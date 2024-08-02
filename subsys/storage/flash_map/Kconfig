@@ -1,0 +1,69 @@
+# Flash map abstraction module
+
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Flash map
+#
+
+menuconfig FLASH_MAP
+	bool "Flash map abstraction module"
+	depends on FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable support of flash map abstraction.
+
+if FLASH_MAP
+
+config FLASH_MAP_SHELL
+	bool "Flash map shell interface"
+	depends on SHELL
+	imply FLASH_MAP_LABELS
+	help
+	  This enables shell commands to list and test flash maps.
+
+config FLASH_MAP_CUSTOM
+	bool "Custom flash map description"
+	help
+	  This option enables custom flash map description.
+	  User must provide such a description in place of default on
+	  if had enabled this option.
+
+config FLASH_AREA_CHECK_INTEGRITY
+	bool "Flash check functions"
+	help
+	  If enabled, there will be available the backend to check flash
+	  integrity using SHA-256 verification algorithm.
+
+config FLASH_MAP_LABELS
+	bool "Access flash area labels at runtime"
+	help
+	  If enabled the label property of the flash map can be retrieved
+	  at runtime. The available labels will also be displayed in the
+	  flash_map list shell command.
+
+if FLASH_AREA_CHECK_INTEGRITY
+
+choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
+	prompt "Crypto backend for the flash check functions"
+	default FLASH_AREA_CHECK_INTEGRITY_PSA if BUILD_WITH_TFM
+	default FLASH_AREA_CHECK_INTEGRITY_MBEDTLS if !BUILD_WITH_TFM
+
+config FLASH_AREA_CHECK_INTEGRITY_PSA
+	bool "Use PSA"
+	select PSA_WANT_ALG_SHA_256
+	help
+	  Use the PSA API to perform the integrity check.
+
+config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
+	bool "Use Mbed TLS"
+	select MBEDTLS
+	select MBEDTLS_SHA256
+	help
+	  Use the Mbed TLS library to perform the integrity check.
+
+endchoice
+
+endif # FLASH_AREA_CHECK_INTEGRITY
+
+endif

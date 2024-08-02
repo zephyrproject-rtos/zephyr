@@ -1,0 +1,254 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include "arduino_giga_r1.dtsi"
+
+/ {
+	model = "Arduino GIGA R1 WiFi Board (M7)";
+	compatible = "arduino,giga-r1";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,uart-mcumgr = &usart1;
+		zephyr,bt-hci = &bt_hci_uart;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan2;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xc0000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(16)>;
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <120>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+};
+
+&usart1 {
+	status = "okay";
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&usart6 {
+	status = "disabled";
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pc7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&uart4 {
+	status = "disabled";
+	pinctrl-0 = <&uart4_tx_ph13 &uart4_rx_pi9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pa8
+		     &uart7_cts_pf9 &uart7_rts_pf8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpiog 3 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+		};
+	};
+};
+
+&i2c4 {
+	status = "okay";
+	pinctrl-0 = <&i2c4_scl_pb6 &i2c4_sda_ph12>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c1 {
+	status = "disabled";
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	status = "disabled";
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi5 {
+	status = "okay";
+	pinctrl-0 = <&spi5_nss_pk1 &spi5_sck_ph6
+		     &spi5_miso_pj11 &spi5_mosi_pj10>;
+	pinctrl-names = "default";
+};
+
+&fdcan2 {
+	status = "okay";
+	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL1_Q FDCAN_SEL(1)>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x40000 0x000c0000>;
+		};
+	};
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pf6>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	n25q128a1: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		qspi-max-frequency = <72000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 DT_SIZE_M(1)>;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 DT_SIZE_M(15)>;
+			};
+		};
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4 &dac1_out2_pa5>;
+	pinctrl-names = "default";
+};
+
+&fmc {
+	status = "okay";
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke0_ph2
+		     &fmc_sdne0_ph3 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
+		     &fmc_a14_pg4 &fmc_a15_pg5
+
+		     &fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13 &fmc_d11_pe14
+		     &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9 &fmc_d15_pd10>;
+	pinctrl-names = "default";
+
+	sdram {
+		status = "okay";
+
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x220>;
+		refresh-rate = <603>;
+
+		bank@0 {
+			reg = <0>;
+			st,sdram-control = <STM32_FMC_SDRAM_NC_8
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_16
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_0>;
+			st,sdram-timing = <2 6 4 6 2 2 2>;
+		};
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+};

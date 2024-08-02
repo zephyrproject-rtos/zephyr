@@ -1,0 +1,16 @@
+# STMicroelectronics STM32F303XC MCU
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+# The HAL expects STM32F302XC to be defined for both the xB and xC variants (only RAM- and Flash-
+# size differ).
+if SOC_STM32F303XB || SOC_STM32F303XC
+
+config NUM_IRQS
+	default 82
+
+config CPU_HAS_ARM_MPU
+	default y
+
+endif # SOC_STM32F303XB || SOC_STM32F303XC

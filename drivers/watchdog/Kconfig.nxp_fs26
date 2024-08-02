@@ -1,0 +1,76 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WDT_NXP_FS26
+	bool "NXP FS26 SBC watchdog driver"
+	default y
+	depends on DT_HAS_NXP_FS26_WDOG_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable the NXP FS26 SBC watchdog driver.
+
+if WDT_NXP_FS26
+
+config WDT_NXP_FS26_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority. Device is connected to SPI bus,
+	  so it has to be initialized after SPI driver.
+
+config WDT_NXP_FS26_ERROR_COUNTER_LIMIT
+	int "Watchdog error counter limit"
+	default 6
+	help
+	  Sets the maximum value of the watchdog error counter. Each time a
+	  watchdog failure occurs, the device increments this counter by 2. The
+	  watchdog error counter is decremented by 1 each time the watchdog is
+	  properly refreshed.
+
+	  Possible values are 2, 4, 6, 8.
+
+config WDT_NXP_FS26_REFRESH_COUNTER_LIMIT
+	int "Watchdog refresh counter limit"
+	default 6
+	help
+	  Sets the maximum value of the watchdog refresh counter. Each time the
+	  watchdog is properly refreshed, this counter is incremented by 1. Each
+	  time this counter reaches its maximum value and if the next refresh is
+	  also good, the fault error counter is decremented by 1. Each time
+	  there is a bad watchdog refresh, this counter is reset to 0.
+
+	  Possible values are 1, 2, 4, 6.
+
+config WDT_NXP_FS26_SEED
+	hex "Watchdog seed"
+	default 0x5ab2
+	range 0x0 0xffff
+	help
+	  Seed to pass to the device. This property can be used with both simple
+	  and challenger watchdog configurations. In simple watchdog
+	  configuration, values 0xffff and 0x0000 are not allowed. In challenger
+	  watchdog configuration, value 0x0000 is not allowed.
+
+config WDT_NXP_FS26_EXIT_DEBUG_MODE
+	bool "Exit DEBUG mode"
+	help
+	  If the device is started in DEBUG mode, the driver will exit this mode
+	  so that the watchdog is enabled. Otherwise, if the device is in DEBUG
+	  mode and this driver is enabled, it will fail to initialize.
+
+config WDT_NXP_FS26_INT_THREAD_STACK_SIZE
+	int "Stack size for internal interrupt handler"
+	default 1024
+	help
+	  Size of the stack used for internal thread which is ran for
+	  interrupt processing.
+
+config WDT_NXP_FS26_INT_THREAD_PRIO
+	int "Priority for internal incoming packet handler"
+	default 2
+	help
+	  Priority level for internal cooperative thread which is ran for
+	  interrupt processing.
+
+endif # WDT_NXP_FS26

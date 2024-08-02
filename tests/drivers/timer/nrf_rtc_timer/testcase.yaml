@@ -1,0 +1,25 @@
+tests:
+  drivers.timer.nrf_rtc_timer:
+    tags:
+      - drivers
+      - timer
+    platform_allow:
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_configs:
+      - CONFIG_ZERO_LATENCY_IRQS=y
+
+  drivers.timer.nrf_rtc_timer_no_zli:
+    tags:
+      - drivers
+      - timer
+    platform_allow:
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpunet
+    integration_platforms:
+      - nrf52dk/nrf52832

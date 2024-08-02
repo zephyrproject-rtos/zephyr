@@ -1,0 +1,26 @@
+# ADC configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2019 Endre Karlson
+# Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
+# Copyright (c) 2021 Marius Scholtz, RIC Electronics
+# Copyright (c) 2022 Hein Wessels, Nobleo Technology
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_STM32
+	bool "STM32 ADC driver"
+	default y
+	depends on DT_HAS_ST_STM32_ADC_ENABLED
+	help
+	  Enable the driver implementation for the stm32xx ADC
+
+if ADC_STM32
+
+config ADC_STM32_DMA
+	bool "STM32 MCU ADC DMA Support"
+	select DMA
+	help
+	  Enable the ADC DMA mode for ADC instances
+	  that enable dma channels in their device tree node.
+
+endif

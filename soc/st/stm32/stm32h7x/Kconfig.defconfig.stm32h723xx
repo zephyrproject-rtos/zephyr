@@ -1,0 +1,11 @@
+# ST STM32H723X MCU configuration options
+
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H723XX
+
+config NUM_IRQS
+	default 163
+
+endif # SOC_STM32H723XX

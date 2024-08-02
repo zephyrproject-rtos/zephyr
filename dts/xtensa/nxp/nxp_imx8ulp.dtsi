@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/imx8ulp_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			reg = <0>;
+		};
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clic: interrupt-controller@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+	};
+
+	sram0: memory@8e000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x8e000000 DT_SIZE_K(512)>;
+	};
+
+	sram1: memory@8e800000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x8e800000 DT_SIZE_K(512)>;
+	};
+
+	pcc4: clock-controller@29800000 {
+		compatible = "nxp,kinetis-pcc";
+		reg = <0x29800000 DT_SIZE_K(64)>;
+		#clock-cells = <2>;
+	};
+
+	iomuxc1: pinctrl@298c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x298c0000 DT_SIZE_K(64)>;
+		pinctrl: pinctrl {
+			compatible = "nxp,imx8ulp-pinctrl";
+		};
+	};
+
+	/* note: this was intentionally left without an interrupt
+	 * property because HIFI4 DSP doesn't receive interrupts
+	 * from LPUART7.
+	 */
+	lpuart7: serial@29870000 {
+		compatible = "nxp,kinetis-lpuart";
+		reg = <0x29870000 DT_SIZE_K(4)>;
+		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
+		status = "disabled";
+	};
+
+	edma2: dma@2d800000 {
+		compatible = "nxp,edma";
+		reg = <0x2d800000 (DT_SIZE_K(64) * 32)>;
+		valid-channels = <0>, <1>, <2>, <3>;
+		interrupt-parent = <&clic>;
+		interrupts = <6 0 0>, <7 0 0>, <8 0 0>, <9 0 0>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
+	sai5: dai@29890000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x29890000 DT_SIZE_K(4)>;
+		interrupt-parent = <&clic>;
+		interrupts = <23 0 0>;
+		dmas = <&edma2 2 70>, <&edma2 3 69>;
+		dma-names = "tx", "rx";
+		dai-index = <5>;
+		status = "disabled";
+	};
+
+	sai6: dai@2da90000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x2da90000 DT_SIZE_K(4)>;
+		interrupt-parent = <&clic>;
+		interrupts = <24 0 0>;
+		dmas = <&edma2 0 72>, <&edma2 1 71>;
+		dma-names = "tx", "rx";
+		dai-index = <6>;
+		status = "disabled";
+	};
+};

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nsim_em-sec.dtsi"
+
+/ {
+	model = "snps,nsim_sem_mpu_stack_guard";
+	compatible = "snps,nsim_sem_mpu_stack_guard.dts";
+};

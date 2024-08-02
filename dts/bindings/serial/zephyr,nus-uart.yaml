@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Croxel, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UART over NUS (Bluetooth LE)
+
+compatible: "zephyr,nus-uart"
+
+properties:
+  tx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual UART TX FIFO
+
+  rx-fifo-size:
+    type: int
+    default: 1024
+    description: |
+      Size of the virtual UART RX FIFO

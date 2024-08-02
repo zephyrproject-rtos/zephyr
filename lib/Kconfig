@@ -1,0 +1,31 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+source "lib/libc/Kconfig"
+
+source "lib/cpp/Kconfig"
+
+source "lib/crc/Kconfig"
+
+menu "Additional libraries"
+
+source "lib/hash/Kconfig"
+
+source "lib/heap/Kconfig"
+
+source "lib/mem_blocks/Kconfig"
+
+source "lib/os/Kconfig"
+
+source "lib/posix/Kconfig"
+
+source "lib/open-amp/Kconfig"
+
+source "lib/smf/Kconfig"
+
+source "lib/acpi/Kconfig"
+
+source "lib/runtime/Kconfig"
+
+source "lib/utils/Kconfig"
+endmenu

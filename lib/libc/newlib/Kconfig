@@ -1,0 +1,67 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if NEWLIB_LIBC
+
+config NEWLIB_LIBC_NANO
+	bool "Build with newlib-nano C library"
+	depends on HAS_NEWLIB_LIBC_NANO
+	help
+	  Build with newlib-nano library, for small embedded apps.
+	  The newlib-nano library for ARM embedded processors is a part of the
+	  GNU Tools for ARM Embedded Processors.
+
+config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
+	int "Maximum memory mapped for newlib heap"
+	depends on MMU
+	default 1048576
+	help
+	  On MMU-based systems, indicates the maximum amount of memory which
+	  will be used for the newlib malloc() heap. The actual amount of
+	  memory used will be the minimum of this value and the amount of
+	  free physical memory at kernel boot.
+
+config NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE
+	int "Newlib minimum required heap size"
+	default 2048 if NEWLIB_LIBC_NANO
+	default 8192 if !NEWLIB_LIBC_NANO
+	help
+	  Specifies the amount of memory space that must be available for the
+	  newlib heap. An assertion failure message will be displayed during
+	  initialization if the memory space available for the newlib heap is
+	  smaller than this value.
+
+config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+	int "Newlib aligned heap size"
+	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	depends on USERSPACE
+	default 0
+	help
+	  If user mode is enabled, and MPU hardware has requirements that
+	  regions be sized to a power of two and aligned to their size,
+	  and user mode threads need to access this heap, then this is necessary
+	  to properly define an MPU region for the heap.
+
+	  If this is left at 0, then remaining system RAM will be used for this
+	  area and it may not be possible to program it as an MPU region.
+
+config NEWLIB_LIBC_FLOAT_PRINTF
+	bool "Build with newlib float printf"
+	help
+	  Build with floating point printf enabled. This will increase the size of
+	  the image.
+
+config NEWLIB_LIBC_FLOAT_SCANF
+	bool "Build with newlib float scanf"
+	help
+	  Build with floating point scanf enabled. This will increase the size of
+	  the image.
+
+config NEWLIB_LIBC_HEAP_LISTENER
+	bool "Notify heap listeners of newlib libc heap events"
+	select HEAP_LISTENER
+	help
+	  Notify registered heap listeners upon certain events related to the newlib
+	  libc heap usage, such as the heap resize.
+
+endif # NEWLIB_LIBC

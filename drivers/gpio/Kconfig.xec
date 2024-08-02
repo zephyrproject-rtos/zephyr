@@ -1,0 +1,18 @@
+# Microchip XEC GPIO configuration options
+
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_XEC
+	bool "XEC Microchip GPIO driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_GPIO_ENABLED
+	help
+	  Enable the Microchip XEC gpio driver.
+
+config GPIO_XEC_V2
+	bool "XEC Microchip GPIO driver V2"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_GPIO_V2_ENABLED
+	help
+	  Enable the Microchip XEC gpio V2 driver.

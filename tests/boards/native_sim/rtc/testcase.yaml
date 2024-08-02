@@ -1,0 +1,13 @@
+# Test of the native_posix real timeness and RTC model
+tests:
+  boards.native.rtc:
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    build_only: true
+# Note: this test depends too much on not having a high host load to pass.
+#      Therefore it should not be run in automated regression

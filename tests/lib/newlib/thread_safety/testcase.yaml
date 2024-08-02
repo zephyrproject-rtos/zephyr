@@ -1,0 +1,68 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  arch_exclude: posix
+  tags:
+    - clib
+    - newlib
+  integration_platforms:
+    - mps2/an521/cpu0
+    - qemu_x86
+tests:
+  libraries.libc.newlib.thread_safety:
+    min_ram: 64
+  libraries.libc.newlib.thread_safety.stress:
+    extra_configs:
+      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+    slow: true
+    min_ram: 192
+  libraries.libc.newlib.thread_safety.userspace:
+    extra_args: CONF_FILE=prj_userspace.conf
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags:
+      - userspace
+    min_ram: 64
+  libraries.libc.newlib.thread_safety.userspace.stress:
+    extra_args: CONF_FILE=prj_userspace.conf
+    extra_configs:
+      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+      - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=8192
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    slow: true
+    tags:
+      - userspace
+    min_ram: 192
+    timeout: 120
+    platform_exclude: acrn_ehl_crb  # See #61129
+  libraries.libc.newlib_nano.thread_safety:
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC_NANO=y
+    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
+    min_ram: 64
+  libraries.libc.newlib_nano.thread_safety.stress:
+    extra_configs:
+      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+    filter: CONFIG_HAS_NEWLIB_LIBC_NANO
+    slow: true
+    min_ram: 192
+  libraries.libc.newlib_nano.thread_safety.userspace:
+    extra_args: CONF_FILE=prj_userspace.conf
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC_NANO=y
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
+    tags:
+      - userspace
+    min_ram: 64
+  libraries.libc.newlib_nano.thread_safety.userspace.stress:
+    extra_args: CONF_FILE=prj_userspace.conf
+    extra_configs:
+      - CONFIG_NEWLIB_THREAD_SAFETY_TEST_STRESS=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+      - CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE=2048
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_HAS_NEWLIB_LIBC_NANO
+    slow: true
+    tags:
+      - userspace
+    min_ram: 192
+    timeout: 120
+    platform_exclude: acrn_ehl_crb  # See #61129

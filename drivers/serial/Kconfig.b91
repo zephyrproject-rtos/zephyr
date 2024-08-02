@@ -1,0 +1,13 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink B91 UART configuration options
+
+config UART_TELINK_B91
+	bool "Telink B91 UART driver"
+	default y
+	depends on DT_HAS_TELINK_B91_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the B91 serial driver.

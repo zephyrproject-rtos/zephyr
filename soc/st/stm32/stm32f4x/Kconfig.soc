@@ -1,0 +1,113 @@
+# STMicroelectronics STM32F4 MCU line
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F4X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f4x" if SOC_SERIES_STM32F4X
+
+config SOC_STM32F401XC
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F401XE
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F405XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F407XE
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F407XG
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F410RX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F411XE
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F412CX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F412RX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F412VX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F412ZX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F413XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F415XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F417XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F423XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F427XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F429XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F437XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F446XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC_STM32F469XX
+	bool
+	select SOC_SERIES_STM32F4X
+
+config SOC
+	default "stm32f401xc" if SOC_STM32F401XC
+	default "stm32f401xe" if SOC_STM32F401XE
+	default "stm32f405xx" if SOC_STM32F405XX
+	default "stm32f407xx" if SOC_STM32F407XE
+	default "stm32f407xx" if SOC_STM32F407XG
+	default "stm32f410rx" if SOC_STM32F410RX
+	default "stm32f411xe" if SOC_STM32F411XE
+	default "stm32f412cx" if SOC_STM32F412CX
+	default "stm32f412rx" if SOC_STM32F412RX
+	default "stm32f412vx" if SOC_STM32F412VX
+	default "stm32f412zx" if SOC_STM32F412ZX
+	default "stm32f413xx" if SOC_STM32F413XX
+	default "stm32f415xx" if SOC_STM32F415XX
+	default "stm32f417xx" if SOC_STM32F417XX
+	default "stm32f423xx" if SOC_STM32F423XX
+	default "stm32f427xx" if SOC_STM32F427XX
+	default "stm32f429xx" if SOC_STM32F429XX
+	default "stm32f437xx" if SOC_STM32F437XX
+	default "stm32f446xx" if SOC_STM32F446XX
+	default "stm32f469xx" if SOC_STM32F469XX

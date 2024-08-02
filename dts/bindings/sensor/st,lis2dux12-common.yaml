@@ -1,0 +1,95 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the odr, power-mode, and range properties in a .dts or .dtsi file you may include
+    st_lis2dux12.h and use the macros defined there.
+    Example:
+    #include <zephyr/dt-bindings/sensor/st_lis2dux12.h>
+    lis2dux12: lis2dux12@0 {
+      ...
+      power-mode = <LIS2DUX12_OPER_MODE_LOW_POWER>;
+      odr = <LIS2DUX12_DT_ODR_12Hz5>;
+      range = <LIS2DUX12_DT_FS_16G>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+
+  range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 3  # LIS2DUX12_DT_FS_16G
+      - 2  # LIS2DUX12_DT_FS_8G
+      - 1  # LIS2DUX12_DT_FS_4G
+      - 0  # LIS2DUX12_DT_FS_2G
+
+    enum: [0, 1, 2, 3]
+
+  power-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the sensor power mode. Default is power-down mode
+
+      - 0 # LIS2DUX12_OPER_MODE_POWER_DOWN
+      - 1 # LIS2DUX12_OPER_MODE_LOW_POWER
+      - 2 # LIS2DUX12_OPER_MODE_HIGH_RESOLUTION
+      - 3 # LIS2DUX12_OPER_MODE_HIGH_FREQUENCY
+
+    enum: [0, 1, 2, 3]
+
+  odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default output data rate expressed in samples per second (Hz).
+      Default is power-down mode
+      - 0  # LIS2DUX12_DT_ODR_OFF
+      - 1  # LIS2DUX12_DT_ODR_1Hz_ULP
+      - 2  # LIS2DUX12_DT_ODR_3Hz_ULP
+      - 3  # LIS2DUX12_DT_ODR_25Hz_ULP
+      - 4  # LIS2DUX12_DT_ODR_6Hz
+      - 5  # LIS2DUX12_DT_ODR_12Hz5
+      - 6  # LIS2DUX12_DT_ODR_25Hz
+      - 7  # LIS2DUX12_DT_ODR_50Hz
+      - 8  # LIS2DUX12_DT_ODR_100Hz
+      - 9  # LIS2DUX12_DT_ODR_200Hz
+      - 10 # LIS2DUX12_DT_ODR_400Hz
+      - 11 # LIS2DUX12_DT_ODR_800Hz
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]

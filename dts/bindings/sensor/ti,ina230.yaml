@@ -1,0 +1,82 @@
+#
+# Copyright 2021 The Chromium OS Authors
+# Copyright 2021 Grinn
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA230 and INA231 Bidirectional Current and Power Monitor.
+    The <zephyr/dt-bindings/sensor/ina230.h> file should be included in the
+    DeviceTree and it provides macro that can be used for initializing the
+    configuration register.
+
+compatible: "ti,ina230"
+
+include: ti,ina23x-common.yaml
+
+properties:
+  config:
+    type: int
+    deprecated: true
+    default: 0x0000
+    description: |
+      Value of the configuration register
+      e.g shunt voltage and bus voltage ADC conversion
+      times, ADC and averaging, and ADC operating mode.
+
+  alert-config:
+    type: int
+    description: Diag alert register, default matches the power-on reset value
+
+  adc-mode:
+    type: string
+    description: |
+      ADC channel conversion configuration.
+      Default is the power-on reset value.
+    default: "Bus and shunt voltage continuous"
+    enum:
+      - "Shutdown single shot"
+      - "Shunt Voltage single shot"
+      - "Bus Voltage single shot"
+      - "Bus and Shunt Voltage single shot"
+      - "Shutdown continuous"
+      - "Shunt voltage continuous"
+      - "Bus voltage continuous"
+      - "Bus and shunt voltage continuous"
+
+  vbus-conversion-time-us:
+    type: int
+    description: |
+      Vbus conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  vshunt-conversion-time-us:
+    type: int
+    description: |
+      Vshunt conversion time in microseconds.
+      Default is the power-on reset value.
+    default: 1100
+    enum: [140, 204, 332, 588, 1100, 2116, 4156, 8244]
+
+  avg-count:
+    type: int
+    description: |
+      Number of samples to average (applies to all inputs).
+      Default is the power-on reset value.
+    default: 1
+    enum: [1, 4, 16, 64, 128, 256, 512, 1024]
+
+  mask:
+    type: int
+    default: 0
+    # default all alert sources to disabled
+    description: Mask register, default matches the power-on reset value
+
+  alert-limit:
+    type: int
+    default: 0
+    # default alert limit is 0V
+    description: Alert register, default matches the power-on reset value

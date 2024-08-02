@@ -1,0 +1,8 @@
+common:
+  platform_allow: native_sim
+  tags: pm
+tests:
+  pm.system: {}
+  pm.system.no.device.pm:
+    extra_args:
+      - OVERLAY_CONFIG="no-device-pm.conf"

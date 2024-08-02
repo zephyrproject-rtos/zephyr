@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/nordic/nrf5340_cpunet.dtsi>
+
+/ {
+	model = "Nordic NRF5340 BSIM NRF5340 Network";
+	compatible = "bsim,nrf5340-bsim-nrf5340-cpunet","bsim,nrf53";
+
+	/* We need to remove aliases to nodes we delete */
+	aliases {
+		/delete-property/ sram-0;
+		/delete-property/ sram-1;
+		/delete-property/ gpiote-0;
+		/delete-property/ wdt-0;
+		/delete-property/ i2c-0;
+		/delete-property/ spi-0;
+		/delete-property/ gpio-0;
+		/delete-property/ gpio-1;
+	};
+
+	chosen {
+		zephyr,bt-hci-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,ieee802154 = &ieee802154;
+		/delete-property/ zephyr,flash-controller;
+		zephyr,flash = &flash1;
+	};
+
+	soc {
+		/delete-node/ memory@20000000;
+		/delete-node/ memory@21000000;
+		/delete-node/ gpiote@4100a000;
+		/delete-node/ watchdog@4100b000;
+		/delete-node/ i2c@41013000;
+		/delete-node/ spi@41013000;
+		/delete-node/ acl@41080000;
+		/delete-node/ vmc@41081000;
+		/delete-node/ gpio@418c0500;
+		/delete-node/ gpio@418c0800;
+	};
+
+	/delete-node/ cpus;
+	/delete-node/ sw-pwm;
+};
+
+&radio {
+	/* These features are not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash1 {
+	reg = <0x01000000 DT_SIZE_K(256)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+		};
+	};
+};
+
+/* We re-use the IPC shared buffer definition from the real HW. But note the start address of the
+ * buffer won't be used.
+ */
+#include <../boards/nordic/nrf5340dk/nrf5340_shared_sram_planning_conf.dtsi>

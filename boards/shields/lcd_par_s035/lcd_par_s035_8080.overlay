@@ -1,0 +1,41 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/{
+	chosen {
+		zephyr,display = &st7796s;
+	};
+};
+
+&nxp_flexio_lcd {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	st7796s: st7796s@0 {
+		compatible = "sitronix,st7796s";
+		reg = <0>;
+		/* Baud rate on each pin is 1MHz */
+		mipi-max-frequency = <10000000>;
+		mipi-mode = <MIPI_DBI_MODE_8080_BUS_16_BIT>;
+		height = <320>;
+		width = <480>;
+		invert-mode = "1-dot";
+		frmctl1 = [80 10];
+		bpc = [1F 50 00 20];
+		dfc = [8A 07 3B];
+		pwr1 = [80 64];
+		pwr2 = <0x13>;
+		pwr3 = <0xA7>;
+		vcmpctl = <0x09>;
+		doca = [40 8A 00 00 29 19 A5 33];
+		pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
+		ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+		madctl = <0x28>;
+		color-invert;
+	};
+};

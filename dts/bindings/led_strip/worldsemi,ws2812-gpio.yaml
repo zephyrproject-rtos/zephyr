@@ -1,0 +1,14 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, GPIO binding
+
+  Driver bindings for bit-banging a WS2812 or compatible LED strip.
+
+  The GPIO driver uses inline assembly, and isn't available for all
+  boards.
+
+compatible: "worldsemi,ws2812-gpio"
+
+include: [base.yaml, ws2812-gpio.yaml]

@@ -1,0 +1,12 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE, Power Manager node
+
+compatible: "ene,kb1200-pmu"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

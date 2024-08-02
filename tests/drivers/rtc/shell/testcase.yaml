@@ -1,0 +1,11 @@
+tests:
+  drivers.rtc.shell:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - rtc
+      - shell
+    filter: dt_alias_exists("rtc")
+    depends_on: rtc

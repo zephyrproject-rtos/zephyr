@@ -1,0 +1,13 @@
+tests:
+  kernel.common.timing:
+    tags:
+      - kernel
+      - sleep
+  kernel.common.timing.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags:
+      - kernel
+      - sleep
+      - libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y

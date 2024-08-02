@@ -1,0 +1,13 @@
+tests:
+  net.tls_credentials:
+    tags:
+      - net
+      - tls
+    depends_on: netif
+  net.tls_credentials.trusted_tfm:
+    filter: CONFIG_BUILD_WITH_TFM
+    extra_args: OVERLAY_CONFIG=./prj_trusted_tfm.conf
+    tags:
+      - net
+      - tls
+      - trusted-firmware-m

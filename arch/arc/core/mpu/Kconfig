@@ -1,0 +1,41 @@
+# Memory Protection Unit (MPU) configuration options
+
+# Copyright (c) 2017 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+config ARC_MPU_VER
+	int "ARC MPU version"
+	range 2 8
+	default 2
+	help
+	  ARC MPU has several versions. For MPU v2, the minimum region is 2048 bytes;
+	  For other versions, the minimum region is 32 bytes; v4 has secure features,
+	  v6 supports up to 32 regions. Note: MPU v5 & v7 are not supported.
+
+config ARC_CORE_MPU
+	bool "ARC Core MPU functionalities"
+	help
+	  ARC core MPU functionalities
+
+config MPU_STACK_GUARD
+	bool "Thread Stack Guards"
+	depends on ARC_CORE_MPU && ARC_MPU_VER !=2
+	help
+	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
+	  If your core supports that, it is preferred over MPU stack guard.
+	  For ARC_MPU_VER == 2, it requires 2048 extra bytes and a strong start address
+	  alignment, this will bring big waste of memory, so no support for it.
+
+config ARC_MPU
+	bool "ARC MPU Support"
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select ARC_CORE_MPU
+	select THREAD_STACK_INFO
+	select GEN_PRIV_STACKS if !(ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
+	select MPU_REQUIRES_NON_OVERLAPPING_REGIONS if (ARC_MPU_VER = 4 || ARC_MPU_VER = 8)
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	select MEM_DOMAIN_ISOLATED_STACKS
+	help
+	  Target has ARC MPU

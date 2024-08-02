@@ -1,0 +1,35 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_BUYDISPLAY_3_5_TFT_TOUCH_ARDUINO
+
+if DISPLAY
+
+if INPUT
+
+# NOTE: Enable if IRQ line is available (requires to solder jumper)
+config INPUT_FT5336_INTERRUPT
+	default n
+
+endif # INPUT
+
+if LVGL
+
+config LV_Z_VDB_SIZE
+	default 32
+
+config LV_Z_BITS_PER_PIXEL
+	default 24
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+config INPUT
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_BUYDISPLAY_3_5_TFT_TOUCH_ARDUINO

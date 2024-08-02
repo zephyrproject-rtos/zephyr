@@ -1,0 +1,7 @@
+# Copyright 2020 Matija Tudan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+zephyr_library_sources(max17262.c)

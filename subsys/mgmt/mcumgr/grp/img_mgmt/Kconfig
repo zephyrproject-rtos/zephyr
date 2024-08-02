@@ -1,0 +1,192 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to Application Image management group of
+# of MCUmgr subsystem and provides Kconfig options to configure
+# group commands behaviour and other aspects.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_GRP_IMG_ -- general group options;
+#
+# When adding Kconfig options, that control the same feature,
+# try to group them together by the same stem after prefix.
+
+menuconfig MCUMGR_GRP_IMG
+	bool "Mcumgr handlers for image management"
+	depends on FLASH
+	depends on IMG_MANAGER
+	depends on !MCUBOOT_BOOTLOADER_MODE_SINGLE_APP
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
+	select MCUMGR_SMP_CBOR_MIN_ENCODING_LEVEL_3 if ZCBOR_CANONICAL
+	help
+	  Enables MCUmgr handlers for image management
+
+if MCUMGR_GRP_IMG
+
+if HEAP_MEM_POOL_SIZE > 0
+
+config MCUMGR_GRP_IMG_USE_HEAP_FOR_FLASH_IMG_CONTEXT
+	bool "Use heap mem pool for flash image DFU context"
+	help
+	  Use heap to allocate flash image upload context, otherwise a static variable will
+	  be used. The context object is used by MCUMGR_GRP_IMG_MANAGER to buffer image writes
+	  and has significant size, mainly affected by image write buffer of
+	  the CONFIG_IMG_BLOCK_BUF_SIZE size and additional fields that hold the state information
+	  (struct flash_img_context).
+	  When the option is not enabled it increases static RAM use.
+	  Make sure with testing, when enabling the option, that the heap has enough size
+	  to allocate this context or it will not be possible to perform DFU; it may also not be
+	  possible to allocate such context when heap is under pressure, due to application
+	  operation, an issue that should also be addressed within application.
+
+endif
+
+config MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER
+	int "Number of supported images"
+	default UPDATEABLE_IMAGE_NUMBER
+	range 1 3
+	help
+	  Sets how many application images are supported (pairs of secondary and primary slots).
+	  Setting this to 2 requires MCUMGR_TRANSPORT_NETBUF_SIZE to be at least 512b.
+	  NOTE: The UPDATEABLE_IMAGE_NUMBER of MCUBOOT configuration, even for Zephyr build,
+	  needs to be set to the same value; this is due to the fact that the MCUmgr uses
+	  boot_util and the UPDATEABLE_IMAGE_NUMBER controls number of images supported
+	  by that library.
+
+config MCUMGR_GRP_IMG_VERBOSE_ERR
+	bool "Verbose error responses when uploading application image"
+	select MCUMGR_SMP_VERBOSE_ERR_RESPONSE
+	help
+	  Add additional "rsn" key to SMP responses, where provided, explaining
+	  non-0 "rc" codes.
+
+config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
+	bool "Allow to confirm secondary slot of non-active image"
+	default y
+	help
+	  Allows to confirm secondary (non-active) slot of non-active image.
+	  Normally it should not be allowed to confirm any slots of non-active
+	  image, via MCUmgr commands, to prevent confirming something that is
+	  broken and may not boot in other slot; instead application should
+	  have means to test and confirm the image.
+
+config MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_ANY
+	bool "Allow to confirm slots of non-active image"
+	select MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_IMAGE_SECONDARY
+	help
+	  Allows to confirm any slot of non-active image.
+	  Normally it should not be allowed to confirm any slots of non-active
+	  image, via MCUmgr commands, to prevent confirming something that is
+	  broken and may not boot in other slot; instead application should
+	  have means to test and confirm the image.
+
+if !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+config MCUMGR_GRP_IMG_ALLOW_ERASE_PENDING
+	bool "Allow to erase pending slot"
+	help
+	  Allows erasing secondary slot which is marked for test or confirmed; this allows
+	  erasing slots that have been set for next boot but the device has not
+	  reset yet, so has not yet been swapped.
+endif
+
+config MCUMGR_GRP_IMG_DIRECT_UPLOAD
+	bool "Allow direct image upload"
+	help
+	  Enables directly uploading image to selected image partition.
+	  This changes how "image" is understood by MCUmgr: normally MCUmgr allows uploading to
+	  the first slot of the only image it knows, where image is understood as two slots
+	  (two DTS images for Zephyr); this allows to treat every DTS defined image as direct
+	  target for upload, and more than two may be used (4 at this time).
+	  NOTE: When direct upload is used the image numbers are shifted by + 1, and the default
+	  behaviour is, when image is not selected, to upload to image that represents secondary
+	  slot in normal operation.
+
+config MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT
+	bool "Reject Direct-XIP applications with mismatched address"
+	help
+	  When enabled, the MCUmgr will compare base address of application,
+	  encoded into .bin file header with use of imgtool, on upload and will
+	  reject binaries that would not be able to start from available
+	  Direct-XIP address.
+	  The base address can be set, to an image binary header, with imgtool,
+	  using the --rom-fixed command line option.
+
+config MCUMGR_GRP_IMG_FRUGAL_LIST
+	bool "Omit zero, empty or false values from status list"
+	help
+	  The status list send back from the device will only be filled with data that is non-zero,
+	  non-empty or true.  This option slightly reduces number of bytes transferred back from
+	  a device but requires support in client software, which has to default omitted values.
+	  Works correctly with the go mcumgr-cli application.
+
+config MCUMGR_GRP_IMG_VERSION_CMP_USE_BUILD_NUMBER
+	bool "Use build number while comparing image version"
+	help
+	  By default, the image version comparison relies only on version major,
+	  minor and revision. Enable this option to take into account the build
+	  number as well.
+
+config MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK
+	bool "Upload check hook"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable the upload check hook which will send image upload requests to
+	  registered callbacks to check with the user application if an upload should be accepted
+	  or rejected.
+
+config MCUMGR_GRP_IMG_STATUS_HOOKS
+	bool "Status hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  This will enable DFU status hooks which can be checked by the application to monitor DFU
+	  uploads. Note that these are status checking only, to allow inspecting of a file upload
+	  or prevent it, CONFIG_MCUMGR_GRP_IMG_UPLOAD_CHECK_HOOK must be used.
+
+config MCUMGR_GRP_IMG_MUTEX
+	bool "Mutex locking"
+	help
+	  This will enable use of a mutex to lock the image group object access, preventing issues
+	  of concurrent thread (i.e. multiple transport) access. This option also makes the
+	  ``img_mgmt_reset_upload()`` function visible in the image management group header, which
+	  can be used by applications to reset the image management state (useful if there are
+	  multiple ways that firmware updates can be loaded).
+
+choice MCUMGR_GRP_IMG_TOO_LARGE_CHECK
+	prompt "Image size check overhead"
+	default MCUMGR_GRP_IMG_TOO_LARGE_DISABLED
+	help
+	  MCUboot images should be limited to the maximum size that the bootloader can swap, in
+	  order to know this size, additional information is needed from the MCUboot
+	  configuration, otherwise an image can be uploaded that is too large for the bootloader
+	  to swap, this selects which method to use.
+
+	  Note: setting this to a non-disabled option will prevent uploading of padded and
+	  confirmed images, if support for that is required then this feature should be left as
+	  disabled.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_DISABLED
+	bool "Disabled"
+	help
+	  Will not take MCUboot configuration into account when checking for maximum file size.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD
+	bool "Via Sysbuild from MCUboot configuration"
+	depends on ROM_END_OFFSET > 0 || MCUBOOT_UPDATE_FOOTER_SIZE > 0
+	help
+	  Will use the image overhead size calculated during Sysbuild image configuration.
+
+config MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO
+	bool "Via retention bootloader info"
+	depends on RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION
+	help
+	  Will fetch the maximum image size from the bootloader info retention subsystem module.
+
+endchoice
+
+module = MCUMGR_GRP_IMG
+module-str = mcumgr_grp_img
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

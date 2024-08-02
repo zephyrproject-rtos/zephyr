@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of the LED strip driver
+  name: LED strip sample
+tests:
+  sample.drivers.led_strip:
+    tags: LED
+    filter: dt_alias_exists("led-strip")
+    harness_config:
+      fixture: fixture_led_strip
+    integration_platforms:
+      - mimxrt1050_evk

@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Kanak Shilledar <kanakshilledar111@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: visionfive2
+  vendor: starfive
+  socs:
+    - name: jh7110

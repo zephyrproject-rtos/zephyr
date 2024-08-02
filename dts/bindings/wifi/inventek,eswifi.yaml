@@ -1,0 +1,23 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: es-WiFi module
+
+compatible: "inventek,eswifi"
+
+include: spi-device.yaml
+
+properties:
+  resetn-gpios:
+    type: phandle-array
+    required: true
+
+  data-gpios:
+    type: phandle-array
+    required: true
+
+  wakeup-gpios:
+    type: phandle-array
+
+  boot0-gpios:
+    type: phandle-array

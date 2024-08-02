@@ -1,0 +1,170 @@
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Infineon XMC4XXX I2C
+
+  This driver configures the USIC as an I2C device.
+
+  Example devicetree configuration with an adt7420 temperature sensor
+  connected on the bus:
+
+  &usic1ch1 {
+      compatible = "infineon,xmc4xxx-i2c";
+      status = "okay";
+
+      pinctrl-0 = <&i2c_scl_p0_13_u1c1 &i2c_sda_p3_15_u1c1>;
+      pinctrl-names = "default";
+      scl-src = "DX1B";
+      sda-src = "DX0A";
+      interrupts = <94 1>;
+
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+      adt7420@48 {
+          compatible = "adi,adt7420";
+          reg = <0x48>;
+      };
+  };
+
+  The pinctrl nodes need to be configured as open-drain and
+  hwctrl should be disabled:
+
+  &i2c_scl_p0_13_u1c1 {
+      drive-strength = "strong-sharp-edge";
+      drive-open-drain;
+      hwctrl = "disabled";
+  };
+
+  &i2c_sda_p3_15_u1c1 {
+      drive-strength = "strong-soft-edge";
+      drive-open-drain;
+      hwctrl = "disabled";
+  };
+
+compatible: "infineon,xmc4xxx-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  scl-src:
+    description: |
+      Connects the I2C clock line (USIC DX1 input) to a specific GPIO pin.
+      The USIC DX1 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings.
+    type: string
+    required: true
+    enum:
+      - "DX1A"
+      - "DX1B"
+      - "DX1C"
+      - "DX1D"
+      - "DX1E"
+      - "DX1F"
+      - "DX1G"
+
+  sda-src:
+    description: |
+      Connects the I2C data line (USIC DX0 input) to a specific GPIO pin.
+      The USIC DX0 input is a multiplexer which connects to different GPIO pins.
+      Refer to the XMC4XXX reference manual for the GPIO pin/mux mappings.
+    type: string
+    required: true
+    enum:
+      - "DX0A"
+      - "DX0B"
+      - "DX0C"
+      - "DX0D"
+      - "DX0E"
+      - "DX0F"
+      - "DX0G"
+
+  interrupts:
+    required: true
+    description: |
+      IRQ number and priority to use for interrupt driven by I2C.
+      Each USIC must use a certain interrupt range:
+      USIC0 = [84, 89]
+      USIC1 = [90, 95]
+      USIC2 = [96, 101]
+
+  pinctrl-0:
+    description: |
+      PORT pin configuration for SCL, SDA signals.
+      We expect that the phandles will reference pinctrl nodes. These
+      nodes will have a nodelabel that matches the Infineon SoC Pinctrl
+      defines and have following
+      format: i2c_<signal>_p<port>_<pin>_<peripheral inst>
+
+      Examples:
+        pinctrl-0 = <&i2c_scl_p5_2_u2c0 &i2c_sda_p5_0_u2c0>;
+
+      The pins should set to open-drain and hwctrl should be disabled.
+
+      &i2c_scl_p5_2_u2c0 {
+          drive-strength = "strong-sharp-edge";
+          drive-open-drain;
+          hwctrl = "disabled";
+      };
+
+      In the above example, the pin is both an input and output (as is
+      required for I2C setup). It is internally connected to both DX0
+      and DOUT0 of USIC2 channel 0. (See XMC4700/4800 reference manual
+      page 18-110, Figure 18-50 for more details).
+      This limits the number of pins that can be used for the I2C module.
+
+      To get around this pin limitation, it is possible to use pins
+      that do not have this internal connection, and instead connect the
+      pins externally on the board.
+      For example, for the SDA line on USIC2 channel 0, P3.8 may be used
+      for DOUT0 and P6.5 for DX0. These type of pinctrl nodes will have
+      labels:
+      i2c_sda_dout0_p3_8_u2c0 and i2c_sda_dx0_p6_5_u2c0.
+      The generalized format is: i2c_<signal>_<type>_p<port>_<pin>_<peripheral inst>
+
+      An example for SCL and SDA signals on the xmc4700:
+      pinctrl-0 = <&i2c_sda_dout0_p3_8_u2c0 &i2c_sda_dx0_p6_5_u2c0
+                  &i2c_scl_dout1_p3_9_u2c0 &i2c_scl_p5_2_u2c0>;
+
+      Externally P3.8 should be connected to P6.5; P3.9 should be connected
+      to P5.2.
+
+      Note that any pins that do not have dout0/dx0 or dout1/dx1 can have either
+      function. Thus node i2c_scl_p5_0_u2c0 can be both dout1 and dx1.
+
+      For the pin configurations, the output pins (dout0 and dout1) should be set
+      to open-drain while the input pins (dx0 and dx1) should not include this setting.
+
+      &i2c_sda_dout0_p3_8_u2c0 {
+          drive-strength = "strong-sharp-edge";
+          drive-open-drain;
+          hwctrl = "disabled";
+      };
+
+      &i2c_scl_dout1_p3_9_u2c0 {
+          drive-strength = "strong-sharp-edge";
+          drive-open-drain;
+          hwctrl = "disabled";
+      };
+
+      &i2c_sda_dx0_p6_5_u2c0 {   /* will require USIC setting sda-src = DX0D */
+          hwctrl = "disabled";
+      };
+
+      &i2c_scl_p5_2_u2c0 {  /* will require USIC scl-src = DX1A */
+          hwctrl = "disabled";
+      };
+
+    required: true
+
+  pinctrl-names:
+    required: true

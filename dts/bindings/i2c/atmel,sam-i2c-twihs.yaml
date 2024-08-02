@@ -1,0 +1,20 @@
+# Copyright (c) 2017 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Family I2C (TWIHS) node
+
+compatible: "atmel,sam-i2c-twihs"
+
+include:
+  - name: i2c-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

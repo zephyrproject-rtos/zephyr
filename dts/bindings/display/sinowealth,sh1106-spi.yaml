@@ -1,0 +1,14 @@
+# Copyright (c) 2023, TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: SH1106 128x64 dot-matrix display controller on SPI bus
+
+compatible: "sinowealth,sh1106"
+
+include: ["solomon,ssd1306fb-common.yaml", "spi-device.yaml"]
+
+properties:
+  data_cmd-gpios:
+    type: phandle-array
+    required: true
+    description: D/C# pin.

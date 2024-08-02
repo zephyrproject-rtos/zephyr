@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	sx9500@28 {
+		compatible = "semtech,sx9500";
+		reg = <0x28>;
+		int-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+	};
+};

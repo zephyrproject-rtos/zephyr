@@ -1,0 +1,28 @@
+# USB-KW24D512 board
+
+# Copyright (c) 2017, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_USB_KW24D512
+
+config OSC_XTAL0_FREQ
+	# The MCU is configured to use 4 MHz external
+	# clock from the transceiver provided at the CLK_OUT output.
+	# CLK_OUT is internally connected to the input pin EXTAL0
+	# of the MCU.
+	default 4000000
+
+config MCG_PRDIV0
+	default 0x1
+
+config MCG_VDIV0
+	default 0x0
+
+config MCG_FCRDIV
+	default 2
+
+config MCR20A_IS_PART_OF_KW2XD_SIP
+	default y
+	depends on IEEE802154_MCR20A
+
+endif # BOARD_USB_KW24D512

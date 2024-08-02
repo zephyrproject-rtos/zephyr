@@ -1,0 +1,205 @@
+# MAX30101 heart rate sensor
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MAX30101
+	bool "MAX30101 Pulse Oximeter and Heart Rate Sensor"
+	default y
+	depends on DT_HAS_MAXIM_MAX30101_ENABLED
+	select I2C
+
+if MAX30101
+
+config MAX30101_SMP_AVE
+	int "Sample averaging"
+	range 0 7
+	default 0
+	help
+	  To reduce the amount of data throughput, adjacent samples (in each
+	  individual channel) can be averaged and decimated on the chip by
+	  setting this register. Set to 0 for no averaging.
+	  0 = 1 sample (no averaging)
+	  1 = 2 samples
+	  2 = 4 samples
+	  3 = 8 samples
+	  4 = 16 samples
+	  5 = 32 samples
+	  6 = 32 samples
+	  7 = 32 samples
+
+config MAX30101_FIFO_ROLLOVER_EN
+	bool "FIFO rolls on full"
+	help
+	  Controls the behavior of the FIFO when the FIFO becomes completely
+	  filled with data. If set, the FIFO address rolls over to zero and the
+	  FIFO continues to fill with new data. If not set, then the FIFO is
+	  not updated until FIFO_DATA is read or the WRITE/READ pointer
+	  positions are changed.
+
+config MAX30101_FIFO_A_FULL
+	int "FIFO almost full value"
+	range 0 15
+	default 0
+	help
+	  Set the trigger for the FIFO_A_FULL interrupt
+
+choice MAX30101_MODE
+	prompt "Mode control"
+	default MAX30101_MULTI_LED_MODE
+
+config MAX30101_HEART_RATE_MODE
+	bool "Heart rate mode"
+	help
+	  Set to operate in heart rate only mode. The red LED channel is
+	  active.
+
+config MAX30101_SPO2_MODE
+	bool "SpO2 mode"
+	help
+	  Set to operate in SpO2 mode. The red and IR LED channels are active.
+
+config MAX30101_MULTI_LED_MODE
+	bool "Multi-LED mode"
+	help
+	  Set to operate in multi-LED mode. The green, red, and/or IR LED
+	  channels are active.
+
+endchoice
+
+config MAX30101_ADC_RGE
+	int "ADC range control"
+	range 0 3
+	default 2
+	help
+	  Set the ADC's full-scale range.
+	  0 = 7.81 pA/LSB
+	  1 = 15.63 pA/LSB
+	  2 = 31.25 pA/LSB
+	  3 = 62.5 pA/LSB
+
+config MAX30101_SR
+	int "ADC sample rate control"
+	range 0 7
+	default 0
+	help
+	  Set the effective sampling rate with one sample consisting of one
+	  pulse/conversion per active LED channel. In SpO2 mode, these means
+	  one IR pulse/conversion and one red pulse/conversion per sample
+	  period.
+	  0 = 50 Hz
+	  1 = 100 Hz
+	  2 = 200 Hz
+	  3 = 400 Hz
+	  4 = 800 Hz
+	  5 = 1000 Hz
+	  6 = 1600 Hz
+	  7 = 3200 Hz
+
+config MAX30101_LED1_PA
+	hex "LED1 (red) pulse amplitude"
+	range 0 0xff
+	default 0xff
+	help
+	  Set the pulse amplitude to control the LED1 (red) current. The actual
+	  measured LED current for each part can vary significantly due to the
+	  trimming methodology.
+	  0x00 = 0.0 mA
+	  0x01 = 0.2 mA
+	  0x02 = 0.4 mA
+	  0x0f = 3.1 mA
+	  0xff = 50.0 mA
+
+config MAX30101_LED2_PA
+	hex "LED2 (IR) pulse amplitude"
+	range 0 0xff
+	default 0x33
+	help
+	  Set the pulse amplitude to control the LED2 (IR) current. The actual
+	  measured LED current for each part can vary significantly due to the
+	  trimming methodology.
+	  0x00 = 0.0 mA
+	  0x01 = 0.2 mA
+	  0x02 = 0.4 mA
+	  0x0f = 3.1 mA
+	  0xff = 50.0 mA
+
+config MAX30101_LED3_PA
+	hex "LED3 (green) pulse amplitude"
+	range 0 0xff
+	default 0xff
+	help
+	  Set the pulse amplitude to control the LED3 (green) current. The
+	  actual measured LED current for each part can vary significantly due
+	  to the trimming methodology.
+	  0x00 = 0.0 mA
+	  0x01 = 0.2 mA
+	  0x02 = 0.4 mA
+	  0x0f = 3.1 mA
+	  0xff = 50.0 mA
+
+if MAX30101_MULTI_LED_MODE
+
+config MAX30101_SLOT1
+	int "Slot 1"
+	range 0 7
+	default 3
+	help
+	  Set which LED and pulse amplitude are active in time slot 1.
+	  0: None (disabled)
+	  1: LED1 (red), LED1_PA
+	  2: LED2 (IR), LED2_PA
+	  3: LED3 (green), LED3_PA
+	  4: None (disabled)
+	  5: LED1 (red), PILOT_PA
+	  6: LED2 (IR), PILOT_PA
+	  7: LED3 (green), PILOT_PA
+
+config MAX30101_SLOT2
+	int "Slot 2"
+	range 0 7
+	default 0
+	help
+	  Set which LED and pulse amplitude are active in time slot 2.
+	  0: None (disabled)
+	  1: LED1 (red), LED1_PA
+	  2: LED2 (IR), LED2_PA
+	  3: LED3 (green), LED3_PA
+	  4: None (disabled)
+	  5: LED1 (red), PILOT_PA
+	  6: LED2 (IR), PILOT_PA
+	  7: LED3 (green), PILOT_PA
+
+config MAX30101_SLOT3
+	int "Slot 3"
+	range 0 7
+	default 0
+	help
+	  Set which LED and pulse amplitude are active in time slot 3.
+	  0: None (disabled)
+	  1: LED1 (red), LED1_PA
+	  2: LED2 (IR), LED2_PA
+	  3: LED3 (green), LED3_PA
+	  4: None (disabled)
+	  5: LED1 (red), PILOT_PA
+	  6: LED2 (IR), PILOT_PA
+	  7: LED3 (green), PILOT_PA
+
+config MAX30101_SLOT4
+	int "Slot 4"
+	range 0 7
+	default 0
+	help
+	  Set which LED and pulse amplitude are active in time slot 4.
+	  0: None (disabled)
+	  1: LED1 (red), LED1_PA
+	  2: LED2 (IR), LED2_PA
+	  3: LED3 (green), LED3_PA
+	  4: None (disabled)
+	  5: LED1 (red), PILOT_PA
+	  6: LED2 (IR), PILOT_PA
+	  7: LED3 (green), PILOT_PA
+
+endif # MAX30101_MULTI_LED_MODE
+
+endif # MAX30101

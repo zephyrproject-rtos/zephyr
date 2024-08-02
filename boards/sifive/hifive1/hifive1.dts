@@ -1,0 +1,149 @@
+/* Copyright (c) 2018 SiFive, Inc. */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <sifive/riscv32-fe310.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include "hifive1-pinctrl.dtsi"
+
+/ {
+	model = "SiFive HiFive 1";
+	compatible = "sifive,hifive1";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		pwm-led0 = &pwmled0;
+		pwm-led1 = &pwmled1;
+		pwm-led2 = &pwmled2;
+		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dtim;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwmled0: pwmled_0 {
+			pwms = <&pwm1 1 PWM_MSEC(20)>;
+			label = "Green LED";
+		};
+		pwmled1: pwmled_1 {
+			pwms = <&pwm1 2 PWM_MSEC(20)>;
+			label = "Blue LED";
+		};
+		pwmled2: pwmled_2 {
+			pwms = <&pwm1 3 PWM_MSEC(20)>;
+			label = "Red LED";
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* A0 not connected */
+			   <1 0 &gpio0 9 0>,	/* A1, also CS2 */
+			   <2 0 &gpio0 10 0>,	/* A2, also WF_INT */
+			   <3 0 &gpio0 11 0>,	/* A3 */
+			   <4 0 &gpio0 12 0>,	/* A4 */
+			   <5 0 &gpio0 13 0>,	/* A5 */
+			   <6 0 &gpio0 16 0>,	/* D0, also TX */
+			   <7 0 &gpio0 17 0>,	/* D1, also RX */
+			   <8 0 &gpio0 18 0>,	/* D2 */
+			   <9 0 &gpio0 19 0>,	/* D3 */
+			   <10 0 &gpio0 20 0>,	/* D4 */
+			   <11 0 &gpio0 21 0>,	/* D5 */
+			   <12 0 &gpio0 22 0>,	/* D6 */
+			   <13 0 &gpio0 23 0>,	/* D7 */
+			   <14 0 &gpio0 0 0>,	/* D8 */
+			   <15 0 &gpio0 1 0>,	/* D9 */
+			   <16 0 &gpio0 2 0>,	/* D10 */
+			   <17 0 &gpio0 3 0>,	/* D11, also MOSI */
+			   <18 0 &gpio0 4 0>,	/* D12, also MISO */
+			   <19 0 &gpio0 5 0>,	/* D13, also SCK */
+			   <20 0 &gpio0 12 0>,	/* D14, also SDA */
+			   <21 0 &gpio0 13 0>;	/* D15, also SCL */
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+/* disabled (used by Flash ROM by default) */
+&spi0 {
+	reg = <0x10014000 0x1000 0x20400000 0xc00000>;
+	flash0: flash@0 {
+		compatible = "issi,is25lp128", "jedec,spi-nor";
+		status = "disabled";
+		size = <134217728>;
+		jedec-id = [96 60 18];
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_cs0_default &spi1_cs2_default &spi1_cs3_default
+		     &spi1_mosi_default &spi1_miso_default &spi1_sck_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_1_default &pwm1_2_default &pwm1_3_default>;
+	pinctrl-names = "default";
+};
+
+&pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pwm2_1_default &pwm2_2_default &pwm2_3_default>;
+	pinctrl-names = "default";
+};
+
+arduino_i2c: &i2c0 {
+	status = "okay";
+	clock-frequency = <100000>;
+	pinctrl-0 = <&i2c0_0_default &i2c0_1_default>;
+	pinctrl-names = "default";
+};

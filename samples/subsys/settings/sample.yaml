@@ -1,0 +1,46 @@
+sample:
+  name: Settings Sample
+
+tests:
+  sample.subsys.settings:
+    tags: settings
+    timeout: 10
+    platform_allow:
+      - qemu_x86
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "subtree <alpha> handler registered: OK"
+        - "# iteration 0"
+        - "[.]*<alpha/length> value exist in the storage"
+        - "[.]*Can\\'t to load the <alpha/length> value as expected"
+        - "<gamma> = 0 \\(default\\)"
+        - "# iteration 1"
+        - "<alpha/length/2> = 59"
+        - "# iteration 2"
+        - "<alpha/length/1> = 42"
+        - "# iteration 3"
+        - "<alpha/beta/voltage> = -3100"
+        - "# iteration 4"
+        - "<alpha/beta/source> = abcd"
+        - "# iteration 5"
+        - "<alpha/angle/1> = 5"
+        - "<alpha/beta/source> is not compatible with the application"
+        - "direct.length = 100"
+        - "direct.length_1 = 46"
+        - "direct.length_2 = 54"
+        - "<gamma> = 5"
+        - "The settings destination off the key <alpha/beta/source> has got value:\
+        \ \"RT\""
+        - "String value \"rtos\" was retrieved from the settings destination off the\
+        \ key <alpha/beta/source>"

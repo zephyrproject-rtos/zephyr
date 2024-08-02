@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2023 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+*/
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		output-high-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+		output-low-gpios = <&gpiob 20 GPIO_ACTIVE_HIGH>;
+		input-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioc {
+	hog1 {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+
+	hog2 {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		input;
+	};
+};
+
+&gpiob {
+	hog3 {
+		gpio-hog;
+		gpios = <20 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};

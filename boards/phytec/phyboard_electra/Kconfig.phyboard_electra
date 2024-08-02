@@ -1,0 +1,8 @@
+# PHYTEC phyBOARD-Electra AM64x
+#
+# Copyright (c) 2024 PHYTEC Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PHYBOARD_ELECTRA
+	select SOC_AM6442_M4 if BOARD_PHYBOARD_ELECTRA_AM6442_M4

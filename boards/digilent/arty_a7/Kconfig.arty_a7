@@ -1,0 +1,8 @@
+# Digilent Arty board configuration
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARTY_A7
+	select SOC_DESIGNSTART_FPGA_CORTEX_M1 if BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M1
+	select SOC_DESIGNSTART_FPGA_CORTEX_M3 if BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M3

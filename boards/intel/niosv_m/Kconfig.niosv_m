@@ -1,0 +1,8 @@
+# Copyright (C) 2023-2024, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NIOSV_M
+	select SOC_NIOSV_M
+	help
+	  Intel FPGA NIOSV Microcontroller Core Processor

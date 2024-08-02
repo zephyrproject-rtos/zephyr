@@ -1,0 +1,57 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_POSIX
+	select ARCH_POSIX
+	select CPU_HAS_FPU
+
+if SOC_POSIX
+
+config NATIVE_SIMULATOR_MCU_N
+	int "CPU Number this image targets"
+	range 0 15
+	default 0
+	depends on NATIVE_LIBRARY
+	help
+	  Which native simulator microcontroller/CPU number is this image targeting.
+	  This option is only applicable for targets which use the
+	  native simulator as their runner.
+
+config NATIVE_SIMULATOR_NUMBER_MCUS
+	int "Total number of MCUs this target has"
+	range 1 16
+	default 1
+	depends on NATIVE_LIBRARY
+	help
+	  How many AMP MCUs does this target have in total.
+
+config NATIVE_SIMULATOR_PRIMARY_MCU_INDEX
+	int "Which CPU is the primary/preferred"
+	default 0
+	depends on NATIVE_LIBRARY
+	help
+	  On a multi MCU device, which MCU is the preferred one.
+	  This MCU will for example have its tests command line parameters presented
+	  without any prefix. Note that an MCU being primary does not imply it will be
+	  the first one to boot, or even that it will boot automatically.
+
+config NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS
+	string "Other cores images to include"
+	depends on NATIVE_LIBRARY
+	help
+	  This option can be used to provide the native simulator with other MCUs/Cores images which have
+	  been produced by either other Zephyr builds or different OS builds.
+	  So you can, for ex., use this application build to produce one core image, and at the same time
+	  have it produce the final link with the native simulator runner and the other MCU images.
+
+config NATIVE_SIMULATOR_AUTOSTART_MCU
+	bool "Auto-start this MCU"
+	depends on NATIVE_LIBRARY
+	help
+	  Automatically start the MCU this Zephyr image is built for during HW boot,
+	  even if in other circumstances this MCU would not start automatically (for ex. because
+	  another core is meant to release its reset).
+	  If that MCU was, by HW design, going to start at HW boot anyhow, this option does nothing.
+	  This option is meant to facilitate development.
+
+endif # SOC_POSIX

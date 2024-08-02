@@ -1,0 +1,9 @@
+tests:
+  drivers.i2c.tca954x:
+    build_only: true
+    tags:
+      - testing
+      - drivers
+    depends_on: i2c
+    filter: dt_compat_enabled("ti,tca9546a")
+    platform_allow: nrf52840dk/nrf52840

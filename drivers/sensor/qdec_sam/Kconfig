@@ -1,0 +1,13 @@
+# Atmel SAM MCU family Quadrature Decoder (TC) driver configuration options
+#
+# Copyright (c) 2021, Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config QDEC_SAM
+	bool "Atmel SAM QDEC driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_TC_QDEC_ENABLED
+	depends on SOC_FAMILY_ATMEL_SAM
+	help
+	  Atmel SAM MCU family Quadrature Decoder (TC) driver.

@@ -1,0 +1,23 @@
+identifier: ubx_bmd300eval/nrf52832
+name: UBX_BMD300EVAL_NRF52832
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - counter
+  - nvs
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+vendor: u-blox

@@ -1,0 +1,34 @@
+sample:
+  name: ISO-TP sample
+tests:
+  sample.subsys.canbus.isotp:
+    tags:
+      - can
+      - isotp
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and not dt_compat_enabled("kvaser,pcican")
+    extra_configs:
+      - CONFIG_SAMPLE_LOOPBACK_MODE=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "(.*)Got 247 bytes in total"
+  sample.subsys.canbus.isotp.fd:
+    tags:
+      - can
+      - isotp
+    depends_on: can
+    extra_configs:
+      - CONFIG_SAMPLE_LOOPBACK_MODE=y
+      - CONFIG_SAMPLE_CAN_FD_MODE=y
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "(.*)Got 247 bytes in total"

@@ -1,0 +1,210 @@
+/*
+ * Copyright (c) 2020 Erik Larson
+ * Copyright (c) 2020-2022 Jason Kridner, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r7.dtsi>
+#include "beagleconnect_freedom-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
+
+/ {
+	model = "BeagleConnect Freedom";
+	compatible = "beagle,beagleconnect-freedom";
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		mcuboot-button0 = &button0;
+		sensor0 = &light;
+		sensor1 = &humidity;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154g;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/**
+	 * The BeagleConnect Freedom has an on-board antenna switch (SKY13317-373LF) used to select
+	 * the appropriate RF signal port based on the currently-used PHY.
+	 *
+	 * Truth table:
+	 *
+	 * Path         DIO29 DIO30
+	 * ===========  ===== =====
+	 * Off          0     0
+	 * Sub-1 GHz    0     1     // DIO30 mux to IOC_PORT_RFC_GPO0 for auto
+	 * 20 dBm TX    1     0     // DIO29 mux to IOC_PORT_RFC_GPO3 for auto
+	 */
+	antenna_mux0: antenna_mux0 {
+		compatible = "skyworks,sky13317";
+		status = "okay";
+		gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>, <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&board_ant_tx_pa_off &board_ant_subg_off>;
+		pinctrl-1 = <&board_ant_tx_pa_off &board_ant_subg_on>;
+		pinctrl-2 = <&board_ant_tx_pa_on &board_ant_subg_on>;
+		pinctrl-names = "default", "ant_subg", "ant_subg_pa";
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>; // 2.4GHz TX/RX
+		};
+	};
+
+	sens_i2c: sensor-switch {
+		status = "okay";
+		compatible = "gpio-i2c-switch";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		controller = <&i2c0>;
+		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+
+		light: opt3001-light@44 {
+			status = "okay";
+			compatible = "ti,opt3001";
+			reg = <0x44>;
+		};
+
+		humidity: hdc2010-humidity@41 {
+			status = "okay";
+			compatible = "ti,hdc2010";
+			reg = <0x41>;
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Allocate 128 KiB for mcuboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00020000>;
+		};
+
+		/* Allocate 568 KiB for application (avoid touching CCFG) */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x0008e000>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+/* Side away from battery connector (with MSP430) */
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+/* Side with battery connector (with CC1352 and not MSP430) */
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
+	pinctrl-1 = <&i2c0_scl_sleep &i2c0_sda_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	mcu: msp430-usbbridge@4 {
+		compatible = "beagle,usbbridge";
+		reg = <0x4>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sck_default &spi0_mosi_default
+		&spi0_miso_default &spi0_cs0_default
+		&spi0_cs1_default &spi0_cs2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>, // SPI flash
+		<&gpio0 28 GPIO_ACTIVE_LOW>,  // mikroBUS port 1
+		<&gpio0 27 GPIO_ACTIVE_LOW>;  // mikroBUS port 2
+
+	spi_flash0: gd25q16c@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		size = <0x200000>;
+		//has-be32k;
+		has-dpd;
+		t-enter-dpd = <20000>;
+		t-exit-dpd = <100000>;
+		jedec-id = [c8 40 15];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Allocate 568 KiB for application */
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x0008e000>;
+			};
+
+			/* Allocate 128 KiB scratch for image swap */
+			scratch_partition: partition@8e000 {
+				label = "image-scratch";
+				reg = <0x0008e000 0x00020000>;
+			};
+
+			/* Allocate 1 MiB storage partition */
+			storage_partition: partition@ae000 {
+				label = "storage";
+				reg = <0x000ae000 DT_SIZE_K(1024)>;
+			};
+		};
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&ieee802154g {
+	status = "okay";
+};

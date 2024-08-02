@@ -1,0 +1,5 @@
+board:
+  name: esp32s3_devkitc
+  vendor: espressif
+  socs:
+  - name: esp32s3

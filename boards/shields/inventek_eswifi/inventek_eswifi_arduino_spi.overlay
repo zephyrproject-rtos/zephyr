@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2020 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	/* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;
+
+	wifi0_inventek_eswifi_arduino_spi: iwin@0 {
+		status = "okay";
+		compatible = "inventek,eswifi";
+		spi-max-frequency = <2000000>;
+		reg = <0>;
+
+		/* D9 */
+		data-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;
+		/* D7 */
+		wakeup-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+		/* D6 */
+		resetn-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+		/* D5 */
+		boot0-gpios = <&arduino_header 11 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -1,0 +1,18 @@
+# NUCLEO-144 F412ZG board configuration
+
+# Copyright (c) 2017 Florian Vaussard, HEIG-VD
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_F412ZG
+
+if NETWORKING
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_DEVICE_NETWORK_ECM
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NUCLEO_F412ZG

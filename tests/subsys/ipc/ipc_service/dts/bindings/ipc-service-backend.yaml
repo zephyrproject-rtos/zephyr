@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Backend binding to test the IPC service
+
+compatible: "ipc-service-backend"
+
+properties:
+  offset:
+    type: int
+    required: true
+    description: offset to add

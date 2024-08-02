@@ -1,0 +1,13 @@
+# Copyright(c) 2024 DPTechnics bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sequans Monarch 2 GM02S Modem
+
+compatible: "sqn,gm02s"
+
+include: uart-device.yaml
+
+properties:
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true

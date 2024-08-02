@@ -1,0 +1,5 @@
+description: Raspberry Pi Pico SPI
+
+compatible: "raspberrypi,pico-spi"
+
+include: ["arm,pl022.yaml", "reset-device.yaml"]

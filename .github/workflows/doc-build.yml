@@ -1,0 +1,279 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation Build
+
+on:
+  schedule:
+  - cron: '0 */3 * * *'
+  push:
+    tags:
+    - v*
+  pull_request:
+
+env:
+  # NOTE: west docstrings will be extracted from the version listed here
+  WEST_VERSION: 1.2.0
+  # The latest CMake available directly with apt is 3.18, but we need >=3.20
+  # so we fetch that through pip.
+  CMAKE_VERSION: 3.20.5
+  DOXYGEN_VERSION: 1.9.6
+  # Job count is set to 2 less than the vCPU count of 16 because the total available RAM is 32GiB
+  # and each sphinx-build process may use more than 2GiB of RAM.
+  JOB_COUNT: 14
+
+jobs:
+  doc-file-check:
+    name: Check for doc changes
+    runs-on: ubuntu-22.04
+    if: >
+      github.repository_owner == 'zephyrproject-rtos'
+    outputs:
+      file_check: ${{ steps.check-doc-files.outputs.any_changed }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+    - name: Check if Documentation related files changed
+      uses: tj-actions/changed-files@v44
+      id: check-doc-files
+      with:
+        files: |
+          doc/
+          **.rst
+          include/
+          kernel/include/kernel_arch_interface.h
+          lib/libc/**
+          subsys/testsuite/ztest/include/**
+          tests/
+          **/Kconfig*
+          west.yml
+          scripts/dts/
+          doc/requirements.txt
+          .github/workflows/doc-build.yml
+          scripts/pylib/pytest-twister-harness/src/twister_harness/device/device_adapter.py
+          scripts/pylib/pytest-twister-harness/src/twister_harness/helpers/shell.py
+
+  doc-build-html:
+    name: "Documentation Build (HTML)"
+    needs: [doc-file-check]
+    if: >
+      github.repository_owner == 'zephyrproject-rtos' &&
+        ( needs.doc-file-check.outputs.file_check == 'true' || github.event_name != 'pull_request' )
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    timeout-minutes: 90
+    concurrency:
+      group: doc-build-html-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget python3-pip git ninja-build graphviz lcov
+        wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+        sudo tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz -C /opt
+        echo "/opt/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+        echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Rebase
+      if: github.event_name == 'pull_request'
+      continue-on-error: true
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        PR_HEAD: ${{ github.event.pull_request.head.sha }}
+      run: |
+        git config --global user.email "actions@zephyrproject.org"
+        git config --global user.name "Github Actions"
+        git rebase origin/${BASE_REF}
+        git log --graph --oneline HEAD...${PR_HEAD}
+
+    - name: cache-pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('doc/requirements.txt') }}
+
+    - name: install-pip
+      run: |
+        sudo pip3 install -U setuptools wheel pip
+        pip3 install -r doc/requirements.txt
+        pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
+        pip3 install coverxygen
+
+    - name: west setup
+      run: |
+        west init -l .
+
+    - name: build-docs
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          DOC_TARGET="html-fast"
+        else
+          DOC_TARGET="html"
+        fi
+
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
+        SPHINXOPTS_EXTRA="-q -t publish" \
+        make -C doc ${DOC_TARGET}
+
+        # API documentation coverage
+        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
+        # deprecated page causing issues
+        lcov --remove doc-coverage.info \*/deprecated > new.info
+        genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
+
+    - name: compress-docs
+      run: |
+        tar --use-compress-program="xz -T0" -cf html-output.tar.xz --directory=doc/_build html
+        tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
+        tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
+
+    - name: upload-build
+      uses: actions/upload-artifact@v4
+      with:
+        name: html-output
+        path: html-output.tar.xz
+
+    - name: upload-api-coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-coverage
+        path: api-coverage.tar.xz
+
+    - name: process-pr
+      if: github.event_name == 'pull_request'
+      run: |
+        REPO_NAME="${{ github.event.repository.name }}"
+        PR_NUM="${{ github.event.pull_request.number }}"
+        DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
+        API_DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/doxygen/html/"
+        API_COVERAGE_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/api-coverage/"
+
+        echo "${PR_NUM}" > pr_num
+        echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "API Documentation will be available shortly at: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+
+    - name: upload-pr-number
+      uses: actions/upload-artifact@v4
+      if: github.event_name == 'pull_request'
+      with:
+        name: pr_num
+        path: pr_num
+
+  doc-build-pdf:
+    name: "Documentation Build (PDF)"
+    needs: [doc-file-check]
+    if: |
+      github.event_name != 'pull_request' &&
+      github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container: texlive/texlive:latest
+    timeout-minutes: 120
+    concurrency:
+      group: doc-build-pdf-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+    - name: Apply container owner mismatch workaround
+      run: |
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+    - name: Print cloud service information
+      run: |
+        echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+        echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+        echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: install-pkgs
+      run: |
+        apt-get update
+        apt-get install -y python3-pip python3-venv ninja-build doxygen graphviz librsvg2-bin imagemagick
+
+    - name: cache-pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: pip-${{ hashFiles('doc/requirements.txt') }}
+
+    - name: setup-venv
+      run: |
+        python3 -m venv .venv
+        . .venv/bin/activate
+        echo PATH=$PATH >> $GITHUB_ENV
+
+    - name: install-pip
+      run: |
+        pip3 install -U setuptools wheel pip
+        pip3 install -r doc/requirements.txt
+        pip3 install west==${WEST_VERSION}
+        pip3 install cmake==${CMAKE_VERSION}
+
+    - name: west setup
+      run: |
+        west init -l .
+
+    - name: build-docs
+      shell: bash
+      continue-on-error: true
+      run: |
+        if [[ "$GITHUB_REF" =~ "refs/tags/v" ]]; then
+          DOC_TAG="release"
+        else
+          DOC_TAG="development"
+        fi
+
+        DOC_TAG=${DOC_TAG} \
+        SPHINXOPTS="-q -j ${JOB_COUNT}" \
+        LATEXMKOPTS="-quiet -halt-on-error" \
+        make -C doc pdf
+
+    - name: upload-build
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pdf-output
+        if-no-files-found: ignore
+        path: |
+          doc/_build/latex/zephyr.pdf
+          doc/_build/latex/zephyr.log
+
+  doc-build-status-check:
+    if: always()
+    name: "Documentation Build Status"
+    needs:
+    - doc-build-pdf
+    - doc-file-check
+    - doc-build-html
+    uses: ./.github/workflows/ready-to-merge.yml
+    with:
+      needs_context: ${{ toJson(needs) }}

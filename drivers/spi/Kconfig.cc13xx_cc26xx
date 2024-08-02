@@ -1,0 +1,11 @@
+# TI CC13xx / CC26xx SPI configuration options
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx / CC26xx SPI driver"
+	default y
+	depends on DT_HAS_TI_CC13XX_CC26XX_SPI_ENABLED
+	help
+	  Enable support for the TI SimpleLink CC13xx / CC26xx SPI peripheral

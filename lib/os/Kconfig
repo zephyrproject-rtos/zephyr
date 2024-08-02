@@ -1,0 +1,130 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "OS Support Library"
+
+config FDTABLE
+	bool "File descriptor table"
+	help
+	  This file provides generic file descriptor table implementation, suitable
+	  for any I/O object implementing POSIX I/O semantics (i.e. read/write +
+	  aux operations).
+
+config ZVFS_OPEN_MAX
+	int "Maximum number of open file descriptors"
+	default 16 if WIFI_NM_WPA_SUPPLICANT
+	default 16 if POSIX_API
+	default 4
+	help
+	  Maximum number of open file descriptors, this includes
+	  files, sockets, special devices, etc.
+
+config PRINTK_SYNC
+	bool "Serialize printk() calls"
+	default y if SMP && MP_MAX_NUM_CPUS > 1 && !(EFI_CONSOLE && LOG)
+	help
+	  When true, a spinlock will be taken around the output from a
+	  single printk() call, preventing the output data from
+	  interleaving with concurrent usage from another CPU or an
+	  preempting interrupt.
+
+config MPSC_PBUF
+	bool "Multi producer, single consumer packet buffer"
+	select TIMEOUT_64BIT
+	help
+	  Enable usage of mpsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+config SPSC_PBUF
+	bool "Single producer, single consumer packet buffer"
+	help
+	  Enable usage of spsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+if SPSC_PBUF
+
+choice SPSC_PBUF_CACHE_HANDLING
+	prompt "Cache handling"
+	default SPSC_PBUF_CACHE_ALWAYS if SPSC_PBUF_USE_CACHE && !SPSC_PBUF_NO_CACHE
+	default SPSC_PBUF_CACHE_NEVER if !SPSC_PBUF_USE_CACHE && SPSC_PBUF_NO_CACHE
+	default SPSC_PBUF_CACHE_FLAG
+
+config SPSC_PBUF_CACHE_FLAG
+	bool "Use cache flag"
+	help
+	  Use instance specific configuration flag for cache handling.
+
+config SPSC_PBUF_CACHE_ALWAYS
+	bool "Always handle cache"
+	help
+	  Handle cache writeback and invalidation for all instances. Option used
+	  to avoid runtime check and thus reduce memory footprint. Beware! It shall
+	  be used only if all packet buffer instances are used for data sharing
+	  between cores.
+
+config SPSC_PBUF_CACHE_NEVER
+	bool "Never handle cache"
+	help
+	  Discar cache handling for all instances. Option used to avoid runtime
+	  check and thus reduce memory footprint.
+
+endchoice
+
+config SPSC_PBUF_USE_CACHE
+	bool
+
+config SPSC_PBUF_NO_CACHE
+	bool
+
+if SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_REMOTE_DCACHE_LINE
+	int "Remote cache line size"
+	default 32
+	help
+	  If a packet buffer is used for data sharing between two cores then
+	  this value should be set to the data cache line size of the remote core.
+	  If local data cache line is detected at runtime then it should be
+	  maximum of local and remote line size.
+
+endif # SPSC_PBUF_CACHE_FLAG || SPSC_PBUF_CACHE_ALWAYS
+
+config SPSC_PBUF_UTILIZATION
+	bool "Track maximum utilization"
+	help
+	  When enabled, maximum utilization is tracked which can be used to
+	  determine the size of the packet buffer.
+
+endif # SPSC_PBUF
+
+if MPSC_PBUF
+config MPSC_CLEAR_ALLOCATED
+	bool "Clear allocated packet"
+	help
+	  When enabled packet space is zeroed before returning from allocation.
+endif
+
+config REBOOT
+	bool "Reboot functionality"
+	help
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. to stop the system clock before
+	  issuing a reset).
+
+config HAS_POWEROFF
+	bool
+	help
+	  Option to signal that power off functionality is implemented.
+
+config POWEROFF
+	bool "Power off functionality"
+	depends on HAS_POWEROFF
+	help
+	  Enable support for system power off.
+
+rsource "Kconfig.cbprintf"
+rsource "zvfs/Kconfig"
+
+endmenu

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This uses pin 40 on HAT as LED, and pin 38 as interrupt line.
+ *
+ * Note:
+ * Need to change the BIOS settings:
+ * () Advanced -> HAT Configurations:
+ *    - HD-Audio / I2S6 Selec -> Disabled
+ *
+ *    - GPIO 27 (Pin38) Confi -> Input
+ *    - GPIO 28 (Pin40) Confi -> Output
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		out-gpios = <&gpio_w 19 0>; /* HAT Pin 40 */
+		in-gpios  = <&gpio_w 18 0>; /* HAT Pin 38 */
+	};
+};

@@ -1,0 +1,12 @@
+# ADC configuration options
+
+# Copyright (c) 2017 comsuisse AG
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_SAM_AFEC
+	bool "SAM ADC Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_AFEC_ENABLED
+	help
+	  Enable Atmel SAM MCU Family Analog-to-Digital Converter (ADC) driver
+	  based on AFEC module.

@@ -1,0 +1,20 @@
+#
+# Copyright 2023 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: rd_rw612_bga/rw612/ethernet
+name: NXP RD_RW612_BGA ETHERNET
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 960
+flash: 65536
+supported:
+  - netif:eth
+testing:
+  default: false

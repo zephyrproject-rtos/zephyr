@@ -1,0 +1,147 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "nrfx drivers logging"
+	depends on LOG
+
+config NRFX_ADC_LOG
+	bool "ADC driver logging"
+	depends on NRFX_ADC
+
+config NRFX_CLOCK_LOG
+	bool "CLOCK driver logging"
+	depends on NRFX_CLOCK
+
+config NRFX_COMP_LOG
+	bool "COMP driver logging"
+	depends on NRFX_COMP
+
+config NRFX_DPPI_LOG
+	bool "DPPI driver logging"
+	depends on NRFX_DPPI
+
+config NRFX_EGU_LOG
+	bool "EGU driver logging"
+	depends on NRFX_EGU
+
+config NRFX_GPIOTE_LOG
+	bool "GPIOTE driver logging"
+	depends on NRFX_GPIOTE
+
+config NRFX_GRTC_LOG
+	bool "GRTC driver logging"
+	depends on NRFX_GRTC
+
+config NRFX_I2S_LOG
+	bool "I2S driver logging"
+	depends on NRFX_I2S
+
+config NRFX_IPC_LOG
+	bool "IPC driver logging"
+	depends on NRFX_IPC
+
+config NRFX_LPCOMP_LOG
+	bool "LPCOMP driver logging"
+	depends on NRFX_LPCOMP
+
+config NRFX_NFCT_LOG
+	bool "NFCT driver logging"
+	depends on NRFX_NFCT
+
+config NRFX_NVMC_LOG
+	bool "NVMC driver logging"
+	depends on NRFX_NVMC
+
+config NRFX_PDM_LOG
+	bool "PDM driver logging"
+	depends on NRFX_PDM
+
+config NRFX_POWER_LOG
+	bool "POWER driver logging"
+	depends on NRFX_POWER
+
+config NRFX_PPI_LOG
+	bool "PPI driver logging"
+	depends on NRFX_PPI
+
+config NRFX_PRS_LOG
+	bool "PRS driver logging"
+	depends on NRFX_PRS
+
+config NRFX_PWM_LOG
+	bool "PWM driver logging"
+	depends on NRFX_PWM
+
+config NRFX_QDEC_LOG
+	bool "QDEC driver logging"
+	depends on NRFX_QDEC
+
+config NRFX_QSPI_LOG
+	bool "QSPI driver logging"
+	depends on NRFX_QSPI
+
+config NRFX_RNG_LOG
+	bool "RNG driver logging"
+	depends on NRFX_RNG
+
+config NRFX_RTC_LOG
+	bool "RTC driver logging"
+	depends on NRFX_RTC
+
+config NRFX_SAADC_LOG
+	bool "SAADC driver logging"
+	depends on NRFX_SAADC
+
+config NRFX_SPI_LOG
+	bool "SPI driver logging"
+	depends on NRFX_SPI
+
+config NRFX_SPIM_LOG
+	bool "SPIM driver logging"
+	depends on NRFX_SPIM
+
+config NRFX_SPIS_LOG
+	bool "SPIS driver logging"
+	depends on NRFX_SPIS
+
+config NRFX_SYSTICK_LOG
+	bool "SYSTICK driver logging"
+	depends on NRFX_SYSTICK
+
+config NRFX_TEMP_LOG
+	bool "TEMP driver logging"
+	depends on NRFX_TEMP
+
+config NRFX_TIMER_LOG
+	bool "TIMER driver logging"
+	depends on NRFX_TIMER
+
+config NRFX_TWI_LOG
+	bool "TWI driver logging"
+	depends on NRFX_TWI
+
+config NRFX_TWIM_LOG
+	bool "TWIM driver logging"
+	depends on NRFX_TWIM
+
+config NRFX_TWIS_LOG
+	bool "TWIS driver logging"
+	depends on NRFX_TWIS
+
+config NRFX_UART_LOG
+	bool "UART driver logging"
+	depends on NRFX_UART
+
+config NRFX_UARTE_LOG
+	bool "UARTE driver logging"
+	depends on NRFX_UARTE
+
+config NRFX_USBREG_LOG
+	bool "USBREG driver logging"
+	depends on NRFX_USBREG
+
+config NRFX_WDT_LOG
+	bool "WDT driver logging"
+	depends on NRFX_WDT
+
+endmenu # "nrfx drivers logging"

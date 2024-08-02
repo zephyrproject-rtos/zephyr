@@ -1,0 +1,33 @@
+sample:
+  name: Bluetooth Peripheral HT
+  description: Demonstrates the HT (Health Thermometer) GATT Service
+tests:
+  sample.bluetooth.peripheral_ht:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.peripheral_ht.frdm_kw41z_shield:
+    harness: bluetooth
+    platform_allow:
+      - mimxrt1020_evk
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - frdm_k64f
+    tags: bluetooth
+    extra_args: SHIELD=frdm_kw41z
+    integration_platforms:
+      - mimxrt1020_evk
+  sample.bluetooth.peripheral_ht.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+      - frdm_rw612
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_BT=n

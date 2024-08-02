@@ -1,0 +1,16 @@
+sample:
+  description: CPU Die temperature polling sample
+  name: die_temp_polling
+tests:
+  sample.sensor.die_temperature_polling:
+    tags:
+      - sensors
+    filter: dt_alias_exists("die-temp0")
+    integration_platforms:
+      - stm32f3_disco
+      - nucleo_h7a3zi_q
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "CPU Die temperature\\[[A-Za-z0-9_@]+\\]: [1-9][0-9].[0-9] °C"

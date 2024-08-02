@@ -1,0 +1,22 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM I2S driver"
+	default y
+	depends on DT_HAS_NXP_LPC_I2S_ENABLED
+	select DMA
+	help
+	  Enable support for mcux flexcomm i2s driver.
+
+if I2S_MCUX_FLEXCOMM
+
+config I2S_MCUX_FLEXCOMM_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+endif # I2S_MCUX_FLEXCOMM

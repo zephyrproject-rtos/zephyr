@@ -1,0 +1,25 @@
+sample:
+  name: SPI Bitbang Driver Sample
+tests:
+  sample.drivers.spi.bitbang:
+    tags:
+      - drivers
+      - spi
+      - gpio
+    platform_allow: nrf52840dk/nrf52840
+    depends_on: gpio
+    harness: console
+    harness_config:
+      fixture: gpio_loopback
+      type: multi_line
+      ordered: true
+      regex:
+        - "basic_write_9bit_words; ret: 0"
+        - "wrote 0101 00ff 00a5 0000 0102"
+        - "9bit_loopback_partial; ret: 0"
+        - "tx [(]i[)]  : 0101 0102"
+        - "tx [(]ii[)] : 0003 0004 0105"
+        - "rx [(]ii[)] : 0003 0004 0105"
+        - "8bit_loopback_partial; ret: 0"
+        - "tx [(]i[)]  : 01 02 03 04 05"
+        - "rx [(]i[)]  : 01 02 03 04 05"

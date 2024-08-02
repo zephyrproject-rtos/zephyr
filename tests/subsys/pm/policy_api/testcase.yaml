@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: pm
+  platform_allow:
+    - native_posix
+    - native_posix/native/64
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  pm.policy.api.default: {}
+  pm.policy.api.app:
+    extra_configs:
+      - CONFIG_PM_POLICY_CUSTOM=y

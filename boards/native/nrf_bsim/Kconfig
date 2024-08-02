@@ -1,0 +1,102 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52_BSIM
+	bool
+	select SOC_SERIES_BSIM_NRF52X
+	select SOC_COMPATIBLE_NRF52833
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	help
+	  NRF52 simulation model
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+config BOARD_NRF5340BSIM_NRF5340_CPUNET
+	bool
+	select SOC_SERIES_BSIM_NRF53X
+	select SOC_COMPATIBLE_NRF5340_CPUNET
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	help
+	  Simulated NRF53 Network core
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+config BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	bool
+	select SOC_SERIES_BSIM_NRF53X
+	select SOC_COMPATIBLE_NRF5340_CPUAPP
+	select NRF_RTC_TIMER
+	select CLOCK_CONTROL
+	help
+	  Simulated NRF53 Application core
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+config BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
+	bool
+	select SOC_SERIES_BSIM_NRF54LX
+	select SOC_COMPATIBLE_NRF54L15
+	select SOC_COMPATIBLE_NRF54L15_CPUAPP
+	select CLOCK_CONTROL
+	help
+	  Simulated NRF54L15 Application core
+	  Will produce a console Linux process which can be executed natively.
+	  It needs the BabbleSim simulator both in compile time and to execute
+
+
+if SOC_SERIES_BSIM_NRFXX
+
+# The following file is normally parsed only for the ARM architecture, which is
+# used by Nordic SoCs, so to make the symbols defined in this file available for
+# the simulated nrf5x_bsim boards, which use the POSIX architecture, the file
+# must be read also from here.
+source "soc/nordic/common/Kconfig.peripherals"
+
+source "boards/native/common/extra_args/Kconfig"
+
+endif # SOC_SERIES_BSIM_NRFXX
+
+
+# This would eventually be shared by a possible family of simulated NRF boards
+# which use BabbleSim. When that happens, we can move this to a common
+# Kconfig file
+
+config SOC_SERIES_BSIM_NRFXX
+	bool
+	select NATIVE_LIBRARY
+	select SOC_COMPATIBLE_NRF
+	select HAS_NRFX
+	select HAS_NORDIC_DRIVERS
+	select PINCTRL_DYNAMIC if PINCTRL
+	help
+	  Any NRF simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF52X
+	bool
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_COMPATIBLE_NRF52X
+	help
+	  Any NRF52 simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF53X
+	bool
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_COMPATIBLE_NRF53X
+	help
+	  Any NRF53 simulated SOC with BabbleSim, based on the POSIX arch
+
+config SOC_SERIES_BSIM_NRF54LX
+	bool
+	select SOC_SERIES_BSIM_NRFXX
+	select SOC_COMPATIBLE_NRF54LX
+	help
+	  Any NRF54L simulated SOC with BabbleSim, based on the POSIX arch
+
+if SOC_SERIES_BSIM_NRF53X
+
+# Let's reuse the RTC sync options so applications which use it can be reused as is
+source "soc/nordic/nrf53/Kconfig.sync_rtc"
+
+endif # SOC_SERIES_BSIM_NRF53X

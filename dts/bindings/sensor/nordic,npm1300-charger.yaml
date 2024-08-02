@@ -1,0 +1,128 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NPM1300 PMIC Charger
+
+compatible: "nordic,npm1300-charger"
+
+include: [sensor-device.yaml]
+
+properties:
+  term-microvolt:
+    type: int
+    required: true
+    description: |
+      Charge termination voltage in uV.
+      Available range is 3.5 V to 3.65 V and 4.0 V to 4.45 V in 50 mV steps.
+
+  term-warm-microvolt:
+    type: int
+    description: |
+      Charge termination voltage when warm in uV.
+      Available range is 3.5 V to 3.65 V and 4.0 V to 4.45 V in 50 mV steps.
+      If omitted, the term-microvolt value will be used.
+
+  current-microamp:
+    type: int
+    required: true
+    description: |
+      Charge current in uA.
+      Available range is 32 mA to 800 mA in 2mA steps.
+      The value specified will be rounded down to the closest implemented value.
+
+  dischg-limit-microamp:
+    type: int
+    required: true
+    description: |
+      Discharge current limit in uA.
+      Available range is 270 mA to 1340 mA in 3.23 mA steps.
+      The value specified will be rounded down to the closest implemented value.
+
+  vbus-limit-microamp:
+    type: int
+    description: |
+      Vbus current limit in uA.
+      Available values are 100 mA, or between 500 mA and 1500 mA in 100 mA steps.
+      If omitted, the default value of 100 mA will be used.
+
+  thermistor-ohms:
+    type: int
+    required: true
+    enum:
+      - 10000
+      - 47000
+      - 100000
+    description: Thermistor nominal resistance type in ohms.
+
+  thermistor-beta:
+    type: int
+    required: true
+    description: Beta value of selected thermistor.
+
+  thermistor-cold-millidegrees:
+    type: int
+    description: Thermistor cold threshold in milli-degrees
+
+  thermistor-cool-millidegrees:
+    type: int
+    description: Thermistor cool threshold in milli-degrees
+
+  thermistor-warm-millidegrees:
+    type: int
+    description: Thermistor warm threshold in milli-degrees
+
+  thermistor-hot-millidegrees:
+    type: int
+    description: Thermistor hot threshold in milli-degrees
+
+  charging-enable:
+    type: boolean
+    description: |
+      Enable charging.
+
+  trickle-microvolt:
+    type: int
+    enum:
+      - 2900000
+      - 2500000
+    default: 2900000
+    description: |
+      Trickle voltage threshold in uV.
+      Trickle charging is enabled below this value.
+      If omitted the device default of 2.9V is used.
+
+  term-current-percent:
+    type: int
+    enum:
+      - 10
+      - 20
+    default: 10
+    description: |
+      Termination current, as a percentage of current-microamp.
+      Charge completes when the charge current falls below this value.
+      If omitted the device default of 10% is used.
+
+  vbatlow-charge-enable:
+    type: boolean
+    description: |
+      Allow charging when below the vbatlow threshold.
+
+  disable-recharge:
+    type: boolean
+    description: |
+      Disable automatic recharge.
+
+  dietemp-stop-millidegrees:
+    type: int
+    description: |
+      Die temperature halt threshold in milli-degrees.
+      When die temperature exceeds this threshold, charging will be inhibited.
+
+  dietemp-resume-millidegrees:
+    type: int
+    description: |
+      Die temperature resume threshold in milli-degrees.
+      When die temperature falls below this threshold, charging will be permitted.

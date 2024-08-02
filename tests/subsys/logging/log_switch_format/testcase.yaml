@@ -1,0 +1,43 @@
+common:
+  tags:
+    - logging
+    - mipi-sys-t
+  modules:
+    - mipi-sys-t
+  arch_exclude:
+    - mips
+    - nios2
+    - posix
+    - sparc
+  filter: not CONFIG_64BIT
+tests:
+  logging.format.switch.deferred:
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    extra_args: OVERLAY_CONFIG=overlay_deferred.conf
+    # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
+    # because of following chain of dependencies:
+    # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
+    # --> REQUIRES_FULL_LIBC
+    #
+    # Not all compillers announced in Zephyr support a full C library
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
+  logging.format.switch.immediate:
+    extra_args: OVERLAY_CONFIG=overlay_immediate.conf
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y
+  logging.format.switch.custom_output:
+    extra_args: OVERLAY_CONFIG=overlay_custom_output.conf
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_REQUIRES_FULL_LIBC=y

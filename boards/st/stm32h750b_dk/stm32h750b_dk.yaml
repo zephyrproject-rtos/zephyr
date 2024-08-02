@@ -1,0 +1,18 @@
+identifier: stm32h750b_dk
+name: ST STM32H750B Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 1024
+flash: 128
+supported:
+  - arduino_gpio
+  - gpio
+  - dma
+  - flash
+  - rtc
+  - memc
+vendor: st

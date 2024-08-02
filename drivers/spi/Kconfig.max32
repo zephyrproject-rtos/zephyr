@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MAX32
+	bool "MAX32 MCU SPI controller driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_SPI_ENABLED
+	help
+	  Enable SPI support on the MAX32 family of processors.
+
+if SPI_MAX32
+
+config SPI_MAX32_INTERRUPT
+	bool "MAX32 MCU SPI Interrupt Support"
+	help
+	  Enable interrupt support for MAX32 MCU SPI driver.
+
+endif # SPI_MAX32

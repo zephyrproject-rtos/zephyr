@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32690EVKIT";
+	compatible = "adi,max32690evkit";
+
+	chosen {
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+		green_led: led_1 {
+			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb0: pb0 {
+			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &pb0;
+	 };
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&uart2 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart2a_tx_p1_10 &uart2a_rx_p1_9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};

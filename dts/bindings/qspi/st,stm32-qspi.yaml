@@ -1,0 +1,80 @@
+# Copyright (c) 2020, Linaro limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 QSPI device representation. A stm32 quadspi node would typically
+    looks to this:
+
+        &quadspi {
+            pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
+                         &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
+                         &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+
+            dmas = <&dma1 5 5 0x0000 0x03>;
+            dma-names = "tx_rx";
+
+            status = "okay";
+        };
+
+compatible: "st,stm32-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier. If DMA should be used, specifier should
+      hold a phandle reference to the dma controller (not the DMAMUX even if present),
+      the channel number, the slot number, channel configuration and finally features.
+      (depending on the type of DMA: 'features' is optional)
+
+      When a DMAMUX is present and enabled, the channel is the dma one
+      (not dmamux channel). The request is given by the DMAMUX (no 'features' required).
+
+      For example with DMA 2 for TX/RX on QSPI like stm32l496 (no 'features')
+         /* select DMA2 channel 7 request 3 for QUADSPI */
+         dmas = <&dma2 7 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+      For example with a DMAMUX for TX/RX on QSPI like stm32wb55  (no 'features')
+         /* select DMA2 channel 0, request 20 for QUADSPI */
+         dmas = <&dma2 0 20 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx_rx".
+
+      For example
+         dma-names = "tx_rx";
+
+  dual-flash:
+    type: boolean
+    description: |
+      configuration to enable the dual flash mode of the QSPI peripheral
+      where two external quad SPI Flash memories (FLASH 1 and FLASH 2) are used
+      in order to send/receive 8 bits (or 16 bits in DDR mode) every cycle,
+      effectively doubling the throughput as well as the capacity.
+      When true, the Flash ID number <flash-id> is useless.
+
+  flash-id:
+    type: int
+    description: |
+      Flash ID number. This number, if defined, helps to select the right
+      QSPI GPIO banks (defined as 'quadspi_bk[1/2]' in pinctrl property)
+      to communicate with flash memory.
+      Valid only if the <dual-flash> is not set.
+
+      For example
+         flash-id = <2>;

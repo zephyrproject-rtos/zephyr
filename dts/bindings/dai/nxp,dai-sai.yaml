@@ -1,0 +1,111 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Synchronous Audio Interface (SAI) node
+
+compatible: "nxp,dai-sai"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  mclk-is-output:
+    type: boolean
+    description: |
+      Use this property to set the SAI MCLK as output or as input.
+      By default, if this property is not specified, MCLK will be
+      set as input. Setting the MCLK as output for SAIs which don't
+      support MCLK configuration will result in a BUILD_ASSERT()
+      failure.
+  rx-fifo-watermark:
+    type: int
+    description: |
+      Use this property to specify the watermark value for the TX
+      FIFO. This value needs to be in FIFO words (NOT BYTES). This
+      value needs to be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised.
+  tx-fifo-watermark:
+    type: int
+    description: |
+      Use this property to specify the watermark value for the RX
+      FIFO. This value needs to be in FIFO words (NOT BYTES). This
+      value needs to be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised.
+  interrupts:
+    required: true
+  fifo-depth:
+    type: int
+    description: |
+      Use this property to set the FIFO depth that will be reported
+      to other applications calling dai_get_properties(). This value
+      should be in the following interval: (0, DEFAULT_FIFO_DEPTH],
+      otherwise a BUILD_ASSERT() failure will be raised.
+      By DEFAULT_FIFO_DEPTH we mean the actual (hardware) value of
+      the FIFO depth. This is needed because some applications (e.g: SOF)
+      use this value to compute the DMA burst size, in which case
+      DEFAULT_FIFO_DEPTH cannot be used. Generally, reporting a false
+      FIFO depth should be avoided. Please note that the sanity check
+      for tx/rx-fifo-watermark uses DEFAULT_FIFO_DEPTH instead of this
+      value so use with caution. If unsure, it's better to simply not
+      use this property, in which case the reported value will be
+      DEFAULT_FIFO_DEPTH.
+  dai-index:
+    type: int
+    description: |
+      Use this property to specify the index of the DAI. At the
+      moment, this is only used by SOF to fetch the "struct device"
+      associated with the DAI whose index Linux passes to SOF
+      through an IPC. If this property is not specified, the DAI
+      index will be considered 0.
+  tx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Use this property to specify which synchronization mode to use
+      for the transmitter. At the moment, the only supported modes are:
+        1) The transmitter is ASYNC (0)
+        2) The transmitter is in SYNC with the receiver (1)
+      If this property is not specified, the transmitter will be set to ASYNC.
+      If one side is SYNC then the other MUST be ASYNC. Failing to meet this
+      condition will result in a failed BUILD_ASSERT().
+  rx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Use this property to specify which synchronization mode to use
+      for the receiver. At the moment, the only supported modes are:
+        1) The receiver is ASYNC (0)
+        2) The receiver is in SYNC with the transmitter (1)
+      If this property is not specified, the receiver will be set to ASYNC.
+      If one side is SYNC then the other MUST be ASYNC. Failing to meet this
+      condition will result in a failed BUILD_ASSERT().
+  tx-dataline:
+    type: int
+    description: |
+      Use this property to specify which transmission data line the SAI should
+      use. To find out which transmission line you should use you can:
+        1) Check the TRM and see if your SAI instance is multiline. If not then
+        you're going to use transmission line 0.
+        2) If your SAI is multiline then you need to check the datasheet and see
+        the index of the transmission line that's connected to your consumer
+        (e.g: the codec).
+      The indexing of the data line starts at 0. If this property is not specified
+      then the index of the transmission data line will be 0.
+      Please note that "channel" and "data line" are synnonyms in this context.
+  rx-dataline:
+    type: int
+    description: |
+      Use this property to specify which receive transmission data line the SAI should
+      use. To find out which receive line you should use you can:
+        1) Check the TRM and see if your SAI instance is multiline. If not then
+        you're going to use receive line 0.
+        2) If your SAI is multiline then you need to check the datasheet and see
+        the index of the receive line that's connected to your consumer (e.g: the codec).
+      The indexing of the data line starts at 0. If this property is not specified
+      then the index of the receive data line will be 0.
+      Please note that "channel" and "data line" are synnonyms in this context.

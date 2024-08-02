@@ -1,0 +1,102 @@
+tests:
+  bluetooth.mesh.main:
+    build_only: true
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.dbg:
+    build_only: true
+    extra_args: CONF_FILE=dbg.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.friend:
+    build_only: true
+    extra_args: CONF_FILE=friend.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.gatt:
+    build_only: true
+    extra_args: CONF_FILE=gatt.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp/ns
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.gatt.psa:
+    build_only: true
+    extra_args: CONF_FILE=gatt.conf
+    extra_configs:
+      - CONFIG_BT_USE_PSA_API=y
+    platform_allow:
+      - qemu_x86
+      - nrf5340dk/nrf5340/cpuapp/ns
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.lpn:
+    build_only: true
+    extra_args: CONF_FILE=lpn.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.pb_gatt:
+    build_only: true
+    extra_args: CONF_FILE=pb_gatt.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.proxy:
+    build_only: true
+    extra_args: CONF_FILE=proxy.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh
+  bluetooth.mesh.multi_ext_adv:
+    build_only: true
+    extra_args: CONF_FILE=multi_ext_adv.conf
+    platform_allow:
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - bluetooth
+      - mesh

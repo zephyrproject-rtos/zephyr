@@ -1,0 +1,60 @@
+# Distributed Switch Architecture [DSA] configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+#               Lukasz Majewski <lukma@denx.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_DSA_SUPPORT
+	bool
+	help
+	  Set by an ethernet driver that supports DSA.
+
+menuconfig NET_DSA
+	bool "Distributed Switch Architecture support"
+	depends on ETH_DSA_SUPPORT
+	help
+	  Enable Distributed Switch Architecture support. For now it
+	  only supports Kinetics and STM32 ENET drivers.
+
+if NET_DSA
+
+config DSA_KSZ8XXX
+	bool
+
+config DSA_KSZ8794
+	bool "Support for KSZ8794"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8794_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8794),spi)
+	help
+	  Add support for KSZ8794 DSA device driver.
+
+config DSA_KSZ8863
+	bool "Support for KSZ8863"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8863_ENABLED
+	select DSA_KSZ8XXX
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_KSZ8863),spi)
+	help
+	  Add support for KSZ8863 DSA device driver.
+
+config DSA_KSZ_TAIL_TAGGING
+	bool "Support for tail tagging"
+	depends on DSA_KSZ8794 || DSA_KSZ8863
+	help
+	  Add support for tail tagging on DSA device.
+
+config DSA_SPI
+	bool "Support for PHY SPI interface"
+	depends on SPI && (DSA_KSZ8794 || DSA_KSZ8863)
+	help
+	  Use SPI bus to communicate with PHY
+
+module = NET_DSA
+module-dep = NET_LOG
+module-str = Log level for DSA
+module-help = Enables core DSA code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_DSA

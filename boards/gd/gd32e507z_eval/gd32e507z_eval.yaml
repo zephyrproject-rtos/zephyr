@@ -1,0 +1,18 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32e507z_eval
+name: GigaDevice GD32E507Z-EVAL
+type: mcu
+arch: arm
+ram: 128
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - pwm
+  - gpio
+  - counter
+vendor: gd

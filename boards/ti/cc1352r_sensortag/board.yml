@@ -1,0 +1,5 @@
+board:
+  name: cc1352r_sensortag
+  vendor: ti
+  socs:
+  - name: cc1352r

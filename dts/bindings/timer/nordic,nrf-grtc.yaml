@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Nordic GRTC (Global RTC)
+
+compatible: "nordic,nrf-grtc"
+
+include:
+  - "base.yaml"
+  - "nordic,split-channels.yaml"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  cc-num:
+    description: Number of capture/compare channels
+    type: int
+    required: true

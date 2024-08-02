@@ -1,0 +1,5 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STEVAL_STWINBX1
+	select SOC_STM32U585XX

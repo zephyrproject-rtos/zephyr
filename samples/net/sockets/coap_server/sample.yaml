@@ -1,0 +1,14 @@
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+sample:
+  description: BSD Sockets API CoAP server example
+  name: socket_coap_server
+tests:
+  sample.net.sockets.coap_server:
+    harness: net
+    tags:
+      - net
+      - socket
+    platform_allow:
+      - native_sim
+      - qemu_x86

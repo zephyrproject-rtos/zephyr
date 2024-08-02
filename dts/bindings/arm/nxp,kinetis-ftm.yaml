@@ -1,0 +1,29 @@
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinetis FTM
+
+compatible: "nxp,kinetis-ftm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    description: Input clock prescaler

@@ -1,0 +1,55 @@
+# Copyright (c) 2023, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RETENTION_BOOTLOADER_INFO
+	bool "Bootloader info"
+	help
+	  Adds a bootloader information sharing system which allows for
+	  retreiving data from the bootloader when data sharing is enabled.
+
+if RETENTION_BOOTLOADER_INFO
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_BOOTLOADER_INFO := zephyr,bootloader-info
+
+config RETENTION_BOOTLOADER_INFO_TYPE_MCUBOOT
+	bool "MCUboot"
+	depends on !MCUBOOT && BOOTLOADER_MCUBOOT
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BOOTLOADER_INFO))
+	select MCUBOOT_BOOTUTIL_LIB
+	help
+	  Adds a bootloader information sharing system for MCUboot and
+	  applications which allows applications to read the configuration of
+	  MCUboot and the running image. This can be used by applications so
+	  that they know how to e.g. handle firmware updates and place them
+	  into the correct slot.
+
+	  In order to use this, a retention area must be created and set as
+	  the "zephyr,bootloader-info" chosen node via device tree, MCUboot
+	  must be built with the same "zephyr,bootloader-info" DTS node and
+	  have CONFIG_BOOT_SHARE_DATA, CONFIG_BOOT_SHARE_DATA_BOOTINFO and
+	  CONFIG_BOOT_SHARE_BACKEND_RETENTION enabled, or the shared
+	  information will not be accessible.
+
+config RETENTION_BOOTLOADER_INFO_INIT_PRIORITY
+	int "Bootloader info init priority"
+	default 87
+	help
+	  Bootloader info initialization priority (must be higher than init
+	  priorities for for retention subsystem).
+
+config RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION
+	bool "Function"
+	default y
+	help
+	  Allows bootloader settings to be fetched by calling a function which
+	  will update a buffer with the requested data.
+
+config RETENTION_BOOTLOADER_INFO_OUTPUT_SETTINGS
+	bool "Settings"
+	depends on SETTINGS
+	help
+	  Allows bootloader settings to be fetched using settings with the
+	  "blinfo" prefix.
+
+endif

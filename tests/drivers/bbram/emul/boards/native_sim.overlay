@@ -1,0 +1,13 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	bbram: bbram {
+		compatible = "zephyr,bbram-emul";
+		status = "okay";
+		size = <0xff>;
+	};
+};

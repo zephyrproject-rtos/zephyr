@@ -1,0 +1,124 @@
+# FXOS8700 6-axis accelerometer/magnetometer
+
+# Copyright (c) 2016 Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FXOS8700
+	bool "FXOS8700 accelerometer/magnetometer driver"
+	default y
+	depends on DT_HAS_NXP_FXOS8700_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXOS8700),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXOS8700),spi)
+	help
+	  Enable driver for the FXOS8700 accelerometer/magnetometer.
+	  The driver also supports MMA8451Q, MMA8652FC and MMA8653FC
+	  accelerometers. If the driver is used with one of these
+	  accelerometers then the Accelerometer-only mode should be selected."
+
+if FXOS8700
+
+choice FXOS8700_MODE
+	prompt "Mode"
+	default FXOS8700_MODE_HYBRID
+
+config FXOS8700_MODE_ACCEL
+	bool "Accelerometer-only mode"
+
+config FXOS8700_MODE_MAGN
+	bool "Magnetometer-only mode"
+
+config FXOS8700_MODE_HYBRID
+	bool "Hybrid (accel+mag) mode"
+
+endchoice
+
+config FXOS8700_TEMP
+	bool "Temperature"
+	depends on FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID
+	help
+	  Enable the temperature sensor. Note that the temperature sensor is
+	  uncalibrated and its output for a given temperature may vary from one
+	  device to the next.
+
+choice
+	prompt "Trigger mode"
+	default FXOS8700_TRIGGER_NONE
+
+config FXOS8700_TRIGGER_NONE
+	bool "No trigger"
+
+config FXOS8700_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select FXOS8700_TRIGGER
+
+config FXOS8700_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select FXOS8700_TRIGGER
+
+endchoice
+
+config FXOS8700_TRIGGER
+	bool
+
+config FXOS8700_DRDY_INT1
+	bool "Data ready interrupt to INT1 pin"
+	depends on FXOS8700_TRIGGER
+	help
+	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
+	  INT2 pin.
+
+if FXOS8700_TRIGGER
+
+config FXOS8700_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on FXOS8700_TRIGGER_OWN_THREAD
+	default 10
+
+config FXOS8700_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on FXOS8700_TRIGGER_OWN_THREAD
+	default 1024
+
+menuconfig FXOS8700_PULSE
+	bool "Pulse detection"
+	help
+	  Enable pulse detection
+
+if FXOS8700_PULSE
+
+config FXOS8700_PULSE_INT1
+	bool "Pulse interrupt to INT1 pin"
+	help
+	  Say Y to route pulse interrupt to INT1 pin. Say N to route to INT2 pin.
+
+endif # FXOS8700_PULSE
+
+menuconfig FXOS8700_MOTION
+	bool "Motion detection"
+	help
+	  Enable motion detection
+
+config FXOS8700_MOTION_INT1
+	bool "Motion interrupt to INT1 pin"
+	depends on FXOS8700_MOTION
+	help
+	  Say Y to route motion interrupt to INT1 pin. Say N to route to INT2 pin.
+
+menuconfig FXOS8700_MAG_VECM
+	bool "Magnetic vector-magnitude detection"
+	help
+	  Enable magnetic vector-magnitude detection
+
+if FXOS8700_MAG_VECM
+
+config FXOS8700_MAG_VECM_INT1
+	bool "Magnetic vector-magnitude interrupt to INT1 pin"
+	help
+	  Say Y to route magnetic vector-magnitude interrupt to INT1 pin.
+	  Say N to route to INT2 pin.
+
+endif # FXOS8700_MAG_VECM
+
+endif # FXOS8700_TRIGGER
+
+endif # FXOS8700

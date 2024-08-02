@@ -1,0 +1,26 @@
+identifier: nucleo_l073rz
+name: ST Nucleo L073RZ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 192
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - adc
+  - dac
+  - pwm
+  - counter
+  - rng
+  - eeprom
+  - rtc
+vendor: st

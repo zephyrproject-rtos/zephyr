@@ -1,0 +1,11 @@
+# Microchip Polarfire SOC QSPI
+
+# Copyright (c) 2022 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCHP_QSPI
+	bool "Microchip Polarfire SOC QSPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_QSPI_ENABLED
+	help
+	  Enable support for the Polarfire SOC QSPI driver.

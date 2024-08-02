@@ -1,0 +1,38 @@
+# STM32 UART configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_STM32
+	bool "STM32 MCU serial driver"
+	default y
+	depends on DT_HAS_ST_STM32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC \
+		if DT_HAS_ST_STM32_DMA_V1_ENABLED || \
+		   DT_HAS_ST_STM32_DMA_V2_ENABLED || \
+		   DT_HAS_ST_STM32_DMA_V2BIS_ENABLED || \
+		   DT_HAS_ST_STM32U5_DMA_ENABLED
+	select DMA if UART_ASYNC_API
+	select RESET
+	help
+	  This option enables the UART driver for STM32 family of
+	  processors.
+	  Say y if you wish to use serial port on STM32 MCU.
+
+if UART_STM32
+
+config UART_STM32U5_ERRATA_DMAT
+	bool
+	default y
+	depends on SOC_STM32U575XX || SOC_STM32U585XX || \
+		   SOC_STM32H562XX || SOC_STM32H563XX || SOC_STM32H573XX
+	help
+	  Handles erratum "USART does not generate DMA requests after
+	  setting/clearing DMAT bit".
+	  Seen in Errata Sheet 0499 § 2.19.2 and §2.20.1 for stm32u57x/u58x,
+	          Errata Sheet 0565 § 2.14.1 and §2.15.1 for stm32h56x/h57x
+
+endif

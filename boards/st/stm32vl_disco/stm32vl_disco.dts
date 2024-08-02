@@ -1,0 +1,128 @@
+/*
+ * Copyright (c) 2020 Jonas Eriksson, Up to Code AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f1/stm32f100Xb.dtsi>
+#include <st/f1/stm32f100r(8-b)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32VLDISCOVERY board";
+	compatible = "st,stm32vldiscovery";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: ld3 {
+			gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		blue_led: ld4 {
+			gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	mul = <6>;
+	prediv = <1>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(24)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
+		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_master_pb12 &spi2_sck_master_pb13
+		     &spi2_miso_master_pb14 &spi2_mosi_master_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
+		pinctrl-names = "default";
+	};
+};

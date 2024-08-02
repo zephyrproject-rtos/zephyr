@@ -1,0 +1,180 @@
+# USB device stack configuration options
+
+# Copyright (c) 2016 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_DEVICE_STACK
+	bool "USB Device Support"
+	select USB_DEVICE_DRIVER
+	select HWINFO
+	help
+	  Enable USB device stack.
+
+if USB_DEVICE_STACK
+
+module = USB_DEVICE
+module-str = usb device
+source "subsys/logging/Kconfig.template.log_config"
+
+config USB_DEVICE_VID
+	hex "USB Vendor ID"
+	default 0x2FE3
+	help
+	  USB device vendor ID. MUST be configured by vendor.
+
+config USB_DEVICE_PID
+	hex "USB Product ID"
+	default 0x0100
+	help
+	  USB device product ID. MUST be configured by vendor.
+
+config USB_DEVICE_MANUFACTURER
+	string "USB manufacturer name"
+	default "ZEPHYR"
+	help
+	  USB device Manufacturer string. MUST be configured by vendor.
+
+config USB_DEVICE_PRODUCT
+	string "USB product name"
+	default "USB-DEV"
+	help
+	  USB device Product string. MUST be configured by vendor.
+
+config USB_DEVICE_SN
+	string "USB device Serial Number String"
+	default "0123456789ABCDEF"
+	help
+	  Placeholder for USB device Serial Number String.
+	  Serial Number String will be derived from
+	  Hardware Information Driver (HWINFO).
+
+config USB_CONFIGURATION_STRING_DESC_ENABLE
+	bool "USB configuration string descriptor support"
+	help
+	  Enable string descriptor that describes the default configuration.
+	  Since there is only one configuration, this string descriptor may not
+	  provide much useful information.
+
+if USB_CONFIGURATION_STRING_DESC_ENABLE
+
+config USB_CONFIGURATION_STRING_DESC
+	string "USB configuration string descriptor"
+	default "Default Configuration"
+	help
+	  String descriptor that describes the default configuration.
+
+endif # USB_CONFIGURATION_STRING_DESC_ENABLE
+
+config USB_COMPOSITE_DEVICE
+	bool "Use Interface Association Descriptor code triple"
+	help
+	  This option modifies the code triple in the device descriptor
+	  to signal that one of the functions has two or more interfaces and
+	  uses the Interface Association Descriptor.
+
+config USB_MAX_NUM_TRANSFERS
+    int "Set number of USB transfer data buffers"
+    range 1 32
+    default 4
+    help
+        Allocates buffers used for parallel transfers. Increase this number
+        according to USB devices count.
+
+config USB_DEVICE_BLUETOOTH_BIG_BUF
+	bool
+	# Hidden option to simplify bluetooth buffer requirement
+	# TODO: Add BUF reserve in H4 mode and ISO?
+	default y if BT_BUF_ACL_RX_SIZE > 123 # 4 byte header
+	default y if BT_BUF_ACL_TX_SIZE > 123 # 4 byte header
+	default y if BT_BUF_EVT_RX_SIZE > 125 # 2 byte header
+	default y if BT_BUF_CMD_TX_SIZE > 124 # 3 byte header
+
+config USB_REQUEST_BUFFER_SIZE
+	int "Set buffer size for Standard, Class and Vendor request handlers"
+	range 64 512 if USB_DEVICE_NETWORK_RNDIS
+	range 8 65536
+	default 256 if USB_DEVICE_NETWORK_RNDIS
+	default 266 if (USB_DEVICE_BLUETOOTH && USB_DEVICE_BLUETOOTH_BIG_BUF)
+	default 1024 if USB_DEVICE_LOOPBACK
+	default 128
+
+config USB_MAX_ALT_SETTING
+	int "Size of the array where alternate settings are stored"
+	range 0 16
+	default 8
+	help
+	  Size of the array where alternate settings are stored.
+	  Should not be smaller than the number of interfaces.
+
+config USB_NUMOF_EP_WRITE_RETRIES
+	int "Number of endpoint write retries"
+	default 3
+	help
+	  Number of endpoint write retries.
+
+config USB_DEVICE_SOF
+	bool "Start of Frame processing in events"
+	default y if (USB_DEVICE_AUDIO && NRF_USBD_COMMON)
+
+config USB_DEVICE_BOS
+	bool "USB Binary Device Object Store (BOS)"
+
+config USB_DEVICE_OS_DESC
+	bool "MS OS Descriptors support"
+
+config USB_SELF_POWERED
+	bool "Set Self-powered characteristic"
+	default y
+	help
+	  Set Self-powered characteristic in bmAttributes to indicate
+	  self powered USB device.
+
+config USB_MAX_POWER
+	int "Set bMaxPower value"
+	default 50
+	range 0 250
+	help
+	  Set bMaxPower value in the Standard Configuration Descriptor,
+	  the result is 2mA times the value provided.
+
+config USB_WORKQUEUE
+	bool "Use a dedicate work queue in the USB subsystem"
+	default y if USB_CDC_ACM
+	help
+	  This option provides a dedicated work queue that is used for
+	  all offloaded operations initiated by the USB subsystem.
+	  This prevents deadlock situations where tasks on the system
+	  workqueue inadvertently initiate operations that block, such
+	  as UART transmission on CDC-ACM, preventing the system work
+	  queue from making progress on the USB tasks that would
+	  release the task.
+
+	  Without this the system work queue is used for all USB
+	  offloaded transfers.
+
+config USB_WORKQUEUE_STACK_SIZE
+	int "USB workqueue stack size"
+	depends on USB_WORKQUEUE
+	default 4096 if COVERAGE_GCOV
+	default 1024
+
+config USB_WORKQUEUE_PRIORITY
+	int "USB workqueue priority"
+	depends on USB_WORKQUEUE
+	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
+	help
+	  By default, USB work queue priority is the lowest cooperative
+	  priority. This means that any work handler, once started, won't
+	  be preempted by any other thread until finished.
+
+config USB_DEVICE_INITIALIZE_AT_BOOT
+	bool "Initialize USB device support at boot"
+	depends on USB_CDC_ACM
+	help
+	  Use CDC ACM UART as backend for console, shell, or logging.
+
+source "subsys/usb/device/class/Kconfig"
+
+endif # USB_DEVICE_STACK

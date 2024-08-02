@@ -1,0 +1,39 @@
+common:
+  timeout: 180
+  min_ram: 34
+  tags:
+    - kernel
+    - threads
+    - scheduler
+    - userspace
+  ignore_faults: true
+tests:
+  kernel.scheduler:
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+  kernel.scheduler.no_timeslicing:
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=n
+  kernel.scheduler.slice_perthread:
+    filter: not CONFIG_SCHED_MULTIQ
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+      - CONFIG_TIMESLICE_PER_THREAD=y
+  kernel.scheduler.multiq:
+    extra_args: CONF_FILE=prj_multiq.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+  kernel.scheduler.multiq_no_timeslicing:
+    extra_args: CONF_FILE=prj_multiq.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=n
+  kernel.scheduler.dumb_timeslicing:
+    extra_args: CONF_FILE=prj_dumb.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+  kernel.scheduler.dumb_no_timeslicing:
+    extra_args: CONF_FILE=prj_dumb.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=n

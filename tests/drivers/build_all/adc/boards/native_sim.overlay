@@ -1,0 +1,345 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		adc_emul {
+			compatible = "zephyr,adc-emul";
+			nchannels = <2>;
+			ref-internal-mv = <3300>;
+			ref-external1-mv = <5000>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_ads1013: ads1013@0 {
+				compatible = "ti,ads1013";
+				reg = <0x0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1014: ads1014@1 {
+				compatible = "ti,ads1014";
+				reg = <0x1>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1015: ads1015@2 {
+				compatible = "ti,ads1015";
+				reg = <0x2>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1113: ads1113@3 {
+				compatible = "ti,ads1113";
+				reg = <0x3>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1114: ads1114@4 {
+				compatible = "ti,ads1114";
+				reg = <0x4>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1115: ads1115@5 {
+				compatible = "ti,ads1115";
+				reg = <0x5>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1119: ads1119@6 {
+				compatible = "ti,ads1119";
+				reg = <0x6>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads1112: ads1112@7 {
+				compatible = "ti,ads1112";
+				reg = <0x7>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ltc2451: ltc2451@8{
+				compatible = "lltc,ltc2451";
+				reg = <0x8>;
+				conversion-speed = <60>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ad559x: ad559x@9 {
+				compatible = "adi,ad559x";
+				status = "okay";
+				reg = <0x9>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				test_i2c_ad559x_adc: adc-controller {
+					compatible = "adi,ad559x-adc";
+					#io-channel-cells = <1>;
+				};
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
+
+			test_spi_mcp3204: mcp3204@0 {
+				compatible = "microchip,mcp3204";
+				reg = <0>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90077: lmp90077@1 {
+				compatible = "ti,lmp90077";
+				reg = <0x1>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90078: lmp90078@2 {
+				compatible = "ti,lmp90078";
+				reg = <0x2>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90079: lmp90079@3 {
+				compatible = "ti,lmp90079";
+				reg = <0x3>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90080: lmp90080@4 {
+				compatible = "ti,lmp90080";
+				reg = <0x4>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90097: lmp90097@5 {
+				compatible = "ti,lmp90097";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90098: lmp90098@6 {
+				compatible = "ti,lmp90098";
+				reg = <0x6>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90099: lmp90099@7 {
+				compatible = "ti,lmp90099";
+				reg = <0x7>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_lmp90100: lmp90100@8 {
+				compatible = "ti,lmp90100";
+				reg = <0x8>;
+				spi-max-frequency = <0>;
+				drdyb-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ads7052: ads7052@9 {
+				compatible = "ti,ads7052";
+				reg = <0x9>;
+				spi-max-frequency = <12000000>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11254: max11254@a {
+				compatible = "maxim,max11254";
+				reg = <0xa>;
+				spi-max-frequency = <0>;
+				gpio0-enable;
+				gpio1-enable;
+				gpio0-direction;
+				gpio1-direction;
+				gpo0-enable;
+				gpo1-enable;
+				drdy-gpios = <&test_gpio 0 0>;
+				self-calibration;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11253: max11253@b {
+				compatible = "maxim,max11253";
+				reg = <0xb>;
+				spi-max-frequency = <0>;
+				gpio0-enable;
+				gpio1-enable;
+				gpio0-direction;
+				gpio1-direction;
+				gpo0-enable;
+				gpo1-enable;
+				drdy-gpios = <&test_gpio 0 0>;
+				self-calibration;
+				#io-channel-cells = <1>;
+			};
+
+
+			test_spi_ads114s08: ads114s08@c {
+				compatible = "ti,ads114s08";
+				reg = <0xc>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				reset-gpios = <&test_gpio 0 0>;
+				drdy-gpios = <&test_gpio 0 0>;
+				start-sync-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11102: max11102@d {
+				compatible = "maxim,max11102";
+				reg = <0xd>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11103: max11103@e {
+				compatible = "maxim,max11103";
+				reg = <0xe>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11105: max11105@f {
+				compatible = "maxim,max11105";
+				reg = <0xf>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11106: max11106@10 {
+				compatible = "maxim,max11106";
+				reg = <0x10>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11110: max11110@11 {
+				compatible = "maxim,max11110";
+				reg = <0x11>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11111: max11111@12 {
+				compatible = "maxim,max11111";
+				reg = <0x12>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				chsel-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_max11115: max11115@13 {
+				compatible = "maxim,max11115";
+				reg = <0x13>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11116: max11116@14 {
+				compatible = "maxim,max11116";
+				reg = <0x14>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_max11117: max11117@15 {
+				compatible = "maxim,max11117";
+				reg = <0x15>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad559x: ad559x@16 {
+				compatible = "adi,ad559x";
+				status = "okay";
+				reg = <0x16>;
+				spi-max-frequency = <0>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				test_spi_ad559x_adc: adc-controller {
+					compatible = "adi,ad559x-adc";
+					#io-channel-cells = <1>;
+				};
+			};
+		};
+	};
+};

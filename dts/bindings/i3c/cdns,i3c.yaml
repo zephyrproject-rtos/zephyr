@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Meta Platforms, Inc. and its affiliates.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence I3C controller
+
+compatible: "cdns,i3c"
+
+include: [i3c-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  input-clock-frequency:
+    type: int
+    required: true
+    description: The controller input clock frequency

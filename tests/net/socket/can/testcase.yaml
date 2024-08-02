@@ -1,0 +1,8 @@
+tests:
+  net.socket.can:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - net
+      - can

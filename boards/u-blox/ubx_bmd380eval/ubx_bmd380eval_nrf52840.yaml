@@ -1,0 +1,23 @@
+identifier: ubx_bmd380eval/nrf52840
+name: UBX_BMD380EVAL_NRF52840
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - qspi
+  - usb_device
+  - watchdog
+  - netif:openthread
+vendor: u-blox

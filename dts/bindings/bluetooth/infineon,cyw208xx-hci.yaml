@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses Infineon CYW208XX HCI bluetooth interface
+
+    NOTE:
+      cyw920829 requires fetch binary files of Bluetooth controller firmware.
+      To fetch Binary Blobs:  west blobs fetch hal_infineon
+
+compatible: "infineon,cyw208xx-hci"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "CYW208XX"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_VIRTUAL"

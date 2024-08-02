@@ -1,0 +1,12 @@
+description: ARM CMSDK timer
+
+compatible: "arm,cmsdk-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

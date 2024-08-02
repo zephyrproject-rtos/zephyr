@@ -1,0 +1,503 @@
+common:
+  platform_type:
+    - qemu
+    - native
+  tags:
+    - log_api
+    - logging
+  platform_key:
+    - arch
+    - simulation
+  integration_platforms:
+    - native_sim
+  min_ram: 32
+tests:
+  logging.deferred.api.overflow_rt_filter:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.deferred.api.overflow:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+
+  logging.deferred.api.no_overflow:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+
+  logging.deferred.api.static_filter:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC=y
+
+  logging.deferred.api.printk:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_PRINTK=y
+      # When LOG_PRINTK is enabled, thread must process otherwise test output would be lost.
+      - CONFIG_LOG_PROCESS_THREAD=y
+
+  logging.deferred.api.func_prefix:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+
+  logging.deferred.api.64b_timestamp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.deferred.api.override_level:
+    # Testing on selected platforms as it enables all logs in the application
+    # and it cannot be handled on many platforms.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a9
+      - native_posix
+      - native_sim
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4
+
+  logging.immediate.api:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+
+  logging.immediate.api.printk:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=y
+
+  logging.immediate.api.rt_filter:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.immediate.api.static_filter:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+
+  logging.immediate.api.64b_timestamp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.frontend.dbg:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+
+  logging.frontend.dbg.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.frontend:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC=y
+
+  logging.frontend.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.frontend.immediate:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+
+  logging.frontend.immediate_override_level:
+    # Testing on selected platforms as it enables all logs in the application
+    # and it cannot be handled on many platforms.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a9
+      - native_posix
+      - native_sim
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4
+
+  logging.deferred.api.override_level_rt_filtering:
+    # Testing on selected platforms as it enables all logs in the application
+    # and it cannot be handled on many platforms.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a9
+      - native_posix
+      - native_sim
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4
+
+  logging.frontend.only:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+
+  logging.frontend.only.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.frontend.no_backends:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_LOG_BACKEND_NATIVE_POSIX=n
+      - CONFIG_LOG_BACKEND_XTENSA_SIM=n
+    extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
+
+  logging.deferred.api.overflow_rt_filter_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_CPP=y
+
+  logging.deferred.api.overflow_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_CPP=y
+
+  logging.deferred.api.no_overflowcpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_CPP=y
+
+  logging.deferred.api.static_filter_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_CPP=y
+
+  logging.deferred.api.printk_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_PRINTK=y
+      # When LOG_PRINTK is enabled, thread must process otherwise test output would be lost.
+      - CONFIG_LOG_PROCESS_THREAD=y
+      - CONFIG_CPP=y
+
+  logging.deferred.api.func_prefix_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+      - CONFIG_CPP=y
+
+  logging.deferred.api.64b_timestamp_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_CPP=y
+
+  logging.immediate.api.cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_CPP=y
+
+  logging.immediate.api.printk_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=y
+      - CONFIG_CPP=y
+
+  logging.immediate.api.rt_filter_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_CPP=y
+
+  logging.immediate.api.static_filter_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_CPP=y
+
+  logging.immediate.api.64b_timestamp_cpp:
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_CPP=y
+
+  logging.frontend.dbg_cpp:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_CPP=y
+
+  logging.frontend.cpp:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_CPP=y
+
+  logging.frontend.immediate_cpp:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_CPP=y
+
+  logging.frontend.only_cpp:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_CPP=y
+
+  logging.frontend.only_cpp.rt_filtering:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+
+  logging.frontend.no_backends_cpp:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y
+      - CONFIG_LOG_FRONTEND_ONLY=y
+      - CONFIG_LOG_BACKEND_UART=n
+      - CONFIG_LOG_BACKEND_RTT=n
+      - CONFIG_LOG_BACKEND_NATIVE_POSIX=n
+      - CONFIG_LOG_BACKEND_XTENSA_SIM=n
+      - CONFIG_CPP=y
+    extra_args: EXTRA_CPPFLAGS=-DNO_BACKENDS=1
+
+  logging.deferred.api.overflow_rt_filter.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.overflow.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.no_overflowtagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.static_filter.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.printk.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_PRINTK=y
+      # When LOG_PRINTK is enabled, thread must process otherwise test output would be lost.
+      - CONFIG_LOG_PROCESS_THREAD=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.func_prefix.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.64b_timestamp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.override_level.tagged_args:
+    # Testing on selected platforms as it enables all logs in the application
+    # and it cannot be handled on many platforms.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a9
+      - native_posix
+      - native_sim
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.override_level_rt_filtering.tagged_args:
+    # Testing on selected platforms as it enables all logs in the application
+    # and it cannot be handled on many platforms.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a9
+      - native_posix
+      - native_sim
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.printk.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.rt_filter.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.static_filter.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.64b_timestamp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.overflow_rt_filter_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.overflow_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.no_overflowcpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.static_filter_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.printk_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_PRINTK=y
+      # When LOG_PRINTK is enabled, thread must process otherwise test output would be lost.
+      - CONFIG_LOG_PROCESS_THREAD=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.func_prefix_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.deferred.api.64b_timestamp_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.printk_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_PRINTK=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.rt_filter_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_RUNTIME_FILTERING=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.static_filter_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y
+
+  logging.immediate.api.64b_timestamp_cpp.tagged_args:
+    toolchain_exclude: xcc
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+      - CONFIG_CPP=y
+      - CONFIG_LOG_USE_TAGGED_ARGUMENTS=y

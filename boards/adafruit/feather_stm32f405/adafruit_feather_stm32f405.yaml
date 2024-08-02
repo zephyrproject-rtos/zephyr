@@ -1,0 +1,18 @@
+identifier: adafruit_feather_stm32f405
+name: Adafruit Feather STM32F405 Express
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 1024
+supported:
+  - i2c
+  - spi
+  - usb
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+vendor: adafruit

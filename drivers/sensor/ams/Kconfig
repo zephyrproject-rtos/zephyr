@@ -1,0 +1,14 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/ams/ams_as5600/Kconfig"
+source "drivers/sensor/ams/ams_iAQcore/Kconfig"
+source "drivers/sensor/ams/ccs811/Kconfig"
+source "drivers/sensor/ams/ens210/Kconfig"
+source "drivers/sensor/ams/tcs3400/Kconfig"
+source "drivers/sensor/ams/tmd2620/Kconfig"
+source "drivers/sensor/ams/tsl2540/Kconfig"
+source "drivers/sensor/ams/tsl2561/Kconfig"
+source "drivers/sensor/ams/tsl2591/Kconfig"
+# zephyr-keep-sorted-stop

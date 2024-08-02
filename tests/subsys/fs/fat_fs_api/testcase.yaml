@@ -1,0 +1,29 @@
+common:
+  tags:
+    - filesystem
+    - fatfs
+  modules:
+    - fatfs
+tests:
+  filesystem.fat.api:
+    platform_allow:
+      - native_sim
+  filesystem.fat.api.lfn:
+    extra_args: CONF_FILE="prj_lfn.conf"
+    platform_allow:
+      - native_sim
+  filesystem.fat.api.mmc:
+    extra_args: CONF_FILE="prj_mmc.conf"
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+  filesystem.fat.ram.api:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - CONF_FILE="prj_native_ram.conf"
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+  filesystem.fat.api.reentrant:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FS_FATFS_REENTRANT=y
+      - CONFIG_MULTITHREADING=y

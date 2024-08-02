@@ -1,0 +1,14 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Memory region nodes may be referenced by other device nodes
+# by adding a memory-region property to the device node.
+
+properties:
+  memory-regions:
+    type: phandle-array
+    description: List of memory region phandles
+
+  memory-region-names:
+    type: string-array
+    description: A list of names, one for each corresponding phandle in memory-region

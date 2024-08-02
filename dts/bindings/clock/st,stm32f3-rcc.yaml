@@ -1,0 +1,56 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F3 Reset and Clock controller node.
+  Adds the STM32F3 ADC prescaler to the standard generic STM32 RCC.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32f3-rcc"
+
+include: st,stm32-rcc.yaml
+
+properties:
+  adc12-prescaler:
+    type: int
+    enum:
+      - 0 # Synchronous mode
+      - 1 # not divided
+      - 2
+      - 4
+      - 6
+      - 8
+      - 10
+      - 12
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+        ADC 1 and 2 prescaler
+        - 0: Disables the clock so the ADC can use AHB clock (synchronous mode)
+        - Other values n: The ADC can use the PLL clock divided by n
+        On STM32F37x, only 2/4/6/8 are allowed.
+
+  adc34-prescaler:
+    type: int
+    enum:
+      - 0 # Synchronous mode
+      - 1 # not divided
+      - 2
+      - 4
+      - 6
+      - 8
+      - 10
+      - 12
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+        ADC 3 and 4 prescaler
+        - 0: Disables the clock so the ADC can use AHB clock (synchronous mode)
+        - Other values n: The ADC can use the PLL clock divided by n
+        Check RefMan for availability.

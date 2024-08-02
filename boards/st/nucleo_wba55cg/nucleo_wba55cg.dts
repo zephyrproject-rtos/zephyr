@@ -1,0 +1,191 @@
+/*
+ * Copyright (c)  2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wba/stm32wba55Xg.dtsi>
+/* Todo: Once available, use wba55 dedicated pinctrl.dtsi */
+#include <st/wba/stm32wba52cgux-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32WBA55CG-NUCLEO board";
+	compatible = "st,stm32wba55cg-nucleo";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,bt-c2h-uart = &usart1;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		blue_led_1: led_0 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led_2: led_1 {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		red_led_3: led_2 {
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User B1";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_2: button_1 {
+			label = "User B2";
+			gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button_3: button_2 {
+			label = "User B3";
+			gpios = <&gpiob 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_1;
+		led1 = &green_led_2;
+		led2 = &red_led_3;
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+		mcuboot-led0 = &blue_led_1;
+		mcuboot-button0 = &user_button_1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	status = "okay";
+	hse-div2;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(16)>;
+	ahb-prescaler = <1>;
+	ahb5-prescaler = <2>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <2>;
+	apb7-prescaler = <1>;
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>,
+			<&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	prescaler = <32768>;
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
+	pinctrl-0 = <&usart1_tx_pb12 &usart1_rx_pa8>;
+	pinctrl-1 = <&analog_pb12 &analog_pa8>;
+	pinctrl-names = "default", "sleep";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pb5 &lpuart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa12 &spi1_sck_pb4
+		     &spi1_miso_pb3 &spi1_mosi_pa15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in8_pa1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00000800>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(448)>;
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(448)>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 DT_SIZE_K(16)>;
+		};
+		storage_partition: partition@f4000 {
+			label = "storage";
+			reg = <0x000f4000 DT_SIZE_K(48)>;
+		};
+	};
+};

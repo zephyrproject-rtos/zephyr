@@ -1,0 +1,12 @@
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress PSoC-6 Unique 88-bit Serial Number
+
+compatible: "cypress,psoc6-uid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - drivers
+    - input
+  integration_platforms:
+    - native_sim
+tests:
+  input.input_gpio_kbd_matrix: {}

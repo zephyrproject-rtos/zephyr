@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/ {
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>; /* FMU_CH1 */
+		      /* <&ftm0 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>,*/ /* FMU_CH2 */
+		      /* <&ftm0 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>, */ /* FMU_CH3 */
+		      /* <&ftm0 5 PWM_MSEC(20) PWM_POLARITY_NORMAL>, */ /* FMU_CH4 */
+		      /*  <&ftm3 6 PWM_MSEC(20) PWM_POLARITY_NORMAL>,*/ /* FMU_CH5 */
+		      /* <&ftm3 7 PWM_MSEC(20) PWM_POLARITY_NORMAL>; */ /* FMU_CH6 */
+		min-pulse = <PWM_USEC(700)>;
+		max-pulse = <PWM_USEC(2500)>;
+	};
+};

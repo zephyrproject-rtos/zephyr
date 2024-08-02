@@ -1,0 +1,53 @@
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+config IPC_SERVICE_REG_BACKEND_PRIORITY
+	int "Initialization priority of modules registering IPC backend"
+	default 46
+	help
+	  The backend must be registered before the endpoint register.
+
+config IPC_SERVICE_BACKEND_RPMSG
+	bool "OpenAMP RPMSG backend with static VRINGs"
+	default y
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_OPENAMP_STATIC_VRINGS_ENABLED
+	select IPC_SERVICE_RPMSG
+	select IPC_SERVICE_STATIC_VRINGS
+	select OPENAMP
+
+config IPC_SERVICE_BACKEND_ICMSG
+	bool "ICMSG backend with SPSC packet buffer"
+	default y
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ENABLED
+	select IPC_SERVICE_ICMSG
+	help
+	  Chosing this backend results in single endpoint implementation based
+	  on circular packet buffer.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_INITIATOR
+	bool "ICMSG backend with multi-endpoint support in initiator role"
+	default y
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_INITIATOR_ENABLED
+	select IPC_SERVICE_ICMSG_ME
+	help
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery initiator
+	  role.
+
+config IPC_SERVICE_BACKEND_ICMSG_ME_FOLLOWER
+	bool "ICMSG backend with multi-endpoint support in follower role"
+	default y
+	depends on MBOX
+	depends on DT_HAS_ZEPHYR_IPC_ICMSG_ME_FOLLOWER_ENABLED
+	select IPC_SERVICE_ICMSG_ME
+	help
+	  Chosing this backend results in multi endpoint implementation based
+	  on circular packet buffer. This enables enpoint discovery follower
+	  role.
+
+rsource "Kconfig.icmsg_me"
+rsource "Kconfig.icbmsg"
+rsource "Kconfig.rpmsg"

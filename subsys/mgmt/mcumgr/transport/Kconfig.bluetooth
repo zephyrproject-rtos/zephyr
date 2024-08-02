@@ -1,0 +1,103 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to Bluetooth transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_BT_
+
+menuconfig MCUMGR_TRANSPORT_BT
+	bool "Bluetooth mcumgr SMP transport"
+	depends on BT_PERIPHERAL
+	help
+	  Enables handling of SMP commands received over Bluetooth.
+
+if MCUMGR_TRANSPORT_BT
+
+config MCUMGR_TRANSPORT_BT_REASSEMBLY
+	bool "Reassemble packets in Bluetooth SMP transport"
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	help
+	  When enabled, the SMP BT transport will buffer and reassemble received
+	  packet fragments before passing it for further processing.
+
+config MCUMGR_TRANSPORT_BT_AUTHEN
+	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
+	depends on BT_SMP
+	default y
+	help
+	  Enables encrypted and authenticated connection requirement to
+	  Bluetooth SMP transport.
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
+	bool "Request specific connection parameters for SMP packet exchange"
+	depends on SYSTEM_WORKQUEUE_PRIORITY < 0
+	depends on BT_GAP_PERIPHERAL_PREF_PARAMS
+	help
+	  Enables support for requesting specific connection parameters when
+	  SMP commands are handled. This option allows to speed up the command
+	  exchange process.
+	  Its recommended to enable this if SMP is used for DFU.
+
+if MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT
+	int "Minimum connection interval for SMP packet exchange"
+	default 6
+	range 6 3200
+	help
+	  Minimum connection interval in 1.25ms units used during the exchange of SMP packets.
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT
+	int "Maximum connection interval for SMP packet exchange"
+	default 9
+	range MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT 3200
+	help
+	  Maximum connection interval in 1.25ms units used during the exchange of SMP packets.
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_LATENCY
+	int "Peripheral latency for SMP packet exchange"
+	default 0
+	range 0 499
+	help
+	  Peripheral latency in Connection Intervals used during the exchange of SMP packets.
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT
+	int "Supervision timeout for SMP packet exchange"
+	default 42
+	range 10 3200
+	help
+	  Supervision timeout in 10ms used during the exchange of SMP packets.
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RESTORE_TIME
+	int "Connection parameters restore time in milliseconds"
+	default 5000
+	range 1000 $(UINT16_MAX)
+	help
+	  The value is a time of inactivity on the SMP characteristic after which
+	  connection parameters are restored to peripheral preferred values
+	  (BT_GAP_PERIPHERAL_PREF_PARAMS).
+
+config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME
+	int "Connection parameters update retry time in milliseconds"
+	default 1000
+	range 1 5000
+	help
+	  In case connection parameters update fails due to an error, this
+	  option specifies the time of the next update attempt.
+
+endif # MCUMGR_TRASNPORT_BT_CONN_PARAM_CONTROL
+
+config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
+	bool "Register SMP service at runtime"
+	depends on BT_GATT_DYNAMIC_DB
+	default y
+	help
+	  When enabled, the SMP service will be automatically registered at boot time
+	  and can then be dynamically registered/unregistered using a dedicated API.
+	  Otherwise, the SMP service will be statically defined and registered.
+
+endif # MCUMGR_TRANSPORT_BT

@@ -1,0 +1,567 @@
+/*
+ * Copyright 2022,2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	gic: interrupt-controller@48000000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x48000000 0x10000>, /* GIC Dist */
+		      <0x48040000 0xc0000>; /* GICR (RD_base + SGI_base) */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	iomuxc: iomuxc@443c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x443c0000 DT_SIZE_K(64)>;
+		status = "okay";
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,imx93-pinctrl";
+		};
+	};
+
+	ana_pll: ana_pll@44480000 {
+		compatible = "nxp,imx-ana";
+		reg = <0x44480000 DT_SIZE_K(64)>;
+	};
+
+	ccm: ccm@44450000 {
+		compatible = "nxp,imx-ccm-rev2";
+		reg = <0x44450000 DT_SIZE_K(64)>;
+		#clock-cells = <3>;
+	};
+
+	gpio1: gpio@47400000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x47400000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio2: gpio@43810000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43810000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio3: gpio@43820000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43820000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio4: gpio@43830000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x43830000 DT_SIZE_K(64)>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 190 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	lpuart1: serial@44380000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44380000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART1_CLK 0x6c 24>;
+		status = "disabled";
+	};
+
+	lpuart2: serial@44390000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x44390000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPUART2_CLK 0x6c 24>;
+		status = "disabled";
+	};
+
+	lpi2c1: i2c@44340000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x44340000 0x4000>;
+		interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C1_CLK 0x70 6>;
+		status = "disabled";
+	};
+
+	lpi2c2: i2c@44350000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x44350000 0x4000>;
+		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C2_CLK 0x70 8>;
+		status = "disabled";
+	};
+
+	lpi2c3: i2c@42530000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42530000 0x4000>;
+		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C3_CLK 0x70 10>;
+		status = "disabled";
+	};
+
+	lpi2c4: i2c@42540000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x42540000 0x4000>;
+		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C4_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	lpi2c5: i2c@426b0000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x426b0000 0x4000>;
+		interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C5_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	lpi2c6: i2c@426c0000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x426c0000 0x4000>;
+		interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C6_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	lpi2c7: i2c@426d0000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x426d0000 0x4000>;
+		interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C7_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	lpi2c8: i2c@426e0000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x426e0000 0x4000>;
+		interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_LPI2C8_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	lpspi1: spi@44360000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x44360000 0x4000>;
+		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI1_CLK 0x6c 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi2: spi@44370000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x44370000 0x4000>;
+		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI2_CLK 0x6c 2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi3: spi@42550000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x42550000 0x4000>;
+		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi4: spi@42560000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x42560000 0x4000>;
+		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi5: spi@426f0000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x426f0000 0x4000>;
+		interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI5_CLK 0x6c 6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi6: spi@42700000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x42700000 0x4000>;
+		interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI6_CLK 0x6c 6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi7: spi@42710000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x42710000 0x4000>;
+		interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI7_CLK 0x6c 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	lpspi8: spi@42720000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x42720000 0x4000>;
+		interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_LPSPI8_CLK 0x6c 2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	edma4: dma@42000000 {
+		compatible = "nxp,edma";
+		reg = <0x42000000 (DT_SIZE_K(64) * 32)>;
+		valid-channels = <0>, <1>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			<GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		#dma-cells = <2>;
+		hal-cfg-index = <1>;
+		status = "disabled";
+	};
+
+	sai3: dai@42660000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x42660000 DT_SIZE_K(64)>;
+		mclk-is-output;
+		clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
+		clock-names = "mclk1";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 171 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		dai-index = <3>;
+		dmas = <&edma4 0 60>, <&edma4 1 61>;
+		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	enet: enet@42890000 {
+		compatible = "nxp,enet1g";
+		reg = <0x42890000 DT_SIZE_K(64)>;
+		clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+		status = "disabled";
+
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "COMMON";
+			interrupt-parent = <&gic>;
+			nxp,mdio = <&enet_mdio>;
+			nxp,ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		enet_ptp_clock: ptp_clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
+			status = "disabled";
+		};
+	};
+
+	tpm1: tpm@44310000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x44310000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM1_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm2: tpm@44320000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x44320000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM2_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm3: tpm@424e0000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x424e0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM3_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm4: tpm@424f0000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x424f0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM4_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm5: tpm@42500000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x42500000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM5_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm6: tpm@42510000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x42510000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_TPM6_CLK 0 0>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+};
+
+&gpio1{
+	pinmux = <&iomuxc1_i2c1_scl_gpio_io_gpio1_io00>,
+		<&iomuxc1_i2c1_sda_gpio_io_gpio1_io01>,
+		<&iomuxc1_i2c2_scl_gpio_io_gpio1_io02>,
+		<&iomuxc1_i2c2_sda_gpio_io_gpio1_io03>,
+		<&iomuxc1_uart1_rxd_gpio_io_gpio1_io04>,
+		<&iomuxc1_uart1_txd_gpio_io_gpio1_io05>,
+		<&iomuxc1_uart2_rxd_gpio_io_gpio1_io06>,
+		<&iomuxc1_uart2_txd_gpio_io_gpio1_io07>,
+		<&iomuxc1_pdm_clk_gpio_io_gpio1_io08>,
+		<&iomuxc1_pdm_bit_stream0_gpio_io_gpio1_io09>,
+		<&iomuxc1_pdm_bit_stream1_gpio_io_gpio1_io10>,
+		<&iomuxc1_sai1_txfs_gpio_io_gpio1_io11>,
+		<&iomuxc1_sai1_txc_gpio_io_gpio1_io12>,
+		<&iomuxc1_sai1_txd0_gpio_io_gpio1_io13>,
+		<&iomuxc1_sai1_rxd0_gpio_io_gpio1_io14>,
+		<&iomuxc1_wdog_any_gpio_io_gpio1_io15>;
+};
+
+&gpio2{
+	pinmux = <&iomuxc1_gpio_io00_gpio_io_gpio2_io00>,
+		<&iomuxc1_gpio_io01_gpio_io_gpio2_io01>,
+		<&iomuxc1_gpio_io02_gpio_io_gpio2_io02>,
+		<&iomuxc1_gpio_io03_gpio_io_gpio2_io03>,
+		<&iomuxc1_gpio_io04_gpio_io_gpio2_io04>,
+		<&iomuxc1_gpio_io05_gpio_io_gpio2_io05>,
+		<&iomuxc1_gpio_io06_gpio_io_gpio2_io06>,
+		<&iomuxc1_gpio_io07_gpio_io_gpio2_io07>,
+		<&iomuxc1_gpio_io08_gpio_io_gpio2_io08>,
+		<&iomuxc1_gpio_io09_gpio_io_gpio2_io09>,
+		<&iomuxc1_gpio_io10_gpio_io_gpio2_io10>,
+		<&iomuxc1_gpio_io11_gpio_io_gpio2_io11>,
+		<&iomuxc1_gpio_io12_gpio_io_gpio2_io12>,
+		<&iomuxc1_gpio_io13_gpio_io_gpio2_io13>,
+		<&iomuxc1_gpio_io14_gpio_io_gpio2_io14>,
+		<&iomuxc1_gpio_io15_gpio_io_gpio2_io15>,
+		<&iomuxc1_gpio_io16_gpio_io_gpio2_io16>,
+		<&iomuxc1_gpio_io17_gpio_io_gpio2_io17>,
+		<&iomuxc1_gpio_io18_gpio_io_gpio2_io18>,
+		<&iomuxc1_gpio_io19_gpio_io_gpio2_io19>,
+		<&iomuxc1_gpio_io20_gpio_io_gpio2_io20>,
+		<&iomuxc1_gpio_io21_gpio_io_gpio2_io21>,
+		<&iomuxc1_gpio_io22_gpio_io_gpio2_io22>,
+		<&iomuxc1_gpio_io23_gpio_io_gpio2_io23>,
+		<&iomuxc1_gpio_io24_gpio_io_gpio2_io24>,
+		<&iomuxc1_gpio_io25_gpio_io_gpio2_io25>,
+		<&iomuxc1_gpio_io26_gpio_io_gpio2_io26>,
+		<&iomuxc1_gpio_io27_gpio_io_gpio2_io27>,
+		<&iomuxc1_gpio_io28_gpio_io_gpio2_io28>,
+		<&iomuxc1_gpio_io29_gpio_io_gpio2_io29>;
+};
+
+&gpio3{
+	pinmux = <&iomuxc1_sd2_cd_b_gpio_io_gpio3_io00>,
+		<&iomuxc1_sd2_clk_gpio_io_gpio3_io01>,
+		<&iomuxc1_sd2_cmd_gpio_io_gpio3_io02>,
+		<&iomuxc1_sd2_data0_gpio_io_gpio3_io03>,
+		<&iomuxc1_sd2_data1_gpio_io_gpio3_io04>,
+		<&iomuxc1_sd2_data2_gpio_io_gpio3_io05>,
+		<&iomuxc1_sd2_data3_gpio_io_gpio3_io06>,
+		<&iomuxc1_sd2_reset_b_gpio_io_gpio3_io07>,
+		<&iomuxc1_sd1_clk_gpio_io_gpio3_io08>,
+		<&iomuxc1_sd1_cmd_gpio_io_gpio3_io09>,
+		<&iomuxc1_sd1_data0_gpio_io_gpio3_io10>,
+		<&iomuxc1_sd1_data1_gpio_io_gpio3_io11>,
+		<&iomuxc1_sd1_data2_gpio_io_gpio3_io12>,
+		<&iomuxc1_sd1_data3_gpio_io_gpio3_io13>,
+		<&iomuxc1_sd1_data4_gpio_io_gpio3_io14>,
+		<&iomuxc1_sd1_data5_gpio_io_gpio3_io15>,
+		<&iomuxc1_sd1_data6_gpio_io_gpio3_io16>,
+		<&iomuxc1_sd1_data7_gpio_io_gpio3_io17>,
+		<&iomuxc1_sd1_strobe_gpio_io_gpio3_io18>,
+		<&iomuxc1_sd2_vselect_gpio_io_gpio3_io19>,
+		<&iomuxc1_sd3_clk_gpio_io_gpio3_io20>,
+		<&iomuxc1_sd3_cmd_gpio_io_gpio3_io21>,
+		<&iomuxc1_sd3_data0_gpio_io_gpio3_io22>,
+		<&iomuxc1_sd3_data1_gpio_io_gpio3_io23>,
+		<&iomuxc1_sd3_data2_gpio_io_gpio3_io24>,
+		<&iomuxc1_sd3_data3_gpio_io_gpio3_io25>,
+		<&iomuxc1_ccm_clko1_gpio_io_gpio3_io26>,
+		<&iomuxc1_ccm_clko2_gpio_io_gpio3_io27>,
+		<&iomuxc1_dap_tdi_gpio_io_gpio3_io28>,
+		<&iomuxc1_dap_tms_swdio_gpio_io_gpio3_io29>,
+		<&iomuxc1_dap_tclk_swclk_gpio_io_gpio3_io30>,
+		<&iomuxc1_dap_tdo_traceswo_gpio_io_gpio3_io31>;
+};
+
+&gpio4{
+	pinmux = <&iomuxc1_enet1_mdc_gpio_io_gpio4_io00>,
+		<&iomuxc1_enet1_mdio_gpio_io_gpio4_io01>,
+		<&iomuxc1_enet1_td3_gpio_io_gpio4_io02>,
+		<&iomuxc1_enet1_td2_gpio_io_gpio4_io03>,
+		<&iomuxc1_enet1_td1_gpio_io_gpio4_io04>,
+		<&iomuxc1_enet1_td0_gpio_io_gpio4_io05>,
+		<&iomuxc1_enet1_tx_ctl_gpio_io_gpio4_io06>,
+		<&iomuxc1_enet1_txc_gpio_io_gpio4_io07>,
+		<&iomuxc1_enet1_rx_ctl_gpio_io_gpio4_io08>,
+		<&iomuxc1_enet1_rxc_gpio_io_gpio4_io09>,
+		<&iomuxc1_enet1_rd0_gpio_io_gpio4_io10>,
+		<&iomuxc1_enet1_rd1_gpio_io_gpio4_io11>,
+		<&iomuxc1_enet1_rd2_gpio_io_gpio4_io12>,
+		<&iomuxc1_enet1_rd3_gpio_io_gpio4_io13>,
+		<&iomuxc1_enet2_mdc_gpio_io_gpio4_io14>,
+		<&iomuxc1_enet2_mdio_gpio_io_gpio4_io15>,
+		<&iomuxc1_enet2_td3_gpio_io_gpio4_io16>,
+		<&iomuxc1_enet2_td2_gpio_io_gpio4_io17>,
+		<&iomuxc1_enet2_td1_gpio_io_gpio4_io18>,
+		<&iomuxc1_enet2_td0_gpio_io_gpio4_io19>,
+		<&iomuxc1_enet2_tx_ctl_gpio_io_gpio4_io20>,
+		<&iomuxc1_enet2_txc_gpio_io_gpio4_io21>,
+		<&iomuxc1_enet2_rx_ctl_gpio_io_gpio4_io22>,
+		<&iomuxc1_enet2_rxc_gpio_io_gpio4_io23>,
+		<&iomuxc1_enet2_rd0_gpio_io_gpio4_io24>,
+		<&iomuxc1_enet2_rd1_gpio_io_gpio4_io25>,
+		<&iomuxc1_enet2_rd2_gpio_io_gpio4_io26>,
+		<&iomuxc1_enet2_rd3_gpio_io_gpio4_io27>,
+		<&iomuxc1_ccm_clko3_gpio_io_gpio4_io28>,
+		<&iomuxc1_ccm_clko4_gpio_io_gpio4_io29>;
+};

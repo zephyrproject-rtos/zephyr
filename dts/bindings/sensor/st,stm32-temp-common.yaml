@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Wouter Cappelle
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for temperature sensor

@@ -1,0 +1,14 @@
+# Copyright 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BCM2712
+
+config NUM_IRQS
+	int
+	default 280
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 54000000
+
+endif

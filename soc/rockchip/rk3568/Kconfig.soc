@@ -1,0 +1,17 @@
+# Copyright 2022 HNU-ESNL
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RK3568
+	bool
+	select SOC_FAMILY_ROCKCHIP
+
+config SOC_RK3568
+	bool
+	select SOC_SERIES_RK3568
+
+config SOC
+	default "rk3568" if SOC_RK3568
+
+config SOC_SERIES
+	default "rk3568" if SOC_RK3568

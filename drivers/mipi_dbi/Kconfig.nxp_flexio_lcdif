@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_NXP_FLEXIO_LCDIF
+	bool "MIPI DBI driver for NXP Flexio LCDIF"
+	default y
+	depends on DT_HAS_NXP_MIPI_DBI_FLEXIO_LCDIF_ENABLED
+	depends on CLOCK_CONTROL
+	select MCUX_FLEXIO
+	select DMA
+	help
+	  Enable support for MIPI DBI driver for NXP FlexIO based LCDIF controller.

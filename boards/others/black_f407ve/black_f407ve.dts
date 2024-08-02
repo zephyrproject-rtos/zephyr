@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "black_f407ve board";
+	compatible = "black-stm32f407";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+		zephyr,canbus = &can2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioa 6 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: K0 {
+			label = "Key K0";
+			gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1: K1 {
+			label = "Key K1";
+			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button_UP: K_UP {
+			label = "Key WK_UP";
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &green_led_2;
+		sw0 = &user_button_UP;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-names = "default";
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb12 &can2_tx_pb13>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+	w25q16cv: w25q16cv@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		size = <0x1000000>;
+		has-dpd;
+		t-enter-dpd = <4000>;
+		t-exit-dpd = <25000>;
+		jedec-id = [ef 40 15];
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+};

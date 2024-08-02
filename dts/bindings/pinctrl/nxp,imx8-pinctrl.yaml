@@ -1,0 +1,17 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Use this compatible for i.MX8QM/QXP boards.
+
+compatible: "nxp,imx8-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: i.MX8QM/QXP pin controller pin group
+  child-binding:
+    description: i.MX8QM/QXP pin controller pin configuration node.
+    properties:
+      pinmux:
+        required: true
+        type: phandles

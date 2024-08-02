@@ -1,0 +1,82 @@
+# LSM9DS0 gyroscope sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM9DS0_GYRO
+	bool "LSM9DS0 I2C gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_LSM9DS0_GYRO_ENABLED
+	select I2C
+	help
+	  Enable driver for LSM9DS0 I2C-based gyroscope sensor.
+
+if LSM9DS0_GYRO
+
+menu "Attributes"
+
+choice
+	prompt "Default full-scale"
+	default LSM9DS0_GYRO_FULLSCALE_245
+	help
+	  Specify the default full-scale.
+
+config LSM9DS0_GYRO_FULLSCALE_245
+	bool "245 DPS"
+
+config LSM9DS0_GYRO_FULLSCALE_500
+	bool "500 DPS"
+
+config LSM9DS0_GYRO_FULLSCALE_2000
+	bool "2000 DPS"
+
+endchoice
+
+config LSM9DS0_GYRO_FULLSCALE_RUNTIME
+	bool "Dynamic full-scale"
+	help
+	  Enable alteration of full-scale attribute at runtime.
+
+choice
+	prompt "Default sampling rate frequency"
+	default LSM9DS0_GYRO_SAMPLING_RATE_95
+	help
+	  Specify the default sampling rate frequency.
+
+config LSM9DS0_GYRO_SAMPLING_RATE_95
+	bool "95 Hz"
+
+config LSM9DS0_GYRO_SAMPLING_RATE_190
+	bool "190 Hz"
+
+config LSM9DS0_GYRO_SAMPLING_RATE_380
+	bool "380 Hz"
+
+config LSM9DS0_GYRO_SAMPLING_RATE_760
+	bool "760 Hz"
+
+endchoice
+
+config LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME
+	bool "Dynamic sampling rate"
+	help
+	  Enable alteration of sampling rate frequency at runtime.
+
+endmenu
+
+config LSM9DS0_GYRO_TRIGGERS
+	bool "Triggers"
+	depends on GPIO
+
+config LSM9DS0_GYRO_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LSM9DS0_GYRO_TRIGGERS
+	default 1024
+	help
+	  Specify the internal thread stack size.
+
+config LSM9DS0_GYRO_TRIGGER_DRDY
+	bool "Data ready trigger"
+	depends on LSM9DS0_GYRO_TRIGGERS
+
+endif # LSM9DS0_GYRO

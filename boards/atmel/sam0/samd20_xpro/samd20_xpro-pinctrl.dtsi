@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2022, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samd20jXab-pinctrl.h>
+
+&pinctrl {
+	sercom2_i2c_default: sercom2_i2c_default {
+		group1 {
+			pinmux = <PA8D_SERCOM2_PAD0>,
+				 <PA9D_SERCOM2_PAD1>;
+		};
+	};
+
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PA4D_SERCOM0_PAD0>,
+				 <PA6D_SERCOM0_PAD2>,
+				 <PA7D_SERCOM0_PAD3>;
+		};
+	};
+
+	sercom3_uart_default: sercom3_uart_default {
+		group1 {
+			pinmux = <PA25C_SERCOM3_PAD3>,
+				 <PA24C_SERCOM3_PAD2>;
+		};
+	};
+	sercom4_uart_default: sercom4_uart_default {
+		group1 {
+			pinmux = <PB9D_SERCOM4_PAD1>,
+				 <PB8D_SERCOM4_PAD0>;
+		};
+	};
+};

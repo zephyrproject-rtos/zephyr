@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SPI Loopback Test"
+
+source "Kconfig.zephyr"
+
+config SPI_LOOPBACK_MODE_LOOP
+	bool "Configure the SPI in LOOP mode, so that no extra wiring is needed"
+
+if SOC_SERIES_STM32H7X
+
+config SPI_LOOPBACK_16BITS_FRAMES
+	bool "Use 16 bits frames for tests"
+
+config DT_DEFINED_NOCACHE
+	bool "Enable this if nocache regions are defined in devicetree"
+
+if DT_DEFINED_NOCACHE
+
+config DT_DEFINED_NOCACHE_NAME
+	string "Name of the nocache region defined in devicetree (capitals)"
+
+endif # DT_DEFINED_NOCACHE
+
+endif # SOC_SERIES_STM32H7X

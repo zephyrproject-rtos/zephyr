@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <intel/intel_ish5.dtsi>
+
+&hpet {
+	interrupts = <17 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&uart0 {
+	interrupts = <28 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+
+	status = "okay";
+};
+
+&i2c0 {
+	interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&i2c1 {
+	interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&i2c2 {
+	interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};
+
+&gpio0 {
+	interrupts = <16 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&spi0 {
+	interrupts = <23 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "okay";
+};
+
+&spi1 {
+	interrupts = <24 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+	status = "disabled";
+};

@@ -1,0 +1,73 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP low-power analog comparator (LPCMP)
+
+compatible: "nxp,lpcmp"
+
+include: [sensor-device.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  enable-output-pin:
+    type: boolean
+    description: |
+      Decide whether to enable the comparator is available in selected pin.
+
+  use-unfiltered-output:
+    type: boolean
+    description: |
+      Decide whether to use the unfiltered output.
+
+  enable-output-invert:
+    type: boolean
+    description: |
+      Decide whether to invert the comparator output.
+
+  hysteresis-level:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    default: 0
+    description: |
+      LPCMP hysteresis mode.
+      The default corresponds to the reset value of the register field.
+
+  power-level:
+    type: string
+    enum:
+      - "low"
+      - "high"
+      - "nano"
+    default: "low"
+    description: |
+      LPCMP power mode.
+      The default corresponds to the reset value of the register field.
+
+  function-clock:
+    type: string
+    enum:
+      - "Reserved"
+      - "FRO_16K"
+      - "XTAL32K"
+      - "CMP_CLOCK"
+    default: "Reserved"
+    description: |
+      LPCMP function clock.
+      The default corresponds to the reset value of the register field.
+
+  "#io-channel-cells":
+    type: int
+    const: 2
+
+io-channel-cells:
+  - positive
+  - negative

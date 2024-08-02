@@ -1,0 +1,28 @@
+# DesignWare ARC nSIM simulated platform configuration
+
+# Copyright (c) 2016, 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NSIM
+	select SOC_NSIM_EM if BOARD_NSIM_NSIM_EM
+	select SOC_NSIM_EM7D_V22 if BOARD_NSIM_NSIM_EM7D_V22
+	select SOC_NSIM_EM11D if BOARD_NSIM_NSIM_EM11D
+	select SOC_NSIM_HS if BOARD_NSIM_NSIM_HS
+	select SOC_NSIM_HS if BOARD_NSIM_NSIM_HS_SRAM
+	select SOC_NSIM_HS_SMP if BOARD_NSIM_NSIM_HS_SMP
+	select SOC_NSIM_HS if BOARD_NSIM_NSIM_HS_FLASH_XIP
+	select SOC_NSIM_HS_MPUV6 if BOARD_NSIM_NSIM_HS_MPUV6
+	select SOC_NSIM_HS if BOARD_NSIM_NSIM_HS_HOSTLINK
+	select SOC_NSIM_HS5X if BOARD_NSIM_NSIM_HS5X
+	select SOC_NSIM_HS5X_SMP if BOARD_NSIM_NSIM_HS5X_SMP
+	select SOC_NSIM_HS5X_SMP if BOARD_NSIM_NSIM_HS5X_SMP_12CORES
+	select SOC_NSIM_HS6X if BOARD_NSIM_NSIM_HS6X
+	select SOC_NSIM_HS6X_SMP if BOARD_NSIM_NSIM_HS6X_SMP
+	select SOC_NSIM_HS6X_SMP if BOARD_NSIM_NSIM_HS6X_SMP_12CORES
+	select SOC_NSIM_SEM if BOARD_NSIM_NSIM_SEM
+	select SOC_NSIM_SEM if BOARD_NSIM_NSIM_SEM_MPU_STACK_GUARD
+	select SOC_NSIM_VPX5 if BOARD_NSIM_NSIM_VPX5
+	help
+	  The DesignWare ARC nSIM board is a virtual board based on
+	  the ARC nSIM simulator. It demonstrates the ARC core features
+	  and a console based on the ns16550 UART model.

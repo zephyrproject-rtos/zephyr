@@ -1,0 +1,11 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Demand Paging modules"
+	depends on DEMAND_PAGING
+
+source "subsys/demand_paging/eviction/Kconfig"
+
+source "subsys/demand_paging/backing_store/Kconfig"
+
+endmenu

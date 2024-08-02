@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI SimpleLink CC13xx / CC26xx IEEE 802.15.4 node
+
+compatible: "ti,cc13xx-cc26xx-ieee802154"
+
+include: base.yaml

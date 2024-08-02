@@ -1,0 +1,87 @@
+# Copyright (c) 2020 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODBUS
+	bool "Modbus support"
+	select CRC
+
+if MODBUS
+
+config MODBUS_BUFFER_SIZE
+	int "Modbus buffer size"
+	default 256
+	range 64 256
+	help
+	  Modbus buffer size.
+
+choice
+	prompt "Supported node roles"
+	default MODBUS_ROLE_CLIENT_SERVER
+	help
+	  Specify the type of supported node roles.
+
+config MODBUS_ROLE_CLIENT
+	bool "Client support"
+
+config MODBUS_ROLE_SERVER
+	bool "Server support"
+
+config MODBUS_ROLE_CLIENT_SERVER
+	bool "Client and server support"
+
+endchoice
+
+config MODBUS_SERVER
+	bool
+	default y if MODBUS_ROLE_SERVER || MODBUS_ROLE_CLIENT_SERVER
+
+config MODBUS_CLIENT
+	bool
+	default y if MODBUS_ROLE_CLIENT || MODBUS_ROLE_CLIENT_SERVER
+
+config MODBUS_SERIAL
+	bool "Modbus over serial line support"
+	default y
+	depends on SERIAL && SERIAL_HAS_DRIVER
+	depends on DT_HAS_ZEPHYR_MODBUS_SERIAL_ENABLED
+	imply UART_USE_RUNTIME_CONFIGURE
+	help
+	  Enable Modbus over serial line support.
+
+config MODBUS_ASCII_MODE
+	depends on MODBUS_SERIAL
+	bool "Modbus transmission mode ASCII"
+	help
+	  Enable ASCII transmission mode.
+
+config MODBUS_RAW_ADU
+	bool "Modbus raw ADU support"
+	help
+	  Enable Modbus raw ADU support.
+
+config MODBUS_NUMOF_RAW_ADU
+	int "Number of raw ADU instances"
+	depends on MODBUS_RAW_ADU
+	range 1 4
+	help
+	  Number of raw ADU instances.
+
+config MODBUS_FP_EXTENSIONS
+	bool "Floating-Point extensions"
+	default y
+	help
+	  Enable Floating-Point extensions
+
+config MODBUS_FC08_DIAGNOSTIC
+	bool "FC08 Diagnostic support"
+	depends on MODBUS_SERVER
+	default y
+	help
+	  Enable function code 08 Diagnostic support
+
+module = MODBUS
+module-str = Modbus Support
+module-help = Sets log level for Modbus support
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

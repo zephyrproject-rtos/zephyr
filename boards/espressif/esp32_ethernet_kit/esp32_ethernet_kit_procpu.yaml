@@ -1,0 +1,17 @@
+identifier: esp32_ethernet_kit/esp32/procpu
+name: ESP32 ETHERNET KIT PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

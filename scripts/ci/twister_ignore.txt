@@ -1,0 +1,52 @@
+# Add one pattern per line.
+#
+# The patterns listed in this file will be compared with the list of files
+# changed in a patch series (Pull Request) and if all files in the pull request
+# are matched, then twister will not do a full run and optionally will only
+# run on changed tests or boards.
+#
+.gitlint
+.checkpatch.conf
+.clang-format
+.codecov.yml
+.editorconfig
+.gitattributes
+.gitignore
+.mailmap
+.github/workflows/codecov.yaml
+.github/workflows/issue_count.yml
+.github/workflows/stats_merged_prs.yml
+.github/workflows/assigner.yml
+.github/workflows/daily_test_version.yml
+.github/workflows/do_not_merge.yml
+.github/workflows/stale_issue.yml
+.github/workflows/stale-workflow-queue-cleanup.yml
+.github/workflows/greet_first_time_contributor.yml
+.github/workflows/issues-report-config.json
+CODEOWNERS
+MAINTAINERS.yml
+LICENSE
+Makefile
+doc/*
+# GH action have no impact on code
+.github/*
+*.rst
+*.jpg
+*.png
+*.md
+# if we change this file or associated script, it should not trigger a full
+# twister.
+scripts/ci/test_plan.py
+scripts/ci/twister_ignore.txt
+scripts/ci/what_changed.py
+scripts/ci/version_mgr.py
+scripts/ci/stats/*
+scripts/requirements*
+scripts/checkpatch/*
+scripts/checkpatch.pl
+scripts/ci/pylintrc
+scripts/footprint/*
+scripts/make_bugs_pickle.py
+scripts/set_assignees.py
+scripts/gitlint/zephyr_commit_rules.py
+scripts/west_commands/runners/canopen_program.py

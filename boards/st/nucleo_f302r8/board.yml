@@ -1,0 +1,5 @@
+board:
+  name: nucleo_f302r8
+  vendor: st
+  socs:
+    - name: stm32f302x8

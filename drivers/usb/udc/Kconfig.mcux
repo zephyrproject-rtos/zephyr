@@ -1,0 +1,18 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_NXP_EHCI
+	bool "NXP MCUX USB EHCI Device controller driver"
+	default y
+	depends on DT_HAS_NXP_EHCI_ENABLED
+	select NOCACHE_MEMORY if HAS_MCUX_CACHE && CPU_HAS_DCACHE
+	imply UDC_BUF_FORCE_NOCACHE
+	help
+	  NXP MCUX USB Device Controller Driver for EHCI.
+
+config UDC_NXP_IP3511
+	bool "NXP MCUX USB IP3511 Device controller driver"
+	default y
+	depends on DT_HAS_NXP_LPCIP3511_ENABLED
+	help
+	  NXP MCUX USB Device Controller Driver for KHCI.

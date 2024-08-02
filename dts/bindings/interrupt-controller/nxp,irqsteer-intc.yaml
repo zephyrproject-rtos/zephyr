@@ -1,0 +1,9 @@
+description: i.MX DSP interrupt controller
+
+compatible: "nxp,irqsteer-intc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

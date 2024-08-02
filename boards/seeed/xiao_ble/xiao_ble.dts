@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2022-2023 Marcin Niestroj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "xiao_ble_common.dtsi"
+
+/ {
+	model = "Seeed XIAO BLE";
+	compatible = "seeed,xiao-ble";
+};

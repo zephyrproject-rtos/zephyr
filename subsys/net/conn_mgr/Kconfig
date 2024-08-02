@@ -1,0 +1,61 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_CONNECTION_MANAGER
+	bool "Network connection manager [EXPERIMENTAL]"
+	depends on NET_IPV6 || NET_IPV4
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	select EXPERIMENTAL
+	help
+	  When enabled, this will start the connection manager that will
+	  listen to network interface and IP events in order to verify
+	  whether an interface is connected or not. It will then raise
+	  L4 events "connected" or "disconnected" depending on the result.
+
+if NET_CONNECTION_MANAGER
+
+module = NET_CONNECTION_MANAGER
+module-dep = NET_LOG
+module-str = Log level for connection manager
+module-help = Enables connection manager code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE
+	int "Size of the stack allocated for the conn_mgr_monitor thread"
+	default 512
+	help
+	  Sets the stack size which will be used by the connection manager for connectivity monitoring.
+
+config NET_CONNECTION_MANAGER_MONITOR_PRIORITY
+	int "Monitoring thread starting priority"
+	default 1
+	range 1 99
+	help
+	  This sets the starting priority of the conn_mgr_monitor thread.
+
+config NET_CONNECTION_MANAGER_AUTO_IF_DOWN
+	bool "Automatically call net_if_down on ifaces that have given up on connecting"
+	default y
+
+config NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
+	bool "Generic WiFi management connectivity implementation"
+	depends on NET_L2_WIFI_MGMT
+	help
+	  Enable CONNECTIVITY_WIFI_MGMT connectivity bindings on WiFi drivers.
+	  Which implementation is compiled is controlled via CONNECTIVITY_WIFI_MGMT_IMPL.
+
+choice CONNECTIVITY_WIFI_MGMT_IMPL
+	prompt "Implementation of the generic wifi_mgmt connectivity backend"
+	depends on NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
+	default CONNECTIVITY_WIFI_MGMT_APPLICATION
+
+config CONNECTIVITY_WIFI_MGMT_APPLICATION
+	bool "Application specific implementation of the connectivity backend"
+	help
+	  The application defines its own implementation of CONNECTIVITY_WIFI_MGMT.
+
+endchoice
+
+endif # NET_CONNECTION_MANAGER

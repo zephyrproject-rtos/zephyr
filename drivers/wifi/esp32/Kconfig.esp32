@@ -1,0 +1,309 @@
+# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+
+menuconfig WIFI_ESP32
+	bool "ESP32 SoC WiFi support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
+	depends on !SMP
+	select THREAD_CUSTOM_DATA
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select MBEDTLS
+	select THREAD_STACK_INFO
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
+	help
+	  Enable ESP32 SoC WiFi support. Only supported in single
+	  core mode because the network stack is not aware of SMP
+	  stuff.
+
+if WIFI_ESP32
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config ESP32_WIFI_STA_AUTO_DHCPV4
+	bool "Automatically starts DHCP4 negotiation"
+	depends on NET_DHCPV4
+	depends on NET_IPV4
+	help
+	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
+
+config ESP32_WIFI_STA_RECONNECT
+	bool "WiFi connection retry"
+	help
+	  Set auto WiFI reconnection when disconnected.
+
+config ESP32_WIFI_SW_COEXIST_ENABLE
+	bool
+	help
+	  Software controls WiFi/Bluetooth coexistence. Not supported yet.
+
+config ESP32_WIFI_NET_ALLOC_SPIRAM
+	bool "Allocate memory of WiFi and NET in SPIRAM"
+	depends on ESP_SPIRAM
+	help
+	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
+	  for application stack.
+
+config ESP32_WIFI_STATIC_RX_BUFFER_NUM
+	int "Max number of WiFi static RX buffers"
+	range 2 25
+	default 10
+	help
+	  Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
+	  The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+	  until esp_wifi_deinit is called.
+
+	  WiFi hardware use these buffers to receive all 802.11 frames.
+	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
+	  is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
+	  achieve better throughput and compatibility with both stations and APs.
+
+config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+	int "Max number of WiFi dynamic RX buffers"
+	range 0 128
+	default 32
+	help
+	  Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers
+	  will be allocated (provided sufficient free RAM). The size of each dynamic
+	  RX buffer depends on the size of the received data frame.
+
+	  For each received data frame, the WiFi driver makes a copy to an RX buffer
+	  and then delivers it to the high layer TCP/IP stack. The dynamic RX buffer
+	  is freed after the higher layer has successfully received the data frame.
+
+	  For some applications, WiFi data frames may be received faster than the
+	  application can process them. In these cases we may run out of memory if
+	  RX buffer number is unlimited (0). If a dynamic RX buffer limit is set,
+	  it should be at least the number of static RX buffers.
+
+choice ESP32_WIFI_TX_BUFFER
+	prompt "Type of WiFi TX buffers"
+	default ESP32_WIFI_DYNAMIC_TX_BUFFER
+	help
+	  Select type of WiFi TX buffers:
+
+	  If "Static" is selected, WiFi TX buffers are allocated when WiFi is
+	  initialized and released when WiFi is de-initialized. The size of each
+	  static TX buffer is fixed to about 1.6KB.
+
+	  If "Dynamic" is selected, each WiFi TX buffer is allocated as needed
+	  when a data frame is delivered to the Wifi driver from the TCP/IP stack.
+	  The buffer is freed after the data frame has been sent by the WiFi driver.
+	  The size of each dynamic TX buffer depends on the length of each data
+	  frame sent by the TCP/IP layer.
+
+	  If PSRAM is enabled, "Static" should be selected to guarantee enough
+	  WiFi TX buffers. If PSRAM is disabled, "Dynamic" should be selected
+	  to improve the utilization of RAM.
+
+	config ESP32_WIFI_STATIC_TX_BUFFER
+		bool "Static"
+	config ESP32_WIFI_DYNAMIC_TX_BUFFER
+		bool "Dynamic"
+endchoice
+
+config ESP32_WIFI_TX_BUFFER_TYPE
+	int
+	default 0 if ESP32_WIFI_STATIC_TX_BUFFER
+	default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
+
+config ESP32_WIFI_STATIC_TX_BUFFER_NUM
+	int "Max number of WiFi static TX buffers"
+	depends on ESP32_WIFI_STATIC_TX_BUFFER
+	range 1 64
+	default 16
+	help
+	  Set the number of WiFi static TX buffers. Each buffer takes approximately
+	  1.6KB of RAM. The static RX buffers are allocated when esp_wifi_init() is
+	  called, they are not released until esp_wifi_deinit() is called.
+
+	  For each transmitted data frame from the higher layer TCP/IP stack,
+	  the WiFi driver makes a copy of it in a TX buffer.  For some applications
+	  especially UDP applications, the upper layer can deliver frames faster
+	  than WiFi layer can transmit.
+	  In these cases, we may run out of TX buffers.
+
+config ESP32_WIFI_CACHE_TX_BUFFER_NUM
+	int "Max number of WiFi cache TX buffers"
+	depends on ESP_SPIRAM
+	range 16 128
+	default 32
+	help
+	  Set the number of WiFi cache TX buffer number.
+
+	  For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to
+	  allocate a static TX buffer and makes a copy of uplayer packet. If WiFi
+	  driver fails to allocate the static TX buffer, it caches the uplayer
+	  packets to a dedicated buffer queue, this option is used to configure the
+	  size of the cached TX queue.
+
+config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+	int "Max number of WiFi dynamic TX buffers"
+	depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
+	range 1 128
+	default 32
+	help
+	  Set the number of WiFi dynamic TX buffers. The size of each
+	  dynamic TXbuffer is not fixed, it depends on the size of each
+	  transmitted data frame.
+
+	  For each transmitted frame from the higher layer TCP/IP stack,
+	  the WiFi driver makes a copy of it in a TX buffer. For some applications,
+	  especially UDP applications, the upper layer can deliver frames faster
+	  than WiFi layer can transmit. In these cases, we may run out of TX
+	  buffers.
+
+config ESP32_WIFI_CSI_ENABLED
+	bool "WiFi CSI(Channel State Information)"
+	default n
+	help
+	  Select this option to enable CSI(Channel State Information) feature.
+	  CSI takes about CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM.
+	  If CSI is not used, it is better to disable this feature in order
+	  to save memory.
+
+config ESP32_WIFI_AMPDU_TX_ENABLED
+	bool "WiFi AMPDU TX"
+	default y
+	help
+	  Select this option to enable AMPDU TX feature. It improves transmission
+	  error checking and overall network performance with the cost of processing
+	  speed. Helpful when the device is operating in crowded wireless area.
+
+config ESP32_WIFI_TX_BA_WIN
+	int "WiFi AMPDU TX BA window size"
+	depends on ESP32_WIFI_AMPDU_TX_ENABLED
+	range 2 32
+	default 6
+	help
+	  Set the size of WiFi Block Ack TX window. Generally a bigger value means
+	  higher throughput but more memory. Most of time we should NOT change the
+	  default value unless special reason, e.g. test the maximum
+	  UDP TX throughput with iperf etc. For iperf test in shieldbox,
+	  the recommended value is 9~12.
+
+config ESP32_WIFI_AMPDU_RX_ENABLED
+	bool "WiFi AMPDU RX"
+	default y
+	help
+	  Select this option to enable AMPDU RX feature. It improves transmission
+	  error checking and overall network performance with the cost of processing
+	  speed. Helpful when the device is operating in crowded wireless area.
+
+config ESP32_WIFI_RX_BA_WIN
+	int "WiFi AMPDU RX BA window size"
+	depends on ESP32_WIFI_AMPDU_RX_ENABLED
+	range 2 32
+	default 6
+	help
+	  Set the size of WiFi Block Ack RX window. Generally a bigger value means
+	  higher throughput and better compatibility but more memory. Most of time
+	  we should NOT change the default value unless special reason,
+	  e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in
+	  shieldbox, the recommended value is 9~12. If PSRAM is used and WiFi memory
+	  is preferred to be allocated in PSRAM first, the default and minimum value
+	  should be 16 to achieve better throughput and compatibility with both
+	  stations and APs.
+
+config ESP32_WIFI_AMSDU_TX_ENABLED
+	bool "WiFi AMSDU TX"
+	depends on ESP_SPIRAM
+	default n
+	help
+	  Select this option to enable AMSDU TX feature
+
+config ESP32_WIFI_IRAM_OPT
+	bool "WiFi IRAM speed optimization"
+	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
+	default y
+	help
+	  Select this option to place frequently called Wi-Fi library functions in IRAM.
+	  When this option is disabled, more than 10Kbytes of IRAM memory will be saved
+	  but Wi-Fi throughput will be reduced.
+
+config ESP32_WIFI_RX_IRAM_OPT
+	bool "WiFi RX IRAM speed optimization"
+	default n if (BT && ESP_SPIRAM && SOC_SERIES_ESP32)
+	help
+	  Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+	  but Wi-Fi performance will be reduced.
+
+config ESP32_WIFI_FTM_ENABLE
+	bool "WiFi FTM"
+	default n
+	depends on SOC_SERIES_ESP32C3
+	help
+	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
+
+config ESP32_WIFI_FTM_INITIATOR_SUPPORT
+	bool "FTM Initiator support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_FTM_RESPONDER_SUPPORT
+	bool "FTM Responder support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_SOFTAP_SUPPORT
+	bool
+	default y
+	help
+	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
+
+config ESP32_WIFI_MBEDTLS_CRYPTO
+	bool "Use MbedTLS crypto APIs"
+	default n
+	select MBEDTLS_ECP_C
+	select MBEDTLS_ECDH_C
+	select MBEDTLS_ECDSA_C
+	select MBEDTLS_PKCS5_C
+	select MBEDTLS_PK_WRITE_C
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	select MBEDTLS_CMAC
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+
+config ESP32_WIFI_ENABLE_WPA3_SAE
+	bool "WPA3-Personal"
+	default n
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	help
+	  Select this option to allow the device to establish a WPA3-Personal connection.
+
+config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+	bool "OWE STA"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to allow the device to establish OWE connection with eligible AP's.
+
+config ESP32_WIFI_ENABLE_SAE_PK
+	bool "SAE-PK"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to enable SAE-PK
+
+config ESP32_WIFI_DEBUG_PRINT
+	bool "Print debug messages from WPA Supplicant"
+	default n
+	help
+	  Select this option to print logging information from WPA supplicant,
+	  this includes handshake information and key hex dumps depending
+	  on the project logging level.
+
+	  Enabling this could increase the build size ~60kb
+	  depending on the project logging level.
+
+endif # WIFI_ESP32

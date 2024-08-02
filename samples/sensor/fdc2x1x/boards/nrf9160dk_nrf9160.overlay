@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020 arithmetics.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	fdc2x1x@2A {
+		compatible = "ti,fdc2x1x";
+		reg = <0x2A>;
+		sd-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		intb-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+
+		autoscan;
+		deglitch = <5>;
+		fref = <43360>;
+
+		channel_0 {
+			rcount = <7499>;
+			settlecount = <48>;
+			fref-divider = <1>;
+			idrive = <10>;
+			fin-sel = <2>;
+			inductance = < 18 >;
+		};
+
+		channel_1 {
+			rcount = <7499>;
+			settlecount = <48>;
+			fref-divider = <1>;
+			idrive = <10>;
+			fin-sel = <2>;
+			inductance = <18>;
+		};
+	};
+};

@@ -1,0 +1,73 @@
+# Simcom sim7080 driver options
+
+# Copyright (C) 2021 metraTec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_SIM7080
+	bool "Sim7080 Driver"
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select MODEM_IFACE_UART
+	select MODEM_SOCKET
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	imply GPIO
+	help
+	  Enables the driver for the Sim7080 modem.
+
+if MODEM_SIM7080
+
+config MODEM_SIMCOM_SIM7080_RX_STACK_SIZE
+	int "Stack size for the simcom sim7080 modem driver rx thread"
+	default 1028
+	help
+	  This stack is used by the simcom SIM7080 RX thread.
+
+config MODEM_SIMCOM_SIM7080_RX_WORKQ_STACK_SIZE
+	int "Stack size for the simcom sim7080 modem driver work queue"
+	default 2048
+	help
+		This stack is used by the work queue.
+
+config MODEM_SIMCOM_SIM7080_INIT_PRIORITY
+	int "simcom sim7080 driver init priority"
+	default 80
+	help
+	  simcom sim7080 driver initialization priority.
+
+config MODEM_SIMCOM_SIM7080_LTE_BANDS
+	string "LTE bands the driver can use"
+	default "8,20,28"
+	help
+		Comma separated list of usable lte bands.
+
+config MODEM_SIMCOM_SIM7080_APN
+	string "APN for establishing a network connection"
+	default "internet"
+	help
+	  This setting is used to set the APN name for the network connection
+	  context. This value is specific to the network provider and may
+	  need to be changed.
+
+choice MODEM_SIMCOM_SIM7080_RAT
+	bool "Radio Access Technology Mode"
+	default MODEM_SIMCOM_SIM7080_RAT_NB1
+
+config MODEM_SIMCOM_SIM7080_RAT_NB1
+	bool "NB-IoT"
+	help
+		Enable LTE NB-IoT mode.
+
+config MODEM_SIMCOM_SIM7080_RAT_M1
+	bool "Cat-M1"
+	help
+		Enable Cat-M1 mode.
+
+config MODEM_SIMCOM_SIM7080_RAT_GSM
+	bool "GSM"
+	help
+	  Enable GSM mode.
+
+endchoice
+
+endif # MODEM_SIM7080

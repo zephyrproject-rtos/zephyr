@@ -1,0 +1,12 @@
+# Copyright (c) 2023 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        ST STM32F4 family ADC
+        This compatible stands for all ADC blocks similar to the one on STM32F4,
+        like F2, F7 or L1.
+
+compatible: "st,stm32f4-adc"
+
+include: st,stm32-adc.yaml

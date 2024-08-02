@@ -1,0 +1,561 @@
+# TLS/DTLS related options
+
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "TLS configuration"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+
+menu "Supported TLS version"
+
+config MBEDTLS_TLS_VERSION_1_0
+	bool "Support for TLS 1.0"
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_MD
+
+config MBEDTLS_TLS_VERSION_1_1
+	bool "Support for TLS 1.1 (DTLS 1.0)"
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_MD
+
+config MBEDTLS_TLS_VERSION_1_2
+	bool "Support for TLS 1.2 (DTLS 1.2)"
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
+
+config MBEDTLS_DTLS
+	bool "Support for DTLS"
+	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_SSL_EXPORT_KEYS
+	bool "Support for exporting SSL key block and master secret"
+	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_SSL_ALPN
+	bool "Support for setting the supported Application Layer Protocols"
+	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
+endmenu
+
+menu "Ciphersuite configuration"
+
+comment "Supported key exchange modes"
+
+config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	bool "All available ciphersuite modes"
+	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+config MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	bool "PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	bool "DHE-PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "ECDHE-PSK based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	bool "RSA-PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
+		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+
+config MBEDTLS_PSK_MAX_LEN
+	int "Max size of TLS pre-shared keys"
+	default 32
+	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
+	help
+	  Max size of TLS pre-shared keys, in bytes.
+
+config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+	bool "RSA-only based ciphersuite modes"
+	default y if UOSCORE || UEDHOC
+	select MBEDTLS_MD
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
+
+config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	bool "DHE-RSA based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "ECDHE-RSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "ECDHE-ECDSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "ECDH-ECDSA based ciphersuite modes"
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+
+config MBEDTLS_ECDSA_DETERMINISTIC
+	bool "Deterministic ECDSA (RFC 6979)"
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "ECDH-RSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "ECJPAKE based ciphersuite modes"
+	depends on MBEDTLS_ECJPAKE_C
+
+config MBEDTLS_HKDF_C
+	bool "HMAC-based Extract-and-Expand Key Derivation Function"
+
+comment "Elliptic curve libraries"
+
+config MBEDTLS_ECDH_C
+	bool "Elliptic curve Diffie-Hellman library"
+	depends on MBEDTLS_ECP_C
+
+config MBEDTLS_ECDSA_C
+	bool "Elliptic curve DSA library"
+	depends on MBEDTLS_ECP_C
+
+config MBEDTLS_ECJPAKE_C
+	bool "Elliptic curve J-PAKE library"
+	depends on MBEDTLS_ECP_C
+
+config MBEDTLS_ECP_C
+	bool "Elliptic curve over GF(p) library"
+	default y if UOSCORE || UEDHOC
+
+if MBEDTLS_ECP_C
+
+comment "Supported elliptic curves"
+
+config MBEDTLS_ECP_ALL_ENABLED
+	bool "All available elliptic curves"
+	select MBEDTLS_ECP_DP_SECP192R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP192R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP224R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP384R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP521R1_ENABLED
+	select MBEDTLS_ECP_DP_SECP192K1_ENABLED
+	select MBEDTLS_ECP_DP_SECP224K1_ENABLED
+	select MBEDTLS_ECP_DP_SECP256K1_ENABLED
+	select MBEDTLS_ECP_DP_BP256R1_ENABLED
+	select MBEDTLS_ECP_DP_BP384R1_ENABLED
+	select MBEDTLS_ECP_DP_BP512R1_ENABLED
+	select MBEDTLS_ECP_DP_CURVE25519_ENABLED
+	select MBEDTLS_ECP_DP_CURVE448_ENABLED
+	select MBEDTLS_ECP_NIST_OPTIM
+
+config MBEDTLS_ECP_DP_SECP192R1_ENABLED
+	bool "SECP192R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP224R1_ENABLED
+	bool "SECP224R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP256R1_ENABLED
+	bool "SECP256R1 elliptic curve"
+	default y if UOSCORE || UEDHOC
+
+config MBEDTLS_ECP_DP_SECP384R1_ENABLED
+	bool "SECP384R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP521R1_ENABLED
+	bool "SECP521R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP192K1_ENABLED
+	bool "SECP192K1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP224K1_ENABLED
+	bool "SECP224K1 elliptic curve"
+
+config MBEDTLS_ECP_DP_SECP256K1_ENABLED
+	bool "SECP256K1 elliptic curve"
+
+config MBEDTLS_ECP_DP_BP256R1_ENABLED
+	bool "BP256R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_BP384R1_ENABLED
+	bool "BP384R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_BP512R1_ENABLED
+	bool "BP512R1 elliptic curve"
+
+config MBEDTLS_ECP_DP_CURVE25519_ENABLED
+	bool "CURVE25519 elliptic curve"
+
+config MBEDTLS_ECP_DP_CURVE448_ENABLED
+	bool "CURVE448 elliptic curve"
+
+config MBEDTLS_ECP_NIST_OPTIM
+	bool "NSIT curves optimization"
+
+endif
+
+comment "Supported ciphers and cipher modes"
+
+config MBEDTLS_CIPHER_ALL_ENABLED
+	bool "All available ciphers and modes"
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CAMELLIA_ENABLED
+	select MBEDTLS_CIPHER_DES_ENABLED
+	select MBEDTLS_CIPHER_CHACHA20_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_CIPHER_GCM_ENABLED
+	select MBEDTLS_CIPHER_MODE_XTS_ENABLED
+	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
+	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+
+config MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_CIPHER_AES_ENABLED || \
+		MBEDTLS_CIPHER_CAMELLIA_ENABLED
+
+config MBEDTLS_SOME_CIPHER_ENABLED
+	bool
+	default y
+	depends on \
+		MBEDTLS_SOME_AEAD_CIPHER_ENABLED || \
+		MBEDTLS_CIPHER_DES_ENABLED || \
+		MBEDTLS_CIPHER_CHACHA20_ENABLED
+
+config MBEDTLS_CIPHER_AES_ENABLED
+	bool "AES block cipher"
+
+if MBEDTLS_CIPHER_AES_ENABLED
+
+config MBEDTLS_AES_ROM_TABLES
+	bool "Use precomputed AES tables stored in ROM."
+
+config MBEDTLS_AES_FEWER_TABLES
+	bool "Reduce the size of precomputed AES tables by ~6kB"
+	default y
+	depends on MBEDTLS_AES_ROM_TABLES
+	help
+	  Reduce the size of the AES tables at a tradeoff of more
+	  arithmetic operations at runtime. Specifically 4 table
+	  lookups are converted to 1 table lookup, 3 additions
+	  and 6 bit shifts.
+
+config MBEDTLS_CIPHER_MODE_XTS_ENABLED
+	bool "Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
+
+endif # MBEDTLS_CIPHER_AES_ENABLED
+
+config MBEDTLS_CIPHER_CAMELLIA_ENABLED
+	bool "Camellia block cipher"
+
+config MBEDTLS_CIPHER_DES_ENABLED
+	bool "DES block cipher"
+
+config MBEDTLS_CIPHER_CHACHA20_ENABLED
+	bool "ChaCha20 stream cipher"
+
+if MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+
+config MBEDTLS_CIPHER_CCM_ENABLED
+	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
+	default y if UOSCORE || UEDHOC
+
+config MBEDTLS_CIPHER_GCM_ENABLED
+	bool "Galois/Counter Mode (GCM) for symmetric ciphers"
+
+endif # MBEDTLS_SOME_AEAD_CIPHER_ENABLED
+
+if MBEDTLS_SOME_CIPHER_ENABLED
+
+config MBEDTLS_CIPHER_MODE_CBC_ENABLED
+	bool "Cipher Block Chaining mode (CBC) for symmetric ciphers"
+	default y if !NET_L2_OPENTHREAD
+
+config MBEDTLS_CIPHER_MODE_CTR_ENABLED
+	bool "Counter Block Cipher mode (CTR) for symmetric ciphers"
+
+endif # MBEDTLS_SOME_CIPHER_ENABLED
+
+config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+	bool "ChaCha20-Poly1305 AEAD algorithm"
+	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
+
+config MBEDTLS_CMAC
+	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
+
+comment "Supported hash algorithms"
+
+config MBEDTLS_HASH_ALL_ENABLED
+	bool "All available MAC methods"
+	select MBEDTLS_MD5
+	select MBEDTLS_SHA1
+	select MBEDTLS_SHA224
+	select MBEDTLS_SHA256
+	select MBEDTLS_SHA384
+	select MBEDTLS_SHA512
+	select MBEDTLS_POLY1305
+
+config MBEDTLS_MD5
+	bool "MD5 hash algorithm"
+
+config MBEDTLS_SHA1
+	bool "SHA-1 hash algorithm"
+
+config MBEDTLS_SHA224
+	bool "SHA-224 hash algorithm"
+
+config MBEDTLS_SHA256
+	bool "SHA-256 hash algorithm"
+	default y
+
+config MBEDTLS_SHA256_SMALLER
+	bool "Smaller SHA-256 implementation"
+	depends on MBEDTLS_SHA256
+	default y
+	help
+	  Enable an implementation of SHA-256 that has a
+	  smaller ROM footprint but also lower performance.
+
+config MBEDTLS_SHA384
+	bool "SHA-384 hash algorithm"
+
+config MBEDTLS_SHA512
+	bool "SHA-512 hash algorithm"
+
+config MBEDTLS_POLY1305
+	bool "Poly1305 hash family"
+
+endmenu
+
+comment "Random number generators"
+
+config MBEDTLS_CTR_DRBG_ENABLED
+	bool "CTR_DRBG AES-256-based random generator"
+	depends on MBEDTLS_CIPHER_AES_ENABLED
+	default y
+
+config MBEDTLS_HMAC_DRBG_ENABLED
+	bool "HMAC_DRBG random generator"
+	select MBEDTLS_MD
+
+comment "Other configurations"
+
+config MBEDTLS_CIPHER
+	bool "generic cipher layer."
+	default y if PSA_WANT_ALG_CMAC
+
+config MBEDTLS_MD
+	bool "generic message digest layer."
+
+config MBEDTLS_GENPRIME_ENABLED
+	bool "prime-number generation code."
+
+config MBEDTLS_PEM_CERTIFICATE_FORMAT
+	bool "Support for PEM certificate format"
+	help
+	  By default only DER (binary) format of certificates is supported. Enable
+	  this option to enable support for PEM format.
+
+config MBEDTLS_HAVE_ASM
+	bool "Use of assembly code"
+	default y if !ARM
+	help
+	  Enable use of assembly code in mbedTLS. This improves the performances
+	  of asymmetric cryptography, however this might have an impact on the
+	  code size.
+
+config MBEDTLS_ENTROPY_ENABLED
+	bool "MbedTLS generic entropy pool"
+	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
+	default y if MBEDTLS_ZEPHYR_ENTROPY
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "MbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	bool "User mbedTLS config file"
+	help
+	  Enable user mbedTLS config file that will be included at the end of
+	  the generic config file.
+
+config MBEDTLS_USER_CONFIG_FILE
+	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
+	help
+	  User config file that can contain mbedTLS configs that were not
+	  covered by the generic config file.
+
+config MBEDTLS_SERVER_NAME_INDICATION
+	bool "Support for RFC 6066 server name indication (SNI) in SSL"
+	help
+	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
+	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
+
+config MBEDTLS_PK_WRITE_C
+	bool "The generic public (asymmetric) key writer"
+	help
+	  Enable generic public key write functions.
+
+config MBEDTLS_HAVE_TIME_DATE
+	bool "Date/time validation in mbed TLS"
+	help
+	  System has time.h, time(), and an implementation for gmtime_r().
+	  There also need to be a valid time source in the system, as mbedTLS
+	  expects a valid date/time for certificate validation."
+
+config MBEDTLS_PKCS5_C
+	bool "Password-based encryption functions"
+	select MBEDTLS_MD
+	help
+	  Enable PKCS5 functions
+
+config MBEDTLS_SSL_CACHE_C
+	bool "SSL session cache support"
+	help
+	  "This option enables simple SSL cache implementation (server side)."
+
+if MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+	int "Default timeout for SSL cache entires"
+	default 86400
+
+config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+	int "Maximum number of SSL cache entires"
+	default 5
+
+endif # MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	bool "(D)TLS Extended Master Secret extension"
+	depends on MBEDTLS_TLS_VERSION_1_2
+	help
+	  Enable support for the (D)TLS Extended Master Secret extension
+	  which ensures that master secrets are different for every
+	  connection and every session.
+
+choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
+	prompt "Select random source for built-in PSA crypto"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	bool "Use a cryptographically secure driver as random source"
+	depends on CSPRNG_ENABLED
+	help
+	  Use cryptographically secure random generator to provide random data
+	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+
+config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
+	bool "Use legacy modules to generate random data"
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
+	help
+	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
+	  source generators.
+
+endchoice
+
+config MBEDTLS_PSA_CRYPTO_C
+	bool "Platform Security Architecture cryptography API"
+	depends on !BUILD_WITH_TFM
+	default y if UOSCORE || UEDHOC
+
+config MBEDTLS_USE_PSA_CRYPTO
+	bool "Use PSA APIs instead of legacy MbedTLS when possible"
+	default y if MBEDTLS_PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
+	  "intermediate" modules such as PK, MD and Cipher.
+
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	bool
+	default y
+	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
+	select PSA_CRYPTO_CLIENT
+
+config MBEDTLS_LMS
+	bool "Support LMS signature schemes"
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	depends on MBEDTLS_SHA256
+	select PSA_WANT_ALG_SHA_256
+
+config MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	bool "P256-M driver"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	imply PSA_WANT_ALG_SHA_256
+	help
+	  Enable support for the optimized sofware implementation of the secp256r1
+	  curve through the standard PSA API.
+
+config MBEDTLS_PSA_P256M_DRIVER_RAW
+	bool "Access p256-m driver directly (without PSA interface)"
+	depends on MBEDTLS_PSA_P256M_DRIVER_ENABLED
+	help
+	  Allow direct access to the p256-m driver interface.
+	  Warning: Usage of this Kconfig option is prohibited in Zephyr's codebase.
+	           Users can enable it in case of very memory-constrained devices, but be aware that the p256-m interface is absolutely not guaranted to remain stable over time.
+
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "DTLS Connection ID extension"
+	depends on MBEDTLS_DTLS
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
+
+config MBEDTLS_NIST_KW_C
+	bool "NIST key wrap"
+	depends on MBEDTLS_CIPHER_AES_ENABLED
+	help
+	  Key Wrapping mode for 128-bit block ciphers,
+	  as defined in NIST SP 800-38F.
+
+config MBEDTLS_DHM_C
+	bool "Diffie-Hellman-Merkle mode"
+	help
+	  Used by the following key exchanges,
+	  DHE-RSA, DHE-PSK
+
+config MBEDTLS_X509_CRL_PARSE_C
+	bool "X509 CRL parsing"
+	help
+	  Used by X509 CRL parsing
+
+config MBEDTLS_X509_CSR_WRITE_C
+	bool "X509 Certificate Signing Requests writing"
+	help
+	  For X.509 certificate request writing.
+
+config MBEDTLS_X509_CSR_PARSE_C
+	bool "X509 Certificate Signing Request parsing"
+	help
+	  For reading X.509 certificate request.
+endmenu

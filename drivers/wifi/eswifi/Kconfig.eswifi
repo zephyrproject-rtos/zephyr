@@ -1,0 +1,54 @@
+# es-WiFi driver options
+
+# Copyright (c) 2018 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_ESWIFI
+	bool "Inventek eS-WiFi support"
+	default y
+	depends on DT_HAS_INVENTEK_ESWIFI_ENABLED || DT_HAS_INVENTEK_ESWIFI_UART_ENABLED
+	select NET_L2_WIFI_MGMT
+	select WIFI_OFFLOAD
+	select NET_OFFLOAD
+	select NET_SOCKETS
+	imply NET_SOCKETS_OFFLOAD
+	select GPIO
+
+if WIFI_ESWIFI
+
+choice WIFI_ESWIFI_BUS
+	bool "Select BUS interface"
+	default WIFI_ESWIFI_BUS_SPI
+
+config WIFI_ESWIFI_BUS_SPI
+	bool "SPI Bus interface"
+	select SPI
+
+config WIFI_ESWIFI_BUS_UART
+	bool "UART Bus interface"
+	select SERIAL
+
+endchoice
+
+config WIFI_ESWIFI_MAX_DATA_SIZE
+	int "esWiFi message size"
+	default 1600
+	range 500 4000
+	help
+	  This option sets the size of the esWiFi message buffer.
+	  It can be increased to handle larger messages, like scan results.
+
+config WIFI_ESWIFI_THREAD_PRIO
+	int "esWiFi threads priority"
+	default 2
+	help
+	  This option sets the priority of the esWiFi threads.
+	  Do not touch it unless you know what you are doing.
+
+config WIFI_ESWIFI_SHELL
+	bool "esWiFi shell"
+	depends on SHELL
+	help
+	  Enable esWiFi shell
+
+endif

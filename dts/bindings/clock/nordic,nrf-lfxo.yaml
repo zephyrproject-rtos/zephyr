@@ -1,0 +1,58 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF low-frequency crystal oscillator
+
+compatible: "nordic,nrf-lfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  load-capacitors:
+    type: string
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      Type of load capacitors connected to the crystal. If not specified,
+      adjustments may still happen when the device trimming happens during
+      system initialization.
+
+  load-capacitance-femtofarad:
+    type: int
+    enum:
+      - 4000
+      - 4500
+      - 5000
+      - 5500
+      - 6000
+      - 6500
+      - 7000
+      - 7500
+      - 8000
+      - 8500
+      - 9000
+      - 9500
+      - 10000
+      - 10500
+      - 11000
+      - 11500
+      - 12000
+      - 12500
+      - 13000
+      - 13500
+      - 14000
+      - 14500
+      - 15000
+      - 15500
+      - 16000
+      - 16500
+      - 17000
+      - 17500
+      - 18000
+    description: |
+      Load capacitance in femtofarads. This property is only used when
+      load-capacitors is set to "internal".

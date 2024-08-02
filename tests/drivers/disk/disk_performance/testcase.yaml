@@ -1,0 +1,17 @@
+common:
+  harness: ztest
+  tags: disk
+tests:
+  drivers.disk.disk_performance.sdhc:
+    depends_on: sdhc
+    harness: ztest
+    harness_config:
+      fixture: fixture_sdhc
+    tags: sdhc
+    integration_platforms:
+      - mimxrt1064_evk
+      - mimxrt595_evk/mimxrt595s/cm33
+  drivers.disk.disk_performance.disk.nvme:
+    extra_configs:
+      - CONFIG_NVME=y
+    platform_allow: qemu_x86_64

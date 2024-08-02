@@ -1,0 +1,16 @@
+identifier: qemu_malta/qemu_malta/be
+name: QEMU emulation for MIPS (big endian)
+type: qemu
+simulation: qemu
+arch: mips
+toolchain:
+  - zephyr
+  - xtools
+ram: 1024
+flash: 512
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu

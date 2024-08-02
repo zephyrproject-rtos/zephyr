@@ -1,0 +1,59 @@
+tests:
+  drivers.uart.basic_api:
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    integration_platforms:
+      - mps2/an385
+  drivers.uart.basic_api.wide:
+    extra_configs:
+      - CONFIG_UART_WIDE_DATA=y
+    tags: drivers uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    arch_allow: arm
+    platform_allow: nucleo_h743zi
+    integration_platforms:
+      - nucleo_h743zi
+    extra_args: DTC_OVERLAY_FILE="boards/nucleo_h743zi.overlay"
+  drivers.uart.basic_api.poll:
+    extra_args: CONF_FILE=prj_poll.conf
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    integration_platforms:
+      - mps2/an385
+  drivers.uart.basic_api.shell:
+    extra_args: CONF_FILE=prj_shell.conf
+    min_flash: 64
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    integration_platforms:
+      - mps2/an385
+  drivers.uart.basic_api.cdc_acm:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-usb.conf"
+      - DTC_OVERLAY_FILE="usb.overlay"
+    tags:
+      - drivers
+      - usb
+    filter: CONFIG_UART_CONSOLE
+    depends_on: usb_device
+    harness: keyboard
+  drivers.uart.basic_api.shell_ke17z9_uart:
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    platform_allow: frdm_ke17z512
+    extra_args:
+      - CONF_FILE=prj_shell.conf
+      - DTC_OVERLAY_FILE="boards/frdm_ke17z512_uart.overlay"

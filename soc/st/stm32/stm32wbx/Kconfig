@@ -1,0 +1,15 @@
+# ST Microelectronics STM32WB MCU series
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WBX
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_STM32CUBE
+	select CPU_HAS_ARM_MPU
+	select HAS_SWO
+	select HAS_PM
+	select HAS_POWEROFF

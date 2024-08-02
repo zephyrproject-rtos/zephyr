@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2019, Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+#include "../nrf52-bindings.h"
+
+&arduino_spi { /* MOSI on D11 / P0.23 */
+	compatible = "nordic,nrf-spim";
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <SPI_FREQ>;
+
+		/* WS2812 */
+		chain-length = <16>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		spi-one-frame = <ONE_FRAME>;
+		spi-zero-frame = <ZERO_FRAME>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};

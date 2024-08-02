@@ -1,0 +1,46 @@
+# DesignWare DMA common configuration options
+
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_DW_FIFO_PARTITION
+	bool "FIFO Partitioning"
+	help
+	  FIFO partition feature
+
+config DMA_DW_LLI_POOL_SIZE
+	int "number of LLI structs in an allocation pool"
+	default 2
+	help
+	  The number of LLI structs in a statically allocated pool. Each channel has its own
+	  LLI struct pool. If during dma_config() a log notes there are not enough LLI structs
+	  then this should be increased to match the need.
+
+config DMA_DW_HW_LLI
+	bool "hardware supports scatter gather"
+	default y
+	help
+	  The hardware is by default expected to support hardware LLI (scatter gather).
+	  When not enabled the driver will still perform scatter gather but using software
+	  to run through the scatter gather list.
+
+config DMA_DW_SUSPEND_DRAIN
+	bool "channels should be suspended and drained on stop"
+	depends on DMA_INTEL_ADSP_GPDMA
+	help
+	  Rather than immediately stopping a DMA channel the channel is suspended
+	  with the DRAIN bit flag set to allow for the hardware FIFO to be drained
+	  before stopping the channel.
+
+config DMA_DW_HOST_MASK
+	int "memory space mask"
+	default 0
+	help
+	  Some instances of the DesignWare DMAC require a mask applied to source/destination
+	  addresses to signifiy the memory space the address is in.
+
+config DMA_DW_CHANNEL_COUNT
+	int "dw max channel count"
+	default 8
+	help
+	  Channel count for designware DMA instances.

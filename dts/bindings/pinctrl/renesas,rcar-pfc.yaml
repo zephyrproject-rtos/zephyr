@@ -1,0 +1,96 @@
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Renesas R-Car Pin Function Controller node
+    This binding gives a base representation of the R-Car pins configuration.
+    The R-Car pin controller is a singleton node responsible for controlling
+    pin function selection and pin properties. For example, you can use this
+    node to route CAN0 TX A to pin 'RD', and enable pull-up resistor as well
+    as driving ability.
+
+    The node has the 'pfc' node label set in your SoC's devicetree, so you can
+    modify it like this:
+
+    &pfc {
+         /* your modifications go here */
+    };
+
+    All device pin configurations should be placed in child nodes of the
+    'pfc' node, as shown in this example:
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined pins and functions for the SoC used by the board */
+      #include <dt-bindings/pinctrl/renesas/pinctrl-r8a77951.h>
+
+      &pfc {
+        /* configuration for can0 data a tx default state */
+        can0_data_a_tx_default: can0_data_a_tx_default {
+          /* configure PIN_RD as FUNC_CAN0_TX_A */
+          pin = <PIN_RD FUNC_CAN0_TX_A>;
+        };
+        /* configuration for can0 data a rx default state */
+        can0_data_a_rx_default: can0_data_a_rx_default {
+          /* configure PIN_RD_WR as FUNC_CAN0_RX_A */
+          pin = <PIN_RD_WR FUNC_CAN0_RX_A>;
+        };
+      };
+
+    The 'can0_data_a_tx_default' child node encodes the pin configurations
+    for a particular state of a device; in this case, the default
+    (that is, active) state. You would specify the low-power configuration for
+    the same device in a separate child node.
+
+    A pin configuration can also specify pin properties such as the
+    'bias-pull-up' property. Here is a list of supported standard pin
+    properties:
+
+    - bias-disable
+    - bias-pull-down
+    - bias-pull-up
+    - drive-strength
+    - power-source
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+      #include "board-pinctrl.dtsi"
+
+      &can0 {
+        pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
+        pinctrl-1 = <&can0_data_a_tx_sleep &can0_data_a_rx_sleep>;
+        pinctrl-names = "default", "sleep";
+      };
+
+compatible: "renesas,rcar-pfc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+     This binding gives a base representation of the R-Car pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-strength
+        - power-source
+
+  properties:
+    pin:
+      type: array
+      required: true
+      description: |
+        The array is expected to have up to two elements. The first element is
+        the pin the second optional element is the pin function.
+    drive-strength:
+      enum: [3, 6, 9, 12, 15, 18, 21, 24]

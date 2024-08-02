@@ -1,0 +1,87 @@
+# Crypto configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# CRYPTO options
+#
+menuconfig CRYPTO
+	bool "Crypto drivers"
+
+if CRYPTO
+
+config CRYPTO_INIT_PRIORITY
+	int "Crypto devices init priority"
+	default 90
+	help
+	  Crypto devices initialization priority.
+
+module = CRYPTO
+module-str = CRYPTO
+source "subsys/logging/Kconfig.template.log_config"
+
+config CRYPTO_TINYCRYPT_SHIM
+	bool "TinyCrypt shim driver [EXPERIMENTAL]"
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CBC
+	select TINYCRYPT_AES_CTR
+	select TINYCRYPT_AES_CCM
+	select TINYCRYPT_AES_CMAC
+	select EXPERIMENTAL
+	help
+	  Enable TinyCrypt shim layer compliant with crypto APIs.
+
+config CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
+	int "Maximum of sessions TinyCrypt shim driver can handle"
+	default 2
+	depends on CRYPTO_TINYCRYPT_SHIM
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.
+
+config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
+	string "Device name for TinyCrypt Pseudo device"
+	default "CRYPTO_TC"
+	depends on CRYPTO_TINYCRYPT_SHIM
+	help
+	  Device name for TinyCrypt Pseudo device.
+
+config CRYPTO_MBEDTLS_SHIM
+	bool "MbedTLS shim driver [EXPERIMENTAL]"
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_SHA512
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select EXPERIMENTAL
+	help
+	  Enable mbedTLS shim layer compliant with crypto APIs. You will need
+	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
+
+config CRYPTO_MBEDTLS_SHIM_DRV_NAME
+	string "Device name for mbedTLS Pseudo device"
+	default "CRYPTO_MTLS"
+	depends on CRYPTO_MBEDTLS_SHIM
+	help
+	  Device name for mbedTLS Pseudo device.
+
+config CRYPTO_MBEDTLS_SHIM_MAX_SESSION
+	int "Maximum of sessions mbedTLS shim driver can handle"
+	default 2
+	depends on CRYPTO_MBEDTLS_SHIM
+	help
+	  This can be used to tweak the amount of sessions the driver
+	  can handle in parallel.
+
+source "drivers/crypto/Kconfig.ataes132a"
+source "drivers/crypto/Kconfig.stm32"
+source "drivers/crypto/Kconfig.nrf_ecb"
+source "drivers/crypto/Kconfig.intel"
+source "drivers/crypto/Kconfig.npcx"
+source "drivers/crypto/Kconfig.xec"
+source "drivers/crypto/Kconfig.it8xxx2"
+source "drivers/crypto/Kconfig.mcux_dcp"
+source "drivers/crypto/Kconfig.smartbond"
+
+endif # CRYPTO

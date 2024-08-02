@@ -1,0 +1,58 @@
+# Kconfig Andes QSPI-NOR configuration options
+#
+# Copyright (c) 2023 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig FLASH_ANDES_QSPI
+	bool "Andes FLASH driver"
+	default y
+	depends on DT_HAS_ANDESTECH_QSPI_NOR_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_JESD216
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	depends on !SPI_NOR
+	help
+	  Enable driver for Andes QSPI
+
+if FLASH_ANDES_QSPI
+
+choice FLASH_ANDES_QSPI_SFDP
+	prompt "Source for Serial Flash Discoverable Parameters"
+	default FLASH_ANDES_QSPI_SFDP_RUNTIME
+
+config FLASH_ANDES_QSPI_SFDP_DEVICETREE
+	bool "Basic Flash Parameters from devicetree node"
+	help
+	  The JESD216 Basic Flash Parameters table must be provided in the
+	  sfdp-bfp property in devicetree.  The size and jedec-id properties are
+	  also required.
+
+config FLASH_ANDES_QSPI_SFDP_RUNTIME
+	bool "Read flash parameters at runtime"
+	help
+	  Read all flash device characteristics from the device at runtime.
+	  This option is the most flexible as it should provide functionality
+	  for all supported JESD216-compatible devices.
+
+endchoice
+
+config FLASH_ANDES_QSPI_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+
+config FLASH_ANDES_QSPI_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 65536
+	help
+	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
+	  that API.  By default the page size corresponds to the block
+	  size (65536).  Other options include the 32K-byte erase size
+	  (32768), the sector size (4096), or any non-zero multiple of the
+	  sector size.
+
+endif

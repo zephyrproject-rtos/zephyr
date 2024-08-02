@@ -1,0 +1,20 @@
+# Copyright (c) 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: GT9xx / GT9xxx capacitive touch panels
+
+compatible: "goodix,gt911"
+
+include: i2c-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+  reset-gpios:
+    type: phandle-array
+  alt-addr:
+    type: int
+    description:
+      Alternate I2C address for this device. When provided, the driver will
+      use probing mode to determine the I2C address rather than setting the
+      INT pin low to force a specific address

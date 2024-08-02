@@ -1,0 +1,18 @@
+identifier: gr716a_mini
+name: GR716-MINI Development Board
+type: mcu
+simulation: tsim
+simulation_exec: tsim-leon3
+arch: sparc
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - netif
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: gaisler

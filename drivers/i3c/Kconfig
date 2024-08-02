@@ -1,0 +1,122 @@
+# I3C configuration options
+#
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I3C
+	bool "Improved Inter-Integrated Circuit (I3C) bus drivers"
+	help
+	  Enable I3C Driver Configuration
+
+if I3C
+
+module = I3C
+module-str = i3c
+source "subsys/logging/Kconfig.template.log_config"
+
+config I3C_SHELL
+	bool "I3C Shell"
+	depends on SHELL
+	help
+	  Enable I3C Shell.
+
+	  The I3C shell supports info, bus recovery, CCC, I3C read and
+	  write operations.
+
+config I3C_USE_GROUP_ADDR
+	bool "Use Group Addresses"
+	default y
+	help
+	  Enable this to use group addresses if supported
+	  by the controllers and target devices.
+
+	  Says Y if unsure.
+
+menuconfig I3C_USE_IBI
+	bool "Use In-Band Interrupt (IBI)"
+	default y
+	help
+	  Enable this to use In-Band Interrupt (IBI).
+
+	  Says Y if unsure.
+
+if I3C_USE_IBI
+
+config I3C_IBI_MAX_PAYLOAD_SIZE
+	int "Maximum IBI Payload Size"
+	default 16
+	help
+	  Maxmium IBI payload size.
+
+menuconfig I3C_IBI_WORKQUEUE
+	bool "Use IBI Workqueue"
+	help
+	  Use global workqueue for processing IBI.
+
+	  This is enabled by driver if needed.
+
+if I3C_IBI_WORKQUEUE
+
+config I3C_IBI_WORKQUEUE_STACK_SIZE
+	int "IBI workqueue stack size"
+	default 1024
+	help
+	  Stack size for the IBI global workqueue.
+
+config I3C_IBI_WORKQUEUE_PRIORITY
+	int "IBI workqueue thread priority"
+	default -1
+	help
+	  Thread priority for the IBI global workqueue.
+
+config I3C_IBI_WORKQUEUE_LENGTH
+	int "IBI workqueue queue length"
+	default 8
+	help
+	  Define the maximum number of IBIs that can be
+	  queued in the workqueue.
+
+config I3C_IBI_WORKQUEUE_VERBOSE_DEBUG
+	bool "Verbose debug messages for IBI workqueue"
+	help
+	  This turns on verbose debug for the IBI workqueue
+	  when logging level is set to DEBUG, and prints
+	  the IBI payload.
+
+endif # I3C_IBI_WORKQUEUE
+
+endif # I3C_USE_IBI
+
+comment "Initialization Priority"
+
+config I3C_CONTROLLER_INIT_PRIORITY
+	int "I3C Controller Init Priority"
+	# Default is just after CONFIG_KERNEL_INIT_PRIORITY_DEVICE
+	default 50
+	help
+	  This is for setting up I3C controller device driver instance
+	  and also to perform bus initialization (e.g. dynamic address
+	  assignment).
+
+	  Note that this needs to be done before the device driver
+	  instances of the connected I2C and I3C devices start
+	  initializing those devices. This is because some devices
+	  may not be addressable until addresses are assigned by
+	  the controller.
+
+config I3C_INIT_RSTACT
+	bool "Perform Reset Action During Bus Initialization"
+	default y
+	help
+	  This determines whether the bus initialization routine
+	  sends a reset action command to I3C targets.
+
+comment "Device Drivers"
+
+rsource "Kconfig.nxp"
+rsource "Kconfig.cdns"
+rsource "Kconfig.npcx"
+rsource "Kconfig.test"
+
+endif # I3C

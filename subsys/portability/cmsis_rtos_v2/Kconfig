@@ -1,0 +1,104 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CMSIS_RTOS_V2
+	bool "CMSIS RTOS v2 API"
+	depends on POLL
+	depends on THREAD_NAME
+	depends on THREAD_STACK_INFO
+	depends on THREAD_MONITOR
+	depends on INIT_STACKS
+	depends on NUM_PREEMPT_PRIORITIES >= 56
+	help
+	  This enables CMSIS RTOS v2 API support. This is an OS-integration
+	  layer which allows applications using CMSIS RTOS V2 APIs to build
+	  on Zephyr.
+
+if CMSIS_RTOS_V2
+config CMSIS_V2_THREAD_MAX_COUNT
+	int "Maximum thread count in CMSIS RTOS V2 application"
+	default 15
+	range 0 $(UINT8_MAX)
+	help
+	  Mention max number of threads in CMSIS RTOS V2 compliant application.
+	  There's a limitation on the number of threads due to memory
+	  related constraints.
+
+config CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT
+	int "Maximum dynamic thread count in CMSIS RTOS V2 application"
+	default 0
+	range 0 $(UINT8_MAX)
+	help
+	  Mention max number of dynamic threads in CMSIS RTOS V2 compliant
+	  application. There's a limitation on the number of threads due to memory
+	  related constraints. Dynamic threads are a subset of all other CMSIS
+	  threads i.e. they also count towards that maximum too.
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	int "Max stack size threads can be allocated in CMSIS RTOS V2 application"
+	default 4096 if COVERAGE_GCOV
+	default 512
+	help
+	  Mention max stack size threads can be allocated in CMSIS RTOS V2 application.
+
+config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
+	int "Dynamic stack size threads are allocated in CMSIS RTOS V2 application"
+	default 4096 if COVERAGE_GCOV
+	default 512
+	help
+	  Mention dynamic stack size threads are allocated in CMSIS RTOS V2 application.
+
+config CMSIS_V2_TIMER_MAX_COUNT
+	int "Maximum timer count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention maximum number of timers in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MUTEX_MAX_COUNT
+	int "Maximum mutex count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention max number of mutexes in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_SEMAPHORE_MAX_COUNT
+	int "Maximum semaphore count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention max number of semaphores in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MEM_SLAB_MAX_COUNT
+	int "Maximum mem slab count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE
+	int "Maximum dynamic mem slab/pool size in CMSIS RTOS V2 application"
+	default 0
+	help
+	  Mention maximum dynamic size of memory slabs/pools in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MSGQ_MAX_COUNT
+	int "Maximum message queue count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE
+	int "Maximum dynamic message queue size in CMSIS RTOS V2 application"
+	default 0
+	help
+	  Mention maximum dynamic size of message queues in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_EVT_FLAGS_MAX_COUNT
+	int "Maximum event flags count in CMSIS RTOS V2 application"
+	default 5
+	range 0 $(UINT8_MAX)
+	help
+	  Mention maximum number of event flags in CMSIS RTOS V2 compliant application.
+endif

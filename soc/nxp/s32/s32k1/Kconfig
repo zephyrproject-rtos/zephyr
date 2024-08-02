@@ -1,0 +1,124 @@
+# NXP S32K1XX MCUs series
+
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_S32K1
+	select ARM
+	select HAS_NXP_S32_HAL
+	select HAS_MCUX
+	select CPU_HAS_NXP_MPU
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	select MPU_ALLOW_FLASH_WRITE if !XIP
+	select CLOCK_CONTROL
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPSPI
+	select HAS_MCUX_FTM
+	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_WDOG32
+	select HAS_MCUX_RTC
+
+config SOC_S32K116
+	select CPU_CORTEX_M0PLUS
+
+config SOC_S32K118
+	select CPU_CORTEX_M0PLUS
+
+config SOC_S32K142
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+config SOC_S32K142W
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+config SOC_S32K144
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+config SOC_S32K144W
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+config SOC_S32K146
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+config SOC_S32K148
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select HAS_MCUX_CACHE
+
+if SOC_SERIES_S32K1
+
+config WDOG_INIT
+	bool
+	default y
+
+config NXP_S32_FLASH_CONFIG
+	bool "NXP S32 flash configuration field"
+	default y if XIP && !BOOTLOADER_MCUBOOT
+	help
+	  Include the 16-byte flash configuration field that stores default
+	  protection settings (loaded on reset) and security information that
+	  allows the MCU to restrict access to the FTFx module.
+
+if NXP_S32_FLASH_CONFIG
+
+config NXP_S32_FLASH_CONFIG_OFFSET
+	hex "NXP S32 flash configuration field offset"
+	default 0x400
+
+config NXP_S32_FLASH_CONFIG_FSEC
+	hex "Flash security byte (FSEC)"
+	range 0 0xff
+	default 0xfe
+	help
+	  Configures the reset value of the FSEC register, which includes
+	  backdoor key access, mass erase, factory access, and flash security
+	  options.
+
+config NXP_S32_FLASH_CONFIG_FOPT
+	hex "Flash nonvolatile option byte (FOPT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FOPT register, which includes boot,
+	  NMI, and EzPort options.
+
+config NXP_S32_FLASH_CONFIG_FEPROT
+	hex "EEPROM protection byte (FEPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FEPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+config NXP_S32_FLASH_CONFIG_FDPROT
+	hex "Data flash protection byte (FDPROT)"
+	range 0 0xff
+	default 0xff
+	help
+	  Configures the reset value of the FDPROT register for FlexNVM
+	  devices. For program flash only devices, this byte is reserved.
+
+endif # NXP_S32_FLASH_CONFIG
+
+config NXP_S32_ENABLE_CODE_CACHE
+	bool "Code cache"
+	default y
+	depends on HAS_MCUX_CACHE
+
+endif # SOC_SERIES_S32K1

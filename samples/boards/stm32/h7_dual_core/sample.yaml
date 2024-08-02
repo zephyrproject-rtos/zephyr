@@ -1,0 +1,8 @@
+sample:
+  description: Usage of stm32 hsem ipm driver
+  name: stm32_h7_dual_core
+tests:
+  sample.boards.stm32.h7_dual_core:
+    depends_on: mailbox
+    build_only: true
+    filter: dt_compat_enabled("st,stm32-hsem-mailbox")

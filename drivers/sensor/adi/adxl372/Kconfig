@@ -1,0 +1,124 @@
+# Micropower, 3-Axis, +/-200g Digital Accelerometer
+
+# Copyright (c) 2018 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADXL372
+	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL372_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL372),spi)
+	help
+	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
+
+if ADXL372
+
+choice ADXL372_OP_MODE
+	prompt "Operating mode"
+	default ADXL372_PEAK_DETECT_MODE
+
+config ADXL372_PEAK_DETECT_MODE
+	bool "Max Peak detect mode"
+	help
+	  In most high-g applications, a single (3-axis) acceleration sample at
+	  the peak of an impact event contains sufficient information
+	  about the event, and the full acceleration history is not required.
+	  In this mode the device returns only the over threshold
+	  Peak Acceleration between two consecutive sample fetches.
+
+config ADXL372_MEASUREMENT_MODE
+	bool "Measurement Mode"
+	help
+	  In this mode, acceleration data is provided continuously at the
+	  output data rate (ODR).
+
+endchoice
+
+config ADXL372_ACTIVITY_THRESHOLD
+	int "Activity threshold in mg"
+	range 0 200000
+	default 500
+	help
+	  Threshold for activity detection.
+
+config ADXL372_INACTIVITY_THRESHOLD
+	int "In-activity threshold in mg"
+	range 0 200000
+	default 400
+	help
+	  Threshold for in-activity detection.
+
+config ADXL372_ACTIVITY_TIME
+	int "Activity time"
+	range 0 $(UINT8_MAX)
+	default 1
+	help
+	  The activity timer implements a robust activity detection that
+	  minimizes false positive motion triggers. When the timer is used,
+	  only sustained motion can trigger activity detection.
+	  Number of multiples of 3.3 ms activity timer for which above threshold
+	  acceleration is required to detect activity. It is 3.3 ms per code
+	  for 6400 Hz ODR, and it is 6.6 ms per code for 3200 Hz ODR and below.
+
+config ADXL372_INACTIVITY_TIME
+	int "In-activity time"
+	range 0 $(UINT8_MAX)
+	default 2
+	help
+	  The time that all enabled axes must be lower than the inactivity
+	  threshold for an inactivity event to be detected. Number of multiples
+	  of 26 ms inactivity timer for which below threshold acceleration is
+	  required to detect inactivity. It is 26 ms per code for 3200 Hz ODR
+	  and below, and it is 13 ms per code for 6400 Hz ODR.
+
+config ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE
+	bool "Use referenced activity/in-activity detection"
+	default y
+	help
+	  Activity detection can be configured as referenced or absolute.
+	  When using absolute activity detection, acceleration samples are
+	  compared directly to a user set threshold to determine whether
+	  motion is present. In many applications, it is advantageous for
+	  activity detection to be based not on an absolute threshold,
+	  but on a deviation from a reference point or orientation.
+
+choice ADXL372_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ADXL372_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL372_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL372_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+config ADXL372_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+endchoice
+
+config ADXL372_TRIGGER
+	bool
+
+config ADXL372_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL372_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ADXL372

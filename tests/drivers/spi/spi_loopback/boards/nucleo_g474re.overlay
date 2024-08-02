@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rcc {
+	/*
+	* Reduce bus clock speed to be able
+	* to reach SPI_LOOPBACK_SLOW_FREQ = 500000
+	* with max prescaler 256
+	*/
+	apb2-prescaler = <2>;
+};
+
+&spi1 {
+	dmas = <&dmamux1 0 11 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&dmamux1 8 10 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

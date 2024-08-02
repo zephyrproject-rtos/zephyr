@@ -1,0 +1,10 @@
+# Kconfig template file for setting instances count for various USB classes.
+
+# Copyright (c) 2019 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config $(module)_INSTANCES_COUNT
+	int "Number of $(module) instances"
+	default $(default-count)
+	help
+	  Number of instances of this USB class implementation.

@@ -1,0 +1,12 @@
+# ST Microelectronics STM32F7 MCU line
+
+# Copyright (c) 2018 Yurii Hamann
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32F7 series
+
+if SOC_SERIES_STM32F7X
+
+rsource "Kconfig.defconfig.stm32f7*"
+
+endif # SOC_SERIES_STM32F7X

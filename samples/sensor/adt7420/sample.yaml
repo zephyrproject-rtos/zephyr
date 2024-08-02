@@ -1,0 +1,8 @@
+sample:
+  name: ADT7420 Sensor Sample
+tests:
+  sample.sensor.adt7420:
+    harness: sensor
+    tags: sensors
+    platform_allow: frdm_k64f
+    depends_on: i2c

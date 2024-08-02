@@ -1,0 +1,191 @@
+name: BabbleSim Tests
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/bsim-tests.yaml"
+      - ".github/workflows/bsim-tests-publish.yaml"
+      - "west.yml"
+      - "subsys/bluetooth/**"
+      - "tests/bsim/**"
+      - "tests/bluetooth/common/testlib/**"
+      - "samples/bluetooth/**"
+      - "boards/posix/**"
+      - "soc/posix/**"
+      - "arch/posix/**"
+      - "include/zephyr/arch/posix/**"
+      - "scripts/native_simulator/**"
+      - "samples/net/sockets/echo_*/**"
+      - "modules/openthread/**"
+      - "subsys/net/l2/openthread/**"
+      - "include/zephyr/net/openthread.h"
+      - "drivers/ieee802154/**"
+      - "include/zephyr/net/ieee802154*"
+      - "drivers/serial/*nrfx*"
+      - "tests/drivers/uart/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bsim-test:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      options: '--entrypoint /bin/bash'
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      BSIM_OUT_PATH: /opt/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      EDTT_PATH: ../tools/edtt
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Environment Setup
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Bot"
+          rm -fr ".git/rebase-apply"
+          git rebase origin/${BASE_REF}
+          git log  --pretty=oneline | head -n 10
+          west init -l . || true
+          west config manifest.group-filter -- +ci
+          west config --global update.narrow true
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Check common triggering files
+        uses: tj-actions/changed-files@v44
+        id: check-common-files
+        with:
+          files: |
+            .github/workflows/bsim-tests.yaml
+            .github/workflows/bsim-tests-publish.yaml
+            west.yml
+            boards/posix/
+            soc/posix/
+            arch/posix/
+            include/zephyr/arch/posix/
+            scripts/native_simulator/
+            tests/bsim/*
+
+      - name: Check if Bluethooth files changed
+        uses: tj-actions/changed-files@v44
+        id: check-bluetooth-files
+        with:
+          files: |
+            tests/bsim/bluetooth/
+            samples/bluetooth/
+            subsys/bluetooth/
+
+      - name: Check if Networking files changed
+        uses: tj-actions/changed-files@v44
+        id: check-networking-files
+        with:
+          files: |
+            tests/bsim/net/
+            samples/net/sockets/echo_*/
+            modules/openthread/
+            subsys/net/l2/openthread/
+            include/zephyr/net/openthread.h
+            drivers/ieee802154/
+            include/zephyr/net/ieee802154*
+
+      - name: Check if UART files changed
+        uses: tj-actions/changed-files@v44
+        id: check-uart-files
+        with:
+          files: |
+            tests/bsim/drivers/uart/
+            drivers/serial/*nrfx*
+            tests/drivers/uart/
+
+      - name: Update BabbleSim to manifest revision
+        if: >
+          steps.check-bluetooth-files.outputs.any_changed == 'true'
+          || steps.check-networking-files.outputs.any_changed == 'true'
+          || steps.check-uart-files.outputs.any_changed == 'true'
+          || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          export BSIM_VERSION=$( west list bsim -f {revision} )
+          echo "Manifest points to bsim sha $BSIM_VERSION"
+          cd /opt/bsim_west/bsim
+          git fetch -n origin ${BSIM_VERSION}
+          git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          west update
+          make everything -s -j 8
+
+      - name: Run Bluetooth Tests with BSIM
+        if: steps.check-bluetooth-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          tests/bsim/ci.bt.sh
+
+      - name: Run Networking Tests with BSIM
+        if: steps.check-networking-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          tests/bsim/ci.net.sh
+
+      - name: Run UART Tests with BSIM
+        if: steps.check-uart-files.outputs.any_changed == 'true' || steps.check-common-files.outputs.any_changed == 'true'
+        run: |
+          tests/bsim/ci.uart.sh
+
+      - name: Merge Test Results
+        run: |
+          pip3 install junitparser junit2html
+          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
+          junit2html junit.xml junit.html
+
+      - name: Upload Unit Test Results in HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: HTML Unit Test Results
+          if-no-files-found: ignore
+          path: |
+            junit.html
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Bsim Test Results
+          files: "junit.xml"
+          comment_mode: off
+
+      - name: Upload Event Details
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: event
+          path: |
+            ${{ github.event_path }}

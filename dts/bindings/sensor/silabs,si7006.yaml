@@ -1,0 +1,14 @@
+# Copyright (c) 2019, Electronut Labs
+# Copyright (c) 2023, Trent Piepho <tpiepho@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Labs Si7006 Humidity and Temperature Sensor
+
+  This is compatible with a range of Silicon Labs sensors, such as the Si7013,
+  Si7020, and Si7021.  This binding will use a slightly different (better)
+  command to read temperature from the "sensirion,sht21" binding.
+
+compatible: "silabs,si7006"
+
+include: sensirion,sht21.yaml

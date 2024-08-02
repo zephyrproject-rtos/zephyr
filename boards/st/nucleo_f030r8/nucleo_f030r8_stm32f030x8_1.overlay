@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hse {
+	status = "disabled";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	prediv = <2>;
+	mul = <12>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};

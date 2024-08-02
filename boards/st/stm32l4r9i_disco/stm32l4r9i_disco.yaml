@@ -1,0 +1,24 @@
+identifier: stm32l4r9i_disco
+name: ST STM32L4R9I Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 640
+flash: 2048
+vendor: st
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - i2c
+  - pwm
+  - rtc
+  - spi
+  - uart
+  - usb
+  - usb_device

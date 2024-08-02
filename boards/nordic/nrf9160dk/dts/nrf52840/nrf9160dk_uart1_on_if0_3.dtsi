@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&nrf_interface_pins_0_2_routing {
+	status = "okay";
+};
+
+&nrf_interface_pins_3_5_routing {
+	status = "okay";
+};
+
+&pinctrl {
+	uart1_default_alt: uart1_default_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 17)>,
+				<NRF_PSEL(UART_RX, 0, 20)>,
+				<NRF_PSEL(UART_RTS, 0, 15)>,
+				<NRF_PSEL(UART_CTS, 0, 22)>;
+		};
+	};
+
+	uart1_sleep_alt: uart1_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(UART_TX, 0, 17)>,
+				<NRF_PSEL(UART_RX, 0, 20)>,
+				<NRF_PSEL(UART_RTS, 0, 15)>,
+				<NRF_PSEL(UART_CTS, 0, 22)>;
+			low-power-enable;
+		};
+	};
+
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default_alt>;
+	pinctrl-1 = <&uart1_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+};

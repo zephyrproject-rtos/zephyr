@@ -1,0 +1,9 @@
+sample:
+  description: I2S Output Sample
+  name: i2s_output
+common:
+  tags: drivers
+  depends_on: i2s
+tests:
+  sample.drivers.i2s.output:
+    filter: dt_alias_exists("i2s-tx")

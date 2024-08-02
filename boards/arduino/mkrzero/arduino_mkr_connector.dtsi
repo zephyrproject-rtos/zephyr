@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2022 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_mkr_header: connector {
+		compatible = "arduino-mkr-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0  0 &porta 22 0>,  /* D0 */
+			   <1  0 &porta 23 0>,  /* D1 */
+			   <2  0 &porta 10 0>,  /* D2 */
+			   <3  0 &porta 11 0>,  /* D3 */
+			   <4  0 &portb 10 0>,  /* D4 */
+			   <5  0 &portb 11 0>,  /* D5 */
+			   <6  0 &porta 20 0>,  /* D6 */
+			   <7  0 &porta 21 0>,  /* D7 */
+			   <8  0 &porta 16 0>,  /* D8  / SPI-COPI */
+			   <9  0 &porta 17 0>,  /* D9  / SPI-SCK  */
+			   <10 0 &porta 19 0>,  /* D10 / SPI-CIPO */
+			   <11 0 &porta  8 0>,  /* D11 / I2C-SDA  */
+			   <12 0 &porta  9 0>,  /* D12 / I2C-SCL  */
+			   <13 0 &portb 23 0>,  /* D13 / UART-RX  */
+			   <14 0 &portb 22 0>,  /* D14 / UART-TX  */
+			   <15 0 &porta  2 0>,  /* D15 / A0 */
+			   <16 0 &portb  2 0>,  /* D16 / A1 */
+			   <17 0 &portb  3 0>,  /* D17 / A2 */
+			   <18 0 &porta  4 0>,  /* D18 / A3 */
+			   <19 0 &porta  5 0>,  /* D19 / A4 */
+			   <20 0 &porta  6 0>,  /* D20 / A5 */
+			   <21 0 &porta  7 0>;  /* D21 / A6 */
+	};
+};
+
+arduino_mkr_i2c: &sercom0 {};
+arduino_mkr_spi: &sercom1 {};
+arduino_mkr_serial: &sercom5 {};

@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SiFive RISC-V CPUs
+
+include: riscv,cpus.yaml
+
+properties:
+  hardware-exec-breakpoint-count:
+    type: int
+    description: Number of hardware break points

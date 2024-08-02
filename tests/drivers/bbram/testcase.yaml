@@ -1,0 +1,31 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - bbram
+  build_only: true
+  harness: ztest
+  arch_exclude: posix
+tests:
+  drivers.bbram.it8xxx2:
+    filter: dt_compat_enabled("ite,it8xxx2-bbram")
+    integration_platforms:
+      - it82xx2_evb
+  drivers.bbram.npcx:
+    filter: dt_compat_enabled("nuvoton,npcx-bbram")
+    integration_platforms:
+      - npcx9m6f_evb
+  drivers.bbram.stm32:
+    extra_args: OVERLAY_CONFIG="stm32.conf"
+    filter: dt_compat_enabled("st,stm32-bbram")
+    integration_platforms:
+      - nucleo_g071rb
+      - stm32f746g_disco
+  drivers.bbram.stm32_rtc:
+    extra_args: OVERLAY_CONFIG="stm32_rtc.conf"
+    filter: dt_compat_enabled("st,stm32-bbram")
+    integration_platforms:
+      - nucleo_g071rb
+      - stm32f746g_disco

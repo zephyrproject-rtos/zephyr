@@ -1,0 +1,28 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinetis watchdog (WDOG32)
+
+compatible: "nxp,kinetis-wdog32"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: Watchdog counter clock source
+
+  clk-divider:
+    type: int
+    description: Watchdog counter clock divider
+    required: true

@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP OS Timer on i.MX-RT5xx/6xx
+
+compatible: "nxp,os-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  deep-sleep-counter:
+    type: phandle
+    description: |
+      Instance of a counter peripheral. The OS Timer maybe powered off in
+      certain deep power down modes. The OS Timer driver will use this
+      counter to wakeup and also to keep track of system time.

@@ -1,0 +1,7 @@
+# Particle Argon configuration
+
+# Copyright (c) 2018 Matthias Boesl
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PARTICLE_ARGON
+	select SOC_NRF52840_QIAA

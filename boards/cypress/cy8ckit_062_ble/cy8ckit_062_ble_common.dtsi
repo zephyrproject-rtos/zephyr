@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_bt;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			label = "LED_0";
+			gpios = <&gpio_prt13 7 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_bt: button_0 {
+			label = "SW_0";
+			gpios = <&gpio_prt0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           shared */
+		gpio-map = <0  0 &gpio_prt9   0 0>,	/*  A0-             */
+			   <1  0 &gpio_prt9   1 0>,	/*  A1-             */
+			   <2  0 &gpio_prt9   2 0>,	/*  A2-             */
+			   <3  0 &gpio_prt9   3 0>,	/*  A3-             */
+			   <4  0 &gpio_prt9   4 0>,	/*  A4-             */
+			   <5  0 &gpio_prt9   5 0>,	/*  A5-             */
+			   <6  0 &gpio_prt5   0 0>,	/*  D0-RX-5         */
+			   <7  0 &gpio_prt5   1 0>,	/*  D1-TX-5         */
+			   <8  0 &gpio_prt5   2 0>,	/*  D2-RTS-5        */
+			   <9  0 &gpio_prt5   3 0>,	/*  D3-CTS-5        */
+			   <10 0 &gpio_prt5   4 0>,	/*  D4-             */
+			   <11 0 &gpio_prt5   5 0>,	/*  D5-             */
+			   <12 0 &gpio_prt5   6 0>,	/*  D6-             */
+			   <13 0 &gpio_prt0   2 0>,	/*  D7-             */
+			   <14 0 &gpio_prt13  0 0>,	/*  D8-RX-6       y */
+			   <15 0 &gpio_prt13  1 0>,	/*  D9-TX-6       y */
+			   <16 0 &gpio_prt12  3 0>,	/* D10-SPI6_SEL0  y */
+			   <17 0 &gpio_prt12  0 0>,	/* D11-SPI6_MOSI  y */
+			   <18 0 &gpio_prt12  1 0>,	/* D12-SPI6_MISO  y */
+			   <19 0 &gpio_prt12  2 0>,	/* D13-SPI6_CLK   y */
+			   <20 0 &gpio_prt6   1 0>,	/* D14-SDAx         */
+			   <21 0 &gpio_prt6   0 0>;	/* D15-SCLx         */
+	};
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&gpio_prt12 {
+	status = "okay";
+};
+
+&gpio_prt13 {
+	status = "okay";
+};
+
+&spi6 {
+	cs-gpios = <&gpio_prt12 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		<&gpio_prt13 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	pinctrl-0 = <&p12_0_scb6_spi_m_mosi &p12_1_scb6_spi_m_miso &p12_2_scb6_spi_m_clk>;
+	pinctrl-names = "default";
+};

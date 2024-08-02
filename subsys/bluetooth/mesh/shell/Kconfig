@@ -1,0 +1,174 @@
+# Bluetooth Mesh shell configuration options
+
+# Copyright (c) 2022 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_MESH_SHELL
+	bool "Bluetooth Mesh shell"
+	select SHELL
+	help
+	  Activate shell module that provides Bluetooth Mesh commands to
+	  the console.
+
+if BT_MESH_SHELL
+
+config BT_MESH_SHELL_PROV
+	bool "Support for provisioning shell commands"
+	depends on BT_MESH_PROV
+	default y
+	help
+	  This options enables support for provisioning shell commands.
+
+config BT_MESH_SHELL_PROV_CTX_INSTANCE
+	bool "Support for shell provisioning context instance"
+	depends on BT_MESH_SHELL_PROV
+	help
+	  This option enables the provisioning context instance in the
+	  Bluetooth Mesh shell module together with several provisioning
+	  commands and target utility features. To use the provisioning
+	  context instance, use bt_mesh_shell_prov in the
+	  initialization of mesh.
+
+config BT_MESH_SHELL_CDB
+	bool "Support for CDB shell commands"
+	depends on BT_MESH_CDB
+	default y
+	help
+	  This options enables support for CDB shell commands.
+
+config BT_MESH_SHELL_LOW_POWER
+	bool "Support for Low Power node shell commands"
+	depends on BT_MESH_LOW_POWER
+	default y
+	help
+	  This option enables support for Low Power node shell commands.
+
+config BT_MESH_SHELL_TEST
+	bool "Support for test shell commands"
+	default y
+	help
+	  This option enables support for test mesh shell commands.
+
+config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
+	bool "Support for shell Health Server model instance"
+	depends on BT_MESH_SHELL_TEST
+	help
+	  This option enables Health Server model instance in the
+	  Bluetooth Mesh shell module together with fault controlling
+	  shell commands. To use the model instance, add bt_mesh_shell_health_srv
+	  to the device composition data. Use BT_MESH_SHELL_HEALTH_PUB_DEFINE to
+	  instantiate publication context.
+
+config BT_MESH_SHELL_GATT_PROXY
+	bool "Support for GATT Proxy shell commands"
+	depends on BT_MESH_GATT_PROXY || BT_MESH_PROXY_CLIENT
+	default y
+	help
+	  This option enables support for GATT Proxy shell commands.
+
+config BT_MESH_SHELL_HEALTH_CLI
+	bool "Support for Health Client Model shell commands"
+	depends on BT_MESH_HEALTH_CLI
+	default y
+	help
+	  This option enables support of Health Client shell commands.
+
+config BT_MESH_SHELL_CFG_CLI
+	bool "Support for Configuration Client Model shell commands"
+	depends on BT_MESH_CFG_CLI
+	default y
+	help
+	  This option enables support of Configuration Client shell commands.
+
+config BT_MESH_SHELL_DFD_SRV
+	bool "Support for Firmware Distribution Server shell commands"
+	depends on BT_MESH_DFD_SRV
+	default y
+	help
+	  Firmware Distribution Server shell support.
+
+config BT_MESH_SHELL_DFU_CLI
+	bool "Support for Firmware Update Client shell commands"
+	depends on BT_MESH_DFU_CLI
+	default y
+	help
+	  Firmware Update Client shell support.
+
+config BT_MESH_SHELL_DFU_SRV
+	bool "Support for Firmware Update Server shell commands"
+	depends on BT_MESH_DFU_SRV
+	default y
+	help
+	  Firmware Update Server shell support.
+
+config BT_MESH_SHELL_DFU_SLOT
+	bool "Support for DFU slot API shell commands"
+	depends on BT_MESH_DFU_SLOTS
+	default y if BT_MESH_SHELL_DFU_CLI || BT_MESH_SHELL_DFD_SRV
+	help
+	  DFU slot API shell support.
+
+config BT_MESH_SHELL_DFU_METADATA
+	bool "Support for DFU metadata shell commands"
+	depends on BT_MESH_DFU_METADATA
+	default y
+	help
+	  DFU metadata shell support.
+
+config BT_MESH_SHELL_BLOB_CLI
+	bool "Support for BLOB Transfer Client shell commands"
+	depends on BT_MESH_BLOB_CLI
+	default y
+	help
+	  BLOB Transfer Client shell support.
+
+config BT_MESH_SHELL_BLOB_SRV
+	bool "Support for BLOB Transfer Server shell commands"
+	depends on BT_MESH_BLOB_SRV
+	default y
+	help
+	  BLOB Transfer Server shell support.
+
+config BT_MESH_SHELL_BLOB_IO_FLASH
+	bool "Support for BLOB IO flash stream shell commands"
+	depends on BT_MESH_BLOB_IO_FLASH
+	default y
+	help
+	  BLOB Transfer Client shell support.
+
+config BT_MESH_SHELL_RPR_CLI
+	bool "Support for Remote Provisioning Client shell commands"
+	depends on BT_MESH_RPR_CLI
+	default y
+	help
+	  Remote Provisioning Client shell support.
+
+config BT_MESH_SHELL_LARGE_COMP_DATA_CLI
+	bool "Support for Large Composition Data Client shell commands"
+	depends on BT_MESH_LARGE_COMP_DATA_CLI
+	default y
+	help
+	  Large Composition Data Client shell support.
+
+config BT_MESH_SHELL_OP_AGG_CLI
+	bool "Support for Opcodes Aggregator Client shell commands"
+	depends on BT_MESH_OP_AGG_CLI
+	default y
+	help
+	  Opcodes Aggregator Client shell support.
+
+config BT_MESH_SHELL_SAR_CFG_CLI
+	bool "Support for SAR Configuration Client shell commands"
+	depends on BT_MESH_SAR_CFG_CLI
+	default y
+	help
+	  SAR Configuration Client shell support.
+
+config BT_MESH_SHELL_PRIV_BEACON_CLI
+	bool "Support for Private Beacons Client shell commands"
+	depends on BT_MESH_PRIV_BEACON_CLI
+	default y
+	help
+	  Private Beacons Client shell support.
+
+endif # BT_MESH_SHELL

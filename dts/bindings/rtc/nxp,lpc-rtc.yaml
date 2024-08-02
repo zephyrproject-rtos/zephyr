@@ -1,0 +1,12 @@
+# Copyright (c) 2022, Kumar Gala <galak@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC RTC
+
+compatible: "nxp,lpc-rtc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

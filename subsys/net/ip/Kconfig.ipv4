@@ -1,0 +1,180 @@
+# IPv4 Options
+
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_IPV4
+	bool "IPv4"
+	help
+	  Enable IPv4 support. If this is enabled then the device is
+	  able to send and receive IPv4 network packets.
+
+if NET_IPV4
+
+config NET_INITIAL_TTL
+	int "Initial IPv4 time to live value for unicast packets"
+	default 64
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+
+config NET_INITIAL_MCAST_TTL
+	int "Initial IPv4 time to live value for multicast packets"
+	default 1
+	range 0 $(UINT8_MAX)
+	help
+	  The value should normally be > 0. The device receiving the IPv4
+	  packet will decrement the value and will drop the packet if the TTL
+	  value is 0. When sending, the packet is dropped before transmitting
+	  to network if TTL is 0.
+	  The default is 1 (same as in Linux) which means that multicast packets
+	  don't leave the local network unless the application explicitly
+	  requests it.
+
+config NET_IF_MAX_IPV4_COUNT
+	int "Max number of IPv4 network interfaces in the system"
+	default NET_VLAN_COUNT if NET_VLAN
+	default 2 if NET_LOOPBACK
+	default 1
+	help
+	  This tells how many network interfaces there will be in the system
+	  that will have IPv4 enabled.
+
+config NET_IF_UNICAST_IPV4_ADDR_COUNT
+	int "Max number of unicast IPv4 addresses per network interface"
+	default 2 if NET_IPV4_AUTO
+	default 2 if NET_LOOPBACK
+	default 1
+
+config NET_IF_MCAST_IPV4_ADDR_COUNT
+	int "Max number of multicast IPv4 addresses per network interface"
+	default 2 if NET_IPV4_IGMP
+	default 1
+
+config NET_IF_MCAST_IPV4_SOURCE_COUNT
+	int "Max number of IPv4 sources per mcast address to be included or excluded"
+	default 1
+
+config NET_ICMPV4_ACCEPT_BROADCAST
+	bool "Accept broadcast ICMPv4 echo-request"
+	help
+	  If set, then respond to ICMPv4 echo-request that is sent to
+	  broadcast address.
+
+config NET_IPV4_ACCEPT_ZERO_BROADCAST
+	bool "Accept 0.0.0.0 broadcast destination address"
+	help
+	  If set, then accept UDP packets destined to non-standard
+	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
+
+config NET_IPV4_IGMP
+	bool "Internet Group Management Protocol (IGMPv2) support"
+	select NET_IPV4_HDR_OPTIONS
+	help
+	  The value depends on your network needs. IGMP should normally be
+	  enabled if IPv4 multicast support is needed. Currently we support
+	  IGMPv2 and earlier versions. This requires IPv4 header support
+	  because IP Router Alert option must be sent.
+	  See RFC 2236 for details.
+
+config NET_IPV4_IGMPV3
+	bool "Internet Group Management Protocol version 3 (IGMPv3) support"
+	depends on NET_IPV4_IGMP
+	help
+	  Use IGMPv3 for managing the multicast groups.
+
+config NET_IPV4_ACD
+	bool "Activate IPv4 address conflict detection (RFC 5227)"
+	depends on NET_ARP
+	help
+	  Activate IPv4 address conflict detection specified in RFC 5227.
+	  The conflict detection is based on ARP probes/announcements.
+
+config NET_IPV4_AUTO
+	bool "IPv4 autoconfiguration [EXPERIMENTAL]"
+	depends on NET_ARP
+	select EXPERIMENTAL
+	select NET_IPV4_ACD
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	  Enables IPv4 auto IP address configuration (see RFC 3927)
+
+config NET_IPV4_HDR_OPTIONS
+	bool "IPv4 Header options support"
+	help
+	  Enables IPv4 header options support. Current support for only
+	  ICMPv4 Echo request. Only RecordRoute and Timestamp are handled.
+
+config NET_IPV4_FRAGMENT
+	bool "Support IPv4 fragmentation"
+	help
+	  IPv4 fragmentation is disabled by default. This limits incoming and
+	  outgoing packets to the MTU (1500 bytes for Ethernet). If you enable
+	  fragmentation support, please increase amount of RX data buffers so
+	  that larger packets can be received.
+
+config NET_IPV4_FRAGMENT_MAX_COUNT
+	int "How many packets to reassemble at a time"
+	range 1 16
+	default 1
+	depends on NET_IPV4_FRAGMENT
+	help
+	  How many fragmented IPv4 packets can be waiting reassembly
+	  simultaneously. You may need to increase the network buffer
+	  count.
+
+config NET_IPV4_FRAGMENT_MAX_PKT
+	int "How many fragments can be handled to reassemble a packet"
+	default 2
+	depends on NET_IPV4_FRAGMENT
+	help
+	  Incoming fragments are stored in per-packet queue before being
+	  reassembled. This value defines the number of fragments that
+	  can be handled at the same time to reassemble a single packet.
+
+	  You can increase this value if you expect packets with more
+	  than two fragments.
+
+config NET_IPV4_FRAGMENT_TIMEOUT
+	int "How long to wait for fragments to be received"
+	range 1 60
+	default 5
+	depends on NET_IPV4_FRAGMENT
+	help
+	  How long to wait for IPv4 fragment to arrive before the reassembly
+	  will timeout. This value is in seconds.
+
+module = NET_IPV4
+module-dep = NET_LOG
+module-str = Log level for core IPv4
+module-help = Enables core IPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_ICMPV4
+module-dep = NET_LOG
+module-str = Log level for ICMPv4
+module-help = Enables ICMPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+#if NET_IPV4_ACD
+module = NET_IPV4_ACD
+module-dep = NET_LOG
+module-str = Log level for IPv4 address conflict detection
+module-help = Enables IPv4 address conflict detection debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+#endif
+
+if NET_IPV4_AUTO
+module = NET_IPV4_AUTO
+module-dep = NET_LOG
+module-str = Log level for IPv4 autoconf client
+module-help = Enable debug diagnostic from IPv4 autoconf client.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_IPV4_AUTO
+
+endif # NET_IPV4

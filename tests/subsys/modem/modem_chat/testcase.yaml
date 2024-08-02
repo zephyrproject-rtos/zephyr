@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  modem.modem_chat:
+    tags: modem_chat
+    harness: ztest
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim

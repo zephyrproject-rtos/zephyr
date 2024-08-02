@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  input.input_shell:
+    tags: input
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "I: input event: dev=NULL             SYN type= 1 code=  2 value=0"
+        - "I: input event: dev=NULL             SYN type= 1 code=  2 value=1"

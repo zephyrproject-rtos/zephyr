@@ -1,0 +1,129 @@
+/*
+ * Copyright (c) 2023 Marcin Niestroj
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/st-morpho-header.h>
+
+/ {
+	st_morpho_header: st-morpho-header {
+		compatible = "st-morpho-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <ST_MORPHO_PIN_MASK 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <ST_MORPHO_L_1 0 &gpioc 10 0>,
+			   <ST_MORPHO_L_2 0 &gpioc 11 0>,
+			   <ST_MORPHO_L_3 0 &gpioc 12 0>,
+			   <ST_MORPHO_L_4 0 &gpiod 2 0>,
+			   <ST_MORPHO_L_9 0 &gpiof 6 0>,
+			   <ST_MORPHO_L_11 0 &gpiof 7 0>,
+			   <ST_MORPHO_L_13 0 &gpioa 13 0>,
+			   <ST_MORPHO_L_15 0 &gpioa 14 0>,
+			   <ST_MORPHO_L_17 0 &gpioa 15 0>,
+			   <ST_MORPHO_L_21 0 &gpiob 7 0>,
+			   <ST_MORPHO_L_23 0 &gpioc 13 0>,
+			   <ST_MORPHO_L_25 0 &gpioc 14 0>, /* SB45=ON, R34=OFF */
+			   <ST_MORPHO_L_27 0 &gpioc 15 0>, /* SB44=ON, R35=OFF */
+			   <ST_MORPHO_L_28 0 &gpioa 0 0>,
+			   <ST_MORPHO_L_29 0 &gpioh 0 0>,
+			   <ST_MORPHO_L_30 0 &gpioa 1 0>, /* SB58=OFF */
+			   <ST_MORPHO_L_31 0 &gpioh 1 0>,
+			   <ST_MORPHO_L_32 0 &gpioa 4 0>, /* SB56=OFF */
+			   <ST_MORPHO_L_34 0 &gpiob 0 0>, /* LD1 green LED if SB43=ON */
+			   <ST_MORPHO_L_35 0 &gpioc 2 0>,
+			   <ST_MORPHO_L_36 0 &gpioc 1 0>, /* SB62=OFF */
+			   <ST_MORPHO_L_37 0 &gpioc 3 0>,
+			   <ST_MORPHO_L_38 0 &gpioc 0 0>,
+			   <ST_MORPHO_L_39 0 &gpiod 4 0>,
+			   <ST_MORPHO_L_40 0 &gpiod 3 0>,
+			   <ST_MORPHO_L_41 0 &gpiod 5 0>,
+			   <ST_MORPHO_L_42 0 &gpiog 2 0>,
+			   <ST_MORPHO_L_43 0 &gpiod 6 0>,
+			   <ST_MORPHO_L_44 0 &gpiog 3 0>,
+			   <ST_MORPHO_L_45 0 &gpiod 7 0>,
+			   <ST_MORPHO_L_46 0 &gpioe 2 0>, /* SB64=ON */
+			   <ST_MORPHO_L_47 0 &gpioe 3 0>, /* SB78=ON */
+			   <ST_MORPHO_L_48 0 &gpioe 4 0>, /* SB8=ON */
+			   <ST_MORPHO_L_50 0 &gpioe 5 0>, /* SB9=ON */
+			   <ST_MORPHO_L_51 0 &gpiof 1 0>,
+			   <ST_MORPHO_L_52 0 &gpiof 2 0>,
+			   <ST_MORPHO_L_53 0 &gpiof 0 0>,
+			   <ST_MORPHO_L_54 0 &gpiof 8 0>,
+			   <ST_MORPHO_L_55 0 &gpiod 1 0>,
+			   <ST_MORPHO_L_56 0 &gpiof 9 0>,
+			   <ST_MORPHO_L_57 0 &gpiod 0 0>,
+			   <ST_MORPHO_L_58 0 &gpiog 1 0>,
+			   <ST_MORPHO_L_59 0 &gpiog 0 0>,
+			   <ST_MORPHO_L_62 0 &gpioe 6 0>, /* SB68=ON */
+			   <ST_MORPHO_L_63 0 &gpiog 9 0>,
+			   <ST_MORPHO_L_64 0 &gpiog 15 0>,
+			   <ST_MORPHO_L_65 0 &gpiog 12 0>,
+			   <ST_MORPHO_L_66 0 &gpiog 10 0>,
+			   <ST_MORPHO_L_68 0 &gpiog 13 0>, /* SB37=OFF */
+			   <ST_MORPHO_L_69 0 &gpiod 9 0>, /* SB75=ON, SB18=OFF, SB65=OFF */
+			   <ST_MORPHO_L_70 0 &gpiog 11 0>, /* SB34=OFF */
+
+			   <ST_MORPHO_R_1 0 &gpioc 9 0>,
+			   <ST_MORPHO_R_2 0 &gpioc 8 0>,
+			   <ST_MORPHO_R_3 0 &gpiob 8 0>,
+			   <ST_MORPHO_R_4 0 &gpioc 6 0>,
+			   <ST_MORPHO_R_5 0 &gpiob 9 0>,
+			   <ST_MORPHO_R_6 0 &gpioc 5 0>, /* SB36=OFF */
+			   <ST_MORPHO_R_10 0 &gpiod 8 0>,
+			   <ST_MORPHO_R_11 0 &gpioa 5 0>, /* LD1 green LED if SB51=ON */
+			   <ST_MORPHO_R_12 0 &gpioa 12 0>, /* SB22=ON, SB28=OFF */
+			   <ST_MORPHO_R_13 0 &gpioa 6 0>,
+			   <ST_MORPHO_R_14 0 &gpioa 11 0>, /* SB21=ON, SB27=OFF */
+			   <ST_MORPHO_R_15 0 &gpioa 7 0>, /* SB38=OFF */
+			   <ST_MORPHO_R_16 0 &gpiob 12 0>,
+			   <ST_MORPHO_R_17 0 &gpiob 6 0>,
+			   <ST_MORPHO_R_19 0 &gpioc 7 0>,
+			   <ST_MORPHO_R_21 0 &gpioa 9 0>, /* SB31=OFF */
+			   <ST_MORPHO_R_22 0 &gpiob 2 0>,
+			   <ST_MORPHO_R_23 0 &gpioa 8 0>,
+			   <ST_MORPHO_R_24 0 &gpiob 1 0>,
+			   <ST_MORPHO_R_25 0 &gpiob 10 0>,
+			   <ST_MORPHO_R_26 0 &gpiob 15 0>, /* JP6=OFF */
+			   <ST_MORPHO_R_27 0 &gpiob 4 0>,
+			   <ST_MORPHO_R_28 0 &gpiob 14 0>, /* SB30=OFF */
+			   <ST_MORPHO_R_29 0 &gpiob 5 0>,
+			   <ST_MORPHO_R_30 0 &gpiob 13 0>, /* SB29=OFF */
+			   <ST_MORPHO_R_31 0 &gpiob 3 0>, /* SB39=OFF */
+			   <ST_MORPHO_R_33 0 &gpioa 10 0>,
+			   <ST_MORPHO_R_34 0 &gpioc 4 0>, /* SB42=OFF */
+			   <ST_MORPHO_R_35 0 &gpioa 2 0>, /* SB69=OFF */
+			   <ST_MORPHO_R_36 0 &gpiof 5 0>,
+			   <ST_MORPHO_R_37 0 &gpioa 3 0>,
+			   <ST_MORPHO_R_38 0 &gpiof 4 0>, /* LD2 yellow LED */
+			   <ST_MORPHO_R_40 0 &gpioe 8 0>,
+			   <ST_MORPHO_R_41 0 &gpiod 13 0>,
+			   <ST_MORPHO_R_42 0 &gpiof 10 0>,
+			   <ST_MORPHO_R_43 0 &gpiod 12 0>,
+			   <ST_MORPHO_R_44 0 &gpioe 7 0>,
+			   <ST_MORPHO_R_45 0 &gpiod 11 0>,
+			   <ST_MORPHO_R_46 0 &gpiod 14 0>,
+			   <ST_MORPHO_R_47 0 &gpioe 10 0>,
+			   <ST_MORPHO_R_48 0 &gpiod 15 0>,
+			   <ST_MORPHO_R_49 0 &gpioe 12 0>,
+			   <ST_MORPHO_R_50 0 &gpiof 14 0>,
+			   <ST_MORPHO_R_51 0 &gpioe 14 0>,
+			   <ST_MORPHO_R_52 0 &gpioe 9 0>,
+			   <ST_MORPHO_R_53 0 &gpioe 15 0>,
+			   <ST_MORPHO_R_55 0 &gpioe 13 0>,
+			   <ST_MORPHO_R_56 0 &gpioe 11 0>,
+			   <ST_MORPHO_R_57 0 &gpiof 13 0>,
+			   <ST_MORPHO_R_58 0 &gpiof 3 0>,
+			   <ST_MORPHO_R_59 0 &gpiof 12 0>,
+			   <ST_MORPHO_R_60 0 &gpiof 15 0>,
+			   <ST_MORPHO_R_61 0 &gpiog 14 0>,
+			   <ST_MORPHO_R_62 0 &gpiof 11 0>,
+			   <ST_MORPHO_R_64 0 &gpioe 0 0>,
+			   <ST_MORPHO_R_65 0 &gpiod 10 0>,
+			   <ST_MORPHO_R_66 0 &gpiog 8 0>,
+			   <ST_MORPHO_R_67 0 &gpiog 7 0>, /* SB74=OFF */
+			   <ST_MORPHO_R_68 0 &gpiog 5 0>,
+			   <ST_MORPHO_R_69 0 &gpiog 4 0>, /* LD3 red LED */
+			   <ST_MORPHO_R_70 0 &gpiog 6 0>;
+	};
+};

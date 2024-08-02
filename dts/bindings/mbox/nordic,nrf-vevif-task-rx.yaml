@@ -1,0 +1,49 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic VEVIF (VPR Event Interface) - TASK RX MODE
+
+  VEVIF is an event interface for VPR, allowing connection to the domain's DPPI
+  system. VEVIF can also generate IRQs to other CPUs.
+
+  VEVIF provides support for inter-domain software signaling. It implements a set of tasks
+  intended for signaling within an interprocessor communication (IPC) framework.
+  When used in task rx mode, the VEVIF tasks are used to receive events triggered by other core.
+
+  Example definition:
+
+    cpuppr: cpu@d {
+      ...
+      cpuppr_vevif_task_rx: mailbox {
+        compatible = "nordic,nrf-vevif-task-rx";
+        interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+                     <1 NRF_DEFAULT_IRQ_PRIORITY>,
+                     ...
+                     <N NRF_DEFAULT_IRQ_PRIORITY>;
+        #mbox-cells = <1>;
+        nordic,tasks = <16>;
+        nordic,tasks-mask = <0xfffffff0>;
+      };
+    };
+
+compatible: "nordic,nrf-vevif-task-rx"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  nordic,tasks:
+    type: int
+    required: true
+    description: Number of tasks supported by the VEVIF instance.
+
+  nordic,tasks-mask:
+    type: int
+    required: true
+    description: Mask of tasks supported by the VEVIF instance.
+
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel

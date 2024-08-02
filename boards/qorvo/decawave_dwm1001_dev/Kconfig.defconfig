@@ -1,0 +1,18 @@
+# DecaWave DWM1001 board configuration
+
+# Copyright (c) 2019 Stéphane D'Alu
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DECAWAVE_DWM1001_DEV
+
+config BT_CTLR
+	default BT
+
+config I2C
+	default SENSOR
+
+config SPI
+	default y
+	depends on IEEE802154
+
+endif # BOARD_DECAWAVE_DWM1001_DEV

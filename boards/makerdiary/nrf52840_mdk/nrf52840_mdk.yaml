@@ -1,0 +1,13 @@
+identifier: nrf52840_mdk
+name: nRF52840-MDK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - usb_device
+  - ble
+  - pwm
+vendor: makerdiary

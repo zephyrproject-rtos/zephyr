@@ -1,0 +1,11 @@
+# MCUXpresso SDK CCM
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCUX_CCM
+	bool "MCUX CCM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_CCM_ENABLED
+	help
+	  Enable support for mcux ccm driver.

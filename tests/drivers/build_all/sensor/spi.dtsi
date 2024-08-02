@@ -1,0 +1,381 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for spi devices
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+test_spi_adxl362: adxl362@0 {
+	compatible = "adi,adxl362";
+	reg = <0x0>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_adxl372: adxl372@1 {
+	compatible = "adi,adxl372";
+	reg = <0x1>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_bme280: bme280@2 {
+	compatible = "bosch,bme280";
+	reg = <0x2>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_bmi160: bmi160@3 {
+	compatible = "bosch,bmi160";
+	reg = <0x3>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_ms5607: ms5607@4 {
+	compatible = "meas,ms5607";
+	reg = <0x4>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_iis2dlpc: iis2dlpc@5 {
+	compatible = "st,iis2dlpc";
+	reg = <0x5>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis2mdc: iis2mdc@6 {
+	compatible = "st,iis2mdc";
+	reg = <0x6>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis3dhhc: iis3dhhc@7 {
+	compatible = "st,iis3dhhc";
+	reg = <0x7>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_ism330dhcx: ism330dhcx@8 {
+	compatible = "st,ism330dhcx";
+	reg = <0x8>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lis2dh: lis2dh@9 {
+	compatible = "st,lis2dh";
+	reg = <0x9>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
+};
+
+test_spi_lis2ds12: lis2ds12@a {
+	compatible = "st,lis2ds12";
+	reg = <0xa>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lis2dw12: lis2dw12@b {
+	compatible = "st,lis2dw12";
+	reg = <0xb>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lis2mdl: lis2mdl@c {
+	compatible = "st,lis2mdl";
+	reg = <0xc>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lps22hh: lps22hh@d {
+	compatible = "st,lps22hh";
+	reg = <0xd>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lsm303agr_accel: lsm303agr-accel@e {
+	compatible = "st,lsm303agr-accel";
+	reg = <0xe>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+	/* disconnect-sdo-sa0-pull-up; */
+	status = "disabled";
+};
+
+test_spi_lsm6dsl: lsm6dsl@f {
+	compatible = "st,lsm6dsl";
+	reg = <0xf>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lsm6dso: lsm6dso@10 {
+	compatible = "st,lsm6dso";
+	reg = <0x10>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis2dh: iis2dh@11 {
+	compatible = "st,iis2dh";
+	reg = <0x11>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_iis2iclx: iis2iclx@12 {
+	compatible = "st,iis2iclx";
+	reg = <0x12>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
+};
+
+test_spi_icm42605: icm42605@13 {
+	compatible = "invensense,icm42605";
+	reg = <0x13>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_max6675: max6675@14 {
+	compatible = "maxim,max6675";
+	reg = <0x14>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_bmi270: bmi270@15 {
+	compatible = "bosch,bmi270";
+	reg = <0x15>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_bmp388: bmp388@16 {
+	compatible = "bosch,bmp388";
+	reg = <0x16>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_i3g4250d: i3g4250d@17 {
+	compatible = "st,i3g4250d";
+	reg = <0x17>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_icm42670: icm42670@18 {
+	compatible = "invensense,icm42670";
+	reg = <0x18>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
+
+test_spi_bme680: bme680@19 {
+	compatible = "bosch,bme680";
+	reg = <0x19>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_icm426888: icm42688@1a {
+	compatible = "invensense,icm42688";
+	reg = <0x1a>;
+	spi-max-frequency = <24000000>;
+};
+
+test_spi_max31855: max31855@1b {
+	compatible = "maxim,max31855";
+	reg = <0x1b>;
+	spi-max-frequency = <0>;
+};
+
+test_spi_max31865: max31865@1c {
+	compatible = "maxim,max31865";
+	reg = <0x1c>;
+	spi-max-frequency = <125000>;
+	resistance-at-zero = <100>;
+	resistance-reference = <430>;
+	low-threshold = <6579>;
+	high-threshold = <32767>;
+	filter-50hz;
+};
+
+test_spi_bmm150: bmm150@1d {
+	compatible = "bosch,bmm150";
+	reg = <0x1d>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_hts221: hts221@1e {
+	compatible = "st,hts221";
+	reg = <0x1e>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_adt7310: adt7310@1f {
+	compatible = "adi,adt7310";
+	reg = <0x1f>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_bmi323: bmi323@20 {
+	compatible = "bosch,bmi323";
+	reg = <0x20>;
+	spi-max-frequency = <8000000>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lsm6dso16is: lsm6dso16is@21 {
+	compatible = "st,lsm6dso16is";
+	reg = <0x21>;
+	spi-max-frequency = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lsm6dsv16x: lsm6dsv16x@22 {
+	compatible = "st,lsm6dsv16x";
+	reg = <0x22>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_bmi08x_accel: bmi08x@23 {
+	compatible = "bosch,bmi08x-accel";
+	reg = <0x23>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	int1-map-io = <0x01>;
+	int2-map-io = <0x00>;
+	int1-conf-io = <0x0A>;
+	int2-conf-io = <0x17>;
+	accel-hz = "800";
+	accel-fs = <4>;
+};
+
+test_spi_bmi08x_gyro: bmi08x@24 {
+	compatible = "bosch,bmi08x-gyro";
+	reg = <0x24>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	int3-4-map-io = <0x01>;
+	int3-4-conf-io = <0x01>;
+	gyro-hz = "1000_116";
+	gyro-fs = <1000>;
+};
+
+test_spi_tmag5170: tmag5170@25 {
+	compatible = "ti,tmag5170";
+	reg = <0x25>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	operating-mode = <1>;
+};
+
+test_spi_adxl367: adxl367@26 {
+	compatible = "adi,adxl367";
+	reg = <0x26>;
+	spi-max-frequency = <0>;
+	odr = <4>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_lps22df: lps22df@27 {
+	compatible = "st,lps22df";
+	reg = <0x27>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_spi_lis2du12: lis2du12@28 {
+	compatible = "st,lis2du12";
+	reg = <0x28>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_spi_lis2de12: lis2de12@29 {
+	compatible = "st,lis2de12";
+	reg = <0x29>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_spi_ens160: ens160@2a {
+	compatible = "sciosense,ens160";
+	reg = <0x2a>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_spi_bd8lb600fs: bd8lb600fs@2b {
+	compatible = "rohm,bd8lb600fs";
+	reg = <0x2b>;
+	spi-max-frequency = <0>;
+	reset-gpios = <&test_gpio 0 0>;
+	instance-count = <1>;
+	status = "okay";
+
+	bd8lb600fs_diagnostics: bd8lb600fs_diagnostics {
+		compatible = "rohm,bd8lb600fs-diagnostics";
+		status = "okay";
+		#sensor-cells = <0>;
+	};
+};
+
+test_spi_iis328dq: iis328dq@2c {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x2c>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	drdy-int-pad = <1>;
+};
+
+test_spi_lis2dux12: lis2dux12@2d {
+	compatible = "st,lis2dux12";
+	reg = <0x2d>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	status = "okay";
+};
+
+test_spi_tle9104: tle9104@2e {
+	compatible = "infineon,tle9104";
+	reg = <0x2e>;
+	spi-max-frequency = <0>;
+	status = "okay";
+
+	tle9104_diagnostics: tle9104_diagnostics {
+		compatible = "infineon,tle9104-diagnostics";
+		status = "okay";
+		#sensor-cells = <0>;
+	};
+};

@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2017 Shawn Nock <shawn@monadnock.ca>
+ * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Aapo Vienamo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "thingy52_nrf52832-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nordic Thingy52 NRF52832";
+	compatible = "nordic,thingy52-nrf52832";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		accel0 = &lis2dh12;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* Lightwell RGB */
+		led0: led_0 {
+			gpios = <&sx1509b 7 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+			//vin-supply = <&vdd_pwr>;
+		};
+		led1: led_1 {
+			gpios = <&sx1509b 5 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+			//vin-supply = <&vdd_pwr>;
+		};
+		led2: led_2 {
+			gpios = <&sx1509b 6 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+			//vin-supply = <&vdd_pwr>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 4>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+		power-gpios = <&sx1509b 4 0>;
+	};
+
+	vdd_pwr: vdd-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "vdd-pwr-ctrl";
+		enable-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		startup-delay-us = <1000>;
+	};
+
+	spk_pwr: spk-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "spk-pwr-ctrl";
+		enable-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+	};
+
+	mpu_pwr: mpu-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "mpu-pwr-ctrl";
+		enable-gpios = <&sx1509b 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	mic_pwr: mic-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "mic-pwr-ctrl";
+		enable-gpios = <&sx1509b 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	ccs_pwr: ccs-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "ccs-pwr-ctrl";
+		enable-gpios = <&sx1509b 10 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+	sx1509b: sx1509b@3e {
+		compatible = "semtech,sx1509b";
+		reg = <0x3e>;
+		vin-supply = <&vdd_pwr>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <16>;
+		/* Active-low LEDs init high, all else init low */
+		init-out-high = <0xe0e0>;
+		init-out-low = <0x1f1f>;
+	};
+
+	lps22hb_press: lps22hb_press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+		vin-supply = <&vdd_pwr>;
+	};
+
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		vin-supply = <&vdd_pwr>;
+		drdy-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		vin-supply = <&ccs_pwr>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&sx1509b 11 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&sx1509b 12 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+	lis2dh12: lis2dh12@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+
+		/*
+		 * The flash starting at 0x0007a000 and ending at
+		 * 0x0007ffff (sectors 122-127) is reserved for use
+		 * by the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

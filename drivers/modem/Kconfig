@@ -1,0 +1,198 @@
+# Modem configuration options
+
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MODEM
+	bool "Modem drivers"
+	help
+	  Enable config options for modem drivers.
+
+if MODEM
+
+module = MODEM
+module-str = modem
+source "subsys/logging/Kconfig.template.log_config"
+
+config MODEM_RECEIVER
+	bool "Modem receiver helper driver"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
+	help
+	  This driver allows modem drivers to communicate over UART with custom
+	  defined protocols. Driver doesn't inspect received data and all
+	  aspects of received protocol data are handled by application via
+	  work method provided.  This driver differs from the pipe UART driver
+	  in that callbacks are executed in a different work queue and data is
+	  passed around in k_pipe structures.
+
+config MODEM_RECEIVER_MAX_CONTEXTS
+	int "Maximum number of modem receiver contexts"
+	depends on MODEM_RECEIVER
+	range 1 10
+	default 1
+	help
+	  Maximum number of modem receiver contexts to handle.  For most
+	  purposes this should stay at 1.
+
+config MODEM_CONTEXT
+	bool "Modem context helper driver [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This driver allows modem drivers to communicate with an interface
+	  using custom defined protocols. Driver doesn't inspect received data
+	  and all aspects of received protocol data are handled by application
+	  work method provided.  This driver combines abstractions for:
+	  modem interface, command handler, pin config and socket handling each
+	  of which will need to be configured.
+
+if MODEM_CONTEXT
+
+config MODEM_CONTEXT_MAX_NUM
+	int "Maximum number of modem contexts"
+	default 1
+	help
+	  Maximum number of modem contexts to handle.  For most
+	  purposes this should stay at 1.
+
+config MODEM_CONTEXT_VERBOSE_DEBUG
+	bool "Verbose debug output in the modem context"
+	help
+	  Enabling this setting will turn on VERY heavy debugging from the
+	  modem context helper.  Do NOT leave on for production.
+
+config MODEM_IFACE_UART
+	bool "UART-based modem interface"
+	select RING_BUFFER
+	help
+	  To configure this layer for use, create a modem_iface_uart_data
+	  object and pass it's reference to modem_iface_uart_init()
+	  along with the modem_iface reference from your modem_context object
+	  and the UART device name.
+
+if MODEM_IFACE_UART
+
+choice MODEM_IFACE_UART_BACKEND
+	prompt "UART backend to use for modem interface"
+	default MODEM_IFACE_UART_INTERRUPT
+
+config MODEM_IFACE_UART_INTERRUPT
+	bool "UART-based modem interface using interrupt API"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+
+config MODEM_IFACE_UART_ASYNC
+	bool "UART-based modem interface using async API"
+	depends on SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+
+endchoice
+
+if MODEM_IFACE_UART_ASYNC
+
+config MODEM_IFACE_UART_ASYNC_RX_BUFFER_SIZE
+	int "Size in bytes of the RX buffers provided to UART driver"
+	default 64
+	help
+	  Increasing this value decreases the number of UART interrupts needed
+	  to receive large packets.
+
+config MODEM_IFACE_UART_ASYNC_RX_NUM_BUFFERS
+	int "Number of RX buffers available to the UART driver"
+	default 2
+	help
+	  This value needs to be twice the number of UART modems using the
+	  driver to avoid buffer starvation.
+
+config MODEM_IFACE_UART_ASYNC_RX_TIMEOUT_US
+	int "Timeout for flushing RX buffers after receiving no additional data"
+	default 278
+	help
+	  Decreasing this value can help increase data throughput when high
+	  baudrates are used. 278us is 4 bytes at 115200 baud. Decreasing this
+	  value too much can result in spurious interrupts. Leaving it too
+	  high can reduce data throughput.
+
+endif # MODEM_IFACE_UART_ASYNC
+
+endif # MODEM_IFACE_UART
+
+config MODEM_CMD_HANDLER
+	bool "Generic modem command handler"
+	select NET_BUF
+	help
+	  This generic command handler uses a modem interface to process
+	  incoming data and hand it back to the modem driver via callbacks
+	  defined for:
+	  - modem responses
+	  - unsolicited messages
+	  - specified handlers for current operation
+	  To configure this layer for use, create a modem_cmd_handler_data
+	  object and pass it's reference to modem_cmd_handler_init() along with
+	  the modem_cmd_handler reference from your modem_context object.
+
+config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
+	int "Maximum number of params parsed per command"
+	depends on MODEM_CMD_HANDLER
+	default 6
+	help
+	  This option sets the maximum number of parameters which may be
+	  parsed by the command handler.  This is also limited by the length
+	  of the match_buf (match_buf_len) field as it needs to be large
+	  enough to hold a single line of data (ending with /r).
+
+endif # MODEM_CONTEXT
+
+config MODEM_SOCKET
+	bool "Generic modem socket support layer"
+	help
+	  This layer provides much of the groundwork for keeping track of
+	  modem "sockets" throughout their lifecycle (from the initial offload
+	  API calls through the command handler call back layers).
+	  To configure this layer for use, create a modem_socket_config
+	  object with your socket data and pass it's reference to
+	  modem_socket_init().
+	  Note that the modem socket uses runtime allocated file descriptors
+	  reserved from the fdtable, for which the max count is set using the
+	  Kconfig option ZVFS_OPEN_MAX. Make sure to update this value as both
+	  the modem sockets and the POSIX_API, if used, share them.
+
+config MODEM_SOCKET_PACKET_COUNT
+	int "Maximum number of stored packet sizes per socket"
+	depends on MODEM_SOCKET
+	default 6
+	help
+	  As the modem indicates more data is available to be received,
+	  these values are organized into "packets".  This setting limits
+	  the maximum number of packet sizes the socket can keep track of.
+
+config MODEM_SHELL
+	bool "Modem shell utilities"
+	select SHELL
+	help
+	  Activate shell module that provides modem utilities like
+	  sending a command to the modem UART.
+
+config MODEM_SIM_NUMBERS
+	bool "Query the SIM for IMSI and ICCID"
+	default y
+	help
+	  Query the SIM card for the IMSI and ICCID identifiers. This
+	  can be disabled if the application does not use a SIM.
+
+config MODEM_CELL_INFO
+	bool "Query for operator and cell info"
+	help
+	  Query for numerical operator id, location area code and cell id.
+
+source "drivers/modem/Kconfig.ublox-sara-r4"
+source "drivers/modem/Kconfig.quectel-bg9x"
+source "drivers/modem/Kconfig.wncm14a2a"
+source "drivers/modem/Kconfig.cellular"
+source "drivers/modem/Kconfig.at_shell"
+
+source "drivers/modem/Kconfig.hl7800"
+source "drivers/modem/Kconfig.simcom-sim7080"
+
+endif # MODEM

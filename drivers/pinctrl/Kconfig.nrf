@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_NRF
+	bool "nRF pin controller driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_PINCTRL_ENABLED
+	select PINCTRL_STORE_REG
+	help
+	  nRF pin controller driver

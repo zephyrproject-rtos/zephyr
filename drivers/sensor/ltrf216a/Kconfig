@@ -1,0 +1,12 @@
+# LTR-F216A light sensor configuration options
+
+# Copyright (c) 2023 Tridonic
+# SPDX-License-Identifier: Apache-2.0
+
+config LTR_F216A
+	bool "LiteOn LTR-F216A Light Sensor"
+	default y
+	depends on DT_HAS_LTR_F216A_ENABLED
+	select I2C
+	help
+	  Enable driver for LiteOn LTR-F216A light sensors.

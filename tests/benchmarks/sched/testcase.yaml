@@ -1,0 +1,15 @@
+tests:
+  benchmark.kernel.scheduler:
+    tags:
+      - benchmark
+      - kernel
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+    slow: true
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "unpend\\s+\\d* ready\\s+\\d* switch\\s+\\d* pend\\s+\\d* tot\\s+\\d* \\(avg\\s+\\d*\\)"
+        - "fin"

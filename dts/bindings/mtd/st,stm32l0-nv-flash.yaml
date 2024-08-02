@@ -1,0 +1,17 @@
+description: |
+  ST STM32L0 family flash memory.
+
+include: st,stm32-nv-flash.yaml
+
+compatible: st,stm32l0-nv-flash
+
+properties:
+  write-block-size:
+    required: true
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+    description: |
+      Number of bytes used in write operations.

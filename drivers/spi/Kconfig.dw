@@ -1,0 +1,29 @@
+# DesignWare SPI driver configuration options
+
+# Copyright (c) 2015-2016 Intel Corporation
+# Copyright (c) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_DW
+	bool "Designware SPI controller driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_SPI_ENABLED
+	help
+	  Enable support for Designware's SPI controllers.
+
+if SPI_DW
+
+config SPI_DW_ACCESS_WORD_ONLY
+	bool "DesignWare SPI only allows word access"
+	help
+	  In some case, e.g. ARC HS Development kit, the peripheral space of
+	  DesignWare SPI only allows word access, byte access will raise
+	  exception.
+
+config SPI_DW_HSSI
+	bool "Designware SPI HSSI variant"
+	help
+	  Use register layout compatible with the SPI DW HSSI variant of the
+	  peripheral.
+
+endif # SPI_DW

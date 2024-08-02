@@ -1,0 +1,251 @@
+/*
+ * Copyright (c) 2020 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l562Xe.dtsi>
+#include <st/l5/stm32l562qeixq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led_9: led_9 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+			label = "User LD9";
+		};
+		green_led_10: led_10 {
+			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
+			label = "User LD10";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+
+	chosen {
+		zephyr,bt-hci = &hci_spi;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_msi {
+	status = "okay";
+	msi-range = <6>;
+	msi-pll-mode;
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <55>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(110)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm6dso: lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	hci_spi: spbtle-rf@0 {
+		compatible = "st,hci-spi-v1";
+		reg = <0>;
+		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiog 8 GPIO_ACTIVE_LOW>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		spi-hold-cs;
+	};
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospi1_clk_pa3 &octospi1_ncs_pa2
+		     &octospi1_io0_pb1 &octospi1_io1_pb0
+		     &octospi1_io2_pa7 &octospi1_io3_pa6
+		     &octospi1_io4_pc1 &octospi1_io5_pc2
+		     &octospi1_io6_pc3 &octospi1_io7_pc0
+		     &octospi1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@90000000 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+		sfdp-bfp = [
+			53 46 44 50 06 01 02 ff
+			00 06 01 10 30 00 00 ff
+			c2 00 01 04 10 01 00 ff
+			84 00 01 02 c0 00 00 ff
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			e5 20 fb ff ff ff ff 1f
+			44 eb 08 6b 08 3b 04 bb
+			fe ff ff ff ff ff 00 ff
+			ff ff 44 eb 0c 20 0f 52
+			10 d8 00 ff d6 49 c5 00
+			81 df 04 e3 44 03 67 38
+			30 b0 30 b0 f7 bd d5 5c
+			4a 9e 29 ff f0 50 f9 85
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			00 00 00 00 00 00 00 00
+			7f ef ff ff 21 5c dc ff
+		];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				reg = <0x00000000 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};
+
+&timers2 {
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa0>;
+		pinctrl-names = "default";
+	};
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in13_pc4>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_mosi_pb5 &spi3_miso_pb4>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dp_pa12 &usb_dm_pa11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+
+	pinctrl-names = "default";
+
+	cd-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

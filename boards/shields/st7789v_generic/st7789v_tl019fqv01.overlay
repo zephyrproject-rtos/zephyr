@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	chosen {
+		zephyr,display = &st7789v_st7789v_tl019fqv01;
+	};
+
+	mipi_dbi_st7789v_tl019fqv01 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&arduino_spi>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v_st7789v_tl019fqv01: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			mipi-max-frequency = <20000000>;
+			reg = <0>;
+			width = <320>;
+			height = <170>;
+			x-offset = <0>;
+			y-offset = <35>;
+			vcom = <0x2b>;
+			gctrl = <0x35>;
+			vrhs = <0x0f>;
+			vdvs = <0x20>;
+			mdac = <0x60>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [52 a1];
+			pvgam-param = [D0 00 02 07 0B 1A 31 54 40 29 12 12 12 17];
+			nvgam-param = [D0 00 02 07 05 15 2D 44 44 1C 18 16 1C 1D];
+			ram-param = [00 F8];
+			rgb-param = [CD 08 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+};

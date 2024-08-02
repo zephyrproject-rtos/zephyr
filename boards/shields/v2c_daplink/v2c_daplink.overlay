@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&daplink_gpio0 {
+	status = "okay";
+};
+
+&daplink_qspi_mux {
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	* Disable the on-board flash until the jedec,spi-nor driver supports
+	* multiple instances.
+	*/
+	status = "disabled";
+};
+
+&daplink_quad_spi0 {
+	status = "okay";
+
+	daplink_flash0_v2c_daplink: flash@0 {
+		compatible = "spansion,s25fl128s", "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <DT_SIZE_M(128)>;
+		jedec-id = [01 20 18];
+	};
+};
+
+&daplink_single_spi0 {
+	status = "okay";
+
+	sdhc0_v2c_daplink: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2021, Commonwealth Scientific and Industrial Research
+ * Organisation (CSIRO) ABN 41 687 119 230.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the devicetree.h extension API's.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = < 0x1 >;
+		#size-cells = < 0x1 >;
+
+		test_sram1: sram@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = < 0x20000000 0x1000 >;
+			zephyr,memory-region = "SRAM_REGION";
+		};
+		test_sram2: sram@20001000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = < 0x20001000 0x1000 >;
+			zephyr,memory-region = "SRAM@REGION#2";
+		};
+	};
+};

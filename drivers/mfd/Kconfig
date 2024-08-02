@@ -1,0 +1,33 @@
+# Copyright 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD
+	bool "Multi-function device (MFD) drivers"
+	help
+	  Include drivers for multi-function devices
+
+if MFD
+
+module = MFD
+module-str = mfd
+source "subsys/logging/Kconfig.template.log_config"
+
+config MFD_INIT_PRIORITY
+	int "Initialization priority"
+	default 80
+	help
+	  Multi-function devices initialization priority.
+
+source "drivers/mfd/Kconfig.ad559x"
+source "drivers/mfd/Kconfig.adp5585"
+source "drivers/mfd/Kconfig.axp192"
+source "drivers/mfd/Kconfig.bd8lb600fs"
+source "drivers/mfd/Kconfig.max20335"
+source "drivers/mfd/Kconfig.max31790"
+source "drivers/mfd/Kconfig.nct38xx"
+source "drivers/mfd/Kconfig.npm1300"
+source "drivers/mfd/Kconfig.npm6001"
+source "drivers/mfd/Kconfig.lpflexcomm"
+source "drivers/mfd/Kconfig.tle9104"
+
+endif # MFD

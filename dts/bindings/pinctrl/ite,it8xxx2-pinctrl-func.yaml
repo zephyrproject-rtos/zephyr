@@ -1,0 +1,62 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 pin controller function node
+
+compatible: "ite,it8xxx2-pinctrl-func"
+
+include: base.yaml
+
+properties:
+  func3-gcr:
+    type: array
+
+  func3-en-mask:
+    type: array
+
+  func3-ext:
+    type: array
+    description: |
+      When the alternate setting is configured as func3, in addition to
+      the setting of func3-gcr, some pins require external setting.
+
+  func3-ext-mask:
+    type: array
+
+  func4-gcr:
+    type: array
+
+  func4-en-mask:
+    type: array
+
+  volt-sel:
+    type: array
+
+  volt-sel-mask:
+    type: array
+
+  pp-od-mask:
+    type: int
+    description: |
+      KSI[7:0] does not support push-pull and open-drain mode.
+      If KSO[17:0] is in KBS mode, setting 1 selects open-drain mode,
+      setting 0 selects push-pull mode.
+      If KSO[15:0] is in GPIO mode, then this bit is always disabled.
+
+  pullup-mask:
+    type: int
+    description: |
+      If KSI[7:0]/KSO[15:0] is in KBS mode , setting 1 enables the internal
+      pull-up (KSO[17:16] setting internal pull-up by GPIO port GPCR register).
+      If KSI[7:0]/KSO[15:0] is in GPIO mode, then this bit is always disabled.
+
+  gpio-group:
+    type: boolean
+    description: |
+      Default setting pin configure to alternate mode for all GPIO group pins
+      (include KSO[17:16]), otherwise setting pin configure to keyboard scan
+      mode for KSI[7:0] and KSO[15:0] pins.
+
+pinmux-cells:
+  - pin
+  - alt_func

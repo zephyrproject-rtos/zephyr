@@ -1,0 +1,23 @@
+sample:
+  name: ADC driver sequence sample
+tests:
+  sample.drivers.adc.adc_sequence:
+    tags:
+      - adc
+    depends_on: adc
+    platform_allow:
+      - cy8cproto_063_ble
+      - cy8cproto_062_4343w
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    harness: console
+    timeout: 10
+    harness_config:
+      type: multi_line
+      regex:
+        - "ADC sequence reading \\[\\d+\\]:"
+        - "- .+, channel \\d+, \\d+ sequence samples:"
+        - "- - \\d+ (= \\d+mV)|(\\(value in mV not available\\))"

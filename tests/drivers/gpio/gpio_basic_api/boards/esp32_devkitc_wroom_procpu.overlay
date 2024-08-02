@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2019 Mohamed ElShahawi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 16 0>;
+		in-gpios = <&gpio0 17 0>;
+	};
+};
+
+
+/*
+ * Some notes about esp32 pins:
+ *    GPIO pins 34-39 are not suitable for this test because:
+ *    1. input-only
+ *    2. No internal pull-up/pull-down circuitry.
+ *    The pin names are: SENSOR_VP(GPIO36),SENSOR_CAPP(GPIO37),
+ *                       SENSOR_CAPN (GPIO38), SENSOR_VN (GPIO39),
+ *                       VDET_1 (GPIO34), VDET_2 (GPIO35).
+ */

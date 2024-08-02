@@ -1,0 +1,14 @@
+# MCUXpresso SDK IUART
+
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MCUX_IUART
+	bool "MCUX IUART driver"
+	default y
+	depends on DT_HAS_NXP_IMX_IUART_ENABLED
+	depends on CLOCK_CONTROL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX IUART driver.

@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Luis Ubieda
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CROXEL_CX1825
+
+config BT_CTLR
+	default BT
+
+if LOG
+
+# Logger cannot use itself to log
+choice USB_CDC_ACM_LOG_LEVEL_CHOICE
+	default USB_CDC_ACM_LOG_LEVEL_OFF
+endchoice
+
+endif # LOG
+
+endif # BOARD_CROXEL_CX1825

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 TOKITA Hiroshi <tokita.hiroshi@fujitsu.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RA_ICU
+	bool "Renesas RA series interrupt controller unit"
+	default y
+	depends on DT_HAS_RENESAS_RA_INTERRUPT_CONTROLLER_UNIT_ENABLED
+	select GEN_ISR_TABLES
+	help
+	  Renesas RA series interrupt controller unit

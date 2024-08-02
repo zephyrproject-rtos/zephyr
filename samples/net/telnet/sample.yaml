@@ -1,0 +1,12 @@
+sample:
+  name: Telnet Server
+tests:
+  sample.net.telnet:
+    harness: net
+    depends_on: netif
+    tags:
+      - net
+      - telnet
+    platform_exclude:
+      - native_posix
+      - native_posix/native/64

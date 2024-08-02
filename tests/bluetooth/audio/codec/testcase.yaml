@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - bluetooth_audio
+tests:
+  bluetooth.audio.codec.test:
+    type: unit

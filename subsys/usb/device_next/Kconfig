@@ -1,0 +1,60 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_DEVICE_STACK_NEXT
+	bool "New USB device stack [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select UDC_DRIVER
+	imply HWINFO
+	help
+	  New experimental USB device stack.
+
+if USB_DEVICE_STACK_NEXT
+
+module = USBD
+module-str = usbd
+source "subsys/logging/Kconfig.template.log_config"
+
+config USBD_SHELL
+	bool "USB device shell"
+	depends on SHELL
+	help
+	  Enable USB device shell.
+
+config USBD_THREAD_INIT_PRIO
+	int
+	default 90
+	help
+	  USB device thread initialization priority level.
+
+config USBD_THREAD_STACK_SIZE
+	int "USB device stack thread stack size"
+	default 1024
+	help
+	  USB device stack thread stack size in bytes.
+
+config USBD_MAX_UDC_MSG
+	int "Maximum number of UDC events"
+	default 10
+	help
+	  Maximum number of USB device controller events that can be queued.
+
+config USBD_MSG_SLAB_COUNT
+	int "Maximum number of USB device notification messages"
+	range 4 64
+	default 8
+	help
+	  Maximum number of USB device notification messages that can be queued.
+
+config USBD_MSG_WORK_DELAY
+	int "USB device notification messages work delay"
+	range 1 100
+	default 1
+	help
+	  Message work may need to be delayed because the device stack is not
+	  yet ready to publish the message. The delay unit is milliseconds.
+
+rsource "class/Kconfig"
+
+endif # USB_DEVICE_STACK_NEXT

@@ -1,0 +1,5 @@
+board:
+  name: cy8ckit_062_wifi_bt
+  vendor: cypress
+  socs:
+  - name: cy8c6247

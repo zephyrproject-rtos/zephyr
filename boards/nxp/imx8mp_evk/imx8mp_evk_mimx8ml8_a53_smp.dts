@@ -1,0 +1,71 @@
+/*
+ * Copyright 2021-2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx8mp_a53.dtsi>
+#include "imx8mp_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX8MP A53";
+	compatible = "fsl,mimx8mp";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+		cpu@1 {
+			status = "disabled";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	sram0: memory@c0000000 {
+		reg = <0xc0000000 DT_SIZE_M(1)>;
+	};
+
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+	phy: phy@0 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		status = "okay";
+	};
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

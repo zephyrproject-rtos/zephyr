@@ -1,0 +1,28 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: PWM LEDs parent node
+
+compatible: "pwm-leds"
+
+child-binding:
+  description: PWM LED child node
+  properties:
+    pwms:
+      required: true
+      type: phandle-array
+      description: |
+        Reference to a PWM instance.
+
+        The period field is used by the set_brightness function of the LED API.
+        Its value should at least be greater that 100 nanoseconds (for a full
+        brigtness granularity) and lesser than 50 milliseconds (average visual
+        persistence time of the human eye). Typical values for the PWM period
+        are 10 or 20 milliseconds.
+
+    label:
+      type: string
+      description: |
+        Human readable string describing the LED. It can be used by an
+        application to identify this LED or to retrieve its number/index
+        (i.e. child node number) on the parent device.

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2021 Argentum Systems Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samr34.dtsi>
+
+/delete-node/ &usb0;

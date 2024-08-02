@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 Byte-Lab d.o.o <dev@byte-lab.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7/stm32h7b3.dtsi>
+/ {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(2048)>;
+			};
+		};
+	};
+};

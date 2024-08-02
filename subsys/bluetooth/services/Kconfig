@@ -1,0 +1,23 @@
+# GATT Services
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "GATT Services"
+	depends on BT_CONN
+
+rsource "Kconfig.dis"
+
+rsource "Kconfig.bas"
+
+rsource "Kconfig.hrs"
+
+rsource "Kconfig.tps"
+
+rsource "nus/Kconfig.nus"
+
+rsource "ias/Kconfig.ias"
+
+rsource "ots/Kconfig"
+
+endmenu

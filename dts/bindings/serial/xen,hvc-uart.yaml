@@ -1,0 +1,5 @@
+description: Xen Platform HVC UART
+
+compatible: "xen,hvc-uart"
+
+include: uart-controller.yaml

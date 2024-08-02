@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This uses pin 40 on HAT as LED.
+ *
+ * Note:
+ * Need to change the BIOS settings:
+ * () Advanced -> HAT Configurations:
+ *    - HD-Audio / I2S6 Selec -> Disabled
+ *
+ *    - GPIO 28 (Pin40) Confi -> Output
+ */
+
+/ {
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio_w 19 0>;
+			label = "HAT Pin 40 as LED";
+		};
+
+	};
+};

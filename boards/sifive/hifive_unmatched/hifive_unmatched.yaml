@@ -1,0 +1,20 @@
+identifier: hifive_unmatched
+name: SiFive HiFive Unmatched
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+simulation: renode
+simulation_exec: renode
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/sifive/hifive_unmatched/support/hifive_unmatched.resc
+supported:
+  - spi
+  - memc
+vendor: sifive

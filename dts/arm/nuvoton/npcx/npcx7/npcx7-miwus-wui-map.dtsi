@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common Wake-Up Unit Input (WUI) mapping configurations in npcx family */
+#include <nuvoton/npcx/npcx-miwus-wui-map.dtsi>
+
+/* Specific Wake-Up Unit Input (WUI) mapping configurations in npcx7 series */
+/ {
+	/* Mapping between MIWU wui bits and source device */
+	npcx-miwus-wui-map {
+		compatible = "nuvoton,npcx-miwu-wui-map";
+
+		/* MIWU table 0 */
+		/* MIWU group A */
+		wui_cr_sin2: wui0-1-6-2 {
+			miwus = <&miwu0 0 6>; /* CR_SIN2 */
+		};
+
+		/* MIWU group A */
+		wui_io86: wui0-1-6 {
+			miwus = <&miwu0 0 6>; /* GPIO86 */
+		};
+
+		/* MIWU group G */
+		wui_iod7: wui0-7-6 {
+			miwus = <&miwu0 6 6>; /* GPIOD7 */
+		};
+	};
+};

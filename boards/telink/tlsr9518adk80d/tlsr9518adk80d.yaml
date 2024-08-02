@@ -1,0 +1,16 @@
+identifier: tlsr9518adk80d
+name: Telink TLSR9518ADK80D
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 128
+flash: 1024
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - netif:openthread
+vendor: telink

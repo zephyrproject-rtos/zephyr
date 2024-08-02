@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Google, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: TI DACx0501 12 to 16 bit DAC series for DAC60501, DAC70501 and DAC80501 devices.
+
+compatible: "ti,dacx0501"
+
+properties:
+  voltage-reference:
+    type: string
+    required: true
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      DAC voltage reference select: either internal (2.5 V) or external
+
+  output-gain:
+    type: string
+    required: true
+    enum:
+      - "mul2"
+      - "mul1"
+      - "div2"
+    description: |
+      This setting can be used to control the output voltage range within the supported bit
+      resolution. mul2 will double the output range but lower the resolution, while div2 will
+      lower the range but double the resolution.

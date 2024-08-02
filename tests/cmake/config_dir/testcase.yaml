@@ -1,0 +1,5 @@
+tests:
+  buildsystem.config_dir.user_defined:
+    platform_allow: native_sim
+    build_only: true
+    extra_args: APPLICATION_CONFIG_DIR:PATH=foo

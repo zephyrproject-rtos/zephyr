@@ -1,0 +1,10 @@
+tests:
+  libraries.cmsis_nn:
+    filter: CONFIG_CPU_CORTEX_M and CONFIG_FULL_LIBC_SUPPORTED
+    integration_platforms:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - mps2/an521/cpu0
+    tags: cmsis_nn
+    min_flash: 64
+    min_ram: 32

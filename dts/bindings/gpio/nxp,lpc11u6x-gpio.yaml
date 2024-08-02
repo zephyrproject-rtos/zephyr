@@ -1,0 +1,37 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC11U6X GPIO node
+
+compatible: "nxp,lpc11u6x-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  base:
+    type: int
+    default: 0
+    description: index of the first GPIO for this port.
+
+  clocks:
+    required: true
+
+  iocon:
+    required: true
+    type: phandle
+    description: |
+      a phandle reference to the devicetree node that contains the pinmux
+      controller associated with the GPIO controller.
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,291 @@
+# Bluetooth drivers configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Bluetooth HCI Driver Options"
+
+config BT_UART
+	bool
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+
+config BT_H4
+	bool "H:4 UART"
+	select BT_UART
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_UART_ENABLED
+	help
+	  Bluetooth H:4 UART driver. Requires hardware flow control
+	  lines to be available.
+
+config BT_H5
+	bool "H:5 UART [EXPERIMENTAL]"
+	select BT_UART
+	select EXPERIMENTAL
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_3WIRE_UART_ENABLED
+	help
+	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
+	  Three-Wire UART Transport Layer.
+
+# Removed: Here only to give the user a warning about its removal
+# Remove after 3.7.0 is released
+config BT_RPMSG
+	bool "[REMOVED] HCI using RPMsg"
+	help
+	  Use BT_HCI_IPC instead
+
+config BT_HCI_IPC
+	bool "HCI using the IPC subsystem"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_IPC_ENABLED
+	select BT_HAS_HCI_VS
+	select IPC_SERVICE
+	select MBOX
+	help
+	  Bluetooth HCI driver for communication with another CPU
+	  using the IPC subsystem.
+
+config BT_SPI
+	bool "SPI HCI"
+	select SPI
+	help
+	  Supports Bluetooth ICs using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers,
+	  prepended after a known header.  Headers may vary per device, so
+	  additional platform specific knowledge may need to be added as
+	  devices are.
+
+config BT_STM32_IPM
+	bool "IPM HCI"
+	default y
+	depends on DT_HAS_ST_STM32WB_RF_ENABLED
+	select USE_STM32_HAL_CORTEX
+	select HAS_STM32LIB
+	help
+	  TODO
+
+config BT_STM32WBA
+	bool "STM32WBA HCI driver"
+	default y
+	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
+	select HAS_STM32LIB
+	select BT_HCI_SET_PUBLIC_ADDR
+	help
+	  ST STM32WBA HCI Bluetooth interface
+
+config BT_SILABS_HCI
+	bool "Silicon Labs Bluetooth interface"
+	default y
+	depends on DT_HAS_SILABS_BT_HCI_ENABLED
+	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
+	select SOC_GECKO_USE_RAIL
+	select ENTROPY_GENERATOR
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  Use Silicon Labs binary Bluetooth library to connect to the
+	  controller.
+
+config BT_USERCHAN
+	bool "HCI User Channel based driver"
+	depends on BOARD_NATIVE_POSIX
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
+	help
+	  This driver provides access to the local Linux host's Bluetooth
+	  adapter using a User Channel HCI socket to the Linux kernel. It
+	  is only intended to be used with the native POSIX build of Zephyr.
+	  The Bluetooth adapter must be powered off in order for Zephyr to
+	  be able to use it.
+
+config BT_ESP32
+	bool "ESP32 HCI driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
+	help
+	  Espressif HCI bluetooth interface
+
+config BT_PSOC6_BLESS
+	bool "PSOC6 BLESS driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	select BT_HCI_SETUP
+	help
+	  PSOC6 BLESS driver with BLE Controller which operates in
+	  Single CPU mode.
+
+config BT_DA1469X
+	bool "DA1469x HCI driver"
+	default y
+	depends on DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED
+	help
+	  Bluetooth HCI driver for communication with CMAC core
+	  on DA1469x MCU.
+
+config BT_NXP
+	bool "NXP HCI driver"
+	default y
+	depends on DT_HAS_NXP_HCI_BLE_ENABLED
+	select BT_HCI_SETUP
+	help
+	  NXP HCI bluetooth interface
+
+config BT_CYW208XX
+	bool "CYW208XX BLE driver"
+	default y
+	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	help
+	  Infineon CYW208XX HCI bluetooth interface
+
+config BT_AMBIQ_HCI
+	bool "AMBIQ BT HCI driver"
+	default y
+	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
+	select SPI
+	select GPIO if SOC_SERIES_APOLLO4X
+	select CLOCK_CONTROL if SOC_SERIES_APOLLO4X
+	select BT_HCI_SETUP
+	help
+	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
+	  HCI packets are sent and received as single Byte transfers.
+
+
+if BT_SPI
+
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	default 75
+
+config BT_BLUENRG_ACI
+	bool "ACI message with BlueNRG-based devices"
+	select BT_HCI_SET_PUBLIC_ADDR
+	help
+	  Enable support for devices compatible with the BlueNRG Bluetooth
+	  Stack. Current driver supports: ST BLUENRG-MS.
+
+endif # BT_SPI
+
+config BT_HCI_INIT_PRIORITY
+	int "BT HCI init priority"
+	default 75 if BT_AMBIQ_HCI
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  The priority of BT HCI driver initialization.
+
+config BT_STM32_IPM_RX_STACK_SIZE
+	int "STM32 IPM stack size for RX thread"
+	depends on BT_STM32_IPM
+	default 512
+
+menuconfig BT_AIROC
+	bool "AIROC BT connectivity"
+	default y
+	select GPIO                          if BT_H4
+	select UART                          if BT_H4
+	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
+	select BT_HCI_SETUP
+	select USE_INFINEON_ABSTRACTION_RTOS if BT_CYW208XX
+	select EVENTS                        if BT_CYW208XX
+	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED || DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	help
+	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
+	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip
+	  solution to enable small-form-factor IoT designs.
+source "drivers/bluetooth/hci/Kconfig.infineon"
+source "drivers/bluetooth/hci/Kconfig.nxp"
+
+config BT_DRIVER_QUIRK_NO_AUTO_DLE
+	bool "Host auto-initiated Data Length Update quirk"
+	depends on BT_AUTO_DATA_LEN_UPDATE
+	default y if BT_HCI_IPC || BT_ESP32
+	help
+	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
+	  Update procedure for new connections for controllers that do not
+	  auto-initiate the procedure if the default data length parameters are
+	  not equal to the initial parameters.
+
+	  This has to be enabled when the BLE controller connected is Zephyr
+	  open source controller.
+
+config BT_HCI_SET_PUBLIC_ADDR
+	bool
+	select BT_HCI_SETUP
+	help
+	  Pass the controller's public address to the HCI driver in setup()
+
+	  This option should be enabled by drivers for controllers that support setting the
+	  public identity through vendor-specific commands. They can then implement the
+	  setup() HCI driver API function and get the address to set from the public_addr field.
+
+	  From the application side, the public address is set using the first call to
+	  bt_id_create(), before calling bt_enable().
+
+config BT_HCI_SETUP
+	bool
+	help
+	  Enable the HCI vendor-specific Setup function.
+
+	  This option has to be enabled when the BT Controller requires execution
+	  of the vendor-specific commands sequence to initialize the BT Controller
+	  before the BT Host executes a Reset sequence.
+
+	  The user should generally avoid changing it via menuconfig or in
+	  configuration files. This option are enabled by the vendor-specific
+	  HCI extension, where the Setup function is implemented.
+
+config BT_DRV_TX_STACK_SIZE
+	int
+	default 256
+	help
+	  Stack size for the HCI driver's TX thread.
+
+config BT_DRV_RX_STACK_SIZE
+	int
+	default 640 if (BT_SPI || BT_AMBIQ_HCI)
+	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
+	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
+	default 256
+	help
+	  Stack size for the HCI driver's RX thread.
+
+config BT_SILABS_HCI_BUFFER_MEMORY
+	int "Silicon Labs Bluetooth Library memory buffer size"
+	depends on BT_SILABS_HCI
+	default 6144
+	help
+	  Select the size of allocated memory buffer for the Silicon Labs
+	  Bluetooth Library.
+
+config BT_H4_NXP_CTLR
+	bool "NXP Bluetooth Controller"
+	select GPIO
+	depends on BT_H4
+	select CRC
+	default y
+	depends on DT_HAS_NXP_BT_HCI_UART_ENABLED
+	help
+	  Enables support for NXP Bluetooth Controller.
+	  More inforamtion about NXP Bluetooth profuct could be found on
+	  https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4:WIFI-BLUETOOTH
+
+if BT_H4_NXP_CTLR
+
+config BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT
+	int "Timeout for waiting HDR Signure"
+	range 1000 60000
+	default 2500
+	help
+	  Timeout for waiting HDR Signure. Unit is millisecond.
+
+config BT_H4_NXP_CTLR_WAIT_TIME_AFTER_UPLOAD
+	int "Waiting time after firmware is uploaded"
+	range 1000 5000
+	default 1000
+	help
+	  Waiting time after firmware is uploaded. Unit is millisecond.
+
+endif #BT_H4_NXP_CTLR

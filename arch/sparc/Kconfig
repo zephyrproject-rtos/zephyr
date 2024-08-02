@@ -1,0 +1,61 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+menu "SPARC Options"
+	depends on SPARC
+
+config ARCH
+	default "sparc"
+
+config SPARC_NWIN
+	int "Number of register windows"
+	default 8
+	help
+	  Number of implemented register windows.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config NUM_IRQS
+	int
+	default 32
+
+config SPARC_CASA
+	bool "CASA instructions"
+	help
+	  Use CASA atomic instructions. Defined by SPARC V9 and available
+	  in some LEON processors.
+
+# The SPARC V8 ABI allocates a stack frame of minimum 96 byte for each SAVE
+# instruction so we bump the kernel default values.
+config MAIN_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config IPM_CONSOLE_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 1024
+
+config NET_TX_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
+endmenu

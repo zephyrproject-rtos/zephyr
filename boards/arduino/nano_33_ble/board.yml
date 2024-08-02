@@ -1,0 +1,7 @@
+board:
+  name: arduino_nano_33_ble
+  vendor: arduino
+  socs:
+  - name: nrf52840
+    variants:
+    - name: 'sense'

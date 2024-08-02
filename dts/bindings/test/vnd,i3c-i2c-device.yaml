@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test I2C device under I3C bus
+
+compatible: "vnd,i3c-i2c-device"
+
+include:
+  - name: i2c-device.yaml
+    property-blocklist:
+      - label
+
+properties:
+  label:
+    type: string

@@ -1,0 +1,357 @@
+/*
+ * Copyright (c) 2018 - 2020 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "litex,vexriscv", "litex-dev";
+	model = "litex,vexriscv";
+
+
+	chosen {
+		zephyr,entropy = &prbs0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu0: cpu@0 {
+			clock-frequency = <100000000>;
+			compatible = "litex,vexriscv-standard", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32im_zicsr_zifencei";
+			status = "okay";
+		};
+	};
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "litex,vexriscv";
+		ranges;
+		ctrl0: soc_controller@e0000000 {
+			compatible = "litex,soc-controller";
+			reg = <0xe0000000 0x4
+				0xe0000004 0x4
+				0xe0000008 0x4>;
+			reg-names = "reset",
+				"scratch",
+				"bus_errors";
+		};
+		intc0: interrupt-controller@bc0 {
+			compatible = "litex,vexriscv-intc0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0xbc0 0x4 0xfc0 0x4>;
+			reg-names = "irq_mask", "irq_pending";
+			riscv,max-priority = <7>;
+		};
+		uart0: serial@e0001800 {
+			compatible = "litex,uart";
+			interrupt-parent = <&intc0>;
+			interrupts = <2 10>;
+			reg = <0xe0001800 0x4
+				0xe0001804 0x4
+				0xe0001808 0x4
+				0xe000180c 0x4
+				0xe0001810 0x4
+				0xe0001814 0x4
+				0xe0001818 0x4
+				0xe000181c 0x4>;
+			reg-names =
+				"rxtx",
+				"txfull",
+				"rxempty",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"txempty",
+				"rxfull";
+			status = "disabled";
+		};
+		spi0: spi@e0002000 {
+			compatible = "litex,spi";
+			reg = <0xe0002000 0x4
+				0xe0002004 0x4
+				0xe0002008 0x4
+				0xe000200c 0x4
+				0xe0002010 0x4
+				0xe0002014 0x4>;
+			reg-names = "control",
+				"status",
+				"mosi",
+				"miso",
+				"cs",
+				"loopback";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		spi1: spi@e000c000 {
+			compatible = "litex,spi-litespi";
+			reg = <0xe000c000 0x4>,
+				<0xe000c004 0x4>,
+				<0xe000c008 0x4>,
+				<0xe000c00c 0x4>,
+				<0xe000c010 0x4>,
+				<0xe000c800 0x4>,
+				<0x60000000 0x1000000>;
+			reg-names = "core_mmap_dummy_bits",
+				"core_master_cs",
+				"core_master_phyconfig",
+				"core_master_rxtx",
+				"core_master_status",
+				"phy_clk_divisor",
+				"flash_mmap";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			spiflash0: flash@0 {
+				compatible = "jedec,spi-nor";
+				reg = <0>;
+				spi-max-frequency = <10000000>;
+			};
+		};
+		timer0: timer@e0002800 {
+			compatible = "litex,timer0";
+			interrupt-parent = <&intc0>;
+			interrupts = <1 0>;
+			reg = <0xe0002800 0x4
+				0xe0002804 0x4
+				0xe0002808 0x4
+				0xe000280c 0x4
+				0xe0002810 0x4
+				0xe0002814 0x4
+				0xe0002818 0x4
+				0xe000281c 0x4
+				0xe0002820 0x4
+				0xe0002824 0x8>;
+			reg-names =
+				"load",
+				"reload",
+				"en",
+				"update_value",
+				"value",
+				"ev_status",
+				"ev_pending",
+				"ev_enable",
+				"uptime_latch",
+				"uptime_cycles";
+			status = "disabled";
+		};
+		eth0: ethernet@e0009800 {
+			compatible = "litex,liteeth";
+			interrupt-parent = <&intc0>;
+			interrupts = <3 0>;
+			reg = <0xe0009800 0x4
+				0xe0009804 0x4
+				0xe0009808 0x4
+				0xe000980c 0x4
+				0xe0009810 0x4
+				0xe0009814 0x4
+				0xe0009818 0x4
+				0xe000981c 0x4
+				0xe0009820 0x4
+				0xe0009824 0x4
+				0xe0009828 0x4
+				0xe000982c 0x4
+				0xe0009830 0x4
+				0xe0009834 0x4
+				0xb0000000 0x2000>;
+			local-mac-address = [10 e2 d5 00 00 02];
+			reg-names = "rx_slot",
+				"rx_length",
+				"rx_errors",
+				"rx_ev_status",
+				"rx_ev_pending",
+				"rx_ev_enable",
+				"tx_start",
+				"tx_ready",
+				"tx_level",
+				"tx_slot",
+				"tx_length",
+				"tx_ev_status",
+				"tx_ev_pending",
+				"tx_ev_enable",
+				"buffers";
+			status = "disabled";
+		};
+		dna0: dna@e0003800 {
+			compatible = "litex,dna0";
+			/* DNA data is 57-bits long,
+			so it requires 8 bytes.
+			In LiteX each 32-bit register holds
+			only a single byte of meaningful data,
+			hence 8 registers. */
+			reg = <0xe0003800 0x20>;
+			reg-names = "mem";
+			status = "disabled";
+		};
+		i2c0: i2c@e0005000 {
+			compatible = "litex,i2c";
+			reg = <0xe0005000 0x4 0xe0005004 0x4>;
+			reg-names = "write", "read";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		gpio_out: gpio@e0005800 {
+			compatible = "litex,gpio";
+			reg = <0xe0005800 0x4>;
+			reg-names = "control";
+			ngpios = <4>;
+			port-is-output;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		gpio_in: gpio@e0006000 {
+			compatible = "litex,gpio";
+			reg = <0xe0006000 0x4
+				0xe0006004 0x4
+				0xe0006008 0x4
+				0xe0006010 0x4
+				0xe0006014 0x4>;
+			interrupt-parent = <&intc0>;
+			interrupts = <4 2>;
+			reg-names = "base",
+				"irq_mode",
+				"irq_edge",
+				"irq_pend",
+				"irq_en";
+			ngpios = <4>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+		prbs0: prbs@e0006800 {
+			compatible = "litex,prbs";
+			reg = <0xe0006800 0x4>;
+			reg-names = "status";
+			status = "disabled";
+		};
+		pwm0: pwm@e0007000 {
+			compatible = "litex,pwm";
+			reg = <0xe0007000 0x4 0xe0007004 0x10 0xe0007014 0x10>;
+			reg-names = "enable", "width", "period";
+			status = "disabled";
+			#pwm-cells = <2>;
+		};
+		i2s_rx: i2s_rx@e000a800 {
+			compatible = "litex,i2s";
+			reg = <0xe000a800 0x4
+				0xe000a804 0x4
+				0xe000a808 0x4
+				0xe000a80c 0x4
+				0xe000a810 0x4
+				0xe000a814 0x4
+				0xb1000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <6 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "ev_status",
+				"ev_pending",
+				"ev_enable",
+				"rx_ctl",
+				"rx_stat",
+				"rx_conf",
+				"fifo";
+			fifo_depth = <256>;
+			status = "disabled";
+		};
+		i2s_tx: i2s_tx@e000b000 {
+			compatible = "litex,i2s";
+			reg = <0xe000b000 0x4
+				0xe000b004 0x4
+				0xe000b008 0x4
+				0xe000b00c 0x4
+				0xe000b010 0x4
+				0xe000b014 0x4
+				0xb2000000 0x40000>;
+			interrupt-parent = <&intc0>;
+			interrupts = <7 2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg-names = "ev_status",
+				"ev_pending",
+				"ev_enable",
+				"tx_ctl",
+				"tx_stat",
+				"tx_conf",
+				"fifo";
+			fifo_depth = <256>;
+			status = "disabled";
+		};
+		clock-outputs {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clk0: clock-controller@0 {
+				#clock-cells = <1>;
+				reg = <0>;
+				compatible = "litex,clkout";
+				clock-output-names = "CLK_0";
+				litex,clock-frequency = <11289600>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "disabled";
+			};
+			clk1: clock-controller@1 {
+				#clock-cells = <1>;
+				reg = <1>;
+				compatible = "litex,clkout";
+				clock-output-names = "CLK_1";
+				litex,clock-frequency = <22579200>;
+				litex,clock-phase = <0>;
+				litex,clock-duty-num = <1>;
+				litex,clock-duty-den = <2>;
+				litex,clock-margin = <1>;
+				litex,clock-margin-exp = <2>;
+				status = "disabled";
+			};
+		};
+		clock0: clock@e0004800 {
+			compatible = "litex,clk";
+			reg = <0xe0004800 0x4
+				0xe0004804 0x4
+				0xe0004808 0x4
+				0xe000480c 0x4
+				0xe0004810 0x4
+				0xe0004814 0x4
+				0xe0004818 0x4
+				0xe000481c 0x4>;
+			reg-names = "drp_reset",
+				"drp_locked",
+				"drp_read",
+				"drp_write",
+				"drp_drdy",
+				"drp_adr",
+				"drp_dat_w",
+				"drp_dat_r";
+			#clock-cells = <1>;
+			clocks = <&clk0 0>, <&clk1 1>;
+			clock-output-names = "CLK_0", "CLK_1";
+			litex,lock-timeout = <10>;
+			litex,drdy-timeout = <10>;
+			litex,divclk-divide-min = <1>;
+			litex,divclk-divide-max = <107>;
+			litex,clkfbout-mult-min = <2>;
+			litex,clkfbout-mult-max = <65>;
+			litex,vco-freq-min = <600000000>;
+			litex,vco-freq-max = <1200000000>;
+			litex,clkout-divide-min = <1>;
+			litex,clkout-divide-max = <126>;
+			litex,vco-margin = <0>;
+			status = "disabled";
+		};
+	};
+};

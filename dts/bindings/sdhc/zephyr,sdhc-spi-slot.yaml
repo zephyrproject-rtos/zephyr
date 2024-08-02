@@ -1,0 +1,37 @@
+description: Generic Zephyr SPI based SDHC controller
+
+compatible: "zephyr,sdhc-spi-slot"
+
+include: [spi-device.yaml]
+
+properties:
+  power-delay-ms:
+    type: int
+    default: 1
+    description: |
+      Time in ms for SPI SDHC to delay when toggling power to the SD card. This
+      delay gives the card time to power up or down fully. It can be increased
+      if you observe issues initializing your card.
+
+  spi-clock-mode-cpol:
+    type: boolean
+    description: |
+      Clock polarity to use for SPI SDHC. Some cards respond properly
+      only when the clock goes low when not active.
+
+  spi-clock-mode-cpha:
+    type: boolean
+    description: |
+      Clock phase: this dictates when is the data captured, and depends
+      on the clock's polarity. When mode-cpol is set and this option as well,
+      capture will occur on low to high transition and high to low if
+      this option is not set (default).
+
+  pwr-gpios:
+    type: phandle-array
+    description: |
+      Power pin
+      This pin defaults to active high when consumed by the SPI SDHC driver.
+      It can be used to toggle card power via an external control circuit
+
+bus: sd

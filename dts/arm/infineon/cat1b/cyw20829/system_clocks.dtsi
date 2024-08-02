@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "clock_source_def.h"
+/ {
+	clocks {
+		/* iho */
+		clk_iho: clk_iho {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <48000000>;
+			status = "okay";
+		};
+
+		/* imo */
+		clk_imo: clk_imo {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <8000000>;
+			status = "okay";
+		};
+
+		/* fll */
+		fll0: fll0 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <96000000>;
+			status = "okay";
+		};
+
+		/* path mux0 */
+		path_mux0: path_mux0 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_iho>;
+			status = "disabled";
+		};
+
+		/* path mux1 */
+		path_mux1: path_mux1 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_iho>;
+			status = "disabled";
+		};
+
+		/* path mux2 */
+		path_mux2: path_mux2 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_iho>;
+			status = "disabled";
+		};
+
+		/* path mux3 */
+		path_mux3: path_mux3 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&clk_imo>;
+			status = "disabled";
+		};
+
+		/* clk_hf0 */
+		clk_hf0: clk_hf0 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clock-div = <1>;
+			clocks = <&fll0>;
+			status = "disabled";
+		};
+
+		/* clk_hf1 */
+		clk_hf1: clk_hf1 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clock-div = <1>;
+			clocks = <&fll0>;
+			status = "disabled";
+		};
+
+		/* clk_hf2 */
+		clk_hf2: clk_hf2 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clock-div = <1>;
+			clocks = <&path_mux2>;
+			status = "disabled";
+		};
+
+		/* clk_hf3 */
+		clk_hf3: clk_hf3 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clock-div = <2>;
+			clocks = <&path_mux1>;
+			status = "disabled";
+		};
+
+	};
+
+};

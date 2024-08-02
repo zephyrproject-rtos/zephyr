@@ -1,0 +1,24 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - ethernet
+  depends_on:
+    - eth
+tests:
+  net.ethernet.build.default: {}
+
+  net.ethernet.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  net.ethernet.build.stm32_ethernet:
+    filter: dt_compat_enabled("st,stm32-ethernet")
+    extra_configs:
+      - CONFIG_ETH_STM32_MULTICAST_FILTER=y
+    platform_allow:
+      - stm32h573i_dk

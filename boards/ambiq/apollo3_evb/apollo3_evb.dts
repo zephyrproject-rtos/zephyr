@@ -1,0 +1,160 @@
+/dts-v1/;
+#include <ambiq/ambiq_apollo3_blue.dtsi>
+
+#include "apollo3_evb-pinctrl.dtsi"
+
+/ {
+	model = "Ambiq Apollo3 Blue evaluation board";
+	compatible = "ambiq,apollo3_evb";
+
+	chosen {
+		zephyr,itcm = &tcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+		zephyr,flash-controller = &flash;
+		zephyr,bt_hci = &bt_hci_apollo;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0_31 10 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0_31 15 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0_31 14 GPIO_ACTIVE_LOW>;
+			label = "LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
+			label = "LED 4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0_31 16 GPIO_ACTIVE_LOW>;
+			label = "BTN0";
+		};
+		button1: button_1 {
+			gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
+			label = "BTN1";
+		};
+		button2: button_2 {
+			gpios = <&gpio0_31 19 GPIO_ACTIVE_LOW>;
+			label = "BTN2";
+		};
+	};
+};
+
+&flash0 {
+	erase-block-size = <8192>;
+	write-block-size = <4>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 16KB of storage at the end of the 976KB of flash */
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 0x4000>;
+		};
+	};
+};
+
+&bleif {
+	pinctrl-0 = <&bleif_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi0 {
+	compatible = "ambiq,spi";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
+};
+
+&i2c3 {
+	compatible = "ambiq,i2c";
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&counter0 {
+	status = "okay";
+};
+
+&counter1 {
+	status = "okay";
+};
+
+&counter2 {
+	status = "okay";
+};
+
+&counter3 {
+	status = "okay";
+};
+
+&counter4 {
+	status = "okay";
+};
+
+&counter5 {
+	status = "okay";
+};
+
+&counter6 {
+	status = "okay";
+};
+
+&counter7 {
+	status = "okay";
+};
+
+&gpio0_31 {
+	status = "okay";
+};
+
+&gpio32_63 {
+	status = "okay";
+};

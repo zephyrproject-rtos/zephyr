@@ -1,0 +1,92 @@
+# FXAS21002 3-axis gyroscope
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FXAS21002
+	bool "FXAS21002 gyroscope driver"
+	default y
+	depends on DT_HAS_NXP_FXAS21002_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_NXP_FXAS21002),spi)
+	help
+	  Enable driver for the FXAS21002 gyroscope
+
+if FXAS21002
+
+config FXAS21002_WHOAMI
+	hex "WHOAMI value"
+	range 0x00 0xff
+	default 0xd7
+	help
+	  The datasheet defines the value of the WHOAMI register, but some
+	  pre-production devices can have a different value. It is unlikely you
+	  should need to change this configuration option from the default.
+
+config FXAS21002_RANGE
+	int "Full scale range"
+	range 0 3
+	default 0
+	help
+	  Selects the full scale range
+	  0: +/-2000 dps (62.5 mdps/LSB)
+	  1: +/-1000 dps (31.25 mdps/LSB)
+	  2: +/-500 dps (15.625 mdps/LSB)
+	  3: +/-250 dps (7.8125 mdps/LSB)
+
+config FXAS21002_DR
+	int "Output data rate"
+	range 0 7
+	default 3
+	help
+	  Selects the output data rate
+	  0: 800 Hz
+	  1: 400 Hz
+	  2: 200 Hz
+	  3: 100 Hz
+	  4: 50 Hz
+	  5: 25 Hz
+	  6: 12.5 Hz
+	  7: 12.5 Hz
+
+choice
+	prompt "Trigger mode"
+	default FXAS21002_TRIGGER_NONE
+
+config FXAS21002_TRIGGER_NONE
+	bool "No trigger"
+
+config FXAS21002_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select FXAS21002_TRIGGER
+
+config FXAS21002_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select FXAS21002_TRIGGER
+
+endchoice
+
+config FXAS21002_TRIGGER
+	bool
+
+if FXAS21002_TRIGGER
+
+config FXAS21002_DRDY_INT1
+	bool "Data ready interrupt to INT1 pin"
+	help
+	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
+	  INT2 pin.
+
+config FXAS21002_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on FXAS21002_TRIGGER_OWN_THREAD
+	default 10
+
+config FXAS21002_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on FXAS21002_TRIGGER_OWN_THREAD
+	default 1024
+
+endif # FXAS21002_TRIGGER
+
+endif # FXAS21002

@@ -1,0 +1,52 @@
+tests:
+  cpp.libcxx.glibcxx.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    toolchain_exclude: xcc
+    min_flash: 54
+    min_ram: 24
+    tags: cpp
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_GLIBCXX_LIBCPP=y
+      - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - mps2/an385
+  cpp.libcxx.glibcxx.newlib_nano:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    toolchain_exclude: xcc
+    min_flash: 54
+    tags: cpp
+    timeout: 60
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_NEWLIB_LIBC_NANO=y
+      - CONFIG_GLIBCXX_LIBCPP=y
+    integration_platforms:
+      - mps2/an385
+  cpp.libcxx.glibcxx.picolibc:
+    filter: TOOLCHAIN_HAS_PICOLIBC == 1
+    toolchain_exclude: xcc
+    tags: cpp
+    timeout: 60
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+      - CONFIG_GLIBCXX_LIBCPP=y
+      - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - mps2/an385
+  cpp.libcxx.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    min_flash: 54
+    tags: cpp
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+      - CONFIG_ARCMWDT_LIBCPP=y
+  cpp.libcxx.host:
+    arch_allow: posix
+    tags: cpp
+    extra_configs:
+      - CONFIG_EXTERNAL_LIBCPP=y
+      - CONFIG_CPP_EXCEPTIONS=y
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

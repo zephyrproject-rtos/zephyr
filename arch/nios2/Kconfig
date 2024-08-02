@@ -1,0 +1,96 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Nios II Options"
+	depends on NIOS2
+
+config ARCH
+	string
+	default "nios2"
+
+menu "Nios II Gen 2 Processor Options"
+
+config CPU_NIOS2_GEN2
+	bool
+	default y
+	select BUILD_OUTPUT_HEX
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option signifies the use of a Nios II Gen 2 CPU
+
+endmenu
+
+menu "Nios II Family Options"
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NUM_IRQS
+	int
+	default 32
+
+config HAS_MUL_INSTRUCTION
+	bool
+
+config HAS_DIV_INSTRUCTION
+	bool
+
+config HAS_MULX_INSTRUCTION
+	bool
+
+config INCLUDE_RESET_VECTOR
+	bool "Include Reset vector"
+	default y
+	help
+	  Include the reset vector stub, which enables instruction/data caches
+	  and then jumps to __start. This code is typically located at the very
+	  beginning of flash memory. You may need to omit this if using the
+	  nios2-download tool since it refuses to load data anywhere other than
+	  RAM.
+
+config EXTRA_EXCEPTION_INFO
+	bool "Extra exception debug information"
+	help
+	  Have exceptions print additional useful debugging information in
+	  human-readable form, at the expense of code size. For example,
+	  the cause code for an exception will be supplemented by a string
+	  describing what that cause code means.
+
+choice
+	prompt "Global Pointer options"
+	default GP_GLOBAL
+
+config GP_NONE
+	bool "No global pointer"
+	help
+	  Do not use global pointer relative offsets at all
+
+config GP_LOCAL
+	bool "Local data global pointer references"
+	help
+	  Use global pointer relative offsets for small globals declared in the
+	  same C file as the code that uses it.
+
+config GP_GLOBAL
+	bool "Global data global pointer references"
+	help
+	  Use global pointer relative offsets for small globals declared
+	  anywhere in the executable. Note that if any small globals that are put
+	  in alternate sections they must be declared
+	  in headers with proper __attribute__((section)) or the linker will
+	  error out.
+
+config GP_ALL_DATA
+	bool "All data global pointer references"
+	help
+	  Use GP relative access for all data in the program, not just
+	  small data. Use this if your board has 64K or less of RAM.
+
+endchoice
+
+endmenu
+
+endmenu

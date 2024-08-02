@@ -1,0 +1,27 @@
+description: nRF PWM
+
+compatible: "nordic,nrf-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml, memory-region.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  center-aligned:
+    type: boolean
+    description: Set this to use center-aligned (up and down) counter mode.
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

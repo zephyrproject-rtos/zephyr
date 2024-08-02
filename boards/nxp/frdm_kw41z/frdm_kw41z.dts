@@ -1,0 +1,191 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <nxp/nxp_kw41z.dtsi>
+#include "frdm_kw41z-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP Freedom KW41Z board";
+	compatible = "nxp,kw41z", "nxp,mkw41z4";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_3;
+		sw1 = &user_button_4;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpioa 19 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_3: button_0 {
+			label = "User SW3";
+			gpios = <&gpioc 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_4: button_1 {
+			label = "User SW4";
+			gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* A0 cannot be muxed as gpio */
+			   <1 0 &gpiob 18 0>,	/* A1 */
+			   <2 0 &gpiob 2 0>,	/* A2 */
+			   <3 0 &gpiob 3 0>,	/* A3 */
+			   <4 0 &gpiob 1 0>,	/* A4 */
+			   <6 0 &gpioc 6 0>,	/* D0 */
+			   <7 0 &gpioc 7 0>,	/* D1 */
+			   <8 0 &gpioc 19 0>,	/* D2 */
+			   <9 0 &gpioc 16 0>,	/* D3 */
+			   <10 0 &gpioc 4 0>,	/* D4 */
+			   <11 0 &gpioc 17 0>,	/* D5 */
+			   <12 0 &gpioc 18 0>,	/* D6 */
+			   <13 0 &gpioa 1 0>,	/* D7 */
+			   <14 0 &gpioa 0 0>,	/* D8 */
+			   <15 0 &gpioc 1 0>,	/* D9 */
+			   <16 0 &gpioa 19 0>,	/* D10 */
+			   <17 0 &gpioa 16 0>,	/* D11 */
+			   <18 0 &gpioa 17 0>,	/* D12 */
+			   <19 0 &gpioa 18 0>,	/* D13 */
+			   <20 0 &gpioc 3 0>,	/* D14 */
+			   <21 0 &gpioc 2 0>;	/* D15 */
+	};
+};
+
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	fxos8700: fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		int1-gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&lpuart0 {
+	status = "okay";
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&tpm0_default>;
+	pinctrl-names = "default";
+};
+
+&tpm1 {
+	status = "disabled";
+};
+
+&tpm2 {
+	status = "okay";
+	pinctrl-0 = <&tmp2_default>;
+	pinctrl-names = "default";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00070000>;
+		};
+		storage_partition: partition@700000 {
+			label = "storage";
+			reg = <0x00070000 0x00010000>;
+		};
+	};
+};

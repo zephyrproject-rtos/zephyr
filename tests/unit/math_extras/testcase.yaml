@@ -1,0 +1,4 @@
+tests:
+  utilities.math:
+    timeout: 5
+    type: unit

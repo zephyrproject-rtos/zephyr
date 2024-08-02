@@ -1,0 +1,32 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+name: ram-console
+append:
+  EXTRA_CONF_FILE: ram-console.conf
+
+boards:
+  imx8mm_evk/mimx8mm6/a53:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mm_evk_mimx8mm6_a53.overlay
+  imx8mm_evk/mimx8mm6/a53/smp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mm_evk_mimx8mm6_a53.overlay
+  imx8mn_evk/mimx8mn6/a53:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mn_evk_mimx8mn6_a53.overlay
+  imx8mn_evk/mimx8mn6/a53/smp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mn_evk_mimx8mn6_a53.overlay
+  imx8mp_evk/mimx8ml8/a53:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mp_evk_mimx8ml8_a53.overlay
+  imx8mp_evk/mimx8ml8/a53/smp:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx8mp_evk_mimx8ml8_a53.overlay
+  imx93_evk/mimx9352/a55:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/imx93_evk_mimx9352_a55.overlay

@@ -1,0 +1,20 @@
+# NXP MCUX analog comparator (ACMP) configuration options
+
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_ACMP
+	bool "NXP MCUX Analog Comparator (ACMP)"
+	default y
+	depends on DT_HAS_NXP_KINETIS_ACMP_ENABLED
+	select PINCTRL
+	help
+	  Enable driver for the NXP MCUX Analog Comparator (ACMP).
+
+config MCUX_ACMP_TRIGGER
+	bool "Trigger support"
+	depends on MCUX_ACMP
+	help
+	  Enable trigger support for the NXP MCUX Analog Comparator
+	  (ACMP).

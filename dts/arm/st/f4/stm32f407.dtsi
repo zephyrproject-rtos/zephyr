@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f405.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f407", "st,stm32f4", "simple-bus";
+
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x8000>;
+			interrupts = <61 0>;
+			clock-names = "stmmaceth", "mac-clk-tx",
+				      "mac-clk-rx", "mac-clk-ptp";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x02000000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x04000000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x08000000>,
+				 <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
+			status = "disabled";
+		};
+	};
+};

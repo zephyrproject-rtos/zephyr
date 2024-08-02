@@ -1,0 +1,123 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TAINT_BLOBS
+	bool
+	select TAINT
+	help
+	  This option is selected when binary blobs are present locally at
+	  build time to reflect that the build might have been tainted by them.
+
+comment "Available modules."
+
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
+
+source "modules/Kconfig.altera"
+source "modules/Kconfig.atmel"
+source "modules/Kconfig.chre"
+source "modules/Kconfig.cypress"
+source "modules/Kconfig.eos_s3"
+source "modules/Kconfig.esp32"
+source "modules/Kconfig.imx"
+source "modules/Kconfig.infineon"
+source "modules/Kconfig.libmetal"
+source "modules/lvgl/Kconfig"
+source "modules/Kconfig.mcux"
+source "modules/Kconfig.microchip"
+source "modules/Kconfig.nuvoton"
+source "modules/Kconfig.open-amp"
+source "modules/Kconfig.picolibc"
+source "modules/Kconfig.nxp_s32"
+source "modules/Kconfig.renesas_fsp"
+source "modules/Kconfig.silabs"
+source "modules/Kconfig.simplelink"
+source "modules/Kconfig.sof"
+source "modules/Kconfig.stm32"
+source "modules/Kconfig.syst"
+source "modules/Kconfig.telink"
+source "modules/thrift/Kconfig"
+source "modules/Kconfig.tinycrypt"
+source "modules/Kconfig.vega"
+source "modules/Kconfig.wurthelektronik"
+source "modules/Kconfig.xtensa"
+source "modules/zcbor/Kconfig"
+source "modules/Kconfig.mcuboot"
+source "modules/Kconfig.intel"
+source "modules/hostap/Kconfig"
+
+comment "Unavailable modules, please install those via the project manifest."
+
+# List of comments to display when Zephyr modules are not available, please
+# use the following syntax:
+# ---------------------------------------------------
+# comment "<module_name> module not available."
+#	depends on !ZEPHYR_<MODULE_NAME_UPPER>_MODULE
+#
+# Remember to add the following code inside the `<module>/Kconfig file:
+# ---------------------------------------------------
+# config ZEPHYR_<MODULE_NAME_UPPER>_MODULE
+# 	bool
+
+comment "hal_gigadevice module not available."
+	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE
+
+comment "hal_nordic module not available."
+	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "liblc3 module not available."
+	depends on !ZEPHYR_LIBLC3_MODULE
+
+comment "LittleFS module not available."
+	depends on !ZEPHYR_LITTLEFS_MODULE
+
+comment "mbedtls module not available."
+	depends on !ZEPHYR_MBEDTLS_MODULE
+
+comment "Trusted-firmware-m module not available."
+	depends on !ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
+
+comment "Trusted-firmware-a module not available."
+	depends on !ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
+
+comment "Nanopb module not available."
+	depends on !ZEPHYR_NANOPB_MODULE
+
+comment "Lz4 module not available."
+	depends on !ZEPHYR_LZ4_MODULE
+
+comment "loramac-node module not available."
+	depends on !ZEPHYR_LORAMAC_NODE_MODULE
+
+comment "CANopenNode module not available."
+	depends on !ZEPHYR_CANOPENNODE_MODULE
+
+comment "zcbor module not available."
+	depends on !ZEPHYR_ZCBOR_MODULE
+
+comment "CHRE module not available."
+	depends on !ZEPHYR_CHRE_MODULE
+
+comment "THRIFT module not available."
+	depends on !ZEPHYR_THRIFT_MODULE
+
+comment "Segger module not available."
+	depends on !ZEPHYR_SEGGER_MODULE
+
+comment "LVGL module not available."
+	depends on !ZEPHYR_LVGL_MODULE
+
+comment "cmsis module not available."
+	depends on !ZEPHYR_CMSIS_MODULE
+
+comment "cmsis-dsp module not available."
+	depends on !ZEPHYR_CMSIS_DSP_MODULE
+
+comment "cmsis-nn module not available."
+	depends on !ZEPHYR_CMSIS_NN_MODULE
+
+# This ensures that symbols are available in Kconfig for dependency checking
+# and referencing, while keeping the settings themselves unavailable when the
+# modules are not present in the workspace
+if 0
+osource "modules/*/Kconfig"
+endif

@@ -1,0 +1,81 @@
+tests:
+  arch.interrupt:
+    # nios2 excluded, see #22956
+    arch_exclude: nios2
+    platform_exclude: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.interrupt.qemu_cortex_m0:
+    platform_allow: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=y
+  arch.interrupt.minimallibc:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
+    # nios2 excluded, see #22956
+    arch_exclude: nios2
+    platform_exclude: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+      - libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  arch.interrupt.qemu_cortex_m0.minimallibc:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
+    platform_allow: qemu_cortex_m0
+    tags:
+      - kernel
+      - interrupt
+      - libc
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=y
+      - CONFIG_MINIMAL_LIBC=y
+  arch.shared_interrupt:
+    platform_exclude:
+      # excluded because of failures during test_prevent_interruption
+      - qemu_cortex_m0
+      # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
+      # does not trigger interrupts
+      - it8xxx2_evb
+    arch_exclude:
+      # same as for qemu_cortex_m0, #22956
+      - nios2
+      # test needs 2 working interrupt lines
+      - xtensa
+      # TODO: make test work on this arch
+      - mips
+    tags:
+      - kernel
+      - interrupt
+    extra_configs:
+      - CONFIG_SHARED_INTERRUPTS=y
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+  arch.shared_interrupt.lto:
+    # excluded because of failures during test_prevent_interruption
+    platform_exclude: qemu_cortex_m0
+    arch_exclude:
+      # same as above, #22956
+      - nios2
+      # test needs 2 working interrupt lines
+      - xtensa
+      # TODO: make test work on this arch
+      - mips
+    tags:
+      - kernel
+      - interrupt
+      - lto
+    extra_configs:
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
+      - CONFIG_LTO=y
+    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
+    filter: >
+      not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+      and not CONFIG_CODE_DATA_RELOCATION

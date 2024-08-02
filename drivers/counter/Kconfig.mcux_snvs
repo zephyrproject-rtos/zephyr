@@ -1,0 +1,25 @@
+# MCUXpresso SDK SNVS (Secure) RTC
+
+# Copyright (c) 2021 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_SNVS
+	bool "IMX SNVS RTC driver"
+	default y
+	depends on DT_HAS_NXP_IMX_SNVS_RTC_ENABLED
+	help
+	  Enable support for the IMX SNVS High/Low Power clock.
+
+config COUNTER_MCUX_SNVS_SRTC
+	bool "IMX SNVS SRTC low power support"
+	depends on COUNTER_MCUX_SNVS
+	default y
+	help
+	  Enable the low power SRTC in SNVS to synchronise.
+
+config COUNTER_MCUX_SNVS_SRTC_WAKE
+	bool "IMX SNVS wake-up on SRTC alarm"
+	depends on COUNTER_MCUX_SNVS_SRTC
+	default y
+	help
+	  Assert Wake-Up Interrupt on SRTC alarm

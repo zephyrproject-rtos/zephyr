@@ -1,0 +1,30 @@
+# PAN1770 EVB configuration
+
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pan1770_evb
+name: pan1770-evb
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+  - netif:openthread

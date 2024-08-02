@@ -1,0 +1,31 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* I2C bus pins are exposed on the ST morpho header.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c2    PA11  CN10:5      PA12  CN10:3
+ *  i2c3    PB14  CN7:36      PB13  CN7:38
+ *
+ * Short Pin PA11 to PB14, and PA12 to PB13, for the test to pass.
+ */
+
+&i2c2 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb14>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};

@@ -1,0 +1,35 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MBOX
+	bool "Multi-Channel Inter-Processor Mailbox (MBOX) drivers"
+	help
+	  Include multi-channel interrupt-based inter-processor mailboxes
+	  drivers in system configuration
+
+if MBOX
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+source "drivers/mbox/Kconfig.nrfx"
+source "drivers/mbox/Kconfig.nxp_s32"
+source "drivers/mbox/Kconfig.nxp_imx"
+source "drivers/mbox/Kconfig.nxp_mailbox"
+source "drivers/mbox/Kconfig.andes"
+source "drivers/mbox/Kconfig.nrf_vevif_task"
+source "drivers/mbox/Kconfig.nrf_vevif_event"
+source "drivers/mbox/Kconfig.nrf_bellboard"
+source "drivers/mbox/Kconfig.stm32_hsem"
+
+config MBOX_INIT_PRIORITY
+	int "MBOX init priority"
+	default 40
+	help
+	  MBOX driver device initialization priority.
+
+module = MBOX
+module-str = mbox
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MBOX

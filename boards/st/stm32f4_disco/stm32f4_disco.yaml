@@ -1,0 +1,16 @@
+identifier: stm32f4_disco
+name: ST STM32F4 Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 1024
+supported:
+  - can
+  - pwm
+  - counter
+  - usb
+vendor: st

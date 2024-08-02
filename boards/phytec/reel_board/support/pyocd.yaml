@@ -1,0 +1,4 @@
+# reel_board global options
+
+# Delay for 0.5s after the reset is issued
+reset.post_delay: 0.5

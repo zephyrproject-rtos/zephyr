@@ -1,0 +1,9 @@
+tests:
+  arch.x86.pagetables:
+    arch_allow: x86
+    tags:
+      - userspace
+      - mmu
+    filter: CONFIG_MMU
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=0

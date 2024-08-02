@@ -1,0 +1,17 @@
+# Copyright (c) 2021, Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments HDC20XX Temperature and Humidity Sensor
+
+compatible: "ti,hdc20xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: DRDY/INT pin.
+
+      The DRDY/INT pin of HDC20xx sensor is open-drain, active low. If
+      connected directly the MCU pin should be configured as pull-up
+      as pull-up, active low.

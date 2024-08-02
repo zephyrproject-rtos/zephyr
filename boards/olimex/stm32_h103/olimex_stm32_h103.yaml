@@ -1,0 +1,19 @@
+identifier: olimex_stm32_h103
+name: OLIMEX-STM32-H103
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 128
+supported:
+  - gpio
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - bluetooth
+    - net
+vendor: olimex

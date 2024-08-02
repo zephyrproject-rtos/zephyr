@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2021 Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_device: test_device {
+		compatible = "vnd,pinctrl-device";
+		pinctrl-0 = <&test_device_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	test_device_default: test_device_default {
+		/* Note: the groups are just meant for testing if properties and
+		   pins are parsed correctly, but do not necessarily represent a
+		   feasible combination */
+		group1 {
+			pinmux = <GD32_PINMUX_AF('A', 0, AF0)>,
+				 <GD32_PINMUX_AF('B', 1, AF1)>;
+		};
+		group2 {
+			pinmux = <GD32_PINMUX_AF('C', 2, AF2)>;
+			drive-push-pull;
+		};
+		group3 {
+			pinmux = <GD32_PINMUX_AF('A', 3, AF3)>;
+			drive-open-drain;
+		};
+		group4 {
+			pinmux = <GD32_PINMUX_AF('B', 4, AF4)>;
+			bias-disable;
+		};
+		group5 {
+			pinmux = <GD32_PINMUX_AF('C', 5, AF5)>;
+			bias-pull-up;
+		};
+		group6 {
+			pinmux = <GD32_PINMUX_AF('A', 6, AF6)>;
+			bias-pull-down;
+		};
+		group7 {
+			pinmux = <GD32_PINMUX_AF('B', 7, AF7)>;
+			slew-rate = "max-speed-2mhz";
+		};
+		group8 {
+			pinmux = <GD32_PINMUX_AF('C', 8, AF8)>;
+			slew-rate = "max-speed-25mhz";
+		};
+		group9 {
+			pinmux = <GD32_PINMUX_AF('A', 9, AF9)>;
+			slew-rate = "max-speed-50mhz";
+		};
+		group10 {
+			pinmux = <GD32_PINMUX_AF('B', 10, AF10)>;
+			slew-rate = "max-speed-200mhz";
+		};
+		group11 {
+			pinmux = <GD32_PINMUX_AF('C', 11, ANALOG)>;
+		};
+	};
+};

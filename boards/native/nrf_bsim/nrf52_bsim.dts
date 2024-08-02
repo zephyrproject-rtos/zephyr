@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2020 Linaro Limited.
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/nordic/nrf52833.dtsi>
+/* We resuse the pinctrl definitions directly from the real board : */
+#include <../boards/nordic/nrf52833dk/nrf52833dk_nrf52833-pinctrl.dtsi>
+
+/ {
+	model = "nrf52 bsim";
+	compatible = "bsim,nrf52833";
+
+	/* We need to remove aliases to nodes we delete */
+	aliases {
+		/delete-property/ i2c-0;
+		/delete-property/ i2c-1;
+		/delete-property/ spi-0;
+		/delete-property/ spi-1;
+		/delete-property/ spi-2;
+		/delete-property/ spi-3;
+		/delete-property/ adc-0;
+		/delete-property/ wdt-0;
+		/delete-property/ pwm-0;
+		/delete-property/ pwm-1;
+		/delete-property/ pwm-2;
+		/delete-property/ pwm-3;
+		/delete-property/ qdec-0;
+	};
+
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,flash = &flash0;
+		/* UART used by the BT controller UART HCI driver by default: */
+		zephyr,bt-c2h-uart = &uart1;
+	};
+
+	soc {
+		/delete-node/ memory@20000000;
+		/delete-node/ adc@40007000;
+		/delete-node/ i2c@40003000;
+		/delete-node/ i2c@40004000;
+		/delete-node/ pwm@4001c000;
+		/delete-node/ pwm@40021000;
+		/delete-node/ pwm@40022000;
+		/delete-node/ pwm@4002d000;
+		/delete-node/ qdec@40012000;
+		/delete-node/ spi@40003000;
+		/delete-node/ spi@40004000;
+		/delete-node/ spi@40023000;
+		/delete-node/ spi@4002f000;
+		/delete-node/ nfct@40005000;
+		/delete-node/ watchdog@40010000;
+		/delete-node/ acl@4001e000;
+		/delete-node/ usbd@40027000;
+	};
+
+	/delete-node/ sw-pwm;
+};
+
+&radio {
+	/* These features are not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(512)>;
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+	};
+};

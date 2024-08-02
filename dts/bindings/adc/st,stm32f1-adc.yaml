@@ -1,0 +1,19 @@
+# Copyright (c) 2023 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        ST STM32F1 family ADC
+        This compatible stands for all ADC blocks similar to the one on STM32F1,
+        like STM32F37x.
+        Remove the st,adc-clock-source and st,adc-prescaler property.
+        See adc-prescaler property in st,stm32f1-rcc binding to configure ADC
+        prescaler.
+
+compatible: "st,stm32f1-adc"
+
+include:
+  - name: st,stm32-adc.yaml
+    property-blocklist:
+      - st,adc-clock-source
+      - st,adc-prescaler

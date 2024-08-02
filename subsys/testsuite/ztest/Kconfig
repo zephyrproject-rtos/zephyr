@@ -1,0 +1,242 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZTEST
+	bool "Zephyr testing framework"
+	select TEST
+	help
+	  Enable the Zephyr testing framework. You should enable this only
+	  if you're writing automated tests.
+
+if ZTEST
+
+config ZTEST_STACK_SIZE
+	int "Test function thread stack size"
+	default 2048 if COVERAGE_GCOV
+	default 2048 if X86
+	default 1024
+
+config ZTEST_TEST_DELAY_MS
+	int "Delay between tests in milliseconds"
+	default 0
+	help
+	  Add a delay between between tests to manage output on the console on
+	  systems that can't handle the rapid output rate.
+
+config ZTEST_SHELL
+	bool "Ztest with shell support"
+	select SHELL
+	select SHELL_THREAD_PRIORITY_OVERRIDE
+	select GETOPT_LONG
+	select SHELL_GETOPT
+	help
+	  Enable shell to manage test execution and selection.
+
+config ZTEST_CPU_HOLD_TIME_MS
+	int "Time in milliseconds to hold other CPUs for 1cpu type tests"
+	default 5000
+	help
+	  This option is used to specify the maximum time in milliseconds for
+	  which a 1cpu type test may execute on a multicpu system. The default
+	  value ought to suffice for most such tests; however slower platforms
+	  (which may include simulators) may need to set this to a larger
+	  value. Please be aware that increasing it for long-running test cases
+	  may overload the CI system. Modify with caution.
+
+config ZTEST_FAIL_FAST
+	bool "Abort on first failing test"
+	help
+	  Stop and abort on first failing test. Do not continue with other
+	  tests that might be in the queue.
+
+config ZTEST_ASSERT_VERBOSE
+	int "Assertion verbosity level"
+	default 1
+	help
+	  Set verbosity level for assertions.
+	  Assertion verbosity levels:
+	  0 Write only file and line for failed assertions
+	  1 Write file, line number, function and reason for failed assertions
+	  2 Log also successful assertions
+
+config ZTEST_THREAD_PRIORITY
+	int "Testing thread priority"
+	default -2 if !PREEMPT_ENABLED
+	default -1
+	help
+	  Set priority of the testing thread. Default is -1 (cooperative).
+
+config ZTEST_TC_UTIL_USER_OVERRIDE
+	bool "Override tc_util.h"
+	help
+	  Enable overriding defines in tc_util.h.
+	  If True the user should provide tc_util_user_override.h in Zephyr's include path,
+	  e.g. by adding zephyr_include_directories(project PRIVATE my_folder) to a project's CMakeLists.txt.
+	  The override header may now #define the various macros and strings in tc_util.h which are
+	  surrounded by #ifndef ... #endif blocks.
+
+config ZTEST_RETEST_IF_PASSED
+	bool "Reset the board to test again if the test passed"
+	select REBOOT
+	help
+	  If the test passed reset the board so it is run again.  This
+	  may be used as an alternative to manual resets when
+	  attempting to reproduce an intermittent failure.
+
+config ZTEST_FATAL_HOOK
+	bool "Using a pre-defined fatal handler and hook function"
+	help
+	  Use the pre-defined common fatal error handler and a post hook to
+	  do actions in your test case, this option often enabled when doing
+	  error test case. Remember to add ignore_fault tag in yaml file when
+	  using twister to run testing.
+
+config ZTEST_ASSERT_HOOK
+	bool "Using a pre-defined assert handler and hook function"
+	help
+	  Use the pre-defined common assert fail handler and a post hook to
+	  do actions in your test case, this option often enabled when doing
+	  error test case. Remember to add ignore_fault tag in yaml file when
+	  using twister to run testing.
+
+config ZTEST_NO_YIELD
+	bool "Do not yield to the idle thread after tests complete"
+	help
+	  When the tests complete, do not yield to the idle thread and instead
+	  spin in a loop. This is useful for low power mode tests, where
+	  yielding to the idle thread may put the board into a low power state
+	  where a debugger cannot connect to it.
+
+config ZTEST_WARN_NO_OPTIMIZATIONS
+	bool "Warn when running tests with CONFIG_NO_OPTIMIZATIONS"
+	default y if !(ARCH_POSIX || COVERAGE)
+	depends on NO_OPTIMIZATIONS
+	help
+	  Print a CMake warning when building ztests with no compiler
+	  optimizations. Please don't file issues when running tests that are
+	  not explicitly tuned to work in this configuration.
+
+menu "ZTest provided rules"
+
+config ZTEST_RULE_1CPU
+	bool "Run all the tests on a single CPU"
+	help
+	  This rule will call z_test_1cpu_start before each unit test and
+	  ztest_1cpu_stop after each test.
+
+endmenu
+
+config ZTEST_VERIFY_RUN_ALL
+	bool "Validates all defined tests have ran"
+	default y
+	help
+	  This rule will fail the project if not all tests have been run.
+
+
+config ZTEST_COVERAGE_RESET_BEFORE_TESTS
+	bool "Performs coverage counters reset"
+	depends on COVERAGE_GCOV
+	help
+	  This rule will reset gcov counters before running tests. This ensures
+	  that only code lines triggered by test itself are counted in the coverage report
+	  and all the board initialization code and pre-test bootstrap is not counted.
+	  This is useful when, for example, you are testing code that is also executed during bootup.
+
+config ZTEST_SHUFFLE
+	bool "Shuffle the order of tests and suites"
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	help
+	  This rule will shuffle the order of tests and test suites.
+
+if ZTEST_SHUFFLE
+config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
+	int "Number of iterations the test suite will run"
+	default 3
+	help
+	  This rule will execute a test suite N number of times. The tests
+	  per suite will be shuffled on each iteration.  The test order will likely
+	  be different per iteration.
+
+config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+	int "Number of iterations the test will run"
+	default 3
+	help
+	  This rule will execute a test N number of times.  The test order will
+	  likely be different per iteration.
+
+endif #ZTEST_SHUFFLE
+
+config ZTEST_SUMMARY
+	bool "Display test summary"
+	default y
+	help
+	  This option controls output of a test summary.
+
+config ZTEST_VERBOSE_OUTPUT
+	bool "Verbose test output"
+	default y
+	help
+	  This option controls whether test output is shown verbosely or
+	  no output at all.
+
+config ZTEST_VERBOSE_SUMMARY
+	bool "Verbose test summary"
+	default y
+	help
+	  This option controls whether suite summary is shown verbosely or
+	  just in one line.
+
+config ZTEST_FAIL_ON_ASSUME
+	bool "Fail the test run when an assumption fails"
+	default y
+	help
+	  When enabled, the test binary will fail at the end if an assumption failed. This means
+	  that while tests will still be marked as skipped on failed zassume calls, the final test
+	  result will be shown as a failure in order to increase visibility. This precludes tests
+	  that skipped with the ZTEST_EXPECT_SKIP annotation.
+
+config TEST_LOGGING_FLUSH_AFTER_TEST
+	bool "When enabled logs are flushed after each test case"
+	default y
+	depends on MULTITHREADING
+
+endif # ZTEST
+
+config ZTEST_MOCKING
+	bool "Mocking support functions"
+	help
+	  Enable mocking support for Ztest. This allows the test to set
+	  return values and expected parameters to functions.
+
+config ZTEST_PARAMETER_COUNT
+	int "Count of parameters or return values reserved"
+	default 10
+	depends on ZTEST_MOCKING
+	help
+	  Maximum amount of concurrent return values / expected parameters.
+
+config ZTRESS
+	bool "Stress test framework"
+	select THREAD_RUNTIME_STATS
+	select THREAD_MONITOR
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	depends on !USERSPACE
+
+if ZTRESS
+
+config ZTRESS_MAX_THREADS
+	int "Maximum number of threads in ztress framework"
+	default 3
+	range 1 16
+
+config ZTRESS_STACK_SIZE
+	int "Stack size of Ztress thread"
+	default 4096 if NO_OPTIMIZATIONS
+	default 2048
+
+config ZTRESS_REPORT_PROGRESS_MS
+	int "Progress report interval (in milliseconds)"
+	default 1000
+	help
+	  Use 0 to disable.
+endif # ZTRESS

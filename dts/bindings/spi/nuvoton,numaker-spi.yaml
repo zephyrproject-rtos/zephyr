@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NuMaker SPI controller
+
+compatible: "nuvoton,numaker-spi"
+
+include: [spi-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true

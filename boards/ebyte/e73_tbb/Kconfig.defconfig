@@ -1,0 +1,12 @@
+# EBYTE E73-TBB NRF52832 board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# Copyright (c) 2021 Michal Morsisko
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EBYTE_E73_TBB_NRF52832
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_EBYTE_E73_TBB_NRF52832

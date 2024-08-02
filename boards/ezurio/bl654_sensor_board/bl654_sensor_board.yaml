@@ -1,0 +1,20 @@
+identifier: bl654_sensor_board
+name: BL654_Sensor_Board
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - netif:openthread
+vendor: ezurio

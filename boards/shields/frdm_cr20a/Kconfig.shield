@@ -1,0 +1,5 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_FRDM_CR20A
+	def_bool $(shields_list_contains,frdm_cr20a)

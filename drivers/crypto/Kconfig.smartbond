@@ -1,0 +1,17 @@
+# Smartbond Cryptographic Accelerator configuration options
+
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRYPTO_SMARTBOND
+	bool "Smartbond Cryptographic Accelerator driver"
+	depends on DT_HAS_RENESAS_SMARTBOND_CRYPTO_ENABLED
+	default y
+	help
+	  Enable Smartbond Cryptographic Accelerator driver.
+
+config CRYPTO_ASYNC
+	bool "Support ASYNC crypto operations."
+	depends on CRYPTO_SMARTBOND
+	help
+	  Enable ASYNC crypto operations.

@@ -1,0 +1,11 @@
+tests:
+  san.valgrind:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim
+    tags:
+      - agnostic
+      - subgrouped

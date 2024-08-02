@@ -1,0 +1,6 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_ESPRESSIF_HAL
+	bool
+	depends on SOC_FAMILY_ESPRESSIF_ESP32

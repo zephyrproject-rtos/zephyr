@@ -1,0 +1,31 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright 2023 NXP
+#
+
+identifier: mimxrt1062_fmurt6
+name: NXP MIMXRT1062-FMURT6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 768
+flash: 65536
+supported:
+  - counter
+  - uart
+  - dma
+  - gpio
+  - i2c
+  - netif:eth
+  - sdhc
+  - spi
+  - usb_device
+  - can
+  - watchdog
+  - adc
+  - pwm
+vendor: nxp

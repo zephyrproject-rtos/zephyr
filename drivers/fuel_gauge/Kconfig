@@ -1,0 +1,26 @@
+# Copyright 2022 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FUEL_GAUGE
+	bool "Battery fuel gauge drivers"
+	help
+	  Enable battery fuel gauge driver configuration.
+
+if FUEL_GAUGE
+
+module = FUEL_GAUGE
+module-str = fuel_gauge
+source "subsys/logging/Kconfig.template.log_config"
+
+config FUEL_GAUGE_INIT_PRIORITY
+	int "Battery Fuel Gauge init priority"
+	default 90
+	help
+	  Battery fuel gauge initialization priority.
+
+source "drivers/fuel_gauge/max17048/Kconfig"
+source "drivers/fuel_gauge/sbs_gauge/Kconfig"
+source "drivers/fuel_gauge/bq27z746/Kconfig"
+
+endif # FUEL_GAUGE

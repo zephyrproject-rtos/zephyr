@@ -1,0 +1,27 @@
+# PCA95XX GPIO configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_PCA95XX
+	bool "PCA95XX I2C-based GPIO chip"
+	default y
+	depends on DT_HAS_NXP_PCA95XX_ENABLED
+	depends on I2C
+	help
+	  Enable driver for PCA95XX I2C-based GPIO chip.
+
+config GPIO_PCA95XX_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCA95XX
+	help
+	  Device driver initialization priority.
+
+config GPIO_PCA95XX_INTERRUPT
+	bool "Interrupt enable"
+	depends on GPIO_PCA95XX
+	help
+	  Enable interrupt support in PCA95XX driver.
+	  Note that the PCA95XX cannot reliably detect
+	  short-pulse interrupts due to its design.

@@ -1,0 +1,86 @@
+# Native posix ethernet driver configuration options
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NATIVE_POSIX
+	bool "Native Posix Ethernet driver"
+	depends on ARCH_POSIX
+	help
+	  Enable native posix ethernet driver. Note, this driver is run inside
+	  a process in your host system.
+
+if ETH_NATIVE_POSIX
+
+config ETH_NATIVE_POSIX_INTERFACE_COUNT
+	int "Number of network interfaces created"
+	default NET_GPTP_NUM_PORTS if NET_GPTP
+	default PTP_NUM_PORTS if PTP
+	default 1
+	range 1 32
+	help
+	  By default only one network interface is created. It is possible
+	  to create multiple interfaces in certain use cases. For example if
+	  multiple ports are defined in gPTP or PTP, then multiple network interfaces
+	  must be created here.
+
+config ETH_NATIVE_POSIX_DRV_NAME
+	string "Ethernet driver name"
+	default "zeth"
+	help
+	  This option sets the driver name and name of the network interface
+	  in your host system. If there are multiple network interfaces defined,
+	  then this value is used as a prefix and the interface names will be
+	  zeth0, zeth1, etc.
+
+config ETH_NATIVE_POSIX_DEV_NAME
+	string "Host ethernet TUN/TAP device name"
+	default "/dev/net/tun"
+	help
+	  This option sets the TUN/TAP device name in your host system.
+
+config ETH_NATIVE_POSIX_PTP_CLOCK
+	bool "PTP clock driver support"
+	default y if NET_GPTP || PTP
+	select PTP_CLOCK
+	depends on NET_GPTP || PTP
+	help
+	  Enable PTP clock support.
+
+config ETH_NATIVE_POSIX_RANDOM_MAC
+	bool "Random MAC address"
+	depends on ENTROPY_GENERATOR
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
+	bool "Strip VLAN tag from Rx frames"
+	depends on NET_VLAN
+	help
+	  Native posix ethernet driver will strip of VLAN tag from
+	  Rx Ethernet frames and sets tag information in net packet
+	  metadata.
+
+config ETH_NATIVE_POSIX_MAC_ADDR
+	string "MAC address for the interface"
+	default ""
+	depends on !ETH_NATIVE_POSIX_RANDOM_MAC
+	help
+	  Specify a MAC address for the ethernet interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+config ETH_NATIVE_POSIX_RX_TIMEOUT
+	int "Ethernet RX timeout"
+	default 1 if NET_GPTP
+	default 50
+	range 1 100
+	help
+	  Native posix ethernet driver repeatedly checks for new data.
+	  Specify how long the thread sleeps between these checks if no new data
+	  available.
+
+endif # ETH_NATIVE_POSIX

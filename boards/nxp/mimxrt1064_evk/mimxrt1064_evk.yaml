@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1064_evk
+name: NXP MIMXRT1064-EVK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32768
+flash: 4096
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - counter
+  - display
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - sdhc
+  - spi
+  - usb_device
+  - video
+  - can
+  - watchdog
+  - adc
+vendor: nxp

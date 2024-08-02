@@ -1,0 +1,214 @@
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_GPTP
+	bool "IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"
+	select NET_L2_PTP
+	select EXPERIMENTAL
+	help
+	  Enable gPTP driver that send and receives gPTP packets
+	  and handles network packet timestamps.
+
+if NET_GPTP
+
+module = NET_GPTP
+module-dep = NET_LOG
+module-str = Log level for gPTP
+module-help = Enable logs for the gPTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config NET_GPTP_GM_CAPABLE
+	bool "IEEE 802.1AS GrandMaster Capability"
+	help
+	  Enable to mark the whole system as Grand Master Capable.
+
+config NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
+	bool "Probe clock source on demand"
+	depends on NET_GPTP_GM_CAPABLE
+	default y
+	help
+	  This option is helpful if the driver does not fully support the
+	  ClockSourceTime.invoke function. If this is enabled, the clock
+	  source is probed when it is actually needed instead of being
+	  updated on each tick.
+	  See IEEE 802.1AS-2011, chapter 9.2 for more details.
+
+choice
+	prompt "gPTP Clock Accuracy"
+	default NET_GPTP_CLOCK_ACCURACY_UNKNOWN
+	help
+	  Specify the accuracy of the clock. This setting should reflect
+	  the actual capabilities of the hardware.
+	  See 7.6.2.5 of IEEE 1588-2008 for more info.
+
+	config NET_GPTP_CLOCK_ACCURACY_UNKNOWN
+		bool "Unknown"
+	config NET_GPTP_CLOCK_ACCURACY_25NS
+		bool "25ns"
+	config NET_GPTP_CLOCK_ACCURACY_100NS
+		bool "100ns"
+	config NET_GPTP_CLOCK_ACCURACY_250NS
+		bool "250ns"
+	config NET_GPTP_CLOCK_ACCURACY_1US
+		bool "1us"
+	config NET_GPTP_CLOCK_ACCURACY_2_5US
+		bool "2.5us"
+	config NET_GPTP_CLOCK_ACCURACY_10US
+		bool "10us"
+	config NET_GPTP_CLOCK_ACCURACY_25US
+		bool "25us"
+	config NET_GPTP_CLOCK_ACCURACY_100US
+		bool "100us"
+	config NET_GPTP_CLOCK_ACCURACY_250US
+		bool "250us"
+	config NET_GPTP_CLOCK_ACCURACY_1MS
+		bool "1ms"
+	config NET_GPTP_CLOCK_ACCURACY_2_5MS
+		bool "1.5ms"
+	config NET_GPTP_CLOCK_ACCURACY_10MS
+		bool "10ms"
+	config NET_GPTP_CLOCK_ACCURACY_25MS
+		bool "25ms"
+	config NET_GPTP_CLOCK_ACCURACY_100MS
+		bool "100ms"
+	config NET_GPTP_CLOCK_ACCURACY_250MS
+		bool "250ms"
+	config NET_GPTP_CLOCK_ACCURACY_1S
+		bool "1s"
+	config NET_GPTP_CLOCK_ACCURACY_10S
+		bool "10s"
+	config NET_GPTP_CLOCK_ACCURACY_GT_10S
+		bool "> 10s"
+endchoice
+
+config NET_GPTP_CLOCK_ACCURACY
+	hex
+	default 0x20 if NET_GPTP_CLOCK_ACCURACY_25NS
+	default 0x21 if NET_GPTP_CLOCK_ACCURACY_100NS
+	default 0x22 if NET_GPTP_CLOCK_ACCURACY_250NS
+	default 0x23 if NET_GPTP_CLOCK_ACCURACY_1US
+	default 0x24 if NET_GPTP_CLOCK_ACCURACY_2_5US
+	default 0x25 if NET_GPTP_CLOCK_ACCURACY_10US
+	default 0x26 if NET_GPTP_CLOCK_ACCURACY_25US
+	default 0x27 if NET_GPTP_CLOCK_ACCURACY_100US
+	default 0x28 if NET_GPTP_CLOCK_ACCURACY_250US
+	default 0x29 if NET_GPTP_CLOCK_ACCURACY_1MS
+	default 0x2a if NET_GPTP_CLOCK_ACCURACY_2_5MS
+	default 0x2b if NET_GPTP_CLOCK_ACCURACY_10MS
+	default 0x2c if NET_GPTP_CLOCK_ACCURACY_25MS
+	default 0x2d if NET_GPTP_CLOCK_ACCURACY_100MS
+	default 0x2e if NET_GPTP_CLOCK_ACCURACY_250MS
+	default 0x2f if NET_GPTP_CLOCK_ACCURACY_1S
+	default 0x30 if NET_GPTP_CLOCK_ACCURACY_10S
+	default 0x31 if NET_GPTP_CLOCK_ACCURACY_GT_10S
+	default 0xfe
+
+config NET_GPTP_STACK_SIZE
+	int "gPTP thread stack size"
+	default 2048
+	help
+	  Set the gPTP thread stack size in bytes. The gPTP thread handles the
+	  gPTP state machine. There is one gPTP thread in the system.
+
+config NET_GPTP_NUM_PORTS
+	int "Number of gPTP ports"
+	default 1
+	help
+	  Configures the gPTP stack to work with the given number of ports.
+	  The port concept is the same thing as network interface.
+
+config NET_GPTP_NEIGHBOR_PROP_DELAY_THR
+	int "Set neighbor propagation delay threshold (ns)"
+	default 100000
+	help
+	  Defines the neighbor propagation delay threshold in nanoseconds.
+	  This is the propagation time threshold, above which a port is not
+	  considered capable of participating in the IEEE 802.1AS protocol.
+	  See IEEE 802.1AS chapter 11.2.12.6 for details.
+
+config NET_GPTP_INIT_LOG_PDELAY_REQ_ITV
+	int "Set initial pdelay request interval in Log2 base"
+	default 0
+	help
+	  Defines the interval at which a Path Delay Request will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(value)
+
+config NET_GPTP_INIT_LOG_SYNC_ITV
+	int "Set initial sync interval in Log2 base"
+	default -3
+	help
+	  Defines the interval at which a Sync message will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(value)
+
+config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
+	int "Set initial announce interval in Log2 base"
+	default 0
+	help
+	  Defines the interval at which an Announce message will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(value)
+
+config NET_GPTP_SYNC_RECEIPT_TIMEOUT
+	int "Number of sync intervals to wait"
+	default 3
+	help
+	  Defines the number of sync intervals to wait without receiving
+	  synchronization information before assuming that the master is no
+	  longer transmitting synchronization information.
+
+config NET_GPTP_ANNOUNCE_RECEIPT_TIMEOUT
+	int "Number of announce intervals to wait"
+	default 3
+	help
+	  Defines the number of announce intervals to wait without receiving
+	  an Announce message before assuming that the master is no longer
+	  transmitting Announce messages.
+
+config NET_GPTP_USE_DEFAULT_CLOCK_UPDATE
+	bool "Use a default clock update function"
+	default y
+	help
+	  Use a default internal function to update port local clock.
+
+config NET_GPTP_PATH_TRACE_ELEMENTS
+	int "How many path trace elements to track"
+	default 8
+	help
+	  This tells the number of time-aware systems that transmits the
+	  Announce message. Each array element takes 8 bytes. If this value
+	  is set to 8, then 8 * 8 = 64 bytes of memory is used.
+
+config NET_GPTP_BMCA_PRIORITY1
+	int "BMCA priority1 value"
+	default 248 if NET_GPTP_GM_CAPABLE
+	default $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
+	help
+	  The priority1 attribute of the local clock. It is used in the
+	  Best Master Clock selection Algorithm (BMCA), lower values take
+	  precedence. The default value is 255 if the device is non grand
+	  master capable, and 248 if it is GM capable.
+	  See Chapter 8.6.2.1 of IEEE 802.1AS for a more detailed description
+	  of priority1. Note that if the system	is non GM capable, then the
+	  value 255 is used always and this setting is ignored.
+
+config NET_GPTP_BMCA_PRIORITY2
+	int "BMCA priority2 value"
+	default 248
+	range 0 $(UINT8_MAX)
+	help
+	  The priority2 attribute of the local clock. It is used in the BMCA
+	  (Best Master Clock selection Algorithm), lower values take
+	  precedence. The default value is 248.
+	  See Chapter 8.6.2.5 of IEEE 802.1AS for a more detailed description
+	  of priority2.
+
+config NET_GPTP_STATISTICS
+	bool "Collect gPTP statistics"
+	help
+	  Enable this if you need to collect gPTP statistics. The statistics
+	  can be seen in net-shell if needed.
+
+endif # NET_GPTP

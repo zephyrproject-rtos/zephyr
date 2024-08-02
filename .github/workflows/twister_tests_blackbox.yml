@@ -1,0 +1,77 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Twister BlackBox TestSuite
+
+on:
+  pull_request:
+    branches:
+    - main
+    - collab-*
+    - v*-branch
+    paths:
+    - 'scripts/pylib/twister/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister_blackbox/**'
+    - '.github/workflows/twister_tests_blackbox.yml'
+
+jobs:
+  twister-tests:
+    name: Twister Black Box Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+        os: [ubuntu-22.04]
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.26.13
+
+    steps:
+    - name: Apply Container Owner Mismatch Workaround
+      run: |
+        # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+        #        match the container user UID because of the way GitHub
+        #        Actions runner is implemented. Remove this workaround when
+        #        GitHub comes up with a fundamental fix for this problem.
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Environment Setup
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+        west init -l . || true
+        west config --global update.narrow true
+        west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /github/cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /github/cache/zephyrproject)
+        west forall -c 'git reset --hard HEAD'
+
+        echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+    - name: Set Up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Go Into Venv
+      shell: bash
+      run: |
+        python3 -m pip install --user virtualenv
+        python3 -m venv env
+        source env/bin/activate
+        echo "$(which python)"
+
+    - name: Install Packages
+      run: |
+        python3 -m pip install -U -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
+
+    - name: Run Pytest For Twister Black Box Tests
+      shell: bash
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run twister tests"
+        source zephyr-env.sh
+        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox

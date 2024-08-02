@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2022, Teslabs Engineering S.L.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/gd/gd32e50x/gd32e507xe.dtsi>
+#include "gd32e507z_eval-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "GigaDevice GD32E507Z-EVAL";
+	compatible = "gd,gd32e507z-eval";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+		};
+		led2: led2 {
+			gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
+		};
+		led3: led3 {
+			gpios = <&gpiog 12 GPIO_ACTIVE_HIGH>;
+		};
+		led4: led4 {
+			gpios = <&gpiog 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		key_a: key_a {
+			label = "KEY_A";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_A>;
+		};
+		key_b: key_b {
+			label = "KEY_B";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_B>;
+		};
+		key_c: key_c {
+			label = "KEY_C";
+			gpios = <&gpiof 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_C>;
+		};
+		key_d: key_d {
+			label = "KEY_D";
+			gpios = <&gpiof 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_D>;
+		};
+		key_cet: key_cet {
+			label = "KEY_CET";
+			gpios = <&gpiof 15 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* NOTE: bridge TIMER0_CH0 (PA8) and LED1 (PG10)*/
+		pwm_led: pwm_led {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &key_a;
+		pwm-led0 = &pwm_led;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+	prescaler = <256>;
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
+	};
+};

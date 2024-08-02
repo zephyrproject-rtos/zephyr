@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	/delete-node/ memory@38000000;
+
+	ssram2_3: memory@38000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x38000000 0x100000>;
+		zephyr,memory-region = "SSRAM2_3";
+	};
+
+	res0: memory@38100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x38100000 0x1000>;
+		zephyr,memory-region = "RES0";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	res1: memory@38200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x38200000 0x2000>;
+		zephyr,memory-region = "RES1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	};
+
+	res2: memory@38300000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x38300000 0x3000>;
+		zephyr,memory-region = "RES2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};

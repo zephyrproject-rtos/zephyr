@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 Ethernet
+
+compatible: "espressif,esp32-eth"
+
+include:
+  - name: ethernet-controller.yaml
+
+properties:
+  phy-handle:
+    required: true
+
+  ref-clk-output-gpios:
+    type: phandle-array
+    description: |
+      GPIO to output RMII Clock.

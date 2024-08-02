@@ -1,0 +1,56 @@
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinetis ADC16
+
+compatible: "nxp,kinetis-adc16"
+
+include: ["adc-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  channel-mux-b:
+    type: boolean
+    description: |
+      Use alternate set (b instead of a) of ADC channels
+
+  interrupts:
+    required: true
+
+  periodic-trigger:
+    type: boolean
+    description: if periodic trigger enabled
+
+  "#io-channel-cells":
+    const: 1
+
+  clk-source:
+    type: int
+    description: use alternate clock reference source
+
+  long-sample:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+    description: long sample mode
+
+  continuous-convert:
+    type: boolean
+    description: If use continuous convert
+
+  high-speed:
+    type: boolean
+    description: If use high speed
+
+  hw-trigger-src:
+    type: int
+    description: hardware trigger source (See ADCxTRGSEL field in user manual for more details)
+
+io-channel-cells:
+  - input

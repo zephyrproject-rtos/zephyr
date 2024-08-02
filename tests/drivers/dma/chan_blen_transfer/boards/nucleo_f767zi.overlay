@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+tst_dma0: &dma2 {
+	status = "okay";
+};
+
+/* The test driver expects the SRAM0 region to be non-cachable */
+&sram0 {
+	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+};

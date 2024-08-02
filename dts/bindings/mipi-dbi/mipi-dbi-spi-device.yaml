@@ -1,0 +1,38 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+# Common fields for MIPI DBI devices using Mode C (SPI)
+
+include: [mipi-dbi-device.yaml]
+
+properties:
+  duplex:
+    type: int
+    default: 0
+    description: |
+      SPI Duplex mode, full or half. By default it's always full duplex thus 0
+      as this is, by far, the most common mode.
+      Selecting half duplex allows to use SPI MOSI as a bidirectional line,
+      typically used when only one data line is connected.
+      Use the macros not the actual enum value, here is the concordance
+      list (see dt-bindings/spi/spi.h)
+        0    SPI_FULL_DUPLEX
+        2048 SPI_HALF_DUPLEX
+  mipi-cpol:
+    type: boolean
+    description: |
+      SPI clock polarity which indicates the clock idle state.
+      If it is used, the clock idle state is logic high; otherwise, low.
+  mipi-cpha:
+    type: boolean
+    description: |
+      SPI clock phase that indicates on which edge data is sampled.
+      If it is used, data is sampled on the second edge; otherwise, on the first edge.
+  mipi-hold-cs:
+    type: boolean
+    description: |
+      In some cases, it is necessary for the master to manage SPI chip select
+      under software control, so that multiple spi transactions can be performed
+      without releasing it. A typical use case is variable length SPI packets
+      where the first spi transaction reads the length and the second spi transaction
+      reads length bytes.

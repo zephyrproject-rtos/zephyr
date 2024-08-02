@@ -1,0 +1,27 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32L0 and STM32L1 Multi Speed Internal Clock
+
+compatible: "st,stm32l0-msi-clock"
+
+include:
+  - name: st,stm32-msi-clock.yaml
+    property-blocklist:
+      - msi-range
+
+properties:
+  msi-range:
+    required: true
+    type: int
+    default: 5
+    description: |
+      MSI clock ranges
+    enum:
+      - 0 # range 0, around 65.536 kHz
+      - 1 # range 1, around 131.072 kHz
+      - 2 # range 2, around 262.144 kHz
+      - 3 # range 3, around 524.288 kHz
+      - 4 # range 4, around 1.048 MHz
+      - 5 # range 5, around 2.097 MHz (reset value)
+      - 6 # range 6, around 4.194 MHz

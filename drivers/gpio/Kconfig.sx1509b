@@ -1,0 +1,37 @@
+# SX1509B GPIO configuration options
+
+# Copyright (c) 2018 Aapo Vienamo
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_SX1509B
+	bool "SX1509B I2C GPIO chip"
+	default y
+	depends on DT_HAS_SEMTECH_SX1509B_ENABLED
+	select I2C
+	help
+	  Enable driver for SX1509B I2C GPIO chip.
+
+if GPIO_SX1509B
+
+config GPIO_SX1509B_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+config GPIO_SX1509B_INTERRUPT
+	bool "Interrupt enable"
+	help
+	  Enable support for interrupts on GPIO pins.
+
+config GPIO_SX1509B_DEBOUNCE_TIME
+	int "Debounce time interval"
+	range 0 7
+	default 0
+	help
+	  Debounce time interval when debounce enabled.
+
+	  A value V produces a multiplier of 0.5 ms * 2^V, which is
+	  then scaled by 2 MHz / fOSC.  See the datasheet for details.
+
+endif # GPIO_SX1509B

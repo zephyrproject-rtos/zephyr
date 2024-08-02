@@ -1,0 +1,160 @@
+/*
+ * Copyright (c) 2022 metraTec
+ * Copyright 2022-2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "lpcxpresso55s06-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &iap;
+		zephyr,canbus = &can0;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &red_led;
+		led2 = &green_led;
+		sw0 = &btn_wk;
+		sw1 = &btn_usr;
+		sw2 = &btn_isp;
+		usart-0 = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio0 22 0>;
+			label = "Blue LED";
+		};
+		red_led: led_1 {
+			gpios = <&gpio0 21 0>;
+			label = "Red LED";
+		};
+		green_led: led_2 {
+			gpios = <&gpio0 18 0>;
+			label = "Green LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn_wk: button_0 {
+			label = "Wakeup button";
+			gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+		btn_usr: button_1 {
+			label = "User button";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn_isp: button_2 {
+			label = "ISP button";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 16 0>,	/* AN   */
+				/* Not a GPIO */	/* RST  */
+				<2 0 &gpio1 1 0>,	/* CS   */
+				<3 0 &gpio1 2 0>,	/* SCK  */
+				<4 0 &gpio1 3 0>,	/* MISO */
+				<5 0 &gpio0 26 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND  */
+				<6 0 &gpio1 5 0>,	/* PWM  */
+				<7 0 &gpio0 28 0>,	/* INT  */
+				<8 0 &gpio1 10 0>,	/* RX   */
+				<9 0 &gpio1 11 0>,	/* TX   */
+				<10 0 &gpio0 24 0>,	/* SCL  */
+				<11 0 &gpio0 25 0>;	/* SDA  */
+							/* +5V  */
+							/* GND  */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 16 0>,	/* A0 */
+				<1 0 &gpio0 23 0>,	/* A1 */
+				<2 0 &gpio0 9 0>,	/* A2 */
+				<3 0 &gpio0 0 0>,	/* A3 */
+				<4 0 &gpio0 13 0>,	/* A4 */
+				<5 0 &gpio0 14 0>,	/* A5 */
+				<6 0 &gpio1 10 0>,	/* D0 */
+				<7 0 &gpio1 11 0>,	/* D1 */
+				<8 0 &gpio0 15 0>,	/* D2 */
+				<9 0 &gpio0 23 0>,	/* D3 */
+				<10 0 &gpio0 22 0>,	/* D4 */
+				<11 0 &gpio0 19 0>,	/* D5 */
+				<12 0 &gpio0 18 0>,	/* D6 */
+				<13 0 &gpio0 2 0>,	/* D7 */
+				<14 0 &gpio0 10 0>,	/* D8 */
+				<15 0 &gpio0 25 0>,	/* D9 */
+				<16 0 &gpio1 1 0>,	/* D10 */
+				<17 0 &gpio0 26 0>,	/* D11 */
+				<18 0 &gpio1 3 0>,	/* D12 */
+				<19 0 &gpio1 2 0>;	/* D13 */
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(32)>;
+		};
+		slot0_partition: partition@8000 {
+			label = "image-0";
+			reg = <0x00008000 DT_SIZE_K(96)>;
+		};
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 DT_SIZE_K(96)>;
+		};
+		storage_partition: partition@38000 {
+			label = "storage";
+			reg = <0x00038000 DT_SIZE_K(20)>;
+		};
+		/* The last 12KB are reserved for PFR on the 256KB flash. */
+	};
+};
+
+&flexcomm0 {
+	status = "okay";
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_can0>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};

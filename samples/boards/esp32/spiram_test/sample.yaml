@@ -1,0 +1,13 @@
+sample:
+  description: Application to test memory allocation from SPIRAM
+  name: spiram_test
+tests:
+  sample.board.esp32.spiram:
+    platform_allow: esp32_devkitc_wrover/esp32/procpu
+    tags: esp32
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "SPIRAM mem test pass"
+        - "Internal mem test pass"

@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  mgmt.mcumgr.os.echo:
+    # FIXME: Exclude architectures that lack a reboot handler function
+    arch_exclude:
+      - arm64
+      - nios2
+      - sparc
+      - arc
+      - xtensa
+      - mips
+    tags:
+      - os_mgmt_echo
+      - mcumgr
+      - mgmt

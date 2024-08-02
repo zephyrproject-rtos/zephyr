@@ -1,0 +1,14 @@
+# STM32 vref sensor configuration options
+
+# Copyright (c) 2023 Kenneth J. Miller <ken@miller.ec>
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32_VREF
+	bool "STM32 VREF Sensor"
+	default y
+	depends on DT_HAS_ST_STM32_ADC_ENABLED
+	depends on DT_HAS_ST_STM32_VREF_ENABLED
+	depends on SOC_FAMILY_STM32 && !SOC_SERIES_STM32F1X
+	select ADC
+	help
+	  Enable driver for STM32 Vref sensor.

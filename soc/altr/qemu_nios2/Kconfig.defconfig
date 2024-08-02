@@ -1,0 +1,9 @@
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_QEMU_NIOS2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 50000000
+
+endif

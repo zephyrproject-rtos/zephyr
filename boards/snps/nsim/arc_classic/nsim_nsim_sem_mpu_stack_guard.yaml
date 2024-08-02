@@ -1,0 +1,15 @@
+identifier: nsim/nsim_sem/mpu_stack_guard
+name: SEM nSIM simulator (stack guard)
+type: sim
+arch: arc
+simulation: nsim
+simulation_exec: nsimdrv
+toolchain:
+  - zephyr
+  - cross-compile
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

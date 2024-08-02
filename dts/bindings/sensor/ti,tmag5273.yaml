@@ -1,0 +1,169 @@
+# Copyright (c) 2023, deveritec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TMAG5273 Low-Power Linear 3D Hall-Effect Sensor with an I2C interface.
+
+  See the specification for the default I2C address.
+
+  The specification of the sensor can be found at:
+    https://www.ti.com/lit/ds/symlink/tmag5273.pdf
+
+    When setting the enum properties in a .dts or .dtsi file you may
+    include tmag5273.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/tmag5273.h>
+
+    tmag5273: tmag5273@0 {
+      ...
+      axis = <TMAG5273_DT_AXIS_XYZ>;
+      range = <TMAG5273_DT_AXIS_RANGE_HIGH>;
+    };
+
+compatible: "ti,tmag5273"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  operation-mode:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      Sensor mode used if set to "active".
+      Defaults to continuous sampling (TMAG5273_DT_OPER_MODE_CONTINUOUS).
+
+      - 0 # TMAG5273_DT_OPER_MODE_CONTINUOUS (continuous)
+      - 1 # TMAG5273_DT_OPER_MODE_STANDBY    (standby)
+
+  axis:
+    type: int
+    default: 7
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    description: |
+      Magnet axis channel inputs.
+      Defaults to measure all axis (TMAG5273_DT_AXIS_XYZ).
+
+      - 0  # TMAG5273_DT_AXIS_NONE
+      - 1  # TMAG5273_DT_AXIS_X
+      - 2  # TMAG5273_DT_AXIS_Y
+      - 3  # TMAG5273_DT_AXIS_Z
+      - 4  # TMAG5273_DT_AXIS_XY
+      - 5  # TMAG5273_DT_AXIS_XZ
+      - 6  # TMAG5273_DT_AXIS_YZ
+      - 7  # TMAG5273_DT_AXIS_XYZ
+      - 8  # TMAG5273_DT_AXIS_XYX (pseudo-simultaneous sampling)
+      - 9  # TMAG5273_DT_AXIS_YXY (pseudo-simultaneous sampling)
+      - 10 # TMAG5273_DT_AXIS_YZY (pseudo-simultaneous sampling)
+      - 11 # TMAG5273_DT_AXIS_XZX (pseudo-simultaneous sampling)
+
+  temperature:
+    type: boolean
+    description: |
+      Select for temperature measurement.
+
+  range:
+    type: int
+    default: 1
+    enum: [0, 1, 2]
+    description: |
+      XYZ-measurement range for magnetic-field value.
+      Defaults to lower range (higher resolution; TMAG5273_DT_AXIS_RANGE_LOW).
+
+      - 0 # TMAG5273_DT_AXIS_RANGE_LOW      (+/-40 mT (TMAG5273A1) or +/-133 mT (TMAG5273A2))
+      - 1 # TMAG5273_DT_AXIS_RANGE_HIGH     (+/-80 mT (TMAG5273A1) or +/-266 mT (TMAG5273A2))
+      - 2 # TMAG5273_DT_AXIS_RANGE_RUNTIME  (@runtime (initial value is: "high"))
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal connection.
+
+      The signal is active-low as produced by the sensor.
+      Either used for interrupt signaling, or triggering a conversion.
+
+  temperature-coefficient:
+    type: int
+    default: 0
+    enum: [0, 1, 2]
+    description: |
+      Selects the magnet temperature coefficient.
+      Defaults to none (TMAG5273_DT_TEMP_COEFF_NONE).
+
+        - 0 # TMAG5273_DT_TEMP_COEFF_NONE    (none)
+        - 1 # TMAG5273_DT_TEMP_COEFF_NDBFE   (0.12 %/deg C (NdBFe))
+        - 2 # TMAG5273_DT_TEMP_COEFF_CERAMIC (0.2 %/deg C (Ceramic))
+
+      Ignored if temperature is not measured.
+
+  trigger-conversion-via-int:
+    type: boolean
+    description: |
+      Selects initiation of a single conversion based on a trigger via
+      the INT-pin if enabled, and via I2C-command if disabled.
+
+      Used in "standby"-, "wakeup-and-sleep"- and "sleep"-mode.
+      Using I2C-conversion trigger may result in (handled) I2C-errors.
+
+  angle-magnitude-axis:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      Enables angle calculation, magnetic gain, and offset corrections
+      between two selected magnetic channels.
+      Defaults to no additional calculations (TMAG5273_DT_ANGLE_MAG_NONE).
+
+      - 0 # TMAG5273_DT_ANGLE_MAG_NONE    (deactivated)
+      - 1 # TMAG5273_DT_ANGLE_MAG_XY      (x/y)
+      - 2 # TMAG5273_DT_ANGLE_MAG_YZ      (y/z)
+      - 3 # TMAG5273_DT_ANGLE_MAG_XZ      (x/z)
+      - 4 # TMAG5273_DT_ANGLE_MAG_RUNTIME (@runtime (initial value is: "deactivated"))
+
+  ch-mag-gain-correction:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      Channel for the magnitude gain correction.
+      Defaults to 1st channel.
+
+        - 0 # TMAG5273_DT_CORRECTION_CH_1 (1st channel)
+        - 1 # TMAG5273_DT_CORRECTION_CH_2 (2nd channel)
+
+      Only active if angle-magnitude-calculation is active.
+
+  average-mode:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3, 4, 5]
+    description: |
+      Enables additional sampling of the sensor data to reduce the noise effect
+      (or to increase resolution).
+
+      Note that averaging will influence the output data rate.
+      Defaults to 2x averaging (TMAG5273_DT_AVERAGING_2X).
+
+      - 0 # TMAG5273_DT_AVERAGING_NONE  (10.0-kSPS (3-axes) or 20-kSPS   (1 axis))
+      - 1 # TMAG5273_DT_AVERAGING_2X    (5.7-kSPS  (3-axes) or 13.3-kSPS (1 axis))
+      - 2 # TMAG5273_DT_AVERAGING_4X    (3.1-kSPS  (3-axes) or 8.0-kSPS  (1 axis))
+      - 3 # TMAG5273_DT_AVERAGING_8X    (1.6-kSPS  (3-axes) or 4.4-kSPS  (1 axis))
+      - 4 # TMAG5273_DT_AVERAGING_16X   (0.8-kSPS  (3-axes) or 2.4-kSPS  (1 axis))
+      - 5 # TMAG5273_DT_AVERAGING_32X   (0.4-kSPS  (3-axes) or 1.2-kSPS  (1 axis))
+
+  crc-enabled:
+    type: boolean
+    description: |
+      Activate I2C CRC byte to be sent.
+
+  low-noise:
+    type: boolean
+    description: |
+      Select low-noise mode when enabled, and low-power mode when disabled.
+
+  ignore-diag-fail:
+    type: boolean
+    description: |
+      Ignore detected diagnostic fail.
+      According to the manual, this should be done if VCC < 2.3V.

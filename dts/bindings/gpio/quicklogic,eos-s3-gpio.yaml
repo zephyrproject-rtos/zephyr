@@ -1,0 +1,36 @@
+description: EOS S3 GPIO node
+
+compatible: "quicklogic,eos-s3-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  pin-secondary-config:
+    type: int
+    required: true
+    description: |
+        This property is used to preconfigure the GPIOs and connect them to
+        a primary(0) or a secondary(1) pin. EOS S3 supports up to 8 GPIOs
+        which can be configured as follows
+        "GPIO_NUM : primary_pin_num / secondary_pin_num"
+        "0 : 6 / 24"
+        "1 : 9 / 26"
+        "2 : 11 / 28"
+        "3 : 14 / 30"
+        "4 : 18 / 31"
+        "5 : 21 / 36"
+        "6 : 22 / 38"
+        "7 : 23 / 45"
+        E.g. configuring GPIO 2 as secondary results in controlling pin 28,
+        to do so set the bit on the 2nd index of this property
+        "pin-secondary-config = <0x04>;"
+
+gpio-cells:
+  - pin
+  - flags

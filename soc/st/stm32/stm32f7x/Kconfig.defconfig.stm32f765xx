@@ -1,0 +1,14 @@
+# ST STM32F765XX MCU configuration options
+
+# Copyright (c) 2023 Rahul Arasikere
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F765XX
+
+config NUM_IRQS
+	default 110
+
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	default y
+
+endif # SOC_STM32F765XX

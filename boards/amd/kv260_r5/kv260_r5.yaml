@@ -1,0 +1,12 @@
+identifier: kv260_r5
+name: Xilinx KV260 Development board for Cortex-R5
+arch: arm
+toolchain:
+  - zephyr
+ram: 65536
+flash: 32768
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: xlnx

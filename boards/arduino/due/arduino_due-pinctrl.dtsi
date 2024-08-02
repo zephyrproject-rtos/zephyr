@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2022-2023, Gerson Fernando Budke <nandojve@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/sam3XXh-pinctrl.h>
+
+&pinctrl {
+	twi0_default: twi0_default {
+		group1 {
+			pinmux = <PA18A_TWI0_TWCK>,
+				 <PA17A_TWI0_TWD>;
+		};
+	};
+	twi1_default: twi1_default {
+		group1 {
+			pinmux = <PB13A_TWI1_TWCK>,
+				 <PB12A_TWI1_TWD>;
+		};
+	};
+
+	uart_default: uart_default {
+		group1 {
+			pinmux = <PA8A_UART_RXD>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <PA9A_UART_TXD>;
+		};
+	};
+	usart0_default: usart0_default {
+		group1 {
+			pinmux = <PA10A_USART0_RXD>,
+				 <PA11A_USART0_TXD>;
+		};
+	};
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA12A_USART1_RXD>,
+				 <PA13A_USART1_TXD>;
+		};
+	};
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <PB21A_USART2_RXD>,
+				 <PB20A_USART2_TXD>;
+		};
+	};
+	usart3_default: usart3_default {
+		group1 {
+			pinmux = <PD5B_USART3_RXD>,
+				 <PD4B_USART3_TXD>;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PC4B_PWM_PWML1>,
+				 <PC5B_PWM_PWMH1>;
+		};
+	};
+};

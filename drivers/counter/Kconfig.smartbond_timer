@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SMARTBOND_TIMER
+	bool "Renesas SmartBond(tm) counter driver"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_TIMER_ENABLED
+	select CLOCK_CONTROL_SMARTBOND
+	select CLOCK_CONTROL
+	help
+	  Enable the counter driver for for Renesas SmartBond(tm) family of processors.

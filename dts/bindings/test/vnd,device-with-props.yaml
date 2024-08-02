@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test device with random properties
+
+compatible: "vnd,device-with-props"
+
+properties:
+  foo:
+    type: int
+
+  bar:
+    type: int
+
+  baz:
+    type: int

@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 power control node
+
+compatible: "telink,b91-power"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  power-mode:
+    type: string
+    required: true
+    enum:
+      - "LDO_1P4_LDO_1P8"
+      - "DCDC_1P4_LDO_1P8"
+      - "DCDC_1P4_DCDC_1P8"
+
+  vbat-type:
+    type: string
+    required: true
+    enum:
+      - "VBAT_MAX_VALUE_LESS_THAN_3V6"
+      - "VBAT_MAX_VALUE_GREATER_THAN_3V6"

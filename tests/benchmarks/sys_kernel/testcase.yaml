@@ -1,0 +1,10 @@
+tests:
+  benchmark.kernel.core:
+    tags:
+      - kernel
+      - benchmark
+    arch_exclude:
+      - nios2
+      - xtensa
+    min_ram: 32
+    timeout: 120

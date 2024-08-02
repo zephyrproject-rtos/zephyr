@@ -1,0 +1,36 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Main PLL node binding for STM32F100 devices
+
+  Takes one of clk_hse or clk_hsi as input clock.
+  When clk_hsi is used a fixed prescaler is applied. When input clock is hse or
+  pll2, configurable prescaler is used.
+
+  Up to 2 output clocks could be supported and for each output clock, the
+  frequency can be computed with the following formula:
+
+    f(PLLCLK) = f(PLLIN) x PLLMUL       --> SYSCLK (System Clock)
+
+    with, depending on the case:
+            f(PLLIN) = f(input_clk) / 2       if input_clk = clk_hsi
+            f(PLLIN) = f(input_clk) / PREDIV  if input_clk = clk_hse
+
+  The PLL output frequency must not exceed 24 MHz.
+
+
+compatible: "st,stm32f100-pll-clock"
+
+include:
+  - name: st,stm32f105-pll-clock.yaml
+    property-blocklist:
+      - mul
+
+properties:
+  mul:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for output clock
+        Valid range: 2 - 16

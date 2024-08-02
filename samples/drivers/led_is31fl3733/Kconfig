@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+
+source "Kconfig.zephyr"
+
+config LED_ROW_COUNT
+	int "Number of rows in IS31FL3733 matrix"
+	default 12
+	help
+	  Set this to match the number of SW LED sink connections
+	  wired up to your IS31FL3733 LED driver. The sample will only attempt
+	  to drive LEDs within this range.
+
+config LED_COLUMN_COUNT
+	int "Number of columns in IS31FL3733 matrix"
+	default 16
+	help
+	  Set this to match the number of CS LED source connections wired up
+	  to your IS31FL3733 LED driver. The sample will only attempt to drive
+	  LEDs within this range.

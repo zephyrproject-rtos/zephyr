@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.gnss.gnss_parse:
+    tags:
+      - drivers
+      - gnss
+      - parse

@@ -1,0 +1,24 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TMP112 Digital Temperature Sensor.  See more info at
+    https://www.ti.com/product/TMP112
+
+compatible: "ti,tmp112"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  conversion-rate:
+    description: Conversion rate in mHz (milli-Hertz)
+    type: int
+    default: 4000
+    enum:
+      - 250
+      - 1000
+      - 4000
+      - 8000
+  extended-mode:
+    description: When true use 13-bit data format allowing measuring temperature up to 128°C
+    type: boolean

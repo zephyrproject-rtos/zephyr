@@ -1,0 +1,26 @@
+# INA226 Bidirectional Current/Power Monitor
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config INA226
+	bool "INA226 Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA226_ENABLED
+	select I2C
+	help
+	  Enable driver for INA226 Bidirectional Current/Power Monitor.
+
+config INA226_VSHUNT
+	bool "INA226 VShunt Measurement Enable"
+	depends on DT_HAS_TI_INA226_ENABLED
+	help
+	  Enable shunt voltage measurement for INA226.
+
+	  This is the actual shunt voltage measured which is scaled within the
+	  INA226 based upon the SHUNT_CAL register. This value is useful for
+	  determining the measurement noise or debugging the SHUNT_CAL value.
+
+	  Note that enabling this option requires an extra I2C read when the
+	  SENSOR_CHAN_ALL is selected. Hence, only enable this option if the
+	  shunt voltage measurement is required.

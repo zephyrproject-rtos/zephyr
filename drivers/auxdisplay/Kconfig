@@ -1,0 +1,29 @@
+# Auxiliary Display drivers
+
+# Copyright (c) 2022 Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AUXDISPLAY
+	bool "Auxiliary (textual) Display Drivers"
+	help
+	  Enable auxiliary/texual display drivers (e.g. alphanumerical displays)
+
+if AUXDISPLAY
+
+config AUXDISPLAY_INIT_PRIORITY
+	int "Auxiliary display devices init priority"
+	default 85
+	help
+	  Auxiliary (textual) display devices initialization priority.
+
+module = AUXDISPLAY
+module-str = auxdisplay
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/auxdisplay/Kconfig.hd44780"
+source "drivers/auxdisplay/Kconfig.itron"
+source "drivers/auxdisplay/Kconfig.jhd1313"
+source "drivers/auxdisplay/Kconfig.pt6314"
+source "drivers/auxdisplay/Kconfig.serlcd"
+
+endif # AUXDISPLAY

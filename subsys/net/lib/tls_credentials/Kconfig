@@ -1,0 +1,60 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TLS_CREDENTIALS
+	bool "TLS credentials management"
+	help
+	  Enable TLS credentials management subsystem.
+
+if TLS_CREDENTIALS
+
+module = TLS_CREDENTIALS
+module-str = tls_credentials
+source "subsys/logging/Kconfig.template.log_config"
+
+choice TLS_CREDENTIALS_BACKEND
+	prompt "TLS credentials management backend"
+	depends on TLS_CREDENTIALS
+	default TLS_CREDENTIALS_BACKEND_VOLATILE
+	help
+	  TLS credentials management backend implementation.
+
+config TLS_CREDENTIALS_BACKEND_VOLATILE
+	bool "TLS credentials management volatile backend"
+	help
+	  TLS credentials management volatile backend implementation,
+	  storing credentials in system runtime memory.
+
+config TLS_CREDENTIALS_BACKEND_PROTECTED_STORAGE
+	bool "TLS credentials management protected storage backend"
+	depends on BUILD_WITH_TFM
+	select PSA_WANT_ALG_SHA_256
+	help
+	  TLS credentials management backend using the Protected Storage
+	  API to store credentials with integrity check against physical
+	  attacks and keeps entries across system reboot.
+
+endchoice
+
+config TLS_MAX_CREDENTIALS_NUMBER
+	int "Maximum number of TLS credentials"
+	default 4
+	help
+	  Maximum number of TLS credentials that can be registered.
+
+config TLS_CREDENTIAL_FILENAMES
+	bool "Specify TLS credential filenames"
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  Allows clients of the socket APIs to specify filenames
+	  of security certificates and private keys
+	  to use during subsequent TLS/SSL negotiations.
+	  The secure files will have been previously provisioned to the
+	  device's secure file system; eg, via a vendor tool or
+	  by executing a separate binary.
+	  This option is currently only available for secure
+	  socket offload devices.
+
+source "subsys/net/lib/tls_credentials/Kconfig.shell"
+
+endif # TLS_CREDENTIALS

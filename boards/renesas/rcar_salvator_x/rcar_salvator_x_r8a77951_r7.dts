@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2022 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/renesas/rcar/gen3/r8a77951.dtsi>
+#include "rcar_salvator_x_r8a77951_r7-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Renesas h3 Salvator-X board";
+	compatible = "renesas,h3-salvatorx-cr7";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &scif1;
+		zephyr,shell-uart = &scif1;
+		zephyr,canbus = &can0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led_0: led_4 {
+			gpios = <&gpio6 11 GPIO_ACTIVE_HIGH>;
+			label = "led4";
+		};
+		user_led_1: led_5 {
+			gpios = <&gpio6 12 GPIO_ACTIVE_HIGH>;
+			label = "led5";
+		};
+		user_led_2: led_6 {
+			gpios = <&gpio6 13 GPIO_ACTIVE_HIGH>;
+			label = "led6";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: sw20 {
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			label = "sw20";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1: sw21 {
+			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+			label = "sw21";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button_2: sw22 {
+			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+			label = "sw22";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led_1;
+		sw0 = &user_button_0;
+	};
+};
+
+&cmt0 {
+	status = "okay";
+	clock-frequency = <32000>;
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_data_a_tx_default &can0_data_a_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&scif1 {
+	pinctrl-0 = <&scif1_data_a_tx_default &scif1_data_a_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+};

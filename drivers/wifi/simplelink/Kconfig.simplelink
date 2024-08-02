@@ -1,0 +1,52 @@
+# SimpleLink WiFi driver options
+
+# Copyright (c) 2018 Texas Instruments, Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_SIMPLELINK
+	bool "SimpleLink Wi-Fi driver support"
+	select SIMPLELINK_HOST_DRIVER
+	select WIFI_OFFLOAD
+	select NET_L2_WIFI_MGMT
+	select FDTABLE
+	select POSIX_SEMAPHORES
+
+if WIFI_SIMPLELINK
+
+config WIFI_SIMPLELINK_NAME
+	string "Driver name"
+	default "SimpleLink"
+
+config WIFI_SIMPLELINK_MAX_PACKET_SIZE
+	int "Maximum size of a packet, in bytes"
+	# MTU (ipv4) per: http://www.ti.com/lit/ug/swru455d/swru455d.pdf:
+	default 1472
+	help
+	  Set the maximum size of a network packet going through the chip.
+	  This sets the size of each buffer, in each buffer pool.
+	  Do not modify it unless you know what you are doing.
+
+config WIFI_SIMPLELINK_SCAN_COUNT
+	int "Number of entries in network scan table: Max: 30"
+	default 20
+	help
+	  The number of results to request on a Wi-Fi scan operation.
+	  Actual number returned may be less.  Maximum is 30.
+
+config WIFI_SIMPLELINK_MAX_SCAN_RETRIES
+	int "Number of retries to get network scan table"
+	default 10
+	help
+	  The number of times, separated by a one second interval, to retry
+	  a request for the network list.
+
+config WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT
+	int "Time (in seconds) to wait for fast connect on startup"
+	default 7
+	help
+	  SimpleLink uses the "FastConnect" feature to reconnect to the
+	  previously connected AP on startup. Should the Wi-Fi connection
+	  timeout, the SimpleLink driver will fail to initialize,
+	  and LOG an error.
+
+endif # WIFI_SIMPLELINK

@@ -1,0 +1,16 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+};
+
+dut: &lpuart10 {
+	current-speed = <115200>;
+	nxp,loopback;
+	status = "okay";
+};

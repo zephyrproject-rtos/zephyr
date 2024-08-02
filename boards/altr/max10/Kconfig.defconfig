@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2018 Intel
+
+if BOARD_ALTERA_MAX10
+
+if FLASH
+
+config SOC_FLASH_NIOS2_QSPI
+	default y
+
+endif # FLASH
+
+endif # BOARD_ALTERA_MAX10

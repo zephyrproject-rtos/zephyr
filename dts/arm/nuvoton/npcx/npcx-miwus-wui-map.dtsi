@@ -1,0 +1,506 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Mapping between MIWU wui bits and source device */
+	npcx-miwus-wui-map {
+		compatible = "nuvoton,npcx-miwu-wui-map";
+
+		/* MIWU table 0 */
+		/* MIWU group A */
+		wui_io80: wui0-1-0 {
+			miwus = <&miwu0 0 0>; /* GPIO80 */
+		};
+		wui_io81: wui0-1-1 {
+			miwus = <&miwu0 0 1>; /* GPIO81 */
+		};
+		wui_io82: wui0-1-2 {
+			miwus = <&miwu0 0 2>; /* GPIO82 */
+		};
+		wui_io83: wui0-1-3 {
+			miwus = <&miwu0 0 3>; /* GPIO83 */
+		};
+		wui_io87: wui0-1-7 {
+			miwus = <&miwu0 0 7>; /* GPIO87 */
+		};
+
+		/* MIWU group B */
+		wui_io90: wui0-2-0 {
+			miwus = <&miwu0 1 0>; /* GPIO90 */
+		};
+		wui_io91: wui0-2-1 {
+			miwus = <&miwu0 1 1>; /* GPIO91 */
+		};
+		wui_io92: wui0-2-2 {
+			miwus = <&miwu0 1 2>; /* GPIO92 */
+		};
+		wui_io93: wui0-2-3 {
+			miwus = <&miwu0 1 3>; /* GPIO93 */
+		};
+		wui_io94: wui0-2-4 {
+			miwus = <&miwu0 1 4>; /* GPIO94 */
+		};
+		wui_io95: wui0-2-5 {
+			miwus = <&miwu0 1 5>; /* GPIO95 */
+		};
+		wui_mswc: wui0-2-6 {
+			miwus = <&miwu0 1 6>; /* MSWC */
+		};
+		wui_t0out: wui0-2-7 {
+			miwus = <&miwu0 1 7>; /* T0OUT */
+		};
+
+		/* MIWU group C */
+		wui_io96: wui0-3-0 {
+			miwus = <&miwu0 2 0>; /* GPIO96 */
+		};
+		wui_io97: wui0-3-1 {
+			miwus = <&miwu0 2 1>; /* GPIO97 */
+		};
+		wui_ioa0: wui0-3-2 {
+			miwus = <&miwu0 2 2>; /* GPIOA0 */
+		};
+		wui_ioa1: wui0-3-3 {
+			miwus = <&miwu0 2 3>; /* GPIOA1 */
+		};
+		wui_ioa2: wui0-3-4 {
+			miwus = <&miwu0 2 4>; /* GPIOA2 */
+		};
+		wui_ioa3: wui0-3-5 {
+			miwus = <&miwu0 2 5>; /* GPIOA3 */
+		};
+		wui_ioa4: wui0-3-6 {
+			miwus = <&miwu0 2 6>; /* GPIOA4 */
+		};
+		wui_ioa5: wui0-3-7 {
+			miwus = <&miwu0 2 7>; /* GPIOA5 */
+		};
+
+		/* MIWU group D */
+		wui_ioa6: wui0-4-0 {
+			miwus = <&miwu0 3 0>; /* GPIOA6 */
+		};
+		wui_ioa7: wui0-4-1 {
+			miwus = <&miwu0 3 1>; /* GPIOA7 */
+		};
+		wui_iob0: wui0-4-2 {
+			miwus = <&miwu0 3 2>; /* GPIOB0 */
+		};
+		wui_smb0_2: wui0-4-3 {
+			miwus = <&miwu0 3 3>; /* SMB0/2 */
+		};
+		wui_smb1_3: wui0-4-4 {
+			miwus = <&miwu0 3 4>; /* SMB1/3 */
+		};
+		wui_iob1: wui0-4-5 {
+			miwus = <&miwu0 3 5>; /* GPIOB1 */
+		};
+		wui_iob2: wui0-4-6 {
+			miwus = <&miwu0 3 6>; /* GPIOB2 */
+		};
+		wui_mtc: wui0-4-7 {
+			miwus = <&miwu0 3 7>; /* MTC */
+		};
+
+		/* MIWU group E */
+		wui_iob3: wui0-5-0 {
+			miwus = <&miwu0 4 0>; /* GPIOB3 */
+		};
+		wui_iob4: wui0-5-1 {
+			miwus = <&miwu0 4 1>; /* GPIOB4 */
+		};
+		wui_iob5: wui0-5-2 {
+			miwus = <&miwu0 4 2>; /* GPIOB5 */
+		};
+		wui_smb4: wui0-5-3 {
+			miwus = <&miwu0 4 3>; /* SMB4 */
+		};
+		wui_iob7: wui0-5-4 {
+			miwus = <&miwu0 4 4>; /* GPIOB7 */
+		};
+		wui_espi_rst: wui0-5-5 {
+			miwus = <&miwu0 4 5>; /* ESPI_RST */
+		};
+		wui_host_acc: wui0-5-6 {
+			miwus = <&miwu0 4 6>; /* HOST_ACC */
+		};
+		wui_plt_rst: wui0-5-7 {
+			miwus = <&miwu0 4 7>; /* PLT_RST */
+		};
+
+		/* MIWU group F */
+		wui_ioc0: wui0-6-0 {
+			miwus = <&miwu0 5 0>; /* GPIOC0 */
+		};
+		wui_ioc1: wui0-6-1 {
+			miwus = <&miwu0 5 1>; /* GPIOC1 */
+		};
+		wui_ioc2: wui0-6-2 {
+			miwus = <&miwu0 5 2>; /* GPIOC2 */
+		};
+		wui_ioc3: wui0-6-3 {
+			miwus = <&miwu0 5 3>; /* GPIOC3 */
+		};
+		wui_ioc4: wui0-6-4 {
+			miwus = <&miwu0 5 4>; /* GPIOC4 */
+		};
+		wui_ioc5: wui0-6-5 {
+			miwus = <&miwu0 5 5>; /* GPIOC5 */
+		};
+		wui_ioc6: wui0-6-6 {
+			miwus = <&miwu0 5 6>; /* GPIOC6 */
+		};
+		wui_ioc7: wui0-6-7 {
+			miwus = <&miwu0 5 7>; /* GPIOC7 */
+		};
+
+		/* MIWU group G */
+		wui_iod0: wui0-7-0 {
+			miwus = <&miwu0 6 0>; /* GPIOD0 */
+		};
+		wui_iod1: wui0-7-1 {
+			miwus = <&miwu0 6 1>; /* GPIOD1 */
+		};
+		wui_iod2: wui0-7-2 {
+			miwus = <&miwu0 6 2>; /* GPIOD2 */
+		};
+		wui_iod3: wui0-7-3 {
+			miwus = <&miwu0 6 3>; /* GPIOD3 */
+		};
+		wui_iod4: wui0-7-4 {
+			miwus = <&miwu0 6 4>; /* GPIOD4 */
+		};
+		wui_iod5: wui0-7-5 {
+			miwus = <&miwu0 6 5>; /* GPIOD5 */
+		};
+		wui_ioe0: wui0-7-7 {
+			miwus = <&miwu0 6 7>; /* GPIOE0 */
+		};
+
+		/* MIWU group H */
+		wui_ioe1: wui0-8-0 {
+			miwus = <&miwu0 7 0>; /* GPIOE1 */
+		};
+		wui_ioe2: wui0-8-1 {
+			miwus = <&miwu0 7 1>; /* GPIOE2 */
+		};
+		wui_ioe3: wui0-8-2 {
+			miwus = <&miwu0 7 2>; /* GPIOE3 */
+		};
+		wui_ioe4: wui0-8-3 {
+			miwus = <&miwu0 7 3>; /* GPIOE4 */
+		};
+		wui_ioe5: wui0-8-4 {
+			miwus = <&miwu0 7 4>; /* GPIOE5 */
+		};
+		wui_iof0: wui0-8-5 {
+			miwus = <&miwu0 7 5>; /* GPIOF0 */
+		};
+		wui_iof3: wui0-8-6 {
+			miwus = <&miwu0 7 6>; /* GPIOF3 */
+		};
+
+		/* MIWU table 1 */
+		/* MIWU group A */
+		wui_io00: wui1-1-0 {
+			miwus = <&miwu1 0 0>; /* GPIO00 */
+		};
+		wui_io01: wui1-1-1 {
+			miwus = <&miwu1 0 1>; /* GPIO01 */
+		};
+		wui_io02: wui1-1-2 {
+			miwus = <&miwu1 0 2>; /* GPIO02 */
+		};
+		wui_io03: wui1-1-3 {
+			miwus = <&miwu1 0 3>; /* GPIO03 */
+		};
+		wui_io04: wui1-1-4 {
+			miwus = <&miwu1 0 4>; /* GPIO04 */
+		};
+		wui_io05: wui1-1-5 {
+			miwus = <&miwu1 0 5>; /* GPIO05 */
+		};
+		wui_io06: wui1-1-6 {
+			miwus = <&miwu1 0 6>; /* GPIO06 */
+		};
+		wui_io07: wui1-1-7 {
+			miwus = <&miwu1 0 7>; /* GPIO07 */
+		};
+
+		/* MIWU group B */
+		wui_io10: wui1-2-0 {
+			miwus = <&miwu1 1 0>; /* GPIO10 */
+		};
+		wui_io11: wui1-2-1 {
+			miwus = <&miwu1 1 1>; /* GPIO11 */
+		};
+		wui_iof4: wui1-2-2 {
+			miwus = <&miwu1 1 2>; /* GPIOF4 */
+		};
+		wui_io14: wui1-2-4 {
+			miwus = <&miwu1 1 4>; /* GPIO14 */
+		};
+		wui_io15: wui1-2-5 {
+			miwus = <&miwu1 1 5>; /* GPIO15 */
+		};
+		wui_io16: wui1-2-6 {
+			miwus = <&miwu1 1 6>; /* GPIO16 */
+		};
+		wui_io17: wui1-2-7 {
+			miwus = <&miwu1 1 7>; /* GPIO17 */
+		};
+
+		/* MIWU group C */
+		wui_io31: wui1-3-0 {
+			miwus = <&miwu1 2 0>; /* GPIO31 */
+		};
+		wui_io30: wui1-3-1 {
+			miwus = <&miwu1 2 1>; /* GPIO30 */
+		};
+		wui_io27: wui1-3-2 {
+			miwus = <&miwu1 2 2>; /* GPIO27 */
+		};
+		wui_io26: wui1-3-3 {
+			miwus = <&miwu1 2 3>; /* GPIO26 */
+		};
+		wui_io25: wui1-3-4 {
+			miwus = <&miwu1 2 4>; /* GPIO25 */
+		};
+		wui_io24: wui1-3-5 {
+			miwus = <&miwu1 2 5>; /* GPIO24 */
+		};
+		wui_io23: wui1-3-6 {
+			miwus = <&miwu1 2 6>; /* GPIO23 */
+		};
+		wui_io22: wui1-3-7 {
+			miwus = <&miwu1 2 7>; /* GPIO22 */
+		};
+
+		/* MIWU group D */
+		wui_io20: wui1-4-0 {
+			miwus = <&miwu1 3 0>; /* GPIO20 */
+		};
+		wui_io21: wui1-4-1 {
+			miwus = <&miwu1 3 1>; /* GPIO21 */
+		};
+		wui_iof5: wui1-4-2 {
+			miwus = <&miwu1 3 2>; /* GPIOF5 */
+		};
+		wui_io33: wui1-4-3 {
+			miwus = <&miwu1 3 3>; /* GPIO33 */
+		};
+		wui_io34: wui1-4-4 {
+			miwus = <&miwu1 3 4>; /* GPIO34 */
+		};
+		wui_io36: wui1-4-6 {
+			miwus = <&miwu1 3 6>; /* GPIO36 */
+		};
+		wui_io37: wui1-4-7 {
+			miwus = <&miwu1 3 7>; /* GPIO37 */
+		};
+
+		/* MIWU group E */
+		wui_io40: wui1-5-0 {
+			miwus = <&miwu1 4 0>; /* GPIO40 */
+		};
+		wui_io41: wui1-5-1 {
+			miwus = <&miwu1 4 1>; /* GPIO41 */
+		};
+		wui_io42: wui1-5-2 {
+			miwus = <&miwu1 4 2>; /* GPIO42 */
+		};
+		wui_io43: wui1-5-3 {
+			miwus = <&miwu1 4 3>; /* GPIO43 */
+		};
+		wui_io44: wui1-5-4 {
+			miwus = <&miwu1 4 4>; /* GPIO44 */
+		};
+		wui_io45: wui1-5-5 {
+			miwus = <&miwu1 4 5>; /* GPIO45 */
+		};
+		wui_io46: wui1-5-6 {
+			miwus = <&miwu1 4 6>; /* GPIO46 */
+		};
+		wui_io47: wui1-5-7 {
+			miwus = <&miwu1 4 7>; /* GPIO47 */
+		};
+
+		/* MIWU group F */
+		wui_io50: wui1-6-0 {
+			miwus = <&miwu1 5 0>; /* GPIO50 */
+		};
+		wui_io51: wui1-6-1 {
+			miwus = <&miwu1 5 1>; /* GPIO51 */
+		};
+		wui_io52: wui1-6-2 {
+			miwus = <&miwu1 5 2>; /* GPIO52 */
+		};
+		wui_io53: wui1-6-3 {
+			miwus = <&miwu1 5 3>; /* GPIO53 */
+		};
+		wui_io54: wui1-6-4 {
+			miwus = <&miwu1 5 4>; /* GPIO54 */
+		};
+		wui_io55: wui1-6-5 {
+			miwus = <&miwu1 5 5>; /* GPIO55 */
+		};
+		wui_io56: wui1-6-6 {
+			miwus = <&miwu1 5 6>; /* GPIO56 */
+		};
+		wui_io57: wui1-6-7 {
+			miwus = <&miwu1 5 7>; /* GPIO57 */
+		};
+
+		/* MIWU group G */
+		wui_io60: wui1-7-0 {
+			miwus = <&miwu1 6 0>; /* GPIO60 */
+		};
+		wui_io61: wui1-7-1 {
+			miwus = <&miwu1 6 1>; /* GPIO61 */
+		};
+		wui_io62: wui1-7-2 {
+			miwus = <&miwu1 6 2>; /* GPIO62 */
+		};
+		wui_io63: wui1-7-3 {
+			miwus = <&miwu1 6 3>; /* GPIO63 */
+		};
+		wui_io64: wui1-7-4 {
+			miwus = <&miwu1 6 4>; /* GPIO64 */
+		};
+
+		/* MIWU group H */
+		wui_io70: wui1-8-0 {
+			miwus = <&miwu1 7 0>; /* GPIO70 */
+		};
+		wui_io67: wui1-8-1 {
+			miwus = <&miwu1 7 1>; /* GPIO67 */
+		};
+		wui_io72: wui1-8-2 {
+			miwus = <&miwu1 7 2>; /* GPIO72 */
+		};
+		wui_io73: wui1-8-3 {
+			miwus = <&miwu1 7 3>; /* GPIO73 */
+		};
+		wui_io74: wui1-8-4 {
+			miwus = <&miwu1 7 4>; /* GPIO74 */
+		};
+		wui_io75: wui1-8-5 {
+			miwus = <&miwu1 7 5>; /* GPIO75 */
+		};
+		wui_io76: wui1-8-6 {
+			miwus = <&miwu1 7 6>; /* GPIO76 */
+		};
+		wui_cr_sin1: wui1-8-7 {
+			miwus = <&miwu1 7 7>; /* CR_SIN1 */
+		};
+
+		/* MIWU table 2 */
+		/* MIWU group A */
+		/* eSPI VW Events */
+		wui_vw_slp_s3: wui2-1-0 {
+			miwus = <&miwu2 0 0>; /* SLP_S3_L */
+		};
+		wui_vw_slp_s4: wui2-1-1 {
+			miwus = <&miwu2 0 1>; /* SLP_S4_L */
+		};
+		wui_vw_slp_s5: wui2-1-2 {
+			miwus = <&miwu2 0 2>; /* SLP_S5_L */
+		};
+		wui_vw_sus_stat: wui2-1-4 {
+			miwus = <&miwu2 0 4>; /* SUS_STAT_L */
+		};
+		wui_vw_plt_rst: wui2-1-5 {
+			miwus = <&miwu2 0 5>; /* PLTRST_L */
+		};
+		wui_vw_oob_rst_warn: wui2-1-6 {
+			miwus = <&miwu2 0 6>; /* OOB_RST_WARN */
+		};
+
+		/* MIWU group B */
+		wui_vw_host_rst_warn: wui2-2-0 {
+			miwus = <&miwu2 1 0>; /* HOST_RST_WARN */
+		};
+		wui_vw_sus_warn: wui2-2-4 {
+			miwus = <&miwu2 1 4>; /* SUS_WARN_L */
+		};
+		wui_vw_sus_pwrdn_ack: wui2-2-5 {
+			miwus = <&miwu2 1 5>; /* SUS_PWRDN_ACK */
+		};
+		wui_vw_slp_a: wui2-2-7 {
+			miwus = <&miwu2 1 7>; /* SLP_A_L */
+		};
+
+		/* MIWU group C */
+		/* eSPI VW Events */
+		wui_vw_slp_lan: wui2-3-0 {
+			miwus = <&miwu2 2 0>; /* SLP_LAN_L */
+		};
+		wui_vw_slp_wlan: wui2-3-1 {
+			miwus = <&miwu2 2 1>; /* SLP_WLAN_L) */
+		};
+		wui_vw_fl_ack: wui2-3-4 {
+			miwus = <&miwu2 2 4>; /* FL_ACK */
+		};
+		wui_vw_pch_to_ec_gen_1: wui2-3-5 {
+			miwus = <&miwu2 2 5>; /* PCH_TO_EC_GENERIC_1 */
+		};
+		wui_vw_pch_to_ec_gen_2: wui2-3-6 {
+			miwus = <&miwu2 2 6>; /* PCH_TO_EC_GENERIC_2 */
+		};
+		wui_vw_pch_to_ec_gen_3: wui2-3-7 {
+			miwus = <&miwu2 2 7>; /* PCH_TO_EC_GENERIC_3 */
+		};
+
+		/* MIWU group D */
+		wui_vw_pch_to_ec_gen_4: wui2-4-0 {
+			miwus = <&miwu2 3 0>; /* PCH_TO_EC_GENERIC_4 */
+		};
+		wui_vw_pch_to_ec_gen_5: wui2-4-1 {
+			miwus = <&miwu2 3 1>; /* PCH_TO_EC_GENERIC_5 */
+		};
+		wui_vw_pch_to_ec_gen_6: wui2-4-2 {
+			miwus = <&miwu2 3 2>; /* PCH_TO_EC_GENERIC_6 */
+		};
+		wui_vw_pch_to_ec_gen_7: wui2-4-3 {
+			miwus = <&miwu2 3 3>; /* PCH_TO_EC_GENERIC_7 */
+		};
+		wui_vw_host_c10: wui2-4-4 {
+			miwus = <&miwu2 3 4>; /* HOST_C10 */
+		};
+
+		/* MIWU group F */
+		wui_iof1: wui2-6-1 {
+			miwus = <&miwu2 5 1>; /* GPIOF1 */
+		};
+		wui_iof2: wui2-6-2 {
+			miwus = <&miwu2 5 2>; /* GPIOF2 */
+		};
+
+		/* MIWU group G */
+		wui_smb5: wui2-7-0 {
+			miwus = <&miwu2 6 0>; /* SMB5 */
+		};
+		wui_smb6: wui2-7-1 {
+			miwus = <&miwu2 6 1>; /* SMB6 */
+		};
+		wui_smb7: wui2-7-2 {
+			miwus = <&miwu2 6 2>; /* SMB7 */
+		};
+
+		/* Pseudo wui item means no mapping between source and wui */
+		wui_none: wui-pseudo {
+			miwus = <&miwu_none 7 7>;
+		};
+	};
+
+	/* Pseudo MIWU device to present no mapping relationship */
+	miwu_none: miwu-pseudo {
+		compatible = "nuvoton,npcx-miwu";
+		index = <3>;
+		#miwu-cells = <2>;
+		status = "disabled";
+	};
+};

@@ -1,0 +1,30 @@
+tests:
+  buildsystem.debug.build:
+    platform_exclude:
+      - lpcxpresso55s69/lpc55s69/cpu0/ns
+      - nrf9160dk/nrf9160/ns
+      - nrf5340dk/nrf5340/cpuapp/ns
+    build_only: true
+    extra_args: CONF_FILE=debug.conf
+    tags: debug
+    integration_platforms:
+      - native_sim
+    filter: CONFIG_CONSOLE_HAS_DRIVER
+  bootloader.mcuboot.build:
+    tags: mcuboot
+    build_only: true
+    platform_allow:
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+    extra_configs:
+      - CONFIG_BOOTLOADER_MCUBOOT=y
+    integration_platforms:
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+  buildsystem.kconfig.utf8_in_values:
+    build_only: true
+    tags: kconfig
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"

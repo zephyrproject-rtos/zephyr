@@ -1,0 +1,258 @@
+/*
+ * Copyright (c) 2022 AVSystem Sławomir Wolf Sp.j. (AVSystem)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32/esp32_pico_d4.dtsi>
+#include "m5stickc_plus-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/axp192.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "M5StickC Plus PROCPU";
+	compatible = "m5stack,m5stickc-plus";
+
+	aliases {
+		led0 = &red_led;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		accel0 = &mpu6886;
+		rtc = &bm8563;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,rtc = &bm8563;
+		zephyr,display = &st7789v;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios =  <&gpio0 10 GPIO_ACTIVE_HIGH>;
+			label = "Red - LED0";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button_0: button_0 {
+			label = "User button 0";
+			gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1: button_1 {
+			label = "User button 1";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi3>;
+		dc-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <20000000>;
+
+			width = <135>;
+			height = <240>;
+			x-offset = <53>;
+			y-offset = <40>;
+
+			vcom = <0x28>;
+			gctrl = <0x35>;
+			vrhs = <0x10>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 00];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
+			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
+			ram-param = [00 F0];
+			rgb-param = [40 02 14];
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_gpio1 &uart0_rx_gpio3>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/* IMU MPU-6886, RTC BM8563, PMU AXP192 */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-gpios = <&gpio0 21 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 22 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	scl-timeout-us = <0>;
+	pinctrl-names = "default";
+
+	axp192_pmic: axp192@34 {
+		compatible = "x-powers,axp192";
+		reg = <0x34>;
+		status = "okay";
+
+		axp192_regulator: axp192_regulator {
+			compatible = "x-powers,axp192-regulator";
+			status = "okay";
+
+			vdd_mcu: DCDC1 {
+				regulator-init-microvolt = <3350000>;
+				regulator-min-microvolt = <3200000>;
+				regulator-max-microvolt = <3400000>;
+				regulator-initial-mode = <AXP192_DCDC_MODE_AUTO>;
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			lcd_bl: LDO2 {
+				regulator-init-microvolt = <2800000>;
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3000000>;
+				regulator-boot-on;
+			};
+
+			lcd_logic: LDO3 {
+				regulator-init-microvolt = <3000000>;
+			};
+		};
+		axp192_gpio: axp192_gpio {
+			compatible = "x-powers,axp192-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <6>;
+			status = "okay";
+		};
+	};
+
+	mpu6886: mpu6886@68 {
+		status = "okay";
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+	};
+
+	bm8563: bm8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_miso_gpio12 &spim2_mosi_gpio11
+				&spim2_sclk_gpio14 &spim2_csel_gpio16>;
+	pinctrl-names = "default";
+};
+
+/* LCD TFT 1.14", 135x240 px, ST7789v2 */
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 0x0000F000>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 0x00100000>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 0x00100000>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			label = "image-scratch";
+			reg = <0x00210000 0x00040000>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 0x00006000>;
+		};
+	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

@@ -1,0 +1,11 @@
+sample:
+  description: Sample application to test ESP32 flash encryption
+  name: flash_encryption
+tests:
+  sample.board.esp32:
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu
+      - esp32_devkitc_wrover/esp32/procpu
+      - yd_esp32/esp32/procpu
+    tags: esp32
+    build_only: true

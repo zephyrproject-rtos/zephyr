@@ -1,0 +1,359 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l475Xg.dtsi>
+#include <st/l4/stm32l475v(c-e-g)tx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics B-L475E-IOT01Ax board";
+	compatible = "st,stm32l475-disco-iot";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &mx25r6435f;
+		zephyr,bt-c2h-uart = &usart1;
+		zephyr,bt-hci = &hci_spi;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		green_led_2: led_2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		/*
+		 * green_pwm_1 is connected to CN1 pin 2 not LD1, since LD1
+		 * shares a pin with the Arduino SPI SCL line.
+		 */
+		green_pwm_1: green_led_1 {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green LD1";
+		};
+		green_pwm_2: green_led_2 {
+			pwms = <&pwm15 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "green LD2";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		led1 = &green_led_1;
+		pwm-led0 = &green_pwm_2;
+		pwm-led1 = &green_pwm_1;
+		sw0 = &user_button;
+		eswifi0 = &wifi0;
+		watchdog0 = &iwdg;
+		accel0 = &lsm6dsl;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_msi {
+	status = "okay";
+	msi-pll-mode;
+	msi-range = <11>; /* 48MHz USB bus clk */
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <20>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lis3mdl-magn@1e {
+		compatible = "st,lis3mdl-magn";
+		reg = <0x1e>;
+	};
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hb-press@5d {
+		compatible = "st,lps22hb-press";
+		reg = <0x5d>;
+	};
+
+	lsm6dsl: lsm6dsl@6a {
+		compatible = "st,lsm6dsl";
+		reg = <0x6a>;
+		irq-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+	};
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		xshut-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&spi3_miso_pc11 { slew-rate = "very-high-speed"; };
+
+&spi3 {
+	status = "okay";
+
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>,
+		   <&gpioe 0 GPIO_ACTIVE_LOW>;
+
+	hci_spi: spbtle-rf@0 {
+		compatible = "st,hci-spi-v1";
+		reg = <0>;
+		reset-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		spi-hold-cs;
+	};
+
+	wifi0: ism43362@1 {
+		compatible = "inventek,eswifi";
+		spi-max-frequency = <2000000>;
+		reg = <1>;
+		resetn-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		boot0-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+		data-gpios = <&gpioe 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x10000 and ending at
+		 * offset 0x1ffff is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(864)>;
+		};
+
+		scratch_partition: partition@f8000 {
+			label = "image-scratch";
+			reg = <0x000F8000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch1_pa15>; /* CN1 pin 2 (ARD.D9-PWM) */
+		pinctrl-names = "default";
+	};
+};
+
+&timers15 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm15: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim15_ch1_pb14>; /* LED2 */
+		pinctrl-names = "default";
+	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in3_pc2 &adc1_in4_pc3
+		     &adc1_in13_pc4 &adc1_in14_pc5>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
+		     &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
+		     &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+	pinctrl-names = "default";
+	dmas = <&dma1 5 5 0x0000>;
+	dma-names = "tx_rx";
+
+	status = "okay";
+
+	mx25r6435f: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 64 Mbits */
+		qspi-max-frequency = <50000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 DT_SIZE_K(864)>;
+				};
+
+			storage_partition: partition@d8000 {
+				label = "storage";
+				reg = <0x000d8000 DT_SIZE_M(7)>;
+			};
+		};
+	};
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

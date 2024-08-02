@@ -1,0 +1,20 @@
+identifier: olimex_esp32_evb/esp32/procpu
+name: Olimex ESP32-EVB PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - can
+  - counter
+  - gpio
+  - hwinfo
+  - i2c
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: olimex

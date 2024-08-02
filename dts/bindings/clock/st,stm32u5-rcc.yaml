@@ -1,0 +1,25 @@
+# Copyright (c) 2021, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32U5 Reset and Clock controller node.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32u5-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - undershoot-prevention
+
+properties:
+
+  apb3-prescaler:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16

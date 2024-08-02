@@ -1,0 +1,26 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2022 STMicroelectronics
+ */
+
+
+/ {
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm2 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &green_pwm_led;
+	};
+
+};
+
+&pwm2 {
+	status = "okay";
+};

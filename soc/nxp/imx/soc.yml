@@ -1,0 +1,62 @@
+family:
+- name: nxp_imx
+  series:
+  - name: imx8
+    socs:
+    - name: mimx8qm6
+      cpuclusters:
+      - name: adsp
+      - name: a72
+      - name: a53
+      - name: m4
+  - name: imx8x
+    socs:
+    - name: mimx8qx6
+      cpuclusters:
+      - name: adsp
+      - name: a35
+      - name: m4
+  - name: imx8ulp
+    socs:
+    - name: mimx8ud7
+      cpuclusters:
+      - name: adsp
+      - name: f1_dsp
+      - name: a35
+  - name: imx8m
+    socs:
+    - name: mimx8ml8
+      cpuclusters:
+      - name: adsp
+      - name: a53
+      - name: m7
+    - name: mimx8mm6
+      cpuclusters:
+      - name: a53
+      - name: m4
+    - name: mimx8mn6
+      cpuclusters:
+      - name: a53
+      - name: m7
+    - name: mimx8mq6
+      cpuclusters:
+      - name: a53
+      - name: m4
+  - name: imx9
+    socs:
+    - name: mimx9352
+      cpuclusters:
+      - name: a55
+      - name: m33
+  - name: imx6sx
+    socs:
+    - name: mcimx6x
+      cpuclusters:
+      - name: a9
+      - name: m4
+  - name: imx7d
+    socs:
+    - name: mcimx7d
+      cpuclusters:
+      - name: a7
+      - name: m4

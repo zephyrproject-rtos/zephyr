@@ -1,0 +1,32 @@
+sample:
+  name: CANopenNode sample
+common:
+  tags:
+    - can
+    - canopen
+  modules:
+    - canopennode
+  depends_on: can
+  filter: dt_chosen_enabled("zephyr,canbus")
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "(.*)CANopen stack initialized"
+tests:
+  sample.modules.canopennode:
+    depends_on: nvs
+  sample.modules.canopennode.program_download:
+    sysbuild: true
+    depends_on: nvs
+    platform_allow:
+      - frdm_k64f
+      - twr_ke18f
+    integration_platforms:
+      - frdm_k64f
+    extra_args:
+      canopennode_CONF_FILE=prj_img_mgmt.conf
+      SB_CONFIG_BOOTLOADER_MCUBOOT=y
+
+  sample.modules.canopennode.no_storage:
+    extra_args: CONF_FILE=prj_no_storage.conf

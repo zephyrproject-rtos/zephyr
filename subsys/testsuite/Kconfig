@@ -1,0 +1,201 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Testing"
+
+source "subsys/testsuite/ztest/Kconfig"
+
+config TEST
+	bool "Mark project as a test"
+	# For tests, store thread names in binary and dump them on crash to
+	# ease debugging.
+	select THREAD_NAME
+	help
+	  Mark a project or an application as a test. This will enable a few
+	  test defaults.
+
+config TEST_EXTRA_STACK_SIZE
+	int "Test function extra thread stack size"
+	default 2048 if COVERAGE_GCOV
+	default 768 if XTENSA
+	default 0
+	depends on TEST
+	help
+	  Additional stack for tests on some platform where default is not
+	  enough.
+
+config HAS_COVERAGE_SUPPORT
+	bool
+	help
+	  The code coverage report generation is only available on boards
+	  with enough spare RAM to buffer the coverage data, or on boards
+	  based on the POSIX ARCH.
+
+config COVERAGE
+	bool "Create coverage data"
+	depends on HAS_COVERAGE_SUPPORT
+	help
+	  This option will build your application with the -coverage option
+	  which will generate data that can be used to create coverage reports.
+	  For more information see
+	  https://docs.zephyrproject.org/latest/guides/coverage.html
+
+choice
+	prompt "Coverage mode"
+	default COVERAGE_NATIVE_GCOV if NATIVE_BUILD
+	default COVERAGE_GCOV if !NATIVE_BUILD
+	depends on COVERAGE
+
+config COVERAGE_NATIVE_GCOV
+	bool "Host compiler gcov based code coverage"
+	depends on NATIVE_BUILD
+	help
+	  Build natively with the compiler standard `--coverage` options,
+	  that is with gcov/GCC-compatible coverage
+
+config COVERAGE_NATIVE_SOURCE
+	bool "Host compiler source based code coverage"
+	depends on NATIVE_BUILD
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	help
+	  Build natively with the compiler source based coverage options.
+	  Today this is only supported with LLVM
+
+config COVERAGE_GCOV
+	bool "Create Coverage data from hardware platform"
+	depends on !NATIVE_BUILD
+	help
+	  This option will select the custom gcov library. The reports will
+	  be available over serial. This serial dump can be passed to
+	  gen_gcov_files.py which creates the required .gcda files. These
+	  can be read by gcov utility. For more details see gcovr.com .
+
+endchoice
+
+config COVERAGE_GCOV_HEAP_SIZE
+	int "Size of heap allocated for gcov coverage data dump"
+	depends on COVERAGE_GCOV
+	default 32768 if X86 || SOC_SERIES_MPS2
+	default 16384
+	help
+	  This option configures the heap size allocated for gcov coverage
+	  data to be dumped over serial. If the value is 0, no buffer will be used,
+	  data will be dumped directly over serial.
+
+config COVERAGE_DUMP
+	bool "Dump coverage data on exit"
+	depends on COVERAGE_GCOV
+	help
+	  Dump collected coverage information to console on exit.
+
+config FORCE_COVERAGE
+	bool "Force coverage"
+	select HAS_COVERAGE_SUPPORT
+	help
+	  Regardless of platform support, it will enable coverage data production.
+	  If the platform does not support coverage by default, setting this config
+	  does not guarantee that coverage data will be gathered.
+	  Application may not fit memory or crash at runtime.
+
+config TEST_USERSPACE
+	bool "Indicate that this test exercises user mode"
+	help
+	  This option indicates that a test case puts threads in user mode,
+	  and that the build system will [override and] enable USERSPACE
+	  if the platform supports it. It should be set in a .conf file on
+	  a per-test basis and is not meant to be used outside test cases.
+	  Tests with this option should also have the "userspace" filtering
+	  tag in their testcase.yaml file.
+
+	  The userspace APIs are no-ops if userspace is not enabled, so it is
+	  OK to enable this even if the test will run on platforms which do
+	  not support userspace. The test should still run on those platforms,
+	  just with all threads in supervisor mode.
+
+	  If a test *requires* that userspace be enabled in order to
+	  pass, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
+	  testcase.yaml.
+
+config TEST_LOGGING_DEFAULTS
+	bool "Test case logging defaults"
+	depends on TEST
+	select LOG
+	select LOG_DEFAULT_MINIMAL
+	default y
+	help
+	  Option which implements default policy of enabling logging in
+	  minimal mode for all test cases. For tests that need alternate
+	  logging configuration, or no logging at all, disable this
+	  in the project-level defconfig.
+
+config TEST_ENABLE_USERSPACE
+	bool
+	depends on TEST_USERSPACE
+	depends on ARCH_HAS_USERSPACE
+	imply USERSPACE
+	imply DYNAMIC_OBJECTS
+	default y
+	help
+	  This hidden option implements the TEST_USERSPACE logic. It turns on
+	  USERSPACE when CONFIG_ARCH_HAS_USERSPACE is set and the test
+	  case itself indicates that it exercises user mode via
+	  CONFIG_TEST_USERSPACE.
+
+config TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
+	bool "Run User Mode tests without additionally enabling stack protection"
+	depends on TEST_ENABLE_USERSPACE
+	default y if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_S32K1
+	help
+	  A HW platform might not have sufficient MPU/MMU capabilities to support
+	  running all test cases with User Mode and HW Stack Protection features
+	  simultaneously enabled. For this platforms we execute the User Mode-
+	  related tests without enabling HW stack protection.
+
+config TEST_HW_STACK_PROTECTION
+	bool "Hardware-based stack overflow detection if available"
+	depends on ARCH_HAS_STACK_PROTECTION
+	depends on TEST
+	select HW_STACK_PROTECTION
+	default y if !TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION
+	help
+	  This option will enable hardware-based stack protection by default
+	  for all test cases if the hardware supports it.
+
+config TEST_FLASH_DRIVERS
+	bool "Test flash drivers"
+	depends on BOARD_QEMU_X86
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  This option will help test the flash drivers. This should be enabled
+	  only when using qemu_x86.
+
+config TEST_ARM_CORTEX_M
+	bool
+	depends on CPU_CORTEX_M
+	depends on TEST
+	default y
+	select ARM_SECURE_BUSFAULT_HARDFAULT_NMI if ARM_SECURE_FIRMWARE
+	help
+	  ARM Cortex-M configuration required when testing.
+
+	  This option is used to select stack sizes and enable features for
+	  testing.
+
+	  This option is also used to force routing
+	  BusFault, HardFault, and NMI exceptions to Secure State,
+	  when building a Secure ARMv8-M firmware. This will allow
+	  the testing suite to utilize these exceptions, in tests.
+	  Note that by default, when building with ARM_SECURE_FIRMWARE
+	  set, these exceptions are set to target the Non-Secure state.
+
+config TEST_BUSY_SIM
+	bool "Busy simulator"
+	depends on TEST
+	select ENTROPY_GENERATOR
+	select RING_BUFFER if !XOSHIRO_RANDOM_GENERATOR
+	select COUNTER
+	help
+	  It simulates cpu load by using counter device to generate interrupts
+	  with random intervals and random busy looping in the interrupt.
+
+endmenu

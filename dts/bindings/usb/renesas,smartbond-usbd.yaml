@@ -1,0 +1,43 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SmartBond USB device controller
+
+compatible: "renesas,smartbond-usbd"
+
+include: usb-controller.yaml
+
+properties:
+  dma-min-transfer-size:
+    type: int
+    description: |
+      Minimum transfer size required to engage DMA.
+
+  ep-out-buf-size:
+    type: array
+    required: true
+    description: |
+      Buffer size for OUT end points 0-3.
+
+  fifo-read-threshold:
+    type: int
+    description: |
+      RX FIFO is 64 bytes. When endpoint size is greater then 64,
+      FIFO warning interrupt is enabled to allow read incoming data
+      during frame reception.
+      It is possible to stay in interrupt reading whole packet at once,
+      but it may be more efficient for MCU to read as much data as
+      possible and when FIFO is hardly filled exit interrupt handler
+      waiting for next FIFO warning level interrupt or packet end.
+      When running at 96MHz code that reads FIFO based on number of
+      bytes stored in USB_RXSx_REG.USB_RXCOUNT takes enough time to
+      fill FIFO with two additional bytes.
+      Settings this threshold above this allows to leave interrupt
+      handler and wait for more bytes before next ISR. This allows
+      reduce overall ISR time to 1/3 of time that would be needed
+      if ISR read as fast as possible.
+
+  iso-out-mps:
+    type: int
+    description: |
+      Max packet size for ISO out endpoint

@@ -1,0 +1,5 @@
+board:
+  name: robokit1
+  vendor: tdk
+  socs:
+    - name: same70q21b

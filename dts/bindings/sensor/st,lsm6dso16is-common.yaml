@@ -1,0 +1,147 @@
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    When setting the accel-range, accel-odr, gyro-range, gyro-odr properties in
+    a .dts or .dtsi file you may include lsm6dso16is.h and use the macros
+    defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
+
+    lsm6dso16is: lsm6dso16is@0 {
+      ...
+
+      accel-range = <LSM6DSO16IS_DT_FS_8G>;
+      accel-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
+      gyro-range = <LSM6DSO16IS_DT_FS_2000DPS>;
+      gyro-odr = <LSM6DSO16IS_DT_ODR_104Hz_LP>;
+    };
+
+include: sensor-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      DRDY pin
+
+      This pin defaults to active high when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  drdy-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # drdy is generated from INT1
+      - 2 # drdy is generated from INT2
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 1 which is the
+      configuration at power-up.
+
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 0 # LSM6DSO16IS_DT_FS_2G  (0.061 mg/LSB)
+      - 1 # LSM6DSO16IS_DT_FS_16G (0.488 mg/LSB)
+      - 2 # LSM6DSO16IS_DT_FS_4G  (0.122 mg/LSB)
+      - 3 # LSM6DSO16IS_DT_FS_8G  (0.244 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dso16is_xl_data_rate_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x00  # LSM6DSO16IS_DT_ODR_OFF
+      - 0x01  # LSM6DSO16IS_DT_ODR_12Hz5_HP
+      - 0x02  # LSM6DSO16IS_DT_ODR_26H_HP
+      - 0x03  # LSM6DSO16IS_DT_ODR_52Hz_HP
+      - 0x04  # LSM6DSO16IS_DT_ODR_104Hz_HP
+      - 0x05  # LSM6DSO16IS_DT_ODR_208Hz_HP
+      - 0x06  # LSM6DSO16IS_DT_ODR_416Hz_HP
+      - 0x07  # LSM6DSO16IS_DT_ODR_833Hz_HP
+      - 0x08  # LSM6DSO16IS_DT_ODR_1667Hz_HP
+      - 0x09  # LSM6DSO16IS_DT_ODR_3333Hz_HP
+      - 0x0a  # LSM6DSO16IS_DT_ODR_6667Hz_HP
+      - 0x11  # LSM6DSO16IS_DT_ODR_12Hz5_LP
+      - 0x12  # LSM6DSO16IS_DT_ODR_26H_LP
+      - 0x13  # LSM6DSO16IS_DT_ODR_52Hz_LP
+      - 0x14  # LSM6DSO16IS_DT_ODR_104Hz_LP
+      - 0x15  # LSM6DSO16IS_DT_ODR_208Hz_LP
+      - 0x16  # LSM6DSO16IS_DT_ODR_416Hz_LP
+      - 0x17  # LSM6DSO16IS_DT_ODR_833Hz_LP
+      - 0x18  # LSM6DSO16IS_DT_ODR_1667Hz_LP
+      - 0x19  # LSM6DSO16IS_DT_ODR_3333Hz_LP
+      - 0x1a  # LSM6DSO16IS_DT_ODR_6667Hz_LP
+      - 0x1b  # LSM6DSO16IS_DT_ODR_1Hz6_LP
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+           0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0x0  # LSM6DSO16IS_DT_FS_250DPS  (8.75 mdps/LSB)
+      - 0x1  # LSM6DSO16IS_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 0x2  # LSM6DSO16IS_DT_FS_1000DPS (35 mdps/LSB)
+      - 0x3  # LSM6DSO16IS_DT_FS_2000DPS (70 mdps/LSB)
+      - 0x10 # LSM6DSO16IS_DT_FS_125DPS  (4.375 mdps/LSB)
+
+    enum: [0x0, 0x1, 0x2, 0x3, 0x10]
+
+  gyro-odr:
+    type: int
+    default: 0x0
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      The values are taken in accordance to lsm6dso16is_gy_data_rate_t enumerative in hal/st
+      module.
+      Default is power-up configuration.
+
+      - 0x00  # LSM6DSO16IS_DT_ODR_OFF
+      - 0x01  # LSM6DSO16IS_DT_ODR_12Hz5_HP
+      - 0x02  # LSM6DSO16IS_DT_ODR_26H_HP
+      - 0x03  # LSM6DSO16IS_DT_ODR_52Hz_HP
+      - 0x04  # LSM6DSO16IS_DT_ODR_104Hz_HP
+      - 0x05  # LSM6DSO16IS_DT_ODR_208Hz_HP
+      - 0x06  # LSM6DSO16IS_DT_ODR_416Hz_HP
+      - 0x07  # LSM6DSO16IS_DT_ODR_833Hz_HP
+      - 0x08  # LSM6DSO16IS_DT_ODR_1667Hz_HP
+      - 0x09  # LSM6DSO16IS_DT_ODR_3333Hz_HP
+      - 0x0a  # LSM6DSO16IS_DT_ODR_6667Hz_HP
+      - 0x11  # LSM6DSO16IS_DT_ODR_12Hz5_LP
+      - 0x12  # LSM6DSO16IS_DT_ODR_26H_LP
+      - 0x13  # LSM6DSO16IS_DT_ODR_52Hz_LP
+      - 0x14  # LSM6DSO16IS_DT_ODR_104Hz_LP
+      - 0x15  # LSM6DSO16IS_DT_ODR_208Hz_LP
+      - 0x16  # LSM6DSO16IS_DT_ODR_416Hz_LP
+      - 0x17  # LSM6DSO16IS_DT_ODR_833Hz_LP
+      - 0x18  # LSM6DSO16IS_DT_ODR_1667Hz_LP
+      - 0x19  # LSM6DSO16IS_DT_ODR_3333Hz_LP
+      - 0x1a  # LSM6DSO16IS_DT_ODR_6667Hz_LP
+
+    enum: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+           0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a]
+
+  drdy-pulsed:
+    type: boolean
+    description: |
+      Selects the pulsed mode for data-ready interrupt when enabled,
+      and the latched mode when disabled.

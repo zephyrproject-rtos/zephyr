@@ -1,0 +1,87 @@
+# Copyright (c) 2016 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Link layer options"
+
+config NET_L2_DUMMY
+	bool "Dummy l2 layer"
+	default y if !NET_L2_ETHERNET && NET_TEST
+	help
+	  Add a dummy L2 layer driver. This is usually only needed when
+	  simulating a network interface when running network stack inside QEMU.
+
+if NET_L2_DUMMY
+source "subsys/net/l2/dummy/Kconfig"
+endif
+
+source "subsys/net/l2/virtual/Kconfig"
+
+source "subsys/net/l2/ethernet/Kconfig"
+
+source "subsys/net/l2/ppp/Kconfig"
+
+config NET_L2_PHY_IEEE802154
+	bool
+	help
+	  A common config for all IEEE 802.15.4 based L2 implementations.
+
+source "subsys/net/l2/ieee802154/Kconfig"
+
+source "subsys/net/l2/openthread/Kconfig"
+
+config NET_L2_CUSTOM_IEEE802154
+	bool "Custom IEEE802154 L2"
+	select NET_L2_PHY_IEEE802154
+	help
+	  Enable custom IEEE802154 based L2. Zephyr does not provide
+	  implementation for this L2 - users can implement their own L2 using
+	  this symbol, on top of the IEEE802154 radio driver.
+
+config NET_L2_CUSTOM_IEEE802154_MTU
+	int "MTU for the custom IEEE802154 L2"
+	depends on NET_L2_CUSTOM_IEEE802154
+	default 127
+
+source "subsys/net/l2/canbus/Kconfig"
+
+config NET_L2_WIFI_UTILS
+	bool
+	help
+	  This provides utility functions for Wi-Fi subsystem.
+
+config NET_L2_WIFI_MGMT
+	bool "Wi-Fi Management support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	select NET_L2_WIFI_UTILS
+	help
+	  Enable support for Wi-Fi Management interface.
+
+if NET_L2_WIFI_MGMT
+module = NET_L2_WIFI_MGMT
+module-dep = NET_LOG
+module-str = Log level for Wi-Fi management layer
+module-help = Enables Wi-Fi management interface to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+source "subsys/net/l2/wifi/Kconfig"
+endif # NET_L2_WIFI_MGMT
+
+config NET_L2_WIFI_SHELL
+	bool "Wi-Fi shell module"
+	select NET_L2_WIFI_MGMT
+	select NET_L2_WIFI_UTILS
+	select SHELL_GETOPT
+	select GETOPT_LONG
+	help
+	  This can be used for controlling Wi-Fi through the console via
+	  exposing a shell module named "wifi".
+
+config NET_L2_PTP
+	bool "PTP L2 support"
+	select NET_PKT_TIMESTAMP
+	select PTP_CLOCK
+	help
+	  Add support for PTP L2 capabilities. Required by gPTP.
+
+endmenu

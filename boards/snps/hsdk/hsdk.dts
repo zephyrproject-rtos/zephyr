@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "hsdk.dtsi"
+
+/ {
+	model = "hsdk";
+	compatible = "snps,hsdk";
+};

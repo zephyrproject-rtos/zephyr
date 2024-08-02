@@ -1,0 +1,13 @@
+# Copyright (c) 2021-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_LAKEMONT
+	select X86
+	select CPU_LAKEMONT
+	select X86_MMU if FPU
+	select X86_SSE if FPU
+	select X86_SSE2 if FPU
+	select X86_SSE3 if FPU
+	select X86_SSSE3 if FPU
+	select ARCH_HAS_USERSPACE

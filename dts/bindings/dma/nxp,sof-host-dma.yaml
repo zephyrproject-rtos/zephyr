@@ -1,0 +1,12 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SOF host DMA node
+
+compatible: "nxp,sof-host-dma"
+
+include: [base.yaml, dma-controller.yaml]
+
+properties:
+  dma-channels:
+    required: true

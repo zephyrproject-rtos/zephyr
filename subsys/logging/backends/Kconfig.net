@@ -1,0 +1,133 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Immediate mode cannot be used with network backend as it would cause the sent
+# rsyslog message to be malformed.
+config LOG_BACKEND_NET
+	bool "Networking backend"
+	depends on NETWORKING && (NET_UDP || NET_TCP) && !LOG_MODE_IMMEDIATE
+	select LOG_OUTPUT
+	help
+	  Send syslog messages to network server.
+	  See RFC 5424 (syslog protocol) and RFC 5426 (syslog over UDP) and
+	  RFC 6587 (syslog over TCP) specifications for details.
+
+if LOG_BACKEND_NET
+
+config LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	bool "Print structured data according to RFC 5424"
+	help
+	  Print additional structured data as described in
+	  RFC 5424 chapter 6.3. Note that this might increase the
+	  length of the syslog message a lot.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_TZKNOWN
+	bool "RFC 5424 chapter 7.1.1 tzKnown field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The tzKnown parameter indicates whether the originator knows its time zone.
+	  See RFC 5424 chapter 7.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_ISSYNCED
+	bool "RFC 5424 chapter 7.1.2 isSynced field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The isSynced parameter indicates whether the originator is
+	  synchronized to a reliable external time source, e.g., via NTP.
+	  See RFC 5424 chapter 7.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE
+	bool "RFC 5424 chapter 7.2.3 software description field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Software description parameter uniquely identifies the software that
+	  generated the message.
+	  See RFC 5424 chapter 7.2 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VALUE
+	string "RFC 5424 chapter 7.2.3 software field value"
+	default "zephyr"
+	depends on LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE
+	help
+	  User defined value for the software field.
+	  See RFC 5424 chapter 7.2.3 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SOFTWARE_VERSION
+	bool "RFC 5424 chapter 7.2.4 software version field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Software version parameter uniquely identifies the software that
+	  generated the message.
+	  See RFC 5424 chapter 7.2.4 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_SEQID
+	bool "RFC 5424 chapter 7.3.1 sequence id field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  Sequence id parameter tracks the sequence in which the
+	  originator submits messages to the syslog transport for sending.
+	  See RFC 5424 chapter 7.3.1 for details.
+
+config LOG_BACKEND_NET_RFC5424_SDATA_UPTIME
+	bool "RFC 5424 chapter 7.3.2 system uptime field"
+	depends on LOG_BACKEND_NET_RFC5424_STRUCTURED_DATA
+	help
+	  The system uptime parameter tracks the "time (in hundredths of a
+	  second) since the network management portion of the system was last
+	  re-initialized." For Zephyr this is currently interpreted as the
+	  system uptime.
+	  See RFC 5424 chapter 7.3.2 for details.
+
+config LOG_BACKEND_NET_SERVER
+	string "Syslog server IP address"
+	help
+	  This can be either IPv4 or IPv6 address.
+	  Server listen UDP port number can be configured here too.
+	  Following syntax is supported:
+	  192.0.2.1:514
+	  192.0.2.42
+	  [2001:db8::1]:514
+	  [2001:db8::2]
+	  2001:db::42
+	  If you want to use TCP, add "tcp://" in front of the address
+	  like this
+	  tcp://192.0.2.1:514
+	  tcp://192.0.2.42
+	  tcp://[2001:db8::1]:514
+	  UDP is used by default if the URI is missing.
+
+config LOG_BACKEND_NET_MAX_BUF_SIZE
+	int "Max syslog message size"
+	range 64 1180
+	default 1180 if NET_IPV6
+	default 480 if NET_IPV4
+	default 256
+	help
+	  As each syslog message needs to fit to UDP packet, set this value
+	  so that messages are not truncated.
+	  The RFC 5426 recommends that for IPv4 the size is 480 octets and for
+	  IPv6 the size is 1180 octets. As each buffer will use RAM, the value
+	  should be selected so that typical messages will fit the buffer.
+
+config LOG_BACKEND_NET_AUTOSTART
+	bool "Automatically start networking backend"
+	default y if NET_CONFIG_NEED_IPV4 || NET_CONFIG_NEED_IPV6
+	help
+	  When enabled automatically start the networking backend on
+	  application start. If no routes to the logging server are available
+	  on application startup, this must be set to n and the backend must be
+	  started by the application later on. Otherwise the logging
+	  thread might block.
+
+config LOG_BACKEND_NET_USE_DHCPV4_OPTION
+	bool "Use DHCPv4 Log Server Option to configure syslog server"
+	depends on NET_DHCPV4
+	help
+	  When enabled the syslog server IP address is read from the DHCPv4
+	  Log Server Option (7).
+
+backend = NET
+backend-str = net
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_NET

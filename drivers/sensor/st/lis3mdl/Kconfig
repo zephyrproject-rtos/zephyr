@@ -1,0 +1,68 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LIS3MDL
+	bool "LIS3MDL magnetometer"
+	default y
+	depends on DT_HAS_ST_LIS3MDL_MAGN_ENABLED
+	select I2C
+	help
+	  Enable driver for LIS3MDL I2C-based magnetometer.
+
+if LIS3MDL
+
+choice LIS3MDL_TRIGGER_MODE
+	prompt "Trigger mode"
+	default LIS3MDL_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LIS3MDL_TRIGGER_NONE
+	bool "No trigger"
+
+config LIS3MDL_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select LIS3MDL_TRIGGER
+
+config LIS3MDL_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select LIS3MDL_TRIGGER
+
+endchoice # LIS3MDL_TRIGGER_MODE
+
+config LIS3MDL_TRIGGER
+	bool
+
+config LIS3MDL_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LIS3MDL_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LIS3MDL_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LIS3MDL_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config LIS3MDL_ODR
+	string "Output data rate"
+	default "0.625"
+	help
+	  Magnetometer output data rate expressed in samples per second.
+	  Data rates supported by the chip are 0.625, 1.25, 2.5, 5, 10, 20,
+	  40, 80, 155, 300, 560 and 1000.
+
+config LIS3MDL_FS
+	int "Full-scale range"
+	default 4
+	help
+	  Magnetometer full-scale range.
+	  An X value for the config represents a range of +/- X gauss. Valid
+	  values are 4, 8, 12 and 16.
+
+endif # LIS3MDL

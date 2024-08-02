@@ -1,0 +1,5 @@
+board:
+  name: m5stack_core2
+  vendor: m5stack
+  socs:
+  - name: esp32

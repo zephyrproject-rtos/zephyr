@@ -1,0 +1,18 @@
+common:
+  min_ram: 16
+  tags:
+    - net
+    - bridge
+  depends_on: netif
+tests:
+  net.eth_bridge:
+    extra_configs:
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=n
+    platform_exclude:
+      - mg100
+      - pinnacle_100_dvk
+  net.eth_bridge.ip:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y

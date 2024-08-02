@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf5340_cpunet.dtsi>
+
+&flash1 {
+	reg = <0x01000000 DT_SIZE_K(256)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+};
+
+&sram1 {
+	reg = <0x21000000 DT_SIZE_K(64)>;
+};
+
+/ {
+	soc {
+		compatible = "nordic,nrf5340-cpunet-qkaa", "nordic,nrf5340-cpunet",
+			     "nordic,nrf53", "simple-bus";
+	};
+};

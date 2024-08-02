@@ -1,0 +1,26 @@
+# Microchip XEC UART configuration options
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_XEC
+	bool "Microchip XEC family UART driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UARTx driver for Microchip XEC MCUs.
+
+if UART_XEC
+
+config UART_XEC_LINE_CTRL
+	bool "Serial Line Control for Apps"
+	depends on UART_LINE_CTRL
+	help
+	  This enables the API for apps to control the serial line,
+	  such as CTS and RTS.
+
+	  Says n if not sure.
+
+endif # UART_XEC

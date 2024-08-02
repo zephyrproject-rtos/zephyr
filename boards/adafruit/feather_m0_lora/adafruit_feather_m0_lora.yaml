@@ -1,0 +1,11 @@
+identifier: adafruit_feather_m0_lora
+name: Adafruit Feather M0 LoRa
+type: mcu
+arch: arm
+ram: 32
+flash: 232
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+vendor: adafruit

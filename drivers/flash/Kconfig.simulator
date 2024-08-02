@@ -1,0 +1,97 @@
+# Flash simulator config
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FLASH_SIMULATOR
+	bool "Flash simulator"
+	default y
+	depends on DT_HAS_ZEPHYR_SIM_FLASH_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable the flash simulator.
+
+if FLASH_SIMULATOR
+
+config FLASH_SIMULATOR_UNALIGNED_READ
+	bool "Allow read access to be unaligned"
+	default y
+	help
+	 If selected, the reading operation does not check if access is aligned.
+	 Disable this option only if you want to simulate
+	 a specific FLASH interface that requires aligned read access.
+
+config FLASH_SIMULATOR_EXPLICIT_ERASE
+	bool "Program-erase device"
+	select FLASH_HAS_EXPLICIT_ERASE
+	default y
+	help
+	  Explicit erase (non-erase-on-write) Flash, which is device that requires erase
+	  to erase-value prior to write as it only allows to change bits from erase-value
+	  to the opposite.
+
+config FLASH_SIMULATOR_RAMLIKE
+	bool
+	default y if !FLASH_SIMULATOR_EXPLICIT_ERASE
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_SIMULATOR_DOUBLE_WRITES
+	help
+	  This is used for setting FLASH_HAS_NO_EXPLICIT_ERASE.
+
+config FLASH_SIMULATOR_DOUBLE_WRITES
+	bool "Allow program units to be programmed more than once"
+	help
+	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
+	 Keep in mind that write operations can only change value of a bit from erase-value to the
+	 opposite.
+	 This option does not impact FLASH_SIMULATOR_RAMLIKE.
+	 In case when FLASH_SIMULATOR_EXPLICIT_ERASE is selected multiple writes to the same bit
+	 but only change from erase-value to opposite will be registered.
+
+config FLASH_SIMULATOR_SIMULATE_TIMING
+	bool "Hardware timing simulation"
+
+if FLASH_SIMULATOR_SIMULATE_TIMING
+
+config FLASH_SIMULATOR_MIN_READ_TIME_US
+	int "Minimum read time (µS)"
+	default 2
+	range 1 1000000
+
+config FLASH_SIMULATOR_MIN_WRITE_TIME_US
+	int "Minimum write time (µS)"
+	default 100
+	range 1 1000000
+
+config FLASH_SIMULATOR_MIN_ERASE_TIME_US
+	int "Minimum erase time (µS)"
+	default 2000
+	range 1 1000000
+
+endif
+
+config FLASH_SIMULATOR_STATS
+	bool "flash operations statistic"
+	default y
+	select STATS
+	select STATS_NAMES
+	help
+	  Gather statistic measurement for flash simulator operations using the
+	  statistic subsystem.
+
+config FLASH_SIMULATOR_STAT_PAGE_COUNT
+	int "Pages under statistic"
+	depends on FLASH_SIMULATOR_STATS
+	range 1 256
+	default 256
+	help
+	  Only up to this number of beginning pages will be tracked
+	  while catching dedicated flash operations and thresholds.
+	  This number is not automatic because implementation uses
+	  UNTIL_REPEAT() macro, which is limited to take explicitly
+	  number of iterations.
+	  This is why it's not possible to calculate the number of pages with
+	  preprocessor using DT properties.
+
+endif # FLASH_SIMULATOR

@@ -1,0 +1,99 @@
+# Copyright (c) 2022 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Lattice iCE40 FPGA
+
+compatible: "lattice,ice40-fpga"
+
+include: spi-device.yaml
+
+properties:
+  load-mode:
+    type: int
+    required: true
+    description: |
+      Configure the method used to load the bitstream.
+      The bitstream may be loaded via 2 separate methods:
+      0 := load the FPGA via SPI transfer
+      1 := load the FPGA via bit-banged GPIO
+      Option 0 may be suitable for some high-end microcontrollers.
+      Option 1 is suitable for low-end microcontrollers. This option
+      requires clk-gpios, pico-gpios, gpios-set-reg, and gpios-clear-reg
+      to be defined.
+      Example usage:
+      load-mode = <0>;
+  cdone-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Configuration Done output from iCE40.
+      Example usage:
+      cdone-gpios = <&gpio0 0 0>;
+  creset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Configuration Reset input on iCE40.
+      Example usage:
+      creset-gpios = <&gpio0 1 GPIO_PUSH_PULL);
+  clk-gpios:
+    type: phandle-array
+    description: |
+      SPI Clock GPIO input on iCE40.
+      Example usage:
+      clk-gpios = <&gpio0 5 GPIO_PUSH_PULL>;
+  pico-gpios:
+    type: phandle-array
+    description: |
+      Peripheral-In Controller-Out GPIO input on iCE40.
+      Example usage:
+      pico-gpios = <&gpio0 7 GPIO_PUSH_PULL>;
+  gpios-set-reg:
+    type: int
+    description: |
+      Register address for setting a GPIO.
+      Example usage:
+      gpios-set-reg = <0x60004008>;
+  gpios-clear-reg:
+    type: int
+    description: |
+      Register address for clearing a GPIO.
+      Example usage:
+      gpios-clear-reg = <0x6000400c>;
+  mhz-delay-count:
+    type: int
+    description: |
+      in order to create a 1 MHz square wave in the following
+      process.
+      while(true) {
+        *gpios_set_reg |= BIT(n);
+        for(int i = mhz_delay_count; i > 0; --i);
+        *gpios_clear_reg |= BIT(n);
+        for(int i = mhz_delay_count; i > 0; --i);
+      }
+      Example usage / default:
+      mhz-delay-count = <0>;
+  creset-delay-us:
+    type: int
+    description: |
+      Delay (in microseconds) between asserting CRESET_B and releasing CRESET_B.
+      Example usage / default:
+      creset-delay-us = <1>;
+  config-delay-us:
+    type: int
+    description: |
+      Delay (in microseconds) after releasing CRESET_B to clear internal configuration memory.
+      Example usage / default:
+      config-delay-us = <1200>;
+  leading-clocks:
+    type: int
+    description: |
+      Prior to sending the bitstream, issue this number of leading clocks with SPI_CS pulled high.
+      Example usage / default:
+      leading-clocks = <8>;
+  trailing-clocks:
+    type: int
+    description: |
+      After sending the bitstream, issue this number of trailing clocks with SPI_CS pulled high.
+      Example usage / default:
+      trailing-clocks = <49>;

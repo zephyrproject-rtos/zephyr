@@ -1,0 +1,29 @@
+# ESP32-ETHERNET-KIT board configuration
+
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
+
+config ESP_SPIRAM
+	default y if !MCUBOOT
+
+choice SPIRAM_TYPE
+	default SPIRAM_TYPE_ESPPSRAM64
+endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
+
+if BOARD_ESP32_ETHERNET_KIT_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 4096
+
+endif # BOARD_ESP32_ETHERNET_KIT_ESP32_APPCPU

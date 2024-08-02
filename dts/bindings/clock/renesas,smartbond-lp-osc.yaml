@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Smartbond low power oscillator
+
+compatible: "renesas,smartbond-lp-osc"
+
+include:
+  - name: fixed-clock.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clock-frequency
+
+properties:
+  settle-time:
+    type: int
+    default: 8000
+    description: |
+      This is only valid for XTAL32K. Time in ms needed to XTAL32K to settle.

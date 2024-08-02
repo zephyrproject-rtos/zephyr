@@ -1,0 +1,124 @@
+# Copyright (c) 2018, Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2020, Teslabs Engineering S.L.
+# Copyright (c) 2021, Krivorot Oleg <krivorot.oleg@gmail.com>
+# Copyright (c) 2022, Konstantinos Papadopulos <kostas.papadopulos@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILI9342C 320x240 display controller
+
+compatible: "ilitek,ili9342c"
+
+include: ilitek,ili9xxx-common.yaml
+
+properties:
+  gamset:
+    type: uint8-array
+    default: [0x01]
+    description:
+      select the desired Gamma curve for the current display.
+      A maximum of 4 fixed gamma curves can be selected.
+
+  ifmode:
+    type: uint8-array
+    default: [0x40]
+    description:
+      RGB interface signal control (IFMOD) register value.
+
+  invtr:
+    type: uint8-array
+    default: [0x00]
+    description:
+      Display Inversion Control (INVTR) register value.
+
+  frmctr1:
+    type: uint8-array
+    default: [0x00, 0x1c]
+    description:
+      Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
+
+  disctrl:
+    type: uint8-array
+    default: [0x0a, 0x80, 0x1d, 0x04]
+    description:
+      Display function control (DISCTRL) register value. Note that changing
+      default SS bit value (0) may interfere with display rotation.
+
+  etmod:
+    type: uint8-array
+    default: [0x07]
+    description:
+      Entry Mode set (ETMOD)
+
+  pwctrl1:
+    type: uint8-array
+    default: [0x9, 0x9]
+    description:
+      Power control 1 (PWCTRL1) register values.
+
+  pwctrl2:
+    type: uint8-array
+    default: [0x00]
+    description:
+      Power control 2 (PWCTRL2) register values.
+
+  pwctrl3:
+    type: uint8-array
+    default: [0xB2]
+    description:
+      Power control 3 (PWCTRL3) register values.
+
+  vmctrl1:
+    type: uint8-array
+    default: [0xf2]
+    description:
+      VCOM control 1 (VMCTRL1) register values.
+
+  pgamctrl:
+    type: uint8-array
+    default: [
+      0x00,
+      0x05,
+      0x08,
+      0x04,
+      0x13,
+      0x0A,
+      0x34,
+      0x8A,
+      0x46,
+      0x07,
+      0x0E,
+      0x0A,
+      0x1B,
+      0x1D,
+      0x0F
+    ]
+    description:
+      Positive gamma correction (PGAMCTRL) register values.
+
+  ngamctrl:
+    type: uint8-array
+    default: [
+      0x00,
+      0x22,
+      0x25,
+      0x04,
+      0x0F,
+      0x06,
+      0x38,
+      0x56,
+      0x4B,
+      0x05,
+      0x0C,
+      0x0A,
+      0x37,
+      0x3A,
+      0x0F
+    ]
+    description:
+      Negative gamma correction (NGAMCTRL) register values.
+
+  ifctl:
+    type: uint8-array
+    default: [0x01, 0x00, 0x00]
+    description:
+      Interface control (IFCTL) register value.

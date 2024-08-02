@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding gives a representation of SPI controller in some Ambiq
+    Apollox Blue SOC (e.g. Apollo3 Blue) which uses BLEIF module for SPI
+    transceiver.
+
+compatible: "ambiq,spi-bleif"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ambiq,pwrcfg:
+    required: true

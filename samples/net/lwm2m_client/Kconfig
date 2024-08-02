@@ -1,0 +1,42 @@
+# Private config options for LwM2M client sample
+
+# Copyright (c) 2023 NordicNordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "LwM2M Client sample"
+
+config LWM2M_APP_ID
+	string "LwM2M Client identity"
+	default ""
+	help
+	  This is used as client endpoint name as well as PSK ID.
+	  Leave empty for using CONFIG_BOARD
+
+if LWM2M_DTLS_SUPPORT
+config LWM2M_APP_PSK
+	string "PSK key"
+	default "000102030405060708090a0b0c0d0e0f"
+	help
+	  PSK key as a hex string.
+	  Maximum binary size is CONFIG_LWM2M_SECURITY_KEY_SIZE.
+
+config LWM2M_APP_TLS_TAG
+	int "TLS security tag"
+	default 1
+	help
+	  TLS security tag to use when connecting.
+endif
+
+config LWM2M_APP_SERVER
+	string "LwM2M server address"
+	default "coap://192.0.2.2:5683" if !LWM2M_DTLS_SUPPORT
+	default "coaps://192.0.2.2:5684" if (LWM2M_DTLS_SUPPORT && !LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	default "coaps://192.0.2.2:5784" if (LWM2M_DTLS_SUPPORT && LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+	help
+	  LwM2M server address. Write as a full URI including optional port number.
+	  Only accepted protocols are "coap://" and "coaps://"
+	  When DNS resolver is enabled, DNS domain names could be used as well.
+	  When port number is missing, CONFIG_LWM2M_PEER_PORT is used instead.
+	  IPv6 addresses must be enclosed in square brackets, for example "coap://[fd00::1]".
+
+source "Kconfig.zephyr"

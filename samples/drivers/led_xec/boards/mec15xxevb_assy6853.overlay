@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2022 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&bbled0 {
+	compatible = "microchip,xec-bbled";
+	pinctrl-0 = <&led0_gpio156>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&bbled1 {
+	compatible = "microchip,xec-bbled";
+	pinctrl-0 = <&led1_gpio157>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&bbled2 {
+	compatible = "microchip,xec-bbled";
+	pinctrl-0 = <&led2_gpio153>;
+	pinctrl-names = "default";
+	status = "okay";
+};

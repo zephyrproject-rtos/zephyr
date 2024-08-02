@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <synopsys/emsdp.dtsi>
+#include <mem.h>
+#include "board.dtsi"
+#include "emsdp-pinctrl.dtsi"
+
+/ {
+	model = "emsdp";
+	compatible = "snps,emsdp", "snps,emsdp";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/ {
+	soc {
+
+		uart@f0004000 {
+			interrupts = <107 1>;
+		};
+
+		gpio@f0002000 {
+			interrupts = <85 1>;
+		};
+
+		spi@f0008000 {
+			interrupts = <83 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <84 1>;
+			pinctrl-0 = <&unmuxed_pin>;
+			pinctrl-names = "default";
+		};
+
+		spi@80010000 {
+			interrupts = <63 2>, <64 2>, <65 2>;
+			pinctrl-0 = <&arduino_CFG5_spi>;
+			pinctrl-names = "default";
+		};
+
+		spi@80010100 {
+			interrupts = <67 2>, <68 2>, <69 2>;
+			pinctrl-0 = <&pmodA_spi1_cs0>;
+			pinctrl-names = "default";
+		};
+	};
+};

@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL345 3-axis I2C accelerometer
+
+compatible: "adi,adxl345"
+
+include: [sensor-device.yaml, i2c-device.yaml]

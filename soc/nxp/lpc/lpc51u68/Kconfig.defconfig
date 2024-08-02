@@ -1,0 +1,17 @@
+# LPC51U68 series configuration options
+
+# Copyright (c) 2021 metraTec GmbH
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_LPC51U68
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used.
+	default 32
+
+config SOC_FLASH_LPC
+	default y
+	depends on FLASH
+
+endif # SOC_SERIES_LPC51U86

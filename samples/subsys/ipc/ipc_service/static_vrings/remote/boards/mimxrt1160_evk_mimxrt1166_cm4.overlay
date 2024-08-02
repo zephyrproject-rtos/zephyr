@@ -1,0 +1,98 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,flash = &ocram;
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+
+		/* Delete ipc chosen property where old IPM mailbox driver bellow is
+		 * configured.
+		 */
+		/delete-property/ zephyr,ipc;
+		/delete-property/ zephyr,ipc_shm;
+	};
+
+	/* Define memory regions for IPC
+	 * Note that shared memory must have specific MPU attributes set.
+	 */
+	ocram2_ipc0: memory@202c0000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x202c0000 DT_SIZE_K(32)>;
+		zephyr,memory-region="OCRAM2_IPC0";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+	ocram2_ipc1: memory@202c8000{
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x202c8000 DT_SIZE_K(32)>;
+		zephyr,memory-region="OCRAM2_IPC1";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO))>;
+	};
+
+	soc {
+		/delete-node/ gpt@400f0000;
+
+		/* Replace GPT2 with another GPT kernel timer */
+		gpt2_hw_timer:gpt@400f0000 {
+			compatible = "nxp,gpt-hw-timer";
+			reg = <0x400f0000 0x4000>;
+			interrupts = <120 0>;
+			status = "okay";
+		};
+
+		/* Delete IPM Driver node nxp,imx-mu */
+		/delete-node/ mailbox@40c4c000;
+
+		/* Attach MBOX driver to MU Unit */
+		mbox:mbox@40c4c000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x40c4c000 0x4000>;
+			interrupts = <118 0>;
+			rx-channels = <4>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+	};
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&ocram2_ipc0>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&ocram2_ipc1>;
+			mboxes = <&mbox 2>, <&mbox 3>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			zephyr,priority = <1 PRIO_COOP>;
+			zephyr,buffer-size = <128>;
+			status = "okay";
+		};
+	};
+};
+
+/* Enable secondary LPUART */
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+/* Disable primary GPT timer */
+&gpt_hw_timer {
+	status = "disabled";
+};

@@ -1,0 +1,22 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG
+	default y
+
+config LOG_PRINTK
+	default y
+
+config SENSOR_LOG_LEVEL
+	default 4
+
+# Enable SPI and I2C support by default so that the sample works with
+# the device connected either way. These defaults can be overridden if
+# needed.
+config SPI
+	default y
+
+config I2C
+	default y
+
+source "Kconfig.zephyr"

@@ -1,0 +1,217 @@
+# Bluetooth configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT
+	bool "Bluetooth"
+	# Some BT threads use co-op priorities to implement critical sections,
+	# will need some refactoring to work on SMP systems.
+	depends on !SMP
+	select NET_BUF
+	help
+	  This option enables Bluetooth support.
+
+if BT
+
+choice BT_STACK_SELECTION
+	prompt "Bluetooth Stack Selection"
+	default BT_HCI
+	help
+	  Select the Bluetooth stack to compile.
+
+config BT_HCI
+	bool "HCI-based"
+	help
+	  HCI-based stack with optional host & controller parts and an
+	  HCI driver in between.
+
+config BT_CUSTOM
+	bool "Custom"
+	help
+	  Select a custom, non-HCI based stack. If you're not sure what
+	  this is, you probably want the HCI-based stack instead.
+
+endchoice
+
+# The Bluetooth subsystem requires the system workqueue to execute at
+# a cooperative priority.
+config SYSTEM_WORKQUEUE_PRIORITY
+	range -256 -1
+
+if BT_HCI
+
+config BT_HCI_RAW
+	bool "RAW HCI access"
+	help
+	  This option allows to access Bluetooth controller
+	  from the application with the RAW HCI protocol.
+
+config BT_HCI_RAW_H4
+	bool "RAW HCI H:4 transport"
+	help
+	  This option enables HCI RAW access to work over an H:4
+	  transport, note that it still need to be selected at runtime.
+
+config BT_HCI_RAW_H4_ENABLE
+	bool "RAW HCI H:4 transport enable"
+	depends on BT_HCI_RAW_H4
+	help
+	  This option enables use of H:4 transport for HCI RAW access at
+	  build time.
+
+config BT_HCI_RAW_CMD_EXT
+	bool "RAW HCI Command Extension"
+	help
+	  This option enables HCI RAW command extension so the driver can
+	  register it own command table extension.
+
+config BT_PERIPHERAL
+	bool "Peripheral Role support"
+	select BT_BROADCASTER
+	select BT_CONN
+	default y if BT_HCI_RAW
+	help
+	  Select this for LE Peripheral role support.
+
+config BT_CENTRAL
+	bool "Central Role support"
+	select BT_OBSERVER
+	select BT_CONN
+	default y if BT_HCI_RAW
+	help
+	  Select this for LE Central role support.
+
+config BT_BROADCASTER
+	bool "Broadcaster Role support"
+	default y if !BT_OBSERVER
+	help
+	  Select this for LE Broadcaster role support.
+
+config BT_OBSERVER
+	bool "Observer Role support"
+	help
+	  Select this for LE Observer role support.
+
+rsource "Kconfig.adv"
+
+config BT_CONN
+	bool
+
+config BT_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BT_CONN
+	range 1 250
+	default 2 if BT_MESH_GATT_CLIENT
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth connections
+	  supported.
+
+config BT_CONN_TX
+	bool
+	default BT_CONN || BT_ISO_TX
+	help
+	  Hidden configuration that is true if ACL or broadcast ISO is enabled
+
+if BT_CONN
+config BT_HCI_ACL_FLOW_CONTROL
+	bool "Controller to Host ACL flow control support"
+	# Enable if building a Host-only build
+	default y if !BT_CTLR && !BT_STM32_IPM && !BT_ESP32  && !BT_STM32WBA
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+	select POLL
+	help
+	  Enable support for throttling ACL buffers from the controller
+	  to the host. This is particularly useful when the host and
+	  controller are on separate cores since it ensures that we do
+	  not run out of incoming ACL buffers.
+
+config BT_REMOTE_VERSION
+	bool "Allow fetching of remote version"
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+	help
+	  Enable this to get access to the remote version in the Controller and
+	  in the Host through bt_conn_get_remote_info(). The fields in question
+	  can then be found in the bt_conn_remote_info struct.
+
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+	depends on !BT_CTLR || BT_CTLR_PHY_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure.
+
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y if ((BT_BUF_ACL_TX_SIZE > 27) || (BT_BUF_ACL_RX_SIZE > 27))
+	depends on !BT_CTLR || BT_CTLR_DATA_LEN_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
+
+config BT_PER_ADV_SYNC_TRANSFER_RECEIVER
+	bool "Periodic Advertising Sync Transfer receiver"
+	depends on BT_PER_ADV_SYNC && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT)
+
+config BT_PER_ADV_SYNC_TRANSFER_SENDER
+	bool "Periodic Advertising Sync Transfer sender"
+	depends on (BT_PER_ADV_SYNC || BT_PER_ADV) && BT_CONN && (!BT_CTLR || BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT)
+
+config BT_SCA_UPDATE
+	bool "Sleep Clock Accuracy Update"
+	default y if BT_ISO_PERIPHERAL || BT_ISO_CENTRAL
+	depends on !BT_CTLR || BT_CTLR_SCA_UPDATE_SUPPORT
+	help
+	  Enable support for Bluetooth 5.1 Sleep Clock Accuracy Update Procedure
+
+config BT_TRANSMIT_POWER_CONTROL
+	bool "LE Power Control"
+	depends on !BT_CTLR || BT_CTLR_LE_POWER_CONTROL_SUPPORT
+	help
+	  Enable support for LE Power Control Request feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.31.
+
+config BT_PATH_LOSS_MONITORING
+	bool "LE Path Loss Monitoring"
+	depends on !BT_CTLR || BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
+	help
+	  Enable support for LE Path Loss Monitoring feature that is defined in the
+	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
+
+endif # BT_CONN
+
+rsource "Kconfig.iso"
+rsource "common/Kconfig"
+rsource "host/Kconfig"
+rsource "controller/Kconfig"
+rsource "shell/Kconfig"
+rsource "crypto/Kconfig"
+rsource "lib/Kconfig"
+rsource "Kconfig.logging"
+
+config BT_USE_PSA_API
+	bool "Use PSA APIs instead of TinyCrypt for crypto operations"
+	depends on BT_CRYPTO || BT_HOST_CRYPTO || BT_ECC
+	depends on PSA_CRYPTO_CLIENT
+	help
+	  Use PSA APIs instead of TinyCrypt for crypto operations
+
+endif # BT_HCI
+
+config BT_COMPANY_ID
+	hex "Company Id"
+	default 0x05F1
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier for this device. The Linux
+	  Foundation's Company Identifier (0x05F1) is the default value for
+	  this option although silicon vendors and hardware manufacturers
+	  can set their own. Note that the controller's Company Identifier is
+	  controlled by BT_CTLR_COMPANY_ID. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
+endif # BT

@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ESP32
+	bool "ESP32 ADC driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_ADC_ENABLED
+	help
+	  Enable the driver implementation for the ESP32 ADC
+
+if ADC_ESP32
+
+config ADC_ESP32_DMA
+	bool "ESP32 ADC DMA Support"
+	default n
+	depends on DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	help
+	  Enable the ADC DMA mode for ADC instances
+	  that enable dma channels in their device tree node.
+
+endif

@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "DF Connectionless Locator App"
+config DF_LOCATOR_APP_IQ_REPORT_PRINT_IQ_SAMPLES
+	bool "Print IQ samples for received IQ reports"
+	help
+	  The option enables printing of IQ samples for received IQ report.
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu

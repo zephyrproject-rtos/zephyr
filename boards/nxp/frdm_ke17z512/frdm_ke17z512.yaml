@@ -1,0 +1,21 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_ke17z512
+name: NXP FRDM-KE17Z512
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - uart
+  - i2c
+vendor: nxp

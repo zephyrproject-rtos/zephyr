@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2020, Bernhard Kraemer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: teensy40
+name: PJRC TEENSY40
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 768
+flash: 2048
+supported:
+  - counter
+  - gpio
+  - usb_device
+testing:
+  ignore_tags:
+    - net
+    - posix
+vendor: nxp

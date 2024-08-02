@@ -1,0 +1,59 @@
+sample:
+  name: Demonstrate usage of the PM policy latency APIs
+tests:
+  sample.pm.latency:
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: pm
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "<inf> app: Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE"
+        - "<inf> soc_pm: Entering SUSPEND_TO_IDLE{0}"
+        - "<inf> app: Sleeping for 1.3 seconds, we should enter STANDBY"
+        - "<inf> soc_pm: Entering STANDBY{0}"
+        - "<inf> app: Setting latency constraint: 30ms"
+        - "<inf> app: Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE"
+        - "<inf> soc_pm: Entering SUSPEND_TO_IDLE{0}"
+        - "<inf> app: Sleeping for 1.3 seconds, we should enter SUSPEND_TO_IDLE"
+        - "<inf> soc_pm: Entering SUSPEND_TO_IDLE{0}"
+        - "<inf> app: Opening test device"
+        - "<inf> dev_test: Adding latency constraint: 20ms"
+        - "<inf> app: Latency constraint changed: 20ms"
+        - "<inf> app: Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Sleeping for 1.2 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Sleeping for 1.3 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Updating latency constraint: 10ms"
+        - "<inf> app: Latency constraint changed: 10ms"
+        - "<inf> dev_test: Latency constraint changed: 10ms"
+        - "<inf> app: Sleeping for 1.1 seconds, we should stay ACTIVE"
+        - "<inf> app: Sleeping for 1.2 seconds, we should stay ACTIVE"
+        - "<inf> app: Sleeping for 1.3 seconds, we should stay ACTIVE"
+        - "<inf> app: Updating latency constraint: 30ms"
+        - "<inf> app: Latency constraint changed: 20ms"
+        - "<inf> dev_test: Latency constraint changed: 20ms"
+        - "<inf> app: Closing test device"
+        - "<inf> dev_test: Removing latency constraint"
+        - "<inf> app: Latency constraint changed: 30ms"
+        - "<inf> dev_test: Latency constraint changed: 30ms"
+        - "<inf> app: Sleeping for 1.1 seconds, we should enter RUNTIME_IDLE"
+        - "<inf> soc_pm: Entering RUNTIME_IDLE{0}"
+        - "<inf> app: Sleeping for 1.2 seconds, we should enter SUSPEND_TO_IDLE"
+        - "<inf> soc_pm: Entering SUSPEND_TO_IDLE{0}"
+        - "<inf> app: Sleeping for 1.3 seconds, we should enter SUSPEND_TO_IDLE"
+        - "<inf> soc_pm: Entering SUSPEND_TO_IDLE{0}"
+        - "<inf> app: Removing latency constraint"
+        - "<inf> app: Latency constraint changed: none"
+        - "<inf> app: Finished, we should now enter STANDBY"
+        - "<inf> soc_pm: Entering STANDBY{0}"

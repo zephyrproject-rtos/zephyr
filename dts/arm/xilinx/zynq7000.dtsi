@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
+
+/ {
+	soc {
+		interrupt-parent = <&gic>;
+
+		ocm_low: memory@1000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0x00001000 DT_SIZE_K(188)>;
+			zephyr,memory-region = "OCM_LOW";
+		};
+
+		ocm_high: memory@fffc0000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0xFFFC0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM_HIGH";
+		};
+
+		arch_timer: timer@f8f00200 {
+			compatible = "arm,armv8-timer";
+			status = "okay";
+			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
+			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_EDGE
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_EDGE
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_EDGE
+					IRQ_DEFAULT_PRIORITY>;
+			reg = <0xf8f00200 0x1C>;
+		};
+
+		gic: interrupt-controller@f8f01000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			status = "okay";
+			reg = <0xf8f01000 0x1000>,
+				<0xf8f00100 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+		};
+
+		gem0: ethernet@e000b000 {
+			compatible = "xlnx,gem";
+			status = "disabled";
+			reg = <0xe000b000 0x1000>,
+				<0xf8000140 0x4>;
+			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 23 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
+		};
+
+		gem1: ethernet@e000c000 {
+			compatible = "xlnx,gem";
+			status = "disabled";
+			reg = <0xe000c000 0x1000>,
+				<0xf8000144 0x4>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 46 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			mdio-phy-address = <XLNX_GEM_PHY_AUTO_DETECT>;
+			phy-poll-interval = <1000>;
+			link-speed = <XLNX_GEM_LINK_SPEED_100MBIT>;
+			amba-ahb-dbus-width = <XLNX_GEM_AMBA_AHB_DBUS_WIDTH_32BIT>;
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_SINGLE>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <512>;
+			tx-buffer-size = <512>;
+			discard-rx-fcs;
+			unicast-hash;
+			full-duplex;
+		};
+
+		uart0: uart@e0000000 {
+			compatible = "xlnx,xuartps";
+			status = "disabled";
+			reg = <0xe0000000 0x4c>;
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+		};
+
+		uart1: uart@e0001000 {
+			compatible = "xlnx,xuartps";
+			status = "disabled";
+			reg = <0xe0001000 0x4c>;
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+		};
+
+		psgpio: gpio@e000a000 {
+			compatible = "xlnx,ps-gpio";
+			status = "disabled";
+			reg = <0xe000a000 0x1000>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			psgpio_bank0: psgpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank1: psgpio_bank@1 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <22>;
+				status = "okay";
+			};
+
+			psgpio_bank2: psgpio_bank@2 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x2>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+
+			psgpio_bank3: psgpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "okay";
+			};
+		};
+	};
+
+	slcr: slcr@f8000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "xlnx,zynq-slcr", "syscon";
+		reg = <0xf8000000 0x1000>;
+		ranges;
+
+		pinctrl0: pinctrl@700 {
+			compatible = "xlnx,pinctrl-zynq";
+			reg = <0x700 0x200>;
+			syscon = <&slcr>;
+		};
+	};
+};

@@ -1,0 +1,25 @@
+# PHYTEC AM64x M4 phyBOARD-Electra
+#
+# Copyright (C) 2024 PHYTEC Messtechnik GmbH
+# Author: Daniel Schultz <d.schultz@phytec.de>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_CORTEX_M_SYSTICK=y
+
+# Zephyr Kernel Configuration
+CONFIG_XIP=n
+
+# Enable Pinctrl
+CONFIG_PINCTRL=y
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# GPIO Driver
+CONFIG_GPIO=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

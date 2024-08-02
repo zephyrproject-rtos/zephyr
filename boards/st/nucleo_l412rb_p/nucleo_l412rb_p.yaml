@@ -1,0 +1,21 @@
+identifier: nucleo_l412rb_p
+name: ST Nucleo L412RP-P
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 40
+flash: 64
+supported:
+  - nvs
+  - pwm
+  - counter
+  - spi
+  - i2c
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+vendor: st

@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <xilinx/zynq7000.dtsi>
+#include <zephyr/dt-bindings/ethernet/xlnx_gem.h>
+
+/ {
+	model = "QEMU Cortex-A9";
+	compatible = "xlnx,zynq7000s";
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@100000 {
+		compatible = "mmio-sram";
+		reg = <0x00100000 DT_SIZE_M(512)>;
+	};
+
+	flash0: flash@0 {
+		reg = <0x00000000 DT_SIZE_M(256)>;
+	};
+
+	chosen {
+		zephyr,flash      = &flash0;
+		zephyr,sram       = &sram0;
+		zephyr,console    = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ocm        = &ocm_low;
+		zephyr,uart-pipe  = &uart1;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <50000000>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <50000000>;
+};
+
+&gem0 {
+	status = "okay";
+	clock-frequency = <1000000000>;
+	mdc-divider = <XLNX_GEM_MDC_DIVIDER_224>;
+	local-mac-address = [00 00 00 01 02 03];
+};

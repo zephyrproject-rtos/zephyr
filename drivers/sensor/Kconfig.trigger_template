@@ -1,0 +1,44 @@
+# Common Kconfig template for all sensors
+# Copyright (c) 2023 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+choice "$(module)_TRIGGER_MODE"
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the sensor module.
+
+config $(module)_TRIGGER_NONE
+	bool "No trigger"
+
+config $(module)_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select $(module)_TRIGGER
+
+config $(module)_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select $(module)_TRIGGER
+
+endchoice
+
+config $(module)_TRIGGER
+	bool
+
+if $(module)_TRIGGER
+
+config $(module)_THREAD_PRIORITY
+	int "Thread priority"
+	depends on $(module)_TRIGGER_OWN_THREAD
+	default $(thread_priority)
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config $(module)_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on $(module)_TRIGGER_OWN_THREAD
+	default $(thread_stack_size)
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # $(module)_TRIGGER

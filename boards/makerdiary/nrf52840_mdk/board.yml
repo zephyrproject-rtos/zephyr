@@ -1,0 +1,5 @@
+board:
+  name: nrf52840_mdk
+  vendor: makerdiary
+  socs:
+  - name: nrf52840

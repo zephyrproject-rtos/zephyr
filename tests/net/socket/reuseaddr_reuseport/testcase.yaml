@@ -1,0 +1,18 @@
+common:
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  min_ram: 31
+  tags:
+    - net
+    - socket
+  # FIXME: This test fails very frequently on mps2/an385 due to the system
+  #        timer stability issues, so keep it disabled until the root cause
+  #        is fixed (GitHub issue zephyrproject-rtos/zephyr#48608).
+  platform_exclude: mps2/an385
+tests:
+  net.socket.reuseaddr_reuseport:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+  net.socket.reuseaddr_reuseport.userspace:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

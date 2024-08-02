@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-I2C controller node
+
+compatible: "nuvoton,npcx-i2c-ctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true

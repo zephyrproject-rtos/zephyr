@@ -1,0 +1,70 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_ITE_IT8XXX2
+	bool "ITE IT8XXX2 I2C driver"
+	default y
+	depends on DT_HAS_ITE_IT8XXX2_I2C_ENABLED
+	help
+	  Enable I2C support on it8xxx2_evb.
+	  Supported Speeds: 100kHz, 400kHz and 1MHz.
+	  This driver supports repeated start.
+
+if I2C_ITE_IT8XXX2
+
+config I2C_IT8XXX2_FIFO_MODE
+	bool "IT8XXX2 I2C FIFO mode"
+	default y
+	help
+	  This is an option to enable FIFO mode which can reduce
+	  the time between each byte to improve the I2C bus clock
+	  stretching during I2C transaction.
+	  The I2C controller supports two 32-bytes FIFOs,
+	  FIFO1 supports channel A. FIFO2 supports channel B.
+	  I2C FIFO mode of it8xxx2 can support I2C APIs including:
+	  i2c_write(), i2c_read(), i2c_burst_read.
+
+endif # I2C_ITE_IT8XXX2
+
+config I2C_ITE_ENHANCE
+	bool "ITE IT8XXX2 I2C enhance driver"
+	default y
+	depends on DT_HAS_ITE_ENHANCE_I2C_ENABLED
+	help
+	  This option can enable the enhance I2C
+	  of IT8XXX2 and support three channels.
+
+if I2C_ITE_ENHANCE
+
+config I2C_IT8XXX2_CQ_MODE
+	bool "IT8XXX2 I2C command queue mode"
+	default y
+	select SOC_IT8XXX2_CPU_IDLE_GATING
+	help
+	  This is an option to enable command queue mode which can
+	  reduce the time between each byte to improve the I2C bus
+	  clock stretching during I2C transaction.
+	  I2C command queue mode of it8xxx2 can support I2C APIs
+	  including: i2c_write(), i2c_read(), i2c_burst_read.
+
+config I2C_CQ_MODE_MAX_PAYLOAD_SIZE
+	int "It is allowed to configure the size up to 2K bytes."
+	range 32 2048
+	default 64
+	help
+	  This is the command queue mode payload size which size
+	  up to 2k bytes.
+
+endif # I2C_ITE_ENHANCE
+
+if I2C_TARGET
+
+config I2C_TARGET_IT8XXX2_MAX_BUF_SIZE
+	int "It is allowed to configure the size up to 2044 bytes."
+	range 4 2044
+	default 256
+
+config I2C_TARGET_BUFFER_MODE
+	default y
+
+endif # I2C_TARGET

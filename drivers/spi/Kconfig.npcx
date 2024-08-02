@@ -1,0 +1,17 @@
+# Nuvoton NPCX SPI Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NPCX_SPIP
+	bool "Nuvoton NPCX embedded controller (EC) SPI driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_SPIP_ENABLED
+	help
+	  Enable the SPI peripherals on NPCX MCU.
+
+config SPI_NPCX_SPIP_INTERRUPT
+	bool "NPCX SPIP Interrupt Support"
+	depends on SPI_NPCX_SPIP
+	help
+	  Enable Interrupt support for the SPI Driver of NPCX chip.

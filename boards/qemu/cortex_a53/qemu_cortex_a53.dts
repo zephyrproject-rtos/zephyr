@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm64/qemu/qemu-virt-a53.dtsi>
+
+/ {
+	model = "QEMU Cortex-A53";
+	compatible = "qemu,arm-cortex-a53";
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "hvc";
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,pcie-controller = &pcie;
+	};
+
+	soc {
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
+		};
+
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&pcie {
+	eth0: pcie@1,0 {
+		compatible = "intel,e1000";
+		vendor-id = <0x8086>;
+		device-id = <0x100e>;
+		interrupts = <1>;
+		interrupt-parent = <&pcie>;
+		reg = <0x0800 0 0 0 0>;
+		status = "okay";
+	};
+};

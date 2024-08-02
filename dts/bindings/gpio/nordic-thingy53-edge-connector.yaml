@@ -1,0 +1,29 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This binding provides a nexus mapping for 20 pins (HW rev 1.1.0) as depicted below
+        P1   VLi-Ion
+        P2   VBat
+        P3   VOUTB
+        P4   VDD_nRF53
+        P5   P1.01/GRANT
+        P6   P1.00/REQ
+        P7   RESET
+        P8   P0.05/AIN1
+        P9   P0.04/AIN0
+        P10  LOAD_SW_DISABLE
+        P11  VOUTB_2
+        P12  VDD_nRF21540
+        P13  VDD_EXP_BRD
+        P14  3V3
+        P15  P0.08/TRACEDATA3
+        P16  P0.09/TRACEDATA2
+        P17  P0.10/TRACEDATA1
+        P18  P0.11/TRACEDATA0
+        P19  P0.12/TRACECLK
+        P20  GND
+
+compatible: "nordic-thingy53-edge-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

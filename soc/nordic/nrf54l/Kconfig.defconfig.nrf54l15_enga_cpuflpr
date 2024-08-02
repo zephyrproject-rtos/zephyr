@@ -1,0 +1,15 @@
+# Nordic Semiconductor nRF54L15 MCU
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF54L15_ENGA_CPUFLPR
+
+config RISCV_HAS_CPU_IDLE
+	bool
+
+config NUM_IRQS
+	int
+	default 287
+
+endif # SOC_NRF54L15_ENGA_CPUFLPR

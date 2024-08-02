@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+&flash_sim0 {
+	/*
+	 * Sync with qemu_x86.dts on partitions to make sure
+	 * size is large enough and there are no overlaps.
+	 */
+
+	partitions {
+		coredump_partition: partition@31000 {
+			label = "coredump-partition";
+
+			reg = <0x31000 DT_SIZE_K(8)>;
+		};
+
+	};
+};

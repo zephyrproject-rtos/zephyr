@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2020 TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi0_default_alt: spi0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 27)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 26)>,
+				<NRF_PSEL(SPIM_MISO, 0, 23)>;
+		};
+	};
+
+	spi0_sleep_alt: spi0_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 27)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 26)>,
+				<NRF_PSEL(SPIM_MISO, 0, 23)>;
+			low-power-enable;
+		};
+	};
+};
+
+&spi0 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi0_default_alt>;
+	pinctrl-1 = <&spi0_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	icm42605@0 {
+		compatible = "invensense,icm42605";
+		spi-max-frequency = <24000000>;
+		reg = <0>;
+		int-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+	};
+};

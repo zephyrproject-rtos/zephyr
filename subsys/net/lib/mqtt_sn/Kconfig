@@ -1,0 +1,60 @@
+# MQTT-SN Library for Zephyr
+
+# Copyright (c) 2022 René Beckmann
+# SPDX-License-Identifier: Apache-2.0
+
+config MQTT_SN_LIB
+	bool "MQTT-SN Library Support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the Zephyr MQTT Library
+
+if MQTT_SN_LIB
+
+config MQTT_SN_LIB_MAX_PAYLOAD_SIZE
+	int "Maximum payload size of an MQTT-SN message"
+	default $(UINT8_MAX)
+
+config MQTT_SN_LIB_MAX_MSGS
+	int "Number of preallocated messages"
+	default 10
+
+config MQTT_SN_LIB_MAX_TOPICS
+	int "Number of topics that can be managed"
+	default 20
+
+config MQTT_SN_LIB_MAX_TOPIC_SIZE
+	int "Maximum topic length"
+	default 64
+
+config MQTT_SN_LIB_MAX_PUBLISH
+	int "Number of publishes that can be in-flight at the same time"
+	default 5
+
+config MQTT_SN_KEEPALIVE
+	int "Maximum number of clients Keep alive time for MQTT-SN (in seconds)"
+	default 60
+	help
+	  Keep alive time for MQTT-SN (in seconds). Sending of Ping Requests to
+	  keep the connection alive are governed by this value.
+
+config MQTT_SN_TRANSPORT_UDP
+	bool "UDP transport for MQTT-SN"
+	select NET_SOCKETS
+
+config MQTT_SN_LIB_N_RETRY
+	int "Number of times to retry messages"
+	range 1 20
+	default 5
+
+config MQTT_SN_LIB_T_RETRY
+	int "Time (seconds) to wait for responses"
+	default 10
+
+module=MQTT_SN
+module-dep=NET_LOG
+module-str=Log level for MQTT-SN
+module-help=Enables mqtt-sn debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # MQTT_SN_LIB

@@ -1,0 +1,10 @@
+common:
+  tags:
+    - drivers
+    - display
+  build_only: true
+  platform_allow:
+    - native_posix
+    - native_sim
+tests:
+  drivers.display.default: {}

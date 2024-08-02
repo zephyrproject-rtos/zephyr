@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Ruuvi Innovations Ltd (Oy)
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+CONFIG_PINCTRL=y

@@ -1,0 +1,52 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip I2C/SMB controller
+
+compatible: "microchip,xec-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port_sel:
+    type: int
+    description: soc block mapping to pin
+    required: true
+
+  girq:
+    type: int
+    required: true
+    description: GIRQ for this device
+
+  girq-bit:
+    type: int
+    required: true
+    description: Bit position in GIRQ for this device
+
+  pcrs:
+    type: array
+    required: true
+    description: PCR sleep register index and bit position
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  sda-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SDA pin for the selected port. Pin choice for port is
+      determined by chip and package.
+
+  scl-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The SCL pin for the selected port. Pin choice for port is
+      determined by chip and package.

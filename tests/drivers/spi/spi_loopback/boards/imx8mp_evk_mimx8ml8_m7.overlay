@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2024 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/mimx8ml8dvnlz-pinctrl.dtsi>
+
+&pinctrl {
+	ecspi1_default: ecspi1_default {
+		group1 {
+			pinmux = <&iomuxc_ecspi1_miso_ecspi_miso_ecspi1_miso>,
+				 <&iomuxc_ecspi1_mosi_ecspi_mosi_ecspi1_mosi>,
+				 <&iomuxc_ecspi1_sclk_ecspi_sclk_ecspi1_sclk>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+		group2 {
+			pinmux = <&iomuxc_ecspi1_ss0_ecspi_ss_ecspi1_ss0>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+			bias-pull-up;
+		};
+	};
+};
+
+&ecspi1 {
+	status = "okay";
+	pinctrl-0 = <&ecspi1_default>;
+	pinctrl-names = "default";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

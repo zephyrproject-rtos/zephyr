@@ -1,0 +1,5 @@
+board:
+  name: lpcxpresso55s36
+  vendor: nxp
+  socs:
+    - name: lpc55s36

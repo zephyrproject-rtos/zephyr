@@ -1,0 +1,505 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/inputmux/inputmux_trigger_ports.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+
+/ {
+	aliases {
+		watchdog0 = &wwdt0;
+	};
+
+	chosen {
+		zephyr,flash-controller = &iap;
+	};
+
+	cpus: cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&sleep>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+		cpu@1 {
+			compatible = "arm,cortex-m33";
+			reg = <1>;
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				min-residency-us = <4>;
+				exit-latency-us = <4>;
+			};
+		};
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sramx: memory@4000000 {
+		compatible = "mmio-sram";
+		reg = <0x4000000 DT_SIZE_K(32)>;
+	};
+
+	/* lpc55S6x Memory configurations:
+	 *
+	 * RAM blocks SRAM0 through SRAM4 are contiguous address ranges
+	 *
+	 * LPC55S66: 144KB RAM, RAMX: 32K, SRAM0: 32K
+	 * LPC55S69: 320KB RAM, RAMX: 32K, SRAM0: 64K, SRAM1: 64K,
+	 *                      SRAM2: 64K, SRAM3: 64K, SRAM4: 16K
+	 */
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(64)>;
+	};
+
+	sram1: memory@20010000 {
+		compatible = "mmio-sram";
+		reg = <0x20010000 DT_SIZE_K(64)>;
+	};
+
+	sram2: memory@20020000 {
+		compatible = "mmio-sram";
+		reg = <0x20020000 DT_SIZE_K(64)>;
+	};
+
+	sram3: memory@20030000 {
+		compatible = "mmio-sram";
+		reg = <0x20030000 DT_SIZE_K(64)>;
+	};
+
+	sram4: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000  DT_SIZE_K(16)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	usb_sram: memory@100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x100000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "USB_SRAM";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	syscon: syscon@0 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x0 0x1000>;
+		#clock-cells = <1>;
+		reset: reset {
+			compatible = "nxp,lpc-syscon-reset";
+			#reset-cells = <1>;
+		};
+	};
+
+	iap: flash-controller@34000 {
+		compatible = "nxp,iap-fmc55";
+		reg = <0x34000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(630)>;
+			erase-block-size = <512>;
+			write-block-size = <512>;
+		};
+
+		flash_reserved: flash@9D800 {
+			compatible = "soc-nv-flash";
+			reg = <0x9D800 DT_SIZE_K(9)>;
+			status = "disabled";
+		};
+
+		uuid: flash@9fc70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x9fc70 0x10>;
+		};
+
+		boot_rom: flash@3000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x3000000 DT_SIZE_K(128)>;
+		};
+	};
+
+	iocon: iocon@1000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x1000 0x100>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x1000 0x100>;
+		pinctrl: pinctrl {
+			compatible = "nxp,lpc-iocon-pinctrl";
+		};
+	};
+
+	gpio: gpio@8c000 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x8c000 0x2488>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <0>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc-gpio-port";
+			reg = <1>;
+			int-source = "pint";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	pint: pint@4000 {
+		compatible = "nxp,pint";
+		reg = <0x4000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		#address-cells = <0>;
+		interrupts = <4 2>, <5 2>, <6 2>, <7 2>,
+			<32 2>, <33 2>, <34 2>, <35 2>;
+		num-lines = <8>;
+		num-inputs = <64>;
+	};
+
+	dma0: dma-controller@82000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x82000 0x1000>;
+		interrupts = <1 0>;
+		dma-channels = <23>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA0_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA0_ITRIG_BASE>;
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	dma1: dma-controller@a7000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0xa7000 0x1000>;
+		interrupts = <58 0>;
+		dma-channels = <10>;
+		nxp,dma-num-of-otrigs = <4>;
+		nxp,dma-otrig-base-address = <LPC55S69_DMA1_OTRIG_BASE>;
+		nxp,dma-itrig-base-address = <LPC55S69_DMA1_ITRIG_BASE>;
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	mailbox0:mailbox@8b000 {
+		compatible = "nxp,lpc-mailbox";
+		reg = <0x8b000 0xEC>;
+		interrupts = <31 0>;
+		resets = <&reset NXP_SYSCON_RESET(0, 26)>;
+		status = "disabled";
+	};
+
+	flexcomm0: flexcomm@86000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x86000 0x1000>;
+		interrupts = <14 0>;
+		clocks = <&syscon MCUX_FLEXCOMM0_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 11)>;
+		dmas = <&dma0 4>, <&dma0 5>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm1: flexcomm@87000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x87000 0x1000>;
+		interrupts = <15 0>;
+		clocks = <&syscon MCUX_FLEXCOMM1_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
+		dmas = <&dma0 6 &dma0 7>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm2: flexcomm@88000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x88000 0x1000>;
+		interrupts = <16 0>;
+		clocks = <&syscon MCUX_FLEXCOMM2_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
+		dmas = <&dma0 10 &dma0 11>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm3: flexcomm@89000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x89000 0x1000>;
+		interrupts = <17 0>;
+		clocks = <&syscon MCUX_FLEXCOMM3_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 14)>;
+		dmas = <&dma0 8 &dma0 9>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm4: flexcomm@8a000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x8a000 0x1000>;
+		interrupts = <18 0>;
+		clocks = <&syscon MCUX_FLEXCOMM4_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 15)>;
+		dmas = <&dma0 12 &dma0 13>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm5: flexcomm@96000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x96000 0x1000>;
+		interrupts = <19 0>;
+		clocks = <&syscon MCUX_FLEXCOMM5_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
+		dmas = <&dma0 14 &dma0 15>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm6: flexcomm@97000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x97000 0x1000>;
+		interrupts = <20 0>;
+		clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 17)>;
+		dmas = <&dma0 16 &dma0 17>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	flexcomm7: flexcomm@98000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x98000 0x1000>;
+		interrupts = <21 0>;
+		clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 18)>;
+		dmas = <&dma0 18 &dma0 19>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	sdif: sdif@9b000 {
+		compatible = "nxp,lpc-sdif";
+		reg = <0x9b000 0x1000>;
+		interrupts = <42 0>;
+		clocks = <&syscon MCUX_SDIF_CLK>;
+		status = "disabled";
+	};
+
+	hs_lspi: spi@9f000 {
+		compatible = "nxp,lpc-spi";
+		/* Enabling cs-gpios below will allow using GPIO CS,
+		 rather than Flexcomm SS */
+		/* cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>,
+			<&gpio1 1 GPIO_ACTIVE_LOW>,
+			<&gpio1 12 GPIO_ACTIVE_LOW>,
+			<&gpio1 26 GPIO_ACTIVE_LOW>; */
+		reg = <0x9f000 0x1000>;
+		interrupts = <59 0>;
+		clocks = <&syscon MCUX_HS_SPI_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(2, 28)>;
+		dmas = <&dma0 2 &dma0 3>;
+		dma-names = "rx", "tx";
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	rng: rng@3a000 {
+		compatible = "nxp,lpc-rng";
+		reg = <0x3a000 0x1000>;
+		status = "okay";
+	};
+
+	wwdt0: watchdog@c000 {
+		compatible = "nxp,lpc-wwdt";
+		reg = <0xc000 0x1000>;
+		interrupts = <0 0>;
+		status = "disabled";
+		clk-divider = <1>;
+	};
+
+	adc0: adc@A0000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0xA0000 0x1000>;
+		interrupts = <22 0>;
+		status = "disabled";
+		clk-divider = <8>;
+		clk-source = <0>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		power-level = <0>;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		clocks = <&syscon MCUX_LPADC1_CLK>;
+	};
+
+	usbfs: usbfs@84000 {
+		compatible = "nxp,lpcip3511";
+		reg = <0x84000 0x1000>;
+		interrupts = <28 1>;
+		num-bidir-endpoints = <5>;
+		maximum-speed = "full-speed";
+		status = "disabled";
+	};
+
+	usbhs: usbhs@94000 {
+		compatible = "nxp,lpcip3511";
+		reg = <0x94000 0x1000>;
+		interrupts = <47 1>;
+		num-bidir-endpoints = <6>;
+		status = "disabled";
+	};
+
+	usbphy1: usbphy@38000 {
+		compatible = "nxp,usbphy";
+		reg = <0x38000 0x1000>;
+		status = "disabled";
+	};
+
+	ctimer0: ctimer@8000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x8000 0x1000>;
+		interrupts = <10 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER0_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer1: ctimer@9000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x9000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER1_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer2: ctimer@28000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x28000 0x1000>;
+		interrupts = <36 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER2_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer3: ctimer@29000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x29000 0x1000>;
+		interrupts = <13 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER3_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	ctimer4: ctimer@2A000 {
+		compatible = "nxp,lpc-ctimer";
+		reg = <0x2A000 0x1000>;
+		interrupts = <37 0>;
+		status = "disabled";
+		clk-source = <3>;
+		clocks = <&syscon MCUX_CTIMER4_CLK>;
+		mode = <0>;
+		input = <0>;
+		prescale = <0>;
+	};
+
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		clocks = <&syscon MCUX_SCTIMER_CLK>;
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
+
+	mrt: mrt@d000 {
+		compatible = "nxp,mrt";
+		reg = <0xd000 0x100>;
+		interrupts = <9 0>;
+		num-channels = <4>;
+		num-bits = <24>;
+		clocks = <&syscon MCUX_MRT_CLK>;
+		resets = <&reset NXP_SYSCON_RESET(1, 0)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mrt_channel0: mrt_channel@0 {
+			compatible = "nxp,mrt-channel";
+			reg = <0>;
+			status = "disabled";
+		};
+		mrt_channel1: mrt_channel@1 {
+			compatible = "nxp,mrt-channel";
+			reg = <1>;
+			status = "disabled";
+		};
+		mrt_channel2: mrt_channel@2 {
+			compatible = "nxp,mrt-channel";
+			reg = <2>;
+			status = "disabled";
+		};
+		mrt_channel3: mrt_channel@3 {
+			compatible = "nxp,mrt-channel";
+			reg = <3>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

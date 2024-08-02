@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Backends"
+
+rsource "Kconfig.adsp"
+rsource "Kconfig.adsp_mtrace"
+rsource "Kconfig.ble"
+rsource "Kconfig.efi_console"
+rsource "Kconfig.fs"
+rsource "Kconfig.native_posix"
+rsource "Kconfig.net"
+rsource "Kconfig.rtt"
+rsource "Kconfig.spinel"
+rsource "Kconfig.swo"
+rsource "Kconfig.uart"
+rsource "Kconfig.xtensa_sim"
+rsource "Kconfig.multidomain"
+
+endmenu

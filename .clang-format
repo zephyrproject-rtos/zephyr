@@ -1,0 +1,94 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Note: The list of ForEachMacros can be obtained using:
+#
+#    git grep -h '^#define [^[:space:]]*FOR_EACH[^[:space:]]*(' include/ \
+#    | sed "s,^#define \([^[:space:]]*FOR_EACH[^[:space:]]*\)(.*$,  - '\1'," \
+#    | sort | uniq
+#
+# References:
+#   - https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+---
+BasedOnStyle: LLVM
+AlignConsecutiveMacros: AcrossComments
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AttributeMacros:
+  - __aligned
+  - __deprecated
+  - __packed
+  - __printf_like
+  - __syscall
+  - __syscall_always_inline
+  - __subsystem
+BitFieldColonSpacing: After
+BreakBeforeBraces: Linux
+ColumnLimit: 100
+ConstructorInitializerIndentWidth: 8
+ContinuationIndentWidth: 8
+ForEachMacros:
+  - 'ARRAY_FOR_EACH'
+  - 'ARRAY_FOR_EACH_PTR'
+  - 'FOR_EACH'
+  - 'FOR_EACH_FIXED_ARG'
+  - 'FOR_EACH_IDX'
+  - 'FOR_EACH_IDX_FIXED_ARG'
+  - 'FOR_EACH_NONEMPTY_TERM'
+  - 'RB_FOR_EACH'
+  - 'RB_FOR_EACH_CONTAINER'
+  - 'SYS_DLIST_FOR_EACH_CONTAINER'
+  - 'SYS_DLIST_FOR_EACH_CONTAINER_SAFE'
+  - 'SYS_DLIST_FOR_EACH_NODE'
+  - 'SYS_DLIST_FOR_EACH_NODE_SAFE'
+  - 'SYS_SFLIST_FOR_EACH_CONTAINER'
+  - 'SYS_SFLIST_FOR_EACH_CONTAINER_SAFE'
+  - 'SYS_SFLIST_FOR_EACH_NODE'
+  - 'SYS_SFLIST_FOR_EACH_NODE_SAFE'
+  - 'SYS_SLIST_FOR_EACH_CONTAINER'
+  - 'SYS_SLIST_FOR_EACH_CONTAINER_SAFE'
+  - 'SYS_SLIST_FOR_EACH_NODE'
+  - 'SYS_SLIST_FOR_EACH_NODE_SAFE'
+  - '_WAIT_Q_FOR_EACH'
+  - 'Z_FOR_EACH'
+  - 'Z_FOR_EACH_ENGINE'
+  - 'Z_FOR_EACH_EXEC'
+  - 'Z_FOR_EACH_FIXED_ARG'
+  - 'Z_FOR_EACH_FIXED_ARG_EXEC'
+  - 'Z_FOR_EACH_IDX'
+  - 'Z_FOR_EACH_IDX_EXEC'
+  - 'Z_FOR_EACH_IDX_FIXED_ARG'
+  - 'Z_FOR_EACH_IDX_FIXED_ARG_EXEC'
+  - 'Z_GENLIST_FOR_EACH_CONTAINER'
+  - 'Z_GENLIST_FOR_EACH_CONTAINER_SAFE'
+  - 'Z_GENLIST_FOR_EACH_NODE'
+  - 'Z_GENLIST_FOR_EACH_NODE_SAFE'
+  - 'STRUCT_SECTION_FOREACH'
+  - 'TYPE_SECTION_FOREACH'
+  - 'K_SPINLOCK'
+IfMacros:
+  - 'CHECKIF'
+# Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520
+#IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^".*\.h"$'
+    Priority: 0
+  - Regex: '^<(assert|complex|ctype|errno|fenv|float|inttypes|limits|locale|math|setjmp|signal|stdarg|stdbool|stddef|stdint|stdio|stdlib|string|tgmath|time|wchar|wctype)\.h>$'
+    Priority: 1
+  - Regex: '^\<zephyr/.*\.h\>$'
+    Priority: 2
+  - Regex: '.*'
+    Priority: 3
+IndentCaseLabels: false
+IndentWidth: 8
+InsertBraces: true
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+SortIncludes: Never
+UseTab: ForContinuationAndIndentation
+WhitespaceSensitiveMacros:
+  - STRINGIFY
+  - Z_STRINGIFY

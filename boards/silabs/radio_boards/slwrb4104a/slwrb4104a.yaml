@@ -1,0 +1,22 @@
+identifier: slwrb4104a
+name: EFR32BG13 2.4 GHz 10 dBm Radio Board (SLWRB4104A)
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+  - gpio
+  - nvs
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

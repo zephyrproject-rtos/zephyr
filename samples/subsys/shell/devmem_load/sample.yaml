@@ -1,0 +1,17 @@
+sample:
+  name: devmem_load
+  description: devmem load sample
+common:
+  harness: keyboard
+  tags:
+    - devmem
+    - devmem_load
+tests:
+  sample.devmem_load.polled:
+    integration_platforms:
+      - native_sim
+    extra_args: OVERLAY_CONFIG="prj_poll.conf"
+  sample.devmem_load.uart.interrupt:
+    integration_platforms:
+      - frdm_k64f
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT

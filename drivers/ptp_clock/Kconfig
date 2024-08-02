@@ -1,0 +1,19 @@
+# Copyright (c) 2018 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PTP_CLOCK
+	bool "Precision Time Protocol (PTP) Clock drivers"
+	help
+	  Enable options for Precision Time Protocol Clock drivers.
+
+if PTP_CLOCK
+
+source "drivers/ptp_clock/Kconfig.nxp_enet"
+
+config PTP_CLOCK_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  PTP Clock device driver initialization priority
+
+endif # PTP_CLOCK

@@ -1,0 +1,88 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GNSS
+	bool "GNSS drivers"
+	select EXPERIMENTAL
+	help
+	  Enable GNSS drivers and configuration.
+
+if GNSS
+
+config GNSS_SATELLITES
+	bool "GNSS satellites support"
+	help
+	  Enable GNSS sattelites callback.
+
+config GNSS_DUMP
+	bool "GNSS dump support"
+	depends on LOG
+	help
+	  Enable GNSS dump library
+
+config GNSS_DUMP_TO_LOG
+	bool "Dump GNSS events to log"
+	select GNSS_DUMP
+	help
+	  Enable GNSS dump to log.
+
+if GNSS_DUMP_TO_LOG
+
+config GNSS_DUMP_TO_LOG_BUF_SIZE
+	int "GNSS log dump buffer size"
+	default 128
+	help
+	  Size of GNSS log dump buffer
+
+endif
+
+config GNSS_PARSE
+	bool "GNSS parsing utilities"
+	help
+	  Enable GNSS parsing utilities.
+
+config GNSS_NMEA0183
+	bool "NMEA0183 parsing utilities"
+	select GNSS_PARSE
+	help
+	  Enable NMEA0183 parsing utilities.
+
+config GNSS_NMEA0183_MATCH
+	bool "GNSS NMEA0183 match utilities"
+	select GNSS_NMEA0183
+	help
+	  Enable NMEA0183 match utilities.
+
+config GNSS_INIT_PRIORITY
+	int "GNSS driver initialization priority"
+	default 80
+	range 0 99
+	help
+	  Driver initialization priority for GNSS drivers.
+
+config GNSS_U_BLOX_PROTOCOL
+	bool "GNSS U-BLOX protocol"
+	select MODEM_UBX
+	help
+	  Enable gnss u-blox protocol.
+
+choice GNSS_REFERENCE_FRAME
+	bool "GNSS reference frame datum"
+	default GNSS_REFERENCE_FRAME_WGS84
+
+config GNSS_REFERENCE_FRAME_WGS84
+	bool "Use the WGS84 ellipsoid as reference frame datum"
+
+endchoice
+
+module = GNSS
+module-str = gnss
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.emul"
+rsource "Kconfig.generic"
+rsource "Kconfig.quectel_lcx6g"
+rsource "Kconfig.u_blox_m10"
+rsource "Kconfig.luatos_air530z"
+
+endif

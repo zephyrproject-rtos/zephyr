@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Panasonic AMG88XX 8x8 (64) pixel infrared array sensor
+
+compatible: "panasonic,amg88xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
+
+      The interrupt pin of AMG88XX is open-drain, active low.
+      If connected directly the MCU pin should be configured
+      as pull-up, active low.

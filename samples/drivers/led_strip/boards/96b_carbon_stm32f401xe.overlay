@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2019, Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&spi2 {
+
+	lpd8806: lpd8806@0 {
+		compatible = "greeled,lpd8806";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_RED
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &lpd8806;
+	};
+};

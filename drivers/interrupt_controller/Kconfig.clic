@@ -1,0 +1,29 @@
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NUCLEI_ECLIC
+	bool "Enhanced Core Local Interrupt Controller (ECLIC)"
+	default y
+	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
+	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING if !RISCV_VECTORED_MODE
+	help
+	  Interrupt controller for Nuclei SoC core.
+
+config NRFX_CLIC
+	bool "VPR Core Local Interrpt Controller (CLIC)"
+	default y
+	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
+	select GEN_IRQ_VECTOR_TABLE
+	help
+	  Interrupt controller for Nordic VPR cores.
+
+if NUCLEI_ECLIC
+
+config LEGACY_CLIC
+	bool "Use the legacy clic specification"
+	depends on RISCV_HAS_CLIC
+	help
+	  Enables legacy clic, where smclicshv extension is not supported and
+	  hardware vectoring is set via mode bits of mtvec.
+
+endif # NUCLEI_ECLIC

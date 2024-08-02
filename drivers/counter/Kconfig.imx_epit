@@ -1,0 +1,11 @@
+# IMX EPIT configuration options
+
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_IMX_EPIT
+	bool "IMX EPIT driver"
+	default y
+	depends on DT_HAS_NXP_IMX_EPIT_ENABLED
+	help
+	  Enable the IMX EPIT driver.

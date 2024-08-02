@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices AD-APARD32690-SL";
+	compatible = "adi,apard32690";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: blue_led {
+			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		red_led: red_led {
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		green_led: green_led {
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		usr_btn: usr_btn {
+			gpios = <&gpio1 27 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "S2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &red_led;
+		led2 = &green_led;
+		sw0 = &usr_btn;
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&uart0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+arduino_serial: &uart1 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart1a_tx_p2_16 &uart1a_rx_p2_14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+arduino_spi: &spi1 {
+	pinctrl-0 = <&spi1a_miso_p1_28 &spi1a_mosi_p1_29 &spi1a_sck_p1_26
+		     &spi1a_ss0_p1_23>;
+	pinctrl-names = "default";
+};
+
+&spi3a_miso_p0_20 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_mosi_p0_21 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_sck_p0_16 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3a_ss0_p0_19 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3a_miso_p0_20 &spi3a_mosi_p0_21 &spi3a_sck_p0_16
+		     &spi3a_ss0_p0_19>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	adin1110: adin1110@0 {
+		compatible = "adi,adin1110";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		reset-gpios = <&gpio0 15 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		status = "okay";
+
+		port1 {
+			local-mac-address = [ 00 E0 22 FE DA C9 ];
+		};
+		mdio {
+			compatible = "adi,adin2111-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ethernet-phy@1 {
+				reg = <0x1>;
+				compatible = "adi,adin2111-phy";
+			};
+		};
+	};
+};

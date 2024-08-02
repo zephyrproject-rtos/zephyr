@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2020 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g0/stm32g030.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g050", "st,stm32g0", "simple-bus";
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1L, 4U)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			resets = <&rctl STM32_RESET(APB1L, 5U)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+			dma-requests = <7>;
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-channels = <7>;
+		};
+	};
+};

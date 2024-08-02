@@ -1,0 +1,15 @@
+identifier: sparkfun_thing_plus/nrf9160/ns
+name: Sparkfun-Thing-Plus-nRF9160-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 128
+flash: 192
+supported:
+  - i2c
+  - pwm
+  - watchdog
+vendor: sparkfun

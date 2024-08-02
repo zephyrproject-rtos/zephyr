@@ -1,0 +1,26 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable SMPS
+CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# Enable Clocks
+CONFIG_CLOCK_CONTROL=y
+
+# enable pin controller
+CONFIG_PINCTRL=y

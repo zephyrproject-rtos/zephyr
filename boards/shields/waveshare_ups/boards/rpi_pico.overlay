@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Joseph Yates
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+&pinctrl {
+	i2c1_default: i2c1_default {
+		group1 {
+			bias-pull-up;
+		};
+	};
+};
+
+&pico_i2c1 {
+	status = "okay";
+};

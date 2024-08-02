@@ -1,0 +1,17 @@
+identifier: stm32g071b_disco
+name: ST STM32G071B Discovery
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 36
+flash: 128
+supported:
+  - uart
+  - gpio
+  - i2c
+  - watchdog
+  - tcpc
+vendor: st

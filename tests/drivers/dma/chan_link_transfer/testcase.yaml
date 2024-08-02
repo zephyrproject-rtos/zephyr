@@ -1,0 +1,24 @@
+tests:
+  drivers.dma.chan_link_transfer:
+    min_ram: 16
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - frdm_k64f
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1024_evk
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso55s36
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - frdm_k64f
+      - native_sim
+      - native_sim/native/64

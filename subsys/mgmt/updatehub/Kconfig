@@ -1,0 +1,156 @@
+# Copyright (c) 2018-2023 O.S.Systems
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UPDATEHUB
+	bool "UpdateHub Firmware Over-the-Air support"
+	depends on FLASH
+	depends on REBOOT
+	depends on IMG_MANAGER
+	depends on BOOTLOADER_MCUBOOT
+	depends on NETWORKING
+	depends on NET_UDP
+	depends on NET_SOCKETS
+	depends on COAP
+	depends on DNS_RESOLVER
+	depends on JSON_LIBRARY
+	depends on HWINFO
+	select REQUIRES_FULL_LIBC
+	select IMG_ENABLE_IMAGE_CHECK
+	select MPU_ALLOW_FLASH_WRITE
+	select MBEDTLS if !BUILD_WITH_TFM
+	select MBEDTLS_SHA256 if !PSA_CRYPTO_CLIENT
+	help
+	  UpdateHub is an enterprise-grade solution which makes simple to
+	  remotely update all your embedded devices in the field. It
+	  handles all aspects related to sending Firmware Over-the-Air
+	  (FOTA) updates with maximum security and efficiency, while you
+	  focus in adding value to your product.
+
+if UPDATEHUB
+config UPDATEHUB_POLL_INTERVAL
+	int "Time to poll interval (in minutes)"
+	default 1440
+	range 0 43200
+	help
+	  Set the interval that the UpdateHub update server will be polled.
+	  This time interval is zero and 43200 minutes(30 days).
+
+config UPDATEHUB_PRODUCT_UID
+	string "Product Unique Identifier (UID)"
+	help
+	  The product unique identifier is used when communicating
+	  with the UpdateHub server.
+
+config UPDATEHUB_SUPPORTED_HARDWARE_MAX
+	int "Max number of supported hardware"
+	default 1
+	range 1 100
+	help
+	  Configure the max number of supported hardware
+	  by the same image.
+
+config UPDATEHUB_CE
+	bool "Use UpdateHub Community Edition Sever"
+	help
+	  Allow the use of UpdateHub Community
+	  Server (updatehub-ce) as alternative to the
+	  updatehub.io enterprise server.
+
+config UPDATEHUB_SERVER
+	string "User address for the updatehub-ce-server"
+	depends on UPDATEHUB_CE
+	help
+	  This configuration is default, if need to use
+	  other address, must be set on the UpdateHub shell
+
+config UPDATEHUB_SHELL
+	bool "UpdateHub shell utilities"
+	depends on SHELL
+	select KERNEL_SHELL
+	help
+	  Activate shell module that provides UpdateHub commands like
+
+config UPDATEHUB_DTLS
+	bool "Activate communication CoAPS/DTLS"
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select NET_SOCKETS_SOCKOPT_TLS
+	select NET_SOCKETS_ENABLE_DTLS
+	help
+	  Enables DTLS communication between the UpdateHub
+	  client and the server
+
+config UPDATEHUB_COAP_CONN_TIMEOUT
+	int "CoAP connection timeout in seconds"
+	default 10
+	range 1 360
+	help
+	  Set the CoAP connection timeout value.
+
+config UPDATEHUB_COAP_MAX_RETRY
+	int "Maximum retries attempts to download a packet"
+	default 10
+	range 3 10
+	help
+	  Set the maximum number of retries attempts to download a packet
+	  before abort a current update.
+
+config UPDATEHUB_COAP_BLOCK_SIZE_EXP
+	int "Max CoAP block size defined as 2^(4 + EXP)"
+	default 6
+	range 0 6
+	help
+	  Configure the max size of a data payload were value:
+	    0 - COAP_BLOCK_16
+	    1 - COAP_BLOCK_32
+	    2 - COAP_BLOCK_64
+	    3 - COAP_BLOCK_128
+	    4 - COAP_BLOCK_256
+	    5 - COAP_BLOCK_512
+	    6 - COAP_BLOCK_1024
+
+	  This value is mapped directly to enum coap_block_size.
+
+choice
+	prompt "Firmware verification"
+	default UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
+
+config UPDATEHUB_DOWNLOAD_SHA256_VERIFICATION
+	bool "SHA-256 on download"
+	help
+	  Enables SHA-256 verification of data stream while downloading.
+	  Notice that it does not check whether the image written to a
+	  storage is still valid, it only confirms that what has been
+	  downloaded matches the server side SHA.
+
+	  To check if the data written to permanent storage matches the SHA
+	  simultaneously, enable "Both download and flash verifications"
+	  option.
+
+config UPDATEHUB_STORAGE_SHA256_VERIFICATION
+	bool "SHA-256 from flash"
+	help
+	  Enables SHA-256 verification of stored data stream.  When this
+	  option is enabled, the data stream will be read back from the
+	  storage and verified with SHA to make sure that it has been
+	  correctly written.
+
+	  To check if the download data stream matches the SHA simultaneously,
+	  enable "Both download and flash verifications" option.
+
+config UPDATEHUB_DOWNLOAD_STORAGE_SHA256_VERIFICATION
+	bool "SHA-256 from both download and flash"
+	help
+	  Enables SHA-256 verification on both data stream while downloading
+	  and stored data stream on flash.
+
+	  It is advised to leave this option enabled.
+
+endchoice
+
+module = UPDATEHUB
+module-str = Log level for UpdateHub
+module-help = Enables logging for UpdateHub code.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

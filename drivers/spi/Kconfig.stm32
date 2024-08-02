@@ -1,0 +1,52 @@
+# STM32 SPI driver configuration options
+
+# Copyright (c) 2015-2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_STM32
+	bool "STM32 MCU SPI controller driver"
+	default y
+	depends on DT_HAS_ST_STM32_SPI_ENABLED
+	select USE_STM32_LL_SPI
+	help
+	  Enable SPI support on the STM32 family of processors.
+
+if SPI_STM32
+
+config SPI_STM32_INTERRUPT
+	bool "STM32 MCU SPI Interrupt Support"
+	help
+	  Enable Interrupt support for the SPI Driver of STM32 family.
+
+config SPI_STM32_DMA
+	bool "STM32 MCU SPI DMA Support"
+	select DMA
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	help
+	  Enable the SPI DMA mode for SPI instances
+	  that enable dma channels in their device tree node.
+
+config SPI_STM32_USE_HW_SS
+	bool "STM32 Hardware Slave Select support"
+	default y
+	help
+	  Use Slave Select pin instead of software Slave Select.
+
+config SPI_STM32_ERRATA_BUSY
+	bool
+	default y
+	depends on SOC_SERIES_STM32F7X || SOC_SERIES_STM32L4X
+	help
+	  Handles erratum "BSY bit may stay high at the end of a data
+	  transfer in slave mode".
+	  Seen for instance in Errata Sheet 0290 §2.11.2
+
+if SPI_STM32_ERRATA_BUSY
+
+config SPI_STM32_BUSY_FLAG_TIMEOUT
+	int "timeout in us for the STM32 busy flag workaround"
+	default 10000
+
+endif # SPI_STM32_ERRATA_BUSY
+
+endif # SPI_STM32

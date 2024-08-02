@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2020 Lucian Copeland for Adafruit Industries
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f405Xg.dtsi>
+#include <st/f4/stm32f405rgtx-pinctrl.dtsi>
+#include "feather_connector.dtsi"
+
+/ {
+	model = "Adafruit Feather STM32F405 Express";
+	compatible = "adafruit,adafruit_feather_stm32f405", "st,stm32f405";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led: led {
+			gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	aliases {
+		led0 = &led;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <12>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1_nss_pa15 { slew-rate = "very-high-speed"; };
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa15 &spi1_sck_pb3
+		     &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	gd25q16: gd25q16c@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <0x200000>;
+		has-dpd;
+		t-enter-dpd = <20000>;
+		t-exit-dpd = <100000>;
+		jedec-id = [c8 40 15];
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};

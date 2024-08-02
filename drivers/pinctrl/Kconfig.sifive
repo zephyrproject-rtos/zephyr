@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_SIFIVE
+	bool "SiFive Freedom SoC pinmux driver"
+	default y
+	depends on DT_HAS_SIFIVE_PINCTRL_ENABLED
+	help
+	  Enable driver for the SiFive Freedom SoC pinctrl driver

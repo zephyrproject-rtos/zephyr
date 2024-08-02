@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_DRAM_SIZE		DT_SIZE_M(2048)
+
+#include <intel/raptor_lake_p.dtsi>
+
+/ {
+	model = "intel_rpl_p_crb";
+	compatible = "intel,raptor-lake-crb";
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		watchdog0 = &tco_wdt;
+		rtc = &rtc;
+	};
+};

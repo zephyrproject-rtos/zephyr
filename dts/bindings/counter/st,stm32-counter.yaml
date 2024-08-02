@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Kent Hall
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 counters
+
+compatible: "st,stm32-counter"
+
+include: base.yaml

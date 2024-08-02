@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Inter core messaging backend
+
+compatible: "zephyr,ipc-icmsg"
+
+include: base.yaml
+
+properties:
+  tx-region:
+    description: phandle to the shared memory region used for data transmission
+    required: true
+    type: phandle
+
+  rx-region:
+    description: phandle to the shared memory region used for data reception
+    required: true
+    type: phandle
+
+  dcache-alignment:
+    type: int
+    description: |
+      Data cache alignment. If any side of the communication uses cache on
+      rx-region/tx-region this property must be the biggest value of the
+      invalidation or the write-back size for both sides of the communication.
+      If no side of the communication uses data cache this property could be
+      safely omitted.
+      For example:
+        Side A: no data cache
+        Side B: 32 Bytes write-back size, 16 Bytes invalidation size
+        dcache-alignment = 32; for both
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true

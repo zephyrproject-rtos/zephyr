@@ -1,0 +1,17 @@
+common:
+  depends_on: netif
+  tags: net dhcpv4
+  # eventfd API does not work with native_posix so exclude it here
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.dhcpv4_server:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.dhcpv4_server.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.dhcpv4_server.no_probe:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT=0

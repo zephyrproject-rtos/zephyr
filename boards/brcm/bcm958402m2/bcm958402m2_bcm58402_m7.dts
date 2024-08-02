@@ -1,0 +1,30 @@
+/*
+ * Copyright 2020 Broadcom
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/viper-m7.dtsi>
+/ {
+	model = "Broadcom BCM958402M2_M7";
+	compatible = "brcm,viper";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart1 {
+	/*
+	 * Setting the current-speed as 0 will retain the baud rate
+	 * configured by bootrom and it will not be re-configured.
+	 */
+	current-speed = <0>;
+	status = "okay";
+};

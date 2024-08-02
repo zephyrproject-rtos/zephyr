@@ -1,0 +1,14 @@
+# Copyright 2023 Ampere Computing
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This can be used when we need a label property in tests without risk
+  of generating deprecation warnings, which are errors in some
+  configurations.
+
+compatible: vnd,non-deprecated-label
+
+properties:
+  label:
+    type: string
+    required: true

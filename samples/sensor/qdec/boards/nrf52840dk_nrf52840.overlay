@@ -1,0 +1,42 @@
+/*
+ * Copyright 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec0;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+		phase_a: phase_a {
+			/* Arduino D1 */
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		};
+		phase_b: phase_b {
+			/* Arduino D3 */
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+};
+
+&pinctrl {
+	qdec_pinctrl: qdec_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Ardiuno D0 */
+				<NRF_PSEL(QDEC_B, 1, 3)>;   /* Arduino D2 */
+		};
+	};
+};
+
+&qdec0 {
+	status = "okay";
+	pinctrl-0 = <&qdec_pinctrl>;
+	pinctrl-names = "default";
+	steps = < 120 >;
+	led-pre = < 500 >;
+};

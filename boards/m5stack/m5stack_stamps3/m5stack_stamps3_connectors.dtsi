@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2023 Martin Kiepfer
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	m5stack_stamps3_header: m5stack_stamps3_header {
+		compatible = "m5stack,stamps3-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			<0 0 &gpio0 1 0>,	/* GPIO/AIN */
+			<1 0 &gpio0 2 0>,	/* GPIO/AIN */
+			<2 0 &gpio0 3 0>,	/* GPIO/AIN/CLKOUT1-3 */
+			<3 0 &gpio0 4 0>,	/* GPIO/AIN */
+			<4 0 &gpio0 5 0>,	/* GPIO/AIN/SPI2-MOSI */
+			<5 0 &gpio0 6 0>,	/* GPIO/AIN/SPI2-CLK */
+			<6 0 &gpio0 7 0>,	/* GPIO/AIN/SPI2-CS */
+			<7 0 &gpio0 8 0>,	/* GPIO/AIN */
+			<8 0 &gpio0 9 0>,	/* GPIO/AIN/CLKOUT1-4 */
+			<9 0 &gpio0 10 0>,	/* GPIO/AIN */
+			/* 10 GND */
+			<11 0 &gpio0 11 0>,	/* GPIO/AIN/SDA1 */
+			/* 11 5V */
+			<12 0 &gpio0 12 0>,	/* GPIO/AIN/SCL1 */
+			<14 0 &gpio0 13 0>,	/* GPIO/AIN/SDA0 */
+			<15 0 &gpio0 14 0>,	/* GPIO/AIN */
+			<16 0 &gpio0 15 0>,	/* GPIO/AIN/SCL0 */
+			/* 17 GND */
+			<18 0 &gpio1 7 0>,	/* GPIO/CLKOUT0-0 */
+			<19 0 &gpio0 0 0>,	/* GPIO */
+			<20 0 &gpio1 8 0>,	/* GPIO/CLKOUT0-1 */
+			/* 21 EN */
+			<22 0 &gpio1 9 0>,	/* GPIO/CLKOUT1-0 */
+			<23 0 &gpio1 12 0>,	/* GPIO/CLKOUT1-1/RXD0 */
+			<24 0 &gpio1 10 0>,	/* GPIO */
+			<25 0 &gpio1 11 0>,	/* GPIO/CLKOUT1.2/TXD0 */
+			<26 0 &gpio1 14 0>;	/* GPIO */
+			/* 27 3V3 */
+	};
+};
+
+m5stack_stamps3_uart0: &uart0 {};
+m5stack_stamps3_i2c0: &i2c0 {};
+m5stack_stamps3_i2c1: &i2c1 {};
+m5stack_stamps3_clkout0: &mcpwm0 {};
+m5stack_stamps3_spilcd: &spi2 {};

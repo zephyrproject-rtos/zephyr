@@ -1,0 +1,70 @@
+# MPU6050 Six-Axis Motion Tracking device configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MPU6050
+	bool "MPU6050 Six-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_MPU6050_ENABLED
+	select I2C
+	help
+	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
+
+if MPU6050
+
+choice
+	prompt "Trigger mode"
+	default MPU6050_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config MPU6050_TRIGGER_NONE
+	bool "No trigger"
+
+config MPU6050_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select MPU6050_TRIGGER
+
+config MPU6050_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select MPU6050_TRIGGER
+
+endchoice
+
+config MPU6050_TRIGGER
+	bool
+
+config MPU6050_THREAD_PRIORITY
+	int "Thread priority"
+	depends on MPU6050_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config MPU6050_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on MPU6050_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config MPU6050_ACCEL_FS
+	int "Accelerometer full-scale range"
+	default 2
+	help
+	  Magnetometer full-scale range.
+	  An X value for the config represents a range of +/- X g. Valid
+	  values are 2, 4, 8 and 16.
+
+config MPU6050_GYRO_FS
+	int "Gyroscope full-scale range"
+	default 250
+	help
+	  Gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degrees/second.
+	  Valid values are 250, 500, 1000, 2000.
+
+endif # MPU6050

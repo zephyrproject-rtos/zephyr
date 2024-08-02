@@ -1,0 +1,9 @@
+boards:
+  - name: teensy40
+    vendor: pjrc
+    socs:
+      - name: mimxrt1062
+  - name: teensy41
+    vendor: pjrc
+    socs:
+      - name: mimxrt1062

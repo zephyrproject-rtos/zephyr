@@ -1,0 +1,135 @@
+# CAN configuration options
+
+# Copyright (c) 2018 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# CAN options
+#
+menuconfig CAN
+	bool "Controller Area Network (CAN) drivers"
+	help
+	  Enable CAN Driver Configuration
+
+if CAN
+
+module = CAN
+module-str = CAN
+source "subsys/logging/Kconfig.template.log_config"
+
+config CAN_INIT_PRIORITY
+	int "CAN driver init priority"
+	default 80
+	help
+	  CAN driver device initialization priority.
+
+config CAN_DEFAULT_BITRATE
+	int "Default CAN bitrate"
+	default 125000
+	help
+	  Default initial CAN bitrate in bits/s. This can be overridden per CAN controller using the
+	  "bitrate" devicetree property.
+
+config CAN_DEFAULT_BITRATE_DATA
+	int "Default CAN data phase bitrate"
+	default 1000000
+	depends on CAN_FD_MODE
+	help
+	  Default initial CAN data phase bitrate in bits/s. This can be overridden per CAN controller
+	  using the "bitrate-data" devicetree property.
+
+config CAN_SHELL
+	bool "CAN shell"
+	depends on SHELL
+	select POLL
+	help
+	  Enable CAN Shell for testing.
+
+if CAN_SHELL
+
+config CAN_SHELL_TX_QUEUE_SIZE
+	int "CAN shell transmit queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of events in the CAN shell transmit queue.
+
+config CAN_SHELL_RX_QUEUE_SIZE
+	int "CAN shell receive queue size"
+	default 5
+	range 1 256
+	help
+	  Maximum number of CAN frames in the CAN shell receive queue.
+
+config CAN_SHELL_SCRIPTING_FRIENDLY
+	bool "Produce scripting-friendly output"
+	help
+	  Enable scripting-friendly/machine-readable output from the CAN shell. Enabling this
+	  bypasses the shell when printing certain outputs to ensure the output is not interleaved
+	  with the shell prompt.
+
+endif # CAN_SHELL
+
+config CAN_STATS
+	bool "CAN controller device statistics"
+	depends on STATS
+	help
+	  Enable CAN controller device statistics.
+
+config CAN_ACCEPT_RTR
+	bool "Accept Remote Transmission Requests (RTR) frames"
+	help
+	  Accept incoming Remote Transmission Request (RTR) frames matching CAN RX filters. Unless
+	  enabled, all incoming Remote Transmission Request (RTR) frames are rejected at the driver
+	  level.
+
+config CAN_FD_MODE
+	bool "CAN FD support"
+	help
+	  Enable CAN FD support. Not all CAN controllers support CAN FD.
+
+config CAN_MANUAL_RECOVERY_MODE
+	bool "Manual bus-off recovery support"
+	help
+	  Enable support for manual (non-automatic) recovery from bus-off state. Not all CAN
+	  controllers support manual recovery mode.
+
+config CAN_RX_TIMESTAMP
+	bool "Receiving timestamps"
+	help
+	  This option enables a timestamp value of the CAN free running timer.
+	  The value is incremented every bit time and starts when the controller
+	  is initialized. Not all CAN controllers support timestamps.
+
+config CAN_QEMU_IFACE_NAME
+	string "SocketCAN interface name for QEMU"
+	default ""
+	depends on QEMU_TARGET
+	help
+	  The SocketCAN interface name for QEMU. This value, if set, is given as "if" parameter to
+	  the "-object can-host-socketcan" qemu command line option. The CAN interface must be
+	  configured before starting QEMU.
+
+source "drivers/can/Kconfig.sam"
+source "drivers/can/Kconfig.sam0"
+source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.mcux"
+source "drivers/can/Kconfig.mcp2515"
+source "drivers/can/Kconfig.mcan"
+source "drivers/can/Kconfig.rcar"
+source "drivers/can/Kconfig.numaker"
+source "drivers/can/Kconfig.loopback"
+source "drivers/can/Kconfig.native_linux"
+source "drivers/can/Kconfig.sja1000"
+source "drivers/can/Kconfig.esp32"
+source "drivers/can/Kconfig.kvaser"
+source "drivers/can/Kconfig.fake"
+source "drivers/can/Kconfig.nxp_s32"
+source "drivers/can/Kconfig.tcan4x5x"
+source "drivers/can/Kconfig.mcp251xfd"
+source "drivers/can/Kconfig.xmc4xxx"
+source "drivers/can/Kconfig.nrf"
+
+source "drivers/can/transceiver/Kconfig"
+
+endif # CAN

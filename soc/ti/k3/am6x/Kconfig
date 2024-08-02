@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_AM6X_A53
+	select ARM64
+	select CPU_CORTEX_A53
+	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
+
+config SOC_SERIES_AM6X_M4
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_DWT
+	select OPENAMP_RSC_TABLE
+	select UART_NS16550_ACCESS_WORD_ONLY
+	select EXTERNAL_ADDRESS_TRANSLATION
+	select MM_DRV
+	select MM_TI_RAT
+
+config SOC_PART_NUMBER
+	default "AM6234" if SOC_AM6234_A53
+	default "AM6234" if SOC_AM6234_M4
+	default "AM6442" if SOC_AM6442_M4

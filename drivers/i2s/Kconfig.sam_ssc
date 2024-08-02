@@ -1,0 +1,47 @@
+# Atmel SAM I2S bus driver configuration options
+
+# Copyright (c) 2017 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_SAM_SSC
+	bool "Atmel SAM MCU family I2S (SSC) Bus Driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_SSC_ENABLED
+	select DMA
+	help
+	  Enable Inter Sound (I2S) bus driver for Atmel SAM MCU family based on
+	  Synchronous Serial Controller (SSC) module.
+
+if I2S_SAM_SSC
+
+config I2S_SAM_SSC_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_SAM_SSC_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+config I2S_SAM_SSC_0_PIN_RF_EN
+	bool "RF pin enabled"
+	default y
+	help
+	  If enabled RF signal is connected to RF pin. It will be configured as
+	  an output or an input depending on whether the receiver is working
+	  in master or slave mode.
+
+	  If disabled RF signal is disconnected from RF pin and connected
+	  internally to TF (Transmitter Frame Synchro signal).
+
+config I2S_SAM_SSC_0_PIN_RK_EN
+	bool "RK pin enabled"
+	default y
+	help
+	  If enabled RK signal is connected to RK pin. It will be configured as
+	  an output or an input depending on whether the receiver is working
+	  in master or slave mode.
+
+	  If disabled RK signal is disconnected from RK pin and connected
+	  internally to TK (Transmitter Clock signal).
+
+endif # I2S_SAM_SSC

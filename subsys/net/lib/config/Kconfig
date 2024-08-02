@@ -1,0 +1,241 @@
+# Options for networking configuration
+
+# Copyright (c) 2017 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+module = NET_CONFIG
+module-dep = NET_LOG
+module-str = Log level for network config library
+module-help = Enables net config library to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+menuconfig NET_CONFIG_SETTINGS
+	bool "Set network settings for applications"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Allow IP addresses to be set in config file for
+	  networking client/server sample applications, or
+	  some link-layer dedicated settings like the channel.
+	  Beware this is not meant to be used for proper
+	  provisioning but quick sampling/testing.
+
+if NET_CONFIG_SETTINGS
+
+config NET_CONFIG_AUTO_INIT
+	bool "Init networking support automatically during device startup"
+	default n if USB_DEVICE_NETWORK
+	default y
+	help
+	  If this option is set, then the networking system is automatically
+	  initialized when the device is started. If you do not wish to do
+	  this, then disable this and call net_config_init() in your application.
+
+if NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_PRIO
+	int "Startup priority for the network application init"
+	default 95
+
+config NET_CONFIG_NEED_IPV6
+	bool "This application wants IPv6 support"
+	select NET_IPV6
+	help
+	  The network application needs IPv6 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv6.
+
+config NET_CONFIG_NEED_IPV6_ROUTER
+	bool "This application wants IPv6 router to exists"
+	depends on NET_IPV6
+	help
+	  The network application needs IPv6 router to exists before continuing.
+	  What this means that the application wants to wait until it receives
+	  IPv6 router advertisement message before continuing.
+
+config NET_CONFIG_NEED_IPV4
+	bool "This application wants IPv4 support"
+	select NET_IPV4
+	help
+	  The network application needs IPv4 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv4.
+
+endif # NET_CONFIG_AUTO_INIT
+
+config NET_CONFIG_INIT_TIMEOUT
+	int "How long to wait for networking to be ready and available"
+	default 30
+	help
+	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
+	  received within this limit, then the net_config_init() call will fail
+	  during the device startup.
+
+config NET_CONFIG_MY_VLAN_ID
+	int "My VLAN identifier"
+	default 0
+	depends on NET_VLAN
+	help
+	  Use 0 here if uncertain.
+
+if NET_IPV6
+
+config NET_CONFIG_MY_IPV6_ADDR
+	string "My IPv6 address"
+	help
+	  Use 2001:db8::1 here if uncertain.
+
+config NET_CONFIG_PEER_IPV6_ADDR
+	string "Peer IPv6 address"
+	help
+	  This is only applicable in client side applications that try
+	  to establish a connection to peer host.
+	  Use 2001:db8::2 here if uncertain.
+
+endif # NET_IPV6
+
+if NET_IPV4
+
+config NET_CONFIG_MY_IPV4_ADDR
+	string "My IPv4 address"
+	help
+	  Use 192.0.2.1 here if uncertain.
+
+config NET_CONFIG_MY_IPV4_NETMASK
+	string "My IPv4 netmask"
+	default "255.255.255.0"
+	help
+	  Static netmask to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
+config NET_CONFIG_MY_IPV4_GW
+	string "My IPv4 gateway"
+	help
+	  Static gateway to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
+config NET_CONFIG_PEER_IPV4_ADDR
+	string "Peer IPv4 address"
+	help
+	  This is only applicable in client side applications that try
+	  to establish a connection to peer host.
+	  Use 192.0.2.2 here if uncertain.
+
+endif # NET_IPV4
+
+if NET_L2_IEEE802154 || IEEE802154_RAW_MODE
+
+config NET_CONFIG_IEEE802154_PAN_ID
+	hex "IEEE 802.15.4 PAN ID"
+	default 0xabcd
+	help
+	  The PAN ID to use by default in the sample.
+
+config NET_CONFIG_IEEE802154_CHANNEL
+	int "IEEE 802.15.4 channel"
+	default 26
+	help
+	  The channel to use by default in the sample application.
+
+config NET_CONFIG_IEEE802154_RADIO_TX_POWER
+	int "IEEE 802.15.4 TX power in dbm"
+	default 0
+	help
+	  The TX power to use by default in the sample application.
+	  See NET_L2_IEEE802154_RADIO_DFLT_TX_POWER for more info.
+
+config NET_CONFIG_IEEE802154_SECURITY_KEY
+	string "IEEE 802.15.4 security key"
+	default "moooh!"
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The key string to use for the link-layer security part.
+
+config NET_CONFIG_IEEE802154_SECURITY_KEY_MODE
+	int "IEEE 802.15.4 security key mode"
+	default 0
+	range 0 0
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The key mode to use for the link-layer security part.
+	  Only implicit mode is supported, thus 0.
+
+config NET_CONFIG_IEEE802154_SECURITY_LEVEL
+	int "IEEE 802.15.4 security level (0-7)"
+	default 0
+	range 0 7
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  The security level to use for the link-layer security part.
+	  0 means no security
+	  1 authentication only with a 4 bytes length tag
+	  2 authentication only with a 8 bytes length tag
+	  3 authentication only with a 16 bytes length tag
+	  4 deprecated since IEEE 802.15.4-2015
+	  5 encryption/authentication with a 4 bytes length tag
+	  6 encryption/authentication with a 8 bytes length tag
+	  7 encryption/authentication with a 16 bytes length tag
+
+config NET_CONFIG_IEEE802154_ACK_REQUIRED
+	bool "IEEE 802.15.4 acknowledgment"
+	default y
+	help
+	  Whether or not to request and require IEEE 802.15.4 acknowledgment
+	  packets.
+
+endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
+
+endif # NET_CONFIG_SETTINGS
+
+if NET_DHCPV6
+
+config NET_CONFIG_DHCPV6_REQUEST_ADDR
+	bool "Request IPv6 address when configuring DHCPv6 client"
+	default y
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 address from the DHCPv6 server.
+
+config NET_CONFIG_DHCPV6_REQUEST_PREFIX
+	bool "Request IPv6 prefix when configuring DHCPv6 client"
+	help
+	  When DHCPv6 is enabled this will configure the DHCPv6 client to
+	  request IPv6 prefix from the DHCPv6 server.
+
+endif # NET_DHCPV6
+
+config NET_CONFIG_CLOCK_SNTP_INIT
+	bool "Initialize system clock using SNTP on application startup"
+	depends on SNTP && POSIX_CLOCK
+	help
+	  Perform an SNTP request over networking to get and absolute
+	  wall clock time, and initialize system time from it, so
+	  functions like time(), gettimeofday(), etc. returned the
+	  correct absolute time (no just time since system startup).
+	  Requires networking.
+
+if NET_CONFIG_CLOCK_SNTP_INIT
+
+config NET_CONFIG_SNTP_INIT_SERVER
+	string "SNTP server to use for system clock init"
+	default ""
+	help
+	  Zephyr does not provide default setting for this option. Each
+	  application and vendor should choose a suitable setting based
+	  on their locality, needs, and server's terms of service. See
+	  e.g. server information at
+	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
+
+config NET_CONFIG_SNTP_INIT_SERVER_USE_DHCPV4_OPTION
+	bool "SNTP server to use for system clock init is set using DHCPv4 option"
+	default y
+	depends on NET_DHCPV4_OPTION_NTP_SERVER
+	help
+	  If this option is set, then the SNTP server to use for system
+	  clock init can be set using DHCPv4 option.
+
+config NET_CONFIG_SNTP_INIT_TIMEOUT
+	int "SNTP timeout to init system clock (ms)"
+	default 3000
+
+endif # NET_CONFIG_CLOCK_SNTP_INIT

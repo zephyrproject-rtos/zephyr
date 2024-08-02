@@ -1,0 +1,11 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ftm0 {
+	clock-source = "fixed";
+	clocks = <&clock NXP_S32_RTC_CLK>;
+	prescaler = <1>;
+};

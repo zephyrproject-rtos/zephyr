@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BRCMSTB
+	bool "Broadcom Set-top box SoC GPIO Driver"
+	default y
+	depends on DT_HAS_BRCM_BRCMSTB_GPIO_ENABLED
+	help
+	  Enable Driver for Broadcom Set-top box SoC GPIO Banks.

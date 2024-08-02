@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Peripheral SC-only
+  description: Demonstrates Secure Connections Only mode
+tests:
+  sample.bluetooth.peripheral_sc_only:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3

@@ -1,0 +1,13 @@
+# LPC11U6X UART configuration
+
+# Copyright (c) 2020 Seagate Technology
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_LPC11U6X
+	bool "LPC11U6X serial driver"
+	default y
+	depends on DT_HAS_NXP_LPC11U6X_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable UART driver for LPC11U6X series

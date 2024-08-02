@@ -1,0 +1,15 @@
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EMSK
+	select ARC
+
+config SOC_EMSK_EM7D
+	select CPU_HAS_MPU
+
+config SOC_EMSK_EM9D
+	select CPU_HAS_FPU
+
+config SOC_EMSK_EM11D
+	select CPU_HAS_FPU

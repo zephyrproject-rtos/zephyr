@@ -1,0 +1,25 @@
+# ESP32 Ethernet driver configuration options
+
+# Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_ESP32
+	bool "ESP32 Ethernet driver"
+	default y
+	depends on SOC_SERIES_ESP32
+	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
+	select MDIO
+	help
+	  Enable ESP32 Ethernet driver.
+
+if ETH_ESP32
+
+config ETH_ESP32_RX_THREAD_STACK_SIZE
+	int "ESP32 Ethernet receive thread stack size"
+	default 768
+
+config ETH_ESP32_RX_THREAD_PRIORITY
+	int "ESP32 Ethernet receive thread priority"
+	default 2
+
+endif # ETH_ESP32

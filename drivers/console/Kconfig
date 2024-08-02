@@ -1,0 +1,287 @@
+# Console driver configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Setting shared by different subsystems
+
+menuconfig CONSOLE
+	bool "Console drivers"
+
+if CONSOLE
+
+config CONSOLE_INPUT_MAX_LINE_LEN
+	int "Console maximum input line length"
+	default 128
+	help
+	  This option can be used to modify the maximum length a console input
+	  can be.
+
+config CONSOLE_HAS_DRIVER
+	bool
+	help
+	  This is an option to be enabled by console drivers to signal
+	  that some kind of console exists.
+
+config CONSOLE_HANDLER
+	bool "Console input handler"
+	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	help
+	  This option enables console input handler allowing to write simple
+	  interaction between serial console and the OS.
+
+config CONSOLE_INIT_PRIORITY
+	int "Console init priority"
+	default 60 if UART_CONSOLE || XTENSA_SIM_CONSOLE
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  Console driver device initialization priority.
+
+config UART_CONSOLE
+	bool "Use UART for console"
+	depends on SERIAL && SERIAL_HAS_DRIVER
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to use one UART for console.
+
+config UART_CONSOLE_DEBUG_SERVER_HOOKS
+	bool "Debug server hooks in debug console"
+	depends on UART_CONSOLE
+	help
+	  This option allows a debug server agent such as GDB to take over the
+	  handling of traffic that goes through the console logic. The debug
+	  server looks at characters received and decides to handle them itself if
+	  they are some sort of control characters, or let the regular console
+	  code handle them if they are of no special significance to it.
+
+config UART_CONSOLE_MCUMGR
+	bool "UART console mcumgr passthrough"
+	depends on UART_CONSOLE
+	help
+	  Enables the UART console to receive mcumgr frames for image upgrade
+	  and device management.  When enabled, the UART console does not
+	  process mcumgr frames, but it hands them up to a higher level module
+	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
+
+config UART_CONSOLE_INPUT_EXPIRED
+	bool "Support for UART console input expired mechanism"
+	default y
+	depends on UART_CONSOLE && PM
+	help
+	  This option allows a notification to the power management module that
+	  the module for UART console is in use now. If the interval of console
+	  module doesn't receive any input message exceeds expired timeout, such
+	  as UART_CONSOLE_INPUT_EXPIRED_TIMEOUT, the power management module is
+	  allowed to enter sleep/deep sleep state and turn off the clock of UART
+	  console module. This mechanism gives a window in which the users can
+	  organize input message if CONFIG_PM is enabled.
+
+config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
+	int "Fixed amount of time to keep the UART console in use flag true"
+	default 15000
+	depends on UART_CONSOLE_INPUT_EXPIRED
+	help
+	  Fixed amount of time which unit is milliseconds to keep the UART
+	  console in use flag true.
+
+config JAILHOUSE_DEBUG_CONSOLE
+	bool "Use JAILHOUSE_DEBUG console"
+	select CONSOLE_HAS_DRIVER
+	depends on ARM64
+	help
+	  Emit console messages to a jailhouse hypervisor debug console.
+	  Useful in board bring-up if there aren't any working serial
+	  drivers.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
+
+config RAM_CONSOLE
+	bool "Use RAM console"
+	select CONSOLE_HAS_DRIVER
+	select RAM_CONSOLE_BUFFER_SECTION if $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
+	help
+	  Emit console messages to a RAM buffer "ram_console" which can
+	  be examined at runtime with a debugger. Useful in board bring-up
+	  if there aren't any working serial drivers.
+
+config RAM_CONSOLE_BUFFER_SECTION
+	bool "Use dedicated section as RAM console buffer"
+	depends on RAM_CONSOLE && $(dt_chosen_enabled,$(DT_CHOSEN_Z_RAM_CONSOLE))
+	select KERNEL_DIRECT_MAP if MMU
+	help
+	  Use a dedicated section as the RAM console buffer, whose address is
+	  known before build so that the console output messages can be easily
+	  examined by a debugger or software tool from a parallel-running OS.
+
+config RAM_CONSOLE_BUFFER_SIZE
+	int "Ram Console buffer size"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_RAM_CONSOLE)) if RAM_CONSOLE_BUFFER_SECTION
+	default 1024
+	depends on RAM_CONSOLE
+	help
+	  Total size of the RAM console buffer, to ensure it's always
+	  NULL-terminated leave one byte unused, the actual length is
+	  one byte less. Messages will wrap around if the actual length
+	  is exceeded.
+
+config RTT_CONSOLE
+	bool "Use RTT console"
+	depends on USE_SEGGER_RTT
+	select CONSOLE_HAS_DRIVER
+	help
+	  Emit console messages to a RAM buffer that is then read by the
+	  Segger J-Link software and displayed on a computer in real-time.
+	  Requires support for Segger J-Link on the companion IC onboard.
+
+if RTT_CONSOLE
+
+config RTT_TX_RETRY_CNT
+	int "Number of TX retries"
+	default 2
+	help
+	  Number of TX retries before dropping the byte and assuming that
+	  RTT session is inactive.
+
+config RTT_TX_RETRY_DELAY_MS
+	int "Delay between TX retries in milliseconds"
+	default 2
+	help
+	  Sleep period between TX retry attempts. During RTT session, host pulls data
+	  periodically. Period starts from 1-2 milliseconds and can be increased
+	  if traffic on RTT increases (also from host to device). In case of
+	  heavy traffic data can be lost and it may be necessary to increase
+	  delay or number of retries.
+
+config RTT_TX_RETRY_IN_INTERRUPT
+	bool "Busy wait in the interrupt context for TX retry"
+	help
+	  If enabled RTT console will busy wait between TX retries when console
+	  assumes that RTT session is active. In case of heavy traffic data can
+	  be lost and it may be necessary to increase delay or number of
+	  retries.
+
+endif
+
+config IPM_CONSOLE_SENDER
+	bool "Inter-processor Mailbox console sender"
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable the sending side of IPM console
+
+config IPM_CONSOLE_RECEIVER
+	bool "Inter-processor Mailbox console receiver"
+	select RING_BUFFER
+	help
+	  Enable the receiving side of IPM console
+
+config IPM_CONSOLE_STACK_SIZE
+	int "Stack size for IPM console receiver thread"
+	depends on IPM_CONSOLE_RECEIVER
+	default 2048 if COVERAGE_GCOV
+	default 512
+	help
+	  Each instance of the IPM console receiver driver creates a worker
+	  thread to print out incoming messages from the remote CPU. Specify the
+	  stack size for these threads here.
+
+config IPM_CONSOLE
+	bool "Inter-processor Mailbox console"
+	depends on IPM
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable console over Inter-processor Mailbox.
+
+config IPM_CONSOLE_LINE_BUF_LEN
+	int "IPM console line buffer length"
+	default 128
+	depends on IPM_CONSOLE
+	help
+	  IPM console line buffer length specify amount of the buffer
+	  where characters are stored before sending the whole line.
+
+config UART_MCUMGR
+	bool "Mcumgr UART driver"
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable the mcumgr UART driver. This driver allows the application to
+	  communicate over UART using the mcumgr protocol for image upgrade and
+	  device management. The driver doesn't inspect received data (as
+	  contrary to console UART driver) and all aspects of received protocol
+	  data are handled by an application provided callback.
+
+if UART_MCUMGR
+
+config UART_MCUMGR_RX_BUF_SIZE
+	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
+	default 128
+	help
+	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
+	  value must be large enough to accommodate any line sent by an mcumgr
+	  client.
+
+config UART_MCUMGR_RX_BUF_COUNT
+	int "Number of receive buffers for mcumgr fragments received over UART"
+	default 2
+	help
+	  Specifies the number of the mcumgr UART receive buffers.  Receive
+	  buffers hold received mcumgr fragments prior to reassembly.  This
+	  setting's value must satisfy the following relation:
+	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
+	  MCUMGR_TRANSPORT_UART_MTU
+
+endif # UART_MCUMGR
+
+config XTENSA_SIM_CONSOLE
+	bool "Use Xtensa simulator console"
+	depends on SIMULATOR_XTENSA
+	depends on !WINSTREAM_CONSOLE
+	select CONSOLE_HAS_DRIVER
+	default y
+	help
+	  Use simulator console to print messages.
+
+config POSIX_ARCH_CONSOLE
+	bool "Use the host terminal for console"
+	depends on ARCH_POSIX
+	select CONSOLE_HAS_DRIVER
+	help
+	  Zephyr's printk messages will be directed to the host terminal stdout
+
+config POSIX_ARCH_CONSOLE_INIT_PRIORITY
+	int "Init priority"
+	default 99
+	depends on POSIX_ARCH_CONSOLE
+	help
+	  Device driver initialization priority.
+
+config SEMIHOST_CONSOLE
+	bool "Use semihosting for console"
+	select CONSOLE_HAS_DRIVER
+	depends on SEMIHOST
+	help
+	  Enable this option to use semihosting for console.
+	  See SEMIHOST for a more complete description of semihosting.
+
+module = UART_CONSOLE
+module-str = UART console
+source "subsys/logging/Kconfig.template.log_config"
+
+config EFI_CONSOLE
+	bool "Use EFI console for console output"
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable this option to use EFI console output.
+
+config WINSTREAM_CONSOLE
+	bool "Use Winstream console"
+	depends on WINSTREAM
+	select CONSOLE_HAS_DRIVER
+	help
+	  Use winstream as a console.
+
+	  See the WINSTREAM Kconfig help for more information.
+
+endif # CONSOLE

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7/stm32h747.dtsi>
+
+/delete-node/ &flash1;
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(1024)>;
+			};
+		};
+
+		mailbox@58026400 {
+			interrupts = <125 0>;
+		};
+	};
+};

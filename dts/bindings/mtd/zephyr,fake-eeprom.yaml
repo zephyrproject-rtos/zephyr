@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides a fake EEPROM for use as either a stub or a mock in Zephyr testing.
+
+compatible: "zephyr,fake-eeprom"
+
+include: eeprom-base.yaml
+
+properties:
+  size:
+    required: true

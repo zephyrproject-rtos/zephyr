@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NSIM_EM
+	bool
+	select SOC_FAMILY_NSIM_ARC_CLASSIC
+
+config SOC_SERIES
+	default "nsim_em" if SOC_SERIES_NSIM_EM
+
+config SOC_NSIM_EM
+	bool
+	select SOC_SERIES_NSIM_EM
+
+config SOC_NSIM_EM7D_V22
+	bool
+	select SOC_SERIES_NSIM_EM
+
+config SOC_NSIM_EM11D
+	bool
+	select SOC_SERIES_NSIM_EM
+
+config SOC
+	default "nsim_em" if SOC_NSIM_EM
+	default "nsim_em7d_v22" if SOC_NSIM_EM7D_V22
+	default "nsim_em11d" if SOC_NSIM_EM11D

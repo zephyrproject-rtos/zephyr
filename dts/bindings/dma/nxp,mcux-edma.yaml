@@ -1,0 +1,66 @@
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX EDMA controller
+
+compatible: "nxp,mcux-edma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies base physical address(s) and size of DMA and respective DMAMUX register(s)
+      that routes DMA sources
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  dma-requests:
+    required: true
+
+  dmamux-reg-offset:
+    type: int
+    default: 0
+    description:
+      The offset value for obtaining DMAMUX register index from DMAMUX channel.
+      Default value means DMAMUX channel is identical with DMAMUX register index
+
+  channel-gap:
+    type: array
+    description: |
+      On some platforms, there may be a gap in the channels and
+      this array specifies the start and end of a single gap
+
+  nxp,mem2mem:
+    type: boolean
+    description: If the DMA controller supports memory to memory transfer
+
+  nxp,a_on:
+    type: boolean
+    description: If the DMA controller supports always on
+
+  irq-shared-offset:
+    type: int
+    default: 0
+    description: |
+      Describes an offset between two channels share the same interrupt entry.
+      Default value means each channel has separate interrupt entry.
+
+  "#dma-cells":
+    type: int
+    required: true
+    description: Number of items to expect in a DMAMUX specifier
+
+# - #dma-cells : Must be <2>.
+#  The 1st cell specifies the DMA channel which will be used
+#  The 2nd cell specifies the request source (slot) ID.
+#    See the SoC's reference manual for all the supported request sources.
+
+dma-cells:
+  - mux
+  - source

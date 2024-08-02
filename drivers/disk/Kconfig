@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISK_DRIVERS
+	bool "Disk drivers"
+	help
+	  Disk Driver configuration
+
+if DISK_DRIVERS
+
+source "drivers/disk/Kconfig.ram"
+source "drivers/disk/Kconfig.flash"
+source "drivers/disk/Kconfig.sdmmc"
+source "drivers/disk/Kconfig.mmc"
+source "drivers/disk/Kconfig.loopback"
+
+rsource "nvme/Kconfig"
+
+endif # DISK_DRIVERS

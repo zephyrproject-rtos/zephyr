@@ -1,0 +1,15 @@
+# Copyright (c) 2020, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test child bindings
+
+compatible: "vnd,child-bindings"
+
+include: [base.yaml]
+
+child-binding:
+  description: Test child binding
+  properties:
+    val:
+      type: int
+      required: true

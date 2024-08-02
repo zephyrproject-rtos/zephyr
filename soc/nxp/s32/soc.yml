@@ -1,0 +1,22 @@
+family:
+- name: nxp_s32
+  series:
+  - name: s32k1
+    socs:
+    - name: s32k116
+    - name: s32k118
+    - name: s32k142
+    - name: s32k142w
+    - name: s32k144
+    - name: s32k144w
+    - name: s32k146
+    - name: s32k148
+  - name: s32k3
+    socs:
+    - name: s32k344
+  - name: s32ze
+    socs:
+    - name: s32z270
+      cpuclusters:
+      - name: rtu0
+      - name: rtu1

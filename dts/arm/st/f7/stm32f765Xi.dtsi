@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Rahul Arasikere
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f7/stm32f765.dtsi>
+
+/ {
+	soc {
+		flash-controller@40023c00 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(2048)>;
+			};
+		};
+	};
+};

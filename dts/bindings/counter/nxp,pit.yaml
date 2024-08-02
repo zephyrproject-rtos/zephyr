@@ -1,0 +1,20 @@
+# Copyright 2020,2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Periodic Interrupt Timer (PIT)
+
+compatible: "nxp,pit"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  max-load-value:
+    type: int
+    required: true
+    description: maximum load value supported

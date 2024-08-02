@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		out-gpios = <&gpio_4_e 13 0>;
+		in-gpios  = <&gpio_4_e 12 0>;
+	};
+};

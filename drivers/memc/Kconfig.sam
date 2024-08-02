@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_SAM_SMC
+	bool "Atmel Static Memory Controller (SMC)"
+	default y
+	depends on DT_HAS_ATMEL_SAM_SMC_ENABLED
+	help
+	  Enable Atmel Static Memory Controller.

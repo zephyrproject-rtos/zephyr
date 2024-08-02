@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024, Eve Redero
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+/ {
+	pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&stmpe811>;
+		invert-y;
+	};
+};

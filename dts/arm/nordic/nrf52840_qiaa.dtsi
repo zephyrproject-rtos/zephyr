@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf52840.dtsi>
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+};
+
+/ {
+	soc {
+		compatible = "nordic,nrf52840-qiaa", "nordic,nrf52840",
+			     "nordic,nrf52", "simple-bus";
+	};
+};

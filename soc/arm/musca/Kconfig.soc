@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MUSCA
+	bool
+	select SOC_FAMILY_ARM
+	help
+	   ARM v2m MUSCA MCU Series
+
+config SOC_V2M_MUSCA_B1
+	bool
+	select SOC_SERIES_MUSCA
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MUSCA-B1
+
+config SOC_V2M_MUSCA_S1
+	bool
+	select SOC_SERIES_MUSCA
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MUSCA-S1
+
+config SOC_SERIES
+	default "musca" if SOC_SERIES_MUSCA
+
+config SOC
+	default "musca_b1" if SOC_V2M_MUSCA_B1
+	default "musca_s1" if SOC_V2M_MUSCA_S1

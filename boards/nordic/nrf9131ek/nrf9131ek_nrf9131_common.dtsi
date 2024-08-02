@@ -1,0 +1,226 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "nrf9131ek_nrf9131_common-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nordic nRF9131 EK NRF9131";
+	compatible = "nordic,nrf9131-ek-nrf9131";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 1";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED 3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(8) PWM_POLARITY_NORMAL>;
+		};
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm0 1 PWM_MSEC(8) PWM_POLARITY_NORMAL>;
+		};
+		pwm_led2: pwm_led_2 {
+			pwms = <&pwm0 2 PWM_MSEC(8) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+		sw0 = &button0;
+		bootloader-led0 = &led0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c2 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	pmic_main: npm1300@6b {
+		compatible = "nordic,npm1300";
+		reg = <0x6b>;
+		pmic_charger: charger {
+			compatible = "nordic,npm1300-charger";
+			term-microvolt = <4150000>;
+			term-warm-microvolt = <4000000>;
+			current-microamp = <150000>;
+			dischg-limit-microamp = <1000000>;
+			vbus-limit-microamp = <500000>;
+			thermistor-ohms = <10000>;
+			thermistor-beta = <3380>;
+			charging-enable;
+		};
+		regulators {
+			compatible = "nordic,npm1300-regulator";
+			BUCK1 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-boot-on;
+			};
+			BUCK2 {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-boot-on;
+			};
+		};
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	gd25wb256: gd25wb256e3ir@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		size = <268435456>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <40000>;
+		sfdp-bfp = [
+			e5 20 f3 ff  ff ff ff 0f  44 eb 08 6b  08 3b 42 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  44 7a c9 fe  83 67 26 62  ec 82 18 44
+			7a 75 7a 75  04 c4 d5 5c  00 06 74 00  08 50 00 01
+			];
+		jedec-id = [c8 65 19];
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x10000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@85000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c5000 {
+			label = "image-1-nonsecure";
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_modem: image_modem@20016000 {
+			/* Modem (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "nrf9131ek_nrf9131_partition_conf.dtsi"

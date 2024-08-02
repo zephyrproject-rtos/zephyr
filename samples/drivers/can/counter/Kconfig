@@ -1,0 +1,15 @@
+# Private config options for can sample app
+
+# Copyright (c) 2018 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Controller Area Network sample application"
+
+config LOOPBACK_MODE
+	bool "Loopback LOOPBACK_MODE"
+	default y
+	help
+	  Set the controller to loopback mode.
+	  This allows testing without a second board.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,13 @@
+# NPCX PWM driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NPCX
+	bool "Nuvoton NPCX embedded controller (EC) PWM driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_PWM_ENABLED
+	help
+	  This option enables the PWM driver for NPCX family of
+	  processors.
+	  Say y if you wish to use pwm ports on NPCX MCU.

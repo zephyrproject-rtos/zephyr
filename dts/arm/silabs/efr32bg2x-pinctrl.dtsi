@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022 Silicon Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/silabs/gpio_gecko.h>
+#include <dt-bindings/pinctrl/gecko-pinctrl.h>
+
+&pinctrl {
+	/* configuration for usart0 device, operating as SPI */
+	usart0_default: usart0_default {
+		group1 {
+			psels = <GECKO_PSEL(SPI_SCK, C, 2)>,
+				<GECKO_PSEL(SPI_MOSI, C, 0)>,
+				<GECKO_PSEL(SPI_MISO, C, 1)>;
+		};
+	};
+
+	/* configuration for usart1 device, default state - operating as UART */
+	usart1_default: usart1_default {
+		group1 {
+			/* configure PA.6 as UART_RX and PA.5 as UART_TX */
+			psels = <GECKO_PSEL(UART_TX, A, 5)>,
+				<GECKO_PSEL(UART_RX, A, 6)>,
+				<GECKO_LOC(UART, 1)>;
+		};
+	};
+};

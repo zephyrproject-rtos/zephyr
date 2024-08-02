@@ -1,0 +1,16 @@
+identifier: steval_stwinbx1
+name: STEVAL STWINBX1 Development kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 786
+flash: 2048
+supported:
+  - counter
+  - gpio
+  - pwm
+  - watchdog
+  - ble
+vendor: st

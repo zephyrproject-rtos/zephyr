@@ -1,0 +1,122 @@
+# Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 Pinctrl container node
+
+  This is a singleton node responsible for controlling the pin function selection
+  and pin properties. For example, you can use this node to route
+  UART0 RX to a particular port/pin and enable the pull-up resistor on that
+  pin.
+
+  The node has the 'pinctrl' node label set in SoC's devicetree,
+  so you can modify it like this:
+
+  &pinctrl {
+      /* Your modifications go here */
+  };
+
+  Pin configuration can also specify the pin properties, for example the
+  'bias-pull-up' property. Here is a list of the supported standard pin
+  properties:
+    * bias-high-impedance
+    * bias-pull-up
+    * bias-pull-down
+    * drive-open-drain
+    * drive-open-source
+    * drive-push-pull   (strong)
+    * input-enable      (input-buffer)
+
+  Infineon CAT1 SoC's devicetree includes a set of pre-defined pin control
+  Nodes, which can be found via MPN dtsi.
+  For example, board cy8cproto_062_4343w uses the CY8C624ABZI_S2D44 part, so
+  board dts (boards\arm\cy8cproto_062_4343w\cy8cproto_062_4343w.dts) includes MPN dts
+  (infineon/psoc6/mpns/CY8C624ABZI_S2D44.dtsi).
+
+  Each MPN dtsi includes package dtsi (../psoc6_xx/psoc6_xx.yyy-zzz.dtsi),
+  For example, CY8C624ABZI_S2D44 includes "../psoc6_02/psoc6_02.124-bga.dtsi".
+
+  An example of pre-defined pin control from package dtsi (e.g. psoc6_02.124-bga.dtsi):
+  p3_0_scb2_uart_rx - RX pin UART2 (SCB2) which connected to port3.0
+
+    /omit-if-no-ref/ p3_0_scb2_uart_rx: p3_0_scb2_uart_rx {
+          pinmux = <DT_CAT1_PINMUX(3, 0, HSIOM_SEL_ACT_6)>;
+    };
+
+  Refer to psoc6_02.124-bga.dtsi for the list of all pre-defined pin control nodes.
+
+  NOTE1 Pre-defined pin control nodes use macro DT_CAT1_PINMUX to
+    initialize pinmux. DT_CAT1_PINMUX has the following input parameters
+    DT_CAT1_PINMUX(port_number, pin_number, hsiom),
+    hsiom is defined in the HSIOM_SEL_xxx macros in the
+    zephyr\include\zephyr\dt-bindings\pinctrl\ifx_cat1-pinctrl.h file.
+
+        You can use DT_CAT1_PINMUX to define your own pin control node:
+          &pinctrl {
+              my_uart_rx: my_uart_rx {
+                  pinmux = <DT_CAT1_PINMUX(3, 0, HSIOM_SEL_ACT_6)>;
+              };
+          };
+
+  NOTE2 Pre-defined pin control nodes do not have bias pin configuration.
+    The bias configuration can be updated in board-pinctrl.dtsi
+    &pinctrl {
+      /* Configure pin control Bias mode for uart2 pins */
+      p3_1_scb2_uart_tx {
+        drive-push-pull;
+      };
+
+      p3_0_scb2_uart_rx {
+        input-enable;
+      };
+
+      p3_2_scb2_uart_rts {
+        drive-push-pull;
+      };
+
+      p3_3_scb2_uart_cts {
+        input-enable;
+      };
+    };
+
+  An example of the usage of pre-defined pin control nodes in your board's DTS file:
+
+    &uart5 {
+      pinctrl-0 = <&p5_1_scb5_uart_tx &p5_0_scb5_uart_rx>;
+      pinctrl-names = "default";
+    };
+
+    /* Configure pin control bias mode for uart5 pins */
+    &p5_1_scb5_uart_tx {
+      drive-push-pull;
+    };
+
+    &p5_0_scb5_uart_rx {
+      input-enable;
+    };
+
+compatible: "infineon,cat1-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: This binding gives a base representation of the Infineon CAT1 pins configuration
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-high-impedance
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - drive-open-source
+        - input-enable
+
+  properties:
+    pinmux:
+      description: |
+        Encodes port/pin and alternate function.
+      required: true
+      type: int

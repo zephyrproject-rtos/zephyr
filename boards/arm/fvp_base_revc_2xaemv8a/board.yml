@@ -1,0 +1,9 @@
+board:
+  name: fvp_base_revc_2xaemv8a
+  vendor: arm
+  socs:
+  - name: fvp_base_revc_2xaemv8a
+    variants:
+    - name: smp
+      variants:
+      - name: ns

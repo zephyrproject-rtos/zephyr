@@ -1,0 +1,59 @@
+sample:
+  description: BSD Sockets API HTTP GET example
+  name: socket_http_get
+common:
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  depends_on: netif
+  min_ram: 32
+  min_flash: 80
+  tags:
+    - net
+    - socket
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  sample.net.sockets.http_get:
+    filter: not CONFIG_NET_SOCKETS_OFFLOAD and not CONFIG_NATIVE_LIBC
+    harness: net
+    platform_exclude:
+      - cc3220sf_launchxl
+      - cc3235sf_launchxl
+      - native_posix
+      - native_posix/native/64
+    extra_configs:
+      - CONFIG_POSIX_API=y
+  sample.net.sockets.http_get.offload.simplelink:
+    platform_allow: cc3220sf_launchxl
+    harness: net
+    tags:
+      - net
+      - socket
+      - offload
+      - simplelink
+  sample.net.sockets.http_get.nsos.http:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*)<BODY>(.*)"
+        - "The document has moved"
+        - "(.*)</BODY>(.*)"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: OVERLAY_CONFIG="overlay-nsos.conf"
+  sample.net.sockets.http_get.nsos.https:
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "(.*)<BODY>(.*)"
+        - "The document has moved"
+        - "(.*)</BODY>(.*)"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args: OVERLAY_CONFIG="overlay-nsos.conf;overlay-tls.conf"

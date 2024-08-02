@@ -1,0 +1,27 @@
+# Copyright (c) 2018 Aapo Vienamo
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Nordic nRF family TWI peripherals
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.

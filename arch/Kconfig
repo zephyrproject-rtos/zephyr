@@ -1,0 +1,1086 @@
+# General architecture configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2015 Intel Corporation
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+
+source "$(ARCH_DIR)/Kconfig.$(HWM_SCHEME)"
+
+# ToDo: Generate a Kconfig.arch for loading of additional arch in HWMv2.
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
+
+# Architecture symbols
+#
+# Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
+# by SOC_*.
+
+config ARC
+	bool
+	select ARCH_IS_SET
+	imply XIP
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_DIRECTED_IPIS
+	help
+	  ARC architecture
+
+config ARM
+	bool
+	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
+	select ARCH_SUPPORTS_COREDUMP_THREADS if CPU_CORTEX_M
+	# FIXME: current state of the code for all ARM requires this, but
+	# is really only necessary for Cortex-M with ARM MPU!
+	select GEN_PRIV_STACKS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
+	select BARRIER_OPERATIONS_ARCH
+	help
+	  ARM architecture
+
+config ARM64
+	bool
+	select ARCH_IS_SET
+	select 64BIT
+	select ARCH_SUPPORTS_COREDUMP
+	select HAS_ARM_SMCCC
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_DIRECTED_IPIS
+	help
+	  ARM64 (AArch64) architecture
+
+config MIPS
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	help
+	  MIPS architecture
+
+config SPARC
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select BIG_ENDIAN
+	select ATOMIC_OPERATIONS_BUILTIN if SPARC_CASA
+	select ATOMIC_OPERATIONS_C if !SPARC_CASA
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  SPARC architecture
+
+config X86
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !X86_64
+	select CPU_HAS_MMU
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_GDBSTUB if !X86_64
+	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_DEMAND_PAGING if !X86_64
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
+					  && !BOARD_HAS_TIMING_FUNCTIONS \
+					  && !SOC_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_STACK_CANARIES_TLS
+	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
+	help
+	  x86 architecture
+
+config NIOS2
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	imply XIP
+	select ARCH_HAS_TIMING_FUNCTIONS
+	help
+	  Nios II Gen 2 architecture
+
+config RISCV
+	bool
+	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
+	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_STACKWALK
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
+	select BARRIER_OPERATIONS_BUILTIN
+	imply XIP
+	help
+	  RISCV architecture
+
+config XTENSA
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
+	select ARCH_HAS_CODE_DATA_RELOCATION
+	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_HAS_DIRECTED_IPIS
+	select THREAD_STACK_INFO
+	help
+	  Xtensa architecture
+
+config ARCH_POSIX
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
+	select ARCH_HAS_THREAD_ABORT
+	select NATIVE_BUILD
+	select HAS_COVERAGE_SUPPORT
+	select BARRIER_OPERATIONS_BUILTIN
+	# POSIX arch based targets get their memory cleared on entry by the host OS
+	select SKIP_BSS_CLEAR
+	# Override the C standard used for compilation to C 2011
+	# This is due to some tests using _Static_assert which is a 2011 feature, but
+	# otherwise relying on compilers supporting it also when set to C99.
+	# This was in general ok, but with some host compilers and C library versions
+	# it led to problems. So we override it to 2011 for the native targets.
+	select REQUIRES_STD_C11
+	help
+	  POSIX (native) architecture
+
+config ARCH_IS_SET
+	bool
+	help
+	  Helper symbol to detect SoCs forgetting to select one of the arch
+	  symbols above. See the top-level CMakeLists.txt.
+
+menu "General Architecture Options"
+
+source "arch/common/Kconfig"
+
+module = ARCH
+module-str = arch
+source "subsys/logging/Kconfig.template.log_config"
+
+config BIG_ENDIAN
+	bool
+	help
+	  This option tells the build system that the target system is big-endian.
+	  Little-endian architecture is the default and should leave this option
+	  unselected.  This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
+	  and command line option for gen_isr_tables.py.
+
+config LITTLE_ENDIAN
+	# Hidden Kconfig option representing the default little-endian architecture
+	# This is just the opposite of BIG_ENDIAN and is used for non-negative
+	# conditional compilation
+	bool
+	depends on !BIG_ENDIAN
+	default y
+
+config 64BIT
+	bool
+	help
+	  This option tells the build system that the target system is
+	  using a 64-bit address space, meaning that pointer and long types
+	  are 64 bits wide. This option is selected by arch/$ARCH/Kconfig,
+	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
+	  avoid modifying it.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_SRAM := zephyr,sram
+
+config SRAM_SIZE
+	int "SRAM Size in kB"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+	help
+	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
+	  devicetree. The user should generally avoid changing it via menuconfig or
+	  in configuration files.
+
+config SRAM_BASE_ADDRESS
+	hex "SRAM Base Address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  The SRAM base address. The default value comes from
+	  /chosen/zephyr,sram in devicetree. The user should generally avoid
+	  changing it via menuconfig or in configuration files.
+
+if ARC || ARM || ARM64 || NIOS2 || X86 || RISCV
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && (ARM ||ARM64)) || !ARM
+	default 0 if !XIP
+	help
+	  This option specifies the size of the flash in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && (ARM || ARM64)) || !ARM
+	default 0 if !XIP
+	help
+	  This option specifies the base address of the flash on the board. It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
+
+endif # ARM || ARM64 || ARC || NIOS2 || X86 || RISCV
+
+if ARCH_HAS_TRUSTED_EXECUTION
+
+config TRUSTED_EXECUTION_SECURE
+	bool "Trusted Execution: Secure firmware image"
+	help
+	  Select this option to enable building a Secure firmware
+	  image for a platform that supports Trusted Execution. A
+	  Secure firmware image will execute in Secure state. It may
+	  allow the CPU to execute in Non-Secure (Normal) state.
+	  Therefore, a Secure firmware image shall be able to
+	  configure security attributions of CPU resources (memory
+	  areas, peripherals, interrupts, etc.) as well as to handle
+	  faults, related to security violations. It may optionally
+	  allow certain functions to be called from the Non-Secure
+	  (Normal) domain.
+
+config TRUSTED_EXECUTION_NONSECURE
+	depends on !TRUSTED_EXECUTION_SECURE
+	bool "Trusted Execution: Non-Secure firmware image"
+	help
+	  Select this option to enable building a Non-Secure
+	  firmware image for a platform that supports Trusted
+	  Execution. A Non-Secure firmware image will execute
+	  in Non-Secure (Normal) state. Therefore, it shall not
+	  access CPU resources (memory areas, peripherals,
+	  interrupts etc.) belonging to the Secure domain.
+
+endif # ARCH_HAS_TRUSTED_EXECUTION
+
+config HW_STACK_PROTECTION
+	bool "Hardware Stack Protection"
+	depends on ARCH_HAS_STACK_PROTECTION
+	help
+	  Select this option to enable hardware-based platform features to
+	  catch stack overflows when the system is running in privileged
+	  mode. If CONFIG_USERSPACE is not enabled, the system is always
+	  running in privileged mode.
+
+	  Note that this does not necessarily prevent corruption and assertions
+	  about the overall system state when a fault is triggered cannot be
+	  made.
+
+config USERSPACE
+	bool "User mode threads"
+	depends on ARCH_HAS_USERSPACE
+	depends on RUNTIME_ERROR_CHECKS
+	depends on SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
+	select LINKER_USE_NO_RELAX
+	help
+	  When enabled, threads may be created or dropped down to user mode,
+	  which has significantly restricted permissions and must interact
+	  with the kernel via system calls. See Zephyr documentation for more
+	  details about this feature.
+
+	  If a user thread overflows its stack, this will be caught and the
+	  kernel itself will be shielded from harm. Enabling this option
+	  may or may not catch stack overflows when the system is in
+	  privileged mode or handling a system call; to ensure these are always
+	  caught, enable CONFIG_HW_STACK_PROTECTION.
+
+config PRIVILEGED_STACK_SIZE
+	int "Size of privileged stack"
+	default 2048 if EMUL
+	default 1024
+	depends on ARCH_HAS_USERSPACE
+	help
+	  This option sets the privileged stack region size that will be used
+	  in addition to the user mode thread stack.  During normal execution,
+	  this region will be inaccessible from user mode.  During system calls,
+	  this region will be utilized by the system call. This value must be
+	  a multiple of the minimum stack alignment.
+
+config KOBJECT_TEXT_AREA
+	int "Size of kobject text area"
+	default 512 if COVERAGE_GCOV
+	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES && RISCV
+	default 256
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Size of kernel object text area. Used in linker script.
+
+config KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT
+	int "Reserve extra kobject data area (in percentage)"
+	default 100
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Multiplication factor used to calculate the size of placeholder to
+	  reserve space for kobject metadata hash table. The hash table is
+	  generated via gperf is highly dependent on the absolute addresses of
+	  kobjects which might change between prebuilts. To reserve enough
+	  space for the hash table during final linking passes to keep
+	  kobjects in same place, the size of reserved space is calculated
+	  from the first prebuilt plus additional space calculated with
+	  this percentage (of the kobject data area in first prebuilt).
+
+config KOBJECT_RODATA_AREA_EXTRA_BYTES
+	int "Reserve extra bytes for kobject rodata area"
+	default 16
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Reserve a few more bytes for the RODATA region for kobject metadata.
+	  This is to account for the uncertainty of tables generated by gperf.
+
+config GEN_PRIV_STACKS
+	bool
+	help
+	  Selected if the architecture requires that privilege elevation stacks
+	  be allocated in a separate memory area. This is typical of arches
+	  whose MPUs require regions to be power-of-two aligned/sized.
+
+	  FIXME: This should be removed and replaced with checks against
+	  CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT, but both ARM and ARC
+	  changes will be necessary for this.
+
+config STACK_GROWS_UP
+	bool "Stack grows towards higher memory addresses"
+	help
+	  Select this option if the architecture has upward growing thread
+	  stacks. This is not common.
+
+config NO_UNUSED_STACK_INSPECTION
+	bool
+	help
+	  Selected if the architecture will generate a fault if unused stack
+	  memory is examined, which is the region between the current stack
+	  pointer and the deepest available address in the current stack
+	  region.
+
+config MAX_THREAD_BYTES
+	int "Bytes to use when tracking object thread permissions"
+	default 2
+	depends on USERSPACE
+	help
+	  Every kernel object will have an associated bitfield to store
+	  thread permissions for that object. This controls the size of the
+	  bitfield (in bytes) and imposes a limit on how many threads can
+	  be created in the system.
+
+config DYNAMIC_OBJECTS
+	bool "Allow kernel objects to be allocated at runtime"
+	depends on USERSPACE
+	help
+	  Enabling this option allows for kernel objects to be requested from
+	  the calling thread's resource pool, at a slight cost in performance
+	  due to the supplemental run-time tables required to validate such
+	  objects.
+
+	  Objects allocated in this way can be freed with a supervisor-only
+	  API call, or when the number of references to that object drops to
+	  zero.
+
+config NOCACHE_MEMORY
+	bool "Support for uncached memory"
+	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Add a "nocache" read-write memory section that is configured to
+	  not be cached. This memory section can be used to perform DMA
+	  transfers when cache coherence issues are not optimal or can not
+	  be solved using cache maintenance operations.
+
+config FRAME_POINTER
+	bool "Compile the kernel with frame pointers"
+	select OVERRIDE_FRAME_POINTER_DEFAULT
+	help
+	  Select Y here to gain precise stack traces at the expense of slightly
+	  increased size and decreased speed.
+
+config ARCH_STACKWALK_MAX_FRAMES
+	int "Max depth for stack walk function"
+	default 8
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Depending on implementation, this can place a hard limit on the depths of the stack
+	  for the stack walk function to examine.
+
+menu "Interrupt Configuration"
+
+config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	bool
+	default y
+	# Userspace is currently not supported
+	depends on !USERSPACE
+	# List of currently supported architectures
+	depends on ARM || ARM64
+	# List of currently supported toolchains
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb"
+
+config ISR_TABLES_LOCAL_DECLARATION
+	bool "ISR tables created locally and placed by linker [EXPERIMENTAL]"
+	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  Enable new scheme of interrupt tables generation.
+	  This is totally different generator that would create tables entries locally
+	  where the IRQ_CONNECT macro is called and then use the linker script to position it
+	  in the right place in memory.
+	  The most important advantage of such approach is that the generated interrupt tables
+	  are LTO compatible.
+	  The drawback is that the support on the architecture port is required.
+
+config DYNAMIC_INTERRUPTS
+	bool "Installation of IRQs at runtime"
+	help
+	  Enable installation of interrupts at runtime, which will move some
+	  interrupt-related data structures to RAM instead of ROM, and
+	  on some architectures increase code size.
+
+config SHARED_INTERRUPTS
+	bool "Set this to enable support for shared interrupts"
+	depends on GEN_SW_ISR_TABLE
+	select EXPERIMENTAL
+	help
+	  Set this to enable support for shared interrupts. Use this with
+	  caution as enabling this will increase the image size by a
+	  non-negligible amount.
+
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	int "Maximum number of clients allowed per shared interrupt"
+	default 2
+	depends on SHARED_INTERRUPTS
+	help
+	  This option controls the maximum number of clients allowed
+	  per shared interrupt. Set this according to your needs.
+
+config GEN_ISR_TABLES
+	bool "Use generated IRQ tables"
+	help
+	  This option controls whether a platform uses the gen_isr_tables
+	  script to generate its interrupt tables. This mechanism will create
+	  an appropriate hardware vector table and/or software IRQ table.
+
+config GEN_IRQ_VECTOR_TABLE
+	bool "Generate an interrupt vector table"
+	default y
+	depends on GEN_ISR_TABLES
+	help
+	  This option controls whether a platform using gen_isr_tables
+	  needs an interrupt vector table created. Only disable this if the
+	  platform does not use a vector table at all, or requires the vector
+	  table to be in a format that is not an array of function pointers
+	  indexed by IRQ line. In the latter case, the vector table must be
+	  supplied by the application or architecture code.
+
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	int "Alignment size of the interrupt vector table"
+	default 4
+	depends on GEN_IRQ_VECTOR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _irq_vector_table.  Some architecture needs an IRQ vector table
+	  to be aligned to architecture specific size.  The default
+	  size is 0 for no alignment.
+
+choice IRQ_VECTOR_TABLE_TYPE
+	prompt "IRQ vector table type"
+	depends on GEN_IRQ_VECTOR_TABLE
+	default IRQ_VECTOR_TABLE_JUMP_BY_CODE if (RISCV && !RISCV_HAS_CLIC)
+	default IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+
+config IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS
+	bool "Jump by address"
+	help
+	  The IRQ vector table contains the address of the interrupt handler.
+
+config IRQ_VECTOR_TABLE_JUMP_BY_CODE
+	bool "Jump by code"
+	help
+	  The IRQ vector table contains the opcode of a jump instruction to the
+	  interrupt handler address.
+
+endchoice
+
+config GEN_SW_ISR_TABLE
+	bool "Generate a software ISR table"
+	default y
+	depends on GEN_ISR_TABLES
+	help
+	  This option controls whether a platform using gen_isr_tables
+	  needs a software ISR table table created. This is an array of struct
+	  _isr_table_entry containing the interrupt service routine and supplied
+	  parameter.
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	int "Alignment size of a software ISR table"
+	default 64 if RISCV_HAS_CLIC
+	default 4
+	depends on GEN_SW_ISR_TABLE
+	help
+	  This option controls alignment size of generated
+	  _sw_isr_table.  Some architecture needs a software ISR table
+	  to be aligned to architecture specific size.  The default
+	  size is 4.
+
+config GEN_IRQ_START_VECTOR
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	  On some architectures, part of the vector table may be reserved for
+	  system exceptions and is declared separately from the tables
+	  created by gen_isr_tables.py. When creating these tables, this value
+	  will be subtracted from CONFIG_NUM_IRQS to properly size them.
+	  This is a hidden option which needs to be set per architecture and
+	  left alone.
+
+config IRQ_OFFLOAD
+	bool "IRQ offload"
+	depends on TEST
+	help
+	  Enable irq_offload() API which allows functions to be synchronously
+	  run in interrupt context. Only useful for test cases that need
+	  to validate the correctness of kernel objects in IRQ context.
+
+config IRQ_OFFLOAD_NESTED
+	bool "irq_offload() supports nested IRQs"
+	depends on IRQ_OFFLOAD
+	help
+	  When set by the arch layer, indicates that irq_offload() may
+	  legally be called in interrupt context to cause a
+	  synchronous nested interrupt on the current CPU.  Not all
+	  hardware is capable.
+
+config EXCEPTION_DEBUG
+	bool "Unhandled exception debugging"
+	default y
+	depends on PRINTK || LOG
+	help
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
+
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
+config SIMPLIFIED_EXCEPTION_CODES
+	bool "Convert arch specific exception codes to K_ERR_CPU_EXCEPTION"
+	default y if ZTEST
+	help
+	  The same piece of faulty code (NULL dereference, etc) can result in
+	  a multitude of potential exception codes at the CPU level, depending
+	  upon whether addresses exist, an MPU is configured, the particular
+	  implementation of the CPU or any number of other reasons. Enabling
+	  this option collapses all the architecture specific exception codes
+	  down to the generic K_ERR_CPU_EXCEPTION, which makes testing code
+	  much more portable.
+
+endmenu # Interrupt configuration
+
+config INIT_ARCH_HW_AT_BOOT
+	bool "Initialize internal architecture state at boot"
+	depends on ARCH_SUPPORTS_ARCH_HW_INIT
+	help
+	  This option instructs Zephyr to force the initialization
+	  of the internal architectural state (for example ARCH-level
+	  HW registers and system control blocks) during boot to
+	  the reset values as specified by the corresponding
+	  architecture manual. The option is useful when the Zephyr
+	  firmware image is chain-loaded, for example, by a debugger
+	  or a bootloader, and we need to guarantee that the internal
+	  states of the architecture core blocks are restored to the
+	  reset values (as specified by the architecture).
+
+	  Note: the functionality is architecture-specific. For the
+	  implementation details refer to each architecture where
+	  this feature is supported.
+
+endmenu
+
+#
+# Architecture Capabilities
+#
+
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	bool
+
+config ARCH_HAS_TIMING_FUNCTIONS
+	bool
+
+config ARCH_HAS_TRUSTED_EXECUTION
+	bool
+
+config ARCH_HAS_STACK_PROTECTION
+	bool
+
+config ARCH_HAS_USERSPACE
+	bool
+
+config ARCH_HAS_EXECUTABLE_PAGE_BIT
+	bool
+
+config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	bool
+
+config ARCH_HAS_RAMFUNC_SUPPORT
+	bool
+
+config ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	bool
+
+config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_SUPPORTS_COREDUMP_THREADS
+	bool
+
+config ARCH_SUPPORTS_ARCH_HW_INIT
+	bool
+
+config ARCH_SUPPORTS_ROM_START
+	bool
+
+config ARCH_HAS_EXTRA_EXCEPTION_INFO
+	bool
+
+config ARCH_HAS_GDBSTUB
+	bool
+
+config ARCH_HAS_STACKWALK
+	bool
+	help
+	  This is selected when the architecture implemented the arch_stack_walk() API.
+
+config ARCH_HAS_COHERENCE
+	bool
+	help
+	  When selected, the architecture supports the
+	  arch_mem_coherent() API and can link into incoherent/cached
+	  memory using the ".cached" linker section.
+
+config ARCH_HAS_THREAD_LOCAL_STORAGE
+	bool
+
+config ARCH_HAS_SUSPEND_TO_RAM
+	bool
+	help
+	  When selected, the architecture supports suspend-to-RAM (S2RAM).
+
+config ARCH_HAS_STACK_CANARIES_TLS
+	bool
+
+config ARCH_SUPPORTS_MEM_MAPPED_STACKS
+	bool
+	help
+	  Select when the architecture supports memory mapped stacks.
+
+#
+# Other architecture related options
+#
+
+config ARCH_HAS_THREAD_ABORT
+	bool
+
+config ARCH_HAS_CODE_DATA_RELOCATION
+	bool
+	help
+	  When selected, the architecture/SoC implements support for
+	  CODE_DATA_RELOCATION in its linker scripts.
+
+#
+# Hidden CPU family configs
+#
+
+config CPU_HAS_TEE
+	bool
+	help
+	  This option is enabled when the CPU has support for Trusted
+	  Execution Environment (e.g. when it has a security attribution
+	  unit).
+
+config CPU_HAS_DCLS
+	bool
+	help
+	  This option is enabled when the processor hardware has support for
+	  Dual-redundant Core Lock-step (DCLS) topology.
+
+config CPU_HAS_FPU
+	bool
+	help
+	  This option is enabled when the CPU has hardware floating point
+	  unit.
+
+config CPU_HAS_DSP
+	bool
+	help
+	  This option is enabled when the CPU has hardware DSP unit.
+
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	bool
+	select CPU_HAS_FPU
+	help
+	  When enabled, this indicates that the CPU has a double floating point
+	  precision unit.
+
+config CPU_HAS_MPU
+	bool
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
+
+config CPU_HAS_MMU
+	bool
+	help
+	  This hidden option is selected when the CPU has a Memory Management Unit
+	  (MMU).
+
+config ARCH_HAS_DEMAND_PAGING
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  demand paging is supported.
+
+config ARCH_HAS_RESERVED_PAGE_FRAMES
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  certain RAM page frames need to be marked as reserved and never used for
+	  memory mappings. The architecture will need to implement
+	  arch_reserved_pages_update().
+
+config ARCH_HAS_DIRECTED_IPIS
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  it has an implementation for arch_sched_directed_ipi() which allows
+	  for IPIs to be directed to specific CPUs.
+
+config CPU_HAS_DCACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has a d-cache.
+
+config CPU_CACHE_INCOHERENT
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has
+	  incoherent cache. This applies to intra-CPU multiprocessing
+	  incoherence and makes only sense when MP_NUM_CPUS > 1.
+
+config CPU_HAS_ICACHE
+	bool
+	help
+	  This hidden configuration should be selected when the CPU has an i-cache.
+
+config ARCH_MAPS_ALL_RAM
+	bool
+	help
+	  This hidden option is selected by the architecture to inform the kernel
+	  that all RAM is mapped at boot, and not just the bounds of the Zephyr image.
+	  If RAM starts at 0x0, the first page must remain un-mapped to catch NULL
+	  pointer dereferences. With this enabled, the kernel will not assume that
+	  virtual memory addresses past the kernel image are available for mappings,
+	  but instead takes into account an entire RAM mapping instead.
+
+	  This is typically set by architectures which need direct access to all memory.
+	  It is the architecture's responsibility to mark reserved memory regions
+	  as such in arch_reserved_pages_update().
+
+	  Although the kernel will not disturb this RAM mapping by re-mapping the associated
+	  virtual addresses elsewhere, this is limited to only management of the
+	  virtual address space. The kernel's page frame ontology will not consider
+	  this mapping at all; non-kernel pages will be considered free (unless marked
+	  as reserved) and K_MEM_PAGE_FRAME_MAPPED will not be set.
+
+config DCLS
+	bool "Processor is configured in DCLS mode"
+	depends on CPU_HAS_DCLS
+	default y
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology. For the processor that
+	  supports DCLS, but is configured in split-lock mode (by default or
+	  changed at flash time), this option should be disabled.
+
+menuconfig MPU
+	bool "MPU features"
+	depends on CPU_HAS_MPU
+	help
+	  This option, when enabled, indicates to the core kernel that an MPU
+	  is enabled.
+
+if MPU
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
+config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	bool
+	help
+	  This option is enabled when the MPU requires a power of two alignment
+	  and size for MPU regions.
+
+config MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	bool
+	help
+	  This option is enabled when the MPU requires the active (i.e. enabled)
+	  MPU regions to be non-overlapping with each other.
+
+config MPU_GAP_FILLING
+	bool "Force MPU to be filling in background memory regions"
+	depends on MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+	default y if !USERSPACE
+	help
+	  This Kconfig option instructs the MPU driver to enforce
+	  a full kernel SRAM partitioning, when it programs the
+	  dynamic MPU regions (user thread stack, PRIV stack guard
+	  and application memory domains) during context-switch. We
+	  allow this to be a configurable option, in order to be able
+	  to switch the option off and have an increased number of MPU
+	  regions available for application memory domain programming.
+
+	  Notes:
+	  An increased number of MPU regions should only be required,
+	  when building with USERSPACE support. As a result, when we
+	  build without USERSPACE support, gap filling should always
+	  be required.
+
+	  When the option is switched off, access to memory areas not
+	  covered by explicit MPU regions is restricted to privileged
+	  code on an ARCH-specific basis. Refer to ARCH-specific
+	  documentation for more information on how this option is
+	  used.
+
+endif # MPU
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU || MPU
+	default y
+	help
+	  This option indicates that memory protection hardware
+	  is present, enabled, and regions have been configured at boot for memory
+	  ranges within the kernel image.
+
+	  If this option is turned on, certain areas of the kernel image will
+	  have the following access policies applied for all threads, including
+	  supervisor threads:
+
+	  1) All program text will be have read-only, execute memory permission
+	  2) All read-only data will have read-only permission, and execution
+	     disabled if the hardware supports it.
+	  3) All other RAM addresses will have read-write permission, and
+	     execution disabled if the hardware supports it.
+
+	  Options such as USERSPACE or HW_STACK_PROTECTION may additionally
+	  impose additional policies on the memory map, which may be global
+	  or local to the current running thread.
+
+	  This option may consume additional memory to satisfy memory protection
+	  hardware alignment constraints.
+
+	  If this option is disabled, the entire kernel will have default memory
+	  access permissions set, typically read/write/execute. It may be desirable
+	  to turn this off on MMU systems which are using the MMU for demand
+	  paging, do not need memory protection, and would rather not use up
+	  RAM for the alignment between regions.
+
+config CODE_DATA_RELOCATION
+	bool "Support code/data section relocation"
+	depends on ARCH_HAS_CODE_DATA_RELOCATION
+	help
+	  Enable support for relocating .text, data and .bss sections from specified
+	  files and placing them in a chosen memory region. Files to relocate and
+	  the target regions should be specified in CMakeLists.txt using
+	  zephyr_code_relocate().
+
+menu "DSP Options"
+
+config DSP_SHARING
+	bool "DSP register sharing"
+	depends on CPU_HAS_DSP
+	help
+	  This option enables preservation of the hardware DSP registers
+	  across context switches to allow multiple threads to perform concurrent
+	  DSP operations.
+endmenu
+
+menu "Floating Point Options"
+
+config FPU
+	bool "Floating point unit (FPU)"
+	depends on CPU_HAS_FPU
+	help
+	  This option enables the hardware Floating Point Unit (FPU), in order to
+	  support using the floating point registers and instructions.
+
+	  When this option is enabled, by default, threads may use the floating
+	  point registers only in an exclusive manner, and this usually means that
+	  only one thread may perform floating point operations.
+
+	  If it is necessary for multiple threads to perform concurrent floating
+	  point operations, the "FPU register sharing" option must be enabled to
+	  preserve the floating point registers across context switches.
+
+	  Note that this option cannot be selected for the platforms that do not
+	  include a hardware floating point unit; the floating point support for
+	  those platforms is dependent on the availability of the toolchain-
+	  provided software floating point library.
+
+config FPU_SHARING
+	bool "FPU register sharing"
+	depends on FPU && MULTITHREADING
+	help
+	  This option enables preservation of the hardware floating point registers
+	  across context switches to allow multiple threads to perform concurrent
+	  floating point operations.
+
+	  Note that some compiler configurations may activate a floating point
+	  context by generating FP instructions for any thread, and that
+	  context must be preserved when switching such threads in and out.
+	  The developers can still disable the FP sharing mode in their
+	  application projects, and switch to Unshared FP registers mode,
+	  if it is guaranteed that the image code does not generate FP
+	  instructions outside the single thread context that is allowed
+	  to do so.
+
+endmenu
+
+menu "Cache Options"
+
+config DCACHE
+	bool "Data cache (d-cache) support"
+	depends on CPU_HAS_DCACHE
+	default y
+	help
+	  This option enables the support for the data cache (d-cache).
+
+config ICACHE
+	bool "Instruction cache (i-cache) support"
+	depends on CPU_HAS_ICACHE
+	default y
+	help
+	  This option enables the support for the instruction cache (i-cache).
+
+config CACHE_DOUBLEMAP
+	bool "Cache double-mapping support"
+	depends on CPU_CACHE_INCOHERENT
+	default y
+	help
+	  Double-mapping behavior where a pointer can be cheaply converted to
+	  point to the same cached/uncached memory at different locations.
+
+	  This applies to intra-CPU multiprocessing incoherence and makes only
+	  sense when MP_NUM_CPUS > 1.
+
+config CACHE_MANAGEMENT
+	bool "Cache management features"
+	depends on DCACHE || ICACHE
+	help
+	  This option enables the cache management functions backed by arch or
+	  driver code.
+
+config DCACHE_LINE_SIZE_DETECT
+	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT && DCACHE
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the d-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's d-cache line size is known in advance, disable this option and
+	  manually enter the value for DCACHE_LINE_SIZE or set it in the DT
+	  using the 'd-cache-line-size' property.
+
+config DCACHE_LINE_SIZE
+	int "d-cache line size"
+	depends on CACHE_MANAGEMENT && DCACHE && !DCACHE_LINE_SIZE_DETECT
+	default 0
+	help
+	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
+	  obtained from the 'd-cache-line-size' DT property instead if present.
+
+
+	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
+
+config ICACHE_LINE_SIZE_DETECT
+	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT && ICACHE
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the i-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's i-cache line size is known in advance, disable this option and
+	  manually enter the value for ICACHE_LINE_SIZE or set it in the DT
+	  using the 'i-cache-line-size' property.
+
+config ICACHE_LINE_SIZE
+	int "i-cache line size"
+	depends on CACHE_MANAGEMENT && ICACHE && !ICACHE_LINE_SIZE_DETECT
+	default 0
+	help
+	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
+	  obtained from the 'i-cache-line-size' DT property instead if present.
+
+	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
+
+choice CACHE_TYPE
+	prompt "Cache type"
+	depends on CACHE_MANAGEMENT
+	default ARCH_CACHE
+
+config ARCH_CACHE
+	bool "Integrated cache controller"
+	help
+	  Integrated on-core cache controller
+
+config EXTERNAL_CACHE
+	bool "External cache controller"
+	help
+	  External cache controller
+
+endchoice
+
+endmenu
+
+config ARCH
+	string
+	help
+	  System architecture string.
+
+config TOOLCHAIN_HAS_BUILTIN_FFS
+	bool
+	default y if !(64BIT && RISCV)
+	help
+	  Hidden option to signal that toolchain has __builtin_ffs*().
+
+config ARCH_CPU_IDLE_CUSTOM
+	bool "Custom arch_cpu_idle implementation"
+	default n
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.

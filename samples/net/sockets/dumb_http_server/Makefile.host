@@ -1,0 +1,7 @@
+# This makefile builds socket_echo sample for POSIX system, like Linux
+#
+# Before using this Makefile, run Zephyr build process once to generate
+# include files.
+
+socket_dumb_http: src/socket_dumb_http.c
+	$(CC) $^ -o $@

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2019 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nxp/nxp_ke1xf.dtsi>
+
+/ {
+	/* The on-chip SRAM is split into SRAM_L and SRAM_U regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture. For clarity and to avoid the temptation for
+	 * someone to extend sram0 without solving this issue, we define two
+	 * separate memory nodes here and only use the upper one for now. A
+	 * potential solution has been proposed in binutils:
+	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
+	 */
+	sram_l: memory@1fffc000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1fffc000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAML";
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(16)>;
+	};
+};
+
+&ftfe {
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 DT_SIZE_K(256)>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <8>;
+	};
+};

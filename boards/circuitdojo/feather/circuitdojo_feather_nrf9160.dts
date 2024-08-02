@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 Circuit Dojo LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9160_sica.dtsi>
+#include "circuitdojo_feather_nrf9160_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_s;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+	};
+};
+
+
+&uart0 {
+	status = "okay";
+	current-speed = <1000000>;
+};

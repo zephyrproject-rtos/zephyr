@@ -1,0 +1,64 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Keyboard matrix device
+
+include: base.yaml
+
+properties:
+  row-size:
+    type: int
+    description: |
+      The number of rows in the keyboard matrix.
+
+  col-size:
+    type: int
+    description: |
+      The number of column in the keyboard matrix.
+
+  poll-period-ms:
+    type: int
+    default: 5
+    description: |
+      Defines the poll period in msecs between between matrix scans, set to 0
+      to never exit poll mode. Defaults to 5ms if unspecified.
+
+  poll-timeout-ms:
+    type: int
+    default: 100
+    description: |
+      How long to wait before going from polling back to idle state. Defaults
+      to 100ms if unspecified.
+
+  debounce-down-ms:
+    type: int
+    default: 10
+    description: |
+      Debouncing time for a key press event. Defaults to 10ms if unspecified.
+
+  debounce-up-ms:
+    type: int
+    default: 20
+    description: |
+      Debouncing time for a key release event. Defaults to 20ms if unspecified.
+
+  settle-time-us:
+    type: int
+    default: 50
+    description: |
+      Delay between setting column output and reading the row values. Defaults
+      to 50us if unspecified.
+
+  actual-key-mask:
+    type: array
+    description:
+      Keyboard scanning mask. For each keyboard column, specify which
+      keyboard rows actually exist. Can be used to avoid triggering the ghost
+      detection on non existing keys. No masking by default, any combination is
+      valid.
+
+  no-ghostkey-check:
+    type: boolean
+    description: |
+        Ignore the ghost key checking in the driver if the diodes are used
+        in the matrix hardware.

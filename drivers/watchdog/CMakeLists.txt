@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/watchdog.h)
+
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_IWDG_STM32 wdt_iwdg_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_WWDG_STM32 wdt_wwdg_stm32.c)
+
+zephyr_library_sources_ifdef(CONFIG_FWDGT_GD32 wdt_fwdgt_gd32.c)
+zephyr_library_sources_ifdef(CONFIG_WWDGT_GD32 wdt_wwdgt_gd32.c)
+
+zephyr_library_sources_ifdef(CONFIG_WDOG_CMSDK_APB wdt_cmsdk_apb.c)
+
+zephyr_library_sources_ifdef(CONFIG_WDT_CC32XX wdt_cc32xx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_CC13XX_CC26XX wdt_cc13xx_cc26xx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ESP32 wdt_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_XT_ESP32 xt_wdt_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_GECKO wdt_gecko.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ITE_IT8XXX2 wdt_ite_it8xxx2.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_IMX_WDOG wdt_mcux_imx_wdog.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG wdt_mcux_wdog.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG32 wdt_mcux_wdog32.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WWDT wdt_mcux_wwdt.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NPCX wdt_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NPM1300 wdt_npm1300.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NPM6001 wdt_npm6001.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NRFX wdt_nrfx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_RPI_PICO wdt_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_SAM wdt_sam.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_SAM0 wdt_sam0.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_SIFIVE wdt_sifive.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_TCO wdt_tco.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_XEC wdt_mchp_xec.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_COUNTER wdt_counter.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NXP_S32 wdt_nxp_s32.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_SMARTBOND wdt_smartbond.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_TI_TPS382X wdt_ti_tps382x.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_XILINX_AXI wdt_xilinx_axi.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_INFINEON_CAT1 wdt_ifx_cat1.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_OPENTITAN wdt_opentitan.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_AMBIQ wdt_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_XMC4XXX wdt_xmc4xxx.c)
+zephyr_library_sources_ifdef(CONFIG_WWDT_NUMAKER wdt_wwdt_numaker.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ENE_KB1200 wdt_ene_kb1200.c)
+
+zephyr_library_sources_ifdef(CONFIG_WDT_DW wdt_dw.c wdt_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_INTEL_ADSP wdt_intel_adsp.c wdt_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_ANDES_ATCWDT200 wdt_andes_atcwdt200.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NXP_FS26 wdt_nxp_fs26.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_SHELL wdt_shell.c)
+
+zephyr_library_sources_ifdef(CONFIG_USERSPACE wdt_handlers.c)

@@ -1,0 +1,19 @@
+common:
+  tags:
+    - adc
+    - drivers
+  depends_on:
+    - adc
+tests:
+  drivers.adc.accuracy.dac_source:
+    depends_on:
+      - dac
+    harness_config:
+      fixture: dac_adc_loopback
+    platform_allow:
+      - frdm_k64f
+  drivers.adc.accuracy.ref_volt:
+    harness_config:
+      fixture: adc_ref_volt
+    platform_allow:
+      - frdm_kl25z

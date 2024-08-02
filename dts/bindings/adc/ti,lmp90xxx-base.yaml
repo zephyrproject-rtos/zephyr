@@ -1,0 +1,16 @@
+# Common fields for Texas Instruments LMP90xxx AFEs
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+bus: lmp90xxx
+
+properties:
+  drdyb-gpios:
+    type: phandle-array
+    description: Data Ready Bar
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

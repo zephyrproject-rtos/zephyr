@@ -1,0 +1,77 @@
+# USB-C stack configuration options
+
+# Copyright (c) 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBC_STACK
+	bool "USB-C Stack Support"
+	select SMF
+	select SMF_ANCESTOR_SUPPORT
+	select USBC_TCPC_DRIVER
+	select USBC_VBUS_DRIVER
+	help
+	  Enable the USB-C Stack. Note that each USB-C port gets its own thread.
+
+if USBC_STACK
+
+config USBC_STACK_INIT_PRIORITY
+	int "USB-C stack init priority"
+	default 90
+	help
+	  Initialization priority of the USB-C connector driver in POST_KERNEL.
+	  This driver must be initialized after devices referenced by USB-C connectors
+	  like VBUS and TCPC.
+
+config USBC_THREAD_PRIORITY
+	int "USB-C thread priority"
+	default 0
+	help
+	  Set thread priority of the USB-C
+
+config USBC_STACK_SIZE
+	int "USB-C thread stack size"
+	default 1024
+	help
+	  Stack size of thread created for each instance.
+
+config USBC_STATE_MACHINE_CYCLE_TIME
+	int "USB-C state machine cycle time in milliseconds"
+	default 5
+	help
+	  The USB-C state machine is run in a loop and the cycle time is the
+	  delay before running the loop again.
+
+config BUILD_OUTPUT_VIF
+	bool "Generate VIF policies of USB-C in XML format"
+	depends on DT_HAS_USB_C_CONNECTOR_ENABLED
+	help
+	  Generate XML file containing VIF policies during project build.
+
+config GENVIF_INPUT_VIF_XML_PATH
+	string "Path to input VIF file"
+	depends on BUILD_OUTPUT_VIF
+	help
+	  Absolute path or relative path (w.r.to the application source
+	  directory) of the GenVIF input VIF XML file.
+
+choice USBC_CSM_TYPE
+	prompt "USB-C Connection State Machine"
+	default USBC_CSM_SINK_ONLY
+
+config USBC_CSM_SINK_ONLY
+	bool "Sink USB-C Connection State Machine"
+	help
+	  Allows the USB-C state machine to function as a Sink
+
+config USBC_CSM_SOURCE_ONLY
+	bool "Source USBC Connection State Machine"
+	help
+	  Allow the USB-C state machine to function as a Source
+
+endchoice
+
+module = USBC_STACK
+module-str = usbc stack
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBC_STACK

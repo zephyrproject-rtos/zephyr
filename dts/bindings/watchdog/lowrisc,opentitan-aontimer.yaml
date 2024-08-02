@@ -1,0 +1,26 @@
+# Copyright (c) 2023 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenTitan Always-On Timer driver
+
+compatible: "lowrisc,opentitan-aontimer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: AON-Timer frequency
+    required: true
+
+  wdog-lock:
+    type: boolean
+    description: |
+      When set, lock watchdog configuration after setup until the next
+      reset.

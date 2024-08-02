@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2019 Gerson Fernando Budke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <atmel/samv71.dtsi>
+
+/ {
+	sram0: memory@20400000 {
+		reg = <0x20400000 DT_SIZE_K(256)>;
+	};
+
+	soc {
+		flash-controller@400e0c00 {
+			flash0: flash@400000 {
+				reg = <0x00400000 DT_SIZE_K(512)>;
+				erase-blocks = <&eefc 8 2048>, <&eefc 62 8192>;
+			};
+		};
+	};
+};

@@ -1,0 +1,19 @@
+identifier: riscv32_virtual
+name: Renode RISC-V 32-bit Virtual Board
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 4096
+flash: 4096
+simulation: renode
+simulation_exec: renode
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+  renode:
+    uart: sysbus.uart0
+    resc: boards/renode/riscv32_virtual/support/riscv32_virtual.resc
+supported:
+  - uart

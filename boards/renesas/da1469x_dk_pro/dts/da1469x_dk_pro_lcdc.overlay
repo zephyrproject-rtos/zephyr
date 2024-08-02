@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2023 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/gpio/gpio.h>
+ #include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,display = &lcdc;
+	};
+
+	lvgl_pointer {
+		input = <&display_touch>;
+		status = "okay";
+		swap-xy;
+	};
+};
+
+&pinctrl {
+	i2c2_default: i2c2_default {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(I2C2_SDA, 0, 19)>,
+				 <SMARTBOND_PINMUX(I2C2_SCL, 0, 18)>;
+			bias-pull-up;
+		};
+	};
+
+	i2c2_sleep: i2c2_sleep {
+		group1 {
+			pinmux = <SMARTBOND_PINMUX(GPIO, 0, 19)>,
+				 <SMARTBOND_PINMUX(GPIO, 0, 18)>;
+			bias-pull-up;
+		};
+	};
+};
+
+&i2c2 {
+	clock-frequency = <400000>;
+	status = "okay";
+
+	display_touch: ft6206@38 {
+		compatible = "focaltech,ft5336";
+		status = "okay";
+		reg = <0x38>;
+		int-gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&lcdc {
+	status = "okay";
+	pinctrl-0 = <&display_controller_default>;
+	pinctrl-1 = <&display_controller_sleep>;
+	pinctrl-names = "default", "sleep";
+	width = <480>;
+	height = <272>;
+	disp-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+
+	/*
+	 * Panel settings for the NHD-4.3-480272EF-ASXP-CTP
+	 * display panel model which integrates the SC7283
+	 * driver IC.
+	 */
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		hsync-len = <2>;
+		hfront-porch = <2>;
+		hback-porch = <3>;
+		vsync-len = <2>;
+		vfront-porch = <2>;
+		vback-porch = <2>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		de-active = <1>;
+		pixelclk-active = <1>;
+		clock-frequency = <12000000>;
+	};
+};

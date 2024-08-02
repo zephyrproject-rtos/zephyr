@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_ESP32
+	bool "ESP32 pin controller"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_PINCTRL_ENABLED
+	help
+	  Enables ESP32 pin controller

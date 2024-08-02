@@ -1,0 +1,250 @@
+/*
+ * Copyright (c) 2021 SILA Embedded Solutions GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h735Xg.dtsi>
+#include <st/h7/stm32h735igkx-pinctrl.dtsi>
+#include "pmod_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32H735G DISCOVERY board";
+	compatible = "st,stm32h735g-disco";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		green_led: led_2 {
+			gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &user_button;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <110>;
+	div-p = <1>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <80>;
+	div-p = <5>;
+	div-q = <5>;
+	div-r = <5>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(550)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp0_pa0_c>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&mac {
+	pinctrl-0 = <&eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pb11
+		     &eth_txd0_pb12
+		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+};
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pf10 &octospim_p1_ncs_pg6
+		     &octospim_p1_io0_pd11 &octospim_p1_io1_pd12
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pd13
+		     &octospim_p1_io4_pd4 &octospim_p1_io5_pd5
+		     &octospim_p1_io6_pg9 &octospim_p1_io7_pd7
+		     &octospim_p1_dqs_pb2>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	mx25lm51245: ospi-nor-flash@90000000 {
+		compatible = "st,stm32-ospi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <OSPI_OPI_MODE>;
+		data-rate = <OSPI_DTR_TRANSFER>;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   partition@0 {
+			       label = "nor";
+			       reg = <0x00000000 DT_SIZE_M(4)>;
+			   };
+		};
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_ph14 &fdcan1_tx_ph13>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&fdcan2 {
+	pinctrl-0 = <&fdcan2_rx_pb5 &fdcan2_tx_pb6>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	status = "okay";
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&fdcan3 {
+	pinctrl-0 = <&fdcan3_rx_pf6 &fdcan3_tx_pf7>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	/* Solder bridges SB29 and SB30 need to be closed for this to work */
+	status = "disabled";
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+};

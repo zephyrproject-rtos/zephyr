@@ -1,0 +1,12 @@
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr I2C Emulation controller
+
+compatible: "zephyr,i2c-emul-controller"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true

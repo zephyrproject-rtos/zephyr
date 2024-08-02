@@ -1,0 +1,39 @@
+common:
+  platform_allow:
+    - native_posix
+    - native_posix/native/64
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  storage.stream_flash:
+    tags: stream_flash
+  storage.stream_flash.simulator.no_explicit_erase:
+    extra_args:
+      - CONFIG_STREAM_FLASH_ERASE=n
+      - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    tags: stream_flash
+  storage.stream_flash.no_explicit_erase:
+    platform_allow:
+      - nrf54l15pdk/nrf54l15/cpuapp
+  storage.stream_flash.dword_wbs:
+    extra_args: DTC_OVERLAY_FILE=unaligned_flush.overlay
+    tags: stream_flash
+  storage.stream_flash.no_erase:
+    extra_configs:
+      - CONFIG_STREAM_FLASH_ERASE=n
+    tags: stream_flash
+  storage.stream_flash.mpu_allow_flash_write:
+    extra_configs:
+      - CONFIG_MPU_ALLOW_FLASH_WRITE=y
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags: stream_flash

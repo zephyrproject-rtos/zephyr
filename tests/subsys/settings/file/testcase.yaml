@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2019 Nordic Semiconductor ASA
+
+tests:
+  settings.file.raw:
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - native_sim
+      - native_sim/native/64
+      - mr_canhubk3
+    tags:
+      - settings
+      - file
+      - littlefs

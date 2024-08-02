@@ -1,0 +1,28 @@
+sample:
+  description: Hello World TensorFlow sample
+  name: hello world tensorflow
+common:
+  tags: tensorflow
+  modules:
+    - tflite-micro
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "x_value:.*, y_value:.*"
+      - ""
+tests:
+  sample.tensorflow.helloworld:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86
+    tags: tensorflow
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+  sample.tensorflow.helloworld.cmsis_nn:
+    tags: tensorflow
+    platform_allow: mps3/an547
+    extra_configs:
+      - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

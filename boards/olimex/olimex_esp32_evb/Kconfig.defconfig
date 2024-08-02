@@ -1,0 +1,22 @@
+# Olimex ESP32-EVB board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OLIMEX_ESP32_EVB_ESP32_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_OLIMEX_ESP32_EVB_ESP32_PROCPU
+
+if BOARD_OLIMEX_ESP32_EVB_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_OLIMEX_ESP32_EVB_ESP32_APPCPU

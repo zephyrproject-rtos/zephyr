@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SAM_TC
+	bool "Atmel SAM MCU family counter (TC) driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_TC_ENABLED
+	help
+	  Enable the Atmel SAM MCU family counter (TC) driver.

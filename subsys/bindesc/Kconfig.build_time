@@ -1,0 +1,114 @@
+# Copyright (c) 2023 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BINDESC_DEFINE_BUILD_TIME
+	bool "Build Time binary descriptors"
+	help
+	  Add the build time binary descriptors
+
+if BINDESC_DEFINE_BUILD_TIME
+
+config BINDESC_BUILD_TIME_USE_LOCAL_TIME
+	bool "Use local time"
+	help
+	  If enabled, the build time used for the descriptors will express
+	  the local time, rather than UTC.
+
+config BINDESC_BUILD_TIME_ALWAYS_REBUILD
+	bool "Always rebuild"
+	default y
+	help
+	  If enabled, the file containing the build time definitions will
+	  always be rebuilt. This results in the timestamp always being
+	  accurate, but also in slightly longer build times.
+
+config BINDESC_BUILD_TIME_YEAR
+	bool "Year of build"
+	help
+	  The year the image was compiled, such as 2023
+
+config BINDESC_BUILD_TIME_MONTH
+	bool "Month of build"
+	help
+	  The month the image was compiled, such as 5 (May)
+
+config BINDESC_BUILD_TIME_DAY
+	bool "Day of build"
+	help
+	  The day of the month the image was compiled, such as 9
+
+config BINDESC_BUILD_TIME_HOUR
+	bool "Hour of build"
+	help
+	  The hour of the day the image was compiled, such as 13 in 13:34:52
+
+config BINDESC_BUILD_TIME_MINUTE
+	bool "Minute of build"
+	help
+	  The minute the image was compiled, such as 34 in 13:34:52
+
+config BINDESC_BUILD_TIME_SECOND
+	bool "Second of build"
+	help
+	  The second the image was compiled, such as 52 in 13:34:52
+
+config BINDESC_BUILD_TIME_UNIX
+	bool "Build time as UNIX time"
+	help
+	  The UNIX time at which the image was compiled. This is an integer
+	  counting the seconds since midnight of January 1st 1970
+
+config BINDESC_BUILD_DATE_TIME_STRING
+	bool "Build date and time as string"
+	help
+	  The date and time of compilation as a string, such as "2023-09-29T17:43:14+0000"
+
+config BINDESC_BUILD_DATE_STRING
+	bool "Build date as string"
+	help
+	  The date of compilation as a string, such as "2023-09-29"
+
+config BINDESC_BUILD_TIME_STRING
+	bool "Build time as string"
+	help
+	  The time of compilation as a string, such as "T17:43:14+0000"
+
+config BINDESC_BUILD_DATE_TIME_STRING_FORMAT
+	string "Date-Time format"
+	default "%Y-%m-%dT%H:%M:%S%z"
+	help
+	  Format of the build time string. This value is passed to cmake's string(TIMESTAMP ...)
+	  function, so refer to string's documentation for more info on the different formats.
+	  This can also be used to set a specific time, when trying to reproduce an image. For
+	  example, setting the format to "2023-02-05T00:07:04+0000" will set it as the build time,
+	  regardless of the actual build time.
+	  If BINDESC_BUILD_TIME_USE_LOCAL_TIME is enabled, the time is the local time, else
+	  it is UTC time.
+	  Example of the default format: 2023-09-29T17:43:14+0000.
+	  Note: the default format complies with ISO-8601.
+
+config BINDESC_BUILD_DATE_STRING_FORMAT
+	string "Date format"
+	default "%Y-%m-%d"
+	help
+	  Format of the build date string. This value is passed to cmake's string(TIMESTAMP ...)
+	  function, so refer to string's documentation for more info on the different formats.
+	  This can also be used to set a specific time, when trying to reproduce an image. For
+	  example, setting the format to "2023-02-05" will set it as the build time,
+	  regardless of the actual build time.
+	  Example of the default format: 2023-02-05
+	  Note: the default format complies with ISO-8601.
+
+config BINDESC_BUILD_TIME_STRING_FORMAT
+	string "Time format"
+	default "T%H:%M:%S%z"
+	help
+	  Format of the build time string. This value is passed to cmake's string(TIMESTAMP ...)
+	  function, so refer to string's documentation for more info on the different formats.
+	  This can also be used to set a specific time, when trying to reproduce an image. For
+	  example, setting the format to "T00:07:04+0000" will set it as the build time,
+	  regardless of the actual build time.
+	  Example of the default format: T00:07:04+0000.
+	  Note: the default format complies with ISO-8601.
+
+endif # BINDESC_DEFINE_BUILD_TIME

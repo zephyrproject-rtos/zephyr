@@ -1,0 +1,16 @@
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config QDEC_NRFX
+	bool "Nordic QDEC nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_QDEC_ENABLED
+	select NRFX_QDEC0 if HAS_HW_NRF_QDEC0
+	select NRFX_QDEC1 if HAS_HW_NRF_QDEC1
+	select NRFX_QDEC20 if HAS_HW_NRF_QDEC20
+	select NRFX_QDEC21 if HAS_HW_NRF_QDEC21
+	select NRFX_QDEC130 if HAS_HW_NRF_QDEC130
+	select NRFX_QDEC131 if HAS_HW_NRF_QDEC131
+	select PINCTRL
+	help
+	  Enable support for nrfx QDEC driver for nRF MCU series.

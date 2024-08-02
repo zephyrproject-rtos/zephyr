@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/wb/stm32wb55.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(192)>;
+	};
+
+	soc {
+		flash-controller@58004000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(808)>;
+			};
+		};
+	};
+};
+
+&pwr {
+	wkup-pin@2 {
+		reg = <0x2>;
+		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@3 {
+		reg = <0x3>;
+		wkup-gpios = <&gpioc 12 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+
+	wkup-pin@5 {
+		reg = <0x5>;
+		wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_SRC_0>;
+	};
+};

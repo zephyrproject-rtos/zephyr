@@ -1,0 +1,41 @@
+common:
+  filter: not CONFIG_64BIT
+tests:
+  logging.mipi_syst:
+    tags:
+      - log_syst
+      - logging
+    arch_exclude:
+      - mips
+      - nios2
+      - posix
+      - sparc
+    # "CONFIG_FULL_LIBC_SUPPORTED" filter was applied
+    # because of following chain of dependencies:
+    # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
+    # --> REQUIRES_FULL_LIBC
+    #
+    # Not all compilers announced in Zephyr support full libc
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    integration_platforms:
+      - mps2/an385
+      - qemu_x86
+      - sam_e70_xplained/same70q21
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_ENABLE=y
+      - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=y
+      - CONFIG_REQUIRES_FULL_LIBC=y
+  logging.mipi_syst.text:
+    tags:
+      - log_syst
+      - logging
+    arch_exclude:
+      - mips
+      - nios2
+      - posix
+      - sparc
+    filter: CONFIG_FULL_LIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_LOG_MIPI_SYST_ENABLE=n
+      - CONFIG_LOG_BACKEND_MOCK_OUTPUT_SYST=n
+      - CONFIG_REQUIRES_FULL_LIBC=y

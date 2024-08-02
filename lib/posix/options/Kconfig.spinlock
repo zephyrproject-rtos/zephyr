@@ -1,0 +1,27 @@
+# Copyright (c) 2023 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_SPIN_LOCKS
+	bool "POSIX spin locks"
+	help
+	  Select 'y' here to enable POSIX spin locks.
+
+	  For more information please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_SPIN_LOCKS
+
+config MAX_PTHREAD_SPINLOCK_COUNT
+	int "Maximum number of POSIX spin locks"
+	default 5
+	help
+	  Maximum simultaneously active spin locks in a POSIX application.
+
+	  Note: this is a non-standard option.
+
+module = PTHREAD_SPINLOCK
+module-str = POSIX Spin Locks
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # POSIX_SPIN_LOCKS

@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L4Q5xx MCU
+
+# Copyright (c) 2023 Marcin Zapolski
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L4Q5XX
+
+config NUM_IRQS
+	default 95
+
+endif # SOC_STM32L4Q5XX

@@ -1,0 +1,27 @@
+# Memory controller configuration options
+
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MIPI_DSI
+	bool "MIPI-DSI Host Controller drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Add support for MIPI-DSI host controllers
+
+if MIPI_DSI
+
+module = MIPI_DSI
+module-str = mipi_dsi
+source "subsys/logging/Kconfig.template.log_config"
+
+config MIPI_DSI_INIT_PRIORITY
+	int "Initialization priority"
+	default 86
+	help
+	  MIPI-DSI Host Controllers initialization priority.
+
+source "drivers/mipi_dsi/Kconfig.mcux"
+source "drivers/mipi_dsi/Kconfig.stm32"
+
+endif

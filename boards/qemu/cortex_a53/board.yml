@@ -1,0 +1,8 @@
+board:
+  name: qemu_cortex_a53
+  vendor: arm
+  socs:
+  - name: qemu_cortex_a53
+    variants:
+    - name: smp
+    - name: xip

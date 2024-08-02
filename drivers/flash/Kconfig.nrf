@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_NRF_FORCE_ALT
+	bool
+	depends on SOC_COMPATIBLE_NRF
+	help
+	  This option can be enabled to force an alternative implementation
+	  of the flash driver.
+
+menuconfig SOC_FLASH_NRF
+	bool "Nordic Semiconductor nRF flash driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF51_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF52_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF53_FLASH_CONTROLLER_ENABLED || \
+		   DT_HAS_NORDIC_NRF91_FLASH_CONTROLLER_ENABLED
+	depends on !FLASH_NRF_FORCE_ALT
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select NRFX_NVMC
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enables Nordic Semiconductor nRF flash driver.
+
+if SOC_FLASH_NRF
+
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
+	help
+	  synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
+
+config SOC_FLASH_NRF_PARTIAL_ERASE
+	bool "Nordic nRFx flash driver partial erase"
+	depends on HAS_HW_NRF_NVMC_PE
+	help
+	  Enable partial erase feature. Partial erase is performed in time
+	  slices instead of blocking MCU, for the time it is needed to
+	  complete operation over given area.
+	  This allows interrupting flash erase between operations
+	  to perform other task by MCU.
+	  This feature may also be used for better syncing flash erase
+	  operations, when compiled with SOC_FLASH_NRF_RADIO_SYNC_TICKER,
+	  with Bluetooth.
+
+config SOC_FLASH_NRF_PARTIAL_ERASE_MS
+	int "Partial erase timeout in MS"
+	depends on SOC_FLASH_NRF_PARTIAL_ERASE
+	default 3
+	help
+	  This is maximum time, in ms, that NVMC will use to erase part
+	  of Flash, before stopping to let CPU resume operation.
+	  Minimal timeout is 2ms maximum should not exceed half of
+	  FLASH_PAGE_ERASE_MAX_TIME_US im ms.
+
+config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
+	int "Multiplier for flash operation timeouts [x0.1]"
+	depends on !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 15 if SOC_FLASH_NRF_PARTIAL_ERASE && SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	default 10
+	help
+	  This is a multiplier that will be divided by 10 that is applied
+	  to the flash erase and write operations timeout. The base for
+	  the multiplication would allow erasing all nRF flash pages in
+	  blocking mode.
+
+config SOC_FLASH_NRF_UICR
+	bool "Access to UICR"
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	help
+	  Enable operations on UICR. Once enabled UICR are written or read as
+	  ordinary flash memory. Erase is possible for whole UICR at once.
+
+config SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS
+	bool "8-bit write block size emulation"
+	help
+	  When this option is enabled writing chunks less than minimal write
+	  block size parameter (imposed by manufacturer) is possible but operation
+	  is more complex and requires basic user knowledge about NVMC controller.
+
+endif # SOC_FLASH_NRF

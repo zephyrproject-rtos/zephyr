@@ -1,0 +1,36 @@
+/*
+ * Copyright (C) 2023, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <niosv/niosv-g.dtsi>
+
+/ {
+	model = "niosv_g";
+	compatible = "intel,niosv_g";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <50000000>;
+};
+
+&sram0 {
+	reg = <0x0 0x40000>;
+};
+
+&mtimer {
+	reg = <0x90000 0x10>;
+};
+
+&uart0 {
+	reg = <0x90078 0x8>;
+	status = "okay";
+};

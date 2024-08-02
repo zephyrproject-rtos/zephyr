@@ -1,0 +1,48 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it8xxx2 keyboard matrix controller
+
+compatible: "ite,it8xxx2-kbd"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  wucctrl:
+    type: phandles
+    description: |
+      Configure wakeup controller, this controller is used to set that
+      when the interrupt is triggered in EC low power mode, it can wakeup
+      EC or not. Via this controller, we set the wakeup trigger edge,
+      enable, disable, and clear wakeup status for the specific pin which
+      may be gpio pins or alternate pins.
+
+  kso16-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The KSO16 pin for the selected port.
+
+  kso17-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The KSO17 pin for the selected port.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true

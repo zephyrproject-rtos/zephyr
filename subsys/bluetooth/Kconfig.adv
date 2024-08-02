@@ -1,0 +1,81 @@
+# Bluetooth LE Advertising and Scanning configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_EXT_ADV
+	bool "Extended Advertising and Scanning support"
+	depends on !BT_CTLR || BT_CTLR_ADV_EXT_SUPPORT
+	default y if BT_MESH
+	help
+	  Select this to enable Extended Advertising API support.
+	  This enables support for advertising with multiple advertising sets,
+	  extended advertising data, and advertising on LE Coded PHY.
+	  It enables support for receiving extended advertising data as a
+	  scanner, including support for advertising data over the LE coded PHY.
+	  It enables establishing connections over LE Coded PHY.
+
+if BT_EXT_ADV
+
+config BT_EXT_ADV_LEGACY_SUPPORT
+	bool "Support starting advertising through legacy commands"
+	help
+	  Select this to enable the use of the Legacy Advertising HCI commands.
+	  This option should be used where the capabilities of the controller
+	  is not known.
+	  If this option is not enabled the controller must support the extended
+	  advertising feature.
+
+config BT_EXT_ADV_MAX_ADV_SET
+	int "Maximum number of simultaneous advertising sets"
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous Bluetooth advertising sets
+	  supported.
+
+config BT_PER_ADV
+	bool "Periodic Advertising and Scanning support"
+	help
+	  Select this to enable Periodic Advertising API support. This allows
+	  the device to send advertising data periodically at deterministic
+	  intervals. Scanners can synchronize to the periodic advertisements
+	  to periodically get the data.
+
+config BT_PER_ADV_RSP
+	bool "Periodic Advertising with Responses support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_PER_ADV
+	help
+	  Select this to enable Periodic Advertising with Responses
+	  API support.
+
+config BT_PER_ADV_SYNC
+	bool "Periodic advertising sync support"
+	depends on BT_OBSERVER
+	help
+	  Select this to enable Periodic Advertising Sync API support.
+	  Syncing with a periodic advertiser allows the device to periodically
+	  and deterministic receive data from that device in a connectionless
+	  manner.
+
+config BT_PER_ADV_SYNC_RSP
+	bool "Periodic Advertising with Responses sync support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_OBSERVER
+	help
+	  Select this to enable Periodic Advertising with Responses Sync
+	  API support.
+
+if BT_PER_ADV_SYNC
+
+config BT_PER_ADV_SYNC_MAX
+	int "Maximum number of simultaneous periodic advertising syncs"
+	range 1 64
+	default 1
+	help
+	  Maximum number of simultaneous periodic advertising syncs supported.
+
+endif # BT_PER_ADV_SYNC
+endif # BT_EXT_ADV

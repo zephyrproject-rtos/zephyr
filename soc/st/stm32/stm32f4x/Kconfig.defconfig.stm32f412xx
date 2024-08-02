@@ -1,0 +1,11 @@
+# ST STM32F412XX MCU configuration options
+
+# Copyright (c) 2024 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F412CX || SOC_STM32F412VX || SOC_STM32F412ZX
+
+config NUM_IRQS
+	default 97
+
+endif

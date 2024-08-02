@@ -1,0 +1,48 @@
+# Copyright (c) 2023 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+# Ext2 file system
+
+config FILE_SYSTEM_EXT2
+	bool "Ext2 file system support"
+	depends on FILE_SYSTEM
+	help
+	  Enable Ext2 file system support.
+
+module = EXT2
+module-str = Ext2
+source "subsys/logging/Kconfig.template.log_config"
+
+if FILE_SYSTEM_EXT2
+
+menu "Ext2 file system Settings"
+	visible if FILE_SYSTEM_EXT2
+
+config MAX_FILES
+	int "Maximum number of opened inodes"
+	default 10
+
+config EXT2_MAX_BLOCK_SIZE
+	int "Maximum size of supported block"
+	range 1024 4096
+	default 4096
+	help
+	  This flag is used to determine size of internal structures that
+	  are used to store fetched blocks.
+
+config EXT2_MAX_BLOCK_COUNT
+	int "Maximum number of blocks that might be used"
+	default 10
+	help
+	  This flag is used to determine size of internal structures that
+	  are used to store fetched blocks.
+
+config EXT2_DISK_STARTING_SECTOR
+	int "Ext2 starting sector"
+	default 0
+	help
+	  The current Ext2 implementation does not support GUID Partition Table. The starting sector
+	  of the file system must be specified by this option.
+
+endmenu
+endif

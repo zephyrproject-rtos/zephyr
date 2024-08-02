@@ -1,0 +1,40 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &led_a3;
+	};
+
+	gpio-led {
+		compatible = "gpio-leds";
+		led_a3: led_a3 {
+			gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PA3_EIRQ_0>;
+			input-enable;
+		};
+	};
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};

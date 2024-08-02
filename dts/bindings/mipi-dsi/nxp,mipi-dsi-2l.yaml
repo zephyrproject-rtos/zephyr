@@ -1,0 +1,78 @@
+#
+# Copyright 2023, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+description: NXP MCUX MIPI DSI 2L
+
+compatible: "nxp,mipi-dsi-2l"
+
+include: mipi-dsi-host.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  nxp,lcdif:
+    type: phandle
+    description:
+      Instance of the LCDIF peripheral. Only required when using the MIPI
+      in video mode
+  dpi-color-coding:
+    type: string
+    enum:
+      - "16-bit-config-1"
+      - "16-bit-config-2"
+      - "16-bit-config-3"
+      - "18-bit-config-1"
+      - "18-bit-config-2"
+      - "24-bit"
+    description:
+      MIPI DPI interface color coding. Sets the distribution of RGB bits within
+      the 24-bit d bus, as specified by the DPI specification.
+
+  dpi-pixel-packet:
+    type: string
+    enum:
+      - "16-bit"
+      - "18-bit"
+      - "18-bit-loose"
+      - "24-bit"
+    description:
+      MIPI DSI pixel packet type send through DPI interface.
+
+  dpi-video-mode:
+    type: string
+    enum:
+      - "non-burst-sync-pulse"
+      - "non-burst-sync-event"
+      - "burst"
+    description:
+      DPI video mode.
+
+  dpi-bllp-mode:
+    type: string
+    enum:
+      - "low-power"
+      - "blank"
+      - "null"
+    description:
+      Behavior in BLLP (Blanking or Low-Power Interval).
+
+  autoinsert-eotp:
+    type: boolean
+    description:
+      Automatically insert an EoTp short packet when switching from HS to LP mode.
+
+  dphy-ref-frequency:
+    type: int
+    default: 0
+    description:
+      Maximum clock speed supported by the device, in Hz. Leave at default
+      if no DPHY PLL is present
+
+  noncontinuous-hs-clk:
+    type: boolean
+    description:
+      Enable non-contiuous high speed clock. Saves power but introduces latency
+      when transitioning to high speed mode.

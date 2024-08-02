@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <xilinx/zynq7000.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "zybo-pinctrl.dtsi"
+
+/ {
+	model = "Digilent Zybo board";
+	compatible = "digilent,zynq-zybo", "xlnx,zynq-7000";
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm_high;
+	};
+
+	aliases {
+		led0 = &ld_mio;
+		sw0 = &btn4;
+		sw1 = &btn5;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <1>;
+		};
+	};
+
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_M(512)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		ld_mio: led_mio {
+			gpios = <&psgpio_bank0 7 GPIO_ACTIVE_HIGH>;
+			label = "LD_MIO";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		btn4: btn4 {
+			gpios = <&psgpio_bank1 18 GPIO_ACTIVE_LOW>;
+			label = "BTN4";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn5: btn5 {
+			gpios = <&psgpio_bank1 19 GPIO_ACTIVE_LOW>;
+			label = "BTN5";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+	pinctrl-0 = <&pinctrl_uart1_default>;
+	pinctrl-names = "default";
+};
+
+&psgpio {
+	status = "okay";
+};

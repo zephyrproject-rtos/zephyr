@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2023 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Intel SEDI I2C
+
+compatible: "intel,sedi-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: Peripheral Instance ID
+    required: true

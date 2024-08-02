@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_keys_foreach_bond.default:
+    type: unit

@@ -1,0 +1,1021 @@
+/*
+ * Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ite/it8xxx2.dtsi>
+
+/ {
+	soc {
+		sram0: memory@80100000 {
+			compatible = "mmio-sram";
+			reg = <0x80100000 DT_SIZE_K(256)>;
+		};
+
+		intc: interrupt-controller@f03f00 {
+			compatible = "ite,it8xxx2-intc-v2";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0x00f03f00 0x0100>;
+		};
+
+		twd0: watchdog@f01f80 {
+			compatible = "ite,it8xxx2-watchdog";
+			reg = <0x00f01f80 0x000f>;
+			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
+				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
+			interrupt-parent = <&intc>;
+		};
+
+		gpiogcr: gpio-gcr@f03e00 {
+			compatible = "ite,it8xxx2-gpiogcr";
+			reg = <0x00f03e00 0x2f>;
+		};
+
+		gpioa: gpio@f01601 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01601 1   /* GPDR (set) */
+			       0x00f01618 1   /* GPDMR (get) */
+			       0x00f01630 1   /* GPOTR */
+			       0x00f01648 1   /* P18SCR */
+			       0x00f01660 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU91 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU92 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU93 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU80 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU81 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU82 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU83 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU100 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b20 0xf01b20 0xf01b20 0xf01b1c
+				    0xf01b1c 0xf01b1c 0xf01b1c 0xf01b24>;
+			wuc-mask = <BIT(3)   BIT(4)   BIT(5)   BIT(0)
+				    BIT(1)   BIT(2)   BIT(3)   BIT(4)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@f01602 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01602 1   /* GPDR (set) */
+			       0x00f01619 1   /* GPDMR (get) */
+			       0x00f01631 1   /* GPOTR */
+			       0x00f01649 1   /* P18SCR */
+			       0x00f01668 8>; /* GPCR */
+			ngpios = <7>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU101 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU102 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU84 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU103 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU94 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU104 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU105 IRQ_TYPE_LEVEL_HIGH
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b24 0xf01b24 0xf01b1c 0xf01b24
+				    0xf01b20 0xf01b28 0xf01b28 NO_FUNC >;
+			wuc-mask = <BIT(5)   BIT(6)   BIT(4)   BIT(7)
+				    BIT(6)   BIT(0)   BIT(1)   0       >;
+			has-volt-sel = <1 1 1 1 1 1 1 0>;
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@f01603 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01603 1   /* GPDR (set) */
+			       0x00f0161a 1   /* GPDMR (get) */
+			       0x00f01632 1   /* GPOTR */
+			       0x00f0164a 1   /* P18SCR */
+			       0x00f01670 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU85 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU107 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU95 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU108 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU22 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU109 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU23 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU86 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b1c 0xf01b28 0xf01b20 0xf01b28
+				    0xf01b04 0xf01b28 0xf01b04 0xf01b1c>;
+			wuc-mask = <BIT(5)   BIT(3)   BIT(7)   BIT(4)
+				    BIT(2)   BIT(5)   BIT(3)   BIT(6)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiod: gpio@f01604 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01604 1   /* GPDR (set) */
+			       0x00f0161b 1   /* GPDMR (get) */
+			       0x00f01633 1   /* GPOTR */
+			       0x00f0164b 1   /* P18SCR */
+			       0x00f01678 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU20 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU21 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU24 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU110 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU111 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU112 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU113 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU87 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b04 0xf01b04 0xf01b04 0xf01b28
+				    0xf01b28 0xf01b2c 0xf01b2c 0xf01b1c>;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(4)   BIT(6)
+				    BIT(7)   BIT(0)   BIT(1)   BIT(7)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpioe: gpio@f01605 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01605 1   /* GPDR (set) */
+			       0x00f0161c 1   /* GPDMR (get) */
+			       0x00f01634 1   /* GPOTR */
+			       0x00f0164c 1   /* P18SCR */
+			       0x00f01680 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU70 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU71 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU72 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU73 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU114 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU40 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU45 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU46 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b18 0xf01b18 0xf01b18 0xf01b18
+				    0xf01b2c 0xf01b0c 0xf01b0c 0xf01b0c>;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(2)   BIT(0)   BIT(5)   BIT(6)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiof: gpio@f01606 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01606 1   /* GPDR (set) */
+			       0x00f0161d 1   /* GPDMR (get) */
+			       0x00f01635 1   /* GPOTR */
+			       0x00f0164d 1   /* P18SCR */
+			       0x00f01688 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU96 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU97 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU98 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU99 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU64 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU65 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU66 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU67 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b24 0xf01b24 0xf01b24 0xf01b24
+				    0xf01b14 0xf01b14 0xf01b14 0xf01b14>;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiog: gpio@f01607 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01607 1   /* GPDR (set) */
+			       0x00f0161e 1   /* GPDMR (get) */
+			       0x00f01636 1   /* GPOTR */
+			       0x00f0164e 1   /* P18SCR */
+			       0x00f01690 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU115 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU116 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU117 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU123 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU124 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU125 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU118 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU126 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b2c 0xf01b2c 0xf01b2c 0xf01b30
+				    0xf01b30 0xf01b30 0xf01b2c 0xf01b30>;
+			wuc-mask = <BIT(3)   BIT(4)   BIT(5)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(6)  >;
+			has-volt-sel = <1 1 1 0 0 0 1 0>;
+			#gpio-cells = <2>;
+		};
+
+		gpioh: gpio@f01608 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01608 1   /* GPDR (set) */
+			       0x00f0161f 1   /* GPDMR (get) */
+			       0x00f01637 1   /* GPOTR */
+			       0x00f0164f 1   /* P18SCR */
+			       0x00f01698 8>; /* GPCR */
+			ngpios = <7>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU60 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU61 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU62 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU63 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU88 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU89 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b14 0xf01b14 0xf01b14 0xf01b14
+				    0xf01b20 0xf01b20 0xf01b20 NO_FUNC >;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(0)   BIT(1)   BIT(2)   0       >;
+			has-volt-sel = <1 1 1 1 1 1 1 0>;
+			#gpio-cells = <2>;
+		};
+
+		gpioi: gpio@f01609 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01609 1   /* GPDR (set) */
+			       0x00f01620 1   /* GPDMR (get) */
+			       0x00f01638 1   /* GPOTR */
+			       0x00f01650 1   /* P18SCR */
+			       0x00f016a0 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU119 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU120 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU121 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU122 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU74 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU75 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU76 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU77 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b2c 0xf01b30 0xf01b30 0xf01b30
+				    0xf01b18 0xf01b18 0xf01b18 0xf01b18>;
+			wuc-mask = <BIT(7)   BIT(0)   BIT(1)   BIT(2)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpioj: gpio@f0160a {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f0160a 1   /* GPDR (set) */
+			       0x00f01621 1   /* GPDMR (get) */
+			       0x00f01639 1   /* GPOTR */
+			       0x00f01651 1   /* P18SCR */
+			       0x00f016a8 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU128 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU129 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU130 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU131 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU132 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU133 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU134 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU135 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b34 0xf01b34 0xf01b34 0xf01b34
+				    0xf01b34 0xf01b34 0xf01b34  0xf01b34 >;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)>;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiok: gpio@f0160b {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f0160b 1   /* GPDR (set) */
+			       0x00f01622 1   /* GPDMR (get) */
+			       0x00f0163a 1   /* GPOTR */
+			       0x00f01652 1   /* P18SCR */
+			       0x00f016b0 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU50 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU51 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU52 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU53 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU54 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU55 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU56 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU57 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b10 0xf01b10 0xf01b10 0xf01b10
+				    0xf01b10 0xf01b10 0xf01b10 0xf01b10>;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiol: gpio@f0160c {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f0160c 1   /* GPDR (set) */
+			       0x00f01623 1   /* GPDMR (get) */
+			       0x00f0163b 1   /* GPOTR */
+			       0x00f01653 1   /* P18SCR */
+			       0x00f016b8 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU136 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU137 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU138 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU139 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU140 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU141 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU142 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU143 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b38 0xf01b38 0xf01b38 0xf01b38
+				    0xf01b38 0xf01b38 0xf01b38 0xf01b38>;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			has-volt-sel = <1 1 1 1 1 1 1 1>;
+			#gpio-cells = <2>;
+		};
+
+		gpiom: gpio@f0160d {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f0160d 1   /* GPDR (set) */
+			       0x00f01624 1   /* GPDMR (get) */
+			       0x00f0163c 1   /* GPOTR */
+			       0x00f01654 1   /* P18SCR */
+			       0x00f016c0 8>; /* GPCR */
+			ngpios = <7>;
+			gpio-controller;
+			interrupts = <IT8XXX2_IRQ_WU144 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU145 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU146 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU147 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU148 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU149 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU150 IRQ_TYPE_LEVEL_HIGH
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			wuc-base = <0xf01b3c 0xf01b3c 0xf01b3c 0xf01b3c
+				    0xf01b3c 0xf01b3c 0xf01b3c NO_FUNC >;
+			wuc-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+				    BIT(4)   BIT(5)   BIT(6)   0       >;
+			has-volt-sel = <1 1 1 1 1 1 1 0>;
+			#gpio-cells = <2>;
+		};
+
+		gpioksi: gpio@f01d08 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d08 1   /* GPDR (set) */
+			       0x00f01d09 1   /* GPDMR (get) */
+			       0x00f01d2c 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d40 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksoh: gpio@f01d01 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d01 1   /* GPDR (set) */
+			       0x00f01d0c 1   /* GPDMR (get) */
+			       0x00f01d2d 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d50 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksol: gpio@f01d00 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d00 1   /* GPDR (set) */
+			       0x00f01d0f 1   /* GPDMR (get) */
+			       0x00f01d2e 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d48 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		pinctrl: pin-controller {
+			compatible = "ite,it8xxx2-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+		};
+
+		pinctrla: pinctrl@f01660 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01660 8     /* GPCR */
+			       0x00f03e30 1>;   /* PDSCA */
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf02032 0xf02032 0xf03e10 0xf03e10>;
+			func3-en-mask = <0        0        0        0
+					 0x02     0x02     0x10     0x0C    >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <0xf01648 0xf01648 0xf01648 0xf01648
+					 0xf01648 0xf01648 0xf01648 0xf01648>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlb: pinctrl@f01668 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01668 8     /* GPCR */
+			       0x00f03e31 1>;   /* PDSCB */
+			func3-gcr =     <0xf03e15 0xf03e15 0xf03e11 NO_FUNC
+					 NO_FUNC  0xf03e11 NO_FUNC  NO_FUNC>;
+			func3-en-mask = <0x01     0x02     0x20     0
+					 0        0x20     0        0      >;
+			func3-ext =     <NO_FUNC  NO_FUNC  0xf03e16 NO_FUNC
+					 NO_FUNC  0xf03e16 NO_FUNC  NO_FUNC>;
+			func3-ext-mask = <0       0        0x40     0
+					  0       0x40     0        0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf01649 0xf01649 0xf01649 0xf01649
+					 0xf01649 0xf01649 0xf01649 NO_FUNC>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlc: pinctrl@f01670 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01670 8     /* GPCR */
+			       0x00f03e32 1>;   /* PDSCC */
+			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC 0xf03e10
+					 NO_FUNC 0xf03e10 NO_FUNC 0xf03e13>;
+			func3-en-mask = <0       0        0       0x10
+					 0       0x10     0       0x02    >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC 0xf03e16>;
+			func4-en-mask = <0       0        0       0
+					 0       0        0       0x80    >;
+			volt-sel =      <0xf0164a 0xf0164a 0xf0164a 0xf0164a
+					 0xf0164a 0xf0164a 0xf0164a 0xf0164a>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrld: pinctrl@f01678 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01678 8     /* GPCR */
+			       0x00f03e33 1>;   /* PDSCD */
+			func3-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  0xf03e10 NO_FUNC NO_FUNC>;
+			func3-en-mask = <0        0        0       0
+					 0        0x02     0       0      >;
+			func4-gcr =     <0xf03e16 NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC>;
+			func4-en-mask = <0x80     0        0       0
+					 0        0        0       0      >;
+			volt-sel =      <0xf0164b 0xf0164b 0xf0164b 0xf0164b
+					 0xf0164b 0xf0164b 0xf0164b 0xf0164b>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrle: pinctrl@f01680 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01680 8     /* GPCR */
+			       0x00f03e34 1>;   /* PDSCE */
+			func3-gcr =     <NO_FUNC  0xf03e16 0xf03e16 NO_FUNC
+					 NO_FUNC  0xf03e10 NO_FUNC  NO_FUNC >;
+			func3-en-mask = <0        0x20     0x20     0
+					 0        0x08     0        0       >;
+			func3-ext =     <0xf02032 0xf02032 0xf02032 NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  0xf02032>;
+			func3-ext-mask = <0x01    0x02     0x02     0
+					  0       0        0        0x01    >;
+			func4-gcr =     <0xf03e13 NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0x01     0        0        0
+					 0        0        0        0       >;
+			volt-sel =      <0xf0164c 0xf0164c 0xf0164c 0xf0164c
+					 0xf0164c 0xf0164c 0xf0164c 0xf0164c>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlf: pinctrl@f01688 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01688 8     /* GPCR */
+			       0x00f03e35 1>;   /* PDSCF */
+			func3-gcr =     <0xf03e15 0xf03e15 0xf03e10 0xf03e10
+					 NO_FUNC  NO_FUNC  0xf03e11 NO_FUNC>;
+			func3-en-mask = <0x04     0x08     0x02     0x02
+					 0        0        0x10     0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC   NO_FUNC  NO_FUNC
+					 NO_FUNC NO_FUNC   NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0       0         0        0
+					 0       0         0        0      >;
+			volt-sel =      <0xf0164d 0xf0164d 0xf0164d 0xf0164d
+					 0xf0164d 0xf0164d 0xf0164d 0xf0164d>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlg: pinctrl@f01690 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01690 8     /* GPCR */
+			       0x00f03e36 1>;   /* PDSCG */
+			func3-gcr =     <0xf03e10 0xf03e10 0xf03e10 NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf03e10 NO_FUNC>;
+			func3-en-mask = <0x20     0x08     0x10     0
+					 0        0        0x02     0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf0164e 0xf0164e 0xf0164e NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf0164e NO_FUNC >;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   0
+					 0        0        BIT(6)   0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlh: pinctrl@f01698 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01698 8     /* GPCR */
+			       0x00f03e37 1>;   /* PDSCH */
+			func3-gcr =     <NO_FUNC 0xf03e11 0xf03e11 NO_FUNC
+					 NO_FUNC 0        0        NO_FUNC>;
+			func3-en-mask = <0       0x20     0x20     0
+					 0       0        0        0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0       0        0        0
+					 0       0        0        0      >;
+			volt-sel =      <0xf0164f 0xf0164f 0xf0164f 0xf0164f
+					 0xf0164f 0xf0164f 0xf0164f NO_FUNC>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   0      >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrli: pinctrl@f016a0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016a0 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC 0xf03e10 0xf03e10 0xf03e10>;
+			func3-en-mask = <0       0        0        0
+					 0       0x08     0x08     0x08    >;
+			func4-gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4-en-mask = <0       0        0        0
+					 0       0        0        0       >;
+			volt-sel =      <0xf01650 0xf01650 0xf01650 0xf01650
+					 0xf01650 0xf01650 0xf01650 0xf01650>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlj: pinctrl@f016a8 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016a8 8     /* GPCR */
+			       0x00f03e39 1>;   /* PDSCJ */
+			func3-gcr =     <0xf03e14 NO_FUNC  0xf03e14 0xf03e14
+					 0xf03e10 0xf03e10 NO_FUNC  NO_FUNC>;
+			func3-en-mask = <0x01     0        0x01     0x02
+					 0x02     0x03     0        0      >;
+			func4-gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4-en-mask = <0        0        0        0
+					 0        0        0        0      >;
+			volt-sel =      <0xf01651 0xf01651 0xf01651 0xf01651
+					 0xf01651 0xf01651 NO_FUNC  NO_FUNC >;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   0        0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlk: pinctrl@f016b0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016b0 8     /* GPCR */
+			       0x00f03e3A 1>;   /* PDSCK */
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf01652 0xf01652 0xf01652 0xf01652
+					 0xf01652 0xf01652 0xf01652 0xf01652>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrll: pinctrl@f016b8 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016b8 8     /* GPCR */
+			       0x00f03e3B 1>;   /* PDSCL */
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf01653 0xf01653 0xf01653 0xf01653
+					 0xf01653 0xf01653 0xf01653 0xf01653>;
+			volt-sel-mask = <BIT(0)   BIT(1)   BIT(2)   BIT(3)
+					 BIT(4)   BIT(5)   BIT(6)   BIT(7)  >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlm: pinctrl@f016c0 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f016c0 8     /* GPCR */
+			       NO_FUNC    1>;
+			func3-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4-gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4-en-mask = <0       0       0       0
+					 0       0       0       0      >;
+			volt-sel =      <0xf03e2d 0xf03e2d 0xf03e2d 0xf03e2d
+					 0xf03e2d 0xf03e2d 0xf03e2d NO_FUNC >;
+			volt-sel-mask = <BIT(4)   BIT(4)   BIT(4)   BIT(4)
+					 BIT(4)   BIT(4)   BIT(4)   0       >;
+			#pinmux-cells = <2>;
+			gpio-group;
+		};
+
+		pinctrlksi: pinctrl@f01d40 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d40 8   /* KSIGCTRL */
+			       0x00f01d05 1>; /* KSICTRL */
+			pp-od-mask = <NO_FUNC>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrlksol: pinctrl@f01d48 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d48 8   /* KSOLGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrlksoh: pinctrl@f01d50 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d50 8   /* KSOHGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		wuc1: wakeup-controller@f01b00 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b00 1   /* WUEMR1 */
+			       0x00f01b01 1   /* WUESR1 */
+			       0x00f01b02 1   /* WUENR1 */
+			       0x00f01b03 1>; /* WUBEMR1 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc2: wakeup-controller@f01b04 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b04             1   /* WUEMR2 */
+			       0x00f01b05             1   /* WUESR2 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR2 */
+			       0x00f01b07             1>; /* WUBEMR2 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc3: wakeup-controller@f01b08 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b08 1   /* WUEMR3 */
+			       0x00f01b09 1   /* WUESR3 */
+			       0x00f01b0a 1   /* WUENR3 */
+			       0x00f01b0b 1>; /* WUBEMR3 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc4: wakeup-controller@f01b0c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b0c 1   /* WUEMR4 */
+			       0x00f01b0d 1   /* WUESR4 */
+			       0x00f01b0e 1   /* WUENR4 */
+			       0x00f01b0f 1>; /* WUBEMR4 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc5: wakeup-controller@f01b10 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b10             1   /* WUEMR5 */
+			       0x00f01b11             1   /* WUESR5 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR5 */
+			       0x00f01b13             1>; /* WUBEMR5 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc6: wakeup-controller@f01b14 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b14             1   /* WUEMR6 */
+			       0x00f01b15             1   /* WUESR6 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR6 */
+			       0x00f01b17             1>; /* WUBEMR6 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc7: wakeup-controller@f01b18 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b18             1   /* WUEMR7 */
+			       0x00f01b19             1   /* WUESR7 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR7 */
+			       0x00f01b1b             1>; /* WUBEMR7 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc8: wakeup-controller@f01b1c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b1c             1   /* WUEMR8 */
+			       0x00f01b1d             1   /* WUESR8 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR8 */
+			       0x00f01b1f             1>; /* WUBEMR8 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc9: wakeup-controller@f01b20 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b20             1   /* WUEMR9 */
+			       0x00f01b21             1   /* WUESR9 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR9 */
+			       0x00f01b23             1>; /* WUBEMR9 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc10: wakeup-controller@f01b24 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b24             1   /* WUEMR10 */
+			       0x00f01b25             1   /* WUESR10 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR10 */
+			       0x00f01b27             1>; /* WUBEMR10 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc11: wakeup-controller@f01b28 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b28             1   /* WUEMR11 */
+			       0x00f01b29             1   /* WUESR11 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR11 */
+			       0x00f01b2b             1>; /* WUBEMR11 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc12: wakeup-controller@f01b2c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b2c             1   /* WUEMR12 */
+			       0x00f01b2d             1   /* WUESR12 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR12 */
+			       0x00f01b2f             1>; /* WUBEMR12 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc13: wakeup-controller@f01b30 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b30             1   /* WUEMR13 */
+			       0x00f01b31             1   /* WUESR13 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR13 */
+			       0x00f01b33             1>; /* WUBEMR13 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc14: wakeup-controller@f01b34 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b34             1   /* WUEMR14 */
+			       0x00f01b35             1   /* WUESR14 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR14 */
+			       0x00f01b37             1>; /* WUBEMR14 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc15: wakeup-controller@f01b38 {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b38             1   /* WUEMR15 */
+			       0x00f01b39             1   /* WUESR15 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR15 */
+			       0x00f01b3b             1>; /* WUBEMR15 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		wuc16: wakeup-controller@f01b3c {
+			compatible = "ite,it8xxx2-wuc";
+			reg = <0x00f01b3c             1   /* WUEMR16 */
+			       0x00f01b3d             1   /* WUESR16 */
+			       IT8XXX2_WUC_UNUSED_REG 1   /* WUENR16 */
+			       0x00f01b3f             1>; /* WUBEMR16 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
+		i2c0: i2c@f04300 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04300 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_A>;
+			channel-switch-sel = <I2C_CHA_LOCATE>;
+			scl-gpios = <&gpiob 3 0>;
+			sda-gpios = <&gpiob 4 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBA>;
+		};
+
+		i2c1: i2c@f04380 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04380 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_B>;
+			channel-switch-sel = <I2C_CHB_LOCATE>;
+			scl-gpios = <&gpioc 1 0>;
+			sda-gpios = <&gpioc 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBB>;
+		};
+
+		i2c2: i2c@f04400 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04400 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <SMB_CHANNEL_C>;
+			channel-switch-sel = <I2C_CHC_LOCATE>;
+			scl-gpios = <&gpiof 6 0>;
+			sda-gpios = <&gpiof 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBC>;
+		};
+
+		i2c3: i2c@f04480 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04480 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_D>;
+			channel-switch-sel = <I2C_CHD_LOCATE>;
+			scl-gpios = <&gpioh 1 0>;
+			sda-gpios = <&gpioh 2 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBD>;
+		};
+
+		i2c4: i2c@f04500 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04500 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_E>;
+			channel-switch-sel = <I2C_CHE_LOCATE>;
+			scl-gpios = <&gpioe 0 0>;
+			sda-gpios = <&gpioe 7 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBE>;
+		};
+
+		i2c5: i2c@f04580 {
+			compatible = "ite,enhance-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00f04580 0x0080>;
+			interrupts = <IT8XXX2_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			port-num = <I2C_CHANNEL_F>;
+			channel-switch-sel = <I2C_CHF_LOCATE>;
+			scl-gpios = <&gpioa 4 0>;
+			sda-gpios = <&gpioa 5 0>;
+			clock-gate-offset = <CGC_OFFSET_SMBF>;
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			status = "disabled";
+			port-num = <2>;
+			gpios = <&gpiof 0 0>;
+			uart-dev = <&uart2>;
+		};
+
+		usb0: usbd@f02f00 {
+			compatible = "ite,it82xx2-usb";
+			interrupts = <IT8XXX2_IRQ_USB IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wucctrl = <&wuc_wu90>;
+			reg = <0x00f02f00 256>;
+			status = "disabled";
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <10>;
+			num-out-endpoints = <5>;
+		};
+
+		sha0: crypto@f03c00 {
+			compatible = "ite,it8xxx2-sha-v2";
+			reg = <0x00f03c00 0x5>;
+			status = "disabled";
+		};
+	};
+};

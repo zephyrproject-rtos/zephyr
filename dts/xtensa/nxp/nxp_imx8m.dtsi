@@ -1,0 +1,87 @@
+/*
+ * Copyright 2021, 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
+		};
+	};
+
+	sram0: memory@92400000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92400000 DT_SIZE_K(512)>;
+	};
+
+	sram1: memory@92c00000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92c00000 DT_SIZE_K(512)>;
+	};
+
+	soc {
+		ccm: ccm@30380000 {
+			compatible = "nxp,imx-ccm";
+			reg = <0x30380000 DT_SIZE_K(64)>;
+			#clock-cells = <3>;
+		};
+
+		iomuxc: iomuxc@30330000 {
+			compatible = "nxp,imx-iomuxc";
+			reg = <0x30330000 DT_SIZE_K(64)>;
+			status = "okay";
+			pinctrl: pinctrl {
+				status = "okay";
+				compatible = "nxp,imx8mp-pinctrl";
+			};
+		};
+
+		/*
+		 * For now only UART4 is supported and
+		 * tested with the serial driver
+		 */
+		uart4: uart@30a60000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30a60000 0x10000>;
+			/* TODO: This INTID is just a dummy
+			 * until we can support UART interrupts
+			 */
+			interrupt-parent = <&clic>;
+			interrupts = <29 0 0>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
+		mailbox0: mailbox@30e70000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x30e70000 0x10000>;
+			interrupt-parent = <&clic>;
+			interrupts = <7 0 0>;
+			rdc = <0>;
+			status = "disabled";
+		};
+	};
+};

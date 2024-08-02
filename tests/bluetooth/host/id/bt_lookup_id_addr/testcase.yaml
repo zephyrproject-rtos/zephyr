@@ -1,0 +1,11 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_lookup_id_addr.default:
+    type: unit
+  bluetooth.host.bt_lookup_id_addr.bt_smp_enabled:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SMP=y

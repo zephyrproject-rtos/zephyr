@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NOTE: this feature is only available in nRF9160 DK v0.14.0 or later. */
+
+&nrf52840_reset {
+	status = "okay";
+	gpios = <&interface_to_nrf52840 9 GPIO_ACTIVE_LOW>;
+};

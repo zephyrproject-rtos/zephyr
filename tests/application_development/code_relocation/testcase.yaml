@@ -1,0 +1,40 @@
+common:
+  tags: linker
+tests:
+  application_development.code_relocation:
+    filter: not CONFIG_CPU_HAS_NXP_MPU and CONFIG_MINIMAL_LIBC and dt_chosen_enabled("zephyr,itcm")
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=y
+    platform_allow:
+      - mimxrt1060_evk
+  application_development.code_relocation_kinetis:
+    filter: CONFIG_CPU_HAS_NXP_MPU
+    arch_allow: arm
+    extra_configs:
+      - CONFIG_MPU_ALLOW_FLASH_WRITE=y
+    platform_allow:
+      - frdm_k64f
+  application_development.code_relocation.no_itcm:
+    filter: not CONFIG_CPU_HAS_NXP_MPU and not dt_chosen_enabled("zephyr,itcm")
+    arch_allow: arm
+    extra_sections:
+      - _SRAM2_RODATA_SECTION_NAME
+      - _SRAM_TEXT_SECTION_NAME
+      - _SRAM_RODATA_SECTION_NAME
+      - _SRAM_DATA_SECTION_NAME
+      - _CUSTOM_SECTION_NAME2
+    platform_allow:
+      - qemu_cortex_m3
+      - mps2/an385
+      - sam_e70_xplained/same70q21
+    integration_platforms:
+      - qemu_cortex_m3
+  application_development.code_relocation.riscv:
+    extra_args: CONF_FILE="prj_riscv.conf"
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+  application_development.code_relocation.xtensa:
+    extra_args: CONF_FILE="prj_xtensa.conf"
+    platform_allow: qemu_xtensa

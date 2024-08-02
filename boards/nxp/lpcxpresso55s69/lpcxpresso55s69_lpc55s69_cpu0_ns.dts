@@ -1,0 +1,135 @@
+/*
+ * Copyright 2019,2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S6x_ns.dtsi>
+#include "lpcxpresso55s69.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP LPCXpresso55S69 board";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	aliases {
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+		watchdog0 = &wwdt0;
+		accel0 = &mma8652fc;
+	};
+
+	chosen {
+		zephyr,sram = &non_secure_ram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "User SW1";
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_2: button_1 {
+			label = "User SW2";
+			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		user_button_3: button_2 {
+			label = "User SW3";
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
+
+&blue_led {
+	status = "okay";
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&hs_lspi {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
+};

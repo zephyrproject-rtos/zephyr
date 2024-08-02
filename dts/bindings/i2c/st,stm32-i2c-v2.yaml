@@ -1,0 +1,57 @@
+# Copyright (c) 2017 I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 I2C V2 controller
+
+compatible: "st,stm32-i2c-v2"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  timings:
+    type: array
+    description: |
+        An optional table of pre-computed i2c timing values with the
+        matching clock configuration.
+
+        Precise timings values for a given Hardware can be pre-computed
+        with a tool like STM32CubeMX or directly from I2C_TIMINGR register
+        description.
+
+        Because timing value is valid for a given I2C peripheral clock
+        frequency and target I2C bus clock, each timing value must be
+        provided with the matching configuration.
+
+        The resulting table entries should look like <periph_clock
+        clock-frequency timing>
+
+        For example timings could be defined as
+
+            timings = <64000000 I2C_BITRATE_STANDARD 0x10707DBC>,
+                      <64000000 I2C_BITRATE_FAST 0x00603D56>,
+                      <56000000 I2C_BITRATE_STANDARD 0x10606DA4>,
+                      <56000000 I2C_BITRATE_FAST 0x00501D63>;
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SCL signal is routed. This is only needed for
+      I2C bus recovery support.
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the I2C SDA signal is routed. This is only needed for
+      I2C bus recovery support.

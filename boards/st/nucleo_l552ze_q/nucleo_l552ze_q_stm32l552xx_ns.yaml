@@ -1,0 +1,13 @@
+identifier: nucleo_l552ze_q/stm32l552xx/ns
+name: ST Nucleo L552ZE Q non secure
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - dac
+ram: 192
+flash: 36
+vendor: st

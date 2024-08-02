@@ -1,0 +1,12 @@
+description: NUVOTON NUMICRO FAMILY UART
+
+compatible: "nuvoton,numicro-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true

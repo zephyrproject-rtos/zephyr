@@ -1,0 +1,7 @@
+/ {
+	zephyr,user {
+		dac = <&dac1>;
+		dac-channel-id = <1>;
+		dac-resolution = <12>;
+	};
+};

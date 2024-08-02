@@ -1,0 +1,248 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f303Xc.dtsi>
+#include <st/f3/stm32f303v(b-c)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32F3DISCOVERY board";
+	compatible = "st,stm32f3discovery";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_3: led_3 {
+			gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		blue_led_4: led_4 {
+			gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+		orange_led_5: led_5 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
+			label = "User LD5";
+		};
+		green_led_6: led_6 {
+			gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+		green_led_7: led_7 {
+			gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
+			label = "User LD7";
+		};
+		orange_led_8: led_8 {
+			gpios = <&gpioe 14 GPIO_ACTIVE_HIGH>;
+			label = "User LD8";
+		};
+		blue_led_9: led_9 {
+			gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+			label = "User LD9";
+		};
+		red_led_10: led_10 {
+			gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
+			label = "User LD10";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_6;
+		led1 = &green_led_7;
+		sw0 = &user_button;
+		magn0 = &lsm303dlhc_magn;
+		watchdog0 = &iwdg;
+		accel0 = &lsm303dlhc_accel;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pc10 &uart4_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm303dlhc_magn: lsm303dlhc-magn@1e {
+		compatible = "st,lsm303dlhc-magn";
+		reg = <0x1e>;
+	};
+
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
+		reg = <0x19>;
+		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
+			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa10>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pd0 &can_tx_pd1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 6Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3e800 {
+			label = "storage";
+			reg = <0x0003e800 DT_SIZE_K(6)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pa0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */
+	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

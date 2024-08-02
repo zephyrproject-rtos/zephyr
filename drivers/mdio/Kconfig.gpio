@@ -1,0 +1,9 @@
+# Copyright (c) 2023, Aleksandr Senin
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_GPIO
+	bool "GPIO bitbang MDIO controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MDIO_GPIO_ENABLED
+	help
+	  Enable software driven (bit banging) MDIO support using GPIO pins

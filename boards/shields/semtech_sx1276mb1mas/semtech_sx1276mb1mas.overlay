@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2023 Marcin Niestroj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		lora0 = &lora_semtech_sx1276mb1mas;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>;	/* D10 */
+
+	lora_semtech_sx1276mb1mas: lora@0 {
+		compatible = "semtech,sx1276";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_LOW>;   /* A0 */
+
+		dio-gpios = <&arduino_header 8 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO0 is D2 */
+		            <&arduino_header 9 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO1 is D3 */
+			    <&arduino_header 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO2 is D4 */
+			    <&arduino_header 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO3 is D5 */
+			    <&arduino_header 14 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,	   /* DIO4 is D8 */
+			    <&arduino_header 15 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;	   /* DIO5 is D9 */
+
+		rfo-enable-gpios = <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* RXTX_EXT is A4 */
+	};
+};

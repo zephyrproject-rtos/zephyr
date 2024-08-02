@@ -1,0 +1,14 @@
+# NUMAKER Ethernet Driver configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_NUMAKER
+	bool "Nuvoton NUMAKER MCU Ethernet driver"
+	default y
+	select HAS_NUMAKER_ETH
+	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
+	help
+	  This option enables the Ethernet driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker ETH.

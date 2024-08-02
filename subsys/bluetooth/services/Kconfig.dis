@@ -1,0 +1,147 @@
+# GATT Device Information service
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_DIS
+	bool "GATT Device Information service"
+
+if BT_DIS
+
+config BT_DIS_SETTINGS
+	bool "Settings usage in Device Information Service"
+	select SETTINGS
+	help
+	  Enable Settings usage in Device Information Service.
+
+config BT_DIS_STR_MAX
+	int "Maximum size in bytes for DIS strings"
+	depends on BT_DIS_SETTINGS
+	default 21
+	range 2 248
+	help
+	  Bluetooth DIS string storage size. Storage can be up to 248 bytes
+	  long (excluding NULL termination).
+
+config BT_DIS_MODEL
+	string "Model name"
+	default SOC
+	help
+	  The device model inside Device Information Service.
+
+config BT_DIS_MANUF
+	string "Manufacturer name"
+	default "Manufacturer"
+	help
+	  The device manufacturer inside Device Information Service.
+
+config BT_DIS_PNP
+	bool "PnP_ID characteristic"
+	default y
+	help
+	  Enable PnP_ID characteristic in Device Information Service.
+
+if BT_DIS_PNP
+
+config BT_DIS_PNP_VID_SRC
+	int "Vendor ID source"
+	range 1 2
+	default 1
+	help
+	  The Vendor ID Source field designates which organization assigned the
+	  value used in the Vendor ID field value.
+	  The possible values are:
+	  - 1 Bluetooth SIG, the Vendor ID was assigned by the Bluetooth SIG
+	  - 2 USB IF, the Vendor ID was assigned by the USB IF
+
+config BT_DIS_PNP_VID
+	hex "Vendor ID"
+	range 0 0xFFFF
+	default 0
+	help
+	  The Vendor ID field is intended to uniquely identify the vendor of the
+	  device. This field is used in conjunction with Vendor ID Source field,
+	  which determines which organization assigned the Vendor ID field value.
+	  Note: The Bluetooth Special Interest Group assigns Device ID Vendor ID,
+	  and the USB Implementers Forum assigns Vendor IDs,
+	  either of which can be used for the Vendor ID field value.
+	  Device providers should procure the Vendor ID from the USB Implementers
+	  Forum or the Company Identifier from the Bluetooth SIG.
+
+config BT_DIS_PNP_PID
+	hex "Product ID"
+	range 0 0xFFFF
+	default 0
+	help
+	  The Product ID field is intended to distinguish between different products
+	  made by the vendor identified with the Vendor ID field. The vendors
+	  themselves manage Product ID field values.
+
+config BT_DIS_PNP_VER
+	hex "Product Version"
+	range 0 0xFFFF
+	default 1
+	help
+	  The Product Version field is a numeric expression identifying the device
+	  release number in Binary-Coded Decimal. This is a vendor-assigned value,
+	  which defines the version of the product identified by the Vendor ID and
+	  Product ID fields. This field is intended to differentiate between
+	  versions of products with identical Vendor IDs and Product IDs.
+	  The value of the field value is 0xJJMN for version JJ.M.N
+	  (JJ - major version number, M - minor version number,
+	  N - sub-minor version number); e.g., version 2.1.3 is represented with
+	  value 0x0213 and version 2.0.0 is represented with a value of 0x0200.
+	  When upward-compatible changes are made to the device, it is recommended
+	  that the minor version number be incremented. If incompatible changes are
+	  made to the device, it is recommended that the major version number be
+	  incremented. The sub-minor version is incremented for bug fixes.
+
+endif # BT_DIS_PNP
+
+config BT_DIS_SERIAL_NUMBER
+	bool "DIS Serial number characteristic"
+	help
+	  Enable Serial Number characteristic in Device Information Service.
+
+config BT_DIS_SERIAL_NUMBER_STR
+	string "Serial Number"
+	depends on BT_DIS_SERIAL_NUMBER
+	help
+	  Enable Serial Number characteristic in Device Information Service.
+
+config BT_DIS_FW_REV
+	bool "DIS Firmware Revision characteristic"
+	help
+	  Enable Firmware Revision characteristic in Device Information Service.
+
+config BT_DIS_FW_REV_STR
+	string "Firmware revision"
+	depends on BT_DIS_FW_REV
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
+	default "0.0.0+0"
+	help
+	  Enable firmware revision characteristic in Device Information Service.
+
+config BT_DIS_HW_REV
+	bool "DIS Hardware Revision characteristic"
+	help
+	  Enable Hardware Revision characteristic in Device Information Service.
+
+config BT_DIS_HW_REV_STR
+	string "Hardware revision"
+	depends on BT_DIS_HW_REV
+	help
+	  Enable hardware revision characteristic in Device Information Service.
+
+config BT_DIS_SW_REV
+	bool "DIS Software Revision characteristic"
+	help
+	  Enable Software Revision characteristic in Device Information Service.
+
+config BT_DIS_SW_REV_STR
+	string "Software revision"
+	depends on BT_DIS_SW_REV
+	help
+	  Enable software revision characteristic in Device Information Service.
+
+endif # BT_DIS

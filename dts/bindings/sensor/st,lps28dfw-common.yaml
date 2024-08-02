@@ -1,0 +1,32 @@
+# Copyright (c) 2023 STMicroelectronics
+# Copyright (c) 2023 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LPS28DFW pressure and temperature sensor. This is an
+    extension of st,lps22df driver binding.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lps2xdf.h>
+
+    lps28dfw@5d {
+      ...
+
+      odr = <LPS2xDF_DT_ODR_10HZ>;
+      lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+      avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+    };
+
+include: st,lps22df-common.yaml
+
+properties:
+  fs:
+    type: int
+    default: 0
+    description: |
+        Specify the full-scale mode.
+        The default is the power-on reset value.
+
+        - 0 # LPS28DFW_DT_FS_MODE_1_1260
+        - 1 # LPS28DFW_DT_FS_MODE_2_4060
+    enum: [0, 1]

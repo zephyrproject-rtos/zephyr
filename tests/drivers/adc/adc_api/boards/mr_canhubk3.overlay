@@ -1,0 +1,36 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 22>, <&adc0 23>;
+	};
+};
+
+&adc0 {
+	group-channel = "standard";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@16 {
+		reg = <22>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+
+	channel@17 {
+		reg = <23>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+	};
+};

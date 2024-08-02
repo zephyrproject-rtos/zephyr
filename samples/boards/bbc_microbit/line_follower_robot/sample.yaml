@@ -1,0 +1,10 @@
+sample:
+  name: BBC micro:bit Line follower robot
+tests:
+  sample.board.bbc_microbit.line_follower_robot:
+    platform_allow: bbc_microbit
+    tags:
+      - microbit
+      - line-follower
+      - robot
+      - car

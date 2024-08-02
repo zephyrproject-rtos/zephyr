@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_MCUX
+	bool "MCUX flash shim driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_FTFA_ENABLED || \
+		   DT_HAS_NXP_KINETIS_FTFE_ENABLED || \
+		   DT_HAS_NXP_KINETIS_FTFL_ENABLED || \
+		   DT_HAS_NXP_IAP_FMC55_ENABLED || \
+		   DT_HAS_NXP_IAP_FMC553_ENABLED || \
+		   DT_HAS_NXP_IAP_MSF1_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enables the MCUX flash shim driver.
+	  WARNING: This driver will disable the system interrupts for
+	  the duration of the flash erase/write operations. This will
+	  have an impact on the overall system performance - whether
+	  this is acceptable or not will depend on the use case.
+
+if SOC_FLASH_MCUX
+
+config CHECK_BEFORE_READING
+	bool "Verify area before reading it"
+	default y if SOC_SERIES_LPC55XXX
+	help
+	  Do a margin check flash command before reading an area.
+	  This feature prevents erroneous/forbidden reading. Some ECC enabled
+	  devices will crash when reading an erased or wrongly programmed area.
+
+endif # SOC_FLASH_MCUX
+
+if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
+
+menu "Flexspi flash driver"
+
+config FLASH_MCUX_FLEXSPI_NOR
+	bool "MCUX FlexSPI NOR driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_NOR_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G
+	bool "MCUX FlexSPI MX25UM51345G driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_MX25UM51345G_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+
+config FLASH_MCUX_FLEXSPI_HYPERFLASH
+	bool "MCUX FlexSPI HYPERFLASH driver"
+	default y
+	depends on DT_HAS_NXP_IMX_FLEXSPI_HYPERFLASH_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+
+endmenu
+
+if FLASH_MCUX_FLEXSPI_MX25UM51345G
+
+choice FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_MODE
+	prompt "FlexSPI MX25UM51345G OPI mode"
+	default FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
+	help
+	  Select the MX25UM51345G octal flash operation mode(Octal I/O STR
+	  or Octal I/O DTR).
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR
+	bool "STR"
+
+config FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR
+	bool "DTR"
+
+endchoice
+
+endif # FLASH_MCUX_FLEXSPI_MX25UM51345G
+
+config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+	bool "MCUX FlexSPI NOR write RAM buffer"
+	default y
+	depends on (FLASH_MCUX_FLEXSPI_NOR || FLASH_MCUX_FLEXSPI_MX25UM51345G)
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located on the
+	  flash itself.
+
+config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
+	bool "MCUX FlexSPI HYPERFLASH write RAM buffer"
+	default y
+	depends on FLASH_MCUX_FLEXSPI_HYPERFLASH
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located on the
+	  flash itself.
+
+endif # HAS_MCUX_FLEXSPI

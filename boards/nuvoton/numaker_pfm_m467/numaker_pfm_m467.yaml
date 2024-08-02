@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_pfm_m467
+name: NUVOTON NUMAKER-PFM-M467 Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 1024
+supported:
+  - gpio
+vendor: nuvoton

@@ -1,0 +1,93 @@
+# Ethernet drivers configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_DRIVER
+	bool "Ethernet drivers"
+	depends on NETWORKING
+	depends on !NET_TEST
+	default y if NET_L2_ETHERNET
+
+if ETH_DRIVER
+
+config ETH_DRIVER_RAW_MODE
+	bool "Ethernet driver without the MAC stack"
+	select NET_RAW_MODE
+	depends on !NET_L2_ETHERNET
+	help
+	  This option enables using the drivers in a so-called "raw" mode,
+	  i.e. without a MAC stack (the net L2 layer for ethernet will not
+	  be built).
+
+module = ETHERNET
+module-dep = LOG
+module-str = Log level for Ethernet driver
+module-help = Sets log level for Ethernet Device Drivers.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config ETH_QEMU_IFACE_NAME
+	string "Network interface name for QEMU"
+	default "zeth"
+	depends on NET_QEMU_ETHERNET
+	help
+	  The network interface name for QEMU. This value is given as
+	  a parameter to -nic qemu command line option. The network
+	  interface must be created before starting QEMU. The net-setup.sh
+	  script from net-tools project can be used to create the network
+	  interface.
+
+config ETH_QEMU_EXTRA_ARGS
+	string "Extra arguments to QEMU -nic option"
+	depends on NET_QEMU_ETHERNET
+	default ""
+	help
+	  Extra arguments passed to QEMU -nic option when Ethernet Networking
+	  is enabled. Typically this is used to set the network MAC address of
+	  Zephyr instance. This option can contain multiple QEMU option
+	  arguments. Each QEMU argument must be separated by comma "," and no
+	  spaces between arguments. Example: "mac=02:03:04:f0:0d:01" or
+	  "mac=02:03:04:f0:0d:01,downscript=no"
+
+source "drivers/ethernet/Kconfig.enc28j60"
+source "drivers/ethernet/Kconfig.enc424j600"
+source "drivers/ethernet/Kconfig.esp32"
+source "drivers/ethernet/Kconfig.e1000"
+source "drivers/ethernet/Kconfig.sam_gmac"
+source "drivers/ethernet/Kconfig.stm32_hal"
+source "drivers/ethernet/Kconfig.dwmac"
+source "drivers/ethernet/Kconfig.smsc911x"
+source "drivers/ethernet/Kconfig.native_posix"
+source "drivers/ethernet/Kconfig.stellaris"
+source "drivers/ethernet/Kconfig.litex"
+source "drivers/ethernet/Kconfig.gecko"
+source "drivers/ethernet/Kconfig.w5500"
+source "drivers/ethernet/Kconfig.dsa"
+source "drivers/ethernet/Kconfig.xlnx_gem"
+source "drivers/ethernet/Kconfig.cyclonev"
+source "drivers/ethernet/Kconfig.nxp_s32_netc"
+source "drivers/ethernet/Kconfig.nxp_s32_gmac"
+source "drivers/ethernet/Kconfig.smsc91x"
+source "drivers/ethernet/Kconfig.ivshmem"
+source "drivers/ethernet/Kconfig.adin2111"
+source "drivers/ethernet/Kconfig.numaker"
+source "drivers/ethernet/Kconfig.lan865x"
+source "drivers/ethernet/Kconfig.xmc4xxx"
+
+source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
+
+source "drivers/ethernet/phy/Kconfig"
+
+source "drivers/ethernet/nxp_enet/Kconfig"
+
+endif # "Ethernet Drivers"
+
+config ETH_INIT_PRIORITY
+	int "Ethernet driver init priority"
+	default 80
+	depends on NET_L2_ETHERNET || ETH_DRIVER
+	help
+	  Ethernet device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.

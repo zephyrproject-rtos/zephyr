@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 12>;
+		reference_mv = <1100>;
+	};
+};
+
+&adc0{
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@12 {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

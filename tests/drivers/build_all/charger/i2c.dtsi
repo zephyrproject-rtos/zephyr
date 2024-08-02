@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2023 Cirrus Logic, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ ***************************************/
+
+bq24190@0 {
+	compatible = "ti,bq24190";
+	reg = <0x0>;
+	status = "okay";
+
+	constant-charge-current-max-microamp = <1000000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+};
+
+max20335@1 {
+	compatible = "maxim,max20335";
+	reg = <0x01>;
+	status = "okay";
+
+	charger: charger {
+		compatible = "maxim,max20335-charger";
+
+		chgin-to-sys-current-limit-microamp = <100000>;
+		constant-charge-voltage-max-microvolt = <4050000>;
+		system-voltage-min-threshold-microvolt = <3600000>;
+		re-charge-threshold-microvolt = <170000>;
+		thermistor-monitoring-mode = "JEITA-2";
+		int-gpios = <&test_gpio 0 0>;
+	};
+};
+
+bq25180@2 {
+	compatible = "ti,bq25180";
+	reg = <0x2>;
+	constant-charge-current-max-microamp = <500000>;
+};

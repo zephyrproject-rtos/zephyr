@@ -1,0 +1,16 @@
+description: RV32M1 pinmux node
+
+compatible: "openisa,rv32m1-pinmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+pinmux-cells:
+  - pin
+  - function

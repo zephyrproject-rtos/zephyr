@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_cis_terminate
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_cis_terminate.test:
+    type: unit

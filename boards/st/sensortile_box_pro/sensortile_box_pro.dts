@@ -1,0 +1,367 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/u5/stm32u585Xi.dtsi>
+#include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics SENSORTILE-BOX-PRO board";
+	compatible = "st,sensortile-box-pro";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &hci_spi;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpiof 6 GPIO_ACTIVE_HIGH>;
+			label = "User GREEN led";
+		};
+		red_led_1: led_2 {
+			gpios = <&gpioh 11 GPIO_ACTIVE_HIGH>;
+			label = "User RED led";
+		};
+		yellow_led_1: led_3 {
+			gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
+			label = "User YELLOW led";
+		};
+		blue_led_1: led_4 {
+			gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
+			label = "User YELLOW led";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button1: button1 {
+			label = "User BT1";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button2: button2 {
+			label = "User BT2";
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	sd_card: sd-card {
+		compatible = "st,stile_sd_card";
+		en-sd-gpios = <&gpioh 10 (GPIO_ACTIVE_HIGH)>;
+		sel-sd-gpios = <&gpioh 8 (GPIO_ACTIVE_HIGH)>;
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &red_led_1;
+		led2 = &yellow_led_1;
+		led3 = &blue_led_1;
+		mcuboot-led0 = &blue_led_1;
+		mcuboot-button0 = &button1;
+		sw1 = &button1;
+		sw2 = &button2;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&gpioi {
+	status = "okay";
+
+	/* switch sensor IMU bus from I2C1 to SPI2 */
+	mcu-sel-gpios {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <80>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msis>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	hci_spi: bluenrg-lp@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		irq-gpios = <&gpiod 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiod 4 GPIO_ACTIVE_LOW>;
+		spi-cpol;
+		spi-cpha;
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		controller-data-delay-us = <0>;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
+&spi1_sck_pa5 {
+	/delete-property/ bias-pull-down;
+	bias-pull-up; /* Idle state for the clock pin is high-level due to SPI mode 3 */
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pi2 &spi2_mosi_pi3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioi 5 GPIO_ACTIVE_LOW>, <&gpioi 7 GPIO_ACTIVE_LOW>;
+
+	lsm6dsv16x: lsm6dsv16x@0 {
+		compatible = "st,lsm6dsv16x";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <0>;
+		int1-gpios = <&gpioa 4 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiod 11 GPIO_ACTIVE_HIGH>;
+
+		drdy-pin = <2>;
+	};
+
+	lis2du12: lis2du12@1 {
+		compatible = "st,lis2du12";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <1>;
+		int1-gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiof 15 GPIO_ACTIVE_HIGH>;
+
+		drdy-pin = <1>;
+	};
+};
+
+&timers4 {
+	status = "okay";
+	st,prescaler = <1>;
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch1_pb6>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	status = "okay";
+	st,prescaler = <255>;
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pe4>;
+		pinctrl-names = "default";
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lps22df@5d {
+		compatible = "st,lps22df";
+		reg = <0x5d>;
+		drdy-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	lis2mdl@1e {
+		compatible = "st,lis2mdl";
+		reg = <0x1e>;
+		irq-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	stts22h@38 {
+		compatible = "st,stts22h";
+		reg = <0x38>;
+		int-gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in15_pb0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in19_pb1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&dac1 {
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2
+		     &sdmmc1_d0dir_pc6 &sdmmc1_d123dir_pc7
+		     &sdmmc1_cdir_pb9 &sdmmc1_ckin_pb8>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+	pwr-gpios = <&gpioh 10 GPIO_ACTIVE_LOW>;
+	bus-width = <4>;
+	clk-div = <4>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of sensortile_box_pro
+		 * with TZEN=0 (so w/o TFM).
+		 * Set the partitions with first MB to make use of the whole Bank1
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(416)>;
+		};
+		slot1_partition: partition@78000 {
+			label = "image-1";
+			reg = <0x00078000 DT_SIZE_K(416)>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 DT_SIZE_K(64)>;
+		};
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 DT_SIZE_K(64)>;
+		};
+
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};

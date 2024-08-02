@@ -1,0 +1,24 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bosch BMA280 triaxial acceleration sensor.  See more info at:
+  https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/bma280.html
+
+compatible: "bosch,bma280"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Identifies pin for the INT1 signal on the sensor.  The sensor
+      INT2 signal is not supported by the driver.
+
+  is-bmc150:
+    type: boolean
+    description: |
+      Specifies that the driver should adapt to the accelerometer
+      capability provided by the BMC150 6-axis eCompass.  This affects
+      the chip ID and the resolution of the measurements.

@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2024 Arm Limited and/or its
+# affiliates <open-source-office@arm.com></text>
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_ETHOS_U
+	bool "Ethos-U core driver"
+	default n
+	depends on MULTITHREADING
+	help
+	  This option enables the Arm Ethos-U core driver.
+
+if ARM_ETHOS_U
+menu "Arm Ethos-U NPU configuration"
+choice  ARM_ETHOS_U_NPU_CONFIG
+	prompt "Arm Ethos-U NPU configuration"
+	default ARM_ETHOS_U55_128
+config ARM_ETHOS_U55_64
+	bool "using Ethos-U55 with 64 macs"
+config ARM_ETHOS_U55_128
+	bool "using Ethos-U55 with 128 macs"
+config ARM_ETHOS_U55_256
+	bool "using Ethos-U55 with 256 macs"
+config ARM_ETHOS_U65_128
+	bool "using Ethos-U65 with 128 macs"
+config ARM_ETHOS_U65_256
+	bool "using Ethos-U65 with 256 macs"
+config ARM_ETHOS_U65_512
+	bool "using Ethos-U65 with 512 macs"
+endchoice
+endmenu
+
+config ARM_ETHOS_U_NPU_NAME
+	string
+	default "ethos-u55-64" if ARM_ETHOS_U55_64
+	default "ethos-u55-128" if ARM_ETHOS_U55_128
+	default "ethos-u55-256" if ARM_ETHOS_U55_256
+	default "ethos-u65-128" if ARM_ETHOS_U65_128
+	default "ethos-u65-256" if ARM_ETHOS_U65_256
+	default "ethos-u65-512" if ARM_ETHOS_U65_512
+	help
+		Name of the used Arm NPU
+
+choice "ARM_ETHOS_U_LOG_LEVEL_CHOICE"
+	prompt "Max compiled-in log level for arm_ethos_u"
+	default ARM_ETHOS_U_LOG_LEVEL_WRN
+	depends on STDOUT_CONSOLE
+
+config ARM_ETHOS_U_LOG_LEVEL_NONE
+	bool "None"
+
+config ARM_ETHOS_U_LOG_LEVEL_ERR
+	bool "Error"
+
+config ARM_ETHOS_U_LOG_LEVEL_WRN
+	bool "Warning"
+
+config ARM_ETHOS_U_LOG_LEVEL_INF
+	bool "Info"
+
+config ARM_ETHOS_U_LOG_LEVEL_DBG
+	bool "Debug"
+
+config ARM_ETHOS_U_LOG_LEVEL_DEFAULT
+	bool "Default"
+
+endchoice
+
+config ARM_ETHOS_U_LOG_LEVEL
+	int
+	depends on STDOUT_CONSOLE
+	default 0 if ARM_ETHOS_U_LOG_LEVEL_NONE
+	default 1 if ARM_ETHOS_U_LOG_LEVEL_ERR
+	default 2 if ARM_ETHOS_U_LOG_LEVEL_WRN
+	default 3 if ARM_ETHOS_U_LOG_LEVEL_INF
+	default 4 if ARM_ETHOS_U_LOG_LEVEL_DBG
+
+endif

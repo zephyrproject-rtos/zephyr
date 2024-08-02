@@ -1,0 +1,11 @@
+# Copyright (c) 2022, Joep Buruma
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_RPI_PICO
+	bool "RPi Pico PWM"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_PWM_ENABLED
+	depends on RESET
+	select PICOSDK_USE_PWM
+	help
+	  Enable PWM driver for RPi Pico family of MCUs

@@ -1,0 +1,1272 @@
+# Zephyr Bluetooth Controller configuration options
+
+# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BT_LL_SW_SPLIT
+
+config BT_LLL_VENDOR_NORDIC
+	bool "Use Nordic LLL"
+	depends on SOC_COMPATIBLE_NRF
+	depends on !$(dt_nodelabel_enabled,timer0)
+	depends on !$(dt_nodelabel_enabled,rtc0)
+
+	select ENTROPY_NRF5_RNG if BT_CTLR_CRYPTO
+	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
+
+	select BT_HAS_HCI_VS
+	select BT_CTLR_CRYPTO_SUPPORT if !SOC_COMPATIBLE_NRF54LX
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					 !BT_CTLR_DATA_LENGTH_CLEAR && \
+					 !BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					  !SOC_SERIES_NRF51X
+	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+	select BT_CTLR_PER_INIT_FEAT_XCHG_SUPPORT
+	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !BT_CTLR_LE_ENC_SUPPORT || \
+						  HAS_HW_NRF_CCM_LFLEN_8BIT || \
+						  BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_EXT_SCAN_FP_SUPPORT
+	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
+					 BT_CTLR_PHY_2M_NRF
+	select BT_CTLR_PHY_CODED_SUPPORT if HAS_HW_NRF_RADIO_BLE_CODED
+	select BT_CTLR_PHY_UPDATE_SUPPORT if BT_CTLR_PHY_2M_SUPPORT || \
+					     BT_CTLR_PHY_CODED_SUPPORT
+	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_ADV_PERIODIC_SUPPORT
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT
+	select BT_CTLR_ADV_ISO_SUPPORT
+	select BT_CTLR_SYNC_ISO_SUPPORT
+	select BT_CTLR_CENTRAL_ISO_SUPPORT
+	select BT_CTLR_PERIPHERAL_ISO_SUPPORT
+	select BT_CTLR_DF_SUPPORT if HAS_HW_NRF_RADIO_DFE
+	select BT_CTLR_CTEINLINE_SUPPORT if HAS_HW_NRF_RADIO_DFE
+	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_SCA_UPDATE_SUPPORT
+	select BT_CTLR_DTM_HCI_SUPPORT
+	select BT_CTLR_CONN_RSSI_SUPPORT
+
+	select BT_CTLR_XTAL_ADVANCED_SUPPORT
+	select BT_CTLR_SCHED_ADVANCED_SUPPORT
+	select BT_CTLR_TIFS_HW_SUPPORT
+	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
+
+	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
+				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
+	select BT_TICKER_REMAINDER if BT_CTLR_CENTRAL_ISO
+	select BT_TICKER_REMAINDER_GET if BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_LAZY_GET if BT_CTLR_ADV_PERIODIC || BT_CTLR_CENTRAL_ISO
+
+	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
+
+	default y
+	help
+	  Use Nordic Lower Link Layer implementation.
+
+config BT_LLL_VENDOR_OPENISA
+	bool "Use OpenISA LLL"
+	depends on SOC_OPENISA_RV32M1
+	select BT_HAS_HCI_VS
+	select BT_CTLR_CRYPTO_SUPPORT
+	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
+					 !BT_CTLR_DATA_LENGTH_CLEAR
+	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
+
+	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN
+
+	default y
+	help
+	  Use OpenISA Lower Link Layer implementation.
+
+# BT_CTLR_DF_SUPPORT is a wrapper for all DF features. Here we select features that are supported by
+# Zephyr's BLE Controller.
+config BT_CTLR_DF_SUPPORT
+	depends on BT_LL_SW_SPLIT && !BT_CTLR_TIFS_HW
+	select BT_CTLR_DF_CTE_TX_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
+config BT_CTLR_XTAL_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_SCHED_ADVANCED_SUPPORT
+	bool
+
+config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
+config BT_CTLR_ULL_LLL_PRIO_SUPPORT
+	bool
+
+config BT_CTLR_RX_PRIO_STACK_SIZE
+	# Hidden, Controller's Co-Operative high priority Rx thread stack size.
+	int
+	default 448
+
+config BT_CTLR_RX_STACK_SIZE
+	# Hidden, Controller's Co-Operative Rx thread stack size.
+	int
+	default 768
+
+config BT_CTLR_SETTINGS
+	bool "Settings System"
+	depends on SETTINGS
+	help
+	  Enable use of settings system in controller.
+
+config BT_CTLR_VERSION_SETTINGS
+	bool "Version Settings"
+	depends on BT_CTLR_SETTINGS
+	help
+	  Make the controller's Company Id and Subversion Number configurable
+	  through settings system.
+
+config BT_CTLR_COMPANY_ID
+	hex "Controller Company Id"
+	default BT_COMPANY_ID
+	range 0x0000 0xFFFF
+	help
+	  Set the Bluetooth Company Identifier that will be used in
+	  the VERSION_IND PDU. Uses BT_COMPANY_ID by default, although
+	  silicon vendors and hardware manufacturers can set their own
+	  Company Identifier for the controller. The full list of Bluetooth
+	  Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
+
+config BT_CTLR_SUBVERSION_NUMBER
+	hex "Subversion Number"
+	default 0xFFFF
+	range 0x0000 0xFFFF
+	help
+	  Set the Subversion Number that will be used in VERSION_IND PDU.
+
+config BT_CTLR_AD_DATA_BACKUP
+	bool "Legacy AD Data backup"
+	depends on BT_PERIPHERAL || BT_CTLR_ADV_EXT
+	default y
+	help
+	  Backup Legacy Advertising Data when switching to Legacy Directed or
+	  to Extended Advertising mode, and restore it when switching back to
+	  Legacy Non-Directed Advertising mode.
+	  Application can disable this feature if not using Directed
+	  Advertising or switch between Legacy and Extended Advertising.
+
+config BT_CTLR_HCI_ADV_HANDLE_MAPPING
+	bool "Advertising set handle mapping between HCI and LL"
+	depends on BT_CTLR_ADV_EXT
+	default y if BT_HCI_RAW
+	help
+	  Enable mapping of advertising set handles between HCI and LL when
+	  using external host since it can use arbitrary numbers as set handles
+	  (as defined by Core specification) as opposed to LL which always uses
+	  zero-based numbering. When using with Zephyr host this option can be
+	  disabled to remove extra mapping logic.
+
+config BT_CTLR_MESH_SCAN_FILTERS
+	int "Number of Mesh scan filters"
+	depends on BT_HCI_MESH_EXT
+	default 1
+	range 1 15
+	help
+	  Set the number of unique Mesh Scan Filters available as part of
+	  the Intel Mesh Vendor Specific Extensions.
+
+config BT_CTLR_MESH_SF_PATTERNS
+	int "Number of Mesh scan filter patterns"
+	depends on BT_HCI_MESH_EXT
+	default 15
+	range 1 15
+	help
+	  Set the number of unique Mesh Scan Filter patterns available per
+	  Scan Filter as part of the Intel Mesh Vendor Specific Extensions.
+
+config BT_CTLR_CHECK_SAME_PEER_CONN
+	bool
+	depends on BT_CONN
+	default BT_MAX_CONN > 1 && !BT_CTLR_ALLOW_SAME_PEER_CONN
+
+if BT_CTLR_ADV_EXT
+
+config BT_CTLR_ADV_EXT_RX_PDU_LEN_MAX
+	int "Maximum Advertising Extensions Receive PDU Length"
+	depends on BT_OBSERVER
+	range $(UINT8_MAX) $(UINT8_MAX) if BT_HCI_RAW
+	range 31 $(UINT8_MAX)
+	default $(UINT8_MAX)
+	help
+	  Maximum Advertising Extensions Receive PDU Length.
+
+config BT_CTLR_SCAN_DATA_LEN_MAX
+	int "Maximum Extended Scanning Data Length"
+	depends on BT_OBSERVER
+	range 31 1650
+	help
+	  Maximum Extended Scanning Data Length.
+
+config BT_CTLR_CHECK_SAME_PEER_SYNC
+	# Hidden Kconfig to add same peer synchronization check
+	bool
+	depends on BT_CTLR_SYNC_PERIODIC
+	default BT_PER_ADV_SYNC_MAX > 1
+
+endif # BT_CTLR_ADV_EXT
+
+config BT_CTLR_ISOAL_LOG_DBG_VERBOSE
+	bool "ISO-AL verbose debug logging"
+	depends on BT_CTLR_ISOAL_LOG_LEVEL = 4
+	default n
+	help
+	  Use this option to enable ISO-AL verbose debug logging.
+
+config BT_CTLR_ISO_TX_SEG_PLAYLOAD_MIN
+	int "Minimum number of playload data bytes in a new segment"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	default 1
+	range 1 64
+	help
+	  Minimum number of payload bytes that would make inserting a new
+	  segment into a PDU worthwhile.
+
+config BT_CTLR_CONN_ISO_HCI_DATAPATH_SKIP_INVALID_DATA
+	bool "Do not pass invalid SDUs on HCI datapath"
+	depends on BT_CTLR_CONN_ISO
+	help
+	  This allows for applications to decide whether to
+	  forward invalid SDUs through HCI upwards.
+
+config BT_CTLR_CONN_ISO_AVOID_SEGMENTATION
+	bool "Avoid SDU fragmentation for framed mode"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  When creating a CIG, the Max_PDU size is calculated according to BT
+	  Core 5.4 Vol 6, Part G, Section 2.2. However, HAP specifies a need for
+	  avoiding segmentation by forcing the Max_PDU to the appropriate value.
+	  Since there is no way to control the Max_PDU using the non-test
+	  interface, the config provides a way to force the Max_PDU to Max_SDU +
+	  5 (header + offset).
+
+choice
+	prompt "CIS Creation Policy Selection"
+	default BT_CTLR_CONN_ISO_RELIABILITY_POLICY
+
+config BT_CTLR_CONN_ISO_RELIABILITY_POLICY
+	bool "CIS creation policy for reliability"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  Select this option to use reliability policy for CIS creation. This
+	  favors a CIS layout/configuration which utilizes the full range of the
+	  Max_Transmission_Latency for maximum retransmission and payload
+	  recovery.
+
+config BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY
+	bool "CIS creation policy for low latency"
+	depends on BT_CTLR_CENTRAL_ISO
+	help
+	  Select this option to use low latency policy for CIS creation. This
+	  favors a CIS layout/configuration which compacts payload transmission
+	  for lowest possible latency.
+endchoice
+
+config BT_CTLR_TEST
+	bool "Run in-system unit tests"
+	help
+	  Run in-system unit tests
+
+config BT_CTLR_ADVANCED_FEATURES
+	bool "Show advanced features"
+	help
+	  Makes advanced features visible to controller developers.
+
+menu "Advanced features"
+	visible if BT_CTLR_ADVANCED_FEATURES
+
+config BT_CTLR_SW_DEFERRED_PRIVACY
+	bool "LE Controller-based Software Privacy"
+	depends on BT_CTLR_PRIVACY
+	help
+	  Enable support for software based deferred privacy calculations.
+
+config BT_CTLR_RPA_CACHE_SIZE
+	int "LE Controller-based Software Privacy Resolving List size"
+	depends on BT_CTLR_SW_DEFERRED_PRIVACY
+	default 8
+	range 1 64
+	help
+	  Set the size of the Known Unknown Resolving List for LE
+	  Controller-based Software deferred Privacy.
+
+config BT_CTLR_TRPA_CACHE_SIZE
+	int "LE Controller-based Software Privacy target RPA cache size"
+	depends on BT_CTLR_SW_DEFERRED_PRIVACY
+	default 4
+	range 1 64
+	help
+	  Set the size of the Known Unknown Target RPA Resolving List for LE
+	  Controller-based Software deferred Privacy.
+
+config BT_CTLR_DATA_LENGTH_CLEAR
+	bool "Data Length Support (Cleartext only)"
+	depends on SOC_SERIES_NRF51X
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure, up to
+	  251 byte cleartext payloads in the Controller. Encrypted connections
+	  are not supported.
+
+
+config BT_CTLR_PHY_2M_NRF
+	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
+	depends on SOC_SERIES_NRF51X
+	select BT_CTLR_PHY_2M
+	help
+	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
+	  Controller. Encrypted connections are not supported.
+
+config BT_CTLR_ADV_AUX_SET
+	int "LE Extended Advertising Auxiliary Sets"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	range 0 BT_CTLR_ADV_SET
+	default BT_CTLR_ADV_SET
+	help
+	  Maximum supported advertising auxiliary channel sets.
+
+config BT_CTLR_ADV_SYNC_SET
+	int "LE Periodic Advertising Sets"
+	depends on BT_CTLR_ADV_PERIODIC
+	range 1 BT_CTLR_ADV_AUX_SET
+	default 1
+	help
+	  Maximum supported periodic advertising sets.
+
+config BT_CTLR_ADV_DATA_CHAIN
+	bool "Advertising Data chaining [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable support for Advertising Data chaining in Extended
+	  (non-connectable) and Periodic Advertising. This will allow to have
+	  Advertising Data Length up to 1650 bytes.
+
+	  This is experimental and work in progress, does not implement
+	  recombining the AD Data and could return BT_HCI_ERR_PACKET_TOO_LONG
+	  when a chain PDU needs its AD data overflow into a new chain PDU.
+	  I.e. AD data in the last PDU could overflow due to the need to add
+	  Aux Pointer field, and if this overflow bytes plus the next AD data
+	  fragment length could be over 255 bytes needing additional chain PDU.
+	  This is not implemented.
+
+config BT_CTLR_ADV_PDU_LINK
+	# Enables extra space in each advertising PDU to allow linking PDUs.
+	# This is required to enable advertising data trains (i.e. transmission
+	# of AUX_CHAIN_IND).
+	bool
+
+config BT_CTLR_ADV_AUX_PDU_LINK
+	# Enable chaining in Extended Advertising
+	bool
+	select BT_CTLR_ADV_PDU_LINK
+
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK
+	bool "Back-to-back transmission of extended advertising trains"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_CTLR_ADV_AUX_PDU_LINK
+	default y if BT_CTLR_ADV_DATA_LEN_MAX > 191
+	help
+	  Enables transmission of AUX_CHAIN_IND in extended advertising train by
+	  sending each AUX_CHAIN_IND one after another back-to-back.
+
+config BT_CTLR_ADV_AUX_PDU_BACK2BACK_AFS
+	int "AUX Frame Space for back-to-back transmission of extended advertising trains"
+	depends on BT_CTLR_ADV_AUX_PDU_BACK2BACK
+	range 300 1000
+	default 300
+	help
+	  Specific AUX Frame Space to be used for back-to-back transmission of
+	  extended advertising trains. Time specified in microseconds.
+
+config BT_CTLR_ADV_SYNC_PDU_LINK
+	bool
+	depends on BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_PDU_LINK
+
+config BT_CTLR_ADV_SYNC_PDU_BACK2BACK
+	bool "Back-to-back transmission of periodic advertising trains"
+	depends on BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_SYNC_PDU_LINK
+	help
+	  Enables transmission of AUX_CHAIN_IND in periodic advertising train by
+	  sending each AUX_CHAIN_IND one after another back-to-back.
+	  Note, consecutive AUX_CHAIN_IND packets are not scheduled but sent at
+	  a constant offset on a best effort basis. This means advertising train can
+	  be preempted by other event at any time.
+
+config BT_CTLR_ADV_SYNC_PDU_BACK2BACK_AFS
+	int "AUX Frame Space for back-to-back transmission of periodic advertising trains"
+	depends on BT_CTLR_ADV_SYNC_PDU_BACK2BACK
+	range 300 1000
+	default 300
+	help
+	  Specific AUX Frame Space to be used for back-to-back transmission of
+	  periodic advertising trains. Time specified in microseconds.
+
+config BT_CTLR_ADV_RESERVE_MAX
+	bool "Use maximum Advertising PDU size time reservation"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	default y
+	help
+	  Use the maximum advertising PDU size time reservation considering the
+	  Advertising Data could be updated from zero to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the Advertising Data present at the time of the
+	  start/enable of Advertising is used.
+
+config BT_CTLR_ADV_ISO_RESERVE_MAX
+	bool "Use maximum Broadcast ISO event time reservation"
+	depends on BT_CTLR_ADV_ISO
+	default y
+	help
+	  Use maximum Broadcast ISO event time reservation. If disabled, then
+	  time reservation does not include the pre-transmissions of the last
+	  BIS and any Control subevents. This will allow extended or periodic
+	  advertising events to preempt the BIG events but allow higher radio
+	  utilizations by allowing larger BIG events when not overlapping with
+	  extended or periodic advertising.
+
+config BT_CTLR_ADV_AUX_SYNC_OFFSET
+	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
+	depends on BT_CTLR_ADV_PERIODIC
+	range 0 4000000
+	default 0
+	help
+	  Define an offset between AUX_ADV_IND and AUX_SYNC_IND when using
+	  Advertising Interval for the Extended Advertising and Periodic
+	  Advertising that are same or multiple of each other, respectively.
+	  Note, to get advertising intervals that are same or multiple,
+	  the Periodic Advertising Interval shall be 10 millisecond more than
+	  the Extended Advertising Interval; this is because the AUX_ADV_IND
+	  PDUs are scheduled as periodic events of Extended Advertising
+	  Interval plus 10 milliseconds (Advertising Random Delay) as the
+	  periodic interval.
+	  The offset is in microseconds, limited to an experimental maximum
+	  value of 4 seconds.
+
+config BT_CTLR_ADV_DATA_BUF_MAX
+	int "Advertising Data Maximum Buffers"
+	depends on BT_BROADCASTER
+	range 1 64 if BT_CTLR_ADV_EXT
+	range 1 1 if !BT_CTLR_ADV_EXT
+	default 2 if BT_CTLR_ADV_PERIODIC
+	default 1
+	help
+	  Maximum number of buffered Advertising Data payload across enabled
+	  advertising sets.
+
+config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	bool
+	depends on BT_CTLR_ADV_EXT
+	help
+	  Add additional memory to advertising PDU storage. The memory is a
+	  general purpose storage for data that should be send from ULL to LLL.
+	  The data stored in the memory are in synchronization with content
+	  of PDU memory.
+
+	  For example, the extra data memory is used for storage for parameters
+	  to configure Radio peripheral to transmit CTE. The configuration data
+	  must be synchronized with CTEInfo field in extended advertising header
+	  that is part of PDU data.
+
+config BT_CTRL_ADV_ADI_IN_SCAN_RSP
+	bool "Include ADI in AUX_SCAN_RSP PDU"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	help
+	  Enable ADI field in AUX_SCAN_RSP PDU
+
+config BT_CTLR_SCAN_AUX_SET
+	int "LE Extended Scanning Auxiliary Sets"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	range 1 64
+	default 1
+	help
+	  Maximum supported auxiliary channel scan sets.
+
+config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
+	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
+	depends on (BT_OBSERVER && BT_CTLR_ADV_EXT) || BT_CTLR_SYNC_PERIODIC
+	default y
+	help
+	  Use minimal time reservation for Auxiliary and Periodic Sync PDU
+	  reception. A peer device could scheduling multiple advertising sets
+	  in a short duration with small PDUs hence using the minimal time
+	  reservation would avoid skipping closely scheduled reception of
+	  multiple Auxiliary or Periodic Sync PDUs.
+
+config BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
+	bool "Skip Periodic Sync event on overlap with Extended Scan Event"
+	depends on BT_CTLR_SYNC_PERIODIC
+	help
+	  When AUX_ADV_IND or AUX_CHAIN_IND auxiliary channel PDU scan radio
+	  event overlaps Periodic Sync radio event in unreserved time space,
+	  let the Periodic Sync radio event be aborted so that the auxiliary
+	  channel PDU can be received to generate Extended Advertising Reports.
+
+	  By default we want Periodic Advertising Sync Events to take priority
+	  over any overlapping Extended Advertising Primary and Auxiliary
+	  channel PDU reception in order to not skip Periodic Advertising Report
+	  generation.
+
+	  But under simultaneous multiple Periodic Advertising Sync support with
+	  small Periodic Advertising Intervals where there will be a lot of
+	  overlapping Periodic Advertising Sync events, it is desirable to
+	  permit Extended Advertising auxiliary PDU reception be allowed in a
+	  round robin scheduling to skip the overlapping Periodic Advertising
+	  Sync event. This permits new Periodic Advertising peers be discovered.
+
+config BT_CTLR_SYNC_ISO_RESERVE_MAX
+	bool "Use maximum ISO Synchronized Receiver event time reservation"
+	depends on BT_CTLR_SYNC_ISO
+	default y
+	help
+	  Use maximum ISO Synchronized Receiver event time reservation. If
+	  disabled, then time reservation does not include the pre-transmissions
+	  and any Control subevents.
+
+config BT_CTLR_ADV_ENABLE_STRICT
+	bool "Enforce Strict Advertising Enable/Disable"
+	depends on BT_BROADCASTER
+	help
+	  Enforce returning HCI Error Command Disallowed on enabling/disabling
+	  already enabled/disabled advertising.
+
+config BT_CTLR_SCAN_ENABLE_STRICT
+	bool "Enforce Strict Scan Enable/Disable"
+	depends on BT_OBSERVER
+	help
+	  Enforce returning HCI Error Command Disallowed on enabling/disabling
+	  already enabled/disabled scanning.
+
+config BT_CTLR_CIS_ACCEPT_MIN_OFFSET_STRICT
+	bool "Enforce Strict CIS Minimum Offset Check"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Enforce strict check of CIS minimum offset accepted by the peripheral
+	  considering that there will be no overlap of ACL connection with the
+	  CIG events. Radio and CPU overheads for an ACL connection event is
+	  considered and checks the CIS minimum offset is greater than the time
+	  reservation for the ACL connection.
+
+config BT_CTLR_ISOAL_SN_STRICT
+	bool "Enforce Strict Tx ISO Data Sequence Number use"
+	depends on !BT_CTLR_ISOAL_PSN_IGNORE && (BT_CTLR_ADV_ISO || \
+						 BT_CTLR_CONN_ISO)
+	default y
+	help
+	  Enforce strict sequencing of released payloads based on the TX SDU's
+	  packet sequence number. This will be effective when fragmenting an
+	  SDU into unframed PDUs.
+
+	  When enabled, this could result in an SDU being fragmented into
+	  payload numbers that are expired (will be dropped), if the TX SDU
+	  packet sequence numbers do not increment according to the SDU interval
+	  and delivery of SDUs to the ISO-AL do not strictly follow the SDU
+	  interval.
+
+	  When disabled, TX SDUs could be shifted from their stream aligned
+	  position and fragmented into payloads that are less likely to be
+	  dropped. This will result in better delivery of data to the receiver
+	  but at the cost of creating skews in the received stream of SDUs.
+
+config BT_CTLR_ISOAL_PSN_IGNORE
+	bool "Ignore Tx ISO Data Packet Sequence Number use"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	help
+	  Ignore the use of Tx ISO Data Packet Sequence Number.
+
+config BT_CTLR_ZLI
+	bool "Use Zero Latency IRQs"
+	depends on ZERO_LATENCY_IRQS
+	default y
+	help
+	  Enable support for use of Zero Latency IRQ feature. Note, applications
+	  shall not use Zero Latency IRQ themselves when this option is selected,
+	  else will impact controller stability.
+
+config BT_CTLR_DYNAMIC_INTERRUPTS
+	bool "Use Dynamic Interrupts allocation only"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Allocate all Controller required interrupts dynamically. This makes
+	  sure that interrupts are properly connected when the Controller is
+	  initialized and not only during the system startup. Thanks to that
+	  application is able to enable Controller and its ISR at runtime, and
+	  permit use of SoC's peripheral for custom use when Bluetooth is not
+	  enabled.
+
+choice
+	prompt "Optimization options"
+	depends on !LTO
+	default BT_CTLR_OPTIMIZE_FOR_SPEED
+
+config BT_CTLR_OPTIMIZE_FOR_APP_DEFAULT
+	bool "Optimize for application defaults"
+	help
+	  Optimize compilation of Controller for application's default.
+
+config BT_CTLR_OPTIMIZE_FOR_SIZE
+	bool "Optimize for space"
+	help
+	  Optimize compilation of Controller for code size.
+
+	  This is the Zephyr project default, but is overridden to use optimize
+	  for speed when compiling the Controller to reduce application's ISR
+	  and thread latencies.
+
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	help
+	  Optimize compilation of Controller for execution speed. As the
+	  Controller's Upper Link Layer and Lower Link Layer execute in ISRs,
+	  use of speed optimizations reduces application's ISR and thread
+	  latencies.
+
+endchoice
+
+config BT_CTLR_XTAL_ADVANCED
+	bool "Advanced event preparation"
+	depends on BT_CTLR_XTAL_ADVANCED_SUPPORT
+	default y
+	help
+	  Enables advanced event preparation offset ahead of radio tx/rx, taking
+	  into account predictive processing time requirements in preparation to
+	  the event, like control procedure handling and CPU execution speeds.
+	  Crystal oscillator is retained between closely spaced consecutive
+	  radio events to reduce the overall number of crystal settling current
+	  consumptions.
+
+	  This feature maximizes radio utilization in an average role event
+	  timeslice when they are closely spaced by using a reduced offset
+	  between preparation and radio event.
+
+	  By disabling this feature, the controller will use a constant offset
+	  between the preparation and radio event. The controller will toggle
+	  crystal oscillator between two closely spaced radio events leading to
+	  higher average current due to increased number of crystal settling
+	  current consumptions.
+
+config BT_CTLR_XTAL_THRESHOLD
+	int "Crystal shutdown threshold in uS"
+	depends on BT_CTLR_XTAL_ADVANCED
+	default 1500
+	help
+	  Configure the optimal delta in micro seconds between two consecutive
+	  radio events, event done to next preparation, below which (active
+	  clock) crystal will be retained. This value is board dependent.
+
+config BT_CTLR_SCHED_ADVANCED
+	bool "Advanced scheduling"
+	depends on BT_CTLR_SCHED_ADVANCED_SUPPORT && \
+		   (BT_CONN || \
+		    (BT_CTLR_ADV_EXT && (BT_CTLR_ADV_AUX_SET > 0)) || \
+		    BT_CTLR_ADV_ISO)
+	select BT_TICKER_NEXT_SLOT_GET
+	default y if BT_CENTRAL || (BT_BROADCASTER && BT_CTLR_ADV_EXT) || BT_CTLR_ADV_ISO
+	help
+	  Enable non-overlapping placement of observer, initiator and central
+	  roles in timespace. Uses window offset in connection updates and uses
+	  connection parameter request in peripheral role to negotiate
+	  non-overlapping placement with active central roles to avoid peripheral
+	  roles drifting into active central roles in the local controller.
+
+	  This feature maximizes the average data transmission amongst active
+	  concurrent central and peripheral connections while other observer,
+	  initiator, central or peripheral roles are active in the local controller.
+
+	  Disabling this feature will lead to overlapping role in timespace
+	  leading to skipped events amongst active roles.
+
+config BT_CTLR_ASSERT_OVERHEAD_START
+	bool "Assert on Prepare Latency"
+	default y
+	help
+	  Assert on increased Radio Event Prepare callback latencies due to
+	  CPU usage overheads in the Controller implementation.
+
+	  Disabling this option permits the Controller to gracefully skip radio
+	  events that are delayed due to CPU usage latencies; as long as the
+	  radio event skips are not for every consecutive radio event interval,
+	  otherwise leading to remote supervision timeout and possible missing
+	  local disconnect events.
+
+config BT_CTLR_ASSERT_VENDOR
+	bool "Vendor Defined Assertion Information Handler"
+	help
+	  This option enables a vendor specific sink for the controller assertion
+	  mechanism, where parameter information is provided. This must be defined in
+	  vendor debug HAL interface as \"BT_ASSERT_VND(cond, param1, param2)\", and
+	  will be invoked whenever the controller code encounters an unrecoverable error
+	  with parameter information. Implementation shall include the equivalent of
+	  BT_ASSERT_DIE for halting the kernel.
+
+config BT_CTLR_CENTRAL_SPACING
+	int "Central Connection Spacing"
+	depends on BT_CTLR_SCHED_ADVANCED
+	default 0
+	range 0 $(UINT16_MAX)
+	help
+	  The preferred connection spacing between multiple simultaneous central
+	  roles in microseconds. The Controller will calculate the required time
+	  reservation using the data length and PHY currently in use. The
+	  greater of the preferred spacing and the calculated time reservation
+	  will be used.
+	  The precision is determined by the resolution of the platform
+	  dependent ticker clock.
+	  The upper range is a ceil value permitting any tuning of Controller's
+	  radio handling overheads and to allow Coded PHY S8 coding scheme PDU
+	  time, i.e. radio event overheads + 17040 (PDU Tx) + 150 (tIFS) + 4
+	  (active clock jitter) + 17040 (PDU rx) = (radio event overheads +
+	  34234) microseconds.
+
+config BT_CTLR_CENTRAL_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Central"
+	depends on BT_CENTRAL
+	default y
+	help
+	  Use the maximum data PDU size time reservation considering the Data
+	  length could be updated from default 27 bytes to maximum support size.
+	  If maximum time reservation is disabled then time reservation
+	  corresponding to the default data length at the time of the
+	  start/enable of Central role is used.
+
+	  Note, currently this value is only used to space multiple central
+	  connections and not for actual ticker time reservations.
+
+config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
+	bool "Reserve maximum event overhead in time reservations"
+	default y
+	help
+	  Use radio event scheduling CPU time overhead in calculations of event
+	  time reservations.
+
+	  If this option is disabled, then Peripheral ACL and Peripheral ISO
+	  role will not include CPU time overhead. Other role will continue to
+	  use CPU overheads in their event time reservations.
+
+config BT_CTLR_SLOT_RESERVATION_UPDATE
+	bool "Update event length reservation after PHY or DLE update"
+	depends on (BT_CTLR_DATA_LENGTH || BT_CTLR_PHY)
+	default y
+	help
+	  Updates the event length reservation after a completed Data Length Update
+	  and/or PHY Update procedure to avoid overlap of radio events
+
+config BT_CTLR_LLL_PRIO
+	int "Lower Link Layer (Radio) IRQ priority" if (BT_CTLR_ULL_LLL_PRIO_SUPPORT && !BT_CTLR_ZLI)
+	range 0 3 if SOC_SERIES_NRF51X
+	range 0 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
+	default 0
+	help
+	  The interrupt priority for event preparation and radio IRQ.
+
+config BT_CTLR_ULL_HIGH_PRIO
+	int "Upper Link Layer High IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
+	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_LLL_PRIO 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
+	default BT_CTLR_LLL_PRIO if (!BT_CTLR_ULL_LLL_PRIO_SUPPORT || BT_CTLR_ZLI || BT_CTLR_LOW_LAT)
+	default 1
+	help
+	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
+	  higher priority functions.
+
+config BT_CTLR_ULL_LOW_PRIO
+	int "Upper Link Layer Low IRQ priority" if BT_CTLR_ULL_LLL_PRIO_SUPPORT
+	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_ULL_HIGH_PRIO 6 if (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
+	default BT_CTLR_ULL_HIGH_PRIO
+	help
+	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
+	  lower priority functions.
+
+config BT_CTLR_LOW_LAT
+	bool "Low latency non-negotiating event preemption"
+	select BT_CTLR_LOW_LAT_ULL_DONE
+	default y if SOC_SERIES_NRF51X
+	help
+	  Use low latency non-negotiating event preemption. This reduces
+	  Radio ISR latencies by the controller event scheduling framework.
+	  Consequently, this reduces on-air radio utilization due to redundant
+	  radio state switches.
+
+config BT_CTLR_LOW_LAT_ULL
+	prompt "Low latency ULL"
+	bool
+	depends on BT_CTLR_LOW_LAT
+	default y
+	help
+	  Low latency ULL implementation that uses tailchaining instead of while
+	  loop to demux rx messages from LLL.
+
+config BT_CTLR_LOW_LAT_ULL_DONE
+	prompt "Low latency ULL prepare dequeue"
+	bool
+	help
+	  Done events be processed and dequeued in ULL context.
+
+config BT_CTLR_CONN_META
+	prompt "Connection meta data extension"
+	bool
+	help
+	  Enables vendor specific per-connection meta data as part of the
+	  LLL connection object.
+
+config BT_CTLR_RX_PDU_META
+	prompt "RX pdu meta data"
+	bool
+
+config BT_CTLR_RADIO_ENABLE_FAST
+	bool "Use tTXEN/RXEN,FAST ramp-up"
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X
+	default y
+	help
+	  Enable use of fast radio ramp-up mode.
+
+config BT_CTLR_TIFS_HW
+	bool "H/w Accelerated tIFS Trx switching"
+	depends on !BT_CTLR_RADIO_ENABLE_FAST && BT_CTLR_TIFS_HW_SUPPORT
+	default y
+	help
+	  Enable use of hardware accelerated tIFS Trx switching.
+
+config BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	bool "Single TIMER tIFS Trx SW switching"
+	depends on (!BT_CTLR_TIFS_HW) && (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
+	help
+	  Implement the tIFS Trx SW switch with the same TIMER
+	  instance, as the one used for BLE event timing. Requires
+	  SW switching be enabled. Using a single TIMER:
+	  (+) frees up one TIMER instance
+	  (+) removes jitter for HCTO implementation
+	  (-) introduces drifting to the absolute time inside BLE
+	  events, that increases linearly with the number of
+	  packets exchanged in the event
+	  (-) makes it impossible to use most of the pre-programmed
+	  PPI channels for the controller, resulting in 4 channels
+	  less left for other uses
+
+config BT_CTLR_PARAM_CHECK
+	bool "HCI Command Parameter checking"
+	default y if BT_HCI_RAW
+	help
+	  Enable code checking HCI Command Parameters. This is not needed in
+	  combined host plus controller builds, saving some code space.
+
+if BT_CONN
+
+config BT_CTLR_LLCP_CONN
+	int "Number of connections with worst-case overlapping procedures"
+	default BT_MAX_CONN
+	range 1 BT_MAX_CONN
+	help
+	  Set the number connections for which worst-case buffer requirements
+	  for LLCP procedures must be met. Executing LLCP procedures on
+	  more than this number of connections simultaneously may cause
+	  instabilities.
+
+config BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	int
+	default 4
+	help
+	  The theoretical maximum number of tx ctrl buffers needed for any connection, is 4.
+	  two for active encryption procedure plus one for rejecting a remote request
+	  and one for a local terminate
+
+config BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be reserved per connection"
+	default BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	range 0 BT_CTLR_LLCP_TX_PER_CONN_TX_CTRL_BUF_NUM_MAX
+	help
+	  Set the number control buffers that is to be pre allocated per connection
+	  This defines the minimum number of buffers available for any connection
+	  Setting this to non zero will ensure a connection will always have access
+	  to buffer(s) for control procedure TX
+
+config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
+	int "Number of tx control buffers to be available across all connections"
+	default 0
+	range 0 $(UINT8_MAX)
+	help
+	  Set the number control buffers that is to be available for tx.
+	  This defines the size of the pool of tx buffers available
+	  for control procedure tx. This pool is shared across all
+	  procedures/connections with allocation through a fifo queue.
+	  Configure between 0 and (4 - BT_CTLR_LLCP_PER_CONN_TX_CTRL_BUF_NUM) * BT_CTLR_LLCP_CONN
+
+config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
+	int "Number of local control procedure contexts to be available across all connections"
+	default 6 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
+	default 2 if BT_CTLR_LLCP_CONN = 1
+	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
+	range 2 $(UINT8_MAX)
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling local initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+config BT_CTLR_LLCP_REMOTE_PROC_CTX_BUF_NUM
+	int "Number of remote control procedure contexts to be available across all connections"
+	default BT_CTLR_LLCP_CONN
+	range 1 $(UINT8_MAX)
+	help
+	  Set the number control procedure contexts that is to be available.
+	  This defines the size of the pool of control procedure contexts available
+	  for handling remote initiated control procedures.
+	  This pool is shared across all connections, with allocation through a queue.
+
+config BT_CTLR_LLID_DATA_START_EMPTY
+	bool "Handle zero length L2CAP start frame"
+	default y if BT_HCI_RAW
+	help
+	  Handle zero length L2CAP start frame.
+
+config BT_CTLR_TX_RETRY_DISABLE
+	bool "Disable Tx Retry"
+	help
+	  Avoid retransmission of a PDU if peer device Nack-ed a transmission
+	  in the current connection event, close the connection event so as to
+	  save current consumption on retries (in case peer has no buffers to
+	  receive new PDUs).
+
+	  Enabling this will lower power consumption, but increase transmission
+	  latencies by one connection interval as the next attempt to send a PDU
+	  would happen in the next connection event instead of repeated retries
+	  in the current connection event.
+
+config BT_CTLR_THROUGHPUT
+	bool "Measure incoming Tx throughput"
+	help
+	  Measure incoming Tx throughput and log the results.
+
+config BT_CTLR_FORCE_MD_COUNT
+	int "Forced MD bit count" if !BT_CTLR_FORCE_MD_AUTO
+	depends on !BT_CTLR_LOW_LAT_ULL
+	range 0 $(UINT8_MAX)
+	default 1 if BT_CTLR_FORCE_MD_AUTO
+	default 0
+	help
+	  No. of times to force MD bit to be set in Tx PDU after a successful
+	  transmission of non-empty PDU.
+
+	  This will prolong the connection event to from being closed in cases
+	  where applications want to send data in same connection event but are
+	  slow in providing new Tx data.
+
+config BT_CTLR_FORCE_MD_AUTO
+	bool "Forced MD bit automatic calculation"
+	depends on !BT_CTLR_LOW_LAT_ULL
+	select BT_CTLR_THROUGHPUT
+	default y if BT_HCI_RAW
+	help
+	  Force MD bit in transmitted PDU based on runtime incoming transmit
+	  data throughput.
+
+config BT_CTLR_CONN_RANDOM_FORCE
+	bool "Random forced scheduling for peripheral on missed anchor point"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  When enabled, controller will have legacy behavior and randomly force
+	  priority at next ticker scheduling for peripheral role, if anchor point is
+	  missed.
+	  Two or more connections with similar interval on a device connected
+	  to a peer device having two or more connections at its end with same
+	  interval could lock to a round robin pattern where in neither of the central
+	  nor peripheral event would be in sync at either end. Randomness allows
+	  to break this locked round robin pattern permitting an anchor point sync.
+
+config BT_CTLR_CONN_RSSI_EVENT
+	bool "Connection RSSI event"
+	depends on BT_CTLR_CONN_RSSI
+	help
+	  Generate events for connection RSSI measurement.
+
+config BT_CTLR_ALLOW_SAME_PEER_CONN
+	bool "Allow connection requests from same peer"
+	depends on BT_MAX_CONN > 1
+	help
+	  Allow connection requests from the same peer. While the
+	  Bluetooth specification does not allow multiple connections
+	  with the same peer, allowing such connections is useful
+	  while debugging multiple connections.
+
+	  WARNING: This option enables behavior that violates the Bluetooth
+	  specification.
+
+endif # BT_CONN
+
+config BT_CTLR_ADV_INDICATION
+	bool "Advertisement indications"
+	depends on BT_BROADCASTER
+	help
+	  Generate events indicating on air advertisement events.
+
+config BT_CTLR_SCAN_REQ_NOTIFY
+	bool "Scan Request Notifications"
+	depends on BT_BROADCASTER
+	help
+	  Generate events notifying the on air scan requests received.
+
+config BT_CTLR_SCAN_REQ_RSSI
+	bool "Measure Scan Request RSSI"
+	depends on BT_CTLR_SCAN_REQ_NOTIFY
+	help
+	  Measure RSSI of the on air scan requests received.
+
+config BT_CTLR_SCAN_INDICATION
+	bool "Scanner indications"
+	depends on BT_OBSERVER
+	help
+	  Generate events indicating on air scanner events.
+
+config BT_CTLR_SCAN_UNRESERVED
+	bool "Unreserved scan window"
+	depends on BT_OBSERVER && !BT_CTLR_LOW_LAT
+	default y if BT_MESH
+	help
+	  Scanner will not use time space reservation for scan window when in
+	  continuous scan mode.
+
+config BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE
+	bool "Early abort previous prepare"
+	default y
+	help
+	  Early abort previous prepare present before a short prepare is
+	  enqueued in the prepare pipeline.
+
+config BT_MAYFLY_YIELD_AFTER_CALL
+	bool "Yield from mayfly thread after first call"
+	default y
+	help
+	  Only process one mayfly callback per invocation (legacy behavior).
+	  If set to 'n', all pending mayflies for callee are executed before
+	  yielding
+
+config BT_TICKER_LOW_LAT
+	bool "Ticker low latency mode"
+	default y if SOC_SERIES_NRF51X
+	help
+	  This option enables legacy ticker scheduling which defers overlapping
+	  ticker node timeouts and thereby prevents ticker interrupts during
+	  radio RX/TX. Enabling this option disables the ticker priority- and
+	  'must expire' features.
+
+config BT_TICKER_UPDATE
+	bool "Ticker Update"
+	help
+	  This option enables Ticker Update interface.
+
+config BT_TICKER_REMAINDER
+	bool "Ticker Remainder"
+	help
+	  This option enables Ticker Start interface remainder parameter for
+	  first expire timeout.
+
+config BT_TICKER_JOB_IDLE_GET
+	bool "Ticker Job Idle Get"
+	default y if BT_TICKER_LOW_LAT
+	help
+	  This option enables the ticker interface to query the idle state of
+	  the Ticker Job execution context. This interface is used to disable
+	  Ticker Job execution once in idle state, no operations pending for the
+	  Ticker Job to process.
+
+config BT_TICKER_NEXT_SLOT_GET
+	bool "Ticker Next Slot Get"
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire.
+
+config BT_TICKER_REMAINDER_GET
+	bool "Ticker Next Slot Get with Remainder"
+	select BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
+	default y
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and remainder from a reference
+	  tick.
+
+config BT_TICKER_LAZY_GET
+	bool "Ticker Next Slot Get with Lazy"
+	select BT_TICKER_NEXT_SLOT_GET
+	select BT_TICKER_NEXT_SLOT_GET_MATCH
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes, returning tick to expire and lazy count from a reference
+	  tick.
+
+config BT_TICKER_NEXT_SLOT_GET_MATCH
+	bool "Ticker Next Slot Get with match callback"
+	depends on BT_TICKER_NEXT_SLOT_GET
+	default y if BT_TICKER_SLOT_AGNOSTIC
+	help
+	  This option enables ticker interface to iterate through active
+	  ticker nodes with a callback for every found ticker node. When
+	  returning true in the callback, iteration will stop and the normal
+	  operation callback invoked.
+
+config BT_TICKER_EXT
+	bool "Ticker extensions"
+	depends on !BT_TICKER_LOW_LAT
+	default y if BT_BROADCASTER
+	help
+	  This option enables ticker extensions such as re-scheduling of
+	  ticker nodes with slot_window set to non-zero. Ticker extensions
+	  are invoked by using available '_ext' versions of ticker interface
+	  functions.
+
+config BT_TICKER_EXT_SLOT_WINDOW_YIELD
+	bool "Tickers with slot window always yields"
+	depends on BT_TICKER_EXT
+	default y if BT_MESH || BT_CTLR_ADV_ISO
+	help
+	  This options forces tickers with slot window extensions to yield to
+	  normal tickers and be placed at the end of their slot window.
+
+config BT_TICKER_EXT_EXPIRE_INFO
+	bool "Ticker timeout with other ticker's expire information"
+	select BT_TICKER_EXT
+	help
+	  This option enables ticker to return expiration info. The extended
+	  ticker interface) is used to ask for expiration information for
+	  another ticker id to be returned in the ticker callback. This utilises
+	  the extended ticker interface and a callback function with a different
+	  context to keep the current ticker interface as unchanged as possible.
+
+config BT_TICKER_PRIORITY_SET
+	bool "Tickers with priority based collision resolution"
+	depends on BT_TICKER_EXT
+	help
+	  This option provide tickers with persistent priority value that will
+	  be used in resolving collisions.
+
+	  The priority feature if enabled then a custom ULL is needed by vendors
+	  to avoid repeated skipping of overlapping events as next_has_priority
+	  check uses lazy value that would be always lazy_next > lazy_current as
+	  currently skipped event becomes the next event with lazy value
+	  incremented by 1. This repeated skip happens when all the time
+	  between the event intervals are occupied continuously by overlapping
+	  tickers.
+
+config BT_TICKER_SLOT_AGNOSTIC
+	bool "Slot agnostic ticker mode"
+	help
+	  This option enables slot agnostic ticker mode, which ignores slot
+	  reservations and collision handling, and operates as a simple
+	  multi-instance programmable timer.
+
+config BT_TICKER_PREFER_START_BEFORE_STOP
+	bool "Ticker prefer start before stop request"
+	help
+	  Under race conditions wherein for a given ticker node if a number of
+	  start and stop operations are enqueued towards ticker_job by a said
+	  user execution context, then start operations is preferred to be
+	  processed before stop operations.
+
+	  Without this option, the default behavior is to defer all start
+	  requests after all stop requests enqueued by all user context having
+	  been processed. The rationale for default behavior being that under
+	  race conditions, start followed by stop requests, or start before stop
+	  requests, the said ticker node is always scheduled and at timeout the
+	  execution context can take decision based on its execution state.
+
+config BT_CTLR_JIT_SCHEDULING
+	bool "Just-in-Time Scheduling"
+	select BT_TICKER_SLOT_AGNOSTIC
+	help
+	  This option enables the experimental 'Next Generation' scheduling
+	  feature, which eliminates priorities and collision resolving in the
+	  ticker, and instead relies on just-in-time ("lazy") resolution in
+	  the link layer.
+
+config BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START
+	bool "Early start of peripheral CIG event"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	help
+	  Start scheduling the Peripheral ISO CIG events one event in advance
+	  and hence adjust CIG offset and reference point ahead one interval.
+
+config BT_CTLR_USER_EXT
+	prompt "Proprietary extensions in Controller"
+	bool
+	help
+	  Catch-all for enabling proprietary event types in Controller behavior.
+
+config BT_CTLR_USER_EVT_RANGE
+	int "Range of event constants reserved for proprietary event types"
+	depends on BT_CTLR_USER_EXT
+	default 5
+	range 0 10
+	help
+	  Number of event types reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
+config BT_CTLR_USER_TICKER_ID_RANGE
+	int "Range of ticker id constants reserved for proprietary ticker nodes"
+	depends on BT_CTLR_USER_EXT
+	default 0
+	range 0 10
+	help
+	  Number of ticker ids reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
+config BT_RX_USER_PDU_LEN
+	int "Maximum supported proprietary PDU buffer length"
+	depends on BT_CTLR_USER_EXT
+	default 2
+	range 2 $(UINT8_MAX)
+	help
+	  Maximum data size for each proprietary PDU. This size includes link layer
+	  header and payload. It does not account for HCI event headers as these
+	  PDUs are assumed to not go across HCI.
+
+config BT_CTLR_USER_CPR_INTERVAL_MIN
+	bool "Proprietary Connection Parameter Request minimum interval"
+	depends on BT_CTLR_USER_EXT
+	help
+	  When enabled, controller will accept Connection Parameter Request
+	  intervals down to a proprietary minimum value.
+
+config BT_CTLR_USER_CPR_ANCHOR_POINT_MOVE
+	bool "Proprietary handling of anchor point movement"
+	depends on BT_CTLR_USER_EXT && BT_CTLR_CONN_PARAM_REQ && BT_PERIPHERAL
+	help
+	  When enabled, defer accept/reject of Connection Parameter Request with only
+	  anchor point movement to proprietary logic.
+	  Only applicable for peripheral.
+
+endmenu
+
+source "subsys/bluetooth/controller/coex/Kconfig"
+
+comment "BLE Controller debug configuration"
+
+config BT_CTLR_PROFILE_ISR
+	bool "Profile radio ISR"
+	help
+	  Turn on measurement of radio ISR latency, CPU usage and generation of
+	  controller event with these profiling data. The controller event
+	  contains current, minimum and maximum ISR entry latencies; and
+	  current, minimum and maximum ISR CPU use in micro-seconds.
+
+config BT_CTLR_DEBUG_PINS
+	bool "Bluetooth Controller Debug Pins"
+	depends on BOARD_NRF51DK_NRF51822 || BOARD_NRF52DK_NRF52832 || BOARD_NRF52DK_NRF52810 || BOARD_NRF52840DK_NRF52840 || BOARD_NRF52833DK_NRF52833 || BOARD_NRF5340DK_NRF5340_CPUNET || BOARD_RV32M1_VEGA
+	help
+	  Turn on debug GPIO toggling for the BLE Controller. This is useful
+	  when debugging with a logic analyzer or profiling certain sections of
+	  the code.
+
+endif # BT_LL_SW_SPLIT

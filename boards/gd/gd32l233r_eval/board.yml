@@ -1,0 +1,5 @@
+board:
+  name: gd32l233r_eval
+  vendor: gd
+  socs:
+    - name: gd32l233

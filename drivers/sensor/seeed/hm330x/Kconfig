@@ -1,0 +1,12 @@
+# Seeed Studio HM330x dust particle sensor configuration options
+
+# Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config HM330X
+	bool "HM330X dust particle sensor"
+	default y
+	depends on DT_HAS_SEEED_HM330X_ENABLED
+	select I2C
+	help
+	  Enable driver for the HM330X dust particle sensor.

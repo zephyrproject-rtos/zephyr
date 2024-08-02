@@ -1,0 +1,7 @@
+/*
+ * Copyright 2024 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "native_sim.overlay"

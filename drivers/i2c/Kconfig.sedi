@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config I2C_SEDI
+	bool "Intel SEDI I2C Driver"
+	default y
+	depends on DT_HAS_INTEL_SEDI_I2C_ENABLED
+	help
+	  This option enables the Intel SEDI I2C driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal I2C driver in the hal-intel module

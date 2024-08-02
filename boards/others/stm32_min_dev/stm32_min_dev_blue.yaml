@@ -1,0 +1,15 @@
+identifier: stm32_min_dev@blue
+name: STM32 Minimum Development Board (blue)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+supported:
+  - i2c
+  - pwm
+  - spi
+  - adc
+  - gpio

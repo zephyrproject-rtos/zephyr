@@ -1,0 +1,41 @@
+HTTP/1.0 200 OK
+Content-Type: text/html; charset=utf-8
+
+<html>
+<head>
+<style>
+body {
+  background-color: #f3f5f6;
+  font-family: "sans-serif";
+}
+</style>
+</head>
+
+<body>
+
+<p style="color: red">
+Warning: this is a content sample. Proceed to
+<a href="https://www.zephyrproject.org/about/what-is-zephyr-project">Zephyr About page</a>
+for up to date information.
+</p>
+
+<h1>What is Zephyr™ Project?</h1>
+
+<table width="50%">
+<tr><td>
+<p>
+The Zephyr™ Project, is a Linux Foundation hosted Collaboration Project, an open source collaborative effort uniting leaders from across the industry to build a best-in-breed small, scalable, real-time operating system (RTOS) optimized for resource constrained devices, across multiple architectures. The Zephyr Project’s goal is to establish a neutral project where silicon vendors, OEMs, ODMs, ISVs, and OSVs can contribute technology to reduce the cost and accelerate time to market for developing the billions of devices that will make up the majority of the Internet of Things
+</p>
+
+<p>
+The Zephyr Project is perfect for building simple connected sensors, LED wearables, up to modems and small IoT wireless gateways. Because the Zephyr OS is modular and supports multiple architectures, developers are able to easily tailor an optimal solution to meet their needs. As a true open source project, the community can evolve the project to support new hardware, developer tools, sensor and device drivers. Enhancements in security, device management capabilities, connectivity stacks and file systems can be easily implemented.
+</p>
+
+<p>
+The Zephyr kernel is derived from Wind River's commercial VxWorks Microkernel Profile for VxWorks. Microkernel Profile has evolved over 20 years from DSP RTOS technology known as Virtuoso. The RTOS has been used in several commercial applications including satellites, military command and control communications, radar, telecommunications and image processing. The most recent example of the technology’s success is the successful Philae Landing on Comet Churyumov–Gerasimenko and the accompanying Rosetta Orbiter.
+</p>
+</td></tr>
+
+</table>
+
+</body></html>

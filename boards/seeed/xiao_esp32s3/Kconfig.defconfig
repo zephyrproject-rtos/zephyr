@@ -1,0 +1,20 @@
+# Copyright (c) 2023 Seeed Studio inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XIAO_ESP32S3_ESP32S3_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_XIAO_ESP32S3_ESP32S3_PROCPU
+
+if BOARD_XIAO_ESP32S3_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_XIAO_ESP32S3_ESP32S3_APPCPU

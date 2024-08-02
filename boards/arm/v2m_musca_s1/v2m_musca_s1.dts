@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2019-2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv8-m.dtsi>
+
+/ {
+	compatible = "arm,v2m-musca";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &mram0;
+		zephyr,shell-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio 2 0>;
+			label = "User LED1";
+		};
+		green_led: led_1 {
+			gpios = <&gpio 3 0>;
+			label = "User LED2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio 4 0>;
+			label = "User LED3";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	mram0: mram@1a000000 {
+		/* Internal code eMRAM */
+		reg = <0x1a000000 0x200000>;
+	};
+
+	flash0: flash@10200000 {
+		/* External QSPI flash */
+		reg = <0x10200000 0x2000000>;
+	};
+
+	sram0: memory@30000000 {
+		compatible = "mmio-sram";
+		reg = <0x30000000 0x80000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
+	scc@5010b000 {
+		compatible = "arm,scc";
+		reg = <0x5010b000 0x1000>;
+	};
+
+	soc {
+		peripheral@50000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x50000000 0x10000000>;
+
+			#include "v2m_musca_s1-common.dtsi"
+		};
+	};
+
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

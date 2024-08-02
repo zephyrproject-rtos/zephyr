@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&arduino_header 0 0>; /* Arduino A0 */
+		in-gpios = <&arduino_header 1 0>;  /* Arduino A1 */
+	};
+};

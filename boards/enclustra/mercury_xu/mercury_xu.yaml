@@ -1,0 +1,9 @@
+# Copyright (c) 2020, Antmicro
+identifier: mercury_xu
+name: MERCURY-XU
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+vendor: xlnx

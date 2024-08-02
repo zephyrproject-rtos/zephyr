@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32S3
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/flash-controller@60002000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@60002000/flash@0)
+
+endif # SOC_SERIES_ESP32S3

@@ -1,0 +1,75 @@
+# BMC150 magnetometer sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMC150_MAGN
+	bool "BMC150_MAGN I2C Magnetometer Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMC150_MAGN_ENABLED
+	select I2C
+	help
+	  Enable driver for BMC150 I2C-based magnetometer sensor.
+
+if BMC150_MAGN
+
+menu "Attributes"
+
+choice
+	prompt "Default preset"
+	default BMC150_MAGN_PRESET_REGULAR
+	help
+	  Specify the default preset (x/y oversampling, z oversampling, sampling
+	  frequency).
+
+config BMC150_MAGN_PRESET_LOW_POWER
+	bool "Low power (3, 3, 10)"
+
+config BMC150_MAGN_PRESET_REGULAR
+	bool "Regular (9, 15, 10)"
+
+config BMC150_MAGN_PRESET_ENHANCED_REGULAR
+	bool "Enhanced regular (15, 27, 10)"
+
+config BMC150_MAGN_PRESET_HIGH_ACCURACY
+	bool "High accuracy (47, 83, 20)"
+
+endchoice
+
+config BMC150_MAGN_SAMPLING_RATE_RUNTIME
+	bool "Dynamic sampling rate"
+	help
+	  Enable alteration of sampling rate attribute at runtime.
+
+config BMC150_MAGN_SAMPLING_REP_XY
+	bool "Dynamic XY oversampling"
+	help
+	  Enable alteration of XY oversampling at runtime.
+
+config BMC150_MAGN_SAMPLING_REP_Z
+	bool "Dynamic Z oversampling"
+	help
+	  Enable alteration of Z oversampling at runtime.
+
+endmenu
+
+config BMC150_MAGN_TRIGGER
+	bool "Triggers"
+	depends on GPIO
+	help
+	  Enable triggers for BMC150 magnetometer
+
+config BMC150_MAGN_TRIGGER_THREAD_STACK
+	int "Thread stack size"
+	depends on BMC150_MAGN_TRIGGER
+	default 1024
+	help
+	  Specify the internal thread stack size.
+
+config BMC150_MAGN_TRIGGER_DRDY
+	bool "Data ready trigger"
+	depends on BMC150_MAGN_TRIGGER
+	help
+	  Enable data ready interrupt for BMC150 magnetometer
+
+endif # BMC150_MAGN

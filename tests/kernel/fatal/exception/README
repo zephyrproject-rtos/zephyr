@@ -1,0 +1,4 @@
+This test case verifies that kernel fatal error handling works correctly.
+
+If a thread causes a CPU exception, and it is not in an ISR or "essential"
+thread, the thread gets aborted and the rest of the system executes normally.

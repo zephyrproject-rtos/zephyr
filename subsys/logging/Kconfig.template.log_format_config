@@ -1,0 +1,44 @@
+# Copyright (c) 2022 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice "LOG_BACKEND_$(backend)_OUTPUT"
+	prompt "Backend Output Mode"
+	default LOG_BACKEND_$(backend)_OUTPUT_TEXT
+
+config LOG_BACKEND_$(backend)_OUTPUT_TEXT
+	bool "Text"
+	help
+	  Output in text.
+
+config LOG_BACKEND_$(backend)_OUTPUT_SYST
+	bool "MIPI SyS-T"
+	depends on LOG_MIPI_SYST_ENABLE
+	help
+	  When enabled backend is used to output syst format logs.
+
+config LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
+	bool "Dictionary"
+	select LOG_DICTIONARY_SUPPORT
+	imply LOG_FMT_SECTION
+	imply LOG_FMT_SECTION_STRIP if !LOG_ALWAYS_RUNTIME
+	help
+	  Backend is in dictionary-based logging output mode.
+
+config LOG_BACKEND_$(backend)_OUTPUT_CUSTOM
+	bool "Extern"
+	help
+	  Custom formatting function can be set externally.
+
+endchoice
+
+# The numbering of the format types should be consistent across
+# all the backends in the Kconfig and their values must match
+# LOG_OUTPUT_XXX type in C files.
+# Example : LOG_BACKEND_XXX_OUTPUT_TEXT should be numbered 0 across all backends
+# and should match the value of LOG_OUTPUT_TEXT defined in log_output.h
+config LOG_BACKEND_$(backend)_OUTPUT_DEFAULT
+	int
+	default 0 if LOG_BACKEND_$(backend)_OUTPUT_TEXT
+	default 1 if LOG_BACKEND_$(backend)_OUTPUT_SYST
+	default 2 if LOG_BACKEND_$(backend)_OUTPUT_DICTIONARY
+	default 3 if LOG_BACKEND_$(backend)_OUTPUT_CUSTOM

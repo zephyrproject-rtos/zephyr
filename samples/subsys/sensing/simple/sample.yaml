@@ -1,0 +1,17 @@
+sample:
+  description: A sensor framework sample
+  name: sensing sample
+common:
+  tags: sensing
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "sensing subsystem run successfully"
+tests:
+  sample.sensing.simple:
+    platform_allow:
+      - native_sim
+    tags: sensing

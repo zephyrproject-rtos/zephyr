@@ -1,0 +1,21 @@
+# Copyright 2020 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+zephyr_library_sources(regulator_common.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_AXP192 regulator_axp192.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_ADP5360 regulator_adp5360.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_CP9314 regulator_cp9314.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_DA1469X regulator_da1469x.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_FAKE regulator_fake.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_FIXED regulator_fixed.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_GPIO regulator_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_MAX20335 regulator_max20335.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_NPM1100 regulator_npm1100.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_NPM1300 regulator_npm1300.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_NPM6001 regulator_npm6001.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_PCA9420 regulator_pca9420.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_SHELL regulator_shell.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_RPI_PICO regulator_rpi_pico.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_NXP_VREF regulator_nxp_vref.c)

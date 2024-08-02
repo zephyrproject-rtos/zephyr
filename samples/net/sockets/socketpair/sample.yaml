@@ -1,0 +1,14 @@
+sample:
+  description: Socketpair sample
+  name: socketpair
+common:
+  tags:
+    - net
+    - socket
+    - posix
+  harness: net
+  arch_exclude: posix
+  integration_platforms:
+    - qemu_x86
+tests:
+  sample.net.sockets.socketpair: {}

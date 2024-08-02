@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-cc32xx-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P55>, <UART0_RX_P57>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C_SCL_P1>, <I2C_SDA_P2>;
+		};
+	};
+};

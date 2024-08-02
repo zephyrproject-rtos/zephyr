@@ -1,0 +1,22 @@
+# Copyright (c) 2018 Foundries.io Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_OPENISA_RV32M1
+	select RISCV
+	select XIP
+	select HAS_RV32M1_LPUART
+	select HAS_RV32M1_LPI2C
+	select HAS_RV32M1_LPSPI
+	select HAS_RV32M1_TPM
+	select ATOMIC_OPERATIONS_C
+	select VEGA_SDK_HAL
+	select RISCV_SOC_INTERRUPT_INIT
+	select CLOCK_CONTROL
+	select HAS_RV32M1_FTFX
+	select HAS_FLASH_LOAD_OFFSET
+	select BUILD_OUTPUT_HEX
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI

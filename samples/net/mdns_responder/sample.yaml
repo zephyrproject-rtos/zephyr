@@ -1,0 +1,13 @@
+sample:
+  name: mDNS responder
+tests:
+  sample.net.mdns_responder:
+    harness: net
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - mdns

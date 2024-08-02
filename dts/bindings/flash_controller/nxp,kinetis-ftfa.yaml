@@ -1,0 +1,5 @@
+description: NXP Kinetis Flash Memory Module A (FTFA)
+
+compatible: "nxp,kinetis-ftfa"
+
+include: flash-controller.yaml

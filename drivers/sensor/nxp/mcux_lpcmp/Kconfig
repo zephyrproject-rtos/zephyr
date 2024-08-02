@@ -1,0 +1,18 @@
+# NXP MCUX low power comparator (LPCMP) configuration options
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_LPCMP
+	bool "NXP LPCMP driver"
+	default y
+	depends on DT_HAS_NXP_LPCMP_ENABLED
+	select PINCTRL
+	help
+	  Enable the MCUX LPCMP driver.
+
+config MCUX_LPCMP_TRIGGER
+	bool "Trigger support"
+	depends on MCUX_LPCMP
+	help
+	  Enable trigger support for the NXP LPCMP.

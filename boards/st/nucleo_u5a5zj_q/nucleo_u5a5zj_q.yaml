@@ -1,0 +1,25 @@
+identifier: nucleo_u5a5zj_q
+name: ST Nucleo U5A5ZJ Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - can
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - spi
+  - usart
+  - watchdog
+  - backup_sram
+  - dma
+  - rtc
+ram: 2450
+flash: 4096

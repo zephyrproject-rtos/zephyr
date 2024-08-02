@@ -1,0 +1,5 @@
+board:
+  name: ubx_bmd380eval
+  vendor: u-blox
+  socs:
+  - name: nrf52840

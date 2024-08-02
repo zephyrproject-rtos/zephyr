@@ -1,0 +1,12 @@
+# Copyright (c) 2021, Innoseis
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instrument 4 channels I2C ADC
+
+compatible: "ti,ads1119"
+
+include: [adc-controller.yaml, i2c-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1

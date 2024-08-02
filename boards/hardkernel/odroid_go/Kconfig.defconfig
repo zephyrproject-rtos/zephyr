@@ -1,0 +1,35 @@
+# ODROID-GO Game Kit configuration
+
+# Copyright (c) 2019 Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ODROID_GO_ESP32_PROCPU
+
+config DISK_DRIVER_SDMMC
+	default y if DISK_ACCESS
+
+config SPI
+	default y if DISK_DRIVER_SDMMC
+
+config ESP_SPIRAM
+	default y if !MCUBOOT
+
+choice SPIRAM_TYPE
+	default SPIRAM_TYPE_ESPPSRAM32
+endchoice
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_ODROID_GO_ESP32_PROCPU
+
+if BOARD_ODROID_GO_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 4096
+
+endif # BOARD_ODROID_GO_ESP32_APPCPU

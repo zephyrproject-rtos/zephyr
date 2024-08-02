@@ -1,0 +1,727 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LWM2M
+	bool "OMA LwM2M protocol stack"
+	select COAP
+	select HTTP_PARSER_URL
+	select NET_SOCKETS
+	help
+	  This option adds logic for managing OMA LwM2M data
+
+if LWM2M
+
+module = LWM2M
+module-dep = LOG
+module-str = Log level for LwM2M library
+source "subsys/net/Kconfig.template.log_config.net"
+
+menu "Protocol versions"
+
+choice
+	prompt "LwM2M protocol version"
+	default LWM2M_VERSION_1_0
+	help
+	  Select which version of the LwM2M protocol is used
+
+config LWM2M_VERSION_1_0
+	bool "LwM2M version 1.0"
+	imply LWM2M_RW_OMA_TLV_SUPPORT
+
+config LWM2M_VERSION_1_1
+	bool "LwM2M version 1.1"
+	imply LWM2M_RW_CBOR_SUPPORT
+	imply ZCBOR
+
+endchoice # "LwM2M protocol version"
+
+choice
+	prompt "LwM2M Security object version"
+	default LWM2M_SECURITY_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_SECURITY_OBJECT_VERSION_1_1 if LWM2M_VERSION_1_1
+	help
+	  Select which version of the security object should be used.
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_0
+	bool "Security object version 1.0"
+
+config LWM2M_SECURITY_OBJECT_VERSION_1_1
+	bool "Security object version 1.1"
+
+endchoice # "LwM2M Security object version"
+
+choice
+	prompt "LwM2M Server object version"
+	default LWM2M_SERVER_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_SERVER_OBJECT_VERSION_1_1 if LWM2M_VERSION_1_1
+	help
+	  Select which version of the Server object should be used.
+
+config LWM2M_SERVER_OBJECT_VERSION_1_0
+	bool "Server object version 1.0"
+
+config LWM2M_SERVER_OBJECT_VERSION_1_1
+	bool "Server object version 1.1"
+
+endchoice # "LwM2M Server object version"
+
+endmenu # "Protocol versions"
+
+menu "Engine features"
+
+config LWM2M_DTLS_SUPPORT
+	bool "DTLS support in the LwM2M client"
+
+
+config LWM2M_DNS_SUPPORT
+	bool "DNS support in the LwM2M client"
+	default y if DNS_RESOLVER
+
+config LWM2M_COAP_BLOCK_TRANSFER
+	bool "CoAP block transfer support for big outgoing LwM2M messages [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  LwM2M messages with a big body that exceed the block size will be split
+	  into blocks for sending.
+	  To append CoAP ETag option into outgoing block transfers, CONFIG_SYS_HASH_FUNC32 should
+	  be enabled.
+
+config LWM2M_CANCEL_OBSERVE_BY_PATH
+	bool "Use path matching as fallback for cancel-observe"
+	help
+	  Some ambiguous language in the LwM2M spec causes some LwM2M server
+	  implementations to implement cancel-observe by specifying the resource
+	  path rather than the token of the original observe request. Without
+	  this option, cancel-observe may not work properly when connecting to
+	  those servers.
+
+config LWM2M_QUEUE_MODE_ENABLED
+	bool "Queue Mode UDP binding"
+	help
+	  Set the transport binding to UDP with Queue Mode (UQ).
+
+config LWM2M_QUEUE_MODE_UPTIME
+	int "Specify time the LwM2M client should stay online in queue mode." if LWM2M_QUEUE_MODE_ENABLED
+	default 93
+	help
+	  This config specifies time (in seconds) the device should stay online
+	  after sending a message to the server. Note, that LwM2M specification
+	  recommends this to be CoAP MAX_TRANSMIT_WAIT parameter (which
+	  defaults to 93 seconds, see RFC 7252), it does not forbid other
+	  values though.
+
+config LWM2M_QUEUE_MODE_NO_MSG_BUFFERING
+	bool "Disable buffering notifications and messages on queue mode"
+	select EXPERIMENTAL
+	help
+	  Messages are sent right away instead of waiting for next registration update.
+	  This might not be supported on all servers.
+
+config LWM2M_TLS_SESSION_CACHING
+	bool "TLS session caching"
+	help
+	  Enabling this only when feature is supported in TLS library.
+
+config LWM2M_DTLS_CID
+	bool "DTLS Connection Identifier support"
+	default y if MBEDTLS_SSL_DTLS_CONNECTION_ID
+	help
+	  Request TLS stack to enable DTLS Connection identifier. This requires stack that support it
+	  and actual effect depends on the target server as well.
+
+config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
+	bool "Bootstrap support"
+	help
+	  Enabling this setting allows the RD client to support bootstrap mode.
+
+config LWM2M_ENGINE_ALWAYS_REPORT_OBJ_VERSION
+	bool "LwM2M engine always report object version"
+	help
+	  According to LwM2M specification v1.0 and v1.1, non-core object versions other than 1.0
+	  'must' be provided, while all other versions 'may' be provided. With specification v1.2,
+	  a client 'can always attach Object Version Information'. Enable this configuration to
+	  always report all object versions.
+
+choice
+prompt "Socket handling at idle state"
+
+config LWM2M_RD_CLIENT_CLOSE_SOCKET_AT_IDLE
+	bool "Close socket when entering RX idle"
+
+config LWM2M_RD_CLIENT_SUSPEND_SOCKET_AT_IDLE
+	bool "Stop polling on RX idle and close only when resuming"
+
+config  LWM2M_RD_CLIENT_STOP_POLLING_AT_IDLE
+	bool "Stop polling the socket on RX idle"
+
+config  LWM2M_RD_CLIENT_LISTEN_AT_IDLE
+	bool "Keep open and listening"
+
+endchoice
+
+choice
+	prompt "LwM2M Engine operation mode"
+	default LWM2M_TICKLESS if NET_SOCKETPAIR
+	default LWM2M_INTERVAL if !NET_SOCKETPAIR
+
+config LWM2M_TICKLESS
+	bool "Tickless operation mode"
+	depends on NET_SOCKETPAIR
+
+config LWM2M_INTERVAL
+	bool "Interval based polling mode"
+
+endchoice
+
+config LWM2M_SERVER_DEFAULT_SSID
+	int "Default server ssid when using the lwm2m-client. (used for access control)"
+	default 101
+	help
+	  When bootstrap is not enabled, access control needs a default owner.
+
+config LWM2M_PEER_PORT
+	int "LWM2M server port"
+	default 5683
+	help
+	  This is the default server port to connect to for LwM2M communication.
+
+config LWM2M_FIRMWARE_PORT_NONSECURE
+	int "LWM2M firmware server port non-secure"
+	default 5683
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coap.
+
+config LWM2M_FIRMWARE_PORT_SECURE
+	int "LWM2M firmware server port secure"
+	default 5684
+	help
+	  This is the default server port to connect to for LwM2M firmware downloads over coaps.
+
+config LWM2M_SERVER_DEFAULT_PMIN
+	int "Default server record PMIN"
+	default 0
+	help
+	  Default minimum amount of time in seconds the client must wait
+	  between notifications.  If a resource has to be notified during this
+	  minimum time period, the notification must be sent after the time
+	  period expires.
+
+config LWM2M_SERVER_DEFAULT_PMAX
+	int "Default server record PMAX"
+	default 0
+	help
+	  Default maximum amount of time in seconds the client may wait
+	  between notifications.  When this time period expires a notification
+	  must be sent.
+
+config LWM2M_RD_CLIENT_MAX_RETRIES
+	int "Specify maximum number of registration retries"
+	default 5
+	help
+	  Specify maximum number of registration retries, before the application
+	  is notified about the network failure. Once application is notified,
+	  it's up to the application to handle this situation in a way
+	  appropriate for the specific use-case (for instance by waiting for
+	  LTE link to be re-established).
+
+config LWM2M_RESOURCE_DATA_CACHE_SUPPORT
+	bool "Resource Time series data cache support"
+	depends on (LWM2M_RW_SENML_JSON_SUPPORT || LWM2M_RW_SENML_CBOR_SUPPORT)
+	depends on (POSIX_TIMERS && RING_BUFFER)
+	help
+	  Enable time series data storage.
+	  Requires time() to provide current Unix timestamp.
+
+if LWM2M_RESOURCE_DATA_CACHE_SUPPORT
+config LWM2M_MAX_CACHED_RESOURCES
+	int "Maximum # of cached resources"
+	default 4
+	help
+	  This settings define how many different resources may have cache enabled.
+	  This affects static memory usage of engine.
+choice
+	prompt "Cache full policy"
+	default LWM2M_CACHE_DROP_OLDEST
+
+config LWM2M_CACHE_DROP_LATEST
+	bool "Drop new data when cache is full"
+
+config LWM2M_CACHE_DROP_OLDEST
+	bool "Drop oldest data when cache is full"
+
+endchoice
+
+endif # LWM2M_RESOURCE_DATA_CACHE_SUPPORT
+
+endmenu # "Engine features"
+
+menu "Memory and buffer size configuration"
+
+config LWM2M_ENGINE_STACK_SIZE
+	int "LWM2M engine stack size"
+	default 2560 if NET_LOG
+	default 2048
+	help
+	  Set the stack size for the LwM2M library engine (used for handling
+	  OBSERVE and NOTIFY events)
+
+config LWM2M_ENGINE_MAX_MESSAGES
+	int "LWM2M engine max. message object"
+	default 10
+	help
+	  Set the maximum message objects for the LwM2M library client
+
+config LWM2M_COAP_BLOCK_SIZE
+	int "LWM2M CoAP block-wise transfer size"
+	default 256
+	range 64 1024
+	help
+	  CoAP block size used by LwM2M when performing block-wise
+	  transfers. Possible values: 64, 128, 256, 512 and 1024.
+
+config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
+	int "Room for CoAP header data"
+	default 48
+	range 24 128
+	help
+	  Extra room allocated to handle CoAP header data
+
+config LWM2M_COAP_MAX_MSG_SIZE
+	int "LWM2M CoAP maximum message size"
+	default LWM2M_COAP_BLOCK_SIZE
+	help
+	  CoAP message size used by LWM2M. Minimum is the block size used
+	  in blockwise transfers.
+
+config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
+	int "Size of the validation buffer for the incoming data"
+	default 64
+	help
+	  LwM2M will use the validation buffer during the write operation, to
+	  decode the resource value before validating it (applies for resources
+	  for which validation callback has been registered). Set this value to
+	  the maximum expected size of the resources that need to be validated
+	  (and thus have validation callback registered).
+	  Setting the validation buffer size to 0 disables validation support.
+
+config LWM2M_ENGINE_MAX_PENDING
+	int "LWM2M engine max. pending objects"
+	default 5
+	help
+	  Set the maximum pending objects for the LwM2M library client
+
+config LWM2M_ENGINE_MAX_REPLIES
+	int "LWM2M engine max. reply objects"
+	default 5
+	help
+	  Set the maximum reply objects for the LwM2M library client
+
+config LWM2M_ENGINE_MAX_OBSERVER
+	int "Maximum # of observable LwM2M resources"
+	default 10
+	range 5 200
+	help
+	  This value sets the maximum number of resources which can be
+	  added to the observe notification list.
+
+config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
+	int "Maximum length of client endpoint name"
+	default 33
+	help
+	  Default: room for 32 hexadecimal digits (UUID) + NULL
+
+config LWM2M_SECURITY_KEY_SIZE
+	int "Buffer size of the security key resources"
+	default 16
+	help
+	  This setting establishes the size of the key (pre-shared / public)
+	  resources in the security object instances.
+
+config LWM2M_SECURITY_DTLS_TLS_CIPHERSUITE_MAX
+	int "Maximum # of DTLS/TLS ciphersuite resource instances"
+	default 5
+	range 0 20
+	depends on LWM2M_SECURITY_OBJECT_VERSION_1_1
+	help
+	  This setting sets the maximum number of the resource instances of
+	  a security object defined in LwM2M version 1.1. Affects the resource
+	  0/X/16, where X is the object instance number.
+
+config LWM2M_SECURITY_INSTANCE_COUNT
+	int "Maximum # of LwM2M Security object instances"
+	default 2 if LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
+	default 1
+	range 1 10
+	help
+	  This setting establishes the total count of LwM2M Security instances
+	  available to the client.
+
+config LWM2M_SERVER_INSTANCE_COUNT
+	int "Maximum # of LwM2M Server object instances"
+	default 2 if LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
+	default 1
+	range 1 10
+	help
+	  This setting establishes the total count of LwM2M Server instances
+	  available to the client (including: bootstrap and regular servers).
+
+if LWM2M_COAP_BLOCK_TRANSFER
+config LWM2M_COAP_ENCODE_BUFFER_SIZE
+	int "LwM2M CoAP buffer size for encoding the full message for block-wise transfer"
+	default 1024
+	help
+	  Size of buffers for serializing big LwM2M CoAP messages that need to be
+	  split into blocks for sending.
+
+config LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
+	int "Maximum # of LwM2M block contexts used for outgoing messages"
+	default 3
+	help
+	  Maximum number of CoAP block contexts needed to split messages into blocks for
+	  sending. This limits the number of messages that need block transfer that can be
+	  handled at the same time.
+
+config LWM2M_LOG_ENCODE_BUFFER_ALLOCATIONS
+	bool "Log allocations of encode buffers for block wise transfer"
+	select MEM_SLAB_TRACE_MAX_UTILIZATION
+	help
+	  The allocation of encode buffers can be tracked to analyse the usage and
+	  to optimize the configuration of number of block contexts and indirectly
+	  the number of available encode buffers.
+endif # LWM2M_COAP_BLOCK_TRANSFER
+
+config LWM2M_NUM_BLOCK1_CONTEXT
+	int "Maximum # of LwM2M block1 contexts"
+	default 3
+	help
+	  This value sets up the maximum number of block1 contexts for
+	  CoAP block-wise transfer we can handle at the same time.
+
+config LWM2M_SWMGMT_PACKAGE_URI_LEN
+	int "Maximum size of the software management object's download URI string"
+	default 128
+
+config LWM2M_COMPOSITE_PATH_LIST_SIZE
+	int "Maximum # of composite read and send operation URL path"
+	default 6
+	help
+	  Define path list size for Composite Read and send operation.
+
+config LWM2M_DEVICE_ERROR_CODE_SETTINGS
+	bool "Use settings to store error codes across device resets"
+	depends on SETTINGS
+	help
+	  Store the device error code list in settings. Ensures error list can
+	  be transferred to LwM2M server even if the device is reset.
+
+config LWM2M_DEVICE_PWRSRC_MAX
+	int "Maximum # of device power source records"
+	default 5
+	range 1 20
+	help
+	  This value sets the maximum number of power source data that a device
+	  can store.  These are displayed via the "Device" object /3/0/6,
+	  /3/0/7 and /3/0/8 resources.
+
+config LWM2M_DEVICE_ERROR_CODE_MAX
+	int "Maximum # of device obj error codes to store"
+	default 10
+	range 1 20
+	help
+	  This value sets the maximum number of error codes that the device
+	  object will store before ignoring new values.
+
+config LWM2M_DEVICE_EXT_DEV_INFO_MAX
+	int "Maximum # of device obj external device info to store"
+	default 5
+	range 1 20
+	help
+	  This value sets the maximum number of external device info that the
+	  device object will store before ignoring new values.
+
+config LWM2M_NUM_ATTR
+	int "Maximum # of LwM2M attributes"
+	default 20
+	help
+	  This value sets up the maximum number of LwM2M attributes that
+	  we can handle at the same time.
+
+endmenu # "Memory and buffer size configuration"
+
+menu "Content format supports"
+config LWM2M_RW_OMA_TLV_SUPPORT
+	bool "TLV data format"
+	help
+	  Include support for write / parse TLV data
+
+config LWM2M_RW_JSON_SUPPORT
+	bool "support for JSON writer"
+	depends on JSON_LIBRARY
+	help
+	  Include support for writing JSON data
+
+
+config LWM2M_RW_SENML_JSON_SUPPORT
+	bool "SENML JSON data format"
+	depends on BASE64
+	depends on JSON_LIBRARY
+	help
+	  Include support for write / parse SENML JSON data
+
+config LWM2M_RW_CBOR_SUPPORT
+	bool "support for CBOR writer"
+	depends on ZCBOR
+	help
+	  Include support for writing CBOR data
+
+config LWM2M_RW_SENML_CBOR_SUPPORT
+	bool "support for SenML CBOR writer"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	help
+	  Include support for writing SenML CBOR data
+
+config LWM2M_RW_SENML_CBOR_RECORDS
+	int "Maximum # of SenML records packed into a CBOR binary"
+	depends on LWM2M_RW_SENML_CBOR_SUPPORT
+	default 30
+	help
+	  The CBOR library requires you to set an upper limit for the records when encoder
+	  and decoder do get generated.
+
+endmenu # "Content format supports"
+
+config LWM2M_ENGINE_DEFAULT_LIFETIME
+	int "LWM2M engine default server connection lifetime"
+	default 30
+	range 15 $(UINT32_MAX)
+	help
+	  Set the default lifetime (in seconds) for the LwM2M library engine.
+	  This is also a minimum lifetime that client accepts. If server sets lifetime
+	  less than this value, client automatically raises it.
+
+config LWM2M_UPDATE_PERIOD
+	int "LwM2M engine update period"
+	default 0
+	range 0 $(UINT32_MAX)
+	help
+	  Time period after the previous update or registration when to send the next update message.
+	  This allows modifying lifetime without affecting the update period.
+	  Set to zero, to allow LWM2M_SECONDS_TO_UPDATE_EARLY and lifetime to control when to
+	  send the update. When both values are set, smallest period will be used.
+
+config LWM2M_SECONDS_TO_UPDATE_EARLY
+	int "LWM2M Registration Update transmission time before timeout"
+	default 10
+	range 1 $(UINT32_MAX)
+	help
+	  Time in seconds before the registration timeout, when the LWM2M
+	  Registration Update is sent by the engine. In networks with large
+	  round trip times (like NB-IoT), it might be needed to set this value
+	  higher, in order to allow the response to arrive before timeout.
+
+config LWM2M_SHELL
+	bool "LwM2M shell utilities"
+	select SHELL
+	select CRC
+	help
+	  Activate shell module that provides LwM2M commands like
+	  send to the console.
+
+config LWM2M_ACCESS_CONTROL_ENABLE
+	bool "Access control support (ID 2)"
+	help
+	  Enabling this setting registers the access control object.
+
+config LWM2M_ACCESS_CONTROL_INSTANCE_COUNT
+	int "Maximum # of LwM2M Access Control object instances" if LWM2M_ACCESS_CONTROL_ENABLE
+	default 50
+	help
+	  This setting establishes the total count of LwM2M Access Control instances
+	  available to the client.
+
+config LWM2M_CONN_MON_OBJ_SUPPORT
+	bool "Connectivity Monitoring object support (ID 4)"
+	help
+	  Include support for LwM2M Connectivity Monitoring Object
+
+if LWM2M_CONN_MON_OBJ_SUPPORT
+choice
+	prompt "LwM2M Connectivity Monitor object version"
+	default LWM2M_CONNMON_OBJECT_VERSION_1_0 if LWM2M_VERSION_1_0
+	default LWM2M_CONNMON_OBJECT_VERSION_1_2 if LWM2M_VERSION_1_1
+	help
+	  Select Which version of the Connectivity Monitor object should be used.
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_0
+	bool "Connectivity monitor object version 1.0"
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_2
+	bool "Connectivity monitor object version 1.2"
+
+config LWM2M_CONNMON_OBJECT_VERSION_1_3
+	bool "Connectivity monitor object version 1.3"
+
+endchoice
+
+config LWM2M_CONN_MON_BEARER_MAX
+	int "Maximum # of available network bearer resource instances"
+	default 1
+	help
+	  This value sets the maximum number of available network bearer
+	  resource instances.  These are displayed via the
+	  "Connection Monitoring" object /4/0/1.
+
+config LWM2M_CONN_MON_APN_MAX
+	int "Maximum # of APN resource instances"
+	default 1
+	help
+	  This value sets the maximum number of APN resource instances.
+	  These are displayed via the "Connection Monitoring" object /4/0/7.
+endif # LWM2M_CONN_MON_OBJ_SUPPORT
+
+config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	bool "Firmware Update object support (ID 5)"
+	default y
+	help
+	  Include support for LwM2M Firmware Update Object
+
+if LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE
+	bool "Support multiple firmware update objects [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Support multiple instances of LwM2M Firmware Update Object
+
+config LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
+	int "Maximum # of LwM2M Firmware update object instances"
+	default 1
+	help
+	  This setting establishes the total count of LwM2M Firmware update
+	  object instances available to the client.
+
+config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	bool "Firmware Update object pull support"
+	default y
+	depends on (HTTP_PARSER || HTTP_PARSER_URL)
+	help
+	  Include support for pulling a file from a remote server via
+	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
+	  adds another UDP context and packet handling.
+
+config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
+	bool "Firmware Update object pull via CoAP-CoAP/HTTP proxy support"
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	help
+	  Include support for pulling firmware file via a CoAP-CoAP/HTTP proxy.
+
+config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
+	string "CoAP proxy network address"
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
+	help
+	  Network address of the CoAP proxy server.
+
+endif # LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+
+config LWM2M_LOCATION_OBJ_SUPPORT
+	bool "Location object support (ID 6)"
+	help
+	  Include support for LwM2M Location Object
+
+config LWM2M_SWMGMT_OBJ_SUPPORT
+	bool "Software management object support (ID 9)"
+	help
+	  Include support for LwM2M Software Management Object.
+
+if LWM2M_SWMGMT_OBJ_SUPPORT
+config LWM2M_SWMGMT_MAX_INSTANCE_COUNT
+	int "Maximum # of object instances"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 1
+
+config LWM2M_SWMGMT_PACKAGE_NAME_LEN
+	int "Maximum size of the software management object's name string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+
+config LWM2M_SWMGMT_PACKAGE_VERSION_LEN
+	int "Maximum size of the software management object's version string"
+	depends on LWM2M_SWMGMT_OBJ_SUPPORT
+	default 64
+endif # LWM2M_SWMGMT_OBJ_SUPPORT
+
+config LWM2M_PORTFOLIO_OBJ_SUPPORT
+	bool "LwM2M Portfolio object ID support (ID 16)"
+	help
+	  Include support for LwM2M Portfolio Object.
+
+config LWM2M_BINARYAPPDATA_OBJ_SUPPORT
+	bool "LwM2M BinaryAppDataContainer Object (ID 19)"
+	help
+	  Include support for LwM2M BinaryAppDataContainer Object
+
+config LWM2M_EVENT_LOG_OBJ_SUPPORT
+	bool "LwM2M Event Log Object (ID 20)"
+	help
+	  Include support for LwM2M Event Log Object
+
+config LWM2M_GATEWAY_OBJ_SUPPORT
+	bool "LwM2M Gateway Object (ID 25) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+if LWM2M_GATEWAY_OBJ_SUPPORT
+
+config LWM2M_GATEWAY_MAX_INSTANCES
+	int "Maximum number of bridged devices"
+	default 1
+	help
+	  This setting establishes the total count of LwM2M Gateway
+	  instances available to the LwM2M client.
+
+config LWM2M_GATEWAY_DEFAULT_DEVICE_ID
+	string "Identifies the IoT Device bridged to the LwM2M Gateway"
+	default "Node"
+
+config LWM2M_GATEWAY_DEVICE_ID_MAX_STR_SIZE
+	int "Maximum string size for device ID"
+	default 32
+
+config LWM2M_GATEWAY_DEFAULT_DEVICE_PREFIX
+	string "Used for access to LwM2M Objects of this IoT Device"
+	default "n"
+	help
+	  Defaults are n0, n1, n2, ..., n<max instances - 1>
+
+config LWM2M_GATEWAY_PREFIX_MAX_STR_SIZE
+	int "Max string size for prefix"
+	default 32
+
+config LWM2M_GATEWAY_DEFAULT_IOT_DEVICE_OBJECTS
+	string "Contains the Objects and Object Instances exposed by Gateway"
+	default ""
+	help
+	  It uses the same CoreLnk format as Registration Interface.
+	  This must be populated by Gateway.
+	  Example:
+	    </3>;ver=1.0,</3/0>,</4>;ver=1.0,</4/0>,
+	    </5>;ver=1.0,</5/0>,</9>;ver=1.0,</9/0>,</3303/0>
+
+config LWM2M_GATEWAY_IOT_DEVICE_OBJECTS_MAX_STR_SIZE
+	int "Maximum string size for IoT device objects"
+	default 128
+
+endif # LWM2M_GATEWAY_OBJ_SUPPORT
+
+source "subsys/net/lib/lwm2m/Kconfig.ipso"
+
+source "subsys/net/lib/lwm2m/Kconfig.ucifi"
+
+menu "Deprecated flags"
+config LWM2M_RD_CLIENT_SUPPORT
+	bool "DEPRECATED: client bootstrap/registration state machine"
+	select DEPRECATED
+	help
+	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
+endmenu # "Deprecated flags"
+
+endif # LWM2M

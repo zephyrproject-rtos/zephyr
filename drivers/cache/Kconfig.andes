@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 ANDES Technology Inc.
+
+DT_COMPAT_ANDESTECH_L2C := andestech,l2c
+
+config CACHE_ANDES
+bool "ANDES external cache driver"
+	default y
+	depends on SOC_FAMILY_ANDES_V5
+	select CACHE_HAS_DRIVER
+	imply DCACHE_LINE_SIZE_DETECT
+	imply ICACHE_LINE_SIZE_DETECT
+	help
+	  This option enables the CACHE driver for ANDES V5 series SOC.
+
+if CACHE_ANDES
+
+config L2C_INCLUSIVE_POLICY
+	bool
+	depends on $(dt_compat_enabled,$(DT_COMPAT_ANDESTECH_L2C))
+	help
+	  When L2 cache is inclusive of L1, CPU only needs to perform operations
+	  on L2 cache, instead of on both L1 and L2 caches.
+
+config CACHE_ANDES_INIT_PRIORITY
+	int "Andes cache driver init priority"
+	default 60
+	help
+	  This option controls the priority of the cache initialization.
+	  Lower values indicate earlier initialization.
+
+endif # CACHE_ANDES

@@ -1,0 +1,22 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - video
+tests:
+  drivers.video.build:
+    platform_allow:
+      - native_posix
+      - native_sim
+    min_ram: 32
+    depends_on:
+      - gpio
+      - i2c
+  drivers.video.mcux_csi.build:
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7
+  drivers.video.mcux_mipi_csi2rx.build:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7

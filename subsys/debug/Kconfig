@@ -1,0 +1,440 @@
+# Debug configuration options
+
+# Copyright (c) 2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "System Monitoring Options"
+
+menuconfig THREAD_ANALYZER
+	bool "Thread analyzer"
+	depends on !ARCH_POSIX
+	select INIT_STACKS
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	select THREAD_RUNTIME_STATS
+	help
+	  Enable thread analyzer functionality and all the required modules.
+	  This module may be used to debug thread configuration issues, e.g.
+	  stack size configuration to find stack overflow or to find stacks
+	  which may be optimized.
+
+if THREAD_ANALYZER
+module = THREAD_ANALYZER
+module-str = thread analyzer
+source "subsys/logging/Kconfig.template.log_config"
+
+choice
+	prompt "Thread analysis print mode"
+	default THREAD_ANALYZER_USE_PRINTK
+
+config THREAD_ANALYZER_USE_LOG
+	bool "Use logger output"
+	select LOG
+	help
+	  Use logger output to print thread information.
+
+config THREAD_ANALYZER_USE_PRINTK
+	bool "Use printk function"
+	help
+	  Use kernel printk function to print thread information.
+
+endchoice
+
+config THREAD_ANALYZER_ISR_STACK_USAGE
+	bool "Analyze interrupt stacks usage"
+	default y
+
+config THREAD_ANALYZER_RUN_UNLOCKED
+	bool "Run analysis with interrupts unlocked"
+	default y
+	help
+	  The thread analysis takes quite a long time.
+	  Every thread it finds is analyzed word by word to find any that
+	  does not match the magic number.
+	  Normally while thread are analyzed the k_thread_foreach function
+	  is used.
+	  While this is a safe run from the thread list perspective it may lock
+	  the interrupts for a long time - long enough to disconnect when
+	  Bluetooth communication is used.
+	  Setting this flag will force thread analyzer to use
+	  the k_thread_foreach_unlocked function.
+	  This will allow the interrupts to be processed while the thread is
+	  analyzed.
+	  For the limitation of such configuration see the k_thread_foreach
+	  documentation.
+
+config THREAD_ANALYZER_AUTO
+	bool "Run periodic thread analysis in a thread"
+	help
+	  Run the thread analyzer automatically, without the need to add
+	  any code to the application.
+	  Thread analysis would be called periodically.
+
+if THREAD_ANALYZER_AUTO
+
+config THREAD_ANALYZER_AUTO_SEPARATE_CORES
+	bool "Run thread analyzer separately on each core"
+	default y if KERNEL_COHERENCE
+	depends on SCHED_CPU_MASK
+	help
+	  Run the thread analyzer auto thread on each core and report
+	  cores separately. This feature is needed for platforms running
+	  on cache-incoherent architectures.
+
+config THREAD_ANALYZER_AUTO_INTERVAL
+	int "Thread analysis interval"
+	default 60
+	range 5 3600
+	help
+	  The time in seconds to call thread analyzer periodic printing function.
+
+config THREAD_ANALYZER_AUTO_STACK_SIZE
+	int "Stack size for the periodic thread analysis thread"
+	default 2048 if THREAD_ANALYZER_USE_LOG && LOG_MODE_IMMEDIATE && NO_OPTIMIZATIONS
+	default 1024
+
+endif # THREAD_ANALYZER_AUTO
+
+endif # THREAD_ANALYZER
+
+
+endmenu
+
+menu "Debugging Options"
+
+config DEBUG
+	bool "Build kernel with debugging enabled"
+	help
+	  Build a kernel suitable for debugging.  Right now, this option
+	  only disables optimization, more debugging variants can be selected
+	  from here to allow more debugging.
+
+config GPROF
+	bool "Generate profiling information"
+	depends on ARCH_POSIX
+	help
+	  Generate call graph profile data for the application that can be
+	  analyzed with gprof
+
+config ASAN
+	bool "Build with address sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Address Sanitizer enabled. This is currently
+	  only supported by boards based on the posix architecture, and requires a
+	  recent-ish compiler with the ``-fsanitize=address`` command line option,
+	  and the libasan library.
+
+	  Note that at exit leak detection is disabled for 64-bit boards when
+	  GCC is used due to potential risk of a deadlock in libasan.
+	  This behavior can be changes by adding leak_check_at_exit=1 to the
+	  environment variable ASAN_OPTIONS.
+
+config ASAN_RECOVER
+	bool "Continue after sanitizer errors"
+	depends on ASAN
+	default y
+	help
+	  The default behavior of compiler sanitizers is to exit after
+	  the first error.  Set this to y to enable the code to
+	  continue, which can be useful if a code base has known
+	  unsuppressed errors.  You will also need to set
+	  "halt_on_error=0" in your ASAN_OPTIONS environment variable
+	  at runtime.
+
+config ASAN_NOP_DLCLOSE
+	bool "Override host OS dlclose() with a NOP"
+	default y if HAS_SDL
+	depends on ASAN
+	help
+	  Override host OS dlclose() with a NOP.
+
+	  This NOP implementation is needed as workaround for a known limitation in
+	  LSAN (leak sanitizer) that if dlcose is called before performing the leak
+	  check, "<unknown module>" is reported in the stack traces during the leak
+	  check and these can not be suppressed, see
+	  https://github.com/google/sanitizers/issues/89 for more info.
+
+config UBSAN
+	bool "Build with undefined behavior sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Undefined Behavior Sanitizer enabled.
+	  This is currently only supported by boards based on the posix
+	  architecture, and requires a recent-ish compiler with the
+	  ``-fsanitize=undefined`` command line option.
+
+config MSAN
+	bool "Build with memory sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with the LLVM MemorySanitizer enabled.  Works
+	  only on the posix architecture currently, and only with host
+	  compilers recent enough to support the feature (currently
+	  clang on x86_64 only).  It cannot be used in tandem with
+	  CONFIG_ASAN due to clang limitations.  You must choose one
+	  or the other (but can combine it with CONFIG_UBSAN if you
+	  like)
+
+config STACK_USAGE
+	bool "Generate stack usage information"
+	help
+	  Generate an extra file that specifies the maximum amount of stack used,
+	  on a per-function basis.
+
+config STACK_SENTINEL
+	bool "Stack sentinel"
+	select THREAD_STACK_INFO
+	depends on MULTITHREADING
+	depends on !USERSPACE
+	depends on !MPU_STACK_GUARD
+	help
+	  Store a magic value at the lowest addresses of a thread's stack.
+	  Periodically check that this value is still present and kill the
+	  thread gracefully if it isn't. This is currently checked in four
+	  places:
+
+	  1) Upon any context switch for the outgoing thread
+	  2) Any hardware interrupt that doesn't context switch, the check is
+	     performed for the interrupted thread
+	  3) When a thread returns from its entry point
+	  4) When a thread calls k_yield() but doesn't context switch
+
+	  This feature doesn't prevent corruption and the system may be
+	  in an unusable state. However, given the bizarre behavior associated
+	  with stack overflows, knowledge that this is happening is very
+	  useful.
+
+	  This feature is intended for those systems which lack hardware support
+	  for stack overflow protection, or have insufficient system resources
+	  to use that hardware support.
+
+config PRINTK
+	bool "Send printk() to console"
+	default y
+	help
+	  This option directs printk() debugging output to the supported
+	  console device, rather than suppressing the generation
+	  of printk() output entirely. Output is sent immediately, without
+	  any mutual exclusion or buffering.
+
+config PRINTK_BUFFER_SIZE
+	int "printk() buffer size"
+	depends on PRINTK
+	depends on USERSPACE
+	default 32
+	help
+	  If userspace is enabled, printk() calls are buffered so that we do
+	  not have to make a system call for every character emitted. Specify
+	  the size of this buffer.
+
+config EARLY_CONSOLE
+	bool "Send stdout at the earliest stage possible"
+	help
+	  This option will enable stdout as early as possible, for debugging
+	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
+	  initialize its driver earlier than normal, in order to get the stdout
+	  sent through the console at the earliest stage possible.
+
+config ASSERT
+	bool "__ASSERT() macro"
+	default y if TEST
+	help
+	  This enables the __ASSERT() macro in the kernel code. If an assertion
+	  fails, the policy for what to do is controlled by the implementation
+	  of the assert_post_action() function, which by default will trigger
+	  a fatal error.
+
+	  Disabling this option will cause assertions to compile to nothing,
+	  improving performance and system footprint.
+
+if ASSERT
+
+config ASSERT_LEVEL
+	int "__ASSERT() level"
+	default 2
+	range 0 2
+	help
+	  This option specifies the assertion level used by the __ASSERT()
+	  macro. It can be set to one of three possible values:
+
+	  Level 0: off
+	  Level 1: on + warning in every file that includes __assert.h
+	  Level 2: on + no warning
+
+config SPIN_VALIDATE
+	bool "Spinlock validation"
+	depends on MULTITHREADING
+	depends on MP_MAX_NUM_CPUS <= 4
+	default y if !FLASH || FLASH_SIZE > 32
+	help
+	  There's a spinlock validation framework available when asserts are
+	  enabled. It adds a relatively hefty overhead (about 3k or so) to
+	  kernel code size, don't use on platforms known to be small.
+
+config SPIN_LOCK_TIME_LIMIT
+	int "Spin lock holding time limit in cycles"
+	default 0
+	depends on SPIN_VALIDATE
+	depends on SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  Assert at the time of unlocking the number of system clock cycles
+	  the lock has been held is less than the configured value. Requires
+	  the timer driver sys_clock_get_cycles_32() be lock free.
+
+endif # ASSERT
+
+config FORCE_NO_ASSERT
+	bool "Force-disable no assertions"
+	help
+	  This boolean option disables Zephyr assertion testing even
+	  in circumstances (twister) where it is enabled via
+	  CFLAGS and not Kconfig.  Added solely to be able to work
+	  around compiler bugs for specific tests.
+
+config ASSERT_VERBOSE
+	bool "Verbose assertions"
+	default y
+	help
+	  This option enables printing an assert message with information about
+	  the assertion that occurred. This includes printing the location,
+	  the conditional expression and additional message specific to the
+	  assert.
+
+config ASSERT_NO_FILE_INFO
+	bool "Disable file info for asserts"
+	help
+	  This option removes the name and the path of the source file
+	  in which the assertion occurred. Enabling this will save
+	  target code space, and thus may be necessary for tiny targets.
+
+config ASSERT_NO_COND_INFO
+	bool "Disable condition info for asserts"
+	help
+	  This option removes the assert condition from the printed assert
+	  message. Enabling this will save target code space, and thus may be
+	  necessary for tiny targets. It is recommended to disable condition
+	  info before disabling file info since the condition can be found in
+	  the source using file info.
+
+config ASSERT_NO_MSG_INFO
+	bool "Disable message for asserts"
+	help
+	  This option removes the additional message from the printed assert.
+	  Enabling this will save target code space, and thus may be
+	  necessary for tiny targets. It is recommended to disable message
+	  before disabling file info since the message can be found in the
+	  source using file info.
+
+config ASSERT_TEST
+	bool "Assert test mode"
+	help
+	  This option enables the assert test mode, which allows the assert
+	  post action handler to return (i.e. not abort) when the asserted
+	  condition is false. The tests that validate the assert feature may
+	  select this option to allow the test to proceed by implementing a
+	  custom assert post action hook.
+
+config OVERRIDE_FRAME_POINTER_DEFAULT
+	bool "Override compiler defaults for -fomit-frame-pointer"
+	help
+	  Omitting the frame pointer prevents the compiler from putting the stack
+	  frame pointer into a register. Saves a few instructions in function
+	  prologues/epilogues and frees up a register for general-purpose use,
+	  which can provide good performance improvements on register-constrained
+	  architectures like x86. On some architectures (including x86) omitting
+	  frame pointers impedes debugging as local variables are harder to
+	  locate. At -O1 and above gcc will enable -fomit-frame-pointer
+	  automatically but only if the architecture does not require if for
+	  effective debugging.
+
+	  Choose Y if you want to override the default frame pointer behavior
+	  of your compiler, otherwise choose N.
+
+config OMIT_FRAME_POINTER
+	bool "Omit frame pointer"
+	depends on !FRAME_POINTER
+	depends on OVERRIDE_FRAME_POINTER_DEFAULT
+	help
+	  Choose Y for best performance. On some architectures (including x86)
+	  this will favor code size and performance over debuggability.
+
+	  Choose N in you wish to retain the frame pointer. This option may
+	  be useful if your application uses runtime backtracing and does not
+	  support parsing unwind tables.
+
+	  If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
+	  to adopt sensible defaults for your architecture.
+
+
+#
+# Generic Debugging Options
+#
+config DEBUG_INFO
+	bool "System debugging information"
+	help
+	  This option enables the addition of various information that can be
+	  used by debuggers in debugging the system, or enable additional
+	  debugging information to be reported at runtime.
+
+config EXCEPTION_STACK_TRACE
+	bool "Attempt to print stack traces upon exceptions"
+	default y
+	depends on (X86_EXCEPTION_STACK_TRACE || \
+		    ARM64_EXCEPTION_STACK_TRACE || \
+		    RISCV_EXCEPTION_STACK_TRACE)
+	help
+	  If the architecture fatal handling code supports it, attempt to
+	  print a stack trace of function memory addresses when an
+	  exception is reported.
+
+config EXCEPTION_STACK_TRACE_MAX_FRAMES
+	int "Configures the depth of stack trace"
+	default ARCH_STACKWALK_MAX_FRAMES if ARCH_HAS_STACKWALK
+	default 8
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  In the event of a stack trace, this place a limit on the depths
+	  of the stack to examine.
+
+config EXCEPTION_STACK_TRACE_SYMTAB
+	bool "Print function names in the stack trace"
+	select SYMTAB
+	depends on EXCEPTION_STACK_TRACE
+	help
+	  Enable this if you want to print the function names in the
+	  stack trace output. This will generate the symtab and
+	  can consume a lot of ROM if there's a lot of functions.
+
+#
+# Miscellaneous debugging options
+#
+config DEBUG_THREAD_INFO
+	bool "Thread awareness support"
+	depends on !SMP
+	select THREAD_MONITOR
+	select THREAD_NAME
+	help
+	  This option exports an array of offsets to kernel structs to allow
+	  for debugger RTOS plugins to determine the state of running threads.
+
+rsource "coredump/Kconfig"
+rsource "symtab/Kconfig"
+endmenu
+
+rsource "gdbstub/Kconfig"
+
+config SEGGER_DEBUGMON
+	bool "Use Segger's J-Link debug monitor implementation"
+	depends on CORTEX_M_DEBUG_MONITOR_HOOK
+	help
+	  This option will enable Segger's implementation of
+	  the debug monitor interrupt, overriding the
+	  default z_arm_debug_monitor symbol.
+
+config MIPI_STP_DECODER
+	bool "MIPI STPv2 decoder"
+	depends on !BIG_ENDIAN
+	help
+	  Module decodes a stream of STPv2 data.

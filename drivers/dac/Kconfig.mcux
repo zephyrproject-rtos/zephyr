@@ -1,0 +1,40 @@
+# DAC configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MCUX_DAC
+	bool "NXP Kinetis MCUX DAC driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_DAC_ENABLED
+	help
+	  Enable the driver for the NXP Kinetis MCUX DAC.
+
+config DAC_MCUX_DAC32
+	bool "NXP Kinetis MCUX DAC32 driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_DAC32_ENABLED
+	select PINCTRL
+	help
+	  Enable the driver for the NXP Kinetis MCUX DAC32.
+
+config DAC_MCUX_LPDAC
+	bool "NXP MCUX LPDAC driver"
+	default y
+	depends on DT_HAS_NXP_LPDAC_ENABLED
+	help
+	  Enable the driver for the NXP MCUX LPDAC.
+
+config DAC_MCUX_DAC32_TESTOUT
+	bool "DAC test output"
+	depends on DAC_MCUX_DAC32
+	help
+	  Enable the DAC test output.
+
+config DAC_MCUX_GAU
+	bool "NXP GAU DAC driver"
+	default y
+	depends on DT_HAS_NXP_GAU_DAC_ENABLED
+	help
+	  Enable the driver for the NXP GAU DAC.

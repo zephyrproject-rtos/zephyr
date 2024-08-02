@@ -1,0 +1,11 @@
+description: Bluetooth HCI for test purposes
+
+compatible: "zephyr,bt-hci-test"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "test"
+  bt-hci-bus:
+    default: "BT_HCI_BUS_VIRTUAL"

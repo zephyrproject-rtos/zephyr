@@ -1,0 +1,38 @@
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The representation of Raspberry Pi Pico ring oscillator.
+
+compatible: "raspberrypi,pico-rosc"
+
+include: [fixed-clock.yaml, fixed-factor-clock.yaml]
+
+properties:
+  range:
+    type: int
+    required: true
+    description: |
+      Specify the number of ring oscillator stages to use.
+        - LOW: 8 (default)
+        - MEDIUM: 6
+        - HIGH: 4
+        - TOOHIGH: 2
+
+  stage-drive-strength:
+    type: array
+    required: true
+    description: |
+      Specifies the drive strength of the eight stages of the ring oscillator.
+      The valid range of each value is between 0 and 7.
+
+  phase-flip:
+    type: boolean
+    description: |
+      Flipping phase-shifter output.
+
+  phase:
+    type: int
+    description: |
+      The phase-shift value.
+      The valid range is 0 to 3

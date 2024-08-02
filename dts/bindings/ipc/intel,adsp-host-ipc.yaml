@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel ADSP Inter Processor Communication on Intel SoC
+
+compatible: "intel,adsp-host-ipc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true

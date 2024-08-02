@@ -1,0 +1,264 @@
+/*
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2019 Gerson Fernando Budke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/clock/atmel_sam_pmc.h>
+
+/ {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,flash-controller = &eefc;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		pmc: pmc@400e0400 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0400 0x200>;
+			interrupts = <5 0>;
+			#clock-cells = <2>;
+			status = "okay";
+		};
+
+		supc: supc@400e1410 {
+			compatible = "atmel,sam-supc";
+			reg = <0x400e1410 0x20>;
+			#wakeup-source-id-cells = <1>;
+			status = "okay";
+		};
+
+		sram0: memory@20100000 {
+			compatible = "mmio-sram";
+		};
+
+		eefc: flash-controller@400e0a00 {
+			compatible = "atmel,sam-flash-controller";
+			reg = <0x400e0a00 0x200>;
+			interrupts = <6 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			#erase-block-cells = <2>;
+
+			flash0: flash@400000 {
+				compatible = "atmel,sam-flash", "soc-nv-flash";
+				write-block-size = <8>;
+				erase-block-size = <4096>;
+			};
+		};
+
+		wdt: watchdog@400e1450 {
+			compatible = "atmel,sam-watchdog";
+			reg = <0x400e1450 0xc>;
+			interrupts = <4 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 4>;
+			status = "disabled";
+		};
+
+		twi0: i2c@40018000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40018000 0x128>;
+			interrupts = <19 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 19>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		twi1: i2c@4001c000 {
+			compatible = "atmel,sam-i2c-twi";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4001c000 0x128>;
+			interrupts = <20 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi0: spi@40008000 {
+			compatible = "atmel,sam-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008000 0x4000>;
+			interrupts = <21 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
+			status = "disabled";
+		};
+
+		uart0: uart@400e0600 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400e0600 0x200>;
+			interrupts = <8 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 8>;
+			status = "disabled";
+		};
+
+		uart1: uart@400e0800 {
+			compatible = "atmel,sam-uart";
+			reg = <0x400e0800 0x200>;
+			interrupts = <9 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 9>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@40020000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0x40020000 0x4000>;
+			interrupts = <31 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 31>;
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		usart0: usart@40024000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40024000 0x130>;
+			interrupts = <14 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 14>;
+			status = "disabled";
+		};
+
+		usart1: usart@40028000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40028000 0x130>;
+			interrupts = <15 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 15>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@400e0e00 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e0e00 0x400e0e00 0x600>;
+			status = "okay";
+
+			pioa: gpio@400e0e00 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e0e00 0x190>;
+				interrupts = <11 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 11>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			piob: gpio@400e1000 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1000 0x190>;
+				interrupts = <12 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 12>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+
+			pioc: gpio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <13 1>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 13>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		tc0: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <23 0
+				      24 0
+				      25 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 23>,
+				 <&pmc PMC_TYPE_PERIPHERAL 24>,
+				 <&pmc PMC_TYPE_PERIPHERAL 25>;
+			status = "disabled";
+		};
+
+		tc1: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <26 0
+				      27 0
+				      28 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 26>,
+				 <&pmc PMC_TYPE_PERIPHERAL 27>,
+				 <&pmc PMC_TYPE_PERIPHERAL 28>;
+			status = "disabled";
+		};
+
+		adc0: adc@40038000 {
+			compatible = "atmel,sam-adc";
+			reg = <0x40038000 0x4000>;
+			interrupts = <29 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 29>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		rstc: rstc@400e1400 {
+			compatible = "atmel,sam-rstc";
+			reg = <0x400e1400 0x10>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
+			user-nrst;
+		};
+
+		smc: smc@400e0000 {
+			compatible = "atmel,sam-smc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400e0000 0x200>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 10>;
+			status = "disabled";
+		};
+
+		rtc: rtc@400e1460 {
+			compatible = "atmel,sam-rtc";
+			reg = <0x400e1460 0x100>;
+			interrupts = <2 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

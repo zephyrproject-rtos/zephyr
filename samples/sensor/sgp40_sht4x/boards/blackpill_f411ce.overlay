@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2021 Leonard Pollak
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+	sgp40@59 {
+		status = "okay";
+		compatible = "sensirion,sgp40";
+		reg = <0x59>;
+		enable-selftest;
+	};
+};

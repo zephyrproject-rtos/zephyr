@@ -1,0 +1,65 @@
+# Copyright 2020, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT685S_CM33
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select CLOCK_CONTROL
+	select CODE_DATA_RELOCATION_SRAM if FLASH_MCUX_FLEXSPI_XIP
+	select PLATFORM_SPECIFIC_INIT
+	select HAS_PM
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_FLEXSPI
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_OS_TIMER
+	select HAS_MCUX_LPC_RTC
+	select HAS_MCUX_TRNG
+	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
+	select INIT_SYS_PLL
+	select HAS_MCUX_USB_LPCIP3511
+	select HAS_MCUX_CTIMER
+
+if SOC_SERIES_IMXRT6XX
+
+config MCUX_CORE_SUFFIX
+	default "_cm33" if SOC_MIMXRT685S_CM33
+
+config INIT_SYS_PLL
+	bool "Initialize SYS PLL"
+
+config INIT_AUDIO_PLL
+	bool "Initialize Audio PLL"
+
+config XTAL_SYS_CLK_HZ
+	int "External oscillator frequency"
+	help
+	  Set the external oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config SYSOSC_SETTLING_US
+	int "System oscillator settling time"
+	help
+	  Set the board system oscillator settling time in us. This should be set by the
+	  board's defconfig.
+
+config IMXRT6XX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable code cache for FlexSPI region at boot. If this Kconfig is
+	  cleared, the CACHE64 controller will be disabled during SOC init
+
+endif

@@ -1,0 +1,12 @@
+# Microchip XEC ADC configuration
+
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_XEC
+	bool "Microchip XEC series ADC driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_ADC_ENABLED
+	help
+	  Enable ADC driver for Microchip XEC MCU series.

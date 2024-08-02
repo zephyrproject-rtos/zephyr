@@ -1,0 +1,11 @@
+# ST STM32F423XX MCU configuration options
+
+# Copyright (c) 2022 Richard Osterloh.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F423XX
+
+config NUM_IRQS
+	default 102
+
+endif # SOC_STM32F423XX

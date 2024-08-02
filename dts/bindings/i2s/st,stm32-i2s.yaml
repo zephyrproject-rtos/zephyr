@@ -1,0 +1,8 @@
+# Copyright (c) 2018, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 I2S controller
+
+compatible: "st,stm32-i2s"
+
+include: st,stm32-i2s-common.yaml

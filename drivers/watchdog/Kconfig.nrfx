@@ -1,0 +1,21 @@
+# nrfx WDT support
+
+# Copyright (c) 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NRFX
+	bool "nRF WDT nrfx driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_WDT_ENABLED
+	select NRFX_WDT0 if HAS_HW_NRF_WDT0
+	select NRFX_WDT1 if HAS_HW_NRF_WDT1
+	select NRFX_WDT30 if HAS_HW_NRF_WDT30
+	select NRFX_WDT31 if HAS_HW_NRF_WDT31
+	select NRFX_WDT010 if HAS_HW_NRF_WDT010
+	select NRFX_WDT011 if HAS_HW_NRF_WDT011
+	select NRFX_WDT130 if HAS_HW_NRF_WDT130
+	select NRFX_WDT131 if HAS_HW_NRF_WDT131
+	select NRFX_WDT132 if HAS_HW_NRF_WDT132
+
+	help
+	  Enable support for nrfx WDT driver for nRF MCU series.

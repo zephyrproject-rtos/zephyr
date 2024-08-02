@@ -1,0 +1,88 @@
+/*
+ * Copyright 2022-2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <PB10_LIN_0_TX>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PB11_LIN_0_RX>;
+			input-enable;
+		};
+	};
+
+	uart9_default: uart9_default {
+		group1 {
+			pinmux = <PM6_LIN_9_TX>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PM7_LIN_9_RX>;
+			input-enable;
+		};
+	};
+
+	emdio_default: emdio_default {
+		group1 {
+			pinmux = <(PE10_ETH_MDC_I | PE10_ETH_MDC_O)>;
+			input-enable;
+			output-enable;
+		};
+		group2 {
+			pinmux = <(PE11_ETH_MDIO_I | PE11_ETH_MDIO_O)>;
+			input-enable;
+			output-enable;
+			drive-open-drain;
+		};
+	};
+
+	eth0_default: eth0_default {
+		group1 {
+			pinmux = <PF2_ETH_0_RX_CLK>,
+				<PF3_ETH_0_RGMII_RXCTL>,
+				<PF4_ETH_0_RGMII_RXD_0>,
+				<PF5_ETH_0_RGMII_RXD_1>,
+				<PF6_ETH_0_RGMII_RXD_2>,
+				<PF7_ETH_0_RGMII_RXD_3>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PE12_ETH_0_RGMII_TXC>,
+				<PE13_ETH_0_RGMII_TXCTL>,
+				<PE14_ETH_0_RGMII_TXD_0>,
+				<PE15_ETH_0_RGMII_TXD_1>,
+				<PF0_ETH_0_RGMII_TXD_2>,
+				<PF1_ETH_0_RGMII_TXD_3>;
+			output-enable;
+		};
+	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PN2_CANXL_0_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PN1_CANXL_0_TX>;
+			output-enable;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PM11_CANXL_1_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PM10_CANXL_1_TX>;
+			output-enable;
+		};
+	};
+};

@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OpenTitan Machine Timer
+
+  The OpenTitan machine timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "lowrisc,machine-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

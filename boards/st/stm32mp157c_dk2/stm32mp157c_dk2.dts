@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp1/stm32mp157.dtsi>
+#include <st/mp1/stm32mp157cacx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32MP157-DK2 board";
+	compatible = "st,stm32mp157c-dk2";
+	chosen {
+		/*
+		 * By default, Zephyr console and shell are assigned to
+		 * remoteproc. To enable console and shell over UART, uncomment
+		 * following lines and set the correct config in
+		 * stm32mp157c_dk2_defconfig "Serial Port" section in Zephyr
+		 * board documentation.
+		 * zephyr,console = &usart3;
+		 * zephyr,shell-uart = &usart3;
+		 */
+		zephyr,flash = &retram;
+		zephyr,sram = &mcusram;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_1: led_1 {
+			gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
+			label = "LD7";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User 1";
+			gpios = <&gpioa 14 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led_1;
+		sw0 = &user_button;
+	};
+
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(209)>;
+};
+
+&spi4_miso_pe13{ slew-rate = "very-high-speed"; };
+
+&spi4{
+	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi5_miso_pf8{ slew-rate = "very-high-speed"; };
+
+&spi5{
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_pf7
+		     &spi5_miso_pf8 &spi5_mosi_pf9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&mailbox {
+	status = "okay";
+};
+
+&i2c5 {
+	pinctrl-0 = <&i2c5_scl_pa11 &i2c5_sda_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};

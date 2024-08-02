@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ipc_service/static_vrings.h>
+
+/ {
+	chosen {
+		/delete-property/ zephyr,ipc_shm;
+		zephyr,log-ipc = &ipc0;
+	};
+
+	reserved-memory {
+		/delete-node/ memory@20070000;
+
+		sram_ipc0: memory@20070000 {
+			reg = <0x20070000 0x8000>;
+		};
+
+		sram_ipc1: memory@20078000 {
+			reg = <0x20078000 0x8000>;
+		};
+	};
+
+	ipc {
+		/delete-node/ ipc0;
+
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc0>;
+			mboxes = <&mbox 0>, <&mbox 1>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-openamp-static-vrings";
+			memory-region = <&sram_ipc1>;
+			mboxes = <&mbox 2>, <&mbox 3>;
+			mbox-names = "rx", "tx";
+			role = "remote";
+			zephyr,priority = <2 PRIO_PREEMPT>;
+			zephyr,buffer-size = <512>;
+			status = "okay";
+		};
+	};
+};

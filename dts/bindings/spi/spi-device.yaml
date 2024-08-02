@@ -1,0 +1,60 @@
+# Copyright (c) 2018, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SPI devices
+
+include: [base.yaml, power.yaml]
+
+on-bus: spi
+
+properties:
+  reg:
+    required: true
+  spi-max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of device's SPI interface in Hz
+  duplex:
+    type: int
+    default: 0
+    description: |
+      Duplex mode, full or half. By default it's always full duplex thus 0
+      as this is, by far, the most common mode.
+      Use the macros not the actual enum value, here is the concordance
+      list (see dt-bindings/spi/spi.h)
+        0    SPI_FULL_DUPLEX
+        2048 SPI_HALF_DUPLEX
+    enum:
+      - 0
+      - 2048
+  frame-format:
+    type: int
+    default: 0
+    description: |
+      Motorola or TI frame format. By default it's always Motorola's,
+      thus 0 as this is, by far, the most common format.
+      Use the macros not the actual enum value, here is the concordance
+      list (see dt-bindings/spi/spi.h)
+        0     SPI_FRAME_FORMAT_MOTOROLA
+        32768 SPI_FRAME_FORMAT_TI
+    enum:
+      - 0
+      - 32768
+  spi-cpol:
+    type: boolean
+    description: |
+      SPI clock polarity which indicates the clock idle state.
+      If it is used, the clock idle state is logic high; otherwise, low.
+  spi-cpha:
+    type: boolean
+    description: |
+      SPI clock phase that indicates on which edge data is sampled.
+      If it is used, data is sampled on the second edge; otherwise, on the first edge.
+  spi-hold-cs:
+    type: boolean
+    description: |
+      In some cases, it is necessary for the master to manage SPI chip select
+      under software control, so that multiple spi transactions can be performed
+      without releasing it. A typical use case is variable length SPI packets
+      where the first spi transaction reads the length and the second spi transaction
+      reads length bytes.

@@ -1,0 +1,80 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 Audio Streaming interface
+
+compatible: "zephyr,uac2-audio-streaming"
+
+properties:
+  linked-terminal:
+    type: phandle
+    required: true
+    description: |
+      Input or Output Terminal to which this interface is connected.
+
+  active-alternate-setting-control:
+    type: string
+    description: Active Alternate Setting Control capabilities
+    enum:
+      - "read-only"
+
+  valid-alternate-settings-control:
+    type: string
+    description: Valid Alternate Settings Control capabilities
+    enum:
+      - "read-only"
+
+  external-interface:
+    type: boolean
+    description: |
+      Enable if audio stream is not transmitted over USB (Type IV Audio Stream).
+
+  implicit-feedback:
+    type: boolean
+    description: |
+      Enable implicit feedback on asynchronous endpoint. For IN endpoints this
+      sets endpoint behaviour type to implicit feedback data endpoint. For OUT
+      endpoints setting this property removes explicit feedback endpoint.
+
+  pitch-control:
+    type: string
+    description: Pitch Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+
+  data-overrun-control:
+    type: string
+    description: Data Overrun capabilities
+    enum:
+      - "read-only"
+
+  data-underrun-control:
+    type: string
+    description: Data Underrun capabilities
+    enum:
+      - "read-only"
+
+  lock-delay:
+    type: int
+    description: |
+      Time it takes this endpoint to reliably lock its internal clock recovery
+      circuitry. Units depend on the lock-delay-units field. Relevant only if
+      linked-terminal's clock is sof-synchronized.
+
+  lock-delay-units:
+    type: string
+    description: Units for lock-delay parameter.
+    enum:
+      - "milliseconds"
+      - "decoded-pcm-samples"
+
+  subslot-size:
+    type: int
+    description: |
+      Number of bytes occupied by one audio subslot. Can be 1, 2, 3 or 4.
+
+  bit-resolution:
+    type: int
+    description: |
+      Number of effectively used bits in audio subslot.

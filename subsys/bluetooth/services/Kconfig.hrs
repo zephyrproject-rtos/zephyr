@@ -1,0 +1,30 @@
+# Bluetooth GATT Heart Rate service
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HRS
+	bool "GATT Heart Rate service"
+
+if BT_HRS
+
+choice BT_HRS_DEFAULT_PERM
+	prompt "Default permissions used for HRS characteristics"
+	default BT_HRS_DEFAULT_PERM_RW
+	help
+	  Default permissions for HRS characteristic attributes
+	  used when no permission is set for the report.
+	  Used also for boot reports.
+
+config BT_HRS_DEFAULT_PERM_RW
+	bool "Read and write allowed"
+
+config BT_HRS_DEFAULT_PERM_RW_ENCRYPT
+	bool "Require encryption for access"
+
+config BT_HRS_DEFAULT_PERM_RW_AUTHEN
+	bool "Require encryption and authentication for access"
+
+endchoice
+
+endif # BT_HRS

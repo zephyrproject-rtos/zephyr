@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Matthias Freese
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_SN74HC595
+	bool "SN74HC595 shift register as GPIO extender"
+	default y
+	depends on DT_HAS_TI_SN74HC595_ENABLED
+	depends on SPI
+	help
+	  Use SN74HC595 as GPIO extender
+
+if GPIO_SN74HC595
+
+config GPIO_SN74HC595_INIT_PRIORITY
+	int "Init priority"
+	default 71
+	help
+	  Device driver initialization priority.
+
+endif

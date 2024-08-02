@@ -1,0 +1,7 @@
+common:
+  tags: drivers gpio
+  depends_on: gpio
+  harness: ztest
+tests:
+  drivers.gpio.gpio_nrf:
+    filter: dt_compat_enabled("nordic,nrf-gpio") and dt_nodelabel_enabled("led0")

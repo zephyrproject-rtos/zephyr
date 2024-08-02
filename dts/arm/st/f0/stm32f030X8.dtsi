@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2018 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <st/f0/stm32f030.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(8)>;
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(64)>;
+			};
+		};
+
+		usart2: serial@40004400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			resets = <&rctl STM32_RESET(APB1, 17U)>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			interrupts = <24 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <26 3>;
+			status = "disabled";
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			resets = <&rctl STM32_RESET(APB1, 4U)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+		};
+
+		timers15: timers@40014000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			resets = <&rctl STM32_RESET(APB2, 16U)>;
+			interrupts = <20 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+};

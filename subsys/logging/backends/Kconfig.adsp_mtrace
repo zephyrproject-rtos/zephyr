@@ -1,0 +1,19 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_ADSP_MTRACE
+	bool "Intel ADSP mtrace backend"
+	depends on SOC_FAMILY_INTEL_ADSP
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Provide a logging backend which writes to SRAM window
+	  using the SOF Linux driver mtrace buffer layout.
+
+if LOG_BACKEND_ADSP_MTRACE
+
+backend = ADSP_MTRACE
+backend-str = adsp_mtrace
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_ADSP_MTRACE

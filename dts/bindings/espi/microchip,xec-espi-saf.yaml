@@ -1,0 +1,38 @@
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2020 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip ESPI SAF controller
+
+compatible: "microchip,xec-espi-saf"
+
+include: espi-controller.yaml
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  io_girq:
+    type: int
+    description: soc group irq index for eSPI I/O
+
+  poll_timeout:
+    type: int
+    description: poll flash busy timeout in 32KHz periods
+
+  poll_interval:
+    type: int
+    description: interval between flash busy poll in 20 ns units
+
+  consec_rd_timeout:
+    type: int
+    description: timeout after last read to resume supended operations in 20 ns units
+
+  sus_chk_delay:
+    type: int
+    description: hold off poll after suspend in 20 ns units
+
+  sus_rsm_interval:
+    type: int
+    description: force suspended erase or program to resume in 32KHz periods

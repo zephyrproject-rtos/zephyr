@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico clock controller node
+
+compatible: "raspberrypi,pico-clock-controller"
+
+include: [base.yaml, clock-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clk-id

@@ -1,0 +1,206 @@
+# Thread network configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config OPENTHREAD_PANID
+	int "Default PAN ID"
+	default 43981
+
+config OPENTHREAD_CHANNEL
+	int "Default Channel"
+	default 11
+
+config OPENTHREAD_NETWORK_NAME
+	string "Default network name"
+	default "ot_zephyr"
+	help
+	  Network name for OpenThread
+
+config OPENTHREAD_XPANID
+	string "Default Extended PAN ID"
+	default "de:ad:00:be:ef:00:ca:fe"
+	help
+	  Extended PAN ID for OpenThread with
+	  format "de:ad:00:be:ef:00:ca:fe"
+
+config OPENTHREAD_NETWORKKEY
+	string "Default Thread Network Key"
+	help
+	  Network Key for OpenThread with format
+	  "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
+
+config OPENTHREAD_JOINER_AUTOSTART
+	bool "Automatic joiner start"
+	depends on OPENTHREAD_JOINER
+
+config OPENTHREAD_JOINER_PSKD
+	string "Default pre shared key for the Joiner"
+	depends on OPENTHREAD_JOINER_AUTOSTART
+	default "J01NME"
+
+choice OPENTHREAD_DEVICE_TYPE
+	prompt "OpenThread device type"
+	help
+	  This option selects Thread network device type
+
+config OPENTHREAD_FTD
+	bool "FTD - Full Thread Device"
+config OPENTHREAD_MTD
+	bool "MTD - Minimal Thread Device"
+endchoice
+
+config OPENTHREAD_MTD_SED
+	bool "SED - Sleepy End Device"
+	depends on OPENTHREAD_MTD
+
+config OPENTHREAD_POLL_PERIOD
+	int "Poll period for sleepy end devices [ms]"
+	default 236000
+	depends on OPENTHREAD_MTD_SED
+
+config OPENTHREAD_MAX_CHILDREN
+	int "The maximum number of children"
+	range 1 511
+	default 32
+
+config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+	int "The maximum number of IPv6 address registrations per child"
+	range 4 $(UINT8_MAX)
+	default 6
+
+config OPENTHREAD_CONFIG_PLATFORM_INFO
+	string "The platform-specific string to insert into the OpenThread version string"
+	default "Zephyr"
+
+config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
+	bool "Support for IEEE802.15.4 radio link"
+	default y
+
+config OPENTHREAD_CSL_AUTO_SYNC
+	bool "CSL autosync"
+	default y if OPENTHREAD_CSL_RECEIVER
+
+config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
+	int "CSL receiver wake up margin in microseconds"
+	default 5000
+
+config OPENTHREAD_MIN_RECEIVE_ON_AHEAD
+	int "Minimum receiving time before start of MHR"
+	default 192
+	help
+	  The minimum time (microseconds) that radio has to be in receive mode before the start of the MHR.
+
+config OPENTHREAD_MIN_RECEIVE_ON_AFTER
+	int "Minimum receiving time after start of MHR"
+	default 5504
+	help
+	  The minimum time (microseconds) that radio should be in receive mode after the start of the MHR.
+
+config OPENTHREAD_PLATFORM_CSL_UNCERT
+	int "CSL uncertainty"
+	default $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
+	help
+	  The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
+
+config OPENTHREAD_CSL_TIMEOUT
+	int "CSL timeout in seconds"
+	default 100
+	help
+	  The default CSL timeout in seconds.
+
+config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
+	bool "Software transmission security logic"
+	default y if !OPENTHREAD_THREAD_VERSION_1_1
+
+config OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
+	bool "Inform previous parent on reattach"
+	default y if OPENTHREAD_PARENT_SEARCH
+	help
+	  To allow end devices (EDs) in a Thread network to inform their
+	  previous parent router that they have attached to a new parent
+	  router, enable the Inform Previous Parent on Reattach feature.
+
+config OPENTHREAD_PARENT_SEARCH
+	bool "Periodic parent search support"
+	help
+	  To allow end devices (EDs) in a Thread network to switch to a
+	  better parent router than their current one—while still attached
+	  to the network—enable the Periodic Parent Search feature.
+
+config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL
+	int "Interval to trigger parent search in seconds"
+	default 540
+	depends on OPENTHREAD_PARENT_SEARCH
+
+config OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL
+	int "Backoff interval to prevent parent search retry in seconds"
+	default 36000
+	depends on OPENTHREAD_PARENT_SEARCH
+
+config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+	int "RSSI threshold to trigger parent search"
+	default -65
+	depends on OPENTHREAD_PARENT_SEARCH
+
+config OPENTHREAD_CLI_MAX_LINE_LENGTH
+	int "The maximum size of the CLI line in bytes"
+	range 16 1024
+	default 384
+
+config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
+	int "The maximum number of supported IPv6 addresses allows to be externally added"
+	range 0 32
+	default 4
+
+config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
+	int "The maximum number of supported IPv6 multicast addresses allows to be externally added"
+	range 0 32
+	default 2
+
+config OPENTHREAD_TCP_ENABLE
+	bool "TCP support"
+
+config OPENTHREAD_CLI_TCP_ENABLE
+	bool "TCP in the CLI tool"
+	default y if SHELL
+	depends on OPENTHREAD_TCP_ENABLE
+
+config OPENTHREAD_HISTORY_TRACKER
+	bool "History tracker support"
+
+config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
+	bool "Stay awake between packet fragments"
+	help
+	  This optimization is done at the expense of power consumption on SED/SSED devices.
+
+config OPENTHREAD_DEFAULT_TX_POWER
+	int "OpenThread default tx power in dBm"
+	range -40 20 if NRF_802154_RADIO_DRIVER
+	default 0
+	help
+	  Set the default TX output power [dBm] in radio driver for OpenThread purpose.
+
+config OPENTHREAD_BLE_TCAT_THREAD_STACK_SIZE
+	int "Openthread default TCAT stack size"
+	default 5120 if OPENTHREAD_CRYPTO_PSA
+	default 4200
+	help
+	   Openthread default TCAT stack size.
+
+config OPENTHREAD_BLE_TCAT_RING_BUF_SIZE
+	int "Openthread BLE ringbuffer size"
+	default 512
+	help
+	   Openthread BLE TCAT ringbuffer size.
+
+config OPENTHREAD_NAT64_CIDR
+	string "Set IPv4 CIDR used by NAT64"
+	default "192.168.255.0/24"
+	depends on OPENTHREAD_BORDER_ROUTING && OPENTHREAD_NAT64_TRANSLATOR
+	help
+	  Set the IPv4 CIDR (Classless Inter-Domain Routing) used by NAT64
+	  to set source address of the outgoing translated IPv4 packets.
+	  The CIDR must have four bytes in the address with the
+	  non-zero length of prefix (e.g., "127.0.0.1/24").

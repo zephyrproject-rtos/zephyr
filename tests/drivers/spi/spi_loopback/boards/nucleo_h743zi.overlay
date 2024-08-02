@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/* Set div-q to get test clk freq into acceptable SPI freq range */
+&pll {
+	/delete-property/ div-q;
+	div-q = <8>;
+};
+
+&sram2 {
+	zephyr,memory-attr = < DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) >;
+};
+
+&spi1 {
+	dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
+		&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

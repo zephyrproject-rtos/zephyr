@@ -1,0 +1,41 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019-2023 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_MACHINE_TIMER
+	bool "RISCV Machine Timer"
+	default y
+	depends on DT_HAS_ANDESTECH_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_NEORV32_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_NUCLEI_SYSTIMER_ENABLED || \
+		   DT_HAS_SIFIVE_CLINT0_ENABLED || \
+		   DT_HAS_TELINK_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_LOWRISC_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_NIOSV_MACHINE_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the generic RISCV machine
+	  timer driver. It provides the standard "system clock driver" interfaces.
+
+if RISCV_MACHINE_TIMER
+
+config RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER
+	int
+	default 0
+	help
+	  Specifies the division ratio of the system clock supplied to the Machine Timer.
+
+	  A clock obtained by dividing the system clock by a value of [2^N] is
+	  supplied to the timer. Where N is this parameter's value.
+	  When N=2, it is divided by 4, and when N=5, it is divided by 32.
+	  Default case is N=0, this means use system clock as machine timer clock.
+	  It is normal configuration for RISC-V machine clock.
+
+	  This parameter usually depends on the hardware configuration.
+	  The division ratio should define in devicetree,
+	  and it is desirable usage that references it with using a function such as
+	  dt_node_int_prop_int from Kconfig. (Tune in the conf file is not preferable.)
+
+endif

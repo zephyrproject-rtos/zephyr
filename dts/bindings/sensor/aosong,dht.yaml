@@ -1,0 +1,32 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Aosong DHT (Digital-output Humidity and Temperature Sensor)
+
+    The Aosong DHT family of sensors provide temperature and humidity
+    measurements through a bidirectional serial digital signal.  The
+    DHT11 uses a polymer humidity capacitor with NTC thermistor; the
+    DHT22 replaces the thermistor with a DS18B20 1-wire thermometer.
+
+    The DHT22 is also known as an AM2303.
+
+compatible: "aosong,dht"
+
+include: sensor-device.yaml
+
+properties:
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Pin on which sensor communication will be performed.
+
+      Control and data are encoded by the duration of active low
+      signals.  A pull up may be appropriate.
+
+  dht22:
+    type: boolean
+    description: |
+      Set to identify sensor as a DHT22/AM2303.  Leave unset to identify
+      sensor as a DHT11.

@@ -1,0 +1,64 @@
+# MCUX CAN configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCUX_FLEXCAN
+	bool "NXP FlexCAN driver"
+	default y
+	depends on DT_HAS_NXP_FLEXCAN_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable support for the NXP FlexCAN driver.
+
+if CAN_MCUX_FLEXCAN
+
+config CAN_MCUX_FLEXCAN_FD
+	bool # hidden
+	default y
+	depends on DT_HAS_NXP_FLEXCAN_FD_ENABLED && CAN_FD_MODE
+	help
+	  Enable support for CAN FD capable NXP FlexCAN devices.
+
+config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
+	int "Maximum number of wait loop iterations"
+	default 10000
+	help
+	  Maximum number of wait loop iterations for the MCUX FlexCAN HAL when entering/leaving
+	  freeze mode.
+
+config CAN_MAX_MB
+	int "Maximum number of message buffers for concurrent active instances"
+	default 16
+	depends on SOC_SERIES_S32K3 || SOC_SERIES_S32K1
+	range 1 96 if SOC_SERIES_S32K3
+	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
+	range 1 64 if SOC_S32K142W || SOC_S32K144W
+	help
+	  Defines maximum number of message buffers for concurrent active instances.
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active RX filters"
+	default 5
+	range 1 15 if SOC_SERIES_KINETIS_KE1XF || SOC_SERIES_KINETIS_K6X
+	range 1 13 if (SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX) && CAN_MCUX_FLEXCAN_FD
+	range 1 63 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+	range 1 96 if SOC_SERIES_S32K3
+	range 1 32 if SOC_SERIES_S32K1 && !SOC_S32K142W && !SOC_S32K144W
+	range 1 64 if SOC_S32K142W || SOC_S32K144W
+	help
+	  Defines maximum number of concurrent active RX filters
+
+endif # CAN_MCUX_FLEXCAN
+
+config CAN_MCUX_MCAN
+	bool "MCUX MCAN driver"
+	default y
+	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
+	depends on CLOCK_CONTROL
+	select CAN_MCAN
+	select PINCTRL
+	select RESET
+	help
+	  Enable support for mcux mcan driver.

@@ -1,0 +1,9 @@
+# Copyright 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config NET_CORE_BOARD
+string
+	default "nrf5340dk/nrf5340/cpunet" if $(BOARD) = "nrf5340dk"

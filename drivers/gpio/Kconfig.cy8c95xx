@@ -1,0 +1,22 @@
+# CY8C95XX GPIO configuration options
+
+# Copyright (c) 2021 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_CY8C95XX
+	bool "CY8C95XX I2C GPIO chip"
+	default y
+	depends on DT_HAS_CYPRESS_CY8C95XX_GPIO_PORT_ENABLED
+	depends on I2C
+	help
+	  Enable driver for CY8C95XX I2C GPIO chip.
+
+if GPIO_CY8C95XX
+
+config GPIO_CY8C95XX_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+endif # GPIO_CY8C95XX

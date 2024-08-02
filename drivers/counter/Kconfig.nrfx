@@ -1,0 +1,26 @@
+# Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NRF_TIMER
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_TIMER_ENABLED
+
+config COUNTER_NRF_RTC
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_RTC_ENABLED
+
+# Internal flag which detects if PPI wrap feature is enabled for any instance
+config COUNTER_RTC_WITH_PPI_WRAP
+	def_bool $(dt_nodelabel_bool_prop,rtc0,ppi-wrap) || \
+		 $(dt_nodelabel_bool_prop,rtc1,ppi-wrap) || \
+		 $(dt_nodelabel_bool_prop,rtc2,ppi-wrap)
+	depends on COUNTER_NRF_RTC
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+
+# Internal flag which detects if fixed top feature is enabled for any instance
+config COUNTER_RTC_CUSTOM_TOP_SUPPORT
+	def_bool !$(dt_nodelabel_bool_prop,rtc0,fixed-top) || \
+		 !$(dt_nodelabel_bool_prop,rtc1,fixed-top) || \
+		 !$(dt_nodelabel_bool_prop,rtc2,fixed-top)
+	depends on COUNTER_NRF_RTC

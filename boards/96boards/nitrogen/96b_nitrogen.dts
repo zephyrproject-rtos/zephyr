@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+#include "96b_lscon.dtsi"
+#include "96b_nitrogen-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Seeed Studio Nitrogen 96board";
+	compatible = "seeed,nitrogen";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		bt = &led1;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* green led */
+		led0: led_0 {
+			gpios = <&gpio0 29 0>;
+			label = "USR1 LED";
+		};
+		/* blue led */
+		led1: led_1 {
+			gpios = <&gpio0 28 0>;
+			label = "BT LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "User Push Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xa000>;
+		};
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x33000>;
+		};
+		slot1_partition: partition@3d000 {
+			label = "image-1";
+			reg = <0x0003d000 0x33000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+
+		/*
+		 * The flash starting at 0x0007a000 and ending at
+		 * 0x0007ffff (sectors 122-127) is reserved for use
+		 * by the application. If enabled, partition for FCB/LittleFS
+		 * will be created in this area.
+		 */
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

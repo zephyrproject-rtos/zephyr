@@ -1,0 +1,25 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: GD32 GPIO node
+
+compatible: "gd,gd32-gpio"
+
+include: [gpio-controller.yaml, reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -1,0 +1,26 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_LPTMR_TIMER
+	bool "MCUX LPTMR timer"
+	default y
+	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED || \
+		   MCUX_KINETIS_LPTMR
+	depends on !COUNTER_MCUX_LPTMR
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  This module implements a kernel device driver for the NXP MCUX Low
+	  Power Timer (LPTMR) and provides the standard "system clock driver"
+	  interfaces.
+
+config MCUX_KINETIS_LPTMR
+	bool
+	default y
+	depends on DT_HAS_NXP_KINETIS_LPTMR_ENABLED
+	select DEPRECATED
+	help
+	  The compatible string "nxp,kinetis-lptmr" should
+	  be swiched to "nxp,lptmr" in DT. The former will
+	  be removed eventually.

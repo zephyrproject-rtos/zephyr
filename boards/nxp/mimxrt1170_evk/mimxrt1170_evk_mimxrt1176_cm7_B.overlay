@@ -1,0 +1,104 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &w25q512nw;
+		zephyr,flash-controller = &w25q512nw;
+		zephyr,flash = &w25q512nw;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+
+	aliases {
+		/delete-property/ magn0;
+		/delete-property/ accel0;
+	};
+};
+
+&flexspi {
+	/* RT1170 EVKB uses a different QSPI flash chip */
+	/delete-node/ is25wp128@0;
+	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	w25q512nw:w25q512nw@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(64*8)>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [ef 60 20];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* The MCUBoot swap-move algorithm uses the last 3 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+			};
+			slot1_partition: partition@723000 {
+				label = "image-1";
+				reg = <0x00723000 DT_SIZE_M(7)>;
+			};
+			storage_partition: partition@E23000 {
+				label = "storage";
+				reg = <0x00E23000 (DT_SIZE_M(50) - DT_SIZE_K(140))>;
+			};
+		};
+	};
+};
+
+&lpi2c5 {
+	/* FXOS accelerometer is not present in this board */
+	/delete-node/ fxos8700@1f;
+};
+
+&enet_mdio {
+	/delete-node/ phy@0;
+
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+m2_hci_uart: &lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2_flowcontrol>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		m2_bt_module {
+			compatible = "nxp,bt-hci-uart";
+			sdio-reset-gpios = <&gpio9 15 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio9 30 GPIO_ACTIVE_HIGH>;
+			hci-operation-speed = <115200>;
+			hw-flow-control;
+			fw-download-primary-speed = <115200>;
+			fw-download-secondary-speed = <3000000>;
+			fw-download-secondary-flowcontrol;
+		};
+	};
+};
+
+&m2_hci_uart {
+	status = "okay";
+	current-speed = <115200>;
+};

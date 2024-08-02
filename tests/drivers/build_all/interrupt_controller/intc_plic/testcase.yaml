@@ -1,0 +1,28 @@
+common:
+  build_only: true
+  filter: CONFIG_PLIC
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv64
+  tags:
+    - drivers
+    - interrupt
+    - plic
+tests:
+  drivers.interrupt_controller.intc_plic.build: {}
+  drivers.interrupt_controller.intc_plic.plic_shell.build:
+    tags:
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_PLIC_SHELL=y
+  drivers.interrupt_controller.intc_plic.multi_instance.build:
+    extra_args:
+      DTC_OVERLAY_FILE="./app.multi_instance.overlay"
+    extra_configs:
+      - CONFIG_NUM_IRQS=116
+      - CONFIG_MULTI_LEVEL_INTERRUPTS=y
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+      - CONFIG_NUM_2ND_LEVEL_AGGREGATORS=2
+      - CONFIG_2ND_LVL_INTR_01_OFFSET=3
+      - CONFIG_UART_INTERRUPT_DRIVEN=y

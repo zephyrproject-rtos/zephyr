@@ -1,0 +1,405 @@
+sample:
+  name: Message subscriber
+tests:
+  sample.zbus.msg_subscriber_dynamic:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?I:  AL Memory allocated \\d{1,3} bytes. Total allocated \\d{1,3} bytes$"
+        - "^.*?I:  FR Memory freed \\d{1,3} bytes. Total allocated 0 bytes$"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?D:  2 -> bar_msg_sub2"
+        - "^.*?D:  3 -> bar_msg_sub3"
+        - "^.*?D:  4 -> bar_msg_sub4"
+        - "^.*?D:  5 -> bar_msg_sub5"
+        - "^.*?D:  6 -> bar_msg_sub6"
+        - "^.*?D:  7 -> bar_msg_sub7"
+        - "^.*?D:  8 -> bar_msg_sub8"
+        - "^.*?D:  9 -> bar_msg_sub9"
+        - "^.*?D:  10 -> foo_lis"
+        - "^.*?D:  11 -> bar_msg_sub10"
+        - "^.*?D:  12 -> bar_msg_sub11"
+        - "^.*?D:  13 -> bar_msg_sub12"
+        - "^.*?D:  14 -> bar_msg_sub13"
+        - "^.*?D:  15 -> bar_msg_sub14"
+        - "^.*?D:  16 -> bar_msg_sub15"
+        - "^.*?D:  17 -> bar_msg_sub16"
+        - "^.*?D:  18 -> bar_sub2"
+        - "^.*?I: From listener foo_lis -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From listener foo_lis -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From listener foo_lis -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.msg_subscriber_static:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?D:  2 -> bar_msg_sub2"
+        - "^.*?D:  3 -> bar_msg_sub3"
+        - "^.*?D:  4 -> bar_msg_sub4"
+        - "^.*?D:  5 -> bar_msg_sub5"
+        - "^.*?D:  6 -> bar_msg_sub6"
+        - "^.*?D:  7 -> bar_msg_sub7"
+        - "^.*?D:  8 -> bar_msg_sub8"
+        - "^.*?D:  9 -> bar_msg_sub9"
+        - "^.*?D:  10 -> foo_lis"
+        - "^.*?D:  11 -> bar_msg_sub10"
+        - "^.*?D:  12 -> bar_msg_sub11"
+        - "^.*?D:  13 -> bar_msg_sub12"
+        - "^.*?D:  14 -> bar_msg_sub13"
+        - "^.*?D:  15 -> bar_msg_sub14"
+        - "^.*?D:  16 -> bar_msg_sub15"
+        - "^.*?D:  17 -> bar_msg_sub16"
+        - "^.*?D:  18 -> bar_sub2"
+        - "^.*?I: From listener foo_lis -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From listener foo_lis -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From listener foo_lis -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+
+  sample.zbus.msg_subscriber_dynamic_isolated:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?I:  AL Memory allocated \\d{1,3} bytes. Total allocated \\d{1,3} bytes$"
+        - "^.*?I:  FR Memory freed \\d{1,3} bytes. Total allocated 0 bytes$"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?D:  2 -> bar_msg_sub2"
+        - "^.*?D:  3 -> bar_msg_sub3"
+        - "^.*?D:  4 -> bar_msg_sub4"
+        - "^.*?D:  5 -> bar_msg_sub5"
+        - "^.*?D:  6 -> bar_msg_sub6"
+        - "^.*?D:  7 -> bar_msg_sub7"
+        - "^.*?D:  8 -> bar_msg_sub8"
+        - "^.*?D:  9 -> bar_msg_sub9"
+        - "^.*?D:  10 -> foo_lis"
+        - "^.*?D:  11 -> bar_msg_sub10"
+        - "^.*?D:  12 -> bar_msg_sub11"
+        - "^.*?D:  13 -> bar_msg_sub12"
+        - "^.*?D:  14 -> bar_msg_sub13"
+        - "^.*?D:  15 -> bar_msg_sub14"
+        - "^.*?D:  16 -> bar_msg_sub15"
+        - "^.*?D:  17 -> bar_msg_sub16"
+        - "^.*?D:  18 -> bar_sub2"
+        - "^.*?I: From listener foo_lis -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From listener foo_lis -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From listener foo_lis -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.msg_subscriber_dynamic_isolated_too_small:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=2
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?I:  AL Memory allocated \\d{1,3} bytes. Total allocated \\d{1,3} bytes$"
+        - "^.*?I:  FR Memory freed \\d{1,3} bytes. Total allocated 0 bytes$"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?E: could not deliver notification to observer bar_msg_sub2. Error code -12"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.msg_subscriber_static_isolated:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=32
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?D:  2 -> bar_msg_sub2"
+        - "^.*?D:  3 -> bar_msg_sub3"
+        - "^.*?D:  4 -> bar_msg_sub4"
+        - "^.*?D:  5 -> bar_msg_sub5"
+        - "^.*?D:  6 -> bar_msg_sub6"
+        - "^.*?D:  7 -> bar_msg_sub7"
+        - "^.*?D:  8 -> bar_msg_sub8"
+        - "^.*?D:  9 -> bar_msg_sub9"
+        - "^.*?D:  10 -> foo_lis"
+        - "^.*?D:  11 -> bar_msg_sub10"
+        - "^.*?D:  12 -> bar_msg_sub11"
+        - "^.*?D:  13 -> bar_msg_sub12"
+        - "^.*?D:  14 -> bar_msg_sub13"
+        - "^.*?D:  15 -> bar_msg_sub14"
+        - "^.*?D:  16 -> bar_msg_sub15"
+        - "^.*?D:  17 -> bar_msg_sub16"
+        - "^.*?D:  18 -> bar_sub2"
+        - "^.*?I: From listener foo_lis -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=1, y=10, z=100"
+        - "^.*?I: From listener foo_lis -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=2, y=20, z=200"
+        - "^.*?I: From listener foo_lis -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub2 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub3 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub4 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub5 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub6 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub7 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub8 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub9 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub10 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub11 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub12 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub13 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub14 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub15 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From msg subscriber bar_msg_sub16 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub1 -> Acc x=3, y=30, z=300"
+        - "^.*?I: From subscriber bar_sub2 -> Acc x=3, y=30, z=300"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86
+  sample.zbus.msg_subscriber_static_isolated_too_small:
+    harness: console
+    extra_configs:
+      - CONFIG_ZBUS_LOG_LEVEL_DBG=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE=16
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION=y
+      - CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE=2
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "^.*?I: ----> Publishing to acc_data_chan channel"
+        - "^.*?D:  0 -> bar_sub1"
+        - "^.*?D:  1 -> bar_msg_sub1"
+        - "^.*?E: could not deliver notification to observer bar_msg_sub2. Error code -12"
+    tags: zbus
+    integration_platforms:
+      - qemu_x86

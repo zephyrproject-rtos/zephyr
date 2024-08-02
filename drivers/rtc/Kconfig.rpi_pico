@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_RPI_PICO
+	bool "Raspberry Pi Pico RTC driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_RTC_ENABLED
+	select PICOSDK_USE_RTC
+	depends on RESET

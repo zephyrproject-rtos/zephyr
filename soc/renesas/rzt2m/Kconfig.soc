@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RENESAS_RZT2M
+	bool
+
+config SOC_PART_NUMBER_R9A07G075
+	bool
+
+config SOC
+	default "renesas_rzt2m" if SOC_RENESAS_RZT2M
+
+config SOC_PART_NUMBER
+	default "R9A07G075" if SOC_PART_NUMBER_R9A07G075

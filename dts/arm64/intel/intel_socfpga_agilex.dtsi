@@ -1,0 +1,191 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (C) 2021-2022, Intel Corporation
+ *
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells= <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x1>;
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x2>;
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x3>;
+		};
+	};
+
+	gic: interrupt-controller@fffc1000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0xfffc1000 0x1000>,
+		      <0xfffc2000 0x2000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	sysmgr: sysmgr@ffd12000 {
+		compatible = "syscon";
+		reg = <0xffd12000 0x1000>;
+	};
+
+	clock: clock@ffd10000 {
+		compatible = "intel,agilex-clock";
+		reg = <0xffd10000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	/*
+	 * This qspi setting included
+	 * The QSPI controller register and
+	 * The QSPI data register
+	 * QSPI REG  <0xff8d2000 0x100>
+	 * QSPI DATA <0xff900000 0x100000>
+	 */
+	qspi: qspi@ff8d2000 {
+		#address-cells = <0x1>;
+		#size-cells = <0x0>;
+		compatible = "cdns,qspi-nor";
+		reg = <0xff8d2000 0x100>,
+		      <0xff900000 0x100000>;
+		reg-names = "qspi_reg", "qspi_data";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 4 IRQ_TYPE_LEVEL
+			     IRQ_DEFAULT_PRIORITY>;
+		clock-frequency = <50000000>;
+		status = "disabled";
+	};
+
+	mem0: memory@10000000 {
+		device_type = "memory";
+		reg = <0x10000000 0x200000>;
+	};
+
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
+	uart0: uart@ffc02000 {
+		compatible = "ns16550";
+		reg-shift = <2>;
+		reg = <0xffc02000 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
+		status = "disabled";
+	};
+
+	sip_smc: smc{
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		status = "disabled";
+		zephyr,num-clients = <2>;
+	};
+
+	timer0: timer@ffc03000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffc03000 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer1: timer@ffc03100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffc03100 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer2: timer@ffd00000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffd00000 0x100>;
+		clock-frequency = < 100000000 >;
+		status = "disabled";
+	};
+
+	timer3: timer@ffd00100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0xffd00100 0x100>;
+		clock-frequency = < 100000000 >;
+	};
+
+	watchdog0: watchdog@ffd00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00200 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@ffd00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00300 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@ffd00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00400 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@ffd00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0xffd00500 0x100>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
+		status = "disabled";
+	};
+};

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f407.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32f417", "st,stm32f4", "simple-bus";
+
+		cryp: cryp@50060000 {
+			compatible = "st,stm32-cryp";
+			reg = <0x50060000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			resets = <&rctl STM32_RESET(AHB2, 4U)>;
+			interrupts = <79 0>;
+			status = "disabled";
+		};
+	};
+};

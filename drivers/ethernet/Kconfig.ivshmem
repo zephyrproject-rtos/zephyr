@@ -1,0 +1,27 @@
+# IVSHMEM Ethernet driver configuration options
+
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_IVSHMEM
+	bool "Inter-VM shared memory Ethernet driver"
+	select PCIE
+	select VIRTUALIZATION
+	select IVSHMEM_V2
+	select IVSHMEM_DOORBELL
+	select OPENAMP
+	help
+	  Enable Inter-VM Shared Memory Ethernet driver.
+	  Used for Ethernet communication between "cells" in the Jailhouse hypervisor.
+
+if ETH_IVSHMEM
+
+config ETH_IVSHMEM_THREAD_STACK_SIZE
+	int "IVSHMEM Ethernet thread stack size"
+	default 4096
+
+config ETH_IVSHMEM_THREAD_PRIORITY
+	int "IVSHMEM Ethernet thread priority"
+	default 2
+
+endif # ETH_IVSHMEM

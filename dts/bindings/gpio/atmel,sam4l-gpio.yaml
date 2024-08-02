@@ -1,0 +1,8 @@
+# Copyright (c) 2021-2023, Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SAM4L GPIO PORT node
+
+compatible: "atmel,sam4l-gpio"
+
+include: ["atmel,sam-gpio.yaml"]

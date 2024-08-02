@@ -1,0 +1,310 @@
+# Shell configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SHELL
+	bool "Shell"
+	imply LOG_RUNTIME_FILTERING
+	select POLL
+
+if SHELL
+
+module = SHELL
+module-str = Shell
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/shell/backends/Kconfig.backends"
+
+config SHELL_MINIMAL
+	bool "Default config to reduce flash and memory requirements"
+	help
+	  This is a meta-configuration option to significantly reduce the flash
+	  and memory requirements of the shell.  Enabling it will choose Kconfig
+	  defaults which favor reduced flash or memory requirements over extra
+	  features.
+
+config SHELL_THREAD_PRIORITY_OVERRIDE
+	bool "Override default shell thread priority"
+	help
+	  Option to change the default value of shell thread priority.
+
+if SHELL_THREAD_PRIORITY_OVERRIDE
+config SHELL_THREAD_PRIORITY
+	int "Shell thread priority"
+	default 0
+	help
+	  Set thread priority of the shell
+endif
+
+config SHELL_STACK_SIZE
+	int "Shell thread stack size"
+	default 3168 if OPENTHREAD_SHELL
+	default 3072 if 64BIT
+	default 2048 if MULTITHREADING
+	default 0 if !MULTITHREADING
+	help
+	  Stack size for thread created for each instance.
+
+config SHELL_BACKSPACE_MODE_DELETE
+	bool "Default escape code for backspace is DELETE (0x7F)"
+	default y
+	help
+	  Terminals have different escape code settings for backspace button.
+	  Some terminals send code: 0x08 (backspace) other 0x7F (delete). When
+	  this option is set shell will expect 0x7F for backspace key.
+
+config SHELL_PROMPT_CHANGE
+	bool "Allow prompt change in runtime"
+	default y if !SHELL_MINIMAL
+	help
+	  Allow for the modification of the shell prompt at runtime.
+	  Enabling this will allocate additional RAM memory where
+	  the string of the prompt will be stored.
+
+config SHELL_PROMPT_BUFF_SIZE
+	int "Shell prompt buffer size"
+	depends on SHELL_PROMPT_CHANGE
+	range 2 40
+	default 10 if SHELL_MINIMAL
+	default 20
+	help
+	  Maximum prompt size in bytes. One byte is reserved for the string
+	  terminator character.
+
+config SHELL_CMD_BUFF_SIZE
+	int "Shell command buffer size"
+	default 128 if SHELL_MINIMAL
+	default 256
+	help
+	  Maximum command size in bytes. One byte is reserved for the string
+	  terminator character.
+
+config SHELL_PRINTF_BUFF_SIZE
+	int "Shell print buffer size"
+	default 30
+	help
+	  Maximum text buffer size for fprintf function.
+	  It is working like stdio buffering in Linux systems
+	  to limit number of peripheral access calls.
+
+config SHELL_DEFAULT_TERMINAL_WIDTH
+	int "Default terminal width"
+	default 80
+	help
+	  Default terminal width is used to break lines.
+
+config SHELL_DEFAULT_TERMINAL_HEIGHT
+	int "Default terminal height"
+	default 24
+
+config SHELL_ARGC_MAX
+	int "Maximum arguments in shell command"
+	range 3 $(UINT8_MAX)
+	default 20
+	help
+	  Maximum number of arguments that can build a command.
+
+config SHELL_TAB
+	bool "The Tab button support in shell"
+	default y if !SHELL_MINIMAL && !SHELL_BACKEND_RTT
+	help
+	  Enable using the Tab button in the shell. The button
+	  can be used for prompting commands, or for autocompletion.
+	  This feature has high impact on flash usage.
+
+config SHELL_TAB_AUTOCOMPLETION
+	bool "Commands autocompletion with the Tab button"
+	depends on SHELL_TAB
+	default y if !SHELL_MINIMAL
+	help
+	  Enable commands and subcommands autocompletion with the Tab
+	  key. This function can be deactivated to save some flash.
+
+config SHELL_ASCII_FILTER
+	bool "Filter incoming ASCII characters"
+	default y
+	help
+	  Shell will not collect characters that are not in
+	  ASCII range: <0, 127>. As a result filtered characters will not be
+	  printed on the terminal and passed to the command handler.
+
+config SHELL_WILDCARD
+	bool "Wildcard support in shell"
+	select POSIX_C_LIB_EXT
+	default y if !SHELL_MINIMAL
+	help
+	  Enables using wildcards: * and ? in the shell.
+
+config SHELL_MSG_CMD_NOT_FOUND
+	bool "': command not found' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
+config SHELL_MSG_SPECIFY_SUBCOMMAND
+	bool "'Please specify a subcommand.' message in the shell"
+	default y
+	help
+	  If enabled, the shell prints out this message.
+
+config SHELL_ECHO_STATUS
+	bool "Echo on shell"
+	default y
+	help
+	  If enabled shell prints back every input byte.
+
+config SHELL_START_OBSCURED
+	bool "Display asterisk when echoing"
+	help
+	  If enabled, don't echo actual character, but echo * instead.
+	  This is used for login prompts.
+
+config SHELL_VT100_COMMANDS
+	bool "VT100 commands in shell"
+	default y if !SHELL_BACKEND_RTT
+	help
+	  Enables VT100 commands in shell (e.g. cursor position, clear screen etc.).
+
+config SHELL_VT100_COLORS
+	bool "Colors in shell"
+	depends on SHELL_VT100_COMMANDS
+	default y if !SHELL_MINIMAL
+	help
+	  If enabled VT100 colors are used in shell (e.g. print errors in red).
+
+config SHELL_GETOPT
+	bool "Threadsafe getopt support in shell"
+	select POSIX_C_LIB_EXT
+	help
+	  This config creates a separate getopt_state for the shell instance.
+	  It ensures that using getopt with shell is thread safe.
+	  When more threads are using getopt please call getopt_state_get to
+	  get getopt state of the shell thread.
+
+config SHELL_METAKEYS
+	bool "Metakeys"
+	default y if !SHELL_MINIMAL
+	help
+	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
+	  Ctrl+f, Ctrl+k, Ctrl+l, Ctrl+u, Ctrl+w, Alt+b, Alt+f
+	  Meta keys will not be active when shell echo is set to off.
+
+config SHELL_HELP
+	bool "Help message"
+	default y if !SHELL_MINIMAL
+	help
+	  Enables shell functions for printing formatted help message.
+
+config SHELL_HELP_OPT_PARSE
+	bool "Parse -h and --help options"
+	depends on SHELL_HELP
+	depends on !SHELL_GETOPT
+	default y
+	help
+	  Shell parses command to find '-h' or '--help' string. If the shell
+	  finds the string, it will automatically print a help message
+	  for a command.
+
+config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
+	bool "Printing help on wrong argument count"
+	depends on SHELL_HELP
+	default y if !SHELL_MINIMAL
+
+config SHELL_HISTORY
+	bool "History in shell"
+	default y if !SHELL_MINIMAL
+	select RING_BUFFER
+	help
+	  Enable commands history. History can be accessed using up and down
+	  arrows or Ctrl+n and Ctrl+p meta keys.
+
+config SHELL_HISTORY_BUFFER
+	int "History buffer in bytes"
+	default 128 if SHELL_MINIMAL
+	default 512
+	depends on SHELL_HISTORY
+	help
+	  Number of bytes dedicated for storing executed commands.
+
+config SHELL_STATS
+	bool "Shell statistics"
+	default y if !SHELL_MINIMAL
+
+config SHELL_CMDS
+	bool "Built-in commands"
+	default y if !SHELL_MINIMAL
+	help
+	  Enable built-in commands like 'clear', 'history', etc.
+
+config SHELL_CMDS_RESIZE
+	bool "Resize command"
+	depends on SHELL_CMDS
+	depends on SHELL_VT100_COMMANDS
+	default y if !SHELL_MINIMAL
+	help
+	  By default shell assumes width of a terminal screen set to 80
+	  characters. Each time terminal screen width is changed resize command
+	  must be called to ensure correct text display on the terminal screen.
+	  The resize command can be turned off to save code memory (~0,5k).
+
+config SHELL_CMDS_SELECT
+	bool "Select command"
+	depends on SHELL_CMDS
+	help
+	  This option enables select command. It can be used to set new root
+	  command. Exit to main command tree is with alt+r.
+
+config SHELL_CMD_ROOT
+	string "Set a root command at init"
+	help
+	  This option sets a root command at shell init,
+	  and when exiting to main command tree with alt+r.
+
+config SHELL_LOG_BACKEND
+	bool "Shell log backend"
+	depends on LOG && !LOG_MODE_MINIMAL
+	select MPSC_PBUF
+	select LOG_OUTPUT
+	default y if LOG
+	help
+	  When enabled, backend will use the shell for logging.
+	  This option is enabled by default.
+	  Disabling this option disables log output to all shell backends.
+	  Disabling log output to a specific shell backend can be achieved
+	  using the shell backend's LOG_LEVEL option
+	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
+
+config SHELL_LOG_FORMAT_TIMESTAMP
+	bool "Format timestamp"
+	default y
+	depends on SHELL_LOG_BACKEND
+	help
+	  Enable timestamp formatting.
+
+config SHELL_AUTOSTART
+	bool "Auto-start shell at boot"
+	default y
+	help
+	  If enabled, shell will be automatically started.
+
+config SHELL_CMDS_RETURN_VALUE
+	bool "Retval command"
+	depends on SHELL_CMDS
+	default y
+	help
+	  This option enables the retval command. It is used to retrieve
+	  the return value from the most recently executed command.
+
+config SHELL_CUSTOM_HEADER
+	bool "Include Custom Shell Header"
+	help
+	  When enabled, a custom application provided header, named
+	  "zephyr_custom_shell.h", is included at the end of shell.h. This enables
+	  extension of the shell APIs at the macro level. Please use cautiously!
+	  The internal shell API may change in future releases.
+
+source "subsys/shell/modules/Kconfig"
+
+endif # SHELL

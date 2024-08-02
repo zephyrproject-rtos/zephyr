@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2022 Joylab AG <team@joylab.ch>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g031X8.dtsi>
+#include <st/g0/stm32g031k(4-6-8)tx-pinctrl.dtsi>
+#include "arduino_nano_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32G031K8-NUCLEO board";
+	compatible = "st,stm32g031k8-nucleo";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		green_led_3: led_3 {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_3;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <8>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+};

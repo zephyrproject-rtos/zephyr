@@ -1,0 +1,11 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_SOF_MODULE
+	bool
+
+config SOF
+	bool "Sound Open Firmware (SOF)"
+	depends on ZEPHYR_SOF_MODULE
+	help
+	  Build Sound Open Firmware (SOF) support.

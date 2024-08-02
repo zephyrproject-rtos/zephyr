@@ -1,0 +1,15 @@
+# NRF AES ECB configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_NRF_ECB
+	bool "nRF AES electronic codebook mode encryption"
+	default y
+	depends on DT_HAS_NORDIC_NRF_ECB_ENABLED
+	# Bluetooth controller uses the ECB peripheral directly
+	# (see subsys/bluetooth/controller/ll_sw/nordic/hal/nrf5/ecb.c),
+	# hence this driver cannot be enabled together with it.
+	depends on !BT_CTLR
+	help
+	  Enable nRF HAL-based AES ECB encryption driver

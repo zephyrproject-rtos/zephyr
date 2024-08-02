@@ -1,0 +1,321 @@
+# Copyright (c) 2017 Christian Taedcke
+# Copyright (c) 2018 Gil Benkoe
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+
+rsource "*/Kconfig"
+
+config SOC_GECKO_SDID
+	int
+	help
+	  Gecko SDK sometime refere to the chipset using the internal ID. This
+	  entry reflects this ID.
+
+config SOC_GECKO_BURTC
+	bool
+	help
+	  Set if the Back-Up Real Time Counter (BURTC) HAL module is used.
+
+config SOC_GECKO_CORE
+	bool
+	default y
+	help
+	  Set if the Core interrupt handling (CORE) HAL module is used.
+
+config SOC_GECKO_ADC
+	bool
+	help
+	  Set if the Analog to Digital Converter (ADC) HAL module is used.
+
+config SOC_GECKO_IADC
+	bool
+	help
+	  Set if the Incremental Analog to Digital Converter (IADC) HAL module is used.
+
+config SOC_GECKO_CRYOTIMER
+	bool
+	help
+	  Set if the Ultra Low Energy Timer/Counter (CRYOTIMER) HAL module is used.
+
+config SOC_GECKO_EMU
+	bool
+	help
+	  Set if the Energy Management Unit (EMU) HAL module is used.
+
+config SOC_GECKO_GPIO
+	bool
+	help
+	  Set if the General Purpose Input/Output (GPIO) HAL module is used.
+
+config SOC_GECKO_I2C
+	bool
+	help
+	  Set if the Inter-Integrated Circuit Interface (I2C) HAL module is used.
+
+config SOC_GECKO_LETIMER
+	bool
+	help
+	  Set if the Low Energy Timer (LETIMER) HAL module is used.
+
+config SOC_GECKO_LEUART
+	bool
+	help
+	  Set if the Low Energy Universal Asynchronous Receiver/Transmitter (LEUART)
+	  HAL module is used.
+
+config SOC_GECKO_MSC
+	bool
+	help
+	  Set if the Memory System Controller (MSC) HAL module is used.
+
+config SOC_GECKO_PRS
+	bool
+	help
+	  Set if the Peripheral Reflex System (PRS) HAL module is used.
+
+config SOC_GECKO_RMU
+	bool
+	help
+	  Set if the Reset Management Unit (RMU) HAL module is used.
+
+config SOC_GECKO_RTC
+	bool
+	help
+	  Set if the Real Time Counter (RTC) HAL module is used.
+
+config SOC_GECKO_RTCC
+	bool
+	help
+	  Set if the Real Time Counter and Calendar (RTCC) HAL module is used.
+
+config SOC_GECKO_SE
+	bool
+	help
+	  Set if the Secure Element (SE) HAL module is used.
+
+config SOC_GECKO_TIMER
+	bool
+	help
+	  Set if the Timer/Counter (TIMER) HAL module is used.
+
+config SOC_GECKO_USART
+	bool
+	help
+	  Set if the Universal Synchronous Asynchronous Receiver/Transmitter (USART)
+	  HAL module is used.
+
+config SOC_GECKO_WDOG
+	bool
+	help
+	  Set if the Watchdog Timer (WDOG) HAL module is used.
+
+config SOC_GECKO_TRNG
+	bool
+	help
+	  Set if the SoC has a True Random Number Generator (TRNG) module.
+
+if PM
+
+config SOC_GECKO_PM_BACKEND_PMGR
+	bool
+	depends on SOC_GECKO_DEV_INIT
+	default y if SOC_FAMILY_SILABS_S2
+	help
+	  Implement PM using sl_power_manager service from Gecko SDK
+
+config SOC_GECKO_PM_BACKEND_EMU
+	bool
+	default y if !SOC_GECKO_PM_BACKEND_PMGR
+	help
+	  Implement PM using direct calls to EMU driver in emlib
+
+endif
+
+config SOC_GECKO_EMU_DCDC
+	bool "SoC DC/DC regulator"
+	select SOC_GECKO_EMU
+	help
+	  Enable the on chip DC/DC regulator
+
+choice SOC_GECKO_EMU_DCDC_MODE
+	prompt "DC/DC mode"
+	depends on SOC_GECKO_EMU_DCDC
+	help
+	  Select power configuration mode of the on chip DC/DC converter.
+
+	config SOC_GECKO_EMU_DCDC_MODE_UNCONFIGURED
+		bool "Initial / Unconfigured"
+
+	config SOC_GECKO_EMU_DCDC_MODE_ON
+		bool "DC/DC On"
+
+	config SOC_GECKO_EMU_DCDC_MODE_OFF
+		bool "DC/DC Off"
+
+	config SOC_GECKO_EMU_DCDC_MODE_BYPASS
+		bool "Bypass"
+endchoice
+
+config CRYPTO_ACC_GECKO_TRNG
+	bool
+	help
+	  Enable Entropy driver based on the CRYPTO_ACC module for Silicon Labs
+	  Gecko chips.
+
+config SOC_GECKO_DEV_INIT
+	bool
+	help
+	  Use the device initialization routines from the device_init service
+	  in Silicon Labs HAL. These routines initialize and tune HFXOs,
+	  configures DPLLs and manages the Energy Management Unit.
+
+	  Disabling these services may negatively impact counter and timer
+	  routines in Silabs SoCs.
+
+config COUNTER_GECKO_STIMER
+	bool
+	help
+	  Enable counter driver based on the Sleep Timer driver for Silicon Labs
+	  Gecko chips.
+
+config SOC_GECKO_CMU
+	bool
+	help
+	  Set if the clock management unit (CMU) is present in the SoC.
+
+if SOC_GECKO_CMU
+
+config CMU_NEED_LFXO
+	bool
+	help
+	  Set if LFXO oscillator should be configured and enabled, potentially
+	  in on-demand mode, after SoC is initialized.
+
+choice
+	prompt "High Frequency Clock Selection"
+	default CMU_HFCLK_HFXO
+
+config CMU_HFCLK_HFXO
+	bool "External high frequency crystal oscillator"
+	help
+	  Set this option to use the external high frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_LFXO
+	bool "External low frequency crystal oscillator"
+	select CMU_NEED_LFXO
+	help
+	  Set this option to use the external low frequency crystal oscillator
+	  as high frequency clock.
+
+config CMU_HFCLK_HFRCO
+	bool "Internal high frequency RC oscillator"
+	help
+	  Set this option to use the internal high frequency RC oscillator as high frequency clock.
+
+endchoice
+
+
+choice
+	prompt "BURTC Clock Selection"
+	depends on SOC_GECKO_BURTC
+	default CMU_BURTCCLK_LFRCO
+
+config CMU_BURTCCLK_LFXO
+	bool "LFXO - external low frequency crystal oscillator"
+	select CMU_NEED_LFXO
+	help
+	  Set this option to use LFXO - the external low freqency crystal oscillator
+	  as BURTC clock.
+	  Frequency is set by external crystal, typically 32.768 kHz.
+
+config CMU_BURTCCLK_LFRCO
+	bool "LFRCO - internal low frequency RC oscillator"
+	help
+	  Set this option to use LFRCO - the internal low freqency RC oscillator
+	  as BURTC clock.
+	  Frequency is approximately 32.768 kHz.
+
+config CMU_BURTCCLK_ULFRCO
+	bool "ULFRCO - internal ultra low frequency RC oscillator"
+	help
+	  Set this option to use ULFRCO - the external low freqency crystal oscillator
+	  as BURTC clock.
+	  Frequency is approximately 1 kHz.
+
+endchoice
+
+
+config CMU_HFXO_FREQ
+	int "External high frequency oscillator frequency"
+	help
+	  Set the external high frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config CMU_LFXO_FREQ
+	int "External low frequency oscillator frequency"
+	help
+	  Set the external low frequency oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config CMU_HFRCO_FREQ
+	int "Internal high frequency RC oscillator frequency"
+	default 0
+	depends on SOC_GECKO_HAS_HFRCO_FREQRANGE
+	help
+	  Set the internal high frequency RC oscillator frequency in Hz. This should be set by the
+	  board's defconfig. Only supported values may be used here. Setting this to 0, skips the
+	  configuration of the high frequency RC oscillator completely. This may be desired, if
+	  the bootloader already configured it properly or the device's default clock source should
+	  be used with it's default configuration.
+
+endif # SOC_GECKO_CMU
+
+config SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	bool
+	help
+	  If enabled, indicates that SoC allows to configure individual pin
+	  locations. This is supported by e.g. efr32fg1p, efr32mg12p series.
+	  If disabled, indicates that pin locations are configured in groups.
+	  This is supported by e.g. efm32hg, efm32wg series.
+
+config SOC_GECKO_HAS_ERRATA_RTCC_E201
+	bool
+	help
+	  Set if the SoC is affected by errata RTCC_E201:
+	  "When the RTCC is configured with a prescaler, the CCV1 top value enable
+	  feature enabled by setting CCV1TOP in RTCC_CTRL fails to wrap the counter
+	  when RTCC_CNT is equal to RTCC_CC1_CCV, as intended."
+
+config SOC_GECKO_HAS_HFRCO_FREQRANGE
+	bool
+	help
+	  If enabled, indicates that configuration of HFRCO frequency for this SOC is supported
+	  via FREQRANGE field. This is supported for e.g. efr32fg1p, efr32mg12p series.
+	  If disabled, indicates that configuration of HFRCO frequency for corresponding SOC
+	  is not supported via this field. This is the case for e.g. efm32hg, efm32wg series.
+
+config SOC_GECKO_HAS_RADIO
+	bool
+	help
+	  If enabled, indicates that the SoC has a Radio PHY.
+
+config SOC_GECKO_USE_RAIL
+	bool "Use RAIL (Radio Abstraction Interface Layer)"
+	depends on SOC_GECKO_HAS_RADIO
+	help
+	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
+	  hardware. This option enable the proper set of features to allow to properly compile
+	  with the RAIL blob.
+
+config SOC_GECKO_CUSTOM_RADIO_PHY
+	bool "Use RAIL for custom radio phy packet sending and receiving"
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	help
+	  If enabled, RAIL can be used for user generated custom radio phy
+	  management, sending and receiving packets on radio phy. User has
+	  to provide the radio_config.c and radio_config.h files for the phy.
+
+endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2

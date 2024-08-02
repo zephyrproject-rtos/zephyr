@@ -1,0 +1,40 @@
+# Copyright (c) 2023, Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bluetooth module that uses Ambiq's Bluetooth Host Controller Interface SPI
+    driver (e.g. Apollo4 Blue Plus).
+
+compatible: "ambiq,bt-hci-spi"
+
+include: [spi-device.yaml, bt-hci.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      This irq gpio is used to indicate there is packet ready to send to host
+      from controller.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      This reset gpio is used to reset the Bluetooth controller.
+
+  clkreq-gpios:
+    type: phandle-array
+    description: |
+      This clkreq gpio is used to send the XO32MHz clock request to host from
+      controller. The host needs to enable XO32MHz when receiving low to high
+      edge interrupts and disable XO32MHz when receiving high to low edge
+      interrupts.
+
+  bt-hci-name:
+    default: "ambiq hci"
+
+  bt-hci-bus:
+    default: "BT_HCI_BUS_SPI"

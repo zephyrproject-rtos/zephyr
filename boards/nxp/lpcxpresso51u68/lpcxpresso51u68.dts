@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2021 metraTec GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc51u68.dtsi>
+#include "lpcxpresso51u68-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP LPCXPRESSO51U68 board";
+	compatible = "nxp,lpc51xxx","nxp,lpc";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		sw0 = &btn_wk;
+		sw1 = &isp0_button;
+		sw2 = &isp1_button;
+		usart-0 = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio1 9 0>;
+			label = "Blue LED";
+		};
+		green_led: led_1 {
+			gpios = <&gpio1 10 0>;
+			label = "Green LED";
+		};
+		red_led: led_2 {
+			gpios = <&gpio0 29 0>;
+			label = "Red LED";
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		btn_wk: button_0 {
+			label = "Wakeup button";
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+		isp0_button: button_1 {
+			label = "ISP0 button";
+			gpios = <&gpio0 31 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		isp1_button: button_2 {
+			label = "ISP1 button";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&flexcomm0 {
+	status = "okay";
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_uart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4 {
+	status = "okay";
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&flexcomm5 {
+	status = "okay";
+	compatible = "nxp,lpc-spi";
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};

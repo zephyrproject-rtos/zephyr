@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - mdio
+tests:
+  drivers.mdio.build:
+    platform_allow: qemu_cortex_m0

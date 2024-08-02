@@ -1,0 +1,5 @@
+board:
+  name: stamp_c3
+  vendor: m5stack
+  socs:
+  - name: esp32c3

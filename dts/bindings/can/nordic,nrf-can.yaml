@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic CAN (Controller Area Network)
+
+compatible: "nordic,nrf-can"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+  - bosch,m_can-base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

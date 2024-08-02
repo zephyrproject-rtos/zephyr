@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2020 Jonas Eriksson, Up to Code AB
+ *
+ * SoC device tree include for STM32F100xB SoCs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/f1/stm32f1.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(8)>;
+	};
+
+	clocks {
+		/delete-node/ pll;
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "st,stm32f100-pll-clock";
+			status = "disabled";
+		};
+	};
+
+	soc {
+		compatible = "st,stm32f100", "st,stm32f1", "simple-bus";
+
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(128)>;
+				erase-block-size = <DT_SIZE_K(1)>;
+			};
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+	};
+};

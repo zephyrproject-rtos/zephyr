@@ -1,0 +1,5 @@
+board:
+  name: nrf52_sparkfun
+  vendor: sparkfun
+  socs:
+  - name: nrf52832

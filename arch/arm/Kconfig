@@ -1,0 +1,193 @@
+# ARM architecture configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ARM Options"
+	depends on ARM
+
+config ARCH
+	default "arm"
+
+config CPU_CORTEX
+	bool
+	help
+	  This option signifies the use of a CPU of the Cortex family.
+
+config ARM_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the ARM CPU is connected to a custom (i.e.
+	  non-GIC or NVIC) interrupt controller.
+
+	  A number of Cortex-A and Cortex-R cores (Cortex-A5, Cortex-R4/5, ...)
+	  allow interfacing to a custom external interrupt controller and this
+	  option must be selected when such cores are connected to an interrupt
+	  controller that is not the ARM Generic Interrupt Controller (GIC) or
+	  the Cortex-M ARM Nested Vectored Interrupt Controller (NVIC).
+
+	  When this option is selected, the architecture interrupt control
+	  functions are mapped to the SoC interrupt control interface, which is
+	  implemented at the SoC level.
+
+	  N.B. Since all Cortex-M cores have a NVIC, if this option is selected it
+	  is assumed that the custom interrupt control interface implementation
+	  assumes responsibility for handling the NVIC.
+
+config ROMSTART_RELOCATION_ROM
+	bool "Relocate rom_start region"
+	default n
+	help
+	  Relocates the rom_start region containing the boot-vector data and
+	  irq vectors to the region specified by configurations:
+	  ROMSTART_REGION_ADDRESS and ROMSTART_REGION_SIZE
+
+	  This is useful for the Linux Remoteproc framework that uses the elf-loader
+	  such that it is able to load the correct boot-vector (contained in rom_start)
+	  into the correct memory location independent of the chosen zephyr,flash
+	  ROM region.
+
+	  Most SOCs include an alias for the boot-vector at address 0x00000000
+	  so a default which might be supported by the corresponding Linux rproc driver.
+	  If it is not, additionnal options allows to specify the addresses.
+
+	  In general this option should be chosen if the zephyr,flash chosen node
+	  is not placed into the boot-vector memory area.
+
+	  While this aims at generating a correct zephyr.elf file, it has the side
+	  effect of enlarging the bin file. If the zephyr.bin file is used to boot the
+	  secondary core, this option should be disabled.
+
+	  Example:
+		on IMX7D, the chosen zephyr,flash can be OCRAM/OCRAM_S/TCM/DDR memories
+		for code location. But the boot-vector must be placed into OCRAM_S for the
+		CORTEX-M to boot (alias 0, real 0x00180000/32K available).
+
+if ROMSTART_RELOCATION_ROM
+
+	config ROMSTART_REGION_ADDRESS
+		hex "Base address of the rom_start region"
+		default 0x00000000
+		help
+		  Start address of the rom_start region.
+		  This setting can be derived from a DT node reg property or specified directly.
+
+		  A default value of 0x00000000 might work in most cases as SOCs have an alias
+		  to the right memory region of the boot-vector.
+
+		  Examples:
+		  -IMX7D the boot-vector is OCRAM_S (0x00180000, aliased at 0x0).
+		  -IMX6SX the boot-vector is TCML (0x007F8000, aliased at 0x0).
+		  -IMX8MQ the boot-vector is TCML (0x007E0000, aliased at 0x0).
+		  -IMX8MN the boot-vector is ITCM (0x007E0000, aliased at 0x0).
+
+		  Example of DT definition:
+		  $(dt_nodelabel_reg_addr_hex,ocram_s_sys)
+
+	config ROMSTART_REGION_SIZE
+		hex "Size of the rom_start region"
+		default 1
+		help
+		  Size of the rom_start region in KB.
+
+		  Default is 1KB which is enough to store the boot and irq vectors.
+
+		  This setting can be derived from a DT node reg property or specified directly.
+
+		  Example for IMX7D that needs the boot-vector into OCRAM_S (0x00180000):
+		  $(dt_nodelabel_reg_size_hex,ocram_s_sys,0,K)
+
+endif
+
+config CODE_DATA_RELOCATION_SRAM
+	bool "Relocate code/data sections to SRAM"
+	depends on CPU_CORTEX_M
+	select CODE_DATA_RELOCATION
+	help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in SRAM. The files should be specified
+	  in the CMakeList.txt file with a cmake API zephyr_code_relocate(). This
+	  config is used to create an MPU entry for the SRAM space used for code
+	  relocation.
+
+config ARM_ON_ENTER_CPU_IDLE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can be used to prevent the CPU from actually
+	  entering sleep by skipping the WFE/WFI instruction.
+
+config ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK
+	bool
+	help
+	  Enables a hook (z_arm_on_enter_cpu_idle_prepare()) that is called when
+	  the CPU is made idle (by k_cpu_idle() or k_cpu_atomic_idle()).
+	  If needed, this hook can prepare data to upcoming call to
+	  z_arm_on_enter_cpu_idle(). The z_arm_on_enter_cpu_idle_prepare differs
+	  from z_arm_on_enter_cpu_idle because it is called before interrupts are
+	  disabled.
+
+config ARM_ON_EXIT_CPU_IDLE
+	bool
+	help
+	  Enables a possibility to inject SoC-specific code just after WFI/WFE
+	  instructions of the cpu idle implementation.
+
+	  Enabling this option requires that the SoC provides a soc_cpu_idle.h
+	  header file which defines SOC_ON_EXIT_CPU_IDLE macro guarded by
+	  _ASMLANGUAGE.
+
+	  The SOC_ON_EXIT_CPU_IDLE macro is expanded just after
+	  WFI/WFE instructions before any memory access is performed. The purpose
+	  of the SOC_ON_EXIT_CPU_IDLE is to perform an action that mitigate issues
+	  observed on some SoCs caused by a memory access following WFI/WFE
+	  instructions.
+
+rsource "core/Kconfig"
+rsource "core/Kconfig.vfp"
+
+# General options signifying CPU capabilities of ARM SoCs
+config CPU_HAS_ARM_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in ARM flavor.
+
+config CPU_HAS_NXP_MPU
+	bool
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in NXP flavor.
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	bool "Custom fixed SoC MPU region definition"
+	help
+	  If enabled, this option signifies that the SoC will
+	  define and configure its own fixed MPU regions in the
+	  SoC definition. These fixed MPU regions are currently
+	  used to set Flash and SRAM default access policies and
+	  they are programmed at boot time.
+
+config CPU_HAS_ARM_SAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the ARM Security Attribution Unit (SAU).
+
+config CPU_HAS_NRF_IDAU
+	bool
+	select CPU_HAS_TEE
+	help
+	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
+	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
+	  ARM terminology).
+
+config HAS_SWO
+	bool
+	help
+	  When enabled, indicates that SoC has an SWO output
+
+endmenu

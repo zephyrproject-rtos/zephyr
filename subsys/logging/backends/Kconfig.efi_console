@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_EFI_CONSOLE
+	bool "EFI_CONSOLE backend"
+	depends on X86_EFI_CONSOLE
+	select LOG_OUTPUT
+	default y if !UART_CONSOLE
+	help
+	  When enabled backend is using EFI CONSOLE to output logs.
+
+if LOG_BACKEND_EFI_CONSOLE
+
+backend = EFI_CON
+backend-str = efi_console
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_EFI_CONSOLE

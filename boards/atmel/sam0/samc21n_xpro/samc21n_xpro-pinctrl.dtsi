@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2022 Kamil Serwus
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/samc21n-pinctrl.h>
+
+&pinctrl {
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PC5F_TCC2_WO1>;
+		};
+	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PB9B_ADC0_AIN3>;
+		};
+	};
+
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <PA8B_ADC1_AIN10>;
+		};
+	};
+
+	can0_default: can0_default {
+		group1 {
+			pinmux = <PA25G_CAN0_RX>,
+				 <PA24G_CAN0_TX>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PB15G_CAN1_RX>,
+				 <PB14G_CAN1_TX>;
+		};
+	};
+
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PB25C_SERCOM0_PAD1>,
+				 <PB24C_SERCOM0_PAD0>;
+		};
+	};
+
+	sercom1_i2c_default: sercom1_i2c_default {
+		group1 {
+			pinmux = <PA16C_SERCOM1_PAD0>,
+				 <PA17C_SERCOM1_PAD1>;
+		};
+	};
+
+	sercom2_uart_default: sercom1_uart_default {
+		group1 {
+			pinmux = <PA13C_SERCOM2_PAD1>,
+				 <PA12C_SERCOM2_PAD0>;
+		};
+	};
+
+	sercom4_uart_default: sercom4_uart_default {
+		group1 {
+			pinmux = <PB11D_SERCOM4_PAD3>,
+				 <PB10D_SERCOM4_PAD2>;
+		};
+	};
+
+	sercom5_spi_default: sercom5_spi_default {
+		group1 {
+			pinmux = <PB0D_SERCOM5_PAD2>,
+				 <PB2D_SERCOM5_PAD0>,
+				 <PB1D_SERCOM5_PAD3>;
+		};
+	};
+
+};

@@ -1,0 +1,31 @@
+# Private config options for syslog-net sample app
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking syslog sample application"
+
+config NET_SAMPLE_SEND_ITERATIONS
+	int "Send sample data this many times"
+	default 0
+	help
+	  Send sample data this many times before exiting. A value of
+	  zero means that the defaults in the application are used.
+
+
+config NET_SAMPLE_SERVER_RUNTIME
+	string "Syslog server IP address set at runtime"
+	help
+	  Server address for the syslog server.
+	  This server address gets set at rumtime by the sample
+	  app defore the backend is initialized. This can be
+	  either IPv4 or IPv6 address. Server listen UDP port
+	  number can be configured here too.
+	  Following syntax is supported:
+	  192.0.2.1:514
+	  192.0.2.42
+	  [2001:db8::1]:514
+	  [2001:db8::2]
+	  2001:db::42
+
+source "Kconfig.zephyr"

@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2021, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: vmu_rt1170/mimxrt1176/cm7
+name: NXP VMU RT1170
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 65536
+supported:
+  - adc
+  - counter
+  - can
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+vendor: nxp

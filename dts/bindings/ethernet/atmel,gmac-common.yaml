@@ -1,0 +1,51 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# Copyright (c) 2020-2021 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - name: ethernet-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  phy-handle:
+    required: true
+
+  num-queues:
+    type: int
+    required: true
+    description: |
+      Number of hardware TX and RX queues.
+
+  max-frame-size:
+    type: int
+    default: 1518
+    description: |
+      Maximum ethernet frame size.  The current ethernet frame sizes
+      supported by hardware are 1518, 1536 and 10240 (jumbo frames).  This
+      means that normally gmac will reject any frame above max-frame-size
+      value.  The default value is 1518, which represents an usual
+      IEEE 802.3 ethernet frame:
+
+        Ethernet Frame [ 14 MAC HEADER | 1500 MTU | 4 FCS ] = 1518 bytes
+
+      When using value 1536 it is possible extend ethernet MAC HEADER up
+      to 32 bytes.  The hardware have support to jumbo frames and it can be
+      enabled by selecting the value 10240.
+
+  max-speed:
+    type: int
+    default: 100
+    description: |
+      This specifies maximum speed in Mbit/s supported by the device.  The
+      gmac driver supports 10Mbit/s and 100Mbit/s.  Using 100, as default
+      value, enables driver to configure 10 and 100Mbit/s speeds.
+
+  mac-eeprom:
+    type: phandle
+    description: phandle to I2C eeprom device node.
+
+  phy-connection-type:
+    default: "rmii"

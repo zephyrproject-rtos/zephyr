@@ -1,0 +1,31 @@
+# DHCPv4 server implementation for Zephyr
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_DHCPV6
+	bool "DHCPv6 client"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_IPV6 && NET_UDP
+
+config NET_DHCPV6_DUID_MAX_LEN
+	int "The maximum DUID length (not including a type code)"
+	range 1 128
+	default 22
+	help
+	  This will set the available number of bytes for the DUID.
+
+if NET_DHCPV6
+module = NET_DHCPV6
+module-dep = NET_LOG
+module-str = Log level for DHCPv6 client
+module-help = Enables DHCPv6 client code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_DHCPV6

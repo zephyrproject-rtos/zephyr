@@ -1,0 +1,20 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  platform_exclude:
+    - native_posix/native/64
+    - native_posix
+  integration_platforms:
+    - native_sim
+  tags:
+    - openthread
+tests:
+  openthread.radio_test.min: {}
+  openthread.radio_test.timed_tx:
+    extra_configs:
+      - CONFIG_NET_PKT_TXTIME=y
+  openthread.radio_test.csl:
+    # Hack to enable CSL w/o having to enable CONFIG_OPENTHREAD
+    extra_args:
+      - EXTRA_CPPFLAGS=-DCONFIG_OPENTHREAD_CSL_RECEIVER

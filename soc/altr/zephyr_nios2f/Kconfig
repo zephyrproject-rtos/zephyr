@@ -1,0 +1,7 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ZEPHYR_NIOS2F
+	select NIOS2
+	select HAS_MUL_INSTRUCTION
+	select HAS_DIV_INSTRUCTION

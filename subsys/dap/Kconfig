@@ -1,0 +1,55 @@
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DAP
+	bool "Debug Access Port support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select DP_DRIVER
+	help
+	  Debug Access Port support (currently CMSIS DAP only)
+
+if DAP
+
+config CMSIS_DAP_PACKET_COUNT
+	int "Maximum packet buffers for request and response data."
+	default 4
+	range 1 $(UINT8_MAX)
+	help
+	  Maximum packet buffers for request and response data.
+
+config CMSIS_DAP_PACKET_SIZE
+	int "Maximum packet size for request and response data."
+	default 64
+	range 64 512
+	help
+	  Maximum packet size for request and response data.
+
+config CMSIS_DAP_PROBE_VENDOR
+	string "Probe vendor"
+	default "Zephyr"
+
+config CMSIS_DAP_PROBE_NAME
+	string "Probe name"
+	default "CMSIS-DAP"
+
+config CMSIS_DAP_BOARD_VENDOR
+	string "Target board vendor"
+	default ""
+
+config CMSIS_DAP_BOARD_NAME
+	string "Target board name"
+	default ""
+
+config CMSIS_DAP_DEVICE_VENDOR
+	string "Target device vendor"
+	default ""
+
+config CMSIS_DAP_DEVICE_NAME
+	string "Target device name"
+	default ""
+
+module = DAP
+module-str = dap
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DAP

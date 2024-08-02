@@ -1,0 +1,13 @@
+common:
+  tags:
+    - adc
+    - drivers
+    - userspace
+tests:
+  drivers.adc.emul:
+    depends_on: adc
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim

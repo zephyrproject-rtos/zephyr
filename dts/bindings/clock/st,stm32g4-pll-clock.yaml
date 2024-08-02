@@ -1,0 +1,51 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32G4 devices
+
+  It can take one of clk_hse or clk_hsi as input clock, with
+  an input frequency from 2.66 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP  --> to ADC
+    f(PLL_Q) = f(VCO clock) / PLLQ  --> PLL48MCLK (for USB, RNG)
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLCLK (System Clock)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  The PLL output frequency must not exceed 170 MHz.
+
+compatible: "st,stm32g4-pll-clock"
+
+include:
+  - name: st,stm32l4-pll-clock.yaml
+    property-blocklist:
+      - div-m
+      - mul-n
+      - div-p
+
+properties:
+
+  div-m:
+    type: int
+    required: true
+    description: |
+        Division factor for PLL input clock
+        Valid range: 1 - 16
+
+  mul-n:
+    type: int
+    required: true
+    description: |
+        Main PLL multiplication factor for VCO
+        Valid range: 8 - 127
+
+  div-p:
+    type: int
+    description: |
+        Main PLL division factor for ADC
+        Valid range: 2 - 31

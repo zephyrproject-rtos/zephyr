@@ -1,0 +1,18 @@
+# Copyright (c) 2022 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Flash memory binding of GD32 FMC v3.
+
+  GD32 series use this type flash memory:
+    - GD32F4xx
+
+include: soc-nv-flash.yaml
+
+compatible: gd,gd32-nv-flash-v3
+
+properties:
+  max-erase-time-ms:
+    type: int
+    required: true
+    description: max erase time(millisecond) of a flash sector

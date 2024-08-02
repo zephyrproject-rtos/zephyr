@@ -1,0 +1,19 @@
+# Emulated GPIO configuration options
+
+# Copyright (c) 2020 Friedt Professional Engineering Services, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_EMUL
+	bool "Emulated GPIO driver"
+	default y
+	depends on DT_HAS_ZEPHYR_GPIO_EMUL_ENABLED
+	help
+	  Enable the emulated GPIO driver. Mainly used for testing, this
+	  driver allows for an arbitrary number of emulated GPIO controllers
+	  to be instantiated. Furthermore, the emulated pins can be "wired"
+	  using the regular GPIO callback API and the additional API
+	  available in drivers/gpio/gpio_emul.h . Configuration for each
+	  GPIO instance is accomplished using device tree and an example of
+	  such a configuration is in
+	  tests/drivers/gpio/gpio_basic_api/boards/native_sim.overlay
+	  If unsure, say N.

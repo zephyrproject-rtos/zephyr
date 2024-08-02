@@ -1,0 +1,3 @@
+tests:
+  no_filter.dummy:
+    tags: no_filter

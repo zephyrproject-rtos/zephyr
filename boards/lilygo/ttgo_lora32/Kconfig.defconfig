@@ -1,0 +1,25 @@
+# Lilygo ttgo LoRa32 board configuration
+
+# Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TTGO_LORA32_ESP32_PROCPU
+
+config ENTROPY_GENERATOR
+	default y
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_TTGO_LORA32_ESP32_PROCPU
+
+if BOARD_TTGO_LORA32_ESP32_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_TTGO_LORA32_ESP32_APPCPU

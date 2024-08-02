@@ -1,0 +1,14 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.watchdog.reset_none:
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+    tags:
+      - drivers
+      - watchdog
+    depends_on: watchdog

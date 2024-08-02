@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  mgmt.mcumgr.smp.version:
+    tags:
+      - smp_version
+      - mcumgr
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude:
+      - nios2
+      - mips
+      - posix
+    platform_exclude:
+      - qemu_kvm_arm64
+  mgmt.mcumgr.smp.version_no_legacy:
+    tags:
+      - smp_version
+      - mcumgr
+    extra_configs:
+      - CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL=n
+    # FIXME: Exclude systems whereby the processor type is not known and emits a warning
+    arch_exclude:
+      - nios2
+      - mips
+      - posix
+    platform_exclude:
+      - qemu_kvm_arm64

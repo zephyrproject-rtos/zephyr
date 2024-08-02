@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2018 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f412Xg.dtsi>
+#include <st/f4/stm32f412c(e-g)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Tocoding Argonkey 96boards";
+	compatible = "tocoding,argonkey";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "USR0 LED";
+		};
+		green_led_1: led_1 {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "USR1 LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &green_led_1;
+		sw0 = &user_button;
+		accel0 = &lsm6dsl;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <8>;
+	mul-n = <84>;
+	div-p = <2>;
+	div-q = <8>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&plli2s {
+	div-m = <8>;
+	mul-n = <192>;
+	div-r = <3>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(84)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	/* APB2 clock is fixed at 42MHz to prevent known SPI/I2S bug */
+	apb2-prescaler = <2>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1_nss_pa4 { slew-rate = "very-high-speed"; };
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2_nss_pb12 { slew-rate = "very-high-speed"; };
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* ST Microelectronics LSM6DSL accel/gyro sensor */
+	lsm6dsl: lsm6dsl@1 {
+		compatible = "st,lsm6dsl";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		irq-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&i2s5 {
+	status = "okay";
+	pinctrl-0 = <&i2s5_ck_pb0 &i2s5_sd_pb8>;
+	pinctrl-names = "default";
+
+	mp34dt05@0 {
+		compatible = "st,mpxxdtyy";
+		reg = <0>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		drdy-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hb-press@5d {
+		compatible = "st,lps22hb-press";
+		reg = <0x5d>;
+	};
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pb4>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lp3943@60 {
+		compatible = "ti,lp3943";
+		reg = <0x60>;
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};

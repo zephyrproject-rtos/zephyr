@@ -1,0 +1,96 @@
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_TIMERS
+	bool "POSIX timers, clocks, and sleep functions"
+	help
+	  Select 'y' here and Zephyr will provide implementations of clock_getres(), clock_gettime(),
+	  clock_settime(), nanosleep(), timer_create(), timer_delete(), timer_getoverrun(),
+	  timer_settime(), and timer_gettime().
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_TIMERS
+
+config POSIX_THREAD_CPUTIME
+	bool "POSIX per-thread CPU-time clocks"
+	help
+	  This enables CLOCK_THREAD_CPUTIME_ID.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_118
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_08_05_04
+
+config POSIX_MONOTONIC_CLOCK
+	bool "POSIX Monotonic clock support"
+	help
+	  This enables CLOCK_MONOTONIC.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_08_05_03
+
+config POSIX_CPUTIME
+	bool "POSIX per-process CPU-time clocks"
+	help
+	  This enables CLOCK_PROCESS_CPUTIME_ID.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap03.html#tag_03_118
+	  https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_08_05_04
+
+config POSIX_CLOCK_SELECTION
+	bool "POSIX Clock selection"
+	help
+	  This enables POSIX clock selection.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html#tag_24_03_04
+
+config POSIX_DELAYTIMER_MAX
+	int "Maximum count returned my timer_getoverrun() in POSIX application"
+	default 32
+	help
+	  This controls the maximum number of times a timer can overrun before
+	  timer_getoverrun() in POSIX compliant application.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
+
+config POSIX_TIMER_MAX
+	int "Maximum number of POSIX timers per process"
+	default 32
+	help
+	  Maximum simultaneously active timer_t in a POSIX application.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
+
+config POSIX_TIMEOUTS
+	bool "Support timeouts for some blocking POSIX services"
+	help
+	  Enable mandatory timeouts for some blocking operations.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_port.html
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_xbd_chap02.html
+
+config TIMER_CREATE_WAIT
+	int "Time to wait for timer availability (in msec) in POSIX application"
+	default 100
+	range 0 1000
+	help
+	  This controls how long to wait for resources to come available to create
+	  a new timer in POSIX compliant application
+
+module = TIMER
+module-str = POSIX Timers
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # POSIX_TIMERS

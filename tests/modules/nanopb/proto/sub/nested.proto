@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2023 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+syntax = "proto3";
+
+message NestedMessage {
+    uint32 id = 1;
+    string name = 2;
+};

@@ -1,0 +1,74 @@
+common:
+  harness: console
+  ignore_faults: true
+  ignore_qemu_crash: true
+  tags: kernel
+tests:
+  arch.common.stack_unwind.riscv_fp:
+    arch_allow: riscv
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_FRAME_POINTER=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E:       0: ra: \\w+"
+        - "E:       1: ra: \\w+"
+  arch.common.stack_unwind.riscv_sp:
+    arch_allow: riscv
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E:       0: ra: \\w+"
+        - "E:       1: ra: \\w+"
+  arch.common.stack_unwind.x86:
+    arch_allow: x86
+    extra_configs:
+      - CONFIG_NO_OPTIMIZATIONS=y
+      - CONFIG_OMIT_FRAME_POINTER=n
+    integration_platforms:
+      - qemu_x86
+      - qemu_x86_64
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: call trace:"
+        - "E: (E|R)IP: \\w+"
+  arch.common.stack_unwind.arm64:
+    arch_allow:
+      - arm64
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_FRAME_POINTER=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "E: backtrace  0: fp: \\w+ lr: \\w+"
+        - "E: backtrace  1: fp: \\w+ lr: \\w+"
+  arch.common.stack_unwind.symtab:
+    arch_allow:
+      - riscv
+      - arm64
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_cortex_a53
+    extra_configs:
+      - CONFIG_FRAME_POINTER=y
+      - CONFIG_EXCEPTION_STACK_TRACE_SYMTAB=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "\\[func1\\+0x\\w+\\]"
+        - "\\[func2\\+0x\\w+\\]"
+        - "\\[func1\\+0x\\w+\\]"
+        - "\\[func2\\+0x\\w+\\]"
+        - "\\[func1\\+0x\\w+\\]"

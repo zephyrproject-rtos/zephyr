@@ -1,0 +1,5 @@
+board:
+  name: stm32h7b3i_dk
+  vendor: st
+  socs:
+    - name: stm32h7b3xx

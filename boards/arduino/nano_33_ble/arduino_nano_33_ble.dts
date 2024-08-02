@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Jefferson Lee
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "arduino_nano_33_ble-common.dtsi"
+#include "arduino_nano_33_ble-pinctrl.dtsi"
+#include "arduino_nano_r3_connector.dtsi"
+
+/ {
+	model = "Arduino Nano 33 BLE";
+	compatible = "arduino,arduino_nano_33_ble";
+};

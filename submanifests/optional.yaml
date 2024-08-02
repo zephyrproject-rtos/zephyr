@@ -1,0 +1,66 @@
+manifest:
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+  projects:
+    - name: canopennode
+      revision: dec12fa3f0d790cafa8414a4c2930ea71ab72ffd
+      path: modules/lib/canopennode
+      remote: upstream
+      groups:
+        - optional
+    - name: chre
+      revision: 3b32c76efee705af146124fb4190f71be5a4e36e
+      path: modules/lib/chre
+      remote: upstream
+      groups:
+        - optional
+    - name: lz4
+      revision: 8e303c264fc21c2116dc612658003a22e933124d
+      path: modules/lib/lz4
+      remote: upstream
+      groups:
+        - optional
+    - name: nanopb
+      revision: 4474bd35bd39de067f0532a1b19ce3aed9ed9807
+      path: modules/lib/nanopb
+      remote: upstream
+      groups:
+        - optional
+    - name: psa-arch-tests
+      revision: 2cadb02a72eacda7042505dcbdd492371e8ce024
+      path: modules/tee/tf-m/psa-arch-tests
+      remote: upstream
+      groups:
+        - optional
+    - name: sof
+      revision: 3f1716b0da7a48358bc265586b90b2252745c14c
+      path: modules/audio/sof
+      remote: upstream
+      groups:
+        - optional
+    - name: tf-m-tests
+      revision: d552e4f18b92032bd335d5e3aa312f6acd82a83b
+      path: modules/tee/tf-m/tf-m-tests
+      remote: upstream
+      groups:
+        - optional
+    - name: tflite-micro
+      revision: 48613f7ba1ffbda46ad771a77a35408f48f922e9
+      path: optional/modules/lib/tflite-micro
+      repo-path: tflite-micro
+      remote: upstream
+      groups:
+        - optional
+    - name: thrift
+      path: optional/modules/lib/thrift
+      revision: 10023645a0e6cb7ce23fcd7fd3dbac9f18df6234
+      remote: upstream
+      groups:
+        - optional
+    - name: zscilib
+      path: modules/lib/zscilib
+      revision: ee1b287d9dd07208d2cc52284240ac25bb66eae3
+      remote: upstream
+      groups:
+        - optional

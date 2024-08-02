@@ -1,0 +1,25 @@
+:description: This script is prepared to run Zephyr on SiFive-FU540 board.
+:name: SiFive-FU540
+
+$name?="SiFive-FU540"
+
+using sysbus
+mach create $name
+
+set platform
+"""
+using "platforms/cpus/sifive-fu540.repl"
+
+clint:
+    frequency: 10000000
+"""
+
+machine LoadPlatformDescriptionFromString $platform
+machine PyDevFromFile @scripts/pydev/flipflop.py 0x10000000 0x100 True
+showAnalyzer uart0
+
+macro reset
+"""
+    sysbus LoadELF $elf
+"""
+runMacro $reset

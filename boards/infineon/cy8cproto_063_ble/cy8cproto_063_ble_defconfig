@@ -1,0 +1,34 @@
+#**************************************************************************
+# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation.
+# SPDX-Licence-Identifier: Apache-2.0
+#***************************************************************************
+
+# General configuration
+CONFIG_CORTEX_M_SYSTICK=y
+CONFIG_BUILD_OUTPUT_HEX=y
+
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Enable UART driver
+CONFIG_SERIAL=y
+
+# Enable pin controller
+CONFIG_PINCTRL=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable clock controller
+CONFIG_CLOCK_CONTROL=y
+
+# Main Stack Size
+CONFIG_MAIN_STACK_SIZE=2048
+
+# Add catcm0p sleep images for CM0 Devices
+CONFIG_SOC_PSOC6_CM0P_IMAGE_SLEEP=y

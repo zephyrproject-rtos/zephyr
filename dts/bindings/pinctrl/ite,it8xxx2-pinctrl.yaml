@@ -1,0 +1,111 @@
+# Copyright (c) 2022 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The ITE IT8XXX2 pin controller is a node responsible for controlling
+    pin function selection and pin properties. For example, you can
+    use this node to route UART1 RX and TX setting the alternate
+    function on the pin.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined pins and functions for the SoC used by the board */
+      #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+
+      &pinctrl {
+        /* configuration for I2C0 default state */
+        i2c0_clk_pb3_default: i2c0_clk_pb3_default {
+                pinmuxs = <&pinctrlb 3 IT8XXX2_ALT_FUNC_1>;
+                gpio-voltage = "1p8";
+        };
+        i2c0_data_pb4_default: i2c0_data_pb4_default {
+                pinmuxs = <&pinctrlb 4 IT8XXX2_ALT_FUNC_1>;
+                gpio-voltage = "1v8";
+        };
+        /* configuration for UART0 default state */
+        uart1_rx_pb0_default: uart1_rx_pb0_default {
+                pinmuxs = <&pinctrlb 0 IT8XXX2_ALT_FUNC_3>;
+                bias-pull-up;
+        };
+        uart1_tx_pb1_default: uart1_tx_pb1_default {
+                pinmuxs = <&pinctrlb 1 IT8XXX2_ALT_FUNC_3>;
+        };
+      };
+
+    The 'uart1_rx_pb0_default' child node encodes the pin configurations
+    for a particular state of a device; in this case, the default
+    (that is, active) state.
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+      #include "board-pinctrl.dtsi"
+
+      &uart0 {
+        pinctrl-0 = <&uart1_rx_pb0_default &uart1_tx_pb1_default>;
+        pinctrl-1 = <&uart1_rx_pb0_sleep &uart1_tx_pb1_sleep>;
+        pinctrl-names = "default", "sleep";
+      };
+
+compatible: "ite,it8xxx2-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+      This binding gives a base representation of the ITE IT8XXX2 pins configuration.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-high-impedance
+        - bias-pull-pin-default
+        - bias-pull-up
+        - bias-pull-down
+        - input-enable
+        - drive-push-pull
+        - drive-open-drain
+
+  properties:
+    pinmuxs:
+      required: true
+      type: phandle-array
+      description: |
+          ITE IT8XXX2 pin's configuration (pinctrl node, pin and function).
+
+    gpio-voltage:
+      type: string
+      description: |
+          Pin input voltage selection 3.3V or 1.8V. All gpio pins support 3.3V.
+          This property only needs to be configured if the board specifies a
+          pin as 1.8V. So the default is 3.3V.
+          kSI[7:0] and KSO[15:0] pins only support 3.3V.
+      default: "3v3"
+      enum:
+        - "3v3"
+        - "1v8"
+
+    drive-strength:
+      type: string
+      description: |
+          We can configure this property to drive a high or low current selection.
+          If this property is not configured, it is the default setting.
+          According to the SPEC, the default drive current selection varies from
+          different pins.
+          Define the high level 0b: 8mA
+                     low  level 1b: 4mA or 2mA
+      enum:
+        - "high"
+        - "low"

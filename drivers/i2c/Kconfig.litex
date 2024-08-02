@@ -1,0 +1,10 @@
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_LITEX
+	bool "LiteX I2C driver"
+	default y
+	depends on DT_HAS_LITEX_I2C_ENABLED
+	select I2C_BITBANG
+	help
+	  Enable support for Litex I2C driver

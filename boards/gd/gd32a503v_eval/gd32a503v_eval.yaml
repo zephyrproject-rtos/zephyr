@@ -1,0 +1,25 @@
+# Copyright (c) 2022 YuLong Yao <feilongphone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32a503v_eval
+name: GigaDevice GD32A503V-EVAL
+type: mcu
+arch: arm
+ram: 48
+flash: 384
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - counter
+  - dac
+  - dma
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: gd

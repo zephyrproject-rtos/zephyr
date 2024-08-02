@@ -1,0 +1,13 @@
+common:
+  tags: lora
+  depends_on: lora
+sample:
+  description: Demonstration of LoRa Send functionality
+  name: LoRa Send Sample
+tests:
+  sample.driver.lora.send:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "<inf> lora_send: Data sent!"

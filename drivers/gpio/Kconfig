@@ -1,0 +1,184 @@
+# GPIO configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO
+	bool "General-Purpose Input/Output (GPIO) drivers"
+	help
+	  Include GPIO drivers in system config
+
+if GPIO
+
+module = GPIO
+module-str = gpio
+source "subsys/logging/Kconfig.template.log_config"
+
+config GPIO_SHELL
+	bool "GPIO Shell"
+	depends on SHELL
+	imply DEVICE_DT_METADATA
+	help
+	  Enable GPIO Shell for testing.
+
+config GPIO_SHELL_INFO_CMD
+	bool "GPIO Shell info command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell information command.
+	  This command provides a shell user extra information about gpio
+	  controller reserved pins and line names.
+
+config GPIO_SHELL_TOGGLE_CMD
+	bool "GPIO Shell toggle command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell toggle command.
+
+config GPIO_SHELL_BLINK_CMD
+	bool "GPIO Shell blink command"
+	default y
+	depends on GPIO_SHELL
+	help
+	  Enable GPIO Shell blink command.
+	  This command provides a shell user the ability to 'blink' a pin
+	  at 1Hz.
+
+config GPIO_INIT_PRIORITY
+	int "GPIO init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  GPIO driver device initialization priority.
+
+config GPIO_GET_DIRECTION
+	bool "Support for querying GPIO direction [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable this option if the application does not maintain its own GPIO
+	  direction state.
+
+	  With this option enabled, the application may query GPIO direction
+	  via gpio_port_get_direction(), gpio_pin_is_input(), and
+	  gpio_pin_is_output().
+
+config GPIO_GET_CONFIG
+	bool "Support for get configuration function [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for getting the current configurations
+	  of GPIOs. The driver must implement it to work.
+
+config GPIO_HOGS
+	bool "Support for GPIO hogs"
+	default $(dt_gpio_hogs_enabled)
+	help
+	  Enable support for GPIO hogs. GPIO hogging is a mechanism for providing
+	  automatic GPIO configuration via devicetree.
+
+config GPIO_HOGS_INIT_PRIORITY
+	int "GPIO hogs init priority"
+	default 41
+	depends on GPIO_HOGS
+	help
+	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
+	  GPIO controller drivers.
+
+config GPIO_ENABLE_DISABLE_INTERRUPT
+	bool "Support for enable/disable interrupt without re-config [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This option enables the support for enabling/disabling interrupt with
+	  previous configuration, and enabling/disabling the interrupt only turns
+	  on/off the interrupt signal without changing other registers, such as
+	  pending register, etc. The driver must implement it to work.
+
+# zephyr-keep-sorted-start
+source "drivers/gpio/Kconfig.ad559x"
+source "drivers/gpio/Kconfig.adp5585"
+source "drivers/gpio/Kconfig.ads114s0x"
+source "drivers/gpio/Kconfig.altera"
+source "drivers/gpio/Kconfig.ambiq"
+source "drivers/gpio/Kconfig.andes_atcgpio100"
+source "drivers/gpio/Kconfig.axp192"
+source "drivers/gpio/Kconfig.b91"
+source "drivers/gpio/Kconfig.bcm2711"
+source "drivers/gpio/Kconfig.bd8lb600fs"
+source "drivers/gpio/Kconfig.brcmstb"
+source "drivers/gpio/Kconfig.cc13xx_cc26xx"
+source "drivers/gpio/Kconfig.cc32xx"
+source "drivers/gpio/Kconfig.cmsdk_ahb"
+source "drivers/gpio/Kconfig.creg_gpio"
+source "drivers/gpio/Kconfig.cy8c95xx"
+source "drivers/gpio/Kconfig.davinci"
+source "drivers/gpio/Kconfig.dw"
+source "drivers/gpio/Kconfig.efinix_sapphire"
+source "drivers/gpio/Kconfig.emul"
+source "drivers/gpio/Kconfig.emul_sdl"
+source "drivers/gpio/Kconfig.ene"
+source "drivers/gpio/Kconfig.eos_s3"
+source "drivers/gpio/Kconfig.esp32"
+source "drivers/gpio/Kconfig.fxl6408"
+source "drivers/gpio/Kconfig.gd32"
+source "drivers/gpio/Kconfig.gecko"
+source "drivers/gpio/Kconfig.grgpio"
+source "drivers/gpio/Kconfig.ifx_cat1"
+source "drivers/gpio/Kconfig.imx"
+source "drivers/gpio/Kconfig.intel"
+source "drivers/gpio/Kconfig.iproc"
+source "drivers/gpio/Kconfig.it8xxx2"
+source "drivers/gpio/Kconfig.litex"
+source "drivers/gpio/Kconfig.lmp90xxx"
+source "drivers/gpio/Kconfig.lpc11u6x"
+source "drivers/gpio/Kconfig.max32"
+source "drivers/gpio/Kconfig.mchp_mss"
+source "drivers/gpio/Kconfig.mcp23s17"
+source "drivers/gpio/Kconfig.mcp23xxx"
+source "drivers/gpio/Kconfig.mcux"
+source "drivers/gpio/Kconfig.mcux_igpio"
+source "drivers/gpio/Kconfig.mcux_lpc"
+source "drivers/gpio/Kconfig.mcux_rgpio"
+source "drivers/gpio/Kconfig.mmio32"
+source "drivers/gpio/Kconfig.nct38xx"
+source "drivers/gpio/Kconfig.neorv32"
+source "drivers/gpio/Kconfig.npcx"
+source "drivers/gpio/Kconfig.npm1300"
+source "drivers/gpio/Kconfig.npm6001"
+source "drivers/gpio/Kconfig.nrfx"
+source "drivers/gpio/Kconfig.numaker"
+source "drivers/gpio/Kconfig.numicro"
+source "drivers/gpio/Kconfig.nxp_s32"
+source "drivers/gpio/Kconfig.pca953x"
+source "drivers/gpio/Kconfig.pca95xx"
+source "drivers/gpio/Kconfig.pcal64xxa"
+source "drivers/gpio/Kconfig.pcf857x"
+source "drivers/gpio/Kconfig.psoc6"
+source "drivers/gpio/Kconfig.rcar"
+source "drivers/gpio/Kconfig.renesas_ra"
+source "drivers/gpio/Kconfig.renesas_ra8"
+source "drivers/gpio/Kconfig.rpi_pico"
+source "drivers/gpio/Kconfig.rt1718s"
+source "drivers/gpio/Kconfig.rv32m1"
+source "drivers/gpio/Kconfig.rzt2m"
+source "drivers/gpio/Kconfig.sam"
+source "drivers/gpio/Kconfig.sam0"
+source "drivers/gpio/Kconfig.sc18im704"
+source "drivers/gpio/Kconfig.sedi"
+source "drivers/gpio/Kconfig.sifive"
+source "drivers/gpio/Kconfig.smartbond"
+source "drivers/gpio/Kconfig.sn74hc595"
+source "drivers/gpio/Kconfig.stellaris"
+source "drivers/gpio/Kconfig.stm32"
+source "drivers/gpio/Kconfig.stmpe1600"
+source "drivers/gpio/Kconfig.sx1509b"
+source "drivers/gpio/Kconfig.tca6424a"
+source "drivers/gpio/Kconfig.test"
+source "drivers/gpio/Kconfig.tle9104"
+source "drivers/gpio/Kconfig.xec"
+source "drivers/gpio/Kconfig.xlnx"
+source "drivers/gpio/Kconfig.xlnx_ps"
+source "drivers/gpio/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
+
+endif # GPIO

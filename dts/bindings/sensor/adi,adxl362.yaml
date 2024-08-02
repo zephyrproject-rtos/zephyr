@@ -1,0 +1,29 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL362 3-axis SPI accelerometer
+
+compatible: "adi,adxl362"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      The INT1 signal defaults to active high as produced by the
+      sensor.  The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
+
+  wakeup-mode:
+    type: boolean
+    description: |
+      This mode is intended for extremely low power consumption,
+      checking for motion only about six times a second.
+
+  autosleep:
+    type: boolean
+    description: |
+      Enter Wake-Up mode when inactivity is detected,
+      reenter Measurement mode when activity is detected.
+      Only applies for Linked and Loop mode, ignored otherwise.

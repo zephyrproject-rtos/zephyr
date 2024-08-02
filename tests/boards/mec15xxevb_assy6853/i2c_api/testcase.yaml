@@ -1,0 +1,8 @@
+tests:
+  boards.mec15xxevb_assy6853.i2c:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    filter: dt_compat_enabled("nxp,pca95xx")
+    platform_allow: mec15xxevb_assy6853

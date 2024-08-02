@@ -1,0 +1,23 @@
+identifier: hifive_unleashed
+name: SiFive HiFive Unleashed
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+simulation: renode
+simulation_exec: renode
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - newlib
+    - crypto
+  renode:
+    uart: sysbus.uart0
+    resc: boards/sifive/hifive_unleashed/support/hifive_unleashed.resc
+supported:
+  - gpio
+  - spi
+vendor: sifive

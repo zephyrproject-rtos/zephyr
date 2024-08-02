@@ -1,0 +1,364 @@
+/*
+ * Copyright (c) 2017 Piotr Mienkowski
+ * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright (c) 2019-2022 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "sam_v71_xult-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		i2c-0 = &twihs0;
+		i2c-1 = &twihs2;
+		led0 = &yellow_led1;
+		pwm-led0 = &pwm_led0;
+		pwm-0 = &pwm0;
+		sw0 = &sw0_user_button;
+		sw1 = &sw1_user_button;
+		watchdog0 = &wdt;
+	};
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		yellow_led0: led_0 {
+			gpios = <&pioa 23 GPIO_ACTIVE_LOW>;
+			label = "User LED 0";
+			status = "disabled";
+		};
+		yellow_led1: led_1 {
+			gpios = <&pioc 9 GPIO_ACTIVE_LOW>;
+			label = "User LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* The switch is labeled SW300/301 in the schematic, and
+		 * labeled SW0 on the board, and labeled ERASE User Button
+		 * on docs
+		 */
+		sw0_user_button: button_1 {
+			label = "User Button 0";
+			gpios = <&pioa 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		sw1_user_button: button_2 {
+			label = "User Button 1";
+			gpios = <&piob 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	ext1_header: xplained-pro-connector1 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &pioc 31 0>,	/* AFE1 AD6         */
+				<1  0 &pioa 19 0>,	/* AFE0 AD8         */
+				<2  0 &piob  3 0>,	/* RTS0             */
+				<3  0 &piob  2 0>,	/* CTS0             */
+				<4  0 &pioa  0 0>,	/* PWMC0_H0         */
+				<5  0 &pioc 30 0>,	/* TIOB5            */
+				<6  0 &piod 28 0>,	/* WKUP5            */
+				<7  0 &pioa  5 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXT2 */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXT2 */
+				<10 0 &piob  0 0>,	/* RXD0             */
+				<11 0 &piob  1 0>,	/* TXD0             */
+				<12 0 &piod 25 0>,	/* SPI0(NPCS1)      */
+				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT2 */
+				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT2 */
+				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT2 */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "atmel-xplained-pro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &piod 30 0>,	/* AFE0 AD0         */
+				<1  0 &pioc 13 0>,	/* AFE1 AD1         */
+				<2  0 &pioa  6 0>,	/* GPIO             */
+				<3  0 &piod 11 0>,	/* GPIO             */
+				<4  0 &pioc 19 0>,	/* PWMC0_H2         */
+				<5  0 &piod 26 0>,	/* PWMC0_L2         */
+				<6  0 &pioa  2 0>,	/* WKUP2            */
+				<7  0 &pioa 24 0>,	/* GPIO             */
+				<8  0 &pioa  3 0>,	/* TWD0        EXT1 */
+				<9  0 &pioa  4 0>,	/* TWCK0       EXT1 */
+				<10 0 &pioa 21 0>,	/* RXD1             */
+				<11 0 &piob  4 0>,	/* TXD1             */
+				<12 0 &piod 27 0>,	/* SPI0(NPCS3)      */
+				<13 0 &piod 21 0>,	/* SPI0(MOSI)  EXT1 */
+				<14 0 &piod 20 0>,	/* SPI0(MISO)  EXT1 */
+				<15 0 &piod 22 0>;	/* SPI0(SCK)   EXT1 */
+							/* GND              */
+							/* +3.3V            */
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;		/*           Shared */
+		gpio-map =	<0  0 &piod 26 0>,	/*  A0-TD           */
+				<1  0 &pioc 31 0>,	/*  A1-AFE1 AD6   y */
+				<2  0 &pioa 19 0>,	/*  A2-AFE0 AD8   y */
+				<3  0 &piod 30 0>,	/*  A3-AFE0 AD0   y */
+				<4  0 &pioc 13 0>,	/*  A4-AFE1 AD1   y */
+				<5  0 &pioe  0 0>,	/*  A5-AFE1 AD11    */
+				<6  0 &piod 28 0>,	/*  D0-URXD3        */
+				<7  0 &piod 30 0>,	/*  D1-UTXD3        */
+				<8  0 &pioa  0 0>,	/*  D2-PWMC0_H0     */
+				<9  0 &pioa  6 0>,	/*  D3-GPIO         */
+				<10 0 &piod 27 0>,	/*  D4-SPI0_NPCS3 y */
+				<11 0 &piod 11 0>,	/*  D5-PWMC0_H0     */
+				<12 0 &pioc 19 0>,	/*  D6-PWMC0_H2     */
+				<13 0 &pioa  2 0>,	/*  D7-PWMC0_H1     */
+				<14 0 &pioa  5 0>,	/*  D8-PWMC1_PWML3  */
+				<15 0 &pioc  9 0>,	/*  D9-TIOB7        */
+				<16 0 &piod 25 0>,	/* D10-SPI0_NPCS1 y */
+				<17 0 &piod 21 0>,	/* D11-SPI0_MOSI  y */
+				<18 0 &piod 20 0>,	/* D12-SPI0_MISO  y */
+				<19 0 &piod 22 0>,	/* D13-SPI0_SPCK  y */
+				<20 0 &pioa  3 0>,	/* D14-TWD0       y */
+				<21 0 &pioa  4 0>;	/* D15-TWCK0      y */
+	};
+};
+
+&cpu0 {
+	clock-frequency = <300000000>;
+};
+
+&afec0 {
+	status = "okay";
+
+	pinctrl-0 = <&afec0_default>;
+	pinctrl-names = "default";
+};
+
+&afec1 {
+	status = "okay";
+
+	pinctrl-0 = <&afec1_default>;
+	pinctrl-names = "default";
+};
+
+&dacc {
+	status = "okay";
+};
+
+&twihs0 {
+	status = "okay";
+
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
+
+	eeprom: eeprom@5f {
+		compatible = "atmel,24mac402";
+		reg = <0x5f>;
+	};
+};
+
+&twihs2 {
+	status = "okay";
+
+	pinctrl-0 = <&twihs2_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&piod 25 GPIO_ACTIVE_LOW>,
+		   <&piod 27 GPIO_ACTIVE_LOW>;
+
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart3 {
+	status = "okay";
+	current-speed = <115200>;
+
+
+	pinctrl-0 = <&uart3_default>;
+	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	mac-eeprom = <&eeprom>;
+	phy-handle = <&phy>;
+};
+
+&mdio {
+	status = "okay";
+
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&pioa {
+	status = "okay";
+};
+
+&piob {
+	status = "okay";
+};
+
+&pioc {
+	status = "okay";
+};
+
+&piod {
+	status = "okay";
+};
+
+&pioe {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The first half of sector 0 (64 kbytes)
+		 * is reserved for the bootloader
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x00010000>;
+			read-only;
+		};
+
+		/* From sector 1 to sector 7 (included): slot0 (896 kbytes) */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 0x000e0000>;
+		};
+
+		/* From sector 8 to sector 14 (included): slot1 (896 kbytes) */
+		slot1_partition: partition@100000 {
+			label = "image-1";
+			reg = <0x00100000 0x000e0000>;
+		};
+
+		/* Sector 15: scratch (128 kbytes) */
+		scratch_partition: partition@1e0000 {
+			label = "image-scratch";
+			reg = <0x001e0000 0x00020000>;
+		};
+	};
+};
+
+&ssc {
+	status = "okay";
+
+	pinctrl-0 = <&ssc_default>;
+	pinctrl-names = "default";
+
+	dma-names = "rx", "tx";
+	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+};
+
+&can1 {
+	status = "okay";
+
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+ext1_spi: &spi0 {
+};
+
+ext1_i2c: &twihs0 {
+};
+
+ext1_serial: &usart0 {
+};
+
+ext2_spi: &spi0 {
+};
+
+ext2_i2c: &twihs0 {
+};
+
+ext2_serial: &usart1 {
+};
+
+arduino_spi: &spi0 {
+};
+
+arduino_i2c: &twihs0 {
+};
+
+arduino_serial: &uart3 {
+};

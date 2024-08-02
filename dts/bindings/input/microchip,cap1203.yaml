@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Keiya Nobuta
+# SPDX-License-Identifier: Apache-2.0
+
+description: CAP1203 3-channel capacitive touch sensor
+
+compatible: "microchip,cap1203"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).

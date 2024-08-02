@@ -1,0 +1,31 @@
+name: Backport Issue Check
+
+on:
+  pull_request_target:
+    branches:
+      - v*-branch
+
+jobs:
+  backport:
+    name: Backport Issue Check
+    runs-on: ubuntu-22.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: |
+          sudo pip3 install -U setuptools wheel pip
+          pip3 install -U pygithub
+
+      - name: Run backport issue checker
+        env:
+          GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+        run: |
+          ./scripts/release/list_backports.py \
+            -o ${{ github.event.repository.owner.login }} \
+            -r ${{ github.event.repository.name }} \
+            -b ${{ github.event.pull_request.base.ref }} \
+            -p ${{ github.event.pull_request.number }}

@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Andes Machine Timer
+
+  The Andes machine timer provides RISC-V privileged mtime and mtimecmp
+  registers.
+
+compatible: "andestech,machine-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts-extended:
+    required: true

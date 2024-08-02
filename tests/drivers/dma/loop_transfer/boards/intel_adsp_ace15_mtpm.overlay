@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * Author: Tomasz Leman <tomasz.m.leman@intel.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &lpgpdma0 { };

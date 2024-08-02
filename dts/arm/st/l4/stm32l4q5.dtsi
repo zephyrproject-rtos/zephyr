@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l4p5.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l4q5", "st,stm32l4", "simple-bus";
+	};
+};

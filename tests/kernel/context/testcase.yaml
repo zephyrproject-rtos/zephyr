@@ -1,0 +1,21 @@
+tests:
+  kernel.context:
+    tags: kernel
+    extra_configs:
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
+    min_ram: 16
+  kernel.context.minimallibc:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: kernel libc
+    extra_configs:
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024
+      - CONFIG_MINIMAL_LIBC=y
+    min_ram: 16
+  linker.linker_generator:
+    platform_allow: qemu_cortex_m3
+    tags:
+      - kernel
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+      - CONFIG_TEST_EXTRA_STACK_SIZE=1024

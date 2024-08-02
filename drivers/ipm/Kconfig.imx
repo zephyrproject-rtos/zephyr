@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022, Intel Corporation
+
+config IPM_MCUX
+	bool "MCUX IPM driver"
+	default y
+	depends on DT_HAS_NXP_LPC_MAILBOX_ENABLED
+	select RESET
+	help
+	  Driver for MCUX mailbox
+
+config IPM_IMX
+	bool "IMX IPM driver"
+	default y
+	depends on DT_HAS_NXP_IMX_MU_ENABLED
+	help
+	  Driver for NXP i.MX messaging unit
+
+if IPM_IMX
+
+choice
+	prompt "IMX IPM max data size"
+	default IPM_IMX_MAX_DATA_SIZE_16
+	help
+	  Select maximum message size for NXP i.MX messaging unit.
+
+config IPM_IMX_MAX_DATA_SIZE_4
+	bool "4 bytes"
+	help
+	  There will be four message types with ids 0, 1, 2 or 3
+	  and a maximum size of 4 bytes each.
+
+config IPM_IMX_MAX_DATA_SIZE_8
+	bool "8 bytes"
+	help
+	  There will be two message types with ids 0 or 1
+	  and a maximum size of 8 bytes each.
+
+config IPM_IMX_MAX_DATA_SIZE_16
+	bool "16 bytes"
+	help
+	  There will be a single message type with id 0
+	  and a maximum size of 16 bytes.
+
+endchoice
+
+config IPM_IMX_MAX_DATA_SIZE
+	int
+	range 4 16
+	default 4 if IPM_IMX_MAX_DATA_SIZE_4
+	default 8 if IPM_IMX_MAX_DATA_SIZE_8
+	default 16 if IPM_IMX_MAX_DATA_SIZE_16
+
+config IPM_IMX_MAX_ID_VAL
+	int
+	range 0 3
+	default 3 if IPM_IMX_MAX_DATA_SIZE_4
+	default 1 if IPM_IMX_MAX_DATA_SIZE_8
+	default 0 if IPM_IMX_MAX_DATA_SIZE_16
+
+config IPM_IMX_FW_READY_REPLY
+	bool "Send FW_READY reply message"
+	help
+	  Send FW_READY reply to check for FW boot completion
+
+endif # IPM_IMX

@@ -1,0 +1,28 @@
+# MIMXRT1064-EVK board
+
+# Copyright 2018,2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1064_EVK
+
+config DEVICE_CONFIGURATION_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+if ETH_MCUX
+
+config ETH_MCUX_PHY_RESET
+	default y
+
+endif # ETH_MCUX
+
+endif # NETWORKING
+
+endif # BOARD_MIMXRT1064_EVK

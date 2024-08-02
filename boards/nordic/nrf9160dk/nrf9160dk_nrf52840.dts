@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "nrf9160dk_nrf52840-pinctrl.dtsi"
+
+/ {
+	model = "Nordic nRF9160 DK NRF52840";
+	compatible = "nordic,nrf9160-dk-nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	interface_to_nrf9160: gpio-interface {
+		compatible = "nordic,nrf9160dk-nrf52840-interface";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xf 0>;
+		gpio-map-pass-thru = <0 0xffffffff>;
+		gpio-map = <0 0 &gpio0 17 0>,
+			   <1 0 &gpio0 20 0>,
+			   <2 0 &gpio0 15 0>,
+			   <3 0 &gpio0 22 0>,
+			   <4 0 &gpio1  4 0>,
+			   <5 0 &gpio1  2 0>,
+			   <6 0 &gpio1 13 0>,
+			   <7 0 &gpio1 11 0>,
+			   <8 0 &gpio1 15 0>;
+	};
+
+	reset_input: gpio-reset {
+		compatible = "nordic,nrf9160dk-nrf52840-reset";
+		/*
+		 * This line is specified as active high for compatibility
+		 * with the previously used Kconfig-based configuration.
+		 */
+		gpios = <&interface_to_nrf9160 5
+			(GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		status = "disabled";
+	};
+
+	board-control {
+		vcom0_pins_routing: switch-nrf91-uart1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		vcom2_pins_routing: switch-nrf91-uart2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			/*
+			 * Two pins (P1.12 and P0.12) need to be driven for
+			 * this switch.
+			 */
+			control-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>,
+					<&gpio0 12 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+		};
+
+		led1_pin_routing: switch-nrf91-led1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led2_pin_routing: switch-nrf91-led2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led3_pin_routing: switch-nrf91-led3 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		led4_pin_routing: switch-nrf91-led4 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		switch1_pin_routing: switch-nrf91-switch1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		switch2_pin_routing: switch-nrf91-switch2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		button1_pin_routing: switch-nrf91-button1 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		button2_pin_routing: switch-nrf91-button2 {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		nrf_interface_pins_0_2_routing: switch-nrf-if0-2-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		nrf_interface_pins_3_5_routing: switch-nrf-if3-5-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+
+		nrf_interface_pins_6_8_routing: switch-nrf-if6-8-ctrl {
+			compatible = "nordic,nrf9160dk-optional-routing";
+			control-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			status = "disabled";
+		};
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/* The nRF52840 SoC does not have any connection to the any of the LEDs,
+ * buttons, switches and Arduino pin headers on the nRF9160 DK board.
+ */
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x00076000>;
+		};
+		slot1_partition: partition@82000 {
+			label = "image-1";
+			reg = <0x00082000 0x00076000>;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};

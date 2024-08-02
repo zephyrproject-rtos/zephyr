@@ -1,0 +1,54 @@
+name: Issue Tracker
+
+on:
+  schedule:
+  - cron: '*/10 * * * *'
+
+env:
+  OUTPUT_FILE_NAME: IssuesReport.md
+  COMMITTER_EMAIL: actions@github.com
+  COMMITTER_NAME: github-actions
+  COMMITTER_USERNAME: github-actions
+
+
+jobs:
+  track-issues:
+    name: "Collect Issue Stats"
+    runs-on: ubuntu-22.04
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+    - name: Download configuration file
+      run: |
+        wget -q https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/.github/workflows/issues-report-config.json
+
+    - name: install-packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install discount
+
+    - uses: brcrista/summarize-issues@v4
+      with:
+        title: 'Issues Report for ${{ github.repository }}'
+        configPath: 'issues-report-config.json'
+        outputPath: ${{ env.OUTPUT_FILE_NAME }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: upload-stats
+      uses: actions/upload-artifact@v4
+      continue-on-error: true
+      with:
+        name: ${{ env.OUTPUT_FILE_NAME }}
+        path: ${{ env.OUTPUT_FILE_NAME }}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Post Results
+      run: |
+        mkd2html IssuesReport.md IssuesReport.html
+        aws s3 cp --quiet IssuesReport.html s3://testing.zephyrproject.org/issues/$GITHUB_REPOSITORY/index.html

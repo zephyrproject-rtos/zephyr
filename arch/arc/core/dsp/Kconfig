@@ -1,0 +1,70 @@
+# Digital Signal Processing (DSP) configuration options
+
+# Copyright (c) 2022 Synopsys
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ARC DSP Options"
+depends on CPU_HAS_DSP
+
+config ARC_DSP
+	bool "digital signal processing (DSP)"
+	help
+	  This option enables DSP and DSP instructions.
+
+config ARC_DSP_TURNED_OFF
+	bool "Turn off DSP if it presents"
+	depends on !ARC_DSP
+	help
+	  This option disables DSP block via resetting DSP_CRTL register.
+
+config DSP_SHARING
+	bool "DSP register sharing"
+	depends on ARC_DSP && MULTITHREADING
+	select ARC_HAS_ACCL_REGS
+	help
+	  This option enables preservation of the hardware DSP registers
+	  across context switches to allow multiple threads to perform concurrent
+	  DSP operations.
+
+config ARC_DSP_BFLY_SHARING
+	bool "ARC complex DSP operation"
+	depends on ARC_DSP && CPU_ARCEM
+	help
+	  This option is to enable Zephyr to store and restore DSP_BFLY0
+	  and FFT_CTRL registers during context switch. This option is
+	  only required when butterfly instructions are used in
+	  multi-thread.
+
+config ARC_XY_ENABLE
+	bool "ARC address generation unit registers"
+	help
+	  Processors with XY memory and AGU registers can configure this
+	  option to accelerate DSP instrctions.
+
+config ARC_AGU_SHARING
+	bool "ARC address generation unit register sharing"
+	depends on ARC_XY_ENABLE && MULTITHREADING
+	default y if DSP_SHARING
+	help
+	  This option enables preservation of the hardware AGU registers
+	  across context switches to allow multiple threads to perform concurrent
+	  operations on XY memory. Save and restore small size AGU registers is
+	  set as default, including 4 address pointers regs, 2 address offset regs
+	  and 4 modifiers regs.
+
+config ARC_AGU_MEDIUM
+	bool "ARC AGU medium size register"
+	depends on ARC_AGU_SHARING
+	help
+	  Save and restore medium AGU registers, including 8 address pointers regs,
+	  4 address offset regs and 12 modifiers regs.
+
+config ARC_AGU_LARGE
+	bool "ARC AGU large size register"
+	depends on ARC_AGU_SHARING
+	select ARC_AGU_MEDIUM
+	help
+	  Save and restore large AGU registers, including 12 address pointers regs,
+	  8 address offset regs and 24 modifiers regs.
+
+endmenu

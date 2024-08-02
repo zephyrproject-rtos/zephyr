@@ -1,0 +1,359 @@
+/*
+ * Copyright (c) 2019-2021 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_ke18f512vlx16.dtsi>
+#include <zephyr/dt-bindings/clock/kinetis_scg.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "twr_ke18f-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP Kinetis KE18 MCU Tower System Module";
+	compatible = "nxp,mke18f16", "nxp,ke18f", "nxp,ke1xf";
+
+	aliases {
+		led0 = &orange_led;
+		led1 = &yellow_led;
+		led2 = &green_led;
+		led3 = &red_led;
+		led4 = &tri_red_led;
+		led5 = &tri_green_led;
+		led6 = &tri_blue_led;
+		pwm-led0 = &orange_pwm_led;
+		pwm-led1 = &yellow_pwm_led;
+		pwm-led2 = &green_pwm_led;
+		pwm-led3 = &red_pwm_led;
+		red-pwm-led = &tri_red_pwm_led;
+		green-pwm-led = &tri_green_pwm_led;
+		blue-pwm-led = &tri_blue_pwm_led;
+		sw0 = &user_button_3;
+		sw1 = &user_button_2;
+		magn0 = &fxos8700;
+		accel0 = &fxos8700;
+	};
+
+	chosen {
+		/*
+		 * Note: when using DMA, the SRAM region must be set to
+		 * a memory region that is not cached by the chip. If the chosen
+		 * sram region is changed and DMA is in use, you will
+		 * encounter issues!
+		 */
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
+		zephyr,canbus = &flexcan0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led: led_0 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "User LED D9";
+		};
+		yellow_led: led_1 {
+			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+			label = "User LED D8";
+		};
+		green_led: led_2 {
+			gpios = <&gpioc 11 GPIO_ACTIVE_LOW>;
+			label = "User LED D7";
+		};
+		red_led: led_3 {
+			gpios = <&gpioc 10 GPIO_ACTIVE_LOW>;
+			label = "User LED D6";
+		};
+
+		tri_red_led: led_4 {
+			gpios = <&gpiod 16 GPIO_ACTIVE_LOW>;
+			label = "User Tricolor LED D5 (Red)";
+		};
+		tri_green_led: led_5 {
+			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			label = "User Tricolor LED D5 (Green)";
+		};
+		tri_blue_led: led_6 {
+			gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+			label = "User Tricolor LED D5 (Blue)";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		orange_pwm_led: led_pwm_0 {
+			pwms = <&ftm3 7 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LED D9";
+		};
+		yellow_pwm_led: led_pwm_1 {
+			pwms = <&ftm3 6 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LED D8";
+		};
+		green_pwm_led: led_pwm_2 {
+			pwms = <&ftm3 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LED D7";
+		};
+		red_pwm_led: led_pwm_3 {
+			pwms = <&ftm3 4 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User PWM LED D6";
+		};
+
+		tri_red_pwm_led: led_pwm_4 {
+			pwms = <&ftm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User Tricolor PWM LED D5 (Red)";
+		};
+		tri_green_pwm_led: led_pwm_5 {
+			pwms = <&ftm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User Tricolor PWM LED D5 (Green)";
+		};
+		tri_blue_pwm_led: led_pwm_6 {
+			pwms = <&ftm0 5 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "User Tricolor PWM LED D5 (Blue)";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
+};
+
+&sim {
+	clkout-source = <1>;
+	clkout-divider = <0>;
+};
+
+&scg {
+	sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
+
+	sosc_clk {
+		status = "okay";
+		clock-frequency = <8000000>;
+	};
+
+	pll {
+		clock-mult = <30>;
+	};
+
+	core_clk {
+		clocks = <&spll_clk>;
+	};
+
+	bus_clk {
+		clock-div = <2>;
+	};
+
+	slow_clk {
+		clock-div = <5>;
+	};
+
+	clkout_clk {
+		status = "okay";
+	};
+
+	splldiv1_clk {
+		clock-div = <1>;
+	};
+
+	splldiv2_clk {
+		clock-div = <2>;
+	};
+
+	sircdiv1_clk {
+		clock-div = <1>;
+	};
+
+	sircdiv2_clk {
+		clock-div = <2>;
+	};
+
+	fircdiv1_clk {
+		clock-div = <1>;
+	};
+
+	fircdiv2_clk {
+		clock-div = <1>;
+	};
+
+	soscdiv1_clk {
+		clock-div = <1>;
+	};
+
+	soscdiv2_clk {
+		clock-div = <1>;
+	};
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&ftm0 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm0_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm3_default>;
+	pinctrl-names = "default";
+	clock-source = "fixed";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+
+	fxos8700: fxos8700@1d {
+		compatible = "nxp,fxos8700";
+		reg = <0x1d>;
+		reset-gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c1_default>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+};
+
+&lpspi0 {
+	dmas = <&edma 0 14>, <&edma 1 15>;
+	dma-names = "rx", "tx";
+	status = "okay";
+	pinctrl-0 = <&lpspi0_default>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&lpspi1_default>;
+	pinctrl-names = "default";
+};
+
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&dac0_default>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&temp0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&edma {
+	status = "okay";
+};
+
+&flexio1 {
+	status = "okay";
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 (DT_SIZE_K(200) + DT_SIZE_K(8))>;
+		};
+		slot1_partition: partition@44000 {
+			label = "image-1";
+			reg = <0x00044000 DT_SIZE_K(200)>;
+		};
+		storage_partition: partition@76000 {
+			label = "storage";
+			reg = <0x00076000 DT_SIZE_K(40)>;
+		};
+	};
+};

@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  min_ram: 20
+  tags: net
+tests:
+  net.packet:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.packet.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.packet.large_buffer:
+    extra_configs:
+      - CONFIG_NET_BUF_FIXED_DATA_SIZE=y
+      - CONFIG_NET_BUF_DATA_SIZE=512

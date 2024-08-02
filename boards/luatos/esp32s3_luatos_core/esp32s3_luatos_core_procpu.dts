@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2023 YuLong Yao <feilongphone@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "esp32s3_luatos_core.dtsi"
+
+/ {
+	model = "ESP32S3 Luatos Core PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+};

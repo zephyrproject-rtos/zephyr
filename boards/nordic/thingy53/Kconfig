@@ -1,0 +1,57 @@
+# Thingy53 NRF5340 board configuration
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config THINGY53_INIT_PRIORITY
+	int "Init priority"
+	default 79
+	help
+	  Initialization priority of the Thingy:53.
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+config BOARD_ENABLE_DCDC_APP
+	bool "Application MCU DCDC converter"
+	select SOC_DCDC_NRF53X_APP
+	default y
+
+config BOARD_ENABLE_DCDC_NET
+	bool "Network MCU DCDC converter"
+	select SOC_DCDC_NRF53X_NET
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF53X_HV
+	default y
+
+config BOARD_SERIAL_BACKEND_CDC_ACM
+	bool "USB CDC"
+	default y
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "thingy53/nrf5340/cpunet"
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc on the nRF5340_cpunet for
+	  Bluetooth applications.
+
+endif # BOARD_THINGY53_NRF5340_CPUAPP || BOARD_THINGY53_NRF5340_CPUAPP_NS
+
+if BOARD_THINGY53_NRF5340_CPUNET
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "thingy53/nrf5340/cpuapp"
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
+
+endif # BOARD_THINGY53_NRF5340_CPUNET

@@ -1,0 +1,10 @@
+&spi0 {
+	status = "okay";
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	bme280@0 {
+		compatible = "bosch,bme280";
+		reg = <0>;
+		spi-max-frequency = <1000000>; /* conservatively set to 1MHz */
+	};
+};

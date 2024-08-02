@@ -1,0 +1,11 @@
+board:
+  name: s32z2xxdc2
+  vendor: nxp
+  revision:
+    format: letter
+    default: B
+    revisions:
+      - name: B
+      - name: D
+  socs:
+    - name: s32z270

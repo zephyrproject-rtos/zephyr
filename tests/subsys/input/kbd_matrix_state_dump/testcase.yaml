@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags: input
+  platform_allow:
+    - native_posix
+    - native_posix/native/64
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  harness: console
+tests:
+  input.kbd_matrix_state_dump:
+    harness_config:
+      type: multi_line
+      regex:
+        - "I: kbd-matrix state \\[01 -- -- --\\] \\(1\\)"
+        - "I: kbd-matrix state \\[11 -- -- --\\] \\(2\\)"
+        - "I: kbd-matrix state \\[11 02 -- --\\] \\(3\\)"
+        - "I: kbd-matrix state \\[11 02 04 --\\] \\(4\\)"
+        - "I: kbd-matrix state \\[10 02 04 --\\] \\(3\\)"
+        - "I: kbd-matrix state \\[-- 02 04 --\\] \\(2\\)"
+        - "I: kbd-matrix state \\[-- -- 04 --\\] \\(1\\)"
+        - "I: kbd-matrix state \\[-- -- -- --\\] \\(0\\)"
+        - "I: kbd-matrix state \\[-- -- -- 08\\] \\(1\\)"
+        - "I: kbd-matrix state \\[-- -- -- --\\] \\(0\\)"
+        - "I: kbd-matrix key-mask \\[11 02 04 08\\] \\(5\\)"
+  input.kbd_matrix_state_dump_16_bit_rows:
+    extra_configs:
+      - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y
+    harness_config:
+      type: multi_line
+      regex:
+        - "I: kbd-matrix state \\[0001 ---- ---- ----\\] \\(1\\)"
+        - "I: kbd-matrix state \\[0011 ---- ---- ----\\] \\(2\\)"
+        - "I: kbd-matrix state \\[0011 0002 ---- ----\\] \\(3\\)"
+        - "I: kbd-matrix state \\[0011 0002 0004 ----\\] \\(4\\)"
+        - "I: kbd-matrix state \\[0010 0002 0004 ----\\] \\(3\\)"
+        - "I: kbd-matrix state \\[---- 0002 0004 ----\\] \\(2\\)"
+        - "I: kbd-matrix state \\[---- ---- 0004 ----\\] \\(1\\)"
+        - "I: kbd-matrix state \\[---- ---- ---- ----\\] \\(0\\)"
+        - "I: kbd-matrix state \\[---- ---- ---- 0008\\] \\(1\\)"
+        - "I: kbd-matrix state \\[---- ---- ---- ----\\] \\(0\\)"
+        - "I: kbd-matrix state \\[1000 ---- ---- ----\\] \\(1\\)"
+        - "I: kbd-matrix state \\[---- ---- ---- ----\\] \\(0\\)"
+        - "I: kbd-matrix key-mask \\[1011 0002 0004 0008\\] \\(6\\)"

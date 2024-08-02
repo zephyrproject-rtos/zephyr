@@ -1,0 +1,18 @@
+common:
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  tags: arm
+  arch_allow: arm
+tests:
+  arch.arm.no-mt:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
+    platform_allow:
+      - qemu_cortex_m0
+      - qemu_cortex_m3
+      - mps2/an385
+      - mps2/an521/cpu0
+      - mps3/an547
+      - nrf52840dk/nrf52840
+      - nrf9160dk/nrf9160
+      - nrf51dk/nrf51822
+    integration_platforms:
+      - qemu_cortex_m0

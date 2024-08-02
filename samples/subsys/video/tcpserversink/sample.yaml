@@ -1,0 +1,18 @@
+sample:
+  name: Video TCP server sink
+tests:
+  sample.video.tcpserversink:
+    build_only: true
+    tags:
+      - video
+      - net
+      - socket
+      - shield
+    platform_allow: mimxrt1064_evk
+    depends_on:
+      - video
+      - netif
+    integration_platforms:
+      - mimxrt1064_evk
+    extra_args:
+      - platform:mimxrt1064_evk:SHIELD=dvp_fpc24_mt9m114

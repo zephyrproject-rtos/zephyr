@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_SPINEL
+	bool "OpenThread dedicated Spinel protocol backend"
+	depends on !LOG_BACKEND_UART
+	depends on NET_L2_OPENTHREAD
+	select LOG_OUTPUT
+	help
+	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
+	  This protocol is byte oriented and wraps given messages into serial frames.
+	  Backend should be enabled only to OpenThread purposes and when UART backend is disabled
+	  or works on another UART device to avoid interference.
+
+if LOG_BACKEND_SPINEL
+
+config LOG_BACKEND_SPINEL_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 64
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+backend = SPINEL
+backend-str = spinel
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_SPINEL

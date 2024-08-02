@@ -1,0 +1,11 @@
+sample:
+  description: Demonstration of the LP3943 LED driver
+  name: LP3943 sample
+tests:
+  sample.drivers.led.lp3943:
+    platform_allow:
+      - 96b_neonkey
+      - 96b_argonkey
+    integration_platforms:
+      - 96b_argonkey
+    tags: LED

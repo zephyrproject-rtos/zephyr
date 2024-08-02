@@ -1,0 +1,31 @@
+sample:
+  name: Task Watchdog Subsytem Sample
+common:
+  harness: console
+  tags:
+    - task_wdt
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Task watchdog sample application."
+      - "Control thread started."
+      - "Main thread still alive..."
+      - "Control thread getting stuck..."
+      - "Task watchdog channel 1 callback, thread: control"
+      - "Resetting device...(.*)"
+      - "Task watchdog sample application."
+  depends_on: watchdog
+  platform_exclude:
+    - s32z2xxdc2/s32z270/rtu0
+    - s32z2xxdc2/s32z270/rtu1
+    - s32z2xxdc2@D/s32z270/rtu0
+    - s32z2xxdc2@D/s32z270/rtu1
+tests:
+  sample.task_wdt:
+    integration_platforms:
+      - nucleo_g474re
+  sample.task_wdt.no_hw_fallback:
+    extra_args: CONF_FILE="prj_no_hw_fallback.conf"
+    platform_allow:
+      - mr_canhubk3

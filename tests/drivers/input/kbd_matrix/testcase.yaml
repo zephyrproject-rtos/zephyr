@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - drivers
+    - input
+  integration_platforms:
+    - native_sim
+tests:
+  input.input_kbd_matrix: {}
+  input.input_kbd_matrix.no_ghostkey_check:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=no-ghostkey-check.overlay
+  input.input_kbd_matrix.actual_key_mask:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=actual-key-mask.overlay
+  input.input_kbd_matrix.actual_key_mask_dynamic:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=actual-key-mask.overlay
+      - CONFIG_INPUT_KBD_ACTUAL_KEY_MASK_DYNAMIC=y
+  input.input_kbd_matrix.row_16_bit:
+    extra_args:
+      - CONFIG_INPUT_KBD_MATRIX_16_BIT_ROW=y

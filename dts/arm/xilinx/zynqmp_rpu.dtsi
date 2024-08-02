@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2019 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/xilinx/zynqmp.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5f";
+			reg = <0>;
+		};
+	};
+
+	soc {
+
+		rpu0_ipi: zynqmp-ipi@ff310000 {
+			status = "disabled";
+			compatible = "xlnx,zynqmp-ipi-mailbox";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reg = <0xff310000 0x10000>;
+			reg-names = "host_ipi_reg";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			local-ipi-id = <1>;
+
+			rpu0_apu_mailbox: mailbox@ff990200 {
+				remote-ipi-id = <0>;
+				reg = <0xff990200 0x20>,
+				      <0xff990220 0x20>,
+				      <0xff990040 0x20>,
+				      <0xff990060 0x20>;
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
+
+			rpu0_rpu1_mailbox: mailbox@ff990260 {
+				remote-ipi-id = <2>;
+				reg = <0xff990260 0x20>,
+				      <0xff990280 0x20>,
+				      <0xff990420 0x20>,
+				      <0xff990440 0x20>;
+
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
+		};
+
+		rpu1_ipi: zynqmp-ipi@ff320000 {
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "xlnx,zynqmp-ipi-mailbox";
+			local-ipi-id = <2>;
+
+			reg = <0xff320000 0x10000>;
+			reg-names = "host_ipi_reg";
+
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+
+			rpu1_apu_mailbox: mailbox@ff990400 {
+				remote-ipi-id = <0>;
+				reg = <0xff990400 0x20>,
+				      <0xff990420 0x20>,
+				      <0xff990080 0x20>,
+				      <0xff9900a0 0x20>;
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
+
+			rpu1_rpu0_mailbox: mailbox@ff990420 {
+				remote-ipi-id = <1>;
+				reg = <0xff990420 0x20>,
+				      <0xff990440 0x20>,
+				      <0xff990260 0x20>,
+				      <0xff990280 0x20>;
+				reg-names = "local_request_region",
+					    "local_response_region",
+					    "remote_request_region",
+					    "remote_response_region";
+			};
+		};
+
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@f9000000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			reg = <0xf9000000 0x1000>,
+					<0xf9001000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};

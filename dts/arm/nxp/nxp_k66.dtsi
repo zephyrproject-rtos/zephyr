@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2020 DENX Software Engineering GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nxp/nxp_k6x.dtsi>
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_M(2)>;
+};
+
+/ {
+	soc {
+		lpuart0: lpuart@400c4000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x400c4000 0x14>;
+			interrupts = <86 0>;
+			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
+			dmas = <&edma0 1 58>, <&edma0 2 59>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		flexcan1: can@400a4000 {
+			compatible = "nxp,flexcan";
+			reg = <0x400a4000 0x1000>;
+			interrupts = <94 0>, <95 0>, <96 0>, <97 0>, <98 0>, <99 0>;
+			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning",
+			    "rx-warning", "wake-up";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
+			clk-source = <1>;
+			status = "disabled";
+		  };
+	};
+};

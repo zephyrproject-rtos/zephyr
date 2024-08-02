@@ -1,0 +1,44 @@
+common:
+  platform_allow:
+    - native_posix
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags: bindesc
+tests:
+  bindesc.define:
+    platform_allow:
+      - native_posix
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_m0
+      - qemu_cortex_m3
+      - qemu_cortex_r5
+      - qemu_arc/qemu_arc_em
+      - qemu_arc/qemu_arc_hs
+      - qemu_arc/qemu_arc_hs5x
+      - qemu_arc/qemu_arc_hs6x
+      - qemu_riscv32
+      - qemu_riscv32e
+      - qemu_riscv64
+  bindesc.define.c99:
+    extra_configs:
+      - CONFIG_STD_C99=y
+  bindesc.define.c11:
+    extra_configs:
+      - CONFIG_STD_C11=y
+  bindesc.define.c17:
+    extra_configs:
+      - CONFIG_STD_C17=y
+  bindesc.define.gnu99:
+    extra_configs:
+      - CONFIG_STD_C99=y
+      - CONFIG_GNU_C_EXTENSIONS=y
+  bindesc.define.gnu11:
+    extra_configs:
+      - CONFIG_STD_C11=y
+      - CONFIG_GNU_C_EXTENSIONS=y
+  bindesc.define.gnu17:
+    extra_configs:
+      - CONFIG_STD_C17=y
+      - CONFIG_GNU_C_EXTENSIONS=y

@@ -1,0 +1,5 @@
+description: Texas Instruments LP5018 I2C LED controller node
+
+compatible: ti,lp5018
+
+include: ti,lp50xx.yaml

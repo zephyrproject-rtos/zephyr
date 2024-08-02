@@ -1,0 +1,20 @@
+sample:
+  description: System heap sample showing how to use sys_heap functions
+  name: Basic system heap sample
+common:
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - ".*allocated 15.,.*"
+      - ".*allocated 10.,.*"
+      - ".*allocated 0, free ..., max allocated ..., heap size 256.*"
+tests:
+  sample.basic.sys_heap:
+    tags:
+      - heap
+      - statistics
+      - dynamic_memory

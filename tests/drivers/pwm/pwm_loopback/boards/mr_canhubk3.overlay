@@ -1,0 +1,41 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		/* Connect P8A pin 3 and P8A pin 6 */
+		pwms = <&emios0_pwm 0 0 PWM_POLARITY_NORMAL>,
+			<&emios0_pwm 1 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	emios0_default {
+		group2 {
+			pinmux = <PTB13_EMIOS_0_CH1_G_I>;
+			input-enable;
+		};
+	};
+};
+
+&emios0 {
+	emios0_pwm: pwm {
+		pinctrl-0 = <&emios0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_1 {
+			/delete-property/ period;
+			/delete-property/ polarity;
+			/delete-property/ duty-cycle;
+			prescaler = <16>;
+			pwm-mode = "SAIC";
+		};
+	};
+};

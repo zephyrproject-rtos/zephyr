@@ -1,0 +1,45 @@
+# BL5340-DVK board configuration
+
+# Copyright (c) 2019-2021 Nordic Semiconductor ASA
+# Copyright (c) 2021-2023 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+config BOARD_ENABLE_DCDC_APP
+	bool "Application MCU DCDC converter"
+	select SOC_DCDC_NRF53X_APP
+	default y
+
+config BOARD_ENABLE_DCDC_NET
+	bool "Network MCU DCDC converter"
+	select SOC_DCDC_NRF53X_NET
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF53X_HV
+	default y
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "bl5340_dvk/nrf5340/cpunet"
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc on the bl5340_dvk_cpunet for
+	  Bluetooth applications.
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
+
+if BOARD_BL5340_DVK_NRF5340_CPUNET
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "bl5340_dvk/nrf5340/cpuapp"
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
+
+endif # BOARD_BL5340_DVK_NRF5340_CPUNET

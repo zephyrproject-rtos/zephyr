@@ -1,0 +1,22 @@
+family:
+- name: ti_simplelink
+  series:
+  - name: cc13x2_cc26x2
+    socs:
+    - name: cc1352p
+    - name: cc1352r
+    - name: cc2652p
+    - name: cc2652r
+  - name: cc13x2x7_cc26x2x7
+    socs:
+    - name: cc1352p7
+    - name: cc1352r7
+    - name: cc2652p7
+    - name: cc2652r7
+  - name: cc32xx
+    socs:
+    - name: cc3220sf
+    - name: cc3235sf
+  - name: msp432p4xx
+    socs:
+    - name: msp432p401r

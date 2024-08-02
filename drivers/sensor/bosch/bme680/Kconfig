@@ -1,0 +1,118 @@
+# BME680 temperature, pressure, humidity and gas sensor configuration options
+
+# Copyright (c) 2018 Bosch Sensortec GmbH
+# Copyright (c) 2022, Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME680
+	bool "BME680 sensor"
+	default y
+	depends on DT_HAS_BOSCH_BME680_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME680),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME680),spi)
+	help
+	  Enable driver for BME680 I2C- or SPI- based temperature, pressure, humidity and gas sensor.
+
+if BME680
+
+choice
+	prompt "BME680 temperature oversampling"
+	default BME680_TEMP_OVER_2X
+	help
+	  Select temperature oversampling for the BME680 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_TEMP_OVER_1X
+	bool "x1"
+config BME680_TEMP_OVER_2X
+	bool "x2"
+config BME680_TEMP_OVER_4X
+	bool "x4"
+config BME680_TEMP_OVER_8X
+	bool "x8"
+config BME680_TEMP_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 pressure oversampling"
+	default BME680_PRESS_OVER_16X
+	help
+	  Select pressure oversampling for the BME680 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_PRESS_OVER_1X
+	bool "x1"
+config BME680_PRESS_OVER_2X
+	bool "x2"
+config BME680_PRESS_OVER_4X
+	bool "x4"
+config BME680_PRESS_OVER_8X
+	bool "x8"
+config BME680_PRESS_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 humidity oversampling"
+	default BME680_HUMIDITY_OVER_1X
+	help
+	  Select humidity oversampling for the BME680 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_HUMIDITY_OVER_1X
+	bool "x1"
+config BME680_HUMIDITY_OVER_2X
+	bool "x2"
+config BME680_HUMIDITY_OVER_4X
+	bool "x4"
+config BME680_HUMIDITY_OVER_8X
+	bool "x8"
+config BME680_HUMIDITY_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 IIR low-pass filter coefficient"
+	default BME680_FILTER_OFF
+	help
+	  Select the filter coefficient for the BME680 sensor.
+config BME680_FILTER_OFF
+	bool "filter off"
+config BME680_FILTER_2
+	bool "2"
+config BME680_FILTER_4
+	bool "4"
+config BME680_FILTER_8
+	bool "8"
+config BME680_FILTER_16
+	bool "16"
+config BME680_FILTER_32
+	bool "32"
+config BME680_FILTER_64
+	bool "64"
+config BME680_FILTER_128
+	bool "128"
+endchoice
+
+choice
+	prompt "BME680 gas sensor's heater temperature in degree Celsius"
+	default BME680_HEATR_TEMP_LP
+	help
+	  Select the gas sensor's heater temperature for the BME680 sensor.
+config BME680_HEATR_TEMP_LP
+	bool "320"
+config BME680_HEATR_TEMP_ULP
+	bool "400"
+endchoice
+
+choice
+	prompt "BME680 gas sensor's heating duration in milliseconds"
+	default BME680_HEATR_DUR_LP
+	help
+	  Select the gas sensor's heating duration for the BME680 sensor.
+config BME680_HEATR_DUR_LP
+	bool "197"
+config BME680_HEATR_DUR_ULP
+	bool "1943"
+endchoice
+
+endif # BME680

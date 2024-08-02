@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2022 Embla Flatlandsmo <embla.flatlandsmo@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "adafruit_itsybitsy_nrf52840-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	model = "Adafruit ItsyBitsy nRF52840 Express";
+	compatible = "adafruit,itsybitsy-nrf52840";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,uart-mcumgr = &cdc_acm_uart0;
+		zephyr,bt-mon-uart = &cdc_acm_uart0;
+		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 29 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		led-strip = &apa102;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "disabled";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi1 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-1 = <&spi1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spi";
+	status = "okay";
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-1 = <&spi2_sleep>;
+	pinctrl-names = "default", "sleep";
+	apa102: apa102@0 {
+		compatible = "apa,apa102";
+		reg = <0>;
+		spi-max-frequency = <5250000>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_BLUE
+				 LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+	gd25q16: gd25q16@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		writeoc = "pp4o";
+		readoc = "read4io";
+		sck-frequency = <32000000>;
+		jedec-id = [c8 40 15];
+		size = <16777216>;
+		has-dpd;
+		t-enter-dpd = <20000>;
+		t-exit-dpd = <20000>;
+		quad-enable-requirements = "S2B1v1";
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* To enable flashing with UF2 bootloader, we
+		 * must reserve a partition for SoftDevice.
+		 * See https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather?view=all#hathach-memory-map
+		 */
+		reserved_partition_0: partition@0 {
+			label = "SoftDevice";
+			reg = <0x000000000 DT_SIZE_K(152)>;
+		};
+		code_partition: partition@26000 {
+			label = "Application";
+			reg = <0x00026000 DT_SIZE_K(796)>;
+		};
+
+		/*
+		 * The flash starting at 0x000ed000 and ending at
+		 * 0x000f4000 is reserved for use by the application.
+		 */
+		storage_partition: partition@ed000 {
+			label = "storage";
+			reg = <0x0000ed000 DT_SIZE_K(28)>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "UF2";
+			reg = <0x000f4000 DT_SIZE_K(48)>;
+		};
+	};
+};
+
+&gd25q16 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		lfs_partition: partition@0 {
+			label = "lfs_storage";
+			reg = <0x00000000 DT_SIZE_M(2)>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

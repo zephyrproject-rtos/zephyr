@@ -1,0 +1,22 @@
+# Copyright (c) 2022, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32 Clock multiplexer
+        Describes a clock multiplexer, such as per_ck on STM32H7 or
+        CLK48 on STM32L5.
+        The only property of this node is to select a clock input.
+        For instance:
+                &perck {
+                        clocks = <&rcc STM32_SRC_HSI_KER CKPER_SEL(0)>;
+                        status = "okay";
+                };
+
+compatible: "st,stm32-clock-mux"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clocks

@@ -1,0 +1,24 @@
+identifier: yd_esp32/esp32/procpu
+name: YD-ESP32 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - dac
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - nvs
+  - pwm
+  - dac
+  - spi
+  - counter
+  - entropy
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: vcc-gnd

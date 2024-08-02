@@ -1,0 +1,36 @@
+common:
+  timeout: 5
+tests:
+  drivers.clock.stm32_clock_configuration.common_device.wb.i2c1_hsi_lptim1_lse:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_i2c1_hsi_lptim1_lse.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.clock.stm32_clock_configuration.common_device.wb.i2c1_sysclk_lptim1_lsi:
+    extra_args: DTC_OVERLAY_FILE="boards/wb_i2c1_sysclk_lptim1_lsi.overlay"
+    platform_allow: nucleo_wb55rg
+  drivers.clock.stm32_clock_configuration.common_device.g0.i2c1_sysclk_lptim1_lsi:
+    extra_args: DTC_OVERLAY_FILE="boards/g0_i2c1_sysclk_lptim1_lsi.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.clock.stm32_clock_configuration.common_device.g0.i2c1_hsi_lptim1_lse_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/g0_i2c1_hsi_lptim1_lse_adc1_pllp.overlay"
+    platform_allow: nucleo_g071rb
+  drivers.clock.stm32_clock_configuration.common_device.wl.i2c1_hsi_lptim1_lse_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_i2c1_hsi_lptim1_lse_adc1_pllp.overlay"
+    platform_allow: nucleo_wl55jc
+  drivers.clock.stm32_clock_configuration.common_device.wl.i2c1_sysclk_lptim1_lsi:
+    extra_args: DTC_OVERLAY_FILE="boards/wl_i2c1_sysclk_lptim1_lsi.overlay"
+    platform_allow: nucleo_wl55jc
+  drivers.clock.stm32_clock_configuration.common_device.l4.i2c1_sysclk_lptim1_lsi:
+    extra_args: DTC_OVERLAY_FILE="boards/l4_i2c1_sysclk_lptim1_lsi.overlay"
+    platform_allow: disco_l475_iot1
+  drivers.clock.stm32_clock_configuration.common_device.l4.i2c1_hsi_lptim1_lse:
+    extra_args: DTC_OVERLAY_FILE="boards/l4_i2c1_hsi_lptim1_lse.overlay"
+    platform_allow: disco_l475_iot1
+  drivers.clock.stm32_clock_configuration.common_device.g4.i2c1_hsi_adc1_pllp:
+    extra_args: DTC_OVERLAY_FILE="boards/g4_i2c1_hsi_adc1_pllp.overlay"
+    platform_allow: nucleo_g474re
+  drivers.clock.stm32_clock_configuration.common_device.f0.i2c1_hsi:
+    extra_args: DTC_OVERLAY_FILE="boards/f0_i2c1_hsi.overlay"
+    platform_allow: nucleo_f091rc
+  drivers.clock.stm32_clock_configuration.common_device.f3.i2c1_hsi:
+    extra_args: DTC_OVERLAY_FILE="boards/f3_i2c1_hsi.overlay"
+    platform_allow: stm32f3_disco

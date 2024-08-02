@@ -1,0 +1,104 @@
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 Pin controller Node
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are default pin configurations.
+           They will be applied in case no `bias-foo` or `driver-bar` properties
+           are set.
+
+compatible: "st,stm32-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  remap-pa11:
+    type: boolean
+    description: Remaps the PA11 pin to operate as PA9 pin.
+      Use of this property is restricted to STM32G0 and STM32C0 SoCs.
+
+  remap-pa12:
+    type: boolean
+    description: Remaps the PA12 pin to operate as PA10 pin.
+      Use of this property is restricted to STM32G0 and STM32C0 SoCs.
+
+  remap-pa11-pa12:
+    type: boolean
+    description: Remaps the PA11/PA12 pin to operate as PA9/PA10 pin.
+      Use of this property is restricted to STM32F070x SoCs.
+
+child-binding:
+  description: |
+      This binding gives a base representation of the STM32 pins configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - output-low
+        - output-high
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Reused from
+        https://github.com/torvalds/linux/blob/master/Documentation/devicetree/bindings/pinctrl/st,stm32-pinctrl.yaml
+        Integer array, represents gpio pin number and mux setting.
+        These defines are calculated as: ((port * 16 + line) << 8) | function
+        With:
+        - port: The gpio port index (PA = 0, PB = 1, ..., PK = 11)
+        - line: The line offset within the port (PA0 = 0, PA1 = 1, ..., PA15 = 15)
+        - function: The function number, can be:
+        * 0 : Alternate Function 0
+        * 1 : Alternate Function 1
+        * 2 : Alternate Function 2
+        * ...
+        * 15 : Alternate Function 15
+        * 16 : Analog
+        * 17 : GPIO
+        In case selected pin function is GPIO, pin is statically configured as
+        a plain input/output GPIO. Default configuration is input. Output value
+        can be configured by adding 'ouptut-low' or 'output-high' properties
+        to the pin configuration.
+
+        To simplify the usage, macro is available to generate "pinmux" field.
+        This macro is available here:
+          -include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h
+        Some examples of macro usage:
+           GPIO A9 set as alternate function 2
+        ... {
+                 pinmux = <STM32_PINMUX('A', 9, AF2)>;
+        };
+           GPIO A9 set as analog
+        ... {
+                 pinmux = <STM32_PINMUX('A', 9, ANALOG)>;
+        };
+           GPIO A9 set as GPIO output high
+        ... {
+                 pinmux = <STM32_PINMUX('A', 9, GPIO)>;
+                 output-high;
+        };
+
+    slew-rate:
+      type: string
+      default: "low-speed"
+      enum:
+        - "low-speed"           # Default value.
+        - "medium-speed"
+        - "high-speed"
+        - "very-high-speed"
+      description: |
+        Pin speed. Default to low-speed. For few pins (PA11 and
+        PB3 depending on SoCs)hardware reset value could differ
+        (very-high-speed). Carefully check reference manual for these pins.

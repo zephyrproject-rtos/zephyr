@@ -1,0 +1,8 @@
+tests:
+  mgmt.ec_host_cmd.simulator.core:
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: ec_host_cmd

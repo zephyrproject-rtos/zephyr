@@ -1,0 +1,14 @@
+# Ambiq SDK GPIO
+#
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config GPIO_AMBIQ
+	bool "AMBIQ GPIO driver"
+	default y
+	depends on DT_HAS_AMBIQ_GPIO_ENABLED
+	select AMBIQ_HAL
+	help
+	  Enable driver for Ambiq gpio.

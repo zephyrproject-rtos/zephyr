@@ -1,0 +1,98 @@
+# Copyright (c), 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM1300 PMIC
+
+  The PMIC has two buck converters and two LDOs.
+  The regulators need to be defined as child nodes, strictly following the
+  BUCK1,2 LDO1..2, node names. For
+  example:
+
+  pmic@6b {
+    reg = <0x6b>;
+    ...
+    regulators {
+      compatible = "nordic,npm1300-regulator";
+
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+      LDO2 {
+        /* all properties for LDO2 */
+      };
+    };
+  };
+
+compatible: "nordic,npm1300-regulator"
+
+include: base.yaml
+
+properties:
+  dvs-gpios:
+    type: phandle-array
+    description: |
+      List of SOC GPIOs connected to PMIC GPIOs.
+      Set_dvs_mode will drive these pins as follows:
+        DVS mode 1 will enable the first pin
+        DVS mode 2 will enable the second pin
+        DVS mode 3 will drive the first and second pins
+        etc.
+      The effect of the mode change is defined by the enable-gpios
+      and pwm_gpios fields for each of the regulator blocks.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+        - regulator-allowed-modes
+        - regulator-initial-mode
+        - regulator-min-microamp
+        - regulator-max-microamp
+        - startup-delay-us
+        - off-on-delay-us
+
+  properties:
+    retention-microvolt:
+      type: int
+      description: |
+        Retention mode voltage in microvolts.
+
+    enable-gpios:
+      type: phandle-array
+      description: |
+        Regulator enable controlled by specified regulator GPIO pin.
+        When set regulator must be enabled/disabled using set_dvs_mode.
+
+    pwm-gpios:
+      type: phandle-array
+      description: |
+        Regulator enable controlled by specified regulator GPIO pin.
+        When set regulator must be enabled/disabled using set_dvs_mode.
+
+    retention-gpios:
+      type: phandle-array
+      description: |
+        Retention mode controlled by specified regulator GPIO pin.
+
+    soft-start-microamp:
+      type: int
+      enum:
+        - 10000
+        - 20000
+        - 35000
+        - 50000
+      description: |
+        Soft start current limit in microamps.

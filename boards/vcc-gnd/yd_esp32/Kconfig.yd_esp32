@@ -1,0 +1,9 @@
+# YD-ESP32 board configuration
+
+# Copyright (c) 2023 Julio Cesar <hi@jcsx.dev>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_YD_ESP32
+	select SOC_ESP32_WROOM_32UE_N4
+	select SOC_ESP32_PROCPU if BOARD_YD_ESP32_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_YD_ESP32_ESP32_APPCPU

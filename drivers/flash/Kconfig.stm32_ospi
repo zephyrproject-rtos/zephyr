@@ -1,0 +1,28 @@
+# STM32 Octo SPI flash driver configuration options
+
+# Copyright (c) 2022 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_OCTOSPI_1_HAS_DMA := $(dt_nodelabel_has_prop,octospi1,dmas)
+DT_STM32_OCTOSPI_2_HAS_DMA := $(dt_nodelabel_has_prop,octospi2,dmas)
+
+config FLASH_STM32_OSPI
+	bool "STM32 Octo SPI Flash driver"
+	default y
+	depends on DT_HAS_ST_STM32_OSPI_NOR_ENABLED
+	select USE_STM32_HAL_OSPI if !SOC_SERIES_STM32H5X
+	select USE_STM32_HAL_XSPI if SOC_SERIES_STM32H5X
+	select USE_STM32_LL_DLYB if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32U5X)
+	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select DMA if $(DT_STM32_OCTOSPI_1_HAS_DMA) || $(DT_STM32_OCTOSPI_2_HAS_DMA)
+	select USE_STM32_HAL_DMA if $(DT_STM32_OCTOSPI_1_HAS_DMA) || \
+					$(DT_STM32_OCTOSPI_2_HAS_DMA)
+	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32U5X && \
+					($(DT_STM32_OCTOSPI_1_HAS_DMA) || \
+					 $(DT_STM32_OCTOSPI_2_HAS_DMA))
+	help
+	  Enable OSPI-NOR support on the STM32 family of processors.

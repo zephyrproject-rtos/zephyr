@@ -1,0 +1,26 @@
+description: SAM0 GPIO PORT node
+
+compatible: "atmel,sam0-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  "#atmel,pin-cells":
+    type: int
+    required: true
+    const: 2
+    description: Number of items to expect in a atmel,pins specifier
+
+gpio-cells:
+  - pin
+  - flags
+
+atmel,pin-cells:
+  - pin
+  - peripheral

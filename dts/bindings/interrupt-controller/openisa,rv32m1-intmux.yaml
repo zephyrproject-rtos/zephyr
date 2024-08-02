@@ -1,0 +1,12 @@
+# Copyright (c) 2018 Foundries.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: RV32M1 INTMUX IP
+
+compatible: "openisa,rv32m1-intmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

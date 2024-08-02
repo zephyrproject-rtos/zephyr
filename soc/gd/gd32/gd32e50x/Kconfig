@@ -1,0 +1,11 @@
+# Copyright (c) 2022, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32E50X
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M33
+	select ARMV8_M_DSP
+	select GD32_HAS_AFIO_PINMUX
+	select GD32_HAS_IRC_40K

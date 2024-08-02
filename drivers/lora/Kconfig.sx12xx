@@ -1,0 +1,33 @@
+#
+# Copyright (c) 2019 Manivannan Sadhasivam
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LORA_SX127X
+	bool "Semtech SX127x driver"
+	default y
+	depends on DT_HAS_SEMTECH_SX1272_ENABLED || DT_HAS_SEMTECH_SX1276_ENABLED
+	select HAS_SEMTECH_SX1272 if DT_HAS_SEMTECH_SX1272_ENABLED
+	select HAS_SEMTECH_SX1276 if DT_HAS_SEMTECH_SX1276_ENABLED
+	depends on SPI
+	help
+	  Enable LoRa driver for Semtech SX1272 and SX1276.
+
+config LORA_SX126X
+	bool "Semtech SX126x driver"
+	default y
+	depends on DT_HAS_SEMTECH_SX1261_ENABLED || DT_HAS_SEMTECH_SX1262_ENABLED
+	select HAS_SEMTECH_SX126X
+	depends on SPI
+	help
+	  Enable LoRa driver for Semtech SX1261 and SX1262.
+
+config LORA_STM32WL_SUBGHZ_RADIO
+	bool "STM32WL SUBGHZ radio driver"
+	default y
+	depends on DT_HAS_ST_STM32WL_SUBGHZ_RADIO_ENABLED
+	select HAS_SEMTECH_SX126X
+	depends on SPI
+	help
+	  Enable LoRa driver for STM32WL SUBGHZ radio.

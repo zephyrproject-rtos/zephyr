@@ -1,0 +1,27 @@
+# BL654 DVK board configuration
+
+# Copyright (c) 2019 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BL654_DVK
+
+config BT_CTLR
+	default BT
+
+if DAC
+
+config I2C
+	default y
+
+endif # DAC
+
+endif # BOARD_BL654_DVK
+
+if BOARD_BL654_DVK_NRF52840_PA
+
+# Limit max power for FCC compliance with power amplifier
+choice BT_CTLR_TX_PWR
+	default BT_CTLR_TX_PWR_MINUS_4
+endchoice
+
+endif # BOARD_BL654_DVK_NRF52840_PA

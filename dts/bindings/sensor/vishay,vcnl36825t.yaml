@@ -1,0 +1,92 @@
+# Copyright (c) 2024 Juliane Schulze, deveritec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  VCNL36825T proximity and ambient light sensor.  See datasheet at
+  https://www.vishay.com/docs/84274/vcnl36825t.pdf
+
+compatible: "vishay,vcnl36825t"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  operation-mode:
+    type: string
+    default: "auto"
+    enum: ["auto", "force"]
+    description: |
+      Mode of operation.
+      - "auto": the sensor performs sampling continuously,
+      - "force": the sampling is performed on every fetch command.
+
+      Defaults to sensor reset value.
+
+      Note: "force"-mode only available if low-power mode inactive.
+
+  measurement-period:
+    type: int
+    default: 40
+    enum: [10, 20, 40, 80, 160, 320]
+    description: |
+      Measurement period of the sensors in ms.
+      Higher values yield lower power consumption.
+      Note:
+        - [10, 80] ms only if low power mode is inactive
+        - [80, 320] ms only in low power mode
+
+      Defaults to 40 ms which is supported in both normal and low-power mode.
+
+  proximity-it:
+    type: string
+    default: "1"
+    enum: ["1", "2", "4", "8"]
+    description: |
+      Proximity integration time in T.
+      Defaults to sensor reset value.
+
+  proximity-itb:
+    type: int
+    default: 25
+    enum: [25, 50]
+    description: |
+      Duration of the proximity integration time T in us.
+      Defaults to sensor reset value.
+
+  multi-pulse:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8]
+    description: |
+      Number of pulses per single measurement.
+      Higher values increase accuracy and power consumption.
+      Defaults to sensor reset value.
+
+  laser-current:
+    type: int
+    default: 10
+    enum: [10, 12, 14, 16, 18, 20]
+    description: |
+      Current used by the laser during measurement periods.
+      Defaults to minimum allowed value.
+
+  low-power:
+    type: boolean
+    description: |
+      Activate low power mode.
+      This allows to increase the measurement period up to 320 ms.
+
+  high-gain:
+    type: boolean
+    description: |
+      Activate the high gain mode.
+
+  sunlight-cancellation:
+    type: boolean
+    description: |
+      Activate sunlight cancellation.
+
+  high-dynamic-output:
+    type: boolean
+    description: |
+      Activate 16bit high dynamic output mode.
+      Cannot be used with threshold interrupt.

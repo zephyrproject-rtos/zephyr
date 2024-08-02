@@ -1,0 +1,18 @@
+/* Copyright (c) 2023 North River Systems Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/sensor/ina230.h>
+
+ &i2c0 {
+	 status = "okay";
+
+	/* Datasheet example and Default DT Configuration Test */
+	ina230_default_test: ina230@40 {
+		compatible = "ti,ina230";
+		reg = <0x40>;
+		rshunt-micro-ohms = <2000>;
+		current-lsb-microamps = <1000>;
+		status = "okay";
+	};
+};

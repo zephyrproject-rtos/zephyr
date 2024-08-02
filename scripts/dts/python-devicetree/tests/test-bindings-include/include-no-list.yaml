@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: A map element with just a name is valid, and has no filters.
+compatible: include-no-list
+include:
+  - name: include.yaml

@@ -1,0 +1,51 @@
+# Copyright (c) 2021 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.$(HWM_SCHEME)"
+
+comment "Sysbuild image configuration"
+
+osource "$(BOARD_DIR)/Kconfig.sysbuild"
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.sysbuild"
+
+menu "Modules"
+
+source "modules/Kconfig.sysbuild"
+
+endmenu
+
+config EXPERIMENTAL
+	bool
+	help
+	  Symbol that must be selected by a feature if it is considered to be
+	  at an experimental implementation stage.
+
+config WARN_EXPERIMENTAL
+	bool
+	prompt "Warn on experimental usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any experimental
+	  features are enabled.
+
+config DEPRECATED
+	bool
+	help
+	  Symbol that must be selected by a feature or module if it is
+	  considered to be deprecated.
+
+config WARN_DEPRECATED
+	bool
+	default y
+	prompt "Warn on deprecated usage"
+	help
+	  Print a warning when the Kconfig tree is parsed if any deprecated
+	  features are enabled.
+
+rsource "images/Kconfig"
+
+menu "Build options"
+
+rsource "build/Kconfig"
+
+endmenu

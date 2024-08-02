@@ -1,0 +1,12 @@
+description: Raspberry Pi Pico UART
+
+compatible: "raspberrypi,pico-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

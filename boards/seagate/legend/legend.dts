@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f070Xb.dtsi>
+#include <st/f0/stm32f070cbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/seagate_legend_b1414.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		watchdog0 = &iwdg;
+		led-strip = &led_strip_spi;
+	};
+
+	board_id: brd-id {
+		compatible = "gpio-keys";
+		brd_id0: brd_id_0 {
+			label = "BRD_ID_0";
+			gpios = <&gpioc 13 0>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		brd_id1: brd_id_1 {
+			label = "BRD_ID_1";
+			gpios = <&gpioc 14 0>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+		brd_id2: brd_id_2 {
+			label = "BRD_ID_2";
+			gpios = <&gpioc 15 0>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	dmas = <&dma1 3 0x20440>, <&dma1 2 0x20480>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	led_strip_spi: b1414@0 {
+		compatible = "everlight,b1414", "worldsemi,ws2812-spi";
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <SPI_FREQ>;
+
+		/* B1414 */
+		spi-one-frame = <ONE_FRAME>;
+		spi-zero-frame = <ZERO_FRAME>;
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+		reset-delay = <250>;
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	spi_nor: spi_nor@0 {
+		status = "okay";
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		size = <1048576>;
+		/*
+		 * Main flash source
+		 *
+		 * Vendor     : Puya
+		 * Model      : P25Q21H
+		 * Total size : 256 KB
+		 * Erase size : whole chip, 64 and 32 KB blocks, 4 KB sectors,
+		 *              256 B pages
+		 * Write size : up to 256 B (page size)
+		 * Lifetime   : 100K erase/program cycles on each sector/block
+		 */
+		jedec-id = [85 40 12];
+		/*
+		 * Alternate flash source
+		 *
+		 * Vendor     : Fudan
+		 * Model      : FM25F01B
+		 * Total size : 128 KB
+		 * Erase size : whole chip, 64 and 32 KB blocks, 4 KB sectors
+		 * Write size : up to 256 B (page size)
+		 * Lifetime   : 100K erase/program cycles on each sector/block
+		 *
+		 * jedec-id = [a1 31 11];
+		 *
+		 * Model only found in first Jordan (2"5) EVT revision
+		 *
+		 * Vendor     : Fudan
+		 * Model      : FM25F005
+		 * Total size : 64 KB
+		 * Erase size : whole chip, 64 and 32 KB blocks, 4 KB sectors
+		 *
+		 * jedec-id = [a1 31 10];
+		 */
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			product_info: partition@0 {
+				label = "product-info";
+				reg = <0x00000000 DT_SIZE_K(4)>;
+			};
+			led_das: partition@10000 {
+				label = "led-das";
+				reg = <0x00001000 DT_SIZE_K(60)>;
+			};
+		};
+	};
+};
+
+&spi_nor {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&timers3 {
+	/*
+	 * The maximum period needed on Legend devices for activity LED
+	 * hardware blinking is 250ms (i.e. "error" fast blink at 4 Hz).
+	 *
+	 * We can use the following equation to compute the
+	 * corresponding prescaler value:
+	 *
+	 * period_max = counter_size / cycles_per_second
+	 *
+	 * With:
+	 *
+	 * cycles_per_second = 48 MHz / (prescaler + 1)
+	 * counter_size = 2^16
+	 * period_max = 0.25
+	 *
+	 * Which gives:
+	 *
+	 * prescaler = 48 MHz * 0.25 / 2^16 + 1 = 182
+	 *
+	 * So any prescaler value above 182 is good for a 4 Hz hardware
+	 * blinking. In addition the PWM frequency must be as high as
+	 * possible to fool eyes and cameras with steady brightness
+	 * levels.
+	 */
+	st,prescaler = <200>;
+
+	pwm3: pwm {
+		pinctrl-0 = <&tim3_ch3_pb0>;
+		pinctrl-names = "default";
+		status = "disabled";
+	};
+};
+
+&gpiod {
+	status = "disabled";
+};
+
+&gpiof {
+	status = "disabled";
+};
+
+&iwdg {
+	status = "okay";
+};

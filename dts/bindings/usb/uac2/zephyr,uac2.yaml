@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 instance
+
+compatible: "zephyr,uac2"
+
+# Child nodes of "zephyr,uac2" compatibles are supposed to be Audio Control
+# entities, i.e. clock sources, input terminals, output terminals, etc.
+# After all Audio Control entities, the Audio Streaming interface compatibles
+# should follow (as child nodes of "zephyr,uac2").
+#
+# The only reason for putting Audio Streaming interfaces at the end is because
+# Audio Control entities derive their unique ID from child index (+ 1). For most
+# cases the order shouldn't really matter, but if there happen to be maximum
+# possible number of entities (255) then the Audio Streaming would inadvertently
+# "consume" one of the available IDs.
+
+properties:
+  audio-function:
+    type: int
+    required: true
+    description: |
+      Constant, indicating the primary use of this audio function, as intended
+      by the manufacturer. Use Audio Function category codes define from
+      dt-bindings/usb/audio.h.
+
+  interrupt-endpoint:
+    type: boolean
+    description: |
+      Enable to support an optional interrupt endpoint to inform the Host about
+      dynamic changes that occur on the different addressable entities.
+
+  latency-control:
+    type: string
+    description: Latency Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"

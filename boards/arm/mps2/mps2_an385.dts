@@ -1,0 +1,284 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "arm,mps2";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&gpio_led0 0>;
+			label = "USERLED0";
+		};
+		led_1: led_1 {
+			gpios = <&gpio_led0 1>;
+			label = "USERLED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "USERPB0";
+			gpios = <&gpio_button 0>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1: button_1 {
+			label = "USERPB1";
+			gpios = <&gpio_button 1>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x400000>;
+	};
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0 0x400000>;
+	};
+
+	sim_flash_controller: sim_flash_controller {
+		compatible = "zephyr,sim-flash";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-value = <0x00>;
+
+		flash_sim0: flash_sim@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 0x8000>;
+
+			erase-block-size = <1024>;
+			write-block-size = <4>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: partition@0 {
+					label = "storage_partition";
+					reg = <0x00000000 0x8000>;
+				};
+			};
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <25000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		timer0: timer@40000000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40000000 0x1000>;
+			interrupts = <8 3>;
+		};
+
+		timer1: timer@40001000 {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x40001000 0x1000>;
+			interrupts = <9 3>;
+		};
+
+		dtimer0: dtimer@40002000 {
+			compatible = "arm,cmsdk-dtimer";
+			reg = <0x40002000 0x1000>;
+			interrupts = <10 3>;
+		};
+
+		uart0: uart@40004000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40004000 0x1000>;
+			interrupts = <1 3 0 3>;
+			interrupt-names = "tx", "rx";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+		};
+
+		uart1: uart@40005000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40005000 0x1000>;
+			interrupts = <3 3 2 3>;
+			interrupt-names = "tx", "rx";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+		};
+
+		uart2: uart@40006000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40006000 0x1000>;
+			interrupts = <5 3 4 3>;
+			interrupt-names = "tx", "rx";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+		};
+
+		uart3: uart@40007000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40007000 0x1000>;
+			interrupts = <19 3 18 3>;
+			interrupt-names = "tx", "rx";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+		};
+
+		wdog0: wdog@40008000 {
+			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
+			reg = <0x40008000 0x1000>;
+		};
+
+		uart4: uart@40009000 {
+			compatible = "arm,cmsdk-uart";
+			reg = <0x40009000 0x1000>;
+			interrupts = <21 3 20 3>;
+			interrupt-names = "tx", "rx";
+			clocks = <&sysclk>;
+			current-speed = <115200>;
+		};
+
+		gpio0: gpio@40010000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40010000 0x1000>;
+			interrupts = <6 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@40011000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40011000 0x1000>;
+			interrupts = <7 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2: gpio@40012000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40012000 0x1000>;
+			interrupts = <16 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@40013000 {
+			compatible = "arm,cmsdk-gpio";
+			reg = <0x40013000 0x1000>;
+			interrupts = <17 3>;
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		eth0: eth@40200000 {
+			/* Linux has "smsc,lan9115" */
+			compatible = "smsc,lan9220";
+			/* Such a big size from memory map in AN385 */
+			/* Actual reg range is ~0x200 */
+			reg = <0x40200000 0x100000>;
+			interrupts = <13 3>;
+		};
+
+		i2c_touch: i2c@40022000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40022000 0x1000>;
+		};
+
+		i2c_audio_conf: i2c@40023000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40023000 0x1000>;
+		};
+
+		i2c_shield0: i2c@40029000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40029000 0x1000>;
+		};
+
+		i2c_shield1: i2c@4002a000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4002a000 0x1000>;
+		};
+
+		gpio_led0: mps2_fpgaio@40028000 {
+			compatible = "arm,mps2-fpgaio-gpio";
+
+			reg = <0x40028000 0x4>;
+			gpio-controller;
+			#gpio-cells = <1>;
+			ngpios = <2>;
+		};
+
+		gpio_button: mps2_fpgaio@40028008 {
+			compatible = "arm,mps2-fpgaio-gpio";
+
+			reg = <0x40028008 0x4>;
+			gpio-controller;
+			#gpio-cells = <1>;
+			ngpios = <2>;
+		};
+
+		gpio_misc: mps2_fpgaio@4002804c {
+			compatible = "arm,mps2-fpgaio-gpio";
+
+			reg = <0x4002804c 0x4>;
+			gpio-controller;
+			#gpio-cells = <1>;
+			ngpios = <10>;
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,172 @@
+/*
+ * Copyright (c) 2019 Antony Pavlov <antonynpavlov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l1/stm32l152Xe.dtsi>
+#include <st/l1/stm32l152retx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32L152RE-NUCLEO board";
+	compatible = "st,stm32l152re-nucleo";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpioa 5 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		sw0 = &user_button;
+		eeprom-0 = &eeprom;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div = <2>;
+	mul = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi3 {
+	/* SPI3 on the ST Morpho Connector CN7 pins 17, 1, 2, 3*/
+	pinctrl-0 = <&spi3_nss_pa15 &spi3_sck_pc10
+		     &spi3_miso_pc11 &spi3_mosi_pc12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&eeprom {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 2KB of storage at the end of 512KB flash */
+		storage_partition: partition@7f800 {
+			label = "storage";
+			reg = <0x0007f800 DT_SIZE_K(2)>;
+		};
+	};
+};
+
+&timers3 {
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pa6>;
+		pinctrl-names = "default";
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};

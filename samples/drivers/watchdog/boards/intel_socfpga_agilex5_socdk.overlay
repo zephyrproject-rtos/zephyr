@@ -1,0 +1,18 @@
+/*
+ * Copyright (C) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+};
+
+&watchdog0 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+			IRQ_DEFAULT_PRIORITY>;
+	status = "okay";
+};

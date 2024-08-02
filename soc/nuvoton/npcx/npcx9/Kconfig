@@ -1,0 +1,21 @@
+# Nuvoton Cortex-M4 Embedded Controller NPCX9 series
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NPCX9
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_NPCX
+	select HAS_PM
+
+config NPCX_VCC1_RST_HANG_WORKAROUND
+	bool
+	depends on SOC_NPCX9M7FB
+	default y
+	help
+	  Workaround the issue "Possible Hang-Up After VCC1_RST Reset"
+	  in the npcx9m7fb SoC errata.

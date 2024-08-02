@@ -1,0 +1,4 @@
+series:
+- name: xtensa_sample_controller
+  socs:
+  - name: xtensa_sample_controller

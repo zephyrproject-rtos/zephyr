@@ -1,0 +1,11 @@
+sample:
+  description: ArgonKey sensor testing
+  name: ArgonKey test
+tests:
+  sample.board.96b_argonkey.microphone:
+    harness: sensor
+    platform_allow: 96b_argonkey
+    tags: sensors
+    depends_on:
+      - i2s
+      - gpio

@@ -1,0 +1,20 @@
+common:
+  modules:
+    - littlefs
+  tags:
+    - logging
+    - backend
+    - filesystem
+    - fs
+    - littlefs
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - nrf52840dk/nrf52840
+    - mr_canhubk3
+  integration_platforms:
+    - native_sim
+tests:
+  logging.backend.fs.automounted: {}
+  logging.backend.fs.manualmounted:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="automount.overlay"

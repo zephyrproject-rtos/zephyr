@@ -1,0 +1,5 @@
+board:
+  name: stm32373c_eval
+  vendor: st
+  socs:
+    - name: stm32f373xc

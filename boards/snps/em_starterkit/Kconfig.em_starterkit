@@ -1,0 +1,17 @@
+# DesignWare ARC EM Starter Kit board configuration
+
+# Copyright (c) 2016 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EM_STARTERKIT
+	select SOC_EMSK
+	select SOC_EMSK_EM7D if BOARD_EM_STARTERKIT_EMSK_EM7D
+	select SOC_EMSK_EM9D if BOARD_EM_STARTERKIT_EMSK_EM9D
+	select SOC_EMSK_EM11D if BOARD_EM_STARTERKIT_EMSK_EM11D
+	help
+	  The DesignWare ARC EM Starter Kit board is a board
+	  that can host up to 3 different SOC FPGA bit files.
+	  Both version 2.2 and 2.3 firmware have EM7D, EM9D and EM11D configurations.
+	  EM9D using CCM memories and is a Harvard Architecture.
+	  EM7D and EM11D have access to 128MB DRAM and use i-cache and d-cache.
+	  EM7D of EMSK 2.3 supports secure mode.

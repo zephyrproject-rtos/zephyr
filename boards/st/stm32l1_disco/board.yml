@@ -1,0 +1,9 @@
+boards:
+  - name: stm32l1_disco
+    vendor: st
+    socs:
+      - name: stm32l151xb
+  - name: stm32l152c_disco
+    vendor: st
+    socs:
+      - name: stm32l152xc

@@ -1,0 +1,43 @@
+common:
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  platform_allow:
+    - mps2/an521/cpu0/ns
+    - nrf5340dk/nrf5340/cpuapp/ns
+    - nrf9160dk/nrf9160/ns
+    - nrf9161dk/nrf9161/ns
+    - v2m_musca_s1/musca_s1/ns
+  modules:
+    - psa-arch-tests
+    - tf-m-tests
+  integration_platforms:
+    - mps2/an521/cpu0/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "\\*\\*\\*\\*\\* PSA Architecture Test Suite - Version .* \\*\\*\\*\\*\\*"
+      - "TOTAL FAILED *: 0"
+sample:
+  name: "TFM PSA Test"
+
+tests:
+  sample.tfm.psa_test_protected_storage:
+    extra_args: "CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE=y"
+    timeout: 120
+  sample.tfm.psa_test_internal_trusted_storage:
+    extra_args: "CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE=y"
+  sample.tfm.psa_test_storage:
+    extra_args: "CONFIG_TFM_PSA_TEST_STORAGE=y"
+    timeout: 130
+  sample.tfm.psa_test_crypto:
+    timeout: 120
+    extra_args: "CONFIG_TFM_PSA_TEST_CRYPTO=y"
+
+# The test suite below has been disabled due to licensing issues with the QCBOR
+# library used by t_cose. This test will be re-enabled once the licensing
+# issues have been sorted out upstream.
+#
+#  sample.tfm.psa_test_initial_attestation:
+#    extra_args: "CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION=y"

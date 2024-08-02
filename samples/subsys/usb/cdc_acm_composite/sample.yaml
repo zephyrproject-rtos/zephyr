@@ -1,0 +1,17 @@
+sample:
+  description: Application with two CDC ACM instances requires at least
+    two OUT and four IN endpoints on the USB device controller.
+  name: CDC ACM Composite USB
+tests:
+  sample.usb.cdc-acm-composite:
+    depends_on: usb_device
+    tags: usb
+    platform_exclude:
+      - nucleo_f429zi
+      - nucleo_f207zg
+    arch_exclude: posix
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"

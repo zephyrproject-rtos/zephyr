@@ -1,0 +1,23 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 GMAC MDIO controller.
+
+  Driver for the GMAC Station Management Agent (SMA), which is a two wire
+  interface (MDC/MDIO), implemented as per IEEE 802.3 specification. SMA
+  supports both MDIO Clause 45 and Clause 22 frame structure.
+
+compatible: "nxp,s32-gmac-mdio"
+
+include: [mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true

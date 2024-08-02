@@ -1,0 +1,90 @@
+# Private config options for echo-server sample app
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking echo-server sample application"
+
+config NET_SAMPLE_NUM_HANDLERS
+	int "How many connections to serve at the same time"
+	default 1
+	help
+	  Each connection is served by a thread which needs
+	  memory. Only increase the value here if really needed.
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_VLAN_TAG
+	int "VLAN tag for second interface"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
+	string "My IPv6 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
+	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_NETMASK
+	string "My IPv4 netmask for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_VLAN_TAG
+	int "VLAN tag for third interface"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_TUNNEL_PEER_ADDR
+	string "Remote IP address of the tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  Use overlay-tunnel.conf to setup the tunnel support.
+
+config NET_SAMPLE_TUNNEL_MY_ADDR
+	string "My address for tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_PSK_HEADER_FILE
+	string "Header file containing PSK"
+	default "dummy_psk.h"
+	depends on MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	help
+	  Name of a header file containing a
+	  pre-shared key.
+
+config NET_SAMPLE_CERTS_WITH_SC
+	bool "Signed certificates"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable this flag, if you are interested to run this
+	  application with signed certificates and keys.
+
+source "Kconfig.zephyr"

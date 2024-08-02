@@ -1,0 +1,13 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUX TPM PWM
+
+config PWM_MCUX_TPM
+	bool "MCUX TPM PWM driver"
+	default y
+	depends on DT_HAS_NXP_KINETIS_TPM_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable the MCUX TPM PWM driver.

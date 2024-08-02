@@ -1,0 +1,75 @@
+# NXP MCR20A configuration options
+
+# Copyright (c) 2017 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_MCR20A
+	bool "NXP MCR20A Driver support"
+	default y
+	depends on DT_HAS_NXP_MCR20A_ENABLED
+	select SPI
+
+if IEEE802154_MCR20A
+
+config MCR20A_IS_PART_OF_KW2XD_SIP
+	bool "MCR20A device is part of KW2xD SiP"
+	help
+	  If this option is set, the driver does not perform a hardware
+	  reset and the CLK_OUT frequency is not set, instead these settings
+	  are performed during the initialization of the SoC.
+
+choice
+	prompt "CLK_OUT frequency"
+	default MCR20A_CLK_OUT_4MHZ if MCR20A_IS_PART_OF_KW2XD_SIP
+	default MCR20A_CLK_OUT_DISABLED
+	help
+	  Configuration of the MCR20A clock output pin.
+
+config MCR20A_CLK_OUT_DISABLED
+	bool "Disabled"
+
+config MCR20A_CLK_OUT_32MHZ
+	bool "32 MHz"
+
+config MCR20A_CLK_OUT_16MHZ
+	bool "16 MHz"
+
+config MCR20A_CLK_OUT_8MHZ
+	bool "8 MHz"
+
+config MCR20A_CLK_OUT_4MHZ
+	bool "4 MHz"
+
+config MCR20A_CLK_OUT_1MHZ
+	bool "1 MHz"
+
+config MCR20A_CLK_OUT_250KHZ
+	bool "250 kHz"
+
+config MCR20A_CLK_OUT_62500HZ
+	bool "62500 Hz"
+
+config MCR20A_CLK_OUT_32768HZ
+	bool "32768 Hz"
+
+endchoice
+
+config IEEE802154_MCR20A_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_MCR20A_INIT_PRIO
+	int "MCR20A initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware mcr20a requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
+
+
+endif

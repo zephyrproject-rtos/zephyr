@@ -1,0 +1,29 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_UHC_MAX3421E := maxim,max3421e_spi
+
+config UHC_MAX3421E
+	bool "MAX3421E driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX3421E_SPI_ENABLED
+	select SPI
+	help
+	  This option enables MAX3421E USB Peripheral/Host Controller with SPI
+	  Interface.
+
+if UHC_MAX3421E
+
+config MAX3421E_THREAD_STACK_SIZE
+	int "Driver internal thread stack size"
+	default 512
+	help
+	  Size of the stack used in the driver.
+
+config MAX3421E_OSC_WAIT_RETRIES
+	int "Maximum retries for oscillator ready event"
+	default 3
+	help
+	  Specify the number of retries for oscillator ready event.
+
+endif #UHC_MAX3421E

@@ -1,0 +1,13 @@
+# Atmel SAMC21 MCU series
+
+# Copyright (c) 2022 Kamil Serwus
+# Copyright (c) 2023-2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMC21
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select PLATFORM_SPECIFIC_INIT

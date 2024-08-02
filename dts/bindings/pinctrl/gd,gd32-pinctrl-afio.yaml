@@ -1,0 +1,136 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The GD32 pin controller (AFIO model) is a singleton node responsible for
+    controlling pin function selection and pin properties. For example, you can
+    use this node to route USART0 RX to pin PA10 and enable the pull-up resistor
+    on the pin. Remapping is also supported.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined combinations for the SoC variant used by the board */
+      #include <dt-bindings/pinctrl/gd32f403z(k-i-g-e-c-b)xx-pinctrl.h>
+
+      &pinctrl {
+        /* configuration for the usart0 "default" state */
+        usart0_default: usart0_default {
+          /* group 1 */
+          group1 {
+            /* configure PA9 as USART0 TX and PA11 as USART0 CTS (no remap) */
+            pinmux = <USART0_TX_PA9_NORMP>, <USART0_CTS_PA11_NORMP>;
+          };
+          /* group 2 */
+          group2 {
+            /* configure PA10 as USART0 RX and PA12 as USART0 RTS (no remap) */
+            pinmux = <USART0_RX_PA10_NORMP>, <USART0_RTS_PA12_NORMP>;
+            /* both PA10 and PA12 have pull-up enabled */
+            bias-pull-up;
+          };
+
+        /* configuration for the usart0 "sleep" state */
+        usart0_sleep: usart0_sleep {
+          /* group 1 */
+          group1 {
+            /* configure PA9, PA10, PA11 and PA12 in analog mode */
+            pinmux = <ANALOG_PA9>, <ANALOG_PA10>, <ANALOG_PA12>, <ANALOG_PA11>;
+          };
+        };
+
+    The 'usart0_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state. Similarly, 'usart0_sleep' child node encodes the pin configurations
+    for the sleep state (used in device low power mode). Note that analog mode
+    is used for low power states because it disconnects the pin pull-up/down
+    resistor, schmitt trigger, and output buffer.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'pinmux'
+    property.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'bias-pull-up' property in group 2. Here is a list of
+    supported standard pin properties:
+
+    - drive-push-pull: Push-pull drive mode (default, not required). Only
+      applies for GPIO_IN mode.
+    - drive-open-drain: Open-drain drive mode. Only applies for GPIO_IN mode.
+    - bias-disable: Disable pull-up/down (default, not required). Only applies
+      for GPIO_IN mode.
+    - bias-pull-up: Enable pull-up resistor. Only applies for GPIO_IN mode.
+    - bias-pull-down: Enable pull-down resistor. Only applies for GPIO_IN mode.
+    - slew-rate: Set the maximum speed (and so the slew-rate) of the output
+      signal (default: 2MHz). Only applies for ALTERNATE mode.
+
+    Note that drive and bias options are mutually exclusive.
+
+    Peripherals that are remappable will have their pre-defined macros suffixed
+    with the remap option being selected, for example:
+
+      - CAN0_RX_PA11_NORMP: No remap
+      - CAN0_RX_PB8_PRMP: Partial remap
+      - CAN0_RX_PD0_FRMP: Full remap
+
+    It is important that **ALL** pinmux entries share the same remap. For
+    example:
+
+      &pinctrl {
+        can0_default: can0_default {
+          group1 {
+            pinmux = <CAN0_RX_PD0_FRMP>, <CAN0_TX_PD1_FRMP>;
+            /*                    ^^^^                ^^^^           */
+            /* CAN0 pins are remapped choosing the full remap option */
+          };
+        };
+      };
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+       #include "board-pinctrl.dtsi"
+
+       &usart0 {
+             pinctrl-0 = <&usart0_default>;
+             pinctrl-1 = <&usart0_sleep>;
+             pinctrl-names = "default", "sleep";
+       };
+
+compatible: "gd,gd32-pinctrl-afio"
+
+include: gd,gd32-pinctrl-common.yaml
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+    properties:
+      slew-rate:
+        type: string
+        default: "max-speed-2mhz"
+        enum:
+          - "max-speed-10mhz"
+          - "max-speed-2mhz"
+          - "max-speed-50mhz"
+          - "max-speed-highest"
+        description: |
+          Set the maximum speed of a pin. This setting effectively limits the
+          slew rate of the output signal. Defaults to "max-speed-2mhz", the SoC
+          default. The max-speed-highest option may not be available on all SoC
+          variants. If selected and not available the 50 MHz maximum speed will
+          be used instead. Note that usage of max-speed-highest may require
+          enabling the I/O compensation cell (refer to the gd,gd32-afio binding
+          for more details).

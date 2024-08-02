@@ -1,0 +1,13 @@
+common:
+  tags: lora
+  depends_on: lora
+sample:
+  description: Demonstration of LoRa Receive functionality
+  name: LoRa Receive Sample
+tests:
+  sample.driver.lora.receive:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "<inf> lora_receive: Synchronous reception"

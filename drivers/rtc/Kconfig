@@ -1,0 +1,59 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTC
+	bool "Real-Time Clock (RTC) drivers"
+	help
+	  Enable RTC driver configuration.
+
+if RTC
+
+module = RTC
+module-str = rtc
+source "subsys/logging/Kconfig.template.log_config"
+
+config RTC_INIT_PRIORITY
+	int "RTC init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  RTC device driver initialization priority.
+
+config RTC_ALARM
+	bool "RTC driver alarm support"
+	help
+	  This is an option which enables driver support for RTC alarms.
+
+config RTC_UPDATE
+	bool "RTC driver update event callback support"
+	help
+	  This is an option which enables driver support for the RTC
+	  update event callback.
+
+config RTC_CALIBRATION
+	bool "RTC driver clock calibration support"
+	help
+	  This is an option which enables driver support for RTC clock
+	  calibration.
+
+config RTC_SHELL
+	bool "RTC Shell commands"
+	depends on SHELL
+	help
+	  RTC Shell commands
+
+source "drivers/rtc/Kconfig.am1805"
+source "drivers/rtc/Kconfig.ds1307"
+source "drivers/rtc/Kconfig.emul"
+source "drivers/rtc/Kconfig.fake"
+source "drivers/rtc/Kconfig.mc146818"
+source "drivers/rtc/Kconfig.pcf8523"
+source "drivers/rtc/Kconfig.pcf8563"
+source "drivers/rtc/Kconfig.rpi_pico"
+source "drivers/rtc/Kconfig.rv3028"
+source "drivers/rtc/Kconfig.sam"
+source "drivers/rtc/Kconfig.smartbond"
+source "drivers/rtc/Kconfig.stm32"
+source "drivers/rtc/Kconfig.numaker"
+source "drivers/rtc/Kconfig.rv8263"
+
+endif # RTC

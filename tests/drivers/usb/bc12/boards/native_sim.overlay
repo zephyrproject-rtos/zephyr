@@ -1,0 +1,18 @@
+/* Copyright (c) 2022 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		bc12 = &pi3usb9201_emul0;
+	};
+};
+
+&i2c0 {
+	pi3usb9201_emul0: pi3usb9201@5f {
+		compatible = "diodes,pi3usb9201";
+		reg = <0x5f>;
+		intb-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		charging-mode = "BC12_TYPE_CDP";
+	};
+};

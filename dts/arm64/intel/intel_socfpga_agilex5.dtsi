@@ -1,0 +1,242 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (C) 2023, Intel Corporation
+ *
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells= <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			enable-method = "psci";
+			reg = <0x100>;
+		};
+
+		cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x200>;
+		};
+
+		cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x300>;
+		};
+	};
+
+	gic: interrupt-controller@1d000000  {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x1d000000 0x10000>, /* GICD */
+		      <0x1d060000 0x80000>; /* GICR */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		its: msi-controller@1d040000 {
+			compatible = "arm,gic-v3-its";
+			reg = <0x1d040000 0x20000>;
+			status = "disabled";
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	sysmgr: sysmgr@10d12000 {
+		compatible = "syscon";
+		reg = <0x10d12000 0x1000>;
+	};
+
+	clock: clock@10d10000 {
+		compatible = "intel,agilex5-clock";
+		reg = <0x10d10000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+
+	/* This is for setting the MMU region for pinmux */
+	pinmux: pinmux@10d13000 {
+		compatible = "syscon";
+		reg = <0x10d13000 0x1000>;
+	};
+
+	mem0: memory@80100000 {
+		device_type = "memory";
+		reg = <0x80100000 DT_SIZE_M(8)>;
+	};
+
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
+	uart0: uart@10c02000 {
+		compatible = "ns16550";
+		reg-shift = <2>;
+		reg = <0x10c02000 0x100>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_UART0_RSTLINE>;
+		status = "disabled";
+	};
+
+	reset: reset-controller@10D11000 {
+		compatible = "intel,socfpga-reset";
+		reg = <0x10D11000 0x100>;
+		active-low;
+		#reset-cells = <1>;
+		status = "okay";
+	};
+
+	sdmmc: sdmmc@10808000 {
+		compatible = "cdns,sdhc";
+		reg = <0x10808000 0x1000>,
+			<0x10B92000 0x1000>;
+		reg-names = "reg_base", "combo_phy";
+		clock-frequency = <200000000>;
+		power_delay_ms = <1000>;
+		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
+			<&reset RSTMGR_SDMMCECC_RSTLINE>,
+			<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer0: timer@10C03000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10c03000 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer1: timer@10C03100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10c03100 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer2: timer@10D00000 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10D00000 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
+		status = "disabled";
+	};
+
+	timer3: timer@10D00100 {
+		compatible = "snps,dw-timers";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
+				IRQ_DEFAULT_PRIORITY>;
+		reg = <0x10D00100 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
+	};
+
+	watchdog0: watchdog@10d00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00200 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG0_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@10d00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00300 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG1_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@10d00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00400 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG2_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@10d00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00500 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG3_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog4: watchdog@10d00600 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00600 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG4_RSTLINE>;
+		status = "disabled";
+	};
+
+	sip_smc: smc{
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		status = "disabled";
+		zephyr,num-clients = <2>;
+	};
+
+	/* cadence Nand Flash controller*/
+	nand: nand@10B80000	{
+		compatible = "cdns,nand";
+		reg = <0x10B80000 0X10000>,
+			  <0x10840000 0x10000>;
+		reg-names = "nand_reg","sdma";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		resets = <&reset RSTMGR_NAND_RSTLINE>,
+				<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		block-size = <0x20000>;
+		data-rate-mode = <0>;
+		status = "disabled";
+	};
+
+};

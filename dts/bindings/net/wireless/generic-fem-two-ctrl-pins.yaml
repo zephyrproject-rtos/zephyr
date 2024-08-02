@@ -1,0 +1,55 @@
+# Copyright (c) 2020-2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This is a representation of generic radio Front-End Module (FEM)
+    that has a two-pin control interface (CTX, CRX).
+
+    The CTX control pin is used to enable the Power Amplifier (PA) in
+    the transmit path. This is therefore sometimes referred to as
+    the "PA pin" in other contexts.
+
+    The CRX control pin is used to enable the Low Noise Amplifier
+    (LNA) in the receive path, and is sometimes referred to as
+    the "LNA pin" in other contexts.
+
+    Each of these pins is optional, and may be omitted if not present.
+    (Though if you do specify a pin, you must also specify its
+    corresponding settle-time-us property.)
+
+compatible: "generic-fem-two-ctrl-pins"
+
+include: base.yaml
+
+properties:
+  ctx-gpios:
+    type: phandle-array
+    description: |
+        SoC GPIO connected to the CTX input pin on the FEM device.
+
+  crx-gpios:
+    type: phandle-array
+    description: |
+        SoC GPIO connected to the CRX input pin on the FEM device.
+
+  ctx-settle-time-us:
+    type: int
+    description: |
+        Desired minimum settling time, in microseconds, from
+        assertion of the CTX pin to beginning of transmission.
+
+  crx-settle-time-us:
+    type: int
+    description: |
+        Desired minimum settling time, in microseconds, from
+        assertion of the CRX pin to beginning of reception.
+
+  tx-gain-db:
+    type: int
+    description: |
+        TX gain of the PA of the FEM device, in dB.
+
+  rx-gain-db:
+    type: int
+    description: |
+        RX gain of the LNA of the FEM device, in dB.

@@ -1,0 +1,90 @@
+# BMM150 Geomagnetic sensor configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMM150
+	bool "BMM150 I2C Geomagnetic Chip"
+	default y
+	depends on DT_HAS_BOSCH_BMM150_ENABLED
+	select I2C
+	help
+	  Enable driver for BMM150 I2C-based Geomagnetic sensor.
+if BMM150
+
+choice
+	prompt "Default preset"
+	default BMM150_PRESET_REGULAR
+	help
+	  Specify the default preset (x/y oversampling, z oversampling, sampling
+	  frequency).
+
+config BMM150_PRESET_LOW_POWER
+	bool "Low power (3, 3, 10)"
+
+config BMM150_PRESET_REGULAR
+	bool "Regular (9, 15, 10)"
+
+config BMM150_PRESET_ENHANCED_REGULAR
+	bool "Enhanced regular (15, 27, 10)"
+
+config BMM150_PRESET_HIGH_ACCURACY
+	bool "High accuracy (47, 83, 20)"
+
+endchoice
+
+choice BMM150_TRIGGER_MODE
+	prompt "Trigger mode"
+	default BMM150_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMM150_TRIGGER_NONE
+	bool "No trigger"
+
+config BMM150_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select BMM150_TRIGGER
+
+config BMM150_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select BMM150_TRIGGER
+
+config BMM150_TRIGGER_DIRECT
+	bool "Use IRQ handler"
+	select BMM150_TRIGGER
+endchoice
+
+config BMM150_TRIGGER
+	bool
+
+config BMM150_SAMPLING_RATE_RUNTIME
+	bool "Dynamic sampling rate"
+	help
+	  Enable alteration of sampling rate attribute at runtime.
+
+config BMM150_SAMPLING_REP_XY
+	bool "Dynamic XY oversampling"
+	help
+	  Enable alteration of XY oversampling at runtime.
+
+config BMM150_SAMPLING_REP_Z
+	bool "Dynamic Z oversampling"
+	help
+	  Enable alteration of Z oversampling at runtime.
+
+config BMM150_THREAD_PRIORITY
+	int "Own thread priority"
+	depends on BMM150_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of the thread used by the driver to handle interrupts.
+
+config BMM150_THREAD_STACK_SIZE
+	int "Own thread stack size"
+	depends on BMM150_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # BMM150

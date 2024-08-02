@@ -1,0 +1,19 @@
+# Copyright (c) 2022, Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RPI_PICO
+	bool "Raspberry Pi Pico Watchdog driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+
+config WDT_RPI_PICO_INITIAL_TIMEOUT
+	int "Default watchdog timeout in us"
+	depends on WDT_RPI_PICO
+	default 8388607
+	range 1 8388607
+	help
+	  Sets the default watchdog timeout at start-up, the feed function must
+	  be called every interval prior to this time elapsing to prevent a
+	  reboot of the module. The default is just over 8 seconds, which is the
+	  largest timeout possible.

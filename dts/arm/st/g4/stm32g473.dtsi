@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2021 Guðni Már Gilbert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g4/stm32g491.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g473", "st,stm32g4", "simple-bus";
+
+		timers5: timers@40000c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
+			resets = <&rctl STM32_RESET(APB1L, 3U)>;
+			interrupts = <50 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		adc4: adc@50000500 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000500 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
+			interrupts = <61 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+
+		adc5: adc@50000600 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000600 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00004000>;
+			interrupts = <62 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(12, 0x00)
+				       STM32_ADC_RES(10, 0x01)
+				       STM32_ADC_RES(8, 0x02)
+				       STM32_ADC_RES(6, 0x03)>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+
+		spi4: spi@40013c00 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00008000>;
+			interrupts = <84 5>;
+			status = "disabled";
+		};
+
+		dac2: dac@50000c00 {
+			compatible = "st,stm32-dac";
+			reg = <0x50000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00020000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac4: dac@50001400 {
+			compatible = "st,stm32-dac";
+			reg = <0x50001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00080000>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		i2c4: i2c@40008400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000002>;
+			interrupts = <82 0>, <83 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		fdcan3: can@40006c00 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006c00 0x400>, <0x4000a400 0x9f0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <88 0>, <89 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
+		status = "disabled";
+	};
+};

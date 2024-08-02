@@ -1,0 +1,562 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/intel/intel_adsp_cavs.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+			cpu-power-states = <&d3>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <1>;
+			cpu-power-states = <&d3>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <2>;
+			cpu-power-states = <&d3>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <3>;
+			cpu-power-states = <&d3>;
+		};
+
+		power-states {
+			/* PM_STATE_SOFT_OFF can be entered only by calling
+			 * pm_state_force. The procedure is triggered by IPC
+			 * from the HOST (SET_DX).
+			 */
+			d3: off {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2147483647>;
+				exit-latency-us = <0>;
+			};
+		};
+	};
+
+	sram0: memory@be000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe000000 DT_SIZE_K(2944)>;
+	};
+
+	sram1: memory@be800000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe800000 DT_SIZE_K(64)>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <38400000>;
+		#clock-cells = <0>;
+	};
+
+	audioclk: audio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24576000>;
+		#clock-cells = <0>;
+	};
+
+	pllclk: pll-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <96000000>;
+		#clock-cells = <0>;
+	};
+
+	clkctl: clkctl {
+		compatible = "intel,adsp-shim-clkctl";
+		adsp-clkctl-clk-wovcro = <0>;
+		adsp-clkctl-clk-lpro = <1>;
+		adsp-clkctl-clk-hpro = <2>;
+		adsp-clkctl-freq-enc = <0x1a 0x20000002 0x80000002>;
+		adsp-clkctl-freq-mask = <0x10 0x20000000 0x80000000>;
+		adsp-clkctl-freq-default = <2>;
+		adsp-clkctl-freq-lowest = <0>;
+		wovcro-supported;
+	};
+
+	IMR1: memory@b0000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xB0000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
+	};
+
+	soc {
+		lsbpm: lsbpm@71d50 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d50 0x10>;
+		};
+
+		hsbpm: hsbpm@71d10 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x71d10 0x10>;
+		};
+
+		shim: shim@71f00 {
+			compatible = "intel,adsp-shim";
+			reg = <0x71f00 0x100>;
+		};
+
+		mem_window0: mem_window@71a00 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a00 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+		mem_window1: mem_window@71a08 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a08 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@71a10 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a10 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@71a18 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a18 0x8>;
+			memory = <&sram0>;
+			read-only;
+		};
+
+		timer: timer {
+			compatible = "intel,adsp-timer";
+			syscon = <&shim>;
+		};
+
+		sspbase: ssp_base@71c00 {
+			compatible = "intel,cavs-sspbase";
+			reg = <0x71C00 0x100>;
+		};
+
+		l2lm: l2lm@71d00 {
+			compatible = "intel,cavs-l2lm";
+			reg = <0x71d00 0x20>;
+		};
+
+		core_intc: core_intc@0 {
+			compatible = "cdns,xtensa-core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		adsp_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,adsp-host-ipc";
+			reg = <0x71e00 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs_intc0>;
+		};
+
+		cavs_intc0: cavs@78800  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78800 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc1: cavs@78810  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78810 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0xA 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc2: cavs@78820  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78820 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0XD 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc3: cavs@78830  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78830 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		adsp_idc: idc@1200 {
+			compatible = "intel,adsp-idc";
+			reg = <0x1200 0x80>;
+			interrupts = <8 0 0>;
+			interrupt-parent = <&cavs_intc0>;
+		};
+
+		tlb: tlb@3000 {
+			compatible = "intel,adsp-tlb";
+			reg = <0x3000 0x1000>;
+			paddr-size = <11>;
+		};
+
+		ssp0: ssp@77000 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077000 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 2
+				&lpgpdma0 3>;
+			dma-names = "tx", "rx";
+			ssp-index = <0>;
+			status = "okay";
+
+			ssp00: ssp@0 {
+				compatible = "intel,ssp-dai";
+				reg = <0x0>;
+				status = "okay";
+			};
+		};
+
+		ssp1: ssp@77200 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077200 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x01 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 4
+				&lpgpdma0 5>;
+			dma-names = "tx", "rx";
+			ssp-index = <1>;
+			status = "okay";
+
+			ssp10: ssp@10 {
+				compatible = "intel,ssp-dai";
+				reg = <0x10>;
+				status = "okay";
+			};
+		};
+
+		ssp2: ssp@77400 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077400 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x02 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 6
+				&lpgpdma0 7>;
+			dma-names = "tx", "rx";
+			ssp-index = <2>;
+			status = "okay";
+
+			ssp20: ssp@20 {
+				compatible = "intel,ssp-dai";
+				reg = <0x20>;
+				status = "okay";
+			};
+		};
+
+		ssp3: ssp@77600 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077600 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 8
+				&lpgpdma0 9>;
+			dma-names = "tx", "rx";
+			ssp-index = <3>;
+			status = "okay";
+
+			ssp30: ssp@30 {
+				compatible = "intel,ssp-dai";
+				reg = <0x30>;
+				status = "okay";
+			};
+		};
+
+		ssp4: ssp@77800 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077800 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 10
+				&lpgpdma0 11>;
+			dma-names = "tx", "rx";
+			ssp-index = <4>;
+			status = "okay";
+
+			ssp40: ssp@40 {
+				compatible = "intel,ssp-dai";
+				reg = <0x40>;
+				status = "okay";
+			};
+		};
+
+		ssp5: ssp@77a00 {
+			compatible = "intel,ssp";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00077A00 0x200
+			       0x00078C00 0x008>;
+			interrupts = <0x03 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+			dmas = <&lpgpdma0 12
+				&lpgpdma0 13>;
+			dma-names = "tx", "rx";
+			ssp-index = <5>;
+			status = "okay";
+
+			ssp50: ssp@50 {
+				compatible = "intel,ssp-dai";
+				reg = <0x50>;
+				status = "okay";
+			};
+		};
+
+		/*
+		 * FIXME this is modeling individual alh channels/instances
+		 * with node labels, which has problems. A better representation
+		 * is discussed here:
+		 *
+		 * https://github.com/zephyrproject-rtos/zephyr/pull/50287#discussion_r974591009
+		 */
+		alh0: alh0@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh1: alh1@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh2: alh2@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh3: alh3@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh4: alh4@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh5: alh5@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh6: alh6@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh7: alh7@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh8: alh8@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh9: alh9@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh10: alh10@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh11: alh11@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh12: alh12@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh13: alh13@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh14: alh14@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		alh15: alh15@71000 {
+			compatible = "intel,alh-dai";
+			reg = <0x00071000 0x00071200>;
+			status = "okay";
+		};
+
+		dmic0: dmic0@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0x71E80>;
+			fifo = <0x0008>;
+			interrupts = <0x08 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
+
+		dmic1: dmic1@10000 {
+			compatible = "intel,dai-dmic";
+			reg = <0x10000 0x8000>;
+			shim = <0x71E80>;
+			fifo = <0x0108>;
+			interrupts = <0x09 0 0>;
+			interrupt-parent = <&cavs_intc3>;
+		};
+	};
+
+	hdas {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		hda0: hda@0 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0>;
+		};
+		hda1: hda@1 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <1>;
+		};
+		hda2: hda@2 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <2>;
+		};
+		hda3: hda@3 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <3>;
+		};
+		hda4: hda@4 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <4>;
+		};
+		hda5: hda@5 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <5>;
+		};
+		hda6: hda@6 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <6>;
+		};
+		hda7: hda@7 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <7>;
+		};
+		hda8: hda@8 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <8>;
+		};
+		hda9: hda@9 {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <9>;
+		};
+		hda10: hda@a {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0a>;
+		};
+		hda11: hda@b {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0b>;
+		};
+		hda12: hda@c {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0c>;
+		};
+		hda13: hda@d {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0d>;
+		};
+		hda14: hda@e {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0e>;
+		};
+		hda15: hda@f {
+			compatible = "intel,hda-dai";
+			status = "okay";
+			reg = <0x0f>;
+		};
+	};
+};

@@ -1,0 +1,11 @@
+# STMicroelectronics STM32L151XB MCU
+
+# Copyright (c) 2019 Linaro Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L151XB
+
+config NUM_IRQS
+	default 45
+
+endif # SOC_STM32L151XB

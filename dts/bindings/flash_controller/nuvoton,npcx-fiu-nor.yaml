@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The SPI NOR flash devices accessed by Nuvoton Flash Interface Unit (FIU).
+
+    Representation of a SPI NOR flash on a qspi bus looks like:
+
+      int_flash: w25q40@0 {
+            compatible ="nuvoton,npcx-fiu-nor";
+            size = <DT_SIZE_K(512 * 8)>;
+            reg = <0>;
+
+            qspi-flags = <NPCX_QSPI_SW_CS1>;
+            mapped-addr = <0x64000000>;
+            pinctrl-0 = <&int_flash_sl>;
+            pinctrl-names = "default";
+      };
+
+compatible: "nuvoton,npcx-fiu-nor"
+
+include: [flash-controller.yaml, pinctrl-device.yaml, "jedec,spi-nor-common.yaml"]
+
+on-bus: qspi
+
+properties:
+  mapped-addr:
+    type: int
+    required: true
+    description: Mapped memory address of direct read access for spi nor flash.
+  max-timeout:
+    type: int
+    default: 10000
+    description: Typically, it equals to max timeout of chip erase in ms.
+  qspi-flags:
+    type: int
+    required: true
+    description: The definitions for configuring the Quad-SPI peripherals.
+  rd-mode:
+    type: string
+    default: "NPCX_RD_MODE_FAST_DUAL"
+    description: |
+      Selects the SPI read access type of Direct Read Access. Usually, we choose
+      Fast Read Dual I/O mode for better performance. If the nor spi flash does
+      not support this mode, please set this property explicitly.
+    enum:
+      - "NPCX_RD_MODE_NORMAL" # Direct read access by command code 03h
+      - "NPCX_RD_MODE_FAST" # Direct read access by command code 0bh
+      - "NPCX_RD_MODE_FAST_DUAL" # Direct read access by command code bbh

@@ -1,0 +1,181 @@
+/*
+ * Copyright (c) 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/imx_ccm.h>
+#include <zephyr/dt-bindings/dai/esai.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			clic: interrupt-controller@0 {
+				compatible = "cdns,xtensa-core-intc";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <3>;
+			};
+		};
+	};
+
+	irqsteer: interrupt-controller@510a0000 {
+		compatible = "nxp,irqsteer-intc";
+		reg = <0x510a0000 DT_SIZE_K(64)>;
+
+		#size-cells = <0>;
+		#address-cells = <1>;
+
+		master0: interrupt-controller@0 {
+			compatible = "nxp,irqsteer-master";
+			reg = <0>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 19 0 0>;
+		};
+
+		master1: interrupt-controller@1 {
+			compatible = "nxp,irqsteer-master";
+			reg = <1>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 20 0 0>;
+		};
+
+		master2: interrupt-controller@2 {
+			compatible = "nxp,irqsteer-master";
+			reg = <2>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 21 0 0>;
+		};
+
+		master3: interrupt-controller@3 {
+			compatible = "nxp,irqsteer-master";
+			reg = <3>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 22 0 0>;
+		};
+
+		master4: interrupt-controller@4 {
+			compatible = "nxp,irqsteer-master";
+			reg = <4>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 23 0 0>;
+		};
+
+		master5: interrupt-controller@5 {
+			compatible = "nxp,irqsteer-master";
+			reg = <5>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 24 0 0>;
+		};
+
+		master6: interrupt-controller@6 {
+			compatible = "nxp,irqsteer-master";
+			reg = <6>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 25 0 0>;
+		};
+
+		master7: interrupt-controller@7 {
+			compatible = "nxp,irqsteer-master";
+			reg = <7>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			interrupts-extended = <&clic 26 0 0>;
+		};
+	};
+
+	sram0: memory@92400000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92400000 DT_SIZE_K(512)>;
+	};
+
+	sram1: memory@92c00000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x92c00000 DT_SIZE_K(512)>;
+	};
+
+	edma0: dma@591f0000 {
+		compatible = "nxp,edma";
+		reg = <0x591f0000 (DT_SIZE_K(64) * 33)>;
+		valid-channels = <6>, <7>, <14>, <15>;
+		interrupts-extended = <&master6 58>, <&master6 58>,
+				<&master5 29>, <&master5 29>;
+		#dma-cells = <2>;
+		status = "disabled";
+	};
+
+	sai1: dai@59050000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x59050000 DT_SIZE_K(64)>;
+		interrupt-parent = <&master5>;
+		interrupts = <28>;
+		dai-index = <1>;
+		dmas = <&edma0 15 0>, <&edma0 14 0>;
+		dma-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	esai0: dai@59010000 {
+		compatible = "nxp,dai-esai";
+		reg = <0x59010000 DT_SIZE_K(64)>;
+		dmas = <&edma0 7 0>, <&edma0 6 0>;
+		dma-names = "tx", "rx";
+		esai-pin-modes = <ESAI_PIN_HCKR ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_HCKT ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO4_SDI1 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO3_SDI2 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO2_SDI3 ESAI_PIN_DISCONNECTED>,
+				<ESAI_PIN_SDO1 ESAI_PIN_DISCONNECTED>;
+		status = "disabled";
+	};
+
+	/* LSIO MU2, used to interact with the SCFW */
+	scu_mu: mailbox@5d1d0000 {
+		reg = <0x5d1d0000 DT_SIZE_K(64)>;
+	};
+
+	scu: system-controller {
+		ccm: clock-controller {
+			compatible = "nxp,imx-ccm";
+			#clock-cells = <3>;
+		};
+
+		iomuxc: iomuxc {
+			compatible = "nxp,imx-iomuxc-scu";
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8-pinctrl";
+			};
+		};
+	};
+
+	lpuart2: serial@5a080000 {
+		compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+		reg = <0x5a080000 DT_SIZE_K(4)>;
+		interrupt-parent = <&master4>;
+		interrupts = <3>;
+		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
+		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
+		status = "disabled";
+	};
+};

@@ -1,0 +1,10 @@
+# Copyright (c) 2024 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ENE_KB1200
+	bool "ENE KB1200 ADC driver"
+	default y
+	depends on DT_HAS_ENE_KB1200_ADC_ENABLED
+	select PINCTRL
+	help
+	  Enable ADC driver for ENE KB1200.

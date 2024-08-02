@@ -1,0 +1,17 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_STM32
+	bool "Pin controller driver for STM32 MCUs"
+	default y
+	depends on DT_HAS_ST_STM32_PINCTRL_ENABLED || DT_HAS_ST_STM32F1_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for STM32 MCUs
+
+config PINCTRL_STM32_REMAP_INIT_PRIORITY
+	int "Remap initialization priority"
+	default 2
+	depends on PINCTRL_STM32
+	help
+	  Initialization priority for the routine in charge of configuring the
+	  remap for pins PA11/12.

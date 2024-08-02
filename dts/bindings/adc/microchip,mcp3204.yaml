@@ -1,0 +1,5 @@
+description: Microchip MCP3204
+
+compatible: "microchip,mcp3204"
+
+include: microchip,mcp320x-base.yaml

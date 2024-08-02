@@ -1,0 +1,82 @@
+# Copyright (c) 2019, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 DMAMUX controller
+
+  The STM32 DMAMUX is a direct memory access multiplexer
+  capable of supporting independent DMA channels.
+  DMAMUX clients connected to the STM32 DMA ultiplexer must use a two-cell specifier
+  for each dmamux channel: a phandle to the DMA multiplexer plus the following 2 integer cells:
+    1. channel: the mux channel from 0 to <dma-channels> - 1
+    2. slot: the request line Multiplexer ID
+    3. channel-config: A 32bit mask specifying the DMA channel configuration
+    which is device dependent:
+        -bit 6-7 : Direction  (see dma.h)
+               0x0: MEM to MEM
+               0x1: MEM to PERIPH
+               0x2: PERIPH to MEM
+               0x3: reserved for PERIPH to PERIPH
+        -bit 9 : Peripheral Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 10 : Memory Increment Address
+               0x0: no address increment between transfers
+               0x1: increment address between transfers
+        -bit 11-12 : Peripheral data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 13-14 : Memory data size
+               0x0: Byte (8 bits)
+               0x1: Half-word (16 bits)
+               0x2: Word (32 bits)
+               0x3: reserved
+        -bit 15: Peripheral Increment Offset Size not USED for DMA V2
+               0x0: offset size is linked to the peripheral bus width
+               0x1: offset size is fixed to 4 (32-bit alignment)
+        -bit 16-17 : Priority level
+               0x0: low
+               0x1: medium
+               0x2: high
+               0x3: very high
+   example for stm32wb55x
+     dmamux1: dmamux@40020800 {
+         compatible = "st,stm32-dmamux";
+         ...
+         dma-channels = <14>;
+         dma-generators = <4>;
+         dma-requests= <36>;
+         status = "disabled";
+        };
+    for client SPI of stm32wb55x
+     spi1: spi@40013000 {
+         compatible = "st,stm32-spi";
+         dmas = <&dmamux1 11 7 0x20440
+                  &dmamux1 1 6 0x20480>;
+         dma-names = "tx", "rx";
+        };
+
+compatible: "st,stm32-dmamux"
+
+include: dmamux-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 3
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/st,stm32-dmamux.yaml
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config

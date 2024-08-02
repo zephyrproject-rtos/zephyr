@@ -1,0 +1,338 @@
+# OpenThread driver configuration options
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+config OPENTHREAD_SECURITY_INTERNAL
+	bool
+	help
+	  OpenThread setting to signal that OpenThread security settings, such
+	  as the OPENTHREAD_MBEDTLS setting will be controlled through other
+	  Kconfig dependencies and should not be user configurable.
+
+menuconfig NET_L2_OPENTHREAD
+	bool "OpenThread L2"
+	depends on NETWORKING
+	select NET_L2_PHY_IEEE802154
+	select OPENTHREAD
+
+	imply FLASH
+	imply FLASH_MAP
+	imply MPU_ALLOW_FLASH_WRITE
+	imply NVS
+
+	select SETTINGS if FLASH
+	select OPENTHREAD_SETTINGS_RAM if !FLASH
+	select CPP
+	select REBOOT
+	select ENTROPY_GENERATOR
+
+	imply NET_UDP
+	imply NET_IPV6
+	imply NET_CONFIG_NEED_IPV6
+
+if NET_L2_OPENTHREAD
+
+choice OPENTHREAD_IMPLEMENTATION
+	prompt "OpenThread origin selection"
+	help
+	  Select OpenThread to use for build. Custom OpenThread implementations
+	  can be added to the application Kconfig.
+
+config OPENTHREAD_SOURCES
+	bool "OpenThread from sources"
+	help
+	  Build Zephyr's OpenThread port from sources.
+
+endchoice
+
+config OPENTHREAD_MANUAL_START
+	bool "Start OpenThread stack manually"
+	help
+	  If enabled, OpenThread stack will have to be configured and
+	  started manually, with respective API calls or CLI/NCP commands.
+	  Otherwise, OpenThread will configure the network parameters and try to
+	  join the Thread network automatically during initialization (using
+	  credentials stored in persistent storage, obtained during
+	  commissioning or pre-commissioned with other Kconfig options,
+	  depending on configuration used).
+
+menu "Logging"
+
+menuconfig OPENTHREAD_DEBUG
+	bool "OpenThread stack logging support"
+	depends on NET_L2_OPENTHREAD
+	help
+	  This option enables logging support for OpenThread.
+
+choice
+	prompt "OpenThread stack log level"
+	depends on OPENTHREAD_DEBUG
+	help
+	  This option selects log level for OpenThread stack.
+
+config OPENTHREAD_LOG_LEVEL_CRIT
+	bool "Critical"
+config OPENTHREAD_LOG_LEVEL_WARN
+	bool "Warning"
+config OPENTHREAD_LOG_LEVEL_NOTE
+	bool "Notice"
+config OPENTHREAD_LOG_LEVEL_INFO
+	bool "Informational"
+config OPENTHREAD_LOG_LEVEL_DEBG
+	bool "Debug"
+endchoice
+
+config OPENTHREAD_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+	default 2 if OPENTHREAD_LOG_LEVEL_WARN
+	default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+	default 4 if OPENTHREAD_LOG_LEVEL_INFO
+	default 5 if OPENTHREAD_LOG_LEVEL_DEBG
+	default 0
+
+menuconfig OPENTHREAD_L2_DEBUG
+	bool "OpenThread L2 log support"
+	help
+	  This option enables log support for OpenThread.
+
+if OPENTHREAD_L2_DEBUG
+
+config OPENTHREAD_L2_DEBUG_DUMP_15_4
+	bool "Dump 802.15.4 packets"
+	help
+	  This option enables dumping of 802.15.4 packets.
+
+config OPENTHREAD_L2_DEBUG_DUMP_IPV6
+	bool "Dump IPv6 packets"
+	help
+	  This option enables dumping of IPv6 packets.
+
+endif # OPENTHREAD_L2_DEBUG
+
+module = OPENTHREAD_L2
+module-dep = NET_LOG
+module-str = Log level for OpenThread driver
+module-help = Enables OpenThread driver to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endmenu # "Logging"
+
+menu "Zephyr optimizations"
+
+config OPENTHREAD_THREAD_PREEMPTIVE
+	bool "Set Openthread thread to be preemptive"
+
+config OPENTHREAD_THREAD_PRIORITY
+	int "OpenThread thread priority"
+	default 0 if OPENTHREAD_THREAD_PREEMPTIVE
+	default 8
+
+config OPENTHREAD_THREAD_STACK_SIZE
+	int "OpenThread thread stack size"
+	default 6144 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 6240 if (OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER) && MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
+	default 3168 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
+	default 3072
+
+
+config OPENTHREAD_PKT_LIST_SIZE
+	int "List size for IPv6 packet buffering"
+	default 10
+
+config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
+	int "OpenThread radio transmit workqueue stack size"
+	default 608 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
+	default 512
+
+endmenu # "Zephyr optimizations"
+
+config OPENTHREAD_SHELL
+	bool "OpenThread shell"
+	depends on SHELL
+
+config MBEDTLS_PROMPTLESS
+	bool
+	default y if !CUSTOM_OPENTHREAD_SECURITY
+
+choice OPENTHREAD_SECURITY
+	prompt "OpenThread security"
+	default OPENTHREAD_MBEDTLS_CHOICE
+	depends on !OPENTHREAD_SECURITY_INTERNAL
+
+config CUSTOM_OPENTHREAD_SECURITY
+	bool "Custom"
+	help
+	  Security settings will be controlled directly by the user.
+	  Enabling this setting will give access to full control of mbed TLS
+	  configuration.
+
+config OPENTHREAD_MBEDTLS_CHOICE
+	bool "mbed TLS built-in"
+	select OPENTHREAD_MBEDTLS
+	help
+	  Use the OpenThread mbed TLS configuration pre-defined security scheme.
+
+endchoice
+
+config OPENTHREAD_MBEDTLS
+	bool
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_CIPHER_AES_ENABLED
+	select MBEDTLS_CIPHER_CCM_ENABLED
+	select MBEDTLS_SHA256
+	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_CMAC
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
+	select MBEDTLS_TLS_VERSION_1_2 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_DTLS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECJPAKE_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_ECP_DP_SECP256R1_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || \
+	    OPENTHREAD_SRP_CLIENT || OPENTHREAD_SRP_SERVER
+	select MBEDTLS_ECP_NIST_OPTIM if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_SSL_EXPORT_KEYS if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_CTR_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	select MBEDTLS_HMAC_DRBG_ENABLED if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || \
+	    OPENTHREAD_SRP_CLIENT || OPENTHREAD_SRP_SERVER
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED if OPENTHREAD_ECDSA
+	select MBEDTLS_ECDH_C if OPENTHREAD_ECDSA
+	select MBEDTLS_ECDSA_C if OPENTHREAD_ECDSA
+	select MBEDTLS_ECDSA_DETERMINISTIC if OPENTHREAD_ECDSA
+	select MBEDTLS_PK_WRITE_C if OPENTHREAD_ECDSA
+	select MBEDTLS_ECP_C if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER || OPENTHREAD_ECDSA
+
+
+config OPENTHREAD_MBEDTLS_LIB_NAME
+	string "mbedtls lib name"
+	default "mbedTLS"
+	help
+	  This option allows to specify one or more mbedtls library files to be
+	  linked with OpenThread. Separate multiple values with space " ".
+
+config OPENTHREAD_COPROCESSOR
+	bool "OpenThread Co-Processor"
+	select OPENTHREAD_MANUAL_START
+	select RING_BUFFER
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable Co-Processor in OpenThread stack.
+
+if OPENTHREAD_COPROCESSOR
+
+choice
+	prompt "OpenThread Co-Processor type"
+	help
+	  This option selects Thread network co-processor type
+
+config OPENTHREAD_COPROCESSOR_NCP
+	bool "NCP - Network Co-Processor"
+config OPENTHREAD_COPROCESSOR_RCP
+	bool "RCP - Radio Co-Processor"
+endchoice
+
+config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
+	int "Set Co-Processor UART ring buffer size"
+	default 4096
+	help
+	  TX buffer size for the OpenThread Co-Processor UART.
+
+config OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE
+	string "Path to vendor hook source file"
+	help
+	  Provides path to compile vendor hook file.
+
+endif # OPENTHREAD_COPROCESSOR
+
+config OPENTHREAD_PLATFORM_INFO
+	string "Platform information for OpenThread"
+	default "ZEPHYR"
+	help
+	  Platform information for OpenThread
+
+config OPENTHREAD_CUSTOM_PARAMETERS
+	string "Custom Parameters to pass to OpenThread build system"
+	default ""
+	help
+	  This option is intended for advanced users only.
+	  Pass additional parameters that do not have corresponding Kconfig
+	  options to the OpenThread build system. Separate multiple values with
+	  space " ", for example:
+	  "OPENTHREAD_CONFIG_JOINER_ENABLE=1 OPENTHREAD_CONFIG_JOINER_MAX_CANDIDATES=3"
+
+config OPENTHREAD_NUM_MESSAGE_BUFFERS
+	int "The number of message buffers in the buffer pool"
+	default 128
+	help
+	  "The number of message buffers in the buffer pool."
+
+config OPENTHREAD_MESSAGE_BUFFER_SIZE
+	int "The size of a message buffer in bytes"
+	default 128
+	help
+	  "The size of a message buffer in bytes"
+
+config OPENTHREAD_MAX_STATECHANGE_HANDLERS
+	int "The maximum number of state-changed callback handlers"
+	default 2
+	help
+	  The maximum number of state-changed callback handlers
+	  set using otSetStateChangedCallback.
+
+config OPENTHREAD_TMF_ADDRESS_CACHE_ENTRIES
+	int "The number of EID-to-RLOC cache entries"
+	default 20
+	help
+	  The number of EID-to-RLOC cache entries.
+
+config OPENTHREAD_TMF_ADDRESS_CACHE_MAX_SNOOP_ENTRIES
+	int "The maximum number of EID-to-RLOC cache entries"
+	default 2
+	help
+	  The maximum number of EID-to-RLOC cache entries that can be used for
+	  "snoop optimization" where an entry is created by inspecting a received
+	  message.
+
+config OPENTHREAD_LOG_PREPEND_LEVEL_ENABLE
+	bool "Prepending the log level to all OpenThread log messages"
+	help
+	  When enabled the OpenThread logs will be prepended with the appropriate
+	  log level prefix i.e. [CRIT], [WARN], [NOTE], [INFO], [DEBG].
+
+config OPENTHREAD_MAC_SOFTWARE_ACK_TIMEOUT_ENABLE
+	bool "Software ACK timeout logic"
+	default y
+	help
+	  Set y if the radio supports AckTime event
+
+config OPENTHREAD_MAC_SOFTWARE_RETRANSMIT_ENABLE
+	bool "Software retransmission logic"
+	default y
+	help
+	  Set y if the radio supports tx retry logic with collision avoidance (CSMA)
+
+config OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
+	bool "Software CSMA backoff logic"
+	default y
+	help
+	  Set y to enable software CSMA backoff. The option can be disabled if
+	  the radio has hardware support for this feature (IEEE802154_HW_CSMA).
+
+config OPENTHREAD_CRYPTO_PSA
+	bool "ARM PSA crypto API"
+	depends on MBEDTLS_PSA_CRYPTO_CLIENT
+	select OPENTHREAD_PLATFORM_KEY_REF if !OPENTHREAD_COPROCESSOR_RCP
+	imply OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+	help
+	  Enable crypto backend library implementation based on ARM PSA crypto
+	  API instead of the default, using mbedTLS.
+
+config OPENTHREAD_PLATFORM_KEYS_EXPORTABLE_ENABLE
+	bool "Make MAC keys exportable"
+	depends on OPENTHREAD_PLATFORM_KEY_REF
+	help
+	  Enable the creation of exportable MAC keys in the OpenThread Key Manager.
+
+endif # NET_L2_OPENTHREAD

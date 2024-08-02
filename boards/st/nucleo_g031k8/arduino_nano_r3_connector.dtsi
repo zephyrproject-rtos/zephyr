@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2022 Joylab AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_nano_header: connector {
+		compatible = "arduino-nano-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 7 0>,   /* D0 / UART-RX */
+			   <1 0 &gpiob 6 0>,   /* D1 / UART-TX */
+			   <2 0 &gpioa 15 0>,  /* D2 */
+			   <3 0 &gpiob 1 0>,   /* D3 */
+			   <4 0 &gpioa 10 0>,  /* D4 */
+			   <5 0 &gpioa 9 0>,   /* D5 */
+			   <6 0 &gpiob 0 0>,   /* D6 */
+			   <7 0 &gpiob 2 0>,   /* D7 */
+			   <8 0 &gpiob 8 0>,   /* D8 */
+			   <9 0 &gpioa 8 0>,   /* D9 */
+			   <10 0 &gpiob 9 0>,  /* D10 */
+			   <11 0 &gpiob 5 0>,  /* D11 / SPI-MOSI */
+			   <12 0 &gpiob 4 0>,  /* D12 / SPI-MISO */
+			   <13 0 &gpiob 3 0>,  /* D13 / SPI-SCK */
+			   <14 0 &gpioa 0 0>,  /* D14 / A0 */
+			   <15 0 &gpioa 1 0>,  /* D15 / A1 */
+			   <16 0 &gpioa 4 0>,  /* D16 / A2 */
+			   <17 0 &gpioa 5 0>,  /* D17 / A3 */
+			   <18 0 &gpioa 12 0>, /* D18 / A4 / I2C-SDA */
+			   <19 0 &gpioa 11 0>, /* D19 / A5 / I2C-SCL */
+			   <20 0 &gpioa 6 0>,  /* D20 / A6 */
+			   <21 0 &gpioa 7 0>;  /* D21 / A7 */
+	};
+};
+
+arduino_nano_i2c: &i2c2 {};
+arduino_nano_spi: &spi1 {};
+arduino_nano_serial: &usart1 {};

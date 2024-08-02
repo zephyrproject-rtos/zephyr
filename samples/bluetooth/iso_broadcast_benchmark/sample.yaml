@@ -1,0 +1,13 @@
+sample:
+  name: BLE ISO Broadcast
+  description: Bluetooth Low Energy ISO Broadcast Benchmark sample
+tests:
+  sample.bluetooth.iso_broadcast_benchmark:
+    build_only: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags: bluetooth

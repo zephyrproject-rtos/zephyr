@@ -1,0 +1,24 @@
+sample:
+  name: Bluetooth ISO Broadcaster
+tests:
+  sample.bluetooth.iso_broadcast:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52dk/nrf52832
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth
+  sample.bluetooth.iso_broadcast.bt_ll_sw_split:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+      - nrf52833dk/nrf52833
+    integration_platforms:
+      - nrf52833dk/nrf52833
+    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    tags: bluetooth

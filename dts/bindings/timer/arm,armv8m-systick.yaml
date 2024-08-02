@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARMv8-M System Tick
+
+compatible: "arm,armv8m-systick"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

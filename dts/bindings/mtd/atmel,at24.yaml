@@ -1,0 +1,38 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2018, Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  I2C EEPROMs compatible with Atmel's AT24 family
+
+  There are multiple vendors manufacturing I2C EEPROMs compatible with the programming model of the
+  Atmel AT24.
+
+  Examples of compatible EEPROM families:
+  - Microchip AT24xxx
+  - ST M24xxx
+
+  Each of these can be represented by a set of common parameters (EEPROM size, page size, address
+  width, and timeout) available from the datasheet of the specific EEPROM. The compatible string for
+  these can list the specific EEPROM vendor and model along with the vendor EEPROM family as long as
+  the least-specific compatible entry is "atmel,at24".
+
+  Example devicetree node describing a ST M24M01 EEPROM on the i2c0 bus:
+
+    &i2c0 {
+      status = "okay";
+      clock-frequency = <I2C_BITRATE_FAST>;
+
+      eeprom@56 {
+        compatible = "st,m24m01", "st,m24xxx", "atmel,at24";
+        reg = <0x56>;
+        size = <DT_SIZE_K(128)>;
+        pagesize = <256>;
+        address-width = <16>;
+        timeout = <5>;
+     };
+   };
+
+compatible: "atmel,at24"
+
+include: ["atmel,at2x-base.yaml", i2c-device.yaml]

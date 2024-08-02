@@ -1,0 +1,34 @@
+# Copyright (c) 2022 BrainCo Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_GD32
+	bool "GigaDevice GD32 flash driver"
+	default y
+	depends on (GD32_NV_FLASH_V1 || GD32_NV_FLASH_V2 || GD32_NV_FLASH_V3)
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable the GigaDevice GD32 flash driver.
+
+config GD32_NV_FLASH_V1
+	bool
+	default y
+	depends on DT_HAS_GD_GD32_NV_FLASH_V1_ENABLED
+	help
+	  Enable the generic backend for GD32 FMC v1 flash driver.
+
+config GD32_NV_FLASH_V2
+	bool
+	default y
+	depends on DT_HAS_GD_GD32_NV_FLASH_V2_ENABLED
+	help
+	  Enable the generic backend for GD32 FMC v2 flash driver.
+
+config GD32_NV_FLASH_V3
+	bool
+	default y
+	depends on DT_HAS_GD_GD32_NV_FLASH_V3_ENABLED
+	help
+	  Enable the generic backend for GD32 FMC v3 flash driver.

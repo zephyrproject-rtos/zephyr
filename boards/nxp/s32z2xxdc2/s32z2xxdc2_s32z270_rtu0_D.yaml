@@ -1,0 +1,19 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: s32z2xxdc2@D/s32z270/rtu0
+name: NXP X-S32Z270-DC (DC2) on RTU0 Cortex-R52 cores (rev. D)
+type: mcu
+arch: arm
+ram: 1024
+toolchain:
+  - zephyr
+supported:
+  - uart
+  - gpio
+  - watchdog
+  - netif:eth
+  - can
+  - spi
+  - counter
+vendor: nxp

@@ -1,0 +1,11 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_DAVINCI
+	bool "Davinci GPIO Driver"
+	default y
+	depends on DT_HAS_TI_DAVINCI_GPIO_ENABLED
+	help
+		Enable the Davinci GPIO controller support.

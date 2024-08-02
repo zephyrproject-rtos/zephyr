@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2020, PHYTEC Messtechnik GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "waveshare_epaper_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,display = &uc8179_waveshare_epaper_gdew075t7;
+	};
+
+	mipi_dbi_waveshare_epaper_gdew075t7 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&arduino_spi>;
+		dc-gpios = <&arduino_header 15 GPIO_ACTIVE_HIGH>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		uc8179_waveshare_epaper_gdew075t7: uc8179@0 {
+			compatible = "gooddisplay,gdew075t7", "ultrachip,uc8179";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <800>;
+			height = <480>;
+			busy-gpios = <&arduino_header 13 GPIO_ACTIVE_LOW>; /* D7 */
+
+			softstart = [17 17 17 17];
+
+			full {
+				pwr = [07 07 3f 3f];
+				cdi = <07>;
+				tcon = <0x22>;
+			};
+		};
+	};
+};

@@ -1,0 +1,92 @@
+# EditorConfig: https://editorconfig.org/
+
+# top-most EditorConfig file
+root = true
+
+# All (Defaults)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 100
+
+# Assembly
+[*.S]
+indent_style = tab
+indent_size = 8
+
+# C
+[*.{c,h}]
+indent_style = tab
+indent_size = 8
+
+# C++
+[*.{cpp,hpp}]
+indent_style = tab
+indent_size = 8
+
+# Linker Script
+[*.ld]
+indent_style = tab
+indent_size = 8
+
+# Python
+[*.py]
+indent_style = space
+indent_size = 4
+
+# Perl
+[*.pl]
+indent_style = tab
+indent_size = 8
+
+# reStructuredText
+[*.rst]
+indent_style = space
+indent_size = 3
+
+# YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Shell Script
+[*.sh]
+indent_style = space
+indent_size = 4
+
+# Windows Command Script
+[*.cmd]
+end_of_line = crlf
+indent_style = tab
+indent_size = 8
+
+# Valgrind Suppression File
+[*.supp]
+indent_style = space
+indent_size = 3
+
+# CMake
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 2
+
+# Makefile
+[Makefile]
+indent_style = tab
+indent_size = 8
+
+# Device tree
+[*.{dts,dtsi,overlay}]
+indent_style = tab
+indent_size = 8
+
+# Git commit messages
+[COMMIT_EDITMSG]
+max_line_length = 75
+
+# Kconfig
+[Kconfig*]
+indent_style = tab
+indent_size = 8

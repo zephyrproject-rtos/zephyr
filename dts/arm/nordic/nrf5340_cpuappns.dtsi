@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* .dtsi header for nRF5340 CPUAPP (Application MCU), Non-Secure domain */
+
+#include <arm/armv8-m.dtsi>
+#include <nordic/nrf_common.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	chosen {
+		zephyr,entropy = &psa_rng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			/* Common nRF5340 Application MCU
+			 * peripheral description
+			 */
+			#include "nrf5340_cpuapp_peripherals.dtsi"
+		};
+
+		/*
+		 * GPIOTE1 is always accessible as a non-secure peripheral,
+		 * so we give it the 'gpiote' label for use when building
+		 * code for this target.
+		 */
+		gpiote: gpiote1: gpiote@4002f000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x4002f000 0x1000>;
+			interrupts = <47 5>;
+			status = "disabled";
+			instance = <1>;
+		};
+	};
+
+	/* Default IPC description */
+	ipc {
+		#include "nrf5340_cpuapp_ipc.dtsi"
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+&systick {
+	/* Use RTC for system clock, instead of SysTick. */
+	status = "disabled";
+};

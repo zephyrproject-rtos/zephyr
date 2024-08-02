@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2022 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/sifive-pinctrl.h>
+
+&pinctrl {
+	/* UART0 */
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <16 SIFIVE_PINMUX_IOF0>;
+	};
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <17 SIFIVE_PINMUX_IOF0>;
+	};
+
+	/* SPI1 */
+	spi1_cs0_default: spi1_cs0_default {
+		pinmux = <2 SIFIVE_PINMUX_IOF0>;
+	};
+	spi1_mosi_default: spi1_mosi_default {
+		pinmux = <3 SIFIVE_PINMUX_IOF0>;
+	};
+	spi1_miso_default: spi1_miso_default {
+		pinmux = <4 SIFIVE_PINMUX_IOF0>;
+	};
+	spi1_sck_default: spi1_sck_default {
+		pinmux = <5 SIFIVE_PINMUX_IOF0>;
+	};
+	spi1_cs2_default: spi1_cs2_default {
+		pinmux = <9 SIFIVE_PINMUX_IOF0>;
+	};
+	spi1_cs3_default: spi1_cs3_default {
+		pinmux = <10 SIFIVE_PINMUX_IOF0>;
+	};
+
+	/* PWM0 */
+	pwm0_0_default: pwm0_0_default {
+		pinmux = <0 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm0_1_default: pwm0_1_default {
+		pinmux = <1 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm0_2_default: pwm0_2_default {
+		pinmux = <2 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm0_3_default: pwm0_3_default {
+		pinmux = <3 SIFIVE_PINMUX_IOF1>;
+	};
+
+	/* PWM1 */
+	pwm1_0_default: pwm1_0_default {
+		pinmux = <20 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm1_1_default: pwm1_1_default {
+		pinmux = <19 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm1_2_default: pwm1_2_default {
+		pinmux = <21 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm1_3_default: pwm1_3_default {
+		pinmux = <22 SIFIVE_PINMUX_IOF1>;
+	};
+
+	/* PWM2 */
+	pwm2_0_default: pwm2_0_default {
+		pinmux = <10 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm2_1_default: pwm2_1_default {
+		pinmux = <11 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm2_2_default: pwm2_2_default {
+		pinmux = <12 SIFIVE_PINMUX_IOF1>;
+	};
+	pwm2_3_default: pwm2_3_default {
+		pinmux = <13 SIFIVE_PINMUX_IOF1>;
+	};
+
+	/* I2C0 */
+	i2c0_0_default: i2c0_0_default {
+		pinmux = <12 SIFIVE_PINMUX_IOF0>;
+	};
+	i2c0_1_default: i2c0_1_default {
+		pinmux = <13 SIFIVE_PINMUX_IOF0>;
+	};
+};

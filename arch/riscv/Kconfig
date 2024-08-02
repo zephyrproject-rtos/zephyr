@@ -1,0 +1,388 @@
+# Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menu "RISCV Options"
+	depends on RISCV
+
+config ARCH
+	string
+	default "riscv"
+
+config FLOAT_HARD
+	bool "Hard-float calling convention"
+	default y
+	depends on FPU
+	help
+	  This option enables the hard-float calling convention.
+
+config RISCV_GP
+	bool "RISC-V global pointer relative addressing"
+	default n
+	help
+	  Use global pointer relative addressing for small globals declared
+	  anywhere in the executable. It can benefit performance and reduce
+	  the code size.
+
+	  Note: To support this feature, RISC-V SoC needs to initialize
+	  global pointer at program start or earlier than any instruction
+	  using GP relative addressing.
+
+config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+	bool "Do not use mret outside a trap handler context"
+	depends on MULTITHREADING
+	help
+	  Use mret instruction only when in a trap handler.
+	  This is for RISC-V implementations that require every mret to be
+	  balanced with an ecall. This is not required by the RISC-V spec
+	  and most people should say n here to minimize context switching
+	  overhead.
+
+config RISCV_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	imply THREAD_STACK_INFO
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
+menu "RISCV Processor Options"
+
+config INCLUDE_RESET_VECTOR
+	bool "Jumps to __initialize directly"
+	help
+	  Select 'y' here to use the Zephyr provided default implementation that
+	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
+	  custom `__reset` routine.
+
+config RISCV_PRIVILEGED
+	bool
+	select ARCH_HAS_RAMFUNC_SUPPORT if XIP
+	help
+	  Option selected by SoCs implementing the RISC-V privileged ISA.
+
+config RISCV_SOC_HAS_ISR_STACKING
+	bool
+	depends on !USERSPACE
+	help
+	  Enable low-level SOC-specific hardware stacking / unstacking
+	  operations during ISR. This hidden option needs to be selected by SoC
+	  if this feature is supported.
+
+	  Some SOCs implement a mechanism for which, on interrupt handling,
+	  part of the context is automatically saved by the hardware on the
+	  stack according to a custom ESF format. The same part of the context
+	  is automatically restored by hardware on mret.
+
+	  Enabling this option requires that the SoC provides a
+	  soc_isr_stacking.h header which defines the following:
+
+	  - SOC_ISR_SW_STACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR entry to save in the ESF the
+	    remaining part of the context not pushed already on the stack by
+	    the hardware.
+
+	  - SOC_ISR_SW_UNSTACKING: macro guarded by _ASMLANGUAGE called by the
+	    IRQ wrapper assembly code on ISR exit to restore the part of the
+	    context from the ESF that won't be restored by hardware on mret.
+
+	  - SOC_ISR_STACKING_ESF_DECLARE: structure declaration for the ESF
+	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
+	    the hardware stacked registers in the proper order as they are
+	    saved on the stack by the hardware, and the registers saved by the
+	    software macros. The structure must be called 'struct arch_esf'.
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	bool
+	help
+	  This allows the SoC to overwrite the irq handling. If enabled, the
+	  function __soc_handle_all_irqs has to be implemented. It shall service
+	  and clear all pending interrupts.
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
+	bool
+	help
+	  Hidden option to allow SoC to overwrite arch_irq_lock(),
+	  arch_irq_unlock() and arch_irq_unlocked() functions with
+	  platform-specific versions named z_soc_irq_lock(), z_soc_irq_unlock()
+	  and z_soc_irq_unlocked().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the mstatus register to lock and unlock the IRQs.
+
+config RISCV_SOC_HAS_CUSTOM_SYS_IO
+	bool
+	help
+	  Hidden option to allow SoC to overwrite sys_read*(), sys_write*() functions with
+	  platform-specific versions named z_soc_sys_read*() and z_soc_sys_write*().
+
+	  Enable this hidden option and specialize the z_soc_* functions when
+	  the RISC-V SoC needs to do something different and more than reading and
+	  writing the registers.
+
+config RISCV_SOC_CONTEXT_SAVE
+	bool "SOC-based context saving in IRQ handlers"
+	select RISCV_SOC_OFFSETS
+	help
+	  Enable low-level SOC-specific context management, for SOCs
+	  with extra state that must be saved when entering an
+	  interrupt/exception, and restored on exit. If unsure, leave
+	  this at the default value.
+
+	  Enabling this option requires that the SoC provide a
+	  soc_context.h header which defines the following macros:
+
+	  - SOC_ESF_MEMBERS: structure component declarations to
+	    allocate space for. The last such declaration should not
+	    end in a semicolon, for portability. The generic RISC-V
+	    architecture code will allocate space for these members in
+	    a "struct soc_esf" type (typedefed to soc_esf_t), which will
+	    be available if arch.h is included.
+
+	  - SOC_ESF_INIT: structure contents initializer for struct soc_esf
+	    state. The last initialized member should not end in a comma.
+
+	  The generic architecture IRQ wrapper will also call
+	  \_\_soc_save_context and \_\_soc_restore_context routines at
+	  ISR entry and exit, respectively. These should typically
+	  be implemented in assembly. If they were C functions, they
+	  would have these signatures:
+
+	  ``void __soc_save_context(soc_esf_t *state);``
+
+	  ``void __soc_restore_context(soc_esf_t *state);``
+
+	  The calls obey standard calling conventions; i.e., the state
+	  pointer address is in a0, and ra contains the return address.
+
+config RISCV_SOC_OFFSETS
+	bool "SOC-based offsets"
+	help
+	  Enabling this option requires that the SoC provide a soc_offsets.h
+	  header which defines the following macros:
+
+	  - GEN_SOC_OFFSET_SYMS(): a macro which expands to
+	    GEN_OFFSET_SYM(soc_esf_t, soc_specific_member) calls
+	    to ensure offset macros for SOC_ESF_MEMBERS are defined
+	    in offsets.h. The last one should not end in a semicolon.
+	    See gen_offset.h for more details.
+
+config RISCV_HAS_PLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config RISCV_SOC_EXCEPTION_FROM_IRQ
+	bool
+	help
+	  Option selected by SoCs that require a custom mechanism to check if
+	  an exception is the result of an interrupt or not. If selected,
+	  __soc_is_irq() needs to be implemented by the SoC.
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool "SOC-based interrupt initialization"
+	help
+	  Enable SOC-based interrupt initialization
+	  (call soc_interrupt_init, within _IntLibInit when enabled)
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	hex
+	default 0x7FFFFFFFFFFFFFFF if 64BIT
+	default 0x7FFFFFFF
+	help
+	  Specify the bits to use for exception code in mcause register.
+
+config RISCV_GENERIC_TOOLCHAIN
+	bool "Compile using generic riscv32 toolchain"
+	default y
+	help
+	  Compile using generic riscv32 toolchain.
+	  Allow SOCs that have custom extended riscv ISA to still
+	  compile with generic riscv32 toolchain.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+	int
+	default 0
+	depends on GEN_ISR_TABLES
+	help
+	  On some RISCV platform the first interrupt vectors are primarly
+	  intended for inter-hart interrupt signaling and so retained for that
+	  purpose and not available. When this option is set, all the IRQ
+	  vectors are shifted by this offset value when installed into the
+	  software ISR table and the IRQ vector table. CONFIG_NUM_IRQS must be
+	  properly sized to take into account this offset. This is a hidden
+	  option which needs to be set per architecture and left alone.
+
+config NUM_IRQS
+	int
+
+config RV_BOOT_HART
+	int "Starting HART ID"
+	default 0
+	help
+	  This option sets the starting HART ID for the SMP core.
+	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
+	  skip the E51 HART 0 as it is not usable in SMP configurations.
+
+config RISCV_HART_MASK
+	int
+	default -1
+	help
+	  Configures the mask for the HART ID.
+	  For RISC-V systems with HART ID starting from non-zero value,
+	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
+	  such that we can extract the bits that start from 0.
+
+config RISCV_PMP
+	bool "RISC-V PMP Support"
+	select THREAD_STACK_INFO
+	select CPU_HAS_MPU
+	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_STACK_PROTECTION
+	select MPU
+	select SRAM_REGION_PERMISSIONS
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select THREAD_LOCAL_STORAGE if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	select MEM_DOMAIN_ISOLATED_STACKS
+	help
+	  MCU implements Physical Memory Protection.
+
+if RISCV_PMP
+
+config PMP_SLOTS
+	int "Number of PMP slots"
+	default 8
+	help
+	  This is the number of PMP entries implemented by the hardware.
+	  Typical values are 8 or 16.
+
+config PMP_NO_TOR
+	bool
+	help
+	  Set this if TOR (Top Of Range) mode is not supported.
+
+config PMP_NO_NA4
+	bool
+	help
+	  Set this if NA4 (Naturally Aligned 4-byte) mode is not supported.
+
+config PMP_NO_NAPOT
+	bool
+	help
+	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
+
+config PMP_POWER_OF_TWO_ALIGNMENT
+	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
+	default y if TEST_USERSPACE
+	default y if (PMP_SLOTS = 8)
+	default y if PMP_NO_TOR
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	select GEN_PRIV_STACKS
+	help
+	  This option reduces the PMP slot usage but increases
+	  memory consumption. Useful when enabling userspace mode with
+	  many memory domains and/or few PMP slots available.
+
+config PMP_GRANULARITY
+	int "The granularity of PMP address matching"
+	default 8 if (PMP_NO_TOR && PMP_NO_NA4)
+	default 4
+	help
+	  The granularity must be a power of 2 greater than or equal to 4
+	  (ie 4, 8, 16, ...), but if neither TOR mode nor NA4 mode is
+	  supported, the minimum granularity is 8.
+
+endif #RISCV_PMP
+
+config PMP_STACK_GUARD
+	def_bool y
+	depends on MULTITHREADING
+	depends on HW_STACK_PROTECTION
+
+config PMP_STACK_GUARD_MIN_SIZE
+	int "Stack Guard area size"
+	depends on PMP_STACK_GUARD
+	default 1024 if 64BIT
+	default 512
+	help
+	  The Hardware Stack Protection implements a guard area at the bottom
+	  of the stack using the PMP to catch stack overflows by marking that
+	  guard area not accessible.
+
+	  This is the size of the guard area. This should be large enough to
+	  catch any sudden jump in stack pointer decrement, plus some
+	  wiggle room to accommodate the eventual overflow exception
+	  stack usage.
+
+# Implement the null pointer detection using the Physical Memory Protection
+# (PMP) Unit.
+config NULL_POINTER_EXCEPTION_DETECTION_PMP
+	bool "Use PMP for null pointer exception detection"
+	depends on RISCV_PMP
+	help
+	  Null pointer dereference detection implemented
+	  using PMP functionality.
+
+if NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config NULL_POINTER_EXCEPTION_REGION_SIZE
+	hex "Inaccessible region to implement null pointer detection"
+	default 0x10
+	help
+	  Use a PMP slot to make region (starting at address 0x0) inaccessible for
+	  detecting null pointer dereferencing (raising a CPU access fault).
+	  Minimum is 4 bytes.
+
+endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+endmenu
+
+config MAIN_STACK_SIZE
+	default 4096 if 64BIT
+	default 2048 if PMP_STACK_GUARD
+
+config TEST_EXTRA_STACK_SIZE
+	default 1536
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT
+
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 256
+
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	int "Alignment of RISC-V trap handler in bytes"
+	default 64 if RISCV_HAS_CLIC
+	default 4
+	help
+	  This value configures the alignment of RISC-V trap handling
+	  code. The requirement for a particular alignment arises from
+	  the format of MTVEC register which is RISC-V platform-specific.
+	  The minimum alignment is 4 bytes according to the Spec.
+
+config GEN_IRQ_VECTOR_TABLE
+	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
+
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	default y if !SMP
+
+rsource "Kconfig.isa"
+
+endmenu

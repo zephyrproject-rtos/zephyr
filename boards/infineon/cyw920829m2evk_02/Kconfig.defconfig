@@ -1,0 +1,13 @@
+# The Infineon AIROC™ CYW20829 Bluetooth® LE evaluation kit (CYW92089M2EVK-02)
+
+# Copyright (c) 2024 Cypress Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice AIROC_PART
+	default CYW20829 if BT
+endchoice
+
+# Heap Pool Size
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 10096

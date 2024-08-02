@@ -1,0 +1,59 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32L0 and STM32L1 Main PLL node binding:
+
+  Takes one of clk_hse, clk_hsi or clk_msi as input clock, with an
+  input frequency from 2 to 24 MHz.
+
+  The desired PLL frequency can be computed with the following formula:
+
+    f(PLL) = f(VCO clock) / PLLDIV  --> PLLCLK (System Clock)
+
+      with f(VCO clock) = f(PLL clock input) × PLLMUL --> PLLVCO
+
+  The PLL output frequency must not exceed 32 MHz.
+
+compatible: "st,stm32l0-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    required: true
+
+  div:
+    type: int
+    required: true
+    description: |
+        PLL output division
+    enum:
+      - 2
+      - 3
+      - 4
+
+  mul:
+    type: int
+    required: true
+    description: |
+        PLL multiplication factor for VCO
+        The PLL VCO clock frequency must not exceed:
+        - 96 MHz when the product is in Range 1
+        - 48 MHz when the product is in Range 2
+        - 24 MHz when the product is in Range 3
+        If the USB uses the PLL as clock source, the PLL VCO clock must be
+        programmed to output a 96 MHz frequency (USBCLK = PLLVCO/2).
+    enum:
+      - 3
+      - 4
+      - 6
+      - 8
+      - 12
+      - 16
+      - 24
+      - 32
+      - 48

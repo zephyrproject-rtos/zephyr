@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - eeprom
+tests:
+  drivers.eeprom.build:
+    min_ram: 32
+    platform_exclude: serpente
+    depends_on:
+      - gpio
+      - i2c
+      - spi

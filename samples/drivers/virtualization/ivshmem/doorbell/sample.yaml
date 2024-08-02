@@ -1,0 +1,18 @@
+sample:
+  description: ivshmem-doorbell sample application
+  name: ivshmem_doorbell_sample
+tests:
+  sample.virtualization.ivshmem.doorbell.arm64:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_kvm_arm64
+    tags:
+      - userspace
+      - ivshmem
+  sample.virtualization.ivshmem.doorbell.x64:
+    build_only: true
+    platform_allow: qemu_x86_64
+    tags:
+      - userspace
+      - ivshmem

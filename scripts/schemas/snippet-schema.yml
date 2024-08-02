@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022, Nordic Semiconductor ASA
+
+# A pykwalify schema for basic validation of the snippet.yml format.
+
+schema;append-schema:
+  # Sub-schema for appending onto CMake list variables.
+  # See uses under 'append:' keys below.
+  type: map
+  mapping:
+    EXTRA_DTC_OVERLAY_FILE:
+      type: str
+    EXTRA_CONF_FILE:
+      type: str
+    DTS_EXTRA_CPPFLAGS:
+      type: str
+
+type: map
+mapping:
+  name:
+    required: true
+    type: str
+  append:
+    example: |
+      Snippet-wide appending can be done here:
+
+        name: foo
+        append:
+          EXTRA_DTC_OVERLAY_FILE: m3.overlay
+    include: append-schema
+  boards:
+    example: |
+      Board-specific appending can be done here:
+
+        name: foo
+        boards:
+          qemu_cortex_m3:
+            append:
+              EXTRA_DTC_OVERLAY_FILE: m3.overlay
+    type: map
+    mapping:
+      regex;(.*):
+        type: map
+        mapping:
+          append:
+            include: append-schema

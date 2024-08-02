@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NATIVE_SIM
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !NET_LOOPBACK && !NET_TEST
+
+config ETH_NATIVE_POSIX
+	default y if NET_L2_ETHERNET && ETH_DRIVER
+
+endif # NETWORKING
+
+if CONSOLE
+
+config POSIX_ARCH_CONSOLE
+	default y if !SERIAL
+
+config UART_CONSOLE
+	default y if SERIAL
+
+endif # CONSOLE
+
+
+endif # BOARD_NATIVE_SIM

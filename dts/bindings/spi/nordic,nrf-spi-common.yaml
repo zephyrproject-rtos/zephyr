@@ -1,0 +1,65 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for Nordic nRF family SPI peripherals
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  max-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum data rate the SPI peripheral can be driven at, in Hz. This
+      property must be set at SoC level DTS files.
+
+  overrun-character:
+    type: int
+    default: 0xff
+    description: |
+      The overrun character (ORC) is used when all bytes from the TX buffer
+      are sent, but the transfer continues due to RX. Defaults to 0xff
+      (line high), the most common value used in SPI transfers.
+
+  easydma-maxcnt-bits:
+    type: int
+    required: true
+    description: |
+      Maximum number of bits available in the EasyDMA MAXCNT register. This
+      property must be set at SoC level DTS files.
+
+  wake-gpios:
+    type: phandle-array
+    description: |
+      Optional bi-directional line that allows SPI master to indicate to SPI
+      slave (by setting the line high) that a transfer is to occur, so that
+      the latter can prepare (and indicate its readiness) for handling that
+      transfer when it is actually needed, and stay in any desired low-power
+      state otherwise.
+      The protocol is as follows:
+      - initially, SPI slave configures its WAKE line pin as an input and SPI
+        master keeps the line in the low state
+      - when a transfer is to be performed, SPI master configures its WAKE
+        line pin as an input with pull-up; this changes the line state to
+        high but allows SPI slave to override that state
+      - when SPI slave detects the high state of the WAKE line, it prepares
+        for the transfer and when everything is ready, it drives the WAKE
+        line low by configuring its pin as an output
+      - the generated high-to-low transition on the WAKE line is a signal
+        to SPI master that it can proceed with the transfer
+      - SPI slave releases the line by configuring its pin back to be an input
+        and SPI master again keeps the line in the low state
+      Please note that the line must be configured and properly handled on
+      both sides for the mechanism to work correctly.

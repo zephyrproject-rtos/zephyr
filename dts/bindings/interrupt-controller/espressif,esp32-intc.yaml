@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 Interrupt controller
+compatible: "espressif,esp32-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+interrupt-cells:
+  - irq

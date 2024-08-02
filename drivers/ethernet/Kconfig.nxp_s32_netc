@@ -1,0 +1,102 @@
+# Copyright 2022-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_NXP_S32_NETC
+	bool "NXP S32 Ethernet Switch and Controller (NETC) driver"
+	default y
+	depends on (DT_HAS_NXP_S32_NETC_PSI_ENABLED || DT_HAS_NXP_S32_NETC_VSI_ENABLED)
+	select MBOX
+	select MDIO if DT_HAS_NXP_S32_NETC_PSI_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable Ethernet Switch and Controller (NETC) driver for NXP S32 SoCs.
+
+if ETH_NXP_S32_NETC
+
+config ETH_NXP_S32_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 2
+	help
+	  RX thread priority. RX thread is a cooperative thread.
+
+config ETH_NXP_S32_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 1500
+	help
+	  RX thread stack size.
+
+config ETH_NXP_S32_RX_BUDGET
+	int "RX thread budget"
+	default 128
+	range 1 1024
+	help
+	  The budget parameter places a limit on the amount of work the driver may
+	  do in the RX thread before yielding the processor, in case there is more
+	  work to do. This is to prevent the RX thread to starve other threads. Each
+	  received frame counts as one unit of work.
+
+config ETH_NXP_S32_TX_RING_LEN
+	int "TX ring length"
+	default 64
+	range 8 256
+	help
+	  Length of the TX ring. The value must be a multiple of 8.
+
+config ETH_NXP_S32_TX_RING_BUF_SIZE
+	int "TX ring data buffer size"
+	default 1536
+	range 64 1536
+	help
+	  Size, in bytes, of the TX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of 8.
+
+config ETH_NXP_S32_RX_RING_LEN
+	int "RX ring length"
+	default 64
+	range 8 256
+	help
+	  Length of the RX ring. The value must be a multiple of 8.
+
+config ETH_NXP_S32_RX_RING_BUF_SIZE
+	int "RX ring data buffer size"
+	default 1536
+	range 64 1536
+	help
+	  Size, in bytes, of the RX data buffer. The size must be big enough to
+	  store one complete Ethernet frame, and be a multiple of 8.
+
+config ETH_NXP_S32_RX_IRQ_PACKET_THRESHOLD
+	int "RX interrupt coalescing packet threshold"
+	default 32
+	range 1 511
+	help
+	  RX interrupt coalescing packet threshold. This values determines the
+	  minimum number of packets received before raising an interrupt.
+
+config ETH_NXP_S32_RX_IRQ_TIMER_THRESHOLD
+	int "RX interrupt coalescing timer threshold"
+	default 60000
+	range 1 $(UINT32_MAX)
+	help
+	  RX interrupt coalescing timer threshold, in units of NETC clock cycles.
+	  This value determines the maximum amount of time allowed between a first
+	  received packet until RX interrupt coalescing packet threshold is reached.
+	  If the timer expires before the threshold is reached, an interrupt is
+	  raised.
+
+config ETH_NXP_S32_MAC_FILTER_TABLE_SIZE
+	int "MAC filter hash table size"
+	default 8
+	range 8 128
+	help
+	  Maximum number of entries supported in the MAC filter hash table.
+
+config ETH_NXP_S32_VSI_INIT_PRIORITY
+	int
+	default 81
+	help
+	  VSI initialization priority. It must be bigger than PSI init priority
+	  (CONFIG_ETH_INIT_PRIORITY) and lower than CONFIG_NET_INIT_PRIO, so
+	  that it can start after the PSI but before the networking sub-system.
+
+endif # ETH_NXP_S32_NETC

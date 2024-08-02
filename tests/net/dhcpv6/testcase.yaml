@@ -1,0 +1,10 @@
+common:
+  depends_on: netif
+  tags: net dhcpv6
+tests:
+  net.dhcpv6:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.dhcpv6.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

@@ -1,0 +1,136 @@
+/*
+ * Copyright (c) 2023 PSICONTROl nv
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+
+
+/ {
+	soc {
+		compatible = "st,stm32u595", "st,stm32u5", "simple-bus";
+
+		pinctrl: pin-controller@42020000 {
+			compatible = "st,stm32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42020000 0x2800>;
+
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42022400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000200>;
+			};
+		};
+
+		usart6: serial@40006400 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40006400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			resets = <&rctl STM32_RESET(APB1L, 25U)>;
+			interrupts = <126 0>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@40009800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000040>;
+			interrupts = <128 0>, <127 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		i2c6: i2c@40009c00 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000080>;
+			interrupts = <130 0>, <129 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+		};
+
+		/* Available in STM32U59x/5Ax/5Fx/5Gx SoCs */
+		adc2: adc@42028100 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028100 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(14, 0x00)
+				       STM32_ADC_RES(12, 0x01)
+				       STM32_ADC_RES(10, 0x02)
+				       STM32_ADC_RES(8, 0x03)>;
+			sampling-times = <5 6 12 20 36 68 391 814>;
+			st,adc-clock-source = <ASYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+
+		/*
+		 * Available in STM32U59x/5Ax/5Fx/5Gx SoCs
+		 * dual mode: adc1 and adc2 coupled
+		 */
+		adc1_2: adc@42028300 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028300 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>;
+			interrupts = <37 0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			resolutions = <STM32_ADC_RES(14, 0x00)
+				       STM32_ADC_RES(12, 0x01)
+				       STM32_ADC_RES(10, 0x02)
+				       STM32_ADC_RES(8, 0x03)>;
+			sampling-times = <5 6 12 20 36 68 391 814>;
+			st,adc-clock-source = <ASYNC>;
+			st,adc-sequencer = <FULLY_CONFIGURABLE>;
+		};
+
+		usbotg_hs: otghs@42040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x42040000 0x20000>;
+			interrupts = <73 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x0000c000>,
+				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			phys = <&otghs_phy>;
+			status = "disabled";
+		};
+	};
+
+	otghs_phy: otghs_phy {
+		/* Clock source defined by USBPHYC_SEL in */
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+
+	smbus5: smbus5 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c5>;
+		status = "disabled";
+	};
+
+	smbus6: smbus6 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c6>;
+		status = "disabled";
+	};
+};

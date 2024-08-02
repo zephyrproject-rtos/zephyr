@@ -1,0 +1,10 @@
+tests:
+  # section.subsection
+  sample.testing.ztest:
+    build_only: true
+    platform_allow:
+      - native_posix
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: test_framework

@@ -1,0 +1,5 @@
+# Copyright (c) 2018 AJ Palmer
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F746ZG
+	select SOC_STM32F746XX

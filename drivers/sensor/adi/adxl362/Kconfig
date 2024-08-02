@@ -1,0 +1,146 @@
+# ADXL362 Three-Axis Digital Accelerometers
+
+# Copyright (c) 2017 IpTronix S.r.l.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADXL362
+	bool "ADXL362 sensor"
+	default y
+	depends on DT_HAS_ADI_ADXL362_ENABLED
+	select SPI
+	help
+	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
+
+if ADXL362
+
+choice
+	prompt "Accelerometer range setting"
+	default ADXL362_ACCEL_RANGE_RUNTIME
+
+config ADXL362_ACCEL_RANGE_RUNTIME
+	bool "Set at runtime."
+
+config ADXL362_ACCEL_RANGE_2G
+	bool "2G"
+
+config ADXL362_ACCEL_RANGE_4G
+	bool "4G"
+
+config ADXL362_ACCEL_RANGE_8G
+	bool "8G"
+
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency."
+	default ADXL362_ACCEL_ODR_RUNTIME
+
+config ADXL362_ACCEL_ODR_RUNTIME
+	bool "Set at runtime."
+
+config ADXL362_ACCEL_ODR_12_5
+	bool "12.5 Hz"
+
+config ADXL362_ACCEL_ODR_25
+	bool "25 Hz"
+
+config ADXL362_ACCEL_ODR_50
+	bool "50 Hz"
+
+config ADXL362_ACCEL_ODR_100
+	bool "100 Hz"
+
+config ADXL362_ACCEL_ODR_200
+	bool "200 Hz"
+
+config ADXL362_ACCEL_ODR_400
+	bool "400 Hz"
+
+endchoice
+
+choice
+	prompt "Trigger mode"
+	default ADXL362_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL362_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL362_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL362_TRIGGER
+
+config ADXL362_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL362_TRIGGER
+
+endchoice
+
+config ADXL362_TRIGGER
+	bool
+
+config ADXL362_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL362_TRIGGER_OWN_THREAD && ADXL362_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL362_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL362_TRIGGER_OWN_THREAD && ADXL362_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config ADXL362_ACTIVITY_THRESHOLD
+	int "Upper threshold value"
+	default 1000
+	help
+	  Unsigned value that the adxl362 samples are
+	  compared to in activity trigger mode.
+
+config ADXL362_ACTIVITY_TIME
+       int "Upper threshold time"
+       default 1
+       help
+         8 bit value written to the activity timer register
+         0 to 254, seconds is this value div by ODR
+
+config ADXL362_INACTIVITY_THRESHOLD
+	int "Lower threshold value"
+	default 100
+	help
+	  Unsigned value that the adxl362 samples are
+	  compared to in inactivity trigger mode.
+
+config ADXL362_INACTIVITY_TIME
+  int "Lower threshold time"
+  default 1
+  help
+    16 bit value written to the activity timer register
+    0 to 65535, seconds is this value div by ODR
+
+config ADXL362_INTERRUPT_MODE
+	int "Activity and inactivity interrupt mode"
+	default 0
+	help
+	  Unsigned value that sets the ADXL362 in different
+	  interrupt modes.
+	  0 - Default mode
+	  1 - Linked mode
+	  3 - Loop mode
+
+config ADXL362_ABS_REF_MODE
+	int "Absolute or referenced interrupt"
+	default 0
+	help
+	  Unsigned value that sets the ADXL362 interrupt
+	  mode in either absolute or referenced mode.
+	  0 - Absolute mode
+	  1 - Referenced mode
+
+endif # ADXL362

@@ -1,0 +1,16 @@
+identifier: max32680evkit/max32680/m4
+name: max32680evkit m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+  - trng
+  - i2c
+ram: 128
+flash: 512

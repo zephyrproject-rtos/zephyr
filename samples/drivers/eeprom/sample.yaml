@@ -1,0 +1,42 @@
+sample:
+  name: EEPROM Sample
+
+tests:
+  sample.drivers.eeprom:
+    tags: eeprom
+    platform_allow:
+      - gd32f450i_eval
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Reset the MCU to see the increasing boot counter."
+  sample.drivers.eeprom.shield.x_nucleo_eeprma2:
+    tags:
+      - eeprom
+      - shield
+    depends_on:
+      - arduino_gpio
+      - arduino_i2c
+      - arduino_spi
+    platform_exclude:
+      - ubx_evkannab1/nrf52832
+      - sam_v71_xult/samv71q21
+      - sam_v71_xult/samv71q21b
+      - pan1781_evb
+      - pan1782_evb
+      - pan1770_evb
+      - pan1780_evb
+      - mimxrt1010_evk
+    extra_args: SHIELD=x_nucleo_eeprma2
+    harness: console
+    harness_config:
+      fixture: fixture_shield_x_nucleo_eeprma2
+    integration_platforms:
+      - nucleo_f070rb

@@ -1,0 +1,10 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - watchdog
+tests:
+  drivers.watchdog.build:
+    # will cover drivers without in-tree boards
+    platform_allow: qemu_cortex_m3
+    extra_args: "CONFIG_WATCHDOG=y"

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	mem_ram: memory@10000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x10000000 0x1000>;
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_FLASH) | DT_MEM_NON_VOLATILE )>;
+	};
+
+	mem_ram_nocache: memory@20000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x20000000 0x2000>;
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
+	};
+
+	mem_ram_disabled: memory@30000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x30000000 0x3000>;
+		zephyr,memory-attr = <( DT_MEM_CACHEABLE | DT_MEM_OOO )>;
+		status = "disabled";
+	};
+};

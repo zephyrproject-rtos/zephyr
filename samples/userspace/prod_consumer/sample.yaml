@@ -1,0 +1,19 @@
+sample:
+  description: userspace producer-consumer example
+  name: producer-consumer
+common:
+  integration_platforms:
+    - mps2/an385
+  tags: userspace
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "SUCCESS"
+tests:
+  sample.userspace.prod_consumer:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - ucans32k1sic

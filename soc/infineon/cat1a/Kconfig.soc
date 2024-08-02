@@ -1,0 +1,61 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# MPNs definitions
+rsource "*/Kconfig.soc"
+
+# Infineon CAT1A devices
+
+# Category definitions
+config SOC_FAMILY_INFINEON_CAT1
+	bool
+
+config SOC_FAMILY_INFINEON_CAT1A
+	bool
+
+# Family definitions
+config SOC_FAMILY_PSOC6
+	bool
+
+config SOC_FAMILY_PSOC6_LEGACY
+	bool
+
+config SOC_FAMILY_PSOC6_LEGACY_M4
+	bool
+
+config SOC_FAMILY_PSOC6_LEGACY_M0
+	bool
+
+# Cypress PSoC™ 6 MCU lines
+config SOC_SERIES_PSOC6_60
+	bool
+	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES_PSOC6_61
+	bool
+	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES_PSOC6_62
+	bool
+	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES_PSOC6_63
+	bool
+	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES_PSOC6_64
+	bool
+	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY
+	select SOC_FAMILY_INFINEON_CAT1A
+
+config SOC_SERIES
+	default "psoc6_60" if SOC_SERIES_PSOC6_60
+	default "psoc6_61" if SOC_SERIES_PSOC6_61
+	default "psoc6_62" if SOC_SERIES_PSOC6_62
+	default "psoc6_63" if SOC_SERIES_PSOC6_63
+	default "psoc6_64" if SOC_SERIES_PSOC6_64

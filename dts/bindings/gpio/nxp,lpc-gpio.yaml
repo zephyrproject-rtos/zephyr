@@ -1,0 +1,23 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# This binding is for the gpio device,
+# which has multiple ports that share the same
+# base address. It is the ports that are
+# functionally gpio devices.
+
+description: LPC GPIO node
+
+compatible: "nxp,lpc-gpio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0

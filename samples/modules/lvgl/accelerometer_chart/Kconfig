@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_CHART_POINTS_PER_SERIES
+	int "Number of points per series"
+	default 50
+	range 10 200
+	help
+	  Maximum number of points per series in the accelerometer chart.
+	  Warning: More points means more memory usage, and slower rendering!
+
+config SAMPLE_ACCEL_SAMPLING_RATE
+	int "Accelerometer sampling rate (Hz)"
+	default 50
+	range 1 100
+
+source "Kconfig.zephyr"

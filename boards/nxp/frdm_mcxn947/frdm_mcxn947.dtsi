@@ -1,0 +1,223 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_mcxn947-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		sdhc0 = &usdhc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+			status = "disabled";
+		};
+		red_led: led_3 {
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+			status = "disabled";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			status = "disabled";
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+			status = "disabled";
+		};
+	};
+};
+
+&flexcomm1_lpspi1 {
+	pinctrl-0 = <&pinmux_flexcomm1_lpspi>;
+	pinctrl-names = "default";
+};
+
+&flexcomm2_lpi2c2 {
+	pinctrl-0 = <&pinmux_flexcomm2_lpi2c>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&flexcomm2_lpuart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart>;
+	pinctrl-names = "default";
+};
+
+&flexcomm4_lpuart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_lpuart>;
+	pinctrl-names = "default";
+};
+
+/*
+ * MCXN947 board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		/* For the MCUBoot "upgrade only" method,
+		 * the slot sizes must be equal.
+		 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(992)>;
+		};
+		slot1_partition: partition@108000 {
+			label = "image-1";
+			reg = <0x00108000 DT_SIZE_K(992)>;
+		};
+		/* storage_partition is placed in WINBOND flash memory*/
+	};
+};
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND flash memory*/
+	w25q64jvssiq: w25q64jvssiq@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "disabled";
+		size = <67108864>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		jedec-id = [ef 40 17];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
+
+&dac0 {
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+&usdhc0 {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	cd-gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default", "slow", "med";
+	no-1-8-v;
+};
+
+&lpadc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+nxp_flexio_lcd: &flexio0_lcd {
+	/* DMA channels 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 61>;
+	dma-names = "tx";
+	shifters-count = <8>;
+	timers-count = <1>;
+	enwr-pin = <1>;
+	rd-pin = <0>;
+	data-pin-start = <16>;
+	reset-gpios = <&gpio4 7 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
+};
+
+&lpcmp0 {
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};

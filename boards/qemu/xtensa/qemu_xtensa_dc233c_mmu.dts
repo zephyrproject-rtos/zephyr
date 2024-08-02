@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2019, 2023 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "dc233c.dtsi"
+
+/ {
+	model = "qemu_xtensa_mmu";
+	compatible = "cdns,xtensa-dc233c";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <10000000>;
+};

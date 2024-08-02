@@ -1,0 +1,56 @@
+/*
+ * Copyright 2023, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	chosen {
+		zephyr,display = &rm67162_g1120b0mipi;
+	};
+
+	en_mipi_display_g1120b0mipi: enable-mipi-display {
+		compatible = "regulator-fixed";
+		regulator-name = "en_mipi_display";
+		enable-gpios = <&nxp_mipi_connector 32 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&ft3267_g1120b0mipi>;
+		invert-y;
+	};
+};
+
+&nxp_mipi_i2c {
+	status = "okay";
+	ft3267_g1120b0mipi: ft3267@38 {
+		/*
+		 * Note- the actual controller present on this IC is a FT3267,
+		 * but the FT35336 driver in Zephyr supports this IC.
+		 */
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&nxp_mipi_connector 28 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&zephyr_mipi_dsi {
+	status = "okay";
+	autoinsert-eotp;
+	phy-clock = <316800000>;
+	rm67162_g1120b0mipi: rm67162@0 {
+		status = "okay";
+		compatible = "raydium,rm67162";
+		reg = <0x0>;
+		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&nxp_mipi_connector 0 GPIO_ACTIVE_HIGH>;
+		te-gpios = <&nxp_mipi_connector 22 GPIO_ACTIVE_HIGH>;
+		data-lanes = <1>;
+		width = <400>;
+		height = <392>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+	};
+};

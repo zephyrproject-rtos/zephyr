@@ -1,0 +1,77 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  sample.net.lwm2m_client:
+    harness: net
+    depends_on: netif
+    platform_allow:
+      - qemu_x86
+      - frdm_k64f
+      - pinnacle_100_dvk
+      - mg100
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - lwm2m
+  sample.net.lwm2m_client.all_objects:
+    harness: net
+    depends_on: netif
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - lwm2m
+    extra_configs:
+      - CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT=y
+      - CONFIG_LWM2M_LOCATION_OBJ_SUPPORT=y
+      - CONFIG_LWM2M_IPSO_ACCELEROMETER=y
+      - CONFIG_LWM2M_IPSO_BUZZER=y
+      - CONFIG_LWM2M_IPSO_ONOFF_SWITCH=y
+      - CONFIG_LWM2M_IPSO_PUSH_BUTTON=y
+      - CONFIG_LWM2M_IPSO_GENERIC_SENSOR=y
+      - CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR=y
+      - CONFIG_LWM2M_IPSO_PRESSURE_SENSOR=y
+  sample.net.lwm2m_client.dtls:
+    harness: net
+    depends_on: netif
+    extra_args: OVERLAY_CONFIG=overlay-dtls.conf
+    platform_allow:
+      - qemu_x86
+      - frdm_k64f
+      - pinnacle_100_dvk
+      - mg100
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - lwm2m
+  sample.net.lwm2m_client.queue_mode:
+    harness: net
+    depends_on: netif
+    extra_args: OVERLAY_CONFIG=overlay-queue.conf
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - net
+      - lwm2m
+  sample.net.lwm2m_client.wnc_m14a2a:
+    harness: net
+    extra_args: SHIELD=wnc_m14a2a
+    platform_allow:
+      - frdm_k64f
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - frdm_k64f
+    tags:
+      - net
+      - lwm2m

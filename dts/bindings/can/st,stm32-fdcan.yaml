@@ -1,0 +1,45 @@
+description: ST STM32 FDCAN CAN FD controller
+
+compatible: "st,stm32-fdcan"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clk-divider:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 8
+      - 10
+      - 12
+      - 14
+      - 16
+      - 18
+      - 20
+      - 22
+      - 24
+      - 26
+      - 28
+      - 30
+
+    description: |
+      Divides the kernel clock giving the time quanta clock that is fed to the
+      CAN core(FDCAN_CKDIV).
+      Note that the divisor is common to all 'st,stm32-fdcan' instances.
+      Divide by 1 is the peripherals reset value and remains set unless
+      this property is configured.

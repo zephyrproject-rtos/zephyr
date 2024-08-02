@@ -1,0 +1,5 @@
+board:
+  name: stm32f412g_disco
+  vendor: st
+  socs:
+    - name: stm32f412zx

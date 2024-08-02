@@ -1,0 +1,30 @@
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+/* Use the PTY driver instead of the UART peripheral emulation that is now the
+ * default on nrf52_bsim. */
+
+&uart1 {
+	status = "okay";
+	compatible = "zephyr,native-posix-uart";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "disabled";
+	};
+};
+
+&uart0 {
+	status = "okay";
+	compatible = "zephyr,native-posix-uart";
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-1;
+	/delete-property/ pinctrl-names;
+};

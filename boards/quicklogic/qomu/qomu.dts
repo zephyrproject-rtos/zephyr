@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2022 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <quicklogic/quicklogic_eos_s3.dtsi>
+#include <zephyr/dt-bindings/pinctrl/quicklogic-eos-s3-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "QuickLogic Qomu board";
+	compatible = "quicklogic,eos_s3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		led1 = &green_led;
+		led2 = &red_led;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_0 {
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+
+		red_led: led_2 {
+			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	fpga0: fpga {
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	uart1_rx_default: uart1_rx_default {
+		pinmux = <UART_RX_PAD45>;
+		input-enable;
+	};
+	uart1_tx_default: uart1_tx_default {
+		pinmux = <UART_TX_PAD44>;
+		output-enable;
+	};
+	usb_pu_default: usb_pu_default {
+		pinmux = <USB_PU_CTRL_PAD23>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dn_default: usb_dn_default {
+		pinmux = <USB_DN_PAD28>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+	usb_dp_default: usb_dp_default {
+		pinmux = <USB_DP_PAD31>;
+		bias-high-impedance;
+		quicklogic,control-selection = "fabric";
+		output-enable;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <61440000>;
+};
+
+&gpio {
+	status = "okay";
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default
+		     &usb_pu_default &usb_dn_default &usb_dp_default>;
+	pinctrl-names = "default";
+};

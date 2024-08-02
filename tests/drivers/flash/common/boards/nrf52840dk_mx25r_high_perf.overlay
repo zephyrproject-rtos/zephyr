@@ -1,0 +1,29 @@
+/delete-node/ &qspi;
+
+&gpio0 {
+	gpio-reserved-ranges = <0 2>, <6 1>, <8 3>, <18 6>;
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	mx25r64: mx25r6435f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <33000000>;
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+		mxicy,mx25r-power-mode = "high-performance";
+	};
+};

@@ -1,0 +1,52 @@
+name: Pull Request Assigner
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    branches:
+    - main
+    - collab-*
+    - v*-branch
+  issues:
+    types:
+    - labeled
+
+jobs:
+  assignment:
+    name: Pull Request Assignment
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Install Python dependencies
+      run: |
+        sudo pip3 install -U setuptools wheel pip
+        pip3 install -U PyGithub>=1.55 west
+
+    - name: Check out source code
+      uses: actions/checkout@v4
+
+    - name: Run assignment script
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_GITHUB_TOKEN }}
+      run: |
+        FLAGS="-v"
+        FLAGS+=" -o ${{ github.event.repository.owner.login }}"
+        FLAGS+=" -r ${{ github.event.repository.name }}"
+        FLAGS+=" -M MAINTAINERS.yml"
+        if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            FLAGS+=" -P ${{ github.event.pull_request.number }}"
+        elif [ "${{ github.event_name }}" = "issues" ]; then
+            FLAGS+=" -I ${{ github.event.issue.number }}"
+        elif [ "${{ github.event_name }}" = "schedule" ]; then
+            FLAGS+=" --modules"
+        else
+          echo "Unknown event: ${{ github.event_name }}"
+          exit 1
+        fi
+
+        python3 scripts/set_assignees.py $FLAGS

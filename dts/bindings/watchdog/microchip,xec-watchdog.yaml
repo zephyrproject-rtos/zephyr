@@ -1,0 +1,25 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC watchdog timer
+
+include: base.yaml
+
+compatible: "microchip,xec-watchdog"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: Array of GIRQ numbers [8:26] and bit positions [0:31].
+
+  pcrs:
+    type: array
+    required: true
+    description: PCR sleep enable register index and bit position.

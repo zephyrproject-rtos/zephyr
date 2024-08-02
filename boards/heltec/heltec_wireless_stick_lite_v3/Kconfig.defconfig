@@ -1,0 +1,23 @@
+# Heltec Wireless Stick Lite (V3) board configuration
+
+# Copyright (c) 2021 Instituto de Pesquisas Eldorado (eldorado.org.br)
+# Copyright (c) 2023 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_PROCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default $(UINT16_MAX) if WIFI && BT
+	default 51200 if WIFI
+	default 40960 if BT
+	default 4096
+
+endif # BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_PROCPU
+
+if BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_APPCPU
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	default 256
+
+endif # BOARD_HELTEC_WIRELESS_STICK_LITE_V3_ESP32S3_APPCPU

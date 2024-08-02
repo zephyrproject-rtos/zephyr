@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <mem.h>
+#include <arm64/renesas/r8a77951.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "rcar_h3ulcb_r8a77951_a57-pinctrl.dtsi"
+
+/ {
+	model = "H3ULCB CA57";
+
+	chosen {
+		zephyr,sram = &ram;
+		zephyr,console = &scif2;
+		zephyr,shell-uart = &scif2;
+	};
+
+	ram: memory@48000000 {
+		device_type = "mmio-sram";
+		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sdhc0 = &emmc2;
+	};
+
+	vcc_sd0: regulator-vcc-sd0 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "SD0 Vcc";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		enable-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	vccq_sd0: regulator-vccq-sd0 {
+		compatible = "regulator-gpio";
+
+		regulator-name = "SD0 VccQ";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
+		states = <3300000 1>, <1800000 0>;
+
+		regulator-always-on;
+	};
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&sd0 {
+	pinctrl-0 = <&sd0_clk &sd0_cmd &sd0_cd &sd0_wp
+		     &sd0_data0 &sd0_data1 &sd0_data2 &sd0_data3>;
+	pinctrl-1 = <&sd0_clk_uhs &sd0_cmd_uhs &sd0_cd &sd0_wp
+		     &sd0_data0_uhs &sd0_data1_uhs &sd0_data2_uhs &sd0_data3_uhs>;
+	pinctrl-names = "default", "uhs";
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+
+	vmmc-supply = <&vcc_sd0>;
+	vqmmc-supply = <&vccq_sd0>;
+
+	bus-width = <4>;
+	mmc-sdr104-support;
+	status = "okay";
+};
+
+&scif2 {
+	pinctrl-0 = <&scif2_data_a_tx_default &scif2_data_a_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&emmc2 {
+	pinctrl-0 = <&emmc2_clk &emmc2_cmd &emmc2_ds
+		     &emmc2_data0 &emmc2_data1 &emmc2_data2 &emmc2_data3
+		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
+	pinctrl-1 = <&emmc2_clk &emmc2_cmd &emmc2_ds
+		     &emmc2_data0 &emmc2_data1 &emmc2_data2 &emmc2_data3
+		     &emmc2_data4 &emmc2_data5 &emmc2_data6 &emmc2_data7>;
+	pinctrl-names = "default", "uhs";
+	disk {
+		compatible = "zephyr,mmc-disk";
+		status = "disabled";
+	};
+	bus-width = <8>;
+	mmc-hs200-1_8v;
+	mmc-hs400-1_8v;
+	non-removable;
+};

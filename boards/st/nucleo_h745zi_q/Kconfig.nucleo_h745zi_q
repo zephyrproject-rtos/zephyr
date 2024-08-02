@@ -1,0 +1,8 @@
+# STM32H745ZI Nucleo board configuration
+
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H745ZI_Q
+	select SOC_STM32H745XX_M7 if BOARD_NUCLEO_H745ZI_Q_STM32H745XX_M7
+	select SOC_STM32H745XX_M4 if BOARD_NUCLEO_H745ZI_Q_STM32H745XX_M4

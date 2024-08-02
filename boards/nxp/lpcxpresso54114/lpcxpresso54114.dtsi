@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "lpcxpresso54114-pinctrl.dtsi"
+
+/ {
+	aliases{
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		spi-5 = &flexcomm5;
+		usart-0 = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio0 29 GPIO_PULL_UP>;
+			label = "User LD1";
+			status = "disabled";
+		};
+		green_led: led_1 {
+			gpios = <&gpio1 10 GPIO_PULL_UP>;
+			label = "User LD2";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio1 9 0>;
+			label = "User LD3";
+			status = "disabled";
+		};
+	};
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
+
+arduino_i2c: &flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	pinctrl-names = "default";
+};
+
+arduino_spi: &flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm5_spi>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot1_partition: partition@10000 {
+			label = "image-1";
+			reg = <0x00010000 0x00010000>;
+		};
+	};
+};
