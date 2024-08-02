@@ -18,12 +18,12 @@ void mock_bap_unicast_server_cleanup(void);
 DECLARE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_config, struct bt_conn *,
 			const struct bt_bap_ep *, enum bt_audio_dir,
 			const struct bt_audio_codec_cfg *, struct bt_bap_stream **,
-			struct bt_audio_codec_qos_pref *const, struct bt_bap_ascs_rsp *);
+			struct bt_bap_qos_cfg_pref *const, struct bt_bap_ascs_rsp *);
 DECLARE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_reconfig, struct bt_bap_stream *,
 			enum bt_audio_dir, const struct bt_audio_codec_cfg *,
-			struct bt_audio_codec_qos_pref *const, struct bt_bap_ascs_rsp *);
+			struct bt_bap_qos_cfg_pref *const, struct bt_bap_ascs_rsp *);
 DECLARE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_qos, struct bt_bap_stream *,
-			const struct bt_audio_codec_qos *, struct bt_bap_ascs_rsp *);
+			const struct bt_bap_qos_cfg *, struct bt_bap_ascs_rsp *);
 DECLARE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_enable, struct bt_bap_stream *,
 			const uint8_t *, size_t, struct bt_bap_ascs_rsp *);
 DECLARE_FAKE_VALUE_FUNC(int, mock_bap_unicast_server_cb_start, struct bt_bap_stream *,

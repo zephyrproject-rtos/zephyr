@@ -21,7 +21,7 @@
  * @ingroup bluetooth
  * @{
  *
- * These APIs provide presets for codec configuration and codec QoS based on values supplied by the
+ * These APIs provide presets for codec configuration and QoS based on values supplied by the
  * codec configurations from table 3.16 in the GMAP v1.0 specification
  */
 
@@ -43,7 +43,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_32KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 60U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 60U, 1U, 15U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 60U, 1U, 15U, 10000U))
 
 /**
  * @brief Helper to declare LC3 32_2_gr codec configuration
@@ -55,7 +55,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_32KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 80U, 1,  \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 80U, 1U, 20U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 80U, 1U, 20U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_1_gr codec configuration
@@ -67,7 +67,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 75U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 75U, 1U, 15U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 75U, 1U, 15U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_2_gr codec configuration
@@ -81,7 +81,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 100U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 100U, 1U, 20U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 100U, 1U, 20U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_3_gr codec configuration
@@ -93,7 +93,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 90U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 90U, 1U, 15U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 90U, 1U, 15U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_4_gr codec configuration
@@ -107,7 +107,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 120u, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 120U, 1U, 20U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 120U, 1U, 20U, 10000U))
 
 /**
  * @brief Helper to declare LC3 16_1_gs codec configuration
@@ -119,7 +119,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 30U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 30U, 1U, 15U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 30U, 1U, 15U, 60000U))
 
 /**
  * @brief Helper to declare LC3 16_2_gs codec configuration
@@ -131,7 +131,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_16KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 40U, 1,  \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 40U, 1U, 20U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 40U, 1U, 20U, 60000U))
 
 /**
  * @brief Helper to declare LC3 32_1_gs codec configuration
@@ -143,7 +143,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_32KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 60U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 60U, 1U, 15U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 60U, 1U, 15U, 60000U))
 
 /**
  * @brief Helper to declare LC3 32_2_gs codec configuration
@@ -155,7 +155,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_32KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 80U, 1,  \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 80U, 1U, 20U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 80U, 1U, 20U, 60000U))
 
 /**
  * @brief Helper to declare LC3 48_1_gs codec configuration
@@ -167,7 +167,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 75U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 75U, 1U, 15U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 75U, 1U, 15U, 60000U))
 
 /**
  * @brief Helper to declare LC3 48_2_gs codec configuration
@@ -179,7 +179,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 100U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 100U, 1U, 20U, 60000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 100U, 1U, 20U, 60000U))
 
 /* GMAP LC3 broadcast presets defined by table 3.22 in the GMAP v1.0 specification */
 
@@ -193,7 +193,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 75U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 75U, 1U, 8U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 75U, 1U, 8U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_2_g codec configuration
@@ -205,7 +205,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 100U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 100U, 1U, 10U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 100U, 1U, 10U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_3_g codec configuration
@@ -217,7 +217,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_7_5, _loc, 90U, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(7500u, 90U, 1U, 8U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(7500u, 90U, 1U, 8U, 10000U))
 
 /**
  * @brief Helper to declare LC3 48_4_g codec configuration
@@ -229,7 +229,7 @@ extern "C" {
 	BT_BAP_LC3_PRESET(BT_AUDIO_CODEC_LC3_CONFIG(BT_AUDIO_CODEC_CFG_FREQ_48KHZ,                 \
 						    BT_AUDIO_CODEC_CFG_DURATION_10, _loc, 120u, 1, \
 						    _stream_context),                              \
-			  BT_AUDIO_CODEC_QOS_UNFRAMED(10000u, 120U, 1U, 10U, 10000U))
+			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 120U, 1U, 10U, 10000U))
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,7 @@
 					     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 
 struct btp_bap_unicast_group {
-	struct bt_audio_codec_qos qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+	struct bt_bap_qos_cfg qos[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group *cig;
 	bool in_use;
 };
