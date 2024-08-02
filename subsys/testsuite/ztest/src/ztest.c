@@ -92,10 +92,10 @@ static int cleanup_test(struct ztest_unit_test *test)
 #endif
 
 	if (!ret && mock_status == 1) {
-		PRINT("Test %s failed: Unused mock parameter values\n", test->name);
+		PRINT_DATA("Test %s failed: Unused mock parameter values\n", test->name);
 		ret = TC_FAIL;
 	} else if (!ret && mock_status == 2) {
-		PRINT("Test %s failed: Unused mock return values\n", test->name);
+		PRINT_DATA("Test %s failed: Unused mock return values\n", test->name);
 		ret = TC_FAIL;
 	} else {
 		;
@@ -414,17 +414,17 @@ void ztest_test_fail(void)
 {
 	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
-		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" at %s function\n", get_friendly_phase_name(cur_phase));
 		longjmp(test_suite_fail, 1);
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
-		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" at %s function\n", get_friendly_phase_name(cur_phase));
 		longjmp(test_fail, 1);
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot fail in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
@@ -435,8 +435,8 @@ void ztest_test_pass(void)
 	if (cur_phase == TEST_PHASE_TEST) {
 		longjmp(test_pass, 1);
 	}
-	PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
-	      get_friendly_phase_name(cur_phase));
+	PRINT_DATA(" ERROR: cannot pass in test phase '%s()', bailing\n",
+		   get_friendly_phase_name(cur_phase));
 	longjmp(stack_fail, 1);
 }
 EXPORT_SYMBOL(ztest_test_pass);
@@ -449,8 +449,8 @@ void ztest_test_skip(void)
 	case TEST_PHASE_TEST:
 		longjmp(test_skip, 1);
 	default:
-		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot skip in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
@@ -462,17 +462,17 @@ void ztest_test_expect_fail(void)
 
 	switch (cur_phase) {
 	case TEST_PHASE_SETUP:
-		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" at %s function\n", get_friendly_phase_name(cur_phase));
 		break;
 	case TEST_PHASE_BEFORE:
 	case TEST_PHASE_TEST:
-		PRINT(" at %s function\n", get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" at %s function\n", get_friendly_phase_name(cur_phase));
 		break;
 	case TEST_PHASE_AFTER:
 	case TEST_PHASE_TEARDOWN:
 	case TEST_PHASE_FRAMEWORK:
-		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot fail in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		longjmp(stack_fail, 1);
 	}
 }
@@ -572,8 +572,8 @@ void ztest_test_fail(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot fail in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot fail in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
 	}
@@ -588,8 +588,8 @@ void ztest_test_pass(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot pass in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot pass in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		if (cur_phase == TEST_PHASE_BEFORE) {
 			test_finalize();
@@ -610,8 +610,8 @@ void ztest_test_skip(void)
 		test_finalize();
 		break;
 	default:
-		PRINT(" ERROR: cannot skip in test phase '%s()', bailing\n",
-		      get_friendly_phase_name(cur_phase));
+		PRINT_DATA(" ERROR: cannot skip in test phase '%s()', bailing\n",
+			   get_friendly_phase_name(cur_phase));
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		break;
 	}
@@ -807,7 +807,7 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 
 #ifndef KERNEL
 	if (setjmp(stack_fail)) {
-		PRINT("TESTSUITE crashed.\n");
+		PRINT_DATA("TESTSUITE crashed.\n");
 		test_status = ZTEST_STATUS_CRITICAL_ERROR;
 		end_report();
 		exit(1);
@@ -1157,7 +1157,7 @@ void ztest_verify_all_test_suites_ran(void)
 		for (suite = _ztest_suite_node_list_start; suite < _ztest_suite_node_list_end;
 		     ++suite) {
 			if (suite->stats->run_count < 1) {
-				PRINT("ERROR: Test suite '%s' did not run.\n", suite->name);
+				PRINT_DATA("ERROR: Test suite '%s' did not run.\n", suite->name);
 				all_tests_run = false;
 			}
 		}
@@ -1165,9 +1165,10 @@ void ztest_verify_all_test_suites_ran(void)
 		for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
 			suite = ztest_find_test_suite(test->test_suite_name);
 			if (suite == NULL) {
-				PRINT("ERROR: Test '%s' assigned to test suite '%s' which doesn't "
-				      "exist\n",
-				      test->name, test->test_suite_name);
+				PRINT_DATA("ERROR: Test '%s' assigned to test suite '%s' which "
+					   "doesn't "
+					   "exist\n",
+					   test->name, test->test_suite_name);
 				all_tests_run = false;
 			}
 		}
@@ -1180,7 +1181,7 @@ void ztest_verify_all_test_suites_ran(void)
 	for (test = _ztest_unit_test_list_start; test < _ztest_unit_test_list_end; ++test) {
 		if (test->stats->fail_count + test->stats->pass_count + test->stats->skip_count !=
 		    test->stats->run_count) {
-			PRINT("Bad stats for %s.%s\n", test->test_suite_name, test->name);
+			PRINT_DATA("Bad stats for %s.%s\n", test->test_suite_name, test->name);
 			test_status = 1;
 		}
 	}
@@ -1430,11 +1431,11 @@ int main(void)
 		}
 		state.boots += 1;
 		if (test_status == 0) {
-			PRINT("Reset board #%u to test again\n", state.boots);
+			PRINT_DATA("Reset board #%u to test again\n", state.boots);
 			k_msleep(10);
 			sys_reboot(SYS_REBOOT_COLD);
 		} else {
-			PRINT("Failed after %u attempts\n", state.boots);
+			PRINT_DATA("Failed after %u attempts\n", state.boots);
 			state.boots = 0;
 		}
 	}
