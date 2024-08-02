@@ -862,16 +862,20 @@ __weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
 {
 }
 
-void l2cap_le_tx_done(struct bt_conn *conn, uint8_t *userdata, int err)
+void l2cap_le_tx_done(struct bt_conn *conn, struct net_buf *tx, int err)
 {
 	bt_conn_tx_cb_t cb;
-	void *user_data;
+	void *ud;
 
-	memcpy(&cb, userdata, sizeof(cb));
-	memcpy(&user_data, &userdata[sizeof(cb)], sizeof(user_data));
+	memcpy(&cb, net_buf_pull_mem(tx, sizeof(cb)), sizeof(cb));
+	memcpy(&ud, net_buf_pull_mem(tx, sizeof(ud)), sizeof(ud));
+
+	/* 🤞 *exterminate* 🤖 🤞 */
+	net_buf_unref(tx);
+	__ASSERT_NO_MSG(tx->ref == 0);
 
 	if (cb) {
-		cb(conn, user_data, err);
+		cb(conn, ud, err);
 	}
 }
 

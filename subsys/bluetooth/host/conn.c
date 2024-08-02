@@ -49,28 +49,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_conn);
 
-K_FIFO_DEFINE(free_tx);
-
-static void tx_free(struct bt_conn_tx *tx);
-
-static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
-{
-	__ASSERT_NO_MSG(tx);
-
-	uint8_t luser_data[BT_CONN_TX_USER_DATA_SIZE];
-
-	memcpy(&luser_data, &tx->user_data[0], sizeof(luser_data));
-
-	LOG_DBG("conn %p tx %p ud %p", conn, tx, tx->user_data);
-
-	/* Free up TX metadata before calling callback in case the callback
-	 * tries to allocate metadata
-	 */
-	tx_free(tx);
-
-	conn->tx_done(conn, luser_data, -ESHUTDOWN);
-}
-
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_complete_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN_TX */
@@ -100,8 +78,6 @@ sys_slist_t bt_auth_info_cbs = SYS_SLIST_STATIC_INIT(&bt_auth_info_cbs);
 
 static sys_slist_t conn_cbs = SYS_SLIST_STATIC_INIT(&conn_cbs);
 
-static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
-
 #if defined(CONFIG_BT_CLASSIC)
 static int bt_hci_connect_br_cancel(struct bt_conn *conn);
 
@@ -110,6 +86,34 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CONN_TX)
+static bool have_free_bufs(struct net_buf_pool *pool)
+{
+	/* The LIFO only tracks buffers that have been destroyed at least once,
+	 * hence the uninit check beforehand.
+	 */
+	if (pool->uninit_count > 0) {
+		/* If there are uninitialized bufs, we are guaranteed allocation. */
+		return true;
+	}
+
+	/* In practice k_fifo == k_lifo ABI. */
+	return !k_fifo_is_empty(&pool->free);
+}
+
+#ifndef CONFIG_BT_CONN_TX_MAX
+#define CONFIG_BT_CONN_TX_MAX 0
+#endif
+
+#ifndef CONFIG_BT_ISO_TX_BUF_COUNT
+#define CONFIG_BT_ISO_TX_BUF_COUNT 0
+#endif
+
+/* FIXME make l2cap + ISO give their own pools */
+#define BT_CONN_TX_USER_DATA_SIZE (sizeof(void*) * 2)
+
+NET_BUF_POOL_DEFINE(heap, CONFIG_BT_CONN_TX_MAX + CONFIG_BT_ISO_TX_BUF_COUNT,
+		    BT_CONN_TX_USER_DATA_SIZE, 0, NULL);
+
 void frag_destroy(struct net_buf *buf);
 
 /* Storage for fragments (views) into the upper layers' PDUs. */
@@ -174,14 +178,9 @@ static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
 #if defined(CONFIG_BT_ISO)
 extern struct bt_conn iso_conns[CONFIG_BT_ISO_MAX_CHAN];
 
-/* Callback TX buffers for ISO */
-static struct bt_conn_tx iso_tx[CONFIG_BT_ISO_TX_BUF_COUNT];
-
 int bt_conn_iso_init(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(iso_tx); i++) {
-		k_fifo_put(&free_tx, &iso_tx[i]);
-	}
+	/* very init, such work, wow 🦮✨ */
 
 	return 0;
 }
@@ -243,14 +242,6 @@ static inline const char *state2str(bt_conn_state_t state)
 	}
 }
 
-static void tx_free(struct bt_conn_tx *tx)
-{
-	LOG_DBG("%p", tx);
-	memset(tx->user_data, 0, sizeof(tx->user_data));
-
-	k_fifo_put(&free_tx, tx);
-}
-
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_notify(struct bt_conn *conn)
 {
@@ -260,15 +251,15 @@ static void tx_notify(struct bt_conn *conn)
 	LOG_DBG("conn %p", conn);
 
 	while (1) {
-		struct bt_conn_tx *tx = NULL;
+		struct net_buf *tx = NULL;
 		unsigned int key;
-		uint8_t user_data[BT_CONN_TX_USER_DATA_SIZE];
 
 		key = irq_lock();
 		if (!sys_slist_is_empty(&conn->tx_complete)) {
+			/* FIXME: use net_buf_get */
 			const sys_snode_t *node = sys_slist_get_not_empty(&conn->tx_complete);
 
-			tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+			tx = CONTAINER_OF(node, struct net_buf, node);
 		}
 		irq_unlock(key);
 
@@ -278,17 +269,11 @@ static void tx_notify(struct bt_conn *conn)
 
 		LOG_DBG("tx %p user_data %p", tx, tx->user_data);
 
-		/* Copy over the params */
-		memcpy(user_data, tx->user_data, sizeof(user_data));
-
-		/* Free up TX notify since there may be user waiting */
-		tx_free(tx);
-
 		/* Run the callback, at this point it should be safe to
 		 * allocate new buffers since the TX should have been
 		 * unblocked by tx_free.
 		 */
-		conn->tx_done(conn, user_data, 0);
+		conn->tx_done(conn, tx, 0);
 
 		LOG_DBG("raise TX IRQ");
 		bt_tx_irq_raise();
@@ -480,16 +465,12 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 static bool dont_have_tx_context(struct bt_conn *conn)
 {
-	return k_fifo_is_empty(&free_tx);
-}
-
-static struct bt_conn_tx *conn_tx_alloc(void)
-{
-	struct bt_conn_tx *ret = k_fifo_get(&free_tx, K_NO_WAIT);
-
-	LOG_DBG("%p", ret);
-
-	return ret;
+#if defined(CONFIG_BT_CONN_TX)
+	/* can-malloc? */
+	return !have_free_bufs(&heap);
+#else
+	return false;
+#endif
 }
 
 enum {
@@ -615,7 +596,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		    size_t len, void *cb, void *ud)
 {
 	struct net_buf *frag = NULL;
-	struct bt_conn_tx *tx = NULL;
+	struct net_buf *tx = NULL;
 	uint8_t flags;
 	int err;
 
@@ -646,8 +627,9 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -ENOMEM;
 	}
 
+	#define MAH_LLOC net_buf_alloc
 	/* Allocate and set the TX context */
-	tx = conn_tx_alloc();
+	tx = MAH_LLOC(&heap, K_NO_WAIT);
 
 	/* See big comment above */
 	if (!tx) {
@@ -656,8 +638,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -ENOMEM;
 	}
 
-	memcpy(&tx->user_data[0], &cb, sizeof(cb));
-	memcpy(&tx->user_data[sizeof(cb)], &ud, sizeof(ud));
+	net_buf_add_mem(tx, &cb, sizeof(cb));
+	net_buf_add_mem(tx, &ud, sizeof(ud));
 
 	uint16_t frag_len = MIN(conn_mtu(conn), len);
 
@@ -733,7 +715,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 	 * pointer will still be reachable. Make sure that we don't try
 	 * to use the destroyed context later.
 	 */
-	conn_tx_destroy(conn, tx);
+	conn->tx_done(conn, tx, -ESHUTDOWN);
 	k_sem_give(bt_conn_get_pkts(conn));
 
 	/* Merge HCI driver errors */
@@ -841,17 +823,7 @@ static bool cannot_send_to_controller(struct bt_conn *conn)
 static bool dont_have_viewbufs(void)
 {
 #if defined(CONFIG_BT_CONN_TX)
-	/* The LIFO only tracks buffers that have been destroyed at least once,
-	 * hence the uninit check beforehand.
-	 */
-	if (fragments.uninit_count > 0) {
-		/* If there are uninitialized bufs, we are guaranteed allocation. */
-		return false;
-	}
-
-	/* In practice k_fifo == k_lifo ABI. */
-	return k_fifo_is_empty(&fragments.free);
-
+	return !have_free_bufs(&fragments);
 #else  /* !CONFIG_BT_CONN_TX */
 	return false;
 #endif	/* CONFIG_BT_CONN_TX */
@@ -1096,7 +1068,7 @@ static void process_unack_tx(struct bt_conn *conn)
 
 	/* Return any unacknowledged packets */
 	while (1) {
-		struct bt_conn_tx *tx;
+		struct net_buf *tx;
 		sys_snode_t *node;
 
 		node = sys_slist_get(&conn->tx_pending);
@@ -1105,9 +1077,9 @@ static void process_unack_tx(struct bt_conn *conn)
 			return;
 		}
 
-		tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+		tx = CONTAINER_OF(node, struct net_buf, node);
 
-		conn_tx_destroy(conn, tx);
+		conn->tx_done(conn, tx, -ESHUTDOWN);
 		k_sem_give(bt_conn_get_pkts(conn));
 	}
 }
@@ -3651,11 +3623,6 @@ struct bt_conn *bt_conn_lookup_index(uint8_t index)
 int bt_conn_init(void)
 {
 	int err, i;
-
-	k_fifo_init(&free_tx);
-	for (i = 0; i < ARRAY_SIZE(conn_tx); i++) {
-		k_fifo_put(&free_tx, &conn_tx[i]);
-	}
 
 	bt_att_init();
 

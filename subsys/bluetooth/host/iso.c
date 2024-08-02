@@ -92,8 +92,10 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
-static void bt_iso_sent_cb(struct bt_conn *iso, int err)
+static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 {
+	ARG_UNUSED(user_data);
+
 #if defined(CONFIG_BT_ISO_TX)
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
@@ -164,14 +166,33 @@ static bool iso_has_data(struct bt_conn *conn);
 static void iso_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 				 bt_conn_tx_cb_t *cb, void **ud)
 {
-	*cb = NULL;
+	if (IS_ENABLED(CONFIG_BT_ISO_TX)) {
+		*cb = bt_iso_sent_cb;
+	} else {
+		*cb = NULL;
+	}
+
 	*ud = NULL;
 }
 
-static void iso_tx_done(struct bt_conn *conn, uint8_t *user_data, int err)
+static void iso_tx_done(struct bt_conn *conn, struct net_buf *tx, int err)
 {
-	ARG_UNUSED(user_data);
-	bt_iso_sent_cb(conn, err);
+	bt_conn_tx_cb_t cb;
+	static size_t frags = 0;
+	static size_t fulls = 0;
+
+	frags++;
+	memcpy(&cb, net_buf_pull_mem(tx, sizeof(cb)), sizeof(cb));
+	net_buf_unref(tx);
+	__ASSERT_NO_MSG(tx->ref == 0);
+
+	/* Only the last HCI fragment sets `cb` */
+	if (cb) {
+		fulls++;
+		__ASSERT_NO_MSG(cb == bt_iso_sent_cb);
+		bt_iso_sent_cb(conn, NULL, err);
+	}
+		/* if (frags != fulls) LOG_ERR("Frag %d Full %d", frags, fulls); */
 }
 
 static struct bt_conn *iso_new(void)
