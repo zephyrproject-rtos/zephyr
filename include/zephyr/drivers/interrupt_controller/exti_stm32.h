@@ -29,57 +29,65 @@
 typedef uint32_t stm32_exti_line_t;
 
 /**
- * @brief enable EXTI interrupt for specific line
+ * @brief Enable EXTI interrupts for specified line
  *
- * @param line EXTI# line
+ * @param line	EXTI interrupt line
  */
 void stm32_exti_enable(stm32_exti_line_t line);
 
 /**
- * @brief disable EXTI interrupt for specific line
+ * @brief Disable EXTI interrupts for specified line
  *
- * @param line EXTI# line
+ * @param line	EXTI interrupt line
  */
 void stm32_exti_disable(stm32_exti_line_t line);
 
 /**
- * @brief EXTI trigger flags
+ * @brief EXTI interrupt trigger flags
  */
 enum stm32_exti_trigger {
-	/* clear trigger */
+	/* No trigger */
 	STM32_EXTI_TRIG_NONE  = 0x0,
-	/* trigger on rising edge */
+	/* Trigger on rising edge */
 	STM32_EXTI_TRIG_RISING  = 0x1,
-	/* trigger on falling edge */
+	/* Trigger on falling edge */
 	STM32_EXTI_TRIG_FALLING = 0x2,
-	/* trigger on both rising & falling edge */
+	/* Trigger on both rising and falling edge */
 	STM32_EXTI_TRIG_BOTH = 0x3,
 };
 
 /**
- * @brief set EXTI interrupt line triggers
+ * @brief Select trigger for interrupt on specified EXTI line
  *
- * @param line EXTI# line
- * @param trg  OR'ed stm32_exti_trigger flags
+ * @param line	EXTI interrupt line
+ * @param trg	Interrupt trigger (see @ref stm32_exti_trigger)
  */
 void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trg);
 
-/* callback for exti interrupt */
-typedef void (*stm32_exti_callback_t) (stm32_exti_line_t line, void *user);
+/**
+ * @brief EXTI interrupt callback function signature
+ *
+ * @param line	Triggered EXTI interrupt line
+ * @param user	@p data provided to @ref stm32_exti_set_callback
+ *
+ * @note This callback is invoked in ISR context.
+ */
+typedef void (*stm32_exti_callback_t)(stm32_exti_line_t line, void *user);
 
 /**
- * @brief set EXTI interrupt callback
+ * @brief Set callback invoked when an interrupt occurs on specified EXTI line
  *
- * @param line EXI# line
- * @param cb   user callback
- * @param data user data
+ * @param line	EXTI interrupt line
+ * @param cb	Interrupt callback function
+ * @param data	Custom data for usage by the callback
+ * @returns 0 on success, -EBUSY if a callback is already set for @p line
  */
 int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *data);
 
 /**
- * @brief unset EXTI interrupt callback
+ * @brief Removes the interrupt callback of specified EXTI line
  *
- * @param line EXI# line
+ * @param line	EXTI interrupt line
  */
 void stm32_exti_unset_callback(stm32_exti_line_t line);
 
