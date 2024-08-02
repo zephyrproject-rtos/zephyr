@@ -11,7 +11,7 @@ rsource "*/Kconfig.defconfig"
 if SYS_CLOCK_EXISTS
 
 config CLOCK_CONTROL
-	default y if !SOC_SERIES_NRF54HX
+	default y if (!SOC_SERIES_NRF54HX && !SOC_SERIES_NRF92X)
 
 endif # SYS_CLOCK_EXISTS
 
