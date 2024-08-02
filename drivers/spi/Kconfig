@@ -74,88 +74,49 @@ module = SPI
 module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/spi/Kconfig.b91"
-
-source "drivers/spi/Kconfig.stm32"
-
-source "drivers/spi/Kconfig.dw"
-
-source "drivers/spi/Kconfig.mcux_dspi"
-
-source "drivers/spi/Kconfig.mcux_ecspi"
-
-source "drivers/spi/Kconfig.mcux_flexcomm"
-
-source "drivers/spi/Kconfig.mcux_flexio"
-
-source "drivers/spi/Kconfig.mcux_lpspi"
-
-source "drivers/spi/Kconfig.rv32m1_lpspi"
-
-source "drivers/spi/Kconfig.sam"
-
-source "drivers/spi/Kconfig.sam0"
-
-source "drivers/spi/Kconfig.sifive"
-
-source "drivers/spi/Kconfig.spi_emul"
-
-source "drivers/spi/Kconfig.nrfx"
-
-source "drivers/spi/Kconfig.cc13xx_cc26xx"
-
-source "drivers/spi/Kconfig.litex"
-
-source "drivers/spi/Kconfig.oc_simple"
-
-source "drivers/spi/Kconfig.xec_qmspi"
-
-source "drivers/spi/Kconfig.gecko"
-
-source "drivers/spi/Kconfig.xlnx"
-
-source "drivers/spi/Kconfig.esp32"
-
-source "drivers/spi/Kconfig.test"
-
-source "drivers/spi/Kconfig.psoc6"
-
-source "drivers/spi/Kconfig.bitbang"
-
-source "drivers/spi/Kconfig.gd32"
-
-source "drivers/spi/Kconfig.mchp_mss_qspi"
-
-source "drivers/spi/Kconfig.pl022"
-
-source "drivers/spi/Kconfig.andes_atcspi200"
-
-source "drivers/spi/Kconfig.nxp_s32"
-
-source "drivers/spi/Kconfig.xmc4xxx"
-
-source "drivers/spi/Kconfig.pw"
-
-source "drivers/spi/Kconfig.smartbond"
-
-source "drivers/spi/Kconfig.opentitan"
-
-source "drivers/spi/Kconfig.numaker"
-
+# zephyr-keep-sorted-start
 source "drivers/spi/Kconfig.ambiq"
-
-source "drivers/spi/Kconfig.rpi_pico"
-
-source "drivers/spi/Kconfig.ifx_cat1"
-
-source "drivers/spi/Kconfig.sedi"
-
-source "drivers/spi/Kconfig.npcx"
-
-source "drivers/spi/Kconfig.mchp_mss"
-
+source "drivers/spi/Kconfig.andes_atcspi200"
+source "drivers/spi/Kconfig.b91"
+source "drivers/spi/Kconfig.bitbang"
+source "drivers/spi/Kconfig.cc13xx_cc26xx"
+source "drivers/spi/Kconfig.dw"
+source "drivers/spi/Kconfig.esp32"
+source "drivers/spi/Kconfig.gd32"
+source "drivers/spi/Kconfig.gecko"
 source "drivers/spi/Kconfig.grlib_spimctrl"
-
+source "drivers/spi/Kconfig.ifx_cat1"
+source "drivers/spi/Kconfig.litex"
 source "drivers/spi/Kconfig.max32"
+source "drivers/spi/Kconfig.mchp_mss"
+source "drivers/spi/Kconfig.mchp_mss_qspi"
+source "drivers/spi/Kconfig.mcux_dspi"
+source "drivers/spi/Kconfig.mcux_ecspi"
+source "drivers/spi/Kconfig.mcux_flexcomm"
+source "drivers/spi/Kconfig.mcux_flexio"
+source "drivers/spi/Kconfig.mcux_lpspi"
+source "drivers/spi/Kconfig.npcx"
+source "drivers/spi/Kconfig.nrfx"
+source "drivers/spi/Kconfig.numaker"
+source "drivers/spi/Kconfig.nxp_s32"
+source "drivers/spi/Kconfig.oc_simple"
+source "drivers/spi/Kconfig.opentitan"
+source "drivers/spi/Kconfig.pl022"
+source "drivers/spi/Kconfig.psoc6"
+source "drivers/spi/Kconfig.pw"
+source "drivers/spi/Kconfig.rpi_pico"
+source "drivers/spi/Kconfig.rv32m1_lpspi"
+source "drivers/spi/Kconfig.sam"
+source "drivers/spi/Kconfig.sam0"
+source "drivers/spi/Kconfig.sedi"
+source "drivers/spi/Kconfig.sifive"
+source "drivers/spi/Kconfig.smartbond"
+source "drivers/spi/Kconfig.spi_emul"
+source "drivers/spi/Kconfig.stm32"
+source "drivers/spi/Kconfig.test"
+source "drivers/spi/Kconfig.xec_qmspi"
+source "drivers/spi/Kconfig.xlnx"
+source "drivers/spi/Kconfig.xmc4xxx"
+# zephyr-keep-sorted-stop
 
 endif # SPI
