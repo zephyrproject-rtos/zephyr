@@ -107,12 +107,12 @@ static int cleanup_test(struct ztest_unit_test *test)
 #ifdef KERNEL
 
 #if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-#define MAX_NUM_CPUHOLD (CONFIG_MP_MAX_NUM_CPUS - 1)
+#define MAX_NUM_CPUHOLD  (CONFIG_MP_MAX_NUM_CPUS - 1)
 #define CPUHOLD_STACK_SZ (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 struct cpuhold_pool_item {
-	struct k_thread  thread;
-	bool             used;
+	struct k_thread thread;
+	bool used;
 };
 
 static struct cpuhold_pool_item cpuhold_pool_items[MAX_NUM_CPUHOLD + 1];
@@ -184,10 +184,8 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		cpuhold_spawned = false;
 
 		cpuhold_pool_items[i].used = true;
-		k_thread_create(&cpuhold_pool_items[i].thread,
-				cpuhold_stacks[i], CPUHOLD_STACK_SZ,
-				cpu_hold, k_current_get(),
-				(void *)(uintptr_t)idx, NULL,
+		k_thread_create(&cpuhold_pool_items[i].thread, cpuhold_stacks[i], CPUHOLD_STACK_SZ,
+				cpu_hold, k_current_get(), (void *)(uintptr_t)idx, NULL,
 				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 		/*
@@ -217,7 +215,6 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 		k_thread_name_set(k_current_get(), tname);
 	}
 
-
 	uint32_t dt, start_ms = k_uptime_get_32();
 	unsigned int key = arch_irq_lock();
 
@@ -243,8 +240,7 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	 * logic views it as one "job") and cause other test failures.
 	 */
 	dt = k_uptime_get_32() - start_ms;
-	zassert_true(dt < CONFIG_ZTEST_CPU_HOLD_TIME_MS,
-		     "1cpu test took too long (%d ms)", dt);
+	zassert_true(dt < CONFIG_ZTEST_CPU_HOLD_TIME_MS, "1cpu test took too long (%d ms)", dt);
 	arch_irq_unlock(key);
 }
 #endif /* CONFIG_SMP && (CONFIG_MP_MAX_NUM_CPUS > 1) */
@@ -268,10 +264,9 @@ void z_impl_z_test_1cpu_start(void)
 		__ASSERT_NO_MSG(j != -1);
 
 		cpuhold_pool_items[j].used = true;
-		k_thread_create(&cpuhold_pool_items[j].thread,
-				cpuhold_stacks[j], CPUHOLD_STACK_SZ,
-				cpu_hold, NULL, (void *)(uintptr_t)i, NULL,
-				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+		k_thread_create(&cpuhold_pool_items[j].thread, cpuhold_stacks[j], CPUHOLD_STACK_SZ,
+				cpu_hold, NULL, (void *)(uintptr_t)i, NULL, K_HIGHEST_THREAD_PRIO,
+				0, K_NO_WAIT);
 		k_sem_take(&cpuhold_sem, K_FOREVER);
 	}
 #endif
@@ -292,10 +287,16 @@ void z_impl_z_test_1cpu_stop(void)
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_z_test_1cpu_start(void) { z_impl_z_test_1cpu_start(); }
+void z_vrfy_z_test_1cpu_start(void)
+{
+	z_impl_z_test_1cpu_start();
+}
 #include <zephyr/syscalls/z_test_1cpu_start_mrsh.c>
 
-void z_vrfy_z_test_1cpu_stop(void) { z_impl_z_test_1cpu_stop(); }
+void z_vrfy_z_test_1cpu_stop(void)
+{
+	z_impl_z_test_1cpu_stop();
+}
 #include <zephyr/syscalls/z_test_1cpu_stop_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #endif
@@ -671,10 +672,8 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		get_start_time_cyc();
 		k_thread_create(&ztest_thread, ztest_thread_stack,
-				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
-				test_cb, suite, test, data,
-				CONFIG_ZTEST_THREAD_PRIORITY,
-				K_INHERIT_PERMS, K_FOREVER);
+				K_THREAD_STACK_SIZEOF(ztest_thread_stack), test_cb, suite, test,
+				data, CONFIG_ZTEST_THREAD_PRIORITY, K_INHERIT_PERMS, K_FOREVER);
 
 		k_thread_access_grant(&ztest_thread, suite, test, suite->stats);
 		if (test->name != NULL) {
@@ -765,8 +764,8 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 }
 
 #if CONFIG_ZTEST_SHUFFLE
-static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start,
-			    size_t num_items, size_t element_size)
+static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start, size_t num_items,
+			    size_t element_size)
 {
 	/* Initialize dest array */
 	for (size_t i = 0; i < num_items; ++i) {
@@ -789,8 +788,8 @@ static void z_ztest_shuffle(bool shuffle, void *dest[], intptr_t start,
 }
 #endif
 
-static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
-				      bool shuffle, int suite_iter, int case_iter)
+static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuffle, int suite_iter,
+				      int case_iter)
 {
 	struct ztest_unit_test *test = NULL;
 	void *data = NULL;
@@ -836,8 +835,8 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
 
 		memset(tests_to_run, 0, ZTEST_TEST_COUNT * sizeof(struct ztest_unit_test *));
 		z_ztest_shuffle(shuffle, (void **)tests_to_run,
-				(intptr_t)_ztest_unit_test_list_start,
-				ZTEST_TEST_COUNT, sizeof(struct ztest_unit_test));
+				(intptr_t)_ztest_unit_test_list_start, ZTEST_TEST_COUNT,
+				sizeof(struct ztest_unit_test));
 		for (size_t j = 0; j < ZTEST_TEST_COUNT; ++j) {
 			test = tests_to_run[j];
 			/* Make sure that the test belongs to this suite */
@@ -902,8 +901,8 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite,
 
 int z_ztest_run_test_suite(const char *name, bool shuffle, int suite_iter, int case_iter)
 {
-	return z_ztest_run_test_suite_ptr(ztest_find_test_suite(name),
-					shuffle, suite_iter, case_iter);
+	return z_ztest_run_test_suite_ptr(ztest_find_test_suite(name), shuffle, suite_iter,
+					  case_iter);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -979,12 +978,10 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	}
 
 	TC_SUMMARY_PRINT("SUITE %s - %3d.%02d%% [%s]: pass = %d, fail = %d, "
-				"skip = %d, total = %d duration = %u.%03u seconds\n",
-				TC_RESULT_TO_STR(suite_result),
-				passrate_major, passrate_minor,
-				suite->name, distinct_pass, distinct_fail,
-				distinct_skip, distinct_total,
-				suite_duration_worst_ms / 1000, suite_duration_worst_ms % 1000);
+			 "skip = %d, total = %d duration = %u.%03u seconds\n",
+			 TC_RESULT_TO_STR(suite_result), passrate_major, passrate_minor,
+			 suite->name, distinct_pass, distinct_fail, distinct_skip, distinct_total,
+			 suite_duration_worst_ms / 1000, suite_duration_worst_ms % 1000);
 	flush_log();
 }
 
@@ -1010,20 +1007,18 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 		}
 
 		if (tc_result == TC_FLAKY) {
-			TC_SUMMARY_PRINT(" - %s - [%s.%s] - (Failed %d of %d attempts)"
-					 " - duration = %u.%03u seconds\n",
-					TC_RESULT_TO_STR(tc_result),
-					test->test_suite_name, test->name,
-					test->stats->run_count - test->stats->pass_count,
-					test->stats->run_count,
-					test->stats->duration_worst_ms / 1000,
-					test->stats->duration_worst_ms % 1000);
+			TC_SUMMARY_PRINT(
+				" - %s - [%s.%s] - (Failed %d of %d attempts)"
+				" - duration = %u.%03u seconds\n",
+				TC_RESULT_TO_STR(tc_result), test->test_suite_name, test->name,
+				test->stats->run_count - test->stats->pass_count,
+				test->stats->run_count, test->stats->duration_worst_ms / 1000,
+				test->stats->duration_worst_ms % 1000);
 		} else {
 			TC_SUMMARY_PRINT(" - %s - [%s.%s] duration = %u.%03u seconds\n",
-					TC_RESULT_TO_STR(tc_result),
-					test->test_suite_name, test->name,
-					test->stats->duration_worst_ms / 1000,
-					test->stats->duration_worst_ms % 1000);
+					 TC_RESULT_TO_STR(tc_result), test->test_suite_name,
+					 test->name, test->stats->duration_worst_ms / 1000,
+					 test->stats->duration_worst_ms % 1000);
 		}
 
 		if (flush_frequency % 3 == 0) {
@@ -1057,8 +1052,8 @@ static void __ztest_show_suite_summary(void)
 	flush_log();
 }
 
-static int __ztest_run_test_suite(struct ztest_suite_node *ptr,
-			const void *state, bool shuffle, int suite_iter, int case_iter)
+static int __ztest_run_test_suite(struct ztest_suite_node *ptr, const void *state, bool shuffle,
+				  int suite_iter, int case_iter)
 {
 	struct ztest_suite_stats *stats = ptr->stats;
 	int count = 0;
@@ -1100,26 +1095,26 @@ int z_impl_ztest_run_test_suites(const void *state, bool shuffle, int suite_iter
 		__ztest_init_unit_test_result_for_suite(suites_to_run[i]);
 	}
 	for (size_t i = 0; i < ZTEST_SUITE_COUNT; ++i) {
-		count += __ztest_run_test_suite(suites_to_run[i],
-				state, shuffle, suite_iter, case_iter);
+		count += __ztest_run_test_suite(suites_to_run[i], state, shuffle, suite_iter,
+						case_iter);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
 		 */
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
-				(test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
+		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
 			break;
 		}
 	}
 #else
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
-			ptr < _ztest_suite_node_list_end; ++ptr) {
+	     ptr < _ztest_suite_node_list_end; ++ptr) {
 		__ztest_init_unit_test_result_for_suite(ptr);
 		count += __ztest_run_test_suite(ptr, state, shuffle, suite_iter, case_iter);
 		/* Stop running tests if we have a critical error or if we have a failure and
 		 * FAIL_FAST was set
 		 */
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
-				(test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
+		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
 			break;
 		}
 	}
@@ -1274,8 +1269,8 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 	struct getopt_state *state;
 	int opt;
 	static struct option long_options[] = {{"suite_iter", required_argument, 0, 's'},
-		{"case_iter", required_argument, 0, 'c'},
-		{0, 0, 0, 0}};
+					       {"case_iter", required_argument, 0, 'c'},
+					       {0, 0, 0, 0}};
 	int opt_index = 0;
 	int val;
 	int opt_num = 0;
@@ -1290,7 +1285,7 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 			val = atoi(state->optarg);
 			if (val < 1) {
 				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of suite interations\n");
+					      "Invalid number of suite interations\n");
 				return -ENOEXEC;
 			}
 			suite_iter = val;
@@ -1300,15 +1295,15 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 			val = atoi(state->optarg);
 			if (val < 1) {
 				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of case interations\n");
+					      "Invalid number of case interations\n");
 				return -ENOEXEC;
 			}
 			case_iter = val;
 			opt_num++;
 			break;
 		default:
-			shell_fprintf(sh, SHELL_ERROR,
-				"Invalid option or option usage: %s\n", argv[opt_index + 1]);
+			shell_fprintf(sh, SHELL_ERROR, "Invalid option or option usage: %s\n",
+				      argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
@@ -1327,11 +1322,11 @@ static int cmd_run_suite(const struct shell *sh, size_t argc, char **argv)
 	ztest_set_test_args(argv[1]);
 
 	for (struct ztest_suite_node *ptr = _ztest_suite_node_list_start;
-			ptr < _ztest_suite_node_list_end; ++ptr) {
+	     ptr < _ztest_suite_node_list_end; ++ptr) {
 		__ztest_init_unit_test_result_for_suite(ptr);
 		count += __ztest_run_test_suite(ptr, NULL, shuffle, 1, 1);
 		if (test_status == ZTEST_STATUS_CRITICAL_ERROR ||
-				(test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
+		    (test_status == ZTEST_STATUS_HAS_FAILURE && FAIL_FAST)) {
 			break;
 		}
 	}
@@ -1357,8 +1352,7 @@ static const struct ztest_suite_node *suite_lookup(size_t idx, const char *prefi
 
 	while (suite < suite_end) {
 		if ((suite->name != NULL) && (strlen(suite->name) != 0) &&
-				((prefix == NULL) ||
-				(strncmp(prefix, suite->name, strlen(prefix)) == 0))) {
+		    ((prefix == NULL) || (strncmp(prefix, suite->name, strlen(prefix)) == 0))) {
 			if (match_idx == idx) {
 				return suite;
 			}
@@ -1380,6 +1374,7 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = NULL;
 }
 
+/* clang-format off */
 	SHELL_STATIC_SUBCMD_SET_CREATE(
 		sub_ztest_cmds,
 		SHELL_CMD_ARG(run-all, NULL, "Run all tests", cmd_runall, 0, 0),
@@ -1396,6 +1391,7 @@ static void testsuite_list_get(size_t idx, struct shell_static_entry *entry)
 		SHELL_CMD_ARG(run-testcase, NULL, "Run testcase", cmd_run_suite, 2, 0),
 		SHELL_SUBCMD_SET_END /* Array terminated. */
 	);
+/* clang-format on */
 
 SHELL_CMD_REGISTER(ztest, &sub_ztest_cmds, "Ztest commands", NULL);
 #endif /* CONFIG_ZTEST_SHELL */

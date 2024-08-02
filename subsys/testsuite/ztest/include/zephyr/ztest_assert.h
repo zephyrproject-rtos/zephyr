@@ -172,8 +172,9 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 #define _zassert_base(cond, default_msg, msg, ...)                                                 \
 	do {                                                                                       \
 		bool _msg = (msg != NULL);                                                         \
-		bool _ret = z_zassert(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
-				      __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);         \
+		bool _ret =                                                                        \
+			z_zassert(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,    \
+				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
 		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
 			/* If kernel but without multithreading return. */                         \
@@ -209,8 +210,9 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 #define _zassume_base(cond, default_msg, msg, ...)                                                 \
 	do {                                                                                       \
 		bool _msg = (msg != NULL);                                                         \
-		bool _ret = z_zassume(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,\
-				      __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);         \
+		bool _ret =                                                                        \
+			z_zassume(cond, _msg ? ("(" default_msg ")") : (default_msg), __FILE__,    \
+				  __LINE__, __func__, _msg ? msg : "", ##__VA_ARGS__);             \
 		(void)_msg;                                                                        \
 		if (!_ret) {                                                                       \
 			/* If kernel but without multithreading return. */                         \
@@ -396,7 +398,7 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  * @param s2 The second string
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zassert_str_equal(s1, s2, ...)                                                     \
+#define zassert_str_equal(s1, s2, ...)                                                             \
 	zassert(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
 
 /**
@@ -574,7 +576,7 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  * @param s2 The second string
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zassume_str_equal(s1, s2, ...)                                                     \
+#define zassume_str_equal(s1, s2, ...)                                                             \
 	zassume(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
 
 /**
@@ -719,7 +721,7 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  * @param s2 The second string
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zexpect_str_equal(s1, s2, ...)                                                     \
+#define zexpect_str_equal(s1, s2, ...)                                                             \
 	zexpect(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
 
 /**
