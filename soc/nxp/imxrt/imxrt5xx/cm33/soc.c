@@ -15,10 +15,13 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include "fsl_power.h"
 #include "fsl_clock.h"
 #include <fsl_cache.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
