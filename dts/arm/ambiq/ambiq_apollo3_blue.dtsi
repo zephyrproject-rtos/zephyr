@@ -189,6 +189,17 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
+		spid0: spi@50000100 {
+			compatible = "ambiq,spid";
+			reg = <0x50000100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <4 0>;
+			status = "disabled";
+			ambiq,pwrcfg = <&pwrcfg 0x8 0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
 		spi0: spi@50004000 {
 			reg = <0x50004000 0x1000>;
 			#address-cells = <1>;
