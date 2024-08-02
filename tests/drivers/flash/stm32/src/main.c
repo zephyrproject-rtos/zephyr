@@ -167,7 +167,12 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 ZTEST(flash_stm32, test_stm32_readout_protection_disabled)
 {
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+/* For stm32H7 serie, the flash_stm32_ex_op_rdp is renamed */
+	struct flash_stm32h7_ex_op_rdp rdp_status;
+#else
 	struct flash_stm32_ex_op_rdp rdp_status;
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 	int rc;
 
 	rc = flash_ex_op(flash_dev, FLASH_STM32_EX_OP_RDP, (uintptr_t)NULL,
