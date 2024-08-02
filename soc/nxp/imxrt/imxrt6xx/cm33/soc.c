@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/linker/sections.h>
@@ -25,6 +26,8 @@
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
 #include <fsl_cache.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"

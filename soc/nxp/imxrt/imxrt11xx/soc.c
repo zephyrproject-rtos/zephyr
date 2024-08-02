@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/linker/linker-defs.h>
@@ -15,6 +16,9 @@
 #include <fsl_gpc.h>
 #include <fsl_pmu.h>
 #include <fsl_dcdc.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
+
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
 #include <fsl_flexspi_nor_boot.h>
 #endif
