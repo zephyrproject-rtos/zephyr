@@ -28,9 +28,36 @@ LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVE
 
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
+static struct bt_ascs_register_param ascs_param = {
+	CONFIG_BT_ASCS_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_ASE_SRC_COUNT
+};
+
+int bt_bap_unicast_server_set_ase_count(enum bt_audio_dir dir, uint8_t count)
+{
+	if (dir == BT_AUDIO_DIR_SINK) {
+		if (count > CONFIG_BT_ASCS_ASE_SNK_COUNT) {
+			return -EINVAL;
+		}
+		ascs_param.sink_ase_count = count;
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		if (count > CONFIG_BT_ASCS_ASE_SRC_COUNT) {
+			return -EINVAL;
+		}
+		ascs_param.source_ase_count = count;
+	}
+
+	return 0;
+}
+
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
 	int err;
+
+	err = bt_ascs_service_register(&ascs_param);
+	if (err != 0) {
+		return err;
+	}
 
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
@@ -66,6 +93,8 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 
 	bt_ascs_cleanup();
 	unicast_server_cb = NULL;
+
+	bt_ascs_service_unregister();
 
 	return 0;
 }

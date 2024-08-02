@@ -3082,20 +3082,115 @@ respond:
 #define BT_ASCS_ASE_SRC_DEFINE(_n, ...) BT_ASCS_ASE_DEFINE(BT_UUID_ASCS_ASE_SRC, (_n) + 1 + \
 							   CONFIG_BT_ASCS_ASE_SNK_COUNT)
 
-BT_GATT_SERVICE_DEFINE(ascs_svc,
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
-	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP,
-		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE,
-		      NULL, ascs_cp_write, NULL),
-	BT_AUDIO_CCC(ascs_cp_cfg_changed),
+#define BT_ASCS_CHR_ASE_CONTROL_POINT \
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE, \
+		      NULL, ascs_cp_write, NULL), \
+	BT_AUDIO_CCC(ascs_cp_cfg_changed)
+
 #if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
+#define BT_ASCS_ASE_SINKS \
 	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
+#else
+#define BT_ASCS_ASE_SINKS
 #endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 0 */
+
 #if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
+#define BT_ASCS_ASE_SOURCES \
 	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
+#else
+#define BT_ASCS_ASE_SOURCES
 #endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 0 */
-);
+
+#define BT_ASCS_SERVICE_DEFINITION() { \
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS), \
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE, \
+		      NULL, ascs_cp_write, NULL), \
+	BT_AUDIO_CCC(ascs_cp_cfg_changed), \
+	BT_ASCS_ASE_SINKS \
+	BT_ASCS_ASE_SOURCES \
+	}
+
+#define ASCS_ASE_CHAR_ATTR_COUNT 3 /* declaration + value + cccd */
+
+static struct bt_gatt_attr ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+static struct bt_gatt_service ascs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(ascs_attrs);
+
+static void remove_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
+{
+	uint8_t snk_ases_to_rem = CONFIG_BT_ASCS_ASE_SNK_COUNT - snk_cnt;
+	uint8_t src_ases_to_rem = CONFIG_BT_ASCS_ASE_SRC_COUNT - src_cnt;
+	size_t attrs_to_rem;
+
+	/* Remove the Source ASEs. The ones to remove will always be at the very tail of the
+	 * attributes, so we just decrease the count withe the amount of sources we want to remove.
+	 */
+	attrs_to_rem = src_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
+	ascs_svc.attr_count -= attrs_to_rem;
+
+	/* Remove the Sink ASEs.
+	 */
+	attrs_to_rem = snk_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
+	if (CONFIG_BT_ASCS_ASE_SRC_COUNT == 0 || CONFIG_BT_ASCS_ASE_SRC_COUNT == src_ases_to_rem) {
+		/* If there are no Source ASEs present, then we can just decrease the
+		 * attribute count
+		 */
+		ascs_svc.attr_count -= attrs_to_rem;
+	} else {
+		/* As Source ASEs are present, we need to iterate backwards (as this will likely be
+		 * the shortest distance). Find the first Sink to save, and move all Sources
+		 * backwards to it.
+		 */
+		size_t src_start_idx = ascs_svc.attr_count - (src_cnt * ASCS_ASE_CHAR_ATTR_COUNT);
+		size_t new_src_start_idx = src_start_idx - (snk_ases_to_rem *
+							    ASCS_ASE_CHAR_ATTR_COUNT);
+
+		for (size_t i = 0; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
+			ascs_svc.attrs[new_src_start_idx + i] = ascs_svc.attrs[src_start_idx + i];
+		}
+
+		ascs_svc.attr_count -= attrs_to_rem;
+	}
+}
+
+int bt_ascs_service_register(const struct bt_ascs_register_param *param)
+{
+	int err = 0;
+
+	if (param->sink_ase_count < CONFIG_BT_ASCS_ASE_SNK_COUNT ||
+	    param->source_ase_count < CONFIG_BT_ASCS_ASE_SRC_COUNT) {
+		remove_ase_char(param->sink_ase_count, param->source_ase_count);
+	}
+
+	err = bt_gatt_service_register(&ascs_svc);
+
+	if (err == 0) {
+		LOG_DBG("Successfully registered %u Sink ASEs and %u Source ASEs",
+			param->sink_ase_count, param->source_ase_count);
+	}
+
+	return err;
+}
+
+int bt_ascs_service_unregister(void)
+{
+	int err = 0;
+
+	err = bt_gatt_service_unregister(&ascs_svc);
+	/* If unregistration was succesfull, make sure to reset ascs_attrs so it can be used for
+	 * new registrations
+	 */
+	if (err == 0) {
+		struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+
+		memcpy(&ascs_attrs, &_ascs_attrs, sizeof(struct bt_gatt_attr));
+	}
+
+	return err;
+}
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
 {
