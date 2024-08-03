@@ -77,19 +77,14 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
  */
 static inline int stm32_exti_is_pending(stm32_exti_line_t line)
 {
-	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT(line)) ||
-			LL_EXTI_IsActiveFallingFlag_0_31(BIT(line)));
+	return (LL_EXTI_IsActiveRisingFlag_0_31(line) ||
+		LL_EXTI_IsActiveFallingFlag_0_31(line));
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		return LL_C2_EXTI_IsActiveFlag_0_31(BIT(line));
+	return LL_C2_EXTI_IsActiveFlag_0_31(line);
 #else
-		return LL_EXTI_IsActiveFlag_0_31(BIT(line));
+	return LL_EXTI_IsActiveFlag_0_31(line);
 #endif
-	} else {
-		__ASSERT_NO_MSG(0);
-		return 0;
-	}
 }
 
 /**
@@ -99,18 +94,30 @@ static inline int stm32_exti_is_pending(stm32_exti_line_t line)
  */
 static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
 {
-	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-		LL_EXTI_ClearRisingFlag_0_31(BIT(line));
-		LL_EXTI_ClearFallingFlag_0_31(BIT(line));
+	LL_EXTI_ClearRisingFlag_0_31(line);
+	LL_EXTI_ClearFallingFlag_0_31(line);
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_ClearFlag_0_31(BIT(line));
+	LL_C2_EXTI_ClearFlag_0_31(line);
 #else
-		LL_EXTI_ClearFlag_0_31(BIT(line));
+	LL_EXTI_ClearFlag_0_31(line);
 #endif
-	} else {
-		__ASSERT_NO_MSG(0);
-	}
+}
+
+/**
+ * @returns the LL_EXTI_LINE_n define for EXTI line number @p linenum
+ */
+static inline stm32_exti_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
+{
+	return BIT(linenum);
+}
+
+/**
+ * @returns EXTI line number for LL_EXTI_LINE_n define
+ */
+static inline gpio_pin_t ll_exti_line_to_linenum(stm32_exti_line_t line)
+{
+	return LOG2(line);
 }
 
 /**
@@ -126,21 +133,25 @@ static void stm32_exti_isr(const void *exti_range)
 	struct stm32_exti_data *data = dev->data;
 	const struct stm32_exti_range *range = exti_range;
 	stm32_exti_line_t line;
+	uint32_t line_num;
 
 	/* see which bits are set */
 	for (uint8_t i = 0; i <= range->len; i++) {
-		line = range->start + i;
+		line_num = range->start + i;
+		line = linenum_to_ll_exti_line(line_num);
+
 		/* check if interrupt is pending */
 		if (stm32_exti_is_pending(line) != 0) {
 			/* clear pending interrupt */
 			stm32_exti_clear_pending(line);
 
 			/* run callback only if one is registered */
-			if (!data->cb[line].cb) {
+			if (!data->cb[line_num].cb) {
 				continue;
 			}
 
-			data->cb[line].cb(line, data->cb[line].data);
+			/* `line` can be passed as-is because LL_EXTI_LINE_n is (1 << n) */
+			data->cb[line_num].cb(line, data->cb[line_num].data);
 		}
 	}
 }
@@ -227,21 +238,39 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
  * @brief EXTI GPIO interrupt controller API implementation
  */
 
+/**
+ * @internal
+ * STM32 EXTI driver:
+ * The type @ref stm32_exti_line_t is used to hold the LL_EXTI_LINE_xxx
+ * defines of the LL EXTI API that corresponds to the provided pin.
+ *
+ * The port is not part of these definitions because port configuration
+ * is done via different APIs, which use the LL_<PPP>_EXTI_LINE_xxx defines
+ * returned by @ref stm32_exti_linenum_to_src_cfg_line instead.
+ * @endinternal
+ */
+stm32_exti_line_t stm32_exti_get_pin_exti_line(uint32_t port, gpio_pin_t pin)
+{
+	ARG_UNUSED(port);
+	return linenum_to_ll_exti_line(pin);
+}
+
 void stm32_exti_enable(stm32_exti_line_t line)
 {
-	int irqnum = 0;
+	unsigned int irqnum;
+	uint32_t line_num = ll_exti_line_to_linenum(line);
 
-	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
+	__ASSERT_NO_MSG(line_num < NUM_EXTI_LINES);
 
 	/* Get matching exti irq provided line thanks to irq_table */
-	irqnum = exti_irq_table[line];
+	irqnum = exti_irq_table[line_num];
 	__ASSERT_NO_MSG(irqnum != 0xFF);
 
 	/* Enable requested line interrupt */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(BIT(line));
+	LL_C2_EXTI_EnableIT_0_31(line);
 #else
-	LL_EXTI_EnableIT_0_31(BIT(line));
+	LL_EXTI_EnableIT_0_31(line);
 #endif
 
 	/* Enable exti irq interrupt */
@@ -250,39 +279,33 @@ void stm32_exti_enable(stm32_exti_line_t line)
 
 void stm32_exti_disable(stm32_exti_line_t line)
 {
-	if (line < NUM_EXTI_LINES) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(BIT(line));
+	LL_C2_EXTI_DisableIT_0_31(line);
 #else
-		LL_EXTI_DisableIT_0_31(BIT(line));
+	LL_EXTI_DisableIT_0_31(line);
 #endif
-	} else {
-		__ASSERT_NO_MSG(0);
-	}
 }
 
 void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
 {
-	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
-
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	switch (trigger) {
 	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
+		LL_EXTI_DisableRisingTrig_0_31(line);
+		LL_EXTI_DisableFallingTrig_0_31(line);
 		break;
 	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
+		LL_EXTI_EnableRisingTrig_0_31(line);
+		LL_EXTI_DisableFallingTrig_0_31(line);
 		break;
 	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
-		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
+		LL_EXTI_EnableFallingTrig_0_31(line);
+		LL_EXTI_DisableRisingTrig_0_31(line);
 		break;
 	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
-		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
+		LL_EXTI_EnableRisingTrig_0_31(line);
+		LL_EXTI_EnableFallingTrig_0_31(line);
 		break;
 	default:
 		__ASSERT_NO_MSG(0);
@@ -295,18 +318,19 @@ int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, vo
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
+	uint32_t line_num = ll_exti_line_to_linenum(line);
 
-	if ((data->cb[line].cb == cb) && (data->cb[line].data == arg)) {
+	if ((data->cb[line_num].cb == cb) && (data->cb[line_num].data == arg)) {
 		return 0;
 	}
 
 	/* if callback already exists/maybe-running return busy */
-	if (data->cb[line].cb != NULL) {
+	if (data->cb[line_num].cb != NULL) {
 		return -EBUSY;
 	}
 
-	data->cb[line].cb = cb;
-	data->cb[line].data = arg;
+	data->cb[line_num].cb = cb;
+	data->cb[line_num].data = arg;
 
 	return 0;
 }
@@ -315,9 +339,10 @@ void stm32_exti_unset_callback(stm32_exti_line_t line)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
+	uint32_t line_num = ll_exti_line_to_linenum(line);
 
-	data->cb[line].cb = NULL;
-	data->cb[line].data = NULL;
+	data->cb[line_num].cb = NULL;
+	data->cb[line_num].data = NULL;
 }
 
 void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port)
