@@ -37,6 +37,30 @@ static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 	return 32 - __builtin_clz(op);
 }
 
+/**
+ *
+ * @brief find most significant bit set in a 64-bit word
+ *
+ * This routine finds the first bit set starting from the most significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
+ *
+ * @return most significant bit set, 0 if @a op is 0
+ */
+
+static ALWAYS_INLINE unsigned int find_msb_set_64(uint64_t op)
+{
+	if (op == 0) {
+		return 0;
+	}
+
+#ifdef CONFIG_64BIT
+	return 64 - __builtin_clzl(op);
+#else
+	return 64 - __builtin_clzll(op);
+#endif
+}
 
 /**
  *
@@ -77,6 +101,41 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 	 * compiler happy.
 	 */
 	return 0;
+#endif /* CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS */
+}
+
+/**
+ *
+ * @brief find least significant bit set in a 64-bit word
+ *
+ * This routine finds the first bit set starting from the least significant bit
+ * in the argument passed in and returns the index of that bit.  Bits are
+ * numbered starting at 1 from the least significant bit.  A return value of
+ * zero indicates that the value passed is zero.
+ *
+ * @return least significant bit set, 0 if @a op is 0
+ */
+
+static ALWAYS_INLINE unsigned int find_lsb_set_64(uint64_t op)
+{
+#if !defined(CONFIG_64BIT) && defined(CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS)
+	return __builtin_ffsll(op);
+#elif defined(CONFIG_64BIT) && defined(CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS)
+	return __builtin_ffsl(op);
+#else
+	int bit;
+
+	bit = find_lsb_set((uint32_t)op);
+	if (bit != 0) {
+		return bit;
+	}
+
+	bit = find_lsb_set((uint32_t)(op >> 32));
+	if (bit == 0) {
+		return 0;
+	}
+
+	return bit + 32;
 #endif /* CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS */
 }
 
