@@ -39,11 +39,11 @@ LOG_MODULE_REGISTER(stm32, CONFIG_GPIO_LOG_LEVEL);
 /**
  * @brief EXTI interrupt callback
  */
-static void gpio_stm32_isr(stm32_exti_line_t line, void *arg)
+static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
 {
 	struct gpio_stm32_data *data = arg;
 
-	gpio_fire_callbacks(&data->cb, data->dev, BIT(line));
+	gpio_fire_callbacks(&data->cb, data->dev, pin);
 }
 
 /**
@@ -505,24 +505,26 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_stm32_config *cfg = dev->config;
 	struct gpio_stm32_data *data = dev->data;
+	const stm32_exti_line_t exti_line =
+				stm32_exti_get_pin_exti_line(cfg->port, pin);
 	uint32_t edge = 0;
 	int err = 0;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	if (mode == GPIO_INT_MODE_DISABLE_ONLY) {
-		stm32_exti_disable(pin);
+		stm32_exti_disable(exti_line);
 		goto exit;
 	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
-		stm32_exti_enable(pin);
+		stm32_exti_enable(exti_line);
 		goto exit;
 	}
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		if (stm32_exti_get_line_src_port(pin) == cfg->port) {
-			stm32_exti_disable(pin);
-			stm32_exti_unset_callback(pin);
-			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
+			stm32_exti_disable(exti_line);
+			stm32_exti_unset_callback(exti_line);
+			stm32_exti_trigger(exti_line, STM32_EXTI_TRIG_NONE);
 		}
 		/* else: No irq source configured for pin. Nothing to disable */
 		goto exit;
@@ -534,7 +536,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	if (stm32_exti_set_callback(pin, gpio_stm32_isr, data) != 0) {
+	if (stm32_exti_set_callback(exti_line, gpio_stm32_isr, data) != 0) {
 		err = -EBUSY;
 		goto exit;
 	}
@@ -556,9 +558,9 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 
 	stm32_exti_set_line_src_port(pin, cfg->port);
 
-	stm32_exti_trigger(pin, edge);
+	stm32_exti_trigger(exti_line, edge);
 
-	stm32_exti_enable(pin);
+	stm32_exti_enable(exti_line);
 
 exit:
 	return err;

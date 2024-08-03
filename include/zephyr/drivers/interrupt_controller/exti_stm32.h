@@ -25,9 +25,15 @@
 #include <zephyr/drivers/gpio.h>
 
 /**
- * @brief Type representing an EXTI line number
+ * @brief Opaque type representing an EXTI line
  */
 typedef uint32_t stm32_exti_line_t;
+
+/**
+ * @brief Get the EXTI interrupt line value corresponding
+ *        to specified @p pin of GPIO port @p port
+ */
+stm32_exti_line_t stm32_exti_get_pin_exti_line(uint32_t port, gpio_pin_t pin);
 
 /**
  * @brief Enable EXTI interrupts for specified line
@@ -68,12 +74,12 @@ void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trg);
 /**
  * @brief EXTI interrupt callback function signature
  *
- * @param line	Triggered EXTI interrupt line
+ * @param pin	GPIO pin on which interrupt occurred
  * @param user	@p data provided to @ref stm32_exti_set_callback
  *
  * @note This callback is invoked in ISR context.
  */
-typedef void (*stm32_exti_callback_t)(stm32_exti_line_t line, void *user);
+typedef void (*stm32_exti_callback_t)(gpio_port_pins_t pin, void *user);
 
 /**
  * @brief Set callback invoked when an interrupt occurs on specified EXTI line
