@@ -37,6 +37,7 @@ synchronization.
    threads/nothread.rst
    interrupts.rst
    polling.rst
+   signals.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
    synchronization/condvar.rst
