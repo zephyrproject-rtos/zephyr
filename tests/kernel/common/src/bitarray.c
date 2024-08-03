@@ -1058,6 +1058,87 @@ ZTEST(bitarray, test_ffs)
 		zassert_equal(find_lsb_set(value), bit + 1, "LSB is not matched");
 	}
 }
+
+/**
+ * @brief Test find MSB and LSB operations for 64-bit values
+ *
+ * @details Verify the functions that find out the most significant
+ * bit and least significant bit work as expected.
+ *
+ * @see find_msb_set_64(), find_lsb_set_64()
+ */
+ZTEST(bitarray, test_ffs_64)
+{
+	uint64_t value;
+	unsigned int bit;
+
+	/* LOWER 32-BITS */
+
+	/* boundary test, input is min */
+	value = 0x0;
+	zassert_equal(find_msb_set_64(value), 0, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 0, "LSB is not matched");
+
+	/* boundary test, input is min + 1 */
+	value = 0x00000001;
+	zassert_equal(find_msb_set_64(value), 1, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 1, "LSB is not matched");
+
+	/* average value test */
+	value = 0x80000000;
+	zassert_equal(find_msb_set_64(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 32, "LSB is not matched");
+
+	/* mediate value test */
+	value = 0x000FF000;
+	zassert_equal(find_msb_set_64(value), 20, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 13, "LSB is not matched");
+
+	/* boundary test, input is max */
+	value = 0xffffffff;
+	zassert_equal(find_msb_set_64(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 1, "LSB is not matched");
+
+	/* boundary test, input is max - 1 */
+	value = 0xfffffffe;
+	zassert_equal(find_msb_set_64(value), 32, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 2, "LSB is not matched");
+
+	/* UPPER 32-BITS */
+
+	/* boundary test, input is (min32 + 1) << 32 */
+	value = BIT64(32);
+	zassert_equal(find_msb_set_64(value), 33, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 33, "LSB is not matched");
+
+	/* average value test */
+	value = BIT64(63);
+	zassert_equal(find_msb_set_64(value), 64, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 64, "LSB is not matched");
+
+	/* mediate value test */
+	value = 0x000FF000LL << 32;
+	zassert_equal(find_msb_set_64(value), 52, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 45, "LSB is not matched");
+
+	/* boundary test, input is max32 << 32 */
+	value = 0xffffffffLL << 32;
+	zassert_equal(find_msb_set_64(value), 64, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 33, "LSB is not matched");
+
+	/* boundary test, input is (max32 - 1) << 32 */
+	value = 0xfffffffeLL << 32;
+	zassert_equal(find_msb_set_64(value), 64, "MSB is not matched");
+	zassert_equal(find_lsb_set_64(value), 34, "LSB is not matched");
+
+	/* equivalent class testing, each bit means a class */
+	for (bit = 0; bit < 64; bit++) {
+		value = BIT64(bit);
+		zassert_equal(find_msb_set_64(value), bit + 1, "MSB is not matched");
+		zassert_equal(find_lsb_set_64(value), bit + 1, "LSB is not matched");
+	}
+}
+
 extern void *common_setup(void);
 ZTEST_SUITE(bitarray, NULL, common_setup, NULL, NULL, NULL);
 
