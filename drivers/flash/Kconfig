@@ -205,6 +205,8 @@ source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.simulator"
 
+source "drivers/flash/Kconfig.si32"
+
 source "drivers/flash/Kconfig.rv32m1"
 
 source "drivers/flash/Kconfig.nordic_qspi_nor"
