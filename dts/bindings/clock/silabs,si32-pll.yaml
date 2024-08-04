@@ -1,0 +1,13 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs Si32 PLL clock controller node
+
+compatible: "silabs,si32-pll"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
