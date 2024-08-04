@@ -611,6 +611,9 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 
 	if (esp_wifi_get_mode(&mode) == ESP_OK) {
 		if (mode == ESP32_WIFI_MODE_STA) {
+			wifi_phy_mode_t phy_mode;
+			esp_err_t err;
+
 			esp_wifi_get_config(ESP_IF_WIFI_STA, &conf);
 			esp_wifi_sta_get_ap_info(&ap_info);
 
@@ -619,14 +622,18 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
-			if (ap_info.phy_11b) {
-				status->link_mode = WIFI_1;
-			} else if (ap_info.phy_11g) {
-				status->link_mode = WIFI_3;
-			} else if (ap_info.phy_11n) {
-				status->link_mode = WIFI_4;
-			} else if (ap_info.phy_11ax) {
-				status->link_mode = WIFI_6;
+			err = esp_wifi_sta_get_negotiated_phymode(&phy_mode);
+			if (err == ESP_OK) {
+				if (phy_mode == WIFI_PHY_MODE_11B) {
+					status->link_mode = WIFI_1;
+				} else if (phy_mode == WIFI_PHY_MODE_11G) {
+					status->link_mode = WIFI_3;
+				} else if ((phy_mode == WIFI_PHY_MODE_HT20) ||
+					   (phy_mode == WIFI_PHY_MODE_HT40)) {
+					status->link_mode = WIFI_4;
+				} else if (phy_mode == WIFI_PHY_MODE_HE20) {
+					status->link_mode = WIFI_6;
+				}
 			}
 
 			status->beacon_interval = conf.sta.listen_interval;
