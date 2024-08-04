@@ -1,0 +1,23 @@
+# Copyright (c) 2024, Gergo Vari <work@gergovari.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config RTC_DS3231
+	bool "Maxim DS3231 RTC/TCXO"
+	default y
+	depends on DT_HAS_MAXIM_DS3231_MFD_ENABLED
+	depends on DT_HAS_MAXIM_DS3231_RTC_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable RTC driver based on Maxim DS3231 I2C device.
+
+config RTC_DS3231_INIT_PRIORITY
+	int "DS3231 RTC driver initialization priority"
+	depends on RTC_DS3231
+	default 86
+	help
+	  Initialization priority for the DS3231 RTC driver. It must be
+	  greater than the I2C controller init priority and the mfd driver
+	  init priority.

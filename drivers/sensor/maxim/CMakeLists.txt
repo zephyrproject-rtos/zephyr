@@ -12,4 +12,5 @@ add_subdirectory_ifdef(CONFIG_MAX31865 max31865)
 add_subdirectory_ifdef(CONFIG_MAX31875 max31875)
 add_subdirectory_ifdef(CONFIG_MAX44009 max44009)
 add_subdirectory_ifdef(CONFIG_MAX6675 max6675)
+add_subdirectory_ifdef(CONFIG_SENSOR_DS3231 ds3231)
 # zephyr-keep-sorted-stop
