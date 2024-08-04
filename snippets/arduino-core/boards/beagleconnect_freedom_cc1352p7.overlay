@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2024 Ayush Singh <ayush@beagleboard.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		digital-pin-gpios =
+				    <&gpio0 16 GPIO_ACTIVE_HIGH>, /* D0  - MB1 INT */
+				    <&gpio0 20 GPIO_ACTIVE_HIGH>, /* D1  - MB2 INT */
+				    <&gpio0 17 GPIO_ACTIVE_HIGH>, /* D2  - MB1 PWM */
+				    <&gpio0 28 GPIO_ACTIVE_HIGH>, /* D3  - MB1 CS - A5 */
+				    <&gpio0 21 GPIO_ACTIVE_HIGH>, /* D4  - MB2 UART1 RX */
+				    <&gpio0 22 GPIO_ACTIVE_HIGH>, /* D5  - MB2 UART1 TX */
+				    <&gpio0 19 GPIO_ACTIVE_HIGH>, /* D6  - MB2 PWM */
+				    <&gpio0 27 GPIO_ACTIVE_HIGH>, /* D7  - MB2 CS - A4 */
+				    <&gpio0 9  GPIO_ACTIVE_HIGH>, /* D8  - MB1/2 PICO */
+				    <&gpio0 10 GPIO_ACTIVE_HIGH>, /* D9  - MB1/2 SCK */
+				    <&gpio0 11 GPIO_ACTIVE_HIGH>, /* D10 - MB1/2 POCI */
+				    <&gpio0 26 GPIO_ACTIVE_HIGH>, /* D11 - MB1/2 SDA - A2 */
+				    <&gpio0 25 GPIO_ACTIVE_HIGH>, /* D12 - MB1/2 SCL - A3 */
+				    <&gpio0 12 GPIO_ACTIVE_HIGH>, /* D13 - MB1 UART0 RX */
+				    <&gpio0 13 GPIO_ACTIVE_HIGH>, /* D14 - MB1 UART0 TX */
+				    <&gpio0 23 GPIO_ACTIVE_HIGH>, /* D15 - MB1 AN - A0 */
+				    <&gpio0 24 GPIO_ACTIVE_HIGH>, /* D16 - MB2 AN - A1 */
+				    <&gpio0 5  GPIO_ACTIVE_HIGH>, /* D17 - MB2 RST */
+				    <&gpio0 6  GPIO_ACTIVE_HIGH>, /* D18 - MB1 RST */
+				    <&gpio0 7  GPIO_ACTIVE_HIGH>, /* D19 - on-board sensor INT */
+				    <&gpio0 8  GPIO_ACTIVE_HIGH>, /* D20 - flash CS */
+				    <&gpio0 14 GPIO_ACTIVE_HIGH>, /* D21 - on-board sensor I2C-en */
+				    <&gpio0 15 GPIO_ACTIVE_HIGH>, /* D22 - BOOT button */
+				    <&gpio0 18 GPIO_ACTIVE_HIGH>; /* D23 - LINK LED */
+
+		pwm-pin-gpios =
+				    <&gpio0 17 GPIO_ACTIVE_HIGH>, /* D2  - MB1 PWM */
+				    <&gpio0 19 GPIO_ACTIVE_HIGH>; /* D6  - MB2 PWM */
+
+		pwms = <&pwm0 0 255 PWM_POLARITY_NORMAL>,
+				   <&pwm1 0 255 PWM_POLARITY_NORMAL>;
+
+		adc-pin-gpios =
+				    <&gpio0 23 GPIO_ACTIVE_HIGH>, /* D15 - MB1 AN - A0 */
+				    <&gpio0 24 GPIO_ACTIVE_HIGH>, /* D16 - MB2 AN - A1 */
+				    <&gpio0 26 GPIO_ACTIVE_HIGH>, /* D11 - MB1/2 SDA - A2 */
+				    <&gpio0 25 GPIO_ACTIVE_HIGH>, /* D12 - MB1/2 SCL - A3 */
+				    <&gpio0 27 GPIO_ACTIVE_HIGH>, /* D7  - MB2 CS - A4 */
+				    <&gpio0 28 GPIO_ACTIVE_HIGH>; /* D3  - MB1 CS - A5 */
+
+		io-channels = <&adc0 0x09>, <&adc0 0x0a>, <&adc0 0x0b>,
+			      <&adc0 0x0c>, <&adc0 0x0d>, <&adc0 0x0e>;
+
+		adc-pin-gpios =
+				    <&gpio0 23 GPIO_ACTIVE_HIGH>, /* D15 - MB1 AN - A0 */
+				    <&gpio0 24 GPIO_ACTIVE_HIGH>, /* D16 - MB2 AN - A1 */
+				    <&gpio0 26 GPIO_ACTIVE_HIGH>, /* D11 - MB1/2 SDA - A2 */
+				    <&gpio0 25 GPIO_ACTIVE_HIGH>, /* D12 - MB1/2 SCL - A3 */
+				    <&gpio0 27 GPIO_ACTIVE_HIGH>, /* D7  - MB2 CS - A4 */
+				    <&gpio0 28 GPIO_ACTIVE_HIGH>; /* D3  - MB1 CS - A5 */
+
+		gpio-ports = <&gpio0>;
+		serials = <&uart0 &uart1>;
+		i2cs = <&i2c0>;
+		spis = <&spi0>;
+	};
+};

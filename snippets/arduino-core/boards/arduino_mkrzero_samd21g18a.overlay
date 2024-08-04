@@ -1,0 +1,164 @@
+/*
+ * Copyright (c) 2022 Dhruva Gole <goledhruva@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		digital-pin-gpios = <&arduino_mkr_header 0 0>,
+				    <&arduino_mkr_header 1 0>,
+				    <&arduino_mkr_header 2 0>,
+				    <&arduino_mkr_header 3 0>,
+				    <&arduino_mkr_header 4 0>,
+				    <&arduino_mkr_header 5 0>,
+				    <&arduino_mkr_header 6 0>,
+				    <&arduino_mkr_header 7 0>,
+				    <&arduino_mkr_header 8 0>,
+				    <&arduino_mkr_header 9 0>,
+				    <&arduino_mkr_header 10 0>,
+				    <&arduino_mkr_header 11 0>,
+				    <&arduino_mkr_header 12 0>,
+				    <&arduino_mkr_header 13 0>,
+				    <&arduino_mkr_header 14 0>, /* D14 / A0 */
+				    <&arduino_mkr_header 15 0>,
+				    <&arduino_mkr_header 16 0>,
+				    <&arduino_mkr_header 17 0>,
+				    <&arduino_mkr_header 18 0>, /* D18 / A4 / I2C-SDA */
+				    <&arduino_mkr_header 19 0>, /* D19 / A5 / I2C-SCL */
+				    <&arduino_mkr_header 20 0>,
+				    <&arduino_mkr_header 21 0>,
+				    <&portb 8 0>;
+
+		pwm-pin-gpios =     <&arduino_mkr_header 2 0>,
+				    <&arduino_mkr_header 3 0>;
+
+		adc-pin-gpios =	    <&arduino_mkr_header 15 0>,
+				    <&arduino_mkr_header 16 0>,
+				    <&arduino_mkr_header 17 0>,
+				    <&arduino_mkr_header 18 0>,
+				    <&arduino_mkr_header 19 0>,
+				    <&arduino_mkr_header 20 0>,
+				    <&arduino_mkr_header 21 0>;
+
+		pwms =	<&tcc0 2 255>,
+			<&tcc0 3 255>;
+
+		io-channels =	<&adc 0>,
+				<&adc 10>,
+				<&adc 11>,
+				<&adc 4>,
+				<&adc 5>,
+				<&adc 6>,
+				<&adc 7>;
+
+		gpio-ports = <&porta>, <&portb>;
+		serials = <&sercom5>;
+		i2cs = <&sercom0>;
+	};
+};
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA10F_TCC0_WO2>,
+				 <PA11F_TCC0_WO3>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA2B_ADC_AIN0>,
+				 <PB2B_ADC_AIN10>,
+				 <PB3B_ADC_AIN11>,
+				 <PA4B_ADC_AIN4>,
+				 <PA5B_ADC_AIN5>,
+				 <PA6B_ADC_AIN6>,
+				 <PA7B_ADC_AIN7>;
+		};
+	};
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <2>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0x0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <0>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <4>;
+	};
+
+	channel@5 {
+		reg = <0x5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <5>;
+	};
+
+	channel@6 {
+		reg = <0x6>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <6>;
+	};
+
+	channel@7 {
+		reg = <0x7>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <7>;
+	};
+
+	channel@a {
+		reg = <0xa>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <10>;
+	};
+
+	channel@b {
+		reg = <0xb>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <11>;
+	};
+};
