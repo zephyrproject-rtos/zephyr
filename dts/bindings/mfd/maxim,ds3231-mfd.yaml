@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Gergo Vari <work@gergovari.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Maxim DS3231 I2C MFD
+
+compatible: "maxim,ds3231-mfd"
+
+include:
+  - name: i2c-device.yaml
