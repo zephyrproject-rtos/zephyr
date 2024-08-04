@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 2022 Mike Szczys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		digital-pin-gpios =
+			<&arduino_header 6 0>,	/* Digital */
+			<&arduino_header 7 0>,
+			<&arduino_header 8 0>,
+			<&arduino_header 9 0>,
+			<&arduino_header 10 0>,
+			<&arduino_header 11 0>,
+			<&arduino_header 12 0>,
+			<&arduino_header 13 0>,
+			<&arduino_header 14 0>,
+			<&arduino_header 15 0>,
+			<&arduino_header 16 0>,
+			<&arduino_header 17 0>,
+			<&arduino_header 18 0>,
+			<&arduino_header 19 0>,
+			<&arduino_header 20 0>,
+			<&arduino_header 21 0>,
+			<&arduino_header 0 0>,	/* Analog */
+			<&arduino_header 1 0>,
+			<&arduino_header 2 0>,
+			<&arduino_header 3 0>,
+			<&arduino_header 4 0>,
+			<&arduino_header 5 0>,
+			<&gpio0 13 GPIO_ACTIVE_LOW>;
+
+		pwm-pin-gpios =
+			<&gpio0 13 GPIO_ACTIVE_LOW>,
+			<&arduino_header 9 0>,
+			<&arduino_header 11 0>,
+			<&arduino_header 12 0>,
+			<&arduino_header 15 0>,
+			<&arduino_header 16 0>,
+			<&arduino_header 17 0>;
+
+		adc-pin-gpios =
+			<&arduino_header 0 0>,
+			<&arduino_header 1 0>,
+			<&arduino_header 2 0>,
+			<&arduino_header 3 0>,
+			<&arduino_header 4 0>,
+			<&arduino_header 5 0>;
+
+		pwms =
+			<&pwm0 1 255 PWM_POLARITY_NORMAL>,
+			<&pwm0 2 255 PWM_POLARITY_NORMAL>,
+			<&pwm0 3 255 PWM_POLARITY_NORMAL>,
+			<&pwm1 0 255 PWM_POLARITY_NORMAL>,
+			<&pwm1 1 255 PWM_POLARITY_NORMAL>,
+			<&pwm1 2 255 PWM_POLARITY_NORMAL>;
+
+		io-channels =
+			<&arduino_adc 0>,
+			<&arduino_adc 1>,
+			<&arduino_adc 2>,
+			<&arduino_adc 3>,
+			<&arduino_adc 4>,
+			<&arduino_adc 5>;
+
+		gpio-ports = <&gpio0>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN0>; /* P0.02 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>; /* P0.03 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>; /* P0.04 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN3>; /* P0.05 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN4>; /* P0.28 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN5>; /* P0.29 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>; /* P0.30 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>; /* P0.31 */
+		zephyr,resolution = <10>;
+	};
+};
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 1, 4)>,
+				<NRF_PSEL(PWM_OUT2, 1, 6)>,
+				<NRF_PSEL(PWM_OUT3, 1, 7)>;
+				nordic,invert;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 1, 4)>,
+				<NRF_PSEL(PWM_OUT2, 1, 6)>,
+				<NRF_PSEL(PWM_OUT3, 1, 7)>;
+				low-power-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 11)>,
+				<NRF_PSEL(PWM_OUT1, 1, 12)>,
+				<NRF_PSEL(PWM_OUT2, 1, 13)>;
+				nordic,invert;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 11)>,
+				<NRF_PSEL(PWM_OUT1, 1, 12)>,
+				<NRF_PSEL(PWM_OUT2, 1, 13)>;
+				low-power-enable;
+		};
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};

@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2022 Dhruva Gole <goledhruva@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		digital-pin-gpios = <&arduino_nano_header 0 0>,
+				    <&arduino_nano_header 1 0>,
+				    <&arduino_nano_header 2 0>,
+				    <&arduino_nano_header 3 0>,
+				    <&arduino_nano_header 4 0>,
+				    <&arduino_nano_header 5 0>,
+				    <&arduino_nano_header 6 0>,
+				    <&arduino_nano_header 7 0>,
+				    <&arduino_nano_header 8 0>,
+				    <&arduino_nano_header 9 0>,
+				    <&arduino_nano_header 10 0>,
+				    <&arduino_nano_header 11 0>,
+				    <&arduino_nano_header 12 0>,
+				    <&arduino_nano_header 13 0>,
+				    <&arduino_nano_header 14 0>, /* D14 / A0 */
+				    <&arduino_nano_header 15 0>,
+				    <&arduino_nano_header 16 0>,
+				    <&arduino_nano_header 17 0>,
+				    <&arduino_nano_header 18 0>, /* D18 / A4 / I2C-SDA */
+				    <&arduino_nano_header 19 0>, /* D19 / A5 / I2C-SCL */
+				    <&arduino_nano_header 20 0>,
+				    <&arduino_nano_header 21 0>;
+
+		pwm-pin-gpios =	    <&arduino_nano_header 3 0>,
+				    <&arduino_nano_header 5 0>,
+				    <&arduino_nano_header 6 0>,
+				    <&arduino_nano_header 13 0>,
+				    <&arduino_nano_header 9 0>,
+				    <&arduino_nano_header 10 0>,
+				    <&arduino_nano_header 11 0>;
+
+		adc-pin-gpios =	    <&arduino_nano_header 14 0>,
+				    <&arduino_nano_header 15 0>,
+				    <&arduino_nano_header 16 0>,
+				    <&arduino_nano_header 17 0>,
+				    <&arduino_nano_header 18 0>,
+				    <&arduino_nano_header 19 0>,
+				    <&arduino_nano_header 20 0>,
+				    <&arduino_nano_header 21 0>;
+
+		pwms =	<&pwm1 1 255 PWM_POLARITY_NORMAL>,
+			<&pwm1 2 255 PWM_POLARITY_NORMAL>,
+			<&pwm1 3 255 PWM_POLARITY_NORMAL>,
+			<&pwm2 0 255 PWM_POLARITY_NORMAL>,
+			<&pwm2 1 255 PWM_POLARITY_NORMAL>,
+			<&pwm2 2 255 PWM_POLARITY_NORMAL>,
+			<&pwm2 3 255 PWM_POLARITY_NORMAL>;
+
+		io-channels =	<&adc 2>,
+				<&adc 3>,
+				<&adc 6>,
+				<&adc 5>,
+				<&adc 7>,
+				<&adc 0>,
+				<&adc 4>,
+				<&adc 1>;
+
+		gpio-ports = <&gpio0>, <&gpio1>;
+		serials = <&uart0>;
+		i2cs = <&arduino_nano_i2c>;
+	};
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN0>; /* P0.02 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN1>; /* P0.03 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>; /* P0.04 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN3>; /* P0.05 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN4>; /* P0.28 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@5 {
+		reg = <5>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN5>; /* P0.29 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@6 {
+		reg = <6>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN6>; /* P0.30 */
+		zephyr,resolution = <10>;
+	};
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>; /* P0.31 */
+		zephyr,resolution = <10>;
+	};
+};
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 9)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 1, 12)>,
+				<NRF_PSEL(PWM_OUT2, 1, 13)>,
+				<NRF_PSEL(PWM_OUT3, 1, 14)>;
+				nordic,invert;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 9)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 1, 12)>,
+				<NRF_PSEL(PWM_OUT2, 1, 13)>,
+				<NRF_PSEL(PWM_OUT3, 1, 14)>;
+				low-power-enable;
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 0, 27)>,
+				<NRF_PSEL(PWM_OUT2, 1, 2)>,
+				<NRF_PSEL(PWM_OUT3, 1, 1)>;
+				nordic,invert;
+		};
+	};
+
+	pwm2_sleep: pwm2_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 13)>, /* keep original config */
+				<NRF_PSEL(PWM_OUT1, 0, 27)>,
+				<NRF_PSEL(PWM_OUT2, 1, 2)>,
+				<NRF_PSEL(PWM_OUT3, 1, 1)>;
+				low-power-enable;
+		};
+	};
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-1 = <&pwm2_sleep>;
+	pinctrl-names = "default", "sleep";
+};

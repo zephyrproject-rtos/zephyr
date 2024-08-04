@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		digital-pin-gpios = <&pico_header 0 0>,
+				    <&pico_header 1 0>,
+				    <&pico_header 2 0>,
+				    <&pico_header 3 0>,
+				    <&pico_header 4 0>,
+				    <&pico_header 5 0>,
+				    <&pico_header 6 0>,
+				    <&pico_header 7 0>,
+				    <&pico_header 8 0>,
+				    <&pico_header 9 0>,
+				    <&pico_header 10 0>,
+				    <&pico_header 11 0>,
+				    <&pico_header 12 0>,
+				    <&pico_header 13 0>,
+				    <&pico_header 14 0>,
+				    <&pico_header 15 0>,
+				    <&pico_header 16 0>,
+				    <&pico_header 17 0>,
+				    <&pico_header 18 0>,
+				    <&pico_header 19 0>,
+				    <&pico_header 20 0>,
+				    <&pico_header 21 0>,
+				    <&pico_header 22 0>,
+				    <&gpio0 23 0>,
+				    <&gpio0 24 0>,
+				    <&gpio0 25 0>,
+				    <&pico_header 26 0>,
+				    <&pico_header 27 0>,
+				    <&pico_header 28 0>;
+
+		pwm-pin-gpios =     <&pico_header 2 0>,
+				    <&pico_header 3 0>,
+				    <&pico_header 7 0>,
+				    <&pico_header 8 0>,
+				    <&pico_header 10 0>,
+				    <&pico_header 11 0>,
+				    <&pico_header 12 0>,
+				    <&pico_header 13 0>,
+				    <&pico_header 14 0>,
+				    <&pico_header 15 0>,
+				    <&pico_header 20 0>,
+				    <&pico_header 21 0>,
+				    <&pico_header 22 0>,
+				    <&gpio0 25 0>;
+
+		adc-pin-gpios =     <&pico_header 26 0>,
+				    <&pico_header 27 0>,
+				    <&pico_header 28 0>;
+
+		pwms =  <&pwm 2 255 PWM_POLARITY_NORMAL>,
+			<&pwm 3 255 PWM_POLARITY_NORMAL>,
+			<&pwm 7 255 PWM_POLARITY_NORMAL>,
+			<&pwm 8 255 PWM_POLARITY_NORMAL>,
+			<&pwm 10 255 PWM_POLARITY_NORMAL>,
+			<&pwm 11 255 PWM_POLARITY_NORMAL>,
+			<&pwm 12 255 PWM_POLARITY_NORMAL>,
+			<&pwm 13 255 PWM_POLARITY_NORMAL>,
+			<&pwm 14 255 PWM_POLARITY_NORMAL>,
+			<&pwm 15 255 PWM_POLARITY_NORMAL>,
+			<&pwm 4 255 PWM_POLARITY_NORMAL>,
+			<&pwm 5 255 PWM_POLARITY_NORMAL>,
+			<&pwm 6 255 PWM_POLARITY_NORMAL>,
+			<&pwm 9 255 PWM_POLARITY_NORMAL>;
+
+		io-channels =   <&adc 0>,
+				<&adc 1>,
+				<&adc 2>;
+
+		gpio-ports = <&gpio0>;
+		serials = <&pico_serial>;
+		i2cs = <&pico_i2c0>;
+		spis = <&pico_spi>;
+	};
+};
+
+&pinctrl {
+	pwm_ch1a_default: pwm_ch1a_default {
+		group1 {
+			pinmux = <PWM_1A_P2>;
+		};
+	};
+
+	pwm_ch1b_default: pwm_ch1b_default {
+		group1 {
+			pinmux = <PWM_1B_P3>;
+		};
+	};
+
+	pwm_ch2a_default: pwm_ch2a_default {
+		group1 {
+			pinmux = <PWM_2A_P20>;
+		};
+	};
+
+	pwm_ch2b_default: pwm_ch2b_default {
+		group1 {
+			pinmux = <PWM_2B_P21>;
+		};
+	};
+
+	pwm_ch3a_default: pwm_ch3a_default {
+		group1 {
+			pinmux = <PWM_3A_P22>;
+		};
+	};
+
+	pwm_ch3b_default: pwm_ch3b_default {
+		group1 {
+			pinmux = <PWM_3B_P7>;
+		};
+	};
+
+	pwm_ch4a_default: pwm_ch4a_default {
+		group1 {
+			pinmux = <PWM_4A_P8>;
+		};
+	};
+
+	pwm_ch5a_default: pwm_ch5a_default {
+		group1 {
+			pinmux = <PWM_5A_P10>;
+		};
+	};
+
+	pwm_ch5b_default: pwm_ch5b_default {
+		group1 {
+			pinmux = <PWM_5B_P11>;
+		};
+	};
+
+	pwm_ch6a_default: pwm_ch6a_default {
+		group1 {
+			pinmux = <PWM_6A_P12>;
+		};
+	};
+
+	pwm_ch6b_default: pwm_ch6b_default {
+		group1 {
+			pinmux = <PWM_6B_P13>;
+		};
+	};
+
+	pwm_ch7a_default: pwm_ch7a_default {
+		group1 {
+			pinmux = <PWM_7A_P14>;
+		};
+	};
+
+	pwm_ch7b_default: pwm_ch7b_default {
+		group1 {
+			pinmux = <PWM_7B_P15>;
+		};
+	};
+};
+
+&pwm {
+	status = "okay";
+	divider-frac-4 = <15>;
+	divider-int-4 = <255>;
+};
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

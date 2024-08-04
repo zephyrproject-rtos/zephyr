@@ -1,0 +1,183 @@
+/*
+ * Copyright (c) 2022 Dhruva Gole <goledhruva@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		digital-pin-gpios = <&arduino_nano_header 0 0>,
+				    <&arduino_nano_header 1 0>,
+				    <&arduino_nano_header 2 0>,
+				    <&arduino_nano_header 3 0>,
+				    <&arduino_nano_header 4 0>,
+				    <&arduino_nano_header 5 0>,
+				    <&arduino_nano_header 6 0>,
+				    <&arduino_nano_header 7 0>,
+				    <&arduino_nano_header 8 0>,
+				    <&arduino_nano_header 9 0>,
+				    <&arduino_nano_header 10 0>,
+				    <&arduino_nano_header 11 0>,
+				    <&arduino_nano_header 12 0>,
+				    <&arduino_nano_header 13 0>,
+				    <&arduino_nano_header 14 0>, /* D14 / A0 */
+				    <&arduino_nano_header 15 0>,
+				    <&arduino_nano_header 16 0>,
+				    <&arduino_nano_header 17 0>,
+				    <&arduino_nano_header 18 0>, /* D18 / A4 / I2C-SDA */
+				    <&arduino_nano_header 19 0>, /* D19 / A5 / I2C-SCL */
+				    <&arduino_nano_header 20 0>,
+				    <&arduino_nano_header 21 0>;
+
+		pwm-pin-gpios =	    <&arduino_nano_header 6 0>,
+				    <&arduino_nano_header 5 0>,
+				    <&arduino_nano_header 17 0>,
+				    <&arduino_nano_header 12 0>,
+				    <&arduino_nano_header 2 0>,
+				    <&arduino_nano_header 3 0>,
+				    <&arduino_nano_header 9 0>,
+				    <&arduino_nano_header 10 0>;
+
+		adc-pin-gpios =     <&arduino_nano_header 14 0>,
+				    <&arduino_nano_header 15 0>,
+				    <&arduino_nano_header 16 0>,
+				    <&arduino_nano_header 17 0>,
+				    <&arduino_nano_header 18 0>,
+				    <&arduino_nano_header 19 0>,
+				    <&arduino_nano_header 20 0>,
+				    <&arduino_nano_header 21 0>;
+
+		pwms =	<&tcc0 0 255>,
+			<&tcc0 1 255>,
+			<&tcc0 2 255>,
+			<&tcc0 3 255>,
+			<&tcc0 4 255>,
+			<&tcc0 5 255>,
+			<&tcc0 6 255>,
+			<&tcc0 7 255>;
+
+		io-channels =	<&adc 0>,
+				<&adc 10>,
+				<&adc 11>,
+				<&adc 4>,
+				<&adc 5>,
+				<&adc 6>,
+				<&adc 7>;
+
+		gpio-ports = <&porta>, <&portb>;
+		serials = <&sercom5>;
+		i2cs = <&arduino_nano_i2c>;
+	};
+};
+
+&pinctrl {
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PA4E_TCC0_WO0>,
+				 <PA5E_TCC0_WO1>,
+				 <PA10F_TCC0_WO2>,
+				 <PA19F_TCC0_WO3>,
+				 <PB10F_TCC0_WO4>,
+				 <PB11F_TCC0_WO5>,
+				 <PA20F_TCC0_WO6>,
+				 <PA21F_TCC0_WO7>;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA2B_ADC_AIN0>,
+				 <PB2B_ADC_AIN10>,
+				 <PA11B_ADC_AIN19>,
+				 <PA10B_ADC_AIN18>,
+				 <PB8B_ADC_AIN2>,
+				 <PB9B_ADC_AIN3>,
+				 <PA9B_ADC_AIN17>,
+				 <PB3B_ADC_AIN11>;
+		};
+	};
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <2>;
+	#pwm-cells = <2>;
+
+	pinctrl-0 = <&pwm_default>;
+	pinctrl-names = "default";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0x0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <0>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <2>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <3>;
+	};
+
+	channel@a {
+		reg = <0xa>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <10>;
+	};
+
+	channel@b {
+		reg = <0xb>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <11>;
+	};
+
+	channel@12 {
+		reg = <0x12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <18>;
+	};
+
+	channel@13 {
+		reg = <0x13>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+		zephyr,input-positive = <19>;
+	};
+};
