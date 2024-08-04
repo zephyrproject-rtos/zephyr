@@ -330,7 +330,7 @@ int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *stati
 		}
 	}
 
-	LOG_DBG("found %s, file size: %d", fname, file_size);
+	LOG_DBG("found %s, file size: %zu", fname, file_size);
 
 	/* send HTTP header */
 	len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
