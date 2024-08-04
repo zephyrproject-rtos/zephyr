@@ -136,7 +136,7 @@ static int tsl2591_channel_get(const struct device *dev, enum sensor_channel cha
 			       struct sensor_value *val)
 {
 	const struct tsl2591_data *data = dev->data;
-	int64_t cpl = data->atime * data->again;
+	int64_t cpl = (int64_t)data->atime * (int64_t)data->again;
 	int64_t strength;
 
 	/* Unfortunately, datasheet does not provide a lux conversion formula for this particular
