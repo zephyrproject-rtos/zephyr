@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_capture, CONFIG_NET_CAPTURE_LOG_LEVEL);
 #include "ipv4.h"
 #include "ipv6.h"
 #include "udp_internal.h"
+#include "net_stats.h"
 
 #define PKT_ALLOC_TIME K_MSEC(50)
 #define DEFAULT_PORT 4242
@@ -554,7 +555,7 @@ int net_capture_pkt_with_status(struct net_if *iface, struct net_pkt *pkt)
 
 			if (captured == NULL) {
 				NET_DBG("Captured pkt %s", "dropped");
-				/* TODO: update capture data statistics */
+				net_stats_update_processing_error(ctx->tunnel_iface);
 				ret = -ENOMEM;
 				goto out;
 			}
