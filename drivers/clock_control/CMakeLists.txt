@@ -30,7 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA          clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_control_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RPI_PICO            clock_control_rpi_pico.c)
-
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RTS5912_SCCON       clock_control_rts5912_sccon.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)
