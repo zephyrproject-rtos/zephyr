@@ -591,7 +591,7 @@
 				cpu = <13>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x908000 0x4000>;
+				ranges = <0x0 0x908000 0x1000>;
 
 				cpuppr_vevif_tx: mailbox@0 {
 					compatible = "nordic,nrf-vevif-task-tx";
@@ -600,15 +600,6 @@
 					#mbox-cells = <1>;
 					nordic,tasks = <16>;
 					nordic,tasks-mask = <0xfffffff0>;
-				};
-
-				cpuppr_clic: interrupt-controller@1000 {
-					compatible = "nordic,nrf-clic";
-					reg = <0x1000 0x3000>;
-					status = "disabled";
-					#interrupt-cells = <2>;
-					interrupt-controller;
-					#address-cells = <1>;
 				};
 			};
 
@@ -1213,6 +1204,20 @@
 			compatible = "arm,v8m-nvic";
 			reg = <0xe000e100 0xc00>;
 			arm,num-irq-priority-bits = <3>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpuppr_private: cpuppr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuppr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			#address-cells = <1>;
