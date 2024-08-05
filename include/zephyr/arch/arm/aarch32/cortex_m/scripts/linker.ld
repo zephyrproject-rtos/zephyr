@@ -118,7 +118,7 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 
@@ -132,6 +132,9 @@ SECTIONS
 
 #include <zephyr/linker/kobject-text.ld>
 
+    . = ALIGN(16);
+	KEEP(*(".app_descriptor"))  /* The app descriptor shall be close to the origin to speed up its search. */
+
 	*(.text)
 	*(".text.*")
 	*(".TEXT.*")
@@ -144,7 +147,7 @@ SECTIONS
 	*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 	. = ALIGN(4);
 
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 
 	__text_region_end = .;
 
@@ -155,7 +158,7 @@ SECTIONS
 	 * .ARM.extab section containing exception unwinding information.
 	 */
 	*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 #endif
 
 	SECTION_PROLOGUE(.ARM.exidx,,)
@@ -171,7 +174,7 @@ SECTIONS
 	*(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
 	__exidx_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 
 	__rodata_region_start = .;
 
@@ -202,7 +205,7 @@ SECTIONS
 	 * usually 4k aligned.
 	 */
 	. = ALIGN(4);
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 
 #include <zephyr/linker/cplusplus-rom.ld>
 
@@ -296,7 +299,7 @@ SECTIONS
 #endif
 	__data_end = .;
 
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION) =0xA5
     __data_size = __data_end - __data_start;
     __data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
@@ -378,7 +381,7 @@ GROUP_START(ITCM)
 		*(.itcm)
 		*(".itcm.*")
 		__itcm_end = .;
-	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION) =0xA5
 
 	__itcm_size = __itcm_end - __itcm_start;
 	__itcm_load_start = LOADADDR(_ITCM_SECTION_NAME);
@@ -412,7 +415,7 @@ GROUP_START(DTCM)
 		*(.dtcm_data)
 		*(".dtcm_data.*")
 		__dtcm_data_end = .;
-	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION) =0xA5
 
 	__dtcm_end = .;
 
@@ -447,7 +450,7 @@ SECTION_PROLOGUE(.last_section,,)
    * region data usage match. */
   LONG(CONFIG_LINKER_LAST_SECTION_ID_PATTERN)
 #endif
-} GROUP_LINK_IN(ROMABLE_REGION)
+} GROUP_LINK_IN(ROMABLE_REGION) =0xA5
 
 /* To provide the image size as a const expression,
  * calculate this value here. */
