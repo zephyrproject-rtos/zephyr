@@ -1349,7 +1349,8 @@ static int cmd_i3c_i2c_detach(const struct shell *shell_ctx, size_t argc, char *
  *
  * This will print "I3" if an address is already assigned for an I3C
  * device and it will print "I2" if an address is already assigned for
- * an I2C device.
+ * an I2C device. It will print RS, if the address is reserved according
+ * to section 5.1.2.2.5 I3C Target Address Restrictions in I3C v1.1.1.
  *
  * This sends I2C messages without any data (i.e. stop condition after
  * sending just the address). If there is an ACK for the address, it
@@ -1428,6 +1429,8 @@ static int cmd_i3c_i2c_scan(const struct shell *shell_ctx, size_t argc, char **a
 				shell_fprintf(shell_ctx, SHELL_NORMAL, "I3 ");
 			} else if (slot == I3C_ADDR_SLOT_STATUS_I2C_DEV) {
 				shell_fprintf(shell_ctx, SHELL_NORMAL, "I2 ");
+			} else if (slot == I3C_ADDR_SLOT_STATUS_RSVD) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "RS ");
 			} else {
 				shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
 			}
