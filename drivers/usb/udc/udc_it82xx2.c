@@ -1089,12 +1089,10 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 		return 0;
 	}
 
-	buf = udc_buf_get(dev, ep);
+	buf = udc_buf_peek(dev, ep);
 	if (buf == NULL) {
 		return -ENODATA;
 	}
-
-	udc_ep_set_busy(dev, ep, false);
 
 	fifo_idx = ep_idx > 0 ? ep_fifo_res[ep_idx % SHARED_FIFO_NUM] : 0;
 	len = (uint16_t)ff_regs[fifo_idx].ep_rx_fifo_dcnt_lsb +
@@ -1103,6 +1101,7 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev) && len != 0) {
 			LOG_DBG("Handle early setup token");
+			buf = udc_buf_get(dev, ep);
 			/* Notify upper layer */
 			udc_ctrl_submit_status(dev, buf);
 			/* Update to next stage of control transfer */
@@ -1118,6 +1117,23 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 	}
 
 	it82xx2_xfer_out_data(dev, ep, buf);
+
+	LOG_DBG("Handle data OUT, %zu | %zu", len, net_buf_tailroom(buf));
+
+	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
+		work_handler_xfer_continue(dev, ep, buf);
+		if (ep != USB_CONTROL_EP_OUT) {
+			err = udc_submit_ep_event(dev, buf, 0);
+		}
+		return err;
+	}
+
+	buf = udc_buf_get(dev, ep);
+	if (buf == NULL) {
+		return -ENODATA;
+	}
+
+	udc_ep_set_busy(dev, ep, false);
 
 	if (ep == USB_CONTROL_EP_OUT) {
 		if (udc_ctrl_stage_is_status_out(dev)) {
