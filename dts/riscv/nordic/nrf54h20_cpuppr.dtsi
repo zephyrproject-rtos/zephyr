@@ -30,6 +30,11 @@ cpusys_vevif: &cpusys_vevif_tx {};
 	};
 };
 
+&cpuppr_private {
+	compatible = "simple-bus";
+	ranges;
+};
+
 &cpuppr_clic {
 	status = "okay";
 };
