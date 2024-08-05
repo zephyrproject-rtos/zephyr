@@ -8,6 +8,9 @@
 
 extern FUNC_NORETURN void z_cstart(void);
 
+/* defined by the SoC in case of CONFIG_SOC_HAS_RUNTIME_NUM_CPUS=y */
+extern void soc_num_cpus_init(void);
+
 /**
  *
  * @brief Prepare to and run C code
@@ -17,6 +20,10 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_prep_c(void)
 {
+#if CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
+	soc_num_cpus_init();
+#endif
+
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
 #ifdef CONFIG_KERNEL_COHERENCE
