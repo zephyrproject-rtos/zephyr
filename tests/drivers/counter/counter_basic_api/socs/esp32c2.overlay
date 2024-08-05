@@ -1,0 +1,7 @@
+&timer0 {
+	status = "okay";
+};
+
+&rtc_timer {
+	status = "okay";
+};
