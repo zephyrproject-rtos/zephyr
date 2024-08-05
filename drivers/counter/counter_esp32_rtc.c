@@ -22,7 +22,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -31,7 +31,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define ESP32_COUNTER_RTC_ISR_HANDLER isr_handler_t
 #else
 #define ESP32_COUNTER_RTC_ISR_HANDLER intr_handler_t
@@ -108,7 +108,8 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 	uint32_t ticks = 0;
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3)
 	/* In ESP32/C3 Series the min possible value is 30 us*/
 	if (counter_ticks_to_us(dev, alarm_cfg->ticks) < 30) {
 		return -EINVAL;

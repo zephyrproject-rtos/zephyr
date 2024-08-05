@@ -18,16 +18,16 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -70,9 +70,11 @@ static int counter_esp32_init(const struct device *dev)
 	case TIMER_GROUP_0:
 		periph_module_enable(PERIPH_TIMG0_MODULE);
 		break;
+#if !defined(CONFIG_SOC_SERIES_ESP32C2)
 	case TIMER_GROUP_1:
 		periph_module_enable(PERIPH_TIMG1_MODULE);
 		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
