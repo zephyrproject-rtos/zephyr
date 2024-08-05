@@ -12,11 +12,6 @@ description: |
 include: base.yaml
 
 properties:
-  cpu:
-    type: int
-    description: |
-      Processor ID of the VPR core.
-
   execution-memory:
     type: phandle
     required: true
