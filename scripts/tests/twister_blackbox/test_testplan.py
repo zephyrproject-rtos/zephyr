@@ -56,7 +56,7 @@ class TestTestPlan:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_subtest(self, out_path, test, expected_exception, expected_subtest_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '--sub-test', test, '-y'] + \
                [val for pair in zip(
@@ -89,7 +89,7 @@ class TestTestPlan:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_filter(self, out_path, filter, expected_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '--filter', filter, '-y'] + \
                [val for pair in zip(
@@ -120,7 +120,7 @@ class TestTestPlan:
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', '')
     def test_integration(self, out_path, integration, expected_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                (['--integration'] if integration else []) + \

@@ -44,7 +44,7 @@ class TestOutfile:
         ids=['clobber', 'do not clobber', 'do not clean', 'do not clobber, do not clean']
     )
     def test_clobber_output(self, out_path, flag_section, clobber, expect_straggler):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                flag_section + \
@@ -80,7 +80,7 @@ class TestOutfile:
             assert straggler_name not in out_contents
 
     def test_runtime_artifact_cleanup(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--runtime-artifact-cleanup'] + \
@@ -177,7 +177,7 @@ class TestOutfile:
                 assert len(flag_value) < len(unshortened_pipe_path), 'Pipe path not shortened.'
 
     def test_prep_artifacts_for_testing(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
         zephyr_out_path = os.path.join(out_path, 'qemu_x86', relative_test_path,
