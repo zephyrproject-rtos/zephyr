@@ -31,7 +31,7 @@ class TestConfig:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_alt_config_root(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
@@ -67,7 +67,7 @@ class TestConfig:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_level(self, out_path, level, expected_tests):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         config_path = os.path.join(TEST_DATA, 'test_config.yaml')
         args = ['-i','--outdir', out_path, '-T', path, '--level', level, '-y',

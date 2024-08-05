@@ -37,7 +37,7 @@ class TestTooling:
     )
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_jobs(self, out_path, jobs):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--jobs', jobs] + \
