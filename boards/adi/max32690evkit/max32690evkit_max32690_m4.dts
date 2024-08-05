@@ -97,3 +97,9 @@
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
 };
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
+	pinctrl-names = "default";
+};
