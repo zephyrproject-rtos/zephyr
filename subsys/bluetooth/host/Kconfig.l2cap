@@ -58,6 +58,12 @@ config BT_L2CAP_ECRED
 	  This option enables support for LE Connection oriented Channels with
 	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
 
+config BT_L2CAP_RECEIVER_REDUCE_LOG_PRINT
+	bool "L2CAP RECEIVER REDUCE LOG PRINT"
+	default y
+	help
+	  When enabled, reduce the printing of logs related to the l2cap receiver.
+
 config BT_L2CAP_SEG_RECV
 	bool "L2CAP Receive segment direct API [EXPERIMENTAL]"
 	select EXPERIMENTAL
