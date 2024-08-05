@@ -139,13 +139,15 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr)
 {
-	int table_cnt, i;
+	int i;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
 	/* Find symbol and string tables */
-	for (i = 0, table_cnt = 0; i < ldr->sect_cnt && table_cnt < 3; ++i) {
+	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+		const char *sect_type_str;
+		enum llext_mem sect_mem_idx = LLEXT_MEM_COUNT;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
 			"addr 0x%zx, size %zd, link %d, info %d",
@@ -162,32 +164,37 @@ static int llext_find_tables(struct llext_loader *ldr)
 		switch (shdr->sh_type) {
 		case SHT_SYMTAB:
 		case SHT_DYNSYM:
-			LOG_DBG("symtab at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
-			table_cnt++;
+			sect_type_str = "symtab";
+			sect_mem_idx = LLEXT_MEM_SYMTAB;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
-				LOG_DBG("shstrtab at %d", i);
-				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
+				sect_type_str = "shstrtab";
+				sect_mem_idx = LLEXT_MEM_SHSTRTAB;
 			} else {
-				LOG_DBG("strtab at %d", i);
-				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
+				sect_type_str = "strtab";
+				sect_mem_idx = LLEXT_MEM_STRTAB;
 			}
-			table_cnt++;
 			break;
 		default:
-			break;
+			/* not a special section */
+			continue;
 		}
+
+		if (ldr->sects[sect_mem_idx].sh_type != 0) {
+			LOG_ERR("Multiple %s sections found", sect_type_str);
+			return -ENOEXEC;
+		}
+
+		LOG_DBG("%s at %d", sect_type_str, i);
+		ldr->sects[sect_mem_idx] = *shdr;
+		ldr->sect_map[i].mem_idx = sect_mem_idx;
 	}
 
 	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
-		LOG_ERR("Some sections are missing or present multiple times!");
+		LOG_ERR("Some needed sections are missing");
 		return -ENOEXEC;
 	}
 
@@ -207,6 +214,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+
+		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
+			LOG_DBG("section %d name %s already mapped to region %d",
+				i, name, ldr->sect_map[i].mem_idx);
+			continue;
+		}
 
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
