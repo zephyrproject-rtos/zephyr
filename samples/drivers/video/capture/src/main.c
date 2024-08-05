@@ -144,6 +144,20 @@ int main(void)
 	}
 #endif
 
+        fmt.width = 160;
+	fmt.height = 120;
+	fmt.pitch = fmt.width * 2;
+	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
+
+	if(video_set_format(video_dev, VIDEO_EP_OUT, &fmt)){
+                LOG_ERR("Unable to set format");
+                return 0;
+        }
+
+        printk("- Set format: %c%c%c%c %ux%u\n", (char)fmt.pixelformat,
+	       (char)(fmt.pixelformat >> 8), (char)(fmt.pixelformat >> 16),
+	       (char)(fmt.pixelformat >> 24), fmt.width, fmt.height);
+
 	/* Size to allocate for each buffer */
 	bsize = fmt.pitch * fmt.height;
 

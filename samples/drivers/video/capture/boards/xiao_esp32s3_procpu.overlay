@@ -1,0 +1,85 @@
+ #include <zephyr/dt-bindings/led/led.h>
+ #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+ #include <zephyr/dt-bindings/pwm/pwm.h>
+
+ / {
+        chosen {
+                zephyr_camera = &camera0;
+        };
+ };
+
+&dma {
+        status = "okay";
+};
+
+&i2c1 {
+        status = "okay";
+        clock-frequency = <I2C_BITRATE_STANDARD>;
+        pinctrl-0 = <&i2c1_default>;
+        pinctrl-names = "default";
+        ov2640: ov2640@30 {
+                compatible = "ovti,ov2640";
+                reg = <0x30>;
+                status = "okay";
+                clock-rate-control = <0x80>;
+                port {
+                        ov2640_ep_out: endpoint {
+                                remote-endpoint = <&dvp_ep_in>;
+                        };
+                };
+        };
+};
+
+&lcd_cam {
+        status = "okay";
+        cam_clk = < 10000000 >;
+        pinctrl-0 = <&lcd_cam_default>;
+        pinctrl-names = "default";
+};
+
+&camera0 {
+        status = "okay";
+        pinctrl-0 = <&cam_default>;
+        pinctrl-names = "default";
+        source = <&ov2640>;
+        port {
+                dvp_ep_in: endpoint {
+                        remote-endpoint = <&ov2640_ep_out>;
+                };
+        };
+};
+
+&pinctrl {
+        lcd_cam_default: lcd_cam_default{
+                group1 {
+                        pinmux = <ESP32_PINMUX(10, ESP_NOSIG, ESP_CAM_CLK)>;
+                        output-enable;
+                };
+        };
+        cam_default: cam_default {
+                group1 {
+                        pinmux = <ESP32_PINMUX(38, ESP_CAM_V_SYNC, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(47, ESP_CAM_H_ENABLE, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(13, ESP_CAM_PCLK, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(15, ESP_CAM_DATA_IN0, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(17, ESP_CAM_DATA_IN1, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(18, ESP_CAM_DATA_IN2, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(16, ESP_CAM_DATA_IN3, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(14, ESP_CAM_DATA_IN4, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(12, ESP_CAM_DATA_IN5, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(11, ESP_CAM_DATA_IN6, ESP_NOSIG)>,
+                                 <ESP32_PINMUX(48, ESP_CAM_DATA_IN7, ESP_NOSIG)>;
+                        input-enable;
+                        bias-disable;
+                };
+        };
+        i2c1_default: i2c1_default {
+                group1 {
+			pinmux = <I2C1_SDA_GPIO40>,
+				 <I2C1_SCL_GPIO39>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+        };
+ };
