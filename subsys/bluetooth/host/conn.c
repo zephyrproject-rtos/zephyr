@@ -530,6 +530,20 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	return bt_send(buf);
 }
 
+static enum bt_iso_timestamp contains_iso_timestamp(struct net_buf *buf)
+{
+	enum bt_iso_timestamp ts;
+
+	if (net_buf_headroom(buf) ==
+	    (BT_BUF_ISO_SIZE(0) - sizeof(struct bt_hci_iso_sdu_ts_hdr))) {
+		ts = BT_ISO_TS_PRESENT;
+	} else {
+		ts = BT_ISO_TS_ABSENT;
+	}
+
+	return ts;
+}
+
 static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	struct bt_hci_iso_hdr *hdr;
@@ -560,7 +574,7 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	 * every fragment, only the first one.
 	 */
 	if (flags == BT_ISO_SINGLE || flags == BT_ISO_START) {
-		ts = (enum bt_iso_timestamp)net_buf_pull_u8(buf);
+		ts = contains_iso_timestamp(buf);
 	} else {
 		ts = BT_ISO_TS_ABSENT;
 	}
