@@ -44,16 +44,17 @@ extern "C" {
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Variant-specific details for @p _config_type.
  */
-#define SYS_HASHMAP_DEFINE_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,             \
-				    _alloc_func, ...)                                              \
+#define SYS_HASHMAP_DEFINE_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,       \
+				    _eq_func, _alloc_func, ...)                                                      \
 	const struct _config_type _name##_config = __VA_ARGS__;                                    \
 	struct _data_type _name##_data;                                                            \
 	struct sys_hashmap _name = {                                                               \
-		.api = (const struct sys_hashmap_api *)(_api),                                     \
-		.config = (const struct sys_hashmap_config *)&_name##_config,                      \
-		.data = (struct sys_hashmap_data *)&_name##_data,                                  \
-		.hash_func = (_hash_func),                                                         \
-		.alloc_func = (_alloc_func),                                                       \
+		.api = (const struct sys_hashmap_api *)(_api),                                           \
+		.config = (const struct sys_hashmap_config *)&_name##_config,                            \
+		.data = (struct sys_hashmap_data *)&_name##_data,                                        \
+		.eq_func = (_eq_func),                                                                   \
+		.hash_func = (_hash_func),                                                               \
+		.alloc_func = (_alloc_func),                                                             \
 	}
 
 /**
@@ -73,15 +74,16 @@ extern "C" {
  * @param ... Variant-specific details for @p _config_type.
  */
 #define SYS_HASHMAP_DEFINE_STATIC_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,      \
-					   _alloc_func, ...)                                       \
+					   _alloc_func, _eq_func, ...)                                                           \
 	static const struct _config_type _name##_config = __VA_ARGS__;                             \
 	static struct _data_type _name##_data;                                                     \
 	static struct sys_hashmap _name = {                                                        \
-		.api = (const struct sys_hashmap_api *)(_api),                                     \
-		.config = (const struct sys_hashmap_config *)&_name##_config,                      \
-		.data = (struct sys_hashmap_data *)&_name##_data,                                  \
-		.hash_func = (_hash_func),                                                         \
-		.alloc_func = (_alloc_func),                                                       \
+		.api = (const struct sys_hashmap_api *)(_api),                                           \
+		.config = (const struct sys_hashmap_config *)&_name##_config,                            \
+		.data = (struct sys_hashmap_data *)&_name##_data,                                        \
+		.hash_func = (_hash_func),                                                               \
+		.eq_func = (_eq_func),                                                                   \
+		.alloc_func = (_alloc_func),                                                             \
 	}
 
 /**
@@ -101,6 +103,16 @@ extern "C" {
  * @param _name Name of the Hashmap.
  */
 #define SYS_HASHMAP_DEFINE_STATIC(_name) SYS_HASHMAP_DEFAULT_DEFINE_STATIC(_name)
+
+/*
+ * Default equality function used by the hash map implementations
+ */
+static inline bool sys_hashmap_default_equal(uint64_t left, uint64_t right) {
+	return left == right;
+}
+
+/** @brief The default Hashmap equality function */
+#define SYS_HASHMAP_DEFAULT_EQUALITY_FUNCTION sys_hashmap_default_equal
 
 /*
  * A safe wrapper for realloc(), invariant of which libc provides it.
@@ -131,6 +143,8 @@ struct sys_hashmap {
 	struct sys_hashmap_data *data;
 	/** Hash function */
 	sys_hash_func32_t hash_func;
+	/** Equality function */
+	sys_hashmap_equal_t eq_func;
 	/** Allocator */
 	sys_hashmap_allocator_t alloc_func;
 };

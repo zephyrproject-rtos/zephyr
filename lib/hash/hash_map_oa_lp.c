@@ -50,7 +50,7 @@ static struct oalp_entry *sys_hashmap_oa_lp_find(const struct sys_hashmap *map, 
 
 		switch (entry->state) {
 		case USED:
-			if (used_ok && entry->key == key) {
+			if (used_ok && map->eq_func(entry->key, key)) {
 				return entry;
 			}
 			break;

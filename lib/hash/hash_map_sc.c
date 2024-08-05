@@ -124,7 +124,7 @@ static struct sys_hashmap_sc_entry *sys_hashmap_sc_find(const struct sys_hashmap
 	bucket = &buckets[hash % map->data->n_buckets];
 
 	SYS_DLIST_FOR_EACH_CONTAINER(bucket, entry, node) {
-		if (entry->key == key) {
+		if (map->eq_func(entry->key == key)) {
 			return entry;
 		}
 	}

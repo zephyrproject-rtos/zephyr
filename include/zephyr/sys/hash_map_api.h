@@ -71,6 +71,20 @@ static inline bool sys_hashmap_iterator_has_next(const struct sys_hashmap_iterat
 }
 
 /**
+ * @brief Equality function defined for elements of @ref sys_hashmap
+ *
+ * The Hashmap equality function allows storing arbitrary data in the uint64_t fields of the map.
+ * Similarly to what happens in other hashmap implementation by defining a custom hash and equality
+ * function you can store and retrieve elements of virtually every type.
+ *
+ * @param left Left element of the comparison.
+ * @param right Right element of the comparison.
+ *
+ * @return wether left and right elements are the same
+ */
+typedef bool(*sys_hashmap_equal_t)(uint64_t left, uint64_t right);
+
+/**
  * @brief Allocator interface for @ref sys_hashmap
  *
  * The Hashmap allocator can be any allocator that behaves similarly to `realloc()` with the
