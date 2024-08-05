@@ -17,6 +17,13 @@ config NRFX_CLIC
 	help
 	  Interrupt controller for Nordic VPR cores.
 
+config CLIC_SMCLICSHV_EXT
+	bool
+	help
+	  The selective hardware vectoring extension gives users the flexibility
+	  to select the behavior for each interrupt. The CLIC driver needs to
+	  implement the riscv_clic_irq_vector_set() function.
+
 if NUCLEI_ECLIC
 
 config LEGACY_CLIC
