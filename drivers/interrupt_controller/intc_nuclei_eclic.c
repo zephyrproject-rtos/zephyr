@@ -144,16 +144,9 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 	ECLIC_CTRL[irq].INTCTRL = intctrl;
 
 	union CLICINTATTR intattr = {.w = 0};
-#if defined(CONFIG_RISCV_VECTORED_MODE) && !defined(CONFIG_LEGACY_CLIC)
-	/*
-	 * Set Selective Hardware Vectoring.
-	 * Legacy SiFive does not implement smclicshv extension and vectoring is
-	 * enabled in the mode bits of mtvec.
-	 */
-	intattr.b.shv = 1;
-#else
+
+	/* Set non-vectoring as default. */
 	intattr.b.shv = 0;
-#endif
 	intattr.b.trg = (uint8_t)(flags & CLIC_INTATTR_TRIG_Msk);
 	ECLIC_CTRL[irq].INTATTR = intattr;
 }
