@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2023, NXP
+ * Copyright 2020-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
+		dmic-dev = &dmic0;
 	};
 
 	chosen {
@@ -395,4 +396,28 @@ zephyr_udc0: &usbhs {
 /* Disable this node if not using USB and need another MPU region */
 &sram1 {
 	status = "okay";
+};
+
+&dmic0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dmic0>;
+	pinctrl-names = "default";
+	use2fs;
+};
+
+/* Configure pdm channels 0 and 1 with gain, and cutoff settings
+ * appropriate for the attached MEMS microphones.
+ */
+&pdmc0 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
+};
+
+&pdmc1 {
+	status = "okay";
+	gainshift = <3>;
+	dc-cutoff = "155hz";
+	dc-gain = <1>;
 };
