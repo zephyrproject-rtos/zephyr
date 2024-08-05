@@ -20,7 +20,13 @@ properties:
   clk-source:
     type: int
     required: true
-    description: Prescaler clock source (0 to 3)
+    enum: [0, 1, 2, 3]
+    description: |
+      Selects the clock to be used by the LPMTR prescaler/glitch filter.
+      In time counter mode, this field selects the input clock to the prescaler.
+      In pulse counter mode, this field selects the input clock to the glitch filter.
+      The clock connections vary by device, see the device reference manual for
+      more details.
 
   input-pin:
     type: int
