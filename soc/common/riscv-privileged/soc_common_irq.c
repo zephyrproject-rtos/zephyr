@@ -37,6 +37,15 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 	riscv_clic_irq_priority_set(irq, prio, flags);
 }
 
+void z_riscv_irq_vector_set(unsigned int irq)
+{
+#if defined(CONFIG_CLIC_SMCLICSHV_EXT)
+	riscv_clic_irq_vector_set(irq);
+#else
+	ARG_UNUSED(irq);
+#endif
+}
+
 #else /* PLIC + HLINT/CLINT or HLINT/CLINT only */
 
 void arch_irq_enable(unsigned int irq)
