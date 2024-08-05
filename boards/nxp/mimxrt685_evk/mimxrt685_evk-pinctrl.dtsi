@@ -82,6 +82,16 @@
 		};
 	};
 
+	pinmux_dmic0: pinmux_dmic0 {
+		group0 {
+			pinmux = <DMIC0_DATA2_3_PIO2_21>, <DMIC0_DATA0_1_PIO2_20>,
+			       <DMIC0_CLK0_1_PIO2_16>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
+
 	pinmux_flexspi: pinmux_flexspi {
 		group0 {
 			pinmux = <FLEXSPI0B_DATA0_PIO1_11>,

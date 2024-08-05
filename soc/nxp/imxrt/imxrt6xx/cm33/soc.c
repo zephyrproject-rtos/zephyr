@@ -313,6 +313,18 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+	/* Using the Audio PLL as input clock leads to better clock dividers
+	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
+	 */
+	/* DMIC source from audio pll, divider 8, 24.576M/8=3.072MHZ
+	 * Select Audio PLL as clock source. This should produce a bit clock
+	 * of 3.072MHZ
+	 */
+	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 8);
+#endif
+
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	/*
 	 * Call function flexspi_setup_clock() to set user configured clock source/divider
