@@ -328,6 +328,10 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 	/*
 	 * Special case - append already received data (extracted from previous
 	 * chunk) to new packet.
+	 *
+	 * This code is NOT used when OA_CONFIG0 RFA [13:12] is set to 01
+	 * (ZAREFE) - so received ethernet frames will always start on the
+	 * beginning of new chunks.
 	 */
 	if (tc6->concat_buf) {
 		net_pkt_append_buffer(pkt, tc6->concat_buf);
