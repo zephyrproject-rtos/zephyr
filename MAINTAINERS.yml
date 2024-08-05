@@ -3338,6 +3338,7 @@ ADI Platforms:
     - microbuilder
   files:
     - boards/adi/
+    - boards/shields/pmod_acl/
     - drivers/*/*max*
     - drivers/*/*max*/
     - drivers/dac/dac_ltc*
