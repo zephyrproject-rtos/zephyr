@@ -65,8 +65,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		return ret;
 	}
 
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
 		/* 9 bit word mode must be used, as the command/data bit
 		 * is stored before the data word.
 		 */
@@ -177,8 +176,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 		return ret;
 	}
 	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
 		/* We have to emulate 3 wire mode by packing the data/command
 		 * bit into the upper bit of the SPI transfer.
 		 * switch SPI to 9 bit mode, and write the transfer
