@@ -454,6 +454,9 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 	case kUSB_DeviceNotifyAttach:
 		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		break;
+	case kUSB_DeviceNotifySOF:
+		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		break;
 	default:
 		ep  = mcux_msg->code;
 		if (mcux_msg->isSetup) {
