@@ -176,6 +176,18 @@ static int llext_find_tables(struct llext_loader *ldr)
 				sect_mem_idx = LLEXT_MEM_STRTAB;
 			}
 			break;
+		case SHT_PREINIT_ARRAY:
+			sect_type_str = "preinit";
+			sect_mem_idx = LLEXT_MEM_PREINIT;
+			break;
+		case SHT_INIT_ARRAY:
+			sect_type_str = "init";
+			sect_mem_idx = LLEXT_MEM_INIT;
+			break;
+		case SHT_FINI_ARRAY:
+			sect_type_str = "fini";
+			sect_mem_idx = LLEXT_MEM_FINI;
+			break;
 		default:
 			/* not a special section */
 			continue;
@@ -552,6 +564,43 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_call_array(struct llext_loader *ldr, struct llext *ext, enum llext_mem fn_array)
+{
+	uintptr_t *ptr;
+	size_t nents, i;
+	void (*entry_fn)(void);
+
+	if (ldr->sects[fn_array].sh_size == 0)
+		return 0;
+
+	if (ldr->sects[fn_array].sh_entsize == 0 ||
+	    ldr->sects[fn_array].sh_size % ldr->sects[fn_array].sh_entsize != 0) {
+		LOG_ERR("Invalid data in region %d", fn_array);
+		return -ENOEXEC;
+	}
+
+	nents = ldr->sects[fn_array].sh_size / ldr->sects[fn_array].sh_entsize;
+	ptr = ext->mem[fn_array];
+	for (i = 0; i < nents; ++i) {
+		entry_fn = (void *) *ptr++;
+		entry_fn();
+	}
+
+	return 0;
+}
+
+static int llext_call_inits(struct llext_loader *ldr, struct llext *ext)
+{
+	int ret;
+
+	ret = llext_call_array(ldr, ext, LLEXT_MEM_PREINIT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return llext_call_array(ldr, ext, LLEXT_MEM_INIT);
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -640,6 +689,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_export_symbols(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
+		goto out;
+	}
+
+	LOG_DBG("Calling init functions...");
+	ret = llext_call_inits(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to init, ret %d", ret);
 		goto out;
 	}
 
