@@ -1370,11 +1370,17 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 	cmd.AddressSize = stm32_ospi_hal_address_size(dev);
 	/* DataSize is set by the read cmd */
 
+	LOG_DBG("OSPI: read %zu data", size);
+
 	/* Configure other parameters */
 	if (dev_cfg->data_rate == OSPI_DTR_TRANSFER) {
 		/* DTR transfer rate (==> Octal mode) */
 		cmd.Instruction = SPI_NOR_OCMD_DTR_RD;
 		cmd.DummyCycles = SPI_NOR_DUMMY_RD_OCTAL_DTR;
+		/* In DTR mode, Nb of bytes to read must be EVEN : one dummy byte is read */
+		if (size % 2) {
+			size = size + 1;
+		}
 	} else {
 		/* STR transfer rate */
 		if (dev_cfg->data_mode == OSPI_OPI_MODE) {
@@ -1389,7 +1395,6 @@ static int flash_stm32_ospi_read(const struct device *dev, off_t addr,
 		}
 	}
 
-	LOG_DBG("OSPI: read %zu data", size);
 	ospi_lock_thread(dev);
 
 	ret = ospi_read_access(dev, &cmd, data, size);
