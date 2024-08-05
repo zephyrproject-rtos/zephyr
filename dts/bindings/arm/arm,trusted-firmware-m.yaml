@@ -1,0 +1,117 @@
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Trusted-Firmware-M Configuration
+
+compatible: "arm,trusted-firmware-m"
+
+properties:
+  sram:
+    type: phandle
+    required: true
+    description: |
+      Complete SRAM range
+
+  sram-secure:
+    type: phandle
+    required: true
+    description: |
+      SRAM allocated to the secure image
+
+  sram-nonsecure:
+    type: phandle
+    required: true
+    description: |
+      SRAM allocated to the non-secure image
+
+  spu-flash-region-size:
+    type: int
+    required: true
+    description: |
+      SRAM allocated to the non-secure image
+
+  spu-sram-region-size:
+    type: int
+    required: true
+    description: |
+      SRAM allocated to the non-secure image
+
+child-binding:
+  properties:
+    driver:
+      type: string
+      required: true
+      description: |
+        Flash driver name for this memory region
+
+    define-prefix:
+      type: string
+      default: ""
+      description: |
+        Prefix to prepend to defines
+
+    erase-block-size:
+      type: int
+      description: |
+        Erase block size if not defined on `complete`.
+
+    write-block-size:
+      type: int
+      description: |
+        Write block size if not defined on `complete`.
+
+    extra-defines:
+      type: string-array
+      description: |
+        Any other defines needed for TF-M to use this device
+
+    complete:
+      type: phandle
+      required: true
+      description: |
+        Complete flash memory range
+
+    img-bl2:
+      type: phandle
+      description: |
+        BL2 application location
+
+    img-primary-secure:
+      type: phandle
+      description: |
+        Primary secure application location
+
+    img-primary-nonsecure:
+      type: phandle
+      description: |
+        Primary non-secure application location
+
+    img-secondary-secure:
+      type: phandle
+      description: |
+        Secondary secure application location
+
+    img-secondary-nonsecure:
+      type: phandle
+      description: |
+        Secondary non-secure application location
+
+    partition-ps:
+      type: phandle
+      description: |
+        Protected Storage partition
+
+    partition-its:
+      type: phandle
+      description: |
+        Internal Trusted Storage partition
+
+    partition-otp:
+      type: phandle
+      description: |
+        One-time-programmable/NV counter partition
+
+    partition-nonsecure-storage:
+      type: phandle
+      description: |
+        Non-secure application storage partition

@@ -7,10 +7,17 @@
 cmake_policy(SET CMP0076 NEW)
 set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 
-set(partition_includes
-    ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/nordic_nrf/common/${NRF_SOC_VARIANT}/partition
-    ${CMAKE_BINARY_DIR}/../zephyr/include/generated
-)
+if(DEVICETREE_LAYOUT)
+    set(partition_includes
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/partition_dts
+        ${CMAKE_BINARY_DIR}/../zephyr/include/generated
+    )
+else()
+    set(partition_includes
+        ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/nordic_nrf/common/${NRF_SOC_VARIANT}/partition
+        ${CMAKE_BINARY_DIR}/../zephyr/include/generated
+    )
+endif()
 
 set(board_includes
     ${CMAKE_BINARY_DIR}/../zephyr/misc/generated/syscalls_links/include
@@ -43,6 +50,18 @@ if(BL2)
             ${partition_includes}
             ${board_includes}
     )
+    if(BL2_QSPI_DRIVERS)
+        set(LAIRD_FOLDER ${Trusted\ Firmware\ M_SOURCE_DIR}/platform/ext/target/lairdconnectivity)
+        target_sources(platform_bl2
+            PRIVATE
+                ${LAIRD_FOLDER}/common/core/cmsis_drivers/Driver_QSPI.c
+                ${HAL_NORDIC_PATH}/nrfx/drivers/src/nrfx_qspi.c
+        )
+        target_compile_definitions(platform_bl2
+            PRIVATE
+                "-DNRFX_QSPI_ENABLED=1"
+        )
+    endif()
 endif()
 
 target_sources(tfm_spm

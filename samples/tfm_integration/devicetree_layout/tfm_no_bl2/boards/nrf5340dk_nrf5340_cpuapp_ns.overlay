@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot0_ns_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &slot1_ns_partition;
+
+/ {
+    tfm_config {
+        onboard_flash {
+            /delete-property/ img-bl2;
+            /delete-property/ img-secondary-secure;
+            /delete-property/ img-secondary-nonsecure;
+        };
+    };
+};
+
+&flash0 {
+    partitions {
+        slot0_partition: partition@0 {
+            label = "image-0";
+            reg = <0x00000000 0x30000>;
+        };
+        slot0_ns_partition: partition@30000 {
+            label = "image-0-nonsecure";
+            reg = <0x00030000 0xC0000>;
+        };
+    };
+};
