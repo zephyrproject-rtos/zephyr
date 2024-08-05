@@ -20,6 +20,7 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/compile.sh
 
 app=tests/bsim/bluetooth/host/iso/cis compile
 app=tests/bsim/bluetooth/host/iso/bis compile
+app=tests/bsim/bluetooth/host/iso/frag compile
 
 app=tests/bsim/bluetooth/host/misc/disable compile
 app=tests/bsim/bluetooth/host/misc/disconnect/dut compile
