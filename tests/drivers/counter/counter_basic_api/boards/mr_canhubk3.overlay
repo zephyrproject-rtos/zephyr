@@ -10,6 +10,6 @@
 };
 
 &stm1 {
-	prescaler = <8>;
+	prescaler = <64>;
 	status = "okay";
 };
