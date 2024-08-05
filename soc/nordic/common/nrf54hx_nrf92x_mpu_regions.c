@@ -14,6 +14,10 @@
 #define CAN120_SIZE	DT_REG_SIZE_BY_NAME(DT_NODELABEL(can120), message_ram) + \
 			DT_REG_SIZE_BY_NAME(DT_NODELABEL(can120), m_can)
 
+#define CAN121_BASE	DT_REG_ADDR_BY_NAME(DT_NODELABEL(can121), message_ram)
+#define CAN121_SIZE	DT_REG_SIZE_BY_NAME(DT_NODELABEL(can121), message_ram) + \
+			DT_REG_SIZE_BY_NAME(DT_NODELABEL(can121), m_can)
+
 static struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
@@ -31,6 +35,10 @@ static struct arm_mpu_region mpu_regions[] = {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can120), okay)
 	MPU_REGION_ENTRY("CAN120_MCAN", CAN120_BASE,
 			 REGION_RAM_NOCACHE_ATTR(CAN120_BASE, CAN120_SIZE)),
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can121), okay)
+	MPU_REGION_ENTRY("CAN121_MCAN", CAN121_BASE,
+			 REGION_RAM_NOCACHE_ATTR(CAN121_BASE, CAN121_SIZE)),
 #endif
 };
 
