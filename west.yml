@@ -289,6 +289,8 @@ manifest:
     - name: mcuboot
       revision: fb2cf0ec3da3687b93f28e556ab682bdd4b85223
       path: bootloader/mcuboot
+      groups:
+        - bootloader
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:
