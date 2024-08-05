@@ -588,7 +588,6 @@
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
 				status = "disabled";
-				cpu = <13>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges = <0x0 0x908000 0x1000>;
