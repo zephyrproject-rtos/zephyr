@@ -9,8 +9,6 @@
 #include <string.h>
 #include <soc/rtc.h>
 #include <soc/wdev_reg.h>
-#include <soc/rtc_cntl_reg.h>
-#include <soc/apb_ctrl_reg.h>
 #include <esp_system.h>
 #include <soc.h>
 #include <esp_cpu.h>
