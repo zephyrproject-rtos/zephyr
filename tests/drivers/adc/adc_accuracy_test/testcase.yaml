@@ -17,3 +17,6 @@ tests:
       fixture: adc_ref_volt
     platform_allow:
       - frdm_kl25z
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
