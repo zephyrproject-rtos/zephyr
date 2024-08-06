@@ -129,7 +129,7 @@ int64_t net_timeout_deadline(const struct net_timeout *timeout,
  * be calculated.  This should be recently captured value from
  * k_uptime_get_32().
  *
- * @retval 0 if the timeout has completed.
+ * @retval 0 the timeout has completed.
  * @retval positive the remaining duration of the timeout, in seconds.
  */
 uint32_t net_timeout_remaining(const struct net_timeout *timeout,
@@ -149,7 +149,7 @@ uint32_t net_timeout_remaining(const struct net_timeout *timeout,
  * be calculated.  This should be recently captured value from
  * k_uptime_get_32().
  *
- * @retval 0 if the timeout has completed
+ * @retval 0 the timeout has completed
  * @retval positive the maximum delay until the state of this timeout should
  * be re-evaluated, in milliseconds.
  */

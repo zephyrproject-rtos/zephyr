@@ -201,8 +201,8 @@ struct dsa_api {
  * @param      iface      Master port
  * @param[in]  slave_num  Slave port number
  *
- * @return     network interface of the slave if successful
- * @return     NULL if slave port does not exist
+ * @retval     iface network interface of the slave port
+ * @retval     NULL slave port does not exist
  */
 struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num);
 

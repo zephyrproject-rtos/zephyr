@@ -112,9 +112,9 @@ enum conn_mgr_if_flag {
  *
  * @param iface Pointer to network interface
  * @retval 0 on success.
- * @retval -ESHUTDOWN if the iface is not admin-up.
- * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @retval -ESHUTDOWN the iface is not admin-up.
+ * @retval -ENOTSUP the iface does not have a connectivity implementation.
+ * @retval status implementation-specific status code otherwise.
  */
 int conn_mgr_if_connect(struct net_if *iface);
 
@@ -129,8 +129,8 @@ int conn_mgr_if_connect(struct net_if *iface);
  * @param iface Pointer to network interface
  *
  * @retval 0 on success.
- * @retval -ENOTSUP if the iface does not have a connectivity implementation.
- * @retval implementation-specific status code otherwise.
+ * @retval -ENOTSUP the iface does not have a connectivity implementation.
+ * @retval status implementation-specific status code otherwise.
  */
 int conn_mgr_if_disconnect(struct net_if *iface);
 
@@ -156,12 +156,12 @@ bool conn_mgr_if_is_bound(struct net_if *iface);
  *		  Some settings may affect multiple ifaces.
  * @param optval Pointer to the value to be assigned to the option.
  * @param optlen Length (in bytes) of the value to be assigned to the option.
- * @retval 0 if successful.
- * @retval -ENOTSUP if conn_mgr_if_set_opt not implemented by the iface.
- * @retval -ENOBUFS if optlen is too long.
- * @retval -EINVAL if NULL optval pointer provided.
- * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @retval 0 success.
+ * @retval -ENOTSUP conn_mgr_if_set_opt not implemented by the iface.
+ * @retval -ENOBUFS optlen is too long.
+ * @retval -EINVAL NULL optval pointer provided.
+ * @retval -ENOPROTOOPT the optname is not recognized.
+ * @retval status implementation-specific error code otherwise.
  */
 int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, size_t optlen);
 
@@ -183,13 +183,13 @@ int conn_mgr_if_set_opt(struct net_if *iface, int optname, const void *optval, s
  *		 optlen will always be set to the total number of bytes written, regardless of
  *		 whether an error is returned, even if zero bytes were written.
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if conn_mgr_if_get_opt is not implemented by the iface.
- * @retval -ENOBUFS if retrieval buffer is too small.
- * @retval -EINVAL if invalid retrieval buffer length is provided, or if NULL optval or
+ * @retval 0 success.
+ * @retval -ENOTSUP conn_mgr_if_get_opt is not implemented by the iface.
+ * @retval -ENOBUFS retrieval buffer is too small.
+ * @retval -EINVAL invalid retrieval buffer length is provided, or if NULL optval or
  *		   optlen pointer provided.
- * @retval -ENOPROTOOPT if the optname is not recognized.
- * @retval implementation-specific error code otherwise.
+ * @retval -ENOPROTOOPT the optname is not recognized.
+ * @retval status implementation-specific error code otherwise.
  */
 int conn_mgr_if_get_opt(struct net_if *iface, int optname, void *optval, size_t *optlen);
 
@@ -217,8 +217,8 @@ bool conn_mgr_if_get_flag(struct net_if *iface, enum conn_mgr_if_flag flag);
  * @param flag - The flag to set.
  * @param value - Whether the flag should be enabled or disabled.
  * @retval 0 on success.
- * @retval -EINVAL if the flag does not exist.
- * @retval -ENOTSUP if the provided iface is not bound to a connectivity implementation.
+ * @retval -EINVAL the flag does not exist.
+ * @retval -ENOTSUP the provided iface is not bound to a connectivity implementation.
  */
 int conn_mgr_if_set_flag(struct net_if *iface, enum conn_mgr_if_flag flag, bool value);
 
@@ -244,7 +244,7 @@ int conn_mgr_if_get_timeout(struct net_if *iface);
  * @param timeout - The timeout value to set (in seconds).
  *		    Pass @ref CONN_MGR_IF_NO_TIMEOUT to disable the timeout.
  * @retval 0 on success.
- * @retval -ENOTSUP if the provided iface is not bound to a connectivity implementation.
+ * @retval -ENOTSUP the provided iface is not bound to a connectivity implementation.
  */
 int conn_mgr_if_set_timeout(struct net_if *iface, int timeout);
 

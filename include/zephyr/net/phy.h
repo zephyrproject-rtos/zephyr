@@ -131,9 +131,9 @@ __subsystem struct ethphy_driver_api {
  * @param[in]  dev     PHY device structure
  * @param      speeds  OR'd link speeds to be advertised by the PHY
  *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
- * @retval -ENOTSUP If not supported.
+ * @retval 0 success.
+ * @retval -EIO communication with PHY failed.
+ * @retval -ENOTSUP not supported.
  */
 static inline int phy_configure_link(const struct device *dev,
 				     enum phy_link_speed speeds)
@@ -154,8 +154,8 @@ static inline int phy_configure_link(const struct device *dev,
  * @param[in]  dev    PHY device structure
  * @param      state  Pointer to receive PHY state
  *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
+ * @retval 0 success.
+ * @retval -EIO communication with PHY failed.
  */
 static inline int phy_get_link_state(const struct device *dev,
 				     struct phy_link_state *state)
@@ -177,8 +177,8 @@ static inline int phy_get_link_state(const struct device *dev,
  * @param      callback   Callback handler
  * @param      user_data  Pointer to data specified by user.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If not supported.
+ * @retval 0 success.
+ * @retval -ENOTSUP not supported.
  */
 static inline int phy_link_callback_set(const struct device *dev,
 					phy_callback_t callback,
@@ -199,8 +199,8 @@ static inline int phy_link_callback_set(const struct device *dev,
  * @param[in]  reg_addr  Register address
  * @param      value     Pointer to receive read value
  *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
+ * @retval 0 success.
+ * @retval -EIO communication with PHY failed.
  */
 static inline int phy_read(const struct device *dev, uint16_t reg_addr,
 			   uint32_t *value)
@@ -220,8 +220,8 @@ static inline int phy_read(const struct device *dev, uint16_t reg_addr,
  * @param[in]  reg_addr  Register address
  * @param[in]  value     Value to write
  *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
+ * @retval 0 success.
+ * @retval -EIO communication with PHY failed.
  */
 static inline int phy_write(const struct device *dev, uint16_t reg_addr,
 			    uint32_t value)

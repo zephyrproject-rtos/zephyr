@@ -1085,10 +1085,10 @@ int net_context_listen(struct net_context *context,
  *                   * >0: this function will wait the specified ms.
  * @param user_data  Data passed to the callback function.
  *
- * @return           0 on success.
- * @return           -EINVAL if an invalid parameter is passed as an argument.
- * @return           -ENOTSUP if the operation is not supported or implemented.
- * @return           -ETIMEDOUT if the connect operation times out.
+ * @retval           0 success.
+ * @retval           -EINVAL an invalid parameter is passed as an argument.
+ * @retval           -ENOTSUP the operation is not supported or implemented.
+ * @retval           -ETIMEDOUT the connect operation times out.
  */
 int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
@@ -1384,8 +1384,8 @@ static inline void net_context_setup_pools(struct net_context *context,
  * @param local_port the port to check
  * @param local_addr the network address
  *
- * @return true if the port is bound
- * @return false if the port is not bound
+ * @retval true the port is bound
+ * @retval false the port is not bound
  */
 bool net_context_port_in_use(enum net_ip_protocol ip_proto,
 	uint16_t local_port, const struct sockaddr *local_addr);

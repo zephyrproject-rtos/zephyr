@@ -1397,8 +1397,8 @@ struct ieee802154_attr_value {
  * driver's channel range or ranges.
  * @param value The pointer to the value struct provided by the user.
  *
- * @retval 0 if the attribute could be resolved
- * @retval -ENOENT if the attribute could not be resolved
+ * @retval 0 the attribute could be resolved
+ * @retval -ENOENT the attribute could not be resolved
  */
 static inline int ieee802154_attr_get_channel_page_and_range(
 	enum ieee802154_attr attr,

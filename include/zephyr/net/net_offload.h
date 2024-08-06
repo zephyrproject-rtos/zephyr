@@ -227,9 +227,9 @@ static inline int net_offload_listen(struct net_if *iface,
  *                   * >0: this function will wait the specified ms.
  * @param user_data  Data passed to the callback function.
  *
- * @return           0 on success.
- * @return           -EINVAL if an invalid parameter is passed as an argument.
- * @return           -ENOTSUP if the operation is not supported or implemented.
+ * @retval           0 success.
+ * @retval           -EINVAL an invalid parameter is passed as an argument.
+ * @retval           -ENOTSUP the operation is not supported or implemented.
  */
 static inline int net_offload_connect(struct net_if *iface,
 				      struct net_context *context,

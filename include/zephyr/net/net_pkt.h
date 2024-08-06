@@ -2076,7 +2076,7 @@ void net_pkt_trim_buffer(struct net_pkt *pkt);
  * @param length Number of bytes to be removed
  *
  * @retval 0       On success.
- * @retval -EINVAL If packet length is shorter than @a length.
+ * @retval -EINVAL packet length is shorter than @a length.
  */
 int net_pkt_remove_tail(struct net_pkt *pkt, size_t length);
 

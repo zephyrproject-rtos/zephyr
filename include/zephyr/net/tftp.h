@@ -144,11 +144,11 @@ struct tftpc {
  * @param remote_file Name of the remote file to get.
  * @param mode        TFTP Client "mode" setting.
  *
- * @retval The size of data being received if the operation completed successfully.
+ * @return The size of data being received if the operation completed successfully.
  * @retval TFTPC_BUFFER_OVERFLOW if the file is larger than the user buffer.
  * @retval TFTPC_REMOTE_ERROR if the server failed to process our request.
  * @retval TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
- * @retval -EINVAL if `client` is NULL.
+ * @retval -EINVAL `client` is NULL.
  *
  * @note This function blocks until the transfer is completed or network error happens. The
  *       integrity of the `client` structure must be ensured until the function returns.
@@ -165,10 +165,10 @@ int tftp_get(struct tftpc *client,
  * @param user_buf    Data buffer containing the data to put.
  * @param user_buf_size Length of the data to put.
  *
- * @retval The size of data being sent if the operation completed successfully.
+ * @return The size of data being sent if the operation completed successfully.
  * @retval TFTPC_REMOTE_ERROR if the server failed to process our request.
  * @retval TFTPC_RETRIES_EXHAUSTED if the client timed out waiting for server.
- * @retval -EINVAL if `client` or `user_buf` is NULL or if `user_buf_size` is zero.
+ * @retval -EINVAL `client` or `user_buf` is NULL or if `user_buf_size` is zero.
  *
  * @note This function blocks until the transfer is completed or network error happens. The
  *       integrity of the `client` structure must be ensured until the function returns.

@@ -125,10 +125,10 @@ bool wifi_nm_iface_is_sap(struct net_if *iface);
  * @param nm Pointer to Network manager instance
  * @param iface Managed interface
  *
- * @retval 0 If successful.
- * @retval -EINVAL If invalid parameters were passed.
- * @retval -ENOTSUP If the interface is not a Wi-Fi interface.
- * @retval -ENOMEM If the maximum number of managed interfaces has been reached.
+ * @retval 0 success.
+ * @retval -EINVAL invalid parameters were passed.
+ * @retval -ENOTSUP the interface is not a Wi-Fi interface.
+ * @retval -ENOMEM the maximum number of managed interfaces has been reached.
  */
 int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface);
 
@@ -139,10 +139,10 @@ int wifi_nm_register_mgd_iface(struct wifi_nm_instance *nm, struct net_if *iface
  * @param type Wi-Fi type
  * @param iface Managed interface
  *
- * @retval 0 If successful.
- * @retval -EINVAL If invalid parameters were passed.
- * @retval -ENOTSUP If the interface is not a Wi-Fi interface.
- * @retval -ENOMEM If the maximum number of managed interfaces has been reached.
+ * @retval 0 success.
+ * @retval -EINVAL invalid parameters were passed.
+ * @retval -ENOTSUP the interface is not a Wi-Fi interface.
+ * @retval -ENOMEM the maximum number of managed interfaces has been reached.
  */
 int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm,
 		enum wifi_nm_iface_type type, struct net_if *iface);
