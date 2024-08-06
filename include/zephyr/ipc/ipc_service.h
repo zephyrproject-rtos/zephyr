@@ -215,7 +215,7 @@ struct ipc_ept_cfg {
  *  @retval -EALREADY when the instance is already opened (or being opened).
  *
  *  @retval 0 on success or when not implemented on the backend (not needed).
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_open_instance(const struct device *instance);
 
@@ -234,7 +234,7 @@ int ipc_service_open_instance(const struct device *instance);
  *           deregistered
  *
  *  @retval 0 on success or when not implemented on the backend (not needed).
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_close_instance(const struct device *instance);
 
@@ -256,7 +256,7 @@ int ipc_service_close_instance(const struct device *instance);
  *  @retval -EBUSY when the instance is busy.
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_register_endpoint(const struct device *instance,
 				  struct ipc_ept *ept,
@@ -276,7 +276,7 @@ int ipc_service_register_endpoint(const struct device *instance,
  *  @retval -EBUSY when the instance is busy.
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_deregister_endpoint(struct ipc_ept *ept);
 
@@ -296,7 +296,7 @@ int ipc_service_deregister_endpoint(struct ipc_ept *ept);
  *  @retval -ENOMEM when no memory / buffers are available.
  *
  *  @retval bytes number of bytes sent.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
 
@@ -314,7 +314,7 @@ int ipc_service_send(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -ENOTSUP when the operation is not supported by backend.
  *
  *  @retval size TX buffer size on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_get_tx_buffer_size(struct ipc_ept *ept);
 
@@ -363,7 +363,7 @@ int ipc_service_get_tx_buffer_size(struct ipc_ept *ept);
  *		    contains the maximum allowed size).
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *size, k_timeout_t wait);
 
@@ -385,7 +385,7 @@ int ipc_service_get_tx_buffer(struct ipc_ept *ept, void **data, uint32_t *size, 
  *		   ipc_service_get_tx_buffer
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data);
 
@@ -419,7 +419,7 @@ int ipc_service_drop_tx_buffer(struct ipc_ept *ept, const void *data);
  *  @retval -EBUSY when the instance is busy.
  *
  *  @retval bytes number of bytes sent.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len);
 
@@ -444,7 +444,7 @@ int ipc_service_send_nocopy(struct ipc_ept *ept, const void *data, size_t len);
  *  @retval -ENOTSUP when this is not supported by backend.
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data);
 
@@ -470,7 +470,7 @@ int ipc_service_hold_rx_buffer(struct ipc_ept *ept, void *data);
  *		   ipc_service_hold_rx_buffer
  *
  *  @retval 0 on success.
- *  @retval other errno codes depending on the implementation of the backend.
+ *  @retval -errno other errno codes depending on the implementation of the backend.
  */
 int ipc_service_release_rx_buffer(struct ipc_ept *ept, void *data);
 

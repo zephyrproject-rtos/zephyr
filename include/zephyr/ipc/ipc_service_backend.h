@@ -34,7 +34,7 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the instance is already opened.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*open_instance)(const struct device *instance);
@@ -46,7 +46,7 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the instance is not already inited.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*close_instance)(const struct device *instance);
@@ -65,7 +65,7 @@ struct ipc_service_backend {
 	 *  @retval -ENOMEM when no memory / buffers are available.
 	 *
 	 *  @retval bytes number of bytes sent.
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*send)(const struct device *instance, void *token,
@@ -81,7 +81,7 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*register_endpoint)(const struct device *instance,
@@ -98,7 +98,7 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *      backend.
 	 */
 	int (*deregister_endpoint)(const struct device *instance, void *token);
@@ -113,7 +113,7 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when the operation is not supported.
 	 *
 	 *  @retval size TX buffer size on success.
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*get_tx_buffer_size)(const struct device *instance, void *token);
@@ -135,7 +135,7 @@ struct ipc_service_backend {
 	 *		    contains the maximum allowed size).
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*get_tx_buffer)(const struct device *instance, void *token,
@@ -153,7 +153,7 @@ struct ipc_service_backend {
 	 *  @retval -EALREADY when the buffer was already dropped.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*drop_tx_buffer)(const struct device *instance, void *token,
@@ -175,7 +175,7 @@ struct ipc_service_backend {
 	 *  @retval -EBUSY when the instance is busy or not ready.
 	 *
 	 *  @retval bytes number of bytes sent.
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*send_nocopy)(const struct device *instance, void *token,
@@ -193,7 +193,7 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when this function is not supported.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*hold_rx_buffer)(const struct device *instance, void *token,
@@ -211,7 +211,7 @@ struct ipc_service_backend {
 	 *  @retval -ENOTSUP when this function is not supported.
 	 *
 	 *  @retval 0 on success
-	 *  @retval other errno codes depending on the implementation of the
+	 *  @retval -errno other errno codes depending on the implementation of the
 	 *	    backend.
 	 */
 	int (*release_rx_buffer)(const struct device *instance, void *token,

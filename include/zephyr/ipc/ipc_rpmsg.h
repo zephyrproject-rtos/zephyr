@@ -103,7 +103,7 @@ struct ipc_rpmsg_instance {
  *
  *  @retval -EINVAL When some parameter is missing.
  *  @retval 0 If successful.
- *  @retval Other errno codes depending on the OpenAMP implementation.
+ *  @retval -errno Other errno codes depending on the OpenAMP implementation.
  */
 int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
 		   unsigned int role,
@@ -137,7 +137,7 @@ int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance,
  *
  *  @retval -EINVAL When some parameter is missing.
  *  @retval 0 If successful.
- *  @retval Other errno codes depending on the OpenAMP implementation.
+ *  @retval -errno Other errno codes depending on the OpenAMP implementation.
  */
 int ipc_rpmsg_register_ept(struct ipc_rpmsg_instance *instance, unsigned int role,
 			   struct ipc_rpmsg_ept *ept);

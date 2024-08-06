@@ -80,7 +80,7 @@ struct icmsg_data_t {
  *
  *  @retval 0 on success.
  *  @retval -EALREADY when the instance is already opened.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno other errno codes from dependent modules.
  */
 int icmsg_open(const struct icmsg_config_t *conf,
 	       struct icmsg_data_t *dev_data,
@@ -98,7 +98,7 @@ int icmsg_open(const struct icmsg_config_t *conf,
  *                         instance.
  *
  *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno other errno codes from dependent modules.
  */
 int icmsg_close(const struct icmsg_config_t *conf,
 		struct icmsg_data_t *dev_data);
@@ -113,13 +113,13 @@ int icmsg_close(const struct icmsg_config_t *conf,
  *  @param[in] len Size of data in the @p msg buffer.
  *
  *
- *  @retval Number of sent bytes.
+ *  @return Number of sent bytes.
  *  @retval -EBUSY when the instance has not finished handshake with the remote
  *                 instance.
  *  @retval -ENODATA when the requested data to send is empty.
  *  @retval -EBADMSG when the requested data to send is too big.
  *  @retval -ENOBUFS when there are no TX buffers available.
- *  @retval other errno codes from dependent modules.
+ *  @retval -errno other errno codes from dependent modules.
  */
 int icmsg_send(const struct icmsg_config_t *conf,
 	       struct icmsg_data_t *dev_data,

@@ -176,11 +176,11 @@ int pbuf_init(struct pbuf *pb);
  * @param pb	A buffer to which to write.
  * @param buf	Pointer to the data to be written to the buffer.
  * @param len	Number of bytes to be written to the buffer. Must be positive.
- * @retval int	Number of bytes written, negative error code on fail.
- *		-EINVAL, if any of input parameter is incorrect.
- *		-ENOMEM, if len is bigger than the buffer can fit.
+ * @return	Number of bytes written
+ * @retval 	-EINVAL, if any of input parameter is incorrect.
+ * @retval 	-ENOMEM, if len is bigger than the buffer can fit.
+ * @retval 	-errno other negative error code on fail.
  */
-
 int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
 
 /**
@@ -193,11 +193,11 @@ int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
  * @param buf	Data pointer to which read data will be written.
  *		If NULL, len of stored message is returned.
  * @param len	Number of bytes to be read from the buffer.
- * @retval int	Bytes read, negative error code on fail.
- *		Bytes to be read, if buf == NULL.
- *		-EINVAL, if any of input parameter is incorrect.
- *		-ENOMEM, if message can not fit in provided buf.
- *		-EAGAIN, if not whole message is ready yet.
+ * @return	Bytes read (if buf != NULL) or to be read (if buf == NULL).
+ * @retval	-EINVAL if any of input parameter is incorrect.
+ * @retval	-ENOMEM if message can not fit in provided buf.
+ * @retval	-EAGAIN if not whole message is ready yet.
+ * @retval	-errno other negative error code on fail.
  */
 int pbuf_read(struct pbuf *pb, char *buf, uint16_t len);
 
