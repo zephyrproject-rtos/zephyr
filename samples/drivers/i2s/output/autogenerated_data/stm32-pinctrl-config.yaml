@@ -1,0 +1,315 @@
+# Configuration file for pinctrl generation (except F1 series).
+#
+# This file contains a list of pin configuration templates used to generate the
+# pinctrl files. Each entry can have the following fields:
+#
+#   - name (mandatory): This is the pin function name, e.g. UART_TX. It is used
+#     to group pin configurations alphabetically in the generated pinctrl files.
+#
+#   - match (mandatory): This is a regular expression used to match against
+#     STM32 xml database pin configuration names. The regular expression should
+#     be as precise as possible. Note that it needs to be escaped here in the
+#     configuration file.
+#     Note: Specific "ANALOG" value allows generation of analog pins
+#     configuration
+#
+#   - mode (optional): Mode setting (analog, alternate). Mode needs to
+#     be set according to the following rules:
+#       * Pin operates in analog configuration: analog
+#       * Pin operates in alternate function configuration: alternate
+#     In default case, mode could be infered from CubeMX SoC description files
+#     and can be omitted.
+#
+#   - bias (optional): Bias setting (disable, pull-up, pull-down). Equivalent to
+#     "disable" (a.k.a floating) if not set.
+#
+#   - drive (optional): Drive setting (push-pull, open-drain). Equivalent to
+#     "push-pull" if not set.
+#
+#   - slew-rate (optional): Slew rate setting (low-speed, medium-speed,
+#     high-speed, very-high-speed). Equivalent to "low-speed" if not set.
+#
+#   - variant (optional): Defines an alternative pin configuration. This is used
+#     to provide multiple configurations of a pin function (slave, master,
+#     low-power, ...).
+#
+
+---
+- name: Analog
+  match: "ANALOG"
+  mode: analog
+
+- name: ADC_IN / ADC_INN / ADC_INP
+  match: "^ADC(?:\\d+)?_IN[NP]?\\d+$"
+
+- name: ADC_VINM / ADC_VINP
+  match: "^ADC(?:\\d+)?_VIN[PM]\\d+$"
+
+- name: CAN_RX
+  match: "^CAN\\d*_RX$"
+  bias: pull-up
+
+- name: CAN_TX
+  match: "^CAN\\d*_TX$"
+
+- name: DAC_OUT
+  match: "^DAC(?:\\d+)?_OUT\\d+$"
+
+- name: DCMI
+  match: "^DCMI_(?:HSYNC|PIXCLK|VSYNC|D[0-7])$"
+  slew-rate: very-high-speed
+
+- name: DFSDM
+  match: "^DFSDM[1-2]_(DATIN[0-7]|CKIN[0-7]|CKOUT)$"
+  slew-rate: very-high-speed
+  mode: alternate
+
+- name: ETH_COL
+  match: "^ETH_COL$"
+  slew-rate: very-high-speed
+
+- name: ETH_CRS
+  match: "^ETH_CRS$"
+  slew-rate: very-high-speed
+
+- name: ETH_CRS_DV
+  match: "^ETH_CRS_DV$"
+  slew-rate: very-high-speed
+
+- name: ETH_MDC
+  match: "^ETH_MDC$"
+  slew-rate: very-high-speed
+
+- name: ETH_MDIO
+  match: "^ETH_MDIO$"
+  slew-rate: very-high-speed
+
+- name: ETH_PPS_OUT
+  match: "^ETH_PPS_OUT$"
+  slew-rate: very-high-speed
+
+- name: ETH_REF_CLK
+  match: "^ETH_REF_CLK$"
+  slew-rate: very-high-speed
+
+- name: ETH_RX_CLK
+  match: "^ETH_RX_CLK$"
+  slew-rate: very-high-speed
+
+- name: ETH_RX_DV
+  match: "^ETH_RX_DV$"
+  slew-rate: very-high-speed
+
+- name: ETH_RX_ER
+  match: "^ETH_RX_ER$"
+  slew-rate: very-high-speed
+
+- name: ETH_RXD0
+  match: "^ETH_RXD0$"
+  slew-rate: very-high-speed
+
+- name: ETH_RXD1
+  match: "^ETH_RXD1$"
+  slew-rate: very-high-speed
+
+- name: ETH_RXD2
+  match: "^ETH_RXD2$"
+  slew-rate: very-high-speed
+
+- name: ETH_RXD3
+  match: "^ETH_RXD3$"
+  slew-rate: very-high-speed
+
+- name: ETH_TX_CLK
+  match: "^ETH_TX_CLK$"
+  slew-rate: very-high-speed
+
+- name: ETH_TX_EN
+  match: "^ETH_TX_EN$"
+  slew-rate: very-high-speed
+
+- name: ETH_TXD0
+  match: "^ETH_TXD0$"
+  slew-rate: very-high-speed
+
+- name: ETH_TXD1
+  match: "^ETH_TXD1$"
+  slew-rate: very-high-speed
+
+- name: ETH_TXD2
+  match: "^ETH_TXD2$"
+  slew-rate: very-high-speed
+
+- name: ETH_TXD3
+  match: "^ETH_TXD3$"
+  slew-rate: very-high-speed
+
+- name: FDCAN_RX
+  match: "^FDCAN\\d+_RX$"
+
+- name: FDCAN_TX
+  match: "^FDCAN\\d+_TX$"
+
+- name: FMC
+  match: "^FMC_(?:NL|NADV|CLK|NBL[0-3]|A\\d+|D\\d+|NE[1-4]|NOE|NWE|NWAIT|NCE|INT|SDCLK|SDNWE|SDCKE[0-1]|SDNE[0-1]|SDNRAS|SDNCAS)$"
+  bias: pull-up
+  slew-rate: very-high-speed
+
+- name: HRTIM_CH
+  match: "^HRTIM\\d+_CH[A-F]\\d+$"
+
+- name: HRTIM_EEV
+  match: "^HRTIM\\d+_EEV\\d+$"
+
+- name: HRTIM_FLT
+  match: "^HRTIM\\d+_FLT[A-F]\\d+$"
+
+- name: HRTIM_SCIN / HRTIM_SCOUT
+  match: "^HRTIM\\d+_SC(IN|OUT)$"
+
+- name: I2C_SCL
+  match: "^I2C\\d+_SCL$"
+  drive: open-drain
+  bias: pull-up
+
+- name: I2C_SDA
+  match: "^I2C\\d+_SDA$"
+  drive: open-drain
+  bias: pull-up
+
+- name: I2C_SMBA
+  match: "^I2C\\d+_SMBA$"
+  bias: pull-up
+
+- name: I2S_MCK
+  match: "^I2S\\d+_MCK$"
+  slew-rate: very-high-speed
+
+- name: SAI_MCLK
+  match: "^SAI\\d+_MCLK(_[A-Z])?$"
+  slew-rate: very-high-speed
+  
+- name: SAI_SCK
+  match: "^SAI\\d+_SCK(_[A-Z])?$"
+  slew-rate: very-high-speed
+
+- name: SAI_SD
+  match: "^SAI\\d+_SD(_[A-Z])?$"
+  
+- name: SAI_FS
+  match: "^SAI\\d+_FS(_[A-Z])?$"
+
+- name: I2S_CK
+  match: "^I2S\\d+_CK$"
+  slew-rate: very-high-speed
+
+- name: I2S_WS
+  match: "^I2S\\d+_WS$"
+
+- name: I2S_SD
+  match: "^I2S\\d+_SD$"
+
+- name: I3C_SCL
+  match: "^I3C\\d+_SCL$"
+  slew-rate: very-high-speed
+
+- name: I3C_SDA
+  match: "^I3C\\d+_SDA$"
+  slew-rate: very-high-speed
+
+- name: LTDC
+  match: "^LTDC_(?:DE|CLK|HSYNC|VSYNC|R[0-7]|G[0-7]|B[0-7])$"
+
+- name: OCTOSPI
+  match: "^OCTOSPI(.*)(?:CLK|NCS|DQS|IO[0-7])$"
+  slew-rate: very-high-speed
+
+- name: RCC_MCO
+  match: "^RCC_MCO_?(\\d+)?$"
+  mode: alternate
+  slew-rate: very-high-speed
+
+- name: QUADSPI
+  match: "^QUADSPI(\\d+)?_(?:CLK|NCS|BK1_NCS|BK1_IO[0-3]|BK2_NCS|BK2_IO[0-3])$"
+  slew-rate: very-high-speed
+
+- name: XSPIM
+  match: "^XSPIM(.*)(?:CLK|NCS[0-1]|DQS[0-1]|IO[0-7])$"
+  slew-rate: very-high-speed
+
+- name: SDMMC
+  match: "^SDMMC\\d+_(?:CK)?(?:CKIN)?(?:CDIR)?(?:CMD)?(?:D\\d+)?(?:D0DIR)?(?:D123DIR)?$"
+  slew-rate: very-high-speed
+  bias: pull-up
+
+- name: SDIO
+  match: "^SDIO_(?:CK)?(?:CKIN)?(?:CDIR)?(?:CMD)?(?:D\\d+)?(?:D0DIR)?(?:D123DIR)?$"
+  slew-rate: very-high-speed
+  bias: pull-up
+
+- name: SPI_MISO
+  match: "^SPI\\d+_MISO$"
+  bias: pull-down
+
+- name: SPI_MOSI
+  match: "^SPI\\d+_MOSI$"
+  bias: pull-down
+
+# NOTE: The SPI_SCK pins speed must be set to very-high-speed to avoid last data
+# bit corruption which is a known issue on multiple STM32F4 series SPI
+# peripheral (ref. ES0182 Rev 12, 2.5.12, p. 22).
+- name: SPI_SCK
+  match: "^SPI\\d+_SCK$"
+  slew-rate: very-high-speed
+  bias: pull-down
+
+- name: SPI_NSS
+  match: "^SPI\\d+_NSS$"
+  bias: pull-up
+
+- name: TIM_BKIN
+  match: "^TIM\\d+_BKIN\\d?$"
+
+- name: TIM_CH / TIM_CHN
+  match: "^TIM\\d+_CH\\d+N?$"
+
+- name: UART_CTS / USART_CTS / LPUART_CTS
+  match: "^(?:LP)?US?ART\\d+_CTS$"
+  drive: open-drain
+  bias: pull-up
+
+- name: UART_RTS / USART_RTS / LPUART_RTS
+  match: "^(?:LP)?US?ART\\d+_RTS$"
+  drive: open-drain
+  bias: pull-up
+
+- name: UART_DE / USART_DE / LPUART_DE
+  match: "^(?:LP)?US?ART\\d+_DE$"
+  drive: push-pull
+
+- name: UART_TX / USART_TX / LPUART_TX
+  match: "^(?:LP)?US?ART\\d+_TX$"
+  bias: pull-up
+
+- name: UART_RX / USART_RX / LPUART_RX
+  match: "^(?:LP)?US?ART\\d+_RX$"
+
+- name: UCPD
+  match: "^UCPD\\d+_CC\\d+N?$"
+  mode: analog
+
+- name: USB_OTG_FS
+  match: "^USB_OTG_FS_(?:DM)?(?:DP)?(?:SOF)?(?:ID)?(?:VBUS)?$"
+
+- name: USB_OTG_HS
+  match: "^USB_OTG_HS_(?:DM)?(?:DP)?(?:SOF)?(?:ID)?(?:VBUS)?$"
+
+- name: USB_OTG_HS_ULPI
+  match: "^USB_OTG_HS_ULPI_(?:CK)?(?:DIR)?(?:STP)?(?:NXT)?(?:D\\d+)?$"
+  slew-rate: high-speed
+
+- name: USB
+  match: "^USB_(?:DM)?(?:DP)?(?:NOE)?$"
+
+- name: JTAG PORT
+  match: ^(SYS|DEBUG)_((JTMS-)?SWDIO|(JTCK-)?SWCLK|JTDI|JTDO(-TRACESWO|-SWO)?|(NJ)?JTRST)$
