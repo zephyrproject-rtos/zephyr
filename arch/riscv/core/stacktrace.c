@@ -14,9 +14,6 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
 
-#define MAX_STACK_FRAMES                                                                           \
-	MAX(CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES, CONFIG_ARCH_STACKWALK_MAX_FRAMES)
-
 struct stackframe {
 	uintptr_t fp;
 	uintptr_t ra;
@@ -114,7 +111,7 @@ static inline bool in_text_region(uintptr_t addr)
 #ifdef CONFIG_FRAME_POINTER
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
-			    const _callee_saved_t *csf)
+			    const _callee_saved_t *csf, unsigned int max_frames)
 {
 	uintptr_t fp, last_fp = 0;
 	uintptr_t ra;
@@ -134,7 +131,7 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		ra = csf->ra;
 	}
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp);) {
+	for (int i = 0; (i < max_frames) && vrfy(fp, thread, esf) && (fp > last_fp);) {
 		if (in_text_region(ra)) {
 			if (!cb(cookie, ra)) {
 				break;
@@ -156,7 +153,7 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 register uintptr_t current_stack_pointer __asm__("sp");
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
-			    const _callee_saved_t *csf)
+			    const _callee_saved_t *csf, unsigned int max_frames)
 {
 	uintptr_t sp;
 	uintptr_t ra;
@@ -178,7 +175,7 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 	}
 
 	ksp = (uintptr_t *)sp;
-	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy((uintptr_t)ksp, thread, esf) &&
+	for (int i = 0; (i < max_frames) && vrfy((uintptr_t)ksp, thread, esf) &&
 			((uintptr_t)ksp > last_ksp);) {
 		if (in_text_region(ra)) {
 			if (!cb(cookie, ra)) {
@@ -205,7 +202,8 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		thread = _current;
 	}
 
-	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved);
+	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved,
+			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 }
 
 #if __riscv_xlen == 32
@@ -239,6 +237,7 @@ void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf
 	int i = 0;
 
 	LOG_ERR("call trace:");
-	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf);
+	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf,
+			CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES);
 	LOG_ERR("");
 }
