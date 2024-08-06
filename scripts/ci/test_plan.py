@@ -75,6 +75,28 @@ def _get_match_fn(globs, regexes):
 
     return re.compile(regex).search
 
+def _check_exec(value):
+    # Returns a bool indicating that a tag should be run based on the
+    # "needs-exe" proper.  If the property is missing, or the named
+    # executable is present, this will be true, otherwise false.  This
+    # being false will prevent tests with a given tag from being run
+    # even if they otherwise would.
+
+    # If 'needs-exe' was not specified, we can run the test.
+    if value is None:
+        return True
+
+    try:
+        result = subprocess.run(value,
+                                shell=True,
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+        return result.returncode == 0
+    except Exception:
+        # The command was not present, avoid running tests with this
+        # tab.
+        return False
+
 class Tag:
     """
     Represents an entry for a tag in tags.yaml.
@@ -335,6 +357,8 @@ class Filters:
             tag._exclude_match_fn = \
                 _get_match_fn(x.get("files-exclude"), x.get("files-regex-exclude"))
 
+            tag.exec_avail = _check_exec(x.get("needs-exe"))
+
             tags[tag.name] = tag
 
         for f in self.modified_files:
@@ -344,7 +368,7 @@ class Filters:
 
         exclude_tags = set()
         for t in tags.values():
-            if t.exclude:
+            if t.exclude or not t.exec_avail:
                 exclude_tags.add(t.name)
 
         for tag in exclude_tags:
