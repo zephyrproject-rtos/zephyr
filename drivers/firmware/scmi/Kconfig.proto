@@ -38,3 +38,10 @@ config ARM_SCMI_BASE_AGENT_HELPERS
 	  - BASE_DISCOVER_AGENT
 	  - BASE_SET_DEVICE_PERMISSIONS
 	  - BASE_RESET_AGENT_CONFIGURATION
+
+config ARM_SCMI_RESET_HELPERS
+	bool "Helper functions for SCMI reset protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_RESET_ENABLED
+	help
+	  Enable support for SCMI reset protocol helper functions.
