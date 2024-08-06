@@ -237,7 +237,9 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_register_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
+	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
+					      WIFI_TYPE_STA,
+					      iface);
 	if (ret) {
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);
