@@ -92,6 +92,10 @@
 	};
 };
 
+&rng {
+	status = "okay";
+};
+
 /*
  * Set flags of unused pins as GPIO_ACTIVE_HIGH (0 << 0), which will be
  * interpreted by GPIO driver as GPIO_DISCONNECTED, without setting the gpio as
