@@ -109,8 +109,7 @@ get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
 assert_exists(LIBGCC_DIR)
 
-LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-LIST(APPEND TOOLCHAIN_LIBS gcc)
+set_linker_property(PROPERTY lib_include_dir "-L\"${LIBGCC_DIR}\"")
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and

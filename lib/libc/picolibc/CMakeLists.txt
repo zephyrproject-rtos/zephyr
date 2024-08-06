@@ -17,7 +17,7 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
   # Zephyr build (via the __ZEPHYR__ macro) to expose the Zephyr C API
 
   zephyr_compile_options(--specs=picolibc.specs)
-  zephyr_libc_link_libraries(--specs=picolibc.specs c -lgcc)
+  zephyr_libc_link_libraries(--specs=picolibc.specs)
   if(CONFIG_PICOLIBC_IO_FLOAT)
     zephyr_compile_definitions(PICOLIBC_DOUBLE_PRINTF_SCANF)
     zephyr_link_libraries(-DPICOLIBC_DOUBLE_PRINTF_SCANF)

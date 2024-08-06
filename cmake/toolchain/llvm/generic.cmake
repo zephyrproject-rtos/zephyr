@@ -19,4 +19,4 @@ set(BINTOOLS llvm)
 
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
 
-message(STATUS "Found toolchain: host (clang/ld)")
+message(STATUS "Found toolchain: llvm (clang/ld)")

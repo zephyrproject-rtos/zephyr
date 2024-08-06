@@ -76,8 +76,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
   get_filename_component(RTLIB_NAME_WITH_PREFIX ${RTLIB_FILE_NAME} NAME_WLE)
   string(REPLACE lib "" RTLIB_NAME ${RTLIB_NAME_WITH_PREFIX})
 
-  list(APPEND LIB_INCLUDE_DIR -L${RTLIB_DIR})
-  list(APPEND TOOLCHAIN_LIBS ${RTLIB_NAME})
+  set_property(TARGET linker PROPERTY lib_include_dir "-L${RTLIB_DIR}")
+  set_property(TARGET linker PROPERTY rt_library "-l${RTLIB_NAME}")
 
   list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")

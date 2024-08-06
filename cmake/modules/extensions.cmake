@@ -2409,6 +2409,39 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'set_linker_property' is a function that sets the property for the linker
+# property target used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with some additional extension flags for improved behavioral control.
+#
+# NO_CREATE: Flag to indicate that the property should only be set if not already
+#            defined with a value.
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (commonly: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_linker_property)
+  set(options APPEND NO_CREATE)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  if(LINKER_PROPERTY_NO_CREATE)
+    list(GET LINKER_PROPERTY_PROPERTY 0 property_name)
+    get_target_property(var ${LINKER_PROPERTY_TARGET} ${property_name})
+    if(NOT "${var}" STREQUAL "var-NOTFOUND")
+      return()
+    endif()
+  endif()
+  set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${LINKER_PROPERTY_PROPERTY})
+endfunction()
+
 # 'check_set_linker_property' is a function that check the provided linker
 # flag and only set the linker property if the check succeeds
 #
