@@ -19,7 +19,7 @@
 #include <esp_clk_tree.h>
 #include <hal/i2s_hal.h>
 
-LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
+
 
 #if !SOC_GDMA_SUPPORTED
 #error "Only SoCs with GDMA peripheral are supported!"
