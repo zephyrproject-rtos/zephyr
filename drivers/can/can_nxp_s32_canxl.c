@@ -259,6 +259,17 @@ static int can_nxp_s32_stop(const struct device *dev)
 	return 0;
 }
 
+static void can_nxp_s32_set_fd_mode(CANXL_SIC_Type *base,
+					boolean enable_fd,
+					boolean enable_brs)
+{
+	base->BCFG2 = (base->BCFG2 & ~CANXL_SIC_BCFG2_FDEN_MASK) |
+			CANXL_SIC_BCFG2_FDEN(enable_fd ? 1UL : 0UL);
+	base->BCFG1 = (base->BCFG1 & ~CANXL_SIC_BCFG1_FDRSDIS_MASK) |
+			CANXL_SIC_BCFG1_FDRSDIS(enable_brs ? 0UL : 1UL);
+	base->BTDCC &= ~(CANXL_SIC_BTDCC_FTDCEN_MASK |
+			CANXL_SIC_BTDCC_FTDCOFF_MASK);
+}
 
 static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 {
@@ -304,7 +315,7 @@ static int can_nxp_s32_set_mode(const struct device *dev, can_mode_t mode)
 
 	Canexcel_Ip_EnterFreezeMode(config->instance);
 
-	CanXL_SetFDEnabled(config->base_sic, canfd, brs);
+	can_nxp_s32_set_fd_mode(config->base_sic, canfd, brs);
 
 	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
 		Canexcel_Ip_StatusType status;
@@ -733,7 +744,7 @@ static int can_nxp_s32_set_timing_data(const struct device *dev,
 
 static void can_nxp_s32_err_callback(const struct device *dev,
 					Canexcel_Ip_EventType eventType,
-					uint32 u32SysStatus,
+					uint32_t u32SysStatus,
 					const Canexcel_Ip_StateType *canexcelState)
 {
 	const struct can_nxp_s32_config *config = dev->config;
@@ -857,7 +868,7 @@ static void nxp_s32_msg_data_to_zcan_frame(Canexcel_RxFdMsg msg_data,
 }
 
 static void can_nxp_s32_ctrl_callback(const struct device *dev,
-					Canexcel_Ip_EventType eventType, uint32 buffidx,
+					Canexcel_Ip_EventType eventType, uint32_t buffidx,
 					const Canexcel_Ip_StateType *canexcelState)
 {
 	const struct can_nxp_s32_config *config = dev->config;
