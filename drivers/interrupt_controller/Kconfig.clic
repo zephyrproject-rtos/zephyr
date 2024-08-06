@@ -6,6 +6,7 @@ config NUCLEI_ECLIC
 	default y
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING if !RISCV_VECTORED_MODE
+	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
 	help
 	  Interrupt controller for Nuclei SoC core.
 
