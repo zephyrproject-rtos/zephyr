@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/barrier.h>
 
-void z_arm_platform_init(void)
+void platform_reset(void)
 {
 	L1C_DisableCaches();
 	L1C_DisableBTAC();

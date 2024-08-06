@@ -8,7 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-void z_arm_platform_init(void)
+void platform_reset(void)
 {
 	SYS_UnlockReg();
 

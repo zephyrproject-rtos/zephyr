@@ -120,13 +120,13 @@ static int k8x_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_PLATFORM_RESET_HOOK
 
-void z_arm_platform_init(void)
+void platform_reset(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+#endif /* CONFIG_PLATFORM_RESET_HOOK */
 
 SYS_INIT(k8x_init, PRE_KERNEL_1, 0);

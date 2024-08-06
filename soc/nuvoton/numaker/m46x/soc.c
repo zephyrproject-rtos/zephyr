@@ -9,7 +9,7 @@
 /* Hardware and starter kit includes. */
 #include <NuMicro.h>
 
-void z_arm_platform_init(void)
+void platform_reset(void)
 {
 	SystemInit();
 

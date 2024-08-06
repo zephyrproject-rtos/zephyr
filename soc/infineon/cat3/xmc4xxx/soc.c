@@ -17,7 +17,7 @@
 #define PMU_FLASH_WS		(0x4U)
 #endif
 
-void z_arm_platform_init(void)
+void platform_reset(void)
 {
 	uint32_t temp;
 
