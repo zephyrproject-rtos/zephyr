@@ -427,8 +427,7 @@ static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 	return 0;
 }
 
-#if (defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA) & (defined(CONFIG_UART_ASYNC_API)))\
-	| UART_NS16550_PCP_ENABLED
+__maybe_unused
 static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint32_t val)
 {
@@ -444,6 +443,7 @@ static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 	}
 }
 
+__maybe_unused
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
@@ -455,7 +455,6 @@ static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 	/* MMIO mapped */
 	return sys_read32(port);
 }
-#endif
 
 static inline uint8_t reg_interval(const struct device *dev)
 {
