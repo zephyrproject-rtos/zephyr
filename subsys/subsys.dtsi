@@ -1,0 +1,5 @@
+#include <subsys/net/net.dtsi>
+
+/ {
+	subsys {};
+};

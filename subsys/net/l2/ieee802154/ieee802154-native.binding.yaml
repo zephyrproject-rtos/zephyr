@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IEEE 802.15.4 MAC configuration specific to Zephyr's IEEE 802.15.4 native L2.
+
+  Note: Please do not add PHY-specific properties to this binding file.
+  Currently we do not support IEEE 802.15.4 PHY-specific configuration. Once
+  drivers appear that require PHY-specific configuration, we will add
+  corresponding subnode bindings for each supported channel page.
+
+  References are to the IEEE 802.15.4-2020 standard by default.
+
+compatible: "zephyr,subsys-net-l2-ieee802154-native"
+
+include: "zephyr,subsys-net-l2-ieee802154.yaml"
+
+properties:
+  sec-key:
+    type: string
+    description: |
+      The private security key to be used to decrypt and encrypt IEEE 802.15.4
+      packets, 16 bytes, hex encoded, e.g. "000102030405060708090a0b0c0d0e0f".
+
+      Note: Currently native L2 only supports a single secKeySource, see
+      section 9.5, table 9-9, in combination with secKeyMode zero (implicit key
+      mode), see section 9.4.2.3, table 9-7.
+
+      Warning: Only use this for testing. For production use, the key should be
+      stored in a secure element.
+
+      Warning: This key source / key mode combination is no longer considered
+      secure in accordance with the 2015+ versions of the standard and needs to
+      be extended in the future for full security procedure compliance.
+  sec-key-mode:
+    type: int
+    description: |
+      The key mode to be used for encrypted packages. Currently only key mode 0
+      is supported (implicit key mode). See the description of sec-key above.
+    default: 0
+  sec-level:
+    type: int
+    description: 1;
+      The security level to be used for encrypted packages, possible values are
+      defined in section, 9.4.2.2, table 9-6.
+    default: 0
+  no-ack:
+    type: boolean
+    description: |
+      Whether an acknowledgment is required for transmitted packets.
+
+      Sets AckTx to false for all MLME-DATA (aka TX) requests, see section 8.3.2.

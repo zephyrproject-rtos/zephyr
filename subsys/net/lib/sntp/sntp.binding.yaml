@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+include: node.yaml
+
+description: |
+  The SNTP library is part of the network subsystem and can be configured using
+  this binding.
+
+  The SNTP configuration nodes SHALL be named according to the pattern
+  "sntp@<int>". The address part of the node is used to identify the SNTP node
+  instance and does not have any further semantic meaning. If there is a single
+  SNTP node in an application configuration, the address part can be left out.
+
+compatible: "zephyr,subsys-net-lib-sntp"
+
+properties:
+  server:
+    type: string
+    description: The NTP clock source, e.g. "time.google.com".
+  timeout:
+    type: int
+    description: The NTP server timeout in seconds.
+    default: 30

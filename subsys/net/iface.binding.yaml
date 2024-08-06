@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+
+include: node.yaml
+
+description: |
+  Network interface configuraton.
+
+  All nodes using this binding SHOULD be called "iface" or "iface@<u32>". At
+  build time, devicetree nodes representing a network device MAY have exactly as
+  many "iface[@<u32>]" child nodes with "status = 'okay'" as the corresponding
+  device node instantiates network interfaces. In most cases this will be a
+  single network interface per device node in which case the address part of the
+  "iface" node is optional.
+
+  If a single devicetree node instantiates more than one network interface, then
+  the "iface" nodes SHOULD be named "iface@0", "iface@1", etc.
+
+  Note: The interface node's address part has no semantic meaning other than
+  uniquely identifying instances of interface nodes. Notably the address part
+  does not correspond to the interface index.
+
+compatible: "zephyr,subsys-net-iface"
+
+properties:
+  iface-name:
+    type: string
+    description: Sets a non-default interface name.
+  is-default:
+    type: boolean
+    description: If set, this interface will be the default interface.
+  no-auto-start:
+    type: boolean
+    description: |
+      By default, interfaces will be brought up automatically during system
+      initialization. Setting this flag will prevent this behavior.

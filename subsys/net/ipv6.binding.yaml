@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IPv6 configuration.
+
+  All nodes using this binding SHALL be called "ipv6" and SHALL be placed inside
+  the corresponding "iface" node.
+
+compatible: "zephyr,subsys-net-iface-ipv6"
+
+include: node.yaml
+
+properties:
+  addr:
+    type: string
+    description: IPv6 address, e.g. "2001:db8:110::1".
+  hop-limit:
+    type: int
+    description: IPv6 hop limit.
+    default: 64
+  mcast-addr:
+    type: string
+    description: IPv6 multicast address, e.g. "ff02::1".
+  mcast-hop-limit:
+    type: int
+    description: IPv6 multicast hop limit.
+    default: 1

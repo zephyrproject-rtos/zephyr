@@ -1,0 +1,93 @@
+# Common fields for all devices
+
+properties:
+  status:
+    type: string
+    description: |
+      In the context of a device node:
+
+        Zephyr's use of the status property in the context of a device node
+        deviates slightly from the semantics defined in the devicetree standard.
+
+        Rather than representing an operational state, it configures application
+        specific driver instantiation requirements: A value of "okay" indicates
+        that a device driver SHALL be instantiated and initialized for this
+        device at boot time, i.e. it is intended that the driver instance be
+        "ready" at the time `main()` is called.
+
+        A device driver can only be instantiated if exactly one driver is
+        included in the build that binds to the compatible value of the device.
+        This is usually done by setting a corresponding Kconfig variable like
+        `CONFIG_ADC=y`.
+
+        A value of "disabled" indicates that a device driver instance SHALL not
+        be instantiated for this device. This is useful for devices that are not
+        used by the application and for which no driver needs to be included in
+        the build.
+
+        Other values are included for compatibility with the devicetree
+        specification but are not used by Zephyr.
+
+      In the context of a non-device node:
+
+        A value of "disabled" indicates that the configuration (including all
+        subnodes) SHALL be disregarded as if it was not part of the tree. A
+        value of "okay" indicates that the configuration SHALL be used.
+
+      Note: By the devicetree specification, the lack of a status property will
+      be treated as if the property existed with the value of "okay".
+
+      Note: Using "ok" instead of "okay" is deprecated.
+    enum:
+      - "ok" # deprecated
+      - "okay"
+      - "disabled"
+      - "reserved"
+      - "fail"
+      - "fail-sss"
+
+  compatible:
+    type: string-array
+    required: true
+    description: |
+      The compatible property value consists of one or more strings that define
+      the specific programming model for the device. In Zephyr this list of
+      strings will be used for device driver and devicetree binding file
+      selection.
+
+      The property value consists of a concatenated list of strings, from most
+      specific to most general. In the context of a device node this allows a
+      device to express its compatibility with a family of similar devices,
+      potentially allowing a single device driver to match against several
+      devices.
+
+      The recommended format is "manufacturer,model", where manufacturer is a
+      string describing the name of the manufacturer (such as a stock ticker
+      symbol), and model specifies the model number. The compatible string SHALL
+      consist only of lowercase letters, digits and dashes, and SHALL start with
+      a letter. A single comma MAY only be used following a vendor prefix.
+      Underscores SHALL not be used.
+
+      Note: These are SHOULD-requirements in the original specifications but in
+      Zephyr they were upgraded to SHALL-requirements.
+
+      Example:
+        `compatible = "fsl,mpc8641", "ns16550";`
+
+      In this example, Zephyr would first try to locate a device driver that
+      supported fsl,mpc8641. If a driver was not found, it would then try to
+      locate a driver that supported the more general ns16550 device type.
+
+      Note: You can search for compatible drivers in the tree by replacing any
+      non-alphanumeric character (namely commas and dashes) of a compatible
+      string by an underscore (`_`) combined with the macro `DT_DRV_COMPAT`.
+
+      Example:
+        `DT_DRV_COMPAT fsl_mpc8641`
+
+      You can locate corresponding binding files, by searching for *.y[a]ml
+      files including one of the compatible strings with a colon rather than an
+      equality sign.
+
+      Example:
+        `compatible: "fsl,mpc8641"`

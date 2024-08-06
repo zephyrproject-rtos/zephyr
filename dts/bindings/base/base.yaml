@@ -1,24 +1,10 @@
-# Common fields for all devices
+# Common fields for all nodes
 
-include: [pm.yaml]
+include:
+  -node.yaml
+  -pm.yaml
 
 properties:
-  status:
-    type: string
-    description: indicates the operational status of a device
-    enum:
-      - "ok" # Deprecated form
-      - "okay"
-      - "disabled"
-      - "reserved"
-      - "fail"
-      - "fail-sss"
-
-  compatible:
-    type: string-array
-    required: true
-    description: compatible strings
-
   reg:
     type: array
     description: register space

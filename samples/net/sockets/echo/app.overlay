@@ -1,0 +1,108 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Sample network subsystem configuration. */
+
+/subsys/net/lib {
+	sntp-google: sntp@0 {
+		compatible = "zephyr,subsys-net-lib-sntp";
+		server = "time.google.com";
+		timeout = 30;
+	};
+};
+
+&eth0 {
+	/* Binds to a network peripheral which again determines
+	 * a driver instance. When a peripheral (and its driver
+	 * instance) exposes several interfaces, then we'll have
+	 * to specify a <prop-encoded-array> which will determine
+	 * the specific interface instance to bind to, e.g. in case
+	 * a WiFi device exposes both, station and access point,
+	 * interfaces we could refer to them by iface@0 and iface@1
+	 * respectively or any other addressing scheme that makes
+	 * sense for the given peripheral and conforms to the DT
+	 * spec.
+	 */
+	iface {
+		compatible = "zephyr,subsys-net";
+		iface-name = "my-eth0";
+		is-default;
+
+		ipv6 {
+			compatible = "zephyr,subsys-net-ipv6";
+			status = "okay"; /* Just for demonstration, this is the default. */
+
+			addr = "2001:db8:110::1";
+			hop-limit = 64;
+
+			mcast-addr = "ff05::114", "ff15::115";
+			mcast-hop-limit = 1;
+
+			prefixes {
+				prefix@0 {
+					addr = "2001:db8::";
+					len = 64;
+					lifetime = 1024;
+				};
+			};
+
+			dhcp {
+				req-addr;
+				/* req-prefix - disabled */
+			};
+		};
+
+		ipv4 {
+			compatible = "zephyr,subsys-net-ipv4";
+			status = "disabled"; /* Properties in this node will be ignored. */
+
+			addr = "192.0.2.10/24";
+			mcast-addr = "234.0.0.10";
+			gateway = "192.0.2.1";
+			ttl = 64;
+			mcast-ttl = 1;
+			/* autoconf - disabled */
+
+			dhcp { /* currently no props, still a node for forward compat */
+				status = "okay";
+			};
+		};
+
+		ieee802154 {
+			/* I propose that for bindings (not driver selection), compatibles
+			 * can be composed. Our current approach only allows for
+			 * inheritance. IMO this is not good design practice. We should use
+			 * composition instead where applicable.
+			 *
+			 * If the selected driver does not support one of the properties
+			 * it will be ignored (same as today).
+			 *
+			 * This example shows that both, inheritance and composition, have
+			 * legitimate applications:
+			 *  - We compose driver configuration properties (potentially even
+			 *    vendor specific) with generic IEEE 802.15.4 L2 properties.
+			 *  - We let the native IEEE 802.15.4 L2 schema inherit from a
+			 *    generic IEEE 802.15.4 L2 schema which will be shared by all
+			 *    IEEE 802.15.4 L2 stacks.
+			 *
+			 * We could (optionally) introduce an additive syntax for DT
+			 * <stringlist> properties, e.g.: compatible = "... {} ..."; for
+			 * improved encapsulation where {} will be replaced with the list
+			 * defined further up in the overlay hierarchy. But IMO it's fine if
+			 * applications live with this slight redundancy as it won't matter
+			 * much in practice.
+			 */
+			compatible = "nordic,nrf-ieee802154" "zephyr,subsys-net-l2-ieee802154-native"; /* which inherits from "zephyr,subsys-net-l2-ieee802154" */
+
+			pan-id = 0xabcd; /* little endian */
+			ext-addr = 0xc2a39e00004b1200; /* big endian */
+			default-channel = 26;
+			default-tx-pwr = 1;
+			sec-key = "000102030405060708090a0b0c0d0e0f"; /* 16 bytes hex, deprecated by the standard - the new spec will require a secure key store */
+			sec-key-mode = 0;
+			sec-level = 1;
+			no-ack;
+		};
+
+		sntp: &sntp-google;
+	};
+};

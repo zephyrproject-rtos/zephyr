@@ -1,0 +1,7 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include <subsys/net/lib/lib.dtsi>
+
+/subsys {
+	net {};
+};
