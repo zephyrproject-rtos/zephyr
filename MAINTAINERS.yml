@@ -4799,9 +4799,10 @@ West:
 "West project: lz4":
   status: odd fixes
   collaborators:
-    - Navin-Sankar
+    - parthitce
   files:
     - modules/lz4/
+    - samples/modules/compression/lz4/
   labels:
     - "area: Compression"
 
