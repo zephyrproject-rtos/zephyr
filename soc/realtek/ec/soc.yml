@@ -1,0 +1,6 @@
+family:
+- name: realtek_ec
+  series:
+  - name: rts5912
+    socs:
+    - name: rts5912

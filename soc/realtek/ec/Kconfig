@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+if SOC_FAMILY_REALTEK_EC
+
+menuconfig REALTEK_RTS5912_IMG_HEADER
+	bool "Add RTS5912 image header to output binary"
+	help
+	  The RTS5912 ROM code loads firmware image from flash to RAM by the image header setting.
+	  Enable this to invoke the 'rts5912_imgtool' to generates the RTS5912 image header.
+
+if REALTEK_RTS5912_IMG_HEADER
+
+config REALTEK_HEADER_CHIP
+	string
+	default "RTS5912" if SOC_RTS5912
+
+config REALTEK_RTS5912_HEADER_COMBINE
+	bool "Combine RTS5912 binary and header into new BIN file"
+	default y
+	help
+	  Combine a "raw" binary and header information into zephyr/zephyr.rts5912.bin .
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config REALTEK_RTS5912_IMG_HEADER_LOAD_ADDRESS
+	hex "The loading address where the RTS5912 ROM code loads firmware image from flash to RAM"
+	default "0x200003E0"
+	help
+	  The loading address where the RTS5912 ROM code loads firmware image from flash to RAM.
+
+
+
+endif # REALTEK_RTS5912_IMG_HEADER
+
+# Select SoC Part No. and configuration options
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_REALTEK_EC
