@@ -106,7 +106,7 @@ board.
 System Clock
 ============
 
-The Cortex-R52 cores are configured to run at 800 MHz.
+The Cortex-R52 cores are configured to run at 1 GHz.
 
 Serial Port
 ===========
