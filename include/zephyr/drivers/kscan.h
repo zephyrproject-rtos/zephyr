@@ -76,7 +76,7 @@ __subsystem struct kscan_driver_api {
  * event such as key pressed/released.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int kscan_config(const struct device *dev,
 			     kscan_callback_t callback);
@@ -94,7 +94,7 @@ static inline int z_impl_kscan_config(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int kscan_enable_callback(const struct device *dev);
 
@@ -115,7 +115,7 @@ static inline int z_impl_kscan_enable_callback(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int kscan_disable_callback(const struct device *dev);
 
