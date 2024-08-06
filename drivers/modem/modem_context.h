@@ -89,7 +89,8 @@ int modem_context_sprint_ip_addr(const struct sockaddr *addr, char *buf, size_t 
  * @param  addr: sockaddr
  * @param  port: store port
  *
- * @retval 0 if ok, < 0 if error.
+ * @retval 0 if ok
+ * @retval <0 if error.
  */
 int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port);
 
@@ -98,7 +99,7 @@ int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port);
  *
  * @param  id: modem context id.
  *
- * @retval modem context or NULL.
+ * @return modem context or NULL.
  */
 struct modem_context *modem_context_from_id(int id);
 
@@ -107,7 +108,7 @@ struct modem_context *modem_context_from_id(int id);
  *
  * @param  dev: device used by the modem iface.
  *
- * @retval Modem context or NULL.
+ * @return Modem context or NULL.
  */
 struct modem_context *modem_context_from_iface_dev(const struct device *dev);
 

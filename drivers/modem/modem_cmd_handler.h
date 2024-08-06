@@ -128,7 +128,7 @@ struct modem_cmd_handler_data {
  *
  * @param  data: command handler data reference
  *
- * @retval last handled error.
+ * @return last handled error.
  */
 int modem_cmd_handler_get_error(struct modem_cmd_handler_data *data);
 

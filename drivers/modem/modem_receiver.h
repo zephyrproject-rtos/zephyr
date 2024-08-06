@@ -45,7 +45,7 @@ struct mdm_receiver_context {
  *
  * @param  id: receiver context id.
  *
- * @retval Receiver context or NULL.
+ * @return Receiver context or NULL.
  */
 struct mdm_receiver_context *mdm_receiver_context_from_id(int id);
 
