@@ -7,7 +7,9 @@
 /* Default shared SRAM planning when building for nRF5340.
  * This file is included by both nRF5340 CPUAPP (Application MCU)
  * and nRF5340 CPUNET (Network MCU).
- * - 64 kB SRAM allocated as Shared memory (sram0_shared)
+ * 64 kB SRAM allocated as Shared memory (sram0_shared) divided in:
+ * - 32 kB CPUAPP to CPUNET communication (cpuapp_cpunet_ipc_shm)
+ * - 32 kB CPUNET to CPUAPP communication (cpunet_cpuapp_ipc_shm)
  * - Region defined after the image SRAM of Application MCU
  */
 
@@ -23,8 +25,18 @@
 		ranges;
 
 		sram0_shared: memory@20070000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			/* SRAM allocated to shared memory */
 			reg = <0x20070000 0x10000>;
+
+			cpuapp_cpunet_ipc_shm: memory@20070000 {
+				reg = <0x20070000 DT_SIZE_K(32)>;
+			};
+
+			cpunet_cpuapp_ipc_shm: memory@20078000 {
+				reg = <0x20078000 DT_SIZE_K(32)>;
+			};
 		};
 	};
 };
