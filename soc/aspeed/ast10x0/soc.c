@@ -84,7 +84,7 @@ struct sb_header sbh __attribute((used, section(".sboot"))) = {
 	.img_size = (uint32_t)&__bss_start,
 };
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	uint32_t jtag_pinmux;
 	uint32_t base = DT_REG_ADDR(DT_NODELABEL(syscon));

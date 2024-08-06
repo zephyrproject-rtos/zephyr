@@ -376,9 +376,9 @@ static int nxp_rt600_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #ifndef CONFIG_NXP_IMXRT_BOOT_HEADER
 	/*
