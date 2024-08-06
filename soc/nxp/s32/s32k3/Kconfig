@@ -21,6 +21,7 @@ config SOC_SERIES_S32K3
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_EDMA
 
 if SOC_SERIES_S32K3
 
