@@ -284,8 +284,8 @@ static inline int display_read(const struct device *dev, const uint16_t x,
  *
  * @param dev Pointer to device structure
  *
- * @retval Pointer to frame buffer or NULL if direct framebuffer access
- * is not supported
+ * @return Pointer to frame buffer
+ * @retval NULL if direct framebuffer access is not supported
  *
  */
 static inline void *display_get_framebuffer(const struct device *dev)
