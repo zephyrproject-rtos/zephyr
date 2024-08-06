@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
