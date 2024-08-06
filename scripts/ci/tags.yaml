@@ -85,6 +85,11 @@ posix:
   files:
     - lib/posix/
 
+rust:
+  files:
+    - lib/rust/
+    - cmake/modules/rust.cmake
+
 # cbprintf:
 #    files:
 #        - lib/os/cbprintf*
