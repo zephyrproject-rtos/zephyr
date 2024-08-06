@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(CONFIG_W1_DS2482_800       w1_ds2482-800.c w1_ds248
 zephyr_library_sources_ifdef(CONFIG_W1_DS2484           w1_ds2484.c)
 zephyr_library_sources_ifdef(CONFIG_W1_DS2485           w1_ds2485.c)
 zephyr_library_sources_ifdef(CONFIG_W1_DS2477_85_COMMON w1_ds2477_85_common.c)
+zephyr_library_sources_ifdef(CONFIG_W1_MAX32            w1_max32.c)
 zephyr_library_sources_ifdef(CONFIG_W1_TEST             w1_test.c)
 zephyr_library_sources_ifdef(CONFIG_W1_ZEPHYR_GPIO      w1_zephyr_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_W1_ZEPHYR_SERIAL    w1_zephyr_serial.c)

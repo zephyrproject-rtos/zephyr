@@ -115,6 +115,8 @@ Below interfaces are supported by Zephyr on MAX32690EVKIT.
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| W1        | on-chip    | one wire master                     |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs
