@@ -70,6 +70,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "FT-EAP";
 	case WIFI_SECURITY_TYPE_FT_EAP_SHA384:
 		return "FT-EAP-SHA384";
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return "WPA/WPA2/WPA3 PSK";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
