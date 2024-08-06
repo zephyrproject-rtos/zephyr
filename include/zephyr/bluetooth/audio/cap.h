@@ -198,8 +198,8 @@ void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stre
  * @param seq_num  Packet Sequence number. This value shall be incremented for each call to this
  *                 function and at least once per SDU interval for a specific channel.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_send()
+ * @return Any return value from bt_bap_stream_send()
+ * @retval -EINVAL stream object is NULL
  */
 int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num);
 
@@ -217,8 +217,8 @@ int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16
  * @param ts       Timestamp of the SDU in microseconds (us). This value can be used to transmit
  *                 multiple SDUs in the same SDU interval in a CIG or BIG.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_send()
+ * @return Any return value from bt_bap_stream_send()
+ * @retval -EINVAL stream object is NULL
  */
 int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			  uint32_t ts);
@@ -233,8 +233,8 @@ int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uin
  * @param[in]  stream Stream object.
  * @param[out] info   Transmit info object.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_get_tx_sync()
+ * @return Any return value from bt_bap_stream_get_tx_sync()
+ * @retval -EINVAL stream object is NULL
  */
 int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
 
@@ -400,8 +400,8 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to 0 and the err value set to -ECANCELED.
  *
- * @retval 0 on success
- * @retval -EALREADY if no procedure is active
+ * @retval 0 success
+ * @retval -EALREADY no procedure is active
  */
 int bt_cap_initiator_unicast_audio_cancel(void);
 
@@ -881,8 +881,8 @@ int bt_cap_commander_discover(struct bt_conn *conn);
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to NULL and the err value set to -ECANCELED.
  *
- * @retval 0 on success
- * @retval -EALREADY if no procedure is active
+ * @retval 0 success
+ * @retval -EALREADY no procedure is active
  */
 int bt_cap_commander_cancel(void);
 

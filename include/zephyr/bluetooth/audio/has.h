@@ -319,9 +319,9 @@ struct bt_has_preset_ops {
 	 * @param sync Whether the server must relay this change to the other member of the
 	 *             Binaural Hearing Aid Set.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
-	 * @return -EBUSY if operation cannot be performed at the time.
-	 * @return -EINPROGRESS in case where user has to confirm once the requested preset
+	 * @retval 0 success.
+	 * @retval -EBUSY operation cannot be performed at the time.
+	 * @retval -EINPROGRESS user has to confirm once the requested preset
 	 *                      becomes active by calling @ref bt_has_preset_active_set.
 	 */
 	int (*select)(uint8_t index, bool sync);
@@ -440,8 +440,8 @@ enum {
  * @param name Preset name.
  * @param user_data Data given.
  *
- * @return BT_HAS_PRESET_ITER_CONTINUE if should continue to the next preset.
- * @return BT_HAS_PRESET_ITER_STOP to stop.
+ * @retval BT_HAS_PRESET_ITER_CONTINUE continue to the next preset.
+ * @retval BT_HAS_PRESET_ITER_STOP stop.
  */
 typedef uint8_t (*bt_has_preset_func_t)(uint8_t index, enum bt_has_properties properties,
 					const char *name, void *user_data);

@@ -410,9 +410,9 @@ struct bt_vcp_vol_ctlr_cb {
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was already registered
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY @p cb was already registered
  */
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
 
@@ -421,9 +421,9 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was not registered
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY @p cb was not registered
  */
 int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
 
@@ -455,7 +455,7 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Volume Control Profile Volume Controller instance
+ * @return Pointer to a Volume Control Profile Volume Controller instance
  * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
  */
 struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);

@@ -439,7 +439,7 @@ struct bt_bap_ep_info {
  * @param info The structure object to be filled with the info.
  *
  * @retval 0 in case of success
- * @retval -EINVAL if @p ep or @p info are NULL
+ * @retval -EINVAL @p ep or @p info are NULL
  */
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 
@@ -749,12 +749,12 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream);
  * @param stream Stream object
  *
  * @retval 0 in case of success
- * @retval -EINVAL if the stream, endpoint, ISO channel or connection is NULL
- * @retval -EBADMSG if the stream or ISO channel is in an invalid state for connection
- * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_HCI_ROLE_CENTRAL
- * @retval -EALREADY if the ISO channel is already connecting or connected
- * @retval -EBUSY if another ISO channel is connecting
- * @retval -ENOEXEC if otherwise rejected by the ISO layer
+ * @retval -EINVAL the stream, endpoint, ISO channel or connection is NULL
+ * @retval -EBADMSG the stream or ISO channel is in an invalid state for connection
+ * @retval -EOPNOTSUPP the role of the stream is not @ref BT_HCI_ROLE_CENTRAL
+ * @retval -EALREADY the ISO channel is already connecting or connected
+ * @retval -EBUSY another ISO channel is connecting
+ * @retval -ENOEXEC otherwise rejected by the ISO layer
  */
 int bt_bap_stream_connect(struct bt_bap_stream *stream);
 
@@ -860,10 +860,10 @@ int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uin
  * @param[in]  stream Stream object.
  * @param[out] info   Transmit info object.
  *
- * @retval 0 on success
- * @retval -EINVAL if the stream is invalid, if the stream is not configured for sending or if it is
+ * @return Any return value from bt_iso_chan_get_tx_sync()
+ * @retval 0 success
+ * @retval -EINVAL the stream is invalid, if the stream is not configured for sending or if it is
  *         not connected with a isochronous stream
- * @retval Any return value from bt_iso_chan_get_tx_sync()
  */
 int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info);
 
@@ -1450,8 +1450,8 @@ struct bt_bap_base_subgroup_bis {
  *
  * @param ad The periodic advertising data
  *
+ * @return Pointer to a bt_bap_base structure
  * @retval NULL if the data does not contain a BASE
- * @retval Pointer to a bt_bap_base structure
  */
 const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad);
 
@@ -1460,8 +1460,8 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The size of the BASE
+ * @return The size of the BASE
+ * @retval -EINVAL arguments are invalid
  */
 int bt_bap_base_get_size(const struct bt_bap_base *base);
 
@@ -1470,8 +1470,8 @@ int bt_bap_base_get_size(const struct bt_bap_base *base);
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 24-bit presentation delay value
+ * @return The 24-bit presentation delay value
+ * @retval -EINVAL arguments are invalid
  */
 int bt_bap_base_get_pres_delay(const struct bt_bap_base *base);
 
@@ -1480,8 +1480,8 @@ int bt_bap_base_get_pres_delay(const struct bt_bap_base *base);
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 8-bit subgroup count value
+ * @return The 8-bit subgroup count value
+ * @retval -EINVAL arguments are invalid
  */
 int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base);
 
@@ -1491,8 +1491,8 @@ int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base);
  * @param[in]  base        The BASE pointer
  * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval 0 success
  */
 int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_indexes);
 
@@ -1503,9 +1503,9 @@ int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_in
  * @param func      Callback function. Return true to continue iterating, or false to stop.
  * @param user_data Userdata supplied to @p func
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ECANCELED if iterating over the subgroups stopped prematurely by @p func
- * @retval 0 if all subgroups were iterated
+ * @retval -EINVAL arguments are invalid
+ * @retval -ECANCELED iterating over the subgroups stopped prematurely by @p func
+ * @retval 0 all subgroups were iterated
  */
 int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
 				 bool (*func)(const struct bt_bap_base_subgroup *subgroup,
@@ -1518,8 +1518,8 @@ int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
  * @param[in]  subgroup The subgroup pointer
  * @param[out] codec_id Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval 0 success
  */
 int bt_bap_base_get_subgroup_codec_id(const struct bt_bap_base_subgroup *subgroup,
 				      struct bt_bap_base_codec_id *codec_id);
@@ -1530,8 +1530,8 @@ int bt_bap_base_get_subgroup_codec_id(const struct bt_bap_base_subgroup *subgrou
  * @param[in]  subgroup The subgroup pointer
  * @param[out] data     Pointer that will point to the resulting codec configuration data
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval 0 success
  */
 int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **data);
@@ -1542,8 +1542,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval 0 success
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
@@ -1554,9 +1554,9 @@ int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup  The subgroup pointer
  * @param[out] codec_cfg Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ENOMEM if the @p codec_cfg cannot store the @p subgroup codec data
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval -ENOMEM the @p codec_cfg cannot store the @p subgroup codec data
+ * @retval 0 success
  */
 int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *subgroup,
 					    struct bt_audio_codec_cfg *codec_cfg);
@@ -1566,8 +1566,8 @@ int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *s
  *
  * @param subgroup The subgroup pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 8-bit BIS count value
+ * @return The 8-bit BIS count value
+ * @retval -EINVAL arguments are invalid
  */
 int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgroup);
 
@@ -1577,8 +1577,8 @@ int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgro
  * @param[in]  subgroup    The subgroup pointer
  * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval 0 success
  */
 int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
 					 uint32_t *bis_indexes);
@@ -1590,9 +1590,9 @@ int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subg
  * @param func      Callback function. Return true to continue iterating, or false to stop.
  * @param user_data Userdata supplied to @p func
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ECANCELED if iterating over the subgroups stopped prematurely by @p func
- * @retval 0 if all BIS were iterated
+ * @retval -EINVAL arguments are invalid
+ * @retval -ECANCELED iterating over the subgroups stopped prematurely by @p func
+ * @retval 0 all BIS were iterated
  */
 int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup,
 				     bool (*func)(const struct bt_bap_base_subgroup_bis *bis,
@@ -1608,9 +1608,9 @@ int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup
  * @param[in]  bis       The BIS pointer
  * @param[out] codec_cfg Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ENOMEM if the @p codec_cfg cannot store the @p subgroup codec data
- * @retval 0 on success
+ * @retval -EINVAL arguments are invalid
+ * @retval -ENOMEM the @p codec_cfg cannot store the @p subgroup codec data
+ * @retval 0 success
  */
 int bt_bap_base_subgroup_bis_codec_to_codec_cfg(const struct bt_bap_base_subgroup_bis *bis,
 						struct bt_audio_codec_cfg *codec_cfg);
@@ -1898,7 +1898,7 @@ struct bt_bap_broadcast_sink_cb {
  * @param cb  Broadcast sink callback structure.
  *
  * @retval 0 in case of success
- * @retval -EINVAL if @p cb is NULL
+ * @retval -EINVAL @p cb is NULL
  */
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
 
@@ -2289,9 +2289,9 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
  *
  * @param cb	The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was already registered
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY @p cb was already registered
  */
 int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
 
@@ -2300,9 +2300,9 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was not registered
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -EALREADY @p cb was not registered
  */
 int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb);
 

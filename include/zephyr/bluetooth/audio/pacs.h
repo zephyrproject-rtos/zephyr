@@ -52,8 +52,8 @@ struct bt_pacs_cap {
  * @param cap Capability found.
  * @param user_data Data given.
  *
- * @return true to continue to the next capability
- * @return false to stop the iteration
+ * @retval true continue to the next capability
+ * @retval false stop the iteration
  */
 typedef bool (*bt_pacs_cap_foreach_func_t)(const struct bt_pacs_cap *cap,
 					   void *user_data);

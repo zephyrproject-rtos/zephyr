@@ -345,7 +345,7 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn);
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
+ * @return Pointer to a Coordinated Set Identification Profile Set Coordinator instance
  * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
  */
 struct bt_csip_set_coordinator_set_member *
@@ -440,7 +440,8 @@ bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE]
  *
  * @param cb   Pointer to the callback structure.
  *
- * @return Return 0 on success, or an errno value on error.
+ * @retval 0 success
+ * @retval -errno error
  */
 int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb);
 
@@ -452,8 +453,8 @@ int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb);
  *                   done on the members in ascending order.
  * @param count      Number of members in @p members.
  *
- * @return true if the procedures can be successfully done, or false to stop the
- *         procedure.
+ * @retval true the procedures can be successfully done
+ * @retval false stop the procedure.
  */
 typedef bool (*bt_csip_set_coordinator_ordered_access_t)(
 	const struct bt_csip_set_coordinator_set_info *set_info,

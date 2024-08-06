@@ -262,7 +262,7 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Microphone Control Profile Microphone Controller instance
+ * @return Pointer to a Microphone Control Profile Microphone Controller instance
  * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
  */
 struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn);
