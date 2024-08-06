@@ -1,4 +1,4 @@
-.. _x-nucleo-bnrg2a1:
+.. _x_nucleo_bnrg2a1:
 
 X-NUCLEO-BNRG2A1: BLE expansion board
 #####################################

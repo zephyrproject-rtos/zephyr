@@ -345,7 +345,7 @@ def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, sysbuild=False):
 
 def process_kconfig(module, meta):
     blobs = process_blobs(module, meta)
-    taint_blobs = len(tuple(filter(lambda b: b['status'] != 'D', blobs))) != 0
+    taint_blobs = any(b['status'] != BLOB_NOT_PRESENT for b in blobs)
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')

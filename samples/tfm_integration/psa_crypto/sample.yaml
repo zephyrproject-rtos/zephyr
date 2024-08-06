@@ -5,15 +5,21 @@ sample:
   name: PSA crypto example
 tests:
   sample.psa_crypto:
+    # Sample disabled due to TF-M downloading qcbor which is not apache licensed
+    skip: true
     tags:
       - introduction
       - trusted-firmware-m
       - crypto
       - csr
       - mcuboot
-    platform_allow: mps2/an521/cpu0/ns v2m_musca_s1/musca_s1/ns
-      nrf5340dk/nrf5340/cpuapp/ns nrf9160dk/nrf9160/ns
-      stm32l562e_dk/stm32l562xx/ns bl5340_dvk/nrf5340/cpuapp/ns
+    platform_allow:
+      - mps2/an521/cpu0/ns
+      - v2m_musca_s1/musca_s1/ns
+      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf9160dk/nrf9160/ns
+      - stm32l562e_dk/stm32l562xx/ns
+      - bl5340_dvk/nrf5340/cpuapp/ns
     harness: console
     harness_config:
       type: multi_line

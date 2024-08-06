@@ -23,9 +23,9 @@ struct mipi_dbi_spi_config {
 };
 
 struct mipi_dbi_spi_data {
+	struct k_mutex lock;
 	/* Used for 3 wire mode */
 	uint16_t spi_byte;
-	struct k_mutex lock;
 };
 
 /* Expands to 1 if the node does not have the `write-only` property */
@@ -313,7 +313,7 @@ static int mipi_dbi_spi_init(const struct device *dev)
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
+static const struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
 	.reset = mipi_dbi_spi_reset,
 	.command_write = mipi_dbi_spi_command_write,
 	.write_display = mipi_dbi_spi_write_display,

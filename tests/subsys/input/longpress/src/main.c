@@ -22,7 +22,7 @@ DEVICE_DT_DEFINE(DT_INST(0, vnd_input_device), NULL, NULL, NULL, NULL,
 static int event_count;
 static struct input_event last_events[2];
 
-static void test_cb(struct input_event *evt)
+static void test_cb(struct input_event *evt, void *user_data)
 {
 	TC_PRINT("%s: %d %x %d\n", __func__, event_count, evt->code, evt->value);
 
@@ -30,11 +30,11 @@ static void test_cb(struct input_event *evt)
 	memcpy(&last_events[1], &last_events[0], sizeof(struct input_event));
 	memcpy(&last_events[0], evt, sizeof(struct input_event));
 }
-INPUT_CALLBACK_DEFINE(longpress_dev, test_cb);
+INPUT_CALLBACK_DEFINE(longpress_dev, test_cb, NULL);
 
 static int event_count_no_short;
 static struct input_event last_events_no_short[2];
-static void test_cb_no_short(struct input_event *evt)
+static void test_cb_no_short(struct input_event *evt, void *user_data)
 {
 	TC_PRINT("%s: %d %x %d\n", __func__, event_count_no_short, evt->code, evt->value);
 
@@ -42,7 +42,7 @@ static void test_cb_no_short(struct input_event *evt)
 	memcpy(&last_events_no_short[1], &last_events_no_short[0], sizeof(struct input_event));
 	memcpy(&last_events_no_short[0], evt, sizeof(struct input_event));
 }
-INPUT_CALLBACK_DEFINE(longpress_no_short_dev, test_cb_no_short);
+INPUT_CALLBACK_DEFINE(longpress_no_short_dev, test_cb_no_short, NULL);
 
 ZTEST(longpress, test_longpress_test)
 {

@@ -67,7 +67,7 @@ config HWINFO_NRF
 	bool "NRF device ID"
 	default y
 	depends on SOC_FAMILY_NORDIC_NRF
-	depends on NRF_SOC_SECURE_SUPPORTED
+	depends on SOC_SERIES_NRF54HX || NRF_SOC_SECURE_SUPPORTED
 	help
 	  Enable Nordic NRF hwinfo driver.
 
@@ -210,5 +210,21 @@ config HWINFO_AMBIQ
 	select AMBIQ_HAL_USE_HWINFO
 	help
 	  Enable AMBIQ hwinfo driver
+
+config HWINFO_NUMAKER
+	bool "NuMaker hwinfo"
+	default y
+	depends on SOC_SERIES_M46X
+	select HAS_NUMAKER_FMC
+	help
+	  Enable Nuvoton NuMaker hwinfo driver
+
+config HWINFO_NUMAKER_RMC
+	bool "NuMaker hwinfo backed up by RMC"
+	default y
+	depends on SOC_SERIES_M2L31X
+	select HAS_NUMAKER_RMC
+	help
+	  Enable Nuvoton NuMaker hwinfo driver backed up by RMC
 
 endif

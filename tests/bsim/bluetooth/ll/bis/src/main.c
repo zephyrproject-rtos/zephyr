@@ -907,7 +907,7 @@ static void test_iso_recv_main(void)
 	bis_iso_qos.rx = &iso_rx_qos;
 	big_param.bis_channels = bis_channels;
 	big_param.num_bis = BIS_ISO_CHAN_COUNT;
-	big_param.bis_bitfield = BIT(1); /* BIS 1 selected */
+	big_param.bis_bitfield = BT_ISO_BIS_INDEX_BIT(1); /* BIS 1 selected */
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;
@@ -1124,7 +1124,7 @@ static void test_iso_recv_vs_dp_main(void)
 	bis_iso_qos.rx = &iso_rx_qos;
 	big_param.bis_channels = bis_channels;
 	big_param.num_bis = BIS_ISO_CHAN_COUNT;
-	big_param.bis_bitfield = BIT(1); /* BIS 1 selected */
+	big_param.bis_bitfield = BT_ISO_BIS_INDEX_BIT(1); /* BIS 1 selected */
 	big_param.mse = 1;
 	big_param.sync_timeout = 100; /* 1000 ms */
 	big_param.encryption = false;

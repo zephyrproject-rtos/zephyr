@@ -327,11 +327,6 @@ config HAS_MCUX_OS_TIMER
 	help
 	  Set if the OS timer is used as a kernel timer on the SoC.
 
-config HAS_MCUX_ACMP
-	bool
-	help
-	  Set if the ACMP module is present on the SoC.
-
 config HAS_MCUX_PWT
 	bool
 	help

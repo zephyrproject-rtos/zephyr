@@ -10,4 +10,4 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - nrf52840dk/nrf52840
-      - adafruit_feather/nrf52840
+      - adafruit_feather_nrf52840_sense

@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/util.h>
 
 #define NAME_LEN 30
@@ -44,6 +45,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 	err = bt_le_per_adv_sync_subevent(sync, &params);
 	if (err) {
 		printk("Failed to set subevents to sync to (err %d)\n", err);
+	} else {
+		printk("Changed sync to subevent %d\n", subevents[0]);
 	}
 
 	k_sem_give(&sem_per_sync);
@@ -156,6 +159,8 @@ static ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *att
 		err = bt_le_per_adv_sync_subevent(default_sync, &params);
 		if (err) {
 			printk("Failed to set subevents to sync to (err %d)\n", err);
+		} else {
+			printk("Changed sync to subevent %d\n", subevents[0]);
 		}
 	} else {
 		printk("Not synced yet\n");
@@ -171,7 +176,7 @@ BT_GATT_SERVICE_DEFINE(pawr_svc, BT_GATT_PRIMARY_SERVICE(&pawr_svc_uuid.uuid),
 
 void connected(struct bt_conn *conn, uint8_t err)
 {
-	printk("Connected (err 0x%02X)\n", err);
+	printk("Connected, err 0x%02X %s\n", err, bt_hci_err_to_str(err));
 
 	if (err) {
 		default_conn = NULL;
@@ -187,7 +192,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
 
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 }
 
 BT_CONN_CB_DEFINE(conn_cb) = {
@@ -195,7 +200,7 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
-static const struct bt_data sd[] = {
+static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
@@ -229,7 +234,7 @@ int main(void)
 		err = bt_le_adv_start(
 			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
 					BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-			NULL, 0, sd, ARRAY_SIZE(sd));
+			ad, ARRAY_SIZE(ad), NULL, 0);
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 

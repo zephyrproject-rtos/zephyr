@@ -170,7 +170,7 @@ static void disconnected(struct bt_conn *disconn, uint8_t reason)
 		ble_conn = NULL;
 	}
 
-	LOG_INF("Disconnected (reason %u)", reason);
+	LOG_INF("Disconnected, reason %u %s", reason, bt_hci_err_to_str(reason));
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

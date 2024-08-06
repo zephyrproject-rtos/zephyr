@@ -651,6 +651,10 @@ static void usbfsotg_isr_handler(const struct device *dev)
 		udc_submit_event(dev, UDC_EVT_RESET, 0);
 	}
 
+	if (istatus == USB_ISTAT_SOFTOK_MASK) {
+		udc_submit_event(dev, UDC_EVT_SOF, 0);
+	}
+
 	if (istatus == USB_ISTAT_ERROR_MASK) {
 		LOG_DBG("ERROR IRQ 0x%02x", base->ERRSTAT);
 		udc_submit_event(dev, UDC_EVT_ERROR, base->ERRSTAT);

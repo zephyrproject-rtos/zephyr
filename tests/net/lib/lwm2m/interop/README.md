@@ -162,34 +162,36 @@ Tests are written from test spec;
 |LightweightM2M-1.1-int-226 - Write (Partial Update) on Object Instance |:white_check_mark:| |
 |LightweightM2M-1.1-int-227 - Write (replace) on Resource               |:white_check_mark:| |
 |LightweightM2M-1.1-int-228 - Write on Resource Instance                |:white_check_mark:|[~~#64011~~](https://github.com/zephyrproject-rtos/zephyr/issues/64011) |
-|LightweightM2M-1.1-int-229 - Read-Composite Operation|:white_check_mark:|[~~#64012~~](https://github.com/zephyrproject-rtos/zephyr/issues/64012) [~~#64189~~](https://github.com/zephyrproject-rtos/zephyr/issues/64189) |
-|LightweightM2M-1.1-int-230 - Write-Composite Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-229 - Read-Composite Operation                  |:white_check_mark:|[~~#64012~~](https://github.com/zephyrproject-rtos/zephyr/issues/64012) [~~#64189~~](https://github.com/zephyrproject-rtos/zephyr/issues/64189) |
+|LightweightM2M-1.1-int-230 - Write-Composite Operation                 |:white_check_mark:| |
 |LightweightM2M-1.1-int-231 - Querying basic information in SenML JSON format|:white_check_mark:| |
 |LightweightM2M-1.1-int-232 - Querying basic information in SenML CBOR format|:white_check_mark:| |
 |LightweightM2M-1.1-int-233 - Setting basic information in SenML CBOR format|:white_check_mark:| |
 |LightweightM2M-1.1-int-234 - Setting basic information in SenML JSON format|:white_check_mark:| |
-|LightweightM2M-1.1-int-235 - Read-Composite Operation on root path|:white_check_mark:| |
+|LightweightM2M-1.1-int-235 - Read-Composite Operation on root path     |:white_check_mark:| |
 |LightweightM2M-1.1-int-236 - Read-Composite - Partial Presence|:white_check_mark:| |
 |LightweightM2M-1.1-int-237 - Read on Object without specifying Content-Type|:white_check_mark:| |
-|LightweightM2M-1.1-int-241 - Executable Resource: Rebooting the device|:white_check_mark:| |
-|LightweightM2M-1.1-int-256 - Write Operation Failure|:white_check_mark:| |
-|LightweightM2M-1.1-int-257 - Write-Composite Operation|:white_check_mark:| |
-|LightweightM2M-1.1-int-260 - Discover Command|:white_check_mark:| |
+|LightweightM2M-1.1-int-241 - Executable Resource: Rebooting the device |:white_check_mark:| |
+|LightweightM2M-1.1-int-256 - Write Operation Failure                   |:white_check_mark:| |
+|LightweightM2M-1.1-int-257 - Write-Composite Operation                 |:white_check_mark:| |
+|LightweightM2M-1.1-int-260 - Discover Command                          |:white_check_mark:| |
 |LightweightM2M-1.1-int-261 - Write-Attribute Operation on a multiple resource|:white_check_mark:| |
-|LightweightM2M-1.1-int-280 - Successful Read-Composite Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-280 - Successful Read-Composite Operation       |:white_check_mark:| |
 |LightweightM2M-1.1-int-281 - Partially Successful Read-Composite Operation|:white_check_mark:| |
 |LightweightM2M-1.1-int-301 - Observation and Notification of parameter values|:white_check_mark:| |
-|LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation|:white_check_mark:| |
+|LightweightM2M-1.1-int-302 - Cancel Observations using Reset Operation |:white_check_mark:| |
 |LightweightM2M-1.1-int-303 - Cancel observations using Observe with Cancel parameter|:white_check_mark:||
-|LightweightM2M-1.1-int-304 - Observe-Composite Operation|:white_check_mark:| |
-|LightweightM2M-1.1-int-305 - Cancel Observation-Composite Operation|:white_check_mark:| |
-|LightweightM2M-1.1-int-306 – Send Operation|:white_check_mark:|[~~#64290~~](https://github.com/zephyrproject-rtos/zephyr/issues/64290)|
-|LightweightM2M-1.1-int-307 – Muting Send|:white_check_mark:| |
+|LightweightM2M-1.1-int-304 - Observe-Composite Operation               |:white_check_mark:| |
+|LightweightM2M-1.1-int-305 - Cancel Observation-Composite Operation    |:white_check_mark:| |
+|LightweightM2M-1.1-int-306 – Send Operation                            |:white_check_mark:|[~~#64290~~](https://github.com/zephyrproject-rtos/zephyr/issues/64290)|
+|LightweightM2M-1.1-int-307 – Muting Send                               |:white_check_mark:| |
 |LightweightM2M-1.1-int-308 - Observe-Composite and Creating Object Instance|:white_check_mark:|[~~#64634~~](https://github.com/zephyrproject-rtos/zephyr/issues/64634)|
 |LightweightM2M-1.1-int-309 - Observe-Composite and Deleting Object Instance|:white_check_mark:|[~~#64634~~](https://github.com/zephyrproject-rtos/zephyr/issues/64634)|
 |LightweightM2M-1.1-int-310 - Observe-Composite and modification of parameter values|:white_check_mark:| |
-|LightweightM2M-1.1-int-311 - Send command|:white_check_mark:| |
+|LightweightM2M-1.1-int-311 - Send command                              |:white_check_mark:| |
 |LightweightM2M-1.1-int-401 - UDP Channel Security - PSK Mode           |:white_check_mark:| |
+|LightweightM2M-1.1-int-1630 - Create Portfolio Object Instance         |:white_check_mark:| |
+|LightweightM2M-1.1-int-1635 - Delete Portfolio Object Instance         |:white_check_mark:| |
 
 * :white_check_mark: Working OK.
 * :large_orange_diamond: Feature or operation not implemented.

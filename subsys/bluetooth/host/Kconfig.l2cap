@@ -9,14 +9,14 @@ menu "L2CAP Options"
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
 	default BT_BUF_ACL_TX_COUNT
-	range 2 255
+	range 2 $(UINT8_MAX)
 	help
 	  Number of buffers available for outgoing L2CAP packets.
 
 config BT_L2CAP_TX_FRAG_COUNT
 	int "Number of L2CAP TX fragment buffers"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of buffers available for fragments of TX buffers. Warning:
 	  setting this to 0 means that the application must ensure that

@@ -15,6 +15,7 @@ extern "C" {
 
 /**
  * @defgroup symtab_apis Symbol Table API
+ * @ingroup os_services
  * @{
  */
 

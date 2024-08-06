@@ -53,6 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_HELP_RESUME "LwM2M engine thread resume"
 #define LWM2M_HELP_LOCK "Lock the LwM2M registry"
 #define LWM2M_HELP_UNLOCK "Unlock the LwM2M registry"
+#define LWM2M_HELP_OBSERV "List observations"
 #define LWM2M_HELP_CACHE "cache PATH NUM\nEnable data cache for resource\n" \
 	"PATH is LwM2M path\n" \
 	"NUM how many elements to cache\n" \
@@ -625,6 +626,92 @@ static int cmd_cache(const struct shell *sh, size_t argc, char **argv)
 #endif
 }
 
+static void shell_print_attr(const struct shell *sh, void *ref)
+{
+	struct lwm2m_attr *attr = NULL;
+	bool found;
+
+	for (uint8_t type = 0; type < NR_LWM2M_ATTR; type++) {
+		found = false;
+		while ((attr = lwm2m_engine_get_next_attr(ref, attr)) != NULL) {
+			if (attr->type == type) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			switch (type) {
+			case LWM2M_ATTR_PMIN:
+				/* fall through */
+			case LWM2M_ATTR_PMAX:
+				shell_fprintf(sh, SHELL_NORMAL, "%10u", attr->int_val);
+				break;
+			case LWM2M_ATTR_GT:
+				/* fall through */
+			case LWM2M_ATTR_LT:
+				/* fall through */
+			case LWM2M_ATTR_STEP:
+				shell_fprintf(sh, SHELL_NORMAL, "%10f", attr->float_val);
+				break;
+			}
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL, "%10s", "");
+		}
+	}
+}
+
+static int cmd_observations(const struct shell *sh, size_t argc, char **argv)
+{
+	char buf[LWM2M_MAX_PATH_STR_SIZE];
+	struct lwm2m_obj_path_list *o_p;
+	struct observe_node *obs;
+	uint32_t i = 0, path_i;
+	struct lwm2m_ctx *ctx;
+	void *ref;
+	int ret;
+
+	ctx = lwm2m_rd_client_ctx();
+	if (ctx == NULL) {
+		shell_error(sh, "no lwm2m context yet\n");
+		return -ENOEXEC;
+	}
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_fprintf(sh, SHELL_INFO, " # %10s %18s", "composite", "path");
+	for (i = 0; i < NR_LWM2M_ATTR; i++) {
+		shell_fprintf(sh, SHELL_INFO, "%10s", lwm2m_attr_to_str(i));
+	}
+	shell_print(sh, "");
+
+	lwm2m_registry_lock();
+	i = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
+		shell_fprintf(sh, SHELL_NORMAL, "%2u %10c ", i, obs->composite ? 'y' : 'n');
+		path_i = 0;
+		SYS_SLIST_FOR_EACH_CONTAINER(&obs->path_list, o_p, node) {
+			if (path_i > 0) {
+				shell_fprintf(sh, SHELL_NORMAL, "%14s", "");
+			}
+			shell_fprintf(sh, SHELL_NORMAL, "%-18s",
+				      lwm2m_path_log_buf(buf, &o_p->path));
+			ret = lwm2m_get_path_reference_ptr(NULL, &o_p->path, &ref);
+			if (ret < 0) {
+				continue;
+			}
+			shell_print_attr(sh, ref);
+			path_i++;
+			shell_print(sh, "");
+		}
+		i++;
+
+	}
+	lwm2m_registry_unlock();
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_lwm2m,
 	SHELL_COND_CMD_ARG(CONFIG_LWM2M_VERSION_1_1, send, NULL,
@@ -642,7 +729,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(resume, NULL, LWM2M_HELP_RESUME, cmd_resume, 1, 0),
 	SHELL_CMD_ARG(lock, NULL, LWM2M_HELP_LOCK, cmd_lock, 1, 0),
 	SHELL_CMD_ARG(unlock, NULL, LWM2M_HELP_UNLOCK, cmd_unlock, 1, 0),
-
+	SHELL_CMD_ARG(obs, NULL, LWM2M_HELP_OBSERV, cmd_observations, 1, 0),
 	SHELL_SUBCMD_SET_END);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_LWM2M_SHELL, lwm2m, &sub_lwm2m,
 			    LWM2M_HELP_CMD, NULL, 1, 0);

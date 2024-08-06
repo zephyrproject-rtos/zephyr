@@ -269,7 +269,9 @@ static void modem_ubx_process_handler(struct k_work *item)
 		return;
 	}
 
-	for (int i = 0; i < ret; i++) {
+	const size_t length = ret;
+
+	for (int i = 0; i < length; i++) {
 		ret = modem_ubx_process_received_byte(ubx, ubx->receive_buf[i]);
 		if (ret == 0) { /* Frame matched successfully. Terminate the script. */
 			break;

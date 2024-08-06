@@ -12,6 +12,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 
 enum {
@@ -61,7 +62,7 @@ static int process_profile_connection(struct bt_conn *conn)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %d)\n", err);
+		printk("Connection failed, err %d %s\n", err, bt_hci_err_to_str(err));
 		return;
 	}
 

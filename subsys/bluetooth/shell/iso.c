@@ -813,7 +813,7 @@ static int cmd_big_sync(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (bis_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
+	if (bis_bitfield == 0U || bis_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
 		shell_error(sh, "Invalid bis_bitfield: %lu", bis_bitfield);
 
 		return -ENOEXEC;

@@ -40,7 +40,7 @@ config BT_BAP_UNICAST_CLIENT
 config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 	int "Codec Specific Configuration Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -48,7 +48,7 @@ config BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE
 	int "Codec Specific Configuration Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Configuration metadata.
 
@@ -65,7 +65,7 @@ config BT_BAP_BASS_MAX_SUBGROUPS
 config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 	int "Codec Capabilities Data Size"
 	default 19
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities data.
 	  The default value 19 matches the required fields for the LC3 codec.
@@ -73,7 +73,7 @@ config BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE
 config BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE
 	int "Codec Capabilities Metadata Size"
 	default 4
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Number of octets to support for Codec Specific Capabilities metadata.
 
@@ -101,7 +101,7 @@ config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 	int "Basic Audio Profile ASE Sink count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Sink
 	  instances for Basic Audio Profile on a per connection basis.
@@ -109,7 +109,7 @@ config BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT
 config BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT
 	int "Basic Audio Profile ASE Source count"
 	default 2
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  This option enables caching a number of Audio Stream Endpoint Source
 	  instances for Basic Audio Profile on a per connection basis.
@@ -255,7 +255,7 @@ if BT_BAP_BROADCAST_ASSISTANT
 config BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT
 	int "Broadcast Assistant Max Receive State Count"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the number of maximum receive stat characteristics that will be
 	  discovered and ready to use. Each characteristic may hold information

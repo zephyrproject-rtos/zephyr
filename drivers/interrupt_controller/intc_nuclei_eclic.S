@@ -36,7 +36,8 @@ GTEXT(sys_trace_isr_exit)
  * This function services and clears all pending interrupts for an ECLIC in non-vectored mode.
  */
 SECTION_FUNC(exception.other, __soc_handle_all_irqs)
-	mv t2, ra
+	addi sp, sp, -16
+	sw ra, 0(sp)
 
 	/* Read and clear mnxti to get highest current interrupt and enable interrupts. Will return
 	 * original interrupt if no others appear. */
@@ -74,6 +75,7 @@ irq_loop:
 	bnez a0, irq_loop
 
 irq_done:
-	mv ra, t2
+	lw ra, 0(sp)
+	addi sp, sp, 16
 	ret
 #endif

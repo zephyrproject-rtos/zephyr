@@ -206,10 +206,6 @@
 	};
 };
 
-&vbat {
-	status = "okay";
-};
-
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_ph14 &fdcan1_tx_ph13>;
 	pinctrl-names = "default";

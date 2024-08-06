@@ -1,0 +1,90 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM9DS1 9-axis IMU (Inertial Measurement Unit) sensor
+    accessed through I2C bus.
+
+    This binding describe only the inertial part : accelerometer and gyroscope.
+
+    When setting the accel-range, gyro-range, imu-odr properties in
+    a .dts or .dtsi file you may include lsm9ds1.h and use the macros
+    defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lsm9ds1.h>
+
+    lsm9ds1: lsm9ds1@0 {
+      ...
+
+      accel-range = <LSM9DS1_DT_FS_4G>;
+      imu-odr   =  <LSM9DS1_IMU_14Hz9>;
+      gyro-range = <LSM9DS1_DT_FS_2000DPS>;
+    };
+
+compatible: "st,lsm9ds1"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  accel-range:
+    type: int
+    default: 0
+    description: |
+      Range of the accelerometer. Unit : g. Default is power-up configuration.
+
+      - 0 # LSM9DS1_DT_FS_2G  (0.061 mg/LSB)
+      - 1 # LSM9DS1_DT_FS_16G (0.732 mg/LSB)
+      - 2 # LSM9DS1_DT_FS_4G  (0.122 mg/LSB)
+      - 3 # LSM9DS1_DT_FS_8G  (0.244 mg/LSB)
+
+    enum: [0, 1, 2, 3]
+
+  gyro-range:
+    type: int
+    default: 0
+    description: |
+      Range in dps. Default is power-up configuration.
+
+      - 0 # LSM9DS1_DT_FS_245DPS  (8.75  mdps/LSB)
+      - 1 # LSM9DS1_DT_FS_500DPS  (17.50 mdps/LSB)
+      - 3 # LSM9DS1_DT_FS_2000DPS (70    mdps/LSB)
+
+    enum: [0, 1, 3]
+
+  imu-odr:
+    type: int
+    default: 0
+    description: |
+      Specify the default accelerometer and gyroscope output data rate expressed in samples
+      per second (Hz).
+      Default is power-up configuration.
+
+      - 0x00 # LSM9DS1_IMU_OFF
+      - 0x10 # LSM9DS1_GY_OFF_XL_10Hz
+      - 0x20 # LSM9DS1_GY_OFF_XL_50Hz
+      - 0x30 # LSM9DS1_GY_OFF_XL_119Hz
+      - 0x40 # LSM9DS1_GY_OFF_XL_238Hz
+      - 0x50 # LSM9DS1_GY_OFF_XL_476Hz
+      - 0x60 # LSM9DS1_GY_OFF_XL_952Hz
+      - 0x01 # LSM9DS1_XL_OFF_GY_14Hz9
+      - 0x02 # LSM9DS1_XL_OFF_GY_59Hz5
+      - 0x03 # LSM9DS1_XL_OFF_GY_119Hz
+      - 0x04 # LSM9DS1_XL_OFF_GY_238Hz
+      - 0x05 # LSM9DS1_XL_OFF_GY_476Hz
+      - 0x06 # LSM9DS1_XL_OFF_GY_952Hz
+      - 0x11 # LSM9DS1_IMU_14Hz9
+      - 0x22 # LSM9DS1_IMU_59Hz5
+      - 0x33 # LSM9DS1_IMU_119Hz
+      - 0x44 # LSM9DS1_IMU_238Hz
+      - 0x55 # LSM9DS1_IMU_476Hz
+      - 0x66 # LSM9DS1_IMU_952Hz
+      - 0x81 # LSM9DS1_XL_OFF_GY_14Hz9_LP
+      - 0x82 # LSM9DS1_XL_OFF_GY_59Hz5_LP
+      - 0x83 # LSM9DS1_XL_OFF_GY_119Hz_LP
+      - 0x91 # LSM9DS1_IMU_14Hz9_LP
+      - 0xA2 # LSM9DS1_IMU_59Hz5_LP
+      - 0xB3 # LSM9DS1_IMU_119Hz_LP
+
+    enum: [0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x11,
+           0x22, 0x33, 0x44, 0x55, 0x66, 0x81, 0x82, 0x83, 0x91, 0xA2, 0xB3]

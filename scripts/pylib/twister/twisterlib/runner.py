@@ -660,15 +660,18 @@ class ProjectBuilder(FilterBuilder):
                     self.instance.add_missing_case_status("blocked", self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
-                    logger.debug(f"Determine test cases for test instance: {self.instance.name}")
-                    try:
-                        self.determine_testcases(results)
+                    if self.instance.testsuite.harness in ['ztest', 'test']:
+                        logger.debug(f"Determine test cases for test instance: {self.instance.name}")
+                        try:
+                            self.determine_testcases(results)
+                            pipeline.put({"op": "gather_metrics", "test": self.instance})
+                        except BuildError as e:
+                            logger.error(str(e))
+                            self.instance.status = "error"
+                            self.instance.reason = str(e)
+                            pipeline.put({"op": "report", "test": self.instance})
+                    else:
                         pipeline.put({"op": "gather_metrics", "test": self.instance})
-                    except BuildError as e:
-                        logger.error(str(e))
-                        self.instance.status = "error"
-                        self.instance.reason = str(e)
-                        pipeline.put({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
             ret = self.gather_metrics(self.instance)

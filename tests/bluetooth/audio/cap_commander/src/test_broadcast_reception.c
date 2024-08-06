@@ -92,7 +92,7 @@ static void test_start_param_init(void *f)
 	fixture->start_param.count = ARRAY_SIZE(fixture->start_member_params);
 
 	for (size_t i = 0; i < ARRAY_SIZE(fixture->start_subgroups); i++) {
-		fixture->start_subgroups[i].bis_sync = 1 << i;
+		fixture->start_subgroups[i].bis_sync = i;
 		fixture->start_subgroups[i].metadata_len = 0;
 	}
 

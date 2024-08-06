@@ -223,14 +223,14 @@ static void modem_backend_fake_before(void *f)
 
 static void modem_backend_fake_after(void *f)
 {
-	__ASSERT(modem_pipe_close(test_pipe) == 0, "Failed to close pipe");
+	__ASSERT(modem_pipe_close(test_pipe, K_SECONDS(10)) == 0, "Failed to close pipe");
 	modem_pipe_release(test_pipe);
 }
 
 /* Opening pipe shall raise events OPENED and TRANSMIT_IDLE */
 static void test_pipe_open(void)
 {
-	zassert_ok(modem_pipe_open(test_pipe), "Failed to open pipe");
+	zassert_ok(modem_pipe_open(test_pipe, K_SECONDS(10)), "Failed to open pipe");
 	zassert_true(test_backend.open_called, "open was not called");
 	zassert_equal(atomic_get(&test_state),
 		      BIT(TEST_MODEM_PIPE_EVENT_OPENED_BIT) |
@@ -241,7 +241,7 @@ static void test_pipe_open(void)
 /* Re-opening pipe shall have no effect */
 static void test_pipe_reopen(void)
 {
-	zassert_ok(modem_pipe_open(test_pipe), "Failed to re-open pipe");
+	zassert_ok(modem_pipe_open(test_pipe, K_SECONDS(10)), "Failed to re-open pipe");
 	zassert_false(test_backend.open_called, "open was called");
 	zassert_equal(atomic_get(&test_state), 0,
 		      "Unexpected state %u", atomic_get(&test_state));
@@ -250,7 +250,7 @@ static void test_pipe_reopen(void)
 /* Closing pipe shall raise event CLOSED */
 static void test_pipe_close(void)
 {
-	zassert_ok(modem_pipe_close(test_pipe), "Failed to close pipe");
+	zassert_ok(modem_pipe_close(test_pipe, K_SECONDS(10)), "Failed to close pipe");
 	zassert_true(test_backend.close_called, "close was not called");
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_CLOSED_BIT),
 		      "Unexpected state %u", atomic_get(&test_state));
@@ -259,7 +259,7 @@ static void test_pipe_close(void)
 /* Re-closing pipe shall have no effect */
 static void test_pipe_reclose(void)
 {
-	zassert_ok(modem_pipe_close(test_pipe), "Failed to re-close pipe");
+	zassert_ok(modem_pipe_close(test_pipe, K_SECONDS(10)), "Failed to re-close pipe");
 	zassert_false(test_backend.close_called, "close was called");
 	zassert_equal(atomic_get(&test_state), 0,
 		      "Unexpected state %u", atomic_get(&test_state));

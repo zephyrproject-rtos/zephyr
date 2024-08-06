@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+wifi-max-tx-pwr-5g-low-mcs0 = <13>;
+wifi-max-tx-pwr-5g-low-mcs7 = <13>;
+wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
+wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
+wifi-max-tx-pwr-5g-high-mcs0 = <12>;
+wifi-max-tx-pwr-5g-high-mcs7 = <12>;

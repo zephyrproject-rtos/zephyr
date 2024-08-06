@@ -544,7 +544,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	struct sockaddr_in *recv_addr =
 			(struct sockaddr_in *) &sock->context->remote;
 
-	recv_addr->sin_port = ntohs(port);
+	recv_addr->sin_port = htons(port);
 	recv_addr->sin_family = AF_INET;
 
 	/* IP addr comes within quotation marks, which is disliked by

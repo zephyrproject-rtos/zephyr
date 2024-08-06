@@ -25,6 +25,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
@@ -731,11 +732,12 @@ static ssize_t read_status_flags(struct bt_conn *conn,
 				 void *buf, uint16_t len, uint16_t offset)
 {
 	const struct service_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const uint16_t status_flags_le = sys_cpu_to_le16(inst->optional_opcodes);
 
 	LOG_DBG("Index %u: status_flags 0x%04x", inst_index(inst), inst->status_flags);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->status_flags, sizeof(inst->status_flags));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &status_flags_le,
+				 sizeof(status_flags_le));
 }
 
 static void status_flags_cfg_changed(const struct bt_gatt_attr *attr,
@@ -1348,11 +1350,12 @@ static ssize_t read_optional_opcodes(struct bt_conn *conn,
 				     void *buf, uint16_t len, uint16_t offset)
 {
 	const struct service_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const uint16_t optional_opcodes_le = sys_cpu_to_le16(inst->optional_opcodes);
 
 	LOG_DBG("Index %u: Supported opcodes 0x%02x", inst_index(inst), inst->optional_opcodes);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &inst->optional_opcodes, sizeof(inst->optional_opcodes));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &optional_opcodes_le,
+				 sizeof(optional_opcodes_le));
 }
 
 static void terminate_reason_cfg_changed(const struct bt_gatt_attr *attr,

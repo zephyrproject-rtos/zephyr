@@ -638,7 +638,7 @@ config TIMESLICING
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
 	default 0
-	range 0 2147483647
+	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help
 	  This option specifies the maximum amount of time a thread can execute

@@ -16,6 +16,8 @@
 /**
  * @brief LLDP definitions and helpers
  * @defgroup lldp Link Layer Discovery Protocol definitions and helpers
+ * @since 1.13
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

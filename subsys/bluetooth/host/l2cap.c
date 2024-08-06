@@ -938,14 +938,16 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
+	}
 
-		if (L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-			LOG_DBG("adding `sdu_sent` callback");
-			/* No user callbacks for SDUs */
-			make_closure(pdu->user_data,
-				     l2cap_chan_sdu_sent,
-				     UINT_TO_POINTER(lechan->tx.cid));
-		}
+	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
+		bool sdu_end = last_frag && last_seg;
+
+		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
+		/* No user callbacks for SDUs */
+		make_closure(pdu->user_data,
+			     sdu_end ? l2cap_chan_sdu_sent : NULL,
+			     sdu_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
 	}
 
 	if (last_frag) {
@@ -3068,6 +3070,20 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	return 0;
 }
 
+__maybe_unused static bool user_data_not_empty(const struct net_buf *buf)
+{
+	size_t ud_len = sizeof(struct closure);
+	const uint8_t *ud = net_buf_user_data(buf);
+
+	for (size_t i = 0; i < ud_len; i++) {
+		if (ud[i] != 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_buf *buf)
 {
 	uint16_t sdu_len = buf->len;
@@ -3098,6 +3114,11 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		 * when allocating buffers intended for bt_l2cap_chan_send().
 		 */
 		LOG_DBG("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
+	CHECKIF(user_data_not_empty(buf)) {
+		LOG_DBG("Please clear user_data first");
 		return -EINVAL;
 	}
 

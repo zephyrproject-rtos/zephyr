@@ -314,6 +314,40 @@ struct dirent *readdir(DIR *dirp)
 	return &pdirent;
 }
 
+#ifdef CONFIG_POSIX_THREAD_SAFE_FUNCTIONS
+int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+{
+	struct dirent *dir;
+
+	errno = 0;
+
+	dir = readdir(dirp);
+	if (dir == NULL) {
+		int error = errno;
+
+		if (error != 0) {
+			if (result != NULL) {
+				*result = NULL;
+			}
+
+			return 0;
+		} else {
+			return error;
+		}
+	}
+
+	if (entry != NULL) {
+		memcpy(entry, dir, sizeof(struct dirent));
+	}
+
+	if (result != NULL) {
+		*result = entry;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_POSIX_THREAD_SAFE_FUNCTIONS */
+
 /**
  * @brief Rename a file.
  *

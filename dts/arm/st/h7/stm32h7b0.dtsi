@@ -19,6 +19,7 @@
 			compatible = "st,stm32-cryp";
 			reg = <0x48021000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
+			resets = <&rctl STM32_RESET(AHB2, 4U)>;
 			interrupts = <79 0>;
 			interrupt-names = "cryp";
 			status = "disabled";

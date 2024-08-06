@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NRF7002EK
+	def_bool $(shields_list_contains,nrf7002ek)
+
+config SHIELD_NRF7002EK_NRF7001
+	def_bool $(shields_list_contains,nrf7002ek_nrf7001)
+
+config SHIELD_NRF7002EK_NRF7000
+	def_bool $(shields_list_contains,nrf7002ek_nrf7000)

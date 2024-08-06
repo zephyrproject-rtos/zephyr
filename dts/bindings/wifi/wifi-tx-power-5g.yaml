@@ -1,0 +1,39 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This is a representation of the Wi-Fi transmit power ceilings
+  i.e., maximum transmit power allowed for 5GHz band. Based on the
+  RF performance of the device, the transmit power can be limited
+  for different data rates and sub-bands to get the best performance.
+
+  low sub-band: Channels 36-64
+  mid sub-band: Channels 96-132
+  high sub-band: Channels 136-177
+
+  Resolution is 1 dBm
+
+properties:
+  wifi-max-tx-pwr-5g-low-mcs0:
+    required: true
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS0 low sub-band
+  wifi-max-tx-pwr-5g-low-mcs7:
+    required: true
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS7 low sub-band
+  wifi-max-tx-pwr-5g-mid-mcs0:
+    required: true
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS0 mid sub-band
+  wifi-max-tx-pwr-5g-mid-mcs7:
+    required: true
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS7 mid sub-band
+  wifi-max-tx-pwr-5g-high-mcs0:
+    required: true
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS0 high sub-band
+  wifi-max-tx-pwr-5g-high-mcs7:
+    type: int
+    description: Maximum transmit power allowed in 5GHz band MCS7 high sub-band

@@ -194,30 +194,32 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 }
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, uint8_t length)
+int ieee802514_beacon_header_length(uint8_t *buf, uint8_t length)
 {
 	struct ieee802154_beacon *beacon = (struct ieee802154_beacon *)buf;
 	struct ieee802154_pas_spec *pas;
 	uint8_t len = IEEE802154_BEACON_SF_SIZE + IEEE802154_BEACON_GTS_SPEC_SIZE;
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
+	/* see section 7.3.1.5 on how to calculate GTS length */
 	if (beacon->gts.desc_count) {
 		len += IEEE802154_BEACON_GTS_DIR_SIZE +
 		       beacon->gts.desc_count * IEEE802154_BEACON_GTS_SIZE;
 	}
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
+	/* see section 7.3.1.6 on how to calculate pending address length */
 	pas = (struct ieee802154_pas_spec *)buf + len;
 
 	len += IEEE802154_BEACON_PAS_SPEC_SIZE;
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
 	if (pas->nb_sap || pas->nb_eap) {
@@ -226,12 +228,10 @@ static inline bool validate_beacon(struct ieee802154_mpdu *mpdu, uint8_t *buf, u
 	}
 
 	if (length < len) {
-		return false;
+		return -EINVAL;
 	}
 
-	mpdu->beacon = beacon;
-
-	return true;
+	return len;
 }
 
 static inline bool validate_mac_command_cfi_to_mhr(struct ieee802154_mhr *mhr,
@@ -376,7 +376,7 @@ static inline bool validate_payload_and_mfr(struct ieee802154_mpdu *mpdu, uint8_
 	NET_DBG("Header size: %u, payload size %u", (uint32_t)(p_buf - buf), length);
 
 	if (type == IEEE802154_FRAME_TYPE_BEACON) {
-		if (!validate_beacon(mpdu, p_buf, length)) {
+		if (ieee802514_beacon_header_length(p_buf, length) < 0) {
 			return false;
 		}
 	} else if (type == IEEE802154_FRAME_TYPE_DATA) {

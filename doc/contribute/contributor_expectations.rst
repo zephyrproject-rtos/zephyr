@@ -93,6 +93,8 @@ PR Requirements
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
+- The PR description must include a summary of the changes and their rationales.
+
 - All files in the PR must comply with :ref:`Licensing
   Requirements<licensing_requirements>`.
 

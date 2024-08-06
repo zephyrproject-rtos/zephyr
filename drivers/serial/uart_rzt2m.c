@@ -439,7 +439,7 @@ static void uart_rzt2m_isr(const struct device *dev)
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config_func = uart##n##_rzt2m_irq_config,                                     \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                  \
-	DEVICE_DT_INST_DEFINE(n, &rzt2m_uart_init, NULL, &rzt2m_uart_##n##data,                    \
+	DEVICE_DT_INST_DEFINE(n, rzt2m_uart_init, NULL, &rzt2m_uart_##n##data,                     \
 			      &rzt2m_uart_##n##_config, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &rzt2m_uart_api);
 

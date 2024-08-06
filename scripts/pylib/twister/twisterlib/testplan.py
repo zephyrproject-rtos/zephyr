@@ -542,12 +542,19 @@ class TestPlan:
                 try:
                     parsed_data = TwisterConfigParser(suite_yaml_path, self.suite_schema)
                     parsed_data.load()
-                    subcases, ztest_suite_names = scan_testsuite_path(suite_path)
+                    subcases = None
+                    ztest_suite_names = None
 
                     for name in parsed_data.scenarios.keys():
                         suite_dict = parsed_data.get_scenario(name)
                         suite = TestSuite(root, suite_path, name, data=suite_dict, detailed_test_id=self.options.detailed_test_id)
-                        suite.add_subcases(suite_dict, subcases, ztest_suite_names)
+                        if suite.harness in ['ztest', 'test']:
+                            if subcases is None:
+                                # scan it only once per testsuite
+                                subcases, ztest_suite_names = scan_testsuite_path(suite_path)
+                            suite.add_subcases(suite_dict, subcases, ztest_suite_names)
+                        else:
+                            suite.add_subcases(suite_dict)
                         if testsuite_filter:
                             scenario = os.path.basename(suite.name)
                             if suite.name and (suite.name in testsuite_filter or scenario in testsuite_filter):

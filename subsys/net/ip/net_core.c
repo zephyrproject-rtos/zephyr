@@ -255,12 +255,13 @@ static inline int check_ip(struct net_pkt *pkt)
 		}
 
 		/* If the destination address is our own, then route it
-		 * back to us.
+		 * back to us (if it is not already forwarded).
 		 */
-		if (net_ipv6_is_addr_loopback(
+		if ((net_ipv6_is_addr_loopback(
 				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst) ||
 		    net_ipv6_is_my_addr(
-				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) {
+				(struct in6_addr *)NET_IPV6_HDR(pkt)->dst)) &&
+		    !net_pkt_forwarding(pkt)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side

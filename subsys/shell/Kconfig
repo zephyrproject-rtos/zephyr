@@ -101,7 +101,7 @@ config SHELL_DEFAULT_TERMINAL_HEIGHT
 
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
-	range 3 255
+	range 3 $(UINT8_MAX)
 	default 20
 	help
 	  Maximum number of arguments that can build a command.

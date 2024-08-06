@@ -500,7 +500,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
@@ -565,7 +565,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 };
 
 DEVICE_DT_INST_DEFINE(1,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_1,
 		    &uart_cmsdk_apb_dev_cfg_1, PRE_KERNEL_1,
@@ -630,7 +630,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 };
 
 DEVICE_DT_INST_DEFINE(2,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_2,
 		    &uart_cmsdk_apb_dev_cfg_2, PRE_KERNEL_1,
@@ -695,7 +695,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 };
 
 DEVICE_DT_INST_DEFINE(3,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_3,
 		    &uart_cmsdk_apb_dev_cfg_3, PRE_KERNEL_1,
@@ -760,7 +760,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 };
 
 DEVICE_DT_INST_DEFINE(4,
-		    &uart_cmsdk_apb_init,
+		    uart_cmsdk_apb_init,
 		    NULL,
 		    &uart_cmsdk_apb_dev_data_4,
 		    &uart_cmsdk_apb_dev_cfg_4, PRE_KERNEL_1,

@@ -128,6 +128,20 @@
 			};
 		};
 
+		dma: dma@60080000 {
+			compatible = "espressif,esp32-gdma";
+			reg = <0x60080000 DT_SIZE_K(4)>;
+			#dma-cells = <1>;
+			interrupts = <DMA_IN_CH0_INTR_SOURCE DMA_OUT_CH0_INTR_SOURCE
+				DMA_IN_CH1_INTR_SOURCE DMA_OUT_CH1_INTR_SOURCE
+				DMA_IN_CH2_INTR_SOURCE DMA_OUT_CH2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			clocks = <&rtc ESP32_GDMA_MODULE>;
+			dma-channels = <6>;
+			dma-buf-addr-alignment = <4>;
+			status = "disabled";
+		};
+
 		gpio0: gpio@60091000 {
 			compatible = "espressif,esp32-gpio";
 			gpio-controller;

@@ -216,7 +216,7 @@ config NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH
 config NET_SOCKETS_DTLS_SENDMSG_BUF_SIZE
 	int "Intermediate buffer size for DTLS sendmsg()"
 	depends on NET_SOCKETS_ENABLE_DTLS
-	range 0 65535
+	range 0 $(UINT16_MAX)
 	default 0
 	help
 	  Size of the intermediate buffer for DTLS sendmsg() function. The
@@ -378,16 +378,28 @@ config NET_SOCKETPAIR_STATIC
 
 config NET_SOCKETPAIR_HEAP
 	bool "Use heap for allocating socketpairs"
-	depends on HEAP_MEM_POOL_SIZE != 0
 
 endchoice
 
 if NET_SOCKETPAIR_STATIC
+
 config NET_SOCKETPAIR_MAX
 	int "How many socketpairs to pre-allocate"
+	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 1
-endif
-endif
+
+endif # NET_SOCKETPAIR_STATIC
+
+if NET_SOCKETPAIR_HEAP
+
+config HEAP_MEM_POOL_ADD_SIZE_SOCKETPAIR
+	int
+	default 32000 if WIFI_NM_WPA_SUPPLICANT
+	default 256
+
+endif # NET_SOCKETPAIR_HEAP
+
+endif # NET_SOCKETPAIR
 
 config NET_SOCKETS_NET_MGMT
 	bool "Network management socket support [EXPERIMENTAL]"

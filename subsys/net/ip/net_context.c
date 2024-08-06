@@ -105,6 +105,10 @@ bool net_context_is_reuseport_set(struct net_context *context)
 bool net_context_is_v6only_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	if (context == NULL) {
+		return false;
+	}
+
 	return context->options.ipv6_v6only;
 #else
 	ARG_UNUSED(context);

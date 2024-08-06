@@ -44,6 +44,8 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 
 #endif /* CONFIG_NEWLIB_LIBC */
 
+void __stdout_hook_install(int (*hook)(int));
+
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_COMMON_LIBC_MALLOC
 

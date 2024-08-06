@@ -3237,8 +3237,8 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_conn *conn = le_chan->chan.conn;
 	uint8_t err;
 
-	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x", le_chan, conn,
-		conn->handle, conn->sec_level, hci_status);
+	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x %s", le_chan, conn,
+		conn->handle, conn->sec_level, hci_status, bt_hci_err_to_str(hci_status));
 
 	if (!att_chan->att) {
 		LOG_DBG("Ignore encrypt change on detached ATT chan");

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,16 @@
 
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
+
+/**
+ * @brief Get version
+ *
+ * @param dev: Wi-Fi interface name to use
+ * @param params: version to fill
+ *
+ * @return: 0 for OK; <0 for ERROR
+ */
+int supplicant_get_version(const struct device *dev, struct wifi_version *params);
 
 /**
  * @brief Request a connection
@@ -165,4 +176,14 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 				 const uint8_t *mac_addr);
 
 #endif /* CONFIG_AP */
+
+/**
+ * @brief Dispatch DPP operations
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param dpp_params DPP action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */

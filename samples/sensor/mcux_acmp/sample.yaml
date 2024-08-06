@@ -6,6 +6,8 @@ common:
     - twr_ke18f
     - mimxrt1170_evk/mimxrt1176/cm7
     - mimxrt1170_evk/mimxrt1176/cm4
+    - frdm_ke17z
+    - frdm_ke17z512
   integration_platforms:
     - twr_ke18f
   tags:

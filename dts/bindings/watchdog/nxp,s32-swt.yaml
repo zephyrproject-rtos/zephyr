@@ -1,4 +1,4 @@
-# Copyright 2022-2023 NXP
+# Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Software Watchdog Timer (SWT)
@@ -16,3 +16,51 @@ properties:
 
   clocks:
     required: true
+
+  master-access-mask:
+    type: int
+    default: 0xff
+    description: |
+      Each bit set on this mask enables access to this watchdog for the platform
+      bus master corresponding to the bit. The platform bus master assignments
+      are chip-specific.
+      Defaults to access enabled for all masters (hardware reset value).
+
+  reset-on-invalid-access:
+    type: boolean
+    description: |
+      Set this flag to generate a reset on respond to an invalid access.
+
+  service-mode:
+    type: string
+    default: "fixed"
+    enum:
+      - "fixed"
+      - "keyed"
+    description: |
+      Watchdog service mode:
+        - fixed: writes a fixed sequence as defined by hardware.
+        - keyed: writes two pseudo-random key values based on an initial key.
+      Defaults to "fixed" (hardware reset value).
+
+  initial-key:
+    type: int
+    default: 0
+    description: |
+      Overrides the initial key when using keyed service mode.
+      Defaults to 0 (hardware reset value).
+
+  lock-mode:
+    type: string
+    default: "unlocked"
+    enum:
+      - "unlocked"
+      - "soft-lock"
+      - "hard-lock"
+    description: |
+      Lock mechanism that provides write access protection to the configuration
+      and service registers:
+        - unlocked: registers are always writable.
+        - soft: unlocked by writing an unlock sequence to the service register.
+        - hard: unlocked only after a reset.
+      Defaults to unlocked (hardware reset value).

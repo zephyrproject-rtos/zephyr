@@ -320,7 +320,7 @@ config SHELL_MQTT_RX_BUF_SIZE
 
 config SHELL_MQTT_TX_BUF_SIZE
 	int "TX buffer size"
-	range 32 65535
+	range 32 $(UINT16_MAX)
 	default 256
 	help
 	  Buffer size for the MQTT data transmission.

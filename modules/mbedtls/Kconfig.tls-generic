@@ -460,7 +460,7 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
-choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG

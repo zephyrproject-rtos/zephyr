@@ -61,7 +61,7 @@ to use the external 16 MiBi QSPI flash chip with a 2 MiBy FAT partition.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/mass
-   :board: adafruit_feather/nrf52840
+   :board: adafruit_feather_nrf52840_sense
    :gen-args: -DCONFIG_APP_MSC_STORAGE_FLASH_FATFS=y
    :goals: build
    :compact:

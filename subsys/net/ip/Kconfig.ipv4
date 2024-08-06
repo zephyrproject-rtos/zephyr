@@ -14,7 +14,7 @@ if NET_IPV4
 config NET_INITIAL_TTL
 	int "Initial IPv4 time to live value for unicast packets"
 	default 64
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv4
 	  packet will decrement the value and will drop the packet if the TTL
@@ -24,7 +24,7 @@ config NET_INITIAL_TTL
 config NET_INITIAL_MCAST_TTL
 	int "Initial IPv4 time to live value for multicast packets"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The value should normally be > 0. The device receiving the IPv4
 	  packet will decrement the value and will drop the packet if the TTL

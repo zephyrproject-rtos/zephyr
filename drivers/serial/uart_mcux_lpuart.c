@@ -1376,7 +1376,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	LPUART_MCUX_DECLARE_CFG(n)					\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &mcux_lpuart_init,				\
+			    mcux_lpuart_init,				\
 			    NULL,					\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\

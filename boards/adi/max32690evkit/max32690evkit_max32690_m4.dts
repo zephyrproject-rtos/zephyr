@@ -87,3 +87,13 @@
 	parity = "none";
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
+	pinctrl-names = "default";
+};

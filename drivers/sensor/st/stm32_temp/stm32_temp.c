@@ -182,6 +182,23 @@ static int stm32_temp_init(const struct device *dev)
 	return 0;
 }
 
+/**
+ * Verify that the ADC instance which this driver uses to measure temperature
+ * is enabled. On STM32 MCUs with more than one ADC, it is possible to compile
+ * this driver even if the ADC used for measurement is disabled. In such cases,
+ * fail build with an explicit error message.
+ */
+#if !DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(0), okay)
+
+/* Use BUILD_ASSERT to get preprocessing on the message */
+BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
+		"temperature sensor '" DT_NODE_FULL_NAME(DT_DRV_INST(0)) "' is not enabled");
+
+/* To reduce noise in the compiler error log, do not attempt
+ * to instantiate device if the sensor's ADC is not enabled.
+ */
+#else
+
 static struct stm32_temp_data stm32_temp_dev_data = {
 	.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(0)),
 	.adc_base = (ADC_TypeDef *)DT_REG_ADDR(DT_INST_IO_CHANNELS_CTLR(0)),
@@ -217,3 +234,5 @@ SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
 			     &stm32_temp_dev_data, &stm32_temp_dev_config,
 			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 			     &stm32_temp_driver_api);
+
+#endif /* !DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(0), okay) */

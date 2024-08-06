@@ -15,7 +15,7 @@ config OPTEE
 config OPTEE_MAX_NOTIF
 	int "Max number of OP-TEE notifications"
 	depends on OPTEE
-	default 255
+	default $(UINT8_MAX)
 	help
 	 Sets the maximum notifications from OP-TEE to the Normal World. OP-TEE using
 	 this mechanism for the synchronization.

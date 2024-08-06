@@ -2,16 +2,15 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-set(SOURCES
-  src/main.c
-  src/test_suite_invalid_inputs.c
-)
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(prng_init)
-
-find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/crypto mocks)
 
+target_sources(testbinary PRIVATE
+  src/main.c
+  src/test_suite_invalid_inputs.c
+)
 target_link_libraries(testbinary PRIVATE mocks host_mocks)

@@ -2650,10 +2650,11 @@ static void handle_ongoing_block2_tx(struct lwm2m_message *msg, struct coap_pack
 {
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	int r;
-	uint8_t block;
+	bool more;
+	uint32_t block;
 	enum coap_block_size block_size;
 
-	r = coap_get_block2_option(cpkt, &block);
+	r = coap_get_block2_option(cpkt, &more, &block);
 	if (r < 0) {
 		LOG_ERR("Failed to parse BLOCK2");
 		return;
@@ -2688,8 +2689,8 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 	int r;
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 	bool more_blocks = false;
-	uint8_t block_num;
-	uint8_t last_block_num;
+	uint32_t block_num;
+	uint32_t last_block_num;
 #endif
 	bool has_block2;
 
@@ -3279,12 +3280,6 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	off = parser.field_data[UF_HOST].off;
 	len = parser.field_data[UF_HOST].len;
 
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	/** copy url pointer to be used in socket */
-	client_ctx->desthostname = url + off;
-	client_ctx->desthostnamelen = len;
-#endif
-
 	/* truncate host portion */
 	tmp = url[off + len];
 	url[off + len] = '\0';
@@ -3326,6 +3321,13 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 		memcpy(&client_ctx->remote_addr, res->ai_addr, sizeof(client_ctx->remote_addr));
 		client_ctx->remote_addr.sa_family = res->ai_family;
 		zsock_freeaddrinfo(res);
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+		/** copy url pointer to be used in socket */
+		client_ctx->desthostname = url + off;
+		client_ctx->desthostnamelen = len;
+		client_ctx->hostname_verify = true;
+#endif
+
 #else
 		goto cleanup;
 #endif /* CONFIG_LWM2M_DNS_SUPPORT */

@@ -14,6 +14,8 @@
 /**
  * @brief HTTP request methods
  * @defgroup http_methods HTTP request methods
+ * @since 3.3
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

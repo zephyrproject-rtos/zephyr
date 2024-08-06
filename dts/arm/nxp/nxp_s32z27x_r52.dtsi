@@ -217,8 +217,7 @@
 
 			eirq0: eirq0@40520010 {
 				compatible = "nxp,s32-siul2-eirq";
-				reg = <0x40520010 0x04>, <0x40520018 0x04>;
-				reg-names = "disr0", "direr0";
+				reg = <0x40520010 0xb4>;
 				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
@@ -269,8 +268,7 @@
 
 			eirq1: eirq1@40d20010 {
 				compatible = "nxp,s32-siul2-eirq";
-				reg = <0x40d20010 0x04>, <0x40d20018 0x04>;
-				reg-names = "disr0", "direr0";
+				reg = <0x40d20010 0xb4>;
 				interrupts = <GIC_SPI 515 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
@@ -345,8 +343,7 @@
 
 			eirq4: eirq4@42520010 {
 				compatible = "nxp,s32-siul2-eirq";
-				reg = <0x42520010 0x04>, <0x42520018 0x04>;
-				reg-names = "disr0", "direr0";
+				reg = <0x42520010 0xb4>;
 				interrupts = <GIC_SPI 516 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
@@ -404,7 +401,6 @@
 			gpiol: gpio@42521710 {
 				compatible = "nxp,s32-gpio";
 				reg = <0x42521710 0x02>, <0x42520480 0x40>;
-				reg-names = "disr0", "direr0";
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -420,8 +416,7 @@
 
 			eirq5: eirq5@42d20010 {
 				compatible = "nxp,s32-siul2-eirq";
-				reg = <0x42d20010 0x04>, <0x42d20018 0x04>;
-				reg-names = "disr0", "direr0";
+				reg = <0x42d20010 0xb4>;
 				interrupts = <GIC_SPI 517 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				interrupt-controller;
 				#interrupt-cells = <2>;

@@ -169,7 +169,7 @@ struct gnss_time {
 	uint8_t hour;
 	/** Minute [0, 59] */
 	uint8_t minute;
-	/** Millisecond [0, 59999] */
+	/** Millisecond [0, 60999] */
 	uint16_t millisecond;
 	/** Day of month [1, 31] */
 	uint8_t month_day;

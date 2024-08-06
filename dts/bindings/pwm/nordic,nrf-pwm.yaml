@@ -11,6 +11,9 @@ properties:
   pinctrl-0:
     required: true
 
+  pinctrl-names:
+    required: true
+
   center-aligned:
     type: boolean
     description: Set this to use center-aligned (up and down) counter mode.

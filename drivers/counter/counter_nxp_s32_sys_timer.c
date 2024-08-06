@@ -1,23 +1,51 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT nxp_s32_sys_timer
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <soc.h>
-
-#include <Stm_Ip.h>
 
 LOG_MODULE_REGISTER(nxp_s32_sys_timer, CONFIG_COUNTER_LOG_LEVEL);
 
-#define SYS_TIMER_MAX_VALUE		0xFFFFFFFFU
-#define SYS_TIMER_NUM_CHANNELS		4
+/* System Timer Module (STM) register definitions */
+/* Control */
+#define STM_CR           0x0
+#define STM_CR_TEN_MASK  BIT(0)
+#define STM_CR_TEN(v)    FIELD_PREP(STM_CR_TEN_MASK, (v))
+#define STM_CR_FRZ_MASK  BIT(1)
+#define STM_CR_FRZ(v)    FIELD_PREP(STM_CR_FRZ_MASK, (v))
+#define STM_CR_CPS_MASK  GENMASK(15, 8)
+#define STM_CR_CPS(v)    FIELD_PREP(STM_CR_CPS_MASK, (v))
+/* Count */
+#define STM_CNT          0x4
+#define STM_CNT_CNT_MASK GENMASK(31, 0)
+#define STM_CNT_CNT(v)   FIELD_PREP(STM_CNT_CNT_MASK, (v))
+/* Channel Control */
+#define STM_CCR(n)       (0x10 + 0x10 * (n))
+#define STM_CCR_CEN_MASK BIT(0)
+#define STM_CCR_CEN(v)   FIELD_PREP(STM_CCR_CEN_MASK, (v))
+/* Channel Interrupt */
+#define STM_CIR(n)       (0x14 + 0x10 * (n))
+#define STM_CIR_CIF_MASK BIT(0)
+#define STM_CIR_CIF(v)   FIELD_PREP(STM_CIR_CIF_MASK, (v))
+/* Channel Compare */
+#define STM_CMP(n)       (0x18 + 0x10 * (n))
+#define STM_CMP_CMP_MASK GENMASK(31, 0)
+#define STM_CMP_CMP(v)   FIELD_PREP(STM_CMP_CMP_MASK, (v))
+
+/* Handy accessors */
+#define REG_READ(r)      sys_read32(config->base + (r))
+#define REG_WRITE(r, v)  sys_write32((v), config->base + (r))
+
+#define SYS_TIMER_MAX_VALUE     0xFFFFFFFFU
+#define SYS_TIMER_NUM_CHANNELS  4
 
 struct nxp_s32_sys_timer_chan_data {
 	counter_alarm_callback_t callback;
@@ -30,18 +58,55 @@ struct nxp_s32_sys_timer_data {
 
 struct nxp_s32_sys_timer_config {
 	struct counter_config_info info;
-	Stm_Ip_InstanceConfigType hw_cfg;
-	Stm_Ip_ChannelConfigType ch_cfg[SYS_TIMER_NUM_CHANNELS];
-	uint8_t instance;
+	mem_addr_t base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	uint8_t prescaler;
+	bool freeze;
 };
+
+static ALWAYS_INLINE void stm_disable_channel(const struct nxp_s32_sys_timer_config *config,
+					      uint8_t channel)
+{
+	REG_WRITE(STM_CCR(channel), STM_CCR_CEN(0U));
+	REG_WRITE(STM_CIR(channel), STM_CIR_CIF(1U));
+}
+
+static void stm_isr(const struct device *dev)
+{
+	const struct nxp_s32_sys_timer_config *config = dev->config;
+	struct nxp_s32_sys_timer_data *data = dev->data;
+	struct nxp_s32_sys_timer_chan_data *ch_data = NULL;
+	counter_alarm_callback_t cb = NULL;
+	void *cb_args = NULL;
+	uint8_t channel;
+	bool pending;
+
+	for (channel = 0; channel < SYS_TIMER_NUM_CHANNELS; ++channel) {
+		pending = FIELD_GET(STM_CCR_CEN_MASK, REG_READ(STM_CCR(channel))) &&
+			  FIELD_GET(STM_CIR_CIF_MASK, REG_READ(STM_CIR(channel)));
+
+		if (pending) {
+			stm_disable_channel(config, channel);
+
+			ch_data = &data->ch_data[channel];
+			if (ch_data->callback) {
+				cb = ch_data->callback;
+				cb_args = ch_data->user_data;
+				ch_data->callback = NULL;
+				ch_data->user_data = NULL;
+				cb(dev, channel, REG_READ(STM_CNT), cb_args);
+			}
+		}
+	}
+}
 
 static int nxp_s32_sys_timer_start(const struct device *dev)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 
-	Stm_Ip_StartTimer(config->instance, 0);
+	REG_WRITE(STM_CNT, 0U);
+	REG_WRITE(STM_CR, REG_READ(STM_CR) | STM_CR_TEN(1U));
 
 	return 0;
 }
@@ -50,7 +115,7 @@ static int nxp_s32_sys_timer_stop(const struct device *dev)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 
-	Stm_Ip_StopTimer(config->instance);
+	REG_WRITE(STM_CR, REG_READ(STM_CR) & ~STM_CR_TEN_MASK);
 
 	return 0;
 }
@@ -59,18 +124,19 @@ static int nxp_s32_sys_timer_get_value(const struct device *dev, uint32_t *ticks
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 
-	*ticks = Stm_Ip_GetCounterValue(config->instance);
+	*ticks = REG_READ(STM_CNT);
 
 	return 0;
 }
 
-static int nxp_s32_sys_timer_set_alarm(const struct device *dev, uint8_t chan_id,
+static int nxp_s32_sys_timer_set_alarm(const struct device *dev, uint8_t channel,
 				       const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 	struct nxp_s32_sys_timer_data *data = dev->data;
-	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[chan_id];
+	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[channel];
 	uint32_t ticks = alarm_cfg->ticks;
+	uint32_t cnt_val = REG_READ(STM_CNT);
 
 	if (ch_data->callback) {
 		return -EBUSY;
@@ -85,24 +151,24 @@ static int nxp_s32_sys_timer_set_alarm(const struct device *dev, uint8_t chan_id
 	ch_data->user_data = alarm_cfg->user_data;
 
 	/* Disable the channel before loading the new value so that it takes effect immediately */
-	Stm_Ip_DisableChannel(config->instance, chan_id);
+	stm_disable_channel(config, channel);
 
-	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		Stm_Ip_StartCountingAbsolute(config->instance, chan_id, ticks);
-	} else {
-		Stm_Ip_StartCounting(config->instance, chan_id, ticks);
+	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
+		ticks += cnt_val;
 	}
+	REG_WRITE(STM_CMP(channel), ticks);
+	REG_WRITE(STM_CCR(channel), STM_CCR_CEN(1U));
 
 	return 0;
 }
 
-static int nxp_s32_sys_timer_cancel_alarm(const struct device *dev, uint8_t chan_id)
+static int nxp_s32_sys_timer_cancel_alarm(const struct device *dev, uint8_t channel)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 	struct nxp_s32_sys_timer_data *data = dev->data;
-	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[chan_id];
+	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[channel];
 
-	Stm_Ip_DisableChannel(config->instance, chan_id);
+	stm_disable_channel(config, channel);
 	ch_data->callback = NULL;
 	ch_data->user_data = NULL;
 
@@ -112,17 +178,15 @@ static int nxp_s32_sys_timer_cancel_alarm(const struct device *dev, uint8_t chan
 static uint32_t nxp_s32_sys_timer_get_pending_int(const struct device *dev)
 {
 	const struct nxp_s32_sys_timer_config *config = dev->config;
-	uint32_t flags = 0;
 	uint8_t i;
 
 	for (i = 0; i < counter_get_num_of_channels(dev); i++) {
-		flags = Stm_Ip_GetInterruptStatusFlag(config->instance, i);
-		if (flags) {
-			break;
+		if (REG_READ(STM_CIR(i)) & STM_CIR_CIF_MASK) {
+			return 1;
 		}
 	}
 
-	return flags;
+	return 0;
 }
 
 static int nxp_s32_sys_timer_set_top_value(const struct device *dev,
@@ -152,7 +216,7 @@ static uint32_t nxp_s32_sys_timer_get_frequency(const struct device *dev)
 		return 0;
 	}
 
-	return clock_rate / (config->hw_cfg.clockPrescaler + 1U);
+	return clock_rate / (config->prescaler + 1U);
 }
 
 static int nxp_s32_sys_timer_init(const struct device *dev)
@@ -174,13 +238,20 @@ static int nxp_s32_sys_timer_init(const struct device *dev)
 		return err;
 	}
 
-	Stm_Ip_Init(config->instance, &config->hw_cfg);
+	REG_WRITE(STM_CNT, 0U);
+	REG_WRITE(STM_CR,
+		  STM_CR_FRZ(config->freeze) |
+		  STM_CR_CPS(config->prescaler) |
+		  STM_CR_TEN(1U));
 
 	for (i = 0; i < counter_get_num_of_channels(dev); i++) {
 		ch_data = &data->ch_data[i];
 		ch_data->callback = NULL;
 		ch_data->user_data = NULL;
-		Stm_Ip_InitChannel(config->instance, &config->ch_cfg[i]);
+
+		REG_WRITE(STM_CCR(i), STM_CCR_CEN(0U));
+		REG_WRITE(STM_CIR(i), STM_CIR_CIF(1U));
+		REG_WRITE(STM_CMP(i), 0U);
 	}
 
 	return 0;
@@ -198,50 +269,13 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 	.get_freq = nxp_s32_sys_timer_get_frequency
 };
 
-#define SYS_TIMER_CHANNEL_CFG(i, n)				\
-	{							\
-		.hwChannel = i,					\
-		.callback = &nxp_s32_sys_timer_##n##_callback,	\
-		.callbackParam = i,				\
-		.channelMode = STM_IP_CH_MODE_ONESHOT,		\
-	}
-
-#define _SYS_TIMER_ISR(r, n)	RTU##r##_STM_##n##_ISR
-#define SYS_TIMER_ISR(r, n)	_SYS_TIMER_ISR(r, n)
-
-#define SYS_TIMER_ISR_DECLARE(n)	\
-	extern void SYS_TIMER_ISR(CONFIG_NXP_S32_RTU_INDEX, n)(void)
-
-#define SYS_TIMER_HW_INSTANCE_CHECK(i, n) \
-	((DT_INST_REG_ADDR(n) == IP_STM_##i##_BASE) ? i : 0)
-
-#define SYS_TIMER_HW_INSTANCE(n) \
-	LISTIFY(__DEBRACKET STM_INSTANCE_COUNT, SYS_TIMER_HW_INSTANCE_CHECK, (|), n)
-
 #define SYS_TIMER_INIT_DEVICE(n)							\
-	SYS_TIMER_ISR_DECLARE(n);							\
-											\
-	void nxp_s32_sys_timer_##n##_callback(uint8_t chan_id)				\
-	{										\
-		const struct device *dev = DEVICE_DT_INST_GET(n);			\
-		const struct nxp_s32_sys_timer_config *config = dev->config;		\
-		struct nxp_s32_sys_timer_data *data = dev->data;			\
-		struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[chan_id];	\
-		counter_alarm_callback_t cb = ch_data->callback;			\
-		uint32_t val;								\
-											\
-		ch_data->callback = NULL;						\
-		if (cb) {								\
-			val = Stm_Ip_GetCounterValue(config->instance);			\
-			cb(dev, chan_id, val, ch_data->user_data);			\
-		}									\
-	}										\
-											\
 	static int nxp_s32_sys_timer_##n##_init(const struct device *dev)		\
 	{										\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),			\
-			    SYS_TIMER_ISR(CONFIG_NXP_S32_RTU_INDEX, n),			\
-			    DEVICE_DT_INST_GET(n), DT_INST_IRQ(n, flags));		\
+			    stm_isr, DEVICE_DT_INST_GET(n),				\
+			    COND_CODE_1(DT_INST_IRQ_HAS_CELL(n, flags),			\
+					(DT_INST_IRQ(n, flags)), (0)));			\
 		irq_enable(DT_INST_IRQN(n));						\
 											\
 		return nxp_s32_sys_timer_init(dev);					\
@@ -255,14 +289,9 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 			.channels = SYS_TIMER_NUM_CHANNELS,				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,				\
 		},									\
-		.hw_cfg = {								\
-			.stopInDebugMode = DT_INST_PROP(n, freeze),			\
-			.clockPrescaler = DT_INST_PROP(n, prescaler) - 1,		\
-		},									\
-		.ch_cfg = {								\
-			LISTIFY(SYS_TIMER_NUM_CHANNELS, SYS_TIMER_CHANNEL_CFG, (,), n)	\
-		},									\
-		.instance = SYS_TIMER_HW_INSTANCE(n),					\
+		.base = DT_INST_REG_ADDR(n),						\
+		.freeze = DT_INST_PROP(n, freeze),					\
+		.prescaler = DT_INST_PROP(n, prescaler) - 1,				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	};										\

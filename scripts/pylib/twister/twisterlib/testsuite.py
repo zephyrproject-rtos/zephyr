@@ -423,21 +423,22 @@ class TestSuite(DisablePyTestCollectionMixin):
         if self.harness == 'console' and not self.harness_config:
             raise Exception('Harness config error: console harness defined without a configuration.')
 
-    def add_subcases(self, data, parsed_subcases, suite_names):
+    def add_subcases(self, data, parsed_subcases=None, suite_names=None):
         testcases = data.get("testcases", [])
         if testcases:
             for tc in testcases:
                 self.add_testcase(name=f"{self.id}.{tc}")
         else:
-            # only add each testcase once
-            for sub in set(parsed_subcases):
-                name = "{}.{}".format(self.id, sub)
-                self.add_testcase(name)
-
             if not parsed_subcases:
                 self.add_testcase(self.id, freeform=True)
+            else:
+                # only add each testcase once
+                for sub in set(parsed_subcases):
+                    name = "{}.{}".format(self.id, sub)
+                    self.add_testcase(name)
 
-        self.ztest_suite_names = suite_names
+        if suite_names:
+            self.ztest_suite_names = suite_names
 
     def add_testcase(self, name, freeform=False):
         tc = TestCase(name=name, testsuite=self)

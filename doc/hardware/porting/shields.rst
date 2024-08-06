@@ -48,6 +48,23 @@ to provide a device nodelabel is the form <device>_<shield>, for instance:
                 ...
         };
 
+Adding Source Code
+******************
+
+It is possible to add source code to shields, as a way to meet configuration
+requirements that are specific to the shield (e.g: initialization routines,
+timing constraints, etc), in order to enable it for proper operation with the
+different Zephyr components.
+
+.. note::
+
+   Source code in shields shall not be used for purposes other than the
+   one described above. Generic functionalities that could be reused among
+   shields (and/or targets) shall not be captured here.
+
+To effectively incorporate source code: add a :file:`CMakeLists.txt` file, as
+well as the corresponding source files (referenced in CMake similar to other
+areas of Zephyr, e.g: boards).
 
 Board compatibility
 *******************

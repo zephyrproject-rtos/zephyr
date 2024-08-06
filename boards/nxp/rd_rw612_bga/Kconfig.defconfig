@@ -5,9 +5,6 @@
 
 if BOARD_RD_RW612_BGA
 
-config FLASH_LOAD_SIZE
-	default 0x400000 if !BOOTLOADER_MCUBOOT && !NXP_MONOLITHIC_BT
-
 if LVGL
 
 # Enable DMA for LCDIC

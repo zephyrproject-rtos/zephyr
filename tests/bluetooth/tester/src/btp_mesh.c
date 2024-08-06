@@ -1734,12 +1734,12 @@ static uint8_t health_generate_faults(const void *cmd, uint16_t cmd_len,
 
 	cur_faults_count = MIN(sizeof(cur_faults), sizeof(some_faults));
 	memcpy(cur_faults, some_faults, cur_faults_count);
-	memcpy(rp->current_faults, cur_faults, cur_faults_count);
+	memcpy(rp->faults, cur_faults, cur_faults_count);
 	rp->cur_faults_count = cur_faults_count;
 
 	reg_faults_count = MIN(sizeof(reg_faults), sizeof(some_faults));
 	memcpy(reg_faults, some_faults, reg_faults_count);
-	memcpy(rp->registered_faults + cur_faults_count, reg_faults, reg_faults_count);
+	memcpy(rp->faults + cur_faults_count, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;
 
 	bt_mesh_health_srv_fault_update(&elements[0]);

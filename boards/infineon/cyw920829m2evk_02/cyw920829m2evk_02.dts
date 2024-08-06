@@ -86,34 +86,44 @@ uart2: &scb2 {
 };
 
 / {
-	flash0: flash@60000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x60000000 DT_SIZE_K(512)>;
-		write-block-size = <16>;
-		erase-block-size = <256>;
+	qspi_flash: qspi_flash@40890000 {
+		compatible = "infineon,cat1-qspi-flash";
+		reg = <0x40890000 0x30000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		partitions {
-			compatible = "fixed-partitions";
+		flash0: flash@60000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x60000000 DT_SIZE_K(512)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			toc2_region: flash@60000000 {
+			toc2_region: toc2_region@60000000 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "APP_HEADER_FLASH";
 				reg = <0x60000000 0x50>;
 			};
-			bootstrap_region: flash@60000050 {
+			bootstrap_region: bootstrap_region@60000050 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "BOOTSTRAP_FLASH";
 				reg = <0x60000050 DT_SIZE_K(12)>;
 			};
-			app_region: flash@60003050 {
+			app_region: app_region@60003050 {
 				compatible = "soc-nv-flash";
 				reg = <0x60003050 0x6CFB0>; /* 435kb */
 			};
-			storage_partition: flash@60070000 {
-				compatible = "soc-nv-flash";
-				reg = <0x60070000 DT_SIZE_K(64)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: storage_partition@70000 {
+					compatible = "soc-nv-flash";
+					reg = <0x60000 DT_SIZE_K(64)>;
+				};
 			};
 		};
 	};

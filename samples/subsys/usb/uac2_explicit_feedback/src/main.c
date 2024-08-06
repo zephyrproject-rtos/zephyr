@@ -36,7 +36,8 @@ LOG_MODULE_REGISTER(uac2_sample, LOG_LEVEL_INF);
  * when USB host decides to perform rapid terminal enable/disable cycles.
  */
 #define I2S_BUFFERS_COUNT   7
-K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, MAX_BLOCK_SIZE, I2S_BUFFERS_COUNT, 4);
+K_MEM_SLAB_DEFINE_STATIC(i2s_tx_slab, ROUND_UP(MAX_BLOCK_SIZE, UDC_BUF_GRANULARITY),
+			 I2S_BUFFERS_COUNT, UDC_BUF_ALIGN);
 
 struct usb_i2s_ctx {
 	const struct device *i2s_dev;

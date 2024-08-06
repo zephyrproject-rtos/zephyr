@@ -13,7 +13,7 @@ config MICROBIT_DISPLAY
 
 config MICROBIT_DISPLAY_STR_MAX
 	int "Maximum length of strings that can be shown on the display"
-	range 3 255
+	range 3 $(UINT8_MAX)
 	default 40
 	depends on MICROBIT_DISPLAY
 	help

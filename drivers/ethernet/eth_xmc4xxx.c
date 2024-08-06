@@ -635,6 +635,13 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	}
 }
 
+static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
+{
+	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
+
+	return config->phy_dev;
+}
+
 static void eth_xmc4xxx_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -959,6 +966,7 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 	.iface_api.init = eth_xmc4xxx_iface_init,
 	.send = eth_xmc4xxx_send,
 	.set_config = eth_xmc4xxx_set_config,
+	.get_phy = eth_xmc4xxx_get_phy,
 	.get_capabilities = eth_xmc4xxx_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_xmc4xxx_stats,

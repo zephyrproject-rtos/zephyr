@@ -66,6 +66,15 @@ config GNSS_U_BLOX_PROTOCOL
 	help
 	  Enable gnss u-blox protocol.
 
+choice GNSS_REFERENCE_FRAME
+	bool "GNSS reference frame datum"
+	default GNSS_REFERENCE_FRAME_WGS84
+
+config GNSS_REFERENCE_FRAME_WGS84
+	bool "Use the WGS84 ellipsoid as reference frame datum"
+
+endchoice
+
 module = GNSS
 module-str = gnss
 source "subsys/logging/Kconfig.template.log_config"

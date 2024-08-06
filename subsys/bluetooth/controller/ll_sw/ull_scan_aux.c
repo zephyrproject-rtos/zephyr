@@ -546,6 +546,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		lll_hdr_init(lll_aux, aux);
 
 		aux->parent = lll ? (void *)lll : (void *)sync_lll;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		if (lll) {
+			lll_aux->hdr.score = lll->scan_aux_score;
+		}
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		aux->rx_incomplete = rx_incomplete;
@@ -1266,6 +1271,9 @@ static void flush(void *param)
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
 		lll->lll_aux = NULL;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		lll->scan_aux_score = aux->lll.hdr.score;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	} else {
 		struct lll_sync *sync_lll;
 		struct ll_sync_set *sync;

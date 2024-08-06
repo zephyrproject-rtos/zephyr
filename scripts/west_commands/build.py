@@ -294,9 +294,9 @@ class Build(Forceable):
             tests = y.get('tests')
             if not tests:
                 log.die(f"No tests found in {yf}")
-            item = tests.get(test_item)
-            if not item:
+            if test_item not in tests:
                 log.die(f"Test item {test_item} not found in {yf}")
+            item = tests.get(test_item)
 
             sysbuild = False
             extra_dtc_overlay_files = []

@@ -528,6 +528,8 @@ class Reporting:
             logger.info(f"No errors/fails found")
 
         if cnt and example_instance:
+            cwd_rel_path = os.path.relpath(example_instance.testsuite.source_dir, start=os.getcwd())
+
             logger.info("")
             logger.info("To rerun the tests, call twister using the following commandline:")
             extra_parameters = '' if detailed_test_id else ' --no-detailed-test-id'
@@ -536,8 +538,7 @@ class Reporting:
             logger.info(f"west twister -p {example_instance.platform.name} -s {example_instance.testsuite.name}"
                         f"{extra_parameters}")
             logger.info(f"or with west:")
-            logger.info(f"west build -p -b {example_instance.platform.name} "
-                        f"{example_instance.testsuite.source_dir_rel} -T {example_instance.testsuite.id}")
+            logger.info(f"west build -p -b {example_instance.platform.name} {cwd_rel_path} -T {example_instance.testsuite.id}")
             logger.info("-+" * 40)
 
     def summary(self, results, ignore_unrecognized_sections, duration):

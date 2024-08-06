@@ -15,6 +15,8 @@
 /**
  * @brief Definitions for IEEE 802.3 management interface
  * @defgroup ethernet_mdio IEEE 802.3 management interface
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup ethernet
  * @{
  */

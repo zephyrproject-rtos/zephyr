@@ -15,6 +15,8 @@
 /**
  * @brief Network offloading interface
  * @defgroup net_offload Network Offloading Interface
+ * @since 1.7
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

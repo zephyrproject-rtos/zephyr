@@ -593,7 +593,7 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 {
 	uint32_t *base_bis_index_bitfield = user_data;
 
-	*base_bis_index_bitfield |= BIT(bis->index);
+	*base_bis_index_bitfield |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }

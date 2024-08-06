@@ -33,6 +33,10 @@
 #include <zephyr/net/coap.h>
 #include <zephyr/net/lwm2m_path.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @name LwM2M Objects managed by OMA for LwM2M tech specification.
  * Objects in this range have IDs from 0 to 1023.
@@ -126,7 +130,49 @@ typedef void (*lwm2m_observe_cb_t)(enum lwm2m_observe_event event, struct lwm2m_
 
 
 struct lwm2m_ctx;
-enum lwm2m_rd_client_event;
+
+/**
+ * @brief LwM2M RD client events
+ *
+ * LwM2M client events are passed back to the event_cb function in
+ * lwm2m_rd_client_start()
+ */
+enum lwm2m_rd_client_event {
+	/** Invalid event */
+	LWM2M_RD_CLIENT_EVENT_NONE,
+	/** Bootstrap registration failure */
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE,
+	/** Bootstrap registration complete */
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE,
+	/** Bootstrap transfer complete */
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
+	/** Registration failure */
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
+	/** Registration complete */
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
+	/** Registration timeout */
+	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT,
+	/** Registration update complete */
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
+	/** De-registration failure */
+	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
+	/** Disconnected */
+	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
+	/** Queue mode RX off */
+	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
+	/** Engine suspended */
+	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
+	/** Network error */
+	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
+	/** Registration update */
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE,
+	/** De-register */
+	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
+	/** Server disabled */
+	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
+};
+
+
 /**
  * @brief Asynchronous RD client event callback
  *
@@ -1423,47 +1469,6 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
  */
 void lwm2m_acknowledge(struct lwm2m_ctx *client_ctx);
 
-/**
- * @brief LwM2M RD client events
- *
- * LwM2M client events are passed back to the event_cb function in
- * lwm2m_rd_client_start()
- */
-enum lwm2m_rd_client_event {
-	/** Invalid event */
-	LWM2M_RD_CLIENT_EVENT_NONE,
-	/** Bootstrap registration failure */
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE,
-	/** Bootstrap registration complete */
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE,
-	/** Bootstrap transfer complete */
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
-	/** Registration failure */
-	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
-	/** Registration complete */
-	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
-	/** Registration timeout */
-	LWM2M_RD_CLIENT_EVENT_REG_TIMEOUT,
-	/** Registration update complete */
-	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
-	/** De-registration failure */
-	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
-	/** Disconnected */
-	LWM2M_RD_CLIENT_EVENT_DISCONNECT,
-	/** Queue mode RX off */
-	LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF,
-	/** Engine suspended */
-	LWM2M_RD_CLIENT_EVENT_ENGINE_SUSPENDED,
-	/** Network error */
-	LWM2M_RD_CLIENT_EVENT_NETWORK_ERROR,
-	/** Registration update */
-	LWM2M_RD_CLIENT_EVENT_REG_UPDATE,
-	/** De-register */
-	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
-	/** Server disabled */
-	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
-};
-
 /*
  * LwM2M RD client flags, used to configure LwM2M session.
  */
@@ -1647,6 +1652,10 @@ int lwm2m_security_mode(struct lwm2m_ctx *ctx);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */

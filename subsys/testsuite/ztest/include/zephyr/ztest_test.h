@@ -217,13 +217,13 @@ extern struct ztest_suite_node _ztest_suite_node_list_end[];
 #define ZTEST_SUITE_COUNT (_ztest_suite_node_list_end - _ztest_suite_node_list_start)
 
 /**
- * Create and register a ztest suite. Using this macro creates a new test suite (using
- * ztest_test_suite). It then creates a struct ztest_suite_node in a specific linker section.
+ * Create and register a ztest suite. Using this macro creates a new test suite.
+ * It then creates a struct ztest_suite_node in a specific linker section.
  *
  * Tests can then be run by calling ztest_run_test_suites(const void *state) by passing
  * in the current state. See the documentation for ztest_run_test_suites for more info.
  *
- * @param SUITE_NAME The name of the suite (see ztest_test_suite for more info)
+ * @param SUITE_NAME The name of the suite
  * @param PREDICATE A function to test against the state and determine if the test should run.
  * @param setup_fn The setup function to call before running this test suite
  * @param before_fn The function to call before each unit test in this suite

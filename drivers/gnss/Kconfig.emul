@@ -5,6 +5,7 @@ config GNSS_EMUL
 	bool "Emulated GNSS driver"
 	default y
 	depends on DT_HAS_ZEPHYR_GNSS_EMUL_ENABLED
+	depends on GNSS_REFERENCE_FRAME_WGS84
 	select TIMEOUT_64BIT
 	help
 	  Enable emulated GNSS driver.

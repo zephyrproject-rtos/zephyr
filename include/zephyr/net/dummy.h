@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Dummy L2/driver support functions
  * @defgroup dummy Dummy L2/driver Support Functions
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

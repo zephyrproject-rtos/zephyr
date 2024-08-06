@@ -6,6 +6,7 @@ config UDC_NXP_EHCI
 	default y
 	depends on DT_HAS_NXP_EHCI_ENABLED
 	select NOCACHE_MEMORY if HAS_MCUX_CACHE && CPU_HAS_DCACHE
+	imply UDC_BUF_FORCE_NOCACHE
 	help
 	  NXP MCUX USB Device Controller Driver for EHCI.
 

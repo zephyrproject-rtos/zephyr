@@ -105,6 +105,13 @@ config I3C_CONTROLLER_INIT_PRIORITY
 	  may not be addressable until addresses are assigned by
 	  the controller.
 
+config I3C_INIT_RSTACT
+	bool "Perform Reset Action During Bus Initialization"
+	default y
+	help
+	  This determines whether the bus initialization routine
+	  sends a reset action command to I3C targets.
+
 comment "Device Drivers"
 
 rsource "Kconfig.nxp"

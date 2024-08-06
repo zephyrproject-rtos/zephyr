@@ -13,6 +13,8 @@
  * Targets protocol version 1.2.
  *
  * @defgroup mqtt_sn_socket MQTT-SN Client library
+ * @since 3.3
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

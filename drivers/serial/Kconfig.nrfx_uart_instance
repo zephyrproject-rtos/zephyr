@@ -42,7 +42,7 @@ config UART_$(nrfx_uart_num)_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
-	range 1 65535
+	range 1 $(UINT16_MAX)
 	default 32
 	help
 	  Size of the transmit buffer for API function: fifo_fill.
@@ -97,7 +97,7 @@ config UART_$(nrfx_uart_num)_RX_CACHE_SIZE
 	depends on !UART_NRFX_UARTE_LEGACY_SHIM
 	default 32 if UART_$(nrfx_uart_num)_HAS_RX_CACHE_SECTION
 	default 5
-	range 5 255
+	range 5 $(UINT8_MAX)
 	help
 	  For UARTE, RX cache buffer is used when provided RX buffer is not located
 	  in memory which can be used by the EasyDMA. It is also used to store

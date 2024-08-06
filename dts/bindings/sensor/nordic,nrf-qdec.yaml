@@ -17,6 +17,9 @@ properties:
   pinctrl-0:
     required: true
 
+  pinctrl-names:
+    required: true
+
   enable-pin:
     type: int
     description: |

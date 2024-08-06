@@ -38,56 +38,62 @@ extern "C" {
  * @name EIR/AD data type definitions
  * @{
  */
-#define BT_DATA_FLAGS                   0x01 /**< AD flags */
-#define BT_DATA_UUID16_SOME             0x02 /**< 16-bit UUID, more available */
-#define BT_DATA_UUID16_ALL              0x03 /**< 16-bit UUID, all listed */
-#define BT_DATA_UUID32_SOME             0x04 /**< 32-bit UUID, more available */
-#define BT_DATA_UUID32_ALL              0x05 /**< 32-bit UUID, all listed */
-#define BT_DATA_UUID128_SOME            0x06 /**< 128-bit UUID, more available */
-#define BT_DATA_UUID128_ALL             0x07 /**< 128-bit UUID, all listed */
-#define BT_DATA_NAME_SHORTENED          0x08 /**< Shortened name */
-#define BT_DATA_NAME_COMPLETE           0x09 /**< Complete name */
-#define BT_DATA_TX_POWER                0x0a /**< Tx Power */
-#define BT_DATA_SM_TK_VALUE             0x10 /**< Security Manager TK Value */
-#define BT_DATA_SM_OOB_FLAGS            0x11 /**< Security Manager OOB Flags */
-#define BT_DATA_PERIPHERAL_INT_RANGE    0x12 /**< Peripheral Connection Interval Range */
-#define BT_DATA_SOLICIT16               0x14 /**< Solicit UUIDs, 16-bit */
-#define BT_DATA_SOLICIT128              0x15 /**< Solicit UUIDs, 128-bit */
-#define BT_DATA_SVC_DATA16              0x16 /**< Service data, 16-bit UUID */
-#define BT_DATA_PUB_TARGET_ADDR         0x17 /**< Public Target Address */
-#define BT_DATA_RAND_TARGET_ADDR        0x18 /**< Random Target Address */
-#define BT_DATA_GAP_APPEARANCE          0x19 /**< GAP appearance */
-#define BT_DATA_ADV_INT                 0x1a /**< Advertising Interval */
-#define BT_DATA_LE_BT_DEVICE_ADDRESS    0x1b /**< LE Bluetooth Device Address */
-#define BT_DATA_LE_ROLE                 0x1c /**< LE Role */
-#define BT_DATA_SIMPLE_PAIRING_HASH     0x1d /**< Simple Pairing Hash C256 */
-#define BT_DATA_SIMPLE_PAIRING_RAND     0x1e /**< Simple Pairing Randomizer R256 */
-#define BT_DATA_SOLICIT32               0x1f /**< Solicit UUIDs, 32-bit */
-#define BT_DATA_SVC_DATA32              0x20 /**< Service data, 32-bit UUID */
-#define BT_DATA_SVC_DATA128             0x21 /**< Service data, 128-bit UUID */
-#define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /**< LE SC Confirmation Value */
-#define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /**< LE SC Random Value */
-#define BT_DATA_URI                     0x24 /**< URI */
-#define BT_DATA_INDOOR_POS              0x25 /**< Indoor Positioning */
-#define BT_DATA_TRANS_DISCOVER_DATA     0x26 /**< Transport Discovery Data */
-#define BT_DATA_LE_SUPPORTED_FEATURES   0x27 /**< LE Supported Features */
-#define BT_DATA_CHANNEL_MAP_UPDATE_IND  0x28 /**< Channel Map Update Indication */
-#define BT_DATA_MESH_PROV               0x29 /**< Mesh Provisioning PDU */
-#define BT_DATA_MESH_MESSAGE            0x2a /**< Mesh Networking PDU */
-#define BT_DATA_MESH_BEACON             0x2b /**< Mesh Beacon */
-#define BT_DATA_BIG_INFO                0x2c /**< BIGInfo */
-#define BT_DATA_BROADCAST_CODE          0x2d /**< Broadcast Code */
-#define BT_DATA_CSIS_RSI                0x2e /**< CSIS Random Set ID type */
-#define BT_DATA_ADV_INT_LONG            0x2f /**< Advertising Interval long */
-#define BT_DATA_BROADCAST_NAME          0x30 /**< Broadcast Name */
-#define BT_DATA_ENCRYPTED_AD_DATA       0x31 /**< Encrypted Advertising Data */
-#define BT_DATA_3D_INFO                 0x3D /**< 3D Information Data */
+#define BT_DATA_FLAGS                    0x01 /**< AD flags */
+#define BT_DATA_UUID16_SOME              0x02 /**< 16-bit UUID, more available */
+#define BT_DATA_UUID16_ALL               0x03 /**< 16-bit UUID, all listed */
+#define BT_DATA_UUID32_SOME              0x04 /**< 32-bit UUID, more available */
+#define BT_DATA_UUID32_ALL               0x05 /**< 32-bit UUID, all listed */
+#define BT_DATA_UUID128_SOME             0x06 /**< 128-bit UUID, more available */
+#define BT_DATA_UUID128_ALL              0x07 /**< 128-bit UUID, all listed */
+#define BT_DATA_NAME_SHORTENED           0x08 /**< Shortened name */
+#define BT_DATA_NAME_COMPLETE            0x09 /**< Complete name */
+#define BT_DATA_TX_POWER                 0x0a /**< Tx Power */
+#define BT_DATA_DEVICE_CLASS             0x0d /**< Class of Device */
+#define BT_DATA_SIMPLE_PAIRING_HASH_C192 0x0e /**< Simple Pairing Hash C-192 */
+#define BT_DATA_SIMPLE_PAIRING_RAND_C192 0x0f /**< Simple Pairing Randomizer R-192 */
+#define BT_DATA_DEVICE_ID                0x10 /**< Device ID (Profile) */
+#define BT_DATA_SM_TK_VALUE              0x10 /**< Security Manager TK Value */
+#define BT_DATA_SM_OOB_FLAGS             0x11 /**< Security Manager OOB Flags */
+#define BT_DATA_PERIPHERAL_INT_RANGE     0x12 /**< Peripheral Connection Interval Range */
+#define BT_DATA_SOLICIT16                0x14 /**< Solicit UUIDs, 16-bit */
+#define BT_DATA_SOLICIT128               0x15 /**< Solicit UUIDs, 128-bit */
+#define BT_DATA_SVC_DATA16               0x16 /**< Service data, 16-bit UUID */
+#define BT_DATA_PUB_TARGET_ADDR          0x17 /**< Public Target Address */
+#define BT_DATA_RAND_TARGET_ADDR         0x18 /**< Random Target Address */
+#define BT_DATA_GAP_APPEARANCE           0x19 /**< GAP appearance */
+#define BT_DATA_ADV_INT                  0x1a /**< Advertising Interval */
+#define BT_DATA_LE_BT_DEVICE_ADDRESS     0x1b /**< LE Bluetooth Device Address */
+#define BT_DATA_LE_ROLE                  0x1c /**< LE Role */
+#define BT_DATA_SIMPLE_PAIRING_HASH      0x1d /**< Simple Pairing Hash C256 */
+#define BT_DATA_SIMPLE_PAIRING_RAND      0x1e /**< Simple Pairing Randomizer R256 */
+#define BT_DATA_SOLICIT32                0x1f /**< Solicit UUIDs, 32-bit */
+#define BT_DATA_SVC_DATA32               0x20 /**< Service data, 32-bit UUID */
+#define BT_DATA_SVC_DATA128              0x21 /**< Service data, 128-bit UUID */
+#define BT_DATA_LE_SC_CONFIRM_VALUE      0x22 /**< LE SC Confirmation Value */
+#define BT_DATA_LE_SC_RANDOM_VALUE       0x23 /**< LE SC Random Value */
+#define BT_DATA_URI                      0x24 /**< URI */
+#define BT_DATA_INDOOR_POS               0x25 /**< Indoor Positioning */
+#define BT_DATA_TRANS_DISCOVER_DATA      0x26 /**< Transport Discovery Data */
+#define BT_DATA_LE_SUPPORTED_FEATURES    0x27 /**< LE Supported Features */
+#define BT_DATA_CHANNEL_MAP_UPDATE_IND   0x28 /**< Channel Map Update Indication */
+#define BT_DATA_MESH_PROV                0x29 /**< Mesh Provisioning PDU */
+#define BT_DATA_MESH_MESSAGE             0x2a /**< Mesh Networking PDU */
+#define BT_DATA_MESH_BEACON              0x2b /**< Mesh Beacon */
+#define BT_DATA_BIG_INFO                 0x2c /**< BIGInfo */
+#define BT_DATA_BROADCAST_CODE           0x2d /**< Broadcast Code */
+#define BT_DATA_CSIS_RSI                 0x2e /**< CSIS Random Set ID type */
+#define BT_DATA_ADV_INT_LONG             0x2f /**< Advertising Interval long */
+#define BT_DATA_BROADCAST_NAME           0x30 /**< Broadcast Name */
+#define BT_DATA_ENCRYPTED_AD_DATA        0x31 /**< Encrypted Advertising Data */
+#define BT_DATA_PAWR_TIMING_INFO         0x32 /**< Periodic Advertising Response Timing Info */
+#define BT_DATA_ESL                      0x34 /**< Electronic Shelf Label Profile */
+#define BT_DATA_3D_INFO                  0x3D /**< 3D Information Data */
 
-#define BT_DATA_MANUFACTURER_DATA       0xff /**< Manufacturer Specific Data */
+#define BT_DATA_MANUFACTURER_DATA        0xff /**< Manufacturer Specific Data */
 
-#define BT_LE_AD_LIMITED                0x01 /**< Limited Discoverable */
-#define BT_LE_AD_GENERAL                0x02 /**< General Discoverable */
-#define BT_LE_AD_NO_BREDR               0x04 /**< BR/EDR not supported */
+#define BT_LE_AD_LIMITED                 0x01 /**< Limited Discoverable */
+#define BT_LE_AD_GENERAL                 0x02 /**< General Discoverable */
+#define BT_LE_AD_NO_BREDR                0x04 /**< BR/EDR not supported */
 /**
  * @}
  */

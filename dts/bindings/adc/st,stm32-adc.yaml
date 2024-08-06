@@ -21,12 +21,6 @@ properties:
   "#io-channel-cells":
     const: 1
 
-  pinctrl-0:
-    required: true
-
-  pinctrl-names:
-    required: true
-
   st,adc-clock-source:
     type: int
     required: true

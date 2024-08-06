@@ -41,6 +41,7 @@
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/starfive/jh71xx/ 			  @pfarwsi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/boards/adafruit/feather_nrf52840/        @jacobw
 /boards/ene/                              @ene-steven
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
@@ -326,7 +327,6 @@
 /drivers/serial/uart_altera.c             @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @gdengi
 /drivers/serial/*nrfx*                    @anangl
-/drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78

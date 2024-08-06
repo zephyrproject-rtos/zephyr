@@ -63,9 +63,9 @@ struct CSW {
 /* Can be 64 if device is not High-Speed capable */
 #define MSC_BUF_SIZE 512
 
-NET_BUF_POOL_FIXED_DEFINE(msc_ep_pool,
-			  MSC_NUM_INSTANCES * 2, MSC_BUF_SIZE,
-			  sizeof(struct udc_buf_info), NULL);
+UDC_BUF_POOL_DEFINE(msc_ep_pool,
+		    MSC_NUM_INSTANCES * 2, MSC_BUF_SIZE,
+		    sizeof(struct udc_buf_info), NULL);
 
 struct msc_event {
 	struct usbd_class_data *c_data;

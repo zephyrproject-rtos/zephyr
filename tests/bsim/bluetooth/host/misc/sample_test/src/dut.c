@@ -12,6 +12,7 @@
 
 #include "testlib/conn.h"
 #include "testlib/scan.h"
+#include "testlib/log_utils.h"
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
@@ -20,9 +21,11 @@
 /* local includes */
 #include "data.h"
 
-LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
+LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
 static DEFINE_FLAG(is_subscribed);
+
+extern unsigned long runtime_log_level;
 
 static void ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -97,6 +100,9 @@ void entrypoint_dut(void)
 
 	/* Initialize device sync library */
 	bk_sync_init();
+
+	/* Set the log level given by the `log_level` CLI argument */
+	bt_testlib_log_level_set("dut", runtime_log_level);
 
 	/* Initialize Bluetooth */
 	err = bt_enable(NULL);

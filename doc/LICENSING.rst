@@ -30,3 +30,6 @@ licensing in this document.
   *Origin:* GCC, the GNU Compiler Collection
 
   *Licensing:* `GPLv2 License`_ with Runtime Library Exception
+
+*boards/ene/kb1200_evb/support/openocd.cfg*
+  *Licensing:* `GPLv2 License`_

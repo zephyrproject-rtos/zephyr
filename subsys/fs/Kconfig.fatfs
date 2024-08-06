@@ -135,8 +135,8 @@ config FS_FATFS_FF_USE_LFN
 
 config FS_FATFS_MAX_LFN
 	int "Max filename length"
-	range 12 255
-	default 255
+	range 12 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
 	  additional 608 bytes at exFAT enabled.

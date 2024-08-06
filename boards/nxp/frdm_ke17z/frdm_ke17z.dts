@@ -67,10 +67,44 @@
 	pinctrl-names = "default";
 };
 
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c0_default>;
+	pinctrl-names = "default";
+};
+
 &gpiod {
 	status = "okay";
 };
 
 &gpioe {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(44)>;
+		};
+		/* The MCUBoot swap-move algorithm uses the last 2 sectors
+		 * of the primary slot0 for swap status and move.
+		 */
+		slot0_partition: partition@b000 {
+			label = "image-0";
+			reg = <0xb000 (DT_SIZE_K(98) + DT_SIZE_K(4))>;
+		};
+		slot1_partition: partition@24800 {
+			label = "image-1";
+			reg = <0x24800 DT_SIZE_K(98)>;
+		};
+		storage_partition: partition@3d000 {
+			label = "storage";
+			reg = <0x3d000 DT_SIZE_K(12)>;
+		};
+	};
 };

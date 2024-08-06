@@ -1,4 +1,4 @@
-.. _mikroe_weather_click_shield:
+.. _mikroe_weather_click:
 
 MikroElektronika Weather Click
 ##############################

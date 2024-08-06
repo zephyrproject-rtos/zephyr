@@ -84,6 +84,8 @@ already supported, which can also be re-used on this lpcxpresso55s16 board:
 +-----------+------------+-------------------------------------+
 | IAP       | on-chip    | flash programming                   |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
 

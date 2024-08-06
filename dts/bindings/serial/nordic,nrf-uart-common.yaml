@@ -10,6 +10,9 @@ properties:
   pinctrl-0:
     required: true
 
+  pinctrl-names:
+    required: true
+
   disable-rx:
     type: boolean
     description: |

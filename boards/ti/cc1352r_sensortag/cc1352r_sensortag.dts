@@ -8,7 +8,7 @@
 /dts-v1/;
 
 #include <ti/cc1352r.dtsi>
-#include "../cc1352r1_launchxl/boosterpack_connector.dtsi"
+#include "../common/boosterpack_connector.dtsi"
 #include "cc1352r_sensortag-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

@@ -75,7 +75,7 @@ config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_TIMEOUT
 config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RESTORE_TIME
 	int "Connection parameters restore time in milliseconds"
 	default 5000
-	range 1000 65535
+	range 1000 $(UINT16_MAX)
 	help
 	  The value is a time of inactivity on the SMP characteristic after which
 	  connection parameters are restored to peripheral preferred values

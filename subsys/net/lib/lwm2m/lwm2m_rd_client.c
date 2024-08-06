@@ -205,9 +205,7 @@ static void set_sm_state_delayed(uint8_t sm_state, int64_t delay_ms)
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
 		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
-	} else if (sm_state == ENGINE_DEREGISTERED &&
-		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
-		    client.engine_state <= ENGINE_DEREGISTER_SENT) && !client.server_disabled) {
+	} else if (sm_state == ENGINE_DEREGISTERED && !client.server_disabled) {
 		event = LWM2M_RD_CLIENT_EVENT_DISCONNECT;
 	} else if (sm_state == ENGINE_UPDATE_REGISTRATION) {
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE;

@@ -58,12 +58,12 @@ static inline bool in_user_thread_stack_bound(uintptr_t addr, const struct k_thr
 
 	/* See: zephyr/include/zephyr/arch/riscv/arch.h */
 	if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
-		start = thread->arch.priv_stack_start - CONFIG_PRIVILEGED_STACK_SIZE;
-		end = thread->arch.priv_stack_start;
+		start = thread->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE;
 	} else {
 		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
-		end = thread->stack_info.start;
 	}
+	end = Z_STACK_PTR_ALIGN(thread->arch.priv_stack_start + K_KERNEL_STACK_RESERVED +
+				CONFIG_PRIVILEGED_STACK_SIZE);
 
 	return (addr >= start) && (addr < end);
 }

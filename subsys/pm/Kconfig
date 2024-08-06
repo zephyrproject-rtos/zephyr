@@ -131,7 +131,6 @@ config PM_DEVICE_RUNTIME
 config PM_DEVICE_RUNTIME_EXCLUSIVE
 	depends on PM_DEVICE_RUNTIME
 	bool "[DEPRECATED] Use only on Runtime Power Management on system suspend / resume"
-	default y
 	select DEPRECATED
 	help
 	  On system suspend / resume do not trigger the Device PM hooks but
@@ -146,8 +145,7 @@ config PM_DEVICE_SHELL
 
 config PM_DEVICE_SYSTEM_MANAGED
 	bool "System-Managed Device Power Management"
-	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE
-	default y if !PM_DEVICE_RUNTIME
+	default y if !PM_DEVICE_RUNTIME_EXCLUSIVE && !PM_DEVICE_RUNTIME
 	help
 	  This option enables the system-managed device power
 	  management.  The power management subsystem will suspend

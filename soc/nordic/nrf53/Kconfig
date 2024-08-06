@@ -37,9 +37,14 @@ config SOC_NRF5340_CPUNET
 
 if SOC_SERIES_NRF53X
 
+VREGMAIN_PATH := $(dt_nodelabel_path,vregmain)
+VREGRADIO_PATH := $(dt_nodelabel_path,vregradio)
+
 config SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
 	bool "Workaround for nRF5340 anomaly 160"
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND
+	default y if "$(dt_node_int_prop_int,$(VREGMAIN_PATH),regulator-initial-mode)" = 1
+	default y if "$(dt_node_int_prop_int,$(VREGRADIO_PATH),regulator-initial-mode)" = 1
 	help
 	  Indicates that the workaround for the anomaly 160 that affects
 	  the nRF5340 SoC should be applied.
@@ -107,18 +112,42 @@ if SOC_NRF5340_CPUAPP
 config SOC_DCDC_NRF53X_APP
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregmain {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Application MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_NET
 	bool
 	imply SOC_NRF53_ANOMALY_160_WORKAROUND_NEEDED
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregradio {
+	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	  };
+
 	  Enable nRF53 series System on Chip Network MCU DC/DC converter.
 
 config SOC_DCDC_NRF53X_HV
 	bool
+	select DEPRECATED
 	help
+	  This option is deprecated, use devicetree instead. Example
+	  configuration:
+
+	  &vregh {
+	    status = "okay";
+	  };
+
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
 config NRF_SPU_FLASH_REGION_SIZE
@@ -144,6 +173,32 @@ config SOC_NRF53_CPUNET_MGMT
 	select ONOFF
 	help
 	  hidden option for including the nRF53 network CPU management
+
+config SOC_NRF53_CPUNET_ENABLE
+	bool "NRF53 Network MCU is enabled at boot time"
+	depends on !BT
+	default y if NRF_802154_SER_HOST
+	select SOC_NRF53_CPUNET_MGMT
+	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
+	help
+	  This option enables releasing the Network 'force off' signal, which
+	  as a consequence will power up the Network MCU during system boot.
+	  Additionally, the option allocates GPIO pins that will be used by UARTE
+	  of the Network MCU.
+	  Note: GPIO pin allocation can only be configured by the secure Application
+	  MCU firmware, so when this option is used with the non-secure version of
+	  the board, the application needs to take into consideration, that the
+	  secure firmware image must already have configured GPIO allocation for the
+	  Network MCU.
+
+config BOARD_ENABLE_CPUNET
+	bool "[DEPRECATED] NRF53 Network MCU is enabled at boot time"
+	select SOC_NRF53_CPUNET_ENABLE
+	select DEPRECATED
+	depends on !BT
+	help
+	  Use SOC_NRF53_CPUNET_ENABLE instead.
 
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 

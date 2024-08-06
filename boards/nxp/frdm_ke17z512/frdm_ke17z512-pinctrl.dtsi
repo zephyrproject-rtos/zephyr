@@ -38,4 +38,13 @@
 			slew-rate = "slow";
 		};
 	};
+
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <SCI1_RX_PTC16>,
+				<SCI1_TX_PTC17>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };

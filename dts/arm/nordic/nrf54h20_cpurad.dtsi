@@ -59,21 +59,36 @@ wdt011: &cpurad_wdt011 {};
 };
 
 &dppic130 {
-	owned-channels = <0>;
-	sink-channels = <0>;
-	nonsecure-channels = <0>;
+	owned-channels = <0 2 3>;
+	sink-channels = <0 2>;
+	source-channels = <3>;
+	nonsecure-channels = <0 2 3>;
 	status = "okay";
 };
 
 &dppic132 {
-	owned-channels = <0>;
-	source-channels = <0>;
-	nonsecure-channels = <0>;
+	owned-channels = <0 2 3>;
+	sink-channels = <3>;
+	source-channels = <0 2>;
+	nonsecure-channels = <0 2 3>;
 	status = "okay";
 };
 
 &ipct130 {
-	owned-channels = <0>;
-	source-channel-links = <0 3 0>;
+	status = "okay";
+	owned-channels = <0 2>;
+	sink-channel-links = <2 NRF_DOMAIN_ID_RADIOCORE 2>;
+	source-channel-links = <0 NRF_DOMAIN_ID_RADIOCORE 0>,
+			       <2 NRF_DOMAIN_ID_RADIOCORE 2>;
+};
+
+&cpurad_ipct {
+	status = "okay";
+	sink-channel-links = <0 NRF_DOMAIN_ID_GLOBALSLOW 0>,
+			     <2 NRF_DOMAIN_ID_GLOBALSLOW 2>;
+	source-channel-links = <2 NRF_DOMAIN_ID_GLOBALSLOW 2>;
+};
+
+&dppic020 {
 	status = "okay";
 };

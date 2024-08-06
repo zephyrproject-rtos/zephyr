@@ -1156,7 +1156,7 @@
 
 #define HID_OUT_POOL_DEFINE(n)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, out_report_size),			\
-		    (NET_BUF_POOL_DEFINE(hid_buf_pool_out_##n,			\
+		    (UDC_BUF_POOL_DEFINE(hid_buf_pool_out_##n,			\
 					 CONFIG_USBD_HID_OUT_BUF_COUNT,		\
 					 DT_INST_PROP(n, out_report_size),	\
 					 sizeof(struct udc_buf_info), NULL)),	\

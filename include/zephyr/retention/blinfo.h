@@ -41,7 +41,7 @@ extern "C" {
  * @param val		Where the return information will be placed.
  * @param val_len_max	The maximum size of the provided buffer.
  *
- * @retval 0		If successful.
+ * @retval >= 0		If successful (contains length of read value)
  * @retval -EOVERFLOW	If the data is too large to fit the supplied buffer.
  * @retval -EIO		If the requested key was not found.
  * @retval -errno	Error code.

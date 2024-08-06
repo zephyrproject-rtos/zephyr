@@ -339,10 +339,11 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx = NULL;
 }
 
-static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
-			uint8_t flags)
+static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	uint16_t acl_total_len;
+
+	bt_acl_set_ncp_sent(buf, false);
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -355,7 +356,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		LOG_DBG("First, len %u final %u", buf->len,
 			(buf->len < sizeof(uint16_t)) ? 0 : sys_get_le16(buf->data));
 
-		conn->rx = buf;
+		conn->rx = net_buf_ref(buf);
 		break;
 	case BT_ACL_CONT:
 		if (!conn->rx) {
@@ -385,7 +386,6 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		}
 
 		net_buf_add_mem(conn->rx, buf->data, buf->len);
-		net_buf_unref(buf);
 		break;
 	default:
 		/* BT_ACL_START_NO_FLUSH and BT_ACL_COMPLETE are not allowed on
@@ -402,6 +402,10 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 		/* Still not enough data received to retrieve the L2CAP header
 		 * length field.
 		 */
+		bt_send_one_host_num_completed_packets(conn->handle);
+		bt_acl_set_ncp_sent(buf, true);
+		net_buf_unref(buf);
+
 		return;
 	}
 
@@ -409,8 +413,14 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 
 	if (conn->rx->len < acl_total_len) {
 		/* L2CAP frame not complete. */
+		bt_send_one_host_num_completed_packets(conn->handle);
+		bt_acl_set_ncp_sent(buf, true);
+		net_buf_unref(buf);
+
 		return;
 	}
+
+	net_buf_unref(buf);
 
 	if (conn->rx->len > acl_total_len) {
 		LOG_ERR("ACL len mismatch (%u > %u)", conn->rx->len, acl_total_len);
@@ -421,6 +431,8 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	/* L2CAP frame complete. */
 	buf = conn->rx;
 	conn->rx = NULL;
+
+	__ASSERT(buf->ref == 1, "buf->ref %d", buf->ref);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	bt_l2cap_recv(conn, buf, true);
@@ -624,7 +636,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -EIO;
 	}
 
-	LOG_DBG("conn %p buf %p len %u buf->len %u", conn, buf, len, buf->len);
+	LOG_DBG("conn %p buf %p len %u buf->len %u cb %p ud %p",
+		conn, buf, len, buf->len, cb, ud);
 
 	/* Acquire the right to send 1 packet to the controller */
 	if (k_sem_take(bt_conn_get_pkts(conn), K_NO_WAIT)) {
@@ -849,7 +862,7 @@ static bool dont_have_viewbufs(void)
 #endif	/* CONFIG_BT_CONN_TX */
 }
 
-static bool dont_have_methods(struct bt_conn *conn)
+__maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 {
 	return (conn->tx_data_pull == NULL) ||
 		(conn->get_and_clear_cb == NULL) ||
@@ -1035,7 +1048,6 @@ void bt_conn_tx_processor(void)
 
 	bool last_buf = conn_mtu(conn) >= buf_len;
 
-	/* TODO: add sdu_sent callback on last PDU */
 	if (last_buf) {
 		/* Only pull the callback info from the last buffer.
 		 * We still allocate one TX context per-fragment though.
@@ -1219,13 +1231,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		case BT_CONN_DISCONNECT_COMPLETE:
 			wait_for_tx_work(conn);
 
-			/* Cancel Connection Update if it is pending */
-			if ((conn->type == BT_CONN_TYPE_LE) &&
-			    (k_work_delayable_busy_get(&conn->deferred_work) &
-			     (K_WORK_QUEUED | K_WORK_DELAYED))) {
-				k_work_cancel_delayable(&conn->deferred_work);
-			}
-
 			LOG_DBG("trigger disconnect work");
 			k_work_reschedule(&conn->deferred_work, K_NO_WAIT);
 
@@ -1364,6 +1369,11 @@ found:
 		bt_conn_unref(conn);
 	}
 	return NULL;
+}
+
+struct bt_conn *bt_hci_conn_lookup_handle(uint16_t handle)
+{
+	return bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 }
 
 void bt_conn_foreach(enum bt_conn_type type,
@@ -2744,6 +2754,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 		info->le.data_len = &conn->le.data_len;
 #endif
+#if defined(CONFIG_BT_SUBRATING)
+		info->le.subrate = &conn->le.subrate;
+#endif
 		if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_SC)) {
 			info->security.flags |= BT_SECURITY_FLAG_SC;
 		}
@@ -3027,6 +3040,109 @@ int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool reporting_ena
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PATH_LOSS_REPORTING_ENABLE, buf, NULL);
 }
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
+#if defined(CONFIG_BT_SUBRATING)
+void notify_subrate_change(struct bt_conn *conn,
+			   const struct bt_conn_le_subrate_changed params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->subrate_changed) {
+			callback->subrate_changed(conn, &params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb)
+	{
+		if (cb->subrate_changed) {
+			cb->subrate_changed(conn, &params);
+		}
+	}
+}
+
+static bool le_subrate_common_params_valid(const struct bt_conn_le_subrate_param *param)
+{
+	/* All limits according to BT Core spec 5.4 [Vol 4, Part E, 7.8.123] */
+
+	if (param->subrate_min < 0x0001 || param->subrate_min > 0x01F4 ||
+	    param->subrate_max < 0x0001 || param->subrate_max > 0x01F4 ||
+	    param->subrate_min > param->subrate_max) {
+		return false;
+	}
+
+	if (param->max_latency > 0x01F3 ||
+	    param->subrate_max * (param->max_latency + 1) > 500) {
+		return false;
+	}
+
+	if (param->continuation_number > 0x01F3 ||
+	    param->continuation_number >= param->subrate_max) {
+		return false;
+	}
+
+	if (param->supervision_timeout < 0x000A ||
+	    param->supervision_timeout > 0xC80) {
+		return false;
+	}
+
+	return true;
+}
+
+int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *params)
+{
+	struct bt_hci_cp_le_set_default_subrate *cp;
+	struct net_buf *buf;
+
+	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		return -ENOTSUP;
+	}
+
+	if (!le_subrate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_SUBRATE, buf, NULL);
+}
+
+int bt_conn_le_subrate_request(struct bt_conn *conn,
+			       const struct bt_conn_le_subrate_param *params)
+{
+	struct bt_hci_cp_le_subrate_request *cp;
+	struct net_buf *buf;
+
+	if (!le_subrate_common_params_valid(params)) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SUBRATE_REQUEST, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->subrate_min = sys_cpu_to_le16(params->subrate_min);
+	cp->subrate_max = sys_cpu_to_le16(params->subrate_max);
+	cp->max_latency = sys_cpu_to_le16(params->max_latency);
+	cp->continuation_number = sys_cpu_to_le16(params->continuation_number);
+	cp->supervision_timeout = sys_cpu_to_le16(params->supervision_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SUBRATE_REQUEST, buf, NULL);
+}
+#endif /* CONFIG_BT_SUBRATING */
 
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)

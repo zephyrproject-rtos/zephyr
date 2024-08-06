@@ -12,7 +12,7 @@ config UDC_DWC2
 
 config UDC_DWC2_DMA
 	bool "DWC2 USB DMA support"
-	default n
+	default y
 	depends on UDC_DWC2
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.

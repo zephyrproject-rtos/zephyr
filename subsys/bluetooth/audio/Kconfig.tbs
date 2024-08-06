@@ -67,7 +67,7 @@ config BT_TBS_URI_SCHEMES_LIST
 config BT_TBS_SIGNAL_STRENGTH_INTERVAL
 	int "Telephone Bearer Service Signal Strength Reporting Interval"
 	default 0
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Sets the interval of reporting the signal strength in seconds.
 		If the value is 0, the signal will not be reported.
@@ -101,7 +101,7 @@ config BT_TBS_MAX_CALLS
 config BT_TBS_BEARER_COUNT
 	int "How many bearer instances the device instantiates"
 	default 1
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Sets the number of TBS instances that are instantiated
 

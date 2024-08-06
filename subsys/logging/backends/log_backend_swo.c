@@ -100,8 +100,8 @@ static void log_backend_swo_init(struct log_backend const *const backend)
 	ITM->TER  = 0x0;
 	/* Disable ITM */
 	ITM->TCR  = 0x0;
-	/* Select NRZ (UART) encoding protocol */
-	TPI->SPPR = 2;
+	/* Select TPIU encoding protocol */
+	TPI->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
 	/* Set SWO baud rate prescaler value: SWO_clk = ref_clock/(ACPR + 1) */
 	TPI->ACPR = SWO_FREQ_DIV - 1;
 	/* Enable unprivileged access to ITM stimulus ports */

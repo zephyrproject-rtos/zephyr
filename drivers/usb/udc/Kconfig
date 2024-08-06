@@ -25,6 +25,13 @@ config UDC_BUF_POOL_SIZE
 	help
 	  Total amount of memory available for UDC requests.
 
+config UDC_BUF_FORCE_NOCACHE
+	bool "Place the buffer pools in the nocache memory region"
+	depends on NOCACHE_MEMORY && DCACHE
+	help
+	  Place the buffer pools in the nocache memory region if the driver
+	  cannot handle buffers in cached memory.
+
 config UDC_WORKQUEUE
 	bool "Use a dedicate work queue for UDC drivers"
 	help

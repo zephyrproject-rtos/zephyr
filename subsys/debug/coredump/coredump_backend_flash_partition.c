@@ -44,7 +44,8 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 	DT_PARENT(DT_PARENT(DT_NODELABEL(FLASH_PARTITION)))
 
 #define FLASH_WRITE_SIZE	DT_PROP(FLASH_CONTROLLER, write_block_size)
-#define FLASH_BUF_SIZE		FLASH_WRITE_SIZE
+#define FLASH_BUF_SIZE \
+	MAX(FLASH_WRITE_SIZE, ROUND_UP(CONFIG_DEBUG_COREDUMP_FLASH_CHUNK_SIZE, FLASH_WRITE_SIZE))
 #if DT_NODE_HAS_PROP(FLASH_CONTROLLER, erase_block_size)
 #define DEVICE_ERASE_BLOCK_SIZE DT_PROP(FLASH_CONTROLLER, erase_block_size)
 #else
@@ -525,7 +526,7 @@ static void coredump_flash_backend_buffer_output(uint8_t *buf, size_t buflen)
 			copy_sz = remaining;
 		}
 
-		(void)memcpy(tmp_buf, ptr, copy_sz);
+		(void)memmove(tmp_buf, ptr, copy_sz);
 
 		for (i = 0; i < copy_sz; i++) {
 			backend_ctx.checksum += tmp_buf[i];

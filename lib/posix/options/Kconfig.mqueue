@@ -31,7 +31,7 @@ config MSG_SIZE_MAX
 config MQUEUE_NAMELEN_MAX
 	int "Maximum POSIX message queue name size"
 	default 16
-	range 2 255
+	range 2 $(UINT8_MAX)
 	help
 	  Mention size of message queue name in number of characters.
 

@@ -297,46 +297,6 @@ Binary Descriptors:
   tests:
     - bindesc
 
-Bluetooth:
-  status: maintained
-  maintainers:
-    - jhedberg
-  collaborators:
-    - hermabe
-    - Vudentz
-    - asbjornsabo
-    - sjanc
-  files:
-    - doc/connectivity/bluetooth/
-    - include/zephyr/bluetooth/
-    - samples/bluetooth/
-    - subsys/bluetooth/
-    - subsys/bluetooth/common/
-    - tests/bluetooth/
-    - tests/bsim/bluetooth/
-  files-exclude:
-    - include/zephyr/bluetooth/mesh/
-    - subsys/bluetooth/controller/
-    - subsys/bluetooth/host/
-    - subsys/bluetooth/mesh/
-    - samples/bluetooth/mesh/
-    - subsys/bluetooth/audio/
-    - include/zephyr/bluetooth/audio/
-    - tests/bsim/bluetooth/audio/
-    - tests/bsim/bluetooth/host/
-    - tests/bsim/bluetooth/ll/
-    - tests/bluetooth/controller/
-    - tests/bluetooth/host*/
-    - tests/bluetooth/mesh_*/
-    - tests/bluetooth/mesh/
-    - tests/bluetooth/audio/
-    - tests/bsim/bluetooth/mesh/
-    - tests/bluetooth/shell/audio*
-  labels:
-    - "area: Bluetooth"
-  tests:
-    - bluetooth
-
 Bluetooth HCI:
   status: maintained
   maintainers:
@@ -353,6 +313,7 @@ Bluetooth HCI:
     - include/zephyr/drivers/bluetooth/
     - drivers/bluetooth/
     - samples/bluetooth/hci_*/
+    - tests/bsim/bluetooth/hci_uart/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -372,9 +333,20 @@ Bluetooth controller:
     - wopu-ot
     - erbr-ot
   files:
+    - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
+    - doc/connectivity/bluetooth/img/ctlr*
+    - doc/connectivity/bluetooth/api/controller.rst
+    - include/zephyr/bluetooth/controller.h
+    - subsys/bluetooth/common/
     - subsys/bluetooth/controller/
+    - subsys/bluetooth/crypto/
+    - subsys/bluetooth/shell/ll.c
+    - subsys/bluetooth/shell/ll.h
+    - subsys/bluetooth/shell/ticker.c
     - tests/bluetooth/controller/
     - tests/bsim/bluetooth/ll/
+    - tests/bluetooth/ctrl*/
+    - tests/bluetooth/ll_settings/
   labels:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
@@ -393,11 +365,62 @@ Bluetooth Host:
     - sjanc
     - theob-pro
   files:
+    - doc/connectivity/bluetooth/
+    - include/zephyr/bluetooth/
+    - samples/bluetooth/
+    - subsys/bluetooth/common/
+    - subsys/bluetooth/crypto/
     - subsys/bluetooth/host/
+    - subsys/bluetooth/lib/
     - subsys/bluetooth/services/
     - subsys/bluetooth/shell/
-    - tests/bluetooth/host*/
-    - tests/bsim/bluetooth/host/
+    - subsys/bluetooth/CMakeLists.txt
+    - subsys/bluetooth/Kconfig*
+    - tests/bluetooth/
+    - tests/bsim/bluetooth/
+  files-exclude:
+    - subsys/bluetooth/host/classic/
+    - include/zephyr/bluetooth/audio/
+    - include/zephyr/bluetooth/classic/
+    - include/zephyr/bluetooth/audio/
+    - include/zephyr/bluetooth/iso.h
+    - include/zephyr/bluetooth/controller.h
+    - include/zephyr/bluetooth/mesh.h
+    - include/zephyr/bluetooth/testing.h
+    - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
+    - doc/connectivity/bluetooth/autopts/
+    - doc/connectivity/bluetooth/img/ctlr*
+    - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/api/mesh/
+    - doc/connectivity/bluetooth/api/shell/iso.rst
+    - doc/connectivity/bluetooth/api/controller.rst
+    - samples/bluetooth/bap*/
+    - samples/bluetooth/cap*/
+    - samples/bluetooth/hap*/
+    - samples/bluetooth/hci_*/
+    - samples/bluetooth/pbp*/
+    - samples/bluetooth/tmap*/
+    - samples/bluetooth/*_iso/
+    - samples/bluetooth/iso_*/
+    - samples/bluetooth/mesh*/
+    - subsys/bluetooth/shell/bredr.c
+    - subsys/bluetooth/shell/iso.c
+    - subsys/bluetooth/shell/ll.c
+    - subsys/bluetooth/shell/ll.h
+    - subsys/bluetooth/shell/ticker.c
+    - subsys/bluetooth/Kconfig.iso
+    - tests/bluetooth/audio/
+    - tests/bluetooth/controller/
+    - tests/bluetooth/ctrl*/
+    - tests/bluetooth/ll_settings/
+    - tests/bluetooth/mesh*/
+    - tests/bluetooth/qualification/
+    - tests/bluetooth/tester/
+    - tests/bsim/bluetooth/audio/
+    - tests/bsim/bluetooth/audio_samples/
+    - tests/bsim/bluetooth/hci_uart/
+    - tests/bsim/bluetooth/ll/
+    - tests/bsim/bluetooth/mesh/
   labels:
     - "area: Bluetooth Host"
     - "area: Bluetooth"
@@ -415,11 +438,14 @@ Bluetooth Mesh:
     - HaavardRei
     - omkar3141
   files:
-    - subsys/bluetooth/mesh/
+    - doc/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
+    - include/zephyr/bluetooth/mesh.h
+    - include/zephyr/bluetooth/testing.h
+    - samples/bluetooth/mesh*/
+    - subsys/bluetooth/mesh/
     - tests/bluetooth/mesh*/
     - tests/bsim/bluetooth/mesh/
-    - samples/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
     - "area: Bluetooth"
@@ -471,10 +497,49 @@ Bluetooth Classic:
     - jhedberg
     - sjanc
   files:
+    - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
+    - subsys/bluetooth/shell/bredr.c
     - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
+    - "area: Bluetooth"
+  tests:
+    - bluetooth
+
+Bluetooth ISO:
+  status: maintained
+  maintainers:
+    - Thalley
+  collaborators:
+    - jhedberg
+  files:
+    - include/zephyr/bluetooth/iso.h
+    - doc/connectivity/bluetooth/api/shell/iso.rst
+    - samples/bluetooth/*_iso/
+    - samples/bluetooth/iso_*/
+    - subsys/bluetooth/shell/iso.c
+    - subsys/bluetooth/Kconfig.iso
+  labels:
+    - "area: Bluetooth ISO"
+    - "area: Bluetooth"
+  tests:
+    - bluetooth
+
+Bluetooth Qualification:
+  status: maintained
+  maintainers:
+    - sjanc
+  collaborators:
+    - Thalley
+    - jhedberg
+  files:
+    - doc/connectivity/bluetooth/autopts/
+    - tests/bluetooth/qualification/
+    - tests/bluetooth/tester/
+  labels:
+    - "area: Bluetooth Qualification"
+    - "area: Bluetooth"
   tests:
     - bluetooth
 
@@ -866,10 +931,14 @@ Display drivers:
     - include/zephyr/drivers/display.h
     - subsys/fb/
     - samples/subsys/display/
+    - tests/subsys/display/
     - doc/hardware/peripherals/display/
     - tests/drivers/*/display/
   labels:
     - "area: Display"
+  tests:
+    - display.cfb
+    - drivers.display
 
 Documentation:
   status: maintained
@@ -2028,6 +2097,27 @@ Release Notes:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wi-Fi as nRF Wi-Fi":
+  status: maintained
+  maintainers:
+    - krish2718
+    - jukkar
+  files:
+    - drivers/wifi/nrfwifi/
+    - dts/bindings/wifi/nordic,nrf70.yaml
+    - dts/bindings/wifi/nordic,nrf70-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf70-spi.yaml
+    - dts/bindings/wifi/nordic,nrf70-coex.yaml
+    - dts/bindings/wifi/nordic,nrf7002-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7002-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7000-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7000-spi.yaml
+    - dts/bindings/wifi/nordic,nrf7001-qspi.yaml
+    - dts/bindings/wifi/nordic,nrf7001-spi.yaml
+    - boards/shields/nrf7002ek/
+  labels:
+    - "area: Wi-Fi"
+
 "Drivers: Memory Management":
   status: maintained
   maintainers:
@@ -3071,6 +3161,7 @@ Sensor Subsystem:
     - "area: Sensor Subsystem"
   tests:
     - sample.sensing
+    - sensing.api
 
 Stats:
   status: odd fixes
@@ -3199,6 +3290,8 @@ ADI Platforms:
   maintainers:
     - MaureenHelm
   collaborators:
+    - ozersa
+    - ttmut
     - galak
     - microbuilder
   files:
@@ -3435,6 +3528,9 @@ NXP Drivers:
     - manuargue
     - dbaluta
     - MarkWangChinese
+  files-regex:
+    - ^drivers/.*nxp.*
+    - ^drivers/.*mcux.*
   files:
     - drivers/*/*imx*
     - drivers/*/*lpc*.c
@@ -3667,13 +3763,14 @@ Renesas RA Platforms:
     - thaoluonguw
   files:
     - boards/arduino/uno_r4/
+    - boards/renesas/*ra8*/
     - drivers/*/*renesas_ra*
     - drivers/pinctrl/renesas/ra/
     - dts/arm/renesas/ra/
     - dts/bindings/*/*renesas,ra*
     - soc/renesas/ra/
   labels:
-    - "platforms: Renesas RA"
+    - "platform: Renesas RA"
   description: >-
     Renesas RA SOCs, dts files, and related drivers. Boards based
     on Renesas RA SoCs.
@@ -3880,7 +3977,6 @@ LiteX Platforms:
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
-    - drivers/spi/spi_litespi*
     - drivers/*/Kconfig.litex
     - dts/bindings/*/litex*
     - dts/riscv/riscv32-litex-vexriscv.dtsi
@@ -4372,6 +4468,7 @@ West:
     - MaureenHelm
   collaborators:
     - ozersa
+    - ttmut
   files: []
   labels:
     - "platform: ADI"

@@ -201,15 +201,35 @@ static inline int tmag5273_dev_int_trigger(const struct tmag5273_config *drv_cfg
 /** @brief returns the high measurement range based on the chip version */
 static inline uint16_t tmag5273_range_high(uint8_t version)
 {
-	return (version == TMAG5273_VER_TMAG5273X1) ? TMAG5273_MEAS_RANGE_HIGH_MT_VER1
-						    : TMAG5273_MEAS_RANGE_HIGH_MT_VER2;
+	switch (version) {
+	case TMAG5273_VER_TMAG5273X1:
+		return TMAG5273_MEAS_RANGE_HIGH_MT_VER1;
+	case TMAG5273_VER_TMAG5273X2:
+		return TMAG5273_MEAS_RANGE_HIGH_MT_VER2;
+	case TMAG5273_VER_TMAG3001X1:
+		return TMAG3001_MEAS_RANGE_HIGH_MT_VER1;
+	case TMAG5273_VER_TMAG3001X2:
+		return TMAG3001_MEAS_RANGE_HIGH_MT_VER2;
+	default:
+		return -ENODEV;
+	}
 }
 
 /** @brief returns the low measurement range based on the chip version */
 static inline uint16_t tmag5273_range_low(uint8_t version)
 {
-	return (version == TMAG5273_VER_TMAG5273X1) ? TMAG5273_MEAS_RANGE_LOW_MT_VER1
-						    : TMAG5273_MEAS_RANGE_LOW_MT_VER2;
+	switch (version) {
+	case TMAG5273_VER_TMAG5273X1:
+		return TMAG5273_MEAS_RANGE_LOW_MT_VER1;
+	case TMAG5273_VER_TMAG5273X2:
+		return TMAG5273_MEAS_RANGE_LOW_MT_VER2;
+	case TMAG5273_VER_TMAG3001X1:
+		return TMAG3001_MEAS_RANGE_LOW_MT_VER1;
+	case TMAG5273_VER_TMAG3001X2:
+		return TMAG3001_MEAS_RANGE_LOW_MT_VER2;
+	default:
+		return -ENODEV;
+	}
 }
 
 /**
@@ -983,7 +1003,8 @@ static inline int tmag5273_init_device_config(const struct device *dev)
  * @retval 0 if everything was okay
  * @retval -EIO on communication errors
  */
-static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *drv_cfg)
+static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *drv_cfg,
+						uint8_t version)
 {
 	int retval;
 	uint8_t regdata;
@@ -1034,6 +1055,10 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 		return -EIO;
 	}
 
+	/* the 3001 Variant has REG_CONFIG_3 instead of REG_T_CONFIG. No need for temp enable. */
+	if (version == TMAG5273_VER_TMAG3001X1 || version == TMAG5273_VER_TMAG3001X2) {
+		return 0;
+	}
 	/* REG_T_CONFIG */
 	regdata = 0;
 
@@ -1149,7 +1174,7 @@ static int tmag5273_init(const struct device *dev)
 	}
 
 	/* set settings */
-	retval = tmag5273_init_sensor_settings(drv_cfg);
+	retval = tmag5273_init_sensor_settings(drv_cfg, drv_data->version);
 	if (retval < 0) {
 		LOG_ERR("error setting sensor configuration %d", retval);
 		return retval;

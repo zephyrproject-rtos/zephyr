@@ -2,13 +2,15 @@
    :name: Bluetooth: Common Audio Profile Initiator
    :relevant-api: bt_cap bt_bap bluetooth
 
-   CAP Initiator sample that connects to CAP Acceptors and setup audio streaming.
+   CAP Initiator sample that connects to CAP Acceptors and setup unicast audio streaming,
+   or broadcast audio streams.
 
 Overview
 ********
 
 Application demonstrating the CAP Initiator functionality.
-Starts by scanning for a CAP Acceptor and then connects to and sets up available streams.
+Starts by either scanning for a CAP Acceptor and then connects to and sets up available unicast
+audio streams, sets up a broadcast audio stream, or both.
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_initiator` in the Zephyr tree.
 

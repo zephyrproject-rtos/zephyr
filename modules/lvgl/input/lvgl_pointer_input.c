@@ -27,8 +27,9 @@ struct lvgl_pointer_input_data {
 	uint32_t point_y;
 };
 
-static void lvgl_pointer_process_event(const struct device *dev, struct input_event *evt)
+static void lvgl_pointer_process_event(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	const struct lvgl_pointer_input_config *cfg = dev->config;
 	struct lvgl_pointer_input_data *data = dev->data;
 	lv_disp_t *disp = lv_disp_get_default();
