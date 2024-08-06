@@ -87,9 +87,9 @@ extern "C" {
  * @param buffer  Buffer to write the ID to.
  * @param length  Max length of the buffer.
  *
- * @retval size of the device ID copied.
+ * @return size of the device ID copied.
  * @retval -ENOSYS if there is no implementation for the particular device.
- * @retval any negative value on driver specific errors.
+ * @retval -errno any negative value on driver specific errors.
  */
 __syscall ssize_t hwinfo_get_device_id(uint8_t *buffer, size_t length);
 
@@ -103,9 +103,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
  *
  * @param buffer  Buffer of 8 bytes to write the ID to.
  *
- * @retval zero if successful.
+ * @retval 0 if successful.
  * @retval -ENOSYS if there is no implementation for the particular device.
- * @retval any negative value on driver specific errors.
+ * @retval -errno any negative value on driver specific errors.
  */
 __syscall int hwinfo_get_device_eui64(uint8_t *buffer);
 
@@ -127,9 +127,9 @@ int z_impl_hwinfo_get_device_eui64(uint8_t *buffer);
  * Successive calls to this routine will return the same value, unless
  * `hwinfo_clear_reset_cause` has been called.
  *
- * @retval zero if successful.
+ * @retval 0 if successful.
  * @retval -ENOSYS if there is no implementation for the particular device.
- * @retval any negative value on driver specific errors.
+ * @retval -errno any negative value on driver specific errors.
  */
 __syscall int hwinfo_get_reset_cause(uint32_t *cause);
 
@@ -140,9 +140,9 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause);
  *
  * Clears reset cause flags.
  *
- * @retval zero if successful.
+ * @retval 0 if successful.
  * @retval -ENOSYS if there is no implementation for the particular device.
- * @retval any negative value on driver specific errors.
+ * @retval -errno any negative value on driver specific errors.
  */
 __syscall int hwinfo_clear_reset_cause(void);
 
@@ -155,9 +155,9 @@ int z_impl_hwinfo_clear_reset_cause(void);
  *
  * Retrieves all `reset_cause` flags that are supported by this device.
  *
- * @retval zero if successful.
+ * @retval 0 if successful.
  * @retval -ENOSYS if there is no implementation for the particular device.
- * @retval any negative value on driver specific errors.
+ * @retval -errno any negative value on driver specific errors.
  */
 __syscall int hwinfo_get_supported_reset_cause(uint32_t *supported);
 
