@@ -251,6 +251,10 @@ Libraries / Subsystems
 
 * Storage
 
+  * LittleFS: The module has been updated with changes committed upstream
+    from version 2.8.1, the last module update, up to and including
+    the released version 2.9.3.
+
 * Task Watchdog
 
 * POSIX API
