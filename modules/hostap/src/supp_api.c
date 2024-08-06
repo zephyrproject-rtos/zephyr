@@ -388,6 +388,8 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 		return WIFI_SECURITY_TYPE_FT_EAP;
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
+	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
+		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -2243,7 +2245,7 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 		if (!hostapd_cli_cmd_v("set wpa 0")) {
 			goto out;
 		}
-		iface->bss[0]->conf->wpa_key_mgmt = 0;
+		iface->bss[0]->conf->wpa_key_mgmt = WPA_KEY_MGMT_NONE;
 	}
 
 	if (!hostapd_cli_cmd_v("set ieee80211w %d", params->mfp)) {
@@ -2318,6 +2320,128 @@ int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_para
 	return wifi_mgmt_api->ap_bandwidth(dev, params);
 }
 #endif
+
+int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	int ret = 0;
+	struct hostapd_iface *iface = NULL;
+	struct hostapd_config *conf = NULL;
+	struct hostapd_data *hapd = NULL;
+	struct hostapd_bss_config *bss = NULL;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+	conf = iface->conf;
+	if (!conf) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Conf %s not found", dev->name);
+		goto out;
+	}
+	bss = conf->bss[0];
+	if (!bss) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Bss_conf %s not found", dev->name);
+		goto out;
+	}
+	hapd = iface->bss[0];
+	if (!hapd) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Bss %s not found", dev->name);
+		goto out;
+	}
+
+	int proto;
+	int key_mgmt;
+
+	status->state = iface->state;
+	struct hostapd_ssid *ssid = &bss->ssid;
+
+	os_memcpy(status->bssid, hapd->own_addr, WIFI_MAC_ADDR_LEN);
+	status->iface_mode = WPAS_MODE_AP;
+	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
+	key_mgmt = bss->wpa_key_mgmt;
+	proto = bss->wpa;
+	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
+	status->mfp = bss->ieee80211w;
+	status->channel = conf->channel;
+	os_memcpy(status->ssid, ssid->ssid, ssid->ssid_len);
+
+	status->dtim_period = bss->dtim_period;
+	status->beacon_interval = conf->beacon_int;
+
+	struct hostapd_hw_modes *hw_mode = iface->current_mode;
+
+	status->link_mode = conf->ieee80211ax ? WIFI_6 :
+					conf->ieee80211ac ? WIFI_5 :
+					conf->ieee80211n ? WIFI_4 :
+					hw_mode->mode == HOSTAPD_MODE_IEEE80211G ? WIFI_3 :
+					hw_mode->mode == HOSTAPD_MODE_IEEE80211A ? WIFI_2 :
+					hw_mode->mode == HOSTAPD_MODE_IEEE80211B ? WIFI_1 :
+					WIFI_0;
+	status->twt_capable = (hw_mode->he_capab[IEEE80211_MODE_AP].mac_cap[0] & 0x04);
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+{
+	struct hostapd_iface *iface;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+	int ret = 0;
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
+		if (!wifi_mgmt_api || !wifi_mgmt_api->ap_config_params) {
+			wpa_printf(MSG_ERROR, "ap_config_params not supported");
+			return -ENOTSUP;
+		}
+
+		ret = wifi_mgmt_api->ap_config_params(dev, params);
+		if (ret) {
+			wpa_printf(MSG_ERROR,
+					   "Failed to set maximum inactivity duration for stations");
+		} else {
+			wpa_printf(MSG_INFO,
+					   "Set maximum inactivity duration for stations: %d (s)",
+					   params->max_inactivity);
+		}
+	}
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+		iface = get_hostapd_handle(dev);
+		if (!iface) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+			goto out;
+		}
+
+		if (iface->state > HAPD_IFACE_DISABLED) {
+			ret = -EBUSY;
+			wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
+			goto out;
+		}
+
+		if (!hostapd_cli_cmd_v("set max_num_sta %d", params->max_num_sta)) {
+			ret = -1;
+			wpa_printf(MSG_ERROR, "Failed to set maximum number of stations");
+			goto out;
+		}
+		wpa_printf(MSG_INFO, "Set maximum number of stations: %d", params->max_num_sta);
+
+out:
+		k_mutex_unlock(&wpa_supplicant_mutex);
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
 int supplicant_ap_wps_pbc(const struct device *dev)

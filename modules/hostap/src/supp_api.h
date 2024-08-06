@@ -314,6 +314,24 @@ static inline int hapd_state(const struct device *dev, int *state)
 }
 #endif
 
+/**
+ * @brief Get Wi-Fi SAP status
+ *
+ * @param dev Wi-Fi device
+ * @param status SAP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status);
+
+/**
+ * @brief Wi-Fi AP configuration parameter.
+ *
+ * @param dev Wi-Fi device
+ * @param params AP parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params);
+
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
 /** Start AP WPS PBC/PIN
  *
