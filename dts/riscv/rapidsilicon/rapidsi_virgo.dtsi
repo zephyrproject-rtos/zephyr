@@ -168,7 +168,7 @@
 			 interrupt-parent = <&eclic>;
 			 dma-channels = <8>;
 			 dma-requests = <32>;
-			 chain-transfer = <0>;
+			 chain-transfer = <1>;
 			 #dma-cells = <3>;
 			 status = "disabled";
 		 };
