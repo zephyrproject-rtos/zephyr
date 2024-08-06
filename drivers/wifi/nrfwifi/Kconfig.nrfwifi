@@ -690,7 +690,7 @@ config NRF_WIFI_RPU_RECOVERY_PROPAGATION_DELAY_MS
 
 config NRF_WIFI_RPU_RECOVERY_PS_ACTIVE_TIMEOUT_MS
 	int "RPU recovery power save active timeout in milliseconds"
-	default 10000
+	default 50000
 	help
 	  Power save active timeout in milliseconds after which RPU recovery
 	  mechanism will be triggered. This timeout is used to ensure that the
