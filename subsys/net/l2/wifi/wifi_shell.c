@@ -30,11 +30,20 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 
 #include "net_shell_private.h"
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-#include "ca-cert.h"
-#include "client-cert.h"
-#include "client-key.h"
-#include "client-cert.h"
-#include "client-key.h"
+static const char ca_cert_test[] = {
+	#include <wifi_enterprise_test_certs/ca.der.inc>
+	'\0'
+};
+
+static const char client_cert_test[] = {
+	#include <wifi_enterprise_test_certs/client.der.inc>
+	'\0'
+};
+
+static const char client_key_test[] = {
+	#include <wifi_enterprise_test_certs/client-key.der.inc>
+	'\0'
+};
 #endif
 
 #define WIFI_SHELL_MODULE "wifi"
@@ -1110,11 +1119,11 @@ static int cmd_wifi_set_enterprise_creds(const struct shell *sh, size_t argc, ch
 	context.sh = sh;
 
 	params.ca_cert = (uint8_t *)ca_cert_test;
-	params.ca_cert_len = ca_cert_test_len;
+	params.ca_cert_len = ARRAY_SIZE(ca_cert_test);
 	params.client_cert = (uint8_t *)client_cert_test;
-	params.client_cert_len = client_cert_test_len;
+	params.client_cert_len = ARRAY_SIZE(client_cert_test);
 	params.client_key = (uint8_t *)client_key_test;
-	params.client_key_len = client_key_test_len;
+	params.client_key_len = ARRAY_SIZE(client_key_test);
 
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
 		PR_WARNING("Set enterprise credentials failed\n");
