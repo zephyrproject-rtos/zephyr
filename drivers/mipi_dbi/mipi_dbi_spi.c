@@ -42,8 +42,9 @@ uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
  * (first bit sent in each word) indicates if the word is a command or
  * data. Typically 0 indicates a command and 1 indicates data, but some
  * displays may vary.
+ * Index starts from 0 so that BIT(8) means 9th bit.
  */
-#define MIPI_DBI_DC_BIT BIT(9)
+#define MIPI_DBI_DC_BIT BIT(8)
 
 static int mipi_dbi_spi_write_helper(const struct device *dev,
 				     const struct mipi_dbi_config *dbi_config,
@@ -64,8 +65,7 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 		return ret;
 	}
 
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
 		/* 9 bit word mode must be used, as the command/data bit
 		 * is stored before the data word.
 		 */
@@ -176,8 +176,7 @@ static int mipi_dbi_spi_command_read(const struct device *dev,
 		return ret;
 	}
 	memcpy(&tmp_config, &dbi_config->config, sizeof(tmp_config));
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
-	    IS_ENABLED(CONFIG_MIPI_DBI_SPI_3WIRE)) {
+	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
 		/* We have to emulate 3 wire mode by packing the data/command
 		 * bit into the upper bit of the SPI transfer.
 		 * switch SPI to 9 bit mode, and write the transfer
