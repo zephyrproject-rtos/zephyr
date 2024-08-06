@@ -14,9 +14,9 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(z_arm_platform_init)
+GTEXT(soc_reset_hook)
 
-SECTION_FUNC(TEXT, z_arm_platform_init)
+SECTION_FUNC(TEXT, soc_reset_hook)
 
 	/*
 	 * On destructive reset, SRAM and TCM memories must be initialized to a known value using a

@@ -30,8 +30,8 @@ GDATA(z_arm_sys_stack)
 GDATA(z_arm_fiq_stack)
 GDATA(z_arm_abort_stack)
 GDATA(z_arm_undef_stack)
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-GTEXT(z_arm_platform_init)
+#if defined(CONFIG_SOC_RESET_HOOK)
+GTEXT(soc_reset_hook)
 #endif
 
 /**
@@ -305,9 +305,9 @@ _primary_core:
     msr CPSR_c, #(MODE_SYS | I_BIT | F_BIT)
     mov sp, r10
 
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
+#if defined(CONFIG_SOC_RESET_HOOK)
     /* Execute platform-specific initialisation if applicable */
-    bl z_arm_platform_init
+    bl soc_reset_hook
 #endif
 
 #if defined(CONFIG_WDOG_INIT)
