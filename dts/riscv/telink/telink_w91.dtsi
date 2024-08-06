@@ -146,16 +146,19 @@
 
 		uart0: uart0 {
 			compatible = "telink,w91-uart";
+			instance-id = <0>;
 			status = "disabled";
 		};
 
 		uart1: uart1 {
 			compatible = "telink,w91-uart";
+			instance-id = <1>;
 			status = "disabled";
 		};
 
 		uart2: uart2 {
 			compatible = "telink,w91-uart";
+			instance-id = <2>;
 			status = "disabled";
 		};
 	};

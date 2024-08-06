@@ -6,3 +6,12 @@ description: Telink W91 UART
 compatible: "telink,w91-uart"
 
 include: uart-controller.yaml
+
+properties:
+  pinctrl-0:
+    type: phandles
+    required: true
+
+  instance-id:
+    type: int
+    required: true

@@ -15,16 +15,16 @@ config UART_TELINK_W91
 
 if UART_TELINK_W91
 
-config TELINK_W91_UART_RX_THREAD_STACK_SIZE
-	int "UART IRQ Reception thread stack size"
+config TELINK_W91_UART_IRQ_THREAD_STACK_SIZE
+	int "UART IRQ thread stack size"
 	default 1024
 	help
-	  UART IRQ RX stack size.
+	  UART IRQ stack size.
 
-config TELINK_W91_UART_RX_THREAD_PRIORITY
-	int "UART RX thread priority"
-	default 5
+config TELINK_W91_UART_IRQ_THREAD_PRIORITY
+	int "UART IRQ thread priority"
+	default 0
 	help
-	  UART RX thread priority.
+	  UART IRQ thread priority.
 
 endif # UART_TELINK_W91
