@@ -19,6 +19,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 				GPIO_SLEW_RATE_FAST : GPIO_SLEW_RATE_SLOW));
 	gpio_set_input_hysteresis_enabled(pin->pin_num, pin->schmitt_enable);
 	gpio_set_input_enabled(pin->pin_num, pin->input_enable);
+	gpio_set_oeover(pin->pin_num, pin->oe_override);
 }
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
