@@ -168,7 +168,7 @@ int gnss_nmea0183_parse_gsv_header(const char **argv, uint16_t argc,
  * @param satellites Destination for parsed satellites from NMEA0183 GGA message
  * @param size Size of destination for parsed satellites from NMEA0183 GGA message
  *
- * @retval Number of parsed space-vehicles stored at destination if successful
+ * @return Number of parsed space-vehicles stored at destination if successful
  * @retval -ENOMEM if all space-vehicles in message could not be stored at destination
  * @retval -EINVAL if input is invalid
  */
