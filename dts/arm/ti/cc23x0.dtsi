@@ -240,6 +240,15 @@
 			dma-names = "dma";
 			status = "disabled";
 		};
+
+		i2c0: i2c@40038000 {
+			compatible = "ti,cc23x0-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40038000 0x820>;
+			interrupts = <12 0>;
+			status = "disabled";
+		};
 	};
 };
 
