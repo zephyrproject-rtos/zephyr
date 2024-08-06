@@ -375,8 +375,8 @@ extern struct k_mem_partition rtio_partition;
  * @brief Get the mempool block size of the RTIO context
  *
  * @param[in] r The RTIO context
- * @return The size of each block in the context's mempool
- * @return 0 if the context doesn't have a mempool
+ * @retval size The size of each block in the context's mempool
+ * @retval 0 the context doesn't have a mempool
  */
 static inline size_t rtio_mempool_block_size(const struct rtio *r)
 {
@@ -847,8 +847,8 @@ static inline uint32_t rtio_sqe_acquirable(struct rtio *r)
  *
  * @param iodev_sqe Submission queue entry
  *
- * @retval NULL if current sqe is last in transaction
- * @retval struct rtio_sqe * if available
+ * @return Next submission queue entry if available
+ * @retval NULL current sqe is last in transaction
  */
 static inline struct rtio_iodev_sqe *rtio_txn_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -859,14 +859,13 @@ static inline struct rtio_iodev_sqe *rtio_txn_next(const struct rtio_iodev_sqe *
 	}
 }
 
-
 /**
  * @brief Get the next sqe in the chain
  *
  * @param iodev_sqe Submission queue entry
  *
- * @retval NULL if current sqe is last in chain
- * @retval struct rtio_sqe * if available
+ * @return Next submission queue entry
+ * @retval NULL current sqe is last in chain
  */
 static inline struct rtio_iodev_sqe *rtio_chain_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -882,8 +881,8 @@ static inline struct rtio_iodev_sqe *rtio_chain_next(const struct rtio_iodev_sqe
  *
  * @param iodev_sqe Submission queue entry
  *
- * @retval NULL if current sqe is last in chain
- * @retval struct rtio_iodev_sqe * if available
+ * @return Next submission queue entry if available
+ * @retval NULL current sqe is last in chain
  */
 static inline struct rtio_iodev_sqe *rtio_iodev_sqe_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -1060,9 +1059,9 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
  * @param[in] cqe The CQE handling the event.
  * @param[out] buff Pointer to the mempool buffer
  * @param[out] buff_len Length of the allocated buffer
- * @return 0 on success
- * @return -EINVAL if the buffer wasn't allocated for this cqe
- * @return -ENOTSUP if memory blocks are disabled
+ * @retval 0 success
+ * @retval -EINVAL the buffer wasn't allocated for this cqe
+ * @retval -ENOTSUP memory blocks are disabled
  */
 __syscall int rtio_cqe_get_mempool_buffer(const struct rtio *r, struct rtio_cqe *cqe,
 					  uint8_t **buff, uint32_t *buff_len);
@@ -1173,8 +1172,8 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
  * @param[out] buf        Where to store the pointer to the buffer
  * @param[out] buf_len    Where to store the size of the buffer
  *
- * @return 0 if @p buf and @p buf_len were successfully filled
- * @return -ENOMEM Not enough memory for @p min_buf_len
+ * @retval 0 @p buf and @p buf_len were successfully filled
+ * @retval -ENOMEM Not enough memory for @p min_buf_len
  */
 static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32_t min_buf_len,
 				  uint32_t max_buf_len, uint8_t **buf, uint32_t *buf_len)
@@ -1270,8 +1269,8 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
  * result.
  *
  * @param[in] sqe The SQE to cancel
- * @return 0 if the SQE was flagged for cancellation
- * @return <0 on error
+ * @retval 0 the SQE was flagged for cancellation
+ * @retval -errno negative error code
  */
 __syscall int rtio_sqe_cancel(struct rtio_sqe *sqe);
 

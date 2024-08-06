@@ -50,8 +50,8 @@ struct rtio_work_req {
  * @details This allocation utilizes its internal memory slab with
  * pre-allocated elements.
  *
- * @return Pointer to allocated item if successful.
- * @return NULL if allocation failed.
+ * @retval ptr Pointer to allocated item.
+ * @retval NULL Allocation failed.
  */
 struct rtio_work_req *rtio_work_req_alloc(void);
 
