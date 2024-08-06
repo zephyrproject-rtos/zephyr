@@ -298,7 +298,7 @@ static int nrf_wifi_util_tx_stats(const struct shell *sh,
 		tx_pending_pkts = nrf_wifi_utils_q_len(fmac_dev_ctx->fpriv->opriv, queue);
 
 		shell_fprintf(
-			shell,
+			sh,
 			SHELL_INFO,
 			"Outstanding tokens: ac: %d -> %d (pending_q_len: %d)\n",
 			i,
@@ -346,7 +346,7 @@ static int nrf_wifi_util_tx_rate(const struct shell *sh,
 
 		data_rate = strtol(argv[2], &ptr, 10);
 
-		if (!(check_valid_data_rate(shell,
+		if (!(check_valid_data_rate(sh,
 					    rate_flag,
 					    data_rate))) {
 			shell_fprintf(sh,
