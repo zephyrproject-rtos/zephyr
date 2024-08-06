@@ -777,4 +777,22 @@ config NRF_WIFI_MGMT_BUFF_OFFLOAD
 	  having to exchange commands and events for every management packet even if it is
 	  consumed by UMAC.
 
+config NRF_WIFI_FEAT_KEEPALIVE
+	bool "Wi-Fi keepalive feature for connection maintenance"
+	depends on NRF70_STA_MODE
+	help
+	  Enable Wi-Fi keepalive feature to keep the connection alive by sending
+	  keepalive packets to the AP. Primarily intended to interoperate with APs
+	  that disconnect idle clients without any explicit checks. Slightly increases
+	  power consumption.
+
+if NRF_WIFI_FEAT_KEEPALIVE
+config NRF_WIFI_KEEPALIVE_PERIOD_S
+	int "Keepalive period in seconds"
+	range 30 3600
+	default 60
+	help
+	  Keepalive period in seconds to send keepalive packets to the AP.
+endif
+
 endif # WIFI_NRF70
