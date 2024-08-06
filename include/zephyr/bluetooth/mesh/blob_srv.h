@@ -127,7 +127,7 @@ struct bt_mesh_blob_srv_cb {
 		       const struct bt_mesh_blob_io **io);
 };
 
-/** @brief BLOB Transfer Server instance. */
+/** @brief BLOB Transfer Server model instance. */
 struct bt_mesh_blob_srv {
 	/** Event handler callbacks. */
 	const struct bt_mesh_blob_srv_cb *cb;
@@ -138,6 +138,7 @@ struct bt_mesh_blob_srv {
 	struct bt_mesh_blob_block block;
 	const struct bt_mesh_model *mod;
 	enum bt_mesh_blob_xfer_phase phase;
+	uint16_t chunk_size;
 
 	struct bt_mesh_blob_srv_state {
 		struct bt_mesh_blob_xfer xfer;
