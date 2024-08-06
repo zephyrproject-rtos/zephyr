@@ -102,6 +102,53 @@ Device Drivers and Devicetree
   their driver API, users of these devices should ensure they pass appropriate values to
   :c:func:`gpio_pin_set`. (:github:`65797`)
 
+Clock control
+=============
+
+* LFXO/HFXO (High/Low Frequency Crystal Oscillator) present in nRF53 series can
+  now be configured using devicetree. The Kconfig options
+  :kconfig:option:`CONFIG_SOC_ENABLE_LFXO`,
+  :kconfig:option:`CONFIG_SOC_LFXO_CAP_EXTERNAL`,
+  :kconfig:option:`CONFIG_SOC_LFXO_CAP_INT_6PF`,
+  :kconfig:option:`CONFIG_SOC_LFXO_CAP_INT_7PF`,
+  :kconfig:option:`CONFIG_SOC_LFXO_CAP_INT_9PF`,
+  :kconfig:option:`CONFIG_SOC_HFXO_CAP_DEFAULT`,
+  :kconfig:option:`CONFIG_SOC_HFXO_CAP_EXTERNAL`,
+  :kconfig:option:`CONFIG_SOC_HFXO_CAP_INTERNAL` and
+  :kconfig:option:`CONFIG_SOC_HFXO_CAP_INT_VALUE_X2` have been deprecated.
+
+  LFXO can now be configured like this:
+
+  .. code-block:: devicetree
+
+     /* use external capacitors */
+     &lfxo {
+           load-capacitors = "external";
+     };
+
+     /* use internal capacitors (value needs to be selected: 6, 7, 9pF)
+     &lfxo {
+           load-capacitors = "internal";
+           load-capacitance-picofarad = <...>;
+     };
+
+  HFXO can now be configured like this:
+
+  .. code-block:: devicetree
+
+     /* use external capacitors */
+     &hfxo {
+           load-capacitors = "external";
+     };
+
+     /* use internal capacitors (value needs to be selected: 7pF...20pF in 0.5pF
+      * steps, units: femtofarads)
+      */
+     &hfxo {
+           load-capacitors = "internal";
+           load-capacitance-femtofarad = <...>;
+     };
+
 Controller Area Network (CAN)
 =============================
 
