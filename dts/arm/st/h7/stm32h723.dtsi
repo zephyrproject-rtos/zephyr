@@ -101,7 +101,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 14U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
@@ -113,7 +113,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB3, 19U)>,
 				<&rcc STM32_SRC_PLL1_Q OSPI_SEL(1)>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			status = "disabled";
 		};
 
