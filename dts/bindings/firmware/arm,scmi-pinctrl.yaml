@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: System Control and Management Interface (SCMI) pinctrl protocol
+
+compatible: "arm,scmi-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    const: [0x19]
+
+child-binding:
+  description: SCMI pin protocol pin group
+  properties:
+    pinmux:
+      required: true
+      type: array

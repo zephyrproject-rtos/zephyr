@@ -9,3 +9,4 @@ zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_SHMEM shmem.c)
 
 # SCMI protocol helper files
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_CLK_HELPERS clk.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_PINCTRL_HELPERS pinctrl.c)
