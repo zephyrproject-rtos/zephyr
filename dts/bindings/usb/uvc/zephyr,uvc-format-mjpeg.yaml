@@ -1,0 +1,9 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class list of supported Motion JPEG (MJPEG) formats.
+
+include: zephyr,uvc-format.yaml
+
+compatible: "zephyr,uvc-format-mjpeg"

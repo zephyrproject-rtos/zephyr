@@ -1,0 +1,13 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Video Class instance
+
+compatible: "zephyr,uvc"
+
+# Child nodes of "zephyr,uvc" compatibles are supposed to be:
+# - Video Control entity named "port", which also matches the
+#   port/endpoint/remote-endpoint syntax of devicetrees.
+# - Video Streaming entity, which list the formats available.
+
+on-bus: usb
