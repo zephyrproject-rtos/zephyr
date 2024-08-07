@@ -410,6 +410,13 @@
 			usbd-ram-size = <4096>;
 			status = "disabled";
 		};
+
+		emac: ethernet@40018000 {
+			compatible = "nuvoton,npcm-ethernet";
+			reg = <0x40018000 0x2000>;
+			interrupts = <36 3>;
+			status = "disabled";
+		};
 	};
 
 	soc-id {

@@ -180,3 +180,9 @@
 	pinctrl-0 = <&usbdphy_en &usbdphy_clk_external>;
 	pinctrl-names = "default";
 };
+
+&emac {
+	status = "okay";
+	pinctrl-0 = <&emac_rmii_en &emac_mdio_en &emac_phy>;
+	pinctrl-names = "default";
+};

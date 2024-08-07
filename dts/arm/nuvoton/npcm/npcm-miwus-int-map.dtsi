@@ -77,11 +77,13 @@
 				irq-prio   = <2>;
 				group-mask = <0x08>;
 			};
+			/*
 			group_e1a: group-e1a-map {
 				irq        = <36>;
 				irq-prio   = <2>;
 				group-mask = <0x10>;
 			};
+			*/
 			group_e1b: group-e1b-map {
 				irq        = <12>;
 				irq-prio   = <2>;

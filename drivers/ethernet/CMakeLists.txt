@@ -64,6 +64,8 @@ if(CONFIG_ETH_NATIVE_POSIX)
   endif()
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_ETH_NPCM		eth_npcm.c)
+
 add_subdirectory(phy)
 add_subdirectory(eth_nxp_enet_qos)
 add_subdirectory(nxp_enet)

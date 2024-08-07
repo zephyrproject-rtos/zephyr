@@ -2671,4 +2671,939 @@ struct sgpio_reg {
 #define NPCM_XEVSTS(base, n) (*(volatile uint8_t*)(base + \
 						NPCM_XEVSTS_OFFSET(n)))
 
+/* Ethernet (ETH) registers */
+struct emac_reg {
+	/* 0x00: MAC Configuration Register */
+	volatile uint32_t MACCR;
+	/* 0x04: MAC Frame Filter Register */
+	volatile uint32_t MACFFR;
+	/* 0x08: MAC Hash Table High Register */
+	volatile uint32_t MACHTHR;
+	/* 0x0C: MAC Hash Table Low Register */
+	volatile uint32_t MACHTLR;
+	/* 0x10: MAC MII Address Register */
+	volatile uint32_t MACMIIAR;
+	/* 0x14: MAC MII Data Register */
+	volatile uint32_t MACMIIDR;
+	/* 0x18: MAC Flow Control Register */
+	volatile uint32_t MACFCR;
+	/* 0x1C: MAC VLAN Tag Register */
+	volatile uint32_t MACVLANTR;
+	/* 0x20: MAC Version Register */
+	volatile uint32_t MACVER;
+	/* 0x24: MAC Debug Register */
+	volatile uint32_t MACDBGR;
+	/* 0x28: MAC Remote Wake-Up Frame Filter Register */
+	volatile uint32_t MACRWUFFR;
+	/* 0x2C: MAC PMT Control and Status Register */
+	volatile uint32_t MACPMTCSR;
+	/* 0x30: MAC LPI Control and Status Register */
+	volatile uint32_t MACLPICSR;
+	/* 0x34: MAC LPI Timers Control Register */
+	volatile uint32_t MACLPITCR;
+	/* 0x38: MAC Interrupt Status Register */
+	volatile uint32_t MACISR;
+	/* 0x3C: MAC Interrupt Mask Register */
+	volatile uint32_t MACIMR;
+	/* 0x40: MAC Address 0 High Register */
+	volatile uint32_t MACA0HR;
+	/* 0x44: MAC Address 0 Low Register */
+	volatile uint32_t MACA0LR;
+	/* 0x48: MAC Address 1 High Register */
+	volatile uint32_t MACA1HR;
+	/* 0x4C: MAC Address 1 Low Register */
+	volatile uint32_t MACA1LR;
+	/* 0x50: MAC Address 2 High Register */
+	volatile uint32_t MACA2HR;
+	/* 0x54: MAC Address 2 Low Register */
+	volatile uint32_t MACA2LR;
+	/* 0x58: MAC Address 3 High Register */
+	volatile uint32_t MACA3HR;
+	/* 0x5C: MAC Address 3 Low Register */
+	volatile uint32_t MACA3LR;
+	/* 0x60: MAC Address 4 High Register */
+	volatile uint32_t MACA4HR;
+	/* 0x64: MAC Address 4 Low Register */
+	volatile uint32_t MACA4LR;
+	/* 0x68: MAC Address 5 High Register */
+	volatile uint32_t MACA5HR;
+	/* 0x6C: MAC Address 5 Low Register */
+	volatile uint32_t MACA5LR;
+	/* 0x70: MAC Address 6 High Register */
+	volatile uint32_t MACA6HR;
+	/* 0x74: MAC Address 6 Low Register */
+	volatile uint32_t MACA6LR;
+	/* 0x78: MAC Address 7 High Register */
+	volatile uint32_t MACA7HR;
+	/* 0x7C: MAC Address 7 Low Register */
+	volatile uint32_t MACA7LR;
+	/* 0x80: MAC Address 8 High Register */
+	volatile uint32_t MACA8HR;
+	/* 0x84: MAC Address 8 Low Register */
+	volatile uint32_t MACA8LR;
+	/* 0x88: MAC Address 9 High Register */
+	volatile uint32_t MACA9HR;
+	/* 0x8C: MAC Address 9 Low Register */
+	volatile uint32_t MACA9LR;
+	/* 0x90: MAC Address 10 High Register */
+	volatile uint32_t MACA10HR;
+	/* 0x94: MAC Address 10 Low Register */
+	volatile uint32_t MACA10LR;
+	/* 0x98: MAC Address 11 High Register */
+	volatile uint32_t MACA11HR;
+	/* 0x9C: MAC Address 11 Low Register */
+	volatile uint32_t MACA11LR;
+	/* 0xA0: MAC Address 12 High Register */
+	volatile uint32_t MACA12HR;
+	/* 0xA4: MAC Address 12 Low Register */
+	volatile uint32_t MACA12LR;
+	/* 0xA8: MAC Address 13 High Register */
+	volatile uint32_t MACA13HR;
+	/* 0xAC: MAC Address 13 Low Register */
+	volatile uint32_t MACA13LR;
+	/* 0xB0: MAC Address 14 High Register */
+	volatile uint32_t MACA14HR;
+	/* 0xB4: MAC Address 14 Low Register */
+	volatile uint32_t MACA14LR;
+	/* 0xB8: MAC Address 15 High Register */
+	volatile uint32_t MACA15HR;
+	/* 0xBC: MAC Address 15 Low Register */
+	volatile uint32_t MACA15LR;
+	volatile uint8_t  RESERVED1[28];
+	/* 0xDC: MAC Watchdog Timeout Register */
+	volatile uint32_t MACWTR;
+	/* 0xE0: MAC General Purpose IO Register */
+	volatile uint32_t MACGPIOR;
+	volatile uint8_t  RESERVED2[28];
+
+	/* 0x100: MMC Control Register */
+	volatile uint32_t MMCCR;
+	/* 0x104: MMC Receive Interrupt Register */
+	volatile uint32_t MMCRIR;
+	/* 0x108: MMC Transmit Interrupt Register */
+	volatile uint32_t MMCTIR;
+	/* 0x10C: MMC Receive Interrupt Mask Register */
+	volatile uint32_t MMCRIMR;
+	/* 0x110: MMC Transmit Interrupt Mask Register */
+	volatile uint32_t MMCTIMR;
+	/* 0x114: Number of bytes transmitted,
+	 * exclusive of preamble and retried bytes, in good and bad frames.
+	 */
+	volatile uint32_t txoctetcount_gb;
+	/* 0x118: Number of good and bad frames transmitted, exclusive of retried frames. */
+	volatile uint32_t txframecount_gb;
+	/* 0x11C: Number of good broadcast frames transmitted. */
+	volatile uint32_t txbroadcastframes_g;
+	/* 0x120: Number of good multicast frames transmitted. */
+	volatile uint32_t txmulticastframes_g;
+	/* 0x124: Number of good and bad frames transmitted with length 64 bytes,
+	 * exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx64octets_gb;
+	/* 0x128: Number of good and bad frames transmitted with length between
+	 *  65 and 127 (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx65to127octets_gb;
+	/* 0x12C: Number of good and bad frames transmitted with length between
+	 *  128 and 255 (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx128to255octets_gb;
+	/* 0x130: Number of good and bad frames transmitted with length between
+	 *  256 and 511 (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx256to511octets_gb;
+	/* 0x134: Number of good and bad frames transmitted with length between
+	 *  512 and 1,023 (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx512to1023octets_gb;
+	/* 0x138: Number of good and bad frames transmitted with length between
+	 *  1,024 and maxsize (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t tx1024tomaxoctets_gb;
+	/* 0x13C: Number of good and bad unicast frames ransmitted. */
+	volatile uint32_t txunicastframes_gb;
+	/* 0x140: Number of good and bad multicast frames transmitted. */
+	volatile uint32_t txmulticastframes_gb;
+	/* 0x144: Number of good and bad broadcast frames transmitted. */
+	volatile uint32_t txbroadcastframes_gb;
+	/* 0x148: Number of frames aborted because of frame underflow error. */
+	volatile uint32_t txunderflowerror;
+	/* 0x14C: Number of successfully transmitted frames after a
+	 * single collision in the half-duplex mode.
+	 */
+	volatile uint32_t MMCTGFSCCR;
+	/* 0x150: Number of successfully transmitted frames after
+	 * multiple collisions in the half-duplex mode.
+	 */
+	volatile uint32_t MMCTGFMSCCR;
+	/* 0x154: Number of successfully transmitted frames after
+	 *  a deferral in the half-duplex mode.
+	 */
+	volatile uint32_t txdeferred;
+	/* 0x158: Number of frames aborted because of late collision error. */
+	volatile uint32_t txlatecol;
+	/* 0x15C: Number of frames aborted because of excessive (16) collision errors. */
+	volatile uint32_t txexesscol;
+	/* 0x160: Number of frames aborted because of carrier sense error
+	 * (no carrier or loss of carrier).
+	 */
+	volatile uint32_t txcarriererror;
+	/* 0x164: Number of bytes transmitted, exclusive of preamble, only in good frames. */
+	volatile uint32_t txoctetcount_g;
+	/* 0x168: Number of good frames transmitted. */
+	volatile uint32_t MMCTGFCR;
+	/* 0x16C: Number of frames aborted because of excessive deferral error
+	 * (deferred for more than two max-sized frame times).
+	 */
+	volatile uint32_t txexcessdef;
+	/* 0x170: Number of good Pause frames transmitted. */
+	volatile uint32_t txpauseframes;
+	/* 0x174: Number of good VLAN frames transmitted, exclusive of retried frames. */
+	volatile uint32_t txvlanframes_g;
+	/* 0x178: Number of frames transmitted without errors and with
+	 * length greater than the maxsize (1,518 or 1,522 bytes for VLAN
+	 * tagged frames; 2000 bytes if enabled in Bit 27 of Register 0
+	 * (MAC Configuration Register)).
+	 */
+	volatile uint32_t txoversize_g;
+	volatile uint8_t  RESERVED3[4];
+	/* 0x180: Number of good and bad frames received. */
+	volatile uint32_t rxframecount_gb;
+	/* 0x184: Number of bytes received, exclusive of preamble, in good and bad frames. */
+	volatile uint32_t rxoctetcount_gb;
+	/* 0x188: Number of bytes received, exclusive of preamble, only in good frames. */
+	volatile uint32_t rxoctetcount_g;
+	/* 0x18C: Number of good broadcast frames received. */
+	volatile uint32_t rxbroadcastframes_g;
+	/* 0x190: Number of good multicast frames received. */
+	volatile uint32_t rxmulticastframes_g;
+	/* 0x194: Number of frames received with CRC error. */
+	volatile uint32_t MMCRFCECR;
+	/* 0x198: Number of frames received with alignment (dribble) error.
+	 * Valid only in 10/100 mode.
+	 */
+	volatile uint32_t MMCRFAECR;
+	/* 0x19C: Number of frames received with runt (<64 bytes and CRC error) error. */
+	volatile uint32_t rxrunterror;
+	/* 0x1A0: Number of giant frames received with length (including CRC)
+	 * greater than 1,518 bytes (1,522 bytes for VLAN tagged) and with CRC error.
+	 * If Jumbo Frame mode is enabled, then frames of length greater than 9,018 bytes
+	 * (9,022 for VLAN tagged) are considered as giant frames.
+	 */
+	volatile uint32_t rxjabbererror;
+	/* 0x1A4: Number of frames received with length less than 64 bytes, without any errors. */
+	volatile uint32_t rxundersize_g;
+	/* 0x1A8: Number of frames received without errors, with length greater than the maxsize
+	 * (1,518 or 1,522 for VLAN tagged frames; 2,000 bytes if enabled in Bit 27 of Register 0
+	 * (MAC Configuration Register)).
+	 */
+	volatile uint32_t rxoversize_g;
+	/* 0x1AC: Number of good and bad frames received with length 64 bytes,
+	 * exclusive of preamble.
+	 */
+	volatile uint32_t rx64octets_gb;
+	/* 0x1B0: Number of good and bad frames received with length between
+	 * 65 and 127 (inclusive) bytes, exclusive of preamble.
+	 */
+	volatile uint32_t rx65to127octets_gb;
+	/* 0x1B4: Number of good and bad frames received with length between
+	 * 128 and 255 (inclusive) bytes, exclusive of preamble.
+	 */
+	volatile uint32_t rx128to255octets_gb;
+	/* 0x1B8: Number of good and bad frames received with length between
+	 * 256 and 511 (inclusive) bytes, exclusive of preamble.
+	 */
+	volatile uint32_t rx256to511octets_gb;
+	/* 0x1BC: Number of good and bad frames received with length between
+	 * 512 and 1,023 (inclusive) bytes, exclusive of preamble.
+	 */
+	volatile uint32_t rx512to1023octets_gb;
+	/* 0x1C0: Number of good and bad frames received with length between
+	 * 1,024 and maxsize (inclusive) bytes, exclusive of preamble and retried frames.
+	 */
+	volatile uint32_t rx1024tomaxoctets_gb;
+	/* 0x1C4: Number of received good unicast frames. */
+	volatile uint32_t MMCRGUFCR;
+	/* 0x1C8: Number of frames received with length error
+	 * (Length type field !=frame size), for all frames with valid length field.
+	 */
+	volatile uint32_t rxlengtherror;
+	/* 0x1CC: Number of frames received with length field not equal to the valid
+	 * frame size (greater than 1,500 but less than 1,536).
+	 */
+	volatile uint32_t rxoutofrangetype;
+	/* 0x1D0: Number of good and valid Pause frames received. */
+	volatile uint32_t rxpauseframes;
+	/* 0x1D4: Number of missed received frames because of FIFO overflow.
+	 * This counter is not present in the  GMAC-CORE configuration.
+	 */
+	volatile uint32_t rxfifooverflow;
+	/* 0x1D8: Number of good and bad VLAN frames received. */
+	volatile uint32_t rxvlanframes_gb;
+	/* 0x1DC: Number of frames received with error because
+	 * of watchdog timeout error (frames with a data load larger than
+	 * 2,048 bytes or the value programmed in Register
+	 * 55 (Watchdog Timeout Register)).
+	 */
+	volatile uint32_t rxwatchdogerror;
+	/* 0x1E0: Number of frames received with Receive error or Frame Extension error
+	 * on the GMII or MII interface.
+	 */
+	volatile uint32_t rxrcverror;
+	/* 0x1E4: Number of received good control frames. */
+	volatile uint32_t rxctrlframes_g;
+	volatile uint8_t  RESERVED4[24];
+	/* 0x200: MMC IPC Receive Checksum Offload Interrupt Mask maintains
+	 * the mask for the interrupt generated from the receive IPC statistic counters.
+	 * See Table 4-24 for further detail.
+	 */
+	volatile uint32_t mmc_ipc_intr_mask_rx;
+	volatile uint8_t  RESERVED5[4];
+	/* 0x208: MMC Receive Checksum Offload Interrupt maintains the interrupt
+	 * that the receive IPC statistic counters generate.
+	 * See Table 4-25 for further detail.
+	 */
+	volatile uint32_t mmc_ipc_intr_rx;
+	volatile uint8_t  RESERVED6[4];
+	/* 0x210: Number of good IPv4 datagrams received with the TCP, UDP, or ICMP payload. */
+	volatile uint32_t rxipv4_gd_frms;
+	/* 0x214: Number of IPv4 datagrams received with header
+	 * (checksum, length, or version mismatch) errors.
+	 */
+	volatile uint32_t rxipv4_hdrerr_frms;
+	/* 0x218: Number of IPv4 datagram frames received that did not have a
+	 * TCP, UDP, or ICMP payload processed by the Checksum engine.
+	 */
+	volatile uint32_t rxipv4_nopay_frms;
+	/* 0x21C: Number of good IPv4 datagrams with fragmentation. */
+	volatile uint32_t rxipv4_frag_frms;
+	/* 0x220: Number of good IPv4 datagrams received that had a
+	 * UDP payload with checksum disabled.
+	 */
+	volatile uint32_t rxipv4_udsbl_frms;
+	/* 0x224: Number of good IPv6 datagrams received with TCP, UDP, or ICMP payloads. */
+	volatile uint32_t rxipv6_gd_frms;
+	/* 0x228: Number of IPv6 datagrams received with header errors
+	 * (length or version mismatch).
+	 */
+	volatile uint32_t rxipv6_hdrerr_frms;
+	/* 0x22C: Number of IPv6 datagram frames received that did not have
+	 * a TCP, UDP, or ICMP payload. This includes all IPv6 datagrams
+	 * with fragmentation or security extension headers.
+	 */
+	volatile uint32_t rxipv6_nopay_frms;
+	/* 0x230: Number of good IP datagrams with a good UDP payload.
+	 * This counter is not updated when the rxipv4_udsbl_frms counter is incremented.
+	 */
+	volatile uint32_t rxudp_gd_frms;
+	/* 0x234: Number of good IP datagrams whose UDP payload has a checksum error. */
+	volatile uint32_t rxudp_err_frms;
+	/* 0x238: Number of good IP datagrams with a good TCP payload. */
+	volatile uint32_t rxtcp_gd_frms;
+	/* 0x23C: Number of good IP datagrams whose TCP payload has a checksum error. */
+	volatile uint32_t rxtcp_err_frms;
+	/* 0x240: Number of good IP datagrams with a good ICMP payload. */
+	volatile uint32_t rxicmp_gd_frms;
+	/* 0x244: Number of good IP datagrams whose ICMP payload has a checksum error. */
+	volatile uint32_t rxicmp_err_frms;
+	volatile uint8_t  RESERVED7[8];
+	/* 0x250: Number of bytes received in good IPv4 datagrams encapsulating
+	 * TCP, UDP, or ICMP data. (Ethernet header, FCS, pad, or IP pad bytes
+	 * are not included in this counter or in the octet counters listed below).
+	 */
+	volatile uint32_t rxipv4_gd_octets;
+	/* 0x254: Number of bytes received in IPv4 datagrams with header errors
+	 * (checksum, length, version mismatch). The value in the Length field
+	 * of IPv4 header is used to update this counter.
+	 */
+	volatile uint32_t rxipv4_hdrerr_octets;
+	/* 0x258: Number of bytes received in IPv4 datagrams that did not have
+	 * a TCP, UDP, or ICMP payload. The value in the IPv4 header's Length
+	 * field is used to update this counter.
+	 */
+	volatile uint32_t rxipv4_nopay_octets;
+	/* 0x25C: Number of bytes received in fragmented IPv4 datagrams.
+	 * The value in the IPv4 header's Length field is used to update this counter.
+	 */
+	volatile uint32_t rxipv4_frag_octets;
+	/* 0x260: Number of bytes received in a UDP segment that had the UDP checksum
+	 * disabled. This counter does not count IP Header bytes.
+	 */
+	volatile uint32_t rxipv4_udsbl_octets;
+	/* 0x264: Number of bytes received in good IPv6 datagrams encapsulating
+	 * TCP, UDP or ICMPv6 data.
+	 */
+	volatile uint32_t rxipv6_gd_octets;
+	/* 0x268: Number of bytes received in IPv6 datagrams with header errors
+	 * (length, version mismatch). The value in the IPv6 header's Length
+	 * field is used to update this counter.
+	 */
+	volatile uint32_t rxipv6_hdrerr_octets;
+	/* 0x26C: Number of bytes received in IPv6 datagrams that did not have
+	 * a TCP, UDP, or ICMP payload. The value in the IPv6 header's Length
+	 * field is used to update this counter.
+	 */
+	volatile uint32_t rxipv6_nopay_octets;
+	/* 0x270: Number of bytes received in a good UDP segment.
+	 * This counter (and the counters below) does not count IP header bytes.
+	 */
+	volatile uint32_t rxudp_gd_octets;
+	/* 0x274: Number of bytes received in a UDP segment that had checksum errors. */
+	volatile uint32_t rxudp_err_octets;
+	/* 0x278: Number of bytes received in a good TCP segment. */
+	volatile uint32_t rxtcp_gd_octets;
+	/* 0x27C: Number of bytes received in a TCP segment with checksum errors. */
+	volatile uint32_t rxtcp_err_octets;
+	/* 0x280: Number of bytes received in a good ICMP segment. */
+	volatile uint32_t rxicmp_gd_octets;
+	/* 0x284: Number of bytes received in an ICMP segment with checksum errors. */
+	volatile uint32_t rxicmp_err_octets;
+	volatile uint8_t  RESERVED8[376];
+
+	/* 0x400: Layer 3 and Layer 4 Control Register 0 */
+	volatile uint32_t L3L4CR_0;
+	/* 0x404: Layer 4 Address Register 0 */
+	volatile uint32_t L4ADDR_0;
+	volatile uint8_t  RESERVED9[8];
+	/* 0x410: Layer 3 Address 0 Register 0 */
+	volatile uint32_t L3ADDR0_0;
+	/* 0x414: Layer 3 Address 1 Register 0 */
+	volatile uint32_t L3ADDR1_0;
+	/* 0x418: Layer 3 Address 2 Register 0 */
+	volatile uint32_t L3ADDR2_0;
+	/* 0x41C: Layer 3 Address 3 Register 0 */
+	volatile uint32_t L3ADDR3_0;
+	volatile uint8_t  RESERVED10[16];
+	/* 0x430: Layer 3 and Layer 4 Control Register 1 */
+	volatile uint32_t L3L4CR_1;
+	/* 0x434: Layer 4 Address Register 1 */
+	volatile uint32_t L4ADDR_1;
+	volatile uint8_t  RESERVED11[8];
+	/* 0x440: Layer 3 Address 0 Register 1 */
+	volatile uint32_t L3ADDR0_1;
+	/* 0x444: Layer 3 Address 1 Register 1 */
+	volatile uint32_t L3ADDR1_1;
+	/* 0x448: Layer 3 Address 2 Register 1 */
+	volatile uint32_t L3ADDR2_1;
+	/* 0x44C: Layer 3 Address 3 Register 1 */
+	volatile uint32_t L3ADDR3_1;
+	volatile uint8_t  RESERVED12[16];
+	/* 0x460: Layer 3 and Layer 4 Control Register 2 */
+	volatile uint32_t L3L4CR_2;
+	/* 0x464: Layer 4 Address Register 2 */
+	volatile uint32_t L4ADDR_2;
+	volatile uint8_t  RESERVED13[8];
+	/* 0x470: Layer 3 Address 0 Register 2 */
+	volatile uint32_t L3ADDR0_2;
+	/* 0x474: Layer 3 Address 1 Register 2 */
+	volatile uint32_t L3ADDR1_2;
+	/* 0x478: Layer 3 Address 2 Register 2 */
+	volatile uint32_t L3ADDR2_2;
+	/* 0x47C: Layer 3 Address 3 Register 2 */
+	volatile uint32_t L3ADDR3_2;
+	volatile uint8_t  RESERVED14[16];
+	/* 0x490: Layer 3 and Layer 4 Control Register 3 */
+	volatile uint32_t L3L4CR_3;
+	/* 0x494: Layer 4 Address Register 3 */
+	volatile uint32_t L4ADDR_3;
+	volatile uint8_t  RESERVED15[8];
+	/* 0x4A0: Layer 3 Address 0 Register 3 */
+	volatile uint32_t L3ADDR0_3;
+	/* 0x4A4: Layer 3 Address 1 Register 3 */
+	volatile uint32_t L3ADDR1_3;
+	/* 0x4A8: Layer 3 Address 2 Register 3 */
+	volatile uint32_t L3ADDR2_3;
+	/* 0x4AC: Layer 3 Address 3 Register 3 */
+	volatile uint32_t L3ADDR3_3;
+	volatile uint8_t  RESERVED16[80];
+	/* 0x500: Hash Table Register 0 */
+	volatile uint32_t HASHTAB0;
+	/* 0x504: Hash Table Register 1 */
+	volatile uint32_t HASHTAB1;
+	/* 0x508: Hash Table Register 2 */
+	volatile uint32_t HASHTAB2;
+	/* 0x50C: Hash Table Register 3 */
+	volatile uint32_t HASHTAB3;
+	/* 0x510: Hash Table Register 4 */
+	volatile uint32_t HASHTAB4;
+	/* 0x514: Hash Table Register 5 */
+	volatile uint32_t HASHTAB5;
+	/* 0x518: Hash Table Register 6 */
+	volatile uint32_t HASHTAB6;
+	/* 0x51C: Hash Table Register 7 */
+	volatile uint32_t HASHTAB7;
+	volatile uint8_t  RESERVED17[100];
+	/* 0x584: MAC Config Register */
+	volatile uint32_t VLAN_TAG;
+	/* 0x588: MAC Config Register */
+	volatile uint32_t VLAN_HASHTAB;
+	volatile uint8_t  RESERVED18[628];
+	/* 0x800: MAC Address 16 High Register */
+	volatile uint32_t MACA16HR;
+	/* 0x804: MAC Address 16 Low Register */
+	volatile uint32_t MACA16LR;
+	/* 0x808: MAC Address 17 High Register */
+	volatile uint32_t MACA17HR;
+	/* 0x80C: MAC Address 17 Low Register */
+	volatile uint32_t MACA17LR;
+	/* 0x810: MAC Address 18 High Register */
+	volatile uint32_t MACA18HR;
+	/* 0x814: MAC Address 18 Low Register */
+	volatile uint32_t MACA18LR;
+	/* 0x818: MAC Address 19 High Register */
+	volatile uint32_t MACA19HR;
+	/* 0x81C: MAC Address 19 Low Register */
+	volatile uint32_t MACA19LR;
+	/* 0x820: MAC Address 20 High Register */
+	volatile uint32_t MACA20HR;
+	/* 0x824: MAC Address 20 Low Register */
+	volatile uint32_t MACA20LR;
+	/* 0x828: MAC Address 21 High Register */
+	volatile uint32_t MACA21HR;
+	/* 0x82C: MAC Address 21 Low Register */
+	volatile uint32_t MACA21LR;
+	/* 0x830: MAC Address 22 High Register */
+	volatile uint32_t MACA22HR;
+	/* 0x834: MAC Address 22 Low Register */
+	volatile uint32_t MACA22LR;
+	/* 0x838: MAC Address 23 High Register */
+	volatile uint32_t MACA23HR;
+	/* 0x83C: MAC Address 23 Low Register */
+	volatile uint32_t MACA23LR;
+	/* 0x840: MAC Address 24 High Register */
+	volatile uint32_t MACA24HR;
+	/* 0x844: MAC Address 24 Low Register */
+	volatile uint32_t MACA24LR;
+	/* 0x848: MAC Address 25 High Register */
+	volatile uint32_t MACA25HR;
+	/* 0x84C: MAC Address 25 Low Register */
+	volatile uint32_t MACA25LR;
+	/* 0x850: MAC Address 26 High Register */
+	volatile uint32_t MACA26HR;
+	/* 0x854: MAC Address 26 Low Register */
+	volatile uint32_t MACA26LR;
+	/* 0x858: MAC Address 27 High Register */
+	volatile uint32_t MACA27HR;
+	/* 0x85C: MAC Address 27 Low Register */
+	volatile uint32_t MACA27LR;
+	/* 0x860: MAC Address 28 High Register */
+	volatile uint32_t MACA28HR;
+	/* 0x864: MAC Address 28 Low Register */
+	volatile uint32_t MACA28LR;
+	/* 0x868: MAC Address 29 High Register */
+	volatile uint32_t MACA29HR;
+	/* 0x86C: MAC Address 29 Low Register */
+	volatile uint32_t MACA29LR;
+	/* 0x870: MAC Address 30 High Register */
+	volatile uint32_t MACA30HR;
+	/* 0x874: MAC Address 30 Low Register */
+	volatile uint32_t MACA30LR;
+	/* 0x878: MAC Address 31 High Register */
+	volatile uint32_t MACA31HR;
+	/* 0x87C: MAC Address 31 Low Register */
+	volatile uint32_t MACA31LR;
+	volatile uint8_t  RESERVED19[1920];
+
+	/* 0x1000: DMA Bus Mode Register */
+	volatile uint32_t DMABMR;
+	/* 0x1004: DMA Transmit Poll Demand Register */
+	volatile uint32_t DMATPDR;
+	/* 0x1008: DMA Receive Poll Demand Register */
+	volatile uint32_t DMARPDR;
+	/* 0x100C: DMA Receive Descriptor List Address Register */
+	volatile uint32_t DMARDLAR;
+	/* 0x1010: DMA Transmit Descriptor List Address Register */
+	volatile uint32_t DMATDLAR;
+	/* 0x1014: DMA Status Register */
+	volatile uint32_t DMASR;
+	/* 0x1018: DMA Operation Mode Register */
+	volatile uint32_t DMAOMR;
+	/* 0x101C: DMA Interrupt Enable Register */
+	volatile uint32_t DMAIER;
+	/* 0x1020: DMA Missed Frame and Buffer Overflow Counter Register */
+	volatile uint32_t DMAMFBOCR;
+	/* 0x1024: DMA Receive Interrupt Watchdog Timer Register */
+	volatile uint32_t DMARSWTR;
+	volatile uint8_t  RESERVED20[4];
+	/* 0x102C: DMA AHB or AXI Status Register */
+	volatile uint32_t DMAASR;
+	volatile uint8_t  RESERVED21[24];
+	/* 0x1048: DMA Current Host Transmit Descriptor Register */
+	volatile uint32_t DMACHTDR;
+	/* 0x104C: DMA Current Host Receive Descriptor Register */
+	volatile uint32_t DMACHRDR;
+	/* 0x1050: DMA Current Host Transmit Buffer Address Register */
+	volatile uint32_t DMACHTBAR;
+	/* 0x1054: DMA Current Host Receive Buffer Address Register */
+	volatile uint32_t DMACHRBAR;
+	/* 0x1058: DMA HW Feature Register */
+	volatile uint32_t DMAHWFR;
+};
+
+/* MACCR fields */
+#define NPCM_MACCR_SARC                              (28U)
+#define NPCM_MACCR_TWOKPE                            (27U)
+#define NPCM_MACCR_CST                               (25U)
+#define NPCM_MACCR_WD                                (23U)
+#define NPCM_MACCR_JD                                (22U)
+#define NPCM_MACCR_IFG                               (17U)
+#define NPCM_MACCR_CSD                               (16U)
+#define NPCM_MACCR_FES                               (14U)
+#define NPCM_MACCR_ROD                               (13U)
+#define NPCM_MACCR_LM                                (12U)
+#define NPCM_MACCR_DM                                (11U)
+#define NPCM_MACCR_IPCO                              (10U)
+#define NPCM_MACCR_RD                                (9U)
+#define NPCM_MACCR_APCS                              (7U)
+#define NPCM_MACCR_BL                                (5U)
+#define NPCM_MACCR_DC                                (4U)
+#define NPCM_MACCR_TE                                (3U)
+#define NPCM_MACCR_RE                                (2U)
+#define NPCM_MACCR_PRELEN                            (0U)
+
+/* MACFFR fields */
+#define NPCM_MACFFR_RA                               (31U)
+#define NPCM_MACFFR_DNTU                             (21U)
+#define NPCM_MACFFR_IPFE                             (20U)
+#define NPCM_MACFFR_VTFE                             (16U)
+#define NPCM_MACFFR_HPF                              (10U)
+#define NPCM_MACFFR_SAF                              (9U)
+#define NPCM_MACFFR_SAIF                             (8U)
+#define NPCM_MACFFR_PCF                              (6U)
+#define NPCM_MACFFR_PCF_ForwardExcptPause            (6U)
+#define NPCM_MACFFR_PCF_ForwardAll                   (7U)
+#define NPCM_MACFFR_PCF_ForwardPassedAddrFilter      (6U)
+#define NPCM_MACFFR_BFD                              (5U)
+#define NPCM_MACFFR_PAM                              (4U)
+#define NPCM_MACFFR_DAIF                             (3U)
+#define NPCM_MACFFR_HM                               (2U)
+#define NPCM_MACFFR_HU                               (1U)
+#define NPCM_MACFFR_PM                               (0U)
+
+/* MACHTHR fields */
+#define NPCM_MACHTHR_HTH                             (0U)
+
+/* MACHTLR fields */
+#define NPCM_MACHTLR_HTL                             (0U)
+
+/* MACMIIAR fields */
+#define NPCM_MACMIIAR_PA                             (11U)
+#define NPCM_MACMIIAR_MR                             (6U)
+#define NPCM_MACMIIAR_CR                             (2U)
+#define NPCM_MACMIIAR_MW                             (1U)
+#define NPCM_MACMIIAR_MB                             (0U)
+
+/* MACMIIDR fields */
+#define NPCM_MACMIIDR_MD                             (0U)
+
+/* MACFCR fields */
+#define NPCM_MACFCR_PT                               (16U)
+#define NPCM_MACFCR_ZQPD                             (7U)
+#define NPCM_MACFCR_PLT                              (4U)
+#define NPCM_MACFCR_PLT_Minus4                       (4U)
+#define NPCM_MACFCR_PLT_Minus28                      (4U)
+#define NPCM_MACFCR_PLT_Minus144                     (5U)
+#define NPCM_MACFCR_PLT_Minus256                     (4U)
+#define NPCM_MACFCR_UPFD                             (3U)
+#define NPCM_MACFCR_RFCE                             (2U)
+#define NPCM_MACFCR_TFCE                             (1U)
+#define NPCM_MACFCR_FCBBPA                           (0U)
+
+/* MACVLANTR fields */
+#define NPCM_MACVLANTR_VLANTC                        (16U)
+#define NPCM_MACVLANTR_VLANTI                        (0U)
+
+/* MACRWUFFR fields */
+#define NPCM_MACRWUFFR_D                             (0U)
+
+/* MACPMTCSR fields */
+#define NPCM_MACPMTCSR_WFFRPR                        (31U)
+#define NPCM_MACPMTCSR_RWKPTR                        (24U)
+#define NPCM_MACPMTCSR_GU                            (9U)
+#define NPCM_MACPMTCSR_WFR                           (6U)
+#define NPCM_MACPMTCSR_MPR                           (5U)
+#define NPCM_MACPMTCSR_WFE                           (2U)
+#define NPCM_MACPMTCSR_MPE                           (1U)
+#define NPCM_MACPMTCSR_PD                            (0U)
+
+/* MACDBGR fields */
+#define NPCM_MACDBGR_TFF                             (25U)
+#define NPCM_MACDBGR_TFNE                            (24U)
+#define NPCM_MACDBGR_TPWA                            (22U)
+#define NPCM_MACDBGR_TFRS                            (20U)
+#define NPCM_MACDBGR_TFRS_WRITING                    (20U)
+#define NPCM_MACDBGR_TFRS_WAITING                    (21U)
+#define NPCM_MACDBGR_TFRS_READ                       (20U)
+#define NPCM_MACDBGR_TFRS_IDLE                       (20U)
+#define NPCM_MACDBGR_MTP                             (19U)
+#define NPCM_MACDBGR_MTFCS                           (17U)
+#define NPCM_MACDBGR_MTFCS_TRANSFERRING              (17U)
+#define NPCM_MACDBGR_MTFCS_GENERATINGPCF             (18U)
+#define NPCM_MACDBGR_MTFCS_WAITING                   (17U)
+#define NPCM_MACDBGR_MTFCS_IDLE                      (17U)
+#define NPCM_MACDBGR_MMTEA                           (16U)
+#define NPCM_MACDBGR_RFFL                            (8U)
+#define NPCM_MACDBGR_RFFL_FULL                       (8U)
+#define NPCM_MACDBGR_RFFL_ABOVEFCT                   (9U)
+#define NPCM_MACDBGR_RFFL_BELOWFCT                   (8U)
+#define NPCM_MACDBGR_RFFL_EMPTY                      (8U)
+#define NPCM_MACDBGR_RFRCS                           (5U)
+#define NPCM_MACDBGR_RFRCS_FLUSHING                  (5U)
+#define NPCM_MACDBGR_RFRCS_STATUSREADING             (6U)
+#define NPCM_MACDBGR_RFRCS_DATAREADING               (5U)
+#define NPCM_MACDBGR_RFRCS_IDLE                      (5U)
+#define NPCM_MACDBGR_RFWRA                           (4U)
+#define NPCM_MACDBGR_MSFRWCS                         (1U)
+#define NPCM_MACDBGR_MMRPEA                          (0U)
+
+/* MACSR fields */
+#define NPCM_MACSR_TSTS                              (9U)
+#define NPCM_MACSR_MMCTS                             (6U)
+#define NPCM_MACSR_MMMCRS                            (5U)
+#define NPCM_MACSR_MMCS                              (4U)
+#define NPCM_MACSR_PMTS                              (3U)
+
+/* MACIMR fields */
+#define NPCM_MACIMR_TSTIM                            (9U)
+#define NPCM_MACIMR_PMTIM                            (3U)
+
+/* MACA0HR fields */
+#define NPCM_MACA0HR_MACA0H                          (0U)
+
+/* MACA0LR fields  */
+#define NPCM_MACA0LR_MACA0L                          (0U)
+
+/* MACA1HR fields */
+#define NPCM_MACA1HR_AE                              (31U)
+#define NPCM_MACA1HR_SA                              (30U)
+#define NPCM_MACA1HR_MBC                             (24U)
+#define NPCM_MACA1HR_MACA1H                          (0U)
+
+/* MACA1LR fields */
+#define NPCM_MACA1LR_MACA1L                          (0U)
+
+/* MACA2HR fields */
+#define NPCM_MACA2HR_AE                              (31U)
+#define NPCM_MACA2HR_SA                              (30U)
+#define NPCM_MACA2HR_MBC                             (24U)
+#define NPCM_MACA2HR_MACA2H                          (0U)
+
+/* MACA2LR fields */
+#define NPCM_MACA2LR_MACA2L                          (0U)
+
+/* MACA3HR fields           */
+#define NPCM_MACA3HR_AE                              (31U)
+#define NPCM_MACA3HR_SA                              (30U)
+#define NPCM_MACA3HR_MBC                             (24U)
+#define NPCM_MACA3HR_MACA3H                          (0U)
+
+/* MACWTR fields */
+#define NPCM_MACWTR_PWE                              (16U)
+
+/* MMCCR fields */
+#define NPCM_MMCCR_MCFHP                             (5U)
+#define NPCM_MMCCR_MCP                               (4U)
+#define NPCM_MMCCR_MCF                               (3U)
+#define NPCM_MMCCR_ROR                               (2U)
+#define NPCM_MMCCR_CSR                               (1U)
+#define NPCM_MMCCR_CR                                (0U)
+
+/* MMCRIR fields */
+#define NPCM_MMCRIR_RGUFS                            (17U)
+#define NPCM_MMCRIR_RFAES                            (6U)
+#define NPCM_MMCRIR_RFCES                            (5U)
+
+/* MMCTIR fields */
+#define NPCM_MMCTIR_TGFS                             (21U)
+#define NPCM_MMCTIR_TGFMSCS                          (15U)
+#define NPCM_MMCTIR_TGFSCS                           (14U)
+
+/* MMCRIMR fields */
+#define NPCM_MMCRIMR_RGUFM                           (17U)
+#define NPCM_MMCRIMR_RFAEM                           (6U)
+#define NPCM_MMCRIMR_RFCEM                           (5U)
+
+/* MMCTIMR fields */
+#define NPCM_MMCTIMR_TGFM                            (21U)
+#define NPCM_MMCTIMR_TGFMSCM                         (15U)
+#define NPCM_MMCTIMR_TGFSCM                          (14U)
+
+/* MMCTGFSCCR fields */
+#define NPCM_MMCTGFSCCR_TGFSCC                       (0U)
+
+/* MMCTGFMSCCR fields */
+#define NPCM_MMCTGFMSCCR_TGFMSCC                     (0U)
+
+/* MMCTGFCR fields */
+#define NPCM_MMCTGFCR_TGFC                           (0U)
+
+/* MMCRFCECR fields */
+#define NPCM_MMCRFCECR_RFCEC                         (0U)
+
+/* MMCRFAECR fields */
+#define NPCM_MMCRFAECR_RFAEC                         (0U)
+
+/* MMCRGUFCR fields */
+#define NPCM_MMCRGUFCR_RGUFC                         (0U)
+
+/* PTPTSCR fields */
+#define NPCM_PTPTSCR_TSCNT                           (16U)
+#define NPCM_PTPTSCR_TSSMRME                         (15U)
+#define NPCM_PTPTSCR_TSSEME                          (14U)
+#define NPCM_PTPTSCR_TSSIPV4FE                       (13U)
+#define NPCM_PTPTSCR_TSSIPV6FE                       (12U)
+#define NPCM_PTPTSCR_TSSPTPOEFE                      (11U)
+#define NPCM_PTPTSCR_TSPTPPSV2E                      (10U)
+#define NPCM_PTPTSCR_TSSSR                           (9U)
+#define NPCM_PTPTSCR_TSSARFE                         (8U)
+#define NPCM_PTPTSCR_TSARU                           (5U)
+#define NPCM_PTPTSCR_TSITE                           (4U)
+#define NPCM_PTPTSCR_TSSTU                           (3U)
+#define NPCM_PTPTSCR_TSSTI                           (2U)
+#define NPCM_PTPTSCR_TSFCU                           (1U)
+#define NPCM_PTPTSCR_TSE                             (0U)
+
+/* PTPSSIR fields */
+#define NPCM_PTPSSIR_STSSI                           (0U)
+
+/* PTPTSHR fields */
+#define NPCM_PTPTSHR_STS                             (0U)
+
+/* PTPTSLR fields */
+#define NPCM_PTPTSLR_STPNS                           (31U)
+#define NPCM_PTPTSLR_STSS                            (0U)
+
+/* PTPTSHUR fields */
+#define NPCM_PTPTSHUR_TSUS                           (0U)
+
+/* PTPTSLUR fields */
+#define NPCM_PTPTSLUR_TSUPNS                         (31U)
+#define NPCM_PTPTSLUR_TSUSS                          (0U)
+
+/* PTPTSAR fields */
+#define NPCM_PTPTSAR_TSA                             (0U)
+
+/* PTPTTHR fields */
+#define NPCM_PTPTTHR_TTSH                            (0U)
+
+/* PTPTTLR fields */
+#define NPCM_PTPTTLR_TTSL                            (0U)
+
+/* PTPTSSR fields */
+#define NPCM_PTPTSSR_TSTTR                           (2U)
+#define NPCM_PTPTSSR_TSSO                            (1U)
+
+/* DMABMR fields */
+#define NPCM_DMABMR_AAB                              (25U)
+#define NPCM_DMABMR_FPM                              (24U)
+#define NPCM_DMABMR_USP                              (23U)
+#define NPCM_DMABMR_RDP                              (17U)
+#define NPCM_DMABMR_FB                               (16U)
+#define NPCM_DMABMR_RTPR                             (14U)
+#define NPCM_DMABMR_PBL                              (8U)
+#define NPCM_DMABMR_EDE                              (7U)
+#define NPCM_DMABMR_DSL                              (2U)
+#define NPCM_DMABMR_DA                               (1U)
+#define NPCM_DMABMR_SR                               (0U)
+
+/* DMATPDR fields */
+#define NPCM_DMATPDR_TPD                             (0U)
+
+/* DMARPDR fields */
+#define NPCM_DMARPDR_RPD                             (0U)
+
+/* DMARDLAR fields */
+#define NPCM_DMARDLAR_SRL                            (0U)
+
+/* DMATDLAR fields */
+#define NPCM_DMATDLAR_STL                            (0U)
+
+/* DMASR fields */
+#define NPCM_DMASR_TSTS                              (29U)
+#define NPCM_DMASR_PMTS                              (28U)
+#define NPCM_DMASR_MMCS                              (27U)
+#define NPCM_DMASR_EBS                               (23U)
+#define NPCM_DMASR_EBS_DescAccess                    (25U)
+#define NPCM_DMASR_EBS_ReadTransf                    (24U)
+#define NPCM_DMASR_EBS_DataTransfTx                  (23U)
+#define NPCM_DMASR_TPS                               (20U)
+#define NPCM_DMASR_TPS_Stopped                       (20U)
+#define NPCM_DMASR_TPS_Fetching                      (20U)
+#define NPCM_DMASR_TPS_Waiting                       (21U)
+#define NPCM_DMASR_TPS_Reading                       (20U)
+#define NPCM_DMASR_TPS_Suspended                     (21U)
+#define NPCM_DMASR_TPS_Closing                       (20U)
+#define NPCM_DMASR_RPS                               (17U)
+#define NPCM_DMASR_RPS_Stopped                       (17U)
+#define NPCM_DMASR_RPS_Fetching                      (17U)
+#define NPCM_DMASR_RPS_Waiting                       (17U)
+#define NPCM_DMASR_RPS_Suspended                     (19U)
+#define NPCM_DMASR_RPS_Closing                       (17U)
+#define NPCM_DMASR_RPS_Queuing                       (17U)
+#define NPCM_DMASR_NIS                               (16U)
+#define NPCM_DMASR_AIS                               (15U)
+#define NPCM_DMASR_ERS                               (14U)
+#define NPCM_DMASR_FBES                              (13U)
+#define NPCM_DMASR_ETS                               (10U)
+#define NPCM_DMASR_RWTS                              (9U)
+#define NPCM_DMASR_RPSS                              (8U)
+#define NPCM_DMASR_RBUS                              (7U)
+#define NPCM_DMASR_RS                                (6U)
+#define NPCM_DMASR_TUS                               (5U)
+#define NPCM_DMASR_ROS                               (4U)
+#define NPCM_DMASR_TJTS                              (3U)
+#define NPCM_DMASR_TBUS                              (2U)
+#define NPCM_DMASR_TPSS                              (1U)
+#define NPCM_DMASR_TS                                (0U)
+
+/* DMAOMR fields */
+#define NPCM_DMAOMR_DTCEFD                           (26U)
+#define NPCM_DMAOMR_RSF                              (25U)
+#define NPCM_DMAOMR_DFRF                             (24U)
+#define NPCM_DMAOMR_TSF                              (21U)
+#define NPCM_DMAOMR_FTF                              (20U)
+#define NPCM_DMAOMR_TTC                              (14U)
+#define NPCM_DMAOMR_ST                               (13U)
+#define NPCM_DMAOMR_FEF                              (7U)
+#define NPCM_DMAOMR_FUGF                             (6U)
+#define NPCM_DMAOMR_DGF                              (5U)
+#define NPCM_DMAOMR_RTC                              (3U)
+#define NPCM_DMAOMR_OSF                              (2U)
+#define NPCM_DMAOMR_SR                               (1U)
+
+/* DMAIER fields */
+#define NPCM_DMAIER_NISE                             (16U)
+#define NPCM_DMAIER_AISE                             (15U)
+#define NPCM_DMAIER_ERIE                             (14U)
+#define NPCM_DMAIER_FBEIE                            (13U)
+#define NPCM_DMAIER_ETIE                             (10U)
+#define NPCM_DMAIER_RWTIE                            (9U)
+#define NPCM_DMAIER_RPSIE                            (8U)
+#define NPCM_DMAIER_RBUIE                            (7U)
+#define NPCM_DMAIER_RIE                              (6U)
+#define NPCM_DMAIER_TUIE                             (5U)
+#define NPCM_DMAIER_ROIE                             (4U)
+#define NPCM_DMAIER_TJTIE                            (3U)
+#define NPCM_DMAIER_TBUIE                            (2U)
+#define NPCM_DMAIER_TPSIE                            (1U)
+#define NPCM_DMAIER_TIE                              (0U)
+
+/* DMAMFBOCR fields */
+#define NPCM_DMAMFBOCR_OFOC                          (28U)
+#define NPCM_DMAMFBOCR_MFA                           (17U)
+#define NPCM_DMAMFBOCR_OMFC                          (16U)
+#define NPCM_DMAMFBOCR_MFC                           (0U)
+
+/* DMACHTDR fields */
+#define NPCM_DMACHTDR_HTDAP                          (0U)
+
+/* DMACHRDR fields */
+#define NPCM_DMACHRDR_HRDAP                          (0U)
+
+/* DMACHTBAR fields */
+#define NPCM_DMACHTBAR_HTBAP                         (0U)
+
+/* DMACHRBAR fields */
+#define NPCM_DMACHRBAR_HRBAP                         (0U)
+
 #endif /* _NUVOTON_NPCM_REG_DEF_H */

@@ -184,4 +184,18 @@
 	/omit-if-no-ref/ usbdphy_clk_external: periph-usbd-phy-clk-sel {
 		pinmux = <&alt2e_usbd_phy_clk_sel>;
 	};
+
+	/* EMAC peripheral interfaces */
+	/omit-if-no-ref/ emac_phy: periph-emac-phy {
+		pinmux = <&alt4c_emac_phy>;
+	};
+
+	/omit-if-no-ref/ emac_rmii_en: periph-emac-rmii-en {
+		pinmux = <&alt4d_rmii_en>;
+	};
+
+	/omit-if-no-ref/ emac_mdio_en: periph-emac-mdio-en {
+		pinmux = <&alt4d_mdio_en>;
+	};
+
 };

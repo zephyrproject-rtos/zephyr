@@ -453,6 +453,19 @@
 			alts = <&scfg 0x34 0x7 0>;
 		};
 
+		/* SCFG DEVALT 4C */
+		alt4c_emac_phy: alt4c3 {
+			alts = <&scfg 0x4c 0x3 0>;
+		};
+
+		/* SCFG DEVALT 4D */
+		alt4d_rmii_en: alt4d0 {
+			alts = <&scfg 0x4d 0x0 0>;
+		};
+		alt4d_mdio_en: alt4d1 {
+			alts = <&scfg 0x4d 0x1 0>;
+		};
+
 		/* SCFG DEVALT 50 */
 		alt50_psin_ctl: alt500 {
 			alts = <&scfg 0x50 0x0 0>;
