@@ -177,7 +177,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 		.info = {						\
 			.max_top_value = UINT32_MAX,			\
 			.freq = 24000000U,				\
-			.flags = 0,					\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 			.channels = 0U,					\
 		},							\
 		.dtimer = DTIMER_CMSDK_REG(inst),			\
