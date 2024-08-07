@@ -778,6 +778,12 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
 
+config ARCH_HAS_THREAD_NAME_HOOK
+	bool
+	help
+	  The architecture provides a hook to handle thread name changes beyond
+	  just storing it in the kernel structure.
+
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX
