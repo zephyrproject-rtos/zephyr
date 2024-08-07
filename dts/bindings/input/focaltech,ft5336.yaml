@@ -5,7 +5,7 @@ description: FT3267/FT5XX6/FT6XX6 capacitive touch panels
 
 compatible: "focaltech,ft5336"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, touchscreen-common.yaml]
 
 properties:
   int-gpios:
