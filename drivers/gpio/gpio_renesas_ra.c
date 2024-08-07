@@ -144,7 +144,7 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	const enum gpio_int_trig trig = flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
 	const struct gpio_ra_config *config = dev->config;
 	struct gpio_ra_data *data = dev->data;
-	struct pinctrl_ra_pin pincfg = {0};
+	struct ra_pinctrl_soc_pin pincfg = {0};
 
 	if ((flags & GPIO_OUTPUT) && (flags & GPIO_INPUT)) {
 		/* Pin cannot be configured as input and output */
@@ -155,25 +155,25 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	}
 
 	if (flags & GPIO_OUTPUT) {
-		pincfg.config |= BIT(PmnPFS_PDR_POS);
+		pincfg.cfg |= BIT(R_PFS_PORT_PIN_PmnPFS_PDR_Pos);
 	}
 
 	if (flags & GPIO_PULL_UP) {
-		pincfg.config |= BIT(PmnPFS_PCR_POS);
+		pincfg.cfg |= BIT(R_PFS_PORT_PIN_PmnPFS_PCR_Pos);
 	}
 
 	if ((flags & GPIO_SINGLE_ENDED) && (flags & GPIO_LINE_OPEN_DRAIN)) {
-		pincfg.config |= BIT(PmnPFS_NCODR_POS);
+		pincfg.cfg |= BIT(R_PFS_PORT_PIN_PmnPFS_NCODR_Pos);
 	}
 
 	if (flags & GPIO_INT_ENABLE) {
-		pincfg.config |= BIT(PmnPFS_ISEL_POS);
+		pincfg.cfg |= BIT(R_PFS_PORT_PIN_PmnPFS_ISEL_Pos);
 	}
 
-	pincfg.config &= ~BIT(PmnPFS_PMR_POS);
+	pincfg.cfg &= ~BIT(R_PFS_PORT_PIN_PmnPFS_PMR_Pos);
 
-	pincfg.pin = pin;
-	pincfg.port = config->port;
+	pincfg.pin_num = pin;
+	pincfg.port_num = config->port;
 
 	if (flags & GPIO_INT_ENABLE) {
 		const struct gpio_ra_irq_info *irq_info;
@@ -230,7 +230,7 @@ static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio
 {
 	const struct gpio_ra_config *config = dev->config;
 	const struct gpio_ra_irq_info *irq_info;
-	struct pinctrl_ra_pin pincfg;
+	struct ra_pinctrl_soc_pin pincfg;
 	ra_isr_handler cb;
 	const void *cbarg;
 	uint32_t intcfg;
@@ -239,22 +239,22 @@ static int gpio_ra_pin_get_config(const struct device *dev, gpio_pin_t pin, gpio
 
 	memset(flags, 0, sizeof(gpio_flags_t));
 
-	err = pinctrl_ra_query_config(config->port, pin, &pincfg);
+	err = ra_pinctrl_query_config(config->port, pin, &pincfg);
 	if (err < 0) {
 		return err;
 	}
 
-	if (pincfg.config & BIT(PmnPFS_PDR_POS)) {
+	if (pincfg.cfg & BIT(R_PFS_PORT_PIN_PmnPFS_PDR_Pos)) {
 		*flags |= GPIO_OUTPUT;
 	} else {
 		*flags |= GPIO_INPUT;
 	}
 
-	if (pincfg.config & BIT(PmnPFS_ISEL_POS)) {
+	if (pincfg.cfg & BIT(R_PFS_PORT_PIN_PmnPFS_ISEL_Pos)) {
 		*flags |= GPIO_INT_ENABLE;
 	}
 
-	if (pincfg.config & BIT(PmnPFS_PCR_POS)) {
+	if (pincfg.cfg & BIT(R_PFS_PORT_PIN_PmnPFS_PCR_Pos)) {
 		*flags |= GPIO_PULL_UP;
 	}
 
