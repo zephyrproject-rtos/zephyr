@@ -73,6 +73,7 @@ struct mc3419_config {
 	bool int_cfg;
 #endif
 	uint8_t lpf_fc_sel;
+	uint8_t decimation_rate;
 };
 
 struct mc3419_driver_data {

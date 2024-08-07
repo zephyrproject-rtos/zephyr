@@ -40,3 +40,13 @@ properties:
       11 => LPF with fc set to IDR/12
       13 => LPF with fc set to IDR/16
       Default is disabling LPF.
+
+  decimation-rate:
+    type: int
+    default: 0
+    description: |
+      This helps in producing slower interrupt. Internal Data
+      Rate is divide by this decimation rate. If decimation rate
+      is 0 then internal data rate is equal to output data rate,
+      then it produce interrupt floods.
+      Default is disabling decimation.
