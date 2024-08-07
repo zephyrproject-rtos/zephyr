@@ -764,6 +764,12 @@ config SWAP_NONATOMIC
 	  ARM when the PendSV exception priority sits below that of
 	  Zephyr-handled interrupts.
 
+config ARCH_HAS_THREAD_NAME_HOOK
+	bool
+	help
+	  The architecture provides a hook to handle thread name changes beyond
+	  just storing it in the kernel structure.
+
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX
