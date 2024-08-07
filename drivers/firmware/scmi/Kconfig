@@ -3,6 +3,13 @@
 
 if ARM_SCMI
 
+config ARM_SCMI_CLK_HELPERS
+	bool "Helper functions for SCMI clock protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_CLOCK_ENABLED
+	help
+	  Enable support for SCMI clock protocol helper functions.
+
 config ARM_SCMI_MAILBOX_TRANSPORT
 	bool "SCMI transport based on shared memory and doorbells"
 	default y
