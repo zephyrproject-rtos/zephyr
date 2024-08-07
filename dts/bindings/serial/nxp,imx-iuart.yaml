@@ -3,7 +3,7 @@ description: |
 
 compatible: "nxp,imx-iuart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
@@ -17,7 +17,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  rdc:
-    type: int
-    description: Set the RDC permission for this peripheral
