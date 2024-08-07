@@ -499,6 +499,8 @@ struct bt_bap_stream_ops {
 	 *
 	 * Configured callback is called whenever an Audio Stream has been configured.
 	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
+	 *
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
@@ -511,6 +513,8 @@ struct bt_bap_stream_ops {
 	 * QoS set callback is called whenever an Audio Stream Quality of Service has been set or
 	 * updated.
 	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
+	 *
 	 * @param stream Stream object that had its QoS updated.
 	 */
 	void (*qos_set)(struct bt_bap_stream *stream);
@@ -519,6 +523,8 @@ struct bt_bap_stream_ops {
 	 * @brief Stream enabled callback
 	 *
 	 * Enabled callback is called whenever an Audio Stream has been enabled.
+	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
 	 *
 	 * @param stream Stream object that has been enabled.
 	 */
@@ -530,6 +536,8 @@ struct bt_bap_stream_ops {
 	 * Metadata Updated callback is called whenever an Audio Stream's metadata has been
 	 * updated.
 	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
+	 *
 	 * @param stream Stream object that had its metadata updated.
 	 */
 	void (*metadata_updated)(struct bt_bap_stream *stream);
@@ -538,6 +546,8 @@ struct bt_bap_stream_ops {
 	 * @brief Stream disabled callback
 	 *
 	 * Disabled callback is called whenever an Audio Stream has been disabled.
+	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
 	 *
 	 * @param stream Stream object that has been disabled.
 	 */
@@ -548,6 +558,8 @@ struct bt_bap_stream_ops {
 	 *
 	 * Released callback is called whenever a Audio Stream has been released and can be
 	 * deallocated.
+	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST}
 	 *
 	 * @param stream Stream object that has been released.
 	 */
