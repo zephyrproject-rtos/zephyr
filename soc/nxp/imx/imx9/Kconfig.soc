@@ -15,6 +15,12 @@ config SOC_MIMX9352_A55
 	help
 	  NXP i.MX93 A55
 
+config SOC_MIMX9352_M33
+	bool
+	select SOC_MIMX9352
+	help
+	  NXP i.MX93 M33
+
 config SOC_PART_NUMBER_MIMX9352CVVXM
 	bool
 
