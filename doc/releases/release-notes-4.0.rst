@@ -186,6 +186,9 @@ Networking
 * IPv6:
 
 * LwM2M:
+  * Location object: optional resources altitude, radius, and speed can now be
+  used optionally as per the location object's specification. Users of these
+  resources will now need to provide a read buffer.
 
 * Misc:
 
