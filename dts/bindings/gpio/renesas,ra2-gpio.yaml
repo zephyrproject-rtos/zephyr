@@ -1,0 +1,21 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 GPIO PORT node
+
+compatible: "renesas,ra2-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  renesas,ra2-pfs:
+    type: phandle
+    required: true
+    description: Reference to RA2 pinmux node
+
+gpio-cells:
+  - pin
+  - flags

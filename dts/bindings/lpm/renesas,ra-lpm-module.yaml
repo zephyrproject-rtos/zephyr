@@ -1,0 +1,14 @@
+# Copyright (c) 2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA LPM module ID
+  The Renesas Low Power Manager module handles starting and stopping
+  peripherals, as well as switching between low power modes and speed modes.
+
+properties:
+  lpm-id:
+    type: int
+    required: true
+    description: |
+      The id of the LPM peripheral as seen by the lpm module.

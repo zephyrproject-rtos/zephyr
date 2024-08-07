@@ -1,0 +1,13 @@
+# Copyright (c) 2022-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RENESAS_RA2_SCI
+	bool "RA2 SOC SCI based serial driver"
+	default y
+	depends on DT_HAS_RENESAS_RA2_SCI_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the UART driver for RA2 family of
+	  processors.
+	  Say y if you wish to use serial port on RA2 MCU.

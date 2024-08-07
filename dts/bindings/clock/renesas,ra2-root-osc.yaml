@@ -1,0 +1,29 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 root fixed frequency oscillator
+
+include:
+  - name: fixed-clock.yaml
+  - name: renesas,ra2-common-osc.yaml
+  - name: base.yaml
+    property-allowlist:
+      - reg
+      - compatible
+      - reg-names
+
+compatible: "renesas,ra2-root-osc"
+
+properties:
+  reg:
+    required: true
+
+  trim:
+    type: int
+    description: |
+      User Trimming Control Register
+
+  stabilisation-time:
+    type: int
+    default: 0
+    description: Stabilisation time (us)
