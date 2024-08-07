@@ -7,6 +7,7 @@ tests:
   arch.common.stack_unwind.riscv_fp:
     arch_allow: riscv
     integration_platforms:
+      - qemu_riscv32e
       - qemu_riscv32
       - qemu_riscv64
     extra_configs:
@@ -20,6 +21,7 @@ tests:
   arch.common.stack_unwind.riscv_sp:
     arch_allow: riscv
     integration_platforms:
+      - qemu_riscv32e
       - qemu_riscv32
       - qemu_riscv64
     harness_config:
@@ -58,6 +60,7 @@ tests:
       - riscv
       - arm64
     integration_platforms:
+      - qemu_riscv32e
       - qemu_riscv32
       - qemu_riscv64
       - qemu_cortex_a53
