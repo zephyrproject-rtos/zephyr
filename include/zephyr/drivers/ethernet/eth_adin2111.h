@@ -136,7 +136,7 @@ int eth_adin2111_broadcast_filter(const struct device *dev, bool enable);
  * @param[in] dev ADIN2111 device.
  * @param port_idx Port index.
  *
- * @retval a struct net_if pointer, or NULL on error.
+ * @return a struct net_if pointer, or NULL on error.
  */
 struct net_if *eth_adin2111_get_iface(const struct device *dev, const uint16_t port_idx);
 

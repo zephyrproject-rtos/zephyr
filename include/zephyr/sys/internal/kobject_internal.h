@@ -113,9 +113,9 @@ static inline void k_object_init(const void *obj)
  *
  * @param align Required memory alignment for the allocated object
  * @param size Size of the allocated object
- * @return NULL on insufficient memory
- * @return A pointer to the associated k_object that is installed in the
+ * @retval ptr A pointer to the associated k_object that is installed in the
  *	kernel object tables
+ * @retval NULL insufficient memory
  *
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
@@ -137,9 +137,9 @@ struct k_object *k_object_create_dynamic_aligned(size_t align, size_t size);
  * in the returned k_object's 'name' member) to k_object_free().
  *
  * @param size Size of the allocated object
- * @return NULL on insufficient memory
- * @return A pointer to the associated k_object that is installed in the
+ * @retval ptr A pointer to the associated k_object that is installed in the
  *	kernel object tables
+ * @retval NULL insufficient memory
  *
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.

@@ -473,7 +473,8 @@ int bt_gatt_authorization_cb_register(const struct bt_gatt_authorization_cb *cb)
  *
  *  @param svc Service containing the available attributes
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  *  @return -EAGAIN if ``bt_init()`` has been called but ``settings_load()`` hasn't yet.
  */
 int bt_gatt_service_register(struct bt_gatt_service *svc);
@@ -482,7 +483,8 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
  *
  *  @param svc Service to be unregistered.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
 
@@ -506,8 +508,8 @@ enum {
  *  @param handle Attribute handle found.
  *  @param user_data Data given.
  *
- *  @return ``BT_GATT_ITER_CONTINUE`` if should continue to the next attribute.
- *  @return ``BT_GATT_ITER_STOP`` to stop.
+ *  @retval BT_GATT_ITER_CONTINUE continue to the next attribute.
+ *  @retval BT_GATT_ITER_STOP stop.
  */
 typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 				       uint16_t handle,
@@ -1128,7 +1130,8 @@ struct bt_gatt_notify_params {
  *  @param conn Connection object.
  *  @param params Notification parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
@@ -1205,7 +1208,8 @@ int bt_gatt_notify_multiple(struct bt_conn *conn,
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 static inline int bt_gatt_notify(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
@@ -1242,7 +1246,8 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
  *  @param data Pointer to Attribute data.
  *  @param len  Attribute value length.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
 				      const struct bt_uuid *uuid,
@@ -1333,7 +1338,8 @@ struct bt_gatt_indicate_params {
  *  @param conn Connection object.
  *  @param params Indicate parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
@@ -1990,7 +1996,8 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *  @param peer   Remote address.
  *  @param params Subscribe parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 			struct bt_gatt_subscribe_params *params);

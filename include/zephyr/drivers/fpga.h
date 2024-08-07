@@ -117,7 +117,7 @@ static inline int fpga_load(const struct device *dev, uint32_t *image_ptr,
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval -errno negative errno code on failure.
  */
 static inline int fpga_on(const struct device *dev)
 {
@@ -158,7 +158,7 @@ static inline const char *fpga_get_info(const struct device *dev)
  * @param dev FPGA device structure.
  *
  * @retval 0 if successful.
- * @retval negative errno code on failure.
+ * @retval -errno negative errno code on failure.
  */
 static inline int fpga_off(const struct device *dev)
 {

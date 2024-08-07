@@ -53,8 +53,8 @@ extern "C" {
  * @param data User data which was passed on @ref adc_emul_value_func_set
  * @param result The result value which will be set as input for ADC @p chan
  *
- * @return 0 on success
- * @return other as error code which ends ADC context
+ * @retval 0 success
+ * @retval -errno negative error code which ends ADC context
  */
 typedef int (*adc_emul_value_func)(const struct device *dev, unsigned int chan,
 				   void *data, uint32_t *result);
@@ -66,8 +66,8 @@ typedef int (*adc_emul_value_func)(const struct device *dev, unsigned int chan,
  * @param chan The channel of ADC which input is assigned
  * @param value New voltage in mV to assign to @p chan input
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
 			     uint32_t value);
@@ -81,8 +81,8 @@ int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
  * @param func New function to assign to @p chan
  * @param data Pointer to data passed to @p func on call
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
 			    adc_emul_value_func func, void *data);
@@ -94,8 +94,8 @@ int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
  * @param ref Reference config which is changed
  * @param value New reference voltage in mV
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 			     uint16_t value);

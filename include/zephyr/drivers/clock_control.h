@@ -165,7 +165,7 @@ static inline int clock_control_off(const struct device *dev,
  * @retval -EALREADY if clock was already started and is starting or running.
  * @retval -ENOTSUP If the requested mode of operation is not supported.
  * @retval -ENOSYS if the interface is not implemented.
- * @retval other negative errno on vendor specific error.
+ * @retval -errno other negative errno on vendor specific error.
  */
 static inline int clock_control_async_on(const struct device *dev,
 					 clock_control_subsys_t sys,
@@ -243,7 +243,7 @@ static inline int clock_control_get_rate(const struct device *dev,
  * @retval -EALREADY if clock was already in the given rate.
  * @retval -ENOTSUP If the requested mode of operation is not supported.
  * @retval -ENOSYS if the interface is not implemented.
- * @retval other negative errno on vendor specific error.
+ * @retval -errno other negative errno on vendor specific error.
  */
 static inline int clock_control_set_rate(const struct device *dev,
 		clock_control_subsys_t sys,

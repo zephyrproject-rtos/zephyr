@@ -26,7 +26,7 @@ extern "C" {
  * @param[in]  dev flash simulator device pointer.
  * @param[out] mock_size size of the ram buffer.
  *
- * @retval pointer to the ram buffer
+ * @return pointer to the ram buffer
  */
 __syscall void *flash_simulator_get_memory(const struct device *dev,
 					   size_t *mock_size);

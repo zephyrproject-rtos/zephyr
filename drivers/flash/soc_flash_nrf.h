@@ -48,9 +48,9 @@ struct flash_context {
  * Callback which executes the flash operation.
  *
  * @param context pointer to flash_context structure.
- * @retval @ref FLASH_OP_DONE once operation was done, @ref FLASH_OP_ONGOING if
- *         operation needs more time for execution and a negative error code if
- *         operation was aborted.
+ * @retval @ref FLASH_OP_DONE once operation was done
+ * @retval @ref FLASH_OP_ONGOING if operation needs more time for execution
+ * @retval -errno negative error code if operation was aborted.
  */
 typedef int (*flash_op_handler_t) (void *context);
 

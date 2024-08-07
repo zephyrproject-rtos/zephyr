@@ -372,8 +372,8 @@ static inline int z_impl_i2s_configure(const struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param dir Stream direction: RX or TX as defined by I2S_DIR_*
- * @retval Pointer to the structure containing configuration parameters,
- *         or NULL if un-configured
+ * @return Pointer to the structure containing configuration parameters
+ * @retval NULL if host is un-configured
  */
 static inline const struct i2s_config *i2s_config_get(const struct device *dev,
 						      enum i2s_dir dir)

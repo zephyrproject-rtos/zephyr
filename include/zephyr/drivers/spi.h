@@ -662,8 +662,8 @@ __subsystem struct spi_driver_api {
  * @brief Check if SPI CS is controlled using a GPIO.
  *
  * @param config SPI configuration.
- * @return true If CS is controlled using a GPIO.
- * @return false If CS is controlled by hardware or any other means.
+ * @retval true CS is controlled using a GPIO.
+ * @retval false CS is controlled by hardware or any other means.
  */
 static inline bool spi_cs_is_gpio(const struct spi_config *config)
 {
@@ -674,8 +674,8 @@ static inline bool spi_cs_is_gpio(const struct spi_config *config)
  * @brief Check if SPI CS in @ref spi_dt_spec is controlled using a GPIO.
  *
  * @param spec SPI specification from devicetree.
- * @return true If CS is controlled using a GPIO.
- * @return false If CS is controlled by hardware or any other means.
+ * @retval true CS is controlled using a GPIO.
+ * @retval false CS is controlled by hardware or any other means.
  */
 static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
 {
@@ -1060,7 +1060,7 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
  * @param[in] rx_bufs receive buffer set
  * @param[out] last_sqe last sqe submitted, NULL if not enough memory
  *
- * @retval Number of submission queue entries
+ * @return Number of submission queue entries
  * @retval -ENOMEM out of memory
  */
 static inline int spi_rtio_copy(struct rtio *r,

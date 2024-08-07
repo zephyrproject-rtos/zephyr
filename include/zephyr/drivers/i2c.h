@@ -474,8 +474,8 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * @brief Check if the current message is a read operation
  *
  * @param msg The message to check
- * @return true if the I2C message is sa read operation
- * @return false if the I2C message is a write operation
+ * @retval true the I2C message is sa read operation
+ * @retval false the I2C message is a write operation
  */
 static inline bool i2c_is_read_op(struct i2c_msg *msg)
 {
@@ -895,7 +895,7 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  * @param userdata Userdata passed to callback.
  *
  * @retval 0 if successful
- * @retval negative on error.
+ * @retval -errno negative error code on error.
  */
 static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
@@ -1329,7 +1329,7 @@ static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
  * @param num_read Number of bytes to read
  *
  * @retval 0 if successful
- * @retval negative on error.
+ * @retval -errno negative error code on error.
  */
 static inline int i2c_write_read(const struct device *dev, uint16_t addr,
 				 const void *write_buf, size_t num_write,

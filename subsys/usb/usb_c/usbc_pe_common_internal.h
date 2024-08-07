@@ -410,7 +410,7 @@ bool policy_present_contract_is_valid(const struct device *dev, const uint32_t p
  * @brief Get a Request Data Object from the DPM
  *
  * @param dev Pointer to the device structure for the driver instance
- * @retval the RDO from the DPM
+ * @return the RDO from the DPM
  */
 uint32_t policy_get_request_data_object(const struct device *dev);
 

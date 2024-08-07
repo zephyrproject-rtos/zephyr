@@ -525,7 +525,7 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location);
  *                   ARCH_DATA_PAGE_LOADED state. This is not touched if
  *                   ARCH_DATA_PAGE_NOT_MAPPED.
  * @param clear_accessed Whether to clear ARCH_DATA_PAGE_ACCESSED state
- * @retval Value with ARCH_DATA_PAGE_* bits set reflecting the data page
+ * @return Value with ARCH_DATA_PAGE_* bits set reflecting the data page
  *         configuration
  */
 uintptr_t arch_page_info_get(void *addr, uintptr_t *location,

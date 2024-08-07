@@ -71,7 +71,7 @@ __subsystem struct ps2_driver_api {
  * command or when a mouse/keyboard send data to the client application.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int ps2_config(const struct device *dev,
 			 ps2_callback_t callback_isr);
@@ -92,7 +92,7 @@ static inline int z_impl_ps2_config(const struct device *dev,
  * @param value Data for the PS2 device.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int ps2_write(const struct device *dev, uint8_t value);
 
@@ -110,7 +110,7 @@ static inline int z_impl_ps2_write(const struct device *dev, uint8_t value)
  * @param value Pointer used for reading the PS/2 device.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int ps2_read(const struct device *dev,  uint8_t *value);
 
@@ -127,7 +127,7 @@ static inline int z_impl_ps2_read(const struct device *dev, uint8_t *value)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int ps2_enable_callback(const struct device *dev);
 
@@ -148,7 +148,7 @@ static inline int z_impl_ps2_enable_callback(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int ps2_disable_callback(const struct device *dev);
 

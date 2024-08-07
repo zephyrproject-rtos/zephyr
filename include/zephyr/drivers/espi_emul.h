@@ -68,7 +68,7 @@ typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_s
  *
  * @param target The device Emulator instance
  *
- * @retval The address of the memory.
+ * @return The address of the memory.
  */
 typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
 #endif
@@ -81,8 +81,8 @@ typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
  *
  * @param dev eSPI emulation controller device
  * @param chipsel Chip-select value
- * @return espi_emul to use
- * @return NULL if not found
+ * @retval espi_emul Emulator to use
+ * @retval NULL emulator not found
  */
 typedef struct espi_emul *(*emul_find_emul)(const struct device *dev, unsigned int chipsel);
 

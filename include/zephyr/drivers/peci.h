@@ -269,7 +269,7 @@ __subsystem struct peci_driver_api {
  * @param bitrate the selected bitrate expressed in Kbps.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int peci_config(const struct device *dev, uint32_t bitrate);
 
@@ -288,7 +288,7 @@ static inline int z_impl_peci_config(const struct device *dev,
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int peci_enable(const struct device *dev);
 
@@ -306,7 +306,7 @@ static inline int z_impl_peci_enable(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 __syscall int peci_disable(const struct device *dev);
 
@@ -325,7 +325,7 @@ static inline int z_impl_peci_disable(const struct device *dev)
  * @param msg Structure representing a PECI transaction.
  *
  * @retval 0 If successful.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);

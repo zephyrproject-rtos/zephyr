@@ -35,7 +35,7 @@ extern "C" {
  * This call is intended for use in hotplug. A core that is powered down by
  * cpu_off can only be powered up again in response to a cpu_on
  *
- * @retval The call does not return when successful
+ * @retval none The call does not return when successful
  * @retval -ENOTSUP If the operation is not supported
  */
 int pm_cpu_off(void);

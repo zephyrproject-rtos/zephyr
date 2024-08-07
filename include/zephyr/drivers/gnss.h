@@ -248,8 +248,8 @@ struct gnss_satellites_callback {
  * @param dev Device instance
  * @param fix_interval_ms Fix interval to set in milliseconds
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms);
 
@@ -270,8 +270,8 @@ static inline int z_impl_gnss_set_fix_rate(const struct device *dev, uint32_t fi
  * @param dev Device instance
  * @param fix_interval_ms Destination for fix interval in milliseconds
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms);
 
@@ -292,8 +292,8 @@ static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *f
  * @param dev Device instance
  * @param config Periodic tracking configuration to set
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_set_periodic_config(const struct device *dev,
 				       const struct gnss_periodic_config *config);
@@ -316,8 +316,8 @@ static inline int z_impl_gnss_set_periodic_config(const struct device *dev,
  * @param dev Device instance
  * @param config Destination for periodic tracking configuration
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_get_periodic_config(const struct device *dev,
 				       struct gnss_periodic_config *config);
@@ -340,8 +340,8 @@ static inline int z_impl_gnss_get_periodic_config(const struct device *dev,
  * @param dev Device instance
  * @param mode Navigation mode to set
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_set_navigation_mode(const struct device *dev,
 				       enum gnss_navigation_mode mode);
@@ -364,8 +364,8 @@ static inline int z_impl_gnss_set_navigation_mode(const struct device *dev,
  * @param dev Device instance
  * @param mode Destination for navigation mode
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_get_navigation_mode(const struct device *dev,
 				       enum gnss_navigation_mode *mode);
@@ -388,8 +388,8 @@ static inline int z_impl_gnss_get_navigation_mode(const struct device *dev,
  * @param dev Device instance
  * @param systems Systems to enable
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_set_enabled_systems(const struct device *dev, gnss_systems_t systems);
 
@@ -411,8 +411,8 @@ static inline int z_impl_gnss_set_enabled_systems(const struct device *dev,
  * @param dev Device instance
  * @param systems Destination for enabled systems
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_get_enabled_systems(const struct device *dev, gnss_systems_t *systems);
 
@@ -434,8 +434,8 @@ static inline int z_impl_gnss_get_enabled_systems(const struct device *dev,
  * @param dev Device instance
  * @param systems Destination for supported systems
  *
- * @return 0 if successful
- * @return -errno negative errno code on failure
+ * @retval 0 success
+ * @retval -errno negative errno code on failure
  */
 __syscall int gnss_get_supported_systems(const struct device *dev, gnss_systems_t *systems);
 

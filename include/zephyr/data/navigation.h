@@ -23,9 +23,9 @@
  * point relative to a sphere (commonly Earth)
  */
 struct navigation_data {
-	/** Latitudal position in nanodegrees (0 to +-180E9) */
+	/** Latitudinal position in nanodegrees (0 to +-180E9) */
 	int64_t latitude;
-	/** Longitudal position in nanodegrees (0 to +-180E9) */
+	/** Longitudinal position in nanodegrees (0 to +-180E9) */
 	int64_t longitude;
 	/** Bearing angle in millidegrees (0 to 360E3) */
 	uint32_t bearing;
@@ -43,8 +43,8 @@ struct navigation_data {
  * @param p1 First navigation point
  * @param p2 Second navigation point
  *
- * @return 0 if successful
- * @return -EINVAL if either navigation point is invalid
+ * @retval 0 success
+ * @return -EINVAL either navigation point is invalid
  */
 int navigation_distance(uint64_t *distance, const struct navigation_data *p1,
 			const struct navigation_data *p2);
@@ -56,8 +56,8 @@ int navigation_distance(uint64_t *distance, const struct navigation_data *p1,
  * @param from First navigation point
  * @param to Second navigation point
  *
- * @return 0 if successful
- * @return -EINVAL if either navigation point is invalid
+ * @retval 0 success
+ * @return -EINVAL either navigation point is invalid
  */
 int navigation_bearing(uint32_t *bearing, const struct navigation_data *from,
 		       const struct navigation_data *to);

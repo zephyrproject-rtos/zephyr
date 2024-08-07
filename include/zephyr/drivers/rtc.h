@@ -191,9 +191,9 @@ __subsystem struct rtc_driver_api {
  * @param dev Device instance
  * @param timeptr The time to set
  *
- * @return 0 if successful
- * @return -EINVAL if RTC time is invalid or exceeds hardware capabilities
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL RTC time is invalid or exceeds hardware capabilities
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_set_time(const struct device *dev, const struct rtc_time *timeptr);
 
@@ -210,9 +210,9 @@ static inline int z_impl_rtc_set_time(const struct device *dev, const struct rtc
  * @param dev Device instance
  * @param timeptr Destination for the time
  *
- * @return 0 if successful
- * @return -ENODATA if RTC time has not been set
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -ENODATA RTC time has not been set
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_get_time(const struct device *dev, struct rtc_time *timeptr);
 
@@ -238,10 +238,10 @@ static inline int z_impl_rtc_get_time(const struct device *dev, struct rtc_time 
  *
  * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK.
  *
- * @return 0 if successful
- * @return -EINVAL if id is out of range or time is invalid
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL id is out of range or time is invalid
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno negative error code if failure
  */
 __syscall int rtc_alarm_get_supported_fields(const struct device *dev, uint16_t id,
 					     uint16_t *mask);
@@ -276,10 +276,10 @@ static inline int z_impl_rtc_alarm_get_supported_fields(const struct device *dev
  * @note Only the enabled fields in the timeptr param need to be configured
  * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK
  *
- * @return 0 if successful
- * @return -EINVAL if id is out of range or time is invalid
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL id is out of range or time is invalid
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
 				 const struct rtc_time *timeptr);
@@ -306,10 +306,10 @@ static inline int z_impl_rtc_alarm_set_time(const struct device *dev, uint16_t i
  *
  * @note Bits in the mask param are defined here @ref RTC_ALARM_TIME_MASK
  *
- * @return 0 if successful
- * @return -EINVAL if id is out of range
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL id is out of range
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
 				 struct rtc_time *timeptr);
@@ -335,11 +335,11 @@ static inline int z_impl_rtc_alarm_get_time(const struct device *dev, uint16_t i
  * @param dev Device instance
  * @param id Id of the alarm to test
  *
- * @return 1 if alarm was pending
- * @return 0 if alarm was not pending
- * @return -EINVAL if id is out of range
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 1 alarm was pending
+ * @retval 0 alarm was not pending
+ * @retval -EINVAL id is out of range
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_alarm_is_pending(const struct device *dev, uint16_t id);
 
@@ -375,10 +375,10 @@ static inline int z_impl_rtc_alarm_is_pending(const struct device *dev, uint16_t
  * @param callback Callback called when alarm occurs
  * @param user_data Optional user data passed to callback
  *
- * @return 0 if successful
- * @return -EINVAL if id is out of range
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL id is out of range
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_alarm_set_callback(const struct device *dev, uint16_t id,
 				     rtc_alarm_callback callback, void *user_data);
@@ -421,9 +421,9 @@ static inline int z_impl_rtc_alarm_set_callback(const struct device *dev, uint16
  * @param callback Callback called when update occurs
  * @param user_data Optional user data passed to callback
  *
- * @return 0 if successful
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_update_set_callback(const struct device *dev, rtc_update_callback callback,
 				      void *user_data);
@@ -464,10 +464,10 @@ static inline int z_impl_rtc_update_set_callback(const struct device *dev,
  * @param dev Device instance
  * @param calibration Calibration to set in parts per billion
  *
- * @return 0 if successful
- * @return -EINVAL if calibration is out of range
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -EINVAL calibration is out of range
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_set_calibration(const struct device *dev, int32_t calibration);
 
@@ -488,9 +488,9 @@ static inline int z_impl_rtc_set_calibration(const struct device *dev, int32_t c
  * @param dev Device instance
  * @param calibration Destination for calibration in parts per billion
  *
- * @return 0 if successful
- * @return -ENOTSUP if API is not supported by hardware
- * @return -errno code if failure
+ * @retval 0 successful
+ * @retval -ENOTSUP API is not supported by hardware
+ * @retval -errno other negative error code on failure
  */
 __syscall int rtc_get_calibration(const struct device *dev, int32_t *calibration);
 

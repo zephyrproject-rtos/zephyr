@@ -378,7 +378,7 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
  * @param id Transaction Identifier
  * @param qtype Query type: AA, AAAA. See enum dns_rr_type
  * @retval 0 on success
- * @retval On error, a negative value is returned.
+ * @retval -errno On error, a negative value is returned.
  *         See: dns_msg_pack_query_header and  dns_msg_pack_qname.
  */
 int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,

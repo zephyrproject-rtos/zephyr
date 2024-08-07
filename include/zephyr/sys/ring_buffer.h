@@ -326,7 +326,7 @@ int ring_buf_put_finish(struct ring_buf *buf, uint32_t size);
  * @param data Address of data.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written.
+ * @return Number of bytes written.
  */
 uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
 
@@ -400,7 +400,7 @@ int ring_buf_get_finish(struct ring_buf *buf, uint32_t size);
  * @param data Address of the output buffer. Can be NULL to discard data.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to the output buffer.
+ * @return Number of bytes written to the output buffer.
  */
 uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
 
@@ -428,7 +428,7 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
  * @param data Address of the output buffer. Cannot be NULL.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to the output buffer.
+ * @return Number of bytes written to the output buffer.
  */
 uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
 

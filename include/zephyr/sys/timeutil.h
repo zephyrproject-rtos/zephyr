@@ -180,9 +180,9 @@ struct timeutil_sync_state {
  * strictly after the base instant in both the reference and local
  * time scales.
  *
- * @retval 0 if installation succeeded in providing a new base
- * @retval 1 if installation provided a new latest instant
- * @retval -EINVAL if the new instant is not compatible with the base instant
+ * @retval 0 installation succeeded in providing a new base
+ * @retval 1 installation provided a new latest instant
+ * @retval -EINVAL the new instant is not compatible with the base instant
  */
 int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
 			       const struct timeutil_sync_instant *inst);
@@ -208,8 +208,8 @@ int timeutil_sync_state_update(struct timeutil_sync_state *tsp,
  * between reference and local timescale instants.  Setting the base
  * clears the captured latest value.
  *
- * @return 0 if skew was updated
- * @return -EINVAL if skew was not valid
+ * @retval 0 skew was updated
+ * @retval -EINVAL skew was not valid
  */
 int timeutil_sync_state_set_skew(struct timeutil_sync_state *tsp, float skew,
 				 const struct timeutil_sync_instant *base);
@@ -244,8 +244,8 @@ float timeutil_sync_estimate_skew(const struct timeutil_sync_state *tsp);
  * produces an error.  If interpolation fails the referenced object is
  * not modified.
  *
- * @retval 0 if interpolated using a skew of 1
- * @retval 1 if interpolated using a skew not equal to 1
+ * @retval 0 interpolated using a skew of 1
+ * @retval 1 interpolated using a skew not equal to 1
  * @retval -EINVAL
  *   * the times synchronization state is not adequately initialized
  *   * @p refp is null
@@ -269,8 +269,8 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
  * time 0 is provided without error.  If interpolation fails the
  * referenced object is not modified.
  *
- * @retval 0 if successful with a skew of 1
- * @retval 1 if successful with a skew not equal to 1
+ * @retval 0 successful with a skew of 1
+ * @retval 1 successful with a skew not equal to 1
  * @retval -EINVAL
  *   * the time synchronization state is not adequately initialized
  *   * @p refp is null
@@ -293,8 +293,8 @@ int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
  * representation; this represents a clock running at less than 1/3
  * its nominal rate.
  *
- * @return skew error represented as parts-per-billion, or INT32_MIN
- * if the skew cannot be represented in the return type.
+ * @retval skew_err skew error represented as parts-per-billion
+ * @retval INT32_MIN the skew cannot be represented in the return type.
  */
 int32_t timeutil_sync_skew_to_ppb(float skew);
 

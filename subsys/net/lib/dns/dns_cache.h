@@ -51,7 +51,7 @@ struct dns_cache {
  *
  * @param cache Cache to be flushed
  * @retval 0 on success
- * @retval On error, a negative value is returned.
+ * @retval -errno On error, a negative value is returned.
  */
 int dns_cache_flush(struct dns_cache *cache);
 
@@ -66,7 +66,7 @@ int dns_cache_flush(struct dns_cache *cache);
  * @param ttl Time to live for the entry in seconds. This usually represents
  * the TTL of the RR.
  * @retval 0 on success
- * @retval On error, a negative value is returned.
+ * @retval -errno On error, a negative value is returned.
  */
 int dns_cache_add(struct dns_cache *cache, char const *query, struct dns_addrinfo const *addrinfo,
 		  uint32_t ttl);
@@ -77,7 +77,7 @@ int dns_cache_add(struct dns_cache *cache, char const *query, struct dns_addrinf
  * @param cache Cache where the entries should be removed.
  * @param query Query which should be searched for.
  * @retval 0 on success
- * @retval On error, a negative value is returned.
+ * @retval -errno On error, a negative value is returned.
  */
 int dns_cache_remove(struct dns_cache *cache, char const *query);
 
@@ -90,7 +90,7 @@ int dns_cache_remove(struct dns_cache *cache, char const *query);
  * @param addrinfo_array_len Array size of the dns_addrinfo array
  * @retval on success the amount of dns_addrinfo written into the addrinfo array will be returned.
  * A cache miss will therefore return a 0.
- * @retval On error a negative value is returned.
+ * @retval -errno On error a negative value is returned.
  * -ENOSR means there was not enough space in the addrinfo array to accommodate all cache hits the
  * array will however be filled with valid data.
  */

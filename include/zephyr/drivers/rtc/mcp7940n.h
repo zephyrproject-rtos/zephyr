@@ -189,8 +189,8 @@ enum mcp7940n_alarm_trigger {
  * @param dev the MCP7940N device pointer.
  * @param unix_time Unix time to set the rtc to.
  *
- * @retval return 0 on success, or a negative error code from an I2C
- * transaction or invalid parameter.
+ * @retval 0 on success
+ * @retval -errno negative error code from an I2C transaction or invalid parameter.
  */
 int mcp7940n_rtc_set_time(const struct device *dev, time_t unix_time);
 

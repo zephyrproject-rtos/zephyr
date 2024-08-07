@@ -101,13 +101,13 @@ struct i3c_ibi_work {
 
 	union {
 		/**
-		 * Use for @see I3C_IBI_HOTJOIN.
+		 * Use for I3C_IBI_HOTJOIN.
 		 */
 		const struct device *controller;
 
 		/**
-		 * Use for @see I3C_IBI_TARGET_INTR,
-		 * and @see I3C_IBI_CONTROLLER_ROLE_REQUEST.
+		 * Use for I3C_IBI_TARGET_INTR,
+		 * and I3C_IBI_CONTROLLER_ROLE_REQUEST.
 		 */
 		struct i3c_device_desc *target;
 	};
@@ -146,7 +146,6 @@ struct i3c_ibi_work {
 typedef int (*i3c_target_ibi_cb_t)(struct i3c_device_desc *target,
 				   struct i3c_ibi_payload *payload);
 
-
 /**
  * @brief Queue an IBI work item for future processing.
  *
@@ -162,7 +161,7 @@ typedef int (*i3c_target_ibi_cb_t)(struct i3c_device_desc *target,
  * @retval 0 If work item is successfully queued.
  * @retval -ENOMEM If no more free internal node to
  *                 store IBI work item.
- * @retval Others @see k_work_submit_to_queue
+ * @retval -errno See k_work_submit_to_queue() for other possible error codes.
  */
 int i3c_ibi_work_enqueue(struct i3c_ibi_work *ibi_work);
 
@@ -179,7 +178,7 @@ int i3c_ibi_work_enqueue(struct i3c_ibi_work *ibi_work);
  * @retval 0 If work item is successfully queued.
  * @retval -ENOMEM If no more free internal node to
  *                 store IBI work item.
- * @retval Others @see k_work_submit_to_queue
+ * @retval -errno See k_work_submit_to_queue() for other possible error codes.
  */
 int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 				    uint8_t *payload, size_t payload_len);
@@ -195,7 +194,7 @@ int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
  * @retval 0 If work item is successfully queued.
  * @retval -ENOMEM If no more free internal node to
  *                 store IBI work item.
- * @retval Others @see k_work_submit_to_queue
+ * @retval -errno See k_work_submit_to_queue() for other possible error codes.
  */
 int i3c_ibi_work_enqueue_hotjoin(const struct device *dev);
 
@@ -211,7 +210,7 @@ int i3c_ibi_work_enqueue_hotjoin(const struct device *dev);
  * @retval 0 If work item is successfully queued.
  * @retval -ENOMEM If no more free internal node to
  *                 store IBI work item.
- * @retval Others @see k_work_submit_to_queue
+ * @retval -errno See k_work_submit_to_queue() for other possible error codes.
  */
 int i3c_ibi_work_enqueue_cb(const struct device *dev,
 			    k_work_handler_t work_cb);

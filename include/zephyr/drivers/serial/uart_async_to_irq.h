@@ -123,7 +123,7 @@ int uart_async_to_irq_init(struct uart_async_to_irq_data *data,
  *
  * @retval 0 on successful operation.
  * @retval -EINVAL if adaption layer has wrong configuration.
- * @retval negative value Error reported by the UART API.
+ * @retval -errno negative value Error reported by the UART API.
  */
 int uart_async_to_irq_rx_enable(const struct device *dev);
 
@@ -133,7 +133,7 @@ int uart_async_to_irq_rx_enable(const struct device *dev);
  *
  * @retval 0 on successful operation.
  * @retval -EINVAL if adaption layer has wrong configuration.
- * @retval negative value Error reported by the UART API.
+ * @retval -errno negative value Error reported by the UART API.
  */
 int uart_async_to_irq_rx_disable(const struct device *dev);
 

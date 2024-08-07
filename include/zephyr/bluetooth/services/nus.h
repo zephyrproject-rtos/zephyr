@@ -71,8 +71,8 @@ struct bt_nus_cb {
  *           lifetime of the application.
  * @param ctx User context to be provided through the callback.
  *
- * @return 0 on success
- * @return -EINVAL in case @p cb is NULL
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
  */
 int bt_nus_inst_cb_register(struct bt_nus_inst *inst, struct bt_nus_cb *cb, void *ctx);
 
@@ -85,10 +85,11 @@ int bt_nus_inst_cb_register(struct bt_nus_inst *inst, struct bt_nus_cb *cb, void
  * @param data Pointer to buffer with bytes to send.
  * @param len Length in bytes of data to send.
  *
- * @return 0 on success, negative error code if failed.
- * @return -EAGAIN when Bluetooth stack has not been enabled.
- * @return -ENOTCONN when either no connection has been established or no peers
+ * @retval 0 success
+ * @retval -EAGAIN Bluetooth stack has not been enabled.
+ * @retval -ENOTCONN Either no connection has been established or no peers
  *         have subscribed.
+ * @retval -errno other negative error code on fail
  */
 int bt_nus_inst_send(struct bt_conn *conn,
 		     struct bt_nus_inst *inst,
@@ -101,8 +102,9 @@ int bt_nus_inst_send(struct bt_conn *conn,
  *           lifetime of the application.
  * @param ctx User context to be provided through the callback.
  *
- * @return 0 on success, negative error code if failed.
- * @return -EINVAL in case @p cb is NULL
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -errno other negative error code on fail
  */
 static inline int bt_nus_cb_register(struct bt_nus_cb *cb, void *ctx)
 {
@@ -117,10 +119,11 @@ static inline int bt_nus_cb_register(struct bt_nus_cb *cb, void *ctx)
  * @param data Pointer to buffer with bytes to send.
  * @param len Length in bytes of data to send.
  *
- * @return 0 on success, negative error code if failed.
- * @return -EAGAIN when Bluetooth stack has not been enabled.
- * @return -ENOTCONN when either no connection has been established or no peers
- *         have subscribed.
+ * @retval 0 success
+ * @retval -EAGAIN Bluetooth stack has not been enabled.
+ * @retval -ENOTCONN Either no connection has been established or no peers
+ *        have subscribed.
+ * @retval -errno other negative error code on fail
  */
 static inline int bt_nus_send(struct bt_conn *conn, const void *data, uint16_t len)
 {

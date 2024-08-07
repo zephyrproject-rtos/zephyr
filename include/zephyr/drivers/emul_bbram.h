@@ -42,9 +42,9 @@ __subsystem struct emul_bbram_driver_api {
  * @param offset Offset within the memory to set
  * @param count Number of bytes to write
  * @param data The data to write
- * @return 0 if successful
- * @return -ENOTSUP if no backend API or if the set_data function isn't implemented
- * @return -ERANGE if the destination address is out of range.
+ * @retval 0 success
+ * @retval -ENOTSUP no backend API or if the set_data function isn't implemented
+ * @retval -ERANGE the destination address is out of range.
  */
 static inline int emul_bbram_backend_set_data(const struct emul *target, size_t offset,
 					      size_t count, const uint8_t *data)
@@ -69,9 +69,9 @@ static inline int emul_bbram_backend_set_data(const struct emul *target, size_t 
  * @param offset Offset within the memory to get
  * @param count Number of bytes to read
  * @param data The data buffer to hold the result
- * @return 0 if successful
- * @return -ENOTSUP if no backend API or if the get_data function isn't implemented
- * @return -ERANGE if the address is out of range.
+ * @retval 0 success
+ * @retval -ENOTSUP no backend API or if the get_data function isn't implemented
+ * @retval -ERANGE the address is out of range.
  */
 static inline int emul_bbram_backend_get_data(const struct emul *target, size_t offset,
 					      size_t count, uint8_t *data)

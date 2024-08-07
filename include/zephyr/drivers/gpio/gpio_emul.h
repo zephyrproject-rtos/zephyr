@@ -50,8 +50,8 @@ extern "C" {
  * @param pins The mask of pins that have changed
  * @param values New values to assign to @p pins
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t pins,
 			      gpio_port_value_t values);
@@ -63,8 +63,8 @@ int gpio_emul_input_set_masked(const struct device *port, gpio_port_pins_t pins,
  * @param pin The pin to modify
  * @param value New values to assign to @p pin
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 static inline int gpio_emul_input_set(const struct device *port, gpio_pin_t pin,
 				     int value)
@@ -79,8 +79,8 @@ static inline int gpio_emul_input_set(const struct device *port, gpio_pin_t pin,
  * @param pins The mask of pins that have changed
  * @param values A pointer to where the value of @p pins will be stored
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int gpio_emul_output_get_masked(const struct device *port, gpio_port_pins_t pins,
 			       gpio_port_value_t *values);
@@ -91,8 +91,8 @@ int gpio_emul_output_get_masked(const struct device *port, gpio_port_pins_t pins
  * @param port The emulated GPIO port
  * @param pin The pin to read
  *
- * @return 0 or 1 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 static inline int gpio_emul_output_get(const struct device *port, gpio_pin_t pin)
 {
@@ -116,8 +116,8 @@ static inline int gpio_emul_output_get(const struct device *port, gpio_pin_t pin
  * @param pin The pin to retrieve @p flags for
  * @param flags a pointer to where the flags for @p pin will be stored
  *
- * @return 0 on success
- * @return -EINVAL if an invalid argument is provided
+ * @retval 0 success
+ * @retval -EINVAL an invalid argument was provided
  */
 int gpio_emul_flags_get(const struct device *port, gpio_pin_t pin, gpio_flags_t *flags);
 

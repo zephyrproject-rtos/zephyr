@@ -68,7 +68,7 @@ int tracing_buffer_put_finish(uint32_t size);
  * @param data Address of data.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to tracing buffer.
+ * @return Number of bytes written to tracing buffer.
  */
 uint32_t tracing_buffer_put(uint8_t *data, uint32_t size);
 
@@ -100,7 +100,7 @@ int tracing_buffer_get_finish(uint32_t size);
  * @param data Address of the output buffer.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to the output buffer.
+ * @return Number of bytes written to the output buffer.
  */
 uint32_t tracing_buffer_get(uint8_t *data, uint32_t size);
 

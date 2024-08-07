@@ -27,9 +27,9 @@ struct called_API_info;
  *
  * @param instance_out Session instance handle for caller to use.
  *
- * @return zero(0) upon success, with *instance_out updated.
- * @return -EINVAL if invalid parameter(s)
- * @return -E2BIG  if more calls were made than expected.
+ * @retval 0 success, *instance_out is updated.
+ * @retval -EINVAL invalid parameter(s)
+ * @retval -E2BIG  more calls were made than expected.
  */
 int called_API_open(const struct called_API_info **instance_out);
 
@@ -44,9 +44,9 @@ int called_API_open(const struct called_API_info **instance_out);
  *
  * @param instance Session instance handle provided by called_API_open
  *
- * @return zero(0) upon success, with instance invalidated.
- * @return -EINVAL if invalid parameter(s)
- * @return -E2BIG  if more calls were made than expected.
+ * @retval 0 success, *instance_out is invalidated.
+ * @retval -EINVAL invalid parameter(s)
+ * @retval -E2BIG  more calls were made than expected.
  */
 int called_API_close(const struct called_API_info *instance);
 

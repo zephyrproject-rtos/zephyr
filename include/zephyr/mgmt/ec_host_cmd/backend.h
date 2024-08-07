@@ -116,21 +116,21 @@ struct ec_host_cmd_backend_api {
  *
  * @param dev Pointer to eSPI device instance.
  *
- * @retval The eSPI backend pointer.
+ * @return The eSPI backend pointer.
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_espi(const struct device *dev);
 
 /**
  * @brief Get the SHI NPCX Host Command backend pointer
  *
- * @retval the SHI NPCX backend pointer
+ * @return the SHI NPCX backend pointer
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_npcx(void);
 
 /**
  * @brief Get the SHI ITE Host Command backend pointer
  *
- * @retval the SHI ITE backend pointer
+ * @return the SHI ITE backend pointer
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void);
 
@@ -142,7 +142,7 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_shi_ite(void);
  *
  * @param dev Pointer to UART device instance.
  *
- * @retval The UART backend pointer.
+ * @return The UART backend pointer.
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *dev);
 
@@ -154,7 +154,7 @@ struct ec_host_cmd_backend *ec_host_cmd_backend_get_uart(const struct device *de
  *
  * @param cs Chip select pin..
  *
- * @retval The SPI backend pointer.
+ * @return The SPI backend pointer.
  */
 struct ec_host_cmd_backend *ec_host_cmd_backend_get_spi(struct gpio_dt_spec *cs);
 

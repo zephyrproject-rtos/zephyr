@@ -319,7 +319,7 @@ void ec_host_cmd_set_user_cb(ec_host_cmd_user_cb_t cb, void *user_data);
  * It allows the application code to get inside information for any reason e.g.
  * the host command thread id.
  *
- * @retval A pointer to the main host command structure
+ * @return A pointer to the main host command structure
  */
 const struct ec_host_cmd *ec_host_cmd_get_hc(void);
 
@@ -354,7 +354,8 @@ bool ec_host_cmd_send_in_progress_ended(void);
  *
  * Saving status of Host Commands that send response data is not supported.
  *
- * @retval The final status or EC_HOST_CMD_UNAVAILABLE if not available.
+ * @return The final status of the last command
+ * @retval EC_HOST_CMD_UNAVAILABLE if not available.
  */
 enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void);
 

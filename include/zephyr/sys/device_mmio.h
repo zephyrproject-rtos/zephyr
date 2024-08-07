@@ -236,7 +236,7 @@ struct z_device_mmio_rom {
  * be used in this case.
  *
  * @param dev device instance object
- * @retval struct device_mmio_rom * pointer to storage location
+ * @return pointer to storage location
  */
 #define DEVICE_MMIO_ROM_PTR(dev) \
 	((struct z_device_mmio_rom *)((dev)->config))
@@ -430,7 +430,7 @@ struct z_device_mmio_rom {
  *
  * @param dev device instance object
  * @param name Member name within config
- * @retval struct device_mmio_rom * pointer to storage location
+ * @return pointer to storage location
  */
 #define DEVICE_MMIO_NAMED_ROM_PTR(dev, name) (&(DEV_CFG(dev)->name))
 

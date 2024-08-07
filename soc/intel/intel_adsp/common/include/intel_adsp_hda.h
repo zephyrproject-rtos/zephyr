@@ -419,7 +419,7 @@ static inline void intel_adsp_hda_set_buffer_segment_ptr(uint32_t base, uint32_t
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
- * @retval buffer segment ptr
+ * @return buffer segment ptr
  */
 static inline uint32_t intel_adsp_hda_get_buffer_segment_ptr(uint32_t base, uint32_t regblock_size,
 							     uint32_t sid)
@@ -500,7 +500,7 @@ static inline void intel_adsp_hda_clear_buffer_interrupt(uint32_t base, uint32_t
  * @param regblock_size Register block size
  * @param sid Stream ID
  *
- * @retval interrupt status
+ * @return interrupt status
  */
 static inline uint32_t intel_adsp_hda_check_buffer_interrupt(uint32_t base, uint32_t regblock_size,
 							     uint32_t sid)

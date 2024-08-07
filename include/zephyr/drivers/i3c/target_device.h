@@ -236,7 +236,7 @@ __subsystem struct i3c_target_driver_api {
  * @param len Length of the buffer
  * @param hdr_mode HDR mode see @c I3C_MSG_HDR_MODE*
  *
- * @retval Total number of bytes written
+ * @return Total number of bytes written
  * @retval -ENOTSUP Not in Target Mode or HDR Mode not supported
  * @retval -ENOSPC No space in Tx FIFO
  * @retval -ENOSYS If target mode is not implemented

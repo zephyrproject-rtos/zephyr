@@ -467,8 +467,8 @@ struct sensor_decoder_api {
 	 * @param[in]  buffer The buffer provided on the @ref rtio context.
 	 * @param[in]  channel The channel to get the count for
 	 * @param[out] frame_count The number of frames on the buffer (at least 1)
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel/channel_idx aren't found
+	 * @retval 0 success
+	 * @retval -ENOTSUP the channel/channel_idx aren't found
 	 */
 	int (*get_frame_count)(const uint8_t *buffer, struct sensor_chan_spec channel,
 			       uint16_t *frame_count);
@@ -482,8 +482,8 @@ struct sensor_decoder_api {
 	 * @param[in]  channel The channel to query
 	 * @param[out] base_size The size of decoding the first frame
 	 * @param[out] frame_size The additional size of every additional frame
-	 * @return 0 on success
-	 * @return -ENOTSUP if the channel is not supported
+	 * @retval 0 success
+	 * @retval -ENOTSUP the channel is not supported
 	 */
 	int (*get_size_info)(struct sensor_chan_spec channel, size_t *base_size,
 			     size_t *frame_size);
@@ -509,9 +509,9 @@ struct sensor_decoder_api {
 	 * @param[in,out] fit The current frame iterator
 	 * @param[in]     max_count The maximum number of channels to decode.
 	 * @param[out]    data_out The decoded data
-	 * @return 0 no more samples to decode
-	 * @return >0 the number of decoded frames
-	 * @return <0 on error
+	 * @retval 0 no more samples to decode
+	 * @retval nb_frames number of decoded frames (>0)
+	 * @retval -errno negative error code on failure
 	 */
 	int (*decode)(const uint8_t *buffer, struct sensor_chan_spec channel, uint32_t *fit,
 		      uint16_t max_count, void *data_out);
@@ -943,8 +943,8 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
  *
  * @param[in] dev The sensor device
  * @param[in] decoder Pointer to the decoder which will be set upon success
- * @return 0 on success
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 __syscall int sensor_get_decoder(const struct device *dev,
 				 const struct sensor_decoder_api **decoder);
@@ -979,8 +979,8 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
  * @param[in] sensor The sensor to read from
  * @param[in] channels One or more channels to read
  * @param[in] num_channels The number of channels in @p channels
- * @return 0 on success
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 __syscall int sensor_reconfigure_read_iodev(struct rtio_iodev *iodev, const struct device *sensor,
 					    const struct sensor_chan_spec *channels,
@@ -1037,8 +1037,8 @@ static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void
  * @param[in] ctx The RTIO context to service the read
  * @param[in] buf Pointer to memory to read sample data into
  * @param[in] buf_len Size in bytes of the given memory that are valid to read into
- * @return 0 on success
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_t *buf,
 			      size_t buf_len)
@@ -1079,8 +1079,8 @@ static inline int sensor_read(struct rtio_iodev *iodev, struct rtio *ctx, uint8_
  * @param[in] iodev The iodev created by @ref SENSOR_DT_READ_IODEV
  * @param[in] ctx The RTIO context to service the read
  * @param[in] userdata Optional userdata that will be available when the read is complete
- * @return 0 on success
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 static inline int sensor_read_async_mempool(struct rtio_iodev *iodev, struct rtio *ctx,
 					    void *userdata)

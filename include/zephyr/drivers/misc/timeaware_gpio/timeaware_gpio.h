@@ -70,8 +70,8 @@ __subsystem struct tgpio_driver_api {
  * @param dev TGPIO device
  * @param current_time Pointer to store timer value in cycles
  *
- * @return 0 if successful
- * @return negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_port_get_time(const struct device *dev, uint64_t *current_time);
 
@@ -88,7 +88,8 @@ static inline int z_impl_tgpio_port_get_time(const struct device *dev, uint64_t 
  * @param dev TGPIO device
  * @param cycles pointer to store current running frequency
  *
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_port_get_cycles_per_second(const struct device *dev, uint32_t *cycles);
 
@@ -106,7 +107,8 @@ static inline int z_impl_tgpio_port_get_cycles_per_second(const struct device *d
  * @param dev TGPIO device
  * @param pin TGPIO pin
  *
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_pin_disable(const struct device *dev, uint32_t pin);
 
@@ -124,7 +126,8 @@ static inline int z_impl_tgpio_pin_disable(const struct device *dev, uint32_t pi
  * @param pin TGPIO pin
  * @param event_polarity TGPIO pin event polarity
  *
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_pin_config_ext_timestamp(const struct device *dev, uint32_t pin,
 					      uint32_t event_polarity);
@@ -146,7 +149,8 @@ static inline int z_impl_tgpio_pin_config_ext_timestamp(const struct device *dev
  * @param repeat_interval repeat interval between two pulses in hw cycles
  * @param periodic_enable enables periodic mode if 'true' is passed.
  *
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_pin_periodic_output(const struct device *dev, uint32_t pin,
 					 uint64_t start_time, uint64_t repeat_interval,
@@ -169,7 +173,8 @@ static inline int z_impl_tgpio_pin_periodic_output(const struct device *dev, uin
  * @param timestamp timestamp of the last pulse received
  * @param event_count number of pulses received since the pin is enabled
  *
- * @return 0 if successful, negative errno code on failure.
+ * @retval 0 success
+ * @retval -errno negative errno code on failure.
  */
 __syscall int tgpio_pin_read_ts_ec(const struct device *dev, uint32_t pin, uint64_t *timestamp,
 				    uint64_t *event_count);

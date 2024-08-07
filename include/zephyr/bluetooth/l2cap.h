@@ -342,7 +342,8 @@ struct bt_l2cap_chan_ops {
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
 	 *
-	 *  @return 0 in case of success or negative value in case of error.
+	 *  @retval 0 success.
+	 *  @retval -errno negative error code on failure.
 	 *  @return -EINPROGRESS in case where user has to confirm once the data
 	 *                       has been processed by calling
 	 *                       @ref bt_l2cap_chan_recv_complete passing back
@@ -466,10 +467,11 @@ struct bt_l2cap_server {
 	 *  @param server Pointer to the server structure this callback relates to
 	 *  @param chan Pointer to received the allocated channel
 	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 *  @return -ENOMEM if no available space for new channel.
-	 *  @return -EACCES if application did not authorize the connection.
-	 *  @return -EPERM if encryption key size is too short.
+	 *  @retval 0 success.
+	 *  @retval -errno negative error code on failure.
+	 *  @retval -ENOMEM no available space for new channel.
+	 *  @retval -EACCES application did not authorize the connection.
+	 *  @retval -EPERM encryption key size is too short.
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_server *server,
 		      struct bt_l2cap_chan **chan);
@@ -494,7 +496,8 @@ struct bt_l2cap_server {
  *
  *  @param server Server structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
@@ -506,7 +509,8 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server);
  *
  *  @param server Server structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
 
@@ -520,7 +524,8 @@ int bt_l2cap_br_server_register(struct bt_l2cap_server *server);
  *  @param chans Array of channel objects.
  *  @param psm Channel PSM to connect to.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
 				struct bt_l2cap_chan **chans, uint16_t psm);
@@ -535,7 +540,8 @@ int bt_l2cap_ecred_chan_connect(struct bt_conn *conn,
  *               first 5 are silently ignored.
  *  @param mtu Channel MTU to reconfigure to.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
 
@@ -555,7 +561,8 @@ int bt_l2cap_ecred_chan_reconfigure(struct bt_l2cap_chan **chans, uint16_t mtu);
  *  @param chan Channel object.
  *  @param psm Channel PSM to connect to.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			  uint16_t psm);
@@ -569,7 +576,8 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
  *
  *  @param chan Channel object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
 
@@ -607,15 +615,15 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
  *
- *  @return 0 in case of success or negative value in case of error.
- *  @return -EINVAL if `buf` or `chan` is NULL.
- *  @return -EINVAL if `chan` is not either BR/EDR or LE credit-based.
- *  @return -EINVAL if buffer doesn't have enough bytes reserved to fit header.
- *  @return -EINVAL if buffer's reference counter != 1
- *  @return -EMSGSIZE if `buf` is larger than `chan`'s MTU.
- *  @return -ENOTCONN if underlying conn is disconnected.
- *  @return -ESHUTDOWN if L2CAP channel is disconnected.
- *  @return -other (from lower layers) if chan is BR/EDR.
+ *  @retval 0 success.
+ *  @retval -EINVAL `buf` or `chan` is NULL.
+ *  @retval -EINVAL `chan` is not either BR/EDR or LE credit-based.
+ *  @retval -EINVAL buffer doesn't have enough bytes reserved to fit header.
+ *  @retval -EINVAL buffer's reference counter != 1
+ *  @retval -EMSGSIZE `buf` is larger than `chan`'s MTU.
+ *  @retval -ENOTCONN underlying conn is disconnected.
+ *  @retval -ESHUTDOWN L2CAP channel is disconnected.
+ *  @retval -other (from lower layers) if chan is BR/EDR.
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
@@ -638,7 +646,8 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
  *
  *  Must not be called while the channel is in @ref BT_L2CAP_CONNECTING state.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_credits);
 
@@ -652,7 +661,8 @@ int bt_l2cap_chan_give_credits(struct bt_l2cap_chan *chan, uint16_t additional_c
  * @param chan Channel object.
  * @param buf Buffer containing the data.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
 				struct net_buf *buf);

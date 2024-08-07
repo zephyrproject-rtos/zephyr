@@ -154,7 +154,7 @@ long semihost_close(long fd);
  *
  * @param fd handle returned by @ref semihost_open.
  *
- * @retval positive file size on success.
+ * @retval size positive file size on success.
  * @retval -1 on failure.
  */
 long semihost_flen(long fd);

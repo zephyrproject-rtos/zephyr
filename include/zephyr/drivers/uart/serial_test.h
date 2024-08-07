@@ -27,7 +27,7 @@ extern "C" {
  * @param data Address of data.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written.
+ * @return Number of bytes written.
  */
 int serial_vnd_queue_in_data(const struct device *dev, const unsigned char *data, uint32_t size);
 
@@ -56,7 +56,7 @@ uint32_t serial_vnd_out_data_size_get(const struct device *dev);
  * @param data Address of the output buffer. Can be NULL to discard data.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to the output buffer.
+ * @return Number of bytes written to the output buffer.
  */
 uint32_t serial_vnd_read_out_data(const struct device *dev, unsigned char *data, uint32_t size);
 
@@ -76,7 +76,7 @@ uint32_t serial_vnd_read_out_data(const struct device *dev, unsigned char *data,
  * @param data Address of the output buffer. Cannot be NULL.
  * @param size Data size (in bytes).
  *
- * @retval Number of bytes written to the output buffer.
+ * @return Number of bytes written to the output buffer.
  */
 uint32_t serial_vnd_peek_out_data(const struct device *dev, unsigned char *data, uint32_t size);
 

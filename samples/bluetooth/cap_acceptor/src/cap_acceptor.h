@@ -43,7 +43,7 @@ int init_cap_acceptor_unicast(struct peer_config *peer);
  *
  * @param dir Audio direction of the stream to allocate
  *
- * @retval Pointer to the allocated CAP stream
+ * @retval ptr Pointer to the allocated CAP stream
  * @retval NULL if no more CAP streams for the @p dir could be allocated
  */
 struct bt_cap_stream *stream_alloc(enum bt_audio_dir dir);

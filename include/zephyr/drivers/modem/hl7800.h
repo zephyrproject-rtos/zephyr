@@ -333,19 +333,21 @@ char *mdm_hl7800_get_imsi(void);
 /**
  * @brief Update the Access Point Name in the modem.
  *
- * @retval 0 on success, negative on failure.
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_update_apn(char *access_point_name);
 
 /**
  * @brief Update the Radio Access Technology (mode).
  *
- * @retval 0 on success, negative on failure.
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value);
 
 /**
- * @retval true if RAT value is valid
+ * @return true if RAT value is valid
  */
 bool mdm_hl7800_valid_rat(uint8_t value);
 
@@ -364,7 +366,8 @@ int mdm_hl7800_register_event_callback(struct mdm_hl7800_callback_agent *agent);
  *
  * @param agent event callback agent
  *
- * @retval 0 on success, negative on failure
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int mdm_hl7800_unregister_event_callback(struct mdm_hl7800_callback_agent *agent);
 
@@ -381,7 +384,7 @@ void mdm_hl7800_generate_status_events(void);
  *
  * @param tm time structure
  * @param offset The amount the local time is offset from GMT/UTC in seconds.
- * @return int32_t 0 if successful
+ * @retval 0 on success
  */
 int32_t mdm_hl7800_get_local_time(struct tm *tm, int32_t *offset);
 
@@ -400,14 +403,16 @@ int32_t mdm_hl7800_update_fw(char *file_path);
 /**
  * @brief Read the operator index from the modem.
  *
- * @retval negative error code, 0 on success
+ * @retval operator_index on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_get_operator_index(void);
 
 /**
  * @brief Get modem functionality
  *
- * @return int32_t negative errno on failure, else mdm_hl7800_functionality
+ * @retval mdm_hl7800_functionality on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_get_functionality(void);
 
@@ -419,7 +424,8 @@ int32_t mdm_hl7800_get_functionality(void);
  * MODEM_HL7800_BOOT_IN_AIRPLANE_MODE.
  *
  * @param mode
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
 
@@ -431,7 +437,8 @@ int32_t mdm_hl7800_set_functionality(enum mdm_hl7800_functionality mode);
  * @note Airplane mode isn't cleared when the modem is reset.
  *
  * @param rate in seconds to query location
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_set_gps_rate(uint32_t rate);
 
@@ -443,7 +450,8 @@ int32_t mdm_hl7800_set_gps_rate(uint32_t rate);
  * information into non-volatile memory, then this command
  * only needs to be run once.
  *
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_polte_register(void);
 
@@ -452,7 +460,8 @@ int32_t mdm_hl7800_polte_register(void);
  *
  * @param user from polte.io or register command callback
  * @param password from polte.io register command callback
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_polte_enable(char *user, char *password);
 
@@ -464,7 +473,8 @@ int32_t mdm_hl7800_polte_enable(char *user, char *password);
  * requires 20-120 seconds to be generated and it contains the
  * location information (or indicates server failure).
  *
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_polte_locate(void);
 
@@ -474,7 +484,8 @@ int32_t mdm_hl7800_polte_locate(void);
  *
  * HL7800_EVENT_SITE_SURVEY is generated for each response received from modem.
  *
- * @retval negative error code, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_perform_site_survey(void);
 
@@ -482,7 +493,8 @@ int32_t mdm_hl7800_perform_site_survey(void);
  * @brief Set desired sleep level. Requires MODEM_HL7800_LOW_POWER_MODE
  *
  * @param level (sleep, lite hibernate, or hibernate)
- * @return int negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int mdm_hl7800_set_desired_sleep_level(enum mdm_hl7800_sleep level);
 
@@ -524,7 +536,8 @@ void mdm_hl7800_register_cts_callback(void (*func)(int state));
  * @param bands Band bitmap in hexadecimal format without the 0x prefix.
  * Leading 0's for the value can be omitted.
  *
- * @return int32_t negative errno, 0 on success
+ * @retval 0 on success
+ * @retval -errno negative error code on failure
  */
 int32_t mdm_hl7800_set_bands(const char *bands);
 
@@ -536,7 +549,7 @@ int32_t mdm_hl7800_set_bands(const char *bands);
  *
  * @param level 0 (None) - 4 (Debug)
  *
- * @retval new log level
+ * @return new log level
  */
 uint32_t mdm_hl7800_log_filter_set(uint32_t level);
 

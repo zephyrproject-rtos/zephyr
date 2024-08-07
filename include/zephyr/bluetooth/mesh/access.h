@@ -995,7 +995,8 @@ int bt_mesh_model_publish(const struct bt_mesh_model *model);
  *
  * @param model Mesh Model that supports publication.
  *
- * @return true if this is a retransmission, false if this is a first publication.
+ * @retval true this is a retransmission
+ * @retval false this is a first publication.
  */
 static inline bool bt_mesh_model_pub_is_retransmission(const struct bt_mesh_model *model)
 {

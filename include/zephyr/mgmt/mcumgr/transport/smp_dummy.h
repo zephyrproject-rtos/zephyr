@@ -60,14 +60,14 @@ void smp_dummy_add_data(void);
 /**
  * @brief Gets current send buffer position
  *
- * @retval Current send buffer position (in bytes)
+ * @return Current send buffer position (in bytes)
  */
 uint16_t smp_dummy_get_send_pos(void);
 
 /**
  * @brief Gets current receive buffer position
  *
- * @retval Current receive buffer position (in bytes)
+ * @return Current receive buffer position (in bytes)
  */
 uint16_t smp_dummy_get_receive_pos(void);
 

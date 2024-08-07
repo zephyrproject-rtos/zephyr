@@ -380,7 +380,7 @@ static int submit_to_queue_locked(struct k_work *work,
  * @param queuep pointer to a queue reference.
  * @param work the work structure to be submitted
  *
- * @retval see submit_to_queue_locked()
+ * @return see submit_to_queue_locked()
  */
 int z_work_submit_to_queue(struct k_work_q *queue,
 		  struct k_work *work)

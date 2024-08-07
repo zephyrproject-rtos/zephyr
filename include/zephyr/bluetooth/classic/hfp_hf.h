@@ -164,7 +164,8 @@ struct bt_hfp_hf_cb {
  *
  *  @param cb callback structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
 
@@ -175,7 +176,8 @@ int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
  *  @param conn Connection object.
  *  @param cmd AT command to be sent.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd);
 

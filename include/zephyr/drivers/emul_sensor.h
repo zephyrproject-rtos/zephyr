@@ -64,9 +64,9 @@ static inline bool emul_sensor_backend_is_supported(const struct emul *target)
  * @param value Expected value in fixed-point format using standard SI unit for sensor type
  * @param shift Shift value (scaling factor) applied to \p value
  *
- * @return 0 if successful
- * @return -ENOTSUP if no backend API or if channel not supported by emul
- * @return -ERANGE if provided value is not in the sensor's supported range
+ * @retval 0 success
+ * @retval -ENOTSUP no backend API or if channel not supported by emul
+ * @retval -ERANGE provided value is not in the sensor's supported range
  */
 static inline int emul_sensor_backend_set_channel(const struct emul *target,
 						  struct sensor_chan_spec ch, const q31_t *value,
@@ -97,8 +97,8 @@ static inline int emul_sensor_backend_set_channel(const struct emul *target,
  * @param[out] shift The shift value (scaling factor) associated with \p lower, \p upper, and
  *             \p epsilon.
  *
- * @return 0 if successful
- * @return -ENOTSUP if no backend API or if channel not supported by emul
+ * @retval 0 success
+ * @retval -ENOTSUP no backend API or if channel not supported by emul
  *
  */
 static inline int emul_sensor_backend_get_sample_range(const struct emul *target,
@@ -124,8 +124,8 @@ static inline int emul_sensor_backend_get_sample_range(const struct emul *target
  * @param[in] ch The channel to request info for. If \p ch is unsupported, return `-ENOTSUP`
  * @param[in] attribute The attribute to set
  * @param[in] value the value to use (cast according to the channel/attribute pair)
- * @return 0 is successful
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 static inline int emul_sensor_backend_set_attribute(const struct emul *target,
 						    struct sensor_chan_spec ch,
@@ -158,8 +158,8 @@ static inline int emul_sensor_backend_set_attribute(const struct emul *target,
  * @param[out] max The maximum value the attribute can be set to
  * @param[out] increment The value that the attribute increases by for every LSB
  * @param[out] shift The shift for \p min, \p max, and \p increment
- * @return 0 on SUCCESS
- * @return < 0 on error
+ * @retval 0 success
+ * @retval -errno negative error code on failure
  */
 static inline int emul_sensor_backend_get_attribute_metadata(const struct emul *target,
 							     struct sensor_chan_spec ch,

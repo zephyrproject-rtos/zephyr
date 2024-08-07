@@ -451,8 +451,8 @@ static inline int mbox_set_enabled_dt(const struct mbox_dt_spec *spec,
  *
  * @param dev MBOX device instance.
  *
- * @return >0     Maximum possible number of supported channels on success
- * @return -errno Negative errno on error.
+ * @retval >0 Maximum possible number of supported channels.
+ * @retval -errno Negative errno on error.
  */
 __syscall uint32_t mbox_max_channels_get(const struct device *dev);
 

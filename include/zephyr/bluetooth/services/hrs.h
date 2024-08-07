@@ -46,8 +46,8 @@ struct bt_hrs_cb {
  * @param cb Pointer to callbacks structure. Must point to memory that remains valid
  * until unregistered.
  *
- * @return 0 on success
- * @return -EINVAL in case @p cb is NULL
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
  */
 int bt_hrs_cb_register(struct bt_hrs_cb *cb);
 
@@ -57,9 +57,9 @@ int bt_hrs_cb_register(struct bt_hrs_cb *cb);
  *
  * @param cb Pointer to callbacks structure
  *
- * @return 0 on success
- * @return -EINVAL in case @p cb is NULL
- * @return -ENOENT in case the @p cb was not found in registered callbacks
+ * @retval 0 success
+ * @retval -EINVAL @p cb is NULL
+ * @retval -ENOENT @p cb was not found in registered callbacks
  */
 int bt_hrs_cb_unregister(struct bt_hrs_cb *cb);
 
@@ -69,7 +69,8 @@ int bt_hrs_cb_unregister(struct bt_hrs_cb *cb);
  *
  *  @param heartrate The heartrate measurement in beats per minute.
  *
- *  @return Zero in case of success and error code in case of error.
+ *  @retval 0 success
+ *  @retval -errno error code
  */
 int bt_hrs_notify(uint16_t heartrate);
 

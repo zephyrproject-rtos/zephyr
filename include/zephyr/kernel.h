@@ -337,7 +337,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
  *
- * @retval the allocated thread stack on success.
+ * @return the allocated thread stack on success.
  * @retval NULL on failure.
  *
  * @see CONFIG_DYNAMIC_THREAD
@@ -488,12 +488,12 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  * @param thread Thread to inspect stack information
  * @param unused_ptr Output parameter, filled in with the unused stack space
  *	of the target thread in bytes.
- * @return 0 on success
- * @return -EBADF Bad thread object (user mode only)
- * @return -EPERM No permissions on thread object (user mode only)
- * #return -ENOTSUP Forbidden by hardware policy
- * @return -EINVAL Thread is uninitialized or exited (user mode only)
- * @return -EFAULT Bad memory address for unused_ptr (user mode only)
+ * @retval 0 success
+ * @retval -EBADF Bad thread object (user mode only)
+ * @retval -EPERM No permissions on thread object (user mode only)
+ * #retval -ENOTSUP Forbidden by hardware policy
+ * @retval -EINVAL Thread is uninitialized or exited (user mode only)
+ * @retval -EFAULT Bad memory address for unused_ptr (user mode only)
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 				       size_t *unused_ptr);
@@ -1148,8 +1148,8 @@ void k_thread_time_slice_set(struct k_thread *th, int32_t slice_ticks,
  *
  * @funcprops \isr_ok
  *
- * @return false if invoked by a thread.
- * @return true if invoked by an ISR.
+ * @retval false invoked by a thread.
+ * @retval true invoked by an ISR.
  */
 bool k_is_in_isr(void);
 
@@ -1166,8 +1166,8 @@ bool k_is_in_isr(void);
  *
  * @funcprops \isr_ok
  *
- * @return 0 if invoked by an ISR or by a cooperative thread.
- * @return Non-zero if invoked by a preemptible thread.
+ * @retval 0 if invoked by an ISR or by a cooperative thread.
+ * @retval Non-zero if invoked by a preemptible thread.
  */
 __syscall int k_is_preempt_thread(void);
 
@@ -1179,8 +1179,8 @@ __syscall int k_is_preempt_thread(void);
  *
  * @funcprops \isr_ok
  *
- * @return true if invoked before post-kernel initialization
- * @return false if invoked during/after post-kernel initialization
+ * @retval true if invoked before post-kernel initialization
+ * @retval false if invoked during/after post-kernel initialization
  */
 static inline bool k_is_pre_kernel(void)
 {
@@ -1278,7 +1278,8 @@ __syscall int k_thread_name_set(k_tid_t thread, const char *str);
  * Get the name of a thread
  *
  * @param thread Thread ID
- * @retval Thread name, or NULL if configuration not enabled
+ * @return Thread name
+ * @retval NULL if @kconfig{CONFIG_THREAD_NAME} is not enabled
  */
 const char *k_thread_name_get(k_tid_t thread);
 
@@ -1306,7 +1307,7 @@ __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
  * @param buf Buffer into which to copy state strings
  * @param buf_size Size of the buffer
  *
- * @retval Pointer to @a buf if data was copied, else a pointer to "".
+ * @return Pointer to @a buf if data was copied, else a pointer to "".
  */
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
 
@@ -2162,8 +2163,8 @@ bool k_queue_unique_append(struct k_queue *queue, void *data);
  *
  * @param queue Address of the queue.
  *
- * @return Non-zero if the queue is empty.
- * @return 0 if data is available.
+ * @retval !=0 the queue is empty.
+ * @retval 0 data is available.
  */
 __syscall int k_queue_is_empty(struct k_queue *queue);
 
@@ -2278,9 +2279,9 @@ __syscall int k_futex_wait(struct k_futex *futex, int expected,
  * @param futex Futex to wake up pending threads.
  * @param wake_all If true, wake up all pending threads; If false,
  *                 wakeup the highest priority thread.
+ * @return Number of threads that were woken up.
  * @retval -EACCES Caller does not have access to the futex address.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
- * @retval Number of threads that were woken up.
  */
 __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
 
@@ -2339,7 +2340,7 @@ __syscall void k_event_init(struct k_event *event);
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
@@ -2356,7 +2357,7 @@ __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
  * @param event Address of the event object
  * @param events Set of events to set in @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
 
@@ -2372,7 +2373,7 @@ __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
  *
- * @retval Previous value of the events in @a events_mask
+ * @return Previous value of the events in @a events_mask
  */
 __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
@@ -2385,7 +2386,7 @@ __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
 
@@ -2407,7 +2408,7 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @return set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
@@ -2431,7 +2432,7 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @return set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
@@ -2443,7 +2444,7 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  * @param event Address of the event object
  * @param events_mask Set of desired events to test
  *
- * @retval Current value of events in @a events_mask
+ * @return Current value of events in @a events_mask
  */
 static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
 {
@@ -2643,8 +2644,8 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  *
- * @return Non-zero if the FIFO queue is empty.
- * @return 0 if data is available.
+ * @retval !=0 the FIFO queue is empty.
+ * @retval 0 data is available.
  */
 #define k_fifo_is_empty(fifo) \
 	k_queue_is_empty(&(fifo)->_queue)
@@ -3508,7 +3509,7 @@ int k_work_cancel(struct k_work *work);
  * one completes.  On architectures with CONFIG_KERNEL_COHERENCE the object
  * must be allocated in coherent memory.
  *
- * @retval true if work was pending (call had to wait for cancellation of a
+ * @retval true work was pending (call had to wait for cancellation of a
  * running handler to complete, or scheduled or submitted operations were
  * cancelled);
  * @retval false otherwise
@@ -3867,7 +3868,7 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
  * one completes.  On architectures with CONFIG_KERNEL_COHERENCE the object
  * must be allocated in coherent memory.
  *
- * @retval true if work was not idle (call had to wait for cancellation of a
+ * @retval true work was not idle (call had to wait for cancellation of a
  * running handler to complete, or scheduled or submitted operations were
  * cancelled);
  * @retval false otherwise
@@ -5105,8 +5106,8 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
  *
  * @param pipe Address of the pipe.
  *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
+ * @retval n number of bytes that may be read from @a pipe (0 <= n <= @ref k_pipe.size)
+ * @retval 0 for unbuffered pipes.
  */
 __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
 
@@ -5115,8 +5116,8 @@ __syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
  *
  * @param pipe Address of the pipe.
  *
- * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
- *         result is zero for unbuffered pipes.
+ * @retval n number of bytes that may be written to @a pipe (0 <= n <= @ref k_pipe.size)
+ * @retval 0 for unbuffered pipes.
  */
 __syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
 
@@ -6180,7 +6181,8 @@ __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
  *
  * @param thread ID of thread.
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @retval 0 success
+ * @retval -EINVAL if null pointers
  */
 int k_thread_runtime_stats_get(k_tid_t thread,
 			       k_thread_runtime_stats_t *stats);
@@ -6189,7 +6191,8 @@ int k_thread_runtime_stats_get(k_tid_t thread,
  * @brief Get the runtime statistics of all threads
  *
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @retval 0 success
+ * @retval -EINVAL if null pointers
  */
 int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
 
@@ -6198,7 +6201,8 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @retval 0 success
+ * @retval -EINVAL if null pointers
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 
@@ -6209,7 +6213,8 @@ int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
  * thread.
  *
  * @param thread ID of thread
- * @return -EINVAL if invalid thread ID, otherwise 0
+ * @retval 0 success
+ * @retval -EINVAL invalid thread ID
  */
 int k_thread_runtime_stats_enable(k_tid_t thread);
 
@@ -6220,7 +6225,8 @@ int k_thread_runtime_stats_enable(k_tid_t thread);
  * thread.
  *
  * @param thread ID of thread
- * @return -EINVAL if invalid thread ID, otherwise 0
+ * @retval 0 success
+ * @retval -EINVAL invalid thread ID
  */
 int k_thread_runtime_stats_disable(k_tid_t thread);
 

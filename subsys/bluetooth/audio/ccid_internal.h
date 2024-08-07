@@ -31,8 +31,8 @@ uint8_t bt_ccid_get_value(void);
  *
  * @param ccid The CCID the search for
  *
+ * @retval ptr A pointer to a GATT attribute if found
  * @retval NULL if none was found
- * @retval A pointer to a GATT attribute if found
  */
 const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid);
 

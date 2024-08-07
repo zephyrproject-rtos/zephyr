@@ -55,8 +55,8 @@ int smp_client_object_init(struct smp_client_object *smp_client, int smp_type);
  * @param nb net_buf for response
  * @param user_data same user data that was provided as part of the request
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 typedef int (*smp_client_res_fn)(struct net_buf *nb, void *user_data);
 
@@ -66,8 +66,8 @@ typedef int (*smp_client_res_fn)(struct net_buf *nb, void *user_data);
  * @param nb response net_buf
  * @param res_hdr Parsed SMP header
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 int smp_client_single_response(struct net_buf *nb, const struct smp_hdr *res_hdr);
 
@@ -80,8 +80,8 @@ int smp_client_single_response(struct net_buf *nb, const struct smp_hdr *res_hdr
  * @param op SMP operation type
  * @param version SMP MCUmgr version
  *
- * @return      A newly-allocated buffer net_buf on success
- * @return	NULL on failure.
+ * @retval      net_buf Newly-allocated buffer net_buf
+ * @retval      NULL failure.
  */
 struct net_buf *smp_client_buf_allocation(struct smp_client_object *smp_client, uint16_t group,
 					  uint8_t command_id, uint8_t op,
@@ -103,8 +103,8 @@ void smp_client_buf_free(struct net_buf *nb);
  * @param timeout_in_sec	Timeout in seconds for send process. Client will retry transport
  *				based CONFIG_SMP_CMD_RETRY_TIME
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb,
 			smp_client_res_fn cb, void *user_data, int timeout_in_sec);

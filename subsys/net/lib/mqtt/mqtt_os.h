@@ -64,7 +64,7 @@ static inline void mqtt_mutex_unlock(struct mqtt_client *client)
 
 /**@brief Method to get the sys tick or a wall clock in millisecond resolution.
  *
- * @retval Current wall clock or sys tick value in milliseconds.
+ * @return Current wall clock or sys tick value in milliseconds.
  */
 static inline uint32_t mqtt_sys_tick_in_ms_get(void)
 {
@@ -75,7 +75,7 @@ static inline uint32_t mqtt_sys_tick_in_ms_get(void)
  *
  * @param[in] last_activity The value since elapsed time is requested.
  *
- * @retval Time elapsed since last_activity time.
+ * @return Time elapsed since last_activity time.
  */
 static inline uint32_t mqtt_elapsed_time_in_ms_get(uint32_t last_activity)
 {

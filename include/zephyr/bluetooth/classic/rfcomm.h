@@ -120,7 +120,8 @@ struct bt_rfcomm_server {
 	 *  @param conn The connection that is requesting authorization
 	 *  @param dlc Pointer to received the allocated dlc
 	 *
-	 *  @return 0 in case of success or negative value in case of error.
+	 *  @retval 0 success.
+	 *  @retval -errno negative error code on failure.
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc);
 
@@ -135,7 +136,8 @@ struct bt_rfcomm_server {
  *
  *  @param server Server structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
 
@@ -149,7 +151,8 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
  *  @param dlc Dlc object.
  *  @param channel Server channel to connect to.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 			  uint8_t channel);
@@ -173,7 +176,8 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  *
  *  @param dlc Dlc object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
 

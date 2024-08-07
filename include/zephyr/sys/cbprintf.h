@@ -511,7 +511,7 @@ int cbvprintf_package(void *packaged,
  *
  * @param strl_len Number of elements in @p strl array.
  *
- * @retval Positive output package size.
+ * @return Positive output package size.
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */
@@ -571,7 +571,7 @@ static inline int z_cbprintf_cpy(const void *buf, size_t len, void *ctx)
  *
  * @param strl_len Number of elements in @p strl array.
  *
- * @retval Positive Output package size.
+ * @return Positive output package size.
  * @retval -ENOSPC if @p packaged was not null and the space required to store
  * exceed @p len.
  */

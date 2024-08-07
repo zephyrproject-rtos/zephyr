@@ -330,8 +330,8 @@ void k_mem_paging_eviction_init(void);
  * @param pf Virtual address to obtain a storage location
  * @param [out] location storage location token
  * @param page_fault Whether this request was for a page fault
- * @return 0 Success
- * @return -ENOMEM Backing store is full
+ * @retval 0 Success
+ * @retval -ENOMEM Backing store is full
  */
 int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,

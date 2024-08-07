@@ -426,8 +426,8 @@ static inline int dai_config_get(const struct device *dev,
  * @param dir Stream direction: RX or TX as defined by DAI_DIR_*
  * @param stream_id Stream id: some drivers may have stream specific
  *        properties, this id specifies the stream.
- * @retval Pointer to the structure containing properties,
- *         or NULL if error or no properties
+ * @return Pointer to the structure containing properties
+ * @retval NULL if error or no properties
  */
 static inline const struct dai_properties *dai_get_properties(const struct device *dev,
 							      enum dai_dir dir,
@@ -559,7 +559,7 @@ static inline int dai_ts_get(const struct device *dev, struct dai_ts_cfg *cfg,
  *
  * @retval 0 If successful.
  * @retval -ENOSYS If the configuration update operation is not implemented.
- * @retval Negative errno code if failure.
+ * @retval -errno Negative errno code if failure.
  */
 static inline int dai_config_update(const struct device *dev,
 									const void *bespoke_cfg,

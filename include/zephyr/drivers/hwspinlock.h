@@ -132,7 +132,7 @@ static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t i
  *
  * @param dev HW spinlock device instance.
  *
- * @retval HW spinlock max ID.
+ * @return HW spinlock max ID.
  * @retval 0 if the function is not implemented by the driver.
  */
 __syscall uint32_t hwspinlock_get_max_id(const struct device *dev);

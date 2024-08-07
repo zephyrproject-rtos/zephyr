@@ -135,8 +135,8 @@ void img_mgmt_client_init(struct img_mgmt_client *client, struct smp_client_obje
  * @param image_hash	Pointer to HASH for image must be SHA256 hash of entire upload
  *			if present (32 bytes). Use NULL when HASH from image is not available.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 int img_mgmt_client_upload_init(struct img_mgmt_client *client, size_t image_size,
 				uint32_t image_num, const char *image_hash);
@@ -149,8 +149,8 @@ int img_mgmt_client_upload_init(struct img_mgmt_client *client, size_t image_siz
  * @param length	Length of data
  * @param res_buf	Pointer for command response structure.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, size_t length,
 			   struct mcumgr_image_upload *res_buf);
@@ -163,8 +163,8 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
  * @param confirm	Set false for test and true for confirmation.
  * @param res_buf	Pointer for command response structure.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 
 int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool confirm,
@@ -176,8 +176,8 @@ int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool
  * @param client	IMG mgmt client object
  * @param res_buf	Pointer for command response structure.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 int img_mgmt_client_state_read(struct img_mgmt_client *client, struct mcumgr_image_state *res_buf);
 
@@ -187,8 +187,8 @@ int img_mgmt_client_state_read(struct img_mgmt_client *client, struct mcumgr_ima
  * @param client	IMG mgmt client object
  * @param slot		Slot number
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @retval 0 success.
+ * @retval err @ref mcumgr_err_t code on failure.
  */
 
 int img_mgmt_client_erase(struct img_mgmt_client *client, uint32_t slot);

@@ -108,8 +108,8 @@ __subsystem struct coredump_driver_api {
  * @param dev    Pointer to the device structure for the driver instance.
  * @param region Struct describing memory to be collected
  *
- * @return true if registration succeeded
- * @return false if registration failed
+ * @retval true registration succeeded
+ * @retval false registration failed
  */
 static inline bool coredump_device_register_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
@@ -127,8 +127,8 @@ static inline bool coredump_device_register_memory(const struct device *dev,
  * @param dev    Pointer to the device structure for the driver instance.
  * @param region Struct describing memory to be collected
  *
- * @return true if unregistration succeeded
- * @return false if unregistration failed
+ * @retval true unregistration succeeded
+ * @retval false unregistration failed
  */
 static inline bool coredump_device_unregister_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
@@ -145,8 +145,8 @@ static inline bool coredump_device_unregister_memory(const struct device *dev,
  * @param dev      Pointer to the device structure for the driver instance.
  * @param callback Callback to be invoked at dump time
  *
- * @return true if registration succeeded
- * @return false if registration failed
+ * @retval true registration succeeded
+ * @retval false registration failed
  */
 static inline bool coredump_device_register_callback(const struct device *dev,
 	coredump_dump_callback_t callback)

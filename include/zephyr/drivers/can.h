@@ -1105,7 +1105,7 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * @param bitrate Target bitrate.
  *
  * @retval 0 or positive bitrate error.
- * @retval Negative error code on error.
+ * @retval -errno Negative error code on error.
  */
 __deprecated int can_calc_prescaler(const struct device *dev, struct can_timing *timing,
 				    uint32_t bitrate);
@@ -1437,7 +1437,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
  * @param ide Get the maximum standard (11-bit) CAN ID filters if false, or extended (29-bit) CAN ID
  *            filters if true.
  *
- * @retval Positive number of maximum concurrent filters.
+ * @return Positive number of maximum concurrent filters.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
@@ -1734,7 +1734,7 @@ static inline uint32_t z_impl_can_stats_get_rx_overruns(const struct device *dev
  *
  * @param dlc Data Length Code (DLC).
  *
- * @retval Number of bytes.
+ * @return Number of bytes.
  */
 static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
 {
@@ -1749,7 +1749,7 @@ static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
  *
  * @param num_bytes Number of bytes.
  *
- * @retval Data Length Code (DLC).
+ * @return Data Length Code (DLC).
  */
 static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
 {

@@ -615,11 +615,11 @@ struct bt_ots_cb {
 	 *  @param created_desc  Created object descriptor that shall be filled by the
 	 *                       receiver of this callback.
 	 *
-	 *  @return 0 in case of success or negative value in case of error.
-	 *  @return -ENOTSUP if object type is not supported
-	 *  @return -ENOMEM if no available space for new object.
-	 *  @return -EINVAL if an invalid parameter is provided
-	 *  @return other negative values are treated as a generic operation failure
+	 *  @retval 0 success.
+	 *  @retval -ENOTSUP object type is not supported
+	 *  @retval -ENOMEM no available space for new object.
+	 *  @retval -EINVAL an invalid parameter is provided
+	 *  @retval -errno other negative values representing generic operation failure
 	 */
 	int (*obj_created)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 			   const struct bt_ots_obj_add_param *add_param,
@@ -636,14 +636,14 @@ struct bt_ots_cb {
 	 *              this request came from the server.
 	 *  @param id   Object ID.
 	 *
-	 *  @retval When an error is indicated by using a negative value, the
+	 *  @retval 0 success.
+	 *  @note   When an error is indicated by using a negative value, the
 	 *          object delete procedure is aborted and a corresponding failed
 	 *          status is returned to the client.
-	 *  @return 0 in case of success.
-	 *  @return -EBUSY if the object is locked. This is generally not expected
+	 *  @retval -EBUSY the object is locked. This is generally not expected
 	 *          to be returned by the application as the OTS layer tracks object
 	 *          accesses. An object locked status is returned to the client.
-	 *  @return Other negative values in case of error. A generic operation
+	 *  @retval -errno Other negative values in case of error. A generic operation
 	 *          failed status is returned to the client.
 	 */
 	int (*obj_deleted)(struct bt_ots *ots, struct bt_conn *conn,
@@ -703,11 +703,10 @@ struct bt_ots_cb {
 	 *  @param offset Object data offset.
 	 *  @param rem    Remaining length in the write operation.
 	 *
-	 *  @return Number of bytes written in case of success, if the number
-	 *          of bytes written does not match len, -EIO is returned to
-	 *          the L2CAP layer.
-	 *  @return A negative value in case of an error.
-	 *  @return -EINPROGRESS has a special meaning and is unsupported at
+	 *  @retval nbytes Number of bytes written.
+	 *  @retval -EIO the number of bytes written does not match len.
+	 *  @retval -errno negative error code on failure.
+	 *  @retval -EINPROGRESS has a special meaning and is unsupported at
 	 *          the moment. It should not be returned.
 	 */
 	ssize_t (*obj_write)(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
@@ -766,8 +765,8 @@ struct bt_ots_init_param {
  *  @param ots      OTS instance.
  *  @param param    Object addition parameters.
  *
- *  @return ID of created object in case of success.
- *  @return negative value in case of error.
+ *  @retval id ID of created object in case of success.
+ *  @retval -errno negative value in case of error.
  */
 int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param);
 
@@ -781,7 +780,8 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
  *  @param ots OTS instance.
  *  @param id  ID of the object to be deleted (uint48).
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id);
 
@@ -801,7 +801,8 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots);
  *  @param ots      OTS instance.
  *  @param ots_init OTS initialization descriptor.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_ots_init(struct bt_ots *ots, struct bt_ots_init_param *ots_init);
 

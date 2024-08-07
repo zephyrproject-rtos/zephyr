@@ -38,7 +38,7 @@ typedef void (*z_nrf_rtc_timer_compare_handler_t)(int32_t id,
  *
  * Channel 0 is used for the system clock.
  *
- * @retval Non-negative indicates allocated channel ID.
+ * @retval channel_id Non-negative indicates allocated channel ID.
  * @retval -ENOMEM if channel cannot be allocated.
  */
 int32_t z_nrf_rtc_timer_chan_alloc(void);
@@ -180,7 +180,7 @@ void z_nrf_rtc_timer_abort(int32_t chan);
  * @p t can be absolute or relative. @p t cannot be further into the future
  * from now than the RTC range (e.g. 512 seconds if RTC is running at 32768 Hz).
  *
- * @retval Positive value represents @p t in RTC tick value.
+ * @return Positive value that represents @p t in RTC tick value.
  * @retval -EINVAL if @p t is out of range.
  */
 uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t);
@@ -192,7 +192,7 @@ uint64_t z_nrf_rtc_timer_get_ticks(k_timeout_t t);
  * application cpu system tick. Function can only be used on network cpu. It
  * requires @kconfig{CONFIG_NRF53_SYNC_RTC} being enabled.
  *
- * @retval Non-negative offset given in RTC ticks.
+ * @return Non-negative offset given in RTC ticks.
  * @retval -ENOSYS if operation is not supported.
  * @retval -EBUSY if synchronization is not yet completed.
  */

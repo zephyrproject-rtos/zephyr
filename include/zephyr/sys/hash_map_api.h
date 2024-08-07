@@ -62,8 +62,8 @@ struct sys_hashmap_iterator {
  * @brief Check if a Hashmap iterator has a next entry
  *
  * @param it Hashmap iterator
- * @return true if there is a next entry
- * @return false if there is no next entry
+ * @retval true There is a next entry
+ * @retval false There is no next entry
  */
 static inline bool sys_hashmap_iterator_has_next(const struct sys_hashmap_iterator *it)
 {

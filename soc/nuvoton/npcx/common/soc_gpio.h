@@ -21,7 +21,7 @@ extern "C" {
  *
  * @param port GPIO device index
  *
- * @retval Pointer to structure device
+ * @retval ptr Pointer to structure device
  * @retval NULL Invalid parameter of GPIO port index
  */
 const struct device *npcx_get_gpio_dev(int port);

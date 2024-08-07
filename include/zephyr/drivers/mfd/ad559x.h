@@ -49,7 +49,7 @@ bool mfd_ad559x_has_pointer_byte_map(const struct device *dev);
  * @param[in] len Number of bytes to be read
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_read_raw(const struct device *dev, uint8_t *val, size_t len);
 
@@ -61,7 +61,7 @@ int mfd_ad559x_read_raw(const struct device *dev, uint8_t *val, size_t len);
  * @param[in] len Number of bytes to be written
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_write_raw(const struct device *dev, uint8_t *val, size_t len);
 
@@ -74,7 +74,7 @@ int mfd_ad559x_write_raw(const struct device *dev, uint8_t *val, size_t len);
  * @param[in] val Pointer to data buffer
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_read_reg(const struct device *dev, uint8_t reg, uint8_t reg_data, uint16_t *val);
 
@@ -86,7 +86,7 @@ int mfd_ad559x_read_reg(const struct device *dev, uint8_t reg, uint8_t reg_data,
  * @param[in] val Data to be written
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_write_reg(const struct device *dev, uint8_t reg, uint16_t val);
 
@@ -98,7 +98,7 @@ int mfd_ad559x_write_reg(const struct device *dev, uint8_t reg, uint16_t val);
  * @param[out] result ADC channel value read
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_read_adc_chan(const struct device *dev, uint8_t channel, uint16_t *result);
 
@@ -110,7 +110,7 @@ int mfd_ad559x_read_adc_chan(const struct device *dev, uint8_t channel, uint16_t
  * @param[in] value DAC channel value
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_write_dac_chan(const struct device *dev, uint8_t channel, uint16_t value);
 
@@ -122,7 +122,7 @@ int mfd_ad559x_write_dac_chan(const struct device *dev, uint8_t channel, uint16_
  * @param[in] value DAC channel value
  *
  * @retval 0 if success
- * @retval negative errno if failure
+ * @retval -errno negative errno if failure
  */
 int mfd_ad559x_gpio_port_get_raw(const struct device *dev, uint8_t gpio, uint16_t *value);
 /**

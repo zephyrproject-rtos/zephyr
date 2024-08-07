@@ -652,8 +652,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
  *  been established. The application can be notified about when the remote
  *  information is available through the remote_info_available callback.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -EBUSY The remote information is not yet available.
+ *  @retval 0 success.
+ *  @retval -EBUSY The remote information is not yet available.
  */
 int bt_conn_get_remote_info(struct bt_conn *conn,
 			    struct bt_conn_remote_info *remote_info);
@@ -663,8 +663,8 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  *  @param conn           Connection object.
  *  @param tx_power_level Transmit power level descriptor.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOBUFS HCI command buffer is not available.
+ *  @retval 0 success.
+ *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
 				  struct bt_conn_le_tx_power *tx_power_level);
@@ -674,7 +674,7 @@ int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
  *  @param conn           Connection object.
  *  @param tx_power       Transmit power level descriptor.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 success.
  *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
@@ -685,7 +685,7 @@ int bt_conn_le_enhanced_get_tx_power_level(struct bt_conn *conn,
  *  @param conn           Connection object.
  *  @param phy            PHY information.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @retval 0 success.
  *  @retval -ENOBUFS HCI command buffer is not available.
  */
 int bt_conn_le_get_remote_tx_power_level(struct bt_conn *conn,
@@ -990,8 +990,8 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *  @param create_param Create connection parameters
  *  @param conn_param   Initial connection parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
- *  @return -ENOMEM No free connection object available.
+ *  @retval 0 success.
+ *  @retval -ENOMEM No free connection object available.
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);

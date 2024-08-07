@@ -610,12 +610,13 @@ int settings_runtime_commit(const char *name);
  * Get the storage instance used by zephyr.
  *
  * The type of storage object instance depends on the settings backend used.
- * It might pointer to: `struct nvs_fs`, `struct fcb` or string witch file name
+ * It might pointer to: `struct nvs_fs`, `struct fcb` or string which file name
  * depends on settings backend type used.
  *
- * @retval Pointer to which reference to the storage object can be stored.
+ * @param[out] storage Pointer to which reference to the storage object can be stored.
  *
- * @retval 0 on success, negative error code on failure.
+ * @retval 0 success.
+ * @retval -errno negative error code on failure.
  */
 int settings_storage_get(void **storage);
 

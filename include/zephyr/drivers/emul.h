@@ -201,8 +201,8 @@ struct emul {
  * @brief Set up a list of emulators
  *
  * @param dev Device the emulators are attached to (e.g. an I2C controller)
- * @return 0 if OK
- * @return negative value on error
+ * @retval 0 sucess
+ * @retval -errno negative value on error
  */
 int emul_init_for_bus(const struct device *dev);
 

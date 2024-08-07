@@ -91,7 +91,8 @@ struct bt_hfp_ag_cb {
 	 *  @param location AG memory location
 	 *  @param number Dailing number
 	 *
-	 *  @return 0 in case of success or negative value in case of error.
+	 *  @retval 0 success.
+	 *  @retval -errno negative error code on failure.
 	 */
 	int (*memory_dial)(struct bt_hfp_ag *ag, const char *location, char **number);
 
@@ -169,7 +170,8 @@ struct bt_hfp_ag_cb {
  *
  *  @param cb callback structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb);
 
@@ -181,7 +183,8 @@ int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb);
  *  @param ag Created HFP AG object.
  *  @param channel Peer rfcomm channel to be connected.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t channel);
 
@@ -191,7 +194,8 @@ int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t chann
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
 
@@ -202,7 +206,8 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag);
  *  @param ag HFP AG object.
  *  @param number Dailing number.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);
 
@@ -212,7 +217,8 @@ int bt_hfp_ag_remote_incoming(struct bt_hfp_ag *ag, const char *number);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_reject(struct bt_hfp_ag *ag);
 
@@ -222,7 +228,8 @@ int bt_hfp_ag_reject(struct bt_hfp_ag *ag);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_accept(struct bt_hfp_ag *ag);
 
@@ -232,7 +239,8 @@ int bt_hfp_ag_accept(struct bt_hfp_ag *ag);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_terminate(struct bt_hfp_ag *ag);
 
@@ -243,7 +251,8 @@ int bt_hfp_ag_terminate(struct bt_hfp_ag *ag);
  *  @param ag HFP AG object.
  *  @param number Dailing number.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_outgoing(struct bt_hfp_ag *ag, const char *number);
 
@@ -253,7 +262,8 @@ int bt_hfp_ag_outgoing(struct bt_hfp_ag *ag, const char *number);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_remote_ringing(struct bt_hfp_ag *ag);
 
@@ -263,7 +273,8 @@ int bt_hfp_ag_remote_ringing(struct bt_hfp_ag *ag);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_remote_reject(struct bt_hfp_ag *ag);
 
@@ -273,7 +284,8 @@ int bt_hfp_ag_remote_reject(struct bt_hfp_ag *ag);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_remote_accept(struct bt_hfp_ag *ag);
 
@@ -283,7 +295,8 @@ int bt_hfp_ag_remote_accept(struct bt_hfp_ag *ag);
  *
  *  @param ag HFP AG object.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_hfp_ag_remote_terminate(struct bt_hfp_ag *ag);
 

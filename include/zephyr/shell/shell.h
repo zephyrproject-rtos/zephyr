@@ -1149,8 +1149,8 @@ void shell_process(const struct shell *sh);
  * @param[in] sh	Pointer to the shell instance.
  * @param[in] prompt	New shell prompt.
  *
- * @return 0		Success.
- * @return -EINVAL	Pointer to new prompt is not correct.
+ * @retval 0		Success.
+ * @retval -EINVAL	Pointer to new prompt is not correct.
  */
 int shell_prompt_change(const struct shell *sh, const char *prompt);
 
@@ -1298,7 +1298,7 @@ int shell_mode_delete_set(const struct shell *sh, bool val);
  *
  * @param[in] sh Pointer to the shell instance
  *
- * @retval return value of previous command
+ * @return the return value of the most recently executed shell command
  */
 int shell_get_return_value(const struct shell *sh);
 

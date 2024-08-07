@@ -1829,8 +1829,8 @@ struct bt_mesh_comp_p2_record *bt_mesh_comp_p2_record_pull(struct net_buf_simple
  * @param dst_arr Destination array for the unpacked list.
  * @param dst_cnt Size of the destination array.
  *
- * @return 0 on success.
- * @return -EMSGSIZE if dst_arr size is to small to parse full message.
+ * @retval 0 success.
+ * @retval -EMSGSIZE dst_arr size is too small to parse full message.
  */
 int bt_mesh_key_idx_unpack_list(struct net_buf_simple *buf, uint16_t *dst_arr, size_t *dst_cnt);
 

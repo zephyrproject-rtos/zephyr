@@ -235,8 +235,8 @@ static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
  *                indefinitely.
  * @param data Storage location for data pointer set when thread was woken up.
  *             May be NULL if not used.
- * @retval Return value set by whatever woke us up, or -EAGAIN if the timeout
- *         expired without being woken up.
+ * @return Return value set by whatever woke us up
+ * @retval -EAGAIN if the timeout expired without being woken up.
  */
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);

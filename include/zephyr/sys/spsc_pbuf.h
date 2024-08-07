@@ -140,7 +140,7 @@ static inline uint32_t spsc_pbuf_capacity(struct spsc_pbuf *pb)
  *				bytes of data (one is reserved for written
  *				messages length).
  * @param flags			Option flags. See @ref SPSC_PBUF_FLAGS.
- * @retval struct spsc_pbuf*	Pointer to the created buffer. The pointer
+ * @retval "struct spsc_pbuf*"	Pointer to the created buffer. The pointer
  *				points to the same address as buf.
  * @retval NULL			Invalid buffer alignment.
  */
@@ -155,9 +155,10 @@ struct spsc_pbuf *spsc_pbuf_init(void *buf, size_t blen, uint32_t flags);
  * @param buf	Pointer to the data to be written to the buffer.
  * @param len	Number of bytes to be written to the buffer. Must be positive
  *		but less than @ref SPSC_PBUF_MAX_LEN.
- * @retval int	Number of bytes written, negative error code on fail.
- *		-EINVAL, if len == 0.
- *		-ENOMEM, if len is bigger than the buffer can fit.
+ * @return	Number of bytes written.
+ * @retval 	-EINVAL if len == 0.
+ * @retval 	-ENOMEM if len is bigger than the buffer can fit.
+ * @retval 	-errno other negative error code on fail.
  */
 int spsc_pbuf_write(struct spsc_pbuf *pb, const char *buf, uint16_t len);
 
@@ -235,8 +236,8 @@ int spsc_pbuf_read(struct spsc_pbuf *pb, char *buf, uint16_t len);
  * @param[in,out] buf	A location where claimed packet address is written.
  *                      It is 32 bit word aligned and points to the continuous memory.
  *
+ * @return Length of the claimed packet.
  * @retval 0 No packets in the buffer.
- * @retval positive packet length.
  */
 uint16_t spsc_pbuf_claim(struct spsc_pbuf *pb, char **buf);
 

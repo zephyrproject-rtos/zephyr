@@ -114,7 +114,7 @@ enum pm_device_action {
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP If the requested action is not supported.
- * @retval Errno Other negative errno on failure.
+ * @retval -errno Other negative errno on failure.
  */
 typedef int (*pm_device_action_cb_t)(const struct device *dev,
 				     enum pm_device_action action);
@@ -422,7 +422,7 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -EBUSY If device is changing its state.
  * @retval -ENOSYS If device does not support PM.
  * @retval -EPERM If device has power state locked.
- * @retval Errno Other negative errno on failure.
+ * @retval -errno Other negative errno on failure.
  */
 int pm_device_action_run(const struct device *dev,
 		enum pm_device_action action);

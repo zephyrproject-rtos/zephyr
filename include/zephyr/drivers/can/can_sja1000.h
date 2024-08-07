@@ -94,7 +94,7 @@ typedef void (*can_sja1000_write_reg_t)(const struct device *dev, uint8_t reg, u
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param reg Register offset
- * @retval Register value
+ * @return Register value
  */
 typedef uint8_t (*can_sja1000_read_reg_t)(const struct device *dev, uint8_t reg);
 

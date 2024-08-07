@@ -50,11 +50,11 @@ __syscall void updatehub_autohandler(void);
 /**
  * @brief The UpdateHub probe verify if there is some update to be performed.
  *
- * @return UPDATEHUB_HAS_UPDATE has an update available.
- * @return UPDATEHUB_NO_UPDATE no update available.
- * @return UPDATEHUB_NETWORKING_ERROR fail to connect to the UpdateHub server.
- * @return UPDATEHUB_INCOMPATIBLE_HARDWARE if Incompatible hardware.
- * @return UPDATEHUB_METADATA_ERROR fail to parse or to encode the metadata.
+ * @retval UPDATEHUB_HAS_UPDATE an update is available.
+ * @retval UPDATEHUB_NO_UPDATE no update available.
+ * @retval UPDATEHUB_NETWORKING_ERROR failed to connect to the UpdateHub server.
+ * @retval UPDATEHUB_INCOMPATIBLE_HARDWARE incompatible hardware.
+ * @retval UPDATEHUB_METADATA_ERROR failed to parse or to encode the metadata.
  */
 __syscall enum updatehub_response updatehub_probe(void);
 
@@ -65,11 +65,11 @@ __syscall enum updatehub_response updatehub_probe(void);
  * be made, will perform the installation of the new image and the hardware
  * will rebooting.
  *
- * @return Return UPDATEHUB_OK if success
- * @return UPDATEHUB_NETWORKING_ERROR if fail to connect to the server.
- * @return UPDATEHUB_DOWNLOAD_ERROR fail while downloading the update package.
- * @return UPDATEHUB_INSTALL_ERROR fail while installing the update package.
- * @return UPDATEHUB_FLASH_INIT_ERROR fail to initialize the flash.
+ * @retval UPDATEHUB_OK success
+ * @retval UPDATEHUB_NETWORKING_ERROR failed to connect to the server.
+ * @retval UPDATEHUB_DOWNLOAD_ERROR failed while downloading the update package.
+ * @retval UPDATEHUB_INSTALL_ERROR failed while installing the update package.
+ * @retval UPDATEHUB_FLASH_INIT_ERROR failed to initialize the flash.
  */
 __syscall enum updatehub_response updatehub_update(void);
 
@@ -79,14 +79,16 @@ __syscall enum updatehub_response updatehub_update(void);
  * @details Must be used before the UpdateHub probe. It should be one of first
  * actions after reboot.
  *
- * @return Return 0 if success otherwise a negative 'errno' value.
+ * @retval 0 success
+ * @retval -errno negative error code
  */
 __syscall int updatehub_confirm(void);
 
 /**
  * @brief Request system to reboot.
  *
- * @return Return 0 if success otherwise a negative 'errno' value.
+ * @retval 0 success
+ * @retval -errno negative error code
  */
 __syscall int updatehub_reboot(void);
 

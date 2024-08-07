@@ -336,9 +336,9 @@ static inline int z_impl_sdhc_request(const struct device *dev,
  * power to the SD card.
  * @param dev: SDHC device
  * @param io: I/O properties
- * @return 0 I/O was configured correctly
- * @return -ENOTSUP controller does not support these I/O settings
- * @return -EIO controller could not configure I/O settings
+ * @retval 0 I/O was configured correctly
+ * @retval -ENOTSUP controller does not support these I/O settings
+ * @retval -EIO controller could not configure I/O settings
  */
 __syscall int sdhc_set_io(const struct device *dev, struct sdhc_io *io);
 

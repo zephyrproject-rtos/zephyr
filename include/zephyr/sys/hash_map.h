@@ -307,11 +307,11 @@ static inline size_t sys_hashmap_num_buckets(const struct sys_hashmap *map)
  * as part of the load factor when growing the hash table.
  *
  * @param map Hashmap to examine
- * @param grow true if an entry is to be added. false if an entry has been removed
+ * @param grow true if an entry is to be added, false if an entry has been removed
  * @param num_reserved the number of reserved entries
  * @param[out] new_num_buckets variable Hashmap size
- * @return true if the Hashmap should be rehashed
- * @return false if the Hashmap should not be rehashed
+ * @retval true the Hashmap should be rehashed
+ * @retval false the Hashmap should not be rehashed
  */
 static inline bool sys_hashmap_should_rehash(const struct sys_hashmap *map, bool grow,
 					     size_t num_reserved, size_t *new_num_buckets)

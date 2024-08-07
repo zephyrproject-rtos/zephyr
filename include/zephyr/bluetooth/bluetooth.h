@@ -1147,10 +1147,10 @@ struct bt_le_per_adv_param {
  * @param sd Data to be used in scan response packets.
  * @param sd_len Number of elements in sd
  *
- * @return Zero on success or (negative) error code otherwise.
- * @return -ENOMEM No free connection objects available for connectable
+ * @retval 0 success.
+ * @retval -ENOMEM No free connection objects available for connectable
  *                 advertiser.
- * @return -ECONNREFUSED When connectable advertising is requested and there
+ * @retval -ECONNREFUSED When connectable advertising is requested and there
  *                       is already maximum number of connections established
  *                       in the controller.
  *                       This error code is only guaranteed when using Zephyr
@@ -2666,7 +2666,8 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
  *  @param vs_config_len  Length of additional vendor specific configuration data
  *  @param vs_config      Pointer to additional vendor specific configuration data
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 			   const uint8_t *vs_config);
@@ -2698,7 +2699,8 @@ struct bt_le_per_adv_sync_subevent_params {
  *  @param per_adv_sync   The periodic advertising sync object.
  *  @param params         Parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0 success.
+ *  @retval -errno negative error code on failure.
  */
 int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_subevent_params *params);

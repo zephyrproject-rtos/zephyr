@@ -57,7 +57,7 @@ int32_t ext2_bitmap_find_free(uint8_t *bm, uint32_t size);
  * @param bm Pointer to bitmap
  * @param size Size of bitmap in bits
  *
- * @retval Number of set bits in bitmap;
+ * @return Number of set bits in bitmap;
  */
 uint32_t ext2_bitmap_count_set(uint8_t *bm, uint32_t size);
 

@@ -167,7 +167,7 @@ static inline bool z_impl_sip_svc_plat_func_id_valid(const struct device *dev, u
  * @param client_idx client index.
  * @param trans_idx transaction index.
  *
- * @retval transaction id, which is used for tracking each transaction.
+ * @return transaction id, which is used for tracking each transaction.
  */
 __syscall uint32_t sip_svc_plat_format_trans_id(const struct device *dev, uint32_t client_idx,
 						uint32_t trans_idx);

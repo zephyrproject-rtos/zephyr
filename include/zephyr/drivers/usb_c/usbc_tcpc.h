@@ -466,7 +466,8 @@ static inline int tcpc_set_roles(const struct device *dev,
  * @param dev Runtime device structure
  * @param buf pointer where the pd_buf pointer is written, NULL if only checking the status
  *
- * @retval Greater or equal to 0 is the number of bytes received if buf parameter is provided
+ * @retval bytes_received Greater or equal to 0 is the number of bytes received if buf parameter is
+ * provided
  * @retval 0 if there is a message pending and buf parameter is NULL
  * @retval -EIO on failure
  * @retval -ENODATA if no message is pending
