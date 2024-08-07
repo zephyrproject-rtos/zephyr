@@ -56,7 +56,7 @@ tests:
       ordered: false
       regex:
         - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 18\\)"
+        - "Pong \\(on channel 14\\)"
 
   sample.drivers.mbox.nrf54h20_rad_app:
     platform_allow:
