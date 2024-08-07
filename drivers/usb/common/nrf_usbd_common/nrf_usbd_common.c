@@ -1029,6 +1029,16 @@ void nrf_usbd_common_irq_handler(void)
 	volatile uint32_t *dma_endevent;
 	uint32_t epdatastatus = 0;
 
+	/* Always check and clear SOF but call handler only if SOF interrupt
+	 * is actually enabled.
+	 */
+	if (NRF_USBD->EVENTS_SOF) {
+		NRF_USBD->EVENTS_SOF = 0;
+		if (NRF_USBD->INTENSET & USBD_INTEN_SOF_Msk) {
+			ev_sof_handler();
+		}
+	}
+
 	/* Clear EPDATA event and only then get and clear EPDATASTATUS to make
 	 * sure we don't miss any event.
 	 */
@@ -1064,16 +1074,6 @@ void nrf_usbd_common_irq_handler(void)
 	if (NRF_USBD->EVENTS_USBRESET) {
 		NRF_USBD->EVENTS_USBRESET = 0;
 		ev_usbreset_handler();
-	}
-
-	/* Always check and clear SOF but call handler only if SOF interrupt
-	 * is actually enabled.
-	 */
-	if (NRF_USBD->EVENTS_SOF) {
-		NRF_USBD->EVENTS_SOF = 0;
-		if (NRF_USBD->INTENSET & USBD_INTEN_SOF_Msk) {
-			ev_sof_handler();
-		}
 	}
 
 	if (NRF_USBD->EVENTS_USBEVENT) {
