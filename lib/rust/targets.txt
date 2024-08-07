@@ -1,0 +1,7 @@
+riscv32i-unknown-none-elf
+riscv64imac-unknown-none-elf
+thumbv6m-none-eabi
+thumbv7em-none-eabi
+thumbv7m-none-eabi
+thumbv8m.main-none-eabi
+x86_64-unknown-none
