@@ -131,3 +131,8 @@ Analog Axis API Reference
 *************************
 
 .. doxygengroup:: input_analog_axis
+
+Touchscreen API Reference
+*************************
+
+.. doxygengroup:: touch_events

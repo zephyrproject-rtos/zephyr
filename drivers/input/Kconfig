@@ -29,6 +29,7 @@ source "drivers/input/Kconfig.pmw3610"
 source "drivers/input/Kconfig.sbus"
 source "drivers/input/Kconfig.sdl"
 source "drivers/input/Kconfig.stmpe811"
+source "drivers/input/Kconfig.touch"
 source "drivers/input/Kconfig.xec"
 source "drivers/input/Kconfig.xpt2046"
 # zephyr-keep-sorted-stop
