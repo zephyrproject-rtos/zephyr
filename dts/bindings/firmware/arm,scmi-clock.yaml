@@ -1,0 +1,27 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: System Control and Management Interface (SCMI) clock protocol
+
+compatible: "arm,scmi-clock"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  shmem:
+    type: phandles
+
+  reg:
+    required: true
+    const: [0x14]
+
+  "#clock-cells":
+    required: true
+    const: 1
+    description: |
+      Vendor-specific clock identifier. Needs to match identifier
+      expected by the SCMI platform as this is directly used in SCMI
+      clock management messages.
+
+clock-cells:
+  - name
