@@ -623,6 +623,9 @@ struct net_stats_wifi {
 
 	/** Total number of unicast packets received and sent */
 	struct net_stats_pkts unicast;
+
+	/** Total number of dropped packets at received and sent*/
+	net_stats_t overrun_count;
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
