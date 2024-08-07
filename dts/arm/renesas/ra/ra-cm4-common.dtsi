@@ -240,7 +240,7 @@
 		};
 
 		pinctrl: pinctrl@40040800 {
-			compatible = "renesas,ra-pinctrl";
+			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40040800 0x500 0x40040d03 0x1>;
 			reg-names = "pfs", "pmisc_pwpr";
 			status = "okay";
