@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXN236
+	select SOC_MCXN236
+	select SOC_PART_NUMBER_MCXN236VDF
