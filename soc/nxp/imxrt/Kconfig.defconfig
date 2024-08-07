@@ -7,7 +7,7 @@ if SOC_FAMILY_NXP_IMXRT
 # can override the defaults given here
 rsource "*/Kconfig.defconfig"
 
-if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config SERIAL_INIT_PRIORITY
 	default 55 if SERIAL
@@ -15,6 +15,7 @@ config SERIAL_INIT_PRIORITY
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0xb000 if BOOT_FLEXSPI_NOR && SOC_SERIES_IMXRT118X
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
 config PINCTRL_IMX
@@ -75,7 +76,7 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 endif # ETH_NXP_ENET
 
 config MEMC
-	default y
+	default y if !SOC_SERIES_IMXRT118X # RT118X lacks FLEXRAM
 
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
@@ -116,7 +117,7 @@ endif # MBEDTLS
 config CACHE_MANAGEMENT
 	default y if CPU_CORTEX_M7
 
-endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
+endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 # Logic to set flash size for all IMXRT parts
 DT_CHOSEN_Z_FLASH := zephyr,flash

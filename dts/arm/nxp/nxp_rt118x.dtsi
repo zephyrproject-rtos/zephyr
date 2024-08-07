@@ -1,0 +1,102 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/clock/imx_ccm_rev2.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <1>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	/*
+	 * Note that the offsets here are relative to the base address
+	 * defined in either nxp_rt118x_cm33_ns.dtsi, nxp_rt118x_cm33.dtsi
+	 * or nxp_rt118x_cm7.dtsi. The base addresses on cm33 core differ
+	 * between non-secure (0x40000000) and secure modes (0x50000000).
+	 */
+	iomuxc: iomuxc@2A10000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x2A10000 0x4000>;
+		pinctrl: pinctrl {
+			status = "okay";
+			compatible = "nxp,mcux-rt11xx-pinctrl";
+		};
+	};
+
+	iomuxc_aon: iomuxc@43C0000 {
+		compatible = "nxp,mcux-rt-pinctrl";
+		reg = <0x43C0000 0x4000>;
+		status = "okay";
+	};
+
+	ccm: ccm@4450000 {
+		compatible = "nxp,imx-ccm-rev2";
+		reg = <0x4450000 0x4000>;
+		#clock-cells = <3>;
+	};
+
+	lpuart1: uart@4380000 {
+		compatible = "nxp,kinetis-lpuart";
+		reg = <0x4380000 0x4000>;
+		interrupts = <19 0>;
+		clocks = <&ccm IMX_CCM_LPUART0102_CLK 0x7c 24>;
+		status = "disabled";
+	};
+
+	gpio1: gpio@7400000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x7400000 0x4000>;
+		interrupts = <10 0>, <11 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio4: gpio@3830000 {
+		compatible = "nxp,imx-rgpio";
+		reg = <0x3830000 0x4000>;
+		interrupts = <232 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};
+
+&flexspi1 {
+		compatible = "nxp,imx-flexspi";
+		interrupts = <55 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+		clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0>;
+};

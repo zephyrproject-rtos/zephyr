@@ -1,5 +1,5 @@
 /*
- * Copyright 2023, NXP
+ * Copyright 2023-2024, NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,39 @@ static int mcux_rgpio_configure(const struct device *dev,
 			((size_t)config->pin_muxes[cfg_idx].config_register);
 	uint32_t reg = *gpio_cfg_reg;
 
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	/* PUE/PDRV types have the same ODE bit */
+	if ((flags & GPIO_SINGLE_ENDED)) {
+		/* Set ODE bit */
+		reg |= IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
+	} else {
+		reg &= ~IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
+	}
+
+	if (config->pin_muxes[pin].pue_mux) {
+		if (flags & GPIO_PULL_UP) {
+			reg |= (IOMUXC_SW_PAD_CTL_PAD_PUS_MASK | IOMUXC_SW_PAD_CTL_PAD_PUE_MASK);
+		} else if (flags & GPIO_PULL_DOWN) {
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
+			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUS_MASK;
+		} else {
+			/* Set pin to highz */
+			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
+		}
+	} else {
+		/* PDRV type register layout */
+		if (flags & GPIO_PULL_UP) {
+			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x1U);
+		} else if (flags & GPIO_PULL_DOWN) {
+			reg &= ~IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PULL(0x2U);
+		} else {
+			/* Set pin to no pull */
+			reg |= IOMUXC_SW_PAD_CTL_PAD_PULL_MASK;
+		}
+	}
+#else
 	/* TODO: Default flags, work for i.MX 9352 */
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit */
@@ -101,6 +134,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 		reg &= ~((0x1 << MCUX_IMX_BIAS_PULL_DOWN_SHIFT) |
 				(0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT));
 	}
+#endif
 
 	memcpy(&pin_cfg.pinmux, &config->pin_muxes[cfg_idx], sizeof(pin_cfg));
 	/* cfg register will be set by pinctrl_configure_pins */
