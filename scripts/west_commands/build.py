@@ -588,7 +588,7 @@ class Build(Forceable):
         # This is important because users expect invocations like this
         # to Just Work:
         #
-        # west build -- -DOVERLAY_CONFIG=relative-path.conf
+        # west build -- -DEXTRA_CONF_FILE=relative-path.conf
         final_cmake_args = ['-DWEST_PYTHON={}'.format(pathlib.Path(sys.executable).as_posix()),
                             '-B{}'.format(self.build_dir),
                             '-G{}'.format(config_get('generator',

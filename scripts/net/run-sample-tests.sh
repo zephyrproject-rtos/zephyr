@@ -262,7 +262,7 @@ run_test ()
     local overlay=""
 
     if [ -n "$zephyr_overlay" ]; then
-        overlay="-DOVERLAY_CONFIG=$zephyr_overlay"
+        overlay="-DEXTRA_CONF_FILE=$zephyr_overlay"
     fi
 
 	source "$1"

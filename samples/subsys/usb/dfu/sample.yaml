@@ -32,4 +32,4 @@ tests:
     tags: usb
   sample.usb.dfu.permanent.download:
     tags: usb
-    extra_args: OVERLAY_CONFIG=overlay-permanent-download.conf
+    extra_args: EXTRA_CONF_FILE=overlay-permanent-download.conf

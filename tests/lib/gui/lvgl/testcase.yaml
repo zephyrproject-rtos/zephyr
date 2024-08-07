@@ -84,6 +84,6 @@ tests:
       - CONFIG_DUMMY_DISPLAY=n
     extra_args:
       - SHIELD=st_b_lcd40_dsi1_mb1166
-      - OVERLAY_CONFIG=prj_blk.conf
+      - EXTRA_CONF_FILE=prj_blk.conf
     tags:
       - shield

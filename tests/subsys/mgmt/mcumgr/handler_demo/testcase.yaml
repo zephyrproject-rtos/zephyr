@@ -18,7 +18,7 @@ tests:
     build_only: true
   mgmt.mcumgr.handler.demo.module:
     extra_args:
-      - OVERLAY_CONFIG="module.conf"
+      - EXTRA_CONF_FILE="module.conf"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:
