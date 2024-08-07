@@ -1,0 +1,25 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxn236
+name: NXP FRDM MCXN236
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - dma
+  - gpio
+  - spi
+  - i2c
+  - watchdog
+  - pwm
+  - counter
+vendor: nxp
