@@ -233,6 +233,15 @@ struct bt_gatt_cb {
 	 */
 	void (*att_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
 
+	/** @brief The Unenhanced ATT MTU on a connection has changed.
+	 *
+	 * This callback notifies the application that either the maximum TX
+	 * or RX Unenhanced ATT MTU has increased. It differentiates from
+	 * @ref att_mtu_updated in that this callback does not consider MTU
+	 * changes on dynamic L2CAP channels (EATT).
+	 */
+	void (*uatt_mtu_updated)(struct bt_conn *conn, uint16_t tx, uint16_t rx);
+
 	sys_snode_t node;
 };
 
