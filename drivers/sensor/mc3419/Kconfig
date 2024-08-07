@@ -35,14 +35,4 @@ config MC3419_THREAD_STACK_SIZE
 
 endif # MC3419_TRIGGER
 
-config MC3419_DECIMATION_RATE
-	int "Enable decimation rate"
-	range 0 15
-	default 15
-	help
-	 This helps in producing slower interrupt. Internal Data
-	 Rate is divide by this decimation rate. If decimation rate
-	 is 0 then internal data rate is equal to output data rate,
-	 then it produce interrupt floods.
-
 endif # MC3419
