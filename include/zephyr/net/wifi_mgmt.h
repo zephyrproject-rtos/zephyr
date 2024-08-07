@@ -522,6 +522,8 @@ struct wifi_iface_status {
 	unsigned short beacon_interval;
 	/** is TWT capable? */
 	bool twt_capable;
+	/** The current 802.11 PHY data rate */
+	int current_phy_rate;
 };
 
 /** @brief Wi-Fi power save parameters */
