@@ -271,6 +271,12 @@ static int mc3419_init(const struct device *dev)
 	}
 #endif
 
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_RANGE_SELECT_CTRL,
+				     MC3419_LPF_MASK, cfg->lpf_fc_sel);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure LPF (%d)", ret);
+		return ret;
+	}
 	/* Leave the sensor in default power on state, will be
 	 * enabled by configure attr or setting trigger.
 	 */
@@ -301,6 +307,7 @@ static const struct sensor_driver_api mc3419_api = {
 	static const struct mc3419_config mc3419_config_##idx = {	\
 		.i2c = I2C_DT_SPEC_INST_GET(idx),			\
 		MC3419_CFG_IRQ(idx)					\
+		.lpf_fc_sel = DT_INST_PROP(idx, lpf_fc_sel),		\
 	};								\
 	static struct mc3419_driver_data mc3419_data_##idx;		\
 	SENSOR_DEVICE_DT_INST_DEFINE(idx,				\
