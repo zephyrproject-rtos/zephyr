@@ -53,6 +53,7 @@ Peripherals
    sdhc.rst
    sensor.rst
    spi.rst
+   stepper.rst
    smbus.rst
    uart.rst
    usbc_vbus.rst
