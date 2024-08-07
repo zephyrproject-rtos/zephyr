@@ -73,9 +73,8 @@ struct pbuf_data {
 					 */
 };
 
-
 /**
- * @brief Scure packed buffer.
+ * @brief Secure packed buffer.
  *
  * The packet buffer implements lightweight unidirectional packet
  * buffer with read/write semantics on top of a memory region shared
@@ -177,9 +176,9 @@ int pbuf_init(struct pbuf *pb);
  * @param buf	Pointer to the data to be written to the buffer.
  * @param len	Number of bytes to be written to the buffer. Must be positive.
  * @return	Number of bytes written
- * @retval 	-EINVAL, if any of input parameter is incorrect.
- * @retval 	-ENOMEM, if len is bigger than the buffer can fit.
- * @retval 	-errno other negative error code on fail.
+ * @retval	-EINVAL, if any of input parameter is incorrect.
+ * @retval	-ENOMEM, if len is bigger than the buffer can fit.
+ * @retval	-errno other negative error code on fail.
  */
 int pbuf_write(struct pbuf *pb, const char *buf, uint16_t len);
 
