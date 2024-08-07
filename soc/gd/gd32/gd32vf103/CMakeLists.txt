@@ -3,6 +3,7 @@
 
 zephyr_sources(entry.S)
 zephyr_sources(soc.c)
+zephyr_sources(soc_irq.S)
 
 zephyr_include_directories(.)
 
