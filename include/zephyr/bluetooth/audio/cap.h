@@ -340,9 +340,7 @@ int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
  * initialized and will be usable for streaming audio data.
  * The @p unicast_group value can be used to update and stop the streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT}
  *
  * @param param Parameters to start the audio streams.
  *
@@ -355,9 +353,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  *
  * This will update the metadata of one or more streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT}
  *
  * @param param Update parameters.
  *
@@ -370,9 +366,7 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  *
  * This will stop one or more streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT}
  *
  * @param param Stop parameters.
  *
@@ -510,9 +504,7 @@ struct bt_cap_initiator_broadcast_create_param {
  *
  * Create a new audio broadcast source with one or more audio streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param[in]  param             Parameters to start the audio streams.
  * @param[out] broadcast_source  Pointer to the broadcast source created.
@@ -532,9 +524,7 @@ int bt_cap_initiator_broadcast_audio_create(
  * This will allow the streams in the broadcast source to send audio by calling
  * bt_bap_stream_send().
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param broadcast_source  Pointer to the broadcast source.
  * @param adv               Pointer to an extended advertising set with
@@ -547,9 +537,7 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 /**
  * @brief Update broadcast audio streams for a Common Audio Profile broadcast source.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param broadcast_source The broadcast source to update.
  * @param meta             The new metadata. The metadata shall contain a list
@@ -564,9 +552,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
 /**
  * @brief Stop broadcast audio streams for a Common Audio Profile broadcast source.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param broadcast_source The broadcast source to stop. The audio streams
  *                         in this will be stopped and reset.
@@ -583,9 +569,7 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
  * bt_bap_stream_ops.stopped() callback has been called for all streams in the
  * broadcast source.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param broadcast_source The broadcast source to delete.
  *                         The @p broadcast_source will be invalidated.
@@ -663,10 +647,7 @@ struct bt_cap_unicast_to_broadcast_param {
  * The streams in the unicast group will be stopped and the unicast group
  * will be deleted. This can only be done for source streams.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param param         The parameters for the handover.
  * @param source        The resulting broadcast source.
@@ -707,10 +688,7 @@ struct bt_cap_broadcast_to_unicast_param {
  * The streams in the broadcast source will be stopped and the broadcast source
  * will be deleted.
  *
- * @note @kconfig{CONFIG_BT_CAP_INITIATOR},
- * @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT} and
- * @kconfig{CONFIG_BT_BAP_BROADCAST_SOURCE} must be enabled for this function
- * to be enabled.
+ * @kconfig_dep{CONFIG_BT_CAP_INITIATOR,CONFIG_BT_BAP_UNICAST_CLIENT,CONFIG_BT_BAP_BROADCAST_SOURCE}
  *
  * @param[in]  param          The parameters for the handover.
  * @param[out] unicast_group  The resulting broadcast source.
