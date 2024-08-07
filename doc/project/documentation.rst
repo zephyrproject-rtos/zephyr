@@ -58,53 +58,6 @@ for traceability reports. Here are a few guidelines to be followed:
 - All test documentation should be under doxygen groups that are prefixed
   with tests\_
 
-The custom doxygen ``@verify`` directive signifies that a test verifies a
-requirement::
-
-    /**
-    * @brief Tests for the Semaphore kernel object
-    * @defgroup kernel_semaphore_tests Semaphore
-    * @ingroup all_tests
-    * @{
-    */
-
-    ...
-    /**
-    * @brief A brief description of the tests
-    * Some details about the test
-    * more details
-    *
-    * @verify{@req{1111}}
-    */
-    void test_sema_thread2thread(void)
-    {
-    ...
-    }
-    ...
-
-    /**
-    * @}
-    */
-
-To get coverage of how an implementation or a piece of code satisfies a
-requirements, we use the ``satisfy`` alias in doxygen::
-
-    /**
-    * @brief Give a semaphore.
-    *
-    * This routine gives @a sem, unless the semaphore is already at its maximum
-    * permitted count.
-    *
-    * @note Can be called by ISRs.
-    *
-    * @param sem Address of the semaphore.
-    *
-    * @satisfy{@req{015}}
-    */
-    __syscall void k_sem_give(struct k_sem *sem);
-
-
-
 To generate the matrix, you will first need to build the documentation,
 specifically you will need to build the doxygen XML output::
 

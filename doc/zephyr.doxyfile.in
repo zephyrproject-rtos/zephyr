@@ -276,9 +276,6 @@ TAB_SIZE               = 8
 ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          endrst=\endverbatim \
                          "kconfig{1}=\htmlonly <code>\1</code> \endhtmlonly \xmlonly <verbatim>embed:rst:inline :kconfig:option:`\1`</verbatim> \endxmlonly" \
-                         "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
-                         "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
-                         "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \
                          "funcprops=\par \"Function properties (list may not be complete)\"" \
                          "reschedule=\htmlonly reschedule \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_reschedule`</verbatim> \endxmlonly" \
                          "sleep=\htmlonly sleep \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_sleep`</verbatim> \endxmlonly" \
