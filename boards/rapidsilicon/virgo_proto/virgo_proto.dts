@@ -40,6 +40,12 @@
 	clock-frequency = <26666667>;
  };
 
+ &pit0 {
+	clock-frequency = <26666667>;
+	prescaler = <600>;
+	status = "okay";
+ };
+ 
  &dma0 {
 	status = "okay";
  };

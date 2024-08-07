@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/dma.h>
@@ -93,112 +94,168 @@ void Flash_Test(const struct device *flash, const struct device *dma, uint32_t F
 		}
 	}
 
-	uint8_t *MemMapReadAddr = (uint8_t*)(FLASH_BASE_ADDR + FLASH_ADDR);
-	uint8_t MemMapReadDestAddr[FLASH_RW_SIZE];
-	{		
-		printf("CPU Memory Mapped Reading Test from address:%p\n", MemMapReadAddr);
-		bool memmaptestfail = false;
-		for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
-			if(MemMapReadAddr[i] != flash_data_write[i]) {
-				printf("%s %d%s", ATTR_ERR, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
-				memmaptestfail = true;
-			} 
-			else {
-				printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
-			}
-		} printf("\n");
-		if(memmaptestfail) {
-			printf("%s CPU Memory mapped read failed\n", ATTR_ERR);	
-		} else {
-			printf("%s CPU Memory mapped read passed\n", ATTR_INF);	
-		}
-	} 
-
-	if(dma != NULL) {
-		printf("%s DMA Memory Mapped Reading Test from address:%p\n", ATTR_RST, MemMapReadAddr);
-		// Configure DMA Block
-		struct dma_block_config lv_dma_block_config = {
-			.block_size = FLASH_RW_SIZE,
-			.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
-			.dest_address = (uint32_t)&MemMapReadDestAddr[0],
-			.dest_reload_en = 0,
-			.dest_scatter_count = 0,
-			.dest_scatter_en = 0,
-			.dest_scatter_interval = 0,
-			.fifo_mode_control = 0,
-			.flow_control_mode = 0,
-			.next_block = NULL,
-			.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
-			.source_address = (uint32_t)&MemMapReadAddr[0],
-			.source_gather_count = 0,
-			.source_gather_en = 0,
-			.source_gather_interval = 0,
-			.source_reload_en = 0,
-			._reserved = 0
-		};
-		// Configure DMA
-		struct dma_config lv_Dma_Config = {
-			.block_count = 1,
-			.channel_direction = MEMORY_TO_MEMORY,
-			.channel_priority = 1,
-			.complete_callback_en = 0,
-			.cyclic = 0,
-			.dest_burst_length = 1,
-			.dest_chaining_en = 0,
-			.dest_data_size = 1,
-			.dest_handshake = 1,
-			.dma_callback = NULL,
-			.dma_slot = 0,
-			.error_callback_dis = 1,
-			.head_block = &lv_dma_block_config,
-			.linked_channel = 0,
-			.source_burst_length = 1,
-			.source_chaining_en = 0,
-			.source_data_size = 1,
-			.user_data = NULL
-		};		
-		struct dma_status stat = {0};
-		printf("%s DMA Configuration...\n", ATTR_RST);
-		int dma_error = dma_config(dma, 1, &lv_Dma_Config);
-		k_msleep(10);
-		if(dma_error) {
-			printf("%s Error %d Configuration...\n", ATTR_RST, dma_error);
-		} else {			
-			// Call DMA Read
-			printf("%s DMA Starting...\n", ATTR_INF);
-			dma_error = dma_start(dma, 1);
-			k_msleep(10);
-		}
-		(void)dma_get_status(dma, 1, &stat);
-		while(stat.pending_length > 1) {
-			dma_error = dma_get_status(dma, 1, &stat);
-			if(dma_error) {
-				printf("Error %d dma_status...\n", dma_error);
-				break;
-			} else {
-				printf("dma_pending_length:%d \n", stat.pending_length);
-			}
-		}
-
-		if(!dma_error) {
+	if(errorcode == 0)
+	{
+		uint8_t *MemMapReadAddr = (uint8_t*)(FLASH_BASE_ADDR + FLASH_ADDR);
+		uint8_t MemMapReadDestAddr[FLASH_RW_SIZE];
+		{		
+			printf("CPU Memory Mapped Reading Test from address:%p\n", MemMapReadAddr);
 			bool memmaptestfail = false;
 			for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
-				if(MemMapReadDestAddr[i] != flash_data_write[i]) {
-					printf("%s %d%s", ATTR_ERR, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+				if(MemMapReadAddr[i] != flash_data_write[i]) {
+					printf("%s %d%s", ATTR_ERR, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
 					memmaptestfail = true;
 				} 
 				else {
-					printf("%s %d%s", ATTR_INF, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+					printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
 				}
-			} 
-			printf("\n");
+			} printf("\n");
 			if(memmaptestfail) {
-				printf("%s DMA Memory mapped read failed\n", ATTR_ERR);	
+				printf("%s CPU Memory mapped read failed\n", ATTR_ERR);	
 			} else {
-				printf("%s DMA Memory mapped read passed\n", ATTR_INF);	
+				printf("%s CPU Memory mapped read passed\n", ATTR_INF);	
 			}
-		} else {
-			printf("Error %d DMA Start...\n", dma_error);
+		} 
+
+		if(dma != NULL) {
+			printf("%s DMA Memory Mapped Reading Test from address:%p\n", ATTR_RST, MemMapReadAddr);
+			// Configure DMA Block
+			struct dma_block_config lv_dma_block_config = {
+				.block_size = FLASH_RW_SIZE,
+				.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+				.dest_address = (uint32_t)&MemMapReadDestAddr[0],
+				.dest_reload_en = 0,
+				.dest_scatter_count = 0,
+				.dest_scatter_en = 0,
+				.dest_scatter_interval = 0,
+				.fifo_mode_control = 0,
+				.flow_control_mode = 0,
+				.next_block = NULL,
+				.source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+				.source_address = (uint32_t)&MemMapReadAddr[0],
+				.source_gather_count = 0,
+				.source_gather_en = 0,
+				.source_gather_interval = 0,
+				.source_reload_en = 0,
+				._reserved = 0
+			};
+			// Configure DMA
+			struct dma_config lv_Dma_Config = {
+				.block_count = 1,
+				.channel_direction = MEMORY_TO_MEMORY,
+				.channel_priority = 1,
+				.complete_callback_en = 0,
+				.cyclic = 0,
+				.dest_burst_length = 1,
+				.dest_chaining_en = 0,
+				.dest_data_size = 1,
+				.dest_handshake = 1,
+				.dma_callback = NULL,
+				.dma_slot = 0,
+				.error_callback_dis = 1,
+				.head_block = &lv_dma_block_config,
+				.linked_channel = 0,
+				.source_burst_length = 1,
+				.source_chaining_en = 0,
+				.source_data_size = 1,
+				.user_data = NULL
+			};		
+			struct dma_status stat = {0};
+			printf("%s DMA Configuration...\n", ATTR_RST);
+			int dma_error = dma_config(dma, 1, &lv_Dma_Config);
+			k_msleep(10);
+			if(dma_error) {
+				printf("%s Error %d Configuration...\n", ATTR_RST, dma_error);
+			} else {			
+				// Call DMA Read
+				printf("%s DMA Starting...\n", ATTR_INF);
+				dma_error = dma_start(dma, 1);
+				k_msleep(10);
+			}
+			(void)dma_get_status(dma, 1, &stat);
+			while(stat.pending_length > 1) {
+				dma_error = dma_get_status(dma, 1, &stat);
+				if(dma_error) {
+					printf("Error %d dma_status...\n", dma_error);
+					break;
+				} else {
+					printf("dma_pending_length:%d \n", stat.pending_length);
+				}
+			}
+
+			if(!dma_error) {
+				bool memmaptestfail = false;
+				for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
+					if(MemMapReadDestAddr[i] != flash_data_write[i]) {
+						printf("%s %d%s", ATTR_ERR, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+						memmaptestfail = true;
+					} 
+					else {
+						printf("%s %d%s", ATTR_INF, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+					}
+				} 
+				printf("\n");
+				if(memmaptestfail) {
+					printf("%s DMA Memory mapped read failed\n", ATTR_ERR);	
+				} else {
+					printf("%s DMA Memory mapped read passed\n", ATTR_INF);	
+				}
+			} else {
+				printf("Error %d DMA Start...\n", dma_error);
+			}
+		}
+	}
+}
+
+void CounterCallBack(const struct device *dev, void *UserData)
+{
+	uint32_t *lvData = ((uint32_t*)UserData);
+	printf("andestech_atcpit100 %s # %d\n", __func__, *lvData);
+	*lvData += 1;
+}
+
+void CounterAlarmCallBack(const struct device *dev,
+					 uint8_t chan_id, uint32_t ticks,
+					 void *UserData)
+{
+	uint32_t *lvData = ((uint32_t*)UserData);
+	printf("andestech_atcpit100 %s # %d\n", __func__, *lvData);
+}
+
+static uint32_t s_CallBackData = 0;
+
+void CounterTest(const struct device *pit)
+{
+	struct counter_alarm_cfg lvCntAlarmCfg = {0};
+	lvCntAlarmCfg.callback = CounterAlarmCallBack;
+	lvCntAlarmCfg.flags = COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+	lvCntAlarmCfg.ticks = 24000;
+	lvCntAlarmCfg.user_data = (void*)&s_CallBackData;
+
+	struct counter_top_cfg lvCntTopCfg = {0};
+
+	lvCntTopCfg.callback = CounterCallBack;
+	lvCntTopCfg.user_data = (void*)&s_CallBackData;
+	lvCntTopCfg.flags = COUNTER_TOP_CFG_DONT_RESET;
+	lvCntTopCfg.ticks = 6000;
+
+	int lvErrorCode = 0;
+	/*	
+	lvErrorCode = counter_set_channel_alarm(pit, 0, &lvCntAlarmCfg);
+	if(lvErrorCode < 0) {
+		printf("%s%s(%d) counter Alarm set error code:%d %s\n", \
+		ATTR_ERR,__func__,__LINE__,lvErrorCode,ATTR_RST);
+	} 
+	*/
+	lvErrorCode = counter_set_top_value(pit, &lvCntTopCfg);
+	if(lvErrorCode < 0) {
+		printf("%s%s(%d) counter setting top error code:%d %s\n", \
+		ATTR_ERR,__func__,__LINE__,lvErrorCode,ATTR_RST);
+	} else {
+		int lvErrorCode = counter_start(pit);
+		if(lvErrorCode < 0) {
+			printf("%s%s(%d) counter start error code:%d %s\n", \
+			ATTR_ERR,__func__,__LINE__,lvErrorCode,ATTR_RST);
 		}
 	}
 }
@@ -222,6 +279,7 @@ int main(void)
 	const struct device *spi = DEVICE_DT_GET(DT_NODELABEL(spi0));
 	const struct device *flash = DEVICE_DT_GET(DT_NODELABEL(m25p32));
 	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
+	const struct device *pit = DEVICE_DT_GET(DT_NODELABEL(pit0));
 
 	if((pvt == NULL) || (!device_is_ready(pvt))) {
 		printf("%s pvt has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
@@ -255,9 +313,15 @@ int main(void)
 		}
 	}
 
+	if((pit == NULL) || !device_is_ready(pit)) {
+		printf("%s flash has status disabled or driver is not initialized...%s\n", ATTR_ERR,ATTR_RST);
+	} else {
+		CounterTest(pit);
+	}
+
 	while(true) {		
 		printf(
-				"%s%d - %s [CHIP_ID:0x%02x VENDOR_ID:0x%02x] Build[Date:%s Time:%s]\r", 
+				"%s%d - %s [CHIP_ID:0x%02x VENDOR_ID:0x%02x] Build[Date:%s Time:%s]\n", 
 				ATTR_RST, Cnt++, 
 				CONFIG_BOARD_TARGET, 
 				chip_id, vendor_id,
