@@ -179,6 +179,7 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 			.freq = 24000000U,				\
 			.flags = 0,					\
 			.channels = 0U,					\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 		},							\
 		.dtimer = DTIMER_CMSDK_REG(inst),			\
 		.dtimer_config_func = dtimer_cmsdk_apb_config_##inst,	\
