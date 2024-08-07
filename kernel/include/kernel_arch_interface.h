@@ -557,6 +557,22 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  */
 int arch_printk_char_out(int c);
 
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+/**
+ * Set thread name hook
+ *
+ * If implemented, any invocation of a function setting a thread name
+ * will invoke this function.
+ *
+ * @param thread    Pointer to thread object
+ * @param str       The thread name
+ *
+ * @retval 0        On success.
+ * @retval -EAGAIN  If the operation could not be performed.
+ */
+int arch_thread_name_set(struct k_thread *thread, const char *str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
+
 /**
  * Architecture-specific kernel initialization hook
  *
