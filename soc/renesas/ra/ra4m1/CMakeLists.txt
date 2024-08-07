@@ -3,13 +3,8 @@
 
 zephyr_include_directories(.)
 
-zephyr_library_sources_ifdef(CONFIG_SOC_OPTION_SETTING_MEMORY
+zephyr_sources(
   soc.c
-)
-
-zephyr_linker_sources_ifdef(CONFIG_SOC_OPTION_SETTING_MEMORY
-  ROM_START
-  ${CMAKE_CURRENT_SOURCE_DIR}/opt_set_mem.ld
 )
 
 zephyr_linker_sources(SECTIONS sections.ld)

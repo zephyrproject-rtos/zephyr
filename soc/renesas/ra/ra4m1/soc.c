@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #include <bsp_api.h>
 
-#define HOCO_FREQ DT_PROP(DT_PATH(clocks, hoco), clock_frequency)
+#define HOCO_FREQ DT_PROP(DT_PATH(clocks, clock_hoco), clock_frequency)
 
 #if HOCO_FREQ == MHZ(24)
 #define OFS1_HOCO_FREQ		0
@@ -92,7 +92,7 @@ struct opt_set_mem {
 };
 
 #ifdef CONFIG_SOC_OPTION_SETTING_MEMORY
-const struct opt_set_mem ops __attribute__((section(".opt_set_mem"))) = {
+const struct opt_set_mem ops __attribute__((section(".rom_registers"))) = {
 	.ofs0 = {
 		/*
 		 * Initial settings for watchdog timers. Set all fields to 1,
@@ -124,7 +124,7 @@ const struct opt_set_mem ops __attribute__((section(".opt_set_mem"))) = {
 		.LVDAS = 0x1, /* Disable voltage monitor 0 following reset */
 		.VDSEL1 = 0x3,
 		.RSVD2 = 0x3,
-		.HOCOEN = !DT_NODE_HAS_STATUS(DT_PATH(clocks, hoco), okay),
+		.HOCOEN = !DT_NODE_HAS_STATUS(DT_PATH(clocks, clock_hoco), okay),
 		.RSVD3 = 0x7,
 		.HOCOFRQ1 = OFS1_HOCO_FREQ,
 		.RSVD4 = 0x1ffff,
