@@ -17,6 +17,7 @@
 
 #include "sw_isr_common.h"
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
@@ -450,6 +451,7 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
+	const struct plic_config *config = dev->config;
 	const struct plic_data *data = dev->data;
 	struct plic_stats stat = data->stats;
 
@@ -458,11 +460,19 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 		shell_print(sh, "IRQ line with > %d hits:", min_hit);
 	}
 
-	shell_print(sh, "   IRQ\t      Hits");
-	shell_print(sh, "==================");
+	shell_print(sh, "   IRQ        Hits\tISR(ARG)");
 	for (int i = 0; i < stat.irq_count_len; i++) {
 		if (stat.irq_count[i] > min_hit) {
-			shell_print(sh, "%6d\t%10d", i, stat.irq_count[i]);
+#ifdef CONFIG_SYMTAB
+			const char *name =
+				symtab_find_symbol_name((uintptr_t)config->isr_table[i].isr, NULL);
+
+			shell_print(sh, "  %4d  %10d\t%s(%p)", i, stat.irq_count[i], name,
+				    config->isr_table[i].arg);
+#else
+			shell_print(sh, "  %4d  %10d\t%p(%p)", i, stat.irq_count[i],
+				    (void *)config->isr_table[i].isr, config->isr_table[i].arg);
+#endif /* CONFIG_SYMTAB */
 		}
 	}
 	shell_print(sh, "");
