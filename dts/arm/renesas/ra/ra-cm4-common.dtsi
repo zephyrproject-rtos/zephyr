@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/renesas-ra-icu.h>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
 
 / {
 	cpus {
@@ -21,49 +22,118 @@
 		};
 	};
 
-	clocks {
-		mosc: mosc {
-			compatible = "fixed-clock";
-			clock-frequency = <1200000>;
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-xtal {
+			compatible = "renesas,ra8-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(12)>;
+			#clock-cells = <0>;
 			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
 			#clock-cells = <0>;
 		};
 
-		sosc: sosc {
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
 			compatible = "fixed-clock";
 			clock-frequency = <32768>;
-			status = "disabled";
 			#clock-cells = <0>;
 		};
 
-		hoco: hoco {
-			compatible = "fixed-clock";
-			clock-frequency = <24000000>;
-			status = "okay";
-			#clock-cells = <0>;
-		};
-
-		moco: moco {
-			compatible = "fixed-clock";
-			clock-frequency = <8000000>;
-			status = "okay";
-			#clock-cells = <0>;
-		};
-
-		loco: loco {
-			compatible = "fixed-clock";
+		subclk: clock-subclk {
+			compatible = "renesas,ra8-cgc-subclk";
 			clock-frequency = <32768>;
-			status = "okay";
 			#clock-cells = <0>;
+			status = "disabled";
 		};
 
 		pll: pll {
-			compatible = "fixed-factor-clock";
-			status = "disabled";
-			clocks = <&mosc>;
-			clock-div = <2>;
-			clock-mult = <8>;
+			compatible = "renesas,ra8-cgc-pll";
 			#clock-cells = <0>;
+
+			/* PLL */
+			source = <RA_PLL_SOURCE_MAIN_OSC>;
+			div = <RA_PLL_DIV_2>;
+			mul = <8 0>;
+			divp = <1>;
+			freqp = <1>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@4001e01c {
+			compatible = "renesas,ra8-cgc-pclk-block";
+			reg = <0x4001e01c 4>, <0x40047000 4 >, <0x40047004 4>, <0x40047008 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC", "MSTPD";
+			#clock-cells = <0>;
+			sysclock-src = <RA_CLOCK_SOURCE_PLL>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
+				compatible = "renesas,ra8-cgc-pclk";
+				clk-src = <RA_CLOCK_SOURCE_PLL>;
+				#clock-cells = <2>;
+				status = "disabled";
+			};
 		};
 	};
 
@@ -80,21 +150,6 @@
 			reg-names = "icu";
 			interrupt-controller;
 			#interrupt-cells = <3>;
-		};
-
-		cgc: cgc@4001e000 {
-			compatible = "renesas,ra-clock-generation-circuit";
-			reg = <0x4001e000 0x40 0x40047000 0x10>;
-			reg-names = "system", "mstp";
-			#clock-cells = <1>;
-
-			clock-source = <&moco>;
-			iclk-div = <16>;
-			pclka-div = <16>;
-			pclkb-div = <16>;
-			pclkc-div = <16>;
-			pclkd-div = <16>;
-			fclk-div = <16>;
 		};
 
 		fcu: flash-controller@4001c000 {
