@@ -37,5 +37,10 @@ app=tests/bsim/bluetooth/samples/central_hr_peripheral_hr \
   extra_conf_file=${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf \
   conf_overlay=${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-phy_coded.conf \
   compile
+if [ ${BOARD} == "nrf52_bsim" ]; then
+  app=tests/bsim/bluetooth/samples/battery_service \
+    conf_file=prj.conf \
+    compile
+fi
 
 wait_for_background_jobs
