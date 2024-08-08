@@ -1737,40 +1737,6 @@ static int cmd_wifi_ap_bandwidth(const struct shell *sh, size_t argc, char *argv
 	return -ENOEXEC;
 }
 
-static int cmd_wifi_ap_set_rts_threshold(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_wifi_sap();
-	unsigned int rts_threshold = -1; /* Default value if user supplies "off" argument */
-	int err = 0;
-
-	context.sh = sh;
-
-	if (strcmp(argv[1], "off") != 0) {
-		long rts_val = shell_strtol(argv[1], 10, &err);
-
-		if (err) {
-			shell_error(sh, "Unable to parse input (err %d)", err);
-			return err;
-		}
-
-		rts_threshold = (unsigned int)rts_val;
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_AP_RTS_THRESHOLD, iface,
-		     &rts_threshold, sizeof(rts_threshold))) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Setting RTS threshold failed.\n");
-		return -ENOEXEC;
-	}
-
-	if ((int)rts_threshold >= 0)
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
-	else
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
-
-	return 0;
-}
-
 static int cmd_wifi_reg_domain(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -2013,7 +1979,7 @@ static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *ar
 
 static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_sta();
+	struct net_if *iface = net_if_get_first_wifi();
 	unsigned int rts_threshold = -1; /* Default value if user supplies "off" argument */
 	int err = 0;
 
@@ -2955,12 +2921,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "Get or Set AP wps pin.\n"
 		  "[pin] pin value for set operation (No need to input pin for get operation).\n",
 		  cmd_wifi_ap_wps_pin, 1, 1),
-	SHELL_CMD_ARG(rts_threshold,
-		  NULL,
-		  "<rts_threshold: rts threshold/off>.\n",
-		  cmd_wifi_ap_set_rts_threshold,
-		  2,
-		  0),
 	SHELL_SUBCMD_SET_END
 );
 
