@@ -11,6 +11,7 @@ zephyr_library()
 set(HOSTAP_BASE ${ZEPHYR_HOSTAP_MODULE_DIR})
 set(WIFI_NM_WPA_SUPPLICANT_BASE ${HOSTAP_BASE}/wpa_supplicant)
 set(HOSTAP_SRC_BASE ${HOSTAP_BASE}/src)
+set(WIFI_NM_HOSTAPD_BASE ${HOSTAP_BASE}/hostapd)
 
 set(CMAKE_EXE_LINKER_FLAGS "--specs=nosys.specs -lnosys")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMISSING_SYSCALL_NAMES")
@@ -209,11 +210,31 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	CONFIG_NO_VLAN
 	CONFIG_NO_ACCOUNTING
 	NEED_AP_MLME
+	CONFIG_IEEE80211AC
 	CONFIG_IEEE80211AX
 	CONFIG_EAP_SERVER
 	CONFIG_EAP_SERVER_IDENTITY
 )
 
+zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	${WIFI_NM_HOSTAPD_BASE}/
+)
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	${HOSTAP_SRC_BASE}/ap/acs.c
+	${HOSTAP_SRC_BASE}/utils/ip_addr.c
+	${WIFI_NM_HOSTAPD_BASE}/config_file.c
+	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface.c
+	${WIFI_NM_HOSTAPD_BASE}/ctrl_iface_zephyr.c
+	${WIFI_NM_HOSTAPD_BASE}/eap_register.c
+	${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_cmds.c
+	${WIFI_NM_HOSTAPD_BASE}/hostapd_cli_zephyr.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
+	HOSTAPD
+	CONFIG_ACS
+)
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	${HOSTAP_SRC_BASE}/crypto/crypto_none.c
