@@ -30,6 +30,9 @@ Modules
 Mbed TLS
 ========
 
+* The Kconfig options ``CONFIG_MBEDTLS_TLS_VERSION_1_0`` and ``CONFIG_MBEDTLS_TLS_VERSION_1_1``
+  have been removed because Mbed TLS doesn't support TLS 1.0 and 1.1 anymore since v3.0. (:github:`76833`)
+
 Trusted Firmware-M
 ==================
 
