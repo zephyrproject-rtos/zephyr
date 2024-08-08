@@ -88,12 +88,18 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_STA_DISCONNECT,
 	/** Get Wi-Fi driver and Firmware versions */
 	NET_REQUEST_WIFI_CMD_VERSION,
+	/** Get Wi-Fi latest connection parameters */
+	NET_REQUEST_WIFI_CMD_CONN_PARAMS,
 	/** Set RTS threshold */
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD,
 	/** Configure AP parameter */
 	NET_REQUEST_WIFI_CMD_AP_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
+	/** Flush PMKSA cache entries */
+	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
+	/** Set enterprise mode credential */
+	NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -189,6 +195,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION);
 
+/** Request a Wi-Fi connection parameters */
+#define NET_REQUEST_WIFI_CONN_PARAMS                           \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_CONN_PARAMS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS);
+
 /** Request a Wi-Fi RTS threshold */
 #define NET_REQUEST_WIFI_RTS_THRESHOLD				\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD)
@@ -206,6 +218,18 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
+
+/** Request a Wi-Fi PMKSA cache entries flush */
+#define NET_REQUEST_WIFI_PMKSA_FLUSH                           \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
+
+/** Set Wi-Fi enterprise mode CA/client Cert and key */
+#define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -411,6 +435,14 @@ struct wifi_connect_req_params {
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
 	/** Connect timeout in seconds, SYS_FOREVER_MS for no timeout */
 	int timeout;
+	/** anonymous identity */
+	const uint8_t *anon_id;
+	/** anon_id length */
+	uint8_t aid_length; /* Max 64 */
+	/** Private key passwd for enterprise mode */
+	const uint8_t *key_passwd;
+	/** Private key passwd length */
+	uint8_t key_passwd_length; /* Max 128 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -632,6 +664,22 @@ struct wifi_twt_flow_info {
 	uint32_t twt_wake_interval;
 	/** Wake ahead duration */
 	uint32_t twt_wake_ahead_duration;
+};
+
+/** Wi-Fi enterprise mode credentials */
+struct wifi_enterprise_creds_params {
+	/** CA certification */
+	uint8_t *ca_cert;
+	/** CA certification length */
+	uint32_t ca_cert_len;
+	/** Client certification */
+	uint8_t *client_cert;
+	/** Client certification length */
+	uint32_t client_cert_len;
+	/** Client key */
+	uint8_t *client_key;
+	/** Client key length */
+	uint32_t client_key_len;
 };
 
 /** @brief Wi-Fi power save configuration */
@@ -1123,6 +1171,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_version)(const struct device *dev, struct wifi_version *params);
+	/** Get Wi-Fi connection parameters recently used
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params the Wi-Fi connection parameters recently used
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_conn_params)(const struct device *dev, struct wifi_connect_req_params *params);
 	/** Set RTS threshold value
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1147,6 +1203,22 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
+	/** Flush PMKSA cache entries
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*pmksa_flush)(const struct device *dev);
+	/** Set Wi-Fi enterprise mode CA/client Cert and key
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param creds Pointer to the CA/client Cert and key.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*enterprise_creds)(const struct device *dev,
+			struct wifi_enterprise_creds_params *creds);
 };
 
 /** Wi-Fi management offload API */

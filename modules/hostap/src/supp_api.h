@@ -84,6 +84,14 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
+/** Flush PMKSA cache entries
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_pmksa_flush(const struct device *dev);
+
 /**
  * @brief Set Wi-Fi power save configuration
  *
@@ -130,6 +138,18 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+/** Set Wi-Fi enterprise mode CA/client Cert and key
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param file Pointer to the CA/client Cert and key.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_add_enterprise_creds(const struct device *dev,
+		struct wifi_enterprise_creds_params *creds);
+#endif
+
 /**
  * @brief Set Wi-Fi packet filter for sniffing operation
  *
@@ -147,6 +167,16 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
+
+/** Get Wi-Fi connection parameters recently used
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params the Wi-Fi connection parameters recently used
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_get_wifi_conn_params(const struct device *dev,
+			 struct wifi_connect_req_params *params);
 
 #ifdef CONFIG_AP
 /**
