@@ -16,6 +16,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <soc.h>
+#include <zephyr/pm/policy.h>
 
 #include <fwk_platform_ble.h>
 #include <fwk_platform.h>
@@ -413,7 +414,17 @@ static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	net_buf_push_u8(buf, packetType);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM && CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP
+	/* Sending an HCI message requires to wake up the controller core if it's asleep.
+	 * Block Standby usage until the HCI message is sent. Platform controllers may
+	 * send reponses using non wakeable interrupts which maybe lost during Standby usage.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
 	PLATFORM_SendHciMessage(buf->data, buf->len);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM && CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
 
 	net_buf_unref(buf);
 
