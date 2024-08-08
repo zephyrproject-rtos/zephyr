@@ -923,11 +923,14 @@ __syscall const struct device *device_get_by_dt_nodelabel(const char *nodelabel)
 /**
  * @brief Get the devicetree node labels associated with a device
  * @param dev device whose metadata to look up
- * @return information about the devicetree node labels
+ * @return information about the devicetree node labels or NULL if not available
  */
 static inline const struct device_dt_nodelabels *
 device_get_dt_nodelabels(const struct device *dev)
 {
+	if (dev->dt_meta == NULL) {
+		return NULL;
+	}
 	return dev->dt_meta->nl;
 }
 
