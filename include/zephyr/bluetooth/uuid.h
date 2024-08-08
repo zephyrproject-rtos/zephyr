@@ -1193,23 +1193,14 @@ struct bt_uuid_128 {
 #define BT_UUID_BAS_BATTERY_LEVEL \
 	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_LEVEL_VAL)
 /**
- *  @brief BAS Characteristic Battery Power State UUID value
+ *  @brief BAS Characteristic Battery Level Status UUID value
  */
-#define BT_UUID_BAS_BATTERY_POWER_STATE_VAL 0x2a1a
+#define BT_UUID_BAS_BATTERY_LEVEL_STATUS_VAL 0x2bed
 /**
- *  @brief BAS Characteristic Battery Power State
+ *  @brief BAS Characteristic Battery Level Status
  */
-#define BT_UUID_BAS_BATTERY_POWER_STATE \
-	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_POWER_STATE_VAL)
-/**
- *  @brief BAS Characteristic Battery Level StateUUID value
- */
-#define BT_UUID_BAS_BATTERY_LEVEL_STATE_VAL 0x2a1b
-/**
- *  @brief BAS Characteristic Battery Level State
- */
-#define BT_UUID_BAS_BATTERY_LEVEL_STATE \
-	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_LEVEL_STATE_VAL)
+#define BT_UUID_BAS_BATTERY_LEVEL_STATUS \
+	BT_UUID_DECLARE_16(BT_UUID_BAS_BATTERY_LEVEL_STATUS_VAL)
 /**
  *  @brief HTS Characteristic Temperature Measurement UUID value
  */
