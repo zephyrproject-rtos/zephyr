@@ -4,7 +4,7 @@
 
 # Common fields for Nordic nRF family TWI peripherals
 
-include: [i2c-controller.yaml, pinctrl-device.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
 
 properties:
   reg:

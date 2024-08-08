@@ -549,6 +549,8 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart120: uart@8e6000 {
@@ -569,6 +571,8 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			cpuppr_vpr: vpr@908000 {
@@ -843,6 +847,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi130: spi@9a5000 {
@@ -857,6 +863,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart130: uart@9a5000 {
@@ -865,6 +875,7 @@
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -876,6 +887,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi131: spi@9a6000 {
@@ -890,6 +903,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart131: uart@9a6000 {
@@ -898,6 +915,7 @@
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -946,6 +964,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi132: spi@9b5000 {
@@ -960,6 +980,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart132: uart@9b5000 {
@@ -968,6 +992,7 @@
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -979,6 +1004,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi133: spi@9b6000 {
@@ -993,6 +1020,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart133: uart@9b6000 {
@@ -1001,6 +1032,7 @@
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1049,6 +1081,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi134: spi@9c5000 {
@@ -1063,6 +1097,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart134: uart@9c5000 {
@@ -1071,6 +1109,7 @@
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1082,6 +1121,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi135: spi@9c6000 {
@@ -1096,6 +1137,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart135: uart@9c6000 {
@@ -1104,6 +1149,7 @@
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1152,6 +1198,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi136: spi@9d5000 {
@@ -1166,6 +1214,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart136: uart@9d5000 {
@@ -1174,6 +1226,7 @@
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1185,6 +1238,8 @@
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
+				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
+							 <NRF_FUN_TWIM_SCL>;
 			};
 
 			spi137: spi@9d6000 {
@@ -1199,6 +1254,10 @@
 				#size-cells = <0>;
 				rx-delay-supported;
 				rx-delay = <1>;
+				nordic,clockpin-enable = <NRF_FUN_SPIM_MOSI>,
+							 <NRF_FUN_SPIM_SCK>,
+							 <NRF_FUN_SPIS_MISO>,
+							 <NRF_FUN_SPIS_SCK>;
 			};
 
 			uart137: uart@9d6000 {
@@ -1207,6 +1266,7 @@
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 			};
 		};
 	};
