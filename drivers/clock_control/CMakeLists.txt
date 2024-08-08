@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM_REV2       clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_MCG            clock_control_mcux_mcg.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_PCC            clock_control_mcux_pcc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SCG            clock_control_mcux_scg.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SCG_K4         clock_control_mcux_scg_k4.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SIM            clock_control_mcux_sim.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SYSCON         clock_control_mcux_syscon.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NPCX                clock_control_npcx.c)
