@@ -311,7 +311,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_AM>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI0_RXI_OR_ERI>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am", "rxi-or-eri";
-			clocks = <&cgc RA_CLOCK_SCI(0)>;
+			clocks = <&pclka MSTPB 31>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
@@ -329,7 +329,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_ERI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI1_AM>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
-			clocks = <&cgc RA_CLOCK_SCI(1)>;
+			clocks = <&pclka MSTPB 30>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
@@ -347,7 +347,7 @@
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_ERI>,
 				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI9_AM>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
-			clocks = <&cgc RA_CLOCK_SCI(9)>;
+			clocks = <&pclka MSTPB 22>;
 			#clock-cells = <1>;
 			status = "disabled";
 			uart {
