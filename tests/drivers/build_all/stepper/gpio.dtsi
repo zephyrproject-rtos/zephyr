@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_uln2003_motor_cluster: uln2003_motor_cluster {
+	compatible = "gpio-steppers";
+	status = "okay";
+	motor_1: motor_1 {
+		micro-step-res = <1>;
+		gpios = <&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>;
+	};
+	motor_2: motor_2 {
+		micro-step-res = <2>;
+		gpios = <&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>;
+	};
+};
