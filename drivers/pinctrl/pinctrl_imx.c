@@ -33,7 +33,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		}
 #endif
 
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 		sys_write32(IOMUXC1_SW_MUX_CTL_PAD_MUX_MODE(mux_mode) |
 			IOMUXC1_SW_MUX_CTL_PAD_SION(MCUX_IMX_INPUT_ENABLE(pin_ctrl_flags)),
 			(mem_addr_t)mux_register);
