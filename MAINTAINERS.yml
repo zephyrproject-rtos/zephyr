@@ -1447,6 +1447,22 @@ Release Notes:
   tests:
     - drivers.gnss
 
+"Drivers: Haptics":
+  status: maintained
+  maintainers:
+    - rriveramcrus
+  files:
+    - drivers/haptics/
+    - dts/bindings/haptics/
+    - include/zephyr/drivers/haptics.h
+    - doc/hardware/peripherals/haptics.rst
+    - tests/drivers/build_all/haptics/
+    - samples/drivers/haptics/
+  labels:
+    - "area: Haptics"
+  tests:
+    - drivers.haptics
+
 "Drivers: HW Info":
   status: maintained
   maintainers:
