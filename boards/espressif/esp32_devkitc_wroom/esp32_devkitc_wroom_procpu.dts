@@ -15,6 +15,7 @@
 	compatible = "espressif,esp32";
 
 	aliases {
+		led0 = &blue_led;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		sw0 = &button0;
@@ -37,6 +38,15 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios =  <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "Blue - LED0";
+		};
 	};
 };
 
