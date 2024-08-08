@@ -4,43 +4,30 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menu "TLS configuration"
+menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
-menu "Supported TLS version"
-
-config MBEDTLS_TLS_VERSION_1_0
-	bool "Support for TLS 1.0"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
-
-config MBEDTLS_TLS_VERSION_1_1
-	bool "Support for TLS 1.1 (DTLS 1.0)"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
+menu "TLS"
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
 
+if MBEDTLS_TLS_VERSION_1_2
+
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
-	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
 config MBEDTLS_SSL_EXPORT_KEYS
 	bool "Support for exporting SSL key block and master secret"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
-endmenu
+endif
+
+endmenu # TLS
 
 menu "Ciphersuite configuration"
 
