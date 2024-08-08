@@ -119,9 +119,3 @@ child-binding:
         description: |
           Invert pin polarity (set the active state to low).
           Only valid for PWM channel output pins.
-
-      nordic,clock-enable:
-        type: boolean
-        description: |
-          Enable clock for the pin. Only valid or required for certain
-          peripherals, refer to the reference manual.
