@@ -737,6 +737,7 @@ config NXP_WIFI_GET_LOG
 
 config NXP_WIFI_TX_PER_TRACK
 	bool "TX packet error tracking"
+	default y
 	help
 	  This option is used to track Tx packet error ratio.
 
