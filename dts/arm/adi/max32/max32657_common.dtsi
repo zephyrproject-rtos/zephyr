@@ -269,6 +269,13 @@
 		};
 	};
 
+	rtc_counter: rtc_counter@6000 {
+		compatible = "adi,max32-rtc-counter";
+		reg = <0x6000 0x400>;
+		interrupts = <2 0>;
+		status = "disabled";
+	};
+
 	spi0: spi@46000 {
 		compatible = "adi,max32-spi";
 		reg = <0x46000 0x1000>;
