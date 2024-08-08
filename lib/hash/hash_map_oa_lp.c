@@ -244,7 +244,7 @@ static inline int sys_hashmap_oa_lp_insert(struct sys_hashmap *map, uint64_t key
 	return sys_hashmap_oa_lp_insert_no_rehash(map, key, value, old_value);
 }
 
-static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value, uint64_t *stored_key)
 {
 	struct oalp_entry *entry;
 	struct sys_hashmap_oa_lp_data *data = (struct sys_hashmap_oa_lp_data *)map->data;
@@ -255,6 +255,7 @@ static bool sys_hashmap_oa_lp_remove(struct sys_hashmap *map, uint64_t key, uint
 	}
 
 	if (value != NULL) {
+		*stored_key = entry->key;
 		*value = entry->value;
 	}
 
