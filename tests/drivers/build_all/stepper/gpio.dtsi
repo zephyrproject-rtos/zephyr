@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Carl Zeiss Meditec AG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+test_uln2003_motor: uln2003_1 {
+	compatible = "gpio-stepper";
+	status = "okay";
+	gpios = <&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>;
+};
