@@ -75,7 +75,7 @@
 };
 
 &pclka {
-	clk_src = <RA_CLOCK_SOURCE_PLL>;
-	clk_div = <RA_SYS_CLOCK_DIV_2>;
+	clk-src = <RA_CLOCK_SOURCE_PLL>;
+	clk-div = <RA_SYS_CLOCK_DIV_2>;
 	status = "okay";
 };
