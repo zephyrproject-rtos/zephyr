@@ -36,20 +36,20 @@ sram_dis_loop_cnt:
  * @param A4 - send response to ipc
  */
 
-#define IPC_HOST_BASE				0x00073000
-#define b_enable_lpsram				a2
-#define pu32_hpsram_mask			a3
-#define b_ipc_response				a4
-#define temp_reg0					a6
-#define temp_reg1					a7
-#define temp_reg2					a8
-#define temp_reg3					a9
-#define temp_reg4					a10
-#define temp_reg5					a11
-#define temp_reg6					a12
-#define p_ipc_regs					a13
+#define IPC_HOST_BASE			0x00073000
+#define b_enable_lpsram			a2
+#define pu32_hpsram_mask		a3
+#define b_ipc_response			a4
+#define temp_reg0			a6
+#define temp_reg1			a7
+#define temp_reg2			a8
+#define temp_reg3			a9
+#define temp_reg4			a10
+#define temp_reg5			a11
+#define temp_reg6			a12
+#define p_ipc_regs			a13
 #define u32_ipc_response_mask		a14
-#define pfl_reg						a15
+#define pfl_reg				a15
 
 power_down:
 	entry sp, 32
