@@ -17,6 +17,9 @@ family:
   - name: mcxa
     socs:
     - name: mcxa156
+  - name: mcxw
+    socs:
+    - name: mcxw716c
 runners:
   run_once:
     '--erase':
