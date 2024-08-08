@@ -365,7 +365,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			nrf_gpio_cfg(pin, dir, input, NRF_GET_PULL(pins[i]),
 				     drive, NRF_GPIO_PIN_NOSENSE);
 #if NRF_GPIO_HAS_CLOCKPIN
-			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCK_ENABLE(pins[i]));
+			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 #endif
 		}
 	}
