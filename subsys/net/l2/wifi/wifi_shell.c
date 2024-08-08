@@ -57,7 +57,6 @@ static struct {
 
 	union {
 		struct {
-
 			uint8_t connecting: 1;
 			uint8_t disconnecting: 1;
 			uint8_t _unused: 6;
@@ -453,11 +452,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				 struct wifi_connect_req_params *params,
 				 enum wifi_iface_mode iface_mode)
 {
-	char *endptr;
-	int idx = 1;
-	struct getopt_state *state;
 	int opt;
-	bool secure_connection = false;
+	int opt_index = 0;
+	struct getopt_state *state;
 	static const struct option long_options[] = {
 		{"ssid", required_argument, 0, 's'},
 		{"passphrase", required_argument, 0, 'p'},
@@ -469,7 +466,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"timeout", required_argument, 0, 't'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
-	int opt_index = 0;
+	char *endptr;
+	int idx = 1;
+	bool secure_connection = false;
 	uint8_t band;
 	const uint8_t all_bands[] = {
 		WIFI_FREQ_BAND_2_4_GHZ,
@@ -488,7 +487,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 
 	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -667,8 +666,9 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				    struct wifi_scan_params *params,
 				    bool *do_scan)
 {
-	struct getopt_state *state;
 	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
 	static const struct option long_options[] = {
 		{"type", required_argument, 0, 't'},
 		{"bands", required_argument, 0, 'b'},
@@ -679,13 +679,13 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 		{"chans", required_argument, 0, 'c'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
-	int opt_index = 0;
 	int val;
 	int opt_num = 0;
 
 	*do_scan = true;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:h",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -1398,17 +1398,18 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 					 struct wifi_ap_config_params *params)
 {
-	struct getopt_state *state;
 	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
 	static const struct option long_options[] = {
 		{"max_inactivity", required_argument, 0, 'i'},
 		{"max_num_sta", required_argument, 0, 's'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
-	int opt_index = 0;
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "i:s:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:s:h",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'i':
@@ -1640,9 +1641,8 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			       bool *do_mode_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
-
 	static const struct option long_options[] = {
 		{"if-index", optional_argument, 0, 'i'},
 		{"sta", no_argument, 0, 's'},
@@ -1653,7 +1653,8 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:smtpakgh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -1742,9 +1743,8 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 				  bool *do_channel_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
-
 	static const struct option long_options[] = {
 		{"if-index", optional_argument, 0, 'i'},
 		{"channel", required_argument, 0, 'c'},
@@ -1752,7 +1752,8 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:c:gh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'c':
@@ -1840,9 +1841,8 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 				 bool *do_filter_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
-
 	static const struct option long_options[] = {
 		{"if-index", optional_argument, 0, 'i'},
 		{"capture-len", optional_argument, 0, 'b'},
@@ -1854,7 +1854,8 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:b:amcdgh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'a':
@@ -1980,7 +1981,7 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'p':
@@ -2025,7 +2026,7 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "i:f:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'i':
@@ -2061,7 +2062,7 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "r:f:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'r':
@@ -2099,7 +2100,7 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "t:o:h:a:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -2160,7 +2161,7 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'c':
