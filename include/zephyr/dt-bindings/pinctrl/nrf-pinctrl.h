@@ -10,7 +10,8 @@
  * The whole nRF pin configuration information is encoded in a 32-bit bitfield
  * organized as follows:
  *
- * - 31..17: Pin function.
+ * - 31..18: Pin function.
+ * - 17:     Clockpin enable.
  * - 16:     Pin inversion mode.
  * - 15:     Pin low power mode.
  * - 14..11: Pin output drive configuration.
@@ -27,10 +28,10 @@
 #define NRF_FUN_POS 18U
 /** Mask for the function field. */
 #define NRF_FUN_MSK 0x3FFFU
-/** Position of the clock enable field. */
-#define NRF_CLOCK_ENABLE_POS 17U
-/** Mask for the clock enable field. */
-#define NRF_CLOCK_ENABLE_MSK 0x1U
+/** Position of the clockpin enable field. */
+#define NRF_CLOCKPIN_ENABLE_POS 17U
+/** Mask for the clockpin enable field. */
+#define NRF_CLOCKPIN_ENABLE_MSK 0x1U
 /** Position of the invert field. */
 #define NRF_INVERT_POS 16U
 /** Mask for the invert field. */
