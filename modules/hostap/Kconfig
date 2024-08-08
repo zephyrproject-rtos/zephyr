@@ -24,6 +24,7 @@ config WIFI_NM_WPA_SUPPLICANT
 if WIFI_NM_WPA_SUPPLICANT
 
 config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
 	default 40000 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 8192 for MbedTLS heap
 	default 21808 if MBEDTLS_ENABLE_HEAP
@@ -222,11 +223,15 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
-
 config WPA_CLI
 	bool "WPA CLI support"
 	help
 	  Enable WPA CLI support for wpa_supplicant.
+
+if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	config MBEDTLS_SSL_MAX_CONTENT_LEN
+		default 16384
+endif
 
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
