@@ -85,45 +85,45 @@
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclka: pclka {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkb: pclkb {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkc: pclkc {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkd: pclkd {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			bclk: bclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
 				bclkout: bclkout {
 					compatible = "renesas,ra-cgc-busclk";
-					clk_out_div = <2>;
+					clk-out-div = <2>;
 					sdclk = <0>;
 					#clock-cells = <0>;
 				};
@@ -133,14 +133,14 @@
 
 			uclk: uclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_USB_CLOCK_DIV_5>;
+				clk-div = <RA_USB_CLOCK_DIV_5>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			fclk: fclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
