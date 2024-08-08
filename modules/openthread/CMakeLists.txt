@@ -234,6 +234,52 @@ list(APPEND ot_libs openthread-mtd)
 endif()
 endif()
 
+if(CONFIG_OPENTHREAD_HDLC_RCP)
+set(ot_host_inc
+    ${ZEPHYR_BASE}/include
+    ${ZEPHYR_BASE}/kernel/include
+    ${ZEPHYR_BASE}/arch/arm/include
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/core
+    ${ZEPHYR_BASE}/../modules/lib/openthread/third_party/mbedtls/repo/include
+    ${ZEPHYR_BASE}/../modules/lib/openthread/include
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/core
+   )
+
+set(ot_host_src
+    ${ZEPHYR_BASE}/kernel/msg_q.c
+    ${ZEPHYR_BASE}/modules/openthread/platform/platform_host.c
+    ${ZEPHYR_BASE}/modules/openthread/platform/radio_spinel.cpp
+    ${ZEPHYR_BASE}/modules/openthread/platform/spinel_hdlc.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/platform/exit_code.c
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/spinel/spinel.c
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/url/url.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/hdlc/hdlc.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/spinel/radio_spinel.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/spinel/spinel_buffer.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/spinel/spinel_driver.cpp
+    ${ZEPHYR_BASE}/../modules/lib/openthread/src/lib/spinel/logger.cpp
+    )
+
+add_library(openthread-host-rcp)
+
+target_compile_definitions(openthread-host-rcp PRIVATE
+    OPENTHREAD_FTD=1
+)
+
+target_include_directories(openthread-host-rcp PUBLIC ${OT_PUBLIC_INCLUDES} PRIVATE ${COMMON_INCLUDES} ${ot_host_inc})
+
+target_sources(openthread-host-rcp PRIVATE ${COMMON_SOURCES} ${ot_host_src})
+
+target_link_libraries(openthread-host-rcp
+    PRIVATE
+        ot-config
+        ot-config-ftd
+)
+
+list(APPEND ot_libs openthread-host-rcp)
+endif()
+
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>

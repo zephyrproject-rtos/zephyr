@@ -1,0 +1,23 @@
+# HDLC RCP communication Interface configuration options
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Openthead HDLC RCP communication Interface options
+#
+menuconfig HDLC_RCP_IF
+	bool "HDLC RCP communication Interface"
+	depends on NETWORKING
+	default n if NET_L2_PHY_IEEE802154
+
+if HDLC_RCP_IF
+
+source "drivers/hdlc_rcp_if/Kconfig.nxp"
+
+module = HDLC_RCP_IF
+module-str = HDLC RCP communication Interface
+module-help = Sets log level for HDLC RCP communication Interface.
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # HDLC RCP communication Interface
