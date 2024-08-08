@@ -43,11 +43,11 @@
 		};
 	};
 
-	/* Conflicts with lpspi1 pin routing. SDA: J17 pin 3, SCL: J17 pin 6 */
+	/* LPI2C3 SDA: J33 pin 6, LPI2C3 SCL: J33 pin 5 */
 	pinmux_lpi2c3: pinmux_lpi2c3 {
 		group0 {
-			pinmux = <&iomuxc_gpio_sd_b0_00_lpi2c3_scl>,
-				<&iomuxc_gpio_sd_b0_01_lpi2c3_sda>;
+			pinmux = <&iomuxc_gpio_ad_b1_06_lpi2c3_sda>,
+				<&iomuxc_gpio_ad_b1_07_lpi2c3_scl>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";
