@@ -2056,6 +2056,21 @@ Release Notes:
   tests:
     - drivers.spi
 
+"Drivers: Stepper":
+  status: maintained
+  maintainers:
+    - jilaypandya
+  files:
+    - drivers/stepper/
+    - include/zephyr/drivers/stepper.h
+    - dts/bindings/stepper/
+    - doc/hardware/peripherals/stepper.rst
+    - tests/drivers/build_all/stepper/
+  labels:
+    - "area: Stepper"
+  tests:
+    - drivers.stepper
+
 "Drivers: System timer":
   status: maintained
   maintainers:
