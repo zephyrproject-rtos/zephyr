@@ -10,6 +10,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flc0;
 	};
 
@@ -134,6 +135,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		interrupts = <11 0>;
+		status = "disabled";
+	};
+
+	trng: trng@4d000 {
+		compatible = "adi,max32-trng";
+		reg = <0x4d000 0x1000>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
 		status = "disabled";
 	};
 };
