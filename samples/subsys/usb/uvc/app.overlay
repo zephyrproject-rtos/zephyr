@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/usb/video.h>
+
+&zephyr_udc0 {
+	uvc_0: uvc {
+		compatible = "zephyr,uvc";
+		status = "okay";
+
+		format_uncompressed {
+			compatible = "zephyr,uvc-format-uncompressed", "zephyr,uvc-format";
+			fourcc = "YUYV";
+			guid = [UVC_GUID_YUY2];
+			bits-per-pixel = <16>;
+
+			qVGA {
+				size = <320 240>;
+				max-fps = <15>;
+			};
+		};
+	};
+};
