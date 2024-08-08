@@ -31,7 +31,7 @@ static int iis2iclx_freq_to_odr_val(uint16_t freq)
 	size_t i;
 
 	for (i = 0; i < ARRAY_SIZE(iis2iclx_odr_map); i++) {
-		if (freq == iis2iclx_odr_map[i]) {
+		if (freq <= iis2iclx_odr_map[i]) {
 			return i;
 		}
 	}
