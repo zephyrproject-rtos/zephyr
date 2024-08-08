@@ -25,7 +25,7 @@ static int mcux_ccm_on(const struct device *dev,
 	switch (peripheral) {
 #ifdef CONFIG_ETH_NXP_ENET
 
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 #define ENET1G_CLOCK	kCLOCK_Enet1
 #else
 #define ENET_CLOCK	kCLOCK_Enet
@@ -140,7 +140,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_ETH_NXP_ENET
 	case IMX_CCM_ENET_CLK:
 	case IMX_CCM_ENET1G_CLK:
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 		clock_root = kCLOCK_Root_WakeupAxi;
 #else
 		clock_root = kCLOCK_Root_Bus;
@@ -148,7 +148,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if defined(CONFIG_SOC_MIMX9352_A55) && defined(CONFIG_DAI_NXP_SAI)
+#if defined(CONFIG_SOC_MIMX9352) && defined(CONFIG_DAI_NXP_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
 	case IMX_CCM_SAI3_CLK:
@@ -203,7 +203,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	default:
 		return -EINVAL;
 	}
-#ifdef CONFIG_SOC_MIMX9352_A55
+#ifdef CONFIG_SOC_MIMX9352
 	*rate = CLOCK_GetIpFreq(clock_root);
 #else
 	*rate = CLOCK_GetRootClockFreq(clock_root);
