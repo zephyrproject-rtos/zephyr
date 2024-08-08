@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/nxp/fxas21002/Kconfig"
+source "drivers/sensor/nxp/fxls8974/Kconfig"
 source "drivers/sensor/nxp/fxos8700/Kconfig"
 source "drivers/sensor/nxp/mcux_acmp/Kconfig"
 source "drivers/sensor/nxp/mcux_lpcmp/Kconfig"
