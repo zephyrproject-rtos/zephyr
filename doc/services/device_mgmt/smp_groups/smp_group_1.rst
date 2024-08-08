@@ -295,7 +295,7 @@ where:
     +-----------+--------------------------------------------------------------------------------+
     | "len"     | optional length of an image. Must appear when "off" is 0.                      |
     +-----------+--------------------------------------------------------------------------------+
-    | "off"     | offset of image chunk the request carries.                                     |
+    | "off"     | offset of the next expected chunk of application image.                        |
     +-----------+--------------------------------------------------------------------------------+
     | "sha"     | SHA256 hash of an upload; this is used to identify an upload session (e.g. to  |
     |           | allow MCUmgr to continue a broken session), and for image verification         |
