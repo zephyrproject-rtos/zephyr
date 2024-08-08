@@ -17,6 +17,7 @@ tests:
       - lpcxpresso55s28                 # mma8652fc
       - bbc_microbit                    # mmc8653fc
       - frdm_k64f                       # fxos8700
+      - mimxrt1040_evk                  # fxls8974
       - sparkfun_thing_plus/nrf9160     # lis2dh
       - thingy52/nrf52832               # lis2dh12
       - stm32f411e_disco                # lsm303agr_accel
