@@ -588,6 +588,7 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_settings.on_body = on_body;
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
+	client->http1_headers_sent = false;
 
 	memset(client->header_buffer, 0, sizeof(client->header_buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));
