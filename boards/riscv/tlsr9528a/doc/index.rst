@@ -216,8 +216,8 @@ References
 
 .. target-notes::
 
-.. _Telink TLSR9 series chipset: [UNDER_DEVELOPMENT]
-.. _Telink B92 Generic Starter Kit Hardware Guide: [UNDER_DEVELOPMENT]
+.. _Telink TLSR9 series chipset: https://wiki.telink-semi.cn/wiki/chip-series/TLSR952x-Series/
+.. _Telink B92 Generic Starter Kit Hardware Guide: https://wiki.telink-semi.cn/wiki/Hardware/B92_Generic_Starter_Kit_Hardware_Guide
 .. _Burning and Debugging Tools for all Series: https://wiki.telink-semi.cn/wiki/IDE-and-Tools/Burning-and-Debugging-Tools-for-all-Series/
 .. _Burning and Debugging Tools for Linux: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/Telink_libusb_BDT-Linux-X64-V1.6.0.zip
 .. _Burning and Debugging Tools for Windows: https://wiki.telink-semi.cn/tools_and_sdk/Tools/BDT/BDT.zip
