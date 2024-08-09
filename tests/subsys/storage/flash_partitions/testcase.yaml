@@ -1,0 +1,10 @@
+common:
+  depends_on:
+    - flash_partitions
+    - flash
+  tags: flash_partitions
+tests:
+  storage.flash_partitions.native_sim.api:
+    platform_allow:
+      - native_sim
+    timeout: 60

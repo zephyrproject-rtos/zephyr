@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Laczen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Compatible describing that a flash device has no erase.
+
+compatible: "zephyr,flash-no-erase"
