@@ -490,6 +490,7 @@ Drivers and Sensors
 * IEEE 802.15.4
 
   * Removed :kconfig:option:`CONFIG_IEEE802154_SELECTIVE_TXPOWER` Kconfig option.
+  * Added support for TI CC1352P7 SOC.
 
 * Input
 
@@ -644,6 +645,7 @@ Drivers and Sensors
   * Added ESP32S3 internal temperature sensor driver.
   * Added new self-documenting macros for setting ST sensor devicetree
     properties (e.g., LSM6DSV16X_DT_ODR_AT_60Hz).  (:github:`65410`)
+  * Fixed on-board sensor access for :ref:`beagleconnect_freedom`.
 
 * Serial
 
