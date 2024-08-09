@@ -38,11 +38,6 @@
 #define IS_NONE(addr) (!IS_IROM(addr) && !IS_DROM(addr) \
 			&& !IS_IRAM(addr) && !IS_DRAM(addr) && !IS_PADD(addr))
 
-#define BOOT_LOG_INF(_fmt, ...) \
-	ets_printf("[" CONFIG_SOC_SERIES "] [INF] " _fmt "\n\r", ##__VA_ARGS__)
-#define BOOT_LOG_ERR(_fmt, ...) \
-	ets_printf("[" CONFIG_SOC_SERIES "] [ERR] " _fmt "\n\r", ##__VA_ARGS__)
-
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
 void __start(void);
@@ -94,7 +89,7 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 
 		if (spi_flash_read(offset, &segment_hdr,
 				sizeof(esp_image_segment_header_t)) != ESP_OK) {
-			BOOT_LOG_ERR("Failed to read segment header at %x", offset);
+			ESP_EARLY_LOGE(TAG, "Failed to read segment header at %x", offset);
 			abort();
 		}
 
@@ -104,7 +99,7 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 			break;
 		}
 
-		BOOT_LOG_INF("%s: lma 0x%08x vma 0x%08x len 0x%-6x (%u)",
+		ESP_EARLY_LOGI(TAG, "%s: lma 0x%08x vma 0x%08x len 0x%-6x (%u)",
 			IS_NONE(segment_hdr.load_addr) ? "???" :
 			 IS_MMAP(segment_hdr.load_addr) ?
 			  IS_IROM(segment_hdr.load_addr) ? "IMAP" : "DMAP" :
@@ -135,11 +130,11 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 		}
 	}
 	if (segments == 0 || segments == 16) {
-		BOOT_LOG_ERR("Error parsing segments");
+		ESP_EARLY_LOGE(TAG, "Error parsing segments");
 		abort();
 	}
 
-	BOOT_LOG_INF("Image with %d segments", segments - 1);
+	ESP_EARLY_LOGI(TAG, "Image with %d segments", segments - 1);
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
 #if CONFIG_SOC_SERIES_ESP32
@@ -172,7 +167,7 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 	rc |= cache_flash_mmu_set(1, 0, app_irom_vaddr_aligned,
 					app_irom_start_aligned, 64, irom_page_count);
 	if (rc != 0) {
-		BOOT_LOG_ERR("Failed to setup XIP, aborting");
+		ESP_EARLY_LOGE(TAG, "Failed to setup XIP, aborting");
 		abort();
 	}
 #else
@@ -216,12 +211,15 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 				CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif
 	/* Show map segments continue using same log format as during MCUboot phase */
-	BOOT_LOG_INF("DROM segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map",
+	ESP_EARLY_LOGI(TAG, "%s segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map",
+			"DROM",
 			app_drom_start_aligned, app_drom_vaddr_aligned,
 			app_drom_size, app_drom_size);
-	BOOT_LOG_INF("IROM segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map\r\n",
+	ESP_EARLY_LOGI(TAG, "%s segment: paddr=%08xh, vaddr=%08xh, size=%05Xh (%6d) map",
+			"IROM",
 			app_irom_start_aligned, app_irom_vaddr_aligned,
 			app_irom_size, app_irom_size);
+	ets_printf("\n\r");
 	esp_rom_uart_tx_wait_idle(0);
 }
 
@@ -241,7 +239,7 @@ void __start(void)
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
 	/* Init fundamental components */
 	if (bootloader_init()) {
-		BOOT_LOG_ERR("HW init failed, aborting");
+		ESP_EARLY_LOGE(TAG, "HW init failed, aborting");
 		abort();
 	}
 #endif
