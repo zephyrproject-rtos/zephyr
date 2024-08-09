@@ -454,10 +454,27 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		if ((ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
 		     ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_FEATURE_RSP)) {
 			if (ctx->data.fex.host_initiated) {
-				lp_comm_ntf(conn, ctx);
+				if (ctx->node_ref.rx || llcp_ntf_alloc_is_available()) {
+					/* Either this is a piggy-back or there is a NTF node
+					 * avail
+					 */
+					lp_comm_ntf(conn, ctx);
+					llcp_lr_complete(conn);
+					ctx->state = LP_COMMON_STATE_IDLE;
+				} else {
+					/* Handle procedure TO, in case we end up waiting 'forever'
+					 * for NTF buffer. This is a simple way to implement
+					 * mechanism to trigger disconnect in case NTF buffer
+					 * 'never' becomes avail see elaborate note in
+					 * lp_comm_st_wait_ntf_avail()
+					 */
+					llcp_lr_prt_restart(conn);
+					ctx->state = LP_COMMON_STATE_WAIT_NTF_AVAIL;
+				}
+			} else {
+				llcp_lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
 			}
-			llcp_lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
 		} else {
 			/* Illegal response opcode */
 			lp_comm_terminate_invalid_pdu(conn, ctx);
@@ -853,19 +870,28 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 static void lp_comm_st_wait_ntf_avail(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
 				void *param)
 {
+	/* Note re. procedure timeout handling:
+	 * Procedure TO is specifically NOT reset while in wait state, since
+	 * the mechanism is being 'hi-jacked' to implement a TO on the NTF wait
+	 * This to catch the very unlikely case:
+	 *   local VERSION IND started after a VERSION IND had already been TX'ed
+	 *   in which case the local procedure should complete with NTF without
+	 *   prior TX (ie no procedure TO handling initiated). IF this NTF never
+	 *   finds buffer avail it would wait forever, but not with proc TO active
+	 */
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
 		switch (ctx->proc) {
+		case PROC_FEATURE_EXCHANGE:
+			if (llcp_ntf_alloc_is_available()) {
+				if (ctx->data.fex.host_initiated) {
+					lp_comm_ntf(conn, ctx);
+				}
+				llcp_lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			}
+			break;
 		case PROC_VERSION_EXCHANGE:
-			/* Note re. procedure timeout handling:
-			 * Procedure TO is specifically NOT reset while in wait state, since
-			 * the mechanism is being 'hi-jacked' to implement a TO on the NTF wait
-			 * This to catch the very unlikely case:
-			 *   local VERSION IND started after a VERSION IND had already been TX'ed
-			 *   in which case the local procedure should complete with NTF without
-			 *   prior TX (ie no procedure TO handling initiated). IF this NTF never
-			 *   finds buffer avail it would wait forever, but not with proc TO active
-			 */
 			if (llcp_ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
 				llcp_lr_complete(conn);
