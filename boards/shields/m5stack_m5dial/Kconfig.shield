@@ -1,0 +1,7 @@
+# M5Stack M5Dial board configuration
+
+# Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_M5STACK_M5DIAL
+	def_bool $(shields_list_contains,m5stack_m5dial)
