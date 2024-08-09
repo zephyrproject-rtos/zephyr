@@ -102,3 +102,28 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load.serial:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+                OVERLAY_CONFIG="overlay-serial.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
+    sysbuild: true
+    extra_args: FILE_SUFFIX="ram_load"
+                OVERLAY_CONFIG="overlay-serial.conf"
+                OVERLAY_CONFIG="overlay-fs.conf"
+                OVERLAY_CONFIG="overlay-shell.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840

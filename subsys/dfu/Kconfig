@@ -10,6 +10,7 @@
 menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	depends on STREAM_FLASH
+	depends on !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || RETENTION_BOOTLOADER_INFO_OUTPUT_FUNCTION
 	help
 	  Enable support for managing DFU image.
 

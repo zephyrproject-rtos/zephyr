@@ -96,9 +96,21 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
   endif()
 
-  # Use overwrite-only instead of swap upgrades.
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
+    # Use overwrite-only instead of swap upgrades.
     set(imgtool_extra --overwrite-only --align 1 ${imgtool_extra})
+  elseif(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+    # RAM load requires setting the location of where to load the image to
+    dt_chosen(chosen_ram PROPERTY "zephyr,sram")
+    dt_reg_addr(chosen_ram_address PATH ${chosen_ram})
+    dt_nodelabel(slot0_partition NODELABEL "slot0_partition")
+    dt_reg_addr(slot0_partition_address PATH ${slot0_partition})
+    dt_nodelabel(slot1_partition NODELABEL "slot1_partition")
+    dt_reg_addr(slot1_partition_address PATH ${slot1_partition})
+
+    set(imgtool_extra --load-addr ${chosen_ram_address} ${imgtool_extra})
+    set(imgtool_args_alt_slot -- ${imgtool_extra} --hex-addr ${slot1_partition_address})
+    set(imgtool_extra ${imgtool_extra} --hex-addr ${slot0_partition_address})
   endif()
 
   set(imgtool_args -- ${imgtool_extra})
@@ -113,6 +125,9 @@ function(zephyr_mcuboot_tasks)
   set(unconfirmed_args)
   set(confirmed_args)
   set(encrypted_args)
+  set(unconfirmed_args_alt_slot)
+  set(confirmed_args_alt_slot)
+  set(encrypted_args_alt_slot)
 
   # Set up .bin outputs.
   if(CONFIG_BUILD_OUTPUT_BIN)
@@ -137,6 +152,21 @@ function(zephyr_mcuboot_tasks)
       set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_BIN_NAME "${output}.signed.encrypted.bin"
           CACHE FILEPATH "Signed and encrypted kernel bin file" FORCE
       )
+    endif()
+
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      list(APPEND unconfirmed_args_alt_slot --bin --sbin ${output}.slot1.signed.bin)
+      list(APPEND byproducts ${output}.slot1.signed.bin)
+
+      if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+        list(APPEND confirmed_args_alt_slot --bin --sbin ${output}.slot1.signed.confirmed.bin)
+        list(APPEND byproducts ${output}.slot1.signed.confirmed.bin)
+      endif()
+
+      if(NOT "${keyfile_enc}" STREQUAL "")
+        list(APPEND encrypted_args_alt_slot --bin --sbin ${output}.slot1.signed.encrypted.bin)
+        list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
+      endif()
     endif()
   endif()
 
@@ -164,6 +194,21 @@ function(zephyr_mcuboot_tasks)
           CACHE FILEPATH "Signed and encrypted kernel hex file" FORCE
       )
     endif()
+
+    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+      list(APPEND unconfirmed_args_alt_slot --hex --shex ${output}.slot1.signed.hex)
+      list(APPEND byproducts ${output}.slot1.signed.hex)
+
+      if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
+        list(APPEND confirmed_args_alt_slot --hex --shex ${output}.slot1.signed.confirmed.hex)
+        list(APPEND byproducts ${output}.slot1.signed.confirmed.hex)
+      endif()
+
+      if(NOT "${keyfile_enc}" STREQUAL "")
+        list(APPEND encrypted_args_alt_slot --hex --shex ${output}.slot1.signed.encrypted.hex)
+        list(APPEND byproducts ${output}.slot1.signed.encrypted.hex)
+      endif()
+    endif()
   endif()
 
   # Add the west sign calls and their byproducts to the post-processing
@@ -182,6 +227,19 @@ function(zephyr_mcuboot_tasks)
   if(encrypted_args)
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
       ${west_sign} ${encrypted_args} ${imgtool_args} --encrypt "${keyfile_enc}")
+  endif()
+  if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+    # Generate an alternative slot image
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+      ${west_sign} ${unconfirmed_args_alt_slot} ${imgtool_args_alt_slot})
+    if(confirmed_args)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+        ${west_sign} ${confirmed_args_alt_slot} ${imgtool_args_alt_slot} --pad --confirm)
+    endif()
+    if(encrypted_args)
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+        ${west_sign} ${encrypted_args_alt_slot} ${imgtool_args_alt_slot} --encrypt "${keyfile_enc}")
+    endif()
   endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
