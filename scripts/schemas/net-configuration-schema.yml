@@ -1,0 +1,153 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# A pykwalify schema for basic validation of the configuration.yml format.
+
+type: map
+mapping:
+  "net":
+    type: map
+    mapping:
+      "network-interfaces":
+        type: seq
+        sequence:
+          - type: map
+            required: true
+            mapping:
+              "bind-to":
+                type: any
+              "name":
+                type: str
+              "device":
+                type: str
+              "set-name":
+                type: str
+              "set-default":
+                type: bool
+              "flags":
+                type: seq
+                sequence:
+                  - type: str
+                    required: true
+              "IPv6":
+                type: map
+                mapping:
+                  "status":
+                    type: str
+                    enum: ['enabled', 'disabled']
+                  "addresses":
+                    type: seq
+                    sequence:
+                      - type: str
+                        required: true
+                  "multicast-addresses":
+                    type: seq
+                    sequence:
+                      - type: str
+                        required: true
+                  "prefixes":
+                    type: seq
+                    sequence:
+                      - type: map
+                        required: true
+                        mapping:
+                          "address":
+                            type: str
+                            required: true
+                          "len":
+                            type: int
+                            required: true
+                          "lifetime":
+                            type: int
+                            required: true
+                  "hop-limit":
+                    type: int
+                  "multicast-hop-limit":
+                    type: int
+                  "DHCPv6":
+                    type: map
+                    mapping:
+                      "status":
+                        type: str
+                        enum: ['enabled', 'disabled']
+                      "do-request-address":
+                        type: bool
+                      "do-request-prefix":
+                        type: bool
+              "IPv4":
+                type: map
+                mapping:
+                  "status":
+                    type: str
+                    enum: ['enabled', 'disabled']
+                  "addresses":
+                    type: seq
+                    sequence:
+                      - type: str
+                        required: true
+                  "multicast-addresses":
+                    type: seq
+                    sequence:
+                      - type: str
+                        required: true
+                  "gateway":
+                    type: str
+                  "time-to-live":
+                    type: int
+                  "multicast-time-to-live":
+                    type: int
+                  "DHCPv4":
+                    type: str
+                    enum: ['enabled', 'disabled']
+                  "DHCPv4-server":
+                    type: map
+                    mapping:
+                      "status":
+                        type: str
+                        enum: ['enabled', 'disabled']
+                      "base-address":
+                        type: str
+                  "IPv4-autoconf":
+                    type: str
+                    enum: ['enabled', 'disabled']
+              "VLAN":
+                type: map
+                mapping:
+                  "status":
+                    type: str
+                    enum: ['enabled', 'disabled']
+                  "tag":
+                    type: int
+                    required: true
+      "IEEE-802.15.4":
+        type: map
+        mapping:
+          "bind-to":
+            type: any
+          "pan-id":
+            type: int
+            required: true
+          "channel":
+            type: int
+            required: true
+          "tx-power":
+            type: int
+          "security-key":
+            type: str
+          "security-key-mode":
+            type: int
+          "security-level":
+            type: int
+          "ack-required":
+            type: bool
+      "SNTP":
+        type: map
+        mapping:
+          "server":
+            type: str
+            required: true
+          "timeout":
+            type: int
+          "bind-to":
+            type: any

@@ -1,0 +1,114 @@
+# This is an example for defining network configuration data that
+# can be applied automatically when the device boots.
+#
+net:
+  network-interfaces:
+    # Example of one interface selected by its name
+    - &main-interface
+      name: eth0
+      set-name: my-eth0
+      set-default: true
+      IPv6:
+        status: enabled
+        addresses:
+          - 2001:db8:110::1
+        multicast-addresses:
+          - ff05::114
+          - ff15::115
+        prefixes:
+          - address: "2001:db8::"
+            len: 64
+            lifetime: 1024
+        hop-limit: 64
+        multicast-hop-limit: 1
+        DHCPv6:
+          status: enabled
+          do-request-address: true
+          do-request-prefix: false
+      IPv4:
+        status: enabled
+        addresses:
+          - 192.0.2.10/24
+        multicast-addresses:
+          - 234.0.0.10
+        gateway: 192.0.2.1
+        time-to-live: 64
+        multicast-time-to-live: 1
+        DHCPv4: enabled
+        IPv4-autoconf: disabled
+
+    # Example of another interface selected by its device
+    - &device-interface
+      device: ETH_DEVICE
+      set-name: my-eth1
+      flags:
+        - no-auto-start
+      IPv4:
+        status: enabled
+        addresses:
+          - 192.168.1.2/24
+        multicast-addresses:
+          - 234.0.0.10
+        gateway: 192.168.110.1
+        time-to-live: 10
+        multicast-time-to-live: 0
+        DHCPv4: enabled
+        DHCPv4-server:
+          status: enabled
+          base-address: 192.168.1.100
+
+    # Example of virtual interface tied to the first one
+    - name: virt0
+      set-name: virt0
+      bind-to: *device-interface
+      IPv6:
+        status: enabled
+        addresses:
+          - 2001:db8:111::2
+      IPv4:
+        status: disabled
+
+    # Example of VLAN interface that attaches to eth0
+    - &vlan-interface
+      set-name: vlan0
+      bind-to: *main-interface
+      VLAN:
+        status: enabled
+        tag: 1234
+      IPv4:
+        status: enabled
+        DHCPv4: enabled
+
+    # The interface IPv4 configuration could be set to disabled
+    # in which case its IPv4 configuration is skipped
+    - name: eth1
+      set-name: my-eth2
+      flags:
+        - no-auto-start
+      IPv4:
+        status: disabled
+        addresses:
+          - 192.168.1.2/24
+        multicast-addresses:
+          - 234.0.0.10
+        gateway: 192.168.110.1
+        time-to-live: 10
+        multicast-time-to-live: 0
+        DHCPv4-server:
+          status: enabled
+          base-address: 192.168.2.1
+
+  IEEE-802.15.4:
+    pan-id: 0xabcd
+    channel: 26
+    tx-power: 1
+    security-key: foobar
+    security-key-mode: 0
+    security-level: 1
+    ack-required: true
+    bind-to: *device-interface
+
+  SNTP:
+    server: sntp.foo.bar
+    timeout: 30
+    bind-to: *vlan-interface

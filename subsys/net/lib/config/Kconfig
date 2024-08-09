@@ -33,6 +33,20 @@ config NET_CONFIG_AUTO_INIT
 
 if NET_CONFIG_AUTO_INIT
 
+config NET_CONFIG_USE_YAML
+	bool "Use user supplied YAML file that describes the network setup"
+	help
+	  If this option is enabled, then user can configure the networking options
+	  in the system by a yaml file. The yaml file is used to generate needed
+	  configure data that is then used by the config library to setup the
+	  networking when the device boots.
+
+config NET_CONFIG_YAML_FILE
+	string "Network YAML configure file"
+	depends on NET_CONFIG_USE_YAML
+	help
+	  User must supply the name of the yaml configuration file.
+
 config NET_CONFIG_INIT_PRIO
 	int "Startup priority for the network application init"
 	default 95

@@ -1,0 +1,12 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  # eventfd API does not work with native_posix so exclude it here
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
+tests:
+  net.config:
+    tags:
+      - net
+      - iface

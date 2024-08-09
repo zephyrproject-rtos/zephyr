@@ -22,15 +22,20 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/dhcpv4.h>
+#include <zephyr/net/dhcpv4_server.h>
 #include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/virtual.h>
 
 #include <zephyr/net/net_config.h>
 
 #include "ieee802154_settings.h"
+#include "net_private.h"
 
-extern int net_init_clock_via_sntp(void);
+extern int net_init_clock_via_sntp(struct net_if *iface,
+				   const char *server,
+				   int timeout);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static K_SEM_DEFINE(counter, 0, UINT_MAX);
@@ -497,7 +502,7 @@ static void iface_find_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-int net_config_init_app(const struct device *dev, const char *app_info)
+static int net_config_init_app_by_kconfig(const struct device *dev, const char *app_info)
 {
 	struct net_if *iface = NULL;
 	uint32_t flags = 0U;
@@ -511,7 +516,23 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 		}
 	}
 
-	ret = z_net_config_ieee802154_setup(iface);
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+	struct ieee802154_security_params sec_params = {
+		.key = CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY,
+		.key_len = sizeof(CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY),
+		.key_mode = CONFIG_NET_CONFIG_IEEE802154_SECURITY_KEY_MODE,
+		.level = CONFIG_NET_CONFIG_IEEE802154_SECURITY_LEVEL,
+	};
+	struct ieee802154_security_params *kconfig_sec_params_ptr = &sec_params;
+#else
+#define kconfig_sec_params_ptr 0
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
+
+	ret = z_net_config_ieee802154_setup(iface,
+					    CONFIG_NET_CONFIG_IEEE802154_CHANNEL,
+					    CONFIG_NET_CONFIG_IEEE802154_PAN_ID,
+					    CONFIG_NET_CONFIG_IEEE802154_RADIO_TX_POWER,
+					    kconfig_sec_params_ptr);
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
 	}
@@ -547,7 +568,13 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT)) {
-		net_init_clock_via_sntp();
+		net_init_clock_via_sntp(NULL,
+					COND_CODE_1(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT,
+						    (CONFIG_NET_CONFIG_SNTP_INIT_SERVER,),
+						    (NULL,))
+					COND_CODE_1(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT,
+						    (CONFIG_NET_CONFIG_SNTP_INIT_TIMEOUT),
+						    (0)));
 	}
 
 	/* This is activated late as it requires the network stack to be up
@@ -569,14 +596,539 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	return ret;
 }
 
+static struct net_if *get_interface(const struct net_init_config *config,
+				    int config_ifindex,
+				    const struct device *dev,
+				    const char **iface_name)
+{
+	const struct net_init_config_iface *cfg;
+	struct net_if *iface = NULL;
+	const char *name;
+
+	NET_ASSERT(IN_RANGE(config_ifindex, 0, ARRAY_SIZE(config->iface) - 1));
+
+	cfg = &config->iface[config_ifindex];
+
+	name = cfg->new_name;
+	if (name != NULL) {
+		iface = net_if_get_by_index(net_if_get_by_name(name));
+	}
+
+	if (iface == NULL) {
+		name = cfg->name;
+
+		if (name != NULL) {
+			iface = net_if_get_by_index(net_if_get_by_name(name));
+		}
+	}
+
+	if (iface == NULL) {
+		/* Get the interface by device */
+		const struct device *iface_dev;
+
+		name = cfg->dev;
+
+		iface_dev = device_get_binding(name);
+		if (iface_dev) {
+			iface = net_if_lookup_by_dev(iface_dev);
+		}
+	}
+
+	if (iface_name != NULL) {
+		*iface_name = name;
+	}
+
+	return iface;
+}
+
+static void ipv6_setup_from_generated(struct net_if *iface,
+				      int ifindex,
+				      const struct net_init_config_iface *cfg)
+{
+#if defined(CONFIG_NET_IPV6)
+	const struct net_init_config_ipv6 *ipv6 = &cfg->ipv6;
+	struct net_if_addr *ifaddr;
+	struct net_if_mcast_addr *ifmaddr;
+
+	if (!ipv6->is_enabled) {
+		NET_DBG("Skipping %s setup for iface %d", "IPv6", ifindex);
+		net_if_flag_clear(iface, NET_IF_IPV6);
+		return;
+	}
+
+	/* First set all the static addresses and then enable DHCP */
+	ARRAY_FOR_EACH(ipv6->address, j) {
+		if (net_ipv6_is_addr_unspecified(&ipv6->address[j])) {
+			continue;
+		}
+
+		ifaddr = net_if_ipv6_addr_add(
+				iface,
+				(struct in6_addr *)&ipv6->address[j],
+				/* If DHCPv6 is enabled, then allow address
+				 * to be overridden.
+				 */
+				COND_CODE_1(CONFIG_NET_DHCPV6,
+					    (ipv6->dhcpv6.is_enabled),
+					    (false)) ?
+				NET_ADDR_OVERRIDABLE : NET_ADDR_MANUAL,
+				0);
+		if (ifaddr == NULL) {
+			NET_DBG("Cannot %s %s %s to iface %d", "add", "address",
+				net_sprint_ipv6_addr(&ipv6->address[j]),
+				ifindex);
+			continue;
+		}
+
+		NET_DBG("Added %saddress %s to iface %d", "",
+			net_sprint_ipv6_addr(&ipv6->address[j]),
+			ifindex);
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast_address, j) {
+		if (net_ipv6_is_addr_unspecified(&ipv6->mcast_address[j])) {
+			continue;
+		}
+
+		ifmaddr = net_if_ipv6_maddr_add(iface,
+						(struct in6_addr *)&ipv6->mcast_address[j]);
+		if (ifmaddr == NULL) {
+			NET_DBG("Cannot %s %s %s to iface %d", "add", "address",
+				net_sprint_ipv6_addr(&ipv6->mcast_address[j]),
+				ifindex);
+			continue;
+		}
+
+		NET_DBG("Added %saddress %s to iface %d", "multicast ",
+			net_sprint_ipv6_addr(&ipv6->mcast_address[j]),
+			ifindex);
+	}
+
+	ARRAY_FOR_EACH(ipv6->prefix, j) {
+		struct net_if_ipv6_prefix *prefix;
+
+		if (net_ipv6_is_addr_unspecified(&ipv6->prefix[j].address)) {
+			continue;
+		}
+
+		prefix = net_if_ipv6_prefix_add(iface,
+						(struct in6_addr *)&ipv6->prefix[j].address,
+						ipv6->prefix[j].len,
+						ipv6->prefix[j].lifetime);
+		if (prefix == NULL) {
+			NET_DBG("Cannot %s %s %s to iface %d", "add", "prefix",
+				net_sprint_ipv6_addr(&ipv6->prefix[j].address),
+				ifindex);
+			continue;
+		}
+
+		NET_DBG("Added %saddress %s to iface %d", "prefix ",
+			net_sprint_ipv6_addr(&ipv6->prefix[j].address),
+			ifindex);
+	}
+
+	if (ipv6->hop_limit > 0) {
+		net_if_ipv6_set_hop_limit(iface, ipv6->hop_limit);
+	}
+
+	if (ipv6->mcast_hop_limit > 0) {
+		net_if_ipv6_set_mcast_hop_limit(iface, ipv6->mcast_hop_limit);
+	}
+
+	if (COND_CODE_1(CONFIG_NET_DHCPV6, (ipv6->dhcpv6.is_enabled), (false))) {
+		struct net_dhcpv6_params params = {
+			.request_addr = COND_CODE_1(CONFIG_NET_DHCPV6,
+						    (ipv6->dhcpv6.do_request_addr),
+						    (false)),
+			.request_prefix = COND_CODE_1(CONFIG_NET_DHCPV6,
+						      (ipv6->dhcpv6.do_request_prefix),
+						      (false)),
+		};
+
+		net_dhcpv6_start(iface, &params);
+	}
+#endif
+}
+
+static void ipv4_setup_from_generated(struct net_if *iface,
+				      int ifindex,
+				      const struct net_init_config_iface *cfg)
+{
+#if defined(CONFIG_NET_IPV4)
+	const struct net_init_config_ipv4 *ipv4 = &cfg->ipv4;
+	struct net_if_addr *ifaddr;
+	struct net_if_mcast_addr *ifmaddr;
+
+	if (!ipv4->is_enabled) {
+		NET_DBG("Skipping %s setup for iface %d", "IPv4", ifindex);
+		net_if_flag_clear(iface, NET_IF_IPV4);
+		return;
+	}
+
+	/* First set all the static addresses and then enable DHCP */
+	ARRAY_FOR_EACH(cfg->ipv4.address, j) {
+		if (net_ipv4_is_addr_unspecified(&cfg->ipv4.address[j].ipv4)) {
+			continue;
+		}
+
+		ifaddr = net_if_ipv4_addr_add(iface,
+				(struct in_addr *)&ipv4->address[j].ipv4,
+				/* If DHCPv4 is enabled, then allow address
+				 * to be overridden.
+				 */
+				ipv4->is_dhcpv4 ? NET_ADDR_OVERRIDABLE :
+					      NET_ADDR_MANUAL,
+				0);
+
+		if (ifaddr == NULL) {
+			NET_DBG("Cannot %s %s %s to iface %d", "add", "address",
+				net_sprint_ipv4_addr(&ipv4->address[j].ipv4),
+				ifindex);
+			continue;
+		}
+
+		NET_DBG("Added %saddress %s to iface %d", "",
+			net_sprint_ipv4_addr(&ipv4->address[j].ipv4),
+			ifindex);
+
+		if (ipv4->address[j].netmask_len > 0) {
+			struct in_addr netmask = { 0 };
+
+			netmask.s_addr = BIT_MASK(ipv4->address[j].netmask_len);
+
+			net_if_ipv4_set_netmask_by_addr(iface,
+							&ipv4->address[j].ipv4,
+							&netmask);
+
+			NET_DBG("Added %saddress %s to iface %d", "netmask ",
+				net_sprint_ipv4_addr(&netmask),
+				ifindex);
+		}
+	}
+
+	ARRAY_FOR_EACH(ipv4->mcast_address, j) {
+		if (net_ipv4_is_addr_unspecified(&ipv4->mcast_address[j])) {
+			continue;
+		}
+
+		ifmaddr = net_if_ipv4_maddr_add(iface, &ipv4->mcast_address[j]);
+		if (ifmaddr == NULL) {
+			NET_DBG("Cannot %s %s %s to iface %d", "add", "address",
+				net_sprint_ipv4_addr(&ipv4->mcast_address[j]),
+				ifindex);
+			continue;
+		}
+
+		NET_DBG("Added %saddress %s to iface %d", "multicast ",
+			net_sprint_ipv4_addr(&ipv4->mcast_address[j]),
+			ifindex);
+	}
+
+	if (ipv4->ttl > 0) {
+		net_if_ipv4_set_ttl(iface, ipv4->ttl);
+	}
+
+	if (ipv4->mcast_ttl > 0) {
+		net_if_ipv4_set_mcast_ttl(iface, ipv4->mcast_ttl);
+	}
+
+	if (!net_ipv4_is_addr_unspecified(&ipv4->gateway)) {
+		net_if_ipv4_set_gw(iface, &ipv4->gateway);
+
+		NET_DBG("Added %saddress %s to iface %d", "gateway ",
+			net_sprint_ipv4_addr(&ipv4->gateway),
+			ifindex);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_DHCPV4) && ipv4->is_dhcpv4) {
+		net_dhcpv4_start(iface);
+	}
+
+	if (COND_CODE_1(CONFIG_NET_DHCPV4_SERVER,
+			(ipv4->dhcpv4_server.is_enabled), (false))) {
+		net_dhcpv4_server_start(iface,
+			COND_CODE_1(CONFIG_NET_DHCPV4_SERVER,
+				    ((struct in_addr *)&ipv4->dhcpv4_server.base_addr),
+				    (&((struct in_addr){ 0 }))));
+	}
+#endif
+}
+
+static void vlan_setup_from_generated(const struct net_init_config *config,
+				      const struct net_init_config_iface *cfg)
+{
+#if defined(CONFIG_NET_VLAN)
+	const struct net_init_config_vlan *vlan = &cfg->vlan;
+	struct net_if *bound = NULL;
+	int ret, ifindex;
+
+	if (!vlan->is_enabled) {
+		return;
+	}
+
+	bound = get_interface(config, cfg->bind_to - 1, NULL, NULL);
+	if (bound == NULL) {
+		NET_DBG("Cannot find VLAN bound interface %d", cfg->bind_to - 1);
+		return;
+	}
+
+	ifindex = net_if_get_by_iface(bound);
+
+	ret = net_eth_vlan_enable(bound, vlan->tag);
+	if (ret < 0) {
+		NET_DBG("Cannot %s %s %s to iface %d", "add", "VLAN", "tag", ifindex);
+		NET_DBG("Cannot enable %s for %s %d (%d)", "VLAN", "tag",
+			vlan->tag, ret);
+	} else {
+		NET_DBG("Added %s %s %d to iface %d", "VLAN", "tag", vlan->tag,
+			net_if_get_by_iface(
+				net_eth_get_vlan_iface(
+					net_if_get_by_index(ifindex), vlan->tag)));
+
+		if (cfg->new_name != NULL) {
+			struct net_if *iface;
+
+			iface = net_eth_get_vlan_iface(bound, vlan->tag);
+
+			ret = net_if_set_name(iface, cfg->new_name);
+			if (ret < 0) {
+				NET_DBG("Cannot rename interface %d to \"%s\" (%d)",
+					ifindex, cfg->new_name, ret);
+			} else {
+				NET_DBG("Changed interface %d name to \"%s\"", ifindex,
+					cfg->new_name);
+			}
+		}
+	}
+#endif
+}
+
+static void virtual_setup_from_generated(struct net_if *iface,
+					 int ifindex,
+					 const struct net_init_config *config,
+					 const struct net_init_config_iface *cfg)
+{
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	const struct virtual_interface_api *api = net_if_get_device(iface)->api;
+	struct net_if *bound = NULL;
+	int ret;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return;
+	}
+
+	/* VLAN interfaces are handled separately */
+	if (api->get_capabilities(iface) & VIRTUAL_INTERFACE_VLAN) {
+		return;
+	}
+
+	if (cfg->bind_to > 0) {
+		bound = get_interface(config, cfg->bind_to - 1, NULL, NULL);
+	}
+
+	if (bound == NULL) {
+		NET_DBG("Cannot %s %s %s to iface %d", "add", "virtual", "interface",
+			cfg->bind_to - 1);
+		return;
+	}
+
+	ret = net_virtual_interface_attach(iface, bound);
+	if (ret < 0) {
+		if (ret != -EALREADY) {
+			NET_DBG("Cannot %s %s %s to iface %d (%d)", "attach",
+				"virtual", "interface",
+				net_if_get_by_iface(bound), ret);
+		}
+	} else {
+		NET_DBG("Added %s %s %d to iface %d", "virtual", "interface", ifindex,
+			net_if_get_by_iface(bound));
+	}
+#endif
+}
+
+static int net_config_init_app_from_generated(const struct device *dev,
+					      const char *app_info)
+{
+	const struct net_init_config *config;
+	int ret, ifindex;
+
+	config = net_config_get_init_config();
+	if (config == NULL) {
+		NET_ERR("Network configuration not found.");
+		return -ENOENT;
+	}
+
+	/* We first need to setup any VLAN interfaces so that other
+	 * interfaces can use them (the interface name etc are correctly
+	 * set so that referencing works ok).
+	 */
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		ARRAY_FOR_EACH(config->iface, i) {
+			const struct net_init_config_iface *cfg = &config->iface[i];
+
+			vlan_setup_from_generated(config, cfg);
+		}
+	}
+
+	ARRAY_FOR_EACH(config->iface, i) {
+		const struct net_init_config_iface *cfg;
+		struct net_if *iface;
+		const char *name;
+
+		cfg = &config->iface[i];
+
+		iface = get_interface(config, i, dev, &name);
+		if (iface == NULL || name == NULL) {
+			NET_WARN("No such interface \"%s\" found.",
+				 name == NULL ? "<?>" : name);
+			continue;
+		}
+
+		ifindex = net_if_get_by_iface(iface);
+
+		NET_DBG("Configuring interface %d (%p)", ifindex, iface);
+
+		/* Do we need to change the interface name */
+		if (cfg->new_name != NULL) {
+			ret = net_if_set_name(iface, cfg->new_name);
+			if (ret < 0) {
+				NET_DBG("Cannot rename interface %d to \"%s\" (%d)",
+					ifindex, cfg->new_name, ret);
+				continue;
+			}
+
+			NET_DBG("Changed interface %d name to \"%s\"", ifindex,
+				cfg->new_name);
+		}
+
+		if (cfg->is_default) {
+			net_if_set_default(iface);
+
+			NET_DBG("Setting interface %d as default", ifindex);
+		}
+
+		ipv6_setup_from_generated(iface, ifindex, cfg);
+		ipv4_setup_from_generated(iface, ifindex, cfg);
+		virtual_setup_from_generated(iface, ifindex, config, cfg);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONFIG_CLOCK_SNTP_INIT) && config->is_sntp) {
+#if defined(CONFIG_SNTP)
+		struct net_if *iface = NULL;
+
+		if (config->sntp.bind_to > 0) {
+			iface = get_interface(config,
+					      config->sntp.bind_to - 1,
+					      dev,
+					      NULL);
+		}
+
+		ret = net_init_clock_via_sntp(iface, config->sntp.server,
+					      config->sntp.timeout);
+		if (ret < 0) {
+			NET_DBG("Cannot init SNTP interface %d (%d)",
+				net_if_get_by_iface(iface), ret);
+		} else {
+			NET_DBG("Initialized SNTP to use interface %d",
+				net_if_get_by_iface(iface));
+		}
+#endif
+	}
+
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&
+	    IS_ENABLED(CONFIG_NET_CONFIG_SETTINGS) &&
+	    config->is_ieee802154) {
+#ifdef CONFIG_NET_L2_IEEE802154_SECURITY
+		struct ieee802154_security_params sec_params =
+					config->ieee802154.sec_params;
+	struct ieee802154_security_params *generated_sec_params_ptr = &sec_params;
+#else
+#define generated_sec_params_ptr 0
+#endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
+
+		struct net_if *iface = NULL;
+
+		if (COND_CODE_1(CONFIG_NET_L2_IEEE802154,
+				(config->ieee802154.bind_to), (0)) > 0) {
+			iface = get_interface(
+				config,
+				COND_CODE_1(CONFIG_NET_L2_IEEE802154,
+					    (config->ieee802154.bind_to - 1), (0)),
+				dev,
+				NULL);
+		}
+
+		ret = z_net_config_ieee802154_setup(
+			    IF_ENABLED(CONFIG_NET_L2_IEEE802154,
+				       (iface,
+					config->ieee802154.channel,
+					config->ieee802154.pan_id,
+					config->ieee802154.tx_power,
+					generated_sec_params_ptr)));
+		if (ret < 0) {
+			NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
+		}
+	}
+
+	/* This is activated late as it requires the network stack to be up
+	 * and running before syslog messages can be sent to network.
+	 */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+	    IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
+		const struct log_backend *backend = log_backend_net_get();
+
+		if (!log_backend_is_active(backend)) {
+			if (backend->api->init != NULL) {
+				backend->api->init(backend);
+			}
+
+			log_backend_activate(backend, NULL);
+		}
+	}
+
+	return 0;
+}
+
+int net_config_init_app(const struct device *dev, const char *app_info)
+{
+	if (IS_ENABLED(CONFIG_NET_CONFIG_USE_YAML)) {
+		return net_config_init_app_from_generated(dev, app_info);
+	}
+
+	return net_config_init_app_by_kconfig(dev, app_info);
+}
+
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
 static int init_app(void)
 {
-
 	(void)net_config_init_app(NULL, "Initializing network");
 
 	return 0;
 }
 
 SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);
+
+const struct net_init_config *net_config_get_init_config(void)
+{
+#if defined(CONFIG_NET_CONFIG_USE_YAML)
+#define NET_CONFIG_ENABLE_DATA
+#include "net_init_config.inc"
+
+BUILD_ASSERT(ARRAY_SIZE(net_init_config_data.iface) == NET_CONFIG_IFACE_COUNT);
+
+#if defined(CONFIG_NET_DHCPV4_SERVER)
+BUILD_ASSERT(NET_CONFIG_DHCPV4_SERVER_INSTANCE_COUNT == CONFIG_NET_DHCPV4_SERVER_INSTANCES);
+
+/* If we are starting DHCPv4 server, then the socket service needs to be started before
+ * this config lib as the server will need to use the socket service.
+ */
+BUILD_ASSERT(CONFIG_NET_SOCKETS_SERVICE_INIT_PRIO < CONFIG_NET_CONFIG_INIT_PRIO);
+#endif
+
+	return &net_init_config_data;
+#else
+	return NULL;
+#endif
+}
+
 #endif /* CONFIG_NET_CONFIG_AUTO_INIT */
