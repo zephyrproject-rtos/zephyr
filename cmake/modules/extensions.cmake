@@ -3657,6 +3657,67 @@ function(topological_sort)
   set(${TS_RESULT} "${sorted_targets}" PARENT_SCOPE)
 endfunction()
 
+# Usage:
+#   build_info(<tag>... VALUE <value>...)
+#
+# This function populates updates the build_info.yml info file with exchangable build information
+# related to the current build.
+#
+# Example:
+#   build_info(devicetree files VALUE file1.dts file2.dts file3.dts)
+# Will update the 'devicetree files' key in the build info yaml with the list
+# of files, file1.dts file2.dts file3.dts.
+#
+#   build_info(vendor-specific foo VALUE bar)
+# Will place the vendor specific key 'foo' with value 'bar' in the vendor specific section
+# of the build info file.
+#
+# <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
+#           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
+# VALUE <value>... : value(s) to place in the build_info.yml file.
+function(build_info)
+  set(arg_list ${ARGV})
+  list(FIND arg_list VALUE index)
+  if(index EQUAL -1)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE")
+  endif()
+
+  yaml_context(EXISTS NAME build_info result)
+  if(NOT result)
+    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
+    if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
+      yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+    else()
+      yaml_create(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+    endif()
+    yaml_set(NAME build_info KEY version VALUE "0.1.0")
+  endif()
+
+  list(SUBLIST arg_list 0 ${index} keys)
+  list(SUBLIST arg_list ${index} -1 values)
+  list(POP_FRONT values)
+
+  if(ARGV0 STREQUAL "vendor-specific")
+    set(type VALUE)
+  else()
+    set(schema_check ${keys})
+    list(TRANSFORM schema_check PREPEND "mapping;")
+    yaml_get(check NAME build_info_schema KEY mapping cmake ${schema_check})
+    if(check MATCHES ".*-NOTFOUND")
+      message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) called with invalid tag: ${keys}")
+    endif()
+
+    yaml_get(type NAME build_info_schema KEY mapping cmake ${schema_check} type)
+    if(type MATCHES "seq|sequence")
+      set(type LIST)
+    else()
+      set(type VALUE)
+    endif()
+  endif()
+
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+endfunction()
+
 ########################################################
 # 4. Devicetree extensions
 ########################################################
@@ -5793,5 +5854,14 @@ if(CMAKE_SCRIPT_MODE_FILE)
 
   function(zephyr_set variable)
     # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
+  endfunction()
+
+  # Build info creates a custom target for handling of build info.
+  # build_info is not needed in script mode but still called by Zephyr CMake
+  # modules. Therefore disable build_info(...) in when including
+  # extensions.cmake in script mode.
+  function(build_info)
+    # This silence the error: 'YAML context 'build_info' does not exist.'
+    #                         'Remember to create a YAML context'
   endfunction()
 endif()
