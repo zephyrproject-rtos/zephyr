@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra6/r7fa6m2af3cfb.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "ek_ra6m2-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA6M2";
+	compatible = "renesas,ra6m2", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart7;
+		zephyr,shell-uart = &uart7;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport1 6 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&sci7 {
+	pinctrl-0 = <&sci7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart7: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(12)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	source = <RA_PLL_SOURCE_MAIN_OSC>;
+	div = <RA_PLL_DIV_1>;
+	mul = <20 0>;
+	status = "okay";
+};

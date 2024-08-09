@@ -9,9 +9,9 @@ config PINCTRL_RENESAS_RA
 	help
 	  Enable Renesas RA series pin controller driver.
 
-config PINCTRL_RENESAS_RA8
-	bool "Renesas RA8 pinctrl driver"
+config PINCTRL_RENESAS_RA_PFS
+	bool "Renesas RA pinctrl driver"
 	default y
-	depends on DT_HAS_RENESAS_RA8_PINCTRL_ENABLED
+	depends on DT_HAS_RENESAS_RA_PINCTRL_PFS_ENABLED
 	help
-	  Enable the Renesas RA8 pinctrl driver.
+	  Enable the Renesas RA series pinctrl driver with PFS secure register.
