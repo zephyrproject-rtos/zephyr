@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2017, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+ 
+&pinctrl {
+
+    uart1_default: uart1_default {
+        group2 {
+            pinmux = <UART1_RX_GPIO33>;
+            bias-pull-up;
+        };
+    };
+};
+
+&uart1 {
+    status = "okay";
+    current-speed = <9600>;
+    pinctrl-0 = <&uart1_default>;
+    pmsx003: pmsx003 {
+        compatible = "plantower,pms7003";
+        status = "okay";
+    };
+};
