@@ -132,7 +132,7 @@ static int mipi_csi2rx_get_fmt(const struct device *dev, enum video_endpoint_id 
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
-	if (fmt == NULL || ep != VIDEO_EP_OUT) {
+	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
@@ -175,7 +175,7 @@ static int mipi_csi2rx_get_caps(const struct device *dev, enum video_endpoint_id
 {
 	const struct mipi_csi2rx_config *config = dev->config;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
