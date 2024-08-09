@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 tests:
-  drivers.sensor.icm42688:
+  drivers.sensor.icm4268x:
     tags:
       - drivers
       - sensor
