@@ -238,6 +238,15 @@ config BT_SETTINGS_USE_PRINTK
 	  When not selected, Bluetooth settings will use a faster builtin
 	  function to encode the key string. The drawback is that if
 	  printk is enabled then the program memory footprint will be larger.
+
+config BT_SETTINGS_CCC_STORE_MAX
+	int "Max number of Client Characteristic Configuration (CCC)"
+	default 48
+	range 1 96
+	help
+	  Defines the max number of Client Characteristic Configuration (CCC)
+	  that the stack can handle
+
 endif # BT_SETTINGS
 
 config BT_FILTER_ACCEPT_LIST

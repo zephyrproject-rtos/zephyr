@@ -5677,7 +5677,11 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 #endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-#define CCC_STORE_MAX 48
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX)
+#define CCC_STORE_MAX CONFIG_BT_SETTINGS_CCC_STORE_MAX
+#else /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
+#define CCC_STORE_MAX 0
+#endif /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
 
 static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 					    const bt_addr_le_t *addr,
@@ -6076,6 +6080,12 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	LOG_DBG("Storing CCCs handle 0x%04x value 0x%04x", handle, cfg->value);
+
+	CHECKIF(save->count >= CCC_STORE_MAX) {
+		LOG_ERR("Too many Client Characteristic Configuration. "
+				"See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
+		return BT_GATT_ITER_STOP;
+	}
 
 	save->store[save->count].handle = handle;
 	save->store[save->count].value = cfg->value;
