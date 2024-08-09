@@ -1,0 +1,40 @@
+# Xilinx AXI DMA configuration options
+
+# Copyright (c) 2023 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_XILINX_AXI_DMA
+	bool "Xilinx AXI DMA LogiCORE IP driver"
+	default y
+	depends on DT_HAS_XLNX_AXI_DMA_1_00_A_ENABLED || DT_HAS_XLNX_ETH_DMA_ENABLED
+	help
+	  DMA driver for Xilinx AXI DMAs, usually found on FPGAs.
+
+
+config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+	bool "Disable data cache while accessing Scatter-Gather Descriptors."
+	depends on DMA_XILINX_AXI_DMA
+	default n
+	help
+		Disable dcache while operating on Scatter-Gather descriptors.
+		This allows the DMA to be used on architectures that do not provide
+		coherency for DMA accesses. If you are unsure whether you need this feature,
+		you should select n here.
+
+config DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX
+	int "Number of transfer descriptors allocated for transmission (TX)."
+	depends on DMA_XILINX_AXI_DMA
+	default 1024
+	help
+		The Xilinx AXI DMA uses a ring of in-memory DMA descriptors which reference
+		the buffers containing the network packets and control and status information.
+		Increasing the number of descriptors increases the amount of packets in flight,
+		which benefits performance, while increasing memory usage.
+
+config DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX
+	int "Number of transfer descriptors allocated for reception (RX)."
+	depends on DMA_XILINX_AXI_DMA
+	default 1
+	help
+		The AXI DMA driver currently allocates a single DMA descriptor for each RX transfer,
+		because transfers need to be started by the upstream driver.
