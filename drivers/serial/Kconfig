@@ -280,4 +280,6 @@ rsource "Kconfig.rzt2m"
 
 source "drivers/serial/Kconfig.renesas_ra8"
 
+source "drivers/serial/Kconfig.si32"
+
 endif # SERIAL

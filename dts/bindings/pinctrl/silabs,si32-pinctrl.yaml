@@ -1,0 +1,32 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silabs Si32 pinctrl node
+
+compatible: "silabs,si32-pinctrl"
+
+include:
+  - name: base.yaml
+
+child-binding:
+  description: Si32 pin controller pin group
+  child-binding:
+    description: |
+      Si32 pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - output-enable
+          - output-low
+          - output-high
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selections for this group.

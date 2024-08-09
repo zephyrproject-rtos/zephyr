@@ -2,9 +2,11 @@
 # Copyright (c) 2018 Gil Benkoe
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_SIM3
 
 rsource "*/Kconfig"
+
+if !SOC_FAMILY_SILABS_SIM3
 
 config SOC_GECKO_SDID
 	int
@@ -318,4 +320,6 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
 
-endif # SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+endif # !SOC_FAMILY_SILABS_SIM3
+
+endif # SOC_FAMILY_SILABS_S{0,1,2} || SOC_FAMILY_SILABS_SIM3
