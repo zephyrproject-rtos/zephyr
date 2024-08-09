@@ -3,7 +3,7 @@
 
 # Common fields for Nordic nRF family SPI peripherals
 
-include: [spi-controller.yaml, pinctrl-device.yaml]
+include: [spi-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
 
 properties:
   reg:
