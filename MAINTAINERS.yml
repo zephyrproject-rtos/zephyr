@@ -136,7 +136,7 @@ ARC arch:
     - arch/arc/
     - include/zephyr/arch/arc/
     - tests/arch/arc/
-    - dts/arc/synopsys/
+    - dts/arc/
     - dts/bindings/arc/
     - doc/hardware/arch/arc-support-status.rst
   labels:
