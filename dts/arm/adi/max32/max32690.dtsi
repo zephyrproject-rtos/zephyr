@@ -21,10 +21,6 @@
 	erase-block-size = <16384>;
 };
 
-&gcr {
-	/delete-property/ sysclk-prescaler;
-};
-
 &pinctrl {
 	reg = <0x40008000 0x3220>;
 
