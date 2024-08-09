@@ -59,6 +59,8 @@ extern "C" {
  */
 #define USB_STRING_DESCRIPTOR_LENGTH(s)	(sizeof(s) * 2)
 
+struct usbd_context;
+
 /** Used internally to keep descriptors in order
  * @cond INTERNAL_HIDDEN
  */
@@ -73,6 +75,7 @@ enum usbd_str_desc_utype {
 
 enum usbd_bos_desc_utype {
 	USBD_DUT_BOS_NONE,
+	USBD_DUT_BOS_VREQ,
 };
 /** @endcond */
 
@@ -91,11 +94,30 @@ struct usbd_str_desc_data {
 };
 
 /**
+ * USBD BOS platform descriptor with vendor request data
+ */
+struct usbd_vreq_desc_data {
+	/** Vendor code (bRequest value) */
+	uint8_t code;
+	/** Vendor request callback for device-to-host direction */
+	int (*to_host)(const struct usbd_context *const ctx,
+		       const struct usb_setup_packet *const setup,
+		       struct net_buf *const buf);
+	/** Vendor request callback for host-to-device direction */
+	int (*to_dev)(const struct usbd_context *const ctx,
+		      const struct usb_setup_packet *const setup,
+		      const struct net_buf *const buf);
+};
+
+/**
  * USBD BOS Device Capability descriptor data
  */
 struct usbd_bos_desc_data {
 	/** Descriptor usage type (not bDescriptorType) */
 	enum usbd_bos_desc_utype utype : 8;
+	union {
+		const struct usbd_vreq_desc_data vreq;
+	};
 };
 
 /**
@@ -201,8 +223,6 @@ struct usbd_status {
 	/** USB device speed */
 	enum usbd_speed speed : 2;
 };
-
-struct usbd_context;
 
 /**
  * @brief Callback type definition for USB device message delivery
@@ -616,6 +636,63 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 		.bDescriptorType = USB_DESC_BOS,				\
 	}
 
+/**
+ * @brief Define BOS Device Capability descriptor node with vendor request
+ *
+ * This macro defines a BOS descriptor, usually a platform capability, with a
+ * vendor request code. When the device stack receives a request with type
+ * Vendor and recipient Device, and bRequest value equal to the vendor request
+ * code, it will call the vendor callbacks depending on the direction of the
+ * request.
+ *
+ * Example callback code fragment:
+ *
+ * @code{.c}
+ * static int foo_to_host_cb(const struct usbd_context *const ctx,
+ *                           const struct usb_setup_packet *const setup,
+ *                           struct net_buf *const buf)
+ * {
+ *     if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+ *         uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
+ *
+ *         if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
+ *             return -ENOTSUP;
+ *         }
+ *
+ *         net_buf_add_mem(buf, &webusb_origin_url,
+ *                         MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+ *
+ *         return 0;
+ *     }
+ *
+ *     return -ENOTSUP;
+ * }
+ *
+ * USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,
+ *                           SAMPLE_WEBUSB_VENDOR_CODE, webusb_to_host_cb, NULL);
+ * @endcode
+ *
+ * @param name      Descriptor node identifier
+ * @param len       Device Capability descriptor length
+ * @param subset    Pointer to a Device Capability descriptor
+ * @param vcode     Vendor request code
+ * @param vto_host  Vendor callback for to-host direction request
+ * @param vto_dev   Vendor callback for to-device direction request
+ */
+#define USBD_DESC_BOS_VREQ_DEFINE(name, len, subset, vcode, vto_host, vto_dev)	\
+	static struct usbd_desc_node name = {					\
+		.bos = {							\
+			.utype = USBD_DUT_BOS_VREQ,				\
+			.vreq = {						\
+				.code = vcode,					\
+				.to_host = vto_host,				\
+				.to_dev = vto_dev,				\
+			},							\
+		},								\
+		.ptr = subset,							\
+		.bLength = len,							\
+		.bDescriptorType = USB_DESC_BOS,				\
+	}
 /**
  * @brief Define USB device support class data
  *

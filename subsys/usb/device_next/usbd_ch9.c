@@ -913,6 +913,55 @@ static int std_request_to_host(struct usbd_context *const uds_ctx,
 	return ret;
 }
 
+static struct usbd_desc_node *usbd_get_bos_vreq(struct usbd_context *const uds_ctx,
+						const uint8_t vcode)
+{
+	struct usbd_desc_node *desc_nd;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&uds_ctx->descriptors, desc_nd, node) {
+		if (desc_nd->bDescriptorType != USB_DESC_BOS) {
+			continue;
+		}
+
+		if  (desc_nd->bos.utype != USBD_DUT_BOS_VREQ) {
+			continue;
+		}
+
+		if (desc_nd->bos.vreq.code == vcode) {
+			return desc_nd;
+		}
+	}
+
+	return NULL;
+}
+
+static int vendor_device_request(struct usbd_context *const uds_ctx,
+				 struct net_buf *const buf)
+{
+	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct usbd_desc_node *desc_nd;
+
+	desc_nd = usbd_get_bos_vreq(uds_ctx, setup->bRequest);
+	if (desc_nd == NULL) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (reqtype_is_to_device(setup) && desc_nd->bos.vreq.to_dev != NULL) {
+		LOG_DBG("Vendor request 0x%02x to device", setup->bRequest);
+		errno = desc_nd->bos.vreq.to_dev(uds_ctx, setup, buf);
+		return 0;
+	}
+
+	if (reqtype_is_to_host(setup) && desc_nd->bos.vreq.to_host != NULL) {
+		LOG_DBG("Vendor request 0x%02x to host", setup->bRequest);
+		errno = desc_nd->bos.vreq.to_host(uds_ctx, setup, buf);
+		return 0;
+	}
+
+	return -ENOTSUP;
+}
+
 static int nonstd_request(struct usbd_context *const uds_ctx,
 			  struct net_buf *const dbuf)
 {
@@ -941,7 +990,7 @@ static int nonstd_request(struct usbd_context *const uds_ctx,
 			ret = usbd_class_control_to_host(c_nd->c_data, setup, dbuf);
 		}
 	} else {
-		errno = -ENOTSUP;
+		return vendor_device_request(uds_ctx, dbuf);
 	}
 
 	return ret;
