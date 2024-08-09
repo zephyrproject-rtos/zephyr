@@ -16,7 +16,7 @@ manifest:
       groups:
         - optional
     - name: lz4
-      revision: 8e303c264fc21c2116dc612658003a22e933124d
+      revision: 11b8a1e22fa651b524494e55d22b69d3d9cebcfd
       path: modules/lib/lz4
       remote: upstream
       groups:
