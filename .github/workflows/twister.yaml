@@ -188,6 +188,7 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -196,6 +197,15 @@ jobs:
           west forall -c 'git reset --hard HEAD'
 
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Setup Rust target environment
+        run: |
+          # Ensure that all supported targets have been downloaded.
+          # If the container is up-to-date, this won't do anything,
+          # but keeps updates to Zephyr from having to coordinate with
+          # container changes.
+          rustc --version
+          for target in `cat lib/rust/targets.txt`; do rustup target install $target; done
 
       - name: Check Environment
         run: |
