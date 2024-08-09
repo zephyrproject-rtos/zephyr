@@ -18,6 +18,8 @@ config ADC_TLA2021_INIT_PRIORITY
 	  Fine tune the priority for the driver initialization. Make sure it's
 	  higher (-> lower priority) than I2C_INIT_PRIORITY.
 
+if ADC_ASYNC
+
 config ADC_TLA2021_ACQUISITION_THREAD_PRIORITY
 	int "Priority for the data acquisition thread"
 	default 0
@@ -30,5 +32,7 @@ config ADC_TLA2021_ACQUISITION_THREAD_STACK_SIZE
 	help
 	  Stack size for the internal data acquisition thread. Requires room
 	  for I2C operations.
+
+endif # ADC_ASYNC
 
 endif # ADC_TLA2021
