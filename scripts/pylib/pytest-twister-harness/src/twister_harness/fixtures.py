@@ -46,6 +46,15 @@ def determine_scope(fixture_name, config):
 
 
 @pytest.fixture(scope=determine_scope)
+def unlaunched_dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
+    """Return device object - with logs connected, but not run"""
+    device_object.initialize_log_files(request.node.name)
+    try:
+        yield device_object
+    finally:  # to make sure we close all running processes execution
+        device_object.close()
+
+@pytest.fixture(scope=determine_scope)
 def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
     """Return launched device - with run application."""
     device_object.initialize_log_files(request.node.name)
