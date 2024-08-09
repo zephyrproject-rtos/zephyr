@@ -54,6 +54,8 @@ The following features are supported:
 +-----------+------------+-------------------------------------+
 | WDT       | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| BBRAM     | on-chip    | battery-backed ram                  |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr (at the moment)
 

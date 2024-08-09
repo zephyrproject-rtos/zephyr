@@ -155,3 +155,7 @@
 	pinctrl-0 = <&i2c8_clk_gpio70 &i2c8_dat_gpio71>;
 	pinctrl-names = "default";
 };
+
+&bbram {
+	status = "okay";
+};
