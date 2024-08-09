@@ -253,20 +253,6 @@ void SX126xAntSwOff(void)
 #endif
 }
 
-static void sx126x_set_tx_enable(int value)
-{
-#if HAVE_GPIO_TX_ENABLE
-	gpio_pin_set_dt(&dev_config.tx_enable, value);
-#endif
-}
-
-static void sx126x_set_rx_enable(int value)
-{
-#if HAVE_GPIO_RX_ENABLE
-	gpio_pin_set_dt(&dev_config.rx_enable, value);
-#endif
-}
-
 RadioOperatingModes_t SX126xGetOperatingMode(void)
 {
 	return dev_data.mode;
@@ -278,21 +264,15 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 
 	dev_data.mode = mode;
 
-	/* To avoid inadvertently putting the RF switch in an
-	 * undefined state, first disable the port we don't want to
-	 * use and then enable the other one.
-	 */
 	switch (mode) {
 	case MODE_TX:
-		sx126x_set_rx_enable(0);
-		sx126x_set_tx_enable(1);
+		sx126x_set_rf_switch(&dev_config, RF_SWITCH_TX);
 		break;
 
 	case MODE_RX:
 	case MODE_RX_DC:
 	case MODE_CAD:
-		sx126x_set_tx_enable(0);
-		sx126x_set_rx_enable(1);
+		sx126x_set_rf_switch(&dev_config, RF_SWITCH_RX);
 		break;
 
 	case MODE_SLEEP:
@@ -300,8 +280,7 @@ void SX126xSetOperatingMode(RadioOperatingModes_t mode)
 		sx126x_dio1_irq_disable(&dev_data);
 		__fallthrough;
 	default:
-		sx126x_set_rx_enable(0);
-		sx126x_set_tx_enable(0);
+		sx126x_set_rf_switch(&dev_config, RF_SWITCH_SLEEP);
 		break;
 	}
 }

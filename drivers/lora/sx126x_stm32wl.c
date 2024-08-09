@@ -50,6 +50,39 @@ void sx126x_dio1_irq_disable(struct sx126x_data *dev_data)
 	irq_disable(DT_INST_IRQN(0));
 }
 
+void sx126x_set_rf_switch(const struct sx126x_config *dev_config, enum sx126x_rf_switch mode)
+{
+	/* To avoid inadvertently putting the RF switch in an
+	 * undefined state, first disable the port we don't want to
+	 * use and then enable the other one.
+	 */
+
+#if HAVE_GPIO_RX_ENABLE
+	if (mode != RF_SWITCH_RX) {
+		gpio_pin_set_dt(&dev_config->rx_enable, 0);
+	}
+#endif
+
+#if HAVE_GPIO_TX_ENABLE
+	if (mode == RF_SWITCH_TX) {
+#if HAVE_PA_OUTPUT_SELECTABLE
+		gpio_pin_set_dt(&dev_config->tx_enable,
+				(pa_output == RFO_LP) ? 0 : 1);
+#else
+		gpio_pin_set_dt(&dev_config->tx_enable, 1);
+#endif
+	} else {
+		gpio_pin_set_dt(&dev_config->tx_enable, 0);
+	}
+#endif
+
+#if HAVE_GPIO_RX_ENABLE
+	if (mode == RF_SWITCH_RX) {
+		gpio_pin_set_dt(&dev_config->rx_enable, 1);
+	}
+#endif
+}
+
 void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time)
 {
 	uint8_t buf[2];

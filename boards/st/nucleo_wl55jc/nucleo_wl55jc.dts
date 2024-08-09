@@ -179,11 +179,11 @@ stm32_lp_tick_source: &lptim1 {
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V7>;
 		tcxo-power-startup-delay-ms = <5>;
 		/* High-power output is selected as a consequence of using
-		 * tx/rx-enable-gpio to control FE_CTRL1 and FE_CTRL2. Low-power
-		 * output would require both FE_CTRL1 and FE_CTRL2 to be high,
-		 * which is not currently supported by the driver.
+		 * tx/rx-enable-gpio to control FE_CTRL1 and FE_CTRL2.
+		 * Low-power output would require both FE_CTRL1 and FE_CTRL2 to be high.
 		 */
 		power-amplifier-output = "rfo-hp";
+		power-amplifier-output-selectable;
 		rfo-lp-max-power = <15>;
 		rfo-hp-max-power = <22>;
 	};
