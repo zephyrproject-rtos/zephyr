@@ -26,7 +26,9 @@ LOG_MODULE_REGISTER(qdec_nrfx, CONFIG_SENSOR_LOG_LEVEL);
 
 
 struct qdec_nrfx_data {
+	int32_t raw_acc;
 	int32_t acc;
+	int8_t overflow;
 	sensor_trigger_handler_t data_ready_handler;
 	const struct sensor_trigger *data_ready_trigger;
 };
@@ -48,7 +50,7 @@ static void accumulate(struct qdec_nrfx_data *data, int32_t acc)
 			((acc < 0) && (ACC_MIN - acc > data->acc));
 
 	if (!overflow) {
-		data->acc += acc;
+		data->raw_acc += acc;
 	}
 
 	irq_unlock(key);
@@ -66,9 +68,18 @@ static int qdec_nrfx_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (data->overflow) {
+		data->overflow = 0;
+		data->raw_acc = 0;
+		return -EOVERFLOW;
+	}
+
 	nrfx_qdec_accumulators_read(&config->qdec, &acc, &accdbl);
 
 	accumulate(data, acc);
+
+	data->acc = data->raw_acc;
+	data->raw_acc = 0;
 
 	return 0;
 }
@@ -88,7 +99,6 @@ static int qdec_nrfx_channel_get(const struct device *dev,
 
 	key = irq_lock();
 	acc = data->acc;
-	data->acc = 0;
 	irq_unlock(key);
 
 	val->val1 = (acc * FULL_ANGLE) / config->steps;
@@ -146,6 +156,10 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event, void *p_context)
 		if (handler) {
 			handler(dev, trig);
 		}
+		break;
+
+	case NRF_QDEC_EVENT_ACCOF:
+		dev_data->overflow = 1;
 		break;
 
 	default:
