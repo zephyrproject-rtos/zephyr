@@ -1305,6 +1305,8 @@ Release Notes:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - tomi-font
   files:
     - drivers/entropy/
     - include/zephyr/drivers/entropy.h
@@ -2571,25 +2573,6 @@ MAINTAINERS file:
     - "area: Process"
   description: >-
     Zephyr Maintainers File
-
-Mbed TLS:
-  status: maintained
-  maintainers:
-    - d3zd3z
-    - ceolin
-  collaborators:
-    - ithinuel
-    - valeriosetti
-  files:
-    - tests/crypto/mbedtls/
-    - tests/benchmarks/mbedtls/
-  labels:
-    - "area: Crypto / RNG"
-  description: >-
-    Mbed TLS module implementing the PSA Crypto API and TLS.
-  tests:
-    - benchmark.crypto.mbedtls
-    - crypto.mbedtls
 
 MCU Manager:
   status: maintained
@@ -4094,24 +4077,6 @@ TDK Sensors:
   tests:
     - sample.drivers.misc.timeaware_gpio
 
-TF-M Integration:
-  status: maintained
-  maintainers:
-    - d3zd3z
-  collaborators:
-    - Vge0rge
-    - ithinuel
-    - valeriosetti
-  files:
-    - samples/tfm_integration/
-    - modules/trusted-firmware-m/
-    - doc/services/tfm/
-  labels:
-    - "area: TF-M"
-  tests:
-    - trusted-firmware-m
-
-
 "Toolchain Integration":
   status: maintained
   maintainers:
@@ -4813,10 +4778,16 @@ West:
   collaborators:
     - ithinuel
     - valeriosetti
+    - tomi-font
   files:
     - modules/mbedtls/
+    - tests/crypto/mbedtls/
+    - tests/benchmarks/mbedtls/
   labels:
-    - "area: Crypto / RNG"
+    - "area: mbedTLS / PSA Crypto"
+  tests:
+    - benchmark.crypto.mbedtls
+    - crypto.mbedtls
 
 "West project: mcuboot":
   status: maintained
@@ -4980,10 +4951,16 @@ West:
   collaborators:
     - Vge0rge
     - ithinuel
+    - valeriosetti
+    - tomi-font
   files:
     - modules/trusted-firmware-m/
+    - samples/tfm_integration/
+    - doc/services/tfm/
   labels:
     - "area: TF-M"
+  tests:
+    - trusted-firmware-m
 
 "West project: tf-m-tests":
   status: maintained
@@ -5167,6 +5144,8 @@ Random:
   status: maintained
   maintainers:
     - ceolin
+  collaborators:
+    - tomi-font
   files:
     - subsys/random/
     - include/zephyr/random/
