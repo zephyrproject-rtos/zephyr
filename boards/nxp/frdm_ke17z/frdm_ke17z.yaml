@@ -11,6 +11,7 @@ toolchain:
 supported:
   - gpio
   - uart
+  - pwm
   - i2c
   - spi
   - dma
