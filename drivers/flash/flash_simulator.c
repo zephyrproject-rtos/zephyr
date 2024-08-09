@@ -16,6 +16,9 @@
 #include <zephyr/random/random.h>
 #include <zephyr/stats/stats.h>
 #include <string.h>
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+#include <zephyr/arch/common/semihost.h>
+#endif
 
 #ifdef CONFIG_ARCH_POSIX
 
@@ -148,7 +151,10 @@ static bool flash_erase_at_start;
 static bool flash_rm_at_exit;
 static bool flash_in_ram;
 #else
-#if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+static int flash_fd = -1;
+static char flash_erase_buf[FLASH_SIMULATOR_ERASE_UNIT];
+#elif DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
 #define FLASH_SIMULATOR_MREGION \
 	LINKER_DT_NODE_REGION_NAME( \
 	DT_PHANDLE(DT_PARENT(SOC_NV_FLASH_NODE), memory_region))
@@ -169,6 +175,43 @@ static const struct flash_parameters flash_sim_parameters = {
 #endif
 	},
 };
+
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+static int flash_semihost_erase(off_t offset, size_t len)
+{
+	if (semihost_seek(flash_fd, offset) < 0) {
+		return -EIO;
+	}
+
+	for (int i = offset; i < offset + len; i += FLASH_SIMULATOR_ERASE_UNIT) {
+
+		if (semihost_write(flash_fd, flash_erase_buf, FLASH_SIMULATOR_ERASE_UNIT) < 0) {
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
+static void flash_semihost_write_byte(off_t offset, uint8_t *data)
+{
+	semihost_seek(flash_fd, offset);
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	uint8_t tmp;
+
+	semihost_read(flash_fd, &tmp, 1);
+	semihost_seek(flash_fd, offset);
+#if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
+	tmp &= *data;
+#else
+	tmp |= *data;
+#endif
+	semihost_write(flash_fd, &tmp, 1);
+#else
+	semihost_write(flash_fd, data, 1);
+#endif /* CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE */
+}
+#endif
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
 				size_t len)
@@ -202,7 +245,12 @@ static int flash_sim_read(const struct device *dev, const off_t offset,
 
 	FLASH_SIM_STATS_INC(flash_sim_stats, flash_read_calls);
 
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+	semihost_seek(flash_fd, offset);
+	semihost_read(flash_fd, data, len);
+#else
 	memcpy(data, MOCK_FLASH(offset), len);
+#endif
 	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_read, len);
 
 #ifdef CONFIG_FLASH_SIMULATOR_SIMULATE_TIMING
@@ -231,6 +279,10 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 	FLASH_SIM_STATS_INC(flash_sim_stats, flash_write_calls);
 
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+	semihost_seek(flash_fd, offset);
+#endif
+
 #if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	/* check if any unit has been already programmed */
 	memset(buf, FLASH_SIMULATOR_ERASE_VALUE, sizeof(buf));
@@ -238,7 +290,14 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 	memcpy(buf, MOCK_FLASH(offset), sizeof(buf));
 #endif
 	for (uint32_t i = 0; i < len; i += FLASH_SIMULATOR_PROG_UNIT) {
+#if defined(CONFIG_FLASH_SIMULATOR_SEMIHOST)
+		uint8_t tmp[FLASH_SIMULATOR_PROG_UNIT];
+
+		semihost_read(flash_fd, tmp, sizeof(buf));
+		if (memcmp(buf, tmp, sizeof(buf))) {
+#else
 		if (memcmp(buf, MOCK_FLASH(offset + i), sizeof(buf))) {
+#endif
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
 			return -EIO;
@@ -274,6 +333,9 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif /* CONFIG_FLASH_SIMULATOR_STATS */
 
 		/* only pull bits to zero */
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+		flash_semihost_write_byte(offset + i, (uint8_t *)data + i);
+#else
 #if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 #if FLASH_SIMULATOR_ERASE_VALUE == 0xFF
 		*(MOCK_FLASH(offset + i)) &= *((uint8_t *)data + i);
@@ -282,7 +344,8 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 #endif
 #else
 		*(MOCK_FLASH(offset + i)) = *((uint8_t *)data + i);
-#endif
+#endif /* CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE */
+#endif /* CONFIG_FLASH_SIMULATOR_SEMIHOST */
 	}
 
 	FLASH_SIM_STATS_INCN(flash_sim_stats, bytes_written, len);
@@ -303,8 +366,11 @@ static void unit_erase(const uint32_t unit)
 				(unit * FLASH_SIMULATOR_ERASE_UNIT);
 
 	/* erase the memory unit by setting it to erase value */
-	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
-	       FLASH_SIMULATOR_ERASE_UNIT);
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+	flash_semihost_erase(unit_addr, FLASH_SIMULATOR_ERASE_UNIT);
+#else
+	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE, FLASH_SIMULATOR_ERASE_UNIT);
+#endif
 }
 
 static int flash_sim_erase(const struct device *dev, const off_t offset,
@@ -407,7 +473,25 @@ static int flash_mock_init(const struct device *dev)
 }
 
 #else
-#if DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+static int flash_mock_init(const struct device *dev)
+{
+	flash_fd = semihost_open(CONFIG_FLASH_SIMULATOR_SEMIHOST_FILENAME, SEMIHOST_OPEN_AB_PLUS);
+
+	if (flash_fd < 0) {
+		return -EIO;
+	}
+
+	memset(flash_erase_buf, FLASH_SIMULATOR_ERASE_VALUE, FLASH_SIMULATOR_ERASE_UNIT);
+
+#ifdef CONFIG_FLASH_SIMULATION_SEMIHOST_ERASE_AT_BOOT
+	if (flash_semihost_erase(FLASH_SIMULATOR_BASE_OFFSET, FLASH_SIMULATOR_FLASH_SIZE) < 0) {
+		return -EIO;
+	}
+#endif
+	return 0;
+}
+#elif DT_NODE_HAS_PROP(DT_PARENT(SOC_NV_FLASH_NODE), memory_region)
 static int flash_mock_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -489,7 +573,11 @@ void *z_impl_flash_simulator_get_memory(const struct device *dev,
 	ARG_UNUSED(dev);
 
 	*mock_size = FLASH_SIMULATOR_FLASH_SIZE;
+#ifdef CONFIG_FLASH_SIMULATOR_SEMIHOST
+	return &flash_fd;
+#else
 	return mock_flash;
+#endif
 }
 
 #ifdef CONFIG_USERSPACE
