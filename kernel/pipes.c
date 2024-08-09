@@ -811,7 +811,7 @@ size_t z_vrfy_k_pipe_write_avail(struct k_pipe *pipe)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_PIPE
-static int init_pipe_obj_core_list(void)
+int init_pipe_obj_core_list(void)
 {
 	/* Initialize pipe object type */
 
@@ -826,7 +826,4 @@ static int init_pipe_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_PIPE */

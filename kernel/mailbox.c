@@ -51,7 +51,7 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(void)
+int init_mbox_module(void)
 {
 	/* array of asynchronous message descriptors */
 	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
@@ -79,9 +79,10 @@ static int init_mbox_module(void)
 
 	return 0;
 }
-
-SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
+#else
+int init_mbox_module(void)
+{
+}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
 void k_mbox_init(struct k_mbox *mbox)
@@ -439,8 +440,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 }
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
-
-static int init_mailbox_obj_core_list(void)
+int init_mailbox_obj_core_list(void)
 {
 	/* Initialize mailbox object type */
 
@@ -455,7 +455,4 @@ static int init_mailbox_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_mailbox_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_MAILBOX */

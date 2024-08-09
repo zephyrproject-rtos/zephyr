@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/obj_core.h>
+#include <obj_core_init.h>
 
 static struct k_spinlock  lock;
 
@@ -285,3 +286,51 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 	return rv;
 }
 #endif /* CONFIG_OBJ_CORE_STATS */
+
+
+
+void init_obj_core(void)
+{
+#ifdef CONFIG_OBJ_CORE_SEM
+	init_sem_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_MUTEX
+	init_mutex_obj_core_list();
+#endif
+#if CONFIG_OBJ_CORE_MSGQ
+	init_msgq_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_FIFO
+	init_fifo_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_LIFO
+	init_lifo_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_STACK
+	init_stack_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_TIMER
+	init_timer_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_CONDVAR
+	init_condvar_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_MAILBOX
+	init_mailbox_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_PIPE
+	init_pipe_obj_core_list();
+#endif
+#ifdef CONFIG_OBJ_CORE_THREAD
+	init_thread_obj_core_list();
+#endif
+
+#ifdef CONFIG_OBJ_CORE_EVENT
+	init_event_obj_core_list();
+#endif
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+	init_cpu_obj_core_list();
+	init_kernel_obj_core_list();
+#endif
+}

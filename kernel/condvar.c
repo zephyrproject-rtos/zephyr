@@ -136,7 +136,7 @@ int z_vrfy_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-static int init_condvar_obj_core_list(void)
+int init_condvar_obj_core_list(void)
 {
 	/* Initialize condvar object type */
 
@@ -152,7 +152,4 @@ static int init_condvar_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_condvar_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */

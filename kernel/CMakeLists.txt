@@ -71,6 +71,7 @@ endif()
 if(CONFIG_MULTITHREADING)
 list(APPEND kernel_files
   idle.c
+  cpu.c
   mailbox.c
   msg_q.c
   mutex.c

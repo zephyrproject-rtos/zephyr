@@ -210,7 +210,7 @@ static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_SEM
-static int init_sem_obj_core_list(void)
+int init_sem_obj_core_list(void)
 {
 	/* Initialize semaphore object type */
 
@@ -225,7 +225,4 @@ static int init_sem_obj_core_list(void)
 
 	return 0;
 }
-
-SYS_INIT(init_sem_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_SEM */
