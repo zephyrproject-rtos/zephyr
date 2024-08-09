@@ -56,6 +56,11 @@
 #define _EXC_PENDSV_PRIO 0xff
 #define _EXC_PENDSV_PRIO_MASK Z_EXC_PRIO(_EXC_PENDSV_PRIO)
 
+#ifndef EXC_RETURN_FTYPE
+/* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
+#define EXC_RETURN_FTYPE (0x00000010UL)
+#endif
+
 #ifdef _ASMLANGUAGE
 GTEXT(z_arm_exc_exit);
 #else
@@ -118,6 +123,22 @@ struct arch_esf {
 };
 
 extern uint32_t z_arm_coredump_fault_sp;
+
+/* Returns the size of the exception frame pushed by hardware, in bytes. */
+static inline int z_arm_get_hw_esf_size(uint32_t exc_return)
+{
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	if ((exc_return & EXC_RETURN_FTYPE) == 0) {
+		/* Thread had used FPU instructions and Extended stack frame was pushed */
+		return sizeof(struct __basic_sf) + sizeof(struct __fpu_sf);
+	}
+#else
+	ARG_UNUSED(exc_return);
+#endif
+
+	/* Only Basic stack frame was pushed */
+	return sizeof(struct __basic_sf);
+}
 
 extern void z_arm_exc_exit(void);
 

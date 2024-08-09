@@ -1113,7 +1113,7 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
 		"ESF could not be retrieved successfully. Shall never occur.");
 
 #ifdef CONFIG_DEBUG_COREDUMP
-	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf);
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf) + z_arm_get_hw_esf_size(exc_return);
 #endif
 
 	reason = fault_handle(esf, fault, &recoverable);

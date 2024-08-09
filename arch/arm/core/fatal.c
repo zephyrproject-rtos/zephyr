@@ -101,11 +101,13 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
  *
  * @param esf exception frame
  * @param callee_regs Callee-saved registers (R4-R11)
+ * @param exc_return EXC_RETURN value stored in lr on exception entry
  */
-void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs)
+void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, uint32_t exc_return)
 {
 #if !(defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE))
 	ARG_UNUSED(callee_regs);
+	ARG_UNUSED(exc_return);
 #endif
 	/* Stacked R0 holds the exception reason. */
 	unsigned int reason = esf->basic.r0;
@@ -126,6 +128,10 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs)
 	}
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf) + z_arm_get_hw_esf_size(exc_return);
+#endif
 
 #if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
