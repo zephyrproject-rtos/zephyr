@@ -23,6 +23,7 @@ extern "C" {
 #define AD559X_REG_GPIO_INPUT_EN  0x0AU
 #define AD559X_REG_PD_REF_CTRL    0x0BU
 
+#define AD559X_DAC_RANGE BIT(4)
 #define AD559X_ADC_RANGE BIT(5)
 #define AD559X_EN_REF    BIT(9)
 

@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(dac_ad559x, CONFIG_DAC_LOG_LEVEL);
 
 struct dac_ad559x_config {
 	const struct device *mfd_dev;
+	bool range_double;
 };
 
 struct dac_ad559x_data {
@@ -88,6 +89,13 @@ static int dac_ad559x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->range_double) {
+		ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_GEN_CTRL, AD559X_DAC_RANGE);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ret = mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_PD_REF_CTRL, AD559X_EN_REF);
 	if (ret < 0) {
 		return ret;
@@ -99,6 +107,7 @@ static int dac_ad559x_init(const struct device *dev)
 #define DAC_AD559X_DEFINE(inst)                                                                    \
 	static const struct dac_ad559x_config dac_ad559x_config##inst = {                          \
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                    \
+		.range_double = DT_INST_PROP_OR(inst, range_double, false),                        \
 	};                                                                                         \
                                                                                                    \
 	struct dac_ad559x_data dac_ad559x_data##inst;                                              \
