@@ -46,6 +46,9 @@ west-commands:
       - name: attach
         class: Attach
         help: interactively debug a board
+      - name: rtt
+        class: Rtt
+        help: open an rtt shell
   - file: scripts/west_commands/export.py
     commands:
       - name: zephyr-export
