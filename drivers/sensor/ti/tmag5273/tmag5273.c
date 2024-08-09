@@ -65,6 +65,10 @@ struct tmag5273_config {
 
 	struct gpio_dt_spec int_gpio;
 
+	struct gpio_dt_spec supply_gpio; /** VCC for delayed startup */
+	bool i2c_update;             /** if true, i2c address needs to be updated after startup */
+	uint8_t i2c_startup_address; /** startup address of one device */
+
 #ifdef CONFIG_CRC
 	bool crc_enabled;
 #endif
@@ -161,6 +165,48 @@ static int tmag5273_check_device_status(const struct tmag5273_config *drv_cfg,
 	}
 
 	return -EIO;
+}
+
+/**
+ * @brief checks if the manufacturer id is matching with the expected value
+ *
+ * @param i2c i2c handle
+ * @param print_log activate log printing if @ref CONFIG_LOG is set
+ *
+ * @retval 0 on success
+ * @retval -EIO register value could not be read
+ * @retval -EINVAL invalid read value
+ */
+static int tmag5273_check_manufacturer_id(const struct i2c_dt_spec *i2c, const bool print_log)
+{
+	uint8_t retval;
+	uint8_t regdata;
+
+	retval = i2c_reg_read_byte_dt(i2c, TMAG5273_REG_MANUFACTURER_ID_LSB, &regdata);
+	if (retval < 0) {
+		return -EIO;
+	}
+
+	if (regdata != TMAG5273_MANUFACTURER_ID_LSB) {
+		if (print_log) {
+			LOG_ERR("unexpected manufacturer id LSB 0x%X", regdata);
+		}
+		return -EINVAL;
+	}
+
+	retval = i2c_reg_read_byte_dt(i2c, TMAG5273_REG_MANUFACTURER_ID_MSB, &regdata);
+	if (retval < 0) {
+		return -EIO;
+	}
+
+	if (regdata != TMAG5273_MANUFACTURER_ID_MSB) {
+		if (print_log) {
+			LOG_ERR("unexpected manufacturer id MSB 0x%X", regdata);
+		}
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 /**
@@ -1088,12 +1134,45 @@ static int tmag5273_init(const struct device *dev)
 {
 	const struct tmag5273_config *drv_cfg = dev->config;
 	struct tmag5273_data *drv_data = dev->data;
+
 	int retval;
 	uint8_t regdata;
+
+	/* device needs to be powered on */
+	if (gpio_is_ready_dt(&drv_cfg->supply_gpio)) {
+		retval = gpio_pin_configure_dt(&drv_cfg->supply_gpio, GPIO_OUTPUT);
+		if (retval < 0) {
+			LOG_ERR("could not activate sensor %d", retval);
+			return -EIO;
+		}
+
+		retval = gpio_pin_set_dt(&drv_cfg->supply_gpio, 1);
+		if (retval < 0) {
+			LOG_ERR("could not activate sensor %d", retval);
+			return -EIO;
+		}
+
+		k_usleep(TMAG5273_T_STARTUP_US);
+	}
 
 	if (!i2c_is_ready_dt(&drv_cfg->i2c)) {
 		LOG_ERR("could not get pointer to TMAG5273 I2C device");
 		return -ENODEV;
+	}
+
+	if (drv_cfg->i2c_update && (tmag5273_check_manufacturer_id(&drv_cfg->i2c, false) < 0)) {
+		struct i2c_dt_spec i2c_start = drv_cfg->i2c;
+
+		i2c_start.addr = drv_cfg->i2c_startup_address;
+
+		regdata = TMAG5273_I2C_ADDRESS_UPDATE_ENABLE |
+			  FIELD_PREP(TMAG5273_I2C_ADDRESS_MSK, drv_cfg->i2c.addr);
+
+		retval = i2c_reg_write_byte_dt(&i2c_start, TMAG5273_REG_I2C_ADDRESS, regdata);
+		if (retval < 0) {
+			LOG_ERR("error setting I2C_ADDRESS ");
+			return -EIO;
+		}
 	}
 
 	if (drv_cfg->trigger_conv_via_int) {
@@ -1117,25 +1196,9 @@ static int tmag5273_init(const struct device *dev)
 
 	LOG_DBG("operation mode: %d", (int)FIELD_GET(TMAG5273_OPERATING_MODE_MSK, regdata));
 
-	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MANUFACTURER_ID_LSB, &regdata);
+	retval = tmag5273_check_manufacturer_id(&drv_cfg->i2c, true);
 	if (retval < 0) {
-		return -EIO;
-	}
-
-	if (regdata != TMAG5273_MANUFACTURER_ID_LSB) {
-		LOG_ERR("unexpected manufacturer id LSB 0x%X", regdata);
-		return -EINVAL;
-	}
-
-	retval = i2c_reg_read_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MANUFACTURER_ID_MSB, &regdata);
-	if (retval < 0) {
-		LOG_ERR("could not read MSB of manufacturer id %d", retval);
-		return -EIO;
-	}
-
-	if (regdata != TMAG5273_MANUFACTURER_ID_MSB) {
-		LOG_ERR("unexpected manufacturer id MSB 0x%X", regdata);
-		return -EINVAL;
+		return retval;
 	}
 
 	(void)tmag5273_check_device_status(drv_cfg, &regdata);
@@ -1223,6 +1286,9 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 	BUILD_ASSERT(!DT_INST_PROP(inst, trigger_conversion_via_int) ||                            \
 			     DT_INST_NODE_HAS_PROP(inst, int_gpios),                               \
 		     "trigger-conversion-via-int requires int-gpios to be defined");               \
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(inst, i2c_startup_address) ||                          \
+			     ((uint8_t)DT_INST_PROP_OR(inst, i2c_startup_address, 0) < 0x7F),      \
+		     "invalid i2c startup address");                                               \
 	static const struct tmag5273_config tmag5273_driver_cfg##inst = {                          \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.mag_channel = DT_INST_PROP(inst, axis),                                           \
@@ -1240,6 +1306,9 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 		.low_noise_mode = DT_INST_PROP(inst, low_noise),                                   \
 		.ignore_diag_fail = DT_INST_PROP(inst, ignore_diag_fail),                          \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
+		.supply_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}),                  \
+		.i2c_update = DT_INST_NODE_HAS_PROP(inst, i2c_startup_address),                    \
+		.i2c_startup_address = DT_INST_PROP_OR(inst, i2c_startup_address, 0),              \
 		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};        \
 	static struct tmag5273_data tmag5273_driver_data##inst;                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,       \
