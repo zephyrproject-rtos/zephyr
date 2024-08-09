@@ -101,7 +101,7 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 #if defined(CONFIG_BT_HAS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_HAP);
 #endif /* CONFIG_BT_HAS */
-#if defined(CONFIG_BT_TBS) || defined(CONFIG_BT_GTBS)
+#if defined(CONFIG_BT_TBS)
 	tester_set_bit(rp->data, BTP_SERVICE_ID_TBS);
 #endif /*CONFIG_BT_TBS */
 #if defined(CONFIG_BT_TMAP)
@@ -235,7 +235,7 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_hap();
 		break;
 #endif /* CONFIG_BT_HAS */
-#if defined(CONFIG_BT_TBS) || defined(CONFIG_BT_GTBS)
+#if defined(CONFIG_BT_TBS)
 	case BTP_SERVICE_ID_TBS:
 		status = tester_init_tbs();
 		break;
