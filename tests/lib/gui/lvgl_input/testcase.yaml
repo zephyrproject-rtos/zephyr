@@ -1,0 +1,12 @@
+common:
+  tags:
+    - display
+    - gui
+tests:
+  libraries.gui.lvgl_input:
+    platform_allow:
+      - native_posix/native/64
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim

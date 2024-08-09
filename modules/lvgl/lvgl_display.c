@@ -129,11 +129,53 @@ void lvgl_flush_display(struct lvgl_display_flush *request)
 	k_yield();
 #else
 	/* Write directly to the display */
-	struct lvgl_disp_data *data =
-		(struct lvgl_disp_data *)request->disp_drv->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)request->disp_drv->user_data;
 
-	display_write(data->display_dev, request->x, request->y,
-		      &request->desc, request->buf);
+	display_write(data->display_dev, request->x, request->y, &request->desc, request->buf);
 	lv_disp_flush_ready(request->disp_drv);
 #endif
+}
+
+int lvgl_reload_display_capabilities(void)
+{
+	lv_disp_t *disp = lv_disp_get_next(NULL);
+	struct lvgl_disp_data *disp_data = NULL;
+
+	if (!disp) {
+		return -EINVAL;
+	}
+
+	while (disp) {
+		if (disp->driver == NULL) {
+			continue;
+		}
+
+		disp_data = (struct lvgl_disp_data *)disp->driver->user_data;
+		if (disp_data == NULL) {
+			continue;
+		}
+
+		display_get_capabilities(disp_data->display_dev, &disp_data->cap);
+
+		switch (disp_data->cap.current_orientation) {
+		case DISPLAY_ORIENTATION_NORMAL:
+			disp->driver->rotated = LV_DISP_ROT_NONE;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_90:
+			disp->driver->rotated = LV_DISP_ROT_90;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_180:
+			disp->driver->rotated = LV_DISP_ROT_180;
+			break;
+		case DISPLAY_ORIENTATION_ROTATED_270:
+			disp->driver->rotated = LV_DISP_ROT_270;
+			break;
+		default:
+			return -EINVAL;
+		}
+
+		disp = lv_disp_get_next(disp);
+	}
+
+	return 0;
 }
