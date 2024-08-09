@@ -129,9 +129,9 @@ ARC arch:
   status: maintained
   maintainers:
     - ruuddw
+    - evgeniy-paltsev
   collaborators:
     - abrodkin
-    - evgeniy-paltsev
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
@@ -3346,9 +3346,9 @@ Synopsys Platforms:
   status: maintained
   maintainers:
     - ruuddw
+    - evgeniy-paltsev
   collaborators:
     - abrodkin
-    - evgeniy-paltsev
   files:
     - soc/snps/
     - boards/snps/
