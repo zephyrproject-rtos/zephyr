@@ -65,10 +65,10 @@ description: |
 
     examples for andes_v5_ae350 DMA instance
      dma0: dma0@f0c00000 {
-         compatible = "andestech,atcdmac300";
+         compatible = "andestech,atcdmac100";
          ...
          dma-channels = <8>;
-         dma-requests = <16>;
+         dma-requests = <32>;
          status = "disabled";
          label = "DMA_0";
         };
