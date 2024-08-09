@@ -175,6 +175,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 			.freq = 24000000U,				\
 			.flags = 0,					\
 			.channels = 0U,					\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
 		},							\
 		.timer = ((volatile struct timer_cmsdk_apb *)DT_INST_REG_ADDR(inst)), \
 		.timer_config_func = timer_cmsdk_apb_config_##inst,	\
