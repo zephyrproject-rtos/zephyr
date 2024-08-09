@@ -64,6 +64,17 @@ else() # Linux.x86_64
     check_set_compiler_property(APPEND PROPERTY fpsse2 "SHELL:-msse2 -mfpmath=sse")
     zephyr_compile_options($<TARGET_PROPERTY:compiler,fpsse2>)
     target_compile_options(native_simulator INTERFACE "$<TARGET_PROPERTY:compiler,fpsse2>")
+
+    # Let's request from the host C library (glibc) that time_t be a 64bit type for x86 32bit builds
+    # so we avoid the year 2038 issue.
+    # https://sourceware.org/glibc/wiki/Y2038ProofnessDesign
+    if (CONFIG_ARCH_POSIX_64BIT_TIME_T)
+      if (CONFIG_NATIVE_APPLICATION)
+        zephyr_compile_options(-D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+      else()
+        target_compile_options(native_simulator INTERFACE -D_TIME_BITS=64 -D_FILE_OFFSET_BITS=64)
+      endif()
+    endif()
   endif ()
 endif()
 
