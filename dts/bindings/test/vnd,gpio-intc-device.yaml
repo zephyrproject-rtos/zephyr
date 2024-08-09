@@ -25,5 +25,5 @@ gpio-cells:
   - flags
 
 interrupt-cells:
-  - pin
-  - flags
+  - irq
+  - priority

@@ -215,6 +215,8 @@
 			interrupt-controller;
 			#interrupt-cells = <0x2>;
 			status = "okay";
+			interrupts = <12 0>;
+			interrupt-parent = <&test_cpu_intc>;
 		};
 
 		test_i2c: i2c@11112222 {
