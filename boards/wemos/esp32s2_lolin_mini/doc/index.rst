@@ -74,19 +74,43 @@ application.
    :board: esp32s2_lolin_mini
    :goals: flash
 
-Open a serial port using e.g. screen
+Perform the needed connections (see: Helper hardware connections section)
+to see :ref:`hello_world` output on the screen and open a serial port using e.g. screen:
 
 .. code-block:: shell
 
    screen /dev/ttyUSB0 115200
 
+Or using espressif monitor
+
+.. code-block:: shell
+
+   west espressif monitor
+
+
 After the board has been manually reset and booted, you should see the following
-message in the monitor:
+message in the monitor (see: Hardware Connections section)
 
 .. code-block:: console
 
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! esp32s2_lolin_mini
+
+Helper Hardware connections
+---------------------------
+
+.. warning::
+
+   To this date esp32s2 SoC does not possess USB CDC-ACM support in zephyr.
+   By default zephyr logs are redirected to UART0 through pins 16 and 17)
+
+The following image depicts generic connections from Wemos ESP32-S2 Lolin Mini
+UART0 port to a UART-TTL converter to allow log monitoring:
+
+.. figure:: img/wemos_esp32s2_mini_uart_connection.png
+        :align: center
+        :alt: ESP32-S2 LOLIN MINI UART CONNECTION
+
 
 References
 **********
