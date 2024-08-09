@@ -28,7 +28,7 @@
 #endif
 
 /*
- * Base-64 encoding is typically done by lookup into a 64-byte static
+ * Base64URL encoding is typically done by lookup into a 64-byte static
  * array.  As an experiment, lets look at both code size and time for
  * one that does the character encoding computationally.  Like the
  * array version, this doesn't do bounds checking, and assumes the
