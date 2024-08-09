@@ -56,6 +56,7 @@ config LORAWAN_APP_CLOCK_SYNC_PERIODICITY
 
 config LORAWAN_FRAG_TRANSPORT
 	bool "Fragmented Data Block Transport"
+	depends on FLASH_HAS_PAGE_LAYOUT
 	select FLASH_MAP
 	select FLASH_PAGE_LAYOUT
 	select IMG_MANAGER
