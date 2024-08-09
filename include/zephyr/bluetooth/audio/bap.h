@@ -1020,6 +1020,19 @@ struct bt_bap_unicast_server_cb {
 };
 
 /**
+ * @brief Configures the number of ASEs to be used for a direction.
+ *
+ * Has to be called before any call to bt_bap_unicast_server_register_cb.
+ *
+ * @param dir   Direction of the ASE.
+ * @param count Number of ASEs to use. Has to be between 0 and
+ *              CONFIG_BT_ASCS_ASE_SNK_COUNT/CONFIG_BT_ASCS_ASE_SRC_COUNT
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_unicast_server_set_ase_count(enum bt_audio_dir dir, uint8_t count);
+
+/**
  * @brief Register unicast server callbacks.
  *
  * Only one callback structure can be registered, and attempting to

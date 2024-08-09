@@ -252,6 +252,13 @@ struct bt_ascs_cp_rsp {
 	struct bt_ascs_cp_ase_rsp ase_rsp[0];
 } __packed;
 
+struct bt_ascs_register_param {
+	/* Sink Count to register */
+	uint8_t sink_ase_count;
+	/* Source Count to register */
+	uint8_t source_ase_count;
+};
+
 static inline const char *bt_ascs_op_str(uint8_t op)
 {
 	switch (op) {
@@ -356,5 +363,8 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+
+int bt_ascs_service_register(const struct bt_ascs_register_param *param);
+int bt_ascs_service_unregister(void);
 
 #endif /* BT_ASCS_INTERNAL_H */
