@@ -257,6 +257,7 @@ static void tx_work_handler(struct k_work *work)
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
 	size_t len;
+	int ret;
 
 	if (usb_transfer_is_busy(ep)) {
 		LOG_DBG("Transfer is ongoing");
@@ -275,8 +276,6 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	dev_data->tx_ready = false;
-
 	/*
 	 * Transfer less data to avoid zero-length packet. The application
 	 * running on the host may conclude that there is no more data to be
@@ -289,10 +288,15 @@ static void tx_work_handler(struct k_work *work)
 
 	LOG_DBG("Got %zd bytes from ringbuffer send to ep %x", len, ep);
 
-	usb_transfer(ep, data, len, USB_TRANS_WRITE,
-		     cdc_acm_write_cb, dev_data);
+	ret = usb_transfer(ep, data, len, USB_TRANS_WRITE,
+			   cdc_acm_write_cb, dev_data);
+	if (ret != 0) {
+		(void)ring_buf_get_finish(dev_data->tx_ringbuf, 0);
+		return;
+	}
 
-	ring_buf_get_finish(dev_data->tx_ringbuf, len);
+	dev_data->tx_ready = false;
+	(void)ring_buf_get_finish(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(uint8_t ep, int size, void *priv)
@@ -622,13 +626,9 @@ static void cdc_acm_irq_tx_disable(const struct device *dev)
  */
 static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	struct cdc_acm_dev_data_t *const data = dev->data;
 
-	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
-		return 1;
-	}
-
-	return 0;
+	return data->tx_irq_ena && data->configured && data->tx_ready && !data->suspended;
 }
 
 /**
@@ -668,13 +668,9 @@ static void cdc_acm_irq_rx_disable(const struct device *dev)
  */
 static int cdc_acm_irq_rx_ready(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	struct cdc_acm_dev_data_t *const data = dev->data;
 
-	if (dev_data->rx_ready) {
-		return 1;
-	}
-
-	return 0;
+	return data->rx_irq_ena && data->rx_ready;
 }
 
 /**
@@ -686,15 +682,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
  */
 static int cdc_acm_irq_is_pending(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
-
-	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
-		return 1;
-	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return cdc_acm_irq_rx_ready(dev) || cdc_acm_irq_tx_ready(dev);
 }
 
 /**
