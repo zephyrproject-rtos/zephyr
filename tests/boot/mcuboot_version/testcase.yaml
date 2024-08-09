@@ -1,0 +1,12 @@
+common:
+  platform_allow:
+    - mps2/an385
+  integration_platforms:
+    - mps2/an385
+tests:
+  bootloader.mcuboot.version:
+    tags: mcuboot
+  bootloader.mcuboot.version.git:
+    tags: mcuboot
+    extra_configs:
+      - CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION_GIT_BUILD=y

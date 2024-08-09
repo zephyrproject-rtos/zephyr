@@ -103,12 +103,21 @@ config MCUBOOT_ENCRYPTION_KEY_FILE
 
 config MCUBOOT_IMGTOOL_SIGN_VERSION
 	string "Version to pass to imgtool when signing"
+	default "$(VERSION_MAJOR).$(VERSION_MINOR).$(PATCHLEVEL)+$(APP_GIT_COMMIT_HASH_UINT32)" \
+		if MCUBOOT_IMGTOOL_SIGN_VERSION_GIT_BUILD && "$(VERSION_MAJOR)" != ""
 	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
 	default "0.0.0+0"
 	help
 	  When signing with imgtool then this setting will be passed as version
 	  argument to the tool.
 	  The format is major.minor.revision+build.
+
+config MCUBOOT_IMGTOOL_SIGN_VERSION_GIT_BUILD
+	bool "Set the build version from the git commit hash, not VERSION_TWEAK"
+	help
+	  Automatically determine the git commit hash of the application directory
+	  and set the image build number such that it matches the first 8
+	  characters of the commit hash, converted to decimal.
 
 config MCUBOOT_IMGTOOL_OVERWRITE_ONLY
 	bool "Use overwrite-only instead of swap upgrades"

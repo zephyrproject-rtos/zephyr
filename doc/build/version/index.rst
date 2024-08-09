@@ -110,6 +110,9 @@ following defines are available:
 |                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
 |                             |                   | ``VERSION_TWEAK`` |br|                               |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_GIT_COMMIT_HASH_SHORT   | Numerical         | First 8 hex characters of ``git rev-parse HEAD``     | 0x2c85d922              |
+|                             |                   | from application repository                          |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 | APP_BUILD_VERSION           | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca |
 |                             |                   | from application repository)                         |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
@@ -195,3 +198,7 @@ Use in MCUboot-supported applications
 No additional configuration needs to be done to the target application so long as it is configured
 to support MCUboot and a signed image is generated, the version information will be automatically
 included in the image data.
+
+If desired, the build value (``APP_TWEAK`` in the above) can be automatically populated from the
+git commit hash of the application directory, overriding the value of ``APP_TWEAK``, by enabling
+:kconfig:option:`MCUBOOT_IMGTOOL_SIGN_VERSION_GIT_BUILD`.
