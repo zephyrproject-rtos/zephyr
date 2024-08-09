@@ -72,6 +72,10 @@ struct arch_esf {
 	unsigned long a7;		/* function argument */
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
+#ifdef CONFIG_RISCV_HAS_CLIC
+	unsigned long mcause;		/* machine cause register */
+#endif /* CONFIG_RISCV_HAS_CLIC */
+
 	unsigned long mepc;		/* machine exception program counter */
 	unsigned long mstatus;	/* machine status register */
 

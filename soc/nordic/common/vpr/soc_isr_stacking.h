@@ -34,7 +34,7 @@
 		unsigned long a0;                                                                  \
 		unsigned long a1;                                                                  \
 		unsigned long mepc;                                                                \
-		unsigned long _mcause;                                                             \
+		unsigned long mcause;                                                              \
 	} __aligned(16);
 
 #else /* DT_PROP(VPR_CPU, nordic_bus_width) == 32 */
@@ -56,7 +56,7 @@
 		unsigned long a2;                                                                  \
 		unsigned long a1;                                                                  \
 		unsigned long a0;                                                                  \
-		unsigned long _mcause;                                                             \
+		unsigned long mcause;                                                              \
 		unsigned long mepc;                                                                \
 	} __aligned(16);
 
