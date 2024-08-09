@@ -442,12 +442,6 @@ static int transceive(const struct device *dev,
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&spi->ctx) && !ret) {
-		ret = spi->ctx.recv_frames;
-	}
-#endif /* CONFIG_SPI_SLAVE */
-
 out:
 	spi_context_release(&spi->ctx, ret);
 
