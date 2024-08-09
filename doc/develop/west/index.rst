@@ -37,6 +37,7 @@ each command.
    workspaces.rst
    manifest.rst
    config.rst
+   alias.rst
    extensions.rst
    build-flash-debug.rst
    sign.rst
