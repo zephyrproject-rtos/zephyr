@@ -1,0 +1,66 @@
+# Nordic Semiconductor nRF9280 MCU line
+
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Similarly to other nRF91 family products, the nRF9280 is a
+# SiP (System-in-Package) consisting of the nRF9230 SoC and
+# additional components such as PMIC and others.
+# Additionally, the nRF9230 contains several CPUs, similarly
+# to the nRF54h20 SoC.
+#
+# Like it's done for the nRF91 family, let the nRF9280 SiP
+# be represented by nRF9280 "SoC" in top-level SoC definitions
+# and user-configurable Kconfigs, since that's what visible to users.
+#
+# Keep a nRF9230 Kconfig for the SoC under the hood, complete with
+# the engineering version, because that's what the MDK/nrfx expects
+# as build target, and so that its definition can also be re-used
+# for other SiPs.
+
+config SOC_NRF9230_ENGB
+	bool
+	select SOC_SERIES_NRF92X
+
+config SOC_NRF9230_ENGB_CPUAPP
+	bool
+	select SOC_NRF9230_ENGB
+
+config SOC_NRF9230_ENGB_CPURAD
+	bool
+	select SOC_NRF9230_ENGB
+
+config SOC_NRF9230_ENGB_CPUPPR
+	bool
+	select SOC_NRF9230_ENGB
+
+# The SiP selects the actual SoC complete with engineer revision and appropriate CPU
+config SOC_NRF9280
+	bool
+	select SOC_NRF9230_ENGB_CPUAPP if SOC_NRF9280_CPUAPP
+	select SOC_NRF9230_ENGB_CPURAD if SOC_NRF9280_CPURAD
+	select SOC_NRF9230_ENGB_CPUPPR if SOC_NRF9280_CPUPPR
+	help
+	  nRF9280 SiP
+
+# The CPU select the "SoC" (SiP)
+config SOC_NRF9280_CPUAPP
+	bool
+	select SOC_NRF9280
+	help
+	  nRF9280 CPUAPP
+
+config SOC_NRF9280_CPURAD
+	bool
+	select SOC_NRF9280
+	help
+	  nRF9280 CPURAD
+
+config SOC_NRF9280_CPUPPR
+	bool
+	select SOC_NRF9280
+	help
+	  nRF9280 CPUPPR
+
+config SOC
+	default "nrf9280" if SOC_NRF9280
