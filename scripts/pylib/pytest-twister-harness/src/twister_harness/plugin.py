@@ -121,6 +121,12 @@ def pytest_addoption(parser: pytest.Parser):
         '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
         help='Twister fixture supported by this platform. May be given multiple times.'
     )
+    twister_harness_group.addoption(
+        '--skip-flash',
+        default=False,
+        help='Skip flashing.',
+        action='store_true',
+    )
 
 
 def pytest_configure(config: pytest.Config):

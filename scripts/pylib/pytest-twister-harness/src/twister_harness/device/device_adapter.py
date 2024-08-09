@@ -78,7 +78,10 @@ class DeviceAdapter(abc.ABC):
         self._device_run.set()
         self._start_reader_thread()
 
-        if self.device_config.flash_before:
+        if self.device_config.skip_flash:
+            logger.info('Skip flashing')
+            self.connect()
+        elif self.device_config.flash_before:
             # For hardware devices with shared USB or software USB, connect after flashing.
             # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
             self._flash_and_run()
