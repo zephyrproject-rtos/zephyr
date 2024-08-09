@@ -23,6 +23,7 @@ volatile uintptr_t riscv_cpu_boot_flag;
 volatile void *riscv_cpu_sp;
 
 extern void __start(void);
+extern void z_soc_per_core_init(void);
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
 void soc_interrupt_init(void);
@@ -75,10 +76,14 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_PER_CORE_INIT
+	z_soc_per_core_init();
+#endif
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }
 
-#ifdef CONFIG_SMP
+/* IPI */
+#if defined(CONFIG_SMP) && !defined(CONFIG_RISCV_SOC_HAS_CUSTOM_SMP_IPI)
 
 #define MSIP_BASE 0x2000000UL
 #define MSIP(hartid) ((volatile uint32_t *)MSIP_BASE)[hartid]
@@ -102,11 +107,6 @@ void arch_sched_directed_ipi(uint32_t cpu_bitmap)
 	}
 
 	arch_irq_unlock(key);
-}
-
-void arch_sched_broadcast_ipi(void)
-{
-	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
 }
 
 #ifdef CONFIG_FPU_SHARING
@@ -172,4 +172,13 @@ int arch_smp_init(void)
 
 	return 0;
 }
-#endif /* CONFIG_SMP */
+
+#endif /* CONFIG_SMP && !CONFIG_RISCV_SOC_HAS_CUSTOM_SMP_IPI */
+
+#ifdef CONFIG_SMP
+void arch_sched_broadcast_ipi(void)
+{
+	arch_sched_directed_ipi(IPI_ALL_CPUS_MASK);
+}
+#endif
+/* CONFIG_SMP */
