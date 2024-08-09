@@ -1,0 +1,93 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for video interfaces.
+
+include: base.yaml
+
+properties:
+  bus-type:
+    type: int
+    enum:
+      - 1 # Parallel
+      - 2 # MIPI CSI-2 D-PHY
+      - 3 # MIPI CSI-2 C-PHY
+      - 4 # MIPI CSI-1
+    description:
+      Data bus type.
+
+  bus-width:
+    type: int
+    maximum: 64
+    description:
+      Number of data lines actively used, valid for the parallel busses.
+
+  data-shift:
+    type: int
+    maximum: 64
+    description:
+      On the parallel data busses, if bus-width is used to specify the number of
+      data lines, data-shift can be used to specify which data lines are used,
+      e.g. "bus-width=<8>; data-shift=<2>;" means, that lines 9:2 are used.
+
+  hsync-active:
+    type: int
+    enum:
+      - 0
+      - 1
+    description:
+      Active state of the HSYNC signal, 0/1 for LOW/HIGH respectively.
+
+  vsync-active:
+    type: int
+    enum:
+      - 0
+      - 1
+    description:
+      Active state of the VSYNC signal, 0/1 for LOW/HIGH respectively. Note,
+      that if HSYNC and VSYNC polarities are not specified, embedded
+      synchronization may be required, where supported.
+
+  pclk-sample:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+    description:
+      Sample data on falling (0), rising (1) or both (2) edges of the pixel
+      clock signal.
+
+  data-lanes:
+    type: int
+    minItems: 1
+    maxItems: 8
+    uniqueItems: true
+    items:
+      # Assume up to 9 physical lane indices
+      maximum: 8
+    description: |
+      An array of physical data lane indexes. Position of an entry determines
+      the logical lane number, while the value of an entry indicates physical
+      lane, e.g. for 2-lane MIPI CSI-2 bus we could have "data-lanes = <1 2>;",
+      assuming the clock lane is on hardware lane 0. If the hardware does not
+      support lane reordering, monotonically incremented values shall be used
+      from 0 or 1 onwards, depending on whether or not there is also a clock
+      lane. This property is valid for serial busses only (e.g. MIPI CSI-2).
+
+  clock-lanes:
+    type: int
+    # Assume up to 9 physical lane indices
+    maximum: 8
+    description: |
+      Physical clock lane index. Position of an entry determines the logical
+      lane number, while the value of an entry indicates physical lane, e.g. for
+      a MIPI CSI-2 bus we could have "clock-lanes = <0>;", which places the
+      clock lane on hardware lane 0. This property is valid for serial busses
+      only (e.g. MIPI CSI-2).
+
+  link-frequencies:
+    type: uint64-array
+    description: |
+      Allowed data bus frequencies. For MIPI CSI-2, for instance, this is the
+      actual frequency of the bus, not bits per clock per lane value.
