@@ -978,7 +978,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		if (free_conn != NULL) {
 			*free_conn = stream_conn;
 		} else {
-			__ASSERT_PRINT("No free conns");
+			__ASSERT(false, "[%zu]: No free conns", i);
+			return;
 		}
 	}
 
