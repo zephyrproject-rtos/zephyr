@@ -6,13 +6,15 @@
 
 import argparse
 import ipaddress
-import logging
 import os
 from pathlib import Path
 import shlex
 import subprocess
 import sys
 import tempfile
+from collections import deque
+import re
+from progress.bar import Bar
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, FileType
 
@@ -377,7 +379,30 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                    self.tool_opt)
 
             self.logger.info('Flashing file: {}'.format(flash_file))
-            kwargs = {}
-            if not self.logger.isEnabledFor(logging.DEBUG):
-                kwargs['stdout'] = subprocess.DEVNULL
-            self.check_call(cmd, **kwargs)
+
+            process = self.popen_ignore_int(cmd, stdout=subprocess.PIPE)
+            action_buffer = deque(maxlen=30)
+            progress_buffer = deque(maxlen=6)
+
+            action_regex = r"([a-zA-Z]*) flash"
+            progress_regex = r"([0-9]{3})%]"
+
+            for c in iter(lambda: process.stdout.read(1), b""):
+                action_buffer.append(c)
+                if c == b'\b':
+                    for match in re.findall(action_regex,b''.join(action_buffer).decode('utf-8')):
+                        with Bar('{: <12}'.format(match), max=100) as bar:
+                            for c in iter(lambda: process.stdout.read(1), b""):
+                                progress_buffer.append(c)
+                                if c == b'\b':
+                                    for match in re.findall(progress_regex,b''.join(progress_buffer).decode('utf-8')):
+                                        progress = int(match)
+                                        if progress > 0:
+                                            bar.goto(progress)
+                                if c == b'\n':
+                                    bar.goto(100)
+                                    progress_buffer.clear()
+                                    break
+
+            if process.wait() != 0:
+                self.logger.fatal('Failure')
