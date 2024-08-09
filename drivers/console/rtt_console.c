@@ -40,9 +40,7 @@ static int rtt_console_out(int character)
 	int max_cnt = CONFIG_RTT_TX_RETRY_CNT;
 
 	do {
-		SEGGER_RTT_LOCK();
-		cnt = SEGGER_RTT_WriteNoLock(0, &c, 1);
-		SEGGER_RTT_UNLOCK();
+		cnt = SEGGER_RTT_Write(0, &c, 1);
 
 		/* There are two possible reasons for not writing any data to
 		 * RTT:
