@@ -14,4 +14,4 @@ tests:
   mgmt.mcumgr.all.options: {}
   mgmt.mcumgr.all.options.other:
     extra_args:
-      - OVERLAY_CONFIG="other-options.conf"
+      - EXTRA_CONF_FILE="other-options.conf"

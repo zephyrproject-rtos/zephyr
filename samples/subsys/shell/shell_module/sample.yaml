@@ -22,7 +22,7 @@ tests:
     harness: keyboard
     min_ram: 40
     extra_args:
-      - OVERLAY_CONFIG="overlay-usb.conf"
+      - EXTRA_CONF_FILE="overlay-usb.conf"
       - DTC_OVERLAY_FILE="usb.overlay"
     integration_platforms:
       - native_sim
@@ -62,7 +62,7 @@ tests:
     arch_exclude:
       - posix
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf"
+      - EXTRA_CONF_FILE="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
   sample.shell.shell_module.login:
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")

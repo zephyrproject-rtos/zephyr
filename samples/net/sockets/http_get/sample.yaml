@@ -43,7 +43,7 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_args: OVERLAY_CONFIG="overlay-nsos.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-nsos.conf"
   sample.net.sockets.http_get.nsos.https:
     harness: console
     harness_config:
@@ -56,4 +56,4 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_args: OVERLAY_CONFIG="overlay-nsos.conf;overlay-tls.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-nsos.conf;overlay-tls.conf"

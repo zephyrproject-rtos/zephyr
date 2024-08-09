@@ -42,7 +42,7 @@ tests:
     arch_exclude:
       - posix
     extra_args:
-      - OVERLAY_CONFIG="overlay-bt.conf"
+      - EXTRA_CONF_FILE="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
 
   sample.logger.usermode:

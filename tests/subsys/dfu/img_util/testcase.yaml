@@ -11,5 +11,5 @@ tests:
   dfu.image_util:
     tags: dfu_image_util
   dfu.image_util.progressive:
-    extra_args: OVERLAY_CONFIG=progressively_overlay.conf
+    extra_args: EXTRA_CONF_FILE=progressively_overlay.conf
     tags: dfu_image_util
