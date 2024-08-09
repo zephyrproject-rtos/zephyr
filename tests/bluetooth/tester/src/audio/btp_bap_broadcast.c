@@ -1208,14 +1208,7 @@ uint8_t btp_bap_broadcast_sink_bis_sync(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	if (cp->requested_bis_sync == BT_BAP_BIS_SYNC_NO_PREF) {
-		broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
-	} else {
-		/* For semantic purposes Zephyr API uses BIS Index bitfield
-		 * where BIT(1) means BIS Index 1
-		 */
-		broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync) << 1;
-	}
+	broadcaster->requested_bis_sync = sys_le32_to_cpu(cp->requested_bis_sync);
 
 	err = bt_bap_broadcast_sink_sync(broadcaster->sink, broadcaster->requested_bis_sync,
 					 broadcaster->sink_streams,
