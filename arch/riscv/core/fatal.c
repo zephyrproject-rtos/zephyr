@@ -79,8 +79,8 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("     sp: " PR_REG, z_riscv_get_sp_before_exc(esf));
 		LOG_ERR("     ra: " PR_REG, esf->ra);
-		LOG_ERR("   mepc: " PR_REG, esf->mepc);
-		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
+		LOG_ERR("   xepc: " PR_REG, esf->xepc);
+		LOG_ERR("xstatus: " PR_REG, esf->xstatus);
 		LOG_ERR("");
 	}
 
