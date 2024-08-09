@@ -149,7 +149,7 @@ class CoverageTool:
                 logger.error("Gcov data capture incomplete: {}".format(filename))
                 coverage_completed = False
 
-        with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
+        with open(os.path.join(outdir, "coverage.log"), "a", encoding="utf-8") as coveragelog:
             ret = self._generate(outdir, coveragelog)
             if ret == 0:
                 report_log = {

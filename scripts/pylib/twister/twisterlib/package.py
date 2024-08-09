@@ -22,7 +22,7 @@ class Artifacts:
 
     def package(self):
         dirs = []
-        with open(os.path.join(self.options.outdir, "twister.json"), "r") as json_test_plan:
+        with open(os.path.join(self.options.outdir, "twister.json"), "r", encoding="utf-8") as json_test_plan:
             jtp = json.load(json_test_plan)
             for t in jtp['testsuites']:
                 if t['status'] != "filtered":

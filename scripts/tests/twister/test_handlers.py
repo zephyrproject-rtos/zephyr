@@ -395,7 +395,7 @@ def test_binaryhandler_output_handler(
          mock.patch('time.time', side_effect=faux_timer.time):
         handler._output_handler(proc, harness)
 
-        mock_file.assert_called_with(handler.log, 'wt')
+        mock_file.assert_called_with(handler.log, 'wt', encoding='utf-8')
 
     if expected_handler_calls:
         mock_file.return_value.write.assert_has_calls(expected_handler_calls)
