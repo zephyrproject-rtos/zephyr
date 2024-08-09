@@ -12,12 +12,15 @@ DT_TURBO_MODE ?= 0
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast latex pdf doxygen
+.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1
 
-html latex pdf linkcheck doxygen: configure
+html-live-fast:
+	${MAKE} html-live DT_TURBO_MODE=1
+
+html html-live latex pdf linkcheck doxygen: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:

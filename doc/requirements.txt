@@ -10,6 +10,7 @@ sphinx-notfound-page
 sphinx-copybutton
 sphinx-togglebutton
 sphinx-sitemap
+sphinx-autobuild
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0
