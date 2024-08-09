@@ -126,6 +126,11 @@
 			reg = <0x1fe80088 0x4>;
 		};
 
+		hsbcap: hsbcap@71d00 {
+			compatible = "intel,adsp-hsbcap";
+			reg = <0x71d00 0x4>;
+		};
+
 		lsbpm: lsbpm@71d80 {
 			compatible = "intel,adsp-lsbpm";
 			reg = <0x71d80 0x0008>;
