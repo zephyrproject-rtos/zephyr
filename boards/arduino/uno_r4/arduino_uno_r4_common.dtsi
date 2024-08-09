@@ -61,15 +61,33 @@
 
 &hoco {
 	status = "okay";
-	clock-frequency = <48000000>;
+	clock-frequency = <DT_FREQ_M(48)>;
 };
 
-&cgc {
-	clock-source = <&hoco>;
-	iclk-div = <1>;
-	pclka-div = <1>;
-	pclkb-div = <2>;
-	pclkc-div = <1>;
-	pclkd-div = <1>;
-	fclk-div = <2>;
+&moco {
+	status = "okay";
+};
+
+&loco {
+	status = "okay";
+};
+
+&pclkblock {
+	sysclock-src = <RA_CLOCK_SOURCE_HOCO>;
+
+	pll {
+		source = <RA_PLL_SOURCE_MAIN_OSC>;
+		div = <RA_PLL_DIV_4>;
+		mul = <12 0>;
+		status = "okay";
+	};
+
+	clkout {
+		clk-src = <RA_CLOCK_SOURCE_PLL>;
+		clk-div = <RA_SYS_CLOCK_DIV_1>;
+	};
+
+	uclk {
+		clk-src = <RA_CLOCK_SOURCE_HOCO>;
+	};
 };

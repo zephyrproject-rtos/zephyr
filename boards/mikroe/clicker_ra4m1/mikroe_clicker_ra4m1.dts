@@ -79,17 +79,40 @@
 	status = "okay";
 };
 
-&mosc {
+&hoco {
 	status = "okay";
-	clock-frequency = <12000000>;
 };
 
-&cgc {
-	clock-source = <&mosc>;
-	iclk-div = <1>;
-	pclka-div = <1>;
-	pclkb-div = <2>;
-	pclkc-div = <1>;
-	pclkd-div = <1>;
-	fclk-div = <2>;
+&moco {
+	status = "okay";
+};
+
+&loco {
+	status = "okay";
+};
+
+&pclkblock {
+	sysclock-src = <RA_CLOCK_SOURCE_MAIN_OSC>;
+
+	clock-xtal {
+		clock-frequency = <DT_FREQ_M(12)>;
+		mosel = <0>;
+		status = "okay";
+	};
+
+	pll {
+		source = <RA_PLL_SOURCE_MAIN_OSC>;
+		div = <RA_PLL_DIV_4>;
+		mul = <12 0>;
+		status = "okay";
+	};
+
+	clkout {
+		clk-src = <RA_CLOCK_SOURCE_PLL>;
+		clk-div = <RA_SYS_CLOCK_DIV_1>;
+	};
+
+	uclk {
+		clk-src = <RA_CLOCK_SOURCE_MAIN_OSC>;
+	};
 };
