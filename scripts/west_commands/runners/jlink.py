@@ -320,10 +320,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 raise ValueError(err)
 
         else:
-            # use hex or bin file provided by the buildsystem, preferring .hex over .bin
+            # Use hex, bin or elf file provided by the buildsystem.
+            # Preferring .hex over .bin and .elf
             if self.hex_name is not None and os.path.isfile(self.hex_name):
                 flash_file = self.hex_name
                 flash_cmd = f'loadfile "{self.hex_name}"'
+            # Preferring .bin over .elf
             elif self.bin_name is not None and os.path.isfile(self.bin_name):
                 if self.dt_flash:
                     flash_addr = self.flash_address_from_build_conf(self.build_conf)
@@ -331,9 +333,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     flash_addr = 0
                 flash_file = self.bin_name
                 flash_cmd = f'loadfile "{self.bin_name}" 0x{flash_addr:x}'
+            elif self.elf_name is not None and os.path.isfile(self.elf_name):
+                flash_file = self.elf_name
+                flash_cmd = f'loadfile "{self.elf_name}"'
             else:
-                err = 'Cannot flash; no hex ({}) or bin ({}) files found.'
-                raise ValueError(err.format(self.hex_name, self.bin_name))
+                err = 'Cannot flash; no hex ({}), bin ({}) or elf ({}) files found.'
+                raise ValueError(err.format(self.hex_name, self.bin_name, self.elf_name))
 
         # Flash the selected build artifact
         lines.append(flash_cmd)
