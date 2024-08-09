@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Alexandre Bailon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* Use XDS110 UART for the NCP */
+		zephyr,ot-uart = &uart0;
+		/* Use UART1 for debugging / zephyr console */
+		zephyr,shell-uart = &uart1;
+		zephyr,console = &uart1;
+		zephyr,ieee802154 = &ieee802154;
+	};
+};
+
+&pinctrl {
+	/* UART1 */
+	uart1_tx_default: uart1_tx_default {
+		pinmux = <22 IOC_PORT_MCU_UART1_TX>;
+		bias-disable;
+	};
+	uart1_rx_default: uart1_rx_default {
+		pinmux = <24 IOC_PORT_MCU_UART1_RX>;
+		bias-disable;
+		input-enable;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default>;
+	pinctrl-names = "default";
+};
