@@ -10,9 +10,16 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <zephyr/drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 #define LIS3MDL_REG_WHO_AM_I            0x0F
 #define LIS3MDL_CHIP_ID                 0x3D
@@ -109,12 +116,44 @@ static const uint16_t lis3mdl_magn_gain[] = {
 	6842, 3421, 2281, 1711
 };
 
+union lis3mdl_bus_cfg {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	struct i2c_dt_spec i2c;
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_dt_spec spi;
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+};
+
+struct lis3mdl_transfer_function {
+	int (*read_data)(const struct device *dev, uint8_t reg_addr,
+			 uint8_t *value, uint8_t len);
+	int (*write_data)(const struct device *dev, uint8_t reg_addr,
+			  uint8_t *value, uint8_t len);
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr,
+			uint8_t *value);
+	int (*update_reg)(const struct device *dev, uint8_t reg_addr,
+			  uint8_t mask, uint8_t value);
+};
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+int lis3mdl_i2c_init(const struct device *dev);
+#endif /*DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)*/
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+int lis3mdl_spi_init(const struct device *dev);
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
 struct lis3mdl_data {
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
+#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
 	int16_t temp_sample;
+#endif /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
 
+	const struct lis3mdl_transfer_function *hw_tf;
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -134,10 +173,11 @@ struct lis3mdl_data {
 };
 
 struct lis3mdl_config {
-	struct i2c_dt_spec i2c;
+	int (*bus_init)(const struct device *dev);
+	const union lis3mdl_bus_cfg bus_cfg;
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	struct gpio_dt_spec irq_gpio;
-#endif
+#endif /*CONFIG_LIS3MDL_TRIGGER*/
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
@@ -148,6 +188,6 @@ int lis3mdl_trigger_set(const struct device *dev,
 int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan);
 
 int lis3mdl_init_interrupt(const struct device *dev);
-#endif
+#endif /*CONFIG_LIS3MDL_TRIGGER*/
 
 #endif /* __SENSOR_LIS3MDL__ */
