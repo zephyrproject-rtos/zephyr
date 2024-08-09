@@ -114,3 +114,6 @@ set_ifndef(TOOLCHAIN_KCONFIG_DIR ${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOL
 
 set(HostTools_FOUND TRUE)
 set(HOSTTOOLS_FOUND TRUE)
+build_info(toolchain name VALUE ${ZEPHYR_TOOLCHAIN_VARIANT})
+string(TOUPPER ${ZEPHYR_TOOLCHAIN_VARIANT} zephyr_toolchain_variant_upper)
+build_info(toolchain path VALUE "${${zephyr_toolchain_variant_upper}_TOOLCHAIN_PATH}")
