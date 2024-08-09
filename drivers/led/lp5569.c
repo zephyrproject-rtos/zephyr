@@ -13,6 +13,7 @@
  * The LP5569 is a 9-channel LED driver that communicates over I2C.
  */
 
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/device.h>
@@ -30,12 +31,15 @@ LOG_MODULE_REGISTER(lp5569, CONFIG_LED_LOG_LEVEL);
 
 #define LP5569_MISC			0x2F
 #define LP5569_POWERSAVE_EN		BIT(5)
+#define LP5569_CP_MODE_SHIFT		3
 
 /* PWM base Register for controlling the duty-cycle */
 #define LP5569_LED0_PWM			0x16
 
 struct lp5569_config {
 	struct i2c_dt_spec bus;
+	struct gpio_dt_spec enable_gpio;
+	const uint8_t cp_mode;
 };
 
 static int lp5569_led_set_brightness(const struct device *dev, uint32_t led,
@@ -83,6 +87,25 @@ static int lp5569_enable(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* flip the enable pin if specified */
+	if (config->enable_gpio.port) {
+		if (!gpio_is_ready_dt(&config->enable_gpio)) {
+			LOG_ERR("Enable gpio not ready");
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->enable_gpio,
+					    GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure enable_gpio, err: %d",
+				ret);
+			return ret;
+		}
+
+		/* datasheet 7.9: t_en max 3 ms for chip initialization */
+		k_msleep(3);
+	}
+
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_CONFIG,
 				    LP5569_CHIP_EN);
 	if (ret < 0) {
@@ -91,7 +114,8 @@ static int lp5569_enable(const struct device *dev)
 	}
 
 	ret = i2c_reg_write_byte_dt(&config->bus, LP5569_MISC,
-				    LP5569_POWERSAVE_EN);
+				    LP5569_POWERSAVE_EN |
+				    (config->cp_mode << LP5569_CP_MODE_SHIFT));
 	if (ret < 0) {
 		LOG_ERR("LED reg update failed");
 		return ret;
@@ -156,6 +180,10 @@ static const struct led_driver_api lp5569_led_api = {
 #define LP5569_DEFINE(id)						\
 	static const struct lp5569_config lp5569_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
+		.enable_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(id),	\
+						   enable_gpios, {0}),	\
+		.cp_mode = DT_PROP_OR(DT_DRV_INST(id),			\
+				      charge_pump_mode, 0),		\
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(id, lp5569_pm_action);			\
