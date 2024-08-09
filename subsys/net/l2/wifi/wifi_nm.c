@@ -117,7 +117,7 @@ int wifi_nm_register_mgd_type_iface(struct wifi_nm_instance *nm,
 	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
 		if (!nm->mgd_ifaces[i].iface) {
 			nm->mgd_ifaces[i].iface = iface;
-			nm->mgd_ifaces[i].type = (1 << type);
+			nm->mgd_ifaces[i].type = type;
 			k_mutex_unlock(&wifi_nm_lock);
 			return 0;
 		}
