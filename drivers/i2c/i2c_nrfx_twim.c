@@ -336,6 +336,9 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 
 	dev_config->irq_connect();
 
+	k_sem_init(&dev_data->transfer_sync, 1, 1);
+	k_sem_init(&dev_data->completion_sync, 0, 1);
+
 	int err = pinctrl_apply_state(dev_config->pcfg,
 				      COND_CODE_1(CONFIG_PM_DEVICE_RUNTIME,
 						  (PINCTRL_STATE_SLEEP),
@@ -400,12 +403,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 	IF_ENABLED(USES_MSG_BUF(idx),					       \
 		(static uint8_t twim_##idx##_msg_buf[MSG_BUF_SIZE(idx)]	       \
 		 I2C_MEMORY_SECTION(idx);))				       \
-	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
-		.transfer_sync = Z_SEM_INITIALIZER(			       \
-			twim_##idx##_data.transfer_sync, 1, 1),		       \
-		.completion_sync = Z_SEM_INITIALIZER(			       \
-			twim_##idx##_data.completion_sync, 0, 1),	       \
-	};								       \
+	static struct i2c_nrfx_twim_data twim_##idx##_data;		       \
 	PINCTRL_DT_DEFINE(I2C(idx));					       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
