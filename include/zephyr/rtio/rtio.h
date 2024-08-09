@@ -696,6 +696,10 @@ static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 			return 0;
 		}
 
+		if (bytes <= block_size) {
+			break;
+		}
+
 		bytes -= block_size;
 	} while (bytes >= min_sz);
 
