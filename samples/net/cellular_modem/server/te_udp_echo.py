@@ -8,14 +8,20 @@ import select
 class TEUDPEcho():
     def __init__(self):
         self.running = True
+        self.on_terminated = None
         self.thread = threading.Thread(target=self._target_)
 
     def start(self):
         self.thread.start()
 
     def stop(self):
+        if self.thread == threading.current_thread():
+            return
         self.running = False
         self.thread.join(1)
+
+    def signal_terminated(self, on_terminated):
+        self.on_terminated = on_terminated
 
     def _target_(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,7 +30,7 @@ class TEUDPEcho():
 
         while self.running:
             try:
-                ready_to_read, _, _ = select.select([sock], [sock], [], 0.5)
+                ready_to_read, _, _ = select.select([sock], [], [], 0.5)
 
                 if not ready_to_read:
                     continue
@@ -35,6 +41,8 @@ class TEUDPEcho():
 
             except Exception as e:
                 print(e)
+                if self.on_terminated is not None:
+                    self.on_terminated()
                 break
 
         sock.close()
