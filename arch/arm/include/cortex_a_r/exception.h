@@ -43,6 +43,15 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const struct arch_esf *esf
 	return (arch_curr_cpu()->arch.exc_depth > 1U) ? (true) : (false);
 }
 
+/**
+ * @brief No current implementation where core dump is not supported
+ *
+ * @param esf exception frame
+ * @param exc_return EXC_RETURN value present in LR after exception entry.
+ */
+static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_t exc_return)
+{}
+
 #if defined(CONFIG_USERSPACE)
 /*
  * This function is used by privileged code to determine if the thread

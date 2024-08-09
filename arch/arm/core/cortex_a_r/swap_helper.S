@@ -336,12 +336,14 @@ _context_switch:
 
 _oops:
     /*
-     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
-     * exception reason.
+     * Pass the exception frame to z_do_kernel_oops.
      */
     cps #MODE_SYS
     mov r0, sp
     cps #MODE_SVC
+    /* Zero callee_regs and exc_return (only used on Cortex-M) */
+    mov r1, #0
+    mov r2, #0
     bl z_do_kernel_oops
     b z_arm_int_exit
 
