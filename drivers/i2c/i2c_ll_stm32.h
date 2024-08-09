@@ -63,18 +63,24 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_V1
 	uint16_t slave_address;
 #endif
+	uint16_t addr;
+	uint32_t msg;
+	uint32_t msg_buf_pos;
+	struct i2c_msg *msgs;
+	uint32_t num_msgs;
+#ifdef CONFIG_I2C_CALLBACK
+	i2c_callback_t cb;
+	void *userdata;
+#endif
 	struct {
 #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
-		unsigned int flags;
 #endif
 		unsigned int is_write;
 		unsigned int is_arlo;
 		unsigned int is_nack;
 		unsigned int is_err;
-		struct i2c_msg *msg;
-		unsigned int len;
-		uint8_t *buf;
+		struct i2c_msg msg;
 	} current;
 #ifdef CONFIG_I2C_TARGET
 	bool master_active;
@@ -93,9 +99,8 @@ struct i2c_stm32_data {
 #endif
 };
 
-int32_t stm32_i2c_transaction(const struct device *dev,
-			    struct i2c_msg msg, uint8_t *next_msg_flags,
-			    uint16_t periph);
+int stm32_i2c_check_error(struct i2c_stm32_data *data, bool is_timeout);
+int stm32_i2c_transfer_next(const struct device *dev);
 int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 int i2c_stm32_get_config(const struct device *dev, uint32_t *config);
