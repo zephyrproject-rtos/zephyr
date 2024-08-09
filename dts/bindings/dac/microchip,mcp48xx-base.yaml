@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Novatech LLC
+# SPDX-License-Identifier: Apache-2.0
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  latch-gpios:
+    type: phandle-array
+    description: "GPIO to sync DAC outputs"
+
+  powerdown:
+    type: array
+    required: true
+    description: |
+      Power-down mode select.
+      0 - Vout is loaded with 500kOhm resistor to ground
+      1 - normal mode
+      Note: array entries correspond to the successive channels
+
+  gain:
+    type: array
+    default: [1, 1]
+    description: |
+      Gain selection bit.
+      0 = x2 (gain of 2)
+      1 = x1 (gain of 1)
+      Note: applicable onle when internal Vref is selected
+      Note: array entries correspond to the successive channels
+
+io-channel-cells:
+  - output
