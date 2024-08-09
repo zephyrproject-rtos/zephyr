@@ -15,6 +15,7 @@ supported:
   - trng
   - watchdog
   - spi
+  - rtc
   - adc
   - counter
 ram: 80
