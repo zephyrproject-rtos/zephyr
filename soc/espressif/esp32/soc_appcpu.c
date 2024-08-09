@@ -33,7 +33,7 @@
 #include <esp_app_format.h>
 #include <zephyr/sys/printk.h>
 
-extern void z_cstart(void);
+extern void z_prep_c(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -69,13 +69,13 @@ void __app_cpu_start(void)
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
+	 * z_prep_c() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
 	esp_intr_initialize();
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

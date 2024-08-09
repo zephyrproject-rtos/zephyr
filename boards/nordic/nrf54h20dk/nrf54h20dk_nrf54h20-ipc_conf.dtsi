@@ -41,6 +41,13 @@
 				 <&cpuppr_vevif 12>;
 		};
 
+		cpuapp_cpuflpr_ipc: ipc-2-14 {
+			compatible = "zephyr,ipc-icmsg";
+			status = "disabled";
+			mboxes = <&cpuapp_bellboard 14>,
+				 <&cpuflpr_vevif 16>;
+		};
+
 		cpurad_cpusys_ipc: ipc-3-12 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";

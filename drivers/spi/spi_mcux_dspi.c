@@ -913,7 +913,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
-			    &spi_mcux_init,				\
+			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\

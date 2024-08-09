@@ -840,11 +840,6 @@ int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timesta
 		return -EINVAL;
 	}
 
-	/* push the TS flag on the buffer itself.
-	 * It will be popped and read back by conn before adding the ISO HCI header.
-	 */
-	net_buf_push_u8(buf, has_ts);
-
 	net_buf_put(&conn->iso.txq, buf);
 	BT_ISO_DATA_DBG("%p put on list", buf);
 
@@ -876,6 +871,18 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 	if (!iso_conn->iso.info.can_send) {
 		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
+	}
+
+	if (net_buf_headroom(buf) != BT_BUF_ISO_SIZE(0)) {
+		LOG_DBG("Buffer headroom (%d) != BT_BUF_ISO_SIZE(0) (%d) bytes",
+			net_buf_headroom(buf), BT_BUF_ISO_SIZE(0));
+
+		/* DO NOT remove this check. We rely on precise headroom further
+		 * below in the stack to determine if `buf` contains a timestamp
+		 * field or not. See conn.c:contains_iso_timestamp.
+		 */
+
+		return -EMSGSIZE;
 	}
 
 	if (buf->size < hdr_size) {

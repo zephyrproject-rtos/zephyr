@@ -14,8 +14,9 @@
 
 #include <stdio.h>
 
+#include <version.h>
+
 #include <zephyr/kernel.h>
-#include <zephyr/version.h>
 #include <zephyr/net/net_if.h>
 #ifndef CONFIG_NRF70_RADIO_TEST
 #include <zephyr/net/wifi_mgmt.h>

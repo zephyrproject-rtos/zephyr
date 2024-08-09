@@ -23,3 +23,7 @@
 &cpuflpr_vpr {
 	execution-memory = <&cpuflpr_code_partition>;
 };
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};

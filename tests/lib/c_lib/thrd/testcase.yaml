@@ -1,12 +1,15 @@
 common:
   tags:
-    - clib c11 threads
+    - clib
+    - c11
+    - threads
+    # For now, the implementation of C11 threads uses POSIX under the hood.
+    - posix
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
   filter: not CONFIG_NATIVE_APPLICATION
-  integration_platforms:
-    - qemu_x86
-  platform_exclude:
-    - native_posix
-    - native_posix/native/64
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
@@ -44,8 +47,6 @@ tests:
       - CONFIG_NEWLIB_LIBC=y
   libraries.libc.c11_threads.newlib_nano:
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED and CONFIG_HAS_NEWLIB_LIBC_NANO
-    arch_exclude:
-      - posix
     tags: newlib
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y

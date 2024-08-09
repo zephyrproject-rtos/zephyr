@@ -52,7 +52,7 @@ extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
 
-extern void z_cstart(void);
+extern void z_prep_c(void);
 extern void esp_reset_reason_init(void);
 
 #ifdef CONFIG_SOC_ENABLE_APPCPU
@@ -212,7 +212,7 @@ void IRAM_ATTR __esp_platform_start(void)
 	esp_intr_initialize();
 
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

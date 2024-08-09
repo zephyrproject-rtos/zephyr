@@ -57,7 +57,6 @@ static struct {
 
 	union {
 		struct {
-
 			uint8_t connecting: 1;
 			uint8_t disconnecting: 1;
 			uint8_t _unused: 6;
@@ -453,22 +452,23 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				 struct wifi_connect_req_params *params,
 				 enum wifi_iface_mode iface_mode)
 {
+	int opt;
+	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"ssid", required_argument, 0, 's'},
+		{"passphrase", required_argument, 0, 'p'},
+		{"key-mgmt", required_argument, 0, 'k'},
+		{"ieee-80211w", required_argument, 0, 'w'},
+		{"bssid", required_argument, 0, 'm'},
+		{"band", required_argument, 0, 'b'},
+		{"channel", required_argument, 0, 'c'},
+		{"timeout", required_argument, 0, 't'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	char *endptr;
 	int idx = 1;
-	struct getopt_state *state;
-	int opt;
 	bool secure_connection = false;
-	static struct option long_options[] = {{"ssid", required_argument, 0, 's'},
-					       {"passphrase", required_argument, 0, 'p'},
-					       {"key-mgmt", required_argument, 0, 'k'},
-					       {"ieee-80211w", required_argument, 0, 'w'},
-					       {"bssid", required_argument, 0, 'm'},
-					       {"band", required_argument, 0, 'b'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"timeout", required_argument, 0, 't'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
-	int opt_index = 0;
 	uint8_t band;
 	const uint8_t all_bands[] = {
 		WIFI_FREQ_BAND_2_4_GHZ,
@@ -487,30 +487,30 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 
 	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:h",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
-			params->ssid = optarg;
+			params->ssid = state->optarg;
 			params->ssid_length = strlen(params->ssid);
 			if (params->ssid_length > WIFI_SSID_MAX_LEN) {
 				PR_WARNING("SSID too long (max %d characters)\n",
-					    WIFI_SSID_MAX_LEN);
+					   WIFI_SSID_MAX_LEN);
 				return -EINVAL;
 			}
 			break;
 		case 'k':
-			params->security = atoi(optarg);
+			params->security = atoi(state->optarg);
 			if (params->security) {
 				secure_connection = true;
 			}
 			break;
 		case 'p':
-			params->psk = optarg;
+			params->psk = state->optarg;
 			params->psk_length = strlen(params->psk);
 			break;
 		case 'c':
-			channel = strtol(optarg, &endptr, 10);
+			channel = strtol(state->optarg, &endptr, 10);
 			for (band = 0; band < ARRAY_SIZE(all_bands); band++) {
 				offset += snprintf(bands_str + offset,
 						   sizeof(bands_str) - offset,
@@ -542,7 +542,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'b':
 			if (iface_mode == WIFI_MODE_INFRA) {
-				switch (atoi(optarg)) {
+				switch (atoi(state->optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
 					break;
@@ -553,32 +553,32 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					params->band = WIFI_FREQ_BAND_6_GHZ;
 					break;
 				default:
-					PR_ERROR("Invalid band: %d\n", atoi(optarg));
+					PR_ERROR("Invalid band: %d\n", atoi(state->optarg));
 					return -EINVAL;
 				}
 			}
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
-				params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
+			    params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
 				PR_ERROR("MFP not supported for security type %s\n",
-						 wifi_security_txt(params->security));
+					 wifi_security_txt(params->security));
 				return -EINVAL;
 			}
-			params->mfp = atoi(optarg);
+			params->mfp = atoi(state->optarg);
 			break;
 		case 'm':
 			if (net_bytes_from_str(params->bssid, sizeof(params->bssid),
-					       optarg) < 0) {
+					       state->optarg) < 0) {
 				PR_WARNING("Invalid MAC address\n");
 				return -EINVAL;
 			}
 			break;
 		case 't':
 			if (iface_mode == WIFI_MODE_INFRA) {
-				params->timeout = strtol(optarg, &endptr, 10);
+				params->timeout = strtol(state->optarg, &endptr, 10);
 				if (*endptr != '\0') {
-					PR_ERROR("Invalid timeout: %s\n", optarg);
+					PR_ERROR("Invalid timeout: %s\n", state->optarg);
 					return -EINVAL;
 				}
 			}
@@ -586,7 +586,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'h':
 			return -ENOEXEC;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 	}
@@ -666,24 +666,26 @@ static int wifi_scan_args_to_params(const struct shell *sh,
 				    struct wifi_scan_params *params,
 				    bool *do_scan)
 {
-	struct getopt_state *state;
 	int opt;
-	static const struct option long_options[] = {{"type", required_argument, 0, 't'},
-					       {"bands", required_argument, 0, 'b'},
-					       {"dwell_time_active", required_argument, 0, 'a'},
-					       {"dwell_time_passive", required_argument, 0, 'p'},
-					       {"ssid", required_argument, 0, 's'},
-					       {"max_bss", required_argument, 0, 'm'},
-					       {"chans", required_argument, 0, 'c'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
 	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"type", required_argument, 0, 't'},
+		{"bands", required_argument, 0, 'b'},
+		{"dwell_time_active", required_argument, 0, 'a'},
+		{"dwell_time_passive", required_argument, 0, 'p'},
+		{"ssid", required_argument, 0, 's'},
+		{"max_bss", required_argument, 0, 'm'},
+		{"chans", required_argument, 0, 'c'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	int val;
 	int opt_num = 0;
 
 	*do_scan = true;
 
-	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "t:b:a:p:s:m:c:h",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
@@ -850,6 +852,7 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 		PR("DTIM: %d\n", status.dtim_period);
 		PR("TWT: %s\n",
 		   status.twt_capable ? "Supported" : "Not supported");
+		PR("Current PHY rate : %d\n", status.current_phy_rate);
 	}
 
 	return 0;
@@ -877,6 +880,7 @@ static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
 	PR("Beacons missed   : %u\n", data->sta_mgmt.beacons_miss);
 	PR("Unicast received : %u\n", data->unicast.rx);
 	PR("Unicast sent     : %u\n", data->unicast.tx);
+	PR("Overrun count    : %u\n", data->overrun_count);
 }
 #endif /* CONFIG_NET_STATISTICS_WIFI && CONFIG_NET_STATISTICS_USER_API */
 
@@ -1394,20 +1398,22 @@ static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc,
 static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 					 struct wifi_ap_config_params *params)
 {
-	struct getopt_state *state;
 	int opt;
-	static struct option long_options[] = {{"max_inactivity", required_argument, 0, 'i'},
-					       {"max_num_sta", required_argument, 0, 's'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
 	int opt_index = 0;
+	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"max_inactivity", required_argument, 0, 'i'},
+		{"max_num_sta", required_argument, 0, 's'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 	long val;
 
-	while ((opt = getopt_long(argc, argv, "i:s:h", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:s:h",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'i':
-			if (!parse_number(sh, &val, optarg, "max_inactivity",
+			if (!parse_number(sh, &val, state->optarg, "max_inactivity",
 					  0, WIFI_AP_STA_MAX_INACTIVITY)) {
 				return -EINVAL;
 			}
@@ -1415,7 +1421,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			params->type |= WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY;
 			break;
 		case 's':
-			if (!parse_number(sh, &val, optarg, "max_num_sta",
+			if (!parse_number(sh, &val, state->optarg, "max_num_sta",
 					  0, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA)) {
 				return -EINVAL;
 			}
@@ -1426,7 +1432,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
 		}
@@ -1621,10 +1627,11 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 		return -ENOEXEC;
 	}
 
-	if ((int)rts_threshold >= 0)
+	if ((int)rts_threshold >= 0) {
 		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
-	else
+	} else {
 		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+	}
 
 	return 0;
 }
@@ -1634,19 +1641,20 @@ void parse_mode_args_to_params(const struct shell *sh, int argc,
 			       bool *do_mode_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"sta", no_argument, 0, 's'},
+		{"monitor", no_argument, 0, 'm'},
+		{"ap", no_argument, 0, 'a'},
+		{"softap", no_argument, 0, 'k'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"sta", no_argument, 0, 's'},
-					       {"monitor", no_argument, 0, 'm'},
-					       {"ap", no_argument, 0, 'a'},
-					       {"softap", no_argument, 0, 'k'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
-
-	while ((opt = getopt_long(argc, argv, "i:smtpakgh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:smtpakgh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 's':
@@ -1735,16 +1743,17 @@ void parse_channel_args_to_params(const struct shell *sh, int argc,
 				  bool *do_channel_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"channel", required_argument, 0, 'c'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"channel", required_argument, 0, 'c'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
-
-	while ((opt = getopt_long(argc, argv, "i:c:gh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:c:gh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'c':
@@ -1832,20 +1841,21 @@ void parse_filter_args_to_params(const struct shell *sh, int argc,
 				 bool *do_filter_oper)
 {
 	int opt;
-	int option_index = 0;
+	int opt_index = 0;
 	struct getopt_state *state;
+	static const struct option long_options[] = {
+		{"if-index", optional_argument, 0, 'i'},
+		{"capture-len", optional_argument, 0, 'b'},
+		{"all", no_argument, 0, 'a'},
+		{"mgmt", no_argument, 0, 'm'},
+		{"ctrl", no_argument, 0, 'c'},
+		{"data", no_argument, 0, 'd'},
+		{"get", no_argument, 0, 'g'},
+		{"help", no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
 
-	static const struct option long_options[] = {{"if-index", optional_argument, 0, 'i'},
-					       {"capture-len", optional_argument, 0, 'b'},
-					       {"all", no_argument, 0, 'a'},
-					       {"mgmt", no_argument, 0, 'm'},
-					       {"ctrl", no_argument, 0, 'c'},
-					       {"data", no_argument, 0, 'd'},
-					       {"get", no_argument, 0, 'g'},
-					       {"help", no_argument, 0, 'h'},
-					       {0, 0, 0, 0}};
-
-	while ((opt = getopt_long(argc, argv, "i:b:amcdgh", long_options, &option_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "i:b:amcdgh",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'a':
@@ -1961,35 +1971,36 @@ static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *a
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"peer", required_argument, 0, 'p'},
-					       {"role", required_argument, 0, 'r'},
-					       {"configurator", required_argument, 0, 'c'},
-					       {"mode", required_argument, 0, 'm'},
-					       {"ssid", required_argument, 0, 's'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"peer", required_argument, 0, 'p'},
+		{"role", required_argument, 0, 'r'},
+		{"configurator", required_argument, 0, 'c'},
+		{"mode", required_argument, 0, 'm'},
+		{"ssid", required_argument, 0, 's'},
+		{0, 0, 0, 0}};
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'p':
-			params->auth_init.peer = shell_strtol(optarg, 10, &ret);
+			params->auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'r':
-			params->auth_init.role = shell_strtol(optarg, 10, &ret);
+			params->auth_init.role = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'c':
-			params->auth_init.configurator = shell_strtol(optarg, 10, &ret);
+			params->auth_init.configurator = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'm':
-			params->auth_init.conf = shell_strtol(optarg, 10, &ret);
+			params->auth_init.conf = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->auth_init.ssid, optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->auth_init.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2008,23 +2019,24 @@ static int parse_dpp_args_chirp(const struct shell *sh, size_t argc, char *argv[
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"own", required_argument, 0, 'i'},
-					       {"freq", required_argument, 0, 'f'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"own", required_argument, 0, 'i'},
+		{"freq", required_argument, 0, 'f'},
+		{0, 0, 0, 0}};
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "i:f:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'i':
-			params->chirp.id = shell_strtol(optarg, 10, &ret);
+			params->chirp.id = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'f':
-			params->chirp.freq = shell_strtol(optarg, 10, &ret);
+			params->chirp.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2043,23 +2055,24 @@ static int parse_dpp_args_listen(const struct shell *sh, size_t argc, char *argv
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"role", required_argument, 0, 'r'},
-					       {"freq", required_argument, 0, 'f'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"role", required_argument, 0, 'r'},
+		{"freq", required_argument, 0, 'f'},
+		{0, 0, 0, 0}};
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "r:f:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'r':
-			params->listen.role = shell_strtol(optarg, 10, &ret);
+			params->listen.role = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'f':
-			params->listen.freq = shell_strtol(optarg, 10, &ret);
+			params->listen.freq = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2078,32 +2091,33 @@ static int parse_dpp_args_btstrap_gen(const struct shell *sh, size_t argc, char 
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"type", required_argument, 0, 't'},
-					       {"opclass", required_argument, 0, 'o'},
-					       {"channel", required_argument, 0, 'h'},
-					       {"mac", required_argument, 0, 'a'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"type", required_argument, 0, 't'},
+		{"opclass", required_argument, 0, 'o'},
+		{"channel", required_argument, 0, 'h'},
+		{"mac", required_argument, 0, 'a'},
+		{0, 0, 0, 0}};
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "t:o:h:a:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 't':
-			params->bootstrap_gen.type = shell_strtol(optarg, 10, &ret);
+			params->bootstrap_gen.type = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'o':
-			params->bootstrap_gen.op_class = shell_strtol(optarg, 10, &ret);
+			params->bootstrap_gen.op_class = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'h':
-			params->bootstrap_gen.chan = shell_strtol(optarg, 10, &ret);
+			params->bootstrap_gen.chan = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'a':
 			ret = net_bytes_from_str(params->bootstrap_gen.mac,
-						 WIFI_MAC_ADDR_LEN, optarg);
+						 WIFI_MAC_ADDR_LEN, state->optarg);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2139,27 +2153,29 @@ static int parse_dpp_args_set_config_param(const struct shell *sh, size_t argc, 
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"configurator", required_argument, 0, 'c'},
-					       {"mode", required_argument, 0, 'm'},
-					       {"ssid", required_argument, 0, 's'},
-					       {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"configurator", required_argument, 0, 'c'},
+		{"mode", required_argument, 0, 'm'},
+		{"ssid", required_argument, 0, 's'},
+		{0, 0, 0, 0}};
 	int ret = 0;
 
 	while ((opt = getopt_long(argc, argv, "p:r:c:m:s:",
-		long_options, &opt_index)) != -1) {
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'c':
-			params->configurator_set.configurator = shell_strtol(optarg, 10, &ret);
+			params->configurator_set.configurator =
+				shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'm':
-			params->configurator_set.conf = shell_strtol(optarg, 10, &ret);
+			params->configurator_set.conf = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 's':
-			strncpy(params->configurator_set.ssid, optarg, WIFI_SSID_MAX_LEN);
+			strncpy(params->configurator_set.ssid, state->optarg, WIFI_SSID_MAX_LEN);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2504,8 +2520,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<mode: legacy/WMM>.\n",
 		      cmd_wifi_ps_mode,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(scan, NULL,
 		  "Scan for Wi-Fi APs\n"
 		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
@@ -2583,26 +2598,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
 		      cmd_wifi_ps_timeout,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_listen_interval,
 		      NULL,
 		      "<val> - Listen interval in the range of <0-65535>.\n",
 		      cmd_wifi_listen_interval,
-		      2,
-		      0),
+		      2, 0),
 	SHELL_CMD_ARG(ps_wakeup_mode,
-		     NULL,
-		     "<wakeup_mode: DTIM/Listen Interval>.\n",
-		     cmd_wifi_ps_wakeup_mode,
-		     2,
-		     0),
+		      NULL,
+		      "<wakeup_mode: DTIM/Listen Interval>.\n",
+		      cmd_wifi_ps_wakeup_mode,
+		      2, 0),
 	SHELL_CMD_ARG(rts_threshold,
-		     NULL,
-		     "<rts_threshold: rts threshold/off>.\n",
-		     cmd_wifi_set_rts_threshold,
-		     2,
-		     0),
+		      NULL,
+		      "<rts_threshold: rts threshold/off>.\n",
+		      cmd_wifi_set_rts_threshold,
+		      2, 0),
 	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
 	SHELL_SUBCMD_SET_END
 );

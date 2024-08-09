@@ -137,7 +137,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: dee9a7b1eff13a9da0560daf8842d61657f9d61e
+      revision: 1a700a62511c96d8c3d8b4e29c9503855fec50c5
       path: modules/hal/adi
       groups:
         - hal
@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 87e7902d7184a8280b4d13bce79801a723f4ddd8
+      revision: e2902b60bc8b540b49f1012e6d45f8eef067f5bb
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: bda16da6f92380579b8cf681a5faf61e1fe55220
+      revision: 0b6040d9b440b769a65f25c6fd9320eeff88ee94
       path: modules/hal/nordic
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 150b98fb2632d2660c8eedb5f992bcc72661fdc1
+      revision: 42ea394cbd2d8632339bbecb1efffffa696d11e6
       path: modules/hal/nxp
       groups:
         - hal
@@ -272,7 +272,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 408c16a909dd6cf128874a76f21c793798c9e423
+      revision: 009bcff0ed4853a53df8256039fa815bda6854dd
     - name: loramac-node
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
@@ -287,6 +287,8 @@ manifest:
     - name: mcuboot
       revision: fb2cf0ec3da3687b93f28e556ab682bdd4b85223
       path: bootloader/mcuboot
+      groups:
+        - bootloader
     - name: mipi-sys-t
       path: modules/debug/mipi-sys-t
       groups:

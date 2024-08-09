@@ -170,6 +170,17 @@
 			interrupt-parent = <&intc>;
 		};
 
+		mbox0: mbox@3ffed240 {
+			compatible = "espressif,mbox-esp32";
+			reg = <0x3FFED240 0x8>;
+			status = "disabled";
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
+			interrupts = <FROM_CPU_INTR0_SOURCE FROM_CPU_INTR1_SOURCE>;
+			interrupt-parent = <&intc>;
+			#mbox-cells = <1>;
+		};
+
 		ipi0: ipi@3f4c0058 {
 			compatible = "espressif,crosscore-interrupt";
 			reg = <0x3f4c0058 0x4>;

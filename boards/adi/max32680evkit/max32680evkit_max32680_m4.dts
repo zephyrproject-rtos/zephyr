@@ -97,3 +97,7 @@
 	pinctrl-0 = <&i2c1a_scl_p0_16 &i2c1a_sda_p0_17>;
 	pinctrl-names = "default";
 };
+
+&dma0 {
+	status = "okay";
+};

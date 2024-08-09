@@ -157,6 +157,6 @@ __imr void boot_core0(void)
 	xtensa_vecbase_lock();
 
 	/* Zephyr! */
-	extern FUNC_NORETURN void z_cstart(void);
-	z_cstart();
+	extern FUNC_NORETURN void z_prep_c(void);
+	z_prep_c();
 }

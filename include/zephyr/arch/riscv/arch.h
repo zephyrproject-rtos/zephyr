@@ -30,8 +30,13 @@
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/exception.h>
 
+#ifdef CONFIG_RISCV_ISA_RV32E
+/* Stack alignment for RV32E is 4 bytes */
+#define ARCH_STACK_PTR_ALIGN  4
+#else
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
+#endif
 
 #define Z_RISCV_STACK_PMP_ALIGN \
 	MAX(CONFIG_PMP_GRANULARITY, ARCH_STACK_PTR_ALIGN)

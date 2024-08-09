@@ -646,7 +646,6 @@ SECTIONS
   } GROUP_DATA_LINK_IN(DRAM_REGION, ROMABLE_REGION)
 #endif /* CONFIG_ESP_SIMPLE_BOOT */
 
-  #include <zephyr/linker/cplusplus-rom.ld>
   #include <snippets-data-sections.ld>
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-ram-sections.ld>
@@ -810,6 +809,7 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
+  #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>

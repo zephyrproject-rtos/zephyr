@@ -62,6 +62,8 @@ source "drivers/dma/Kconfig.intel_lpss"
 
 source "drivers/dma/Kconfig.mcux_pxp"
 
+source "drivers/dma/Kconfig.max32"
+
 source "drivers/dma/Kconfig.mcux_smartdma"
 
 source "drivers/dma/Kconfig.andes_atcdmac300"

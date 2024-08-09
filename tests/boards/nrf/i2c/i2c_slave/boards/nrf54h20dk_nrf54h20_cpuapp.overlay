@@ -9,6 +9,7 @@
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 2, 8)>,
 				<NRF_PSEL(TWIM_SCL, 1, 2)>;
+			nordic,clock-enable;
 		};
 	};
 
@@ -27,6 +28,7 @@
 			psels = <NRF_PSEL(TWIM_SDA, 2, 9)>,
 				<NRF_PSEL(TWIM_SCL, 1, 3)>;
 			bias-pull-up;
+			nordic,clock-enable;
 		};
 	};
 

@@ -232,7 +232,9 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCBCD  = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
+#if defined(CONFIG_SOC_SERIES_NPCX4)
 	inst_cdcg->HFCBCD3 = VAL_HFCBCD3;
+#endif
 
 	/*
 	 * Power-down (turn off clock) the modules initially for better

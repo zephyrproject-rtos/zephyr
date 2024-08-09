@@ -1435,12 +1435,7 @@ This has been fixed in main for v3.5.0
 CVE-2023-4262
 -------------
 
-Potential buffer overflow vulnerabilities in the Zephyr Mgmt subsystem
-
-- `Zephyr project bug tracker GHSA-56p9-5p3v-hhrc
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-56p9-5p3v-hhrc>`_
-
-- This issue has not been fixed.
+- This issue has been determined to be a false positive after further analysis.
 
 CVE-2023-4263
 -------------

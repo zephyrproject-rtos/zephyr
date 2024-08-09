@@ -12,5 +12,6 @@ supported:
   - serial
   - trng
   - i2c
+  - dma
 ram: 200
 flash: 1024

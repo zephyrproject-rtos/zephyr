@@ -68,6 +68,56 @@
 				nordic,tasks-mask = <0xfffffff0>;
 			};
 		};
+
+		cpuflpr: cpu@e {
+			compatible = "nordic,vpr";
+			reg = <14>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(320)>;
+			riscv,isa = "rv32emc";
+			nordic,bus-width = <64>;
+
+			cpuflpr_vevif_rx: mailbox {
+				compatible = "nordic,nrf-vevif-task-rx";
+				status = "disabled";
+				interrupt-parent = <&cpuflpr_clic>;
+				interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <1 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <2 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <3 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <4 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <5 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <6 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <7 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <8 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <9 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <10 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <11 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <12 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <13 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <14 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <15 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <16 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <17 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <18 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <19 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <20 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <21 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <22 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <23 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <24 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <25 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <26 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <27 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <28 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <29 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <30 NRF_DEFAULT_IRQ_PRIORITY>,
+					     <31 NRF_DEFAULT_IRQ_PRIORITY>;
+				#mbox-cells = <1>;
+				nordic,tasks = <32>;
+				nordic,tasks-mask = <0xffff0000>;
+			};
+		};
 	};
 
 	reserved-memory {
@@ -98,6 +148,13 @@
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
+		};
+
+		hsfll120: hsfll120 {
+			compatible = "fixed-clock";
+			clocks = <&fll16m>;
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(320)>;
 		};
 	};
 
@@ -429,6 +486,24 @@
 				global-domain-id = <12>;
 			};
 
+			cpuflpr_vpr: vpr@8d4000 {
+				compatible = "nordic,nrf-vpr-coprocessor";
+				reg = <0x8d4000 0x1000>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x8d4000 0x1000>;
+
+				cpuflpr_vevif_tx: mailbox@0 {
+					compatible = "nordic,nrf-vevif-task-tx";
+					reg = <0x0 0x1000>;
+					status = "disabled";
+					#mbox-cells = <1>;
+					nordic,tasks = <32>;
+					nordic,tasks-mask = <0xffff0000>;
+				};
+			};
+
 			can120: can@8d8000 {
 				compatible = "nordic,nrf-can";
 				reg = <0x8d8000 0x400>, <0x2fbef800 0x800>, <0x2fbe8000 0x7800>;
@@ -492,7 +567,8 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
-				interrupts = <229 NRF_DEFAULT_IRQ_PRIORITY>;
+				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hsfll120>;
 			};
 
 			spi121: spi@8e7000 {
@@ -512,10 +588,9 @@
 				compatible = "nordic,nrf-vpr-coprocessor";
 				reg = <0x908000 0x1000>;
 				status = "disabled";
-				cpu = <13>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x908000 0x4000>;
+				ranges = <0x0 0x908000 0x1000>;
 
 				cpuppr_vevif_tx: mailbox@0 {
 					compatible = "nordic,nrf-vevif-task-tx";
@@ -524,15 +599,6 @@
 					#mbox-cells = <1>;
 					nordic,tasks = <16>;
 					nordic,tasks-mask = <0xfffffff0>;
-				};
-
-				cpuppr_clic: interrupt-controller@1000 {
-					compatible = "nordic,nrf-clic";
-					reg = <0x1000 0x3000>;
-					status = "disabled";
-					#interrupt-cells = <2>;
-					interrupt-controller;
-					#address-cells = <1>;
 				};
 			};
 
@@ -1137,6 +1203,34 @@
 			compatible = "arm,v8m-nvic";
 			reg = <0xe000e100 0xc00>;
 			arm,num-irq-priority-bits = <3>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpuppr_private: cpuppr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuppr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			#address-cells = <1>;
+		};
+	};
+
+	cpuflpr_private: cpuflpr-private-bus {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		cpuflpr_clic: interrupt-controller@f0000000 {
+			compatible = "nordic,nrf-clic";
+			reg = <0xf0000000 0x3000>;
+			status = "disabled";
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			#address-cells = <1>;

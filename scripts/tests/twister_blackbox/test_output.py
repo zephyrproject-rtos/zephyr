@@ -46,7 +46,7 @@ class TestOutput:
         ids=['no-detailed-test-id', 'detailed-test-id']
     )
     def test_detailed_test_id(self, out_path, flag, expect_paths):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                [flag] + \
@@ -74,7 +74,7 @@ class TestOutput:
         assert all([testsuite.startswith(expected_start)for _, testsuite, _ in filtered_j])
 
     def test_inline_logs(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'always_build_error', 'dummy')
         args = ['--outdir', out_path, '-T', path] + \
                [val for pair in zip(

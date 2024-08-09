@@ -33,7 +33,7 @@
 #include <esp_app_format.h>
 #include <esp_clk_internal.h>
 
-extern void z_cstart(void);
+extern void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
 {
@@ -72,7 +72,7 @@ void IRAM_ATTR __app_cpu_start(void)
 	esp_intr_initialize();
 
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

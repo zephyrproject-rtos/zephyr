@@ -311,12 +311,9 @@ int flash_stm32_get_wp_sectors(const struct device *dev,
 			       uint32_t *protected_sectors);
 #endif
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+uint8_t flash_stm32_get_rdp_level(const struct device *dev);
 
-int flash_stm32_update_rdp(const struct device *dev, bool enable,
-			   bool permanent);
-
-int flash_stm32_get_rdp(const struct device *dev, bool *enabled,
-			bool *permanent);
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level);
 #endif
 
 /* Flash extended operations */

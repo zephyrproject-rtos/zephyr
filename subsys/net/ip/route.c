@@ -1031,7 +1031,7 @@ static bool is_ll_addr_supported(struct net_if *iface)
 
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 {
-	struct net_linkaddr_storage *lladdr;
+	struct net_linkaddr_storage *lladdr = NULL;
 	struct net_nbr *nbr;
 	int err;
 
@@ -1045,16 +1045,16 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		goto error;
 	}
 
-	lladdr = net_nbr_get_lladdr(nbr->idx);
-	if (!lladdr) {
-		NET_DBG("Cannot find %s neighbor link layer address.",
-			net_sprint_ipv6_addr(nexthop));
-		err = -ESRCH;
-		goto error;
-	}
-
-	if (is_ll_addr_supported(net_pkt_iface(pkt)) &&
+	if (is_ll_addr_supported(nbr->iface) && is_ll_addr_supported(net_pkt_iface(pkt)) &&
 	    is_ll_addr_supported(net_pkt_orig_iface(pkt))) {
+		lladdr = net_nbr_get_lladdr(nbr->idx);
+		if (!lladdr) {
+			NET_DBG("Cannot find %s neighbor link layer address.",
+				net_sprint_ipv6_addr(nexthop));
+			err = -ESRCH;
+			goto error;
+		}
+
 		if (!net_pkt_lladdr_src(pkt)->addr) {
 			NET_DBG("Link layer source address not set");
 			err = -EINVAL;
@@ -1084,9 +1084,11 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
 	}
 
-	net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
-	net_pkt_lladdr_dst(pkt)->type = lladdr->type;
-	net_pkt_lladdr_dst(pkt)->len = lladdr->len;
+	if (lladdr) {
+		net_pkt_lladdr_dst(pkt)->addr = lladdr->addr;
+		net_pkt_lladdr_dst(pkt)->type = lladdr->type;
+		net_pkt_lladdr_dst(pkt)->len = lladdr->len;
+	}
 
 	net_pkt_set_iface(pkt, nbr->iface);
 

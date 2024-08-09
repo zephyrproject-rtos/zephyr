@@ -12,6 +12,7 @@ zephyr_library_sources(
   irq_manage.c
   thread.c
   vector_handlers.c
+  prep_c.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_XTENSA_USE_CORE_CRT1 crt1.S)

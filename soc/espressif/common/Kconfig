@@ -10,3 +10,4 @@ config FLASH_BASE_ADDRESS
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
+rsource "Kconfig.wifi"
