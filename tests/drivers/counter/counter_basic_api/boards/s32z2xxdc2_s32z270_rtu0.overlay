@@ -10,17 +10,17 @@
 };
 
 &stm1 {
-	prescaler = <2>;
+	prescaler = <8>;
 	status = "okay";
 };
 
 &stm2 {
-	prescaler = <4>;
+	prescaler = <32>;
 	status = "okay";
 };
 
 &stm3 {
-	prescaler = <8>;
+	prescaler = <64>;
 	status = "okay";
 };
 

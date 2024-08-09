@@ -9,6 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#if defined(CONFIG_GIC)
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#endif /* CONFIG_GIC */
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
@@ -54,6 +57,8 @@ struct nxp_s32_sys_timer_chan_data {
 
 struct nxp_s32_sys_timer_data {
 	struct nxp_s32_sys_timer_chan_data ch_data[SYS_TIMER_NUM_CHANNELS];
+	uint32_t guard_period;
+	atomic_t irq_pending;
 };
 
 struct nxp_s32_sys_timer_config {
@@ -63,13 +68,109 @@ struct nxp_s32_sys_timer_config {
 	clock_control_subsys_t clock_subsys;
 	uint8_t prescaler;
 	bool freeze;
+	unsigned int irqn;
 };
+
+static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
+{
+#if defined(CONFIG_GIC)
+	arm_gic_irq_set_pending(irq);
+#else
+	NVIC_SetPendingIRQ(irq);
+#endif /* CONFIG_GIC */
+}
+
+static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
+{
+	uint32_t to_top;
+
+	if (likely(IS_BIT_MASK(top))) {
+		return (val1 + val2) & top;
+	}
+
+	/* top is not 2^n-1 */
+	to_top = top - val1;
+
+	return (val2 <= to_top) ? val1 + val2 : val2 - to_top;
+}
+
+static uint32_t ticks_sub(uint32_t val, uint32_t old, uint32_t top)
+{
+	if (likely(IS_BIT_MASK(top))) {
+		return (val - old) & top;
+	}
+
+	/* top is not 2^n-1 */
+	return (val >= old) ? (val - old) : val + top + 1 - old;
+}
 
 static ALWAYS_INLINE void stm_disable_channel(const struct nxp_s32_sys_timer_config *config,
 					      uint8_t channel)
 {
 	REG_WRITE(STM_CCR(channel), STM_CCR_CEN(0U));
 	REG_WRITE(STM_CIR(channel), STM_CIR_CIF(1U));
+}
+
+static int stm_set_alarm(const struct device *dev, uint8_t channel, uint32_t ticks, uint32_t flags)
+{
+	const struct nxp_s32_sys_timer_config *config = dev->config;
+	struct nxp_s32_sys_timer_data *data = dev->data;
+	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[channel];
+	const uint32_t now = REG_READ(STM_CNT);
+	const uint32_t top_val = config->info.max_top_value;
+	int err = 0;
+	uint32_t diff;
+	uint32_t max_rel_val;
+	bool irq_on_late;
+
+	if (flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+		__ASSERT_NO_MSG(data->guard_period < top_val);
+		max_rel_val = top_val - data->guard_period;
+		irq_on_late = !!(flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE);
+	} else {
+		/*
+		 * If relative value is smaller than half of the counter range it is assumed
+		 * that there is a risk of setting value too late and late detection algorithm
+		 * must be applied. When late setting is detected, interrupt shall be
+		 * triggered for immediate expiration of the timer. Detection is performed
+		 * by limiting relative distance between CMP and CNT.
+		 *
+		 * Note that half of counter range is an arbitrary value.
+		 */
+		irq_on_late = ticks < (top_val / 2);
+		/* Limit max to detect short relative being set too late */
+		max_rel_val = irq_on_late ? top_val / 2 : top_val;
+		ticks = ticks_add(now, ticks, top_val);
+	}
+
+	/* Disable the channel before loading the new value so that it takes effect immediately */
+	stm_disable_channel(config, channel);
+	REG_WRITE(STM_CMP(channel), ticks);
+	REG_WRITE(STM_CCR(channel), STM_CCR_CEN(1U));
+
+	/*
+	 * Decrement value to detect also case when ticks == CNT. Otherwise, condition would need
+	 * to include comparing diff against 0.
+	 */
+	diff = ticks_sub(ticks - 1, REG_READ(STM_CNT), top_val);
+	if (diff > max_rel_val) {
+		if (flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+			err = -ETIME;
+		}
+
+		/*
+		 * Interrupt is triggered always for relative alarm and for absolute depending
+		 * on the flag
+		 */
+		if (irq_on_late) {
+			atomic_or(&data->irq_pending, BIT(channel));
+			irq_set_pending(config->irqn);
+		} else {
+			ch_data->callback = NULL;
+		}
+	}
+
+	return err;
 }
 
 static void stm_isr(const struct device *dev)
@@ -86,8 +187,9 @@ static void stm_isr(const struct device *dev)
 		pending = FIELD_GET(STM_CCR_CEN_MASK, REG_READ(STM_CCR(channel))) &&
 			  FIELD_GET(STM_CIR_CIF_MASK, REG_READ(STM_CIR(channel)));
 
-		if (pending) {
+		if (pending || atomic_test_bit(&data->irq_pending, channel)) {
 			stm_disable_channel(config, channel);
+			atomic_and(&data->irq_pending, ~BIT(channel));
 
 			ch_data = &data->ch_data[channel];
 			if (ch_data->callback) {
@@ -135,31 +237,20 @@ static int nxp_s32_sys_timer_set_alarm(const struct device *dev, uint8_t channel
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 	struct nxp_s32_sys_timer_data *data = dev->data;
 	struct nxp_s32_sys_timer_chan_data *ch_data = &data->ch_data[channel];
-	uint32_t ticks = alarm_cfg->ticks;
-	uint32_t cnt_val = REG_READ(STM_CNT);
 
 	if (ch_data->callback) {
 		return -EBUSY;
 	}
 
-	if (ticks > config->info.max_top_value) {
-		LOG_ERR("Invalid ticks value %d", ticks);
+	if (alarm_cfg->ticks > config->info.max_top_value) {
+		LOG_ERR("Invalid ticks value %d", alarm_cfg->ticks);
 		return -EINVAL;
 	}
 
 	ch_data->callback = alarm_cfg->callback;
 	ch_data->user_data = alarm_cfg->user_data;
 
-	/* Disable the channel before loading the new value so that it takes effect immediately */
-	stm_disable_channel(config, channel);
-
-	if (!(alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE)) {
-		ticks += cnt_val;
-	}
-	REG_WRITE(STM_CMP(channel), ticks);
-	REG_WRITE(STM_CCR(channel), STM_CCR_CEN(1U));
-
-	return 0;
+	return stm_set_alarm(dev, channel, alarm_cfg->ticks, alarm_cfg->flags);
 }
 
 static int nxp_s32_sys_timer_cancel_alarm(const struct device *dev, uint8_t channel)
@@ -204,6 +295,28 @@ static uint32_t nxp_s32_sys_timer_get_top_value(const struct device *dev)
 	const struct nxp_s32_sys_timer_config *config = dev->config;
 
 	return config->info.max_top_value;
+}
+
+static int nxp_s32_sys_timer_set_guard_period(const struct device *dev, uint32_t guard,
+					      uint32_t flags)
+{
+	struct nxp_s32_sys_timer_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	__ASSERT_NO_MSG(guard < nxp_s32_sys_timer_get_top_value(dev));
+	data->guard_period = guard;
+
+	return 0;
+}
+
+static uint32_t nxp_s32_sys_timer_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	struct nxp_s32_sys_timer_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	return data->guard_period;
 }
 
 static uint32_t nxp_s32_sys_timer_get_frequency(const struct device *dev)
@@ -264,8 +377,10 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 	.set_alarm = nxp_s32_sys_timer_set_alarm,
 	.cancel_alarm = nxp_s32_sys_timer_cancel_alarm,
 	.set_top_value = nxp_s32_sys_timer_set_top_value,
-	.get_pending_int = nxp_s32_sys_timer_get_pending_int,
 	.get_top_value = nxp_s32_sys_timer_get_top_value,
+	.set_guard_period = nxp_s32_sys_timer_set_guard_period,
+	.get_guard_period = nxp_s32_sys_timer_get_guard_period,
+	.get_pending_int = nxp_s32_sys_timer_get_pending_int,
 	.get_freq = nxp_s32_sys_timer_get_frequency
 };
 
@@ -294,6 +409,7 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 		.prescaler = DT_INST_PROP(n, prescaler) - 1,				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.irqn = DT_INST_IRQN(n),						\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
