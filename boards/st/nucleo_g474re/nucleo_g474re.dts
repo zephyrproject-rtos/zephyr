@@ -57,6 +57,7 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		crc0 = &crc;
 	};
 };
 
@@ -70,6 +71,10 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 
