@@ -4713,6 +4713,14 @@ West:
   labels:
     - "platform: TI"
 
+"West project: hal_wch":
+  status: maintained
+  maintainers:
+    - nzmichaelh
+    - kholia
+  files:
+    - modules/hal_wch/
+
 "West project: hal_wurthelektronik":
   status: maintained
   maintainers:
