@@ -68,7 +68,7 @@ static uint8_t esp_intr_irq_alloc[ESP32C6_INTC_AVAILABLE_IRQS][ESP32C6_INTC_SRCS
 
 static uint32_t esp_intr_enabled_mask[STATUS_MASK_NUM] = {0, 0, 0};
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 
 static uint32_t esp_intr_find_irq_for_source(uint32_t source)
 {
