@@ -33,6 +33,11 @@ async function postLed(state)
 	}
 }
 
+function setNetStat(json_data, stat_name)
+{
+	document.getElementById(stat_name).innerHTML = json_data[stat_name];
+}
+
 window.addEventListener("DOMContentLoaded", (ev) => {
 	/* Fetch the uptime once per second */
 	setInterval(fetchUptime, 1000);
@@ -49,4 +54,19 @@ window.addEventListener("DOMContentLoaded", (ev) => {
 		console.log("led_off clicked");
 		postLed(false);
 	})
+
+	/* Setup websocket for handling network stats */
+	const ws = new WebSocket("/");
+
+	ws.onmessage = (event) => {
+		const data = JSON.parse(event.data);
+		setNetStat(data, "bytes_recv");
+		setNetStat(data, "bytes_sent");
+		setNetStat(data, "ipv6_pkt_recv");
+		setNetStat(data, "ipv6_pkt_sent");
+		setNetStat(data, "ipv4_pkt_recv");
+		setNetStat(data, "ipv4_pkt_sent");
+		setNetStat(data, "tcp_bytes_recv");
+		setNetStat(data, "tcp_bytes_sent");
+	}
 })
