@@ -3,14 +3,6 @@
 
 if SOC_FAMILY_KINETIS
 
-config SERIAL_INIT_PRIORITY
-	default 55
-	depends on SERIAL
-
-config ADC_INIT_PRIORITY
-	default 80 if ADC_MCUX_ADC16_ENABLE_EDMA
-	depends on ADC
-
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_KINETIS
