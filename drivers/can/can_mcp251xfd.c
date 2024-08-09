@@ -1497,7 +1497,9 @@ static int mcp251xfd_reset(const struct device *dev)
 		return ret;
 	}
 
-	return spi_write_dt(&dev_cfg->bus, &tx);
+	ret = spi_write_dt(&dev_cfg->bus, &tx);
+	k_sleep(K_USEC(MCP251XFD_RESET_DELAY_USEC));
+	return ret;
 }
 
 static int mcp251xfd_init(const struct device *dev)
@@ -1507,6 +1509,7 @@ static int mcp251xfd_init(const struct device *dev)
 	uint32_t *reg;
 	uint8_t opmod;
 	int ret;
+	int can_timing_ret;
 	struct can_timing timing = { 0 };
 #if defined(CONFIG_CAN_FD_MODE)
 	struct can_timing timing_data = { 0 };
@@ -1570,6 +1573,7 @@ static int mcp251xfd_init(const struct device *dev)
 	ret = mcp251xfd_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset the device [%d]", ret);
+		ret = -EIO;
 		goto done;
 	}
 
@@ -1617,48 +1621,57 @@ static int mcp251xfd_init(const struct device *dev)
 
 	ret = mcp251xfd_init_con_reg(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_init_osc_reg(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_init_iocon_reg(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_init_int_reg(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_set_tdc(dev, false);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	ret = mcp251xfd_init_tscon(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 #endif
 
 	ret = mcp251xfd_init_tef_fifo(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_init_tx_queue(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
 	ret = mcp251xfd_init_rx_fifo(dev);
 	if (ret < 0) {
+		ret = -EIO;
 		goto done;
 	}
 
@@ -1669,15 +1682,15 @@ static int mcp251xfd_init(const struct device *dev)
 		MCP251XFD_RAM_SIZE);
 
 done:
-	ret = can_set_timing(dev, &timing);
-	if (ret < 0) {
-		return ret;
+	can_timing_ret = can_set_timing(dev, &timing);
+	if (can_timing_ret < 0) {
+		return can_timing_ret;
 	}
 
 #if defined(CONFIG_CAN_FD_MODE)
-	ret = can_set_timing_data(dev, &timing_data);
-	if (ret < 0) {
-		return ret;
+	can_timing_ret = can_set_timing_data(dev, &timing_data);
+	if (can_timing_ret < 0) {
+		return can_timing_ret;
 	}
 #endif
 
