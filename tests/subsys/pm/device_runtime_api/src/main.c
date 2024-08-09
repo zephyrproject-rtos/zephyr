@@ -253,6 +253,31 @@ ZTEST(device_runtime_api, test_api)
 		/* Now it should be already suspended */
 		(void)pm_device_state_get(test_dev, &state);
 		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
+		/* Test if flushing an async operation triggers
+		 * the device pm action immediately.
+		 */
+		ret = pm_device_runtime_get(test_dev);
+		zassert_equal(ret, 0);
+
+		/* A device that is active cannot be flushed */
+		ret = pm_device_runtime_flush(test_dev);
+		zassert_equal(ret, -EINVAL);
+
+		ret = pm_device_runtime_put_async(test_dev, K_MSEC(100));
+
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+		ret = pm_device_runtime_flush(test_dev);
+		zassert_equal(ret, 0);
+
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+
+		/* A device already suspended should not trigger any action */
+		ret = pm_device_runtime_flush(test_dev);
+		zassert_equal(ret, -EALREADY);
 	}
 
 	/* Put operation should fail due the state be locked. */
