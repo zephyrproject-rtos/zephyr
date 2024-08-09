@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable TrustZone-M
+CONFIG_ARM_TRUSTZONE_M=y
+
+# This Board implies building Non-Secure firmware
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable PINCTRL
+CONFIG_PINCTRL=y
+
+# Enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
