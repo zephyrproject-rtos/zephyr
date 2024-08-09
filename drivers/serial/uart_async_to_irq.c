@@ -363,6 +363,13 @@ int uart_async_to_irq_rx_disable(const struct device *dev)
 	return 0;
 }
 
+bool uart_async_to_irq_err_enabled(const struct device *dev)
+{
+	struct uart_async_to_irq_data *data = get_data(dev);
+
+	return (data->flags & A2I_ERR_IRQ_ENABLED) ? true : false;
+}
+
 void uart_async_to_irq_trampoline_cb(const struct device *dev)
 {
 	struct uart_async_to_irq_data *data = get_data(dev);

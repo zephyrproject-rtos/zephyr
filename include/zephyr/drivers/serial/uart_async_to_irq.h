@@ -137,6 +137,13 @@ int uart_async_to_irq_rx_enable(const struct device *dev);
  */
 int uart_async_to_irq_rx_disable(const struct device *dev);
 
+/** @brief Checking if error interrupt is enabled.
+ *
+ * @retval true if error interrupt is enabled.
+ * @retval false if error interrupt is not enabled.
+ */
+bool uart_async_to_irq_err_enabled(const struct device *dev);
+
 /* Starting from here API is internal only. */
 
 /** @cond INTERNAL_HIDDEN
