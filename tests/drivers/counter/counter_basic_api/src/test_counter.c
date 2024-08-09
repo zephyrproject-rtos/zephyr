@@ -23,6 +23,9 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg cntr_alarm_cfg;
 struct counter_alarm_cfg cntr_alarm_cfg2;
 
+#define DELAY_US 1200
+#define RANGE_US 500
+
 #define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 /* Generate a list of devices for all instances of the "compat" */
 #define DEVS_FOR_DT_COMPAT(compat) \
@@ -130,7 +133,6 @@ static const struct device *const period_devs[] = {
 };
 
 typedef void (*counter_test_func_t)(const struct device *dev);
-
 typedef bool (*counter_capability_func_t)(const struct device *dev);
 
 static inline uint32_t get_counter_period_us(const struct device *dev)
@@ -672,6 +674,43 @@ ZTEST(counter_basic, test_all_channels)
 			   single_channel_alarm_capable);
 }
 
+static void test_valid_function_wihtout_alarm(const struct device *dev)
+{
+	int err;
+	uint32_t ticks;
+	uint32_t ticks_per_delay;
+	uint32_t range;
+
+	range = counter_us_to_ticks(dev, RANGE_US);
+
+	ticks_per_delay = counter_us_to_ticks(dev, DELAY_US);
+
+	err = counter_start(dev);
+	zassert_equal(0, err, "%s: counter failed to start", dev->name);
+
+	k_busy_wait(DELAY_US);
+
+	err = counter_get_value(dev, &ticks);
+	zassert_equal(0, err, "%s: could not get counter value", dev->name);
+
+	zassert_true((ticks > 0), "%s: counter did not count");
+
+	zassert_true((ticks <= ticks_per_delay + range),
+		"%s: ticks are above expected range expected below: %lu got: %lu",
+		dev->name, ticks_per_delay + range, ticks);
+
+	zassert_true((ticks >= ticks_per_delay - range),
+		"%s: ticks are below expected range expected above: %lu got: %lu",
+		dev->name, ticks_per_delay - range, ticks);
+
+	err = counter_stop(dev);
+	zassert_equal(0, err, "%s: counter failed to stop", dev->name);
+}
+
+ZTEST(counter_without_alarm, test_valid_function_wihtout_alarm) {
+	test_all_instances(test_valid_function_wihtout_alarm, NULL);
+}
+
 /**
  * Test validates if alarm set too late (current tick or current tick + 1)
  * results in callback being called.
@@ -1025,3 +1064,6 @@ ZTEST_SUITE(counter_basic, NULL, counter_setup, NULL, NULL, NULL);
 
 /* No callbacks, run in usermode */
 ZTEST_SUITE(counter_no_callback, NULL, counter_setup, NULL, NULL, NULL);
+
+/* Some drivers do not have alarm implemented */
+ZTEST_SUITE(counter_without_alarm, NULL, counter_setup, NULL, NULL, NULL);
