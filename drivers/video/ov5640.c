@@ -6,17 +6,15 @@
 
 #define DT_DRV_COMPAT ovti_ov5640
 
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/kernel.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(ov5640);
-
-#include <zephyr/sys/byteorder.h>
+LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define CHIP_ID_REG 0x300a
 #define CHIP_ID_VAL 0x5640

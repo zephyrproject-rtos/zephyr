@@ -6,14 +6,13 @@
 
 #define DT_DRV_COMPAT nxp_mipi_csi2rx
 
-#include <fsl_mipi_csi2rx.h>
-
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mipi_csi);
+
+#include <fsl_mipi_csi2rx.h>
+
+LOG_MODULE_REGISTER(video_mipi_csi2rx, CONFIG_VIDEO_LOG_LEVEL);
 
 /*
  * Two data lanes are set by default as 2-lanes camera sensors are
