@@ -71,6 +71,20 @@ static inline bool sys_hashmap_iterator_has_next(const struct sys_hashmap_iterat
 }
 
 /**
+ * @brief Equality function defined for elements of @ref sys_hashmap
+ *
+ * The Hashmap equality function allows storing arbitrary data in the uint64_t fields of the map.
+ * Similarly to what happens in other hashmap implementation by defining a custom hash and equality
+ * function you can store and retrieve elements of virtually every type.
+ *
+ * @param left Left element of the comparison.
+ * @param right Right element of the comparison.
+ *
+ * @return wether left and right elements are the same
+ */
+typedef bool(*sys_hashmap_equal_t)(uint64_t left, uint64_t right);
+
+/**
  * @brief Allocator interface for @ref sys_hashmap
  *
  * The Hashmap allocator can be any allocator that behaves similarly to `realloc()` with the
@@ -137,16 +151,21 @@ typedef int (*sys_hashmap_insert_t)(struct sys_hashmap *map, uint64_t key, uint6
 /**
  * @brief Remove an entry from a @ref sys_hashmap
  *
- * Erase the entry associated with key @p key, if one exists.
+ * Erase the entry associated with key @p key, if one exists. Returns references to the
+ * old value and the old key. The addition of the `eq_func` in @ref sys_hasmap
+ * could mean that the key used to access an entry is different from the key stored.
+ * The @p stored_key will hold a reference to the old key if present.
  *
  * @param map Hashmap to remove from
  * @param key Key to remove from @p map
  * @param value Location to store a potential value associated with @p key or `NULL`
+ * @param stored_key Location to store a potential key that has the same hash
+ * and is equal to the key passed when checked using @ref sys_hasmap `eq_func`
  *
  * @retval true if @p map was modified as a result of this operation.
  * @retval false if @p map does not contain a value associated with @p key.
  */
-typedef bool (*sys_hashmap_remove_t)(struct sys_hashmap *map, uint64_t key, uint64_t *value);
+typedef bool (*sys_hashmap_remove_t)(struct sys_hashmap *map, uint64_t key, uint64_t *value, uint64_t *stored_key);
 
 /**
  * @brief Get a value from a @ref sys_hashmap

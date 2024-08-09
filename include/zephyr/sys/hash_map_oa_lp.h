@@ -44,9 +44,9 @@ struct sys_hashmap_oa_lp_data {
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Variant-specific details for @ref sys_hashmap_config.
  */
-#define SYS_HASHMAP_OA_LP_DEFINE_ADVANCED(_name, _hash_func, _alloc_func, ...)                     \
+#define SYS_HASHMAP_OA_LP_DEFINE_ADVANCED(_name, _hash_func, _eq_func, _alloc_func, ...)                     \
 	SYS_HASHMAP_DEFINE_ADVANCED(_name, &sys_hashmap_oa_lp_api, sys_hashmap_config,             \
-				    sys_hashmap_oa_lp_data, _hash_func, _alloc_func, __VA_ARGS__)
+				    sys_hashmap_oa_lp_data, _hash_func, _eq_func, _alloc_func, __VA_ARGS__)
 
 /**
  * @brief Declare a Open Addressing Linear Probe Hashmap (advanced)
@@ -61,9 +61,9 @@ struct sys_hashmap_oa_lp_data {
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Details for @ref sys_hashmap_config.
  */
-#define SYS_HASHMAP_OA_LP_DEFINE_STATIC_ADVANCED(_name, _hash_func, _alloc_func, ...)              \
+#define SYS_HASHMAP_OA_LP_DEFINE_STATIC_ADVANCED(_name, _hash_func, _eq_func, _alloc_func, ...)              \
 	SYS_HASHMAP_DEFINE_STATIC_ADVANCED(_name, &sys_hashmap_oa_lp_api, sys_hashmap_config,      \
-					   sys_hashmap_oa_lp_data, _hash_func, _alloc_func,        \
+					   sys_hashmap_oa_lp_data, _eq_func, _hash_func, _alloc_func,        \
 					   __VA_ARGS__)
 
 /**
@@ -75,7 +75,7 @@ struct sys_hashmap_oa_lp_data {
  */
 #define SYS_HASHMAP_OA_LP_DEFINE_STATIC(_name)                                                     \
 	SYS_HASHMAP_OA_LP_DEFINE_STATIC_ADVANCED(                                                  \
-		_name, sys_hash32, SYS_HASHMAP_DEFAULT_ALLOCATOR,                                  \
+		_name, sys_hash32, SYS_HASHMAP_DEFAULT_EQUALITY_FUNCTION, SYS_HASHMAP_DEFAULT_ALLOCATOR,                                  \
 		SYS_HASHMAP_CONFIG(SIZE_MAX, SYS_HASHMAP_DEFAULT_LOAD_FACTOR))
 
 /**
@@ -87,7 +87,7 @@ struct sys_hashmap_oa_lp_data {
  */
 #define SYS_HASHMAP_OA_LP_DEFINE(_name)                                                            \
 	SYS_HASHMAP_OA_LP_DEFINE_ADVANCED(                                                         \
-		_name, sys_hash32, SYS_HASHMAP_DEFAULT_ALLOCATOR,                                  \
+		_name, sys_hash32, SYS_HASHMAP_DEFAULT_EQUALITY_FUNCTION, SYS_HASHMAP_DEFAULT_ALLOCATOR,                                  \
 		SYS_HASHMAP_CONFIG(SIZE_MAX, SYS_HASHMAP_DEFAULT_LOAD_FACTOR))
 
 #ifdef CONFIG_SYS_HASH_MAP_CHOICE_OA_LP

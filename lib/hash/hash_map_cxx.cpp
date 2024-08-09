@@ -96,7 +96,7 @@ static int sys_hashmap_cxx_insert(struct sys_hashmap *map, uint64_t key, uint64_
 	return 1;
 }
 
-static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value, uint64_t *stored_key)
 {
 	cxx_map *umap = static_cast<cxx_map *>(map->data->buckets);
 
@@ -110,6 +110,7 @@ static bool sys_hashmap_cxx_remove(struct sys_hashmap *map, uint64_t key, uint64
 	}
 
 	if (value != nullptr) {
+		*stored_key = it->first;
 		*value = it->second;
 	}
 

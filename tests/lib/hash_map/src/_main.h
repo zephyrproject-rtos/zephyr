@@ -14,5 +14,6 @@
 
 extern struct sys_hashmap map;
 extern struct sys_hashmap custom_load_factor_map;
+extern struct sys_hashmap custom_hash_equality;
 
 #endif
