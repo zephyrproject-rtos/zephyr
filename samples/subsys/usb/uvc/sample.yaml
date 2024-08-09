@@ -1,0 +1,10 @@
+sample:
+  name: USB Video sample
+tests:
+  sample.subsys.usb.uvc:
+    depends_on:
+      - usbd
+      - video
+    tags: usb video
+    platform_allow:
+    harness: TBD
