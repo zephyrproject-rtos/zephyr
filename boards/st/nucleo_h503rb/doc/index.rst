@@ -135,6 +135,8 @@ The Zephyr nucleo_h503rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -177,6 +179,13 @@ Serial Port
 
 Nucleo H533RE board has up to 3 U(S)ARTs. The Zephyr console output is assigned
 to USART3. Default settings are 115200 8N1.
+
+Backup SRAM
+-----------
+
+In order to test backup SRAM, you may want to disconnect VBAT from VDD_MCU.
+You can do it by removing ``SB38`` jumper on the back side of the board.
+VBAT can be provided via the left ST Morpho connector's pin 33.
 
 Programming and Debugging
 *************************

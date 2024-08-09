@@ -150,6 +150,8 @@ The Zephyr nucleo_h563zi board configuration supports the following hardware fea
 +===========+============+=====================================+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | CAN/CANFD | on-chip    | CAN                                 |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
@@ -239,6 +241,13 @@ Serial Port
 
 Nucleo H563ZI board has up to 12 U(S)ARTs. The Zephyr console output is assigned
 to USART3. Default settings are 115200 8N1.
+
+Backup SRAM
+-----------
+
+In order to test backup SRAM, you may want to disconnect VBAT from VDD_MCU.
+You can do it by removing ``SB55`` jumper on the back side of the board.
+VBAT can be provided via the left ST Morpho connector's pin 33.
 
 Programming and Debugging
 *************************

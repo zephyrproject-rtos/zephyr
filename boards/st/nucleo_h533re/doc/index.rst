@@ -165,6 +165,8 @@ The Zephyr nucleo_h533re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | Real Time Clock                     |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -227,6 +229,13 @@ Serial Port
 
 Nucleo H533RE board has up to 4 USARTs, 2 UARTs, and one LPUART. The Zephyr console output is assigned
 to USART2. Default settings are 115200 8N1.
+
+Backup SRAM
+-----------
+
+In order to test backup SRAM, you may want to disconnect VBAT from VDD_MCU.
+You can do it by removing ``SB38`` jumper on the back side of the board.
+VBAT can be provided via the left ST Morpho connector's pin 33.
 
 Programming and Debugging
 *************************
