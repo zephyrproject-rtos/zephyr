@@ -1164,6 +1164,7 @@ static int udc_stm32_driver_init0(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
+	data->caps.sof = true;
 	data->caps.mps0 = UDC_MPS0_64;
 
 	priv->dev = dev;

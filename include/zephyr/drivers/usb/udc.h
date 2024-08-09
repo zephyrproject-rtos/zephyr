@@ -44,6 +44,8 @@ struct udc_device_caps {
 	uint32_t addr_before_status : 1;
 	/** Controller can detect the state change of USB supply VBUS.*/
 	uint32_t can_detect_vbus : 1;
+	/** Controller reports Start of Frame (SoF) events.*/
+	uint32_t sof : 1;
 	/** Maximum packet size for control endpoint */
 	enum udc_mps0 mps0 : 2;
 };
