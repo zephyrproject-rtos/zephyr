@@ -61,7 +61,11 @@ tests:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n
   portability.posix.common.signal.big_nsig:
     extra_configs:
-      - CONFIG_POSIX_RTSIG_MAX=1024
+      # The signal set size is intentionally limited according to the max signal queue size
+      # This effectively fixes RTSIG_MAX to 256, so we can queue all realtime signals.
+      - CONFIG_SIGNAL_SET_SIZE=288
+      # implementation max signal queue size
+      - CONFIG_SIGNAL_QUEUE_SIZE=256
   portability.posix.common.dynamic_stack:
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=y

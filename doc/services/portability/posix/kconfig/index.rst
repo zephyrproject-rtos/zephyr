@@ -24,7 +24,6 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_BITS`
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_GUARDSIZE_DEFAULT`
 * :kconfig:option:`CONFIG_POSIX_PTHREAD_ATTR_STACKSIZE_BITS`
-* :kconfig:option:`CONFIG_POSIX_RTSIG_MAX`
 * :kconfig:option:`CONFIG_POSIX_SIGNAL_STRING_DESC`
 * :kconfig:option:`CONFIG_POSIX_THREAD_KEYS_MAX`
 * :kconfig:option:`CONFIG_POSIX_THREAD_THREADS_MAX`
@@ -35,6 +34,7 @@ implementation of the POSIX API.
 * :kconfig:option:`CONFIG_POSIX_SEM_NAMELEN_MAX`
 * :kconfig:option:`CONFIG_POSIX_SEM_NSEMS_MAX`
 * :kconfig:option:`CONFIG_POSIX_SEM_VALUE_MAX`
+* :kconfig:option:`CONFIG_SIGNAL_SET_SIZE`
 * :kconfig:option:`CONFIG_TIMER_CREATE_WAIT`
 * :kconfig:option:`CONFIG_THREAD_STACK_INFO`
 * :kconfig:option:`CONFIG_ZVFS_EVENTFD_MAX`

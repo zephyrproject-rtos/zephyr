@@ -1,0 +1,14 @@
+common:
+  tags:
+    - kernel
+  platform_exclude:
+    # undefined reference to `bootutil_key_cnt'
+    - mps2/an521/cpu0/ns
+
+tests:
+  kernel.signal: {}
+  kernel.signal.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
