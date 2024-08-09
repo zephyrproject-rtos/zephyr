@@ -117,6 +117,38 @@ uint8_t bt_a2dp_sbc_get_channel_num(struct bt_a2dp_codec_sbc_params *sbc_codec);
  */
 uint32_t bt_a2dp_sbc_get_sampling_frequency(struct bt_a2dp_codec_sbc_params *sbc_codec);
 
+/** @brief get subband num of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the subband num.
+ */
+uint8_t bt_a2dp_sbc_get_subband_num(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get block length of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the block length.
+ */
+uint8_t bt_a2dp_sbc_get_block_length(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get channel mode of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the channel mode.
+ */
+enum sbc_ch_mode bt_a2dp_sbc_get_channel_mode(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
+/** @brief get allocation method of a2dp sbc config.
+ *
+ *  @param sbc_codec The a2dp sbc parameter.
+ *
+ *  @return the allocation method.
+ */
+enum sbc_alloc_mthd bt_a2dp_sbc_get_allocation_method(struct bt_a2dp_codec_sbc_params *sbc_codec);
+
 #ifdef __cplusplus
 }
 #endif
