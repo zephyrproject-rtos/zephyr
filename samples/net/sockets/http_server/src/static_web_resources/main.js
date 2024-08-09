@@ -19,10 +19,12 @@ async function fetchUptime()
 	}
 }
 
-async function postLed(body)
+async function postLed(state)
 {
 	try {
-		const response = await fetch("/led", {method : "POST", body : body});
+		const payload = JSON.stringify({"led_num" : 0, "led_state" : state});
+
+		const response = await fetch("/led", {method : "POST", body : payload});
 		if (!response.ok) {
 			throw new Error(`Response satus: ${response.status}`);
 		}
@@ -39,12 +41,12 @@ window.addEventListener("DOMContentLoaded", (ev) => {
 	const led_on_btn = document.getElementById("led_on");
 	led_on_btn.addEventListener("click", (event) => {
 		console.log("led_on clicked");
-		postLed("led=on");
+		postLed(true);
 	})
 
 	const led_off_btn = document.getElementById("led_off");
 	led_off_btn.addEventListener("click", (event) => {
 		console.log("led_off clicked");
-		postLed("led=off");
+		postLed(false);
 	})
 })

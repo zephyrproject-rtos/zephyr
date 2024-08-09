@@ -15,10 +15,23 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include "zephyr/device.h"
+#include "zephyr/sys/util.h"
 #include <zephyr/drivers/led.h>
+#include <zephyr/data/json.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_server_sample, LOG_LEVEL_DBG);
+
+struct led_command {
+	int led_num;
+	bool led_state;
+};
+
+static const struct json_obj_descr led_command_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct led_command, led_num, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct led_command, led_state, JSON_TOK_TRUE),
+};
 
 static const struct device *leds_dev = DEVICE_DT_GET_ANY(gpio_leds);
 
@@ -150,27 +163,26 @@ static struct http_resource_detail_dynamic uptime_resource_detail = {
 	.user_data = NULL,
 };
 
-static void led_control(bool on)
-{
-	LOG_INF("POST request turning LED %s", on ? "on" : "off");
-
-	if (leds_dev != NULL) {
-		if (on) {
-			led_on(leds_dev, 0);
-		} else {
-			led_off(leds_dev, 0);
-		}
-	}
-}
-
 static void parse_led_post(uint8_t *buf, size_t len)
 {
-	if ((len == sizeof("led=on") - 1) && (0 == memcmp("led=on", buf, len))) {
-		led_control(true);
-	} else if ((len == sizeof("led=off") - 1) && (0 == memcmp("led=off", buf, len))) {
-		led_control(false);
-	} else {
-		LOG_WRN("Unexpected POST payload");
+	int ret;
+	struct led_command cmd;
+	const int expected_return_code = BIT_MASK(ARRAY_SIZE(led_command_descr));
+
+	ret = json_obj_parse(buf, len, led_command_descr, ARRAY_SIZE(led_command_descr), &cmd);
+	if (ret != expected_return_code) {
+		LOG_WRN("Failed to fully parse JSON payload, ret=%d", ret);
+		return;
+	}
+
+	LOG_INF("POST request setting LED %d to state %d", cmd.led_num, cmd.led_state);
+
+	if (leds_dev != NULL) {
+		if (cmd.led_state) {
+			led_on(leds_dev, cmd.led_num);
+		} else {
+			led_off(leds_dev, cmd.led_num);
+		}
 	}
 }
 
