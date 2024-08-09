@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(TMP114, CONFIG_SENSOR_LOG_LEVEL);
 #define TMP114_DEVICE_ID	0x1114
 
 #define TMP114_ALERT_DATA_READY  BIT(0)
+#define TMP114_AVG_MASK          BIT(7)
 
 struct tmp114_data {
 	uint16_t sample;
@@ -50,6 +51,15 @@ static int tmp114_reg_read(const struct device *dev, uint8_t reg,
 	*val = sys_be16_to_cpu(*val);
 
 	return 0;
+}
+
+static int tmp114_reg_write(const struct device *dev, uint8_t reg,
+			    uint16_t val)
+{
+	const struct tmp114_dev_config *cfg = dev->config;
+	uint8_t tx_buf[3] = {reg, val >> 8, val & 0xFF};
+
+	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
 static inline int tmp114_device_id_check(const struct device *dev, uint16_t *id)
@@ -155,8 +165,41 @@ static int tmp114_attr_get(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int tmp114_attr_set(const struct device *dev,
+			   enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	int16_t value;
+	int rc;
+
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+		return -ENOTSUP;
+	}
+
+	switch (attr) {
+	case SENSOR_ATTR_OVERSAMPLING:
+		/* Enable the AVG in tmp114. The chip will do 8 avg of 8 samples
+		 * to get a more accurate value.
+		 */
+		rc = tmp114_reg_read(dev, TMP114_REG_CFGR, &value);
+		if (rc < 0) {
+			return rc;
+		}
+		value = value & ~TMP114_AVG_MASK;
+		if (val->val1) {
+			value |= TMP114_AVG_MASK;
+		}
+
+		return tmp114_reg_write(dev, TMP114_REG_CFGR, value);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api tmp114_driver_api = {
 	.attr_get = tmp114_attr_get,
+	.attr_set = tmp114_attr_set,
 	.sample_fetch = tmp114_sample_fetch,
 	.channel_get = tmp114_channel_get
 };
