@@ -105,7 +105,7 @@ class TestInstance:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.warning(f'TestInstance assigned status "{value}"'
+            logger.error(f'TestInstance assigned status "{value}"'
                            f' without an equivalent in TwisterStatus.'
                            f' Assignment was ignored.')
 
