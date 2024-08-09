@@ -77,6 +77,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_ENE_KB1200 uart_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RZT2M uart_rzt2m.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RA8_SCI_B uart_renesas_ra8_sci_b.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_UART_RTS5912 uart_realtek_rts5912.c)
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)
