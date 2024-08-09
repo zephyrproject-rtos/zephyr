@@ -213,10 +213,10 @@ def test_hardwaremap_summary(capfd, mocked_hm):
     expected = """
 Hardware distribution summary:
 
-| Board   |   ID |   Counter |
-|---------|------|-----------|
-| p1      |    1 |         0 |
-| p7      |    7 |         0 |
+| Board   |   ID |   Counter |   Failures |
+|---------|------|-----------|------------|
+| p1      |    1 |         0 |          0 |
+| p7      |    7 |         0 |          0 |
 """
 
     out, err = capfd.readouterr()
