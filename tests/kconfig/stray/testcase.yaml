@@ -1,0 +1,13 @@
+common:
+  tags: kconfig
+  platform_allow:
+    - qemu_x86
+tests:
+  configuration.preset:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_sample.py"
+      pytest_args:
+        - "--test_kconfig"
+        - "test.config"
