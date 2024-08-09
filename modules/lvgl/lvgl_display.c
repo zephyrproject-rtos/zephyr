@@ -105,6 +105,14 @@ int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv)
 		disp_drv->rounder_cb = lvgl_rounder_cb_mono;
 		disp_drv->set_px_cb = lvgl_set_px_cb_mono;
 		break;
+
+	case PIXEL_FORMAT_GRAY4:
+	case PIXEL_FORMAT_GRAY16:
+		disp_drv->flush_cb = lvgl_flush_cb_gray;
+		disp_drv->rounder_cb = lvgl_rounder_cb_gray;
+		disp_drv->set_px_cb = lvgl_set_px_cb_gray;
+		break;
+
 	default:
 		disp_drv->flush_cb = NULL;
 		disp_drv->rounder_cb = NULL;
