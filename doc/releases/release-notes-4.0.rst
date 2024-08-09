@@ -264,6 +264,11 @@ Libraries / Subsystems
 
 * Management
 
+  * MCUmgr
+
+    * Added support for :ref:`mcumgr_smp_group_10`, which allows for listing information on
+      supported groups.
+
 * Logging
 
 * Modem modules
