@@ -655,35 +655,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		sys_busy = true;
 	}
 
-	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
-
-	/* If we haven't announced for more than half the 24-bit wrap
-	 * duration, then force an announce to avoid loss of a wrap
-	 * event.  This can happen if new timeouts keep being set
-	 * before the existing one triggers the interrupt.
-	 */
-	if (unannounced >= COUNTER_HALF_SPAN) {
-		cyc = 0;
-	}
-
-	/* Get the cycles from last_count to the tick boundary after
-	 * the requested ticks have passed starting now.
-	 */
-	cyc += unannounced;
-	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
-
-	/* Due to elapsed time the calculation above might produce a
-	 * duration that laps the counter.  Don't let it.
-	 * This limitation also guarantees that the anchor will be properly
-	 * updated before every overflow (see anchor_update()).
-	 */
-	if (cyc > MAX_CYCLES) {
-		cyc = MAX_CYCLES;
-	}
-
-	uint64_t target_time = cyc + last_count;
-
-	compare_set(0, target_time, sys_clock_timeout_handler, NULL, false);
+	compare_set(0, cyc + last_count, sys_clock_timeout_handler, NULL, false);
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -692,7 +664,9 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return (z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
+	uint32_t diff = z_nrf_rtc_timer_read() - last_count;
+
+	return DIV_ROUND_UP(diff, CYC_PER_TICK);
 }
 
 uint32_t sys_clock_cycle_get_32(void)

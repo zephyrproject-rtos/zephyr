@@ -228,7 +228,6 @@ __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 static __pinned_bss struct k_spinlock lock;
 static __pinned_bss uint64_t last_count;
 static __pinned_bss uint64_t last_tick;
-static __pinned_bss uint32_t last_elapsed;
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 static __pinned_bss unsigned int cyc_per_tick;
@@ -307,7 +306,6 @@ static void hpet_isr(const void *arg)
 
 	last_count += (uint64_t)dticks * cyc_per_tick;
 	last_tick += dticks;
-	last_elapsed = 0;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint64_t next = last_count + cyc_per_tick;
@@ -367,7 +365,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS/2);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
+	uint64_t cyc = (last_tick + ticks) * cyc_per_tick;
 
 	hpet_timer_comparator_set_safe(cyc);
 	k_spin_unlock(&lock, key);
@@ -382,10 +380,9 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = hpet_counter_get();
-	uint32_t ret = (uint32_t)((now - last_count) / cyc_per_tick);
+	uint64_t elapsed_cyc = hpet_counter_get() - last_count;
+	uint32_t ret = (uint32_t)DIV_ROUND_UP(elapsed_cyc, cyc_per_tick);
 
-	last_elapsed = ret;
 	k_spin_unlock(&lock, key);
 	return ret;
 }
