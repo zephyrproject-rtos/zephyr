@@ -16,8 +16,9 @@
 #include <zephyr/arch/cpu.h>
 #include <swap_macros.h>
 #include <zephyr/arch/arc/asm-compat/assembler.h>
-#ifdef CONFIG_ARC_EARLY_SOC_INIT
-  #include <soc_ctrl.h>
+
+#if defined(CONFIG_PLATFORM_RESET_HOOK)
+GTEXT(platform_reset)
 #endif
 
 GDATA(z_interrupt_stacks)
@@ -112,8 +113,8 @@ done_icache_invalidate:
 
 done_dcache_invalidate:
 
-#ifdef CONFIG_ARC_EARLY_SOC_INIT
-	soc_early_asm_init_percpu
+#ifdef CONFIG_PLATFORM_RESET_HOOK
+	bl platform_reset
 #endif
 
 	_dsp_extension_probe

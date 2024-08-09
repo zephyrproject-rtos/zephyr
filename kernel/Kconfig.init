@@ -1,0 +1,45 @@
+# Kernel init hook options
+
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "Platform and Board Hooks"
+
+config PLATFORM_RESET_HOOK
+	bool "Run early platform reset hook"
+	help
+	  Run an early platform reset hook.
+
+	  A custom hook platform_reset() is executed at the beginning of the
+	  startup code (__start). platform_reset() must be implemented by the SoC.
+
+config PLATFORM_PREP_HOOK
+	bool "Run early platform preparation hook"
+	help
+	  Run an early platform preparation hook.
+
+	  A custom hook platform_prep() is executed at the beginning of the
+	  c prep code (prep_c). platform_prep() must be implemented by the SoC.
+
+config PLATFORM_EARLY_INIT
+	bool "Run early platform hook"
+	help
+	  Run an early platform initialization hook.
+
+config PLATFORM_LATE_INIT
+	bool "Run late platform hook"
+	help
+	  Run a late platform initialization hook.
+
+config BOARD_EARLY_INIT
+	bool "Run early board hook"
+	help
+	  Run an early board initialization hook.
+
+config BOARD_LATE_INIT
+	bool "Run late board hook"
+	help
+	  Run a late board initialization hook.
+
+endmenu

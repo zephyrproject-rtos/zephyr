@@ -16,6 +16,7 @@
 
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/platform/hooks.h>
 
 extern void z_arm64_mm_init(bool is_primary_core);
 
@@ -30,6 +31,10 @@ __weak void z_arm64_mm_init(bool is_primary_core) { }
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_PLATFORM_PREP_HOOK)
+	platform_prep();
+#endif
+
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[0]);
 

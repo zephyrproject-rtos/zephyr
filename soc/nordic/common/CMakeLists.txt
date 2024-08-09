@@ -4,8 +4,8 @@
 add_subdirectory_ifdef(CONFIG_RISCV_CORE_NORDIC_VPR vpr)
 
 if(CONFIG_ARM)
-  # Let SystemInit() be called in place of z_arm_platform_init() by default.
-  zephyr_linker_symbol(SYMBOL z_arm_platform_init EXPR "@SystemInit@")
+  # Let SystemInit() be called in place of platform_reset() by default.
+  zephyr_linker_symbol(SYMBOL platform_reset EXPR "@SystemInit@")
 
   # This file is used when the CMake linker script generator is disabled.
   zephyr_linker_sources(SECTIONS arm_platform_init.ld)
