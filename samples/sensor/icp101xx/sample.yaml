@@ -1,0 +1,11 @@
+sample:
+  name: ICP101XX Sensor data sample
+tests:
+  sample.sensor.icp101xx:
+    build_only: true
+    depends_on: i2c
+    tags: sensors
+    integration_platforms:
+      - nrf52dk/nrf52832
+    platform_exclude:
+      - tdk_robokit1
