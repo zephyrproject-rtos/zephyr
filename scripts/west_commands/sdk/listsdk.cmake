@@ -1,0 +1,14 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+get_filename_component(THIS_SCRIPT_DIR ${CMAKE_SCRIPT_MODE_FILE} DIRECTORY)
+
+include(${THIS_SCRIPT_DIR}/../../../cmake/modules/zephyr_sdk.cmake)
+
+# This ensure packages are sorted in descending order.
+SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION_CURRENT ${CMAKE_FIND_PACKAGE_SORT_DIRECTION})
+SET(CMAKE_FIND_PACKAGE_SORT_ORDER_CURRENT ${CMAKE_FIND_PACKAGE_SORT_ORDER})
+SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
+SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
+
+find_zephyr_sdk(1)

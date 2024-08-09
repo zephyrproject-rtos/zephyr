@@ -76,3 +76,8 @@ west-commands:
       - name: simulate
         class: Simulate
         help: simulate board
+  - file: scripts/west_commands/sdk.py
+    commands:
+      - name: sdk
+        class: Sdk
+        help: manage Zephyr SDK
