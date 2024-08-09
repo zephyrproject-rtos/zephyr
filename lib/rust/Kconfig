@@ -1,0 +1,40 @@
+# Rust configuration options
+#
+# Copyright (c) 2024 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Rust Language Support"
+
+config RUST_SUPPORTED
+	bool
+	default y if (CPU_CORTEX_M || \
+		(RISCV && !RISCV_ISA_RV32E && !RISCV_ISA_RV128I))
+	help
+	  Selected for platforms that have support for Rust.
+
+config RUST
+	bool "Rust support for the application"
+	depends on RUST_SUPPORTED
+	select EXPERIMENTAL
+	help
+	  This option enables the use of applications written in Rust.
+
+if RUST
+
+config RUST_ALLOC
+       bool "Support an allocator in Rust code"
+       help
+         If enabled, the Rust zephyr rust support library will include support for an allocator.
+         This allocator will use the a dedicated heap. It's size can be configured with
+         RUST_ALLOC_HEAP_SIZE. With this enabled, Rust applications can use the `alloc` crate.
+
+config RUST_ALLOC_HEAP_SIZE
+    int "Heap size for Rust allocator"
+    depends on RUST_ALLOC
+    default 8192
+    help
+      Size of the heap provided to the Rust application.
+
+endif # RUST
+
+endmenu
