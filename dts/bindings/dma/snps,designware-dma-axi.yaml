@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys Designware axi DMA Controller node
+
+compatible: "snps,designware-dma-axi"
+
+include: [dma-controller.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dma-channels:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 1
+
+# #dma-cells : Must be <1>.
+# The 1st cell specifies the hardware handshaking signal ID
+# Example of device-tree dma channel configuration:
+#
+# &spi0 {
+#      /* Configure DMA */
+#   dmas = <&dma0 18>, <&dma0 19>;
+#   dma-names = "tx", "rx";
+# };
+#
+# In above spi node numbers 18 and 19 represents the
+# peripheral handshaking interface ID
+dma-cells:
+  - slot
