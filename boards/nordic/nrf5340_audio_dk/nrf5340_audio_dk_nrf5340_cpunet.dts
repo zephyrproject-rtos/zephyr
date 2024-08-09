@@ -83,6 +83,6 @@ arduino_spi: &spi0 {
 	};
 };
 
-/* Include shared RAM configuration file */
-#include "nrf5340_audio_dk_nrf5340_shared_sram_planning_conf.dtsi"
+/* Include default shared RAM configuration file */
+#include <common/nordic/nrf5340_shared_sram_partition.dtsi>
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"
