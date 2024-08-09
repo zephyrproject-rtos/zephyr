@@ -20,6 +20,8 @@
 #include <zephyr/data/json.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "ws.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_http_server_sample, LOG_LEVEL_DBG);
 
@@ -231,24 +233,33 @@ static struct http_resource_detail_dynamic led_resource_detail = {
 };
 
 #if defined(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE)
-extern int ws_setup(int ws_socket, void *user_data);
+static uint8_t ws_echo_buffer[1024];
 
-static uint8_t ws_recv_buffer[1024];
-
-struct http_resource_detail_websocket ws_resource_detail = {
+struct http_resource_detail_websocket ws_echo_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
 
 			/* We need HTTP/1.1 Get method for upgrading */
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 		},
-	.cb = ws_setup,
-	.data_buffer = ws_recv_buffer,
-	.data_buffer_len = sizeof(ws_recv_buffer),
+	.cb = ws_echo_setup,
+	.data_buffer = ws_echo_buffer,
+	.data_buffer_len = sizeof(ws_echo_buffer),
 	.user_data = NULL, /* Fill this for any user specific data */
 };
 
-HTTP_RESOURCE_DEFINE(ws_resource, test_http_service, "/", &ws_resource_detail);
+static uint8_t ws_netstats_buffer[128];
+
+struct http_resource_detail_websocket ws_netstats_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		},
+	.cb = ws_netstats_setup,
+	.data_buffer = ws_netstats_buffer,
+	.data_buffer_len = sizeof(ws_netstats_buffer),
+	.user_data = NULL,
+};
 
 #endif /* CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE */
 
@@ -269,6 +280,11 @@ HTTP_RESOURCE_DEFINE(uptime_resource, test_http_service, "/uptime", &uptime_reso
 
 HTTP_RESOURCE_DEFINE(led_resource, test_http_service, "/led", &led_resource_detail);
 
+#if defined(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE)
+HTTP_RESOURCE_DEFINE(ws_echo_resource, test_http_service, "/ws_echo", &ws_echo_resource_detail);
+
+HTTP_RESOURCE_DEFINE(ws_netstats_resource, test_http_service, "/", &ws_netstats_resource_detail);
+#endif /* CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE */
 #endif /* CONFIG_NET_SAMPLE_HTTP_SERVICE */
 
 #if defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE)
@@ -298,6 +314,13 @@ HTTP_RESOURCE_DEFINE(uptime_resource_https, test_https_service, "/uptime", &upti
 
 HTTP_RESOURCE_DEFINE(led_resource_https, test_https_service, "/led", &led_resource_detail);
 
+#if defined(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE)
+HTTP_RESOURCE_DEFINE(ws_echo_resource_https, test_https_service, "/ws_echo",
+		     &ws_echo_resource_detail);
+
+HTTP_RESOURCE_DEFINE(ws_netstats_resource_https, test_https_service, "/",
+		     &ws_netstats_resource_detail);
+#endif /* CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE */
 #endif /* CONFIG_NET_SAMPLE_HTTPS_SERVICE */
 
 static void setup_tls(void)
