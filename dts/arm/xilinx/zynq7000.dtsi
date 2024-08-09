@@ -167,6 +167,26 @@
 				status = "okay";
 			};
 		};
+
+		can0: can@e0008000 {
+			compatible = "xlnx,zynq-can-1.0";
+			status = "disabled";
+			reg = <0xe0008000 0x1000>;
+			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			sample-point = <875>;
+		};
+
+		can1: can@e0009000 {
+			compatible = "xlnx,zynq-can-1.0";
+			status = "disabled";
+			reg = <0xe0009000 0x1000>;
+			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			sample-point = <875>;
+		};
 	};
 
 	slcr: slcr@f8000000 {
