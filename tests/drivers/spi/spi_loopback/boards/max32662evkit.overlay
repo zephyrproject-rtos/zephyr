@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Increase SRAM2 size to get enough space for image */
+&sram2 {
+	reg = <20008000 DT_SIZE_K(32)>;
+};
+
 &spi0 {
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

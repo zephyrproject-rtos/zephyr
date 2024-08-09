@@ -96,5 +96,35 @@
 				erase-block-size = <8192>;
 			};
 		};
+
+		spi0: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 14>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
 	};
 };
