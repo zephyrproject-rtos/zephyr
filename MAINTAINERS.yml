@@ -136,6 +136,7 @@ ARC arch:
     - arch/arc/
     - include/zephyr/arch/arc/
     - drivers/timer/*arcv2*
+    - drivers/interrupt_controller/*arcv2*
     - tests/arch/arc/
     - dts/arc/
     - dts/bindings/arc/
