@@ -195,7 +195,7 @@ class BinaryHandler(Handler):
     def _output_handler(self, proc, harness):
         suffix = '\\r\\n'
 
-        with open(self.log, "wt") as log_out_fp:
+        with open(self.log, "wt", encoding="utf-8") as log_out_fp:
             timeout_extended = False
             timeout_time = time.time() + self.get_test_timeout()
             while True:
@@ -1128,7 +1128,7 @@ class QEMUWinHandler(Handler):
 
     @staticmethod
     def _open_log_file(logfile):
-        return open(logfile, "wt")
+        return open(logfile, "wt", encoding="utf-8")
 
     @staticmethod
     def _close_log_file(log_file):
