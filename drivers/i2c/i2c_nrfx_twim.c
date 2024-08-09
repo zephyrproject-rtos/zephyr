@@ -29,7 +29,6 @@ struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
-	uint8_t *msg_buf;
 };
 
 struct i2c_nrfx_twim_config {
@@ -38,6 +37,7 @@ struct i2c_nrfx_twim_config {
 	uint16_t msg_buf_size;
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
+	uint8_t *msg_buf;
 	uint16_t max_transfer_size;
 };
 
@@ -50,7 +50,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 	int ret = 0;
-	uint8_t *msg_buf = dev_data->msg_buf;
+	uint8_t *msg_buf = dev_config->msg_buf;
 	uint16_t msg_buf_used = 0;
 	uint16_t msg_buf_size = dev_config->msg_buf_size;
 	nrfx_twim_xfer_desc_t cur_xfer = {
@@ -405,8 +405,6 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 			twim_##idx##_data.transfer_sync, 1, 1),		       \
 		.completion_sync = Z_SEM_INITIALIZER(			       \
 			twim_##idx##_data.completion_sync, 0, 1),	       \
-		IF_ENABLED(USES_MSG_BUF(idx),				       \
-			(.msg_buf = twim_##idx##_msg_buf,))		       \
 	};								       \
 	PINCTRL_DT_DEFINE(I2C(idx));					       \
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
@@ -419,6 +417,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		.msg_buf_size = MSG_BUF_SIZE(idx),			       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),		       \
+		IF_ENABLED(USES_MSG_BUF(idx),				       \
+			(.msg_buf = twim_##idx##_msg_buf,))		       \
 		.max_transfer_size = BIT_MASK(				       \
 				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
 	};								       \
