@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2024 Julien Vermillard <julien@vermillard.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+       aliases {
+		i2c-1 = &i2c1;
+       };
+};
+
+&pinctrl {
+       i2c1_default: i2c1_default {
+               group1 {
+                       pinmux = <I2C1_SDA_GPIO0>,
+                                <I2C1_SCL_GPIO26>;
+                       bias-pull-up;
+                       drive-open-drain;
+                       output-high;
+               };
+       };
+};
+
+&i2c1 {
+       status = "okay";
+       clock-frequency = <I2C_BITRATE_STANDARD>;
+       sda-gpios = <&gpio0 0 GPIO_OPEN_DRAIN>;
+       scl-gpios = <&gpio0 26 GPIO_OPEN_DRAIN>;
+       pinctrl-0 = <&i2c1_default>;
+       scl-timeout-us = <0>;
+       pinctrl-names = "default";
+
+       rover: rover@38 {
+              compatible = "i2c-device";
+              reg = <0x38>;
+              status = "okay";
+       };
+};
