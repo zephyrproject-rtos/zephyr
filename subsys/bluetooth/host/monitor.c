@@ -98,6 +98,8 @@ static void drop_add(uint16_t opcode)
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
 #include <SEGGER_RTT.h>
 
+static bool panic_mode;
+
 #define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
 #define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 
@@ -124,10 +126,14 @@ static void monitor_send(const void *data, size_t len)
 	}
 
 	if (!drop) {
-		SEGGER_RTT_LOCK();
+		if (!panic_mode) {
+			SEGGER_RTT_LOCK();
+		}
 		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
 					     rtt_buf, rtt_buf_offset);
-		SEGGER_RTT_UNLOCK();
+		if (!panic_mode) {
+			SEGGER_RTT_UNLOCK();
+		}
 	}
 
 	if (!cnt) {
@@ -356,6 +362,9 @@ static void monitor_log_process(const struct log_backend *const backend,
 
 static void monitor_log_panic(const struct log_backend *const backend)
 {
+#if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
+	panic_mode = true;
+#endif
 }
 
 static void monitor_log_init(const struct log_backend *const backend)
