@@ -57,6 +57,7 @@ struct zperf_udp_datagram {
 	int32_t id;
 	uint32_t tv_sec;
 	uint32_t tv_usec;
+	int32_t id2;
 } __packed;
 
 BUILD_ASSERT(sizeof(struct zperf_udp_datagram) <= PACKET_SIZE_MAX, "Invalid PACKET_SIZE_MAX");
