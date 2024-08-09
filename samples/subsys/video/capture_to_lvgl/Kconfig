@@ -1,0 +1,14 @@
+# VIDEO resolution settings
+
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config VIDEO_WIDTH
+	int "Define the width of the video"
+	default 160
+
+config VIDEO_HEIGHT
+	int "Define the height of the video"
+	default 120

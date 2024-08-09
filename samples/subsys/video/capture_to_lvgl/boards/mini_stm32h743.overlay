@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &dcmi;
+	};
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(240)>;
+	d1cpre = <1>;
+	hpre = <1>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9 &rcc_mco_1_pa8>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	ov2640: ov2640@30 {
+		compatible = "ovti,ov2640";
+		reg = <0x30>;
+		status = "okay";
+		supply-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>;
+		clock-rate-control = <0x80>;
+
+		port {
+			ov2640_ep_out: endpoint {
+				remote-endpoint = <&dcmi_ep_in>;
+			};
+		};
+	};
+};
+
+&dcmi {
+	status = "okay";
+	sensor = <&ov2640>;
+	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+		&dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+		&dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+	pinctrl-names = "default";
+	bus-width = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pixelclk-active = <1>;
+	capture-rate = <1>;
+	dmas = <&dma1 0 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+
+	port {
+		dcmi_ep_in: endpoint {
+			remote-endpoint = <&ov2640_ep_out>;
+		};
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
