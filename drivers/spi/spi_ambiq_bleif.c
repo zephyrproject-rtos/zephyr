@@ -176,7 +176,7 @@ static int spi_ambiq_init(const struct device *dev)
 	}
 #endif /* CONFIG_SPI_AMBIQ_BLEIF_TIMING_TRACE */
 
-	ret = am_hal_ble_initialize((cfg->base - REG_BLEIF_BASEADDR) / cfg->size, &data->BLEhandle);
+	ret = am_hal_ble_initialize((cfg->base - BLEIF_BASE) / cfg->size, &data->BLEhandle);
 	if (ret) {
 		return ret;
 	}
