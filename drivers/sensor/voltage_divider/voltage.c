@@ -87,11 +87,10 @@ static const struct sensor_driver_api voltage_api = {
 	.channel_get = get,
 };
 
-#ifdef CONFIG_PM_DEVICE
 static int pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct voltage_config *config = dev->config;
-	int ret;
+	int ret = 0;
 
 	if (config->gpio_power.port == NULL) {
 		/* No work to do */
@@ -99,25 +98,34 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 	}
 
 	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = gpio_pin_configure_dt(&config->gpio_power, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("failed to configure GPIO for PM on");
+		}
+		break;
 	case PM_DEVICE_ACTION_RESUME:
 		ret = gpio_pin_set_dt(&config->gpio_power, 1);
 		if (ret != 0) {
 			LOG_ERR("failed to set GPIO for PM resume");
 		}
 		break;
+#ifdef CONFIG_PM_DEVICE
 	case PM_DEVICE_ACTION_SUSPEND:
 		ret = gpio_pin_set_dt(&config->gpio_power, 0);
 		if (ret != 0) {
 			LOG_ERR("failed to set GPIO for PM suspend");
 		}
 		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+#endif /* CONFIG_PM_DEVICE */
 	default:
 		return -ENOTSUP;
 	}
 
 	return ret;
 }
-#endif
 
 static int voltage_init(const struct device *dev)
 {
@@ -134,11 +142,6 @@ static int voltage_init(const struct device *dev)
 		if (!gpio_is_ready_dt(&config->gpio_power)) {
 			LOG_ERR("Power GPIO is not ready");
 			return -ENODEV;
-		}
-
-		ret = gpio_pin_configure_dt(&config->gpio_power, GPIO_OUTPUT_ACTIVE);
-		if (ret != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
 		}
 	}
 
@@ -157,7 +160,7 @@ static int voltage_init(const struct device *dev)
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
 
-	return 0;
+	return pm_device_driver_init(dev, pm_action);
 }
 
 #define VOLTAGE_INIT(inst)                                                                         \
