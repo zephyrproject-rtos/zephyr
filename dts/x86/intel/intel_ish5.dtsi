@@ -193,5 +193,31 @@
 			dma-copy-alignment = <4>;
 			status = "okay";
 		};
+
+		i3c0: i3c@4800000 {
+			compatible = "intel,sedi-i3c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04800000 0x2000>;
+			interrupt-parent = <&intc>;
+			peripheral-id = <0>;
+			interrupts = <18 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			interrupt-names = "i3c0";
+
+			status = "disabled";
+		};
+
+		i3c1: i3c@4802000 {
+			compatible = "intel,sedi-i3c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x04802000 0x2000>;
+			interrupt-parent = <&intc>;
+			peripheral-id = <1>;
+			interrupts = <22 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			interrupt-names = "i3c1";
+
+			status = "disabled";
+		};
 	};
 };
