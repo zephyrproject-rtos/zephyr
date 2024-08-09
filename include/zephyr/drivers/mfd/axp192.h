@@ -40,7 +40,7 @@ enum axp192_gpio_func {
 /**
  * @brief Maximum number of GPIOs supported by AXP192 PMIC.
  */
-#define AXP192_GPIO_MAX_NUM 6U
+#define AXP192_GPIO_MAX_NUM 7U
 
 /**
  * @defgroup mdf_interface_axp192 MFD AXP192 interface
@@ -54,7 +54,8 @@ enum axp192_gpio_func {
  *  [2]: GPIO2
  *  [3]: GPIO3
  *  [4]: GPIO4
- *  [5]: EXTEN
+ *  [5]: GPIO5/N_RSTO
+ *  [6]: EXTEN
  *
  * @ingroup mfd_interfaces
  * @{

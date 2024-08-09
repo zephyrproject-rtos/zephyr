@@ -12,7 +12,8 @@ description: AXP192 GPIO Controller
     [2] GPIO2
     [3] GPIO3
     [4] GPIO4
-    [5] EXTEN
+    [5] GPIO5/NRSTO
+    [6] EXTEN
 
 compatible: "x-powers,axp192-gpio"
 
@@ -24,7 +25,7 @@ properties:
 
   ngpios:
     required: true
-    const: 6
+    const: 7
     description: |
       Number of GPIOs available on axp192.
 
