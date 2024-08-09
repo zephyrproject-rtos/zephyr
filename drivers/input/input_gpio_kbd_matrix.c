@@ -330,7 +330,9 @@ static const struct input_kbd_matrix_api gpio_kbd_matrix_api = {
 												\
 	static struct gpio_kbd_matrix_data gpio_kbd_matrix_data_##n;				\
 												\
-	DEVICE_DT_INST_DEFINE(n, gpio_kbd_matrix_init, NULL,					\
+	PM_DEVICE_DT_INST_DEFINE(n, input_kbd_matrix_pm_action);				\
+												\
+	DEVICE_DT_INST_DEFINE(n, gpio_kbd_matrix_init, PM_DEVICE_DT_INST_GET(n),		\
 			      &gpio_kbd_matrix_data_##n, &gpio_kbd_matrix_cfg_##n,		\
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,				\
 			      NULL);
