@@ -69,6 +69,26 @@ class Shell:
         return lines
 
     def get_filtered_output(self, command_lines: list[str]) -> list[str]:
+        """
+        Filter out prompts and log messages
+
+        Take the output of exec_command, which can contain log messages and command prompts, 
+        and filter them to obtain only the command output.
+
+        Example:
+            >>> # equivalent to `lines = shell.exec_command("kernel version")`
+            >>> lines = [
+            >>>    'uart:~$',                    # filter prompts
+            >>>    'Zephyr version 3.6.0',       # keep this line
+            >>>    'uart:~$ <dbg> debug message' # filter log messages
+            >>> ]
+            >>> filtered_output = shell.get_filtered_output(output)
+            >>> filtered_output
+            ['Zephyr version 3.6.0']
+
+        :param command_lines: List of strings i.e. the output of `exec_command`.
+        :return: A list of strings containing, excluding prompts and log messages.
+        """
         regex_filter = re.compile(
             '|'.join([
                 re.escape(self.prompt),
