@@ -822,6 +822,23 @@ config BUILD_OUTPUT_ADJUST_LMA
 	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
 	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
 
+config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	def_string "*"
+	depends on BUILD_OUTPUT_ADJUST_LMA!=""
+	help
+	  This determines the output sections to which the above LMA adjustment
+	  will be applied.
+	  The value can be the name of a section in the final ELF, like "text".
+	  It can also be a pattern with wildcards, such as "*bss", which could
+	  match more than one section name. Multiple such patterns can be given
+	  as a ";"-separated list. It's possible to supply a 'negative' pattern
+	  starting with "!", to exclude sections matched by a preceding pattern.
+
+	  By default, all sections will have their LMA adjusted. The following
+	  example excludes one section produced by the code relocation feature:
+	  config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	    default "*;!.extflash_text_reloc"
+
 config BUILD_OUTPUT_INFO_HEADER
 	bool "Create a image information header"
 	help
