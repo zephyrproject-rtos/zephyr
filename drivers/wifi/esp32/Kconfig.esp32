@@ -35,6 +35,13 @@ config ESP32_WIFI_STA_AUTO_DHCPV4
 	help
 	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
 
+config ESP32_WIFI_AP_STA_MODE
+	bool "Activates the Station/AP co-existence mode."
+	depends on WIFI_NM
+	help
+	  The Station/AP coexistence mode allows the ESP32 to operate as both a station and
+	  an access point simultaneously. This mode is not enabled by default.
+
 config ESP32_WIFI_STA_RECONNECT
 	bool "WiFi connection retry"
 	help
