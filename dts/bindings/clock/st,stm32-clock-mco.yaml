@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2024, Joakim Andersson
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "st,stm32-clock-mco"
+
+description: |
+        STM32 Microcontroller clock output (MCO)
+        Configure the microcontroller clock output pin and additional properties,
+        e.g. clock source and prescaler.
+        Example:
+                &mco1 {
+                        source = <STM32_SRC_LSE>;
+                        prescaler = <2>;
+                        pinctrl-0 = <&rcc_mco_pa8>;
+                        pinctrl-names = "default";
+                        status = "okay";
+                };
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+
+  reg:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+
+  source:
+    type: int
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

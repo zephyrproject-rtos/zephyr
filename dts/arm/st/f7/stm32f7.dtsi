@@ -88,6 +88,23 @@
 		};
 	};
 
+	mcos {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		mco1: mco@1 {
+			reg = <0x1>;
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+
+		mco2: mco@2 {
+			reg = <0x2>;
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		fmc: memory-controller@a0000000 {
 			compatible = "st,stm32-fmc";
