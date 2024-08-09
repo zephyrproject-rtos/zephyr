@@ -41,7 +41,10 @@
 #include <esp32c6/rom/rtc.h>
 #include <soc/dport_access.h>
 #include <hal/clk_tree_ll.h>
-#endif /* CONFIG_SOC_SERIES_ESP32xx */
+#include <hal/usb_serial_jtag_ll.h>
+#include <esp_private/esp_pmu.h>
+#include <ocode_init.h>
+#endif
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
@@ -117,6 +120,23 @@ static void esp32_clock_perip_init(void)
 		REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
 		REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
 		WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
+
+		usb_serial_jtag_ll_enable_bus_clock(false);
+	}
+
+	if ((rst_reason == RESET_REASON_CHIP_POWER_ON) ||
+		(rst_reason == RESET_REASON_CHIP_BROWN_OUT) ||
+		(rst_reason == RESET_REASON_SYS_RTC_WDT) ||
+		(rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
+
+		periph_ll_disable_clk_set_rst(PERIPH_LP_I2C0_MODULE);
+
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_RNG_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_UART_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_OTP_DBG_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_EXT_I2C_CK_EN);
+		CLEAR_PERI_REG_MASK(LPPERI_CLK_EN_REG, LPPERI_LP_CPU_CK_EN);
+		WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
 	}
 }
 #else
@@ -655,22 +675,29 @@ static int clock_control_esp32_init(const struct device *dev)
 {
 	const struct esp32_clock_config *cfg = dev->config;
 	bool ret;
-#if !defined(CONFIG_SOC_SERIES_ESP32C6)
 	soc_reset_reason_t rst_reas;
-	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
 
 	rst_reas = esp_rom_get_reset_reason(0);
+
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	pmu_init();
+	if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+		esp_ocode_calib_init();
+	}
+#else /* CONFIG_SOC_SERIES_ESP32C6 */
+	rtc_config_t rtc_cfg = RTC_CONFIG_DEFAULT();
+
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	if (rst_reas == RESET_REASON_CHIP_POWER_ON
 #if SOC_EFUSE_HAS_EFUSE_RST_BUG
 	    || rst_reas == RESET_REASON_CORE_EFUSE_CRC
-#endif
+#endif /* SOC_EFUSE_HAS_EFUSE_RST_BUG */
 	) {
 		rtc_cfg.cali_ocode = 1;
 	}
-#endif
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 	rtc_init(rtc_cfg);
-#endif
+#endif /* CONFIG_SOC_SERIES_ESP32C6 */
 
 	ret = esp32_cpu_clock_configure(&cfg->cpu);
 	if (ret) {
