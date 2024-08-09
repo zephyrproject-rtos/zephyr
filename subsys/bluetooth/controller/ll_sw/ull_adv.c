@@ -339,6 +339,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	is_new_set = !adv->is_created;
 	adv->is_created = 1;
 	adv->is_ad_data_cmplt = 1U;
+#if defined(CONFIG_BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL)
+	adv->max_skip = skip;
+#endif /* CONFIG_BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* remember parameters so that set adv/scan data and adv enable
@@ -1496,11 +1499,20 @@ uint8_t ll_adv_enable(uint8_t enable)
 			 * BIG radio events.
 			 */
 			aux->interval =
+#if defined(CONFIG_BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL)
+				DIV_ROUND_UP(((uint64_t)adv->interval *
+						  ADV_INT_UNIT_US) *
+						  (adv->max_skip + 1) +
+						 HAL_TICKER_TICKS_TO_US(
+							ULL_ADV_RANDOM_DELAY),
+						 PERIODIC_INT_UNIT_US);
+#else /* !CONFIG_BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL */
 				DIV_ROUND_UP(((uint64_t)adv->interval *
 						  ADV_INT_UNIT_US) +
 						 HAL_TICKER_TICKS_TO_US(
 							ULL_ADV_RANDOM_DELAY),
 						 PERIODIC_INT_UNIT_US);
+#endif /* !CONFIG_BT_CTLR_ADV_USE_MAX_SECONDARY_INTERVAL */
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);
