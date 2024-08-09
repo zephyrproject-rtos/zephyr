@@ -135,6 +135,7 @@ ARC arch:
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
+    - drivers/timer/*arcv2*
     - tests/arch/arc/
     - dts/arc/
     - dts/bindings/arc/
