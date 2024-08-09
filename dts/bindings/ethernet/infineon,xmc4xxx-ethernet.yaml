@@ -116,3 +116,7 @@ properties:
     enum:
       - "P5_10"
       - "P6_6"
+
+  mac-eeprom:
+    type: phandle
+    description: Optional EEPROM device node for storing MAC address.

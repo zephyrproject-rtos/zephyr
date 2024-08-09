@@ -46,6 +46,12 @@ config ETH_XMC4XXX_VLAN_HW_FILTER
 	  called multiple times, the filtering will be done on the latest
 	  tag.
 
+config ETH_XMC4XXX_MAC_EEPROM_ADDRESS
+	hex "EEPROM address of MAC"
+	default 0x0
+	help
+	  EEPROM address where the MAC address is stored.
+
 config PTP_CLOCK_XMC4XXX
 	bool "XMC4XXX PTP clock driver support"
 	default y
