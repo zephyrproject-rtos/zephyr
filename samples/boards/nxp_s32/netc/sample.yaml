@@ -5,6 +5,8 @@ common:
   platform_allow:
     - s32z2xxdc2/s32z270/rtu0
     - s32z2xxdc2@D/s32z270/rtu0
+    - s32z2xxdc2/s32z280/rtu0
+    - s32z2xxdc2@D/s32z280/rtu0
   depends_on: netif
   tags: net
 tests:
