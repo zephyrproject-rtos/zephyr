@@ -5,17 +5,19 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import pkg_resources
-import sys
-from pathlib import Path
+import argparse
 import json
 import logging
-import subprocess
-import shutil
+import os
 import re
-import argparse
+import shutil
+import subprocess
+import sys
 from datetime import datetime, timezone
+from importlib import metadata
+from pathlib import Path
+from typing import Generator
+
 from twisterlib.coverage import supported_coverage_formats
 
 logger = logging.getLogger('twister')
@@ -40,12 +42,21 @@ import zephyr_module
 # Note "normalization" is different from canonicalization, see os.path.
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
-installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
+
+def _get_installed_packages() -> Generator[str, None, None]:
+    """Return list of installed python packages."""
+    for dist in metadata.distributions():
+        yield dist.metadata['Name']
+
+
+installed_packages: list[str] = list(_get_installed_packages())
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
+
 
 def norm_path(astring):
     newstring = os.path.normpath(astring).replace(os.sep, '/')
     return newstring
+
 
 def add_parse_arguments(parser = None):
     if parser is None:

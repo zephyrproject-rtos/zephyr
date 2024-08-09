@@ -77,7 +77,9 @@ class TestLevel:
     levels = []
     scenarios = []
 
+
 class TestPlan:
+    __test__ = False  # for pytest to skip this class when collects tests
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
