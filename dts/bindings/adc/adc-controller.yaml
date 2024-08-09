@@ -7,6 +7,10 @@
 include: base.yaml
 
 properties:
+  zephyr,device-type:
+    default: adc-controller
+    const: adc-controller
+
   "#io-channel-cells":
     type: int
     required: true
