@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Croxel, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+#include <zephyr/dt-bindings/led/led.h>
+
+&usart3 {
+	status = "okay";
+	current-speed = <7200000>;
+	pinctrl-0 = < &usart3_tx_pc10 &usart3_rx_pc11 >;
+	pinctrl-names = "default";
+	data-bits = <7>;
+	tx-invert;
+
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-uart";
+		/* WS2812 */
+		chain-length = <30>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		rgb-frame-per-uart-frame = <1>;
+		zero-frame = <0x1C0>;
+		one-frame = <0x1F8>;
+		frame-len = <9>;
+	};
+};
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};
