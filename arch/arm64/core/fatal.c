@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
+#include <kernel_arch_interface.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -196,6 +197,34 @@ static void esf_dump(const struct arch_esf *esf)
 }
 
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
+
+static bool is_address_mapped(uint64_t *addr)
+{
+	uintptr_t *phys = NULL;
+
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return !arch_page_phys_get((void *) addr, phys);
+}
+
+static bool is_valid_jump_address(uint64_t *addr)
+{
+	if (*addr == 0U)
+		return false;
+
+	/* Check alignment. */
+	if ((*addr & (sizeof(uint32_t) - 1U)) != 0U)
+		return false;
+
+	return ((*addr >= (uint64_t)CONFIG_KERNEL_VM_BASE) &&
+		(*addr < (uint64_t)(CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE)));
+}
+
 static void esf_unwind(const struct arch_esf *esf)
 {
 	/*
@@ -224,7 +253,11 @@ static void esf_unwind(const struct arch_esf *esf)
 
 	LOG_ERR("");
 	for (int i = 0; (fp != NULL) && (i < CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES); i++) {
+		if (!is_address_mapped(fp))
+			break;
 		lr = fp[1];
+		if (!is_valid_jump_address(&lr))
+			break;
 #ifdef CONFIG_SYMTAB
 		uint32_t offset = 0;
 		const char *name = symtab_find_symbol_name(lr, &offset);
