@@ -26,6 +26,8 @@
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -100,6 +102,34 @@ enum display_orientation {
 	DISPLAY_ORIENTATION_ROTATED_180, /**< Rotated 180 degrees clockwise */
 	DISPLAY_ORIENTATION_ROTATED_270, /**< Rotated 270 degrees clockwise */
 };
+
+/** @brief Structure holding common display configuration. */
+struct display_common_config {
+	struct gpio_dt_spec backlight_gpio;
+#ifdef CONFIG_PWM
+	struct pwm_dt_spec backlight_pwm;
+#endif /* CONFIG_PWM */
+};
+
+/**
+ * @brief Initialize common display config from devicetree.
+ *
+ * @param node_id The devicetree node identifier.
+ */
+#define DISPLAY_BACKLIGHT_DT_COMMON_CONFIG_INIT(node_id)                                           \
+	{                                                                                          \
+		.backlight_gpio = GPIO_DT_SPEC_GET_OR(node_id, backlight_gpio, {0}),               \
+		IF_ENABLED(CONFIG_PWM, (.backlight_pwm = PWM_DT_SPEC_GET_OR(                       \
+						DT_PROP(node_id, backlight_pwm), {0}), ))          \
+	}
+
+/**
+ * @brief Initialize common display config from devicetree instance.
+ *
+ * @param inst Instance.
+ */
+#define DISPLAY_BACKLIGHT_DT_INST_COMMON_CONFIG_INIT(inst)                                         \
+	DISPLAY_BACKLIGHT_DT_COMMON_CONFIG_INIT(DT_DRV_INST(inst))
 
 /** @brief Structure holding display capabilities. */
 struct display_capabilities {
@@ -367,11 +397,21 @@ static inline int display_blanking_off(const struct device *dev)
  * @retval 0 on success else negative errno code.
  * @retval -ENOSYS if not implemented.
  */
-static inline int display_set_brightness(const struct device *dev,
-					 uint8_t brightness)
+static inline int display_set_brightness(const struct device *dev, uint8_t brightness)
 {
-	struct display_driver_api *api =
-		(struct display_driver_api *)dev->api;
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+	struct display_common_config *cfg = (struct display_common_config *)dev->config;
+
+#ifdef CONFIG_PWM
+	if (pwm_is_ready_dt(&b_cfg->backlight_pwm)) {
+		uint32_t step = b_cfg->backlight_pwm.period / 100U;
+		return pwm_set_pulse_dt(&b_cfg->backlight_pwm, brightness * step / 2.55);
+	}
+#endif /* CONFIG_PWM */
+
+	if (gpio_is_ready_dt(&b_cfg->backlight_gpio)) {
+		return gpio_pin_set_dt(&b_cfg->backlight_gpio, brightness ? 1 : 0);
+	}
 
 	if (api->set_brightness == NULL) {
 		return -ENOSYS;
