@@ -51,22 +51,13 @@
 /* mbedTLS feature support */
 
 /* Supported TLS versions */
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_0)
-#define MBEDTLS_SSL_PROTO_TLS1
-#endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_1)
-#define MBEDTLS_SSL_PROTO_TLS1_1
-#endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
 #define MBEDTLS_SSL_PROTO_TLS1_2
 #endif
 
-
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_0) || \
-    defined(CONFIG_MBEDTLS_TLS_VERSION_1_1) || \
-    defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
+#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
 
 /* Modules required for TLS */
 #define MBEDTLS_SSL_TLS_C
