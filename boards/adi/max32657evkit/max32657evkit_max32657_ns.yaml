@@ -12,5 +12,6 @@ supported:
   - watchdog
   - dma
   - counter
+  - pwm
 ram: 192
 flash: 576
