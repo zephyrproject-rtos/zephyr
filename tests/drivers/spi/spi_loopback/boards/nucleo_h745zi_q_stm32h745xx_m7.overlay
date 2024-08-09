@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Graphcore Ltd, All rights reserved.
+ * Copyright (c) 2024 Linutronix GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,10 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
 	dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
 		&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
@@ -28,6 +32,7 @@
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
+	status = "okay";
 };
 
 &dma1 {
