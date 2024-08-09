@@ -128,5 +128,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_dfu_srv
-   :project: Zephyr
-   :members:

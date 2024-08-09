@@ -359,7 +359,6 @@ system-wide settings. The :c:func:`DT_CHOSEN()` macro can be used to get a node
 identifier for a chosen node.
 
 .. doxygengroup:: devicetree-generic-chosen
-   :project: Zephyr
 
 Zephyr-specific chosen nodes
 ****************************

@@ -183,16 +183,13 @@ API Reference
 *************
 
 .. doxygengroup:: mem-demand-paging
-   :project: Zephyr
 
 Eviction Algorithm APIs
 =======================
 
 .. doxygengroup:: mem-demand-paging-eviction
-   :project: Zephyr
 
 Backing Store APIs
 ==================
 
 .. doxygengroup:: mem-demand-paging-backing-store
-   :project: Zephyr
