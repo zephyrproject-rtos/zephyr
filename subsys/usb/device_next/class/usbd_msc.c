@@ -61,7 +61,7 @@ struct CSW {
 #define MSC_NUM_INSTANCES CONFIG_USBD_MSC_INSTANCES_COUNT
 
 /* Can be 64 if device is not High-Speed capable */
-#define MSC_BUF_SIZE 512
+#define MSC_BUF_SIZE USBD_MAX_BULK_MPS
 
 UDC_BUF_POOL_DEFINE(msc_ep_pool,
 		    MSC_NUM_INSTANCES * 2, MSC_BUF_SIZE,
@@ -150,7 +150,8 @@ static uint8_t msc_get_bulk_in(struct usbd_class_data *const c_data)
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct msc_bot_desc *desc = ctx->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
 
@@ -163,7 +164,8 @@ static uint8_t msc_get_bulk_out(struct usbd_class_data *const c_data)
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 	struct msc_bot_desc *desc = ctx->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
@@ -756,7 +758,7 @@ static void *msc_bot_get_desc(struct usbd_class_data *const c_data,
 {
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return ctx->hs_desc;
 	}
 

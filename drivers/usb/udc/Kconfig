@@ -11,6 +11,9 @@ menuconfig UDC_DRIVER
 
 if UDC_DRIVER
 
+config UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	bool
+
 config UDC_BUF_COUNT
 	int "Number of buffers in the pool"
 	range 16 256
