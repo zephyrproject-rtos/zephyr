@@ -67,3 +67,5 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn,
 /* Find L2CAP BR channel by using specific cid on specific connection */
 struct bt_l2cap_chan *bt_l2cap_br_lookup_tx_cid(struct bt_conn *conn,
 						uint16_t cid);
+
+void l2cap_br_tx_done(struct bt_conn *conn, struct net_buf *tx, int err);

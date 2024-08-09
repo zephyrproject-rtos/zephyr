@@ -193,10 +193,12 @@ struct bt_l2cap_le_chan {
 	/** Channel Transmission queue (for SDUs) */
 	struct k_fifo                   tx_queue;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-	/** Segment SDU packet from upper layer */
+	/** RX Segment SDU packet from upper layer */
 	struct net_buf			*_sdu;
+	/** RX */
 	uint16_t			_sdu_len;
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	/** RX */
 	uint16_t			_sdu_len_done;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
@@ -221,6 +223,13 @@ struct bt_l2cap_le_chan {
 	atomic_t			_pdu_ready_lock;
 	/** @internal Holds the length of the current PDU/segment */
 	size_t				_pdu_remaining;
+	/** @internal Holds the length of the current PDU/segment */
+	bool				_tx_sdu_in_progress;
+	/** @internal This is not the meta youre looking for */
+	struct app_cb {
+		void *cb;
+		void *ud;
+	} app_cb;
 };
 
 /**

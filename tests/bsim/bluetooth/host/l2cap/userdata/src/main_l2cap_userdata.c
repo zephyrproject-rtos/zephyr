@@ -289,7 +289,7 @@ static void test_central_main(void)
 
 	/* Validate that the user data has changed */
 	for (int i = 0; i < USER_DATA_SIZE; i++) {
-		if (buf->user_data[i] == FILL) {
+		if (buf->user_data[i] != FILL) {
 			FAIL("Buffer user data should be reset by stack.\n");
 		}
 	}

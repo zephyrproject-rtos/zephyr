@@ -52,7 +52,8 @@ struct bt_buf_data {
 };
 
 /* Headroom reserved in buffers, primarily for HCI transport encoding purposes */
-#define BT_BUF_RESERVE 1
+	/* FIXME: account for 64bit too: use a proper sizeof(struct) */
+#define BT_BUF_RESERVE (8+1)
 
 /** Helper to include reserved HCI data in buffer calculations */
 #define BT_BUF_SIZE(size) (BT_BUF_RESERVE + (size))

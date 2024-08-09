@@ -179,13 +179,6 @@ struct bt_conn_iso {
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
 
-struct bt_conn_tx {
-	sys_snode_t node;
-
-	bt_conn_tx_cb_t cb;
-	void *user_data;
-};
-
 struct acl_data {
 	/* Extend the bt_buf user data */
 	struct bt_buf_data buf_data;
@@ -316,6 +309,9 @@ struct bt_conn {
 	 * memset to zero without affecting the ref.
 	 */
 	atomic_t		ref;
+
+	/* Always moves `tx` ownership. */
+	void (*tx_done)(struct bt_conn *conn, struct net_buf *tx, int err);
 };
 
 /* Holds the callback and a user-data field for the upper layer. This callback
