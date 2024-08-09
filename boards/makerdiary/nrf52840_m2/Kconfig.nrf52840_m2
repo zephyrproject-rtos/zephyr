@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Stavros Avramidis <stavros9899@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF52840_M2
+	select 	NRF52840_QIAA
