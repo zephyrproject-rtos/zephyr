@@ -225,6 +225,13 @@ config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	  properly sized to take into account this offset. This is a hidden
 	  option which needs to be set per architecture and left alone.
 
+config RISCV_EMPTY_IRQ_SPURIOUS
+	bool "Create empty spurious interrupt handler"
+	help
+	  This option changes body of spurious interrupt handler. When enabled,
+	  handler contains only an infinite while loop, when disabled, handler
+	  contains the whole Zephyr fault handling procedure.
+
 config NUM_IRQS
 	int
 
