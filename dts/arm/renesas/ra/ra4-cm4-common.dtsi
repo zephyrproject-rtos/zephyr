@@ -47,11 +47,11 @@
 		sci2: sci@40070040 {
 			compatible = "renesas,ra-sci";
 			reg = <0x40070040 0x20>;
-			interrupts = <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_RXI>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_TXI>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_TEI>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_ERI>,
-				     <RA_ICU_IRQ_UNSPECIFIED 0 RA_ICU_SCI2_AM>;
+			interrupts = <RA_EVENT_SCI2_RXI 0>,
+				     <RA_EVENT_SCI2_TXI 0>,
+				     <RA_EVENT_SCI2_TEI 0>,
+				     <RA_EVENT_SCI2_ERI 0>,
+				     <RA_EVENT_SCI2_AM 0>;
 			interrupt-names = "rxi", "txi", "tei", "eri", "am";
 			clocks = <&cgc RA_CLOCK_SCI(2)>;
 			#clock-cells = <1>;

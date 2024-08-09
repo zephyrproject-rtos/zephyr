@@ -103,6 +103,10 @@ extern void z_arm_interrupt_init(void);
 #define _CHECK_PRIO(priority_p, flags_p)
 #endif
 
+#ifdef CONFIG_ARM_CUSTOM_IRQ_CONNECT
+#include <soc_custom_irq_connect.h>
+#else
+
 /* All arguments must be computable by the compiler at build time.
  *
  * Z_ISR_DECLARE will populate the .intList section with the interrupt's
@@ -130,6 +134,8 @@ extern void z_arm_interrupt_init(void);
 	Z_ISR_DECLARE_DIRECT(irq_p, ISR_FLAG_DIRECT, isr_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
 }
+
+#endif
 
 #ifdef CONFIG_PM
 extern void _arch_isr_direct_pm(void);

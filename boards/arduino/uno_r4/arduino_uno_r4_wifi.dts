@@ -51,3 +51,43 @@
 			   <21 0 &ioport1 0 0>;   /* D15 */
 	};
 };
+
+&ioport0 {
+	/delete-property/ port-irq3-pins;  /* P004: Connect to LED Matrix */
+	/delete-property/ port-irq10-pins; /* P005: Not available */
+	/delete-property/ port-irq15-pins; /* P011: Connect to LED Matrix */
+};
+
+&ioport1 {
+	/delete-property/ port-irq2-pins; /* P101: Conflict with P104 */
+	/delete-property/ port-irq3-pins; /* P110: Connect to ESP32 */
+	status = "okay";
+};
+
+&ioport2 {
+	/delete-property/ port-irq0-pins; /* P206: Connect to LED Matrix */
+	/delete-property/ port-irq1-pins; /* P205: Connect to LED Matrix */
+	/delete-property/ port-irq2-pins; /* P213: Connect to LED Matrix */
+	/delete-property/ port-irq3-pins; /* P212: Connect to LED Matrix */
+};
+
+&ioport3 {
+	/delete-property/ port-irq5-pins; /* P302: Conflict with P410, choose either. */
+	/delete-property/ port-irq6-pins; /* P301: Conflict with P001, choose either. */
+	/delete-property/ port-irq8-pins; /* P305: Not available */
+};
+
+&ioport4 {
+	/delete-property/ port-irq0-pins; /* P400: Connect to ESP32 */
+	/delete-property/ port-irq4-pins; /* P411: Conflict with P111, choose either. */
+	/delete-property/ port-irq6-pins; /* P409: Not connected */
+	/delete-property/ port-irq7-pins; /* P408: Connect internally */
+	/delete-property/ port-irq8-pins; /* P415: Not available */
+	/delete-property/ port-irq9-pins; /* P414: Not available */
+};
+
+&ioport5 {
+	/delete-property/ port-irq11-pins; /* P501: Connect to ESP32 */
+	/delete-property/ port-irq12-pins; /* P502: Connect to ESP32 */
+	/delete-property/ port-irq14-pins; /* P505: Not available */
+};
