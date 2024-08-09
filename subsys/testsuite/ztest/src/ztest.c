@@ -949,7 +949,7 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 	struct ztest_unit_test *test = NULL;
 	unsigned int suite_duration_worst_ms = 0;
 
-	/** summary of disctinct run  */
+	/** summary of distinct run  */
 	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 		distinct_total++;
 		suite_duration_worst_ms += test->stats->duration_worst_ms;
@@ -1027,7 +1027,7 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 		}
 
 		if (flush_frequency % 3 == 0) {
-			/** Reduce the flush frequencey a bit to speed up the output */
+			/** Reduce the flush frequency a bit to speed up the output */
 			flush_log();
 		}
 		flush_frequency++;
@@ -1289,8 +1289,7 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 		case 's':
 			val = atoi(state->optarg);
 			if (val < 1) {
-				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of suite interations\n");
+				shell_error(sh, "Invalid number of suite iterations");
 				return -ENOEXEC;
 			}
 			suite_iter = val;
@@ -1299,16 +1298,15 @@ static int cmd_shuffle(const struct shell *sh, size_t argc, char **argv)
 		case 'c':
 			val = atoi(state->optarg);
 			if (val < 1) {
-				shell_fprintf(sh, SHELL_ERROR,
-					"Invalid number of case interations\n");
+				shell_error(sh, "Invalid number of case iterations");
 				return -ENOEXEC;
 			}
 			case_iter = val;
 			opt_num++;
 			break;
 		default:
-			shell_fprintf(sh, SHELL_ERROR,
-				"Invalid option or option usage: %s\n", argv[opt_index + 1]);
+			shell_error(sh, "Invalid option or option usage: %s",
+				    argv[opt_index + 1]);
 			return -ENOEXEC;
 		}
 	}
