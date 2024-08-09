@@ -194,7 +194,7 @@ static int clock_control_ra_on(const struct device *dev, clock_control_subsys_t 
 	int lock = irq_lock();
 
 	MSTP_write(MSTPCRA_OFFSET + RA_CLOCK_GROUP(clkid),
-		   MSTP_read(MSTPCRB_OFFSET) & ~RA_CLOCK_BIT(clkid));
+		   MSTP_read(MSTPCRA_OFFSET + RA_CLOCK_GROUP(clkid)) & ~RA_CLOCK_BIT(clkid));
 	irq_unlock(lock);
 
 	return 0;
@@ -206,7 +206,7 @@ static int clock_control_ra_off(const struct device *dev, clock_control_subsys_t
 	int lock = irq_lock();
 
 	MSTP_write(MSTPCRA_OFFSET + RA_CLOCK_GROUP(clkid),
-		   MSTP_read(MSTPCRB_OFFSET) | RA_CLOCK_BIT(clkid));
+		   MSTP_read(MSTPCRA_OFFSET + RA_CLOCK_GROUP(clkid)) | RA_CLOCK_BIT(clkid));
 	irq_unlock(lock);
 
 	return 0;
