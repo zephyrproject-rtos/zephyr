@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+config BOARD_ARTEMIS_NANO
+	select SOC_APOLLO3_BLUE
+
+config FLASH_BASE_ADDRESS
+	hex
+	default 0x10000
