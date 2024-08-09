@@ -35,17 +35,9 @@ static struct bt_conn *default_conn;
 static struct k_poll_signal disconn_signal;
 static struct k_poll_signal passkey_enter_signal;
 
-static ssize_t read_key_material(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
-				 uint16_t len, uint16_t offset)
-{
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, attr->user_data,
-				 sizeof(struct key_material));
-}
-
 BT_GATT_SERVICE_DEFINE(key_mat, BT_GATT_PRIMARY_SERVICE(BT_UUID_CUSTOM_SERVICE),
-		       BT_GATT_CHARACTERISTIC(BT_UUID_GATT_EDKM, BT_GATT_CHRC_READ,
-					      BT_GATT_PERM_READ_AUTHEN, read_key_material, NULL,
-					      &mk));
+		       BT_GATT_CHARACTERISTIC_OBJ_RO(BT_UUID_GATT_EDKM, BT_GATT_PERM_READ_AUTHEN,
+						     mk));
 
 static int update_ad_data(struct bt_le_ext_adv *adv)
 {
