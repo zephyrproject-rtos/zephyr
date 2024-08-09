@@ -149,6 +149,39 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pd3 &spi2_mosi_pi3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioh 6 GPIO_ACTIVE_LOW>,
+		   <&gpioh 15 GPIO_ACTIVE_LOW>,
+		   <&gpioi 7 GPIO_ACTIVE_LOW>;
+	iis2dlpc: iis2dlpc@0 {
+		compatible = "st,iis2dlpc";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <0>;
+		drdy-gpios = <&gpiof 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		drdy-int =  <1>;
+	};
+
+	ism330dhcx: ism330dhcx@1 {
+		compatible = "st,ism330dhcx";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <1>;
+		drdy-gpios =  <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		int-pin = <1>;
+	};
+
+	iis2iclx: iis2iclx@2 {
+		compatible = "st,iis2iclx";
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		reg = <2>;
+		drdy-gpios = <&gpiof 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		int-pin =  <2>;
+	};
+};
+
 &spi3 {
 	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
@@ -176,6 +209,13 @@ stm32_lp_tick_source: &lptim1 {
 		compatible = "st,stts22h";
 		reg = <0x3f>;
 		int-gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios = <&gpiof 9 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 };
