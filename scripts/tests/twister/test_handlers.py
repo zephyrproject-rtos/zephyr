@@ -30,6 +30,7 @@ from twisterlib.handlers import (
     BinaryHandler,
     DeviceHandler,
     QEMUHandler,
+    QEMUWinHandler,
     SimulationHandler
 )
 
@@ -73,19 +74,21 @@ def faux_timer():
 
     return Counter()
 
-
+TESTIDS_1 = ['import pty nt', 'import serial+pty posix']
 TESTDATA_1 = [
-    (True, False, 'posix', ['Install pyserial python module with pip to use' \
-     ' --device-testing option.'], None),
     (False, True, 'nt', [], None),
     (True, True, 'posix', ['Install pyserial python module with pip to use' \
      ' --device-testing option.'], ImportError),
 ]
 
+if sys.platform == 'linux':
+    TESTDATA_1.append((True, False, 'posix', ['Install pyserial python module with pip to use --device-testing option.'], None))
+    TESTIDS_1.append('import serial')
+
 @pytest.mark.parametrize(
     'fail_serial, fail_pty, os_name, expected_outs, expected_error',
     TESTDATA_1,
-    ids=['import serial', 'import pty nt', 'import serial+pty posix']
+    ids=TESTIDS_1
 )
 def test_imports(
     capfd,
@@ -103,8 +106,8 @@ def test_imports(
                 raise ImportError()
 
     modules_mock = sys.modules.copy()
-    modules_mock['serial'] = None if fail_serial else modules_mock['serial']
-    modules_mock['pty'] = None if fail_pty else modules_mock['pty']
+    modules_mock['serial'] = None if fail_serial else modules_mock.get('serial')
+    modules_mock['pty'] = None if fail_pty else modules_mock.get('pty')
 
     meta_path_mock = sys.meta_path[:]
     meta_path_mock.insert(0, ImportRaiser())
@@ -210,65 +213,108 @@ def test_handler_missing_suite_name(mocked_instance):
 
 
 def test_handler_terminate(mocked_instance):
-    def mock_kill_function(pid, sig):
+    def mock_kill_function(pid):
         if pid < 0:
             raise ProcessLookupError
+
+    def mock_process_init(pid):
+        return mock.Mock(
+            pid = pid,
+            kill = mock.Mock(side_effect=lambda: mock_kill_function(pid)),
+            terminate = mock.Mock(side_effect=lambda: mock_kill_function(pid)),
+            children = mock.Mock(return_value=[]),
+            wait = mock.Mock()
+        )
+
+    def mock_wait_procs(proc_list, timeout=None):
+        gone = []
+        alive = []
+        for p in proc_list:
+            if p.pid > 0:
+                gone.append(p)
+            else:
+                if p.pid == 0 and len(p.kill.call_args_list) > 0:
+                    gone.append(p)
+                else:
+                    alive.append(p)
+
+        return gone, alive
+
+    mock_parent = mock_process_init(0)
+    mock_child_neg1 = mock_process_init(-1)
+    mock_child1 = mock_process_init(1)
+    mock_child2 = mock_process_init(2)
+    mock_parent.children = mock.Mock(return_value=[mock_child1, mock_child2])
+
+    def mock_process_get(pid):
+        if pid == -1:
+            return mock_child_neg1
+        if pid == 0:
+            return mock_parent
+        if pid == 1:
+            return mock_child1
+        if pid == 2:
+            return mock_child2
+        raise ProcessLookupError
 
     instance = mocked_instance
 
     handler = Handler(instance)
 
-    mock_process = mock.Mock()
-    mock_child1 = mock.Mock(pid=1)
-    mock_child2 = mock.Mock(pid=2)
-    mock_process.children = mock.Mock(return_value=[mock_child1, mock_child2])
-
     mock_proc = mock.Mock(pid=0)
     mock_proc.terminate = mock.Mock(return_value=None)
     mock_proc.kill = mock.Mock(return_value=None)
 
-    with mock.patch('psutil.Process', return_value=mock_process), \
-         mock.patch(
-        'os.kill',
-        mock.Mock(side_effect=mock_kill_function)
-    ) as mock_kill:
+    with mock.patch('psutil.Process', side_effect=mock_process_get), \
+         mock.patch('psutil.wait_procs', side_effect=mock_wait_procs):
         handler.terminate(mock_proc)
 
         assert handler.terminated
-        mock_proc.terminate.assert_called_once()
-        mock_proc.kill.assert_called_once()
-        mock_kill.assert_has_calls(
-            [mock.call(1, signal.SIGTERM), mock.call(2, signal.SIGTERM)]
-        )
+        mock_parent.terminate.assert_called_once()
+        mock_child1.terminate.assert_called_once()
+        mock_child2.terminate.assert_called_once()
+        mock_parent.kill.assert_called_once()
 
-        mock_child_neg1 = mock.Mock(pid=-1)
-        mock_process.children = mock.Mock(
+        mock_parent.children = mock.Mock(
             return_value=[mock_child_neg1, mock_child2]
         )
         handler.terminated = False
-        mock_kill.reset_mock()
+        mock_parent.reset_mock()
+        mock_parent.terminate.reset_mock()
+        mock_parent.kill.reset_mock()
+        mock_child2.reset_mock()
+        mock_child2.terminate.reset_mock()
+        mock_child2.kill.reset_mock()
 
         handler.terminate(mock_proc)
 
-    mock_kill.assert_has_calls(
-        [mock.call(-1, signal.SIGTERM), mock.call(2, signal.SIGTERM)]
-    )
+        mock_parent.terminate.assert_called_once()
+        mock_child_neg1.terminate.assert_called_once()
+        mock_child2.terminate.assert_called_once()
+        mock_child_neg1.kill.assert_called_once()
+        mock_parent.kill.assert_called_once()
 
 
 def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
-    def mock_kill_function(pid, sig):
+    def mock_kill_function(pid):
         if pid < 0:
             raise ProcessLookupError
+
+    def mock_process_init(pid):
+        return mock.Mock(
+            pid = pid,
+            kill = mock.Mock(side_effect=lambda: mock_kill_function(pid)),
+            terminate = mock.Mock(side_effect=lambda: mock_kill_function(pid)),
+            children = mock.Mock(return_value=[]),
+            wait = mock.Mock()
+        )
 
     instance = mocked_instance
 
     handler = BinaryHandler(instance, 'build')
     handler.pid_fn = os.path.join('dummy', 'path', 'to', 'pid.pid')
 
-    with mock.patch(
-        'os.kill',
-        mock.Mock(side_effect=mock_kill_function)
-    ) as mock_kill, \
+    with mock.patch('psutil.Process', mock.Mock(side_effect=mock_process_init)) as mock_proc, \
          mock.patch('os.unlink', mock.Mock()) as mock_unlink:
         with mock.patch('builtins.open', mock.mock_open(read_data='1')):
             handler.try_kill_process_by_pid()
@@ -276,10 +322,10 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
         mock_unlink.assert_called_once_with(
             os.path.join('dummy', 'path', 'to', 'pid.pid')
         )
-        mock_kill.assert_called_once_with(1, signal.SIGKILL)
+        mock_proc.assert_called_with(1)
 
         mock_unlink.reset_mock()
-        mock_kill.reset_mock()
+        mock_proc.reset_mock()
         handler.pid_fn = os.path.join('dummy', 'path', 'to', 'pid.pid')
 
         with mock.patch('builtins.open', mock.mock_open(read_data='-1')):
@@ -288,7 +334,7 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
         mock_unlink.assert_called_once_with(
             os.path.join('dummy', 'path', 'to', 'pid.pid')
         )
-        mock_kill.assert_called_once_with(-1, signal.SIGKILL)
+        mock_proc.assert_called_with(-1)
 
 
 TESTDATA_3 = [
@@ -417,7 +463,8 @@ TESTDATA_4 = [
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
       'generator']),
     (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
-    (False, False, False, None, ['ex1', 'ex2'], ['build_dir/zephyr/zephyr.exe', 'ex1', 'ex2']),
+    (False, False, False, None, ['ex1', 'ex2'],
+     [os.path.join('build_dir', 'zephyr', 'zephyr.exe'), 'ex1', 'ex2']),
 ]
 
 @pytest.mark.parametrize(
@@ -1199,16 +1246,22 @@ def test_devicehandler_create_serial_connection(
         available_mock.assert_called_once_with(make_available)
 
 
+TESTIDS_16 = ['no pty']
 TESTDATA_16 = [
-    ('dummy1 dummy2', None, 'slave name'),
-    ('dummy1,dummy2', CalledProcessError, None),
     (None, None, 'dummy hardware serial'),
 ]
+
+if os.name != 'nt':
+    TESTIDS_16.extend(['pty', 'pty process error'])
+    TESTDATA_16.extend([
+        ('dummy1 dummy2', None, 'slave name'),
+        ('dummy1,dummy2', CalledProcessError, None),
+    ])
 
 @pytest.mark.parametrize(
     'serial_pty, popen_exception, expected_device',
     TESTDATA_16,
-    ids=['pty', 'pty process error', 'no pty']
+    ids=TESTIDS_16
 )
 def test_devicehandler_get_serial_device(
     mocked_instance,
@@ -1230,8 +1283,8 @@ def test_devicehandler_get_serial_device(
     ttyname_mock = mock.Mock(side_effect=lambda x: x + ' name')
 
     with mock.patch('subprocess.Popen', popen_mock), \
-         mock.patch('pty.openpty', openpty_mock), \
-         mock.patch('os.ttyname', ttyname_mock):
+         mock.patch('pty.openpty', openpty_mock) if os.name != 'nt' else nullcontext(), \
+         mock.patch('os.ttyname', ttyname_mock) if os.name != 'nt' else nullcontext():
         result = handler._get_serial_device(serial_pty, hardware_serial)
 
     if popen_exception:
@@ -1400,6 +1453,7 @@ TESTDATA_18 = [
     (False, False, False),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'ignore_qemu_crash, expected_ignore_crash, expected_ignore_unexpected_eof',
     TESTDATA_18,
@@ -1419,6 +1473,7 @@ def test_qemuhandler_init(
     assert handler.ignore_unexpected_eof == expected_ignore_unexpected_eof
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 def test_qemuhandler_get_cpu_time():
     def mock_process(pid):
         return mock.Mock(
@@ -1451,6 +1506,7 @@ TESTDATA_19 = [
     ),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'self_sysbuild, self_build_dir, build_dir, expected',
     TESTDATA_19,
@@ -1493,6 +1549,7 @@ TESTDATA_20 = [
     ),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'self_log, self_pid_fn, sysbuild_build_dir, exists_pid_fn',
     TESTDATA_20,
@@ -1528,6 +1585,7 @@ def test_qemuhandler_set_qemu_filenames(
                                             os.path.sep + 'qemu.pid')
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 def test_qemuhandler_create_command(mocked_instance):
     sysbuild_build_dir = os.path.join('sysbuild', 'dummy_dir')
 
@@ -1593,6 +1651,7 @@ TESTDATA_21 = [
     ),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'self_returncode, self_ignore_qemu_crash,' \
     ' self_instance_reason, harness_state, is_timeout,' \
@@ -1629,6 +1688,7 @@ def test_qemuhandler_update_instance_info(
         )
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 def test_qemuhandler_thread_get_fifo_names():
     fifo_fn = 'dummy'
 
@@ -1637,6 +1697,7 @@ def test_qemuhandler_thread_get_fifo_names():
     assert fifo_in ==  'dummy.in'
     assert fifo_out ==  'dummy.out'
 
+
 TESTDATA_22 = [
     (False, False),
     (False, True),
@@ -1644,6 +1705,7 @@ TESTDATA_22 = [
     (True, True),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'fifo_in_exists, fifo_out_exists',
     TESTDATA_22,
@@ -1691,6 +1753,7 @@ TESTDATA_23 = [
     (True, False)
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'is_pid, is_lookup_error',
     TESTDATA_23,
@@ -1738,6 +1801,7 @@ TESTDATA_24 = [
     (None, None, None, 'Unknown'),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     '_status, _reason, expected_status, expected_reason',
     TESTDATA_24,
@@ -1841,6 +1905,7 @@ TESTDATA_25 = [
     ),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'content, timeout, pid, harness_states, cputime, capture_coverage,' \
     ' expected_status, expected_reason, expected_log_calls',
@@ -1957,6 +2022,7 @@ TESTDATA_26 = [
     (False, True, 'failed', False, ['return code from QEMU (None): 1']),
 ]
 
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
 @pytest.mark.parametrize(
     'isatty, do_timeout, harness_state, exists_pid_fn, expected_logs',
     TESTDATA_26,
@@ -2034,8 +2100,19 @@ def test_qemuhandler_handle(
     assert all([expected_log in caplog.text for expected_log in expected_logs])
 
 
-def test_qemuhandler_get_fifo(mocked_instance):
+@pytest.mark.skipif(os.name == 'nt', reason='QEMUWinHandler is used on Windows, not QEMUHandler.')
+def test_qemuhandler_get_fifo_windows(mocked_instance):
     handler = QEMUHandler(mocked_instance, 'build')
+    handler.fifo_fn = 'fifo_fn'
+
+    result = handler.get_fifo()
+
+    assert result == 'fifo_fn'
+
+
+@pytest.mark.skipif(os.name != 'nt', reason='QEMUWinHandler is used only on Windows.')
+def test_qemuhandler_get_fifo_linux(mocked_instance):
+    handler = QEMUWinHandler(mocked_instance, 'build')
     handler.fifo_fn = 'fifo_fn'
 
     result = handler.get_fifo()

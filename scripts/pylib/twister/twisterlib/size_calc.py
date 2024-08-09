@@ -205,7 +205,7 @@ class SizeCalculator:
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
         # GREP can not be used as it returns an error if the symbol is not
         # found.
-        is_xip_command = "nm " + self.elf_filename + \
+        is_xip_command = "nm " + str(self.elf_filename) + \
                          " | awk '/CONFIG_XIP/ { print $3 }'"
         is_xip_output = subprocess.check_output(
             is_xip_command, shell=True, stderr=subprocess.STDOUT).decode(
@@ -221,7 +221,7 @@ class SizeCalculator:
 
     def _get_info_elf_sections(self) -> None:
         """Calculate RAM and ROM usage and information about issues by section"""
-        objdump_command = "objdump -h " + self.elf_filename
+        objdump_command = "objdump -h " + str(self.elf_filename)
         objdump_output = subprocess.check_output(
             objdump_command, shell=True).decode("utf-8").splitlines()
 
