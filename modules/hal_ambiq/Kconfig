@@ -55,4 +55,9 @@ config AMBIQ_HAL_USE_BLEIF
 	help
 	  Use the BLEIF driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_ADC
+	bool
+	help
+	  Use the ADC driver from Ambiq HAL
+
 endif # AMBIQ_HAL
