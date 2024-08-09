@@ -667,7 +667,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_codec_qos_pref *pref;
+	struct bt_bap_qos_cfg_pref *pref;
 	struct bt_bap_stream *stream;
 	void *cc;
 
@@ -1808,7 +1808,7 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 }
 
 int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *buf,
-				 struct bt_audio_codec_qos *qos)
+				 struct bt_bap_qos_cfg *qos)
 {
 	struct bt_ascs_qos *req;
 	struct bt_conn_iso *conn_iso;
@@ -2135,9 +2135,9 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 	reset_att_buf(client);
 }
 
-static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
-					    const struct bt_audio_codec_qos *qos,
-					    const struct bt_bap_unicast_group_param *group_param)
+static void bt_bap_qos_cfg_to_cig_param(struct bt_iso_cig_param *cig_param,
+					const struct bt_bap_qos_cfg *qos,
+					const struct bt_bap_unicast_group_param *group_param)
 {
 	cig_param->framing = qos->framing;
 	cig_param->packing = BT_ISO_PACKING_SEQUENTIAL; /*  TODO: Add to QoS struct */
@@ -2161,8 +2161,7 @@ static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
  * between CIS'es. The implementation shall take the CIG parameters from
  * unicast_group instead.
  */
-static int bt_audio_cig_create(struct bt_bap_unicast_group *group,
-			       const struct bt_audio_codec_qos *qos,
+static int bt_audio_cig_create(struct bt_bap_unicast_group *group, const struct bt_bap_qos_cfg *qos,
 			       const struct bt_bap_unicast_group_param *group_param)
 {
 	struct bt_iso_cig_param param;
@@ -2183,7 +2182,7 @@ static int bt_audio_cig_create(struct bt_bap_unicast_group *group,
 
 	param.num_cis = cis_count;
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, qos, group_param);
+	bt_bap_qos_cfg_to_cig_param(&param, qos, group_param);
 
 	err = bt_iso_cig_create(&param, &group->cig);
 	if (err != 0) {
@@ -2197,7 +2196,7 @@ static int bt_audio_cig_create(struct bt_bap_unicast_group *group,
 }
 
 static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group,
-				    const struct bt_audio_codec_qos *qos)
+				    const struct bt_bap_qos_cfg *qos)
 {
 	struct bt_iso_cig_param param;
 	uint8_t cis_count;
@@ -2217,7 +2216,7 @@ static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group,
 
 	param.num_cis = cis_count;
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, qos, NULL);
+	bt_bap_qos_cfg_to_cig_param(&param, qos, NULL);
 
 	err = bt_iso_cig_reconfigure(group->cig, &param);
 	if (err != 0) {
@@ -2307,9 +2306,9 @@ static void unicast_group_del_iso(struct bt_bap_unicast_group *group, struct bt_
 	}
 }
 
-static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
-						const struct bt_audio_codec_qos *qos,
-						enum bt_audio_dir dir)
+static void unicast_client_qos_cfg_to_iso_qos(struct bt_bap_iso *iso,
+					      const struct bt_bap_qos_cfg *qos,
+					      enum bt_audio_dir dir)
 {
 	struct bt_iso_chan_io_qos *io_qos;
 	struct bt_iso_chan_io_qos *other_io_qos;
@@ -2336,7 +2335,7 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
 		}
 	}
 
-	bt_audio_codec_qos_to_iso_qos(io_qos, qos);
+	bt_bap_qos_cfg_to_iso_qos(io_qos, qos);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -2354,7 +2353,7 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 				     struct bt_bap_iso *iso, enum bt_audio_dir dir)
 {
 	struct bt_bap_stream *stream = param->stream;
-	struct bt_audio_codec_qos *qos = param->qos;
+	struct bt_bap_qos_cfg *qos = param->qos;
 
 	LOG_DBG("group %p stream %p qos %p iso %p dir %u", group, stream, qos, iso, dir);
 
@@ -2369,8 +2368,8 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 		bt_bap_iso_bind_ep(iso, stream->ep);
 	}
 
-	/* Store the Codec QoS in the bap_iso */
-	unicast_client_codec_qos_to_iso_qos(iso, qos, dir);
+	/* Store the QoS in the bap_iso */
+	unicast_client_qos_cfg_to_iso_qos(iso, qos, dir);
 
 	sys_slist_append(&group->streams, &stream->_node);
 }
@@ -2558,7 +2557,7 @@ static int stream_pair_param_check(const struct bt_bap_unicast_group_stream_pair
 	return 0;
 }
 
-static int group_qos_common_set(const struct bt_audio_codec_qos **group_qos,
+static int group_qos_common_set(const struct bt_bap_qos_cfg **group_qos,
 				const struct bt_bap_unicast_group_stream_pair_param *param)
 {
 	if (param->rx_param != NULL && *group_qos == NULL) {
@@ -2576,7 +2575,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 				  struct bt_bap_unicast_group **out_unicast_group)
 {
 	struct bt_bap_unicast_group *unicast_group;
-	const struct bt_audio_codec_qos *group_qos = NULL;
+	const struct bt_bap_qos_cfg *group_qos = NULL;
 	int err;
 
 	CHECKIF(out_unicast_group == NULL)
@@ -2647,7 +2646,7 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 				       struct bt_bap_unicast_group_stream_pair_param params[],
 				       size_t num_param)
 {
-	const struct bt_audio_codec_qos *group_qos = unicast_group->qos;
+	const struct bt_bap_qos_cfg *group_qos = unicast_group->qos;
 	struct bt_bap_stream *tmp_stream;
 	size_t total_stream_cnt;
 	struct bt_iso_cig *cig;

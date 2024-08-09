@@ -319,7 +319,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	codec_cfg.data_len = cp->cc_ltvs_len;
 	memcpy(codec_cfg.data, cp->cc_ltvs, cp->cc_ltvs_len);
 
-	source->qos.phy = BT_AUDIO_CODEC_QOS_2M;
+	source->qos.phy = BT_BAP_QOS_CFG_2M;
 	source->qos.framing = cp->framing;
 	source->qos.rtn = cp->retransmission_num;
 	source->qos.latency = sys_le16_to_cpu(cp->max_transport_latency);

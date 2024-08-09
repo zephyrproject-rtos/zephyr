@@ -71,8 +71,8 @@ static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
 	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
-static const struct bt_audio_codec_qos_pref unicast_qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
+static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
 
 static bool auto_start_sink_streams;
 
@@ -467,7 +467,7 @@ static struct bt_bap_stream *unicast_stream_alloc(void)
 static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *ep,
 				 enum bt_audio_dir dir, const struct bt_audio_codec_cfg *codec_cfg,
 				 struct bt_bap_stream **stream,
-				 struct bt_audio_codec_qos_pref *const pref,
+				 struct bt_bap_qos_cfg_pref *const pref,
 				 struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
@@ -493,7 +493,7 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 
 static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 				   const struct bt_audio_codec_cfg *codec_cfg,
-				   struct bt_audio_codec_qos_pref *const pref,
+				   struct bt_bap_qos_cfg_pref *const pref,
 				   struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
@@ -508,7 +508,7 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 	return -ENOEXEC;
 }
 
-static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 			      struct bt_bap_ascs_rsp *rsp)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
