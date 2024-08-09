@@ -44,7 +44,7 @@ zephyr_linker_memory(NAME IDT_LIST FLAGS wx START ${IDT_ADDR}   SIZE 2K)
 # Only use 'rw' as FLAGS. It's not used anyway.
 dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
 foreach(path IN LISTS paths)
-  zephyr_linker_dts_memory(PATH ${path} FLAGS rw)
+  zephyr_linker_dts_memory(PATH ${path})
 endforeach()
 
 if(CONFIG_XIP)

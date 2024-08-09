@@ -12,6 +12,13 @@ properties:
       is taken from the <reg> property, while the name is the value of
       this property.
 
+  zephyr,memory-region-flags:
+    type: string
+    description: |
+      Set attributes such as read-only or executable for the linker script
+      memory region. The string set here will be specified in parentheses
+      after the area name in the linker script.
+
   zephyr,memory-region-mpu:
     type: string
     deprecated: true
