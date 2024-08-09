@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Orgatex GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BQ35100
+	bool "BQ35100 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ35100_ENABLED
+	select I2C
+	help
+	  Enable the driver for Texas Instruments
+	  BQ35100 Lithium Primary Battery Fuel Gauge
+	  and End-Of-Service Monitor.
+
+if BQ35100
+
+	config BQ35100_SHUNT_VALUE
+		int "BQ35100 shunt resitor value [mΩ]"
+		default 100
+
+endif
