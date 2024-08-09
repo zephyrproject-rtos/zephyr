@@ -1,0 +1,49 @@
+# Copyright (c) 2023 Andreas Karner <andreaskarner@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL345 3-axis I2C accelerometer
+
+include: [sensor-device.yaml]
+
+properties:
+  frequency:
+    type: int
+    default: 100
+    description: |
+          Accelerometer sampling frequency (ODR).
+          Default is power on reset value (100 Hz).
+    enum:
+      - 6
+      - 12
+      - 25
+      - 50
+      - 100
+      - 200
+      - 400
+
+  range:
+    type: int
+    default: 2
+    description: |
+      Accelerometer sampling range in G.
+      Default is power on reset value (2 G).
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16
+
+  fifo:
+    type: int
+    default: 0
+    description: |
+      Accelerometer fifo mode.
+      Default is power on reset value (0 - Bypass).
+      0 - Bypass(no FIFO mode)
+      1 - FIFO
+      2 - Stream
+      3 - Trigger (not supported yet)
+    enum:
+      - 0
+      - 1
+      - 2
