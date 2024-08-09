@@ -211,6 +211,16 @@ ZTEST(devicetree_api, test_any_inst_prop)
 		      1, "");
 }
 
+#undef DT_DRV_COMPAT
+ZTEST(devicetree_api, test_any_compat_inst_prop)
+{
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo), 1, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, bar), 1, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, baz), 0, "");
+	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, does_not_exist),
+		      0, "");
+}
+
 ZTEST(devicetree_api, test_default_prop_access)
 {
 	/*
@@ -1593,6 +1603,18 @@ ZTEST(devicetree_api, test_foreach_status_okay)
 	 * the values all up.
 	 */
 	val = DT_FOREACH_STATUS_OKAY_VARGS(vnd_enum_holder, MY_FN, +) 3;
+	zassert_equal(val, 5, "");
+
+#undef MY_FN
+#define MY_FN(inst, compat, operator) DT_ENUM_IDX(DT_INST(inst, compat), val) operator
+	/* This should expand to something like:
+	 *
+	 * 0 + 2 + 3
+	 *
+	 * and order of expansion doesn't matter, since we're adding
+	 * the values all up.
+	 */
+	val = DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(vnd_enum_holder, MY_FN, +) 3;
 	zassert_equal(val, 5, "");
 
 	/*
