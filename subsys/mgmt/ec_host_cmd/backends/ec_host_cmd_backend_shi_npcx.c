@@ -875,11 +875,6 @@ static int shi_npcx_init_registers(const struct device *dev)
 		return ret;
 	}
 
-	/* If booter doesn't set the host interface type */
-	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
-		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
-	}
-
 	/*
 	 * SHICFG1 (SHI Configuration 1) setting
 	 * [7] - IWRAP	= 1: Wrap input buffer to the first address

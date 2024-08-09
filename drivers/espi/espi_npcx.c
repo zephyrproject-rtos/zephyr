@@ -1329,11 +1329,6 @@ static int espi_npcx_init(const struct device *dev)
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int i, ret;
 
-	/* If booter doesn't set the host interface type */
-	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
-		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
-	}
-
 	if (!device_is_ready(clk_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
