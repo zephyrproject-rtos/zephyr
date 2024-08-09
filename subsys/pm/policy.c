@@ -145,6 +145,10 @@ static struct k_spinlock events_lock;
 static sys_slist_t events_list;
 /** Next event, in absolute cycles (<0: none, [0, UINT32_MAX]: cycles) */
 static int64_t next_event_cyc = -1;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+/** Pointer to Next Low Latency Event. */
+static struct pm_policy_event *next_low_latency_event;
+#endif
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -202,6 +206,11 @@ static void update_next_event(uint32_t cyc)
 		if ((new_next_event_cyc < 0) ||
 		    (cyc_evt < new_next_event_cyc)) {
 			new_next_event_cyc = cyc_evt;
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+			if (evt->low_latency) {
+				next_low_latency_event = evt;
+			}
+#endif
 		}
 	}
 
@@ -212,6 +221,20 @@ static void update_next_event(uint32_t cyc)
 
 	next_event_cyc = new_next_event_cyc;
 }
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+int32_t pm_policy_next_low_latency_event_ticks(void)
+{
+	int32_t cyc_evt = -1;
+
+	if ((next_low_latency_event) &&
+	   (next_low_latency_event->value_cyc > 0)) {
+		cyc_evt = next_low_latency_event->value_cyc - k_cycle_get_32();
+	}
+
+	return k_cyc_to_ticks_ceil32(cyc_evt);
+}
+#endif
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
@@ -391,6 +414,33 @@ void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
 
 	k_spin_unlock(&events_lock, key);
 }
+
+#ifdef CONFIG_PM_LOW_LATENCY_EVENTS
+void pm_policy_low_latency_event_register(struct pm_policy_event *evt,
+					  uint32_t cycle)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+
+	evt->low_latency = true;
+	evt->value_cyc = cycle;
+	sys_slist_append(&events_list, &evt->node);
+	update_next_event(k_cycle_get_32());
+
+	k_spin_unlock(&events_lock, key);
+}
+
+void pm_policy_low_latency_event_update(struct pm_policy_event *evt,
+					bool low_latency, uint32_t cycle)
+{
+	k_spinlock_key_t key = k_spin_lock(&events_lock);
+
+	evt->value_cyc = cycle;
+	evt->low_latency = low_latency;
+	update_next_event(k_cycle_get_32());
+
+	k_spin_unlock(&events_lock, key);
+}
+#endif
 
 void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us)
 {
