@@ -30,3 +30,10 @@ config LEGACY_MULTI_LEVEL_TABLE_GENERATION
 	help
 	  A make-shift Kconfig to continue generating the multi-level interrupt LUT
 	  with the legacy way using DT macros.
+
+config ISR_TABLE_SHELL
+	bool "Shell command to dump the ISR tables"
+	depends on GEN_SW_ISR_TABLE
+	depends on SHELL
+	help
+	  This option enables a shell command to dump the ISR tables.
