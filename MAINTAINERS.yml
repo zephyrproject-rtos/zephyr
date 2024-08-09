@@ -129,14 +129,16 @@ ARC arch:
   status: maintained
   maintainers:
     - ruuddw
+    - evgeniy-paltsev
   collaborators:
     - abrodkin
-    - evgeniy-paltsev
   files:
     - arch/arc/
     - include/zephyr/arch/arc/
+    - drivers/timer/*arcv2*
+    - drivers/interrupt_controller/*arcv2*
     - tests/arch/arc/
-    - dts/arc/synopsys/
+    - dts/arc/
     - dts/bindings/arc/
     - doc/hardware/arch/arc-support-status.rst
   labels:
@@ -3343,9 +3345,9 @@ Synopsys Platforms:
   status: maintained
   maintainers:
     - ruuddw
+    - evgeniy-paltsev
   collaborators:
     - abrodkin
-    - evgeniy-paltsev
   files:
     - soc/snps/
     - boards/snps/
