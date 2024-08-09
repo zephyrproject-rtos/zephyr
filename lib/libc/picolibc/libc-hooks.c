@@ -30,8 +30,7 @@ static LIBC_DATA int (*_stdout_hook)(int);
 
 int z_impl_zephyr_fputc(int a, FILE *out)
 {
-	(*_stdout_hook)(a);
-	return 0;
+	return ((out == stdout) || (out == stderr)) ? (*_stdout_hook)(a) : EOF;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -44,8 +43,7 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 
 static int picolibc_put(char a, FILE *f)
 {
-	zephyr_fputc(a, f);
-	return 0;
+	return zephyr_fputc(a, f);
 }
 
 static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
