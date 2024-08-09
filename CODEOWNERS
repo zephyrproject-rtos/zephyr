@@ -367,7 +367,6 @@
 /drivers/timer/*rcar_cmt*                 @aaillet
 /drivers/timer/*esp32_sys*                @uLipe
 /drivers/timer/*sam0_rtc*                 @bendiscz
-/drivers/timer/*arcv2*                    @ruuddw
 /drivers/timer/*xtensa*                   @dcpleung
 /drivers/timer/*rv32m1_lptmr*             @mbolivar
 /drivers/timer/*nrf_rtc*                  @anangl
