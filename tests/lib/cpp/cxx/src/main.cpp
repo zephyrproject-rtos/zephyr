@@ -99,7 +99,7 @@ struct foo {
 /* Check that BUILD_ASSERT compiles. */
 BUILD_ASSERT(sizeof(foo) == sizeof(int));
 
-static struct foo foos[5];
+__maybe_unused static struct foo foos[5];
 /* Check that ARRAY_SIZE compiles. */
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
