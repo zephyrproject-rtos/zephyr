@@ -895,6 +895,80 @@ config BT_MESH_BLOB_REPORT_TIMEOUT
 	help
 	  The timer value that Pull BLOB Transfer Server uses to report missed chunks.
 
+config BT_MESH_RX_BLOB_CHUNK_SIZE
+	int "BLOB Server chunk size"
+	default 377 if BT_MESH_RX_SEG_MAX = 32
+	default 365 if BT_MESH_RX_SEG_MAX = 31
+	default 353 if BT_MESH_RX_SEG_MAX = 30
+	default 341 if BT_MESH_RX_SEG_MAX = 29
+	default 329 if BT_MESH_RX_SEG_MAX = 28
+	default 317 if BT_MESH_RX_SEG_MAX = 27
+	default 305 if BT_MESH_RX_SEG_MAX = 26
+	default 293 if BT_MESH_RX_SEG_MAX = 25
+	default 281 if BT_MESH_RX_SEG_MAX = 24
+	default 269 if BT_MESH_RX_SEG_MAX = 23
+	default 257 if BT_MESH_RX_SEG_MAX = 22
+	default 245 if BT_MESH_RX_SEG_MAX = 21
+	default 233 if BT_MESH_RX_SEG_MAX = 20
+	default 221 if BT_MESH_RX_SEG_MAX = 19
+	default 209 if BT_MESH_RX_SEG_MAX = 18
+	default 197 if BT_MESH_RX_SEG_MAX = 17
+	default 185 if BT_MESH_RX_SEG_MAX = 16
+	default 173 if BT_MESH_RX_SEG_MAX = 15
+	default 161 if BT_MESH_RX_SEG_MAX = 14
+	default 149 if BT_MESH_RX_SEG_MAX = 13
+	default 137 if BT_MESH_RX_SEG_MAX = 12
+	default 125 if BT_MESH_RX_SEG_MAX = 11
+	default 113 if BT_MESH_RX_SEG_MAX = 10
+	default 101 if BT_MESH_RX_SEG_MAX = 9
+	default 89 if BT_MESH_RX_SEG_MAX = 8
+	default 77 if BT_MESH_RX_SEG_MAX = 7
+	default 65 if BT_MESH_RX_SEG_MAX = 6
+	default 53 if BT_MESH_RX_SEG_MAX = 5
+	default 41 if BT_MESH_RX_SEG_MAX = 4
+	default 29 if BT_MESH_RX_SEG_MAX = 3
+	default 17 if BT_MESH_RX_SEG_MAX = 2
+	default 8 # unsegmented
+	range 8 377 if BT_MESH_RX_SEG_MAX = 32
+	range 8 365 if BT_MESH_RX_SEG_MAX = 31
+	range 8 353 if BT_MESH_RX_SEG_MAX = 30
+	range 8 341 if BT_MESH_RX_SEG_MAX = 29
+	range 8 329 if BT_MESH_RX_SEG_MAX = 28
+	range 8 317 if BT_MESH_RX_SEG_MAX = 27
+	range 8 305 if BT_MESH_RX_SEG_MAX = 26
+	range 8 293 if BT_MESH_RX_SEG_MAX = 25
+	range 8 281 if BT_MESH_RX_SEG_MAX = 24
+	range 8 269 if BT_MESH_RX_SEG_MAX = 23
+	range 8 257 if BT_MESH_RX_SEG_MAX = 22
+	range 8 245 if BT_MESH_RX_SEG_MAX = 21
+	range 8 233 if BT_MESH_RX_SEG_MAX = 20
+	range 8 221 if BT_MESH_RX_SEG_MAX = 19
+	range 8 209 if BT_MESH_RX_SEG_MAX = 18
+	range 8 197 if BT_MESH_RX_SEG_MAX = 17
+	range 8 185 if BT_MESH_RX_SEG_MAX = 16
+	range 8 173 if BT_MESH_RX_SEG_MAX = 15
+	range 8 161 if BT_MESH_RX_SEG_MAX = 14
+	range 8 149 if BT_MESH_RX_SEG_MAX = 13
+	range 8 137 if BT_MESH_RX_SEG_MAX = 12
+	range 8 125 if BT_MESH_RX_SEG_MAX = 11
+	range 8 113 if BT_MESH_RX_SEG_MAX = 10
+	range 8 101 if BT_MESH_RX_SEG_MAX = 9
+	range 8 89 if BT_MESH_RX_SEG_MAX = 8
+	range 8 77 if BT_MESH_RX_SEG_MAX = 7
+	range 8 65 if BT_MESH_RX_SEG_MAX = 6
+	range 8 53 if BT_MESH_RX_SEG_MAX = 5
+	range 8 41 if BT_MESH_RX_SEG_MAX = 4
+	range 8 29 if BT_MESH_RX_SEG_MAX = 3
+	range 8 17 if BT_MESH_RX_SEG_MAX = 2
+	range 8 8 # unsegmented
+	help
+	  Set the chunk size for the BLOB Server.
+	  The maximum chunk size depends on how many segments are possible,
+	  see also: BT_MESH_RX_SEG_MAX,
+	  and the maximum SDU a node can receive.
+	  Note: Default is the maximum chunk size possible with current
+	        capabilities.
+
 endif # BT_MESH_BLOB_SRV
 
 menuconfig BT_MESH_BLOB_CLI
@@ -911,7 +985,81 @@ config BT_MESH_BLOB_CLI_BLOCK_RETRIES
 	  Controls the number of times the client will attempt to resend missing
 	  chunks to the BLOB receivers for every block.
 
-endif
+config BT_MESH_TX_BLOB_CHUNK_SIZE
+	int "BLOB Client chunk size"
+	default 377 if BT_MESH_TX_SEG_MAX = 32
+	default 365 if BT_MESH_TX_SEG_MAX = 31
+	default 353 if BT_MESH_TX_SEG_MAX = 30
+	default 341 if BT_MESH_TX_SEG_MAX = 29
+	default 329 if BT_MESH_TX_SEG_MAX = 28
+	default 317 if BT_MESH_TX_SEG_MAX = 27
+	default 305 if BT_MESH_TX_SEG_MAX = 26
+	default 293 if BT_MESH_TX_SEG_MAX = 25
+	default 281 if BT_MESH_TX_SEG_MAX = 24
+	default 269 if BT_MESH_TX_SEG_MAX = 23
+	default 257 if BT_MESH_TX_SEG_MAX = 22
+	default 245 if BT_MESH_TX_SEG_MAX = 21
+	default 233 if BT_MESH_TX_SEG_MAX = 20
+	default 221 if BT_MESH_TX_SEG_MAX = 19
+	default 209 if BT_MESH_TX_SEG_MAX = 18
+	default 197 if BT_MESH_TX_SEG_MAX = 17
+	default 185 if BT_MESH_TX_SEG_MAX = 16
+	default 173 if BT_MESH_TX_SEG_MAX = 15
+	default 161 if BT_MESH_TX_SEG_MAX = 14
+	default 149 if BT_MESH_TX_SEG_MAX = 13
+	default 137 if BT_MESH_TX_SEG_MAX = 12
+	default 125 if BT_MESH_TX_SEG_MAX = 11
+	default 113 if BT_MESH_TX_SEG_MAX = 10
+	default 101 if BT_MESH_TX_SEG_MAX = 9
+	default 89 if BT_MESH_TX_SEG_MAX = 8
+	default 77 if BT_MESH_TX_SEG_MAX = 7
+	default 65 if BT_MESH_TX_SEG_MAX = 6
+	default 53 if BT_MESH_TX_SEG_MAX = 5
+	default 41 if BT_MESH_TX_SEG_MAX = 4
+	default 29 if BT_MESH_TX_SEG_MAX = 3
+	default 17 if BT_MESH_TX_SEG_MAX = 2
+	default 8
+	range 1 377 if BT_MESH_TX_SEG_MAX = 32
+	range 1 365 if BT_MESH_TX_SEG_MAX = 31
+	range 1 353 if BT_MESH_TX_SEG_MAX = 30
+	range 1 341 if BT_MESH_TX_SEG_MAX = 29
+	range 1 329 if BT_MESH_TX_SEG_MAX = 28
+	range 1 317 if BT_MESH_TX_SEG_MAX = 27
+	range 1 305 if BT_MESH_TX_SEG_MAX = 26
+	range 1 293 if BT_MESH_TX_SEG_MAX = 25
+	range 1 281 if BT_MESH_TX_SEG_MAX = 24
+	range 1 269 if BT_MESH_TX_SEG_MAX = 23
+	range 1 257 if BT_MESH_TX_SEG_MAX = 22
+	range 1 245 if BT_MESH_TX_SEG_MAX = 21
+	range 1 233 if BT_MESH_TX_SEG_MAX = 20
+	range 1 221 if BT_MESH_TX_SEG_MAX = 19
+	range 1 209 if BT_MESH_TX_SEG_MAX = 18
+	range 1 197 if BT_MESH_TX_SEG_MAX = 17
+	range 1 185 if BT_MESH_TX_SEG_MAX = 16
+	range 1 173 if BT_MESH_TX_SEG_MAX = 15
+	range 1 161 if BT_MESH_TX_SEG_MAX = 14
+	range 1 149 if BT_MESH_TX_SEG_MAX = 13
+	range 1 137 if BT_MESH_TX_SEG_MAX = 12
+	range 1 125 if BT_MESH_TX_SEG_MAX = 11
+	range 1 113 if BT_MESH_TX_SEG_MAX = 10
+	range 1 101 if BT_MESH_TX_SEG_MAX = 9
+	range 1 89 if BT_MESH_TX_SEG_MAX = 8
+	range 1 77 if BT_MESH_TX_SEG_MAX = 7
+	range 1 65 if BT_MESH_TX_SEG_MAX = 6
+	range 1 53 if BT_MESH_TX_SEG_MAX = 5
+	range 1 41 if BT_MESH_TX_SEG_MAX = 4
+	range 1 29 if BT_MESH_TX_SEG_MAX = 3
+	range 1 17 if BT_MESH_TX_SEG_MAX = 2
+	range 1 8 # unsegmented
+	help
+	  Set the chunk size for the BLOB Server.
+	  The maximum chunk size depends on how many segments are possible,
+	  see also: BT_MESH_TX_SEG_MAX,
+	  and the maximum SDU a node can receive.
+	  Note: Default is the maximum chunk size possible with current
+	        capabilities.
+
+endif # BT_MESH_BLOB_CLI
 
 menu "BLOB models common configuration"
 	visible if BT_MESH_BLOB_SRV || BT_MESH_BLOB_CLI

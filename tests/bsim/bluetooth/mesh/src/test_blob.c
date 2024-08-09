@@ -149,7 +149,7 @@ static void blob_cli_caps(struct bt_mesh_blob_cli *b, const struct bt_mesh_blob_
 		ASSERT_EQUAL(caps->max_size, CONFIG_BT_MESH_BLOB_SIZE_MAX);
 		ASSERT_EQUAL(caps->min_block_size_log, BLOB_BLOCK_SIZE_LOG_MIN);
 		ASSERT_EQUAL(caps->max_block_size_log, BLOB_BLOCK_SIZE_LOG_MAX);
-		ASSERT_EQUAL(caps->max_chunk_size, BLOB_CHUNK_SIZE_MAX(BT_MESH_RX_SDU_MAX));
+		ASSERT_EQUAL(caps->max_chunk_size, MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE));
 		ASSERT_EQUAL(caps->max_chunks, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
 	}
 }
@@ -927,7 +927,7 @@ static void test_cli_trans_complete(void)
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 9;
-	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.xfer.chunk_size = MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE);
 	blob_cli_xfer.inputs.timeout_base = 10;
 
 	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
@@ -1002,7 +1002,7 @@ static void test_cli_trans_resume(void)
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 9;
-	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.xfer.chunk_size = MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE);
 	blob_cli_xfer.inputs.timeout_base = 10;
 
 	err = bt_mesh_blob_cli_send(&blob_cli, &blob_cli_xfer.inputs,
@@ -1103,7 +1103,7 @@ static void cli_pull_mode_setup(void)
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 3;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 8;
-	blob_cli_xfer.xfer.chunk_size = 36;
+	blob_cli_xfer.xfer.chunk_size = MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE);
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
 
@@ -1223,7 +1223,7 @@ static void cli_common_fail_on_init(void)
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 2;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 9;
-	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.xfer.chunk_size = MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE);
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
 
@@ -1425,7 +1425,7 @@ static void cli_stop_setup(void)
 	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
 	blob_cli_xfer.xfer.block_size_log = 9;
-	blob_cli_xfer.xfer.chunk_size = 377;
+	blob_cli_xfer.xfer.chunk_size = MIN(CONFIG_BT_MESH_RX_BLOB_CHUNK_SIZE, CONFIG_BT_MESH_TX_BLOB_CHUNK_SIZE);
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
 

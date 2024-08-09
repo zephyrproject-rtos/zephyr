@@ -24,7 +24,6 @@
 #define BLOB_CHUNK_SDU_OVERHEAD                                                \
 	(BT_MESH_MODEL_OP_LEN(BT_MESH_BLOB_OP_CHUNK) + 2 + BT_MESH_MIC_SHORT)
 
-#define BLOB_CHUNK_SIZE_MAX(sdu_max) ((sdu_max) - BLOB_CHUNK_SDU_OVERHEAD)
 #define BLOB_CHUNK_SDU_LEN(chunk_size) (BLOB_CHUNK_SDU_OVERHEAD + (chunk_size))
 
 /* Utility macros for calculating log2 of a number at compile time.
