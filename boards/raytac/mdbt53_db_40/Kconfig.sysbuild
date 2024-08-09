@@ -1,0 +1,10 @@
+# Sysbuild configuration
+# Copyright (c) 2024 Embeint Inc
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "raytac_mdbt53_db_40/nrf5340/cpunet"
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc for Bluetooth applications.

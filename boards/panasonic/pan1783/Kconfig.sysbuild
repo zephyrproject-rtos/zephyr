@@ -1,0 +1,12 @@
+# Sysbuild configuration
+# Copyright (c) 2024 Embeint Inc
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "pan1783_evb/nrf5340/cpunet" if BOARD_PAN1783_EVB
+	default "pan1783a_evb/nrf5340/cpunet" if BOARD_PAN1783A_EVB
+	default "pan1783a_pa_evb/nrf5340/cpunet" if BOARD_PAN1783A_PA_EVB
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc for Bluetooth applications.
