@@ -239,10 +239,14 @@ class Lcov(CoverageTool):
             branch_coverage = "lcov_branch_coverage=1"
             parallel = []
 
+        excludes = []
+        for ignore in self.ignores:
+            excludes += ["--exclude", ignore]
+
         cmd = [
             "lcov", "--gcov-tool", self.gcov_tool,
             "--rc", branch_coverage,
-        ] + parallel + args
+        ] + parallel + args + excludes
         return self.run_command(cmd, coveragelog)
 
     def _generate(self, outdir, coveragelog):
@@ -425,6 +429,8 @@ def run_coverage(testplan, options):
     coverage_tool.add_ignore_file('generated')
     coverage_tool.add_ignore_directory('tests')
     coverage_tool.add_ignore_directory('samples')
+    for exclude in options.coverage_exclude:
+        coverage_tool.add_ignore_directory(exclude)
     # Ignore branch coverage on LOG_* and LOG_HEXDUMP_* macros
     # Branch misses are due to the implementation of Z_LOG2 and cannot be avoided
     coverage_tool.add_ignore_branch_pattern(r"^\s*LOG_(?:HEXDUMP_)?(?:DBG|INF|WRN|ERR)\(.*")
