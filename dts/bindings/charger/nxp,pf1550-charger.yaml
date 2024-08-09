@@ -1,0 +1,48 @@
+# Copyright (c), 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PF1550 battery charger
+
+include: battery.yaml
+
+compatible: "nxp,pf1550-charger"
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    type: int
+
+  vbus-current-limit-microamp:
+    type: int
+    required: true
+
+  constant-charge-voltage-max-microvolt:
+    type: int
+    required: true
+
+  system-voltage-min-threshold-microvolt:
+    type: int
+    required: true
+    enum:
+      - 3500000
+      - 3700000
+      - 4300000
+    description: |
+      System voltage minimum threshold.
+
+  thermistor-monitoring-mode:
+    type: string
+    required: true
+    enum:
+      - "disabled"
+      - "thermistor"
+      - "JEITA-1"
+      - "JEITA-2"
+    description: |
+      Thermistor monitoring mode.
+      Refer to ThrmCfg register description and Table 2 for details.
+
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin

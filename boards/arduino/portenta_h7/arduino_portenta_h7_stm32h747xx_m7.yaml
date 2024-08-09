@@ -10,4 +10,11 @@ ram: 512
 flash: 1024
 supported:
   - gpio
+  - netif:eth
+  - i2c
+  - spi
+  - qspi
+  - memc
+  - usb_cdc
+  - usb_device
 vendor: arduino
