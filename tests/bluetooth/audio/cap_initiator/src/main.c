@@ -24,8 +24,6 @@
 #include "ztest_assert.h"
 #include "ztest_test.h"
 
-DEFINE_FFF_GLOBALS;
-
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
 	test_mocks_init();
