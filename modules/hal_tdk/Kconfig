@@ -1,0 +1,21 @@
+# Copyright (c) 2024 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_TDK_MODULE
+	bool "TDK HAL sensor drivers"
+	help
+	  Use the TDK HAL
+
+choice TDK_EMD_DRIVERS 
+	prompt "TDK eMD drivers"
+	depends on ZEPHYR_HAL_TDK_MODULE
+
+config USE_EMD_ICM42670P
+	bool "ICM42670-P High Performance 6-Axis MotionTracking IMU"
+	depends on ICM42670P
+
+config USE_EMD_ICM42670S
+	bool "ICM42670-S High Performance 6-Axis MotionTracking IMU with Motion Processing Software Library"
+	depends on ICM42670S
+
+endchoice

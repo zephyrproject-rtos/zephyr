@@ -1,0 +1,10 @@
+# Copyright (c) 2024 TDK Invensense
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM42670 integrated environmental sensor, accessed through SPI bus
+
+compatible: "invensense,icm42670"
+
+include: ["invensense,icm42670-common.yaml", "spi-device.yaml"]
