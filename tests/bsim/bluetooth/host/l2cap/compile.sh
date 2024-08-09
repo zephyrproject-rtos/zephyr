@@ -20,6 +20,8 @@ app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_nofrag.conf compile
 app=tests/bsim/bluetooth/host/l2cap/stress conf_file=prj_syswq.conf compile
 app=tests/bsim/bluetooth/host/l2cap/split/dut compile
 app=tests/bsim/bluetooth/host/l2cap/split/tester compile
+app=tests/bsim/bluetooth/host/l2cap/reassembly/dut compile
+app=tests/bsim/bluetooth/host/l2cap/reassembly/peer compile
 app=tests/bsim/bluetooth/host/l2cap/ecred/dut compile
 app=tests/bsim/bluetooth/host/l2cap/ecred/peer compile
 app=tests/bsim/bluetooth/host/l2cap/credits compile
