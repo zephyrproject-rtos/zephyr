@@ -16,6 +16,10 @@ MEMORY
         SDRAM  (wx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(sdram0)), LENGTH = DT_REG_SIZE(DT_NODELABEL(sdram0))
 #endif
 
+#if (DT_REG_SIZE(DT_NODELABEL(hyperram0)) > 0) && !IS_CHOSEN_SRAM(hyperram0)
+        hyperram0  (wx) : ORIGIN = DT_REG_ADDR(DT_NODELABEL(hyperram0)), LENGTH = DT_REG_SIZE(DT_NODELABEL(hyperram0))
+#endif
+
      }
 
 #include <zephyr/arch/arm/cortex_m/scripts/linker.ld>
