@@ -377,7 +377,7 @@ class TestCase(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.warning(f'TestCase assigned status "{value}"'
+            logger.error(f'TestCase assigned status "{value}"'
                            f' without an equivalent in TwisterStatus.'
                            f' Assignment was ignored.')
 
@@ -445,7 +445,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.warning(f'TestSuite assigned status "{value}"'
+            logger.error(f'TestSuite assigned status "{value}"'
                            f' without an equivalent in TwisterStatus.'
                            f' Assignment was ignored.')
 

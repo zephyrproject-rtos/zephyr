@@ -75,7 +75,7 @@ class Harness:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.warning(f'Harness assigned status "{value}"'
+            logger.error(f'Harness assigned status "{value}"'
                            f' without an equivalent in TwisterStatus.'
                            f' Assignment was ignored.')
 
