@@ -814,7 +814,7 @@ int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arc_mpu_init(void)
+int arc_mpu_init(void)
 {
 	uint32_t num_regions;
 	uint32_t i;
@@ -889,7 +889,5 @@ static int arc_mpu_init(void)
 	return 0;
 }
 
-SYS_INIT(arc_mpu_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_ */

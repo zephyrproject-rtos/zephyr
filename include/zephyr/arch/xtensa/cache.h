@@ -331,6 +331,11 @@ static inline void *arch_cache_uncached_ptr_get(void *ptr)
 }
 #endif
 
+static ALWAYS_INLINE int arch_cache_init(void)
+{
+	return 0;
+}
+
 
 #ifdef __cplusplus
 } /* extern "C" */

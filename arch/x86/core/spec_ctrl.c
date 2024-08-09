@@ -17,7 +17,7 @@
  */
 
 #if defined(CONFIG_X86_DISABLE_SSBD) || defined(CONFIG_X86_ENABLE_EXTENDED_IBRS)
-static int spec_ctrl_init(void)
+int spec_ctrl_init(void)
 {
 
 	uint32_t enable_bits = 0U;
@@ -43,5 +43,4 @@ static int spec_ctrl_init(void)
 	return 0;
 }
 
-SYS_INIT(spec_ctrl_init, PRE_KERNEL_1, 0);
 #endif /* CONFIG_X86_DISABLE_SSBD || CONFIG_X86_ENABLE_EXTENDED_IBRS */

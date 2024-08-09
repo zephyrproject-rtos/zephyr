@@ -236,6 +236,11 @@ static ALWAYS_INLINE void arch_icache_disable(void)
 
 #endif /* CONFIG_ICACHE */
 
+static ALWAYS_INLINE int arch_cache_init(void)
+{
+	return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
