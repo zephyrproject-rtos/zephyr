@@ -11,6 +11,9 @@
  * This module contains routines that are used to initialize the kernel.
  */
 
+#include <ctype.h>
+#include <stdbool.h>
+#include <string.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
@@ -24,13 +27,11 @@
 #include <zephyr/linker/linker-defs.h>
 #include <ksched.h>
 #include <kthread.h>
-#include <string.h>
 #include <zephyr/sys/dlist.h>
 #include <kernel_internal.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/tracing/tracing.h>
-#include <stdbool.h>
 #include <zephyr/debug/gcov.h>
 #include <kswap.h>
 #include <zephyr/timing/timing.h>
@@ -403,6 +404,93 @@ static inline int z_vrfy_device_init(const struct device *dev)
 
 extern void boot_banner(void);
 
+#ifdef CONFIG_BOOTARGS
+extern const char *get_bootargs(void);
+static char **prepare_main_args(int *argc)
+{
+#ifdef CONFIG_DYNAMIC_BOOTARGS
+	const char *bootargs = get_bootargs();
+#else
+	const char bootargs[] = CONFIG_BOOTARGS_STRING;
+#endif
+
+	/* beginning of the buffer contains argument's strings, end of it contains argvs */
+	static char args_buf[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
+	char *strings_end = (char *)args_buf;
+	char **argv_begin = (char **)WB_DN(
+		args_buf + CONFIG_BOOTARGS_ARGS_BUFFER_SIZE - sizeof(char *));
+	int i = 0;
+
+	*argc = 0;
+	*argv_begin = NULL;
+
+#ifdef CONFIG_DYNAMIC_BOOTARGS
+	if (!bootargs) {
+		return argv_begin;
+	}
+#endif
+
+	while (1) {
+		while (isspace(bootargs[i])) {
+			i++;
+		}
+
+		if (bootargs[i] == '\0') {
+			return argv_begin;
+		}
+
+		if (strings_end + sizeof(char *) >= (char *)argv_begin) {
+			LOG_WRN("not enough space in args buffer to accommodate all bootargs"
+				" - bootargs truncated");
+			return argv_begin;
+		}
+
+		argv_begin--;
+		memmove(argv_begin, argv_begin + 1, *argc * sizeof(char *));
+		argv_begin[*argc] = strings_end;
+
+		bool quoted = false;
+
+		if (bootargs[i] == '\"' || bootargs[i] == '\'') {
+			char delimiter = bootargs[i];
+
+			for (int j = i + 1; bootargs[j] != '\0'; j++) {
+				if (bootargs[j] == delimiter) {
+					quoted = true;
+					break;
+				}
+			}
+		}
+
+		if (quoted) {
+			char delimiter  = bootargs[i];
+
+			i++; /* strip quotes */
+			while (bootargs[i] != delimiter
+				&& strings_end < (char *)argv_begin) {
+				*strings_end++ = bootargs[i++];
+			}
+			i++; /* strip quotes */
+		} else {
+			while (!isspace(bootargs[i])
+				&& bootargs[i] != '\0'
+				&& strings_end < (char *)argv_begin) {
+				*strings_end++ = bootargs[i++];
+			}
+		}
+
+		if (strings_end < (char *)argv_begin) {
+			*strings_end++ = '\0';
+		} else {
+			LOG_WRN("not enough space in args buffer to accommodate all bootargs"
+				" - bootargs truncated");
+			argv_begin[*argc] = NULL;
+			return argv_begin;
+		}
+		(*argc)++;
+	}
+}
+#endif
 
 /**
  * @brief Mainline for kernel's background thread
@@ -456,9 +544,17 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_mem_manage_boot_finish();
 #endif /* CONFIG_MMU */
 
+#ifdef CONFIG_BOOTARGS
+	extern int main(int, char **);
+
+	int argc = 0;
+	char **argv = prepare_main_args(&argc);
+	(void)main(argc, argv);
+#else
 	extern int main(void);
 
 	(void)main();
+#endif /* CONFIG_BOOTARGS */
 
 	/* Mark non-essential since main() has no more work to do */
 	z_thread_essential_clear(&z_main_thread);
