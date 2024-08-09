@@ -1,0 +1,34 @@
+// To get started, press Ctrl+Space to bring up the completion menu and view the available nodes.
+
+// You can also use the buttons in the sidebar to perform actions on nodes.
+// Actions currently available include:
+
+// * Enabling / disabling the node
+// * Adding the bus to a bus
+// * Removing the node
+// * Connecting ADC channels
+
+// For more help, browse the DeviceTree documentation at https: //docs.zephyrproject.org/latest/guides/dts/index.html
+// You can also visit the nRF DeviceTree extension documentation at https: //nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
+&i2c0 {
+    status = "okay";
+    hdc2010: hdc2010@40 {
+        compatible = "i2c-device";
+        status = "okay";
+        reg = <0x40>;
+    };
+};
+/ {
+    buttons {
+        compatible = "gpio-keys";
+        button5: button_5 {
+            gpios = <&gpio0 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+
+        };
+
+    };
+    aliases{
+        sw5=&button5;
+    };
+
+};
