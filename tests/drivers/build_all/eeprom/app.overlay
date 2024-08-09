@@ -51,6 +51,18 @@
 				wp-gpios = <&test_gpio 0 0>;
 				/* read-only; */
 			};
+
+			test_i2c_m24m02_a125: m24m02_a125@2 {
+				compatible = "st,m24xxx";
+				status = "okay";
+				reg = <0x2>;
+				size = <262144>;
+				pagesize = <256>;
+				address-width = <16>;
+				timeout = <5>;
+				wp-gpios = <&test_gpio 0 0>;
+				/* read-only; */
+			};
 		};
 
 		test_spi: spi@33334444 {
