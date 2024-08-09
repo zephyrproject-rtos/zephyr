@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+ * Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/ {
+	cpus: cpus {
+		#address-cells = <1>;
+		#cpus = <0x1>;
+		#size-cells = <0>;
+	};
+
+	amba_root: amba_root {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		#priority-cells = <1>;
+
+		amba: amba {
+			compatible = "simple-bus";
+		};
+	};
+};
+
+#include "qemu-microblaze-demo.dtsi"

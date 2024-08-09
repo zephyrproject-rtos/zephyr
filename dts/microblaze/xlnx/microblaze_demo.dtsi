@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+ * Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include "skeleton.dtsi"
+#include "mem.h"
+#include "xparam_helper.h"
+
+/ {
+
+	microblazeclk: microblaze-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <200000000>;
+		#clock-cells = <0>;
+	};
+
+	peripheralclk: peripheral-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			device_type = "cpu";
+			compatible = "xlnx,microblaze";
+			reg = <0>;
+			clock-frequency = <200000000>;
+
+			i-cache-base = <0x00000000>;
+			i-cache-size = <0x800>;
+			i-cache-line-size = <16>;
+
+			d-cache-base = <0x00000000>;
+			d-cache-size = <0x2000>;
+			d-cache-line-size = <16>;
+			d-cache-use-writeback = <0>;
+		};
+	};
+
+	ddr0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_M(256)>;
+	};
+
+	soc {
+		interrupt-parent = <&intc0>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+
+		intc0: interrupt-controller@fe010000 {
+			compatible = "xlnx,intc";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			reg = <0xfe010000 DT_SIZE_K(128)>;
+		};
+
+		tmrctr0: timer@fe00c000 {
+			compatible = "xlnx,tmrctr";
+			reg = <0xfe00c000 DT_SIZE_K(4)>;
+			interrupts = <15 15>;
+			clock-frequency = <50000000>;
+		};
+
+		uart0: uart@fe020000 {
+			compatible = "xlnx,xps-uartlite-1.00.a";
+			reg = <0xfe020000 DT_SIZE_K(64)>;
+			interrupts = <14 14>;
+			clock-frequency = <50000000>;
+			parity = "none";
+			status = "disabled";
+		};
+
+	};
+};

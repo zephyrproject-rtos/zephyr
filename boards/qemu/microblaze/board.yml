@@ -1,0 +1,5 @@
+board:
+  name: qemu_microblaze
+  vendor: xlnx
+  socs:
+  - name: microblaze_demo

@@ -1,0 +1,114 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "MicroBlaze Options"
+	depends on MICROBLAZE
+
+config ARCH
+	string
+	default "microblaze"
+
+config CPU_MICROBLAZE
+	bool
+	default y
+	help
+		This option signifies the use of a MicroBlaze CPU
+
+config CPU_VERSION
+	prompt "MicroBlaze CPU Version"
+	string
+	default "v9.00.a"
+	help
+		Use features of, and schedule code for, the given CPU.
+		Supported values are in the format "vX.YY.Z",
+		where X is a major version, YY is the minor version, and Z is compatibility code.
+		Example values are "v3.00.a", "v4.00.b", "v5.00.a", "v5.00.b", "v6.00.a".
+		Taken from https://gcc.gnu.org/onlinedocs/gcc/MicroBlaze-Options.html
+
+config GEN_IRQ_VECTOR_TABLE
+	bool
+	default n if MICROBLAZE
+	help
+		MicroBlaze has a single interrupt and therefore doesn't have an IRQ vector table.
+
+config BIG_ENDIAN
+	bool
+	default n if MICROBLAZE
+	help
+		Our current default endianness is Little-endian.
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	prompt "SW_ISR Table Align Size"
+	default 4
+
+config NUM_IRQS
+	int
+	default 1
+	help
+		This isn't really a choice either because a barebones MicroBlaze offers
+		only 1 external interrupt pin (which is usually connected to an Xlnx Intc
+		or probably a single peripheral which a user wants IRQs from).
+
+choice
+	prompt "Idle Sleep Option"
+	default MICROBLAZE_IDLE_NOP
+
+	config MICROBLAZE_IDLE_NOP
+		bool "NOP (no power saving)"
+		help
+			Executes pseudo-assembly instruction nop in idle.
+			Reset_Mode[0:1] is set to 10
+
+	config MICROBLAZE_IDLE_SLEEP
+		bool "Sleep"
+		help
+			Executes pseudo-assembly instruction sleep in idle.
+			Reset_Mode[0:1] is set to 10
+
+	config MICROBLAZE_IDLE_HIBERNATE
+		bool "Hibernate"
+		help
+			Executes pseudo-assembly instruction hibernate in idle.
+
+	config MICROBLAZE_IDLE_SUSPEND
+		bool "Suspend"
+		help
+			Executes pseudo-assembly instruction suspend in idle.
+endchoice
+
+config MICROBLAZE_DUMP_ON_EXCEPTION
+	bool "Dump core on exceptions"
+	default y
+
+config EXTRA_EXCEPTION_INFO
+	bool "Extra exception debug information"
+	default y
+	help
+	  Have exceptions print additional useful debugging information in
+	  human-readable form, at the expense of code size. For example,
+	  the cause code for an exception will be supplemented by a string
+	  describing what that cause code means.
+
+# Bump the kernel default stack size values.
+config MAIN_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 1024
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACK_SIZE
+	default 4096 if COVERAGE_GCOV
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+source "arch/microblaze/Kconfig.features"
+
+endmenu

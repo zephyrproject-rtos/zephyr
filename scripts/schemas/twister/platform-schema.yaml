@@ -54,6 +54,7 @@ mapping:
         "sparc",
         "x86",
         "xtensa",
+        "microblaze",
 
         # unit testing
         "unit",

@@ -5,6 +5,7 @@ tests:
       - xtensa
       - posix
       - sparc
+      - microblaze
     tags:
       - kernel
       - userspace

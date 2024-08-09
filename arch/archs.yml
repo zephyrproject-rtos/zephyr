@@ -19,3 +19,5 @@ archs:
     path: xtensa
   - name: x86
     path: x86
+  - name: microblaze
+    path: microblaze

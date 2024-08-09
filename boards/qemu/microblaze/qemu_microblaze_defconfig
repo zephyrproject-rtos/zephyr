@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+CONFIG_UART_XLNX_UARTLITE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_EXTRA_EXCEPTION_INFO=y
+CONFIG_QEMU_ICOUNT=n
+CONFIG_XLNX_INTC_INITIALIZE_IVAR_REGISTERS=y
+# TX and RX IRQs are shared. Disabling one doesn't really disable any.
+# Interrupt driven shell implementation doesn't play nice with this paradigm
+CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN=n

@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. (AMD)
+# Copyright (c) 2023 Alp Sayin <alpsayin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_XLNX_MICROBLAZE_DEMO
+	select MICROBLAZE
+	select XLNX_INTC
+	select XLNX_TMRCTR

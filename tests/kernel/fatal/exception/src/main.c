@@ -91,7 +91,8 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile (".word 0x77777777");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on
-	 * xtensa, TLB exception (instruction fetch) on MIPS.
+	 * xtensa, TLB exception (instruction fetch) on MIPS,
+	 * illegal op-code instruction on microblaze
 	 */
 	{
 		volatile long illegal = 0;
@@ -449,6 +450,11 @@ ZTEST(fatal_exception, test_fatal)
 
 static void *fatal_setup(void)
 {
+
+#if defined(CONFIG_MICROBLAZE)
+	microblaze_enable_exceptions();
+#endif
+
 #if defined(CONFIG_DEMAND_PAGING) && \
 	!defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
 	uintptr_t pin_addr;
