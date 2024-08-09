@@ -1046,10 +1046,7 @@ isr_rx_next_subevent:
 
 		start_us = hcto;
 		hcto = radio_tmr_start_us(0U, start_us);
-		/* FIXME: Assertion check disabled until investigation as to
-		 *        why there is high ISR latency causing assertion here.
-		 */
-		/* LL_ASSERT(hcto == (start_us + 1U)); */
+		LL_ASSERT(hcto == (start_us + 1U));
 
 		/* Add 8 us * subevents so far, as radio was setup to listen
 		 * 4 us early and subevents could have a 4 us drift each until
