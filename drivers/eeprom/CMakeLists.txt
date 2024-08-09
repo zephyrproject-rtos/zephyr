@@ -19,3 +19,5 @@ zephyr_library_sources_ifdef(CONFIG_EEPROM_FAKE eeprom_fake.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_AT2X_EMUL eeprom_at2x_emul.c)
 
 zephyr_library_sources_ifdef(CONFIG_EEPROM_MB85RCXX eeprom_mb85rcxx.c)
+
+zephyr_library_sources_ifdef(CONFIG_EEPROM_ATECCX08_OTP eeprom_ateccx08_otp.c)

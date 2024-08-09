@@ -1,0 +1,19 @@
+# Microchip ATECCx08 eeprom driver configuration
+
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_ATECCX08_OTP
+	bool "Microchip ATECCx08 otp eeprom driver"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECCX08_OTP_ENABLED
+	depends on MFD_ATECCX08
+	help
+	  This option enables the Microchip ATECCx08 otp eeprom driver.
+
+config EEPROM_ATECCX08_OTP_INIT_PRIORITY
+	int "Microchip ATECCx08 otp eeprom driver initialization priority"
+	default MFD_ATECCX08_SUBDEVICE_INIT_PRIORITY
+	depends on EEPROM_ATECCX08_OTP
+	help
+	  Microchip ATECCx08 otp eeprom device initialization priority.
