@@ -25,6 +25,7 @@ extern "C" {
 #define AD559X_REG_IO_TS_CONFIG   0x0DU
 
 #define AD559X_DAC_RANGE BIT(4)
+#define AD559X_ADC_RANGE BIT(5)
 #define AD559X_EN_REF    BIT(9)
 
 #define AD559X_PIN_MAX 8U
