@@ -3763,6 +3763,7 @@ Renesas RA Platforms:
     - thaoluonguw
   files:
     - boards/arduino/uno_r4/
+    - boards/renesas/*ra2*/
     - boards/renesas/*ra8*/
     - drivers/*/*renesas_ra*
     - drivers/pinctrl/renesas/ra/
