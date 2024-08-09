@@ -98,7 +98,7 @@ const struct device *z_impl_device_get_by_dt_nodelabel(const char *nodelabel)
 	STRUCT_SECTION_FOREACH(device, dev) {
 		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
 
-		if (!z_impl_device_is_ready(dev)) {
+		if (!z_impl_device_is_ready(dev) || nl == NULL) {
 			continue;
 		}
 
