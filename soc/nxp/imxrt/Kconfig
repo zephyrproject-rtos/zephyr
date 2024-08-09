@@ -90,6 +90,7 @@ config EXTERNAL_MEM_CONFIG_DATA
 config EXTERNAL_MEM_CONFIG_OFFSET
 	hex "External memory configuration offset"
 	depends on EXTERNAL_MEM_CONFIG_DATA
+	default 0x800 if SOC_SERIES_IMXRT118X
 	default 0x1040 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 	help
 	  As specified by the boot ROM, the External Memory configuration data must be
@@ -105,6 +106,13 @@ config NXP_IMX_EXTERNAL_SDRAM
 	  an MPU region will be defined to disable cached access to the
 	  SDRAM memory space.
 
+config NXP_IMX_EXTERNAL_HYPERRAM
+	bool "Allow access to external HYPERRAM region"
+	help
+	  Enable access to external HYPERRAM region managed by the FLEXSPI.
+	  This setting should be enabled when the application uses HYPERRAM,
+	  or an MPU region will be defined to disable cached access to the
+	  HYPERRAM memory space.
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT11xx series"
 	depends on SOC_SERIES_IMXRT11XX
