@@ -21,7 +21,7 @@
 		#size-cells = <0>;
 
 		a55: cpu@0 {
-			compatible = "arm,armv8";
+			compatible = "arm,cortex-a55", "arm,armv8";
 			reg = <0>;
 			device_type = "cpu";
 			enable-method = "psci";
