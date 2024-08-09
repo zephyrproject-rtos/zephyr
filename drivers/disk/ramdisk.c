@@ -77,6 +77,23 @@ static int disk_ram_access_write(struct disk_info *disk, const uint8_t *buff,
 	return 0;
 }
 
+static int disk_ram_access_erase(struct disk_info *disk, uint32_t sector,
+				 uint32_t count)
+{
+	const struct device *dev = disk->dev;
+	const struct ram_disk_config *config = dev->config;
+	uint32_t last_sector = sector + count;
+
+	if (last_sector < sector || last_sector > config->sector_count) {
+		LOG_ERR("Sector %" PRIu32 " is outside the range %zu",
+			last_sector, config->sector_count);
+		return -EIO;
+	}
+
+	memset(lba_to_address(dev, sector), 0x00, count * config->sector_size);
+	return 0;
+}
+
 static int disk_ram_access_ioctl(struct disk_info *disk, uint8_t cmd, void *buff)
 {
 	const struct ram_disk_config *config = disk->dev->config;
@@ -122,6 +139,7 @@ static const struct disk_operations ram_disk_ops = {
 	.status = disk_ram_access_status,
 	.read = disk_ram_access_read,
 	.write = disk_ram_access_write,
+	.erase = disk_ram_access_erase,
 	.ioctl = disk_ram_access_ioctl,
 };
 

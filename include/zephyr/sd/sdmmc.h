@@ -21,6 +21,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief Erase blocks from SD card
+ *
+ * @param card SD card to write from
+ * @param start_block first block to erase
+ * @param num_blocks number of blocks to erase
+ * @retval 0 erase succeeded
+ * @retval -EBUSY: card is busy with another request
+ * @retval -ETIMEDOUT: card write timed out
+ * @retval -EIO: I/O error
+ */
+int sdmmc_erase_blocks(struct sd_card *card, uint32_t start_block,
+	uint32_t num_blocks);
+
+/**
  * @brief Write blocks to SD card from buffer
  *
  * Writes blocks from SD buffer to SD card. For best performance, this buffer

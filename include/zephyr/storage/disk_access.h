@@ -101,6 +101,16 @@ int disk_access_write(const char *pdrv, const uint8_t *data_buf,
 		      uint32_t start_sector, uint32_t num_sector);
 
 /**
+ * @brief erase data from disk
+ *
+ * @param[in] pdrv          Disk name
+ * @param[in] start_sector  Start disk sector to erase
+ * @param[in] num_sector    Number of disk sectors to erase
+ */
+int disk_access_erase(const char *pdrv, uint32_t start_sector,
+		      uint32_t num_sector);
+
+/**
  * @brief Get/Configure disk parameters
  *
  * Function to get disk parameters and make any special device requests.

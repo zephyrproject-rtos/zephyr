@@ -770,6 +770,84 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 	return 0;
 }
 
+static int card_erase(struct sd_card *card, uint32_t start_block, uint32_t num_blocks)
+{
+	int ret;
+	struct sdhc_command cmd;
+
+	LOG_DBG("ERASE: Sector = %u, Count = %u", start_block, num_blocks);
+	cmd.retries = CONFIG_SD_DATA_RETRIES;
+	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+
+	cmd.opcode = SD_ERASE_BLOCK_START;
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.arg = start_block;
+	if (!(card->flags & SD_HIGH_CAPACITY_FLAG)) {
+		/* Standard capacity cards use byte unit address */
+		cmd.arg *= card->block_size;
+	}
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_START failed (%d)", ret);
+		return ret;
+	}
+
+	cmd.opcode = SD_ERASE_BLOCK_END;
+	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
+	cmd.arg = start_block + num_blocks - 1;
+	if (!(card->flags & SD_HIGH_CAPACITY_FLAG)) {
+		/* Standard capacity cards use byte unit address */
+		cmd.arg *= card->block_size;
+	}
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_END failed (%d)", ret);
+		return ret;
+	}
+
+	cmd.opcode = SD_ERASE_BLOCK_OPERATION;
+	cmd.response_type = (SD_RSP_TYPE_R1b | SD_SPI_RSP_TYPE_R1b);
+	cmd.arg = 0x00000000;
+	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	if (ret) {
+		LOG_DBG("SD_ERASE_BLOCK_OPERATION failed (%d)", ret);
+		return ret;
+	}
+
+	/* Verify card is back in transfer state after write */
+	ret = sdmmc_wait_ready(card);
+	if (ret) {
+		LOG_ERR("Card did not return to ready state");
+		return -ETIMEDOUT;
+	}
+	return 0;
+}
+
+/* Erase blocks from SD card memory card */
+int card_erase_blocks(struct sd_card *card, uint32_t start_block, uint32_t num_blocks)
+{
+	int ret;
+
+	if ((start_block + num_blocks) > card->block_count) {
+		return -EINVAL;
+	}
+	if (card->type == CARD_SDIO) {
+		LOG_WRN("SDIO does not support MMC commands");
+		return -ENOTSUP;
+	}
+	ret = k_mutex_lock(&card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	if (ret) {
+		LOG_WRN("Could not get SD card mutex");
+		return -EBUSY;
+	}
+	ret = card_erase(card, start_block, num_blocks);
+	if (ret) {
+		LOG_ERR("Erase failed");
+	}
+	k_mutex_unlock(&card->lock);
+	return ret;
+}
+
 /* IO Control handler for SD MMC */
 int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 {
