@@ -34,6 +34,10 @@
 #         Like 'files-regex', but any matching files will be excluded from the
 #         tag.
 #
+#     needs-exe:
+#         The name of an executable that must be present for this tag
+#         to be considered at all.
+#
 # All tags must have a 'files' and/or 'files-regex' key.
 
 # 1. Avoid putting include/ in entries as any include/ change we want
