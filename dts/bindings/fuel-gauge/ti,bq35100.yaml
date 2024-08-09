@@ -1,0 +1,19 @@
+---
+# Copyright (c) 2024 Orgatex GmbH
+# SPDX-License-Identifier: LicenseRef-Proprietary
+description: |
+  Texas Instruments, BQ35100, Battery fuel gauge for
+  non-rechargeable batteries
+
+compatible: "ti,bq35100"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
+
+# properties:
+#   int-gpios:
+#     type: phandle-array
+#     description: |
+#       This pin can be used to reflect an internal warning. The
+#       warnings can be configured using I2C communication.
+#       Possible Warnings: Battery low, Temperature low,
+#       Temperature high, Battery low SOH, Battery EOS OCV
