@@ -129,7 +129,7 @@ static int pcal64xxa_pin_configure(const struct device *dev, gpio_pin_t pin, gpi
 	gpio_flags_t flags_io;
 	int rc;
 
-	LOG_DBG("configure pin %i with flags 0x%08X", pin, flags);
+	LOG_DBG("%s: configure pin %i with flags 0x%08X", dev->name, pin, flags);
 
 	/* This device does not support open-source outputs, and open-drain
 	 * outputs can be only configured port-wise.
@@ -182,7 +182,7 @@ static int pcal64xxa_pin_configure(const struct device *dev, gpio_pin_t pin, gpi
 	if (rc == 0) {
 		drv_data->pins_cfg = pins_cfg;
 	} else {
-		LOG_ERR("failed to apply pin config for device %s", dev->name);
+		LOG_ERR("%s: failed to apply pin config", dev->name);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -203,7 +203,7 @@ static int pcal64xxa_process_input(const struct device *dev, gpio_port_value_t *
 	rc = drv_cfg->chip_api->inputs_read(&drv_cfg->i2c, &int_sources, &input_port);
 
 	if (rc != 0) {
-		LOG_ERR("failed to read inputs from device %s", dev->name);
+		LOG_ERR("%s: failed to read inputs", dev->name);
 		k_sem_give(&drv_data->lock);
 		return rc;
 	}
@@ -293,8 +293,9 @@ static int pcal64xxa_port_set_raw(const struct device *dev, pcal64xxa_data_t mas
 	int rc;
 	pcal64xxa_data_t output;
 
-	LOG_DBG("setting port with mask 0x%" PRIpcal_data " with value 0x%" PRIpcal_data
-		" and toggle 0x%" PRIpcal_data, mask, value, toggle);
+	LOG_DBG("%s: setting port with mask 0x%" PRIpcal_data " with value 0x%" PRIpcal_data
+		" and toggle 0x%" PRIpcal_data,
+		dev->name, mask, value, toggle);
 
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -325,7 +326,7 @@ static int pcal64xxa_port_set_raw(const struct device *dev, pcal64xxa_data_t mas
 }
 
 static int pcal64xxa_port_set_masked_raw(const struct device *dev, gpio_port_pins_t mask,
-				  gpio_port_value_t value)
+					 gpio_port_value_t value)
 {
 	return pcal64xxa_port_set_raw(dev, (pcal64xxa_data_t)mask, (pcal64xxa_data_t)value, 0);
 }
@@ -346,14 +347,14 @@ static int pcal64xxa_port_toggle_bits(const struct device *dev, gpio_port_pins_t
 }
 
 static int pcal64xxa_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
-				      enum gpio_int_mode mode, enum gpio_int_trig trig)
+					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct pcal64xxa_drv_cfg *drv_cfg = dev->config;
 	struct pcal64xxa_drv_data *drv_data = dev->data;
 	struct pcal64xxa_triggers triggers;
 	int rc;
 
-	LOG_DBG("configure interrupt for pin %i", pin);
+	LOG_DBG("%s: configure interrupt for pin %i", dev->name, pin);
 
 	if (drv_cfg->gpio_interrupt.port == NULL) {
 		return -ENOTSUP;
@@ -394,7 +395,7 @@ static int pcal64xxa_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	if (rc == 0) {
 		drv_data->triggers = triggers;
 	} else {
-		LOG_ERR("failed to apply triggers for device %s", dev->name);
+		LOG_ERR("%s: failed to apply triggers", dev->name);
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -402,8 +403,8 @@ static int pcal64xxa_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	return rc;
 }
 
-static int pcal64xxa_manage_callback(const struct device *dev,
-				     struct gpio_callback *callback, bool set)
+static int pcal64xxa_manage_callback(const struct device *dev, struct gpio_callback *callback,
+				     bool set)
 {
 	struct pcal64xxa_drv_data *drv_data = dev->data;
 
@@ -789,10 +790,11 @@ int pcal64xxa_init(const struct device *dev)
 	 */
 	if (drv_cfg->gpio_reset.port != NULL) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_reset)) {
-			LOG_ERR("reset gpio device is not ready");
+			LOG_ERR("%s: reset gpio device is not ready", dev->name);
 			return -ENODEV;
 		}
 
+		LOG_DBG("%s: trigger reset", dev->name);
 		rc = gpio_pin_configure_dt(&drv_cfg->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (rc != 0) {
 			LOG_ERR("%s: failed to configure RESET line: %d", dev->name, rc);
@@ -814,7 +816,7 @@ int pcal64xxa_init(const struct device *dev)
 		rc = drv_cfg->chip_api->reset_state_apply(&drv_cfg->i2c);
 
 		if (rc != 0) {
-			LOG_ERR("failed to apply reset state to device %s", dev->name);
+			LOG_ERR("%s: failed to apply reset state", dev->name);
 			return rc;
 		}
 	}
@@ -822,7 +824,7 @@ int pcal64xxa_init(const struct device *dev)
 	/* Set initial configuration of the pins. */
 	rc = drv_cfg->chip_api->pins_cfg_apply(&drv_cfg->i2c, &initial_pins_cfg);
 	if (rc != 0) {
-		LOG_ERR("failed to apply pin config for device %s", dev->name);
+		LOG_ERR("%s: failed to apply pin config", dev->name);
 		return rc;
 	}
 
@@ -839,7 +841,7 @@ int pcal64xxa_init(const struct device *dev)
 	/* Set initial state of the interrupt related registers. */
 	rc = drv_cfg->chip_api->triggers_apply(&drv_cfg->i2c, &initial_triggers);
 	if (rc != 0) {
-		LOG_ERR("failed to apply triggers for device %s", dev->name);
+		LOG_ERR("%s: failed to apply triggers", dev->name);
 		return rc;
 	}
 
@@ -848,7 +850,7 @@ int pcal64xxa_init(const struct device *dev)
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_interrupt.port != NULL) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_interrupt)) {
-			LOG_ERR("interrupt gpio device is not ready");
+			LOG_ERR("%s: interrupt gpio device is not ready", dev->name);
 			return -ENODEV;
 		}
 
@@ -882,13 +884,11 @@ int pcal64xxa_init(const struct device *dev)
 
 #define PCAL64XXA_INIT_INT_GPIO_FIELDS(idx)                                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, int_gpios),                                         \
-		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), int_gpios, 0)),                     \
-		    ({0}))
+		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), int_gpios, 0)), ({0}))
 
 #define PCAL64XXA_INIT_RESET_GPIO_FIELDS(idx)                                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, reset_gpios),                                       \
-		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), reset_gpios, 0)),                   \
-		    ({0}))
+		    (GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(idx), reset_gpios, 0)), ({0}))
 
 #define GPIO_PCAL6408A_INST(idx)                                                                   \
 	static const struct gpio_driver_api pcal6408a_drv_api##idx = {                             \
