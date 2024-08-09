@@ -29,18 +29,18 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 	case RTIO_OP_NOP:
 		break;
 	case RTIO_OP_TX:
-		valid_sqe &= K_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, false);
+		valid_sqe &= K_SYSCALL_MEMORY(sqe->tx.buf, sqe->tx.buf_len, false);
 		break;
 	case RTIO_OP_RX:
 		if ((sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) == 0) {
-			valid_sqe &= K_SYSCALL_MEMORY(sqe->buf, sqe->buf_len, true);
+			valid_sqe &= K_SYSCALL_MEMORY(sqe->rx.buf, sqe->rx.buf_len, true);
 		}
 		break;
 	case RTIO_OP_TINY_TX:
 		break;
 	case RTIO_OP_TXRX:
-		valid_sqe &= K_SYSCALL_MEMORY(sqe->tx_buf, sqe->txrx_buf_len, true);
-		valid_sqe &= K_SYSCALL_MEMORY(sqe->rx_buf, sqe->txrx_buf_len, true);
+		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.tx_buf, sqe->txrx.buf_len, true);
+		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.rx_buf, sqe->txrx.buf_len, true);
 		break;
 	default:
 		/* RTIO OP must be known and allowable from user mode

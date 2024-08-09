@@ -69,13 +69,14 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-						   sqe->buf, sqe->buf_len, dt_spec->addr);
+						   sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   sqe->tiny_buf, sqe->tiny_buf_len, dt_spec->addr);
+						   sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+						   dt_spec->addr);
 	case RTIO_OP_TX:
 		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   sqe->buf, sqe->buf_len, dt_spec->addr);
+						   sqe->tx.buf, sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
 		return false;
