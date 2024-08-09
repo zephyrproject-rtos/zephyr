@@ -1,0 +1,70 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+include: [dac-controller.yaml, spi-device.yaml]
+
+bus: max22017
+
+description: Analog devices MAX22017 16bit DAC
+
+properties:
+  "#io-channel-cells":
+    const: 2
+
+  num-channels:
+    type: int
+    description: Number of DAC output channels.
+
+  resolution:
+    type: int
+    description: DAC resolution.
+
+  busy-gpios:
+    description: Busy line indicating the DAC is calculating next sample.
+    type: phandle-array
+
+  rst-gpios:
+    description: Reset pin for max22017.
+    type: phandle-array
+
+  ldac-gpios:
+    description: Load both DAC latches at the same time.
+    type: phandle-array
+
+  int-gpios:
+    description: Interrupt gpio
+    type: phandle-array
+
+  polarity-mode:
+    description: |
+      Unipolar/bipolar mode selection for channels.
+      0 Indicates bipolar mode and 1 unipolar mode.
+    default: [0, 0]
+    type: uint8-array
+
+  dac-mode:
+    description: |
+      Voltage/current mode selection for channels.
+      0 indicates voltage mode and 1 indicates current mode.
+    default: [0, 0]
+    type: uint8-array
+
+  latch-mode:
+    description: |
+      Latch mode selection for channels.
+      0 means the channel is not latched, 1 means latched.
+    default: [0, 0]
+    type: uint8-array
+
+  crc-mode:
+    description: Enables crc over SPI.
+    type: boolean
+
+  timeout:
+    description: |
+      Timeout in ms.
+      The value should be between 100 and 1600ms in increments of 100ms.
+    type: int
+
+compatible: "adi,max22017"
