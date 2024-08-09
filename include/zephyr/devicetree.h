@@ -2273,7 +2273,7 @@
  * @param node_id node identifier
  * @return node's register block address
  */
-#define DT_REG_ADDR(node_id) DT_REG_ADDR_BY_IDX(node_id, 0)
+#define DT_REG_ADDR(node_id) DT_U32_C(DT_REG_ADDR_BY_IDX(node_id, 0))
 
 /**
  * @brief 64-bit version of DT_REG_ADDR()
@@ -2285,7 +2285,7 @@
  * @param node_id node identifier
  * @return node's register block address
  */
-#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR(node_id))
+#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR_BY_IDX(node_id, 0))
 
 /**
  * @brief Get a node's (only) register block size
@@ -2303,7 +2303,7 @@
  * @return address of the register block specified by name
  */
 #define DT_REG_ADDR_BY_NAME(node_id, name) \
-	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
+	DT_U32_C(DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS))
 
 /**
  * @brief Like DT_REG_ADDR_BY_NAME(), but with a fallback to @p default_value
@@ -2330,7 +2330,7 @@
  * @return address of the register block specified by name
  */
 #define DT_REG_ADDR_BY_NAME_U64(node_id, name) \
-	DT_U64_C(DT_REG_ADDR_BY_NAME(node_id, name))
+	DT_U64_C(DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS))
 
 /**
  * @brief Get a register block's size by name
@@ -4805,6 +4805,16 @@
 /** @brief Helper for DT_NODE_HAS_STATUS */
 #define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT3(node_id, _STATUS_, status))
+
+/**
+ * @def DT_U32_C
+ * @brief Macro to add 32bit unsigned postfix to the devicetree address constants
+ */
+#if defined(_LINKER) || defined(_ASMLANGUAGE)
+#define DT_U32_C(_v) (_v)
+#else
+#define DT_U32_C(_v) UINT32_C(_v)
+#endif
 
 /**
  * @def DT_U64_C
