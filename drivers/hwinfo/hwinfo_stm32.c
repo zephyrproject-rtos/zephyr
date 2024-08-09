@@ -175,6 +175,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_MCU();
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_PWR_ClearFlag_C1STOP_C1STB();
+#elif defined(CONFIG_SOC_SERIES_STM32U0X) && defined(PWR_FLAG_SB)
+	LL_PWR_ClearFlag_CSB();
 #elif defined(PWR_FLAG_SB)
 	LL_PWR_ClearFlag_SB();
 #endif /* PWR_FLAG_SB */

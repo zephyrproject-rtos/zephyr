@@ -1,0 +1,10 @@
+identifier: nucleo_u083rc
+name: ST Nucleo U083RC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+ram: 40
+flash: 256
