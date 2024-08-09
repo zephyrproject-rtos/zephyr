@@ -575,7 +575,10 @@ class RimageSigner(Signer):
         if '-k' not in sign_config_extra_args + args.tool_args:
             # rimage requires a key argument even when it does not sign
             cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
-            extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+            if os.path.exists(cmake_default_key):
+                extra_ri_args += [ '-k', str(cmake_default_key) ]
+            else:
+                extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
 
         if args.tool_data and '-c' in args.tool_args:
             log.wrn('--tool-data ' + args.tool_data + ' ignored! Overridden by: -- -c ... ')
