@@ -419,6 +419,12 @@ enum bt_audio_active_state {
 	BT_AUDIO_ACTIVE_STATE_ENABLED        = 0x01,
 };
 
+/** Assisted Listening Stream defined by the Generic Audio assigned numbers (bluetooth.com). */
+enum bt_audio_assisted_listening_stream {
+	/** Unspecified audio enhancement */
+	BT_AUDIO_ASSISTED_LISTENING_STREAM_UNSPECIFIED = 0x00,
+};
+
 /**
  * @brief Codec metadata type IDs
  *
@@ -435,7 +441,7 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT        = 0x01,
+	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT = 0x01,
 
 	/**
 	 * @brief Streaming audio context.
@@ -447,10 +453,10 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT      = 0x02,
+	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT = 0x02,
 
 	/** UTF-8 encoded title or summary of stream content */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO = 0x03,
 
 	/**
 	 * @brief Language
@@ -458,36 +464,46 @@ enum bt_audio_metadata_type {
 	 * 3 octet lower case language code defined by ISO 639-3
 	 * Possible values can be found at https://iso639-3.sil.org/code_tables/639/data
 	 */
-	BT_AUDIO_METADATA_TYPE_LANG                = 0x04,
+	BT_AUDIO_METADATA_TYPE_LANG = 0x04,
 
 	/** Array of 8-bit CCID values */
-	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
+	BT_AUDIO_METADATA_TYPE_CCID_LIST = 0x05,
 
 	/**
 	 * @brief Parental rating
 	 *
 	 * See @ref bt_audio_parental_rating for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING     = 0x06,
+	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING = 0x06,
 
 	/** UTF-8 encoded URI for additional Program information */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI    = 0x07,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI = 0x07,
 
 	/**
 	 * @brief Audio active state
 	 *
 	 * See @ref bt_audio_active_state for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_AUDIO_STATE         = 0x08,
+	BT_AUDIO_METADATA_TYPE_AUDIO_STATE = 0x08,
 
 	/** Broadcast Audio Immediate Rendering flag  */
 	BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE = 0x09,
 
+	/**
+	 * @brief Assisted listening stream
+	 *
+	 * See @ref bt_audio_assisted_listening_stream for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM = 0x0A,
+
+	/** UTF-8 encoded Broadcast name */
+	BT_AUDIO_METADATA_TYPE_BROADCAST_NAME = 0x0B,
+
 	/** Extended metadata */
-	BT_AUDIO_METADATA_TYPE_EXTENDED            = 0xFE,
+	BT_AUDIO_METADATA_TYPE_EXTENDED = 0xFE,
 
 	/** Vendor specific metadata */
-	BT_AUDIO_METADATA_TYPE_VENDOR              = 0xFF,
+	BT_AUDIO_METADATA_TYPE_VENDOR = 0xFF,
 };
 
 /**
@@ -1572,6 +1588,64 @@ int bt_audio_codec_cfg_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cfg *codec_cfg);
 
 /**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cfg The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cfg_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the assisted listening stream value of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cfg *codec_cfg, enum bt_audio_assisted_listening_stream val);
+
+/**
+ * @brief Extract broadcast name
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_BROADCAST_NAME for more information about this value.
+ *
+ * @param[in]  codec_cfg      The codec data to search in.
+ * @param[out] broadcast_name Pointer to the UTF-8 formatted broadcast name.
+ *
+ * @retval length The length of the @p broadcast_name (may be 0)
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ */
+int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *codec_cfg,
+					       const uint8_t **broadcast_name);
+
+/**
+ * @brief Set the broadcast name of a codec configuration metadata.
+ *
+ * @param codec_cfg          The codec configuration to set data for.
+ * @param broadcast_name     The broadcast name to set.
+ * @param broadcast_name_len The length of @p broadcast_name.
+ *
+ * @retval length The data_len of @p codec_cfg on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_broadcast_name(struct bt_audio_codec_cfg *codec_cfg,
+					       const uint8_t *broadcast_name,
+					       size_t broadcast_name_len);
+
+/**
  * @brief Extract extended metadata
  *
  * See @ref BT_AUDIO_METADATA_TYPE_EXTENDED for more information about this value.
@@ -2114,6 +2188,63 @@ int bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(
 int bt_audio_codec_cap_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cap *codec_cap);
 
+/**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cap The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cap_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the assisted listening stream value of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_assisted_listening_stream val);
+
+/**
+ * @brief Extract broadcast name
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_BROADCAST_NAME for more information about this value.
+ *
+ * @param[in]  codec_cap      The codec data to search in.
+ * @param[out] broadcast_name Pointer to the UTF-8 formatted broadcast name.
+ *
+ * @retval length The length of the @p broadcast_name (may be 0)
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ */
+int bt_audio_codec_cap_meta_get_broadcast_name(const struct bt_audio_codec_cap *codec_cap,
+					       const uint8_t **broadcast_name);
+
+/**
+ * @brief Set the broadcast name of a codec capability metadata.
+ *
+ * @param codec_cap          The codec capability to set data for.
+ * @param broadcast_name     The broadcast name to set.
+ * @param broadcast_name_len The length of @p broadcast_name.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_broadcast_name(struct bt_audio_codec_cap *codec_cap,
+					       const uint8_t *broadcast_name,
+					       size_t broadcast_name_len);
 /**
  * @brief Extract extended metadata
  *
