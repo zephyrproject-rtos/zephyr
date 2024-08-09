@@ -10,6 +10,11 @@ endif()
 
 list(APPEND ARM_C_FLAGS -mabi=aapcs)
 
+if(CONFIG_BIG_ENDIAN)
+  list(APPEND TOOLCHAIN_C_FLAGS -mbig-endian)
+  list(APPEND TOOLCHAIN_LD_FLAGS -mbig-endian)
+endif()
+
 if(CONFIG_FPU)
   list(APPEND ARM_C_FLAGS   -mfpu=${GCC_M_FPU})
 
