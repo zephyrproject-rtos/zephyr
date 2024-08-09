@@ -677,7 +677,7 @@ class ProjectBuilder(FilterBuilder):
         elif op == "gather_metrics":
             ret = self.gather_metrics(self.instance)
             if not ret or ret.get('returncode', 1) > 0:
-                self.instance.status = "error"
+                self.instance.status = TwisterStatus.ERROR
                 self.instance.reason = "Build Failure at gather_metrics."
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.instance.run and self.instance.handler.ready:
@@ -1302,7 +1302,7 @@ class TwisterRunner:
 
             no_retry_statuses = [TwisterStatus.PASS, TwisterStatus.SKIP, TwisterStatus.FILTER]
             if not retry_build_errors:
-                no_retry_statuses.append("error")
+                no_retry_statuses.append(TwisterStatus.ERROR)
 
             if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
