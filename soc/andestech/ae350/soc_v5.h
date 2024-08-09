@@ -9,6 +9,7 @@
 
 /* Control and Status Registers (CSRs) available for Andes V5 SoCs */
 #define NDS_MMISC_CTL                0x7D0
+#define NDS_MSAVESTATUS              0x7D6
 #define NDS_MCACHE_CTL               0x7CA
 #define NDS_MXSTATUS                 0x7C4
 #define NDS_MCCTLBEGINADDR           0x7CB
