@@ -1,0 +1,29 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if "$(FILE_SUFFIX)" = "extended"
+
+# Increase Advertising Data Length, as Complete Local Name too needs to be
+# placed in the AUX_ADV_IND PDU compared to when it is placed in ADV_SCAN_IND
+# PDU in the case of legacy advertising.
+configdefault BT_CTLR_ADV_DATA_LEN_MAX
+	default 36
+
+endif
+
+
+if "$(FILE_SUFFIX)" = "phy_coded"
+
+# Increase Advertising Data Length, as Complete Local Name too needs to be
+# placed in the AUX_ADV_IND PDU compared to when it is placed in ADV_SCAN_IND
+# PDU in the case of legacy advertising.
+configdefault BT_CTLR_ADV_DATA_LEN_MAX
+	default 36
+
+configdefault BT_CTLR_PHY_CODED
+	default y
+
+endif
+
+
+source "Kconfig"
