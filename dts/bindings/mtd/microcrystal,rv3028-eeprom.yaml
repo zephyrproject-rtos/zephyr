@@ -1,0 +1,36 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Micro Crystal RV3028 RTC User EEPROM
+
+  There are 43 bytes of non-volatile user EEPROM at addresses 00h to 2Ah for general use.
+
+  Example configuration:
+    rtc: rv3028@52 {
+          compatible = "microcrystal,rv3028";
+          status = "okay";
+          reg = <0x52>;
+          backup-switch-mode = "disabled";
+
+          #address-cells = <1>;
+          #size-cells = <1>;
+
+          rtc_eeprom: rv3028-eeprom@0 {
+                  compatible: "microcrystal,rv3028-eeprom";
+                  status = "okay";
+                  reg = <0x0 0x2b>;
+          };
+    };
+
+compatible: "microcrystal,rv3028-eeprom"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      EEPROM base address and size in bytes
+
+on-bus: microcrystal,rv3028

@@ -1,0 +1,26 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Micro Crystal RV3028 RTC User RAM
+
+  There are two free RAM bytes for general use.
+
+  Example configuration:
+    rtc: rv3028@52 {
+          compatible = "microcrystal,rv3028";
+          status = "okay";
+          reg = <0x52>;
+          backup-switch-mode = "disabled";
+
+          rtc_retmem: rv3028-retmem {
+                  compatible: "microcrystal,rv3028-retmem";
+                  status = "okay";
+          };
+    };
+
+compatible: "microcrystal,rv3028-retmem"
+
+include: base.yaml
+
+on-bus: microcrystal,rv3028

@@ -5,6 +5,8 @@ description: Micro Crystal RV3028 RTC
 
 compatible: "microcrystal,rv3028"
 
+bus: microcrystal,rv3028
+
 include:
   - name: rtc-device.yaml
   - name: i2c-device.yaml
@@ -52,3 +54,9 @@ properties:
     type: phandle-array
     description: |
       GPIO connected to the RV3028 INT interrupt output. This signal is open-drain, active low.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
