@@ -1,0 +1,9 @@
+identifier: canmv_k230
+name: Canaan CanMV-K230
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - uart
