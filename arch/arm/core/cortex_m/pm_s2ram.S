@@ -20,131 +20,198 @@ GTEXT(pm_s2ram_mark_set)
 GTEXT(pm_s2ram_mark_check_and_clear)
 GDATA(_cpu_context)
 
+/**
+ * The following macros are used to save / load a single
+ * special register, interacting with the __cpu_context
+ * structure. The ___cpu_context_t_##_OFFSET definitions
+ * are provided by C defines, so these MUST be C macros.
+ */
+#define SR_CTX_OFFSET(sr_name)	___cpu_context_t_ ## sr_name ## _OFFSET
+
+#define SAVE_CPU_SR(ctx, tmp, sr_name)			\
+	mrs	tmp, sr_name;				\
+	str	tmp, [ ctx , # SR_CTX_OFFSET(sr_name) ];
+
+#define RESTORE_CPU_SR(ctx, tmp, sr_name) 		\
+        ldr     tmp, [ ctx , # SR_CTX_OFFSET(sr_name)];	\
+        msr     sr_name, tmp;
+
+/*
+ * Save all special registers of the CPU to __cpu_context.
+ *
+ * Arguments:
+ *	- ctx:	register containing `__cpu_context` address
+ *	- tmp:	scratch register for internal usage in macro
+ */
+.macro save_special_registers ctx, tmp
+	SAVE_CPU_SR(\ctx, \tmp, msp)
+	SAVE_CPU_SR(\ctx, \tmp, psp)
+	SAVE_CPU_SR(\ctx, \tmp, apsr)
+	SAVE_CPU_SR(\ctx, \tmp, ipsr)
+	SAVE_CPU_SR(\ctx, \tmp, epsr)
+	SAVE_CPU_SR(\ctx, \tmp, primask)
+	SAVE_CPU_SR(\ctx, \tmp, control)
+
+#ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	SAVE_CPU_SR(\ctx, \tmp, basepri)
+	SAVE_CPU_SR(\ctx, \tmp, faultmask)
+# ifdef CONFIG_ARMV8_M_MAINLINE
+	SAVE_CPU_SR(\ctx, \tmp, msplim)
+	SAVE_CPU_SR(\ctx, \tmp, psplim)
+# endif
+#endif
+.endm
+
+/*
+ * Restore all special registers of the CPU from __cpu_context.
+ *
+ * Arguments:
+ *	- ctx:	register containing `__cpu_context` address
+ *	- tmp:	scratch register for internal usage in macro
+ */
+.macro restore_special_registers ctx, tmp
+	RESTORE_CPU_SR(\ctx, \tmp, msp)
+	RESTORE_CPU_SR(\ctx, \tmp, psp)
+	RESTORE_CPU_SR(\ctx, \tmp, ipsr)
+	RESTORE_CPU_SR(\ctx, \tmp, epsr)
+	RESTORE_CPU_SR(\ctx, \tmp, primask)
+
+	/*
+	 * APSR can't be handled by the macro because
+	 * the register name differs from the field
+	 * name in the __cpu_context structure
+	 */
+	ldr	\tmp, [\ctx, # SR_CTX_OFFSET(apsr)]
+	msr	apsr_nzcvq, \tmp
+
+#ifdef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	RESTORE_CPU_SR(\ctx, \tmp, basepri)
+	RESTORE_CPU_SR(\ctx, \tmp, faultmask)
+# ifdef CONFIG_ARMV8_M_MAINLINE
+	RESTORE_CPU_SR(\ctx, \tmp, msplim)
+	RESTORE_CPU_SR(\ctx, \tmp, psplim)
+# endif
+#endif
+	/* Restore CONTROL register last,
+	 * as it must be followed by ISB.
+	 */
+	RESTORE_CPU_SR(\ctx, \tmp, control)
+	isb
+.endm
+
+/*
+ * WARNING: the push_gprs and pop_gprs macros are tightly
+ * coupled. Do not modify one without adapting the other.
+ */
+
+/* Push registers r4~r12 and lr on the stack */
+.macro push_gprs
+#ifndef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* ARMv6-M `push` only supports r0~r7 and LR.
+	 * r0 must be preserved (holds `system_off`).
+	 */
+	push	{ r4-r7 }
+	mov	r1, r8
+	mov	r2, r9
+	mov	r3, r10
+	mov	r4, r11
+	mov	r5, r12
+	push	{ r1-r5, lr }
+#else
+	/* ARMv7-M and ARMv8-M have no limitation on `push` */
+	push	{ r5-r12 }
+#endif
+.endm
+
+/* Pop registers r4-r12 and lr from the stack */
+.macro pop_gprs
+#ifndef CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+	/* ARMv6-M `push` only supports r0~r7 and LR.
+	 * r0 must be preserved (holds return value).
+	 */
+	pop	{ r1-r6 } /* can't pop lr to itself... */
+	mov 	lr, r6
+	mov 	r12, r5
+	mov 	r11, r4
+	mov 	r10, r3
+	mov 	r9, r2
+	mov 	r8, r1
+	pop	{ r4-r7 }
+#else
+	/* ARMv7-M and ARMv8-M have no limitation on `push` */
+	push	{ r5-r12 }
+#endif
+.endm
+
+/*
+ * arch_pm_s2ram_suspend: save CPU context before calling
+ * the `system_off` function, whose address is in r0.
+ *
+ * Does not return if system enters suspended state.
+ * Otherwise, must return what `system_off` returned.
+ */
 SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
-	/*
-	 * Save the CPU context
-	 *
-	 * r0: address of the system_off function
-	 */
-	push	{r4-r12, lr}
+	/* Save general-purpose registers on the current stack */
+	push_gprs
+
+	/* Save special registers in _cpu_context */
 	ldr	r1, =_cpu_context
+	save_special_registers r1, r2
 
-	mrs	r2, msp
-	str	r2, [r1, #___cpu_context_t_msp_OFFSET]
-
-	mrs	r2, msplim
-	str	r2, [r1, #___cpu_context_t_msplim_OFFSET]
-
-	mrs	r2, psp
-	str	r2, [r1, #___cpu_context_t_psp_OFFSET]
-
-	mrs	r2, psplim
-	str	r2, [r1, #___cpu_context_t_psplim_OFFSET]
-
-	mrs	r2, apsr
-	str	r2, [r1, #___cpu_context_t_apsr_OFFSET]
-
-	mrs	r2, ipsr
-	str	r2, [r1, #___cpu_context_t_ipsr_OFFSET]
-
-	mrs	r2, epsr
-	str	r2, [r1, #___cpu_context_t_epsr_OFFSET]
-
-	mrs	r2, primask
-	str	r2, [r1, #___cpu_context_t_primask_OFFSET]
-
-	mrs	r2, faultmask
-	str	r2, [r1, #___cpu_context_t_faultmask_OFFSET]
-
-	mrs	r2, basepri
-	str	r2, [r1, #___cpu_context_t_basepri_OFFSET]
-
-	mrs	r2, control
-	str	r2, [r1, #___cpu_context_t_control_OFFSET]
+	/* Mark that we are entering suspend-to-RAM */
+	bl	pm_s2ram_mark_set
 
 	/*
-	 * Mark entering suspend to RAM.
-	 */
-	bl pm_s2ram_mark_set
-
-	/*
-	 * Call the system_off function passed as parameter. This should never
-	 * return.
+	 * Call the `system_off` function passed as parameter.
+	 * This call will not return if system is suspended.
 	 */
 	blx	r0
 
 	/*
-	 * The system_off function returns here only when the powering off was
-	 * not successful (in r0 the return value).
+	 * `system_off` failed and returned an error code in r0.
+	 * System was not suspended, so the suspend-to-RAM mark
+	 * needs to be cleared. Since we need to call a function,
+	 * the error code must be saved somewhere other than r0.
+	 * As r4 has been pushed on the stack, and is preserved,
+	 * we can use it as temporary storage.
 	 */
+	mov	r4, r0
 
-	/*
-	 * Reset the marking of suspend to RAM, return is ignored.
-	 */
-	push	{r0}
-	bl pm_s2ram_mark_check_and_clear
-	pop	{r0}
+	/* Clear the suspend-to-RAM mark. Return value is ignored. */
+	bl	pm_s2ram_mark_check_and_clear
 
-	pop	{r4-r12, lr}
+	/* Restore error code saved earlier */
+	mov	r0, r4
+
+	/* Restore CPU registers from the stack and return */
+	pop_gprs
 	bx	lr
-
 
 GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	/*
 	 * Check if reset occurred after suspending to RAM.
 	 */
-	push    {lr}
+	push    { lr }
 	bl      pm_s2ram_mark_check_and_clear
 	cmp	r0, #0x1
-	pop     {lr}
 	beq	resume
-	bx	lr
+	pop 	{ pc }	/* not resume reset; return to caller */
 
 resume:
+	/* Pop the previously pushed `lr` (value ignored) */
+	pop	{ r0 }
+
 	/*
-	 * Restore the CPU context
+	 * Restore special registers from _cpu_context.
+	 * This includes reloading of the stack pointer.
 	 */
 	ldr	r0, =_cpu_context
+	restore_special_registers r0, r1
 
-	ldr	r1, [r0, #___cpu_context_t_msp_OFFSET]
-	msr	msp, r1
+	/* Restore CPU registers from the stack */
+	pop_gprs
 
-	ldr	r1, [r0, #___cpu_context_t_msplim_OFFSET]
-	msr	msplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psp_OFFSET]
-	msr	psp, r1
-
-	ldr	r1, [r0, #___cpu_context_t_psplim_OFFSET]
-	msr	psplim, r1
-
-	ldr	r1, [r0, #___cpu_context_t_apsr_OFFSET]
-	msr	apsr_nzcvq, r1
-
-	ldr	r1, [r0, #___cpu_context_t_ipsr_OFFSET]
-	msr	ipsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_epsr_OFFSET]
-	msr	epsr, r1
-
-	ldr	r1, [r0, #___cpu_context_t_primask_OFFSET]
-	msr	primask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_faultmask_OFFSET]
-	msr	faultmask, r1
-
-	ldr	r1, [r0, #___cpu_context_t_basepri_OFFSET]
-	msr	basepri, r1
-
-	ldr	r1, [r0, #___cpu_context_t_control_OFFSET]
-	msr	control, r1
-	isb
-
-	pop	{r4-r12, lr}
-
-	/*
-	 * Set the return value and return
-	 */
-	mov	r0, #0
+	/* Set the return value and return */
+	movs	r0, #0
 	bx	lr
