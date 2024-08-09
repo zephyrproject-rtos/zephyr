@@ -86,7 +86,7 @@ class HardwareAdapter(DeviceAdapter):
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
             elif runner == 'jlink':
-                base_args.append(f'--tool-opt=-SelectEmuBySN {board_id}')
+                base_args.append(f'--dev-id {board_id}')
             elif runner == 'stm32cubeprogrammer':
                 base_args.append(f'--tool-opt=sn={board_id}')
             elif runner == 'linkserver':

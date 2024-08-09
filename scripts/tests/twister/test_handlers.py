@@ -1117,7 +1117,7 @@ TESTDATA_13 = [
         'jlink',
         'product',
         ['west', 'flash', '--skip-rebuild', '-d', '$build_dir',
-         '--runner', 'jlink', '--tool-opt=-SelectEmuBySN  12345',  # 2x space
+         '--runner', 'jlink', '--dev-id', 12345,
          'param1', 'param2']
     ),
     (
