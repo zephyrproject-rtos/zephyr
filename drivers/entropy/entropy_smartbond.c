@@ -94,6 +94,7 @@ static void trng_enable(bool enable)
 	} else {
 		CRG_TOP->CLK_AMBA_REG &= ~CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = 0;
+		NVIC_ClearPendingIRQ(IRQN);
 
 		entropy_smartbond_pm_policy_state_lock_put();
 	}
