@@ -742,6 +742,8 @@ static const struct hid_device_driver_api hid_device_api = {
 		    (USBD_HID_INTERFACE_ALTERNATE_DEFINE(n)))
 
 #define USBD_HID_INSTANCE_DEFINE(n)						\
+	HID_VERIFY_REPORT_SIZES(n);						\
+										\
 	NET_BUF_POOL_DEFINE(hid_buf_pool_in_##n,				\
 			    CONFIG_USBD_HID_IN_BUF_COUNT, 0,			\
 			    sizeof(struct udc_buf_info), NULL);			\

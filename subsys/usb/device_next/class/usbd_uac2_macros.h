@@ -464,7 +464,7 @@
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
 	FIRST_IN_EP_ADDR,				/* bEndpointAddress */	\
 	USB_EP_TYPE_INTERRUPT,				/* bmAttributes */	\
-	0x06,						/* wMaxPacketSize */	\
+	U16_LE(0x06),					/* wMaxPacketSize */	\
 	0x01,						/* bInterval */		\
 
 #define AC_ENDPOINT_DESCRIPTOR_ARRAY(node)					\
