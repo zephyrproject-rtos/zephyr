@@ -127,6 +127,12 @@ void k_mem_paging_backing_store_page_in(uintptr_t location)
 void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location)
 {
+#ifdef CONFIG_DEMAND_MAPPING
+	/* ignore those */
+	if (location == ARCH_UNPAGED_ANON_ZERO || location == ARCH_UNPAGED_ANON_UNINIT) {
+		return;
+	}
+#endif
 	k_mem_paging_backing_store_location_free(location);
 }
 
