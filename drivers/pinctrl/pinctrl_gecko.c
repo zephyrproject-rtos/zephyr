@@ -16,7 +16,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
 #else
+
+#if USART_COUNT > 1
 	int usart_num = USART_NUM(base);
+#else
+	int usart_num = 0;
+	(void)base;
+#endif /*USART_COUNT > 1*/
+
 #endif
 
 #ifdef CONFIG_I2C_GECKO
