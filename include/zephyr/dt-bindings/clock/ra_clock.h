@@ -117,6 +117,15 @@
 #define RA_I3C_CLOCK_DIV_6 3
 #define RA_I3C_CLOCK_DIV_8 4
 
+/* LCD clock divider options. */
+#define RA_LCD_CLOCK_DIV_1 0
+#define RA_LCD_CLOCK_DIV_2 1
+#define RA_LCD_CLOCK_DIV_3 5
+#define RA_LCD_CLOCK_DIV_4 2
+#define RA_LCD_CLOCK_DIV_5 6
+#define RA_LCD_CLOCK_DIV_6 3
+#define RA_LCD_CLOCK_DIV_8 4
+
 #define MSTPA 0x40203000
 #define MSTPB 0x40203004
 #define MSTPC 0x40203008
