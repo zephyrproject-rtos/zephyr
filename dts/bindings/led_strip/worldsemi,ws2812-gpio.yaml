@@ -7,7 +7,16 @@ description: |
   Driver bindings for bit-banging a WS2812 or compatible LED strip.
 
   The GPIO driver uses inline assembly, and isn't available for all
-  boards.
+  boards. The timing is automatically derived from the cpu clock frequency,
+  or can be manually provided by the Kconfig settings DELAY_Txx.
+
+  / {
+        cpus {
+            cpu@0 {
+                clock-frequency = <16000000>;
+            };
+        };
+  };
 
 compatible: "worldsemi,ws2812-gpio"
 
