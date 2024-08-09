@@ -24,6 +24,7 @@ struct i2c_eeprom_target_data {
 	uint32_t buffer_idx;
 	uint32_t idx_write_cnt;
 	uint8_t address_width;
+	bool read_only;
 };
 
 struct i2c_eeprom_target_config {
@@ -115,22 +116,26 @@ static int eeprom_target_write_received(struct i2c_target_config *config,
 						struct i2c_eeprom_target_data,
 						config);
 
-	LOG_DBG("eeprom: write done, val=0x%x", val);
-
-	/* In case EEPROM wants to be R/O, return !0 here could trigger
-	 * a NACK to the I2C controller, support depends on the
-	 * I2C controller support
-	 */
-
 	if (data->idx_write_cnt < (data->address_width >> 3)) {
+		LOG_DBG("eeprom: write addr, val=0x%x", val);
+
 		if (data->idx_write_cnt == 0) {
 			data->buffer_idx = 0;
 		}
 
 		data->buffer_idx = val | (data->buffer_idx << 8);
 		data->idx_write_cnt++;
-	} else {
+	} else if (!data->read_only) {
+		LOG_DBG("eeprom: write data, val=0x%x", val);
+
 		data->buffer[data->buffer_idx++] = val;
+	} else {
+		LOG_DBG("eeprom: write attempt to read-only EEPROM");
+
+		/* In case the EEPROM is read-only, an error code is returned
+		 * to trigger a NACK on I2C controllers that support it.
+		 */
+		return -EIO;
 	}
 
 	data->buffer_idx = data->buffer_idx % data->buffer_size;
@@ -254,6 +259,8 @@ static int i2c_eeprom_target_init(const struct device *dev)
 		i2c_eeprom_target_##inst##_dev_data = {			\
 			.address_width = DT_INST_PROP_OR(inst,		\
 					address_width, 8),		\
+			.read_only = DT_INST_PROP_OR(inst,		\
+					read_only, 8),			\
 		};							\
 									\
 	static uint8_t							\
