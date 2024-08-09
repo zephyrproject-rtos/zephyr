@@ -208,4 +208,11 @@ config INIT_SYS_PLL
 
 endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 
+config NXP_IMX_RT_USER_MPU_REGIONS
+	bool "User mpu regions"
+	help
+		When this option is enabled user should define custom mpu regions:
+			const struct arm_mpu_config mpu_config = {...};
+		See example in zephyr/soc/nxp/imxrt/mpu_regions.c.
+
 endif # SOC_FAMILY_NXP_IMXRT
