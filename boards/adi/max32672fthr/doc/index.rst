@@ -107,6 +107,8 @@ Below interfaces are supported by Zephyr on MAX32672FTHR.
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma controller                      |
 +-----------+------------+-------------------------------------+
+| Timer     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs

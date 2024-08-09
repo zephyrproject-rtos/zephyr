@@ -117,6 +117,8 @@ Below interfaces are supported by Zephyr on MAX32690EVKIT.
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma controller                      |
 +-----------+------------+-------------------------------------+
+| Timer     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs
