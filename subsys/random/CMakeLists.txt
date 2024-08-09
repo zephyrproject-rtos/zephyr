@@ -9,7 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE           random_handlers.c)
 endif()
 
 if (CONFIG_TIMER_RANDOM_GENERATOR)
-  message(WARNING "
+  message(VERBOSE "
     Warning: CONFIG_TIMER_RANDOM_GENERATOR is not a truly random generator.
     This capability is not secure and it is provided for testing purposes only.
     Use it carefully.")
