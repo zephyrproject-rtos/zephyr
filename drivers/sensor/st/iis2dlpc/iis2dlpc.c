@@ -12,7 +12,6 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -244,9 +243,9 @@ static int iis2dlpc_sample_fetch(const struct device *dev,
 		shift = IIS2DLPC_SHIFT_PMOTHER;
 	}
 
-	iis2dlpc->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
-	iis2dlpc->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
-	iis2dlpc->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
+	iis2dlpc->acc[0] = buf[0] >> shift;
+	iis2dlpc->acc[1] = buf[1] >> shift;
+	iis2dlpc->acc[2] = buf[2] >> shift;
 
 	return 0;
 }

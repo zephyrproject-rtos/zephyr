@@ -13,7 +13,6 @@
 #include <zephyr/init.h>
 #include <stdlib.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
@@ -332,9 +331,9 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 		shift = LIS2DW12_SHIFT_PMOTHER;
 	}
 
-	lis2dw12->acc[0] = sys_le16_to_cpu(buf[0]) >> shift;
-	lis2dw12->acc[1] = sys_le16_to_cpu(buf[1]) >> shift;
-	lis2dw12->acc[2] = sys_le16_to_cpu(buf[2]) >> shift;
+	lis2dw12->acc[0] = buf[0] >> shift;
+	lis2dw12->acc[1] = buf[1] >> shift;
+	lis2dw12->acc[2] = buf[2] >> shift;
 
 	return 0;
 }
