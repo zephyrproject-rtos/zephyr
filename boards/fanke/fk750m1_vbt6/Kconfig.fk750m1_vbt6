@@ -1,0 +1,5 @@
+# Copyright (c) 2024 zack jiang <1125934312@qq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FK750M1_VBT6
+	select SOC_STM32H750XX
