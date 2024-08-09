@@ -104,3 +104,4 @@ if(CONFIG_COVERAGE)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
+zephyr_library_sources_ifdef(CONFIG_ARCH_HAS_STACKWALK stacktrace.c)
