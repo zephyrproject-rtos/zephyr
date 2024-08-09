@@ -13,6 +13,7 @@
 			compatible = "st,stm32-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <16>;
 			reg = <0x42021400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 		};

@@ -210,6 +210,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42020000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000001>;
 			};
@@ -218,6 +219,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42020400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000002>;
 			};
@@ -226,6 +228,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42020800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000004>;
 			};
@@ -234,6 +237,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42020c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
 			};
@@ -242,6 +246,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42021000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
 			};
@@ -250,6 +255,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42021400 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000020>;
 			};
@@ -258,6 +264,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42021800 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
 			};
@@ -266,6 +273,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42021c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			};
@@ -274,6 +282,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				reg = <0x42022000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
 			};

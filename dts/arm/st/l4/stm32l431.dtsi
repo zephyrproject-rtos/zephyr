@@ -27,6 +27,7 @@
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000008>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 			};
 
 			gpioe: gpio@48001000 {
@@ -35,6 +36,7 @@
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 			};
 
 		};

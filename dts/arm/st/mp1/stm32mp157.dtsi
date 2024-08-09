@@ -85,6 +85,7 @@
 				reg = <0x50002000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000001>;
 			};
 
@@ -93,6 +94,7 @@
 				reg = <0x50003000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000002>;
 			};
 
@@ -101,6 +103,7 @@
 				reg = <0x50004000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000004>;
 			};
 
@@ -109,6 +112,7 @@
 				reg = <0x50005000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000008>;
 			};
 
@@ -117,6 +121,7 @@
 				reg = <0x50006000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000010>;
 			};
 
@@ -125,6 +130,7 @@
 				reg = <0x50007000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000020>;
 			};
 
@@ -133,6 +139,7 @@
 				reg = <0x50008000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000040>;
 			};
 
@@ -141,6 +148,7 @@
 				reg = <0x50009000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000080>;
 			};
 
@@ -149,6 +157,7 @@
 				reg = <0x5000a000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000100>;
 			};
 
@@ -157,6 +166,7 @@
 				reg = <0x5000b000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000200>;
 			};
 
@@ -165,6 +175,7 @@
 				reg = <0x5000c000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <16>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00000400>;
 			};
 		};
