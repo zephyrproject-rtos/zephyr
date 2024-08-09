@@ -269,6 +269,46 @@ config SOC_MEC_PROC_CLK_DIV
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
 
+# common SoC power management
+config SOC_MEC_PM_DEBUG_ON_DEEP_SLEEP
+	bool "Keep JTAG/SWD on in deep sleep"
+	default n
+	help
+	  Do not disable the JTAG/SWD debug interface in deep sleep.
+	  A side-effect is the PLL will not shut off in deep sleep.
+
+config SOC_MEC_PM_DEBUG_DEEP_SLEEP_CLK_REQ
+	bool "Capture PCR CLK_REQ in VBAT memory"
+	default n
+	help
+	  Save PCR peripheral clock requires status and EC subsystem
+	  sleep mirror status in VBAT memory.
+
+config SOC_MEC_PM_DEBUG_DS_CLK_REQ_VBAT_MEM_OFS
+	int "VBAT memory offset for CLK_REQ"
+	default 0
+	depends on SOC_MEC_PM_DEBUG_DEEP_SLEEP_CLK_REQ
+	help
+	  Start byte offset for saving PCR CLK_REQ register values
+	  if debug feature enabled. A total of 32 bytes are saved.
+
+config SOC_MEC_PM_WAKE_PLL_LOCK_WAIT
+	bool "Wait for PLL to lock with timeout"
+	default y
+	depends on PM || PM_DEVICE
+	help
+	  Upon wake spin with interrupts masked until PLL is locked.
+
+config SOC_MEC_PM_WAKE_PLL_LOCK_WAIT_TIMEOUT_MS
+	int ""
+	default 6
+	depends on SOC_MEC_PM_WAKE_PLL_LOCK_WAIT
+	help
+	  Add a timeout using 32 KHz based hibernation timer 0 to the
+	  PLL lock spin loop. Current MEC HW maximum PLL lock time is
+	  3 ms. Default value set to 6 ms for guard band. Zero disables
+	  the timeout.
+
 # Select SoC Part No. and configuration options
 rsource "*/Kconfig"
 
