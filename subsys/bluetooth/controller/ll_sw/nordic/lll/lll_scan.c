@@ -529,7 +529,14 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll = curr;
+	struct lll_scan *lll;
+
+	/* Prepare being cancelled (no resume for scan) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
+	lll = curr;
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different

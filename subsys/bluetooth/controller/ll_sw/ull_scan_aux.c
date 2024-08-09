@@ -126,6 +126,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	uint8_t acad_len;
 	uint8_t data_len;
 	uint8_t hdr_len;
+	uint32_t pdu_us;
 	uint8_t *ptr;
 	uint8_t phy;
 
@@ -705,6 +706,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * lll_aux->window_size_us;
 
+	/* Skip reception if invalid aux offset */
+	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	if (aux_offset_us < pdu_us) {
+		goto ull_scan_aux_rx_flush;
+	}
+
 	/* CA field contains the clock accuracy of the advertiser;
 	 * 0 - 51 ppm to 500 ppm
 	 * 1 - 0 ppm to 50 ppm
@@ -723,7 +730,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;

@@ -132,9 +132,11 @@ static void prepare(void *param)
 
 	lll = p->param;
 
+	lll->lazy_prepare = p->lazy;
+
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (p->lazy + 1U);
+					   (lll->lazy_prepare + 1U);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
@@ -272,7 +274,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -360,7 +362,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll = p->param;
 
 	/* Calculate the current event latency */
-	lll->skip_event = lll->skip_prepare + p->lazy;
+	lll->skip_event = lll->skip_prepare + lll->lazy_prepare;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
@@ -534,6 +536,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	ARG_UNUSED(resume_cb);
 
+	/* Prepare being cancelled (no resume for periodic sync) */
+	if (!next) {
+		return -ECANCELED;
+	}
+
 	/* Different radio event overlap */
 	if (next != curr) {
 		struct lll_scan_aux *lll_aux;
@@ -562,6 +569,13 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 		lll_sync_next = ull_sync_lll_is_valid_get(next);
 		if (!lll_sync_next) {
+			lll_sync_curr = curr;
+
+			/* Do not abort if near supervision timeout */
+			if (lll_sync_curr->forced) {
+				return 0;
+			}
+
 			/* Abort current event as next event is not a
 			 * scan and not a scan aux event.
 			 */
@@ -624,7 +638,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
-	lll->skip_prepare += (prepare_param->lazy + 1U);
+	lll->skip_prepare += (lll->lazy_prepare + 1U);
 
 	/* Extra done event, to check sync lost */
 	e = ull_event_done_extra_get();
@@ -738,6 +752,7 @@ static void isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
+	LL_ASSERT(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;

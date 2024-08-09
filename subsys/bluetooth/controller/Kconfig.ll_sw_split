@@ -426,6 +426,13 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_AUX_SLOT_WINDOW
+	bool "Reschedule Extended Advertising Auxiliary PDUs"
+	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
+	select BT_TICKER_EXT
+	help
+	  Reschedule Extended Advertising Auxiliary PDUs.
+
 config BT_CTLR_ADV_ISO_RESERVE_MAX
 	bool "Use maximum Broadcast ISO event time reservation"
 	depends on BT_CTLR_ADV_ISO
@@ -535,6 +542,16 @@ config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	  Use maximum ISO Synchronized Receiver event time reservation. If
 	  disabled, then time reservation does not include the pre-transmissions
 	  and any Control subevents.
+
+config BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap ISO Synchronized Receiver event around overlapping roles"
+	depends on BT_CTLR_SYNC_ISO && !BT_CTLR_SYNC_ISO_RESERVE_MAX
+	select BT_TICKER_EXT
+	help
+	  Wrap ISO Synchronized Receiver event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for reception.
 
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
@@ -744,6 +761,19 @@ config BT_CTLR_CENTRAL_RESERVE_MAX
 
 	  Note, currently this value is only used to space multiple central
 	  connections and not for actual ticker time reservations.
+
+config BT_CTLR_PERIPHERAL_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Peripheral"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  Use the maximum data PDU size time reservation considering the Data
+	  length could be updated from default 27 bytes to maximum support size.
+
+	  If maximum time reservation is disabled then time reservation required
+	  for empty PDU transmission is used. Overlapping radio events will use
+	  the is_abort_cb mechanism to decide on continuation of the connection
+	  event.
 
 config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
 	bool "Reserve maximum event overhead in time reservations"

@@ -239,6 +239,9 @@ struct lll_hdr {
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint32_t ticks_drift;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 	uint32_t remainder;
 	uint16_t lazy;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
@@ -505,6 +508,7 @@ struct event_done_extra {
 				struct {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
+					uint8_t  is_aborted:1;
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 					uint8_t  estab_failed:1;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
