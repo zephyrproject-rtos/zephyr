@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2024 espros photonics Co.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: esp32 camera interface
+
+compatible: "espressif,esp32-cam"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  source:
+    required: true
+    type: phandle
+    description: phandle of connected source device
+
+  enable-16bit-mode:
+    type: boolean
+    description: enable 16bit interface
+
+  invert-byte-order:
+    type: boolean
+    description: invert byte order in 16bit mode
+
+  invert-bit-order:
+    type: boolean
+    description: invert bit order
+
+  invert-pclk:
+    type: boolean
+    description: invert pixel clock signal
+
+  invert-de:
+    type: boolean
+    description: invert data enable signal
+
+  invert-hsync:
+    type: boolean
+    description: invert hsync signal
+
+  invert-vsync:
+    type: boolean
+    description: invert vsync signal
