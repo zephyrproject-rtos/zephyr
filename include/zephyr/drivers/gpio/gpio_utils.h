@@ -16,6 +16,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracing.h>
 
 #define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
 	((gpio_port_pins_t)(((uint64_t)1 << (ngpios)) - 1U))
@@ -91,6 +92,8 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
 		if (cb->pin_mask & pins) {
 			__ASSERT(cb->handler, "No callback handler!");
+
+			sys_port_trace_gpio_pin_event_executed(port, cb);
 			cb->handler(port, cb, cb->pin_mask & pins);
 		}
 	}

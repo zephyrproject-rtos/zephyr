@@ -8,6 +8,7 @@ common:
     regex:
       - "thread_a: Hello World from (.*)!"
       - "thread_b: Hello World from (.*)!"
+  extra_args: EXTRA_DTC_OVERLAY_FILE="app.overlay"
 tests:
   sample.tracing.user:
     extra_args: CONF_FILE="prj_user.conf"
@@ -78,3 +79,11 @@ tests:
     extra_args: CONF_FILE="prj_percepio.conf"
     modules:
       - percepio
+  sample.tracing.gpio:
+    depends_on: gpio
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_args: CONF_FILE="prj_gpio.conf"
+    integration_platforms:
+      - native_sim
