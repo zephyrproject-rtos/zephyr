@@ -1,0 +1,11 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RA_AGT
+	bool "Renesas RA AGT driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_AGT_COUNTER_ENABLED
+	help
+	  Enable support for Renesas Low Power Asynchronous General Purpose Timer (AGT) driver.

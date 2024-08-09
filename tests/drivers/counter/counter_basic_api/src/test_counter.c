@@ -115,6 +115,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPTMR
 	DEVS_FOR_DT_COMPAT(nxp_lptmr)
 #endif
+#ifdef CONFIG_COUNTER_RA_AGT
+	DEVS_FOR_DT_COMPAT(renesas_ra_agt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -698,7 +701,12 @@ static void test_late_alarm_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	if (counter_is_counting_up(dev)) {
+		alarm_cfg.ticks = 0;
+	} else {
+		counter_get_value(dev, &(alarm_cfg.ticks));
+	}
+
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err, "%s: Unexpected error (%d)", dev->name, err);
 
@@ -749,7 +757,12 @@ static void test_late_alarm_error_instance(const struct device *dev)
 
 	k_busy_wait(2*tick_us);
 
-	alarm_cfg.ticks = 0;
+	if (counter_is_counting_up(dev)) {
+		alarm_cfg.ticks = 0;
+	} else {
+		counter_get_value(dev, &(alarm_cfg.ticks));
+	}
+
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-ETIME, err,
 			"%s: Failed to detect late setting (err: %d)",
@@ -982,6 +995,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_RA_AGT
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
