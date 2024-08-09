@@ -174,7 +174,7 @@ SECTIONS
 
 	__text_region_end = .;
 
-#if defined (CONFIG_CPP)
+#if defined (CONFIG_CPP) || defined(CONFIG_RUST)
 	SECTION_PROLOGUE(.ARM.extab,,)
 	{
 	/*
