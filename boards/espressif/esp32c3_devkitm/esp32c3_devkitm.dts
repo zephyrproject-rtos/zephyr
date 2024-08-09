@@ -58,6 +58,12 @@
 	pinctrl-names = "default";
 };
 
+&i2s {
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
 &trng0 {
 	status = "okay";
 };
