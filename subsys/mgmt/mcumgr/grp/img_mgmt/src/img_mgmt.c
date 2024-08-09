@@ -835,6 +835,9 @@ static struct mgmt_group img_mgmt_group = {
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = img_mgmt_translate_error_code,
 #endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "img mgmt",
+#endif
 };
 
 static void img_mgmt_register_group(void)
