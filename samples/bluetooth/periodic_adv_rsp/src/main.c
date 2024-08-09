@@ -366,6 +366,12 @@ int main(void)
 		printk("PAwR config written to sync %d, disconnecting\n", num_synced - 1);
 
 disconnect:
+		/* Adding delay (2ms * interval value, using 2ms intead of the 1.25ms
+		 * used by controller) to ensure sync is established before
+		 * disconnection.
+		 */
+		k_sleep(K_MSEC(per_adv_params.interval_max * 2));
+
 		err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err) {
 			return 0;
