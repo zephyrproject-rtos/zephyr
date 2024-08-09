@@ -4,8 +4,19 @@
 
 menu "File Systems"
 
+config FILE_SYSTEM_LIB_LINK
+	bool "Link file system libraries into build"
+	help
+	  Link in the underlying file system libraries. This can be
+	  enabled without CONFIG_FILE_SYSTEM to enable applications
+	  to work directly with the underlying file system libraries.
+	  This can be useful to avoid linking in the entire filesystem
+	  implementation via `struct fs_file_system_t` if only a subset
+	  is used.
+
 config FILE_SYSTEM
 	bool "File system support"
+	select FILE_SYSTEM_LIB_LINK
 	help
 	  Enables support for file system.
 
