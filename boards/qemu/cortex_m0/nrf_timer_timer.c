@@ -233,7 +233,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return ret;
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	nrf_timer_prescaler_set(TIMER, NRF_TIMER_FREQ_1MHz);
 	nrf_timer_bit_width_set(TIMER, NRF_TIMER_BIT_WIDTH_32);
@@ -254,6 +254,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

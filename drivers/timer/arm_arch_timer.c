@@ -226,7 +226,7 @@ void smp_timer_init(void)
 }
 #endif
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
@@ -245,6 +245,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -100,7 +100,7 @@ static void mcux_lptmr_timer_isr(const void *arg)
 	LPTMR_ClearStatusFlags(LPTMR_BASE, kLPTMR_TimerCompareFlag);
 }
 
-static int sys_clock_driver_init(void)
+int init_sys_clock_driver(void)
 {
 	lptmr_config_t config;
 
@@ -128,6 +128,3 @@ static int sys_clock_driver_init(void)
 
 	return 0;
 }
-
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
