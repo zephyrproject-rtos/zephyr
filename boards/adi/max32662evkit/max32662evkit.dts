@@ -44,6 +44,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &pb1;
+		watchdog0 = &wdt0;
 	};
 };
 
@@ -65,5 +66,9 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };

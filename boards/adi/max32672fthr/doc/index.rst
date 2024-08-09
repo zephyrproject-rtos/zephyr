@@ -107,6 +107,8 @@ Below interfaces are supported by Zephyr on MAX32672FTHR.
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | dma controller                      |
 +-----------+------------+-------------------------------------+
+| Watchdog  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs

@@ -99,6 +99,8 @@ Below interfaces are supported by Zephyr on MAX32662EVKIT.
 +-----------+------------+-------------------------------------+
 | TRNG      | on-chip    | entropy                             |
 +-----------+------------+-------------------------------------+
+| Watchdog  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs
