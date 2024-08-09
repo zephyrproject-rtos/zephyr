@@ -1078,9 +1078,28 @@ config TOOLCHAIN_HAS_BUILTIN_FFS
 	help
 	  Hidden option to signal that toolchain has __builtin_ffs*().
 
-config ARCH_CPU_IDLE_CUSTOM
-	bool "Custom arch_cpu_idle implementation"
-	default n
+config ARCH_HAS_CUSTOM_CPU_IDLE
+	bool
 	help
 	  This options allows applications to override the default arch idle implementation with
 	  a custom one.
+
+config ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+	bool
+	help
+	  This options allows applications to override the default arch idle implementation with
+	  a custom one.
+
+config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	bool
+	help
+	  It's possible that an architecture port cannot use _Swap() to swap to
+	  the _main() thread, but instead must do something custom. It must
+	  enable this option in that case.
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	bool
+	help
+	  It's possible that an architecture port cannot or does not want to use
+	  the provided k_busy_wait(), but instead must do something custom. It must
+	  enable this option in that case.

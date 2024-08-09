@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel_structs.h>
 
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
 	/* Do nothing but unconditionally unlock interrupts and return to the
@@ -14,7 +15,9 @@ void arch_cpu_idle(void)
 	 */
 	irq_unlock(NIOS2_STATUS_PIE_MSK);
 }
+#endif
 
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	/* Do nothing but restore IRQ state. This CPU does not have any
@@ -22,3 +25,4 @@ void arch_cpu_atomic_idle(unsigned int key)
 	 */
 	irq_unlock(key);
 }
+#endif

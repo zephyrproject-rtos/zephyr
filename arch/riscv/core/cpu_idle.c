@@ -7,16 +7,20 @@
 #include <zephyr/irq.h>
 #include <zephyr/tracing/tracing.h>
 
-void __weak arch_cpu_idle(void)
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
+void arch_cpu_idle(void)
 {
 	sys_trace_idle();
 	__asm__ volatile("wfi");
 	irq_unlock(MSTATUS_IEN);
 }
+#endif
 
-void __weak arch_cpu_atomic_idle(unsigned int key)
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
+void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();
 	__asm__ volatile("wfi");
 	irq_unlock(key);
 }
+#endif
