@@ -192,13 +192,14 @@ ZTEST(test_log_output, test_colors)
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
+#define LOG_COLOR_CODE_BLUE    "\x1B[1;34m"
 
 	char package[256];
 	static const char *const exp_strs[] = {
 		LOG_COLOR_CODE_RED "<err> " SNAME ": " TEST_STR LOG_COLOR_CODE_DEFAULT "\r\n",
 		LOG_COLOR_CODE_YELLOW "<wrn> " SNAME ": " TEST_STR LOG_COLOR_CODE_DEFAULT "\r\n",
 		LOG_COLOR_CODE_DEFAULT "<inf> " SNAME ": " TEST_STR LOG_COLOR_CODE_DEFAULT "\r\n",
-		LOG_COLOR_CODE_DEFAULT "<dbg> " SNAME ": " TEST_STR LOG_COLOR_CODE_DEFAULT "\r\n"
+		LOG_COLOR_CODE_BLUE "<dbg> " SNAME ": " TEST_STR LOG_COLOR_CODE_DEFAULT "\r\n"
 	};
 	uint8_t levels[] = {LOG_LEVEL_ERR, LOG_LEVEL_WRN, LOG_LEVEL_INF, LOG_LEVEL_DBG};
 	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_COLORS;
