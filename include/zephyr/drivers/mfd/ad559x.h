@@ -13,6 +13,7 @@ extern "C" {
 #include <zephyr/device.h>
 
 #define AD559X_REG_SEQ_ADC        0x02U
+#define AD559X_REG_GEN_CTRL       0x03U
 #define AD559X_REG_ADC_CONFIG     0x04U
 #define AD559X_REG_LDAC_EN        0x05U
 #define AD559X_REG_GPIO_PULLDOWN  0x06U
@@ -22,7 +23,8 @@ extern "C" {
 #define AD559X_REG_GPIO_INPUT_EN  0x0AU
 #define AD559X_REG_PD_REF_CTRL    0x0BU
 
-#define AD559X_EN_REF BIT(9)
+#define AD559X_ADC_RANGE BIT(5)
+#define AD559X_EN_REF    BIT(9)
 
 #define AD559X_PIN_MAX 8U
 
