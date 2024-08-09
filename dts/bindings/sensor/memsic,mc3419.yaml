@@ -21,3 +21,32 @@ properties:
       has two interrupt pins.By default the interrupt are routed
       to interrupt pin 1, by enabled this property interrupt are
       routed to interrupt pin 2.
+
+  lpf-fc-sel:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 9
+      - 10
+      - 11
+      - 13
+    description: |
+      Select lpf cut-off frequency if lpf-en is true. otherwise this has no effect
+      Possible values and corresponding values are listed bellow
+      0 => disable LPF
+      9 => LPF with fc set to IDR/4.255
+      10 => LPF with fc set to IDR/6
+      11 => LPF with fc set to IDR/12
+      13 => LPF with fc set to IDR/16
+      Default is disabling LPF.
+
+  decimation-rate:
+    type: int
+    default: 0
+    description: |
+      This helps in producing slower interrupt. Internal Data
+      Rate is divide by this decimation rate. If decimation rate
+      is 0 then internal data rate is equal to output data rate,
+      then it produce interrupt floods.
+      Default is disabling decimation.
