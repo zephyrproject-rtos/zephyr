@@ -1,0 +1,10 @@
+sample:
+  name: USB Audio 2 asynchronous implicit feedback sample
+tests:
+  sample.subsys.usb.uac2_implicit_feedback:
+    depends_on:
+      - usbd
+      - i2s
+    tags: usb i2s
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+    harness: TBD
