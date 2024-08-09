@@ -105,6 +105,7 @@ config NEWLIB_LIBC
 	imply POSIX_FD_MGMT_ALIAS_LSEEK
 	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
+	imply POSIX_SIGNALS_ALIAS_KILL
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
