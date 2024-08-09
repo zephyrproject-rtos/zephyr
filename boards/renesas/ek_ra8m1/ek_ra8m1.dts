@@ -7,7 +7,7 @@
 
 #include <renesas/ra/ra8/r7fa8m1ahecbd.dtsi>
 #include <dt-bindings/gpio/gpio.h>
-
+#include <zephyr/dt-bindings/adc/adc.h>
 #include "ek_ra8m1-pinctrl.dtsi"
 
 / {
@@ -144,3 +144,17 @@
 };
 
 mikrobus_serial: &uart3 {};
+
+&adc0 {
+	compatible = "renesas,ra-adc";
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	compatible = "renesas,ra-adc";
+	status = "okay";
+	pinctrl-0 = <&adc1_default>;
+	pinctrl-names = "default";
+};

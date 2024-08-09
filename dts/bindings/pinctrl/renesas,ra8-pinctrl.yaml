@@ -103,3 +103,6 @@ child-binding:
         description: |
           The drive strength of a pin. The default value is low, as this
           is the power on reset value.
+      renesas,analog-enable:
+        type: boolean
+        description: enable analog input
