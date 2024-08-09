@@ -266,6 +266,39 @@ ZTEST(canfd, test_send_receive_mixed)
 }
 
 /**
+ * @brief Test error when sending invalid frame (too big data payload).
+ *
+ * This basic test work since the CAN controller is in loopback mode and
+ * therefore ACKs its own frame.
+ */
+ZTEST_USER(canfd, test_send_invalid_frame)
+{
+	struct can_frame test_invalid_frame = {
+		.flags   = CAN_FRAME_FDF | CAN_FRAME_BRS,
+		.flags   = 0,
+		.id      = TEST_CAN_STD_ID_1,
+		.dlc     = 9,
+		.data    = {0}
+	};
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_RUNTIME_ERROR_CHECKS);
+
+	err = can_send(can_dev, (const struct can_frame *) &test_invalid_frame,
+		TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, -EINVAL, "send incorrect frame (err %d)", err);
+
+	test_invalid_frame.flags = CAN_FRAME_IDE | CAN_FRAME_FDF | CAN_FRAME_BRS;
+	test_invalid_frame.dlc = 65;
+
+	err = can_send(can_dev, (const struct can_frame *) &test_invalid_frame,
+		TEST_SEND_TIMEOUT, NULL, NULL);
+	zassert_not_equal(err, -EBUSY, "arbitration lost in loopback mode");
+	zassert_equal(err, -EINVAL, "send incorrect frame (err %d)", err);
+}
+
+/**
  * @brief Test that CAN RX filters are preserved through CAN controller mode changes.
  */
 static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t second)
@@ -396,6 +429,28 @@ ZTEST_USER(canfd, test_set_timing_data_min)
 }
 
 /**
+ * @brief Test setting a too low data phase bitrate.
+ */
+ZTEST_USER(canfd, test_set_bitrate_too_low)
+{
+	uint32_t min = can_get_bitrate_min(can_dev);
+	int err;
+
+	if (min == 0) {
+		ztest_test_skip();
+	} else {
+		err = can_stop(can_dev);
+		zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+		err = can_set_bitrate_data(can_dev, min - 1);
+		zassert_equal(err, -ENOTSUP, "too low data phase bitrate accepted");
+
+		err = can_start(can_dev);
+		zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	}
+}
+
+/**
  * @brief Test setting a too high data phase bitrate.
  */
 ZTEST_USER(canfd, test_set_bitrate_too_high)
@@ -426,6 +481,21 @@ ZTEST_USER(canfd, test_invalid_sample_point)
 }
 
 /**
+ * @brief Test using an invalid bitrate.
+ */
+ZTEST_USER(canfd, test_invalid_bitrate)
+{
+	struct can_timing timing;
+	int err;
+
+	err = can_calc_timing_data(can_dev, &timing, 0, TEST_SAMPLE_POINT);
+	zassert_equal(err, -EINVAL, "invalid bitrate of 0 bit/s accepted (err %d)", err);
+
+	err = can_calc_timing_data(can_dev, &timing, 8000001, TEST_SAMPLE_POINT);
+	zassert_equal(err, -EINVAL, "invalid bitrate of 8000001 bit/s accepted (err %d)", err);
+}
+
+/**
  * @brief Test that the maximum timing values for the data phase can be set.
  */
 ZTEST_USER(canfd, test_set_timing_data_max)
@@ -440,6 +510,110 @@ ZTEST_USER(canfd, test_set_timing_data_max)
 
 	err = can_set_bitrate_data(can_dev, CONFIG_CAN_DEFAULT_BITRATE_DATA);
 	zassert_equal(err, 0, "failed to restore default data bitrate");
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that timing values for the data phase that are above the maximum can't be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_above_max)
+{
+	int err;
+
+	const struct can_timing *max_timing = can_get_timing_data_max(can_dev);
+	struct can_timing test_timing;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.sjw += 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.prop_seg += 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid prop_seg was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.phase_seg1 += 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid phase_seg1 was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.phase_seg2 += 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid phase_seg2 was accepted (err %d)", err);
+
+	test_timing = *max_timing;
+	test_timing.prescaler += 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid prescaler was accepted (err %d)", err);
+
+	err = can_start(can_dev);
+	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+}
+
+/**
+ * @brief Test that timing values for the data phase that are below the minimum can't be set.
+ */
+ZTEST_USER(canfd, test_set_timing_data_below_min)
+{
+	int err;
+
+	const struct can_timing *min_timing = can_get_timing_data_min(can_dev);
+	struct can_timing test_timing;
+
+	err = can_stop(can_dev);
+	zassert_equal(err, 0, "failed to stop CAN controller (err %d)", err);
+
+	if (min_timing->sjw > 0) {
+		test_timing = *min_timing;
+		test_timing.sjw -= 1;
+		err = can_set_timing_data(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+	}
+
+	test_timing = *min_timing;
+	test_timing.sjw = min_timing->phase_seg1 + 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	test_timing = *min_timing;
+	test_timing.sjw = min_timing->phase_seg2 + 1;
+	err = can_set_timing_data(can_dev, &test_timing);
+	zassert_equal(err, -ENOTSUP, "invalid sjw was accepted (err %d)", err);
+
+	if (min_timing->prop_seg > 0) {
+		test_timing = *min_timing;
+		test_timing.prop_seg -= 1;
+		err = can_set_timing_data(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid prop_seg was accepted (err %d)", err);
+	}
+
+	if (min_timing->phase_seg1 > 0) {
+		test_timing = *min_timing;
+		test_timing.phase_seg1 -= 1;
+		err = can_set_timing_data(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid phase_seg1 was accepted (err %d)", err);
+	}
+
+	if (min_timing->phase_seg2 > 0) {
+		test_timing = *min_timing;
+		test_timing.phase_seg2 -= 1;
+		err = can_set_timing_data(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid phase_seg2 was accepted (err %d)", err);
+	}
+
+	if (min_timing->prescaler > 0) {
+		test_timing = *min_timing;
+		test_timing.prescaler -= 1;
+		err = can_set_timing_data(can_dev, &test_timing);
+		zassert_equal(err, -ENOTSUP, "invalid prescaler was accepted (err %d)", err);
+	}
 
 	err = can_start(can_dev);
 	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
