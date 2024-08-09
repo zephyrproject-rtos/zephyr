@@ -1,0 +1,12 @@
+-doc_begin="Derived from Flavio Ceolin <flavio.ceolin@intel.com> email of July 23rd, 2021."
+-file_tag+={out_of_initial_scope, "^zephyr/samples/.*$"}
+-file_tag+={out_of_initial_scope, "^.*\\.cpp$"}
+-file_tag+={out_of_initial_scope, "^zephyr/tests/.*$"}
+-file_tag+={out_of_initial_scope, "^zephyr/build/zephyr/include/generated/autoconf\\.h$"}
+-file_tag+={out_of_initial_scope, "^zephyr/drivers/.*/.*$"}
+-file_tag+={out_of_initial_scope, "^zephyr/lib/libc/.*$"}
+-file_tag+={out_of_initial_scope, "^zephyr/lib/crc/.*$"}
+-file_tag+={out_of_initial_scope, "^zephyr/subsys/(fb|fs|app_memory|fs|blueooth|console|cpp|debug|dfu|disk|fb|fs|mgmt|net|random|settings|shell|stats|storage|usb)/.*$"}
+-file_tag+={out_of_initial_scope, "^zephyr/build/CMakeFiles/.*$"}
+-file_tag+={external,out_of_initial_scope}
+-doc_end

@@ -1,0 +1,10 @@
+# Static Code Analysis (SCA) options
+
+# Copyright (c) 2024 Baumer (www.baumer.com)
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Static Code Analysis (SCA) tools"
+
+source "cmake/sca/eclair/Kconfig.eclair"
+
+endmenu

@@ -1,0 +1,7 @@
+-doc_begin="The following extension have been approved."
+-config=MC3R1.R1.2,behaviors+={hide,"service(STD.tokenext)&&category(^(__asm__|__attribute__|__typeof__|__builtin_types_compatible_p|__volatile__|__alignof|__alignof__|__const__|__inline|_Generic|_Static_assert|__auto_type)$)"}
+-config=MC3R1.R1.2,behaviors+={hide,"service(^STD.(stmtexpr|vptrarth|emptinit|emptrecd|arayzero|funojptr)$)"}
+-config=MC3R1.R1.2,behaviors+={hide,"service(STD.nonstdc)&&category(^GCC diagnostic (push|pop|ignored \"-W.*\")$)"}
+-config=MC3R1.R1.2,behaviors+={hide,"service(STD.freestlb)&&category(^(string|fcntl|time|errno|ctype|stdio|inttypes|stdlib).h$)"}
+-config=MC3R1.R1.2,behaviors+={hide,"service(STD.diag)&&category(^(ext_missing_varargs_arg|ext_paste_comma|ext_flexible_array_in_array|ext_auto_type)$)"}
+-doc_end
