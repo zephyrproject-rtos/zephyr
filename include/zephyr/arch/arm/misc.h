@@ -51,6 +51,14 @@ extern bool z_arm_thread_is_in_user_mode(void);
 bool z_arm_on_enter_cpu_idle(void);
 #endif
 
+#if defined(CONFIG_ARM_ON_EXIT_CPU_IDLE_HOOK)
+/* Prototype of a hook that can be enabled to be called every time the CPU is
+ * waking up from idle (the calls will be done from k_cpu_idle() and k_cpu_atomic_idle()).
+ * It is called with locked interrupts.
+ */
+void z_arm_on_exit_cpu_idle(void);
+#endif
+
 #if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK)
 /* Prototype of a hook that can be enabled to be called every time the CPU is
  * made idle (the calls will be done from k_cpu_idle() and k_cpu_atomic_idle()).
