@@ -41,6 +41,7 @@
 #include <esp32c6/rom/rtc.h>
 #include <soc/dport_access.h>
 #include <hal/clk_tree_ll.h>
+#include <hal/usb_serial_jtag_ll.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
 #include <zephyr/drivers/clock_control.h>
@@ -117,6 +118,8 @@ static void esp32_clock_perip_init(void)
 		REG_CLR_BIT(PCR_PVT_MONITOR_CONF_REG, PCR_PVT_MONITOR_CLK_EN);
 		REG_CLR_BIT(PCR_PVT_MONITOR_FUNC_CLK_CONF_REG, PCR_PVT_MONITOR_FUNC_CLK_EN);
 		WRITE_PERI_REG(PCR_CTRL_CLK_OUT_EN_REG, 0);
+
+		usb_serial_jtag_ll_enable_bus_clock(false);
 	}
 }
 #else
