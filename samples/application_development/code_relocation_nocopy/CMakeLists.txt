@@ -16,3 +16,6 @@ zephyr_code_relocate(FILES src/ext_code.c LOCATION RAM_DATA)
 
 # sram_code instead runs entirely from SRAM after being copied there.
 zephyr_code_relocate(FILES src/sram_code.c LOCATION RAM)
+
+# sram_code_from_extflash instead runs entirely from SRAM after being copied there from extflash
+zephyr_code_relocate(FILES src/sram_code_from_extflash.c LOCATION RAM LMEM EXTFLASH)

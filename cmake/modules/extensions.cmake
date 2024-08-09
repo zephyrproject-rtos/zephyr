@@ -1388,9 +1388,10 @@ endmacro()
 # - NOKEEP: suppress the generation of KEEP() statements in the linker script,
 #   to allow any unused code in the given files/library to be discarded.
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
+# - LMEM [load_memory]: load memory segment
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR)
+  set(single_args LIBRARY LOCATION PHDR LMEM)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1457,7 +1458,10 @@ function(zephyr_code_relocate)
     list(APPEND flag_list NOKEEP)
   endif()
   if(CODE_REL_PHDR)
-    set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
+    set(CODE_REL_LOCATION "${CODE_REL_LOCATION}:PHDR=${CODE_REL_PHDR}")
+  endif()
+  if(CODE_REL_LMEM)
+    set(CODE_REL_LOCATION "${CODE_REL_LOCATION}:LMEM=${CODE_REL_LMEM}")
   endif()
   # We use the "|" character to separate code relocation directives, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
@@ -1467,7 +1471,7 @@ function(zephyr_code_relocate)
     PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS
-    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}|${CODE_REL_LOCATION}:FLAGS=${flag_list}:FILES=${file_list}")
 endfunction()
 
 # Usage:
