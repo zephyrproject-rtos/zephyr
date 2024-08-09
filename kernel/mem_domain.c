@@ -168,6 +168,11 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 		goto out;
 	}
 
+#ifdef Z_LIBC_PARTITION_EXISTS
+	if (part->size == 0 && part == &z_libc_partition)
+		goto out;
+#endif
+
 	CHECKIF(!check_add_partition(domain, part)) {
 		LOG_ERR("invalid partition %p", part);
 		ret = -EINVAL;

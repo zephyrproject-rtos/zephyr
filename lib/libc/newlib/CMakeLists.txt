@@ -64,7 +64,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
 
   list(JOIN CMAKE_C_LINKER_WRAPPER_FLAG "" linker_wrapper_string)
 
-  zephyr_link_libraries(
+  zephyr_libc_link_libraries(
     m
     "${linker_wrapper_string}${CMAKE_LINK_LIBRARY_FLAG}c"
     ${LIBC_LIBRARY_DIR_FLAG} # NB: Optional
@@ -74,10 +74,10 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     "${linker_wrapper_string}${CMAKE_LINK_LIBRARY_FLAG}gcc"
     )
 endif()
-zephyr_link_libraries(c)
+zephyr_libc_link_libraries(c)
 
 if(CONFIG_NEWLIB_LIBC_NANO)
-  zephyr_link_libraries(
+  zephyr_libc_link_libraries(
     -specs=nano.specs
     )
   zephyr_compile_options(

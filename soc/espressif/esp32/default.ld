@@ -276,6 +276,8 @@ SECTIONS
     *libdrivers__console.a:uart_console.*(.literal.console_out .text.console_out)
     *liblib__libc__picolib.a:abort.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
+    *libc_common.a:string.*(.literal .text .literal.* .text.*)
+    *libc_picolibc.a:string.*(.literal .text .literal.* .text.*)
     *liblib__libc__newlib.a:string.*(.literal .text .literal.* .text.*)
     *libc.a:*(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)

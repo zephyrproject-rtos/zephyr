@@ -580,6 +580,21 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
   add_dependencies(zephyr_interface app_version_h)
 endif()
 
+# Create the kernel library now so that other parts of the system can use
+# it with target_link_libraries or other commands.
+#
+# If a pre-built static library containing kernel code exists in the kernel
+# directory, kernel/libkernel.a, link it with the application code instead
+# of building from source.
+
+set(libkernel ${CMAKE_CURRENT_SOURCE_DIR}/kernel/libkernel${CMAKE_STATIC_LIBRARY_SUFFIX})
+if(EXISTS ${libkernel})
+  add_library(kernel STATIC IMPORTED GLOBAL)
+  set_property(TARGET kernel PROPERTY IMPORTED_LOCATION ${libkernel})
+else()
+  add_library(kernel)
+endif()
+
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
 # of subdirectories. One example is "Compiler flags added late in the
@@ -629,7 +644,7 @@ set(ZEPHYR_CURRENT_MODULE_DIR)
 set(ZEPHYR_CURRENT_CMAKE_DIR)
 
 get_property(LIBC_LINK_LIBRARIES TARGET zephyr_interface PROPERTY LIBC_LINK_LIBRARIES)
-zephyr_link_libraries(${LIBC_LINK_LIBRARIES})
+target_link_libraries(zephyr_interface INTERFACE ${LIBC_LINK_LIBRARIES})
 
 set(syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/include/generated/zephyr/syscall_list.h)
 set(edk_syscall_list_h   ${CMAKE_CURRENT_BINARY_DIR}/edk/include/generated/zephyr/syscall_list.h)
@@ -758,14 +773,7 @@ add_custom_command(
           ${syscalls_file_list_output} ${syscalls_interface}
   )
 
-# Make sure Picolibc is built before the rest of the system; there's no explicit
-# reference to any of the files as they're all picked up by various compiler
-# settings
-if(CONFIG_PICOLIBC_USE_MODULE)
-  set(picolibc_dependency PicolibcBuild)
-endif()
-
-add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h} ${picolibc_dependency})
+add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS ${syscall_list_h})
 
 set_property(TARGET ${SYSCALL_LIST_H_TARGET}
              APPEND PROPERTY
@@ -927,11 +935,24 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
+# Convenience variable for linkers
+get_property(ZEPHYR_LINK_LIBS_PROPERTY TARGET zephyr_interface PROPERTY LINK_LIBS)
+
+# Add every target to zephyr_interface so we get the correct include directories
+foreach(zephyr_link_lib ${ZEPHYR_LINK_LIBS_PROPERTY})
+  # esp32 module adds gcc, which we need to skip
+  if(TARGET ${zephyr_link_lib} AND NOT ${zephyr_link_lib} STREQUAL gcc)
+    message(STATUS "Adding ${zephyr_link_lib}")
+    target_link_libraries(zephyr_interface INTERFACE ${zephyr_link_lib})
+  endif()
+endforeach()
+
 if(CONFIG_KERNEL_WHOLE_ARCHIVE)
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY} kernel)
+  set(NO_WHOLE_ARCHIVE_LIBS ${ZEPHYR_LINK_LIBS_PROPERTY})
 else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
-  set(NO_WHOLE_ARCHIVE_LIBS kernel)
+  set(NO_WHOLE_ARCHIVE_LIBS ${ZEPHYR_LINK_LIBS_PROPERTY} kernel)
 endif()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)

@@ -113,7 +113,7 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  set_property(TARGET zephyr_interface APPEND PROPERTY LINK_LIBS ${ARGV})
 endfunction()
 
 function(zephyr_libc_link_libraries)

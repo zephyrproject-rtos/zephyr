@@ -130,8 +130,10 @@ MEMORY
  * These files includes, for example, math and string functions.
  */
 #define LIB_C_IN_SECT(lsect)						\
-	*liblib__libc__minimal.a:(.##lsect)				\
-	*liblib__libc__minimal.a:(.##lsect##.*)
+	*libc.a:(.##lsect)						\
+	*libc.a:(.##lsect##.*)						\
+	*libc_common.a:(.##lsect)					\
+	*libc_common.a:(.##lsect##.*)
 
 #endif /* CONFIG_MINIMAL_LIBC */
 
@@ -146,8 +148,10 @@ MEMORY
 #ifdef CONFIG_PICOLIBC
 /* For Picolibc libc-hook.c. */
 #define LIB_C_IN_SECT(lsect)						\
-	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect)		\
-	*liblib__libc__picolibc.a:libc-hooks.c.obj(.##lsect##.*)
+	*libc_picolibc.a:(.##lsect)					\
+	*libc_picolibc.a:(.##lsect##.*)					\
+	*libc_common.a:(.##lsect)					\
+	*libc_common.a:(.##lsect##.*)
 
 #endif /* CONFIG_PICOLIBC */
 

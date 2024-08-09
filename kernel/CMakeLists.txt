@@ -30,19 +30,9 @@ zephyr_syscall_header_ifdef(
   ${ZEPHYR_BASE}/include/zephyr/kernel/mm/demand_paging.h
 )
 
-# If a pre-built static library containing kernel code exists in
-# this directory, libkernel.a, link it with the application code
-# instead of building from source.
-zephyr_library_get_current_dir_lib_name(${ZEPHYR_BASE} libkernel_stem)
-set(libkernel ${CMAKE_CURRENT_SOURCE_DIR}/lib${libkernel_stem}${CMAKE_STATIC_LIBRARY_SUFFIX})
-unset(libkernel_stem)
+get_target_property(is_imported kernel IMPORTED)
 
-if(EXISTS ${libkernel})
-
-add_library(kernel INTERFACE)
-target_link_libraries(kernel INTERFACE ${libkernel})
-
-else()
+if(NOT is_imported)
 
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
@@ -128,7 +118,7 @@ list(APPEND kernel_files
      paging/statistics.c)
 endif()
 
-add_library(kernel ${kernel_files})
+target_sources(kernel PRIVATE ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
@@ -209,7 +199,7 @@ target_include_directories(kernel PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 
-target_link_libraries(kernel zephyr_interface)
+target_link_libraries(kernel PUBLIC zephyr_interface)
 
 endif()
 
