@@ -45,3 +45,10 @@ properties:
       - 32
       - 64
       - 128
+
+  st,timeout:
+    type: int
+    description: |
+        Gives the LPTIM an exact counting value (s) for timeout expiration.
+        Valid range is [1, 256] and should be consistent with st,prescaler
+        pre-defined setting. If not, an error is raised.
