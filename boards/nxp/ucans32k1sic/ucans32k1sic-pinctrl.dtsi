@@ -74,4 +74,44 @@
 			drive-strength = "low";
 		};
 	};
+
+	adc0_default: adc0_default {
+		group0 {
+			pinmux = <ADC0_SE0_PTA0>,
+				<ADC0_SE1_PTA1>,
+				<ADC0_SE2_PTA6>,
+				<ADC0_SE3_PTA7>,
+				<ADC0_SE4_PTB0>,
+				<ADC0_SE5_PTB1>,
+				<ADC0_SE6_PTB2>,
+				<ADC0_SE7_PTB3>,
+				<ADC0_SE8_PTB13>,
+				<ADC0_SE8_PTC0>,
+				<ADC0_SE9_PTC1>,
+				<ADC0_SE10_PTC2>,
+				<ADC0_SE11_PTC3>,
+				<ADC0_SE12_PTC14>,
+				<ADC0_SE13_PTC15>,
+				<ADC0_SE14_PTC16>,
+				<ADC0_SE15_PTC17>;
+			drive-strength = "low";
+		};
+	};
+
+	adc1_default: adc1_default {
+		group0 {
+			pinmux = <ADC1_SE0_PTA2>,
+				<ADC1_SE1_PTA3>,
+				<ADC1_SE14_PTB0>,
+				<ADC1_SE15_PTB1>,
+				<ADC1_SE7_PTB12>,
+				<ADC1_SE8_PTB13>,
+				<ADC1_SE2_PTD2>,
+				<ADC1_SE3_PTD3>,
+				<ADC1_SE6_PTD4>,
+				<ADC1_SE10_PTE2>,
+				<ADC1_SE11_PTE6>;
+			drive-strength = "low";
+		};
+	};
 };
