@@ -2926,6 +2926,28 @@ Networking:
   tests:
     - sample.net.ptp
 
+"Networking: Prometheus":
+  status: maintained
+  maintainers:
+    - mustafaabdullahk
+  collaborators:
+    - rlubos
+    - jukkar
+  files:
+    - include/zephyr/net/prometheus/*.h
+    - subsys/net/lib/prometheus/
+    - samples/net/prometheus/
+    - tests/net/lib/prometheus/
+  labels:
+    - "area: Prometheus"
+  tests:
+    prometheus.collector
+    prometheus.counter
+    prometheus.gauge
+    prometheus.histogram
+    prometheus.summary
+    prometheus.formatter
+
 "Networking: Native IEEE 802.15.4":
   status: maintained
   maintainers:
