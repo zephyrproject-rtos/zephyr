@@ -835,6 +835,9 @@
 #ifdef CONFIG_NRFX_WDT
 #define NRFX_WDT_ENABLED 1
 #endif
+#ifdef CONFIG_WDT_NRFX_NO_IRQ
+#define NRFX_WDT_CONFIG_NO_IRQ 1
+#endif
 #ifdef CONFIG_NRFX_WDT_LOG
 #define NRFX_WDT_CONFIG_LOG_ENABLED 1
 #endif
