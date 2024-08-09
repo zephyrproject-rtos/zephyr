@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
+#include <hal/nrf_gpio.h>
 
 #if defined(CONFIG_SOC_SERIES_NRF52X)
 #define CPU_CLOCK		64000000U
