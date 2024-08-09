@@ -20,3 +20,6 @@ bz
 
 # used for CAN <=> host testing
 python-can>=4.3.0
+
+# used to add CRC to elf file, parsing sections through symbols defined in the linker file.
+crc-tool

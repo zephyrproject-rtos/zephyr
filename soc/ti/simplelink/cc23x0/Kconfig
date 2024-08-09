@@ -1,0 +1,251 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC23X0
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select TICKLESS_KERNEL
+	select DYNAMIC_INTERRUPTS
+	select HAS_CC23X0_SDK
+	select HAS_TI_CCFG
+	select DYNAMIC_DPL_OBJECTS
+	select EVENTS
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
+	select THREAD_STACK_INFO
+
+menu "Customer Configuration (CCFG)"
+depends on SOC_SERIES_CC23X0
+
+menu "Bootloader Configuration"
+
+choice CC23X0_BLDR_VTOR_TYPE
+	prompt "Pointer to user bootloader vector table"
+	default CC23X0_BLDR_VTOR_TYPE_UNDEF
+
+config CC23X0_BLDR_VTOR_TYPE_UNDEF
+	bool "ROM serial bootloader"
+
+config CC23X0_BLDR_VTOR_TYPE_FORBID
+	bool "No bootloader invoked"
+
+config CC23X0_BLDR_VTOR_TYPE_USE_FCFG
+	bool "Use factory configuration"
+
+config CC23X0_BLDR_VTOR_TYPE_FLASH
+	bool "Use valid main flash address"
+
+endchoice # CC23X0_BLDR_VTOR_TYPE
+
+config CC23X0_BLDR_VTOR_FLASH
+	hex "User bootloader vector table address" if CC23X0_BLDR_VTOR_TYPE_FLASH
+	range 0 0x0effffff
+	default 0
+	help
+	  Whether a bootloader is run or not and where bootloader parameters are picked from
+	  depends on this address. If a bootloader is selected then that bootloader is always
+	  invoked as part of the boot process.
+
+config CC23X0_BLDR_ENABLED
+	bool "Bootloader commands"
+	default n
+	help
+	  If n, bootloader ignores all commands.
+
+config CC23X0_SERIAL_IO_CFG_INDEX
+	int "Serial IO configuration index"
+	range 0 2
+	default 0
+	help
+	  Index of which I/O mapping to use for UART/SPI.
+
+config CC23X0_PIN_TRIGGER_ENABLED
+	bool "Pin trigger"
+	default n
+	help
+	  If n, bootloader unconditionally triggers. Else normal pin trigger check is performed.
+
+config CC23X0_PIN_TRIGGER_DIO
+	int "Trigger DIO pin" if CC23X0_PIN_TRIGGER_ENABLED
+	range 0 25
+	default 0
+	help
+	  Index of DIO pin to use for pin trigger check.
+
+config CC23X0_PIN_TRIGGER_LEVEL_HI
+	bool "Trigger level high" if CC23X0_PIN_TRIGGER_ENABLED
+	default n
+	help
+	  Level on trigger pin that triggers bootloader.
+	  n = Low, y = High.
+
+config CC23X0_P_APP_VTOR
+	hex "Application vector table address"
+	range 0 0x0effffff
+	default 0
+	help
+	  User application start address.
+
+endmenu # "Bootloader Configuration"
+
+menu "Hardware Options"
+
+config CC23X0_HW_OPTS_1
+	hex "Hardware options 1"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask defining which peripherals/features and how much memory is accessible.
+
+config CC23X0_HW_OPTS_2
+	hex "Hardware options 2"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask defining which peripherals/features and how much memory is accessible.
+
+endmenu # "Hardware Options"
+
+menu "Device Permission Settings"
+
+config CC23X0_ALLOW_DEBUG_PORT
+	bool "Allow enabling of SWD port"
+	default y
+	help
+	  If n, then the SWD port is disabled altogether at a certain point in boot before
+	  invoking either bootloader or application.
+
+config CC23X0_ALLOW_ENERGY_TRACE
+	bool "Allow using EnergyTrace power analyzer tool"
+	default y
+	help
+	  EnergyTrace software is an energy-based code analysis tool that measures
+	  and displays the energy profile of an application and helps optimize it for
+	  ultra-low-power consumption.
+
+config CC23X0_ALLOW_FLASH_VERIFY
+	bool "Allow flash verify by SACI"
+	default y
+	help
+	  Determines whether flash verify commands are allowed. These commands only check integrity
+	  against a provided CRC32 value, never return any flash contents. Flash verify commands
+	  are always allowed after a chip erase and until the first reset after the CCFG sector has
+	  been programmed.
+
+config CC23X0_ALLOW_FLASH_PROGRAM
+	bool "Allow flash program by SACI"
+	default y
+	help
+	  Determines whether flash programming commands are allowed.
+	  Reset to allowed after a chip erase.
+
+config CC23X0_ALLOW_CHIP_ERASE
+	bool "Allow chip erase by SACI"
+	default y
+	help
+	  Determines whether the chip erase command is allowed.
+
+config CC23X0_ALLOW_TOOLS_CLIENT_MODE
+	bool "Allow tools client mode to be enabled by SACI"
+	default y
+	help
+	  Used by TI tools such as SmartRF Studio and Packet Sniffer to allow in-situ RF testing
+	  on customer boards without disturbing the application stored in flash.
+
+config CC23X0_ALLOW_RETURN_TO_FACTORY
+	bool "Allow return-to-factory procedure by SACI"
+	default y
+	help
+	  To do full failure analysis including flash, a return to factory procedure is supported.
+
+endmenu # "Device Permission Settings"
+
+menu "SACI Settings (Secure AP Command Interface)"
+
+config CC23X0_SACI_TIMEOUT_OVERRIDE
+	bool "Override SACI timeout"
+	default y
+	help
+	  Determines if SACI timeout defined in FCFG is overridden by SACI timeout defined in CCFG.
+
+config CC23X0_SACI_TIMEOUT_EXP
+	int "SACI timeout" if CC23X0_SACI_TIMEOUT_OVERRIDE
+	range 0 7
+	default 7
+	help
+	  Configures the SACI timeout when there is a bootloader or application to boot into.
+	  SACI timeout is infinite when 0, else (2 ^ saciTimeoutExp) * 64 ms.
+
+endmenu # "SACI Settings (Secure AP Command Interface)"
+
+menu "Flash Protection Settings"
+
+config CC23X0_WR_ER_PROT_SECT0_31
+	hex "Write/Erase protection mask (sectors 0-31)"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of individual sectors in sector range [0, 31].
+	  Controls whether flash programming is allowed through SACI. The same mechanism
+	  controls whether the application is allowed to program these sectors.
+	  0 = protected.
+
+config CC23X0_WR_ER_PROT_SECT32_255
+	hex "Write/Erase protection mask (sectors 32-255)"
+	range 0 0xffffffff
+	default 0xffffffff
+	help
+	  Bitmask for write/erase protection of groups of 8 sectors.
+	  Bit i protects sectors [32 + 8i, 39 + 8i].
+	  0 = protected.
+
+config CC23X0_WR_ER_PROT_CCFG_SECT
+	hex "Write/Erase protection mask (CCFG sectors)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for write/erase protection of CCFG sectors.
+	  0 = protected.
+
+config CC23X0_WR_ER_PROT_FCFG_SECT
+	hex "Write/Erase protection mask (FCFG sectors)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for write/erase protection of FCFG sectors.
+	  0 = protected.
+
+config CC23X0_WR_ER_PROT_ENGR_SECT
+	hex "Write/Erase protection mask (ENGR sectors)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for write/erase protection of ENGR sectors.
+	  0 = protected.
+
+config CC23X0_CHIP_ER_RETAIN_SECT0_31
+	hex "Chip erase protection mask (sectors 0-31)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of individual sectors in sector range [0, 31].
+	  Controls whether a chip erase affects a sector or not. The mechanism is intended
+	  to allow flash sectors devoted to logging or runtime state/configuration to survive
+	  the chip erase during a FW update.
+	  0 = protected.
+
+config CC23X0_CHIP_ER_RETAIN_SECT32_255
+	hex "Chip erase protection mask (sectors 0-31)"
+	range 0 0xffffffff
+	default 0
+	help
+	  Bitmask for chip erase protection of groups of 8 sectors.
+	  Bit i protects sectors [32 + 8i, 39 + 8i].
+	  0 = protected.
+
+endmenu # "Flash Protection Settings"
+
+endmenu # Customer Configuration (CCFG)

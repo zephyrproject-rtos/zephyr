@@ -13,6 +13,9 @@ family:
     - name: cc1352r7
     - name: cc2652p7
     - name: cc2652r7
+  - name: cc23x0
+    socs:
+    - name: cc2340r5
   - name: cc32xx
     socs:
     - name: cc3220sf

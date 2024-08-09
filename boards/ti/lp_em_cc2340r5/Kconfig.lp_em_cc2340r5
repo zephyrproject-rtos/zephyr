@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_EM_CC2340R5
+	select SOC_CC2340R5
+
+config BOARD_USE_LF_XOSC
+	bool "Use external low-frequency crystal"
+	default y
