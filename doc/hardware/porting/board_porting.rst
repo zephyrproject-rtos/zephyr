@@ -915,6 +915,56 @@ There are some extra things you'll need to do:
 Board extensions
 ****************
 
+The board hardware model in Zephyr allows you to extend an existing board with
+new board variants. Such board extensions can be done in your custom repository
+and thus outside of the Zephyr repository.
+
+Extending an existing board with an extra variant allows you to adjust an
+existing board and thereby during build to select building for the existing,
+unmodified board, or the new variant.
+
+To extend an existing board, first create a :file:`board.yml` in your extended
+board. Make sure to use the directory structure described in
+:ref:`create-your-board-directory`.
+
+The skeleton of the board YAML file for extending a board is:
+
+.. code-block:: yaml
+
+   board:
+     extend: <existing-board-name>
+      variants:
+       - name: <new-variant>
+         qualifier: <existing-qualifier>
+
+When extending a board then your board directory should look like:
+
+.. code-block:: none
+
+   boards/<VENDOR>/plank
+   ├── board.yml
+   ├── plank_<new-qualifiers>_defconfig
+   └── plank_<new-qualifiers>.dts
+
+Replace ``plank`` with the real name of the board you extend.
+
+In some cases you might want to also adjust additional settings, like the
+:file:`Kconfig.defconfig` or :file:`Kconfig.<board>`.
+Therefore it is also possible to provide the following in addition when
+extending a board.
+
+.. code-block:: none
+
+   boards/<VENDOR>/plank
+   ├── board.cmake
+   ├── Kconfig
+   ├── Kconfig.plank
+   ├── Kconfig.defconfig
+   └── plank_<new-qualifiers>.yaml
+
+Board extensions
+****************
+
 Boards already supported by Zephyr can be extended by downstream users, such as
 ``example-application`` or vendor SDKs. In some situations, certain hardware
 description or :ref:`choices <devicetree-chosen-nodes>` can not be added in the
