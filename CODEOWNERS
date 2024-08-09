@@ -395,7 +395,6 @@
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
-/dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/aspeed/                          @aspeeddylan
 /dts/arm/atmel/                           @galak @nandojve
