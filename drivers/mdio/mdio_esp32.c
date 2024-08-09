@@ -16,6 +16,8 @@
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
+#include <soc/rtc.h>
+#include <clk_ctrl_os.h>
 
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
 
@@ -86,6 +88,35 @@ static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
 	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
 
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+static int emac_config_apll_clock(void)
+{
+	uint32_t expt_freq = MHZ(50);
+	uint32_t real_freq = 0;
+	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+
+	if (ret == ESP_ERR_INVALID_ARG) {
+		LOG_ERR("Set APLL clock coefficients failed");
+		return -EIO;
+	}
+
+	if (ret == ESP_ERR_INVALID_STATE) {
+		LOG_INF("APLL is occupied already, it is working at %d Hz", real_freq);
+	}
+
+	/* If the difference of real APLL frequency
+	 * is not within 50 ppm, i.e. 2500 Hz,
+	 * the APLL is unavailable
+	 */
+	if (abs((int)real_freq - (int)expt_freq) > 2500) {
+		LOG_ERR("The APLL is working at an unusable frequency");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 static int mdio_esp32_initialize(const struct device *dev)
 {
 	const struct mdio_esp32_dev_config *const cfg = dev->config;
@@ -112,6 +143,24 @@ static int mdio_esp32_initialize(const struct device *dev)
 
 	/* Only the mac registers are required for MDIO */
 	dev_data->hal.mac_regs = &EMAC_MAC;
+
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+	emac_hal_init(&dev_data->hal, NULL, NULL, NULL);
+	emac_hal_iomux_init_rmii();
+	BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+		DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+		"Only GPIO16/17 are allowed as a GPIO REF_CLK source!");
+	int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
+
+	emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
+	emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+	periph_rtc_apll_acquire();
+	res = emac_config_apll_clock();
+	if (res != 0) {
+		goto err;
+	}
+	rtc_clk_apll_enable(true);
+#endif
 
 	/* Init MDIO clock */
 	emac_hal_set_csr_clock_range(&dev_data->hal, esp_clk_apb_freq());
