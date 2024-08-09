@@ -1974,6 +1974,41 @@ ZTEST(devicetree_api, test_enums)
 	zassert_true(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 5), "");
 	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 6), "");
 	zassert_false(DT_ENUM_HAS_VALUE(DT_NODELABEL(test_enum_int_default_0), val, 7), "");
+
+	/* DT_ENUM_IDX_BY_IDX and DT_ENUM_HAS_VALUE_BY_IDX on string-array enum */
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0), 0);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2), 0);
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, baz));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 0, zoo));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, zoo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 1, baz));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, foo));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, baz));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, bar));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_string_array), val, 2, zoo));
+
+	/* DT_ENUM_IDX_BY_IDX and DT_ENUM_HAS_VALUE_BY_IDX on int-array enum */
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1), 4);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2), 3);
+	zassert_equal(DT_ENUM_IDX_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3), 7);
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 4));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 5));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 0, 6));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 3));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 0));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 1, 1));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 4));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 3));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 2, 7));
+	zassert_true(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 0));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 2));
+	zassert_false(DT_ENUM_HAS_VALUE_BY_IDX(DT_NODELABEL(test_enum_int_array), val, 3, 1));
 }
 #undef TO_MY_ENUM
 #undef TO_MY_ENUM_2
@@ -1992,6 +2027,18 @@ ZTEST(devicetree_api, test_enums_required_false)
 	zassert_equal(DT_ENUM_IDX_OR(DT_NODELABEL(test_enum_int_default_1),
 				     val, 4),
 		      4, "");
+	/* DT_ENUM_IDX_OR on string-array value */
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_string_array), val, 0, 2),
+		      0, "");
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_string_array), val, 5, 2),
+		      2, "");
+	/* DT_ENUM_IDX_OR on int-array value */
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_int_array),
+				     val, 0, 7),
+		      3, "");
+	zassert_equal(DT_ENUM_IDX_BY_IDX_OR(DT_NODELABEL(test_enum_int_array),
+				     val, 4, 7),
+		      7, "");
 }
 
 ZTEST(devicetree_api, test_inst_enums)
