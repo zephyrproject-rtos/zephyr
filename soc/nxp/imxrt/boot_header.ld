@@ -17,6 +17,10 @@ KEEP(*(.boot_hdr.conf))
 KEEP(*(.flash_conf))
 #endif
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
+#ifdef CONFIG_EXTERNAL_MEM_CONFIG_DATA
+	. = CONFIG_EXTERNAL_MEM_CONFIG_OFFSET;
+	KEEP(*(.boot_hdr.xmcd_data))
+#endif
 . = CONFIG_IMAGE_CONTAINER_OFFSET;
 KEEP(*(.boot_hdr.container))
 #else
