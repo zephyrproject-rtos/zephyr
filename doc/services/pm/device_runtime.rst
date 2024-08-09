@@ -124,7 +124,7 @@ by the PM subsystem to suspend or resume devices.
 .. code-block:: c
 
     static int mydev_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_SUSPEND:
