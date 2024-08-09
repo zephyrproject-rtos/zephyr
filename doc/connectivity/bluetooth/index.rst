@@ -23,3 +23,4 @@ hardware, as well as portions of a Classical Bluetooth (BR/EDR) Host layer.
    api/index.rst
    bluetooth-tools.rst
    bluetooth-shell.rst
+   bluetooth-contrib.rst
