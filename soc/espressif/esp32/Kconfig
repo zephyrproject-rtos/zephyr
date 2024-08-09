@@ -16,10 +16,6 @@ config SOC_SERIES_ESP32
 
 if SOC_SERIES_ESP32
 
-config IDF_TARGET_ESP32
-	bool "ESP32 as target board"
-	default y
-
 config ESP32_APPCPU_IRAM
 	hex "ESP32 APPCPU IRAM size"
 	depends on SOC_ESP32_PROCPU || SOC_ESP32_APPCPU
