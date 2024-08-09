@@ -33,8 +33,7 @@
 	 */
 	srsdb sp!, #MODE_SYS
 	cps #MODE_SYS
-	stmdb sp, {r0-r3, r12, lr}^
-	sub sp, #24
+	push {r0-r3, r12, lr}
 
 	/* TODO: EXTRA_EXCEPTION_INFO */
 	mov r0, sp
