@@ -276,7 +276,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             if command == 'debug':
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
-                               '-ex', 'load']
+                               '-ex', f'load {self.hex_name}' if self.hex_name is not None else 'load']
                 if self.reset:
                     client_cmd += ['-ex', 'monitor reset']
             if not self.gdb_host:
