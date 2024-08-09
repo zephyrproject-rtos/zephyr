@@ -2,13 +2,14 @@
    :name: Bluetooth: Common Audio Profile Acceptor
    :relevant-api: bt_cap bt_bap bluetooth
 
-   CAP Acceptor sample that advertises audio availability to CAP Initiators.
+   CAP Acceptor sample that advertises audio availability to CAP Initiators and CAP Commanders.
 
 Overview
 ********
 
 Application demonstrating the CAP Acceptor functionality.
 Starts by advertising for a CAP Initiator to connect and set up available streams.
+It can also be configured to start scanning for broadcast audio streams by itself.
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_acceptor` in the Zephyr tree.
 
