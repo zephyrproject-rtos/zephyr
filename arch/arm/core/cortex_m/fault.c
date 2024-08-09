@@ -1192,5 +1192,7 @@ void z_arm_fault_init(void)
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 #ifdef CONFIG_TRAP_UNALIGNED_ACCESS
 	SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
+#else
+	SCB->CCR &= ~SCB_CCR_UNALIGN_TRP_Msk;
 #endif /* CONFIG_TRAP_UNALIGNED_ACCESS */
 }
