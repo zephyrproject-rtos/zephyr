@@ -38,7 +38,7 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 	}
 
 	if (msg != NULL) {
-		return -ENOTSUP;
+		return -EMSGSIZE;
 	}
 
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
