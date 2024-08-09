@@ -1,0 +1,12 @@
+
+&eth {
+	status = "okay";
+};
+
+&phy {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
