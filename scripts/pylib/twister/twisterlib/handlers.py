@@ -342,7 +342,7 @@ class BinaryHandler(Handler):
             proc.wait()
             self.returncode = proc.returncode
             if proc.returncode != 0:
-                self.instance.status = "error"
+                self.instance.status = TwisterStatus.ERROR
                 self.instance.reason = "BinaryHandler returned {}".format(proc.returncode)
             self.try_kill_process_by_pid()
 

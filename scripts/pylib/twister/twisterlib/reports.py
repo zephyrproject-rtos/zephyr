@@ -283,13 +283,15 @@ class Reporting:
         for instance in self.instances.values():
             if platform and platform != instance.platform.name:
                 continue
-            if instance.status == "filtered" and not self.env.options.report_filtered:
+            if instance.status == TwisterStatus.FILTER and not self.env.options.report_filtered:
                 continue
-            if (filters and 'allow_status' in filters and instance.status not in filters['allow_status']):
+            if (filters and 'allow_status' in filters and \
+                instance.status not in [TwisterStatus[s] for s in filters['allow_status']]):
                 logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
                              f"not allowed for {filename}")
                 continue
-            if (filters and 'deny_status' in filters and instance.status in filters['deny_status']):
+            if (filters and 'deny_status' in filters and \
+                instance.status in [TwisterStatus[s] for s in filters['deny_status']]):
                 logger.debug(f"Skip test suite '{instance.testsuite.name}' status '{instance.status}' "
                              f"denied for {filename}")
                 continue
@@ -399,7 +401,7 @@ class Reporting:
                 suite['recording'] = instance.recording
 
             if (instance.status
-                    and instance.status not in ["error", "filtered"]
+                    and instance.status not in [TwisterStatus.ERROR, TwisterStatus.FILTER]
                     and self.env.options.create_rom_ram_report
                     and self.env.options.footprint_report is not None):
                 # Init as empty data preparing for filtering properties.
