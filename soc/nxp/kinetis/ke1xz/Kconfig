@@ -12,3 +12,4 @@ config SOC_SERIES_KE1XZ
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select PLATFORM_SPECIFIC_INIT
+	select HAS_PM
