@@ -68,6 +68,10 @@ jobs:
       run: |
         python3 -m pip install -U -r scripts/requirements-base.txt -r scripts/requirements-build-test.txt -r scripts/requirements-run-test.txt
 
+    - name: Install Pytest concurrency module
+      run: |
+        python3 -m pip install -U pytest-xdist
+
     - name: Run Pytest For Twister Black Box Tests
       shell: bash
       env:
@@ -76,4 +80,4 @@ jobs:
       run: |
         echo "Run twister tests"
         source zephyr-env.sh
-        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox
+        PYTHONPATH="./scripts/tests" pytest ./scripts/tests/twister_blackbox -n auto
