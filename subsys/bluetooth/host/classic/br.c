@@ -22,10 +22,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_br);
 
-static bt_br_discovery_cb_t *discovery_cb;
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
+static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
@@ -324,7 +324,6 @@ static bool eir_has_name(const uint8_t *eir)
 
 void bt_br_discovery_reset(void)
 {
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
@@ -334,6 +333,7 @@ static void report_discovery_results(void)
 {
 	bool resolving_names = false;
 	int i;
+	struct bt_br_discovery_cb *listener, *next;
 
 	for (i = 0; i < discovery_results_count; i++) {
 		struct discovery_priv *priv;
@@ -359,9 +359,12 @@ static void report_discovery_results(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout) {
+			listener->timeout(discovery_results, discovery_results_count);
+		}
 	}
+
 	bt_br_discovery_reset();
 }
 
@@ -437,6 +440,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
 		struct bt_br_discovery_result *result;
 		struct discovery_priv *priv;
+		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end to buffer");
@@ -460,6 +464,12 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 
 		/* we could reuse slot so make sure EIR is cleared */
 		(void)memset(result->eir, 0, sizeof(result->eir));
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+			if (listener->recv) {
+				listener->recv(result);
+			}
+		}
 	}
 }
 
@@ -468,6 +478,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
 	struct discovery_priv *priv;
+	struct bt_br_discovery_cb *listener, *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -487,6 +498,12 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	result->rssi = evt->rssi;
 	memcpy(result->cod, evt->cod, 3);
 	memcpy(result->eir, evt->eir, sizeof(result->eir));
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv) {
+			listener->recv(result);
+		}
+	}
 }
 
 void bt_hci_remote_name_request_complete(struct net_buf *buf)
@@ -497,6 +514,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	int eir_len = 240;
 	uint8_t *eir;
 	int i;
+	struct bt_br_discovery_cb *listener, *next;
 
 	result = get_result_slot(&evt->bdaddr, 0xff);
 	if (!result) {
@@ -549,6 +567,12 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 		eir += eir[0] + 1;
 	}
 
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv) {
+			listener->recv(result);
+		}
+	}
+
 check_names:
 	/* if still waiting for names */
 	for (i = 0; i < discovery_results_count; i++) {
@@ -564,8 +588,10 @@ check_names:
 	/* all names resolved, report discovery results */
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	if (discovery_cb) {
-		discovery_cb(discovery_results, discovery_results_count);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout) {
+			listener->timeout(discovery_results, discovery_results_count);
+		}
 	}
 }
 
@@ -905,8 +931,7 @@ static bool valid_br_discov_param(const struct bt_br_discovery_param *param, siz
 }
 
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
-			  struct bt_br_discovery_result *results, size_t cnt,
-			  bt_br_discovery_cb_t cb)
+			  struct bt_br_discovery_result *results, size_t cnt)
 {
 	int err;
 
@@ -929,7 +954,6 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	(void)memset(results, 0, sizeof(*results) * cnt);
 
-	discovery_cb = cb;
 	discovery_results = results;
 	discovery_results_size = cnt;
 	discovery_results_count = 0;
@@ -977,12 +1001,21 @@ int bt_br_discovery_stop(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_cb = NULL;
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 
 	return 0;
+}
+
+void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
+{
+	sys_slist_append(&discovery_cbs, &cb->node);
+}
+
+void bt_br_discovery_cb_unregister(struct bt_br_discovery_cb *cb)
+{
+	sys_slist_find_and_remove(&discovery_cbs, &cb->node);
 }
 
 static int write_scan_enable(uint8_t scan)

@@ -151,7 +151,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 
 static struct bt_br_discovery_result br_discovery_results[5];
 
-static void br_discovery_complete(struct bt_br_discovery_result *results,
+static void br_discovery_complete(const struct bt_br_discovery_result *results,
 				  size_t count)
 {
 	size_t i;
@@ -164,12 +164,18 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 	}
 }
 
+static struct bt_br_discovery_cb discovery_cb = {
+	.recv = NULL,
+	.timeout = br_discovery_complete,
+};
+
 static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 {
 	const char *action;
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
+		static bool reg_cb = true;
 		struct bt_br_discovery_param param;
 
 		param.limited = false;
@@ -183,9 +189,13 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 			param.limited = true;
 		}
 
+		if (reg_cb) {
+			reg_cb = false;
+			bt_br_discovery_cb_register(&discovery_cb);
+		}
+
 		if (bt_br_discovery_start(&param, br_discovery_results,
-					  ARRAY_SIZE(br_discovery_results),
-					  br_discovery_complete) < 0) {
+					  ARRAY_SIZE(br_discovery_results)) < 0) {
 			shell_print(sh, "Failed to start discovery");
 			return 0;
 		}
