@@ -94,6 +94,7 @@
 /boards/atmel/                            @nandojve
 /boards/arm/scobc_module1/                @yashi
 /boards/arm/v2m_beetle/                   @fvincenzo
+/boards/arm/verdin_imx8mm_m4/             @hiagofranco
 /boards/arm/olimexino_stm32/              @ydamigos
 /boards/arm/s32*/                         @manuargue
 /boards/arm/sensortile_box/               @avisconti

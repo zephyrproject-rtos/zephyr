@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2024, Toradex
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8mm_m4.dtsi>
+#include "verdin_imx8mm-pinctrl.dtsi"
+
+/ {
+	model = "Toradex Verdin iMX8M Mini";
+	compatible = "nxp,verdin_imx8mm";
+
+	aliases {
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
+		uart-4 = &uart4;
+		led0 = &led_0;
+	};
+
+	chosen {
+		zephyr,flash = &tcml_code;
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_0: led_0 {
+			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&mailbox0 {
+	status = "okay";
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_default>;
+	current-speed = <115200>;
+	status = "disabled";
+};
+
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_default>;
+	current-speed = <115200>;
+	status = "disabled";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_default>;
+	current-speed = <115200>;
+	status = "disabled";
+};
+
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart4_default>;
+	current-speed = <115200>;
+	status = "okay";
+};
