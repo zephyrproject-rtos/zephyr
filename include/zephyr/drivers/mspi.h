@@ -538,13 +538,6 @@ __subsystem struct mspi_driver_api {
  */
 __syscall int mspi_config(const struct mspi_dt_spec *spec);
 
-static inline int z_impl_mspi_config(const struct mspi_dt_spec *spec)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)spec->bus->api;
-
-	return api->config(spec);
-}
-
 /**
  * @brief Configure a MSPI controller with device specific parameters.
  *
@@ -577,16 +570,6 @@ __syscall int mspi_dev_config(const struct device *controller,
 			      const enum mspi_dev_cfg_mask param_mask,
 			      const struct mspi_dev_cfg *cfg);
 
-static inline int z_impl_mspi_dev_config(const struct device *controller,
-					 const struct mspi_dev_id *dev_id,
-					 const enum mspi_dev_cfg_mask param_mask,
-					 const struct mspi_dev_cfg *cfg)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	return api->dev_config(controller, dev_id, param_mask, cfg);
-}
-
 /**
  * @brief Query to see if it a channel is ready.
  *
@@ -599,13 +582,6 @@ static inline int z_impl_mspi_dev_config(const struct device *controller,
  * @retval 0 If MSPI channel is ready.
  */
 __syscall int mspi_get_channel_status(const struct device *controller, uint8_t ch);
-
-static inline int z_impl_mspi_get_channel_status(const struct device *controller, uint8_t ch)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	return api->get_channel_status(controller, ch);
-}
 
 /** @} */
 
@@ -642,19 +618,6 @@ __syscall int mspi_transceive(const struct device *controller,
 			      const struct mspi_dev_id *dev_id,
 			      const struct mspi_xfer *req);
 
-static inline int z_impl_mspi_transceive(const struct device *controller,
-					 const struct mspi_dev_id *dev_id,
-					 const struct mspi_xfer *req)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	if (!api->transceive) {
-		return -ENOTSUP;
-	}
-
-	return api->transceive(controller, dev_id, req);
-}
-
 /** @} */
 
 /**
@@ -680,19 +643,6 @@ __syscall int mspi_xip_config(const struct device *controller,
 			      const struct mspi_dev_id *dev_id,
 			      const struct mspi_xip_cfg *cfg);
 
-static inline int z_impl_mspi_xip_config(const struct device *controller,
-					 const struct mspi_dev_id *dev_id,
-					 const struct mspi_xip_cfg *cfg)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	if (!api->xip_config) {
-		return -ENOTSUP;
-	}
-
-	return api->xip_config(controller, dev_id, cfg);
-}
-
 /**
  * @brief Configure a MSPI scrambling settings.
  *
@@ -711,19 +661,6 @@ static inline int z_impl_mspi_xip_config(const struct device *controller,
 __syscall int mspi_scramble_config(const struct device *controller,
 				   const struct mspi_dev_id *dev_id,
 				   const struct mspi_scramble_cfg *cfg);
-
-static inline int z_impl_mspi_scramble_config(const struct device *controller,
-					      const struct mspi_dev_id *dev_id,
-					      const struct mspi_scramble_cfg *cfg)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	if (!api->scramble_config) {
-		return -ENOTSUP;
-	}
-
-	return api->scramble_config(controller, dev_id, cfg);
-}
 
 /**
  * @brief Configure a MSPI timing settings.
@@ -744,19 +681,6 @@ static inline int z_impl_mspi_scramble_config(const struct device *controller,
 __syscall int mspi_timing_config(const struct device *controller,
 				 const struct mspi_dev_id *dev_id,
 				 const uint32_t param_mask, void *cfg);
-
-static inline int z_impl_mspi_timing_config(const struct device *controller,
-					    const struct mspi_dev_id *dev_id,
-					    const uint32_t param_mask, void *cfg)
-{
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	if (!api->timing_config) {
-		return -ENOTSUP;
-	}
-
-	return api->timing_config(controller, dev_id, param_mask, cfg);
-}
 
 /** @} */
 
@@ -806,5 +730,6 @@ static inline int mspi_register_callback(const struct device *controller,
 /**
  * @}
  */
+#include <zephyr/drivers/mspi/internal/mspi_impl.h>
 #include <zephyr/syscalls/mspi.h>
 #endif /* ZEPHYR_INCLUDE_MSPI_H_ */

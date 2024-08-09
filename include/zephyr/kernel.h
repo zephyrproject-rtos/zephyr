@@ -720,12 +720,6 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout);
  */
 __syscall k_ticks_t k_thread_timeout_expires_ticks(const struct k_thread *thread);
 
-static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
-						const struct k_thread *thread)
-{
-	return z_timeout_expires(&thread->base.timeout);
-}
-
 /**
  * @brief Get time remaining before a thread wakes up, in system ticks
  *
@@ -734,12 +728,6 @@ static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
  * waiting, it returns zero.
  */
 __syscall k_ticks_t k_thread_timeout_remaining_ticks(const struct k_thread *thread);
-
-static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
-						const struct k_thread *thread)
-{
-	return z_timeout_remaining(&thread->base.timeout);
-}
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
@@ -1715,12 +1703,6 @@ __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
  */
 __syscall k_ticks_t k_timer_expires_ticks(const struct k_timer *timer);
 
-static inline k_ticks_t z_impl_k_timer_expires_ticks(
-				       const struct k_timer *timer)
-{
-	return z_timeout_expires(&timer->timeout);
-}
-
 /**
  * @brief Get time remaining before a timer next expires, in system ticks
  *
@@ -1732,12 +1714,6 @@ static inline k_ticks_t z_impl_k_timer_expires_ticks(
  * @return Remaining time until expiration, in ticks
  */
 __syscall k_ticks_t k_timer_remaining_ticks(const struct k_timer *timer);
-
-static inline k_ticks_t z_impl_k_timer_remaining_ticks(
-				       const struct k_timer *timer)
-{
-	return z_timeout_remaining(&timer->timeout);
-}
 
 /**
  * @brief Get time remaining before a timer next expires.
@@ -1771,15 +1747,6 @@ static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 __syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
 
 /**
- * @internal
- */
-static inline void z_impl_k_timer_user_data_set(struct k_timer *timer,
-					       void *user_data)
-{
-	timer->user_data = user_data;
-}
-
-/**
  * @brief Retrieve the user-specific data from a timer.
  *
  * @param timer     Address of timer.
@@ -1787,11 +1754,6 @@ static inline void z_impl_k_timer_user_data_set(struct k_timer *timer,
  * @return The user data.
  */
 __syscall void *k_timer_user_data_get(const struct k_timer *timer);
-
-static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
-{
-	return timer->user_data;
-}
 
 /** @} */
 
@@ -2166,11 +2128,6 @@ bool k_queue_unique_append(struct k_queue *queue, void *data);
  * @return 0 if data is available.
  */
 __syscall int k_queue_is_empty(struct k_queue *queue);
-
-static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
-{
-	return sys_sflist_is_empty(&queue->data_q) ? 1 : 0;
-}
 
 /**
  * @brief Peek element at the head of queue.
@@ -3301,14 +3258,6 @@ __syscall void k_sem_reset(struct k_sem *sem);
  * @return Current semaphore count.
  */
 __syscall unsigned int k_sem_count_get(struct k_sem *sem);
-
-/**
- * @internal
- */
-static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
-{
-	return sem->count;
-}
 
 /**
  * @brief Statically define and initialize a semaphore.
@@ -4758,11 +4707,6 @@ __syscall void  k_msgq_get_attrs(struct k_msgq *msgq,
 				 struct k_msgq_attrs *attrs);
 
 
-static inline uint32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
-{
-	return msgq->max_msgs - msgq->used_msgs;
-}
-
 /**
  * @brief Get the number of messages in a message queue.
  *
@@ -4773,11 +4717,6 @@ static inline uint32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
  * @return Number of messages.
  */
 __syscall uint32_t k_msgq_num_used_get(struct k_msgq *msgq);
-
-static inline uint32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
-{
-	return msgq->used_msgs;
-}
 
 /** @} */
 
@@ -6247,6 +6186,7 @@ void k_sys_runtime_stats_disable(void);
 #endif
 
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/kernel/internal/kernel_impl.h>
 #include <zephyr/syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

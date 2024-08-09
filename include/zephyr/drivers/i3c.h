@@ -1555,19 +1555,6 @@ static inline int i3c_do_daa(const struct device *dev)
 __syscall int i3c_do_ccc(const struct device *dev,
 			 struct i3c_ccc_payload *payload);
 
-static inline int z_impl_i3c_do_ccc(const struct device *dev,
-				    struct i3c_ccc_payload *payload)
-{
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)dev->api;
-
-	if (api->do_ccc == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->do_ccc(dev, payload);
-}
-
 /**
  * @addtogroup i3c_transfer_api
  * @{
@@ -1601,15 +1588,6 @@ static inline int z_impl_i3c_do_ccc(const struct device *dev,
  */
 __syscall int i3c_transfer(struct i3c_device_desc *target,
 			   struct i3c_msg *msgs, uint8_t num_msgs);
-
-static inline int z_impl_i3c_transfer(struct i3c_device_desc *target,
-				      struct i3c_msg *msgs, uint8_t num_msgs)
-{
-	const struct i3c_driver_api *api =
-		(const struct i3c_driver_api *)target->bus->api;
-
-	return api->i3c_xfers(target->bus, target, msgs, num_msgs);
-}
 
 /** @} */
 
@@ -2095,6 +2073,7 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target);
  * @}
  */
 
+#include <zephyr/drivers/i3c/internal/i3c_impl.h>
 #include <zephyr/syscalls/i3c.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I3C_H_ */

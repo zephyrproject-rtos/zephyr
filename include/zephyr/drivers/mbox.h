@@ -263,20 +263,6 @@ static inline bool mbox_is_ready_dt(const struct mbox_dt_spec *spec)
 __syscall int mbox_send(const struct device *dev, mbox_channel_id_t channel_id,
 			const struct mbox_msg *msg);
 
-static inline int z_impl_mbox_send(const struct device *dev,
-				   mbox_channel_id_t channel_id,
-				   const struct mbox_msg *msg)
-{
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
-
-	if (api->send == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->send(dev, channel_id, msg);
-}
-
 /**
  * @brief Try to send a message over the MBOX device from a struct mbox_dt_spec.
  *
@@ -362,18 +348,6 @@ static inline int mbox_register_callback_dt(const struct mbox_dt_spec *spec,
  */
 __syscall int mbox_mtu_get(const struct device *dev);
 
-static inline int z_impl_mbox_mtu_get(const struct device *dev)
-{
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
-
-	if (api->mtu_get == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->mtu_get(dev);
-}
-
 /**
  * @brief Return the maximum number of bytes possible in an outbound message
  *        from struct mbox_dt_spec.
@@ -415,20 +389,6 @@ static inline int mbox_mtu_get_dt(const struct mbox_dt_spec *spec)
 __syscall int mbox_set_enabled(const struct device *dev,
 			       mbox_channel_id_t channel_id, bool enabled);
 
-static inline int z_impl_mbox_set_enabled(const struct device *dev,
-					  mbox_channel_id_t channel_id,
-					  bool enabled)
-{
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
-
-	if (api->set_enabled == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_enabled(dev, channel_id, enabled);
-}
-
 /**
  * @brief Enable (disable) interrupts and callbacks for inbound channels from a
  *        struct mbox_dt_spec.
@@ -456,18 +416,6 @@ static inline int mbox_set_enabled_dt(const struct mbox_dt_spec *spec,
  */
 __syscall uint32_t mbox_max_channels_get(const struct device *dev);
 
-static inline uint32_t z_impl_mbox_max_channels_get(const struct device *dev)
-{
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
-
-	if (api->max_channels_get == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->max_channels_get(dev);
-}
-
 /**
  * @brief Return the maximum number of channels from a struct mbox_dt_spec.
  *
@@ -486,6 +434,7 @@ static inline int mbox_max_channels_get_dt(const struct mbox_dt_spec *spec)
 }
 #endif
 
+#include <zephyr/drivers/mbox/internal/mbox_impl.h>
 #include <zephyr/syscalls/mbox.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MBOX_H_ */

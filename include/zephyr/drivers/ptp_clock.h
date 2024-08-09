@@ -56,15 +56,6 @@ static inline int ptp_clock_set(const struct device *dev,
  */
 __syscall int ptp_clock_get(const struct device *dev, struct net_ptp_time *tm);
 
-static inline int z_impl_ptp_clock_get(const struct device *dev,
-				       struct net_ptp_time *tm)
-{
-	const struct ptp_clock_driver_api *api =
-		(const struct ptp_clock_driver_api *)dev->api;
-
-	return api->get(dev, tm);
-}
-
 /**
  * @brief Adjust the PTP clock time.
  *
@@ -101,6 +92,7 @@ static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 }
 #endif
 
+#include <zephyr/drivers/ptp_clock/internal/ptp_clock_impl.h>
 #include <zephyr/syscalls/ptp_clock.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PTP_CLOCK_H_ */

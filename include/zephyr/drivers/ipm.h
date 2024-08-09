@@ -146,16 +146,6 @@ __subsystem struct ipm_driver_api {
 __syscall int ipm_send(const struct device *ipmdev, int wait, uint32_t id,
 		       const void *data, int size);
 
-static inline int z_impl_ipm_send(const struct device *ipmdev, int wait,
-				  uint32_t id,
-				  const void *data, int size)
-{
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->send(ipmdev, wait, id, data, size);
-}
-
 /**
  * @brief Register a callback function for incoming messages.
  *
@@ -185,15 +175,6 @@ static inline void ipm_register_callback(const struct device *ipmdev,
  */
 __syscall int ipm_max_data_size_get(const struct device *ipmdev);
 
-static inline int z_impl_ipm_max_data_size_get(const struct device *ipmdev)
-{
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_data_size_get(ipmdev);
-}
-
-
 /**
  * @brief Return the maximum id value possible in an outbound message.
  *
@@ -206,14 +187,6 @@ static inline int z_impl_ipm_max_data_size_get(const struct device *ipmdev)
  */
 __syscall uint32_t ipm_max_id_val_get(const struct device *ipmdev);
 
-static inline uint32_t z_impl_ipm_max_id_val_get(const struct device *ipmdev)
-{
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->max_id_val_get(ipmdev);
-}
-
 /**
  * @brief Enable interrupts and callbacks for inbound channels.
  *
@@ -224,15 +197,6 @@ static inline uint32_t z_impl_ipm_max_id_val_get(const struct device *ipmdev)
  * @retval -EINVAL If it isn't an inbound channel.
  */
 __syscall int ipm_set_enabled(const struct device *ipmdev, int enable);
-
-static inline int z_impl_ipm_set_enabled(const struct device *ipmdev,
-					 int enable)
-{
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	return api->set_enabled(ipmdev, enable);
-}
 
 /**
  * @brief Signal asynchronous command completion
@@ -250,18 +214,6 @@ static inline int z_impl_ipm_set_enabled(const struct device *ipmdev,
  */
 __syscall void ipm_complete(const struct device *ipmdev);
 
-static inline void z_impl_ipm_complete(const struct device *ipmdev)
-{
-#ifdef CONFIG_IPM_CALLBACK_ASYNC
-	const struct ipm_driver_api *api =
-		(const struct ipm_driver_api *)ipmdev->api;
-
-	if (api->complete != NULL) {
-		api->complete(ipmdev);
-	}
-#endif
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -270,6 +222,7 @@ static inline void z_impl_ipm_complete(const struct device *ipmdev)
  * @}
  */
 
+#include <zephyr/drivers/ipm/internal/ipm_impl.h>
 #include <zephyr/syscalls/ipm.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_IPM_H_ */

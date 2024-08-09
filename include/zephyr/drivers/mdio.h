@@ -68,16 +68,6 @@ __subsystem struct mdio_driver_api {
  */
 __syscall void mdio_bus_enable(const struct device *dev);
 
-static inline void z_impl_mdio_bus_enable(const struct device *dev)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->bus_enable != NULL) {
-		api->bus_enable(dev);
-	}
-}
-
 /**
  * @brief      Disable MDIO bus and tri-state drivers
  *
@@ -85,16 +75,6 @@ static inline void z_impl_mdio_bus_enable(const struct device *dev)
  *
  */
 __syscall void mdio_bus_disable(const struct device *dev);
-
-static inline void z_impl_mdio_bus_disable(const struct device *dev)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->bus_disable != NULL) {
-		api->bus_disable(dev);
-	}
-}
 
 /**
  * @brief      Read from MDIO Bus
@@ -114,19 +94,6 @@ static inline void z_impl_mdio_bus_disable(const struct device *dev)
  */
 __syscall int mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad,
 			uint16_t *data);
-
-static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
-				   uint8_t regad, uint16_t *data)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->read == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->read(dev, prtad, regad, data);
-}
 
 
 /**
@@ -148,19 +115,6 @@ static inline int z_impl_mdio_read(const struct device *dev, uint8_t prtad,
 __syscall int mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad,
 			 uint16_t data);
 
-static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
-				    uint8_t regad, uint16_t data)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->write == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->write(dev, prtad, regad, data);
-}
-
 /**
  * @brief      Read from MDIO Bus using Clause 45 access
  *
@@ -180,20 +134,6 @@ static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
  */
 __syscall int mdio_read_c45(const struct device *dev, uint8_t prtad,
 			    uint8_t devad, uint16_t regad, uint16_t *data);
-
-static inline int z_impl_mdio_read_c45(const struct device *dev, uint8_t prtad,
-				       uint8_t devad, uint16_t regad,
-				       uint16_t *data)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->read_c45 == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->read_c45(dev, prtad, devad, regad, data);
-}
 
 /**
  * @brief      Write to MDIO bus using Clause 45 access
@@ -215,20 +155,6 @@ static inline int z_impl_mdio_read_c45(const struct device *dev, uint8_t prtad,
 __syscall int mdio_write_c45(const struct device *dev, uint8_t prtad,
 			     uint8_t devad, uint16_t regad, uint16_t data);
 
-static inline int z_impl_mdio_write_c45(const struct device *dev, uint8_t prtad,
-					uint8_t devad, uint16_t regad,
-					uint16_t data)
-{
-	const struct mdio_driver_api *api =
-		(const struct mdio_driver_api *)dev->api;
-
-	if (api->write_c45 == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->write_c45(dev, prtad, devad, regad, data);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -237,6 +163,7 @@ static inline int z_impl_mdio_write_c45(const struct device *dev, uint8_t prtad,
  * @}
  */
 
+#include <zephyr/drivers/mdio/internal/mdio_impl.h>
 #include <zephyr/syscalls/mdio.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MDIO_H_ */

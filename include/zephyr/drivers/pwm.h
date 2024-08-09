@@ -480,20 +480,6 @@ __syscall int pwm_set_cycles(const struct device *dev, uint32_t channel,
 			     uint32_t period, uint32_t pulse,
 			     pwm_flags_t flags);
 
-static inline int z_impl_pwm_set_cycles(const struct device *dev,
-					uint32_t channel, uint32_t period,
-					uint32_t pulse, pwm_flags_t flags)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (pulse > period) {
-		return -EINVAL;
-	}
-
-	return api->set_cycles(dev, channel, period, pulse, flags);
-}
-
 /**
  * @brief Get the clock rate (cycles per second) for a single PWM output.
  *
@@ -507,16 +493,6 @@ static inline int z_impl_pwm_set_cycles(const struct device *dev,
  */
 __syscall int pwm_get_cycles_per_sec(const struct device *dev, uint32_t channel,
 				     uint64_t *cycles);
-
-static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
-						uint32_t channel,
-						uint64_t *cycles)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	return api->get_cycles_per_sec(dev, channel, cycles);
-}
 
 /**
  * @brief Set the period and pulse width in nanoseconds for a single PWM output.
@@ -740,21 +716,6 @@ static inline int pwm_configure_capture(const struct device *dev,
  */
 __syscall int pwm_enable_capture(const struct device *dev, uint32_t channel);
 
-#ifdef CONFIG_PWM_CAPTURE
-static inline int z_impl_pwm_enable_capture(const struct device *dev,
-					    uint32_t channel)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (api->enable_capture == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enable_capture(dev, channel);
-}
-#endif /* CONFIG_PWM_CAPTURE */
-
 /**
  * @brief Disable PWM period/pulse width capture for a single PWM input.
  *
@@ -770,21 +731,6 @@ static inline int z_impl_pwm_enable_capture(const struct device *dev,
  * @retval -EIO if IO error occurred while disabling PWM capture
  */
 __syscall int pwm_disable_capture(const struct device *dev, uint32_t channel);
-
-#ifdef CONFIG_PWM_CAPTURE
-static inline int z_impl_pwm_disable_capture(const struct device *dev,
-					     uint32_t channel)
-{
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	if (api->disable_capture == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->disable_capture(dev, channel);
-}
-#endif /* CONFIG_PWM_CAPTURE */
 
 /**
  * @brief Capture a single PWM period/pulse width in clock cycles for a single
@@ -948,6 +894,7 @@ static inline bool pwm_is_ready_dt(const struct pwm_dt_spec *spec)
  * @}
  */
 
+#include <zephyr/drivers/pwm/internal/pwm_impl.h>
 #include <zephyr/syscalls/pwm.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PWM_H_ */

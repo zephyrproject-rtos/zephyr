@@ -253,17 +253,6 @@ struct gnss_satellites_callback {
  */
 __syscall int gnss_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms);
 
-static inline int z_impl_gnss_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_fix_rate == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_fix_rate(dev, fix_interval_ms);
-}
-
 /**
  * @brief Get the GNSS fix rate
  *
@@ -274,17 +263,6 @@ static inline int z_impl_gnss_set_fix_rate(const struct device *dev, uint32_t fi
  * @return -errno negative errno code on failure
  */
 __syscall int gnss_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms);
-
-static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *fix_interval_ms)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_fix_rate == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_fix_rate(dev, fix_interval_ms);
-}
 
 /**
  * @brief Set the GNSS periodic tracking configuration
@@ -298,18 +276,6 @@ static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *f
 __syscall int gnss_set_periodic_config(const struct device *dev,
 				       const struct gnss_periodic_config *config);
 
-static inline int z_impl_gnss_set_periodic_config(const struct device *dev,
-						  const struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_periodic_config(dev, config);
-}
-
 /**
  * @brief Get the GNSS periodic tracking configuration
  *
@@ -321,18 +287,6 @@ static inline int z_impl_gnss_set_periodic_config(const struct device *dev,
  */
 __syscall int gnss_get_periodic_config(const struct device *dev,
 				       struct gnss_periodic_config *config);
-
-static inline int z_impl_gnss_get_periodic_config(const struct device *dev,
-						  struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_periodic_config(dev, config);
-}
 
 /**
  * @brief Set the GNSS navigation mode
@@ -346,18 +300,6 @@ static inline int z_impl_gnss_get_periodic_config(const struct device *dev,
 __syscall int gnss_set_navigation_mode(const struct device *dev,
 				       enum gnss_navigation_mode mode);
 
-static inline int z_impl_gnss_set_navigation_mode(const struct device *dev,
-						  enum gnss_navigation_mode mode)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_navigation_mode == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_navigation_mode(dev, mode);
-}
-
 /**
  * @brief Get the GNSS navigation mode
  *
@@ -370,18 +312,6 @@ static inline int z_impl_gnss_set_navigation_mode(const struct device *dev,
 __syscall int gnss_get_navigation_mode(const struct device *dev,
 				       enum gnss_navigation_mode *mode);
 
-static inline int z_impl_gnss_get_navigation_mode(const struct device *dev,
-						  enum gnss_navigation_mode *mode)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_navigation_mode == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_navigation_mode(dev, mode);
-}
-
 /**
  * @brief Set enabled GNSS systems
  *
@@ -392,18 +322,6 @@ static inline int z_impl_gnss_get_navigation_mode(const struct device *dev,
  * @return -errno negative errno code on failure
  */
 __syscall int gnss_set_enabled_systems(const struct device *dev, gnss_systems_t systems);
-
-static inline int z_impl_gnss_set_enabled_systems(const struct device *dev,
-						  gnss_systems_t systems)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_enabled_systems == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_enabled_systems(dev, systems);
-}
 
 /**
  * @brief Get enabled GNSS systems
@@ -416,18 +334,6 @@ static inline int z_impl_gnss_set_enabled_systems(const struct device *dev,
  */
 __syscall int gnss_get_enabled_systems(const struct device *dev, gnss_systems_t *systems);
 
-static inline int z_impl_gnss_get_enabled_systems(const struct device *dev,
-						  gnss_systems_t *systems)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_enabled_systems == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_enabled_systems(dev, systems);
-}
-
 /**
  * @brief Get supported GNSS systems
  *
@@ -438,18 +344,6 @@ static inline int z_impl_gnss_get_enabled_systems(const struct device *dev,
  * @return -errno negative errno code on failure
  */
 __syscall int gnss_get_supported_systems(const struct device *dev, gnss_systems_t *systems);
-
-static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
-						    gnss_systems_t *systems)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_supported_systems == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_supported_systems(dev, systems);
-}
 
 /**
  * @brief Register a callback structure for GNSS data published
@@ -493,6 +387,7 @@ static inline int z_impl_gnss_get_supported_systems(const struct device *dev,
 }
 #endif
 
+#include <zephyr/drivers/gnss/internal/gnss_impl.h>
 #include <zephyr/syscalls/gnss.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GNSS_H_ */

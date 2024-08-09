@@ -138,18 +138,6 @@ __subsystem struct led_driver_api {
 __syscall int led_blink(const struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off);
 
-static inline int z_impl_led_blink(const struct device *dev, uint32_t led,
-				   uint32_t delay_on, uint32_t delay_off)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	if (api->blink == NULL) {
-		return -ENOSYS;
-	}
-	return api->blink(dev, led, delay_on, delay_off);
-}
-
 /**
  * @brief Get LED information
  *
@@ -162,19 +150,6 @@ static inline int z_impl_led_blink(const struct device *dev, uint32_t led,
  */
 __syscall int led_get_info(const struct device *dev, uint32_t led,
 			   const struct led_info **info);
-
-static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
-				      const struct led_info **info)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	if (api->get_info == NULL) {
-		*info = NULL;
-		return -ENOSYS;
-	}
-	return api->get_info(dev, led, info);
-}
 
 /**
  * @brief Set LED brightness
@@ -193,19 +168,6 @@ static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
  */
 __syscall int led_set_brightness(const struct device *dev, uint32_t led,
 				     uint8_t value);
-
-static inline int z_impl_led_set_brightness(const struct device *dev,
-					    uint32_t led,
-					    uint8_t value)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	if (api->set_brightness == NULL) {
-		return -ENOSYS;
-	}
-	return api->set_brightness(dev, led, value);
-}
 
 /**
  * @brief Write/update a strip of LED channels
@@ -227,19 +189,6 @@ __syscall int led_write_channels(const struct device *dev,
 				 uint32_t start_channel,
 				 uint32_t num_channels, const uint8_t *buf);
 
-static inline int
-z_impl_led_write_channels(const struct device *dev, uint32_t start_channel,
-			  uint32_t num_channels, const uint8_t *buf)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	if (api->write_channels == NULL) {
-		return -ENOSYS;
-	}
-	return api->write_channels(dev, start_channel, num_channels, buf);
-}
-
 /**
  * @brief Set a single LED channel
  *
@@ -254,12 +203,6 @@ z_impl_led_write_channels(const struct device *dev, uint32_t start_channel,
  */
 __syscall int led_set_channel(const struct device *dev,
 			      uint32_t channel, uint8_t value);
-
-static inline int z_impl_led_set_channel(const struct device *dev,
-					 uint32_t channel, uint8_t value)
-{
-	return z_impl_led_write_channels(dev, channel, 1, &value);
-}
 
 /**
  * @brief Set LED color
@@ -280,18 +223,6 @@ static inline int z_impl_led_set_channel(const struct device *dev,
 __syscall int led_set_color(const struct device *dev, uint32_t led,
 			    uint8_t num_colors, const uint8_t *color);
 
-static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
-				       uint8_t num_colors, const uint8_t *color)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	if (api->set_color == NULL) {
-		return -ENOSYS;
-	}
-	return api->set_color(dev, led, num_colors, color);
-}
-
 /**
  * @brief Turn on an LED
  *
@@ -302,14 +233,6 @@ static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
  * @return 0 on success, negative on error
  */
 __syscall int led_on(const struct device *dev, uint32_t led);
-
-static inline int z_impl_led_on(const struct device *dev, uint32_t led)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	return api->on(dev, led);
-}
 
 /**
  * @brief Turn off an LED
@@ -322,14 +245,6 @@ static inline int z_impl_led_on(const struct device *dev, uint32_t led)
  */
 __syscall int led_off(const struct device *dev, uint32_t led);
 
-static inline int z_impl_led_off(const struct device *dev, uint32_t led)
-{
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
-
-	return api->off(dev, led);
-}
-
 /**
  * @}
  */
@@ -338,6 +253,7 @@ static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 }
 #endif
 
+#include <zephyr/drivers/led/internal/led_impl.h>
 #include <zephyr/syscalls/led.h>
 
 #endif	/* ZEPHYR_INCLUDE_DRIVERS_LED_H_ */

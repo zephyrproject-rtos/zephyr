@@ -256,14 +256,6 @@ __subsystem struct counter_driver_api {
  */
 __syscall bool counter_is_counting_up(const struct device *dev);
 
-static inline bool z_impl_counter_is_counting_up(const struct device *dev)
-{
-	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config;
-
-	return config->flags & COUNTER_CONFIG_INFO_COUNT_UP;
-}
-
 /**
  * @brief Function to get number of alarm channels.
  *
@@ -272,14 +264,6 @@ static inline bool z_impl_counter_is_counting_up(const struct device *dev)
  * @return Number of alarm channels.
  */
 __syscall uint8_t counter_get_num_of_channels(const struct device *dev);
-
-static inline uint8_t z_impl_counter_get_num_of_channels(const struct device *dev)
-{
-	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config;
-
-	return config->channels;
-}
 
 /**
  * @brief Function to get counter frequency.
@@ -291,16 +275,6 @@ static inline uint8_t z_impl_counter_get_num_of_channels(const struct device *de
  */
 __syscall uint32_t counter_get_frequency(const struct device *dev);
 
-static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
-{
-	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->get_freq ? api->get_freq(dev) : config->freq;
-}
-
 /**
  * @brief Function to convert microseconds to ticks.
  *
@@ -310,14 +284,6 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
  * @return Converted ticks. Ticks will be saturated if exceed 32 bits.
  */
 __syscall uint32_t counter_us_to_ticks(const struct device *dev, uint64_t us);
-
-static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev,
-					       uint64_t us)
-{
-	uint64_t ticks = (us * z_impl_counter_get_frequency(dev)) / USEC_PER_SEC;
-
-	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
-}
 
 /**
  * @brief Function to convert ticks to microseconds.
@@ -329,12 +295,6 @@ static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev,
  */
 __syscall uint64_t counter_ticks_to_us(const struct device *dev, uint32_t ticks);
 
-static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
-					       uint32_t ticks)
-{
-	return ((uint64_t)ticks * USEC_PER_SEC) / z_impl_counter_get_frequency(dev);
-}
-
 /**
  * @brief Function to retrieve maximum top value that can be set.
  *
@@ -343,14 +303,6 @@ static inline uint64_t z_impl_counter_ticks_to_us(const struct device *dev,
  * @return Max top value.
  */
 __syscall uint32_t counter_get_max_top_value(const struct device *dev);
-
-static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev)
-{
-	const struct counter_config_info *config =
-			(const struct counter_config_info *)dev->config;
-
-	return config->max_top_value;
-}
 
 /**
  * @brief Start counter device in free running mode.
@@ -361,14 +313,6 @@ static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev
  * @retval Negative errno code if failure.
  */
 __syscall int counter_start(const struct device *dev);
-
-static inline int z_impl_counter_start(const struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->start(dev);
-}
 
 /**
  * @brief Stop counter device.
@@ -381,14 +325,6 @@ static inline int z_impl_counter_start(const struct device *dev)
  */
 __syscall int counter_stop(const struct device *dev);
 
-static inline int z_impl_counter_stop(const struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->stop(dev);
-}
-
 /**
  * @brief Get current counter value.
  * @param dev Pointer to the device structure for the driver instance.
@@ -399,15 +335,6 @@ static inline int z_impl_counter_stop(const struct device *dev)
  */
 __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
-static inline int z_impl_counter_get_value(const struct device *dev,
-					   uint32_t *ticks)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->get_value(dev, ticks);
-}
-
 /**
  * @brief Get current counter 64-bit value.
  * @param dev Pointer to the device structure for the driver instance.
@@ -417,19 +344,6 @@ static inline int z_impl_counter_get_value(const struct device *dev,
  * @retval Negative error code on failure getting the counter value
  */
 __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
-
-static inline int z_impl_counter_get_value_64(const struct device *dev,
-					   uint64_t *ticks)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	if (!api->get_value_64) {
-		return -ENOTSUP;
-	}
-
-	return api->get_value_64(dev, ticks);
-}
 
 /**
  * @brief Set a single shot alarm on a channel.
@@ -455,20 +369,6 @@ __syscall int counter_set_channel_alarm(const struct device *dev,
 					uint8_t chan_id,
 					const struct counter_alarm_cfg *alarm_cfg);
 
-static inline int z_impl_counter_set_channel_alarm(const struct device *dev,
-						   uint8_t chan_id,
-						   const struct counter_alarm_cfg *alarm_cfg)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	if (chan_id >= counter_get_num_of_channels(dev)) {
-		return -ENOTSUP;
-	}
-
-	return api->set_alarm(dev, chan_id, alarm_cfg);
-}
-
 /**
  * @brief Cancel an alarm on a channel.
  *
@@ -483,19 +383,6 @@ static inline int z_impl_counter_set_channel_alarm(const struct device *dev,
  */
 __syscall int counter_cancel_channel_alarm(const struct device *dev,
 					   uint8_t chan_id);
-
-static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev,
-						      uint8_t chan_id)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	if (chan_id >= counter_get_num_of_channels(dev)) {
-		return -ENOTSUP;
-	}
-
-	return api->cancel_alarm(dev, chan_id);
-}
 
 /**
  * @brief Set counter top value.
@@ -524,20 +411,6 @@ static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev,
 __syscall int counter_set_top_value(const struct device *dev,
 				    const struct counter_top_cfg *cfg);
 
-static inline int z_impl_counter_set_top_value(const struct device *dev,
-					       const struct counter_top_cfg
-					       *cfg)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	if (cfg->ticks > counter_get_max_top_value(dev)) {
-		return -EINVAL;
-	}
-
-	return api->set_top_value(dev, cfg);
-}
-
 /**
  * @brief Function to get pending interrupts
  *
@@ -553,14 +426,6 @@ static inline int z_impl_counter_set_top_value(const struct device *dev,
  */
 __syscall int counter_get_pending_int(const struct device *dev);
 
-static inline int z_impl_counter_get_pending_int(const struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->get_pending_int(dev);
-}
-
 /**
  * @brief Function to retrieve current top value.
  *
@@ -569,14 +434,6 @@ static inline int z_impl_counter_get_pending_int(const struct device *dev)
  * @return Top value.
  */
 __syscall uint32_t counter_get_top_value(const struct device *dev);
-
-static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->get_top_value(dev);
-}
 
 /**
  * @brief Set guard period in counter ticks.
@@ -634,19 +491,6 @@ __syscall int counter_set_guard_period(const struct device *dev,
 					uint32_t ticks,
 					uint32_t flags);
 
-static inline int z_impl_counter_set_guard_period(const struct device *dev,
-						   uint32_t ticks, uint32_t flags)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	if (!api->set_guard_period) {
-		return -ENOTSUP;
-	}
-
-	return api->set_guard_period(dev, ticks, flags);
-}
-
 /**
  * @brief Return guard period.
  *
@@ -661,15 +505,6 @@ static inline int z_impl_counter_set_guard_period(const struct device *dev,
 __syscall uint32_t counter_get_guard_period(const struct device *dev,
 					    uint32_t flags);
 
-static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
-							uint32_t flags)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return (api->get_guard_period) ? api->get_guard_period(dev, flags) : 0;
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -678,6 +513,7 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/counter/internal/counter_impl.h>
 #include <zephyr/syscalls/counter.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_ */

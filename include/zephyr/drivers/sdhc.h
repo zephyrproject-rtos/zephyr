@@ -287,18 +287,6 @@ __subsystem struct sdhc_driver_api {
  */
 __syscall int sdhc_hw_reset(const struct device *dev);
 
-static inline int z_impl_sdhc_hw_reset(const struct device *dev)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->reset) {
-		return -ENOSYS;
-	}
-
-	return api->reset(dev);
-}
-
-
 /**
  * @brief Send command to SDHC
  *
@@ -315,19 +303,6 @@ static inline int z_impl_sdhc_hw_reset(const struct device *dev)
 __syscall int sdhc_request(const struct device *dev, struct sdhc_command *cmd,
 			   struct sdhc_data *data);
 
-static inline int z_impl_sdhc_request(const struct device *dev,
-				      struct sdhc_command *cmd,
-				      struct sdhc_data *data)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->request) {
-		return -ENOSYS;
-	}
-
-	return api->request(dev, cmd, data);
-}
-
 /**
  * @brief set I/O properties of SDHC
  *
@@ -342,18 +317,6 @@ static inline int z_impl_sdhc_request(const struct device *dev,
  */
 __syscall int sdhc_set_io(const struct device *dev, struct sdhc_io *io);
 
-static inline int z_impl_sdhc_set_io(const struct device *dev,
-				     struct sdhc_io *io)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->set_io) {
-		return -ENOSYS;
-	}
-
-	return api->set_io(dev, io);
-}
-
 /**
  * @brief check for SDHC card presence
  *
@@ -366,18 +329,6 @@ static inline int z_impl_sdhc_set_io(const struct device *dev,
  * @retval -EIO I/O error
  */
 __syscall int sdhc_card_present(const struct device *dev);
-
-static inline int z_impl_sdhc_card_present(const struct device *dev)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->get_card_present) {
-		return -ENOSYS;
-	}
-
-	return api->get_card_present(dev);
-}
-
 
 /**
  * @brief run SDHC tuning
@@ -392,17 +343,6 @@ static inline int z_impl_sdhc_card_present(const struct device *dev)
  */
 __syscall int sdhc_execute_tuning(const struct device *dev);
 
-static inline int z_impl_sdhc_execute_tuning(const struct device *dev)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->execute_tuning) {
-		return -ENOSYS;
-	}
-
-	return api->execute_tuning(dev);
-}
-
 /**
  * @brief check if SD card is busy
  *
@@ -416,18 +356,6 @@ static inline int z_impl_sdhc_execute_tuning(const struct device *dev)
  */
 __syscall int sdhc_card_busy(const struct device *dev);
 
-static inline int z_impl_sdhc_card_busy(const struct device *dev)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->card_busy) {
-		return -ENOSYS;
-	}
-
-	return api->card_busy(dev);
-}
-
-
 /**
  * @brief Get SD host controller properties
  *
@@ -440,18 +368,6 @@ static inline int z_impl_sdhc_card_busy(const struct device *dev)
  */
 __syscall int sdhc_get_host_props(const struct device *dev,
 				  struct sdhc_host_props *props);
-
-static inline int z_impl_sdhc_get_host_props(const struct device *dev,
-					     struct sdhc_host_props *props)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->get_host_props) {
-		return -ENOSYS;
-	}
-
-	return api->get_host_props(dev, props);
-}
 
 /**
  * @brief Enable SDHC interrupt sources.
@@ -472,19 +388,6 @@ __syscall int sdhc_enable_interrupt(const struct device *dev,
 				    sdhc_interrupt_cb_t callback,
 				    int sources, void *user_data);
 
-static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
-					       sdhc_interrupt_cb_t callback,
-					       int sources, void *user_data)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->enable_interrupt) {
-		return -ENOSYS;
-	}
-
-	return api->enable_interrupt(dev, callback, sources, user_data);
-}
-
 /**
  * @brief Disable SDHC interrupt sources
  *
@@ -499,18 +402,6 @@ static inline int z_impl_sdhc_enable_interrupt(const struct device *dev,
  */
 __syscall int sdhc_disable_interrupt(const struct device *dev, int sources);
 
-static inline int z_impl_sdhc_disable_interrupt(const struct device *dev,
-						int sources)
-{
-	const struct sdhc_driver_api *api = (const struct sdhc_driver_api *)dev->api;
-
-	if (!api->disable_interrupt) {
-		return -ENOSYS;
-	}
-
-	return api->disable_interrupt(dev, sources);
-}
-
 /**
  * @}
  */
@@ -519,5 +410,6 @@ static inline int z_impl_sdhc_disable_interrupt(const struct device *dev,
 }
 #endif
 
+#include <zephyr/drivers/sdhc/internal/sdhc_impl.h>
 #include <zephyr/syscalls/sdhc.h>
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SDHC_H_ */

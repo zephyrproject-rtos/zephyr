@@ -223,17 +223,6 @@ __subsystem struct reset_driver_api {
  */
 __syscall int reset_status(const struct device *dev, uint32_t id, uint8_t *status);
 
-static inline int z_impl_reset_status(const struct device *dev, uint32_t id, uint8_t *status)
-{
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
-
-	if (api->status == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->status(dev, id, status);
-}
-
 /**
  * @brief Get the reset status from a @p reset_dt_spec.
  *
@@ -266,17 +255,6 @@ static inline int reset_status_dt(const struct reset_dt_spec *spec, uint8_t *sta
  */
 __syscall int reset_line_assert(const struct device *dev, uint32_t id);
 
-static inline int z_impl_reset_line_assert(const struct device *dev, uint32_t id)
-{
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
-
-	if (api->line_assert == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->line_assert(dev, id);
-}
-
 /**
  * @brief Assert the reset state from a @p reset_dt_spec.
  *
@@ -308,17 +286,6 @@ static inline int reset_line_assert_dt(const struct reset_dt_spec *spec)
  */
 __syscall int reset_line_deassert(const struct device *dev, uint32_t id);
 
-static inline int z_impl_reset_line_deassert(const struct device *dev, uint32_t id)
-{
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
-
-	if (api->line_deassert == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->line_deassert(dev, id);
-}
-
 /**
  * @brief Deassert the reset state from a @p reset_dt_spec.
  *
@@ -349,17 +316,6 @@ static inline int reset_line_deassert_dt(const struct reset_dt_spec *spec)
  */
 __syscall int reset_line_toggle(const struct device *dev, uint32_t id);
 
-static inline int z_impl_reset_line_toggle(const struct device *dev, uint32_t id)
-{
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
-
-	if (api->line_toggle == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->line_toggle(dev, id);
-}
-
 /**
  * @brief Reset the device from a @p reset_dt_spec.
  *
@@ -384,6 +340,7 @@ static inline int reset_line_toggle_dt(const struct reset_dt_spec *spec)
 }
 #endif
 
+#include <zephyr/drivers/reset/internal/reset_impl.h>
 #include <zephyr/syscalls/reset.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RESET_H_ */

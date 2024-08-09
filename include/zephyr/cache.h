@@ -219,17 +219,6 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
  */
 __syscall_always_inline int sys_cache_data_flush_range(void *addr, size_t size);
 
-static ALWAYS_INLINE int z_impl_sys_cache_data_flush_range(void *addr, size_t size)
-{
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-	return cache_data_flush_range(addr, size);
-#endif
-	ARG_UNUSED(addr);
-	ARG_UNUSED(size);
-
-	return -ENOTSUP;
-}
-
 /**
  * @brief Flush an address range in the i-cache
  *
@@ -281,17 +270,6 @@ static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
  * @retval -errno Negative errno for other failures.
  */
 __syscall_always_inline int sys_cache_data_invd_range(void *addr, size_t size);
-
-static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t size)
-{
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-	return cache_data_invd_range(addr, size);
-#endif
-	ARG_UNUSED(addr);
-	ARG_UNUSED(size);
-
-	return -ENOTSUP;
-}
 
 /**
  * @brief Invalidate an address range in the i-cache
@@ -345,17 +323,6 @@ static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
  * @retval -errno Negative errno for other failures.
  */
 __syscall_always_inline int sys_cache_data_flush_and_invd_range(void *addr, size_t size);
-
-static ALWAYS_INLINE int z_impl_sys_cache_data_flush_and_invd_range(void *addr, size_t size)
-{
-#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
-	return cache_data_flush_and_invd_range(addr, size);
-#endif
-	ARG_UNUSED(addr);
-	ARG_UNUSED(size);
-
-	return -ENOTSUP;
-}
 
 /**
  * @brief Flush and Invalidate an address range in the i-cache
@@ -550,6 +517,7 @@ static ALWAYS_INLINE void sys_cache_flush(void *addr, size_t size)
 }
 #endif
 
+#include <zephyr/cache/internal/cache_impl.h>
 #include <zephyr/syscalls/cache.h>
 #ifdef __cplusplus
 }

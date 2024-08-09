@@ -723,15 +723,6 @@ __subsystem struct adc_driver_api {
 __syscall int adc_channel_setup(const struct device *dev,
 				const struct adc_channel_cfg *channel_cfg);
 
-static inline int z_impl_adc_channel_setup(const struct device *dev,
-					   const struct adc_channel_cfg *channel_cfg)
-{
-	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->api;
-
-	return api->channel_setup(dev, channel_cfg);
-}
-
 /**
  * @brief Configure an ADC channel from a struct adc_dt_spec.
  *
@@ -774,15 +765,6 @@ static inline int adc_channel_setup_dt(const struct adc_dt_spec *spec)
 __syscall int adc_read(const struct device *dev,
 		       const struct adc_sequence *sequence);
 
-static inline int z_impl_adc_read(const struct device *dev,
-				  const struct adc_sequence *sequence)
-{
-	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->api;
-
-	return api->read(dev, sequence);
-}
-
 /**
  * @brief Set a read request from a struct adc_dt_spec.
  *
@@ -821,19 +803,6 @@ static inline int adc_read_dt(const struct adc_dt_spec *spec,
 __syscall int adc_read_async(const struct device *dev,
 			     const struct adc_sequence *sequence,
 			     struct k_poll_signal *async);
-
-
-#ifdef CONFIG_ADC_ASYNC
-static inline int z_impl_adc_read_async(const struct device *dev,
-					const struct adc_sequence *sequence,
-					struct k_poll_signal *async)
-{
-	const struct adc_driver_api *api =
-				(const struct adc_driver_api *)dev->api;
-
-	return api->read_async(dev, sequence, async);
-}
-#endif /* CONFIG_ADC_ASYNC */
 
 /**
  * @brief Get the internal reference voltage.
@@ -985,6 +954,7 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 }
 #endif
 
+#include <zephyr/drivers/adc/internal/adc_impl.h>
 #include <zephyr/syscalls/adc.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_ADC_H_ */

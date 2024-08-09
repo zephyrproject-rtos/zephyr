@@ -722,21 +722,6 @@ __syscall int sensor_attr_set(const struct device *dev,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val);
 
-static inline int z_impl_sensor_attr_set(const struct device *dev,
-					 enum sensor_channel chan,
-					 enum sensor_attribute attr,
-					 const struct sensor_value *val)
-{
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	if (api->attr_set == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->attr_set(dev, chan, attr, val);
-}
-
 /**
  * @brief Get an attribute for a sensor
  *
@@ -753,21 +738,6 @@ __syscall int sensor_attr_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      struct sensor_value *val);
-
-static inline int z_impl_sensor_attr_get(const struct device *dev,
-					 enum sensor_channel chan,
-					 enum sensor_attribute attr,
-					 struct sensor_value *val)
-{
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	if (api->attr_get == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->attr_get(dev, chan, attr, val);
-}
 
 /**
  * @brief Activate a sensor's trigger and set the trigger handler
@@ -825,14 +795,6 @@ static inline int sensor_trigger_set(const struct device *dev,
  */
 __syscall int sensor_sample_fetch(const struct device *dev);
 
-static inline int z_impl_sensor_sample_fetch(const struct device *dev)
-{
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
-}
-
 /**
  * @brief Fetch a sample from the sensor and store it in an internal
  * driver buffer
@@ -856,15 +818,6 @@ static inline int z_impl_sensor_sample_fetch(const struct device *dev)
  */
 __syscall int sensor_sample_fetch_chan(const struct device *dev,
 				       enum sensor_channel type);
-
-static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
-						  enum sensor_channel type)
-{
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, type);
-}
 
 /**
  * @brief Get a reading from a sensor device
@@ -890,16 +843,6 @@ static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
 __syscall int sensor_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val);
-
-static inline int z_impl_sensor_channel_get(const struct device *dev,
-					    enum sensor_channel chan,
-					    struct sensor_value *val)
-{
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->channel_get(dev, chan, val);
-}
 
 #if defined(CONFIG_SENSOR_ASYNC_API) || defined(__DOXYGEN__)
 
@@ -949,21 +892,6 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 __syscall int sensor_get_decoder(const struct device *dev,
 				 const struct sensor_decoder_api **decoder);
 
-static inline int z_impl_sensor_get_decoder(const struct device *dev,
-					    const struct sensor_decoder_api **decoder)
-{
-	const struct sensor_driver_api *api = (const struct sensor_driver_api *)dev->api;
-
-	__ASSERT_NO_MSG(api != NULL);
-
-	if (api->get_decoder == NULL) {
-		*decoder = &__sensor_default_decoder;
-		return 0;
-	}
-
-	return api->get_decoder(dev, decoder);
-}
-
 /**
  * @brief Reconfigure a reading iodev
  *
@@ -985,23 +913,6 @@ static inline int z_impl_sensor_get_decoder(const struct device *dev,
 __syscall int sensor_reconfigure_read_iodev(struct rtio_iodev *iodev, const struct device *sensor,
 					    const struct sensor_chan_spec *channels,
 					    size_t num_channels);
-
-static inline int z_impl_sensor_reconfigure_read_iodev(struct rtio_iodev *iodev,
-						       const struct device *sensor,
-						       const struct sensor_chan_spec *channels,
-						       size_t num_channels)
-{
-	struct sensor_read_config *cfg = (struct sensor_read_config *)iodev->data;
-
-	if (cfg->max < num_channels || cfg->is_streaming) {
-		return -ENOMEM;
-	}
-
-	cfg->sensor = sensor;
-	memcpy(cfg->channels, channels, num_channels * sizeof(struct sensor_chan_spec));
-	cfg->count = num_channels;
-	return 0;
-}
 
 static inline int sensor_stream(struct rtio_iodev *iodev, struct rtio *ctx, void *userdata,
 				struct rtio_sqe **handle)
@@ -1531,6 +1442,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_SENSOR_DECODER_DECLARE_INTERNAL)
 }
 #endif
 
+#include <zephyr/drivers/sensor/internal/sensor_impl.h>
 #include <zephyr/syscalls/sensor.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_H_ */

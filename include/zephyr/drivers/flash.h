@@ -232,16 +232,6 @@ __subsystem struct flash_driver_api {
 __syscall int flash_read(const struct device *dev, off_t offset, void *data,
 			 size_t len);
 
-static inline int z_impl_flash_read(const struct device *dev, off_t offset,
-				    void *data,
-				    size_t len)
-{
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	return api->read(dev, offset, data, len);
-}
-
 /**
  *  @brief  Write buffer into flash memory.
  *
@@ -263,18 +253,6 @@ static inline int z_impl_flash_read(const struct device *dev, off_t offset,
 __syscall int flash_write(const struct device *dev, off_t offset,
 			  const void *data,
 			  size_t len);
-
-static inline int z_impl_flash_write(const struct device *dev, off_t offset,
-				     const void *data, size_t len)
-{
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-	int rc;
-
-	rc = api->write(dev, offset, data, len);
-
-	return rc;
-}
 
 /**
  *  @brief  Erase part or all of a flash memory
@@ -305,21 +283,6 @@ static inline int z_impl_flash_write(const struct device *dev, off_t offset,
  *  @see flash_get_page_info_by_idx()
  */
 __syscall int flash_erase(const struct device *dev, off_t offset, size_t size);
-
-static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
-				     size_t size)
-{
-	int rc = -ENOSYS;
-
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	if (api->erase != NULL) {
-		rc = api->erase(dev, offset, size);
-	}
-
-	return rc;
-}
 
 /**
  * @brief Fill selected range of device with specified value
@@ -471,20 +434,6 @@ void flash_page_foreach(const struct device *dev, flash_page_cb cb,
 __syscall int flash_sfdp_read(const struct device *dev, off_t offset,
 			      void *data, size_t len);
 
-static inline int z_impl_flash_sfdp_read(const struct device *dev,
-					 off_t offset,
-					 void *data, size_t len)
-{
-	int rv = -ENOTSUP;
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	if (api->sfdp_read != NULL) {
-		rv = api->sfdp_read(dev, offset, data, len);
-	}
-	return rv;
-}
-
 /**
  * @brief Read the JEDEC ID from a compatible flash device.
  *
@@ -498,18 +447,6 @@ static inline int z_impl_flash_sfdp_read(const struct device *dev,
  */
 __syscall int flash_read_jedec_id(const struct device *dev, uint8_t *id);
 
-static inline int z_impl_flash_read_jedec_id(const struct device *dev,
-					     uint8_t *id)
-{
-	int rv = -ENOTSUP;
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	if (api->read_jedec_id != NULL) {
-		rv = api->read_jedec_id(dev, id);
-	}
-	return rv;
-}
 #endif /* CONFIG_FLASH_JESD216_API */
 
 /**
@@ -525,15 +462,6 @@ static inline int z_impl_flash_read_jedec_id(const struct device *dev,
  */
 __syscall size_t flash_get_write_block_size(const struct device *dev);
 
-static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
-{
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	return api->get_parameters(dev)->write_block_size;
-}
-
-
 /**
  *  @brief  Get pointer to flash_parameters structure
  *
@@ -546,14 +474,6 @@ static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
  *          the device.
  */
 __syscall const struct flash_parameters *flash_get_parameters(const struct device *dev);
-
-static inline const struct flash_parameters *z_impl_flash_get_parameters(const struct device *dev)
-{
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	return api->get_parameters(dev);
-}
 
 /**
  *  @brief Execute flash extended operation on given device
@@ -609,28 +529,6 @@ enum flash_ex_op_types {
 	FLASH_EX_OP_RESET = 0,
 };
 
-static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
-				     const uintptr_t in, void *out)
-{
-#if defined(CONFIG_FLASH_EX_OP_ENABLED)
-	const struct flash_driver_api *api =
-		(const struct flash_driver_api *)dev->api;
-
-	if (api->ex_op == NULL) {
-		return -ENOTSUP;
-	}
-
-	return api->ex_op(dev, code, in, out);
-#else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(code);
-	ARG_UNUSED(in);
-	ARG_UNUSED(out);
-
-	return -ENOSYS;
-#endif /* CONFIG_FLASH_EX_OP_ENABLED */
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -639,6 +537,7 @@ static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
  * @}
  */
 
+#include <zephyr/drivers/flash/internal/flash_impl.h>
 #include <zephyr/syscalls/flash.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_H_ */

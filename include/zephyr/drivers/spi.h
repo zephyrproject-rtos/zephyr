@@ -761,21 +761,6 @@ __syscall int spi_transceive(const struct device *dev,
 			     const struct spi_buf_set *tx_bufs,
 			     const struct spi_buf_set *rx_bufs);
 
-static inline int z_impl_spi_transceive(const struct device *dev,
-					const struct spi_config *config,
-					const struct spi_buf_set *tx_bufs,
-					const struct spi_buf_set *rx_bufs)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-	int ret;
-
-	ret = api->transceive(dev, config, tx_bufs, rx_bufs);
-	spi_transceive_stats(dev, ret, tx_bufs, rx_bufs);
-
-	return ret;
-}
-
 /**
  * @brief Read/write data from an SPI bus specified in @p spi_dt_spec.
  *
@@ -1268,15 +1253,6 @@ out:
 __syscall int spi_release(const struct device *dev,
 			  const struct spi_config *config);
 
-static inline int z_impl_spi_release(const struct device *dev,
-				     const struct spi_config *config)
-{
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-
-	return api->release(dev, config);
-}
-
 /**
  * @brief Release the SPI device specified in @p spi_dt_spec.
  *
@@ -1301,6 +1277,7 @@ static inline int spi_release_dt(const struct spi_dt_spec *spec)
  * @}
  */
 
+#include <zephyr/drivers/spi/internal/spi_impl.h>
 #include <zephyr/syscalls/spi.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SPI_H_ */

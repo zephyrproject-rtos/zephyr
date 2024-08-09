@@ -713,15 +713,6 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  */
 __syscall int i2c_configure(const struct device *dev, uint32_t dev_config);
 
-static inline int z_impl_i2c_configure(const struct device *dev,
-				       uint32_t dev_config)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
-
-	return api->configure(dev, dev_config);
-}
-
 /**
  * @brief Get configuration of a host controller.
  *
@@ -743,17 +734,6 @@ static inline int z_impl_i2c_configure(const struct device *dev,
  * @retval -ENOSYS If get config is not implemented
  */
 __syscall int i2c_get_config(const struct device *dev, uint32_t *dev_config);
-
-static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_config)
-{
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
-
-	if (api->get_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_config(dev, dev_config);
-}
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
@@ -789,30 +769,6 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
 __syscall int i2c_transfer(const struct device *dev,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t addr);
-
-static inline int z_impl_i2c_transfer(const struct device *dev,
-				      struct i2c_msg *msgs, uint8_t num_msgs,
-				      uint16_t addr)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
-
-	if (!num_msgs) {
-		return 0;
-	}
-
-	msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
-
-	int res =  api->transfer(dev, msgs, num_msgs, addr);
-
-	i2c_xfer_stats(dev, msgs, num_msgs);
-
-	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
-	}
-
-	return res;
-}
 
 #if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
 
@@ -1107,18 +1063,6 @@ static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
  */
 __syscall int i2c_recover_bus(const struct device *dev);
 
-static inline int z_impl_i2c_recover_bus(const struct device *dev)
-{
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
-
-	if (api->recover_bus == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->recover_bus(dev);
-}
-
 /**
  * @brief Registers the provided config as Target device of a controller.
  *
@@ -1200,14 +1144,6 @@ static inline int i2c_target_unregister(const struct device *dev,
  */
 __syscall int i2c_target_driver_register(const struct device *dev);
 
-static inline int z_impl_i2c_target_driver_register(const struct device *dev)
-{
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
-
-	return api->driver_register(dev);
-}
-
 /**
  * @brief Instructs the I2C Target device to unregister itself from the I2C
  * Controller
@@ -1222,14 +1158,6 @@ static inline int z_impl_i2c_target_driver_register(const struct device *dev)
  * @retval -EINVAL If parameters are invalid
  */
 __syscall int i2c_target_driver_unregister(const struct device *dev);
-
-static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
-{
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
-
-	return api->driver_unregister(dev);
-}
 
 /*
  * Derived i2c APIs -- all implemented in terms of i2c_transfer()
@@ -1660,6 +1588,7 @@ static inline int i2c_reg_update_byte_dt(const struct i2c_dt_spec *spec,
  * @}
  */
 
+#include <zephyr/drivers/i2c/internal/i2c_impl.h>
 #include <zephyr/syscalls/i2c.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_H_ */

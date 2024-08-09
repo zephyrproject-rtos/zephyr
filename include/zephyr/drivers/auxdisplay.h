@@ -322,17 +322,6 @@ __subsystem struct auxdisplay_driver_api {
  */
 __syscall int auxdisplay_display_on(const struct device *dev);
 
-static inline int z_impl_auxdisplay_display_on(const struct device *dev)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->display_on) {
-		return -ENOSYS;
-	}
-
-	return api->display_on(dev);
-}
-
 /**
  * @brief		Turn display off.
  *
@@ -343,17 +332,6 @@ static inline int z_impl_auxdisplay_display_on(const struct device *dev)
  * @retval		-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_display_off(const struct device *dev);
-
-static inline int z_impl_auxdisplay_display_off(const struct device *dev)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->display_off) {
-		return -ENOSYS;
-	}
-
-	return api->display_off(dev);
-}
 
 /**
  * @brief		Set cursor enabled status on an auxiliary display
@@ -368,18 +346,6 @@ static inline int z_impl_auxdisplay_display_off(const struct device *dev)
 __syscall int auxdisplay_cursor_set_enabled(const struct device *dev,
 					    bool enabled);
 
-static inline int z_impl_auxdisplay_cursor_set_enabled(const struct device *dev,
-						       bool enabled)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->cursor_set_enabled) {
-		return -ENOSYS;
-	}
-
-	return api->cursor_set_enabled(dev, enabled);
-}
-
 /**
  * @brief		Set cursor blinking status on an auxiliary display
  *
@@ -392,18 +358,6 @@ static inline int z_impl_auxdisplay_cursor_set_enabled(const struct device *dev,
  */
 __syscall int auxdisplay_position_blinking_set_enabled(const struct device *dev,
 						       bool enabled);
-
-static inline int z_impl_auxdisplay_position_blinking_set_enabled(const struct device *dev,
-								  bool enabled)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->position_blinking_set_enabled) {
-		return -ENOSYS;
-	}
-
-	return api->position_blinking_set_enabled(dev, enabled);
-}
 
 /**
  * @brief		Set cursor shift after character write and display shift
@@ -420,23 +374,6 @@ static inline int z_impl_auxdisplay_position_blinking_set_enabled(const struct d
  */
 __syscall int auxdisplay_cursor_shift_set(const struct device *dev,
 					  uint8_t direction, bool display_shift);
-
-static inline int z_impl_auxdisplay_cursor_shift_set(const struct device *dev,
-						     uint8_t direction,
-						     bool display_shift)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->cursor_shift_set) {
-		return -ENOSYS;
-	}
-
-	if (direction >= AUXDISPLAY_DIRECTION_COUNT) {
-		return -EINVAL;
-	}
-
-	return api->cursor_shift_set(dev, direction, display_shift);
-}
 
 /**
  * @brief	Set cursor (and write position) on an auxiliary display
@@ -455,23 +392,6 @@ __syscall int auxdisplay_cursor_position_set(const struct device *dev,
 					     enum auxdisplay_position type,
 					     int16_t x, int16_t y);
 
-static inline int z_impl_auxdisplay_cursor_position_set(const struct device *dev,
-							enum auxdisplay_position type,
-							int16_t x, int16_t y)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->cursor_position_set) {
-		return -ENOSYS;
-	} else if (type >= AUXDISPLAY_POSITION_COUNT) {
-		return -EINVAL;
-	} else if (type == AUXDISPLAY_POSITION_ABSOLUTE && (x < 0 || y < 0)) {
-		return -EINVAL;
-	}
-
-	return api->cursor_position_set(dev, type, x, y);
-}
-
 /**
  * @brief	Get current cursor on an auxiliary display
  *
@@ -486,18 +406,6 @@ static inline int z_impl_auxdisplay_cursor_position_set(const struct device *dev
  */
 __syscall int auxdisplay_cursor_position_get(const struct device *dev,
 					     int16_t *x, int16_t *y);
-
-static inline int z_impl_auxdisplay_cursor_position_get(const struct device *dev,
-							int16_t *x, int16_t *y)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->cursor_position_get) {
-		return -ENOSYS;
-	}
-
-	return api->cursor_position_get(dev, x, y);
-}
 
 /**
  * @brief	Set display position on an auxiliary display
@@ -516,23 +424,6 @@ __syscall int auxdisplay_display_position_set(const struct device *dev,
 					      enum auxdisplay_position type,
 					      int16_t x, int16_t y);
 
-static inline int z_impl_auxdisplay_display_position_set(const struct device *dev,
-							 enum auxdisplay_position type,
-							 int16_t x, int16_t y)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->display_position_set) {
-		return -ENOSYS;
-	} else if (type >= AUXDISPLAY_POSITION_COUNT) {
-		return -EINVAL;
-	} else if (type == AUXDISPLAY_POSITION_ABSOLUTE && (x < 0 || y < 0)) {
-		return -EINVAL;
-	}
-
-	return api->display_position_set(dev, type, x, y);
-}
-
 /**
  * @brief	Get current display position on an auxiliary display
  *
@@ -548,18 +439,6 @@ static inline int z_impl_auxdisplay_display_position_set(const struct device *de
 __syscall int auxdisplay_display_position_get(const struct device *dev,
 					      int16_t *x, int16_t *y);
 
-static inline int z_impl_auxdisplay_display_position_get(const struct device *dev,
-							 int16_t *x, int16_t *y)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->display_position_get) {
-		return -ENOSYS;
-	}
-
-	return api->display_position_get(dev, x, y);
-}
-
 /**
  * @brief		Fetch capabilities (and details) of auxiliary display
  *
@@ -571,14 +450,6 @@ static inline int z_impl_auxdisplay_display_position_get(const struct device *de
  */
 __syscall int auxdisplay_capabilities_get(const struct device *dev,
 					  struct auxdisplay_capabilities *capabilities);
-
-static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
-						     struct auxdisplay_capabilities *capabilities)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->capabilities_get(dev, capabilities);
-}
 
 /**
  * @brief	Clear display of auxiliary display and return to home position (note that
@@ -592,13 +463,6 @@ static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
  */
 __syscall int auxdisplay_clear(const struct device *dev);
 
-static inline int z_impl_auxdisplay_clear(const struct device *dev)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->clear(dev);
-}
-
 /**
  * @brief		Get the current brightness level of an auxiliary display
  *
@@ -611,18 +475,6 @@ static inline int z_impl_auxdisplay_clear(const struct device *dev)
  */
 __syscall int auxdisplay_brightness_get(const struct device *dev,
 					uint8_t *brightness);
-
-static inline int z_impl_auxdisplay_brightness_get(const struct device *dev,
-						   uint8_t *brightness)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->brightness_get) {
-		return -ENOSYS;
-	}
-
-	return api->brightness_get(dev, brightness);
-}
 
 /**
  * @brief		Update the brightness level of an auxiliary display
@@ -638,18 +490,6 @@ static inline int z_impl_auxdisplay_brightness_get(const struct device *dev,
 __syscall int auxdisplay_brightness_set(const struct device *dev,
 					uint8_t brightness);
 
-static inline int z_impl_auxdisplay_brightness_set(const struct device *dev,
-						   uint8_t brightness)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->brightness_set) {
-		return -ENOSYS;
-	}
-
-	return api->brightness_set(dev, brightness);
-}
-
 /**
  * @brief		Get the backlight level details of an auxiliary display
  *
@@ -662,18 +502,6 @@ static inline int z_impl_auxdisplay_brightness_set(const struct device *dev,
  */
 __syscall int auxdisplay_backlight_get(const struct device *dev,
 				       uint8_t *backlight);
-
-static inline int z_impl_auxdisplay_backlight_get(const struct device *dev,
-						  uint8_t *backlight)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->backlight_get) {
-		return -ENOSYS;
-	}
-
-	return api->backlight_get(dev, backlight);
-}
 
 /**
  * @brief		Update the backlight level of an auxiliary display
@@ -689,18 +517,6 @@ static inline int z_impl_auxdisplay_backlight_get(const struct device *dev,
 __syscall int auxdisplay_backlight_set(const struct device *dev,
 				       uint8_t backlight);
 
-static inline int z_impl_auxdisplay_backlight_set(const struct device *dev,
-						  uint8_t backlight)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->backlight_set) {
-		return -ENOSYS;
-	}
-
-	return api->backlight_set(dev, backlight);
-}
-
 /**
  * @brief	Check if an auxiliary display driver is busy
  *
@@ -712,17 +528,6 @@ static inline int z_impl_auxdisplay_backlight_set(const struct device *dev,
  * @retval	-errno Negative errno code on other failure.
  */
 __syscall int auxdisplay_is_busy(const struct device *dev);
-
-static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->is_busy) {
-		return -ENOSYS;
-	}
-
-	return api->is_busy(dev);
-}
 
 /**
  * @brief		Sets a custom character in the display, the custom character struct
@@ -747,18 +552,6 @@ static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
 __syscall int auxdisplay_custom_character_set(const struct device *dev,
 					      struct auxdisplay_character *character);
 
-static inline int z_impl_auxdisplay_custom_character_set(const struct device *dev,
-							 struct auxdisplay_character *character)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->custom_character_set) {
-		return -ENOSYS;
-	}
-
-	return api->custom_character_set(dev, character);
-}
-
 /**
  * @brief	Write data to auxiliary display screen at current position
  *
@@ -772,14 +565,6 @@ static inline int z_impl_auxdisplay_custom_character_set(const struct device *de
  */
 __syscall int auxdisplay_write(const struct device *dev, const uint8_t *data,
 			       uint16_t len);
-
-static inline int z_impl_auxdisplay_write(const struct device *dev,
-					  const uint8_t *data, uint16_t len)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->write(dev, data, len);
-}
 
 /**
  * @brief	Send a custom command to the display (if supported by driver)
@@ -795,18 +580,6 @@ static inline int z_impl_auxdisplay_write(const struct device *dev,
 __syscall int auxdisplay_custom_command(const struct device *dev,
 					struct auxdisplay_custom_data *data);
 
-static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
-						   struct auxdisplay_custom_data *data)
-{
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	if (!api->custom_command) {
-		return -ENOSYS;
-	}
-
-	return api->custom_command(dev, data);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -815,6 +588,7 @@ static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
  * @}
  */
 
+#include <zephyr/drivers/auxdisplay/internal/auxdisplay_impl.h>
 #include <zephyr/syscalls/auxdisplay.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_AUXDISPLAY_H_ */

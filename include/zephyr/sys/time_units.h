@@ -47,13 +47,6 @@ extern "C" {
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 __syscall int sys_clock_hw_cycles_per_sec_runtime_get(void);
-
-static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	extern int z_clock_hw_cycles_per_sec;
-
-	return z_clock_hw_cycles_per_sec;
-}
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 #if defined(__cplusplus) && (__cplusplus >= 201402L)
@@ -2070,6 +2063,7 @@ static inline int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 	z_tmcvt_64(t, Z_HZ_ticks, Z_HZ_cyc, Z_CCYC, true, false)
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#include <zephyr/sys/internal/time_units_impl.h>
 #include <zephyr/syscalls/time_units.h>
 #endif
 

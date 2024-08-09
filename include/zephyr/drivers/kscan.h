@@ -81,14 +81,6 @@ __subsystem struct kscan_driver_api {
 __syscall int kscan_config(const struct device *dev,
 			     kscan_callback_t callback);
 
-static inline int z_impl_kscan_config(const struct device *dev,
-					kscan_callback_t callback)
-{
-	const struct kscan_driver_api *api =
-				(struct kscan_driver_api *)dev->api;
-
-	return api->config(dev, callback);
-}
 /**
  * @brief Enables callback.
  * @param dev Pointer to the device structure for the driver instance.
@@ -97,18 +89,6 @@ static inline int z_impl_kscan_config(const struct device *dev,
  * @retval Negative errno code if failure.
  */
 __syscall int kscan_enable_callback(const struct device *dev);
-
-static inline int z_impl_kscan_enable_callback(const struct device *dev)
-{
-	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->api;
-
-	if (api->enable_callback == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->enable_callback(dev);
-}
 
 /**
  * @brief Disables callback.
@@ -119,18 +99,6 @@ static inline int z_impl_kscan_enable_callback(const struct device *dev)
  */
 __syscall int kscan_disable_callback(const struct device *dev);
 
-static inline int z_impl_kscan_disable_callback(const struct device *dev)
-{
-	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->api;
-
-	if (api->disable_callback == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->disable_callback(dev);
-}
-
 #ifdef __cplusplus
 }
 #endif
@@ -139,6 +107,7 @@ static inline int z_impl_kscan_disable_callback(const struct device *dev)
  * @}
  */
 
+#include <zephyr/drivers/kscan/internal/kscan_impl.h>
 #include <zephyr/syscalls/kscan.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_KB_SCAN_H_ */

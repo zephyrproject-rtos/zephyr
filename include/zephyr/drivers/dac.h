@@ -92,15 +92,6 @@ __subsystem struct dac_driver_api {
 __syscall int dac_channel_setup(const struct device *dev,
 				const struct dac_channel_cfg *channel_cfg);
 
-static inline int z_impl_dac_channel_setup(const struct device *dev,
-					   const struct dac_channel_cfg *channel_cfg)
-{
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->channel_setup(dev, channel_cfg);
-}
-
 /**
  * @brief Write a single value to a DAC channel
  *
@@ -114,15 +105,6 @@ static inline int z_impl_dac_channel_setup(const struct device *dev,
 __syscall int dac_write_value(const struct device *dev, uint8_t channel,
 			      uint32_t value);
 
-static inline int z_impl_dac_write_value(const struct device *dev,
-						uint8_t channel, uint32_t value)
-{
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->write_value(dev, channel, value);
-}
-
 /**
  * @}
  */
@@ -131,6 +113,7 @@ static inline int z_impl_dac_write_value(const struct device *dev,
 }
 #endif
 
+#include <zephyr/drivers/dac/internal/dac_impl.h>
 #include <zephyr/syscalls/dac.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */
