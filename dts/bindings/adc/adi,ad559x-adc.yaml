@@ -11,5 +11,11 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  range-double:
+    type: boolean
+    description: |
+      Default ADC input range is 0V to Vref.
+      This option increases the range from 0V to 2 x Vref.
+
 io-channel-cells:
   - input
