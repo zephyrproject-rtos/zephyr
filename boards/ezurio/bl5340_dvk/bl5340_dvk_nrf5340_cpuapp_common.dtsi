@@ -139,6 +139,16 @@
 	status = "okay";
 };
 
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
+};
+
+&hfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <13500>;
+};
+
 &adc {
 	status = "okay";
 };
