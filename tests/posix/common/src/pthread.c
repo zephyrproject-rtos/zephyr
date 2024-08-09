@@ -143,6 +143,13 @@ static void *thread_top_exec(void *p1)
 	return NULL;
 }
 
+static void *thread_alive_1_s(void *p1)
+{
+	sleep(ONE_SECOND);
+
+	return NULL;
+}
+
 static int bounce_test_done(void)
 {
 	int i;
@@ -369,6 +376,63 @@ ZTEST(pthread, test_pthread_termination)
 	/* TESTPOINT: Try canceling a terminated thread */
 	ret = pthread_cancel(newthread[0]);
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
+}
+
+ZTEST(pthread, test_pthread_tryjoin)
+{
+	pthread_t alive_1_s = {0};
+	void *retval;
+
+	/* Creating a threads that exits after 1s*/
+	zassert_ok(pthread_create(&alive_1_s, NULL, thread_alive_1_s, NULL));
+
+	/* Attempting to join immediately should fail */
+	zassert_equal(pthread_tryjoin_np(alive_1_s, &retval), EBUSY);
+
+	/* Sleep so alive_1_s-thread will exit */
+	sleep(ONE_SECOND);
+	sleep(ONE_SECOND);
+
+	/* Attempting to join immediately should succeed now */
+	zassert_ok(pthread_tryjoin_np(alive_1_s, &retval));
+}
+
+ZTEST(pthread, test_pthread_timedjoin)
+{
+	pthread_t alive_1_s = {0};
+	void *ret;
+	struct timespec not_done;
+	struct timespec done;
+	struct timespec invalid[] = {
+		[0] = {.tv_sec = -1},
+		[1] = {.tv_nsec = -1},
+		[2] = {.tv_nsec = NSEC_PER_SEC},
+	};
+
+	/* setup timespecs when the less then and more then a second from now */
+	clock_gettime(CLOCK_MONOTONIC, &not_done);
+	not_done.tv_nsec += NSEC_PER_SEC / 2;
+	while (not_done.tv_nsec >= NSEC_PER_SEC) {
+		not_done.tv_sec++;
+		not_done.tv_nsec -= NSEC_PER_SEC;
+	}
+	clock_gettime(CLOCK_MONOTONIC, &done);
+	done.tv_sec += 2;
+
+	/* Creating a threads that exits after 1s*/
+	zassert_ok(pthread_create(&alive_1_s, NULL, thread_alive_1_s, NULL));
+
+	/* pthread_timedjoin-np must return -EINVAL for invalid struct timespecs */
+	zassert_equal(pthread_timedjoin_np(alive_1_s, &ret, NULL), EINVAL);
+	for (size_t i = 0; i < ARRAY_SIZE(invalid); ++i) {
+		zassert_equal(pthread_timedjoin_np(alive_1_s, &ret, &invalid[i]), EINVAL);
+	}
+
+	/* Attempting to join with a timeout, when the thread is still running should fail */
+	zassert_equal(pthread_timedjoin_np(alive_1_s, &ret, &not_done), ETIMEDOUT);
+
+	/* Attempting to join with a timeout, when the thread is done, should succeed */
+	zassert_ok(pthread_timedjoin_np(alive_1_s, &ret, &done));
 }
 
 static void *create_thread1(void *p1)
