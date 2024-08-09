@@ -12,18 +12,17 @@
 #define MY_DRIVER_B	"my_driver_B"
 
 /* define individual driver A */
-static int my_driver_A_do_this(const struct device *device, int foo, int bar)
+static int my_driver_A_do_this(const struct device *dev, int foo, int bar)
 {
 	return foo + bar;
 }
 
-static void my_driver_A_do_that(const struct device *device,
-				unsigned int *baz)
+static void my_driver_A_do_that(const struct device *dev, unsigned int *baz)
 {
 	*baz = 1;
 }
 
-static struct subsystem_api my_driver_A_api_funcs = {
+static DEVICE_API(abstract, my_driver_A_api_funcs) = {
 	.do_this = my_driver_A_do_this,
 	.do_that = my_driver_A_do_that
 };
@@ -34,18 +33,17 @@ int common_driver_init(const struct device *dev)
 }
 
 /* define individual driver B */
-static int my_driver_B_do_this(const struct device *device, int foo, int bar)
+static int my_driver_B_do_this(const struct device *dev, int foo, int bar)
 {
 	return foo - bar;
 }
 
-static void my_driver_B_do_that(const struct device *device,
-				unsigned int *baz)
+static void my_driver_B_do_that(const struct device *dev, unsigned int *baz)
 {
 	*baz = 2;
 }
 
-static struct subsystem_api my_driver_B_api_funcs = {
+static DEVICE_API(abstract, my_driver_B_api_funcs) = {
 	.do_this = my_driver_B_do_this,
 	.do_that = my_driver_B_do_that
 };

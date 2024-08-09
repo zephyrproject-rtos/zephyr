@@ -14,3 +14,8 @@ target_sources(app PRIVATE ${app_sources})
 # at all. So add this flag to merge string constants such that
 # the pointer comparison would be exercised.
 zephyr_cc_option_ifdef(CONFIG_COVERAGE -fmerge-constants)
+
+zephyr_iterable_section(
+  NAME abstract_driver_api
+  KVMA RAM_REGION GROUP RODATA_REGION
+  SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
