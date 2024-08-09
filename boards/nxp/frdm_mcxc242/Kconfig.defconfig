@@ -1,0 +1,21 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FRDM_MCXC242
+
+config OSC_XTAL0_FREQ
+	default 32768
+
+config MCG_PRDIV0
+	default 0x01
+
+config MCG_VDIV0
+	default 0x00
+
+config MCG_FRDIV
+	default 5
+
+config MCG_FCRDIV
+	default 0
+
+endif
