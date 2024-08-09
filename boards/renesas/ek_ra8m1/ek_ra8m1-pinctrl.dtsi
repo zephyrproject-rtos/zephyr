@@ -27,4 +27,12 @@
 			psels = <RA_PSEL(RA_PSEL_SCI_9, 10, 15)>;
 		};
 	};
+
+	canfd0_default: canfd0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_CANFD, 3, 11)>,	/* crx */
+					<RA_PSEL(RA_PSEL_CANFD, 3, 12)>;	/* ctx */
+			drive-strength = "highspeed-high";
+		};
+	};
 };
