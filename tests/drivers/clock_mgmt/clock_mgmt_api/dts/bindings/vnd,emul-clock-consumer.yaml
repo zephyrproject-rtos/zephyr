@@ -1,0 +1,40 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock consumer device. This device is used in testing
+  to verify that clock states are applied as expected.
+
+compatible: "vnd,emul-clock-consumer"
+
+include: [clock-device.yaml]
+
+properties:
+  default-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying default clock
+      management state
+
+  shared-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying shared clock
+      management state
+
+  setrate-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying setrate clock
+      management state
+
+  setrate1-freq:
+    type: int
+    required: true
+    description: |
+      Frequency this consumer expects to read when applying setrate1 clock
+      management state

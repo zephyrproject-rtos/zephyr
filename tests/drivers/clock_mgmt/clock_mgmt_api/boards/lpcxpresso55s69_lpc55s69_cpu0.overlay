@@ -1,0 +1,89 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Clock CPU from FROHF, since we will use the PLLs within our testcases */
+&cpu0 {
+	clock-state-0 = <&system_clock 96000000>;
+	clock-state-names = "default";
+};
+
+/* Disable the SD controller- we are using its clock for this test */
+&sdif {
+	status = "disabled";
+};
+
+/ {
+	/* Emulated device clock consumers */
+	emul_devices {
+		emul_dev1: emul-dev1 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&clkout_clock>;
+			/* Expect a clock frequency of 500 KHz */
+			clock-state-0 = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1
+					&pll0_pdec 4 &pll0_directo 0
+					&pll0 512000000 8 256 0 31 31 0 0 0
+					&pll1_bypass 0 &clkoutsel 1
+					&clkoutdiv 256>;
+			default-freq = <500000>;
+			/* Expect error when applying this invalid state */
+			clock-state-1 = <&clkoutsel 10>;
+			/* Expect notification on first device only,
+			 * as sdioclksel is not selecting pll0 as an input.
+			 * After reconfiguring PLL0 from emul_dev2, output
+			 * frequency will be 25.5 MHz
+			 */
+			clock-state-2 = <&pll0_pdec 8 &pll0 401000000 4 0
+					0 4 3 1 3363831808 0 &clkoutdiv 2>;
+			shared-freq = <25500000>;
+			/* Request 55MHz. We expect pll0 to be used to
+			 * produce this clock rate.
+			 */
+			clock-state-3 = <&clkout_clock 55000000>;
+			setrate-freq = <55000000>;
+			/* Request 96Mhz. We should be switched to
+			 * fro_hf, which will produce 96MHz
+			 */
+			clock-state-4 = <&clkout_clock 96000000>;
+			setrate1-freq = <96000000>;
+			clock-state-names = "default", "sleep",
+					"shared", "setrate", "setrate1";
+		};
+
+		emul_dev2: emul-dev2 {
+			compatible = "vnd,emul-clock-consumer";
+			clock-outputs = <&sdio_clock>;
+			/* Expect a clock frequency of 48 MHz */
+			clock-state-0 = <&fro_12m 1 &pll1clksel 0
+					&pll1_pdec 4 &pll1_directo 0
+					&pll1 384000000 4 128 0 62 31
+					&pll1_bypass 0 &sdioclksel 5
+					&sdioclkdiv 2>;
+			default-freq = <48000000>;
+			/* Expect error when applying this invalid state */
+			clock-state-1 = <&sdioclksel 8>;
+			/* Expect notification on both devices with this state.
+			 * frequency should be 25.5 MHz for each
+			 */
+			clock-state-2 = <&pll0_pdec 8 &pll0 408000000 4 0
+					0 4 3 1 3422552064 0 &sdioclkdiv 2
+					&sdioclksel 1>;
+			shared-freq = <25500000>;
+			/* Request 25.10MHz. The best source for this would be
+			 * pll0, but since it is locked we
+			 * expect to be forced to use pll1
+			 */
+			clock-state-3 = <&sdio_clock 25100000>;
+			setrate-freq = <27466668>;
+			/* Request 25.5MHz again. PLL0 is no longer locked, so
+			 * we should get this frequency now
+			 */
+			clock-state-4 = <&sdio_clock 25500000>;
+			setrate1-freq = <25500000>;
+			clock-state-names = "default", "sleep",
+					"shared", "setrate", "setrate1";
+		};
+	};
+};

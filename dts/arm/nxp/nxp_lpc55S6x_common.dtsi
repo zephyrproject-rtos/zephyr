@@ -28,19 +28,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			cpu-power-states = <&sleep>;
+			clock-outputs = <&ahbclkdiv>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
 		};
-		cpu@1 {
+		cpu1: cpu@1 {
 			compatible = "arm,cortex-m33";
 			reg = <1>;
 		};
@@ -237,6 +238,7 @@
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl0_mul>;
 	};
 
 	flexcomm1: flexcomm@87000 {
@@ -248,6 +250,7 @@
 		dmas = <&dma0 6 &dma0 7>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl1_mul>;
 	};
 
 	flexcomm2: flexcomm@88000 {
@@ -259,6 +262,7 @@
 		dmas = <&dma0 10 &dma0 11>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl2_mul>;
 	};
 
 	flexcomm3: flexcomm@89000 {
@@ -270,6 +274,7 @@
 		dmas = <&dma0 8 &dma0 9>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl3_mul>;
 	};
 
 	flexcomm4: flexcomm@8a000 {
@@ -281,6 +286,7 @@
 		dmas = <&dma0 12 &dma0 13>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl4_mul>;
 	};
 
 	flexcomm5: flexcomm@96000 {
@@ -292,6 +298,7 @@
 		dmas = <&dma0 14 &dma0 15>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl5_mul>;
 	};
 
 	flexcomm6: flexcomm@97000 {
@@ -303,6 +310,7 @@
 		dmas = <&dma0 16 &dma0 17>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl6_mul>;
 	};
 
 	flexcomm7: flexcomm@98000 {
@@ -314,6 +322,7 @@
 		dmas = <&dma0 18 &dma0 19>;
 		dma-names = "rx", "tx";
 		status = "disabled";
+		clock-outputs = <&frgctrl7_mul>;
 	};
 
 	sdif: sdif@9b000 {
@@ -503,3 +512,5 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "nxp_lpc55Sxx_clocks.dtsi"

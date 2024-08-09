@@ -1,0 +1,30 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON clock gate node. This node accepts one specifier, which
+  either gates the clock (when set to 0), or ungates the clock (when set to 1).
+  Other specifier values may cause undefined behavior.
+
+compatible: "nxp,syscon-clock-gate"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to ungate the clock
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to ungate clock
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - gate
