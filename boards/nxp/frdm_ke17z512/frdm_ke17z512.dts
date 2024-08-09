@@ -69,6 +69,13 @@
 	current-speed = <115200>;
 };
 
+&adc0 {
+	status = "okay";
+	sample-time = <12>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
 &gpiod {
 	status = "okay";
 };

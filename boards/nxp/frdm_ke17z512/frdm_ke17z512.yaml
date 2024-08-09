@@ -16,6 +16,7 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - adc
   - uart
   - i2c
   - spi
