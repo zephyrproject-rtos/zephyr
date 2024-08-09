@@ -981,8 +981,8 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`.
     :header: API, Supported
     :widths: 50,10
 
-    asctime_r(),
-    ctime_r(),
+    asctime_r(), yes
+    ctime_r(), yes (UTC timezone only)
     flockfile(),
     ftrylockfile(),
     funlockfile(),
@@ -993,7 +993,7 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`.
     getpwnam_r(),yes :ref:`†<posix_undefined_behaviour>`
     getpwuid_r(),yes :ref:`†<posix_undefined_behaviour>`
     gmtime_r(), yes
-    localtime_r(),
+    localtime_r(), yes (UTC timezone only)
     putc_unlocked(),
     putchar_unlocked(),
     rand_r(), yes
