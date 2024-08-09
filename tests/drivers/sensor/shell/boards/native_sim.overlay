@@ -1,0 +1,7 @@
+/ {
+    dummy: dummy {
+        compatible = "dummy-sensor";
+        i2c-name = "dummy I2C";
+        i2c-address = <123>;
+    };
+};
