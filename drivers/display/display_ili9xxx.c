@@ -324,27 +324,21 @@ static int ili9xxx_set_orientation(const struct device *dev,
 
 	int r;
 	uint8_t tx_data = ILI9XXX_MADCTL_BGR;
-	if (config->quirks->cmd_set == CMD_SET_1) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			tx_data |= ILI9XXX_MADCTL_MX;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			tx_data |= ILI9XXX_MADCTL_MV;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX |
-				   ILI9XXX_MADCTL_MY;
-		}
-	} else if (config->quirks->cmd_set == CMD_SET_2) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			/* Do nothing */
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
-		}
+
+	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+		tx_data |= 0;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
+		tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		tx_data |= ILI9XXX_MADCTL_MX | ILI9XXX_MADCTL_MY;
+	} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
+	}
+	if (config->x_mirrored) {
+		tx_data ^= ILI9XXX_MADCTL_MX;
+	}
+	if (config->y_mirrored) {
+		tx_data ^= ILI9XXX_MADCTL_MY;
 	}
 
 	r = ili9xxx_transmit(dev, ILI9XXX_MADCTL, &tx_data, 1U);
@@ -487,37 +481,12 @@ static const struct display_driver_api ili9xxx_api = {
 	.set_orientation = ili9xxx_set_orientation,
 };
 
-#ifdef CONFIG_ILI9340
-static const struct ili9xxx_quirks ili9340_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
-#ifdef CONFIG_ILI9341
-static const struct ili9xxx_quirks ili9341_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
-#ifdef CONFIG_ILI9342C
-static const struct ili9xxx_quirks ili9342c_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9488
-static const struct ili9xxx_quirks ili9488_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
 #define ILI9XXX_INIT(n, t)                                                     \
 	ILI##t##_REGS_INIT(n);                                                 \
 									       \
 	static const struct ili9xxx_config ili9xxx_config_##n = {              \
-		.quirks = &ili##t##_quirks,                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
 		.dbi_config = {                                                \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                       \
@@ -531,6 +500,8 @@ static const struct ili9xxx_quirks ili9488_quirks = {
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
 		.x_resolution = ILI##t##_X_RES,                                \
 		.y_resolution = ILI##t##_Y_RES,                                \
+		.x_mirrored = DT_PROP(INST_DT_ILI9XXX(n, t), x_mirrored),      \
+		.y_mirrored = DT_PROP(INST_DT_ILI9XXX(n, t), y_mirrored),      \
 		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
 		.regs = &ili9xxx_regs_##n,                                     \
 		.regs_init_fn = ili##t##_regs_init,                            \
