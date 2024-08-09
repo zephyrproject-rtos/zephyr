@@ -291,6 +291,7 @@
 			prescaler = <1>;
 			clk-source = <1>;
 			resolution = <16>;
+			counter-mode-enable;
 		};
 
 		wdog: watchdog@40052000 {

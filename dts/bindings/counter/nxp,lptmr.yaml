@@ -34,3 +34,14 @@ properties:
     type: int
     required: true
     description: Represents the width of the timer in bits.
+
+  counter-mode-enable:
+    type: boolean
+    description: |
+      Enable Counter or Pulse Mode.
+      During Counter mode, the Clock will increment on
+      every cycle of the chosen clk-source.
+      During Pulse Mode, the clock will increment on
+      every assertion of the chosen clk-source.
+      "counter-mode-enable;" <- Enable Counter Mode
+      "" <- Enable Pulse Mode
