@@ -169,6 +169,18 @@
 		};
 	};
 
+	gem0_emio_clk: gem0-emio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+		#clock-cells = <0>;
+	};
+
+	gem1_emio_clk: gem1-emio-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <25000000>;
+		#clock-cells = <0>;
+	};
+
 	slcr: slcr@f8000000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -179,6 +191,27 @@
 		pinctrl0: pinctrl@700 {
 			compatible = "xlnx,pinctrl-zynq";
 			reg = <0x700 0x200>;
+			syscon = <&slcr>;
+		};
+		clkctrl0: clkctrl@100 {
+			#clock-cells = <1>;
+			compatible = "xlnx,ps7-clkc";
+			reg = <0x100 0x100>;
+			ps-clk-frequency = <33333333>;
+			fclk-enable = <0x5>;
+			clock-output-names = "armpll", "ddrpll", "iopll", "cpu_6or4x",
+				"cpu_3or2x", "cpu_2x", "cpu_1x", "ddr2x", "ddr3x",
+				"dci", "lqspi", "smc", "pcap", "gem0", "gem1",
+				"fclk0", "fclk1", "fclk2", "fclk3", "can0", "can1",
+				"sdio0", "sdio1", "uart0", "uart1", "spi0", "spi1",
+				"dma", "usb0_aper", "usb1_aper", "gem0_aper",
+				"gem1_aper", "sdio0_aper", "sdio1_aper",
+				"spi0_aper", "spi1_aper", "can0_aper", "can1_aper",
+				"i2c0_aper", "i2c1_aper", "uart0_aper", "uart1_aper",
+				"gpio_aper", "lqspi_aper", "smc_aper", "swdt",
+				"dbg_trc", "dbg_apb";
+			clocks = <&gem0_emio_clk>, <&gem1_emio_clk>;
+			clock-names = "gem0_emio_clk", "gem1_emio_clk";
 			syscon = <&slcr>;
 		};
 	};

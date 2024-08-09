@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2023 Immo Birnbaum
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CLOCK_CONTROL_XLNX_PS7_CLKC
+	bool "Xilinx Zynq-7000 (XC7Zxxx/XC7ZxxxS) PS7 clock control driver"
+	default y
+	depends on DT_HAS_XLNX_PS7_CLKC_ENABLED
+	select SYSCON
+	help
+	  Enable the Xilinx Zynq-7000 (XC7Zxxx/XC7ZxxxS) PS7 clock control driver.
