@@ -63,7 +63,7 @@ struct usbd_cdc_ecm_desc {
 	struct usb_if_descriptor if0;
 	struct cdc_header_descriptor if0_header;
 	struct cdc_union_descriptor if0_union;
-	struct cdc_ecm_descriptor if0_ecm;
+	struct cdc_eth_functional_descriptor if0_ecm;
 	struct usb_ep_descriptor if0_int_ep;
 	struct usb_ep_descriptor if0_hs_int_ep;
 
@@ -681,7 +681,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 	},									\
 										\
 	.if0_ecm = {								\
-		.bFunctionLength = sizeof(struct cdc_ecm_descriptor),		\
+		.bFunctionLength = sizeof(struct cdc_eth_functional_descriptor),		\
 		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,			\
 		.iMACAddress = 0,						\
