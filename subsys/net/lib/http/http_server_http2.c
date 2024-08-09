@@ -61,8 +61,8 @@ static void print_http_frames(struct http_client_ctx *client)
 	LOG_DBG("%s=====================================%s", green, reset);
 }
 
-static struct http2_stream_ctx *find_http_stream_context(
-			struct http_client_ctx *client, uint32_t stream_id)
+static struct http2_stream_ctx *find_http_stream_context(struct http_client_ctx *client,
+							 uint32_t stream_id)
 {
 	ARRAY_FOR_EACH(client->streams, i) {
 		if (client->streams[i].stream_id == stream_id) {
@@ -73,15 +73,14 @@ static struct http2_stream_ctx *find_http_stream_context(
 	return NULL;
 }
 
-static struct http2_stream_ctx *allocate_http_stream_context(
-			struct http_client_ctx *client, uint32_t stream_id)
+static struct http2_stream_ctx *allocate_http_stream_context(struct http_client_ctx *client,
+							     uint32_t stream_id)
 {
 	ARRAY_FOR_EACH(client->streams, i) {
 		if (client->streams[i].stream_state == HTTP2_STREAM_IDLE) {
 			client->streams[i].stream_id = stream_id;
 			client->streams[i].stream_state = HTTP2_STREAM_OPEN;
-			client->streams[i].window_size =
-				HTTP_SERVER_INITIAL_WINDOW_SIZE;
+			client->streams[i].window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
 			client->streams[i].headers_sent = false;
 			client->streams[i].end_stream_sent = false;
 			return &client->streams[i];
@@ -91,8 +90,7 @@ static struct http2_stream_ctx *allocate_http_stream_context(
 	return NULL;
 }
 
-static void release_http_stream_context(struct http_client_ctx *client,
-					uint32_t stream_id)
+static void release_http_stream_context(struct http_client_ctx *client, uint32_t stream_id)
 {
 	ARRAY_FOR_EACH(client->streams, i) {
 		if (client->streams[i].stream_id == stream_id) {
@@ -103,8 +101,8 @@ static void release_http_stream_context(struct http_client_ctx *client,
 	}
 }
 
-static int add_header_field(struct http_client_ctx *client, uint8_t **buf,
-			    size_t *buflen, const char *name, const char *value)
+static int add_header_field(struct http_client_ctx *client, uint8_t **buf, size_t *buflen,
+			    const char *name, const char *value)
 {
 	int ret;
 
@@ -125,8 +123,7 @@ static int add_header_field(struct http_client_ctx *client, uint8_t **buf,
 }
 
 static void encode_frame_header(uint8_t *buf, uint32_t payload_len,
-				enum http2_frame_type frame_type,
-				uint8_t flags, uint32_t stream_id)
+				enum http2_frame_type frame_type, uint8_t flags, uint32_t stream_id)
 {
 	sys_put_be24(payload_len, &buf[HTTP2_FRAME_LENGTH_OFFSET]);
 	buf[HTTP2_FRAME_TYPE_OFFSET] = frame_type;
@@ -134,9 +131,8 @@ static void encode_frame_header(uint8_t *buf, uint32_t payload_len,
 	sys_put_be32(stream_id, &buf[HTTP2_FRAME_STREAM_ID_OFFSET]);
 }
 
-static int send_headers_frame(struct http_client_ctx *client,
-			      enum http_status status, uint32_t stream_id,
-			      struct http_resource_detail *detail_common,
+static int send_headers_frame(struct http_client_ctx *client, enum http_status status,
+			      uint32_t stream_id, struct http_resource_detail *detail_common,
 			      uint8_t flags)
 {
 	uint8_t headers_frame[64];
@@ -157,8 +153,7 @@ static int send_headers_frame(struct http_client_ctx *client,
 	}
 
 	if (detail_common && detail_common->content_encoding != NULL) {
-		ret = add_header_field(client, &buf, &buflen, "content-encoding",
-				       "gzip");
+		ret = add_header_field(client, &buf, &buflen, "content-encoding", "gzip");
 		if (ret < 0) {
 			return ret;
 		}
@@ -175,11 +170,9 @@ static int send_headers_frame(struct http_client_ctx *client,
 	payload_len = sizeof(headers_frame) - buflen - HTTP2_FRAME_HEADER_SIZE;
 	flags |= HTTP2_FLAG_END_HEADERS;
 
-	encode_frame_header(headers_frame, payload_len, HTTP2_HEADERS_FRAME,
-			    flags, stream_id);
+	encode_frame_header(headers_frame, payload_len, HTTP2_HEADERS_FRAME, flags, stream_id);
 
-	ret = http_server_sendall(client, headers_frame,
-				  payload_len + HTTP2_FRAME_HEADER_SIZE);
+	ret = http_server_sendall(client, headers_frame, payload_len + HTTP2_FRAME_HEADER_SIZE);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -188,15 +181,15 @@ static int send_headers_frame(struct http_client_ctx *client,
 	return 0;
 }
 
-static int send_data_frame(struct http_client_ctx *client, const char *payload,
-			   size_t length, uint32_t stream_id, uint8_t flags)
+static int send_data_frame(struct http_client_ctx *client, const char *payload, size_t length,
+			   uint32_t stream_id, uint8_t flags)
 {
 	uint8_t frame_header[HTTP2_FRAME_HEADER_SIZE];
 	int ret;
 
 	encode_frame_header(frame_header, length, HTTP2_DATA_FRAME,
-			    is_header_flag_set(flags, HTTP2_FLAG_END_STREAM) ?
-			    HTTP2_FLAG_END_STREAM : 0,
+			    is_header_flag_set(flags, HTTP2_FLAG_END_STREAM) ? HTTP2_FLAG_END_STREAM
+									     : 0,
 			    stream_id);
 
 	ret = http_server_sendall(client, frame_header, sizeof(frame_header));
@@ -216,36 +209,28 @@ static int send_data_frame(struct http_client_ctx *client, const char *payload,
 
 int send_settings_frame(struct http_client_ctx *client, bool ack)
 {
-	uint8_t settings_frame[HTTP2_FRAME_HEADER_SIZE +
-			       2 * sizeof(struct http2_settings_field)];
+	uint8_t settings_frame[HTTP2_FRAME_HEADER_SIZE + 2 * sizeof(struct http2_settings_field)];
 	struct http2_settings_field *setting;
 	size_t len;
 	int ret;
 
 	if (ack) {
-		encode_frame_header(settings_frame, 0,
-				    HTTP2_SETTINGS_FRAME,
+		encode_frame_header(settings_frame, 0, HTTP2_SETTINGS_FRAME,
 				    HTTP2_FLAG_SETTINGS_ACK, 0);
 		len = HTTP2_FRAME_HEADER_SIZE;
 	} else {
-		encode_frame_header(settings_frame,
-				    2 * sizeof(struct http2_settings_field),
+		encode_frame_header(settings_frame, 2 * sizeof(struct http2_settings_field),
 				    HTTP2_SETTINGS_FRAME, 0, 0);
 
-		setting = (struct http2_settings_field *)
-			(settings_frame + HTTP2_FRAME_HEADER_SIZE);
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
-			      &setting->id);
+		setting = (struct http2_settings_field *)(settings_frame + HTTP2_FRAME_HEADER_SIZE);
+		UNALIGNED_PUT(htons(HTTP2_SETTINGS_HEADER_TABLE_SIZE), &setting->id);
 		UNALIGNED_PUT(0, &setting->value);
 
 		setting++;
-		UNALIGNED_PUT(htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS),
-			      &setting->id);
-		UNALIGNED_PUT(htonl(CONFIG_HTTP_SERVER_MAX_STREAMS),
-			      &setting->value);
+		UNALIGNED_PUT(htons(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS), &setting->id);
+		UNALIGNED_PUT(htonl(CONFIG_HTTP_SERVER_MAX_STREAMS), &setting->value);
 
-		len = HTTP2_FRAME_HEADER_SIZE +
-		      2 * sizeof(struct http2_settings_field);
+		len = HTTP2_FRAME_HEADER_SIZE + 2 * sizeof(struct http2_settings_field);
 	}
 
 	ret = http_server_sendall(client, settings_frame, len);
@@ -257,11 +242,9 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 	return 0;
 }
 
-int send_window_update_frame(struct http_client_ctx *client,
-			     struct http2_stream_ctx *stream)
+int send_window_update_frame(struct http_client_ctx *client, struct http2_stream_ctx *stream)
 {
-	uint8_t window_update_frame[HTTP2_FRAME_HEADER_SIZE +
-				    sizeof(uint32_t)];
+	uint8_t window_update_frame[HTTP2_FRAME_HEADER_SIZE + sizeof(uint32_t)];
 	uint32_t window_update;
 	uint32_t stream_id;
 	int ret;
@@ -276,14 +259,11 @@ int send_window_update_frame(struct http_client_ctx *client,
 		stream_id = 0;
 	}
 
-	encode_frame_header(window_update_frame, sizeof(uint32_t),
-			    HTTP2_WINDOW_UPDATE_FRAME,
-			    0, stream_id);
-	sys_put_be32(window_update,
-		     window_update_frame + HTTP2_FRAME_HEADER_SIZE);
+	encode_frame_header(window_update_frame, sizeof(uint32_t), HTTP2_WINDOW_UPDATE_FRAME, 0,
+			    stream_id);
+	sys_put_be32(window_update, window_update_frame + HTTP2_FRAME_HEADER_SIZE);
 
-	ret = http_server_sendall(client, window_update_frame,
-				  sizeof(window_update_frame));
+	ret = http_server_sendall(client, window_update_frame, sizeof(window_update_frame));
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -292,20 +272,17 @@ int send_window_update_frame(struct http_client_ctx *client,
 	return 0;
 }
 
-static int send_http2_404(struct http_client_ctx *client,
-			  struct http2_frame *frame)
+static int send_http2_404(struct http_client_ctx *client, struct http2_frame *frame)
 {
 	int ret;
 
-	ret = send_headers_frame(client, HTTP_404_NOT_FOUND,
-				 frame->stream_identifier, NULL, 0);
+	ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL, 0);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
 	}
 
-	ret = send_data_frame(client, content_404, sizeof(content_404),
-			      frame->stream_identifier,
+	ret = send_data_frame(client, content_404, sizeof(content_404), frame->stream_identifier,
 			      HTTP2_FLAG_END_STREAM);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
@@ -314,13 +291,11 @@ static int send_http2_404(struct http_client_ctx *client,
 	return ret;
 }
 
-static int send_http2_409(struct http_client_ctx *client,
-			  struct http2_frame *frame)
+static int send_http2_409(struct http_client_ctx *client, struct http2_frame *frame)
 {
 	int ret;
 
-	ret = send_headers_frame(client, HTTP_409_CONFLICT,
-				 frame->stream_identifier, NULL,
+	ret = send_headers_frame(client, HTTP_409_CONFLICT, frame->stream_identifier, NULL,
 				 HTTP2_FLAG_END_STREAM);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
@@ -329,9 +304,8 @@ static int send_http2_409(struct http_client_ctx *client,
 	return ret;
 }
 
-static int handle_http2_static_resource(
-	struct http_resource_detail_static *static_detail,
-	struct http2_frame *frame, struct http_client_ctx *client)
+static int handle_http2_static_resource(struct http_resource_detail_static *static_detail,
+					struct http2_frame *frame, struct http_client_ctx *client)
 {
 	const char *content_200;
 	size_t content_len;
@@ -357,8 +331,7 @@ static int handle_http2_static_resource(
 
 	client->current_stream->headers_sent = true;
 
-	ret = send_data_frame(client, content_200, content_len,
-			      frame->stream_identifier,
+	ret = send_data_frame(client, content_200, content_len, frame->stream_identifier,
 			      HTTP2_FLAG_END_STREAM);
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
@@ -507,16 +480,11 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 			status = HTTP_SERVER_DATA_MORE;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len,
+		send_len = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
 					      dynamic_detail->user_data);
 		if (send_len > 0) {
-			ret = send_data_frame(client,
-					      dynamic_detail->data_buffer,
-					      send_len,
-					      frame->stream_identifier,
-					      0);
+			ret = send_data_frame(client, dynamic_detail->data_buffer, send_len,
+					      frame->stream_identifier, 0);
 			if (ret < 0) {
 				break;
 			}
@@ -527,8 +495,7 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 			continue;
 		}
 
-		ret = send_data_frame(client, NULL, 0,
-				      frame->stream_identifier,
+		ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
 				      HTTP2_FLAG_END_STREAM);
 		if (ret < 0) {
 			LOG_DBG("Cannot send last frame (%d)", ret);
@@ -577,24 +544,21 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		client->data_len -= copy_len;
 		frame->length -= copy_len;
 
-		if (frame->length == 0 &&
-		    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
+		if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 			status = HTTP_SERVER_DATA_FINAL;
 		} else {
 			status = HTTP_SERVER_DATA_MORE;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len,
+		send_len = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
 					      dynamic_detail->user_data);
 		if (send_len > 0) {
 			uint8_t flags = 0;
 
 			if (!client->current_stream->headers_sent) {
-				ret = send_headers_frame(
-					client, HTTP_200_OK, frame->stream_identifier,
-					&dynamic_detail->common, 0);
+				ret = send_headers_frame(client, HTTP_200_OK,
+							 frame->stream_identifier,
+							 &dynamic_detail->common, 0);
 				if (ret < 0) {
 					LOG_DBG("Cannot write to socket (%d)", ret);
 					return ret;
@@ -612,11 +576,8 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 				client->current_stream->end_stream_sent = true;
 			}
 
-			ret = send_data_frame(client,
-					      dynamic_detail->data_buffer,
-					      send_len,
-					      frame->stream_identifier,
-					      flags);
+			ret = send_data_frame(client, dynamic_detail->data_buffer, send_len,
+					      frame->stream_identifier, flags);
 			if (ret < 0) {
 				LOG_DBG("Cannot send data frame (%d)", ret);
 				return ret;
@@ -626,16 +587,13 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		copy_len = MIN(data_len, dynamic_detail->data_buffer_len);
 	};
 
-	if (frame->length == 0 &&
-	    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
+	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
 		if (!client->current_stream->headers_sent) {
 			/* The callback did not report any data to send, therefore send
 			 * headers frame now, including END_STREAM flag.
 			 */
-			ret = send_headers_frame(
-				client, HTTP_200_OK, frame->stream_identifier,
-				&dynamic_detail->common,
-				HTTP2_FLAG_END_STREAM);
+			ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier,
+						 &dynamic_detail->common, HTTP2_FLAG_END_STREAM);
 			if (ret < 0) {
 				LOG_DBG("Cannot write to socket (%d)", ret);
 				return ret;
@@ -648,13 +606,11 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		dynamic_detail->holder = NULL;
 	}
 
-
 	return ret;
 }
 
-static int handle_http2_dynamic_resource(
-	struct http_resource_detail_dynamic *dynamic_detail,
-	struct http2_frame *frame, struct http_client_ctx *client)
+static int handle_http2_dynamic_resource(struct http_resource_detail_dynamic *dynamic_detail,
+					 struct http2_frame *frame, struct http_client_ctx *client)
 {
 	uint32_t user_method;
 	int ret;
@@ -693,17 +649,38 @@ static int handle_http2_dynamic_resource(
 		 * which needs to be known when passing data to application.
 		 */
 		if (user_method & BIT(HTTP_POST)) {
-			client->current_detail =
-				(struct http_resource_detail *)dynamic_detail;
+			client->current_detail = (struct http_resource_detail *)dynamic_detail;
 			break;
+		}
+
+		goto not_supported;
+
+	case HTTP_PUT:
+		if (user_method & BIT(HTTP_PUT)) {
+			client->current_detail = (struct http_resource_detail *)dynamic_detail;
+			break;
+		}
+
+		goto not_supported;
+
+	case HTTP_PATCH:
+		if (user_method & BIT(HTTP_PATCH)) {
+			client->current_detail = (struct http_resource_detail *)dynamic_detail;
+			break;
+		}
+
+		goto not_supported;
+
+	case HTTP_DELETE:
+		if (user_method & BIT(HTTP_GET)) {
+			return dynamic_get_req_v2(dynamic_detail, client);
 		}
 
 		goto not_supported;
 
 not_supported:
 	default:
-		LOG_DBG("HTTP method %s (%d) not supported.",
-			http_method_str(client->method),
+		LOG_DBG("HTTP method %s (%d) not supported.", http_method_str(client->method),
 			client->method);
 
 		return -ENOTSUP;
@@ -754,8 +731,7 @@ static int enter_http_frame_data_state(struct http_client_ctx *client)
 
 	stream = find_http_stream_context(client, frame->stream_identifier);
 	if (stream == NULL) {
-		LOG_DBG("No stream context found for ID %d",
-			frame->stream_identifier);
+		LOG_DBG("No stream context found for ID %d", frame->stream_identifier);
 		return -EBADMSG;
 	}
 
@@ -863,8 +839,7 @@ int handle_http_frame_header(struct http_client_ctx *client)
 
 	print_http_frames(client);
 
-	if (client->expect_continuation &&
-	    client->current_frame.type != HTTP2_CONTINUATION_FRAME) {
+	if (client->expect_continuation && client->current_frame.type != HTTP2_CONTINUATION_FRAME) {
 		LOG_ERR("Continuation frame expected");
 		return -EBADMSG;
 	}
@@ -900,11 +875,10 @@ int handle_http_frame_header(struct http_client_ctx *client)
  */
 int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 {
-	static const char switching_protocols[] =
-		"HTTP/1.1 101 Switching Protocols\r\n"
-		"Connection: Upgrade\r\n"
-		"Upgrade: h2c\r\n"
-		"\r\n";
+	static const char switching_protocols[] = "HTTP/1.1 101 Switching Protocols\r\n"
+						  "Connection: Upgrade\r\n"
+						  "Upgrade: h2c\r\n"
+						  "\r\n";
 	struct http2_frame *frame = &client->current_frame;
 	struct http_resource_detail *detail;
 	struct http2_stream_ctx *stream;
@@ -960,8 +934,7 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 
 		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
 			ret = handle_http2_static_resource(
-				(struct http_resource_detail_static *)detail,
-				frame, client);
+				(struct http_resource_detail_static *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
@@ -973,21 +946,18 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			}
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
-				(struct http_resource_detail_dynamic *)detail,
-				frame, client);
+				(struct http_resource_detail_dynamic *)detail, frame, client);
 			if (ret < 0) {
 				goto error;
 			}
 
 			if (client->method == HTTP_POST) {
 				ret = dynamic_post_req_v2(
-					(struct http_resource_detail_dynamic *)detail,
-					client);
+					(struct http_resource_detail_dynamic *)detail, client);
 				if (ret < 0) {
 					goto error;
 				}
 			}
-
 		}
 	} else {
 		ret = send_http2_404(client, frame);
@@ -1088,9 +1058,8 @@ int handle_http_frame_data(struct http_client_ctx *client)
 		}
 	}
 
-	ret = dynamic_post_req_v2(
-		(struct http_resource_detail_dynamic *)client->current_detail,
-		client);
+	ret = dynamic_post_req_v2((struct http_resource_detail_dynamic *)client->current_detail,
+				  client);
 	if (ret < 0 && ret == -ENOENT) {
 		ret = send_http2_404(client, frame);
 	}
@@ -1104,8 +1073,7 @@ int handle_http_frame_data(struct http_client_ctx *client)
 			find_http_stream_context(client, frame->stream_identifier);
 
 		if (stream == NULL) {
-			LOG_DBG("No stream context found for ID %d",
-				frame->stream_identifier);
+			LOG_DBG("No stream context found for ID %d", frame->stream_identifier);
 			return -EBADMSG;
 		}
 
@@ -1135,17 +1103,16 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	return 0;
 }
 
-static int process_header(struct http_client_ctx *client,
-			  struct http_hpack_header_buf *header)
+static int process_header(struct http_client_ctx *client, struct http_hpack_header_buf *header)
 {
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
 		/* TODO Improve string to method conversion */
 		if (header->value_len == (sizeof("GET") - 1) &&
-			memcmp(header->value, "GET", header->value_len) == 0) {
+		    memcmp(header->value, "GET", header->value_len) == 0) {
 			client->method = HTTP_GET;
 		} else if (header->value_len == (sizeof("POST") - 1) &&
-				memcmp(header->value, "POST", header->value_len) == 0) {
+			   memcmp(header->value, "POST", header->value_len) == 0) {
 			client->method = HTTP_POST;
 		} else {
 			/* Unknown method */
@@ -1171,7 +1138,7 @@ static int process_header(struct http_client_ctx *client,
 		client->content_type[header->value_len] = '\0';
 	} else if (header->name_len == (sizeof("content-length") - 1) &&
 		   memcmp(header->name, "content-length", header->name_len) == 0) {
-		char len_str[16] = { 0 };
+		char len_str[16] = {0};
 		char *endptr;
 		unsigned long len;
 
@@ -1221,8 +1188,7 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 	 */
 	prev_frame_len = frame->length;
 	extra_len = client->data_len - frame->length;
-	ret = parse_http_frame_header(client, client->cursor + prev_frame_len,
-				      extra_len);
+	ret = parse_http_frame_header(client, client->cursor + prev_frame_len, extra_len);
 	if (ret < 0) {
 		return -EAGAIN;
 	}
@@ -1241,8 +1207,7 @@ static int handle_incomplete_http_header(struct http_client_ctx *client)
 	client->data_len -= HTTP2_FRAME_HEADER_SIZE;
 	frame->length += prev_frame_len;
 	memmove(client->cursor + prev_frame_len,
-		client->cursor + prev_frame_len + HTTP2_FRAME_HEADER_SIZE,
-		extra_len);
+		client->cursor + prev_frame_len + HTTP2_FRAME_HEADER_SIZE, extra_len);
 
 	return enter_http_frame_continuation_state(client);
 }
@@ -1270,9 +1235,9 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 					      dynamic_detail->user_data);
 		if (send_len > 0) {
 			if (!client->current_stream->headers_sent) {
-				ret = send_headers_frame(
-					client, HTTP_200_OK, frame->stream_identifier,
-					client->current_detail, 0);
+				ret = send_headers_frame(client, HTTP_200_OK,
+							 frame->stream_identifier,
+							 client->current_detail, 0);
 				if (ret < 0) {
 					LOG_DBG("Cannot write to socket (%d)", ret);
 					goto out;
@@ -1281,10 +1246,8 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 				client->current_stream->headers_sent = true;
 			}
 
-			ret = send_data_frame(client,
-					      dynamic_detail->data_buffer,
-					      send_len, frame->stream_identifier,
-					      HTTP2_FLAG_END_STREAM);
+			ret = send_data_frame(client, dynamic_detail->data_buffer, send_len,
+					      frame->stream_identifier, HTTP2_FLAG_END_STREAM);
 			if (ret < 0) {
 				LOG_DBG("Cannot send data frame (%d)", ret);
 				goto out;
@@ -1297,9 +1260,8 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 	}
 
 	if (!client->current_stream->headers_sent) {
-		ret = send_headers_frame(
-			client, HTTP_200_OK, frame->stream_identifier,
-			client->current_detail, HTTP2_FLAG_END_STREAM);
+		ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier,
+					 client->current_detail, HTTP2_FLAG_END_STREAM);
 		if (ret < 0) {
 			LOG_DBG("Cannot write to socket (%d)", ret);
 			goto out;
@@ -1366,8 +1328,8 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		client->cursor += ret;
 		client->data_len -= ret;
 
-		LOG_DBG("Parsed header: %.*s %.*s", (int)header->name_len,
-			header->name, (int)header->value_len, header->value);
+		LOG_DBG("Parsed header: %.*s %.*s", (int)header->name_len, header->name,
+			(int)header->value_len, header->value);
 
 		ret = process_header(client, header);
 		if (ret < 0) {
@@ -1387,8 +1349,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 
 		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
 			ret = handle_http2_static_resource(
-				(struct http_resource_detail_static *)detail,
-				frame, client);
+				(struct http_resource_detail_static *)detail, frame, client);
 			if (ret < 0) {
 				return ret;
 			}
@@ -1400,8 +1361,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			}
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
-				(struct http_resource_detail_dynamic *)detail,
-				frame, client);
+				(struct http_resource_detail_dynamic *)detail, frame, client);
 			if (ret < 0) {
 				return ret;
 			}
@@ -1482,8 +1442,7 @@ int handle_http_frame_rst_stream(struct http_client_ctx *client)
 
 	error_code = sys_get_be32(client->cursor);
 
-	LOG_DBG("Stream %u reset with error code %u", stream_ctx->stream_id,
-		error_code);
+	LOG_DBG("Stream %u reset with error code %u", stream_ctx->stream_id, error_code);
 
 	release_http_stream_context(client, stream_ctx->stream_id);
 
@@ -1624,8 +1583,7 @@ const char *get_frame_type_name(enum http2_frame_type type)
 	}
 }
 
-int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer,
-			    size_t buflen)
+int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer, size_t buflen)
 {
 	struct http2_frame *frame = &client->current_frame;
 
@@ -1636,13 +1594,12 @@ int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffe
 	frame->length = sys_get_be24(&buffer[HTTP2_FRAME_LENGTH_OFFSET]);
 	frame->type = buffer[HTTP2_FRAME_TYPE_OFFSET];
 	frame->flags = buffer[HTTP2_FRAME_FLAGS_OFFSET];
-	frame->stream_identifier = sys_get_be32(
-				&buffer[HTTP2_FRAME_STREAM_ID_OFFSET]);
+	frame->stream_identifier = sys_get_be32(&buffer[HTTP2_FRAME_STREAM_ID_OFFSET]);
 	frame->stream_identifier &= HTTP2_FRAME_STREAM_ID_MASK;
 	frame->padding_len = 0;
 
-	LOG_DBG("Frame len %d type 0x%02x flags 0x%02x id %d",
-		frame->length, frame->type, frame->flags, frame->stream_identifier);
+	LOG_DBG("Frame len %d type 0x%02x flags 0x%02x id %d", frame->length, frame->type,
+		frame->flags, frame->stream_identifier);
 
 	return 0;
 }
