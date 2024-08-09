@@ -58,6 +58,7 @@
 		sw0 = &pb1;
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 };
 
@@ -104,4 +105,9 @@
 
 &wdt0 {
 	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+	alarms-count = <1>;
 };
