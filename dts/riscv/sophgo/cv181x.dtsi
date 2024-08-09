@@ -1,0 +1,154 @@
+/*
+ * Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <sophgo/cv18xx-c906-common.dtsi>
+#include <zephyr/dt-bindings/pinctrl/sophgo-cv181x-pinctrl.h>
+
+/ {
+	soc {
+		compatible = "sophgo,cv181x", "simple-bus";
+
+		mbox: mailbox@1900000 {
+			compatible = "sophgo,cvi-mailbox";
+			reg = <0x1900000 DT_SIZE_K(4)>;
+			interrupts = <61 1>;
+			channel-max = <8>;
+			tx-cpu = <1>;
+			rx-cpu = <2>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@3001000 {
+			compatible = "sophgo,cvi-pinctrl";
+			reg = <0x3001000 DT_SIZE_K(4)>;
+		};
+
+		gpioa: gpio@3020000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3020000 DT_SIZE_K(4)>;
+			interrupts = <41 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@3021000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3021000 DT_SIZE_K(4)>;
+			interrupts = <42 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@3022000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3022000 DT_SIZE_K(4)>;
+			interrupts = <43 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiod: gpio@3023000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x3023000 DT_SIZE_K(4)>;
+			interrupts = <44 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@3060000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3060000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@3061000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3061000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@3062000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3062000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@3063000 {
+			compatible = "sophgo,cvi-pwm";
+			reg = <0x3063000 DT_SIZE_K(4)>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		uart0: uart@4140000 {
+			compatible = "ns16550";
+			reg = <0x4140000 DT_SIZE_K(64)>;
+			interrupts = <30 1>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart1: uart@4150000 {
+			compatible = "ns16550";
+			reg = <0x4150000 DT_SIZE_K(64)>;
+			interrupts = <31 1>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart2: uart@4160000 {
+			compatible = "ns16550";
+			reg = <0x4160000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart3: uart@4170000 {
+			compatible = "ns16550";
+			reg = <0x4170000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		uart4: uart@41c0000 {
+			compatible = "ns16550";
+			reg = <0x41c0000 DT_SIZE_K(64)>;
+			/* interrupt is not supported */
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		pwr_gpio: gpio@5021000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x5021000 DT_SIZE_K(4)>;
+			interrupts = <48 1>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+	};
+};

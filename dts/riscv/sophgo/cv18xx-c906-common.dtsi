@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "thead,c906";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(700)>;
+			mmu-type = "riscv,none";
+			riscv,isa = "rv64imafdc_zicsr_zifencei";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&plic0>;
+
+		plic0: interrupt-controller@70000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x70000000 0x4000000>;
+			interrupts-extended = <&hlic 11>;
+			interrupt-controller;
+			riscv,max-priority = <7>;
+			riscv,ndev = <101>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+		};
+
+		systick: systick@74000000 {
+			compatible = "thead,machine-timer";
+			reg = <0x74000000 DT_SIZE_K(64)>;
+			interrupts-extended = <&hlic 7>;
+		};
+	};
+};

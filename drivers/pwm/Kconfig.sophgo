@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SOPHGO_CVI
+	bool "SOPHGO CVI series PWM driver"
+	default y
+	depends on DT_HAS_SOPHGO_CVI_PWM_ENABLED
+	help
+	  Enables support for the SOPHGO CVI series PWM.

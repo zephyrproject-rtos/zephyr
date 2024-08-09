@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CV181X
+	select 64BIT
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select INCLUDE_RESET_VECTOR
+	select ATOMIC_OPERATIONS_C

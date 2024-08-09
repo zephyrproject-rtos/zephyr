@@ -1,0 +1,17 @@
+# Copyright (c) 2023-2024 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SOPHGO CVI series pin controller driver
+
+compatible: "sophgo,cvi-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: CVI pinmux group
+
+  child-binding:
+    properties:
+      pinmux:
+        required: true
+        type: array
