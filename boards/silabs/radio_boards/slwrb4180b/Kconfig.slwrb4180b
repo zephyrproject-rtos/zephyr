@@ -1,0 +1,7 @@
+# EFR32MG21 BRD4180B
+
+# Copyright (c) 2024 Capgemini
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SLWRB4180B
+	select SOC_PART_NUMBER_EFR32MG21A020F1024IM32
