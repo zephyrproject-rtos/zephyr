@@ -139,13 +139,15 @@ static int llext_load_elf_data(struct llext_loader *ldr, struct llext *ext)
  */
 static int llext_find_tables(struct llext_loader *ldr)
 {
-	int table_cnt, i;
+	int i;
 
 	memset(ldr->sects, 0, sizeof(ldr->sects));
 
 	/* Find symbol and string tables */
-	for (i = 0, table_cnt = 0; i < ldr->sect_cnt && table_cnt < 3; ++i) {
+	for (i = 0; i < ldr->sect_cnt; ++i) {
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
+		const char *sect_type_str;
+		enum llext_mem sect_mem_idx = LLEXT_MEM_COUNT;
 
 		LOG_DBG("section %d at 0x%zx: name %d, type %d, flags 0x%zx, "
 			"addr 0x%zx, size %zd, link %d, info %d",
@@ -162,32 +164,49 @@ static int llext_find_tables(struct llext_loader *ldr)
 		switch (shdr->sh_type) {
 		case SHT_SYMTAB:
 		case SHT_DYNSYM:
-			LOG_DBG("symtab at %d", i);
-			ldr->sects[LLEXT_MEM_SYMTAB] = *shdr;
-			ldr->sect_map[i].mem_idx = LLEXT_MEM_SYMTAB;
-			table_cnt++;
+			sect_type_str = "symtab";
+			sect_mem_idx = LLEXT_MEM_SYMTAB;
 			break;
 		case SHT_STRTAB:
 			if (ldr->hdr.e_shstrndx == i) {
-				LOG_DBG("shstrtab at %d", i);
-				ldr->sects[LLEXT_MEM_SHSTRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_SHSTRTAB;
+				sect_type_str = "shstrtab";
+				sect_mem_idx = LLEXT_MEM_SHSTRTAB;
 			} else {
-				LOG_DBG("strtab at %d", i);
-				ldr->sects[LLEXT_MEM_STRTAB] = *shdr;
-				ldr->sect_map[i].mem_idx = LLEXT_MEM_STRTAB;
+				sect_type_str = "strtab";
+				sect_mem_idx = LLEXT_MEM_STRTAB;
 			}
-			table_cnt++;
+			break;
+		case SHT_PREINIT_ARRAY:
+			sect_type_str = "preinit";
+			sect_mem_idx = LLEXT_MEM_PREINIT;
+			break;
+		case SHT_INIT_ARRAY:
+			sect_type_str = "init";
+			sect_mem_idx = LLEXT_MEM_INIT;
+			break;
+		case SHT_FINI_ARRAY:
+			sect_type_str = "fini";
+			sect_mem_idx = LLEXT_MEM_FINI;
 			break;
 		default:
-			break;
+			/* not a special section */
+			continue;
 		}
+
+		if (ldr->sects[sect_mem_idx].sh_type != 0) {
+			LOG_ERR("Multiple %s sections found", sect_type_str);
+			return -ENOEXEC;
+		}
+
+		LOG_DBG("%s at %d", sect_type_str, i);
+		ldr->sects[sect_mem_idx] = *shdr;
+		ldr->sect_map[i].mem_idx = sect_mem_idx;
 	}
 
 	if (!ldr->sects[LLEXT_MEM_SHSTRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_STRTAB].sh_type ||
 	    !ldr->sects[LLEXT_MEM_SYMTAB].sh_type) {
-		LOG_ERR("Some sections are missing or present multiple times!");
+		LOG_ERR("Some needed sections are missing");
 		return -ENOEXEC;
 	}
 
@@ -207,6 +226,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		elf_shdr_t *shdr = ldr->sect_hdrs + i;
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
+
+		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
+			LOG_DBG("section %d name %s already mapped to region %d",
+				i, name, ldr->sect_map[i].mem_idx);
+			continue;
+		}
 
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
@@ -539,6 +564,43 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
+static int llext_call_array(struct llext_loader *ldr, struct llext *ext, enum llext_mem fn_array)
+{
+	uintptr_t *ptr;
+	size_t nents, i;
+	void (*entry_fn)(void);
+
+	if (ldr->sects[fn_array].sh_size == 0)
+		return 0;
+
+	if (ldr->sects[fn_array].sh_entsize == 0 ||
+	    ldr->sects[fn_array].sh_size % ldr->sects[fn_array].sh_entsize != 0) {
+		LOG_ERR("Invalid data in region %d", fn_array);
+		return -ENOEXEC;
+	}
+
+	nents = ldr->sects[fn_array].sh_size / ldr->sects[fn_array].sh_entsize;
+	ptr = ext->mem[fn_array];
+	for (i = 0; i < nents; ++i) {
+		entry_fn = (void *) *ptr++;
+		entry_fn();
+	}
+
+	return 0;
+}
+
+static int llext_call_inits(struct llext_loader *ldr, struct llext *ext)
+{
+	int ret;
+
+	ret = llext_call_array(ldr, ext, LLEXT_MEM_PREINIT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return llext_call_array(ldr, ext, LLEXT_MEM_INIT);
+}
+
 /*
  * Load a valid ELF as an extension
  */
@@ -627,6 +689,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_export_symbols(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to export, ret %d", ret);
+		goto out;
+	}
+
+	LOG_DBG("Calling init functions...");
+	ret = llext_call_inits(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to init, ret %d", ret);
 		goto out;
 	}
 
