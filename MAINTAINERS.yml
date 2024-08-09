@@ -4015,6 +4015,20 @@ RTIO:
   tests:
     - rtio
 
+Secure storage:
+  status: maintained
+  maintainers:
+    - tomi-font
+  files:
+    - subsys/secure_storage/
+    - include/zephyr/secure_storage/
+    - samples/psa/
+    - doc/services/secure_storage/
+  labels:
+    - "area: Secure storage"
+  tests:
+    - psa
+
 Storage:
   status: odd fixes
   files:
@@ -4817,6 +4831,8 @@ West:
     - modules/mbedtls/
   labels:
     - "area: Crypto / RNG"
+  tests:
+    - psa
 
 "West project: mcuboot":
   status: maintained
@@ -4984,6 +5000,8 @@ West:
     - modules/trusted-firmware-m/
   labels:
     - "area: TF-M"
+  tests:
+    - psa
 
 "West project: tf-m-tests":
   status: maintained

@@ -1,0 +1,37 @@
+sample:
+  name: PSA Crypto persistent key sample
+  description: Demonstration of persistent key usage in the PSA Crypto API.
+common:
+  tags:
+    - psa
+  timeout: 10
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Sample finished successfully."
+tests:
+  sample.psa.persistent_key.tfm:
+    filter: CONFIG_BUILD_WITH_TFM
+    integration_platforms:
+      - nrf9160dk/nrf9160/ns
+    tags:
+      - trusted-firmware-m
+  sample.psa.persistent_key.secure_storage.entropy_driver:
+    filter: not CONFIG_BUILD_WITH_TFM and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
+            and CONFIG_ENTROPY_HAS_DRIVER
+    integration_platforms: &secure_storage_integration_platforms
+      - native_sim
+      - nrf52840dk/nrf52840
+    extra_args: EXTRA_CONF_FILE=overlay-secure_storage.conf;overlay-entropy_driver.conf
+    tags:
+      - drivers.entropy
+      - settings
+  sample.psa.persistent_key.secure_storage.entropy_not_secure:
+    filter: not CONFIG_BUILD_WITH_TFM and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
+            and not CONFIG_ENTROPY_HAS_DRIVER
+    integration_platforms: *secure_storage_integration_platforms
+    extra_args: EXTRA_CONF_FILE="overlay-secure_storage.conf;overlay-entropy_not_secure.conf"
+    tags:
+      - random
+      - settings

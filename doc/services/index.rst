@@ -6,7 +6,6 @@ OS Services
 .. toctree::
    :maxdepth: 1
 
-
    binary_descriptors/index.rst
    console.rst
    crypto/index
@@ -28,6 +27,7 @@ OS Services
    pm/index.rst
    portability/index.rst
    poweroff.rst
+   secure_storage.rst
    shell/index.rst
    serialization/index.rst
    settings/index.rst

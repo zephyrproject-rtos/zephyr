@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
+	prompt "ITS store module implementation"
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+	bool "ITS store module implementation using the settings subsystem for storage"
+	depends on FLASH_HAS_DRIVER_ENABLED
+	imply FLASH_MAP
+	imply NVS
+	select SETTINGS
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
+	bool "Custom ITS store module implementation"
+	help
+	  Implement the functions declared in <zephyr/secure_storage/its/store.h>.
+
+endchoice # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
+
+if SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+
+config SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX
+	string "Subtree in which to store the settings, with a trailing slash. Can be empty."
+	default "its/"
+
+endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
