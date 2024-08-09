@@ -3,18 +3,7 @@
 
 if SOC_FAMILY_NXP_MCX
 
-rsource "*/Kconfig.defconfig"
-
 if FLASH_MCUX_FLEXSPI_XIP
-
-# Avoid RWW hazards by defaulting logging to disabled
-choice FLASH_LOG_LEVEL_CHOICE
-	default FLASH_LOG_LEVEL_OFF
-endchoice
-
-choice MEMC_LOG_LEVEL_CHOICE
-	default MEMC_LOG_LEVEL_OFF
-endchoice
 
 # Code relocation is needed when FLASH_MCUX_FLEXSPI_XIP is enabled
 config CODE_DATA_RELOCATION_SRAM
@@ -32,5 +21,7 @@ config MFD
 choice USB_MCUX_CONTROLLER_TYPE
 	default USB_DC_NXP_EHCI
 endchoice
+
+rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_NXP_MCX
