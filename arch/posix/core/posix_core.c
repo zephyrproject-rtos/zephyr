@@ -36,6 +36,7 @@
  *
  */
 
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -480,6 +481,18 @@ void posix_abort_thread(int thread_idx)
 int posix_arch_get_unique_thread_id(int thread_idx)
 {
 	return threads_table[thread_idx].thead_cnt;
+}
+
+int posix_arch_thread_name_set(int thread_idx, const char *str)
+{
+	int err;
+
+	err = pthread_setname_np(threads_table[thread_idx].thread, str);
+	if (err) {
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 /*

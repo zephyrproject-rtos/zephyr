@@ -47,6 +47,7 @@ void posix_main_thread_start(int next_allowed_thread_nbr);
 int posix_new_thread(void *payload);
 void posix_abort_thread(int thread_idx);
 int posix_arch_get_unique_thread_id(int thread_idx);
+int posix_arch_thread_name_set(int thread_idx, const char *str);
 
 #ifndef POSIX_ARCH_DEBUG_PRINTS
 #define POSIX_ARCH_DEBUG_PRINTS 0
