@@ -110,6 +110,9 @@ following defines are available:
 |                             |                   | ``PATCHLEVEL``, |br|                                 |                         |
 |                             |                   | ``VERSION_TWEAK`` |br|                               |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
+| APP_GIT_COMMIT_HASH_SHORT   | Numerical         | First 8 hex characters of ``git rev-parse HEAD``     | 0x2c85d922              |
+|                             |                   | from application repository                          |                         |
++-----------------------------+-------------------+------------------------------------------------------+-------------------------+
 | APP_BUILD_VERSION           | String (unquoted) | None (value of ``git describe --abbrev=12 --always`` | v3.3.0-18-g2c85d9224fca |
 |                             |                   | from application repository)                         |                         |
 +-----------------------------+-------------------+------------------------------------------------------+-------------------------+
