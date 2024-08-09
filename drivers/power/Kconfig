@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config POWER
+	bool "Enable power driver support"
+
+if POWER
+
+rsource "Kconfig.nrf"
+
+endif # POWER
