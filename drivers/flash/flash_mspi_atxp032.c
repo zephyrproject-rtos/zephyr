@@ -826,9 +826,8 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 
 #define FLASH_MSPI_ATXP032(n)                                                                     \
 	static const struct flash_mspi_atxp032_config flash_mspi_atxp032_config_##n = {           \
-		.port = (DT_REG_ADDR(DT_INST_BUS(n)) - REG_MSPI_BASEADDR) /                       \
-			(DT_REG_SIZE(DT_INST_BUS(n)) * 4),                                        \
 		.mem_size = DT_INST_PROP(n, size) / 8,                                            \
+		.port        = MSPI_PORT(n),                                                      \
 		.flash_param =                                                                    \
 			{                                                                         \
 				.write_block_size = NOR_WRITE_SIZE,                               \

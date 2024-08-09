@@ -47,6 +47,9 @@ enum mspi_ambiq_timing_param {
 	MSPI_AMBIQ_SET_RXDQSDLYEXT    = BIT(7),
 };
 
+#define MSPI_PORT(n)    ((DT_REG_ADDR(DT_INST_BUS(n)) - MSPI0_BASE) /                             \
+			(DT_REG_SIZE(DT_INST_BUS(n)) * 4))
+
 #define TIMING_CFG_GET_RX_DUMMY(cfg)                                                              \
 	{                                                                                         \
 		mspi_timing_cfg *timing = (mspi_timing_cfg *)cfg;                                 \

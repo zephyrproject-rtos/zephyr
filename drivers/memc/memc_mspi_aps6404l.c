@@ -428,8 +428,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MEMC_MSPI_APS6404L(n)                                                                     \
 	static const struct memc_mspi_aps6404l_config                                             \
 	memc_mspi_aps6404l_config_##n = {                                                         \
-		.port               = (DT_REG_ADDR(DT_INST_BUS(n)) - REG_MSPI_BASEADDR) /         \
-					(DT_REG_SIZE(DT_INST_BUS(n)) * 4),                        \
+		.port               = MSPI_PORT(n),                                               \
 		.mem_size           = DT_INST_PROP(n, size) / 8,                                  \
 		.bus                = DEVICE_DT_GET(DT_INST_BUS(n)),                              \
 		.dev_id             = MSPI_DEVICE_ID_DT_INST(n),                                  \
