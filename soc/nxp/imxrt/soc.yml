@@ -8,9 +8,7 @@ family:
     - name: mimxrt1021
     - name: mimxrt1024
     - name: mimxrt1042
-    - name: mimxrt1051
     - name: mimxrt1052
-    - name: mimxrt1061
     - name: mimxrt1062
     - name: mimxrt1064
   - name: imxrt11xx
