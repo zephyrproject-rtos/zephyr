@@ -258,6 +258,12 @@ endif
 
 endmenu # On board MCUboot operation mode
 
+config MCUBOOT_IMGTOOL_LOAD_ADDRESS
+	hex "If image is loaded to RAM, specify the load address"
+	default 0x00
+	help
+	  If the image is loaded to RAM, specify the load address.
+
 endif # BOOTLOADER_MCUBOOT
 
 menuconfig MCUBOOT_BOOTUTIL_LIB
