@@ -1,0 +1,7 @@
+# EFR32MG27 BRD4194A
+
+# Copyright (c) 2024 EMEA Central FAEs
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG27_RB4194A
+	select SOC_PART_NUMBER_EFR32BG27C140F768IM40
