@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menu "GPIO STEPPER Driver"
+
+config GPIO_STEPPER
+	bool "Activate driver for GPIO_STEPPER_MOTOR_CONTROLLER"
+	help
+	  GPIO_STEPPER_MOTOR_CONTROLLER driver for stepper motor control
+
+endmenu

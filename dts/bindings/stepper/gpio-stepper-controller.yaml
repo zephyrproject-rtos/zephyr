@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO STEPPER MOTOR CONTROLLER
+
+compatible: "gpio-stepper"
+
+include: stepper-motor-controller.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The gpio pin array on which the stepper inputs are to be connected
+      stepper {
+              compatible = "gpio-stepper";
+              status = "okay";
+              gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>,
+                      <&gpioc 7 GPIO_ACTIVE_HIGH>,
+                      <&gpiob 0 GPIO_ACTIVE_HIGH>,
+                      <&gpioa 7 GPIO_ACTIVE_HIGH>;
+      };
