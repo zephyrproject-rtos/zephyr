@@ -624,7 +624,8 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
+	if (dev_data->tx_irq_ena && dev_data->tx_ready && dev_data->configured &&
+	    !dev_data->suspended) {
 		return 1;
 	}
 
@@ -688,7 +689,8 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
+	if (dev_data->tx_ready && dev_data->tx_irq_ena && dev_data->configured &&
+	    !dev_data->suspended) {
 		return 1;
 	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
 		return 1;
