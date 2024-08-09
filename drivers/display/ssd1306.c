@@ -107,7 +107,7 @@ static bool ssd1306_bus_ready_spi(const struct device *dev)
 static int ssd1306_write_bus_spi(const struct device *dev, uint8_t *buf, size_t len, bool command)
 {
 	const struct ssd1306_config *config = dev->config;
-	int errno;
+	int ret;
 
 	gpio_pin_set_dt(&config->data_cmd, command ? 0 : 1);
 	struct spi_buf tx_buf = {
@@ -120,9 +120,9 @@ static int ssd1306_write_bus_spi(const struct device *dev, uint8_t *buf, size_t 
 		.count = 1
 	};
 
-	errno = spi_write_dt(&config->bus.spi, &tx_bufs);
+	ret = spi_write_dt(&config->bus.spi, &tx_bufs);
 
-	return errno;
+	return ret;
 }
 
 static const char *ssd1306_bus_name_spi(const struct device *dev)
@@ -204,7 +204,7 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 
 static inline int ssd1306_set_iref_mode(const struct device *dev)
 {
-	int errno = 0;
+	int ret = 0;
 	const struct ssd1306_config *config = dev->config;
 	uint8_t cmd_buf[] = {
 		SSD1306_SET_IREF_MODE,
@@ -212,10 +212,10 @@ static inline int ssd1306_set_iref_mode(const struct device *dev)
 	};
 
 	if (config->use_internal_iref) {
-		errno = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
+		ret = ssd1306_write_bus(dev, cmd_buf, sizeof(cmd_buf), true);
 	}
 
-	return errno;
+	return ret;
 }
 
 static int ssd1306_resume(const struct device *dev)
