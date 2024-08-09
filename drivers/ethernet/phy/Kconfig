@@ -59,6 +59,14 @@ config PHY_REALTEK_RTL8211F
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
+config PHY_QUALCOMM_AR8031
+	bool "Qualcomm Atheros AR8031 Ethernet PHY Driver"
+	default y
+	depends on DT_HAS_QCA_AR8031_ENABLED
+	depends on MDIO
+	help
+	  Enable Qualcomm Atheros AR8031 Ethernet PHY Driver
+
 config PHY_AUTONEG_TIMEOUT_MS
 	int "Auto-negotiation timeout value in milliseconds"
 	default 4000

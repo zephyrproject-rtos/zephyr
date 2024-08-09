@@ -25,4 +25,42 @@
 		};
 	};
 
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <&iomuxc_enet_td0_enet_rgmii_td_enet1_rgmii_td0>,
+				<&iomuxc_enet_td1_enet_rgmii_td_enet1_rgmii_td1>,
+				<&iomuxc_enet_td2_enet_rgmii_td_enet1_rgmii_td2>,
+				<&iomuxc_enet_td3_enet_rgmii_td_enet1_rgmii_td3>,
+				<&iomuxc_enet_txc_enet_rgmii_txc_enet1_rgmii_txc>,
+				<&iomuxc_enet_tx_ctl_enet_rgmii_tx_ctl_enet1_rgmii_tx_ctl>;
+			slew-rate = "fast";
+			drive-strength = "x6";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_enet_rd0_enet_rgmii_rd_enet1_rgmii_rd0>,
+				<&iomuxc_enet_rd1_enet_rgmii_rd_enet1_rgmii_rd1>,
+				<&iomuxc_enet_rd2_enet_rgmii_rd_enet1_rgmii_rd2>,
+				<&iomuxc_enet_rd3_enet_rgmii_rd_enet1_rgmii_rd3>,
+				<&iomuxc_enet_rxc_enet_rgmii_rxc_enet1_rgmii_rxc>,
+				<&iomuxc_enet_rx_ctl_enet_rgmii_rx_ctl_enet1_rgmii_rx_ctl>;
+			slew-rate = "fast";
+			drive-strength = "x1";
+		};
+
+		group2 {
+			pinmux = <&iomuxc_sai2_rxc_gpio_io_gpio4_io22>;
+			slew-rate = "fast";
+			drive-strength = "x1";
+		};
+	};
+
+	pinmux_mdio: pinmux_mdio {
+		group0 {
+			pinmux = <&iomuxc_enet_mdc_enet_mdc_enet1_mdc>,
+				<&iomuxc_enet_mdio_enet_mdio_enet1_mdio>;
+			slew-rate = "slow";
+			drive-strength = "x6";
+		};
+	};
 };

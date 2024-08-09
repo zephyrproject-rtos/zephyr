@@ -159,6 +159,15 @@
 /** 1000BASE-T half-duplex capable */
 #define MII_ESTAT_1000BASE_T_HALF  (1 << 12)
 
+/* MMD Access Control Register (MII_MMD_ACR) Register bit definitions */
+/** DEVAD Mask */
+#define MII_MMD_ACR_DEVAD_MASK      (0x1F << 0)
+/** Address Data bits */
+#define MII_MMD_ACR_ADDR            (0x00 << 14)
+#define MII_MMD_ACR_DATA_NO_POS_INC (0x01 << 14)
+#define MII_MMD_ACR_DATA_RW_POS_INC (0x10 << 14)
+#define MII_MMD_ACR_DATA_W_POS_INC  (0x11 << 14)
+
 /**
  * @}
  */
