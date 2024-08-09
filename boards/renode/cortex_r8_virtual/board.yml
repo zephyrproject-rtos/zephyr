@@ -1,0 +1,5 @@
+board:
+  name: cortex_r8_virtual
+  vendor: renode
+  socs:
+  - name: cortex_r8_virtual
