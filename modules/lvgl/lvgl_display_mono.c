@@ -8,15 +8,15 @@
 #include <lvgl.h>
 #include "lvgl_display.h"
 
-void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
+void lvgl_flush_cb_mono(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
 {
 	uint16_t w = area->x2 - area->x1 + 1;
 	uint16_t h = area->y2 - area->y1 + 1;
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	const struct device *display_dev = data->display_dev;
 	struct display_buffer_descriptor desc;
 	const bool is_epd = data->cap.screen_info & SCREEN_INFO_EPD;
-	const bool is_last = lv_disp_flush_is_last(disp_drv);
+	const bool is_last = lv_display_flush_is_last(display);
 
 	if (is_epd && !data->blanking_on && !is_last) {
 		/*
@@ -33,9 +33,9 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 	desc.width = w;
 	desc.pitch = w;
 	desc.height = h;
-	display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);
+	display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
 	if (data->cap.screen_info & SCREEN_INFO_DOUBLE_BUFFER) {
-		display_write(display_dev, area->x1, area->y1, &desc, (void *)color_p);
+		display_write(display_dev, area->x1, area->y1, &desc, (void *)px_map);
 	}
 
 	if (is_epd && is_last && data->blanking_on) {
@@ -47,13 +47,13 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 		data->blanking_on = false;
 	}
 
-	lv_disp_flush_ready(disp_drv);
+	lv_display_flush_ready(display);
 }
 
-void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,
-			 lv_coord_t y, lv_color_t color, lv_opa_t opa)
+void lvgl_set_px_cb_mono(lv_display_t *display, uint8_t *buf, int32_t buf_w, int32_t x, int32_t y,
+			 lv_color_t color, lv_opa_t opa)
 {
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	uint8_t *buf_xy;
 	uint8_t bit;
 
@@ -76,13 +76,13 @@ void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w
 	}
 
 	if (data->cap.current_pixel_format == PIXEL_FORMAT_MONO10) {
-		if (color.full == 0) {
+		if (lv_color_to_u32(color) == 0) {
 			*buf_xy &= ~BIT(bit);
 		} else {
 			*buf_xy |= BIT(bit);
 		}
 	} else {
-		if (color.full == 0) {
+		if (lv_color_to_u32(color) == 0) {
 			*buf_xy |= BIT(bit);
 		} else {
 			*buf_xy &= ~BIT(bit);
@@ -90,9 +90,11 @@ void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w
 	}
 }
 
-void lvgl_rounder_cb_mono(lv_disp_drv_t *disp_drv, lv_area_t *area)
+void lvgl_rounder_cb_mono(lv_event_t *e)
 {
-	struct lvgl_disp_data *data = (struct lvgl_disp_data *)disp_drv->user_data;
+	lv_area_t *area = lv_event_get_param(e);
+	lv_display_t *display = lv_event_get_user_data(e);
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 
 	if (data->cap.screen_info & SCREEN_INFO_X_ALIGNMENT_WIDTH) {
 		area->x1 = 0;

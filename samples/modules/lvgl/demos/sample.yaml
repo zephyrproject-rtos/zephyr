@@ -18,12 +18,31 @@ tests:
   sample.modules.lvgl.demo_benchmark:
     extra_configs:
       - CONFIG_LV_Z_DEMO_BENCHMARK=y
+      - CONFIG_LV_USE_DEMO_WIDGETS=y
   sample.modules.lvgl.demo_stress:
     extra_configs:
       - CONFIG_LV_Z_DEMO_STRESS=y
   sample.modules.lvgl.demo_widgets:
     extra_configs:
       - CONFIG_LV_Z_DEMO_WIDGETS=y
+  sample.modules.lvgl.demo_flex_layout:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_FLEX_LAYOUT=y
+  sample.modules.lvgl.demo_keypad_encoder:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
+  sample.modules.lvgl.demo_render:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_RENDER=y
+  sample.modules.lvgl.demo_scroll:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_SCROLL=y
+  sample.modules.lvgl.demo_vector_graphic:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_VECTOR_GRAPHIC=y
+  sample.modules.lvgl.demo_multilang:
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_MULTILANG=y
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
