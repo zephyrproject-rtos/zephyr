@@ -50,4 +50,12 @@ config NET_SAMPLE_NUM_WEBSOCKET_HANDLERS
 	  Each websocket connection is served by a thread which needs
 	  memory. Only increase the value here if really needed.
 
+config NET_SAMPLE_WEBSOCKET_STATS_INTERVAL
+	int "Interval in milliseconds to send network stats over websocket"
+	depends on NET_SAMPLE_WEBSOCKET_SERVICE
+	default 200
+	help
+	  This interval controls how often the net stats data shown on the web page
+	  will be updated.
+
 source "Kconfig.zephyr"
