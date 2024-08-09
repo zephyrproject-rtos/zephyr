@@ -8,8 +8,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <hal/nrf_rtc.h>
-
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
@@ -20,6 +18,7 @@
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
+#include "hal/cntr.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
@@ -120,8 +119,13 @@ static void rtc0_nrf5_isr(const void *arg)
 	lll_prof_enter_ull_high();
 
 	/* On compare0 run ticker worker instance0 */
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	if (NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER]) {
+		nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	if (NRF_RTC->EVENTS_COMPARE[0]) {
 		nrf_rtc_event_clear(NRF_RTC, NRF_RTC_EVENT_COMPARE_0);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 		ticker_trigger(0);
 	}

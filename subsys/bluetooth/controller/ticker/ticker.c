@@ -3070,7 +3070,12 @@ ticker_job_compare_update(struct ticker_instance *instance,
 			instance->ticks_slot_previous = 0U;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
+#if !defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
+			/* Stopped counter value will be used as ticks_current
+			 * for calculation to start new tickers.
+			 */
 			instance->ticks_current = cntr_cnt_get();
+#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
 		}
 
 		return 0U;
@@ -3078,12 +3083,23 @@ ticker_job_compare_update(struct ticker_instance *instance,
 
 	/* Check if this is the first update. If so, start the counter */
 	if (ticker_id_old_head == TICKER_NULL) {
+#if !defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
 		uint32_t ticks_current;
 
 		ticks_current = cntr_cnt_get();
+#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
 
 		if (cntr_start() == 0) {
+#if !defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
+			/* Stopped counter value will be used as ticks_current
+			 * for calculation to start new tickers.
+			 * FIXME: We do not need to synchronize here, instead
+			 *        replace with check to ensure the counter value
+			 *        has not since that synchronization when the
+			 *        counter with in stopped state.
+			 */
 			instance->ticks_current = ticks_current;
+#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
 		}
 	}
 
@@ -3205,8 +3221,29 @@ void ticker_job(void *param)
 	 */
 	ticker_id_old_head = instance->ticker_id_head;
 
-	/* Manage user operations (updates and deletions) in ticker list */
+	/* Get current ticks, used in managing updates and expired tickers */
 	ticks_now = cntr_cnt_get();
+
+#if defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
+	if (ticker_id_old_head == TICKER_NULL) {
+		/* No tickers active, synchronize to the free running counter so
+		 * that any new ticker started can have its ticks_to_expire
+		 * relative to current free running counter value.
+		 *
+		 * Both current tick (new value) and previous tick (previously
+		 * stored when all tickers stopped) is assigned to ticks_now.
+		 * All new tickers are started from this synchronized value as
+		 * the anchor/reference value.
+		 *
+		 * Note, this if clause is an overhead wherein the check is
+		 * performed for every ticker_job() iteration!
+		 */
+		instance->ticks_current = ticks_now;
+		ticks_previous = ticks_now;
+	}
+#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
+
+	/* Manage user operations (updates and deletions) in ticker list */
 	pending = ticker_job_list_manage(instance, ticks_now, ticks_elapsed,
 					 &insert_head);
 
@@ -3365,7 +3402,13 @@ uint8_t ticker_init(uint8_t instance_index, uint8_t count_node, void *node,
 	instance->trigger_set_cb = trigger_set_cb;
 
 	instance->ticker_id_head = TICKER_NULL;
+#if defined(CONFIG_BT_TICKER_CNTR_FREE_RUNNING)
+	/* We will synchronize in ticker_job on first ticker start */
+	instance->ticks_current = 0U;
+#else /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
+	/* Synchronize to initialized (in stopped state) counter value */
 	instance->ticks_current = cntr_cnt_get();
+#endif /* !CONFIG_BT_TICKER_CNTR_FREE_RUNNING */
 	instance->ticks_elapsed_first = 0U;
 	instance->ticks_elapsed_last = 0U;
 

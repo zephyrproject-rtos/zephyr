@@ -55,7 +55,8 @@
  * and ticker_update. Set to 32 us, which is ~1 tick with 32768 Hz
  * clock.
  */
-#define EVENT_TICKER_RES_MARGIN_US    32
+#define EVENT_TICKER_RES_MARGIN_US DIV_ROUND_UP(HAL_TICKER_CNTR_CLK_UNIT_FSEC, \
+						HAL_TICKER_FSEC_PER_USEC)
 
 #define EVENT_RX_JITTER_US(phy) 16    /* Radio Rx timing uncertainty */
 #define EVENT_RX_TO_US(phy) ((((((phy)&0x03) + 4)<<3)/BIT((((phy)&0x3)>>1))) + \
