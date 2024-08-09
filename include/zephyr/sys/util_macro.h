@@ -286,6 +286,42 @@ extern "C" {
 #define IS_EQ(a, b) Z_IS_EQ(a, b)
 
 /**
+ * @brief Like <tt>a < b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 4095.
+ *
+ */
+#define IS_LT(a, b) Z_IS_LT(a, b)
+
+/**
+ * @brief Like <tt>a <= b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 4095.
+ *
+ */
+#define IS_LE(a, b) UTIL_NOT(Z_IS_LT(b, a))
+
+/**
+ * @brief Like <tt>a > b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 4095.
+ *
+ */
+#define IS_GT(a, b) Z_IS_LT(b, a)
+
+/**
+ * @brief Like <tt>a >= b</tt>, but does evaluation and
+ * short-circuiting at C preprocessor time.
+ *
+ * This however only works for integer literal from 0 to 4095.
+ *
+ */
+#define IS_GE(a, b) UTIL_NOT(Z_IS_LT(a, b))
+
+/**
  * @brief Remove empty arguments from list.
  *
  * During macro expansion, `__VA_ARGS__` and other preprocessor
@@ -412,6 +448,71 @@ extern "C" {
  */
 #define UTIL_X2(y) UTIL_PRIMITIVE_CAT(Z_UTIL_X2_, y)
 
+/**
+ * @brief UTIL_ADD(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a + b.
+ */
+#define UTIL_ADD(a, b) Z_UTIL_ADD(a, b)
+
+/**
+ * @brief UTIL_SUB(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a - b.
+ */
+#define UTIL_SUB(a, b) Z_UTIL_SUB(a, b)
+
+/**
+ * @brief UTIL_MUL(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a * b.
+ */
+#define UTIL_MUL(a, b) Z_UTIL_MUL(a, b)
+
+/**
+ * @brief UTIL_DIV(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a / b.
+ */
+#define UTIL_DIV(a, b) Z_UTIL_DIV(a, b)
+
+/**
+ * @brief UTIL_BIT_INV(a) for integer literal a from 0 to 4095 expands to an
+ * integer literal whose value is ~a.
+ */
+#define UTIL_BIT_INV(a) Z_UTIL_BIT_INV(a)
+
+/**
+ * @brief UTIL_BIT_INV(a) for integer literal a from 0 to 4095 expands to an
+ * integer literal whose value is ~a + 1.
+ */
+#define UTIL_2S_COMPL(a) UTIL_ADD(1, Z_UTIL_BIT_INV(a))
+
+/**
+ * @brief UTIL_BIT_AND(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a & b.
+ */
+#define UTIL_BIT_AND(a, b) Z_UTIL_BIT_AND(a, b)
+
+/**
+ * @brief UTIL_BIT_OR(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a | b.
+ */
+#define UTIL_BIT_OR(a, b) Z_UTIL_BIT_OR(a, b)
+
+/**
+ * @brief UTIL_BIT_XOR(a, b) for integer literal a and b from 0 to 4095 expands
+ * to an integer literal whose value is a ^ b.
+ */
+#define UTIL_BIT_XOR(a, b) Z_UTIL_BIT_XOR(a, b)
+
+/**
+ * @brief UTIL_LSH(a, s) for integer literal a from 0 to 4095 and s from 0 to 12.
+ * Expands to an integer literal whose value is a << s.
+ */
+#define UTIL_LSH(a, s) Z_UTIL_LSH(a, s)
+
+/**
+ * @brief UTIL_RSH(a, s) for integer literal a from 0 to 4095 and s from 0 to 12.
+ * Expands to an integer literal whose value is a >> s.
+ */
+#define UTIL_RSH(a, s) Z_UTIL_RSH(a, s)
 
 /**
  * @brief Generates a sequence of code with configurable separator.

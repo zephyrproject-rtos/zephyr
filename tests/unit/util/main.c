@@ -167,6 +167,92 @@ ZTEST(util, test_UTIL_AND) {
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7);
 }
 
+ZTEST(util, test_UTIL_ADD) {
+	zexpect_equal(UTIL_ADD(2048, 2047), 4095);
+	zexpect_equal(UTIL_ADD(4000, 500), 404);
+	zexpect_equal(UTIL_ADD(SEVEN, SEVEN), 14);
+	zexpect_equal(UTIL_ADD(4000, SEVEN), 4007);
+	zexpect_equal(UTIL_ADD(SEVEN, 4090), 1);
+}
+
+ZTEST(util, test_UTIL_SUB) {
+	zexpect_equal(UTIL_SUB(2048, 2047), 1);
+	zexpect_equal(UTIL_SUB(4000, 500), 3500);
+	zexpect_equal(UTIL_SUB(SEVEN, SEVEN), 0);
+	zexpect_equal(UTIL_SUB(4000, SEVEN), 3993);
+	zexpect_equal(UTIL_SUB(SEVEN, 4090), 13);
+}
+
+ZTEST(util, test_UTIL_MUL) {
+	zexpect_equal(UTIL_MUL(2048, 2047), 2048);
+	zexpect_equal(UTIL_MUL(4000, 500), 1152);
+	zexpect_equal(UTIL_MUL(SEVEN, SEVEN), 49);
+	zexpect_equal(UTIL_MUL(4000, SEVEN), 3424);
+	zexpect_equal(UTIL_MUL(SEVEN, 4090), 4054);
+}
+
+ZTEST(util, test_UTIL_DIV) {
+	zexpect_equal(UTIL_DIV(2048, 2047), 1);
+	zexpect_equal(UTIL_DIV(4000, 500), 8);
+	zexpect_equal(UTIL_DIV(SEVEN, SEVEN), 1);
+	zexpect_equal(UTIL_DIV(4000, SEVEN), 571);
+	zexpect_equal(UTIL_DIV(SEVEN, 4090), 0);
+}
+
+ZTEST(util, test_UTIL_BIT_INV) {
+	zexpect_equal(UTIL_BIT_INV(2047), 2048);
+	zexpect_equal(UTIL_BIT_INV(ZERO), 4095);
+	zexpect_equal(UTIL_BIT_INV(SEVEN), 4088);
+}
+
+ZTEST(util, test_UTIL_2S_COMPL) {
+	zexpect_equal(UTIL_2S_COMPL(2047), 2049);
+	zexpect_equal(UTIL_2S_COMPL(ZERO), 0);
+	zexpect_equal(UTIL_2S_COMPL(SEVEN), 4089);
+}
+
+ZTEST(util, test_UTIL_BIT_AND) {
+	zexpect_equal(UTIL_BIT_AND(2048, 2047), 0);
+	zexpect_equal(UTIL_BIT_AND(4000, 500), 416);
+	zexpect_equal(UTIL_BIT_AND(SEVEN, SEVEN), 7);
+	zexpect_equal(UTIL_BIT_AND(4000, SEVEN), 0);
+	zexpect_equal(UTIL_BIT_AND(SEVEN, 4090), 2);
+}
+
+ZTEST(util, test_UTIL_BIT_OR) {
+	zexpect_equal(UTIL_BIT_OR(2048, 2047), 4095);
+	zexpect_equal(UTIL_BIT_OR(4000, 500), 4084);
+	zexpect_equal(UTIL_BIT_OR(SEVEN, SEVEN), 7);
+	zexpect_equal(UTIL_BIT_OR(4000, SEVEN), 4007);
+	zexpect_equal(UTIL_BIT_OR(SEVEN, 4090), 4095);
+}
+
+ZTEST(util, test_UTIL_BIT_XOR) {
+	zexpect_equal(UTIL_BIT_XOR(2048, 2047), 4095);
+	zexpect_equal(UTIL_BIT_XOR(4000, 500), 3668);
+	zexpect_equal(UTIL_BIT_XOR(SEVEN, SEVEN), 0);
+	zexpect_equal(UTIL_BIT_XOR(4000, SEVEN), 4007);
+	zexpect_equal(UTIL_BIT_XOR(SEVEN, 4090), 4093);
+}
+
+ZTEST(util, test_UTIL_LSH) {
+	zexpect_equal(UTIL_LSH(1, 13), 0);
+	zexpect_equal(UTIL_LSH(1, 12), 0);
+	zexpect_equal(UTIL_LSH(1, 11), 2048);
+	zexpect_equal(UTIL_LSH(SEVEN, SEVEN), 896);
+	zexpect_equal(UTIL_LSH(31, SEVEN), 3968);
+	zexpect_equal(UTIL_LSH(SEVEN, 4090), 0);
+}
+
+ZTEST(util, test_UTIL_RSH) {
+	zexpect_equal(UTIL_RSH(2048, 13), 0);
+	zexpect_equal(UTIL_RSH(2048, 12), 0);
+	zexpect_equal(UTIL_RSH(2048, 11), 1);
+	zexpect_equal(UTIL_RSH(UTIL_LSH(SEVEN, SEVEN), SEVEN), SEVEN);
+	zexpect_equal(UTIL_RSH(1234, SEVEN), 9);
+	zexpect_equal(UTIL_RSH(SEVEN, 4090), 0);
+}
+
 ZTEST(util, test_IF_ENABLED) {
 	#define test_IF_ENABLED_FLAG_A 1
 	#define test_IF_ENABLED_FLAG_B 0
@@ -400,6 +486,46 @@ ZTEST(util, test_IS_EQ) {
 	zassert_false(IS_EQ(0, 1), "Unexpected IS_EQ result");
 	zassert_false(IS_EQ(1, 7), "Unexpected IS_EQ result");
 	zassert_false(IS_EQ(7, 0), "Unexpected IS_EQ result");
+}
+
+ZTEST(util, test_IS_LT) {
+	zexpect_true(IS_LT(0, 10), "Unexpected IS_LT result");
+	zexpect_true(IS_LT(100, 111), "Unexpected IS_LT result");
+	zexpect_true(IS_LT(4000, 4090), "Unexpected IS_LT result");
+
+	zexpect_false(IS_LT(1, 1), "Unexpected IS_LT result");
+	zexpect_false(IS_LT(17, 7), "Unexpected IS_LT result");
+	zexpect_false(IS_LT(4095, 0), "Unexpected IS_LT result");
+}
+
+ZTEST(util, test_IS_LE) {
+	zexpect_true(IS_LE(0, 0), "Unexpected IS_LE result");
+	zexpect_true(IS_LE(100, 111), "Unexpected IS_LE result");
+	zexpect_true(IS_LE(400, 4095), "Unexpected IS_LE result");
+
+	zexpect_false(IS_LE(1, 0), "Unexpected IS_LE result");
+	zexpect_false(IS_LE(17, 7), "Unexpected IS_LE result");
+	zexpect_false(IS_LE(4095, 0), "Unexpected IS_LE result");
+}
+
+ZTEST(util, test_IS_GT) {
+	zexpect_true(IS_GT(10, 0), "Unexpected IS_GT result");
+	zexpect_true(IS_GT(111, 100), "Unexpected IS_GT result");
+	zexpect_true(IS_GT(4090, 4000), "Unexpected IS_GT result");
+
+	zexpect_false(IS_GT(1, 1), "Unexpected IS_GT result");
+	zexpect_false(IS_GT(7, 17), "Unexpected IS_GT result");
+	zexpect_false(IS_GT(0, 4095), "Unexpected IS_GT result");
+}
+
+ZTEST(util, test_IS_GE) {
+	zexpect_true(IS_GE(0, 0), "Unexpected IS_GE result");
+	zexpect_true(IS_GE(111, 100), "Unexpected IS_GE result");
+	zexpect_true(IS_GE(4095, 400), "Unexpected IS_GE result");
+
+	zexpect_false(IS_GE(0, 1), "Unexpected IS_GE result");
+	zexpect_false(IS_GE(7, 17), "Unexpected IS_GE result");
+	zexpect_false(IS_GE(0, 4095), "Unexpected IS_GE result");
 }
 
 ZTEST(util, test_LIST_DROP_EMPTY) {
