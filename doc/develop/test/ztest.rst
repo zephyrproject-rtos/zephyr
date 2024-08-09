@@ -46,10 +46,13 @@ Below is an example of a test suite using a predicate:
 Adding tests to a suite
 ***********************
 
-There are 4 macros used to add a test to a suite, they are:
+There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
+  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
+  the body of the test using the ``data`` pointer.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
