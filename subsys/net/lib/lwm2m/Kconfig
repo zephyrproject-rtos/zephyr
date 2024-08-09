@@ -18,7 +18,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 menu "Protocol versions"
 
-choice
+choice LWM2M_VERSION
 	prompt "LwM2M protocol version"
 	default LWM2M_VERSION_1_0
 	help
