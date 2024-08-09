@@ -21,6 +21,8 @@ source "lib/posix/Kconfig"
 
 source "lib/open-amp/Kconfig"
 
+source "lib/rust/Kconfig"
+
 source "lib/smf/Kconfig"
 
 source "lib/acpi/Kconfig"

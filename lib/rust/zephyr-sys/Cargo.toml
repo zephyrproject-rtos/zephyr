@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Zühlke Engineering AG
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "zephyr-sys"
+version = "0.1.0"
+edition = "2021"
+
+[build-dependencies]
+bindgen = { version = "0.69.4", features = ["experimental"] }
