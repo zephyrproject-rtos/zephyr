@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* The Aux Offset shall be at least the length of the packet plus T_MAFS */
+#define PDU_ADV_AUX_OFFSET_MIN_US 300
+
 int lll_adv_data_init(struct lll_adv_pdu *pdu);
 int lll_adv_data_reset(struct lll_adv_pdu *pdu);
 int lll_adv_data_release(struct lll_adv_pdu *pdu);

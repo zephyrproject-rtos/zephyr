@@ -187,8 +187,10 @@
 #define EVENT_IFS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
-/* Controller will layout extended adv with minimum separation */
+/* Specification defined Minimum AUX Frame Space (MAFS) */
 #define EVENT_MAFS_US           300
+/* Controller dependent MAFS minimum used to populate aux_offset */
+#define EVENT_MAFS_MIN_US       MAX(EVENT_MAFS_US, PDU_ADV_AUX_OFFSET_MIN_US)
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller defined back to back transmit MAFS for extended advertising */
