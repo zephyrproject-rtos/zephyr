@@ -47,7 +47,6 @@ UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
 #define CDC_ACM_RX_FIFO_BUSY		4
-#define CDC_ACM_LOCK			5
 
 static struct k_work_q cdc_acm_work_q;
 static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
@@ -105,6 +104,10 @@ struct cdc_acm_uart_data {
 	struct k_work irq_cb_work;
 	struct cdc_acm_uart_fifo rx_fifo;
 	struct cdc_acm_uart_fifo tx_fifo;
+	/* When flow_ctrl is set, poll out is blocked when the buffer is full,
+	 * roughly emulating flow control.
+	 */
+	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
@@ -269,7 +272,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-		if (ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (ring_buf_space_get(data->tx_fifo.rb)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
 		} else {
@@ -373,7 +376,8 @@ static void cdc_acm_update_uart_cfg(struct cdc_acm_uart_data *const data)
 		break;
 	};
 
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	cfg->flow_ctrl = data->flow_ctrl ? UART_CFG_FLOW_CTRL_RTS_CTS :
+					   UART_CFG_FLOW_CTRL_NONE;
 }
 
 static void cdc_acm_update_linestate(struct cdc_acm_uart_data *const data)
@@ -535,15 +539,10 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		cdc_acm_work_submit(&data->tx_fifo_work);
-		return;
-	}
-
 	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		cdc_acm_work_submit(&data->tx_fifo_work);
-		goto tx_fifo_handler_exit;
+		return;
 	}
 
 	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
@@ -554,9 +553,6 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		LOG_ERR("Failed to enqueue");
 		net_buf_unref(buf);
 	}
-
-tx_fifo_handler_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 }
 
 /*
@@ -613,7 +609,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_is_empty(data->tx_fifo.rb)) {
+	if (ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -707,7 +703,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (ring_buf_space_get(data->tx_fifo.rb)) {
+		if (data->tx_fifo.irq) {
 			return 1;
 		}
 	} else {
@@ -723,7 +719,7 @@ static int cdc_acm_irq_rx_ready(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (check_wq_ctx(dev)) {
-		if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+		if (data->rx_fifo.irq) {
 			return 1;
 		}
 	} else {
@@ -769,7 +765,7 @@ static int cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -803,12 +799,6 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		return;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("Polling is in progress");
-		cdc_acm_work_submit(&data->irq_cb_work);
-		return;
-	}
-
 	data->tx_fifo.altered = false;
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
@@ -836,12 +826,10 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_is_empty(data->tx_fifo.rb)) {
+	    ring_buf_space_get(data->tx_fifo.rb)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
-
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 }
 
 static void cdc_acm_irq_callback_set(const struct device *dev,
@@ -860,13 +848,8 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 	uint32_t len;
 	int ret = -1;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("IRQ callback is used");
-		return -1;
-	}
-
 	if (ring_buf_is_empty(data->rx_fifo.rb)) {
-		goto poll_in_exit;
+		return ret;
 	}
 
 	len = ring_buf_get(data->rx_fifo.rb, c, 1);
@@ -875,34 +858,32 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 		ret = 0;
 	}
 
-poll_in_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
-
 	return ret;
 }
 
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	unsigned int lock;
+	uint32_t wrote;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_LOCK)) {
-		LOG_ERR("IRQ callback is used");
-		return;
+	while (true) {
+		lock = irq_lock();
+		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		irq_unlock(lock);
+
+		if (wrote == 1) {
+			break;
+		}
+
+		if (k_is_in_isr() || !data->flow_ctrl) {
+			LOG_WRN_ONCE("Ring buffer full, discard data");
+			break;
+		}
+
+		k_msleep(1);
 	}
 
-	if (ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		goto poll_out_exit;
-	}
-
-	LOG_DBG("Ring buffer full, drain buffer");
-	if (!ring_buf_get(data->tx_fifo.rb, NULL, 1) ||
-	    !ring_buf_put(data->tx_fifo.rb, &c, 1)) {
-		LOG_ERR("Failed to drain buffer");
-		__ASSERT_NO_MSG(false);
-	}
-
-poll_out_exit:
-	atomic_clear_bit(&data->state, CDC_ACM_LOCK);
 	cdc_acm_work_submit(&data->tx_fifo_work);
 }
 
@@ -976,17 +957,18 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 static int cdc_acm_configure(const struct device *dev,
 			     const struct uart_config *const cfg)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(cfg);
-	/*
-	 * We cannot implement configure API because there is
-	 * no notification of configuration changes provided
-	 * for the Abstract Control Model and the UART controller
-	 * is only emulated.
-	 * However, it allows us to use CDC ACM UART together with
-	 * subsystems like Modbus which require configure API for
-	 * real controllers.
-	 */
+	struct cdc_acm_uart_data *const data = dev->data;
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		data->flow_ctrl = false;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		data->flow_ctrl = true;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -1240,6 +1222,7 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		.c_data = &cdc_acm_##n,						\
 		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
 		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
 		.desc = &cdc_acm_desc_##n,					\
 		.fs_desc = cdc_acm_fs_desc_##n,					\
