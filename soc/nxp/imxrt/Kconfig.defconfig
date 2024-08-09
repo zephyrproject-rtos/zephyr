@@ -9,10 +9,6 @@ rsource "*/Kconfig.defconfig"
 
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
-config SERIAL_INIT_PRIORITY
-	default 55 if SERIAL
-	depends on SERIAL
-
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
