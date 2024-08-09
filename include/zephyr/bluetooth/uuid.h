@@ -5091,6 +5091,16 @@ struct bt_uuid_128 {
 	BT_UUID_DECLARE_16(BT_UUID_GATT_SL_VAL)
 
 /**
+ *  @brief GATT Characteristic UDI for Medical Devices UUID Value
+ */
+#define BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL 0x2bff
+/**
+ *  @brief GATT Characteristic UDI for Medical Devices
+ */
+#define BT_UUID_UDI_FOR_MEDICAL_DEVICES \
+	BT_UUID_DECLARE_16(BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL)
+
+/**
  *  @brief Gaming Service UUID value
  */
 #define BT_UUID_GMAS_VAL 0x1858
