@@ -1274,7 +1274,8 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
-	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+	    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 		create_time = k_cycle_get_32();
 	} else {
 		ARG_UNUSED(create_time);
@@ -1313,7 +1314,8 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
-	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+	    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 		net_pkt_set_create_time(pkt, create_time);
 	}
 

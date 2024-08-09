@@ -345,7 +345,8 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		zpacket_set_source_addr(ctx, pkt, src_addr, addrlen);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+	if ((IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
+	     IS_ENABLED(CONFIG_TRACING_NET_CORE)) &&
 	    !(flags & ZSOCK_MSG_PEEK)) {
 		net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
 	}
