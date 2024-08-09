@@ -99,7 +99,7 @@
 /* L2 Local Memory Management */
 
 /* These registers are for the L2 memory control and status. */
-#define DFL2MM_REG 0x71d00
+#define DFL2MM_REG (DT_REG_ADDR(DT_NODELABEL(hsbcap)))
 
 struct ace_l2mm {
 	uint32_t l2mcap;
