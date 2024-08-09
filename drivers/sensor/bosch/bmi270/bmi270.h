@@ -18,6 +18,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor/bmi270.h>
 
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
@@ -44,6 +45,7 @@
 #define BMI270_REG_FIFO_DOWNS      0x45
 #define BMI270_REG_FIFO_WTM_0      0x46
 #define BMI270_REG_FIFO_CONFIG_0   0x48
+#define BMI270_REG_FIFO_CONFIG_1   0x49
 #define BMI270_REG_SATURATION      0x4A
 #define BMI270_REG_AUX_DEV_ID      0x4B
 #define BMI270_REG_AUX_IF_CONF     0x4C
@@ -70,6 +72,8 @@
 #define BMI270_REG_GYR_SELF_TEST   0x6E
 #define BMI270_REG_NV_CONF         0x70
 #define BMI270_REG_OFFSET_0        0x71
+#define BMI270_REG_OFFSET_6        0x77
+#define BMI270_GYR_USR_GAIN_0      0x78
 #define BMI270_REG_PWR_CONF        0x7C
 #define BMI270_REG_PWR_CTRL        0x7D
 #define BMI270_REG_CMD             0x7E
@@ -105,6 +109,44 @@
 #define BMI270_INT_IO_CTRL_OUTPUT_EN	BIT(3) /* Output enabled */
 #define BMI270_INT_IO_CTRL_INPUT_EN	BIT(4) /* Input enabled */
 
+/* CRT Feature macro definitions */
+#define BMI270_G_TRIG_1_SELECT_POS    8
+#define BMI270_G_TRIG_1_SELECT_MASK   BIT(8)
+#define BMI270_G_TRIG_1_SELECT_CRT    0x01
+#define BMI270_G_TRIG_1_BLOCK_POS     9
+#define BMI270_G_TRIG_1_BLOCK_MASK    BIT(9)
+#define BMI270_G_TRIG_1_BLOCK_UNBLOCK 0x00
+
+#define BMI270_G_TRIG_1_BURST_LEN_POS   0
+#define BMI270_G_TRIG_1_BURST_LEN_MASK  0xFF
+#define BMI270_G_TRIG_1_BURST_LEN_VALUE 1
+
+#define BMI270_GEN_SET_1_NVM_PROG_PREP_POS  10
+#define BMI270_GEN_SET_1_NVM_PROG_PREP_MASK BIT(10)
+#define BMI270_GEN_SET_1_NVM_PROG_PREP_EN   0x01
+#define BMI270_NVM_PROG_EN                  0x02
+
+#define BMI270_GYR_GAIN_CONFIG_MASK        0x7FF
+#define BMI270_GYR_GAIN_CONFIG_UPD_MSK     BIT(11)
+#define BMI270_GYR_GAIN_CONFIG_UPD_POS     11
+#define BMI270_GYR_GAIN_CONFIG_UPD_ENABLE  1
+#define BMI270_GYR_USR_GAIN_MASK           0x7F
+#define BMI270_GYR_GAIN_EN_MSK             BIT(7)
+#define BMI270_GYR_GAIN_EN_POS             7
+#define BMI270_GYR_GAIN_STATUS_SAT_X_POS   0
+#define BMI270_GYR_GAIN_STATUS_SAT_X_MASK  BIT(0)
+#define BMI270_GYR_GAIN_STATUS_SAT_Y_POS   1
+#define BMI270_GYR_GAIN_STATUS_SAT_Y_MASK  BIT(1)
+#define BMI270_GYR_GAIN_STATUS_SAT_Z_POS   2
+#define BMI270_GYR_GAIN_STATUS_SAT_Z_MASK  BIT(2)
+#define BMI270_GYR_GAIN_STATUS_G_TRIG_POS  3
+#define BMI270_GYR_GAIN_STATUS_G_TRIG_MASK (BIT(3) | BIT(4) | BIT(5))
+#define BMI270_FIFO_CONFIG_1_SENSORS_MSK   (BIT(6) | BIT(7))
+#define BMI270_GYR_CRT_CONF_RUNNING_MSK    0x04
+#define BMI270_GYR_CRT_CONF_RUNNING_POS    0x02
+#define BMI270_GYR_CRT_CONF_RUNNING_EN     0x01
+#define BMI270_GYR_CRT_CONF_RUNNING_DIS    0x00
+
 /* Applies to INT1_MAP_FEAT, INT2_MAP_FEAT, INT_STATUS_0 */
 #define BMI270_INT_MAP_SIG_MOTION        BIT(0)
 #define BMI270_INT_MAP_STEP_COUNTER      BIT(1)
@@ -132,6 +174,8 @@
 #define BMI270_CMD_NVM_PROG   0xA0
 #define BMI270_CMD_FIFO_FLUSH OxB0
 #define BMI270_CMD_SOFT_RESET 0xB6
+#define BMI270_CMD_RDY_MSK    BIT(4)
+#define BMI270_CMD_RDY_POS    4
 
 #define BMI270_POWER_ON_TIME                500
 #define BMI270_SOFT_RESET_TIME              2000
@@ -285,6 +329,11 @@ struct bmi270_data {
 	struct k_work trig_work;
 #endif
 #endif /* CONFIG_BMI270_TRIGGER */
+#ifdef CONFIG_BMI270_CRT
+	/* CRT test results */
+	struct bmi2_gyr_user_gain_status crt_result_sts;
+	struct bmi2_gyro_user_gain_data crt_gain;
+#endif /* CONFIG_BMI270_CRT */
 };
 
 struct bmi270_feature_reg {
@@ -299,6 +348,11 @@ struct bmi270_feature_config {
 	size_t config_file_len;
 	struct bmi270_feature_reg *anymo_1;
 	struct bmi270_feature_reg *anymo_2;
+#ifdef CONFIG_BMI270_CRT
+	struct bmi270_feature_reg *g_trig_1;
+	struct bmi270_feature_reg *gyr_gain_status;
+	struct bmi270_feature_reg *gen_set_1;
+#endif /* CONFIG_BMI270_CRT */
 };
 
 union bmi270_bus {
@@ -358,6 +412,17 @@ int bmi270_reg_write_with_delay(const struct device *dev,
 				const uint8_t *data,
 				uint16_t length,
 				uint32_t delay_us);
+/**
+ * @brief This function resets bmi270 sensor.
+ * All registers are overwritten with their default values.
+ *
+ * @param[in] dev : Structure instance of bmi270 device.
+ *
+ * @return Result of execution status
+ * @retval 0 -> Success
+ * @retval < 0 -> Fail
+ */
+int bmi270_soft_reset(const struct device *dev);
 
 #ifdef CONFIG_BMI270_TRIGGER
 int bmi270_trigger_set(const struct device *dev,
@@ -366,5 +431,67 @@ int bmi270_trigger_set(const struct device *dev,
 
 int bmi270_init_interrupts(const struct device *dev);
 #endif
+
+#ifdef CONFIG_BMI270_CRT
+/**
+ * @brief Method to run the crt process
+ *
+ * @param[in] dev: Structure instance of bmi270 device
+ *
+ * @note CRT may run in the full operating temperature range.
+ *       datasheet recommends to run CRT at the operating
+ *       temperature of the device.
+ *       The sensitivity error is typically minimal at the
+ *       temperature CRT was performed at.
+ *
+ * @return Result of CRT execution status
+ * @retval 0 -> Success
+ * @retval < 0 -> Fail
+ */
+int bmi270_gyro_crt(const struct device *dev);
+
+/**
+ * @brief This function programs the non volatile memory(nvm)
+ *
+ * @param[in] dev:  Structure instance of bmi270 device.
+ *
+ * @return Result of execution status
+ * @retval 0 -> Success
+ * @retval < 0 -> Fail
+ */
+int bmi270_nvm_prog(const struct device *dev);
+
+/**
+ * @brief This function enables/disables gain compensation
+ * with the gain  defined in the gyr_usr_gain_[xyz] register
+ * to filtered and unfiltered Gyroscope data
+ *
+ * @param[in] dev    : Structure instance of bmi270 device.
+ * @param[in] status : sensor_value.val1: 0x01-enable, 0x00-disable,
+ *
+ * @return Result of execution status
+ * @retval 0 -> Success
+ * @retval < 0 -> Fail
+ */
+int bmi270_set_gyro_gain(const struct device *dev, const struct sensor_value *status);
+
+/**
+ * @brief This public method gets the compensated user-gain data of gyroscope
+ * converted into sensor_value type
+ *
+ * @param[in] dev : Structure instance of bmi270 device
+ * @param[in] gain : Compensated user-gain data of gyroscope
+ *                   converted into sensor_value type.
+ *                   sensor_value.val1 & 0xFF: x-axis
+ *                   (sensor_value.val1 >> 8) & 0xFF: y-axis
+ *                   (sensor_value.val1 >> 16) & 0xFF: z-axis
+ *
+ * @return Result of get compensated user-gain data of gyro
+ * @retval 0 -> Success
+ * @retval -EAGAIN -> CRT has not been performed yet.
+ * @retval < 0 -> Fail
+ */
+int bmi270_get_gyro_user_gain(const struct device *dev, struct sensor_value *gain);
+#endif /* CONFIG_BMI270_CRT */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI270_BMI270_H_ */

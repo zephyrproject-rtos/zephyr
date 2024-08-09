@@ -62,4 +62,9 @@ config BMI270_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
+config BMI270_CRT
+	bool "CRT feature support for bmi270"
+	help
+	  BMI270 Gyro Component Re-Trimming(CRT) calibration feature support.
+
 endif # BMI270
