@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Linaro LTD
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "zephyr-sys"
+version = "0.1.0"
+edition = "2021"
+description = """
+Zephyr low-level API bindings.
+"""
+
+# These are needed at build time.
+# Whether these need to be vendored is an open question.  They are not
+# used by the core Zephyr tree, but are needed by zephyr applications.
+[build-dependencies]
+anyhow = "1.0"
+bindgen = { version = "0.69.4", features = ["experimental"] }
+# zephyr-build = { version = "0.1.0", path = "../zephyr-build" }
