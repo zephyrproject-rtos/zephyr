@@ -668,6 +668,7 @@ class Gtest(Harness):
 
 
 class Test(Harness):
+    __test__ = False  # for pytest to skip this class when collects tests
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
