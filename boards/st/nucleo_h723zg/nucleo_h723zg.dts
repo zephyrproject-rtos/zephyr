@@ -24,6 +24,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -189,4 +190,37 @@ zephyr_udc0: &usbotg_hs {
 
 &rng {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 128KB for bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			read-only;
+		};
+
+		/* primary application image slot: 384KB */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(384)>;
+		};
+
+		/* secondary application image slot: 384KB */
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(384)>;
+		};
+
+		/* storage: 128KB */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 DT_SIZE_K(128)>;
+		};
+	};
 };
