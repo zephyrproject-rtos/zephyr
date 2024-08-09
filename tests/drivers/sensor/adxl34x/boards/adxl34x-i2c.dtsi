@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 Chaim Zax
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	adxl34x@53 {
+		compatible = "adi,adxl34x";
+		reg = <0x53>;
+		status = "okay";
+	};
+
+	adxl34x@54 {
+		compatible = "adi,adxl34x";
+		reg = <0x54>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		int-pin = <1>;
+		packet-size = <16>;
+		accel-frequency = "50";
+		accel-range = <2>;
+		status = "okay";
+	};
+
+	adxl34x@55 {
+		compatible = "adi,adxl34x";
+		reg = <0x55>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		int-pin = <2>;
+		packet-size = <31>;
+		accel-frequency = "3200";
+		accel-range = <16>;
+		status = "okay";
+	};
+};

@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2024 Chaim Zax
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "adxl34x-spi.dtsi"
+#include "adxl34x-i2c.dtsi"

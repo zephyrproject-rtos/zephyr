@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2024 Chaim Zax
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  ADXL34x accelerometer sensors of ADI. Supported are the ADXL343, ADXL344,
+  ADXL345 and ADXL346 Three Axis SPI accelerometer.
+
+  Example definition in devicetree:
+
+    adxl34x {
+        compatible = "adi,adxl34x";
+        int-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        int-pin = <1>;
+        packet-size = <16>;
+        accel-frequency = "800";
+        accel-range = 16;
+    };
+
+compatible: "adi,adxl34x"
+
+include: ["sensor-device.yaml", "spi-device.yaml", "adi,adxl34x-common.yaml"]

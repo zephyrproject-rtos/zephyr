@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Chaim Zax
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	adxl34x@0 {
+		compatible = "adi,adxl34x";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		status = "okay";
+	};
+
+	adxl34x@1 {
+		compatible = "adi,adxl34x";
+		reg = <1>;
+		spi-max-frequency = <5000000>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		int-pin = <1>;
+		packet-size = <16>;
+		accel-frequency = "100";
+		accel-range = <2>;
+		status = "okay";
+	};
+
+	adxl34x@2 {
+		compatible = "adi,adxl34x";
+		reg = <2>;
+		spi-max-frequency = <5000000>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		int-pin = <2>;
+		packet-size = <31>;
+		accel-frequency = "3200";
+		accel-range = <16>;
+		status = "okay";
+	};
+};

@@ -379,3 +379,15 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_adxl34x: adxl34x@2f {
+	compatible = "adi,adxl34x";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
+	packet-size = <16>;
+	accel-frequency = "25";
+	accel-range = <16>;
+	status = "okay";
+};

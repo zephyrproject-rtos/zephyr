@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2024 Chaim Zax
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "qemu_cortex_m0-spi.dtsi"
+#include "qemu_cortex_m0-i2c.dtsi"

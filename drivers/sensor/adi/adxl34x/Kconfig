@@ -1,0 +1,143 @@
+#
+# Copyright (c) 2024 Chaim Zax
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADXL34X
+	bool "ADXL343, ADXL344, ADXL345 and ADXL346 accelerometers"
+	default y
+	depends on DT_HAS_ADI_ADXL34X_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL34X),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL34X),spi)
+	help
+	  Enable support for the ADXL343, ADXL344, ADXL345 and ADXL346 Three
+	  Axis accelerometer
+
+if ADXL34X
+
+config ADXL34X_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL34X),i2c)
+
+config ADXL34X_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_ADI_ADXL34X),spi)
+
+config ADXL34X_DECODER
+	bool "Decoder logic"
+	default y
+	select ADXL34X_ASYNC_API
+	depends on SENSOR_ASYNC_API
+	help
+	  Compile the ADXL34X decoder API which allows decoding raw data
+	  returned from the sensor.
+
+if ADXL34X_DECODER
+
+choice
+	prompt "Decoder data type"
+	default ADXL34X_DATA_TYPE_Q31
+	help
+	  Data type returned by the decoder.
+
+config ADXL34X_DATA_TYPE_Q31
+	bool "q31"
+	help
+	  Return q31 sensor type values from the decoder
+
+config ADXL34X_DATA_TYPE_SENSOR_VALUE
+	bool "sensor_value"
+	help
+	  Return sensor_value sensor type values from the decoder
+
+config ADXL34X_DATA_TYPE_DOUBLE
+	bool "double"
+	help
+	  Return double sensor type values from the decoder
+
+endchoice
+
+endif # ADXL34X_DECODER
+
+choice ADXL34X_FIFO_MODE
+	prompt "FIFO mode"
+	default ADXL34X_FIFO_MODE_BYPASS
+	help
+	  Specify the FIFO mode to be used by the driver
+
+config ADXL34X_FIFO_MODE_BYPASS
+	bool "Bypass"
+	help
+	  No FIFO, the FIFO of the adxl34x is bypassed. The sensor can only be
+	  used in polling mode, no triggers are available. Use this mode when
+	  the interrupt line of the adxl34x is not connected.
+
+config ADXL34X_FIFO_MODE_FIFO
+	bool "FIFO"
+	select ADXL34X_TRIGGER
+	select ADXL34X_ASYNC_API
+	depends on SENSOR_ASYNC_API
+	help
+	  FIFO collects up to 32 values and then stops collecting data,
+	  collecting new data only when FIFO is not full. Use this config option
+	  to enable streaming sensor data via RTIO subsystem. This mode requires
+	  the interrupt line of the adxl34x to be connected.
+
+config ADXL34X_FIFO_MODE_STREAM
+	bool "Stream"
+	select ADXL34X_TRIGGER
+	select ADXL34X_ASYNC_API
+	depends on SENSOR_ASYNC_API
+	help
+	  FIFO holds the last 32 data values. When FIFO is full, the oldest data
+	  is overwritten with newer data. This mode requires the interrupt line
+	  of the adxl34x to be connected.
+
+config ADXL34X_FIFO_MODE_TRIGGER
+	bool "Trigger"
+	select ADXL34X_TRIGGER
+	select ADXL34X_ASYNC_API
+	depends on SENSOR_ASYNC_API
+	help
+	  When triggered by the trigger bit, FIFO holds the last data samples
+	  before the trigger event and then continues to collect data until
+	  full. New data is collected only when FIFO is not full. This mode
+	  requires the interrupt line of the adxl34x to be connected.
+
+endchoice
+
+config EMUL_ADXL34X
+	bool "Emulator for the ADXL34X"
+	default y
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ADXL34X. Doing so allows
+	  exercising sensor APIs for this driver in native_sim and qemu.
+
+config ADXL34X_EXTENDED_API
+	bool "Extended API"
+	default y
+	help
+	  Enable the extended API for the ADXL34X. This option gives access to
+	  all registers of the adxl34x when not using user space.
+
+config ADXL34X_ADXL345_COMPATIBLE
+	bool "ADXL345 compatible"
+	default n
+	help
+	  Enable compatibility with the (old) ADXL345 driver. Enable this
+	  feature when the (existing) application was written for the ADXL345
+	  driver. The ADXL345 driver uses the FIFO when calling
+	  sensor_sample_fetch, and will return the number of samples collected
+	  (which is not the official API). This allows sensor_sample_get to be
+	  called multiple times to read all FIFO data.
+
+config ADXL34X_TRIGGER
+	bool
+
+config ADXL34X_ASYNC_API
+	bool
+
+endif # ADXL34X

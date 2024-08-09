@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2024 Chaim Zax
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  ADXL34x accelerometer sensors of ADI. Supported are the ADXL343, ADXL344,
+  ADXL345 and ADXL346 Three Axis I2C accelerometer.
+
+  Example definition in devicetree:
+
+    accel: adxl34x@12 {
+        compatible = "adi,adxl34x";
+        reg = <0x12>;
+        int-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        int-pin = <1>;
+        packet-size = <16>;
+        accel-frequency = "800";
+        accel-range = 16;
+    };
+
+compatible: "adi,adxl34x"
+
+include: ["sensor-device.yaml", "i2c-device.yaml", "adi,adxl34x-common.yaml"]

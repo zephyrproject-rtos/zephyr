@@ -1,0 +1,116 @@
+#
+# Copyright (c) 2024 Chaim Zax
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - drivers
+    - sensor
+tests:
+  drivers.sensor.adxl34x.basic:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_BASIC
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=n
+      - CONFIG_ADXL34X_FIFO_MODE_BYPASS=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.basic.compatible:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_BASIC
+    extra_configs:
+      - CONFIG_ADXL34X_ADXL345_COMPATIBLE=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.basic.pm:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_BASIC
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=n
+      - CONFIG_ADXL34X_FIFO_MODE_BYPASS=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.basic.arm:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_BASIC
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=n
+      - CONFIG_ADXL34X_FIFO_MODE_BYPASS=y
+    platform_allow: qemu_cortex_m0
+    integration_platforms:
+      - qemu_cortex_m0
+    build_only: true
+  drivers.sensor.adxl34x.decoder:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_DECODER
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_SENSOR_VALUE=y
+      - CONFIG_ADXL34X_FIFO_MODE_BYPASS=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.streaming:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_STREAMING
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=n
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.extended:
+    extra_args: EXTRA_CFLAGS=-DADXL34X_TEST_EXTENDED
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_Q31=y
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.i2c:
+    extra_args:
+      - EXTRA_CFLAGS=-DADXL34X_TEST_I2C
+      - DTC_OVERLAY_FILE="boards/adxl34x-i2c.overlay"
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_Q31=y
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.i2c.arm:
+    extra_args:
+      - EXTRA_CFLAGS=-DADXL34X_TEST_I2C
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_m0-i2c.dtsi"
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_Q31=y
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: qemu_cortex_m0
+    integration_platforms:
+      - qemu_cortex_m0
+    build_only: true
+  drivers.sensor.adxl34x.spi:
+    extra_args:
+      - EXTRA_CFLAGS=-DADXL34X_TEST_SPI
+      - DTC_OVERLAY_FILE="boards/adxl34x-spi.overlay"
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_Q31=y
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
+  drivers.sensor.adxl34x.spi.arm:
+    extra_args:
+      - EXTRA_CFLAGS=-DADXL34X_TEST_SPI
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_m0-spi.dtsi"
+    extra_configs:
+      - CONFIG_ADXL34X_DECODER=y
+      - CONFIG_ADXL34X_DATA_TYPE_Q31=y
+      - CONFIG_ADXL34X_FIFO_MODE_STREAM=y
+    platform_allow: qemu_cortex_m0
+    integration_platforms:
+      - qemu_cortex_m0
+    build_only: true

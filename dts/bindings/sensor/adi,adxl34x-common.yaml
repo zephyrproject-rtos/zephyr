@@ -1,0 +1,65 @@
+#
+# Copyright (c) 2024 Chaim Zax
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO to support FIFO mode and other interrupts.
+
+  int-pin:
+    type: int
+    default: 1
+    enum:
+      - 1 # interrupt is generated from INT1
+      - 2 # interrupt is generated from INT2
+    description: |
+      Select the interrupt pin in use when data is available, or an event
+      occurred (1 or 2). The ADXL34x has two interrupt pins of which only one is
+      needed for this driver. The other interrupt can be used to control other
+      hardware directly. Defaults to 1 (INT1), the power-on reset value.
+
+  packet-size:
+    type: int
+    default: 16
+    description: |
+      The number of accelerometer samples in one packet when streaming data. The
+      size ranges from 1 to 31 samples and defaults to halve the FIFO size.
+
+  accel-frequency:
+    type: string
+    default: "100"
+    description: |
+      Default frequency of accelerometer. Power-on reset value is 100 Hz.
+    enum:
+      - "0.10"
+      - "0.20"
+      - "0.39"
+      - "0.78"
+      - "1.56"
+      - "3.13"
+      - "6.25"
+      - "12.5"
+      - "25"
+      - "50"
+      - "100"
+      - "200"
+      - "400"
+      - "800"
+      - "1600"
+      - "3200"
+
+  accel-range:
+    type: int
+    default: 16
+    description: |
+      Default range of accelerometer. Power-on reset value is +-16 g.
+    enum:
+      - 2
+      - 4
+      - 8
+      - 16

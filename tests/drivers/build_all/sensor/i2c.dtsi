@@ -1090,3 +1090,14 @@ test_i2c_fxls8974: fxls8974@93 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_adxl34x: adxl34x@94 {
+	compatible = "adi,adxl34x";
+	reg = <0x94>;
+	int-gpios = <&test_gpio 0 0>;
+	int-pin = <1>;
+	packet-size = <16>;
+	accel-frequency = "25";
+	accel-range = <16>;
+	status = "okay";
+};
