@@ -232,7 +232,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
 
 	for (i = 0; i < 5; i++) {
-		k_usleep(1);
+		k_sleep(K_MSEC(2));
 		t0 = k_uptime_ticks();
 		idle_loops = 0;
 		idle_timer_done = false;
