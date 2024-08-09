@@ -1,0 +1,69 @@
+/* Copyright (C) 2023 BeagleBoard.org Foundation
+ * Copyright (C) 2023 S Prashanth
+ * Copyright (c) 2024 Texas Instruments Incorporated
+ *	Andrew Davis <afd@ti.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/j721e_main_r5.dtsi>
+#include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
+#include <freq.h>
+
+/ {
+	model = "BeagleBone-AI64";
+	compatible = "beagle,beaglebone-ai64";
+
+	chosen {
+		zephyr,sram = &atcm;
+		zephyr,console = &uart2;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@a2000000 {
+		compatible = "mmio-sram";
+		reg = <0xa2000000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@a2100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa2100000 DT_SIZE_M(1)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@a2200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa2200000 DT_SIZE_M(14)>;
+		zephyr,memory-region = "DRAM";
+	};
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0 = <&uart2_tx_default &uart2_rx_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&systick_timer {
+	status = "okay";
+};
+
+&pinctrl {
+	uart2_tx_default: uart2_tx_default {
+		/* 0x1c is address of padconfig register of p8.34 and 14 is mux mode */
+		pinmux = <K3_PINMUX(0x1c, PIN_OUTPUT, MUX_MODE_14)>;
+	};
+
+	uart2_rx_default: uart2_rx_default {
+		/* 0x14 is address of padconfig register of p8.22 and 14 is mux mode */
+		pinmux = <K3_PINMUX(0x14, PIN_INPUT, MUX_MODE_14)>;
+	};
+};

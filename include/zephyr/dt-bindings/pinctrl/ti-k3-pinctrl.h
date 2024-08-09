@@ -39,6 +39,11 @@
 #define MUX_MODE_7		7
 #define MUX_MODE_8		8
 #define MUX_MODE_9		9
+#define MUX_MODE_10		10
+#define MUX_MODE_11		11
+#define MUX_MODE_12		12
+#define MUX_MODE_13		13
+#define MUX_MODE_14		14
 
 #define K3_PINMUX(offset, value, mux_mode)	(((offset) & 0x1fff)) ((value) | (mux_mode))
 
