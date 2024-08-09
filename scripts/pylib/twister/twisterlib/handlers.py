@@ -547,7 +547,8 @@ class DeviceHandler(Handler):
                         command_extra_args.append("--cmd-pre-init")
                         command_extra_args.append("adapter serial %s" % board_id)
                     elif runner == "jlink":
-                        command.append("--tool-opt=-SelectEmuBySN  %s" % board_id)
+                        command.append("--dev-id")
+                        command.append(board_id)
                     elif runner == "linkserver":
                         # for linkserver
                         # --probe=#<number> select by probe index
