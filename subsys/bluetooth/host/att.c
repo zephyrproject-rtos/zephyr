@@ -3832,6 +3832,27 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	return mtu;
 }
 
+uint16_t bt_att_get_uatt_mtu(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan, *tmp;
+	struct bt_att *att;
+
+	att = att_get(conn);
+	if (!att) {
+		return 0;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
+		if (!bt_att_is_enhanced(chan)) {
+			return bt_att_mtu(chan);
+		}
+	}
+
+	LOG_WRN("No UATT channel found in %p", conn);
+
+	return 0;
+}
+
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 {
 	struct bt_att *att = updated_chan->att;

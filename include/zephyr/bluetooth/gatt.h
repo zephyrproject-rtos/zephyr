@@ -1488,6 +1488,23 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
  */
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
+/** @brief Get Unenhanced ATT (UATT) MTU for a connection
+ *
+ *  Get UATT connection MTU.
+ *
+ *  The ATT_MTU defines the largest size of an ATT PDU, encompassing the ATT
+ *  opcode, additional fields, and any attribute value payload. Consequently,
+ *  the maximum size of a value payload is less and varies based on the type
+ *  of ATT PDU. For example, in an ATT_HANDLE_VALUE_NTF PDU, the Attribute Value
+ *  field can contain up to ATT_MTU - 3 octets (size of opcode and handle).
+ *
+ *  @param conn Connection object.
+ *
+ *  @return 0 if @p conn does not have an UATT ATT_MTU (e.g: disconnected).
+ *  @return Current UATT ATT_MTU.
+ */
+uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
+
 /** @} */
 
 /**
