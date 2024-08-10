@@ -5,9 +5,9 @@ common:
   tags:
     - debug
     - thread_analyzer
-  platform_exclude:
-    # native_sim prints nothing from thread analyzer so skips it for now.
-    - native_sim
+  arch_exclude:
+    # The thread analyzer depends on !ARCH_POSIX
+    - posix
 tests:
   debug.thread_analyzer.printk:
     extra_configs:
