@@ -3164,6 +3164,11 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn)
+{
+	return bt_att_get_uatt_mtu(conn);
+}
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
