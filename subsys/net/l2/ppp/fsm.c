@@ -226,10 +226,10 @@ void ppp_fsm_close(struct ppp_fsm *fsm, const uint8_t *reason)
 	case PPP_OPENED:
 	case PPP_REQUEST_SENT:
 		if (reason) {
-			int len = strlen(reason);
+			int limit_len = sizeof(fsm->terminate_reason) - 1;
 
-			len = MIN(sizeof(fsm->terminate_reason) - 1, len);
-			strncpy(fsm->terminate_reason, reason, len);
+			strncpy(fsm->terminate_reason, reason, limit_len);
+			fsm->terminate_reason[limit_len] = '\0';
 		}
 
 		terminate(fsm, PPP_CLOSING);
