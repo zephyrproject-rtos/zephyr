@@ -179,7 +179,8 @@ function __zephyr_west_complete_help
                     "attach" "interactively debug a board" \
                     "zephyr-export" "export Zephyr installation as a CMake config package" \
                     "spdx" "create SPDX bill of materials" \
-                    "blobs" "work with binary blobs"
+                    "blobs" "work with binary blobs" \
+                    "sdk" "manage SDKs"
     set -l nb_ext_cmds (count $ext_cmds)
 
     if __zephyr_west_check_if_in_workspace
@@ -373,3 +374,6 @@ complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and not __fish_seen_subcommand_from list fetch clean" -ra "list\t'list binary blobs' fetch\t'fetch binary blobs' clean\t'clean working tree of binary blobs'"
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and __fish_seen_subcommand_from list fetch clean" -ra "(__zephyr_west_complete_projects)"
 complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and not __fish_seen_subcommand_from fetch clean" -o f -l format -r -d "format string"
+
+# sdk
+complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra sdk -d "manage SDKs"
