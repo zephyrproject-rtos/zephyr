@@ -130,8 +130,8 @@ int i2c_nrfx_twim_common_init(const struct device *dev)
 
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
-	if (nrfx_twim_init(&config->twim, &config->twim_config, config->event_handler, data) !=
-	    NRFX_SUCCESS) {
+	if (nrfx_twim_init(&config->twim, &config->twim_config, config->event_handler,
+			   (void *)dev) != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EIO;
 	}
