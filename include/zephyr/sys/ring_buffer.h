@@ -145,6 +145,13 @@ static ALWAYS_INLINE void rb_store_relaxed(ring_buf_idx_t *p, ring_buf_idx_t v)
 	.size = (ring_buf_size_t)(sz),		\
 }
 
+/** @cond INTERNAL_HIDDEN */
+#define RING_BUF_DECLARE_COMMON(name, size8, ...)					\
+	BUILD_ASSERT((size8) <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);	\
+	static uint8_t __noinit _ring_buffer_data_##name[(size8)];			\
+	__VA_ARGS__ struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, (size8))
+/** @endcond */
+
 /**
  * @brief Define and initialize a ring buffer for byte data.
  *
@@ -160,10 +167,20 @@ static ALWAYS_INLINE void rb_store_relaxed(ring_buf_idx_t *p, ring_buf_idx_t v)
  * @param name  Name of the ring buffer.
  * @param size8 buffer capacity in bytes.
  */
-#define RING_BUF_DECLARE(name, size8)							\
-	BUILD_ASSERT((size8) <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);	\
-	static uint8_t __noinit _ring_buffer_data_##name[(size8)];			\
-	struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, (size8))
+#define RING_BUF_DECLARE(name, size8) RING_BUF_DECLARE_COMMON(name, size8)
+
+/**
+ * @brief Define and initialize a static ring buffer for byte data.
+ *
+ * This macro establishes a ring buffer of an arbitrary size.
+ * The basic storage unit is a byte.
+ *
+ * The ring buffer cannot be accessed outside the module where it is defined.
+ *
+ * @param name  Name of the ring buffer.
+ * @param size8 buffer capacity in bytes.
+ */
+#define RING_BUF_DECLARE_STATIC(name, size8) RING_BUF_DECLARE_COMMON(name, size8, static)
 
 /**
  * @brief Return ring buffer capacity.
