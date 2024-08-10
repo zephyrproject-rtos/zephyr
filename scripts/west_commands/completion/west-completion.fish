@@ -377,3 +377,12 @@ complete -c west -n "__zephyr_west_seen_subcommand_from blobs; and not __fish_se
 
 # sdk
 complete -c west -n "__zephyr_west_use_subcommand; and __zephyr_west_check_if_in_workspace" -ra sdk -d "manage SDKs"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and not __fish_seen_subcommand_from list install" -ra "list\t'list installed SDKs' install\t'install SDK'"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o v -l version -d "version of the Zephyr SDK to install"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o d -l install-dir -d "SDK isntall destination directory"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o i -l interactive -d "interactive"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o t -l toolchains -d "toolchain(s) to install"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o T -l no-toolchains -d "do not install toolchains"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -o H -l no-hosttools -d "do not install host-tools"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -l personal-access-token -d "GitHub personal access token"
+complete -c west -n "__zephyr_west_seen_subcommand_from sdk; and __fish_seen_subcommand_from install" -l api-url -d "GitHub releases API endpoint URL"
