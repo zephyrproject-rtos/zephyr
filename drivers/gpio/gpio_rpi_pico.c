@@ -192,7 +192,7 @@ static const struct gpio_driver_api gpio_rpi_driver_api = {
 static void gpio_rpi_isr(const struct device *dev)
 {
 	struct gpio_rpi_data *data = dev->data;
-	io_irq_ctrl_hw_t *irq_ctrl_base;
+	io_bank0_irq_ctrl_hw_t *irq_ctrl_base;
 	const io_rw_32 *status_reg;
 	uint32_t events;
 	uint32_t pin;
