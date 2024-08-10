@@ -1142,6 +1142,10 @@ __comp_west_twister()
 	esac
 }
 
+__comp_west_sdk()
+{
+}
+
 __comp_west()
 {
 	local previous_extglob_setting=$(shopt -p extglob)
