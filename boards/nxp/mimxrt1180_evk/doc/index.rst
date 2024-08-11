@@ -109,6 +109,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ACMP      | on-chip    | analog comparator                   |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
