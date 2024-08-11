@@ -222,6 +222,12 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+
+config WPA_CLI
+	bool "WPA CLI support"
+	help
+	  Enable WPA CLI support for wpa_supplicant.
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
@@ -392,9 +398,6 @@ config SUITEB192
 config WEP
 	bool
 	default y if WIFI_NM_WPA_SUPPLICANT_WEP
-
-config WPA_CLI
-	bool
 
 config WPA_CRYPTO
 	bool
