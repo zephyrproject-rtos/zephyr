@@ -108,6 +108,7 @@ LOG_MODULE_REGISTER(ov2640);
 #define REG04_DEFAULT       0x28
 #define REG04_HFLIP_IMG     0x80
 #define REG04_VFLIP_IMG     0x40
+#define REG04_VREF_EN       0x10
 #define REG04_HREF_EN       0x08
 #define REG04_SET(x)        (REG04_DEFAULT | x)
 
@@ -791,9 +792,9 @@ static int ov2640_set_vertical_flip(const struct device *dev, int enable)
 	reg = ov2640_read_reg(&cfg->i2c, REG04);
 
 	if (enable) {
-		reg |= REG04_VFLIP_IMG;
+		reg |= REG04_VFLIP_IMG | REG04_VREF_EN;
 	} else {
-		reg &= ~REG04_VFLIP_IMG;
+		reg &= ~(REG04_VFLIP_IMG | REG04_VREF_EN);
 	}
 
 	ret |= ov2640_write_reg(&cfg->i2c, REG04, reg);
