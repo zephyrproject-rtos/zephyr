@@ -53,6 +53,9 @@ Bluetooth
 
 * Host
 
+  * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
+    connection (experimental).
+
 * HCI Drivers
 
 Boards & SoC Support
