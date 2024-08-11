@@ -35,6 +35,9 @@
 	current-speed = <115200>;
 };
 
+&lpadc1 {
+	status = "okay";
+};
 
 &systick {
 	status = "okay";
