@@ -496,7 +496,9 @@ static int mcux_lpadc_init(const struct device *dev)
 	adc_config.conversionAverageMode = config->calibration_average;
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS */
 
-	adc_config.powerLevelMode = config->power_level;
+#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
+		adc_config.powerLevelMode = config->power_level;
+#endif
 
 	LPADC_Init(base, &adc_config);
 
@@ -558,7 +560,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		.base = (ADC_Type *)DT_INST_REG_ADDR(n),	\
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),	\
 		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),	\
-		.power_level = DT_INST_PROP(n, power_level),	\
+		.power_level = DT_INST_PROP_OR(n, power_level, 0),	\
 		.offset_a = DT_INST_PROP(n, offset_value_a),	\
 		.offset_b = DT_INST_PROP(n, offset_value_b),	\
 		.irq_config_func = mcux_lpadc_config_func_##n,				\
@@ -592,6 +594,9 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 			DEVICE_DT_INST_GET(n), 0);				\
 										\
 		irq_enable(DT_INST_IRQN(n));					\
-	}
+	}	\
+										\
+	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) && \
+		(DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)
