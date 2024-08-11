@@ -107,7 +107,7 @@
 #define WDT_TEST_MAX_WINDOW 200U
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)
-#define WDT_TEST_MAX_WINDOW 20000U
+#define WDT_TEST_MAX_WINDOW 8000U
 #define TIMEOUTS 0
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(intel_tco_wdt)
