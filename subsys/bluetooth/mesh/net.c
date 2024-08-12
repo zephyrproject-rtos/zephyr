@@ -36,6 +36,7 @@
 #include "cfg.h"
 #include "statistic.h"
 #include "sar_cfg_internal.h"
+#include "brg_cfg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_NET_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -53,6 +54,13 @@ LOG_MODULE_REGISTER(bt_mesh_net);
 #define SEQ(pdu)           (sys_get_be24(&pdu[2]))
 #define SRC(pdu)           (sys_get_be16(&(pdu)[5]))
 #define DST(pdu)           (sys_get_be16(&(pdu)[7]))
+
+/* Information needed for bridging the network PDUs */
+struct pdu_ctx {
+	struct net_buf_simple *sbuf;
+	struct net_buf_simple_state *state;
+	struct bt_mesh_net_rx *rx;
+};
 
 /* Mesh network information for persistent storage. */
 struct net_val {
@@ -756,6 +764,19 @@ done:
 	bt_mesh_adv_unref(adv);
 }
 
+#if IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)
+static void bt_mesh_sbr_check_cb(uint16_t new_net_idx, void *user_data)
+{
+	struct pdu_ctx *ctx = (struct pdu_ctx *)user_data;
+
+	if (new_net_idx < BT_MESH_BRG_CFG_NETIDX_NOMATCH) {
+		ctx->rx->ctx.net_idx = new_net_idx;
+		net_buf_simple_restore(ctx->sbuf, ctx->state);
+		bt_mesh_net_relay(ctx->sbuf, ctx->rx);
+	}
+}
+#endif
+
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 			      struct bt_mesh_net_rx *rx)
 {
@@ -893,6 +914,28 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		net_buf_simple_restore(&buf, &state);
 		bt_mesh_net_relay(&buf, &rx);
 	}
+
+#if IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)
+	struct pdu_ctx tx_ctx = {
+		.sbuf = &buf,
+		.state = &state,
+		.rx = &rx,
+	};
+
+	/* Bridge the traffic if enabled */
+	if (!bt_mesh_brg_cfg_enable_get()) {
+		return;
+	}
+
+	struct bt_mesh_rpl *rpl = NULL;
+
+	if (bt_mesh_rpl_check(&rx, &rpl)) {
+		return;
+	}
+
+	bt_mesh_brg_cfg_tbl_foreach_subnet(rx.ctx.addr, rx.ctx.recv_dst, rx.ctx.net_idx,
+					    bt_mesh_sbr_check_cb, &tx_ctx);
+#endif
 }
 
 static void ivu_refresh(struct k_work *work)
