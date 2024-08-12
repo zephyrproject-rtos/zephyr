@@ -308,12 +308,17 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 				  struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
+	const uint32_t buffer_size = data->pitch * data->height;
 
 	if (ep != VIDEO_EP_OUT) {
 		return -EINVAL;
 	}
 
-	vbuf->bytesused = data->pitch * data->height;
+	if (buffer_size > vbuf->size) {
+		return -EINVAL;
+	}
+
+	vbuf->bytesused = buffer_size;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
