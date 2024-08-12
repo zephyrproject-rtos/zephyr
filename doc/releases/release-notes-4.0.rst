@@ -29,6 +29,9 @@ API Changes
   ``include/zephyr/arch/arm/cortex_m/cmsis.h``. ``cmsis_core.h`` needs to be
   included now.
 
+* Removed deprecated ``ceiling_fraction`` macro. :c:macro:`DIV_ROUND_UP` needs
+  to be used now.
+
 Removed APIs in this release
 ============================
 
