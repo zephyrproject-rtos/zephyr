@@ -754,11 +754,6 @@ int lwm2m_set_u32(const struct lwm2m_obj_path *path, uint32_t value)
 	return lwm2m_engine_set(path, &value, 4);
 }
 
-int lwm2m_set_u64(const struct lwm2m_obj_path *path, uint64_t value)
-{
-	return lwm2m_engine_set(path, &value, 8);
-}
-
 int lwm2m_set_s8(const struct lwm2m_obj_path *path, int8_t value)
 {
 	return lwm2m_engine_set(path, &value, 1);
@@ -1028,11 +1023,6 @@ int lwm2m_get_u16(const struct lwm2m_obj_path *path, uint16_t *value)
 int lwm2m_get_u32(const struct lwm2m_obj_path *path, uint32_t *value)
 {
 	return lwm2m_engine_get(path, value, 4);
-}
-
-int lwm2m_get_u64(const struct lwm2m_obj_path *path, uint64_t *value)
-{
-	return lwm2m_engine_get(path, value, 8);
 }
 
 int lwm2m_get_s8(const struct lwm2m_obj_path *path, int8_t *value)

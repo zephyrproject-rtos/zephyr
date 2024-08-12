@@ -716,12 +716,4 @@ source "subsys/net/lib/lwm2m/Kconfig.ipso"
 
 source "subsys/net/lib/lwm2m/Kconfig.ucifi"
 
-menu "Deprecated flags"
-config LWM2M_RD_CLIENT_SUPPORT
-	bool "DEPRECATED: client bootstrap/registration state machine"
-	select DEPRECATED
-	help
-	  Deprecated flag. RD state machine is always part of engine. It cannot be disabled.
-endmenu # "Deprecated flags"
-
 endif # LWM2M
