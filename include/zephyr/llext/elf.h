@@ -435,10 +435,6 @@ struct elf64_rela {
 #define R_ARM_THM_MOVT_ABS 48
 #define R_ARM_THM_MOVW_PREL_NC 49
 #define R_ARM_THM_MOVT_PREL 50
-
-#define R_XTENSA_NONE 0
-#define R_XTENSA_32 1
-#define R_XTENSA_SLOT0_OP 20
 /** @endcond */
 
 /**
