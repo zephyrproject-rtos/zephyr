@@ -41,6 +41,7 @@ config XTENSA_TIMER_ID
 	default 0
 
 config SYS_CLOCK_TICKS_PER_SEC
+	default 100 if INTEL_ADSP_SIM
 	default 12000
 
 config INTEL_ADSP_TIMER

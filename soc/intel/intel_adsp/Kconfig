@@ -15,6 +15,22 @@ if SOC_FAMILY_INTEL_ADSP
 
 rsource "*/Kconfig"
 
+config INTEL_ADSP_SIM
+	bool "Intel ADSP Simulator"
+	select SIMULATOR_XTENSA
+	help
+	  Running this SoC family in a simulator.
+
+if INTEL_ADSP_SIM
+
+config INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW
+	bool "No secondary core flow."
+	help
+	  Select if simulator doesn't use the normal secondary core flow
+	  to initialise secondary clocks.
+
+endif # INTEL_ADSP_SIM
+
 DT_COMPAT_INTEL_ADSP_HOST_IPC := intel,adsp-host-ipc
 DT_COMPAT_INTEL_ADSP_IDC := intel,adsp-idc
 
