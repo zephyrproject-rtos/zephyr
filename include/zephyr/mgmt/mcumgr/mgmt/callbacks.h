@@ -180,6 +180,9 @@ enum img_mgmt_group_events {
 	/** Callback when an image write command has finished writing to flash. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 5),
 
+	/** Callback when an image slot's state is encoded for a response. */
+	MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 6),
+
 	/** Used to enable all img_mgmt_group events. */
 	MGMT_EVT_OP_IMG_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
 };
