@@ -182,3 +182,10 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.ke1xz_flexio_spi.loopback:
+    extra_args: DTC_OVERLAY_FILE="boards/frdm_ke1xz_flexio_spi.overlay"
+    filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
+            CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
