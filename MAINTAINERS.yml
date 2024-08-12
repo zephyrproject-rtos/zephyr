@@ -3490,6 +3490,27 @@ Silabs Platforms:
   labels:
     - "platform: Silabs"
 
+Silabs SiM3U Platforms:
+  status: maintained
+  maintainers:
+    - rettichschnidi
+  collaborators:
+    - M1cha
+    - asmellby
+    - jerome-pouiller
+    - jhedberg
+  files:
+    - boards/silabs/dev_kits/sim3u1xx_dk/
+    - drivers/*/*_si32*
+    - drivers/*/Kconfig.si32
+    - dts/arm/silabs/sim3u*
+    - dts/bindings/*/*silabs,si32*
+    - soc/silabs/silabs_sim3/
+  labels:
+    - "platform: Silabs SiM3U"
+  description: >-
+    SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
+
 Intel Platforms (X86):
   status: maintained
   maintainers:
@@ -4711,6 +4732,7 @@ West:
     - sateeshkotapati
     - yonsch
     - mnkp
+    - rettichschnidi
   files:
     - modules/Kconfig.silabs
   labels:
