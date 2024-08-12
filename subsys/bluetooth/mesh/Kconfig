@@ -935,6 +935,18 @@ config BT_MESH_TX_BLOB_CHUNK_SIZE
 	  see also: BT_MESH_TX_SEG_MAX,
 	  and the maximum SDU a node can receive.
 
+config BT_MESH_TX_BLOB_CHUNK_SEND_INTERVAL
+	int "BLOB Client chunk send interval"
+	default 0
+	range 0 2147483647
+	help
+	  Set the interval in milliseconds in which chunks are sent during the BLOB transfer.
+	  Note: Without a delay between each sent chunk, the network might become too busy with the
+	  BLOB transfer for other communications to succeed.
+	  Note: Timing restrictions, like the timeout base, should be considered or changed
+	  accordingly when setting this interval. Otherwise, the interval might be too big for the
+	  timeout settings and cause timeouts.
+
 endif # BT_MESH_BLOB_CLI
 
 menu "BLOB models common configuration"
