@@ -32,6 +32,9 @@ API Changes
 * Removed deprecated ``ceiling_fraction`` macro. :c:macro:`DIV_ROUND_UP` needs
   to be used now.
 
+* Deprecated ``EARLY``, ``APPLICATION`` and ``SMP`` init levels can no longer be
+  used for devices.
+
 Removed APIs in this release
 ============================
 
