@@ -15,14 +15,10 @@ config SOC_SERIES_RW6XX
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
 	select HAS_MCUX_FLEXCOMM
-	select INIT_SYS_PLL
 	select HAS_MCUX_CACHE
 	select HAS_PM
 
 if SOC_SERIES_RW6XX
-
-config INIT_SYS_PLL
-	bool "Initialize SYS PLL"
 
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
@@ -32,15 +28,6 @@ menuconfig NXP_RW6XX_BOOT_HEADER
 	  application from an external flash device.
 
 if NXP_RW6XX_BOOT_HEADER
-
-choice BOOT_DEVICE
-	prompt "Boot device selection"
-	default BOOT_FLEXSPI_NOR
-
-config BOOT_FLEXSPI_NOR
-	bool "FlexSPI serial NOR"
-
-endchoice
 
 config FLASH_CONFIG_OFFSET
 	hex "Flash config data offset"
