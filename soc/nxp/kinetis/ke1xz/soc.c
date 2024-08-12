@@ -126,6 +126,10 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio), okay)
+	CLOCK_SetIpSrc(kCLOCK_Flexio0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(flexio), ip_source));
+#endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi0), okay)
 	CLOCK_SetIpSrc(kCLOCK_Lpspi0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi0), ip_source));
