@@ -14,10 +14,6 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (PM && ZTEST)
 
-# Code relocation is needed for flash clock setup
-config CODE_DATA_RELOCATION_SRAM
-	default y
-
 #
 # MBEDTLS is larger but much faster than TinyCrypt so choose wisely
 #
