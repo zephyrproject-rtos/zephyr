@@ -124,12 +124,6 @@ LOG_MODULE_REGISTER(DRV2605, CONFIG_HAPTICS_LOG_LEVEL);
 
 #define DRV2605_POWER_UP_DELAY_US 250
 
-enum drv2605_pm_state {
-	DRV2605_PM_STATE_SHUTDOWN,
-	DRV2605_PM_STATE_STANDBY,
-	DRV2605_PM_STATE_ACTIVE,
-};
-
 struct drv2605_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_gpio;
