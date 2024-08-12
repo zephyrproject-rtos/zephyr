@@ -6,6 +6,7 @@
 
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/brg_cfg.h>
+#include "access.h"
 #include "brg_cfg.h"
 #include "foundation.h"
 #include "subnet.h"
@@ -306,6 +307,13 @@ static int brg_cfg_srv_init(const struct bt_mesh_model *model)
 		LOG_ERR("Not on primary element");
 		return -EINVAL;
 	}
+
+	/*
+	 * Bridge Configuration Server model security is device key based and only the local
+	 * device key is allowed to access this model.
+	 */
+	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_model_extend(model, config_srv);
 

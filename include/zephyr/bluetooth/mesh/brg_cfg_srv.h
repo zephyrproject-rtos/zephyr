@@ -32,8 +32,8 @@ extern "C" {
 			 NULL, NULL, &bt_mesh_brg_cfg_srv_cb)
 
 /** @cond INTERNAL_HIDDEN */
-extern const struct bt_mesh_model_op bt_mesh_brg_cfg_srv_op[];
-extern const struct bt_mesh_model_cb bt_mesh_brg_cfg_srv_cb;
+extern const struct bt_mesh_model_op _bt_mesh_brg_cfg_srv_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_brg_cfg_srv_cb;
 /** @endcond */
 
 /**
