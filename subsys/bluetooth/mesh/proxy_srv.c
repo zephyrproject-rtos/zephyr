@@ -783,7 +783,7 @@ static int gatt_proxy_advertise(void)
 {
 	int err;
 
-	int32_t max_adv_duration;
+	int32_t max_adv_duration = 0;
 	int cnt;
 	struct bt_mesh_subnet *sub;
 	struct proxy_adv_request request;
