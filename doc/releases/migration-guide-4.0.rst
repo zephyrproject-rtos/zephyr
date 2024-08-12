@@ -24,6 +24,9 @@ Kernel
 Boards
 ******
 
+* :ref:`native_posix<native_posix>` has been deprecated in favour of
+  :ref:`native_sim<native_sim>` (:github:`76898`).
+
 Modules
 *******
 
