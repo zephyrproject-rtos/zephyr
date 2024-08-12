@@ -3379,7 +3379,7 @@ int do_composite_read_op_for_parsed_list(struct lwm2m_message *msg, uint16_t con
 	}
 }
 
-#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+#if defined(CONFIG_LWM2M_VERSION_1_1)
 static int do_send_reply_cb(const struct coap_packet *response, struct coap_reply *reply,
 			    const struct sockaddr *from)
 {
@@ -3455,7 +3455,7 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 int lwm2m_send_cb(struct lwm2m_ctx *ctx, const struct lwm2m_obj_path path_list[],
 			 uint8_t path_list_size, lwm2m_send_cb_t reply_cb)
 {
-#if defined(CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1)
+#if defined(CONFIG_LWM2M_VERSION_1_1)
 	struct lwm2m_message *msg;
 	int ret;
 	uint16_t content_format;
@@ -3594,7 +3594,7 @@ cleanup:
 	lwm2m_reset_message(msg, true);
 	return ret;
 #else
-	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_SERVER_OBJECT_VERSION_1_1");
+	LOG_WRN("LwM2M send is only supported for CONFIG_LWM2M_VERSION_1_1");
 	return -ENOTSUP;
 #endif
 }
