@@ -48,6 +48,8 @@ Deprecated in this release
 * Deprecated the :c:func:`net_buf_put` and :c:func:`net_buf_get` API functions in favor of
   :c:func:`k_fifo_put` and :c:func:`k_fifo_get`.
 
+* The :ref:`kscan_api` subsystem has been marked as deprecated.
+
 Architectures
 *************
 
