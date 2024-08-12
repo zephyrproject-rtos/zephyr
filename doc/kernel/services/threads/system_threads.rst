@@ -53,11 +53,12 @@ Implementation
 Writing a main() function
 =========================
 
-An application-supplied :c:func:`main` function begins executing once
+An application-supplied ``main()`` function begins executing once
 kernel initialization is complete. The kernel does not pass any arguments
-to the function.
+to the function, unless ``CONFIG_BOOTARGS`` is selected. In such case the
+kernel passes arguments to it and ``main(int, char **)`` can be used.
 
-The following code outlines a trivial :c:func:`main` function.
+The following code outlines a trivial ``main(void)`` function.
 The function used by a real application can be as complex as needed.
 
 .. code-block:: c
