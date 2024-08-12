@@ -42,7 +42,7 @@ HDR_FW_SEG3_HASH_OFFSET                 = 0x580
 HDR_FW_SEG4_HASH_OFFSET                 = 0x5C0
 FW_IMAGE_OFFSET                         = 0x600
 
-ARM_FW_ENTRY_POINT_OFFSET = 4
+ARM_FW_ENTRY_POINT_OFFSET               = 0x004
 
 # Header field known values
 FW_HDR_ANCHOR      = '%FiMg94@'
@@ -222,6 +222,11 @@ def _set_firmware_load_start_address(output, esiost_args):
             fw_arm_entry_byte = input_file.read(4)
             fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
 
+            if (fw_arm_entry_pt == 0):
+                input_file.seek(ARM_FW_ENTRY_POINT_OFFSET + HEADER_SIZE)
+                fw_arm_entry_byte = input_file.read(4)
+                fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
+
             if fw_arm_entry_pt > start_flash_addr and fw_arm_entry_pt < end_flash_addr:
                 fw_load_addr = 0x0
                 start_flash_addr = 0x0
@@ -278,6 +283,11 @@ def _set_firmware_entry_point(output, esiost_args):
         input_file.seek(ARM_FW_ENTRY_POINT_OFFSET)
         fw_arm_entry_byte = input_file.read(4)
         fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
+
+        if (fw_arm_entry_pt == 0):
+            input_file.seek(ARM_FW_ENTRY_POINT_OFFSET + HEADER_SIZE)
+            fw_arm_entry_byte = input_file.read(4)
+            fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
 
         if fw_arm_entry_pt > start_flash_addr and fw_arm_entry_pt < end_flash_addr:
             fw_entry_pt = start_flash_addr
@@ -336,11 +346,14 @@ def _set_firmware_load_hash(output, esiost_args):
     :param output: the output file object,
     :param esiost_args: the object representing the command line arguments.
     """
+    sha256_hash = hashlib.sha256()
+    with output.open("r+b") as f:
+        f.seek(HEADER_SIZE)
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
 
-    input_file = Path(esiost_args.input)
-    input_file_size = Path(esiost_args.input).stat().st_size
-
-    hash_data = _openssl_digest(input_file)
+    hash_data = bytearray(sha256_hash.digest())
 
     with output.open("r+b") as output_file:
         output_file.seek(HDR_FW_LOAD_HASH_OFFSET)
@@ -450,6 +463,7 @@ def _set_firmware_segment_hash(output, esiost_args):
         output_file.seek(HDR_FW_SEG1_SIZE_OFFSET)
         seg1_size = int.from_bytes(output_file.read(4), "little")
         output_file.seek(seg1_start)
+
         seg1_data = output_file.read(seg1_size)
 
         seg1_file_path = Path("seg1_" + output_file.name)
@@ -464,7 +478,14 @@ def _set_firmware_segment_hash(output, esiost_args):
         output_file.write(hash_data)
 
         # seg3 hash
-        hash_data = _openssl_digest(input_file)
+        sha256_hash = hashlib.sha256()
+        output_file.seek(HEADER_SIZE)
+        # Read and update hash string value in blocks of 4K
+        for byte_block in iter(lambda: output_file.read(4096), b""):
+            sha256_hash.update(byte_block)
+
+        hash_data = bytearray(sha256_hash.digest())
+
         output_file.seek(HDR_FW_SEG3_HASH_OFFSET)
         output_file.write(hash_data)
 
@@ -478,15 +499,35 @@ def _copy_image(output, esiost_args):
     :param output: the output file object,
     :param esiost_args: the object representing the command line arguments.
     """
+
+    # check input file offset
+    with open(esiost_args.input, "rb") as firmware_image:
+        firmware_image.seek(ARM_FW_ENTRY_POINT_OFFSET)
+        fw_arm_entry_byte = firmware_image.read(4)
+        fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
+        if (fw_arm_entry_pt != 0):
+            image_offset = 0
+            input_file_size = Path(esiost_args.input).stat().st_size
+        else:
+            firmware_image.seek(ARM_FW_ENTRY_POINT_OFFSET + HEADER_SIZE)
+            fw_arm_entry_byte = firmware_image.read(4)
+            fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
+            if (fw_arm_entry_pt == 0):
+                sys.exit(EXIT_FAILURE_STATUS)
+            else:
+                image_offset = 1
+                input_file_size = Path(esiost_args.input).stat().st_size - HEADER_SIZE
+
+    firmware_image.close()
+
     with open(esiost_args.input, "rb") as firmware_image:
         with open(output, "r+b") as output_file:
-            output_file.seek(HEADER_SIZE)
+            if (image_offset == 0):
+                output_file.seek(HEADER_SIZE)
             for line in firmware_image:
                 output_file.write(line)
         output_file.close()
     firmware_image.close()
-
-    input_file_size = Path(esiost_args.input).stat().st_size
 
     # update firmware length if needed
     fw_length = esiost_args.firmware_length
