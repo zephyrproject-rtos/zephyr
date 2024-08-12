@@ -331,6 +331,23 @@ void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	LOG_DBG("conn %p chan %p", conn, chan);
 }
 
+static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
+{
+	/* Initialize private members of the struct. We can't "just memset" as
+	 * some members are used as application parameters.
+	 */
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	le_chan->_sdu = NULL;
+	le_chan->_sdu_len = 0;
+#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+	le_chan->_sdu_len_done = 0;
+#endif /* CONFIG_BT_L2CAP_SEG_RECV */
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
+	le_chan->_pdu_ready_lock = 0;
+	le_chan->_pdu_remaining = 0;
+}
+
 static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 			   bt_l2cap_chan_destroy_t destroy)
 {
@@ -348,6 +365,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	atomic_clear(chan->status);
+	init_le_chan_private(le_chan);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
