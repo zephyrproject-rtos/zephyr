@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, STRIM, ALC
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +101,11 @@ static int spi_mcux_flexio_isr(void *user_data)
 	const struct spi_mcux_flexio_config *config = dev->config;
 	struct spi_mcux_flexio_data *data = dev->data;
 
+#if defined(CONFIG_SOC_SERIES_KE1XZ)
+	/* Wait until data transfer complete. */
+	WAIT_FOR((0U == (FLEXIO_SPI_GetStatusFlags(config->flexio_spi)
+		& (uint32_t)kFLEXIO_SPI_TxBufferEmptyFlag)), 100, NULL);
+#endif
 	FLEXIO_SPI_MasterTransferHandleIRQ(config->flexio_spi, &data->handle);
 
 	return 0;
