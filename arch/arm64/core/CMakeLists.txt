@@ -9,6 +9,7 @@ zephyr_library_sources(
   irq_init.c
   irq_manage.c
   prep_c.c
+  reboot.c
   reset.S
   reset.c
   switch.S
