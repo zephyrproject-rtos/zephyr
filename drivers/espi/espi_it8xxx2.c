@@ -855,13 +855,14 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			break;
 		case E8042_RESUME_IRQ:
 			/* Enable KBC IBF interrupt */
-			kbc_reg->KBHICR |= KBC_KBHICR_IBFCIE;
+			irq_enable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_PAUSE_IRQ:
 			/* Disable KBC IBF interrupt */
-			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFCIE;
+			irq_disable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_CLEAR_OBF:
+			volatile uint8_t _kbhicr __unused;
 			/*
 			 * After enabling IBF/OBF clear mode, we have to make
 			 * sure that IBF interrupt is not triggered before
@@ -878,6 +879,12 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			kbc_reg->KBHICR &= ~KBC_KBHICR_COBF;
 			/* Disable clear mode */
 			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFOBFCME;
+			/*
+			 * I/O access synchronization, this load operation will
+			 * guarantee the above modification of SOC's register
+			 * can be seen by any following instructions.
+			 */
+			_kbhicr = kbc_reg->KBHICR;
 			irq_unlock(key);
 			break;
 		case E8042_SET_FLAG:
@@ -913,9 +920,9 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 		/* Enable/Disable PMC1 (port 62h/66h) interrupt */
 		case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 			if (*data) {
-				pmc_reg->PM1CTL |= PMC_PM1CTL_IBFIE;
+				irq_enable(IT8XXX2_PMC1_IBF_IRQ);
 			} else {
-				pmc_reg->PM1CTL &= ~PMC_PM1CTL_IBFIE;
+				irq_disable(IT8XXX2_PMC1_IBF_IRQ);
 			}
 			break;
 		case ECUSTOM_HOST_CMD_SEND_RESULT:
