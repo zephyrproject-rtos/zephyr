@@ -3,18 +3,6 @@
 
 if SOC_SERIES_MCXN
 
-if FLASH_MCUX_FLEXSPI_XIP
-
-# Code relocation is needed when FLASH_MCUX_FLEXSPI_XIP is enabled
-config CODE_DATA_RELOCATION_SRAM
-	default y
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "RAM"
-
-endif # FLASH_MCUX_FLEXSPI_XIP
-
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
 

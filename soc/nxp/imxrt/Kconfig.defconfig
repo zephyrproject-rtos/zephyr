@@ -107,29 +107,22 @@ config TEST_EXTRA_STACK_SIZE
 	default 1024
 endif # MBEDTLS
 
+if CPU_CORTEX_M7
+# defaults specific for the M7 core
+
 # Enable cache management features when using M7 core, since these parts
 # have L1 instruction and data caches that should be enabled at boot
 config CACHE_MANAGEMENT
-	default y if CPU_CORTEX_M7
+	default y
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM
+	default "ITCM"
+
+config CODE_DATA_RELOCATION_SRAM
+	default n
+
+endif # CPU_CORTEX_M7
 
 endif # SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
-
-# Logic to set flash size for all IMXRT parts
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
-		if $(DT_FLASH_PARENT_IS_FLEXSPI)
-
-config FLASH_SIZE
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
-		if $(DT_FLASH_HAS_SIZE_PROP)
 
 endif # SOC_FAMILY_NXP_IMXRT
