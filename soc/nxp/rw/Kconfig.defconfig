@@ -38,10 +38,6 @@ config BUILD_OUTPUT_ADJUST_LMA
 
 endif # NXP_RW_ROM_RAMLOADER
 
-choice USB_MCUX_CONTROLLER_TYPE
-	default USB_DC_NXP_EHCI
-endchoice
-
 if BT
 
 config FLASH
