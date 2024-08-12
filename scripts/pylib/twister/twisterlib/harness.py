@@ -16,6 +16,7 @@ import time
 import shutil
 import json
 
+from pytest import ExitCode
 from twisterlib.reports import ReportStatus
 from twisterlib.error import ConfigurationError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
@@ -354,6 +355,7 @@ class Pytest(Harness):
         self.report_file = os.path.join(self.running_dir, 'report.xml')
         self.pytest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
         self.reserved_serial = None
+        self._output = []
 
     def pytest_run(self, timeout):
         try:
@@ -488,7 +490,7 @@ class Pytest(Harness):
             env=env
         ) as proc:
             try:
-                reader_t = threading.Thread(target=self._output_reader, args=(proc, self), daemon=True)
+                reader_t = threading.Thread(target=self._output_reader, args=(proc,), daemon=True)
                 reader_t.start()
                 reader_t.join(timeout)
                 if reader_t.is_alive():
@@ -501,6 +503,13 @@ class Pytest(Harness):
             except subprocess.TimeoutExpired:
                 self.status = TwisterStatus.FAIL
                 proc.kill()
+
+        if proc.returncode in (ExitCode.INTERRUPTED, ExitCode.USAGE_ERROR, ExitCode.INTERNAL_ERROR):
+            self.status = TwisterStatus.ERROR
+            self.instance.reason = f'Pytest error - return code {proc.returncode}'
+            with open(self.pytest_log_file_path, 'w') as log_file:
+                log_file.write(shlex.join(cmd) + '\n\n')
+                log_file.write('\n'.join(self._output))
 
     @staticmethod
     def _update_command_with_env_dependencies(cmd):
@@ -524,14 +533,15 @@ class Pytest(Harness):
 
         return cmd, env
 
-    @staticmethod
-    def _output_reader(proc, harness):
+    def _output_reader(self, proc):
+        self._output = []
         while proc.stdout.readable() and proc.poll() is None:
             line = proc.stdout.readline().decode().strip()
             if not line:
                 continue
+            self._output.append(line)
             logger.debug('PYTEST: %s', line)
-            harness.parse_record(line)
+            self.parse_record(line)
         proc.communicate()
 
     def _update_test_status(self):
