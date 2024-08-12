@@ -23,21 +23,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 endif # CORTEX_M_SYSTICK
 
-# The base address is determined from the zephyr,flash node with the following
-# precedence:
-# FlexSPI base address (if flash node is on a FlexSPI bus)
-# node reg property (used for memory regions such as SRAM)
-
-if NXP_RW_ROM_RAMLOADER
-
-DT_CHOSEN_Z_FLASH := zephyr,flash
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@134000,1)
-config BUILD_OUTPUT_ADJUST_LMA
-	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"
-
-endif # NXP_RW_ROM_RAMLOADER
-
 if BT
 
 config FLASH
