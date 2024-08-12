@@ -344,8 +344,10 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		lll_adv_iso->bn = bn;
 		lll_adv_iso->iso_interval = iso_interval;
 		lll_adv_iso->irc = irc;
+		lll_adv_iso->pto = pto;
 		lll_adv_iso->nse = nse;
 		lll_adv_iso->max_pdu = max_pdu;
+
 		iso_interval_us = iso_interval * PERIODIC_INT_UNIT_US;
 
 	} else {
@@ -444,14 +446,11 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	if (test_config) {
-		lll_adv_iso->pto = pto;
+	/* Calculate Pre-Transmission subevents */
+	lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing, event_spacing_max);
 
-	} else {
-		lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing,
-						event_spacing_max);
-
-		/* Pre-Transmission Offset (PTO) */
+	/* Pre-Transmission Offset (PTO) */
+	if (!test_config) {
 		if (lll_adv_iso->ptc) {
 			lll_adv_iso->pto = bn / lll_adv_iso->bn;
 		} else {
