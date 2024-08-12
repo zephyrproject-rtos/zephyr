@@ -9,6 +9,7 @@ config ROM_START_OFFSET
 
 config NUM_IRQS
 	default 129
+
 if MCUX_OS_TIMER
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
@@ -25,17 +26,8 @@ endif # CORTEX_M_SYSTICK
 
 if BT
 
-config FLASH
+config NXP_MONOLITHIC_BT
 	default y
-
-config BT_DIS_MANUF
-	default "NXP"
-
-config BT_BUF_EVT_DISCARDABLE_SIZE
-	default 84
-
-config BT_HCI_ACL_FLOW_CONTROL
-	default n
 
 config HCI_NXP_ENABLE_AUTO_SLEEP
 	default y
@@ -43,16 +35,10 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 config HCI_NXP_SET_CAL_DATA
 	default y
 
-config HEAP_MEM_POOL_SIZE
-	default 256
-
 endif # BT
 
 config NXP_MONOLITHIC_WIFI
 	default y if WIFI
-
-config NXP_MONOLITHIC_BT
-	default y if BT
 
 config NXP_FW_LOADER
 	default y if (BT || WIFI)
