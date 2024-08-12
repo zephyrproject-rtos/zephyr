@@ -61,6 +61,7 @@ BT_EAD,n,experimental
 BT_EATT,n,experimental
 BT_H5,n,experimental,
 BT_HFP_HF,n,experimental
+BT_HID_DEVICE,n,experimental
 BT_IAS,n,experimental
 BT_IAS_CLIENT,n,experimental
 BT_ISO_BROADCASTER,n,experimental

@@ -178,6 +178,13 @@ config BT_A2DP_SINK
 
 endif # BT_A2DP
 
+config BT_HID_DEVICE
+	bool "Bluetooth HID Device Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	default n
+	help
+	  This option enables the HID Device profile
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000

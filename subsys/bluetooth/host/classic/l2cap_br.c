@@ -25,6 +25,7 @@
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
+#include "hid_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
@@ -1856,5 +1857,9 @@ void bt_l2cap_br_init(void)
 
 	if (IS_ENABLED(CONFIG_BT_A2DP)) {
 		bt_a2dp_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HID_DEVICE)) {
+		bt_hid_dev_init();
 	}
 }
