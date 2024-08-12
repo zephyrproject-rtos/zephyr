@@ -33,3 +33,9 @@ properties:
       - "MEDIUM"
       - "HIGH"
       - "VERY_HIGH"
+  en-gpios:
+    type: phandle-array
+    description: GPIO to enable and disable the device.
+  in-trig-gpios:
+    type: phandle-array
+    description: GPIO to trigger ROM waveforms or drive an input signal.
