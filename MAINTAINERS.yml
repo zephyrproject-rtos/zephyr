@@ -3849,6 +3849,8 @@ Espressif Platforms:
     - LucasTambor
     - marekmatej
     - uLipe
+    - raffarost
+    - wmrsouza
   files:
     - drivers/*/*esp32*.c
     - boards/espressif/
