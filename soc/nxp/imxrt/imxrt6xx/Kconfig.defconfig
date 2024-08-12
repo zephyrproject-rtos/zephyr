@@ -28,13 +28,6 @@ config NUM_IRQS
 config ZTEST_NO_YIELD
 	default y if (ZTEST && PM)
 
-# Setup LMA adjustment if using the RAMLOADER feature of ROM
-FLASH_CHOSEN := zephyr,flash
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(FLASH_CHOSEN))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@134000,1)
-config BUILD_OUTPUT_ADJUST_LMA
-	default "$(FLEXSPI_BASE) - $(FLASH_BASE)" if NXP_IMX_RT_ROM_RAMLOADER
-
 #
 # MBEDTLS is larger but much faster than TinyCrypt so choose wisely
 #
