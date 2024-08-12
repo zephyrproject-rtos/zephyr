@@ -24,6 +24,11 @@ https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 API Changes
 ***********
 
+* Removed deprecated arch-level CMSIS header files
+  ``include/zephyr/arch/arm/cortex_a_r/cmsis.h`` and
+  ``include/zephyr/arch/arm/cortex_m/cmsis.h``. ``cmsis_core.h`` needs to be
+  included now.
+
 Removed APIs in this release
 ============================
 
