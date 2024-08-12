@@ -66,6 +66,9 @@ Boards & SoC Support
 
 * Made these board changes:
 
+  * :ref:`native_posix<native_posix>` has been deprecated in favour of
+    :ref:`native_sim<native_sim>`.
+
 * Added support for the following shields:
 
 Build system and Infrastructure
