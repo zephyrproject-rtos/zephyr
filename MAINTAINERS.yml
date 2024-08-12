@@ -4319,6 +4319,7 @@ West:
     - mbolivar-ampere
     - carlescufi
     - swinslow
+    - pdgendt
   files:
     - scripts/west-commands.yml
     - scripts/west_commands/
