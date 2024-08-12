@@ -293,6 +293,11 @@
 					};
 				};
 			};
+
+			nunchuk@a {
+				reg = <0xa>;
+				compatible= "nintendo,nunchuk";
+			};
 		};
 
 		spi@2 {
