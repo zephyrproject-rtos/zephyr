@@ -56,6 +56,8 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_STM32
@@ -71,6 +73,8 @@ tests:
       - nucleo_wl55jc
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
       - stm32h573i_dk
     integration_platforms:
       - nucleo_g474re
@@ -83,6 +87,8 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_16bits_frames_dma.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma.conf"
@@ -91,6 +97,8 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_16bits_frames_dma_dt_nocache_mem.loopback:
     extra_args:
       - OVERLAY_CONFIG="overlay-stm32-spi-16bits-dma-dt-nocache-mem.conf"
@@ -99,6 +107,8 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
   drivers.spi.stm32_spi_interrupt.loopback:
     extra_args: OVERLAY_CONFIG="overlay-stm32-spi-interrupt.conf"
     filter: CONFIG_SOC_FAMILY_STM32
@@ -111,6 +121,8 @@ tests:
       - nucleo_g474re
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m4
+      - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_l152re
       - nucleo_wb55rg
       - nucleo_wl55jc
