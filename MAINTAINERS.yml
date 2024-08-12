@@ -202,6 +202,7 @@ ARM Platforms:
     - soc/arm/fvp_aemv8*/
     - dts/arm/armv*.dtsi
     - dts/bindings/arm/arm*.yaml
+    - drivers/interrupt_controller/intc_gic*
   labels:
     - "platform: ARM"
 
