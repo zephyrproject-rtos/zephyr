@@ -740,3 +740,13 @@ Syscalls
 ========
 
 .. doxygengroup:: subsys_tracing_apis_syscall
+
+Network tracing
+===============
+
+.. doxygengroup:: subsys_tracing_apis_net
+
+Network socket tracing
+======================
+
+.. doxygengroup:: subsys_tracing_apis_socket
