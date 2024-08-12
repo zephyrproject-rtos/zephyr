@@ -664,12 +664,20 @@ menu "Replay Protection List"
 
 config BT_MESH_CRPL
 	int "Maximum capacity of the replay protection list"
+	default 26 if BT_MESH_BRG_CFG_SRV
 	default 10
 	range 2 $(UINT16_MAX)
 	help
-	  This options specifies the maximum capacity of the replay
+	  This option specifies the maximum capacity of the replay
 	  protection list. This option is similar to the network message
-	  cache size, but has a different purpose.
+	  cache size, but has a purpose of preventing replay attacks.
+
+	  Note that: To ensure sufficient space in CRPL for normal node
+	  operations and as specified by other Bluetooth specification
+	  requirements, when subnet bridge functionality is enabled on a node,
+	  you should increase the CRPL capacity in your project configuration
+	  file with the number of bridging table entries
+	  (BT_MESH_BRG_TABLE_ITEMS_MAX) specified for the project as a minimum.
 
 choice BT_MESH_RPL_STORAGE_MODE
 	prompt "Replay protection list storage mode"
