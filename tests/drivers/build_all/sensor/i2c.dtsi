@@ -1219,7 +1219,14 @@ test_i2c_tmag3001: tmag3001@a8 {
 	status = "okay";
 	reg = <0xa8>;
 	int-gpios = <&test_gpio 15 1>;
-
 	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
 	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
+
+test_i2c_tmp435: tmp435@a9 {
+	compatible = "ti,tmp435";
+	reg = <0xa9>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
 };
