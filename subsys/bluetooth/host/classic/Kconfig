@@ -201,6 +201,24 @@ config BT_COD
 	  consult the following link:
 	  https://www.bluetooth.com/specifications/assigned-numbers
 
+config BT_DEVICE_VEDNOR_ID
+	hex "Bluetooth Device Vendor ID"
+	default 0x0000
+	help
+	  This option sets the device vendor id
+
+config BT_DEVICE_PRODUCT_ID
+	hex "Bluetooth Device  Product ID"
+	default 0xb009
+	help
+	  This option sets the device product id
+
+config BT_DEVICE_PROTOCOL_ID
+	hex "Bluetooth Device Protocol ID"
+	default 0x0002
+	help
+	  This option sets the device protocol id
+
 endif # BT_CLASSIC
 
 endmenu

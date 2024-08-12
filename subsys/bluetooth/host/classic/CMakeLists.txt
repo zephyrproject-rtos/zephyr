@@ -31,4 +31,5 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(
   CONFIG_BT_HID_DEVICE
   hid_device.c
+  device_id.c
   )

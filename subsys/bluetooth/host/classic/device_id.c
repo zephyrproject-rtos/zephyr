@@ -1,0 +1,71 @@
+/*
+ * Copyright 2024 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/kernel.h>
+#include <string.h>
+#include <strings.h>
+#include <errno.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/classic/device_id.h>
+#include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/l2cap.h>
+
+#define BLUETOOTH_DEVICE_IDENTIFY_SPEC_VERSION 0x0103
+#define BLUETOOTH_DEVICE_IDENTIFY_ATTR_VERSION 0x0100
+
+static struct bt_sdp_attribute device_id_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(BT_SDP_ATTR_SVCLASS_ID_LIST, BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+		    BT_SDP_DATA_ELEM_LIST({BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+					   BT_SDP_ARRAY_16(BT_SDP_PNP_INFO_SVCLASS)})),
+	BT_SDP_LIST(BT_SDP_ATTR_PROTO_DESC_LIST, BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 13),
+		    BT_SDP_DATA_ELEM_LIST(
+			    {BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			     BT_SDP_DATA_ELEM_LIST({BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+						    BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)},
+						   {BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+						    BT_SDP_ARRAY_16(BT_SDP_PROTO_SDP)})},
+			    {BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+			     BT_SDP_DATA_ELEM_LIST({BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+						    BT_SDP_ARRAY_16(BT_SDP_PROTO_SDP)})})),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_LANG_BASE_ATTR_ID_LIST, BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 9),
+		BT_SDP_DATA_ELEM_LIST({BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_8('n', 'e')},
+				      {BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_16(106)},
+				      {BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				       BT_SDP_ARRAY_16(BT_SDP_PRIMARY_LANG_BASE)})),
+	BT_SDP_LIST(BT_SDP_ATTR_PROFILE_DESC_LIST, BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
+		    BT_SDP_DATA_ELEM_LIST(
+			    {BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+			     BT_SDP_DATA_ELEM_LIST(
+				     {BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				      BT_SDP_ARRAY_16(BT_SDP_PNP_INFO_SVCLASS)},
+				     {BT_SDP_TYPE_SIZE(BT_SDP_UINT16), BT_SDP_ARRAY_16(0x0100)})})),
+	BT_SDP_SERVICE_NAME("PnP Server"),
+	BT_SDP_LIST(BT_SDP_ATTR_SPECIFICATION_ID, BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		    BT_SDP_ARRAY_16(BLUETOOTH_DEVICE_IDENTIFY_SPEC_VERSION)),
+	BT_SDP_LIST(BT_SDP_ATTR_VENDOR_ID, BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		    BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_VEDNOR_ID)),
+	BT_SDP_LIST(BT_SDP_ATTR_PRODUCT_ID, BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		    BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_PROTOCOL_ID)),
+	BT_SDP_LIST(BT_SDP_ATTR_VERSION, BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		    BT_SDP_ARRAY_16(BLUETOOTH_DEVICE_IDENTIFY_ATTR_VERSION)),
+	BT_SDP_LIST(BT_SDP_ATTR_PRIMARY_RECORD, BT_SDP_TYPE_SIZE(BT_SDP_BOOL), BT_SDP_ARRAY_8(1)),
+	BT_SDP_LIST(BT_SDP_ATTR_VENDOR_ID_SOURCE, BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+		    BT_SDP_ARRAY_16(CONFIG_BT_DEVICE_PROTOCOL_ID)),
+};
+
+int bt_did_register()
+{
+	static struct bt_sdp_record service = BT_SDP_RECORD(device_id_attrs);
+
+	return bt_sdp_register_service(&service);
+}
