@@ -60,20 +60,7 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 endif # NXP_RW6XX_BOOT_HEADER
 
-# Used for default value in FLASH_MCUX_FLEXSPI_XIP
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-# Macros to shorten Kconfig definitions
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-config FLASH_MCUX_FLEXSPI_XIP
-	bool "MCUX FlexSPI flash access with xip"
-	default $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-	select XIP
-	help
-	  Allows for the soc to safely initialize the clocks for the
-	  FlexSpi when planning to execute code in FlexSpi Memory.
+rsource "../common/Kconfig.flexspi_xip"
 
 config NXP_RW_ROM_RAMLOADER
 	depends on !FLASH_MCUX_FLEXSPI_XIP
@@ -84,10 +71,5 @@ config NXP_RW_ROM_RAMLOADER
 	  Builds an output image that the RW BootROM can load from the
 	  FlexSPI boot device into RAM region. The image will be loaded
 	  from FLEXSPI into the region specified by `zephyr,flash` node.
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "RAM"
-	depends on MEMC_MCUX_FLEXSPI
 
 endif # SOC_SERIES_RW6XX
