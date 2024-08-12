@@ -1,0 +1,24 @@
+identifier: max78002evkit/max78002/m4
+name: max78002evkit m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
+  - counter
+  - pwm
+  - w1
+  - flash
+ram: 384
+flash: 2560
