@@ -377,13 +377,6 @@ extern "C" {
 	((((n) < 0) ^ ((d) < 0)) ? ((n) - ((d) / 2)) / (d) : \
 	((n) + ((d) / 2)) / (d))
 
-/**
- * @brief Ceiling function applied to @p numerator / @p divider as a fraction.
- * @deprecated Use DIV_ROUND_UP() instead.
- */
-#define ceiling_fraction(numerator, divider) __DEPRECATED_MACRO \
-	DIV_ROUND_UP(numerator, divider)
-
 #ifndef MAX
 /**
  * @brief Obtain the maximum of two values.
