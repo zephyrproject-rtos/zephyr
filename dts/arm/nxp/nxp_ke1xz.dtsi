@@ -454,6 +454,14 @@
 			#dma-cells = <2>;
 			irq-shared-offset = <4>;
 		};
+
+		flexio: flexio@4005a000 {
+			compatible = "nxp,flexio";
+			reg = <0x4005a000 0x1000>;
+			status = "disabled";
+			interrupts = <23 0>;
+			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
+		};
 	};
 };
 
