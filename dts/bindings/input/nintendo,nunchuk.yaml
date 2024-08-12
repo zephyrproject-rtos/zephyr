@@ -5,10 +5,10 @@ description: Nintendo Nunchuk joystick through I2C
 
 compatible: "nintendo,nunchuk"
 
-include: "i2c-device.yaml"
+include: i2c-device.yaml
 
 properties:
   polling-interval-ms:
     type: int
     default: 50
-    description: "Interval between two reads, in ms. The interval must be greater than 21 ms."
+    description: Interval between two reads, in ms. The interval must be greater than 21 ms.
