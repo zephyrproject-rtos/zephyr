@@ -405,6 +405,12 @@ static int handle_http_preface(struct http_client_ctx *client)
 		return -EAGAIN;
 	}
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	client->header_capture_ctx.count = 0;
+	client->header_capture_ctx.cursor = 0;
+	client->header_capture_ctx.status = HTTP_HEADER_STATUS_OK;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 	if (strncmp(client->cursor, HTTP2_PREFACE, sizeof(HTTP2_PREFACE) - 1) != 0) {
 		return enter_http1_request(client);
 	}
