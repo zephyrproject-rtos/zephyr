@@ -753,6 +753,58 @@ done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
 
+static uint8_t sdp_hfp_hf_user(struct bt_conn *conn,
+			       struct bt_sdp_client_result *result,
+			       const struct bt_sdp_discover_params *params)
+{
+	char addr[BT_ADDR_STR_LEN];
+	uint16_t param, version;
+	uint16_t features;
+	int err;
+
+	conn_addr_str(conn, addr, sizeof(addr));
+
+	if (result && result->resp_buf) {
+		bt_shell_print("SDP HFPHF data@%p (len %u) hint %u from remote %s",
+			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
+			       addr);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
+		 * get HFPHF Server Channel Number operating on RFCOMM protocol.
+		 */
+		err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_RFCOMM, &param);
+		if (err < 0) {
+			bt_shell_error("Error getting Server CN, err %d", err);
+			goto done;
+		}
+		bt_shell_print("HFPHF Server CN param 0x%04x", param);
+
+		err = bt_sdp_get_profile_version(result->resp_buf, BT_SDP_HANDSFREE_SVCLASS,
+						 &version);
+		if (err < 0) {
+			bt_shell_error("Error getting profile version, err %d", err);
+			goto done;
+		}
+		bt_shell_print("HFP version param 0x%04x", version);
+
+		/*
+		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
+		 * get profile Supported Features mask.
+		 */
+		err = bt_sdp_get_features(result->resp_buf, &features);
+		if (err < 0) {
+			bt_shell_error("Error getting HFPHF Features, err %d", err);
+			goto done;
+		}
+		bt_shell_print("HFPHF Supported Features param 0x%04x", features);
+	} else {
+		bt_shell_print("No SDP HFPHF data from remote %s", addr);
+	}
+done:
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
 static uint8_t sdp_a2src_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
@@ -816,6 +868,13 @@ static struct bt_sdp_discover_params discov_hfpag = {
 	.pool = &sdp_client_pool,
 };
 
+static struct bt_sdp_discover_params discov_hfphf = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+	.uuid = BT_UUID_DECLARE_16(BT_SDP_HANDSFREE_SVCLASS),
+	.func = sdp_hfp_hf_user,
+	.pool = &sdp_client_pool,
+};
+
 static struct bt_sdp_discover_params discov_a2src = {
 	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 	.uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SOURCE_SVCLASS),
@@ -839,6 +898,8 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!strcmp(action, "HFPAG")) {
 		discov = discov_hfpag;
+	} else if (!strcmp(action, "HFPHF")) {
+		discov = discov_hfphf;
 	} else if (!strcmp(action, "A2SRC")) {
 		discov = discov_a2src;
 	} else {
@@ -963,7 +1024,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
-	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG>", cmd_sdp_find_record, 2, 0),
+	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG, HFPHF>", cmd_sdp_find_record, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
