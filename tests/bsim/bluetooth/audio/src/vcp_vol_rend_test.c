@@ -54,7 +54,7 @@ static volatile bool g_aics_active = 1;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	if (err != 0) {
 		FAIL("VCP state cb err (%d)", err);
@@ -66,7 +66,7 @@ static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
 	g_cb = true;
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	if (err != 0) {
 		FAIL("VCP flags cb err (%d)", err);

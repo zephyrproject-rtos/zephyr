@@ -150,6 +150,12 @@ Bluetooth Mesh
 Bluetooth Audio
 ===============
 
+* The Volume Renderer callback functions :code:`bt_vcp_vol_rend_cb.state` and
+  :code:`bt_vcp_vol_rend_cb.flags` for VCP now contain an additional parameter for
+  the connection.
+  This needs to be added to all instances of VCP Volume Renderer callback functions defined.
+  (:github:`76992`)
+
 Bluetooth Classic
 =================
 
