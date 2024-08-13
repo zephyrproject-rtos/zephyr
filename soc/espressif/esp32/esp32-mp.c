@@ -276,14 +276,18 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	cpus_active[0] = true;
 	cpus_active[cpu_num] = true;
 
-	esp_intr_alloc(DT_IRQN(DT_NODELABEL(ipi0)),
-		ESP_INTR_FLAG_IRAM,
+	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, priority)) |
+		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi0), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
 		esp_crosscore_isr,
 		NULL,
 		NULL);
 
-	esp_intr_alloc(DT_IRQN(DT_NODELABEL(ipi1)),
-		ESP_INTR_FLAG_IRAM,
+	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, priority)) |
+		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(ipi1), 0, flags)) |
+			ESP_INTR_FLAG_IRAM,
 		esp_crosscore_isr,
 		NULL,
 		NULL);
