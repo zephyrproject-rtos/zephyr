@@ -85,6 +85,35 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART4.
 
+Board MUX Control
+-----------------
+
+This board configuration uses a series of digital multiplexers to switch between
+different board functions. The multiplexers are controlled by a GPIO signal called
+``EXP_SEL`` from onboard GPIO expander ADP5585. It can be configured to select
+function set "A" or "B" by dts configuration if board control module is enabled.
+The following dts node is defined:
+
+.. code-block:: dts
+
+    board_exp_sel: board-exp-sel {
+        compatible = "imx93evk-exp-sel";
+        mux-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+        mux = "A";
+    };
+
+Following steps are required to configure the ``EXP_SEL`` signal:
+
+1. Enable Kconfig option ``CONFIG_BOARD_MIMX93_EVK_EXP_SEL_INIT``.
+2. Select ``mux="A";`` or ``mux="B";`` in ``&board_exp_sel`` devicetree node.
+
+Kconfig option ``CONFIG_BOARD_MIMX93_EVK_EXP_SEL_INIT`` is enabled if a board
+function that requires configuring the mux is enabled. The MUX option is
+automatically selected if certain board function is enabled, and takes precedence
+over dts config. For instance, if ``CONFIG_CAN`` is enabled, MUX A is selected
+even if ``mux="B";`` is configured in dts, and an warning would be reported in
+the log.
+
 Programming and Debugging
 *************************
 
