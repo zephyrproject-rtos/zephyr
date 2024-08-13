@@ -26,4 +26,8 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
+config ROM_START_OFFSET
+	default 0x600 if XIP
+	default 0x0   if !XIP
+
 endif # SOC_SERIES_NPCM4
