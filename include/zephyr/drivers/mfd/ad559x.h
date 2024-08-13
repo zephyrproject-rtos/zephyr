@@ -21,6 +21,7 @@ extern "C" {
 #define AD559X_REG_GPIO_SET       0x09U
 #define AD559X_REG_GPIO_INPUT_EN  0x0AU
 #define AD559X_REG_PD_REF_CTRL    0x0BU
+#define AD559X_REG_IO_TS_CONFIG   0x0DU
 
 #define AD559X_EN_REF BIT(9)
 
