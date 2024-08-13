@@ -41,3 +41,11 @@ tests:
       - mimxrt1060_evk
       - frdm_ke17z512
       - frdm_mcxn236
+      - max32655evkit/max32655/m4
+      - max32662evkit
+      - max32666evkit/max32666/cpu0
+      - max32670evkit
+      - max32672evkit
+      - max32675evkit
+      - max32680evkit/max32680/m4
+      - max32690evkit/max32690/m4
