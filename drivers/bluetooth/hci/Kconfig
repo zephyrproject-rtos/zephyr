@@ -93,7 +93,7 @@ config BT_SILABS_HCI
 
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
-	depends on BOARD_NATIVE_POSIX
+	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	help
