@@ -14,6 +14,9 @@
 };
 
 &i2c1 {
+	dmas = <&dma0 1 MAX32_DMA_SLOT_I2C1_TX>, <&dma0 2 MAX32_DMA_SLOT_I2C1_RX>;
+	dma-names = "tx", "rx";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
