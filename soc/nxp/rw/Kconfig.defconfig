@@ -53,7 +53,7 @@ config FLASH_SIZE
 if NXP_RW_ROM_RAMLOADER
 
 FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-FLEXSPI_BASE := $(dt_node_reg_addr_hex,/soc/spi@134000,1)
+FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
 config BUILD_OUTPUT_ADJUST_LMA
 	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"
 
