@@ -597,9 +597,9 @@ static const struct haptics_driver_api drv2605_driver_api = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {}),                           \
 		.in_trig_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, in_trig_gpios, {}),                 \
-		.feedback_brake_factor = DT_INST_ENUM_IDX_OR(inst, feedback_brake_factor, 3),      \
-		.loop_gain = DT_INST_ENUM_IDX_OR(inst, loop_gain, 2),                              \
-		.actuator_mode = DT_INST_ENUM_IDX_OR(inst, actuator_mode, 0),                      \
+		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, feedback_brake_factor),            \
+		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                                    \
+		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                            \
 	};                                                                                         \
                                                                                                    \
 	static struct drv2605_data drv2605_data_##inst = {                                         \
