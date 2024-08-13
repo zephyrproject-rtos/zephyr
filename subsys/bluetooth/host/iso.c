@@ -779,6 +779,8 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 		LOG_DBG("channel has been disconnected");
 		__ASSERT_NO_MSG(b == frag);
 
+		net_buf_unref(b);
+
 		/* Service other connections */
 		bt_tx_irq_raise();
 
