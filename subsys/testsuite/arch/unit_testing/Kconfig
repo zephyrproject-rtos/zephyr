@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Current the use of X86 is for consistency with old testsuite/ztest which
-# defined CONFIG_X86 manually. To consider, is NATIVE_POSIX a better choice?
+# defined CONFIG_X86 manually. To consider, is ARCH_POSIX a better choice?
 config X86
 	bool
 	default y
