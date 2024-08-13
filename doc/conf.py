@@ -86,7 +86,6 @@ extensions = [
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
     "sphinx_sitemap",
-    "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "zephyr.doxybridge",
     "zephyr.gh_utils",
@@ -256,10 +255,6 @@ doxybridge_dir = doxyrunner_outdir
 # -- Options for html_redirect plugin -------------------------------------
 
 html_redirect_pages = redirects.REDIRECTS
-
-# -- Options for zephyr.warnings_filter -----------------------------------
-
-warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
 
 # -- Options for zephyr.link-roles ----------------------------------------
 
