@@ -4310,7 +4310,14 @@ k_tid_t bt_testing_tx_tid_get(void)
 	/* We now TX everything from the syswq */
 	return &k_sys_work_q.thread;
 }
-#endif
+
+#if defined(CONFIG_BT_ISO)
+void bt_testing_set_iso_mtu(uint16_t mtu)
+{
+	bt_dev.le.iso_mtu = mtu;
+}
+#endif /* CONFIG_BT_ISO */
+#endif /* CONFIG_BT_TESTING */
 
 int bt_enable(bt_ready_cb_t cb)
 {
