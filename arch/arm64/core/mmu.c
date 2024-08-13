@@ -373,6 +373,11 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 			continue;
 		}
 
+		if (step != level_size && is_block_desc(*pte)) {
+			/* need to split this block mapping */
+			expand_to_table(pte, level);
+		}
+
 		if (is_table_desc(*pte, level)) {
 			subtable = pte_desc_table(*pte);
 			del_mapping(subtable, virt, step, level + 1);
@@ -380,12 +385,6 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 				continue;
 			}
 			dec_table_ref(subtable);
-		} else {
-			/*
-			 * We assume that block mappings will be unmapped
-			 * as a whole and not partially.
-			 */
-			__ASSERT(step == level_size, "");
 		}
 
 		/* free this entry */
