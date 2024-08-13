@@ -191,7 +191,7 @@ typedef int (*shell_dict_cmd_handler)(const struct shell *sh, size_t argc,
 				      char **argv, void *data);
 
 /* When entries are added to the memory section a padding is applied for
- * native_posix_64 and x86_64 targets. Adding padding to allow handle data
+ * the posix architecture with 64bits builds and x86_64 targets. Adding padding to allow handle data
  * in the memory section as array.
  */
 #if (defined(CONFIG_ARCH_POSIX) && defined(CONFIG_64BIT)) || defined(CONFIG_X86_64)
