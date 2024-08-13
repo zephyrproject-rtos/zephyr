@@ -1135,9 +1135,62 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	return 0;
 }
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void check_user_request_headers_http2(struct http_header_capture_ctx *ctx,
+					     struct http_hpack_header_buf *hdr_buf)
+{
+	size_t required_len;
+	char *dest = &ctx->buffer[ctx->cursor];
+	size_t remaining = sizeof(ctx->buffer) - ctx->cursor;
+	struct http_header *current_header = &ctx->headers[ctx->count];
+
+	STRUCT_SECTION_FOREACH(http_header_name, header) {
+		required_len = hdr_buf->name_len + hdr_buf->value_len + 2;
+
+		if (hdr_buf->name_len == strlen(header->name) &&
+		    (strncasecmp(hdr_buf->name, header->name, hdr_buf->name_len) == 0)) {
+			if (ctx->count == ARRAY_SIZE(ctx->headers)) {
+				LOG_DBG("Header '%s' dropped: not enough slots", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			if (remaining < required_len) {
+				LOG_DBG("Header '%s' dropped: buffer too small", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			/* Copy header name from user-registered header to make HTTP1/HTTP2
+			 * transparent to the user - they do not need a case-insensitive comparison
+			 * to check which header was matched.
+			 */
+			memcpy(dest, header->name, hdr_buf->name_len);
+			dest[hdr_buf->name_len] = '\0';
+			current_header->name = dest;
+			ctx->cursor += (hdr_buf->name_len + 1);
+			dest += (hdr_buf->name_len + 1);
+
+			/* Copy header value */
+			memcpy(dest, hdr_buf->value, hdr_buf->value_len);
+			dest[hdr_buf->value_len] = '\0';
+			current_header->value = dest;
+			ctx->cursor += (hdr_buf->value_len + 1);
+
+			ctx->count++;
+			break;
+		}
+	}
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 static int process_header(struct http_client_ctx *client,
 			  struct http_hpack_header_buf *header)
 {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	check_user_request_headers_http2(&client->header_capture_ctx, header);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
 		/* TODO Improve string to method conversion */
