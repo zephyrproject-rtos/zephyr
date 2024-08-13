@@ -20,3 +20,7 @@ family:
       cpuclusters:
       - name: rtu0
       - name: rtu1
+    - name: s32z280
+      cpuclusters:
+      - name: rtu0
+      - name: rtu1

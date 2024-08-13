@@ -1,12 +1,12 @@
 .. _s32z2xxdc2:
 
-NXP X-S32Z27X-DC (DC2)
+NXP X-S32Z2XX-DC (DC2)
 ######################
 
 Overview
 ********
 
-The X-S32Z27X-DC (DC2) board is based on the NXP S32Z2 Real-Time Processor,
+The X-S32Z2XX-DC (DC2) board is based on the NXP S32Z2 Real-Time Processor,
 which includes two Real-Time Units (RTU) composed of four ARM Cortex-R52 cores
 each, with flexible split/lock configurations.
 
@@ -14,6 +14,8 @@ There is one Zephyr board per SoC/RTU:
 
 - ``s32z2xxdc2/s32z270/rtu0``, for S32Z270/RTU0
 - ``s32z2xxdc2/s32z270/rtu1``, for S32Z270/RTU1.
+- ``s32z2xxdc2/s32z280/rtu0``, for S32Z280/RTU0
+- ``s32z2xxdc2/s32z280/rtu1``, for S32Z280/RTU1.
 
 Hardware
 ********

@@ -10,7 +10,7 @@
 /* Do not let CMSIS to handle GIC */
 #define __GIC_PRESENT 0
 
-#if defined(CONFIG_SOC_S32Z270)
+#if defined(CONFIG_SOC_S32Z270) || defined(CONFIG_SOC_S32Z280)
 #include <S32Z2.h>
 #else
 #error "SoC not supported"

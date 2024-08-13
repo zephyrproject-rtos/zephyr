@@ -23,8 +23,8 @@ if SOC_SERIES_S32ZE
 config NXP_S32_RTU_INDEX
 	int
 	range 0 1
-	default 0 if SOC_S32Z270_RTU0
-	default 1 if SOC_S32Z270_RTU1
+	default 0 if SOC_S32Z270_RTU0 || SOC_S32Z280_RTU0
+	default 1 if SOC_S32Z270_RTU1 || SOC_S32Z280_RTU1
 	help
 	  This option indicates the index of the target RTU (Real-Time Unit) subsystem.
 

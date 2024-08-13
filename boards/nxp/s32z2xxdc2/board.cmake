@@ -1,4 +1,4 @@
-# Copyright 2022-2023 NXP
+# Copyright 2022-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 board_runner_args(trace32
@@ -9,7 +9,7 @@ board_runner_args(trace32
 
 board_runner_args(nxp_s32dbg
   "--soc-family-name" "s32z2e2"
-  "--soc-name" "S32Z270"
+  "--soc-name" string(TOUPPER ${CONFIG_SOC} CONFIG_SOC)
 )
 
 if(CONFIG_DCLS)

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: s32z2xxdc2@D/s32z270/rtu0
-name: NXP X-S32Z270-DC (DC2) on RTU0 Cortex-R52 cores (rev. D)
+name: NXP X-S32Z2XX-DC (DC2) on RTU0 Cortex-R52 cores (rev. D)
 type: mcu
 arch: arm
 ram: 1024

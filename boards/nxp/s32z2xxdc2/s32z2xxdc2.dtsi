@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "s32z2xxdc2_s32z270_pinctrl.dtsi"
+#include "s32z2xxdc2_pinctrl.dtsi"
 
 &swt0 {
 	status = "okay";

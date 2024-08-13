@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# Copyright 2022, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -17,7 +17,7 @@ description: |
   board or application devicetree overlay as follows:
 
     /* Include the SoC package header containing the predefined pins definitions */
-    #include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+    #include <nxp/s32/S32Z2XX-BGA594-pinctrl.h>
 
     &pinctrl {
       uart0_default: uart0_default {
