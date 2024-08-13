@@ -1554,7 +1554,7 @@ int bt_audio_codec_cfg_meta_set_audio_active_state(struct bt_audio_codec_cfg *co
  *
  * @retval 0 if the flag was found
  * @retval -EINVAL if arguments are invalid
- * @retval -ENODATA if not the flag was not found
+ * @retval -ENODATA if the flag was not found
  */
 int bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(
 	const struct bt_audio_codec_cfg *codec_cfg);
