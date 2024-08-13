@@ -461,6 +461,12 @@ static int drv2605_hw_config(const struct device *dev)
 		return ret;
 	}
 
+	ret = i2c_reg_write_byte_dt(&config->i2c, DRV2605_REG_OVERDRIVE_CLAMP_VOLTAGE,
+				    config->overdrive_clamp_voltage);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -610,6 +616,8 @@ static const struct haptics_driver_api drv2605_driver_api = {
 		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                                    \
 		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                            \
 		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_rated_mv)),      \
+		.overdrive_clamp_voltage =                                                         \
+			DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_overdrive_mv)),           \
 	};                                                                                         \
                                                                                                    \
 	static struct drv2605_data drv2605_data_##inst = {                                         \
