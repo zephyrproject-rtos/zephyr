@@ -1,6 +1,0 @@
-tests:
-  seed_native_posix.dummy:
-    platform_allow:
-      - native_posix
-    integration_platforms:
-      - native_posix
