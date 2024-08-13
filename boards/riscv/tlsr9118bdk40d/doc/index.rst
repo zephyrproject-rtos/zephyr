@@ -98,14 +98,14 @@ The following values also could be assigned to the system clock in the board DTS
 PINs Configuration
 ------------------
 
-- LED0 (red): GPIO20, LED1 (green): GPIO19
+- LED0 (green): GPIO19
 - SW0: GPIO16, SW1: GPIO15
 - Key Matrix SW0: GPIO18_GPIO16, SW1: GPIO18_GPIO15, SW2: GPIO17_GPIO16, SW3: GPIO17_GPIO15
 
 Peripheral's pins on the SoC are mapped to the following GPIO pins in the
 ``boards/riscv/tlsr9118bdk40d/tlsr9118bdk40d-common.dtsi`` file:
 
-- PWM Channel 4: GPIO20
+- PWM Channel 4 (red LED): GPIO20
 - I2C SCL: GPIO15, SDA: GPIO16
 
 Serial Port

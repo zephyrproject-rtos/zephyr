@@ -12,8 +12,3 @@
 		};
 	};
 };
-
-&pwm0 {
-	/* On board RGB LEDs */
-	pinctrl-ch4 = <&pwm_ch4_p20_default>;
-};
