@@ -28,7 +28,7 @@
 
 static struct bt_vcp_included vcp_included;
 
-static void vcp_vol_rend_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcp_vol_rend_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCP state get failed (%d)", err);
@@ -37,7 +37,7 @@ static void vcp_vol_rend_state_cb(int err, uint8_t volume, uint8_t mute)
 	}
 }
 
-static void vcp_vol_rend_flags_cb(int err, uint8_t flags)
+static void vcp_vol_rend_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCP flags get failed (%d)", err);
