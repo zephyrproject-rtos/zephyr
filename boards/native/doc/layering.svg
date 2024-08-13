@@ -129,11 +129,11 @@
 						x="42.81" dy="1.2em" class="st4">layering</tspan></text>		</g>
 		<g id="shape14-47" v:mID="14" v:groupContext="shape" transform="translate(244.319,-226.677)">
 			<title>Sheet.14</title>
-			<desc>native_posix/sim &#38; _bsim boards Zephyr layering</desc>
+			<desc>native_sim &#38; _bsim boards Zephyr layering</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 			<v:textRect cx="92.126" cy="250.866" width="184.26" height="28.3465"/>
 			<rect x="0" y="236.693" width="184.252" height="28.3465" class="st7"/>
-			<text x="42.05" y="238.27" class="st8" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native_posix/sim <v:newlineChar/><tspan
+			<text x="60.05" y="238.27" class="st8" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>native_sim <v:newlineChar/><tspan
 						x="43.49" dy="1.2em" class="st4">&#38; _bsim boards <v:lf/></tspan><tspan x="43.88" dy="1.2em" class="st4">Zephyr layering</tspan></text>		</g>
 	</g>
 </svg>
