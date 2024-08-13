@@ -124,6 +124,10 @@ LOG_MODULE_REGISTER(DRV2605, CONFIG_HAPTICS_LOG_LEVEL);
 
 #define DRV2605_POWER_UP_DELAY_US 250
 
+#define DRV2605_VOLTAGE_SCALE_FACTOR_MV 5600
+
+#define DRV2605_CALCULATE_VOLTAGE(_volt) ((_volt * 255) / DRV2605_VOLTAGE_SCALE_FACTOR_MV)
+
 struct drv2605_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec en_gpio;
@@ -452,6 +456,11 @@ static int drv2605_hw_config(const struct device *dev)
 		return ret;
 	}
 
+	ret = i2c_reg_write_byte_dt(&config->i2c, DRV2605_REG_RATED_VOLTAGE, config->rated_voltage);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -600,6 +609,7 @@ static const struct haptics_driver_api drv2605_driver_api = {
 		.feedback_brake_factor = DT_INST_ENUM_IDX(inst, feedback_brake_factor),            \
 		.loop_gain = DT_INST_ENUM_IDX(inst, loop_gain),                                    \
 		.actuator_mode = DT_INST_ENUM_IDX(inst, actuator_mode),                            \
+		.rated_voltage = DRV2605_CALCULATE_VOLTAGE(DT_INST_PROP(inst, vib_rated_mv)),      \
 	};                                                                                         \
                                                                                                    \
 	static struct drv2605_data drv2605_data_##inst = {                                         \
