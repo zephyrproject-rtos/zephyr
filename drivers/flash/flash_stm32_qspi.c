@@ -35,7 +35,7 @@
 #define STM32_QSPI_BASE_ADDRESS DT_INST_REG_ADDR(0)
 
 #define STM32_QSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
-#define STM32_QSPI_RESET_CMD DT_PROP(DT_NODELABEL(quadspi), set_cmd)
+#define STM32_QSPI_RESET_CMD  DT_INST_PROP(0, reset_cmd)
 
 #include <stm32_ll_dma.h>
 
@@ -336,8 +336,10 @@ static int qspi_read_jedec_id(const struct device *dev, uint8_t *id)
 		return -EIO;
 	}
 
+	LOG_DBG("Read JESD216-ID");
+
 	dev_data->cmd_status = 0;
-	id = &data[0];
+	memcpy(id, data, JESD216_READ_ID_LEN);
 
 	return 0;
 }
@@ -1270,6 +1272,9 @@ static int flash_stm32_qspi_send_reset(const struct device *dev)
 		LOG_ERR("%d: Failed to send RESET_MEM", ret);
 		return ret;
 	}
+
+	LOG_DBG("Send Reset command");
+
 	return 0;
 }
 #endif
