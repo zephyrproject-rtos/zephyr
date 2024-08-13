@@ -2,12 +2,18 @@ common:
   integration_platforms:
     - mps2/an385
     - qemu_x86_64
+  platform_allow:
+    # Representative platforms to make sure this builds without issues
+    # and the analyzer actually runs and outputs something.
+    - mps2/an385
+    - qemu_cortex_a53
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_riscv32
+    - qemu_riscv64
   tags:
     - debug
     - thread_analyzer
-  arch_exclude:
-    # The thread analyzer depends on !ARCH_POSIX
-    - posix
 tests:
   debug.thread_analyzer.printk:
     extra_configs:
