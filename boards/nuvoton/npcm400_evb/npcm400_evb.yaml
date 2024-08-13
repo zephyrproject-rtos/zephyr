@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: npcm400_evb
+name: Nuvoton NPCM400 EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 768
+flash: 1024
+vendor: nuvoton
