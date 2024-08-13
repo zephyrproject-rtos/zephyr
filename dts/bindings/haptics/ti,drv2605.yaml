@@ -49,6 +49,12 @@ properties:
     description: |
       Sets the reference voltage for full-scale output during closed-loop
       operation. The default value is inherited from ti,drv260x.yaml in Linux.
+  vib-overdrive-mv:
+    type: int
+    default: 3200
+    description: |
+      Sets a clamp so that the automatic overdrive is bounded. The default
+      value is inherited from ti,drv260x.yaml in Linux.
   en-gpios:
     type: phandle-array
     description: GPIO to enable and disable the device.
