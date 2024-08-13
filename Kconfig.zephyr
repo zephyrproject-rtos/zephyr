@@ -949,6 +949,8 @@ config DEPRECATED
 	help
 	  Symbol that must be selected by a feature or module if it is
 	  considered to be deprecated.
+	  When adding this to an option, remember to follow the instructions in
+	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config WARN_DEPRECATED
 	bool
