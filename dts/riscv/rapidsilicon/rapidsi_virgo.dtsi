@@ -174,11 +174,8 @@
 		 };
  
 		 bcpu_wdt: wdt@A0120000 {
-			 compatible = "andestech,atcwdt100";
+			 compatible = "andestech,atcwdt200";
 			 reg = <0xA0120000 DT_SIZE_K(16)>;
-			 clock-frequency = <266666667>;
-			 intr-time-scale = <7>;
-			 rst-time-scale = <7>;
 			 interrupts = <0xffffffff 1>;
 			 interrupt-parent = <&eclic>;
 			 status = "disabled";
