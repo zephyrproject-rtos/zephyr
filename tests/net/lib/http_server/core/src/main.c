@@ -63,6 +63,32 @@
 	0x49, 0x7c, 0xa5, 0x8a, 0xe8, 0x19, 0xaa, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE1_STREAM_1 \
+	0x00, 0x00, 0x39, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x82, 0x04, 0x8b, 0x62, 0x72, 0x8e, 0x42, 0xd9, 0x11, 0x07, 0x5a, 0x6d, \
+	0xb0, 0xbf, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, \
+	0x7a, 0x88, 0x25, 0xb6, 0x50, 0xc3, 0xab, 0xbc, 0x15, 0xc1, 0x53, 0x03, \
+	0x2a, 0x2f, 0x2a, 0x40, 0x88, 0x49, 0x50, 0x95, 0xa7, 0x28, 0xe4, 0x2d, \
+	0x9f, 0x87, 0x49, 0x50, 0x98, 0xbb, 0x8e, 0x8b, 0x4b
+#define TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE2_STREAM_1 \
+	0x00, 0x00, 0x5a, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x82, 0x04, 0x8b, 0x62, 0x72, 0x8e, 0x42, 0xd9, 0x11, 0x07, 0x5a, 0x6d, \
+	0xb0, 0xbf, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, \
+	0x7a, 0xa9, 0x18, 0xc6, 0x31, 0x8c, 0x63, 0x18, 0xc6, 0x31, 0x8c, 0x63, \
+	0x18, 0xc6, 0x31, 0x8c, 0x63, 0x18, 0xc6, 0x31, 0x8c, 0x63, 0x18, 0xc6, \
+	0x31, 0x8c, 0x63, 0x18, 0xc6, 0x31, 0x8c, 0x63, 0x18, 0xc6, 0x31, 0x8c, \
+	0x63, 0x18, 0xc6, 0x31, 0x8c, 0x63, 0x1f, 0x53, 0x03, 0x2a, 0x2f, 0x2a, \
+	0x40, 0x88, 0x49, 0x50, 0x95, 0xa7, 0x28, 0xe4, 0x2d, 0x9f, 0x87, 0x49, \
+	0x50, 0x98, 0xbb, 0x8e, 0x8b, 0x4b
+#define TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE3_STREAM_1 \
+	0x00, 0x00, 0x4c, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x82, 0x04, 0x8b, 0x62, 0x72, 0x8e, 0x42, 0xd9, 0x11, 0x07, 0x5a, 0x6d, \
+	0xb0, 0xbf, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, \
+	0x7a, 0x88, 0x25, 0xb6, 0x50, 0xc3, 0xab, 0xbc, 0x15, 0xc1, 0x53, 0x03, \
+	0x2a, 0x2f, 0x2a, 0x40, 0x88, 0x49, 0x50, 0x95, 0xa7, 0x28, 0xe4, 0x2d, \
+	0x9f, 0x87, 0x49, 0x50, 0x98, 0xbb, 0x8e, 0x8b, 0x4b, 0x40, 0x88, 0x49, \
+	0x50, 0x95, 0xa7, 0x28, 0xe4, 0x2d, 0x82, 0x88, 0x49, 0x50, 0x98, 0xbb, \
+	0x8e, 0x8b, 0x4a, 0x2f
 #define TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1 \
 	0x00, 0x00, 0x30, 0x01, 0x04, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x83, 0x86, 0x41, 0x87, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xff, 0x04, \
@@ -203,6 +229,63 @@ struct http_resource_detail_dynamic dynamic_detail = {
 
 HTTP_RESOURCE_DEFINE(dynamic_resource, test_http_service, "/dynamic",
 		     &dynamic_detail);
+
+static uint8_t dynamic_headers_buffer[32];
+static struct http_header_capture_ctx header_capture_ctx_clone;
+
+static int dynamic_headers_cb(struct http_client_ctx *client, enum http_data_status status,
+			      uint8_t *buffer, size_t len, void *user_data)
+{
+	ptrdiff_t offset;
+	struct http_header *hdrs_src;
+	struct http_header *hdrs_dst;
+
+	if (status == HTTP_SERVER_DATA_FINAL) {
+		/* Copy the captured header info to static buffer for later assertions in testcase.
+		 * Don't assume that the buffer inside client context remains valid after return
+		 * from the callback - this is currently the case at the time of writing but could
+		 * change. Also need to update pointers within structure with an offset to point at
+		 * new buffer.
+		 */
+		memcpy(&header_capture_ctx_clone, &client->header_capture_ctx,
+		       sizeof(header_capture_ctx_clone));
+
+		hdrs_src = client->header_capture_ctx.headers;
+		hdrs_dst = header_capture_ctx_clone.headers;
+		offset = header_capture_ctx_clone.buffer - client->header_capture_ctx.buffer;
+
+		for (int i = 0; i < CONFIG_HTTP_SERVER_CAPTURE_HEADER_COUNT; i++) {
+			if (hdrs_src[i].name != NULL) {
+				hdrs_dst[i].name = hdrs_src[i].name + offset;
+			}
+
+			if (hdrs_dst[i].value != NULL) {
+				hdrs_dst[i].value = hdrs_src[i].value + offset;
+			}
+		}
+	}
+
+	return 0;
+}
+
+struct http_resource_detail_dynamic dynamic_headers_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
+			.content_type = "text/plain",
+		},
+	.cb = dynamic_headers_cb,
+	.data_buffer = dynamic_headers_buffer,
+	.data_buffer_len = sizeof(dynamic_headers_buffer),
+	.user_data = NULL
+};
+
+HTTP_RESOURCE_DEFINE(dynamic_headers_resource, test_http_service, "/header_capture",
+		     &dynamic_headers_detail);
+
+HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_user_agent, "User-Agent");
+HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_test_header, "Test-Header");
+HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_test_header2, "Test-Header2");
 
 static int client_fd = -1;
 static uint8_t buf[BUFFER_SIZE];
@@ -902,6 +985,236 @@ ZTEST(server_function_tests, test_http2_rst_stream)
 
 	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+static const char http1_header_capture_common_response[] = "HTTP/1.1 200 OK\r\n"
+							   "Content-Type: text/plain\r\n"
+							   "Transfer-Encoding: chunked\r\n"
+							   "\r\n"
+							   "0\r\n\r\n";
+
+static void test_http1_header_capture_common(const char *request)
+{
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, sizeof(http1_header_capture_common_response) - 1);
+}
+
+ZTEST(server_function_tests, test_http1_header_capture)
+{
+	static const char request[] = "GET /header_capture HTTP/1.1\r\n"
+				      "User-Agent: curl/7.68.0\r\n"
+				      "Test-Header: test_value\r\n"
+				      "Accept: */*\r\n"
+				      "Accept-Encoding: deflate, gzip, br\r\n"
+				      "\r\n";
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	test_http1_header_capture_common(request);
+
+	zassert_equal(header_capture_ctx_clone.count, 2,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_OK,
+		      "Header capture status was not OK");
+
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+	zassert_not_equal(hdrs[1].name, NULL, "Second header name is NULL");
+	zassert_not_equal(hdrs[1].value, NULL, "Second header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "User-Agent");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "curl/7.68.0");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
+}
+
+ZTEST(server_function_tests, test_http1_header_too_long)
+{
+	static const char request[] =
+		"GET /header_capture HTTP/1.1\r\n"
+		"User-Agent: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n"
+		"Test-Header: test_value\r\n"
+		"Accept: */*\r\n"
+		"Accept-Encoding: deflate, gzip, br\r\n"
+		"\r\n";
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	test_http1_header_capture_common(request);
+
+	zassert_equal(header_capture_ctx_clone.count, 1,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_DROPPED,
+		      "Header capture status was OK, but should not have been");
+
+	/* First header too long should not stop second header being captured into first slot */
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
+}
+
+ZTEST(server_function_tests, test_http1_header_too_many)
+{
+	static const char request[] = "GET /header_capture HTTP/1.1\r\n"
+				      "User-Agent: curl/7.68.0\r\n"
+				      "Test-Header: test_value\r\n"
+				      "Test-Header2: test_value2\r\n"
+				      "Accept: */*\r\n"
+				      "Accept-Encoding: deflate, gzip, br\r\n"
+				      "\r\n";
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	test_http1_header_capture_common(request);
+
+	zassert_equal(header_capture_ctx_clone.count, 2,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_DROPPED,
+		      "Header capture status OK, but should not have been");
+
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+	zassert_not_equal(hdrs[1].name, NULL, "Second header name is NULL");
+	zassert_not_equal(hdrs[1].value, NULL, "Second header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "User-Agent");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "curl/7.68.0");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
+}
+
+static void common_verify_http2_get_header_capture_request(const uint8_t *request,
+							   size_t request_len)
+{
+	size_t offset = 0;
+	int ret;
+
+	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
+	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0, HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_header_capture)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE1_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	common_verify_http2_get_header_capture_request(request, sizeof(request));
+
+	zassert_equal(header_capture_ctx_clone.count, 2,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_OK,
+		      "Header capture status was not OK");
+
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+	zassert_not_equal(hdrs[1].name, NULL, "Second header name is NULL");
+	zassert_not_equal(hdrs[1].value, NULL, "Second header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "User-Agent");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "curl/7.81.0");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
+}
+
+ZTEST(server_function_tests, test_http2_header_too_long)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE2_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	common_verify_http2_get_header_capture_request(request, sizeof(request));
+
+	zassert_equal(header_capture_ctx_clone.count, 1,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_DROPPED,
+		      "Header capture status was OK, but should not have been");
+
+	/* First header too long should not stop second header being captured into first slot */
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
+}
+
+ZTEST(server_function_tests, test_http2_header_too_many)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_HEADER_CAPTURE3_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	struct http_header *hdrs = header_capture_ctx_clone.headers;
+	int ret;
+
+	common_verify_http2_get_header_capture_request(request, sizeof(request));
+
+	zassert_equal(header_capture_ctx_clone.count, 2,
+		      "Didn't capture the expected number of headers");
+	zassert_equal(header_capture_ctx_clone.status, HTTP_HEADER_STATUS_DROPPED,
+		      "Header capture status OK, but should not have been");
+
+	zassert_not_equal(hdrs[0].name, NULL, "First header name is NULL");
+	zassert_not_equal(hdrs[0].value, NULL, "First header value is NULL");
+	zassert_not_equal(hdrs[1].name, NULL, "Second header name is NULL");
+	zassert_not_equal(hdrs[1].value, NULL, "Second header value is NULL");
+
+	ret = strcmp(hdrs[0].name, "User-Agent");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[0].value, "curl/7.81.0");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].name, "Test-Header");
+	zassert_equal(0, ret, "Header strings did not match");
+	ret = strcmp(hdrs[1].value, "test_value");
+	zassert_equal(0, ret, "Header strings did not match");
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
