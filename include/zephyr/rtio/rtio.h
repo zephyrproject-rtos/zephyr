@@ -1381,12 +1381,7 @@ static inline int z_impl_rtio_cqe_copy_out(struct rtio *r,
 		cqe = K_TIMEOUT_EQ(timeout, K_FOREVER) ? rtio_cqe_consume_block(r)
 						       : rtio_cqe_consume(r);
 		if (cqe == NULL) {
-#ifdef CONFIG_BOARD_NATIVE_POSIX
-			/* Native posix fakes the clock and only moves it forward when sleeping. */
-			k_sleep(K_TICKS(1));
-#else
-			Z_SPIN_DELAY(1);
-#endif
+			Z_SPIN_DELAY(25);
 			continue;
 		}
 		cqes[copied++] = *cqe;
