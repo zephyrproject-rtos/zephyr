@@ -255,6 +255,7 @@ zephyr_udc0: &usbotg_hs {
 		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		spi-bus-width = <4>;
+		reset-cmd;
 		status = "okay";
 
 		partitions {
