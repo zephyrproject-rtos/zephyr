@@ -6,7 +6,6 @@
 
 #include <zephyr/ztest.h>
 
-
 ZTEST_SUITE(a1_1_tests, NULL, NULL, NULL, NULL, NULL);
 
 /**
