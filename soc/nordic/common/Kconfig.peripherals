@@ -102,9 +102,6 @@ config HAS_HW_NRF_I2S0
 config HAS_HW_NRF_I2S20
 	def_bool $(dt_nodelabel_enabled_with_compat,i2s20,$(DT_COMPAT_NORDIC_NRF_I2S))
 
-config HAS_HW_NRF_IPC
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_IPC))
-
 config HAS_HW_NRF_KMU
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_KMU))
 
