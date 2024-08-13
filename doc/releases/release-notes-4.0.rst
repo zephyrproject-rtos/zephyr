@@ -38,6 +38,9 @@ API Changes
 Removed APIs in this release
 ============================
 
+* Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
+  Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
+
 Deprecated in this release
 ==========================
 
