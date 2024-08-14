@@ -18,6 +18,6 @@ config PROFILING_PERF_BUFFER_SIZE
 	int "Perf buffer size"
 	default 2048
 	help
-	  Size of buffer, that used by perf to save samples from stack tracing.
+	  Size of buffer used by perf to save stack trace samples.
 
 endif
