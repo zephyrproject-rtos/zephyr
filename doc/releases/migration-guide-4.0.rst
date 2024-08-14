@@ -243,6 +243,9 @@ Sensors
 * The :dtcompatible:`current-sense-amplifier` sense resistor is now specified in milli-ohms
   (``sense-resistor-milli-ohms``) instead of micro-ohms in order to increase the maximum representable
   resistor from 4.2k to 4.2M.
+* The :dtcompatible:`current-sense-amplifier` properties ``sense-gain-mult`` and ``sense-gain-div``
+  are now limited to a maximum value of ``UINT16_MAX`` to enable smaller rounding errors in internal
+  calculations.
 
 * The ``nxp,`` prefixed properties in :dtcompatible:`nxp,kinetis-acmp` have been deprecated in favor
   of properties without the prefix. The sensor based driver for the :dtcompatible:`nxp,kinetis-acmp`
