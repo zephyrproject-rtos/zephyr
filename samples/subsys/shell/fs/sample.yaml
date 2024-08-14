@@ -13,6 +13,10 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mr_canhubk3
       - native_sim
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
       - reel_board
   sample.filesystem.shell.fuse:
