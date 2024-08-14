@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timezone
 from importlib import metadata
 from pathlib import Path
-from typing import Generator
+from typing import Generator, List
 
 from twisterlib.coverage import supported_coverage_formats
 
@@ -49,7 +49,7 @@ def _get_installed_packages() -> Generator[str, None, None]:
         yield dist.metadata['Name']
 
 
-installed_packages: list[str] = list(_get_installed_packages())
+installed_packages: List[str] = list(_get_installed_packages())
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 
 
