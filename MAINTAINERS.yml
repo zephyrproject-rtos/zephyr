@@ -3429,6 +3429,19 @@ Nuvoton Numicro Numaker Platforms:
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
+Nuvoton NPCM Platforms:
+  status: maintained
+  maintainers:
+    - maxdog988
+    - warp5tw
+    - jc849
+  files:
+    - soc/nuvoton/npcm/
+    - boards/nuvoton/npcm*/
+    - dts/arm/nuvoton/
+  labels:
+    - "platform: Nuvoton NPCM"
+
 Raspberry Pi Pico Platforms:
   status: maintained
   maintainers:
