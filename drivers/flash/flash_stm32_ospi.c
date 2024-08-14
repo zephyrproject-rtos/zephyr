@@ -1057,16 +1057,6 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 
 	/* Initialize the program command */
 	s_command.OperationType = HAL_OSPI_OPTYPE_WRITE_CFG;
-	if (dev_cfg->data_rate == OSPI_STR_TRANSFER) {
-		s_command.Instruction = (dev_cfg->data_mode == OSPI_SPI_MODE)
-					? ((stm32_ospi_hal_address_size(dev) ==
-					HAL_OSPI_ADDRESS_24_BITS)
-						? SPI_NOR_CMD_PP
-						: SPI_NOR_CMD_PP_4B)
-					: SPI_NOR_OCMD_PAGE_PRG;
-	} else {
-		s_command.Instruction = SPI_NOR_OCMD_PAGE_PRG;
-	}
 	s_command.DQSMode = HAL_OSPI_DQS_DISABLE;
 
 	s_command.Instruction = dev_data->write_opcode;
