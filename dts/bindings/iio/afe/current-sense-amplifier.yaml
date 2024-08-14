@@ -20,11 +20,11 @@ properties:
     description: |
       Channels available with this divider configuration.
 
-  sense-resistor-micro-ohms:
+  sense-resistor-milli-ohms:
     type: int
     required: true
     description: |
-      Resistance of the shunt resistor in micro-ohms
+      Resistance of the shunt resistor in milli-ohms.
 
   sense-gain-mult:
     type: int
