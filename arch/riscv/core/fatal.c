@@ -98,12 +98,12 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 #endif /* CONFIG_RISCV_ISA_RV32E */
 		LOG_ERR("");
 	}
-
-	if (IS_ENABLED(CONFIG_EXCEPTION_STACK_TRACE)) {
-		z_riscv_unwind_stack(esf, csf);
-	}
-
 #endif /* CONFIG_EXCEPTION_DEBUG */
+
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	z_riscv_unwind_stack(esf, csf);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }

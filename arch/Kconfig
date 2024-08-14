@@ -114,7 +114,6 @@ config RISCV
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
-	select ARCH_HAS_STACKWALK
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
@@ -415,10 +414,17 @@ config FRAME_POINTER
 	  Select Y here to gain precise stack traces at the expense of slightly
 	  increased size and decreased speed.
 
+config ARCH_STACKWALK
+	bool "Compile the stack walking function"
+	default y
+	depends on ARCH_HAS_STACKWALK
+	help
+	  Select Y here to compile the `arch_stack_walk()` function
+
 config ARCH_STACKWALK_MAX_FRAMES
 	int "Max depth for stack walk function"
 	default 8
-	depends on ARCH_HAS_STACKWALK
+	depends on ARCH_STACKWALK
 	help
 	  Depending on implementation, this can place a hard limit on the depths of the stack
 	  for the stack walk function to examine.
@@ -670,11 +676,6 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 
 config ARCH_HAS_GDBSTUB
 	bool
-
-config ARCH_HAS_STACKWALK
-	bool
-	help
-	  This is selected when the architecture implemented the arch_stack_walk() API.
 
 config ARCH_HAS_COHERENCE
 	bool
