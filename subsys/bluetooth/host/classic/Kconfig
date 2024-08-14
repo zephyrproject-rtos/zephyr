@@ -178,6 +178,11 @@ config BT_A2DP_SINK
 
 endif # BT_A2DP
 
+config BT_PNP
+	bool "Bluetooth PNP Profile"
+	help
+	  This option enables the PNP profile function
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000

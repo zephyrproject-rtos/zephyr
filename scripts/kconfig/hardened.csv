@@ -73,6 +73,7 @@ BT_OTS_CLIENT,n,experimental
 BT_PASSKEY_KEYPRESS,n,experimental
 BT_PER_ADV_RSP,n,experimental
 BT_PER_ADV_SYNC_RSP,n,experimental
+BT_PNP,n,experimental
 BT_RFCOMM,n,experimental
 CAN_NET,n,experimental
 CRYPTO_MBEDTLS_SHIM,n,experimental

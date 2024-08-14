@@ -2612,3 +2612,87 @@ int bt_sdp_get_features(const struct net_buf *buf, uint16_t *features)
 
 	return 0;
 }
+
+int bt_sdp_get_vendor_id(const struct net_buf *buf, uint16_t *vendor_id)
+{
+	struct bt_sdp_attr_item attr;
+	const uint8_t *p;
+	int res;
+
+	if (!vendor_id) {
+		LOG_ERR("Invalid pointer.");
+		return -EINVAL;
+	}
+
+	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_VENDOR_ID);
+	if (res < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_VENDOR_ID, res);
+		return res;
+	}
+
+	p = attr.val;
+	BT_ASSERT(p);
+
+	if (p[0] != BT_SDP_UINT16) {
+		LOG_ERR("Invalid DTD 0x%02x", p[0]);
+		return -EINVAL;
+	}
+
+	/* assert 16bit can be read safely */
+	if (attr.len < 3) {
+		LOG_ERR("Data length too short %u", attr.len);
+		return -EMSGSIZE;
+	}
+
+	*vendor_id = sys_get_be16(++p);
+	p += sizeof(uint16_t);
+
+	if (p - attr.val != attr.len) {
+		LOG_ERR("Invalid data length %u", attr.len);
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+int bt_sdp_get_product_id(const struct net_buf *buf, uint16_t *product_id)
+{
+	struct bt_sdp_attr_item attr;
+	const uint8_t *p;
+	int res;
+
+	if (!product_id) {
+		LOG_ERR("Invalid pointer.");
+		return -EINVAL;
+	}
+
+	res = bt_sdp_get_attr(buf, &attr, BT_SDP_ATTR_PRODUCT_ID);
+	if (res < 0) {
+		LOG_WRN("Attribute 0x%04x not found, err %d", BT_SDP_ATTR_VENDOR_ID, res);
+		return res;
+	}
+
+	p = attr.val;
+	BT_ASSERT(p);
+
+	if (p[0] != BT_SDP_UINT16) {
+		LOG_ERR("Invalid DTD 0x%02x", p[0]);
+		return -EINVAL;
+	}
+
+	/* assert 16bit can be read safely */
+	if (attr.len < 3) {
+		LOG_ERR("Data length too short %u", attr.len);
+		return -EMSGSIZE;
+	}
+
+	*product_id = sys_get_be16(++p);
+	p += sizeof(uint16_t);
+
+	if (p - attr.val != attr.len) {
+		LOG_ERR("Invalid data length %u", attr.len);
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
