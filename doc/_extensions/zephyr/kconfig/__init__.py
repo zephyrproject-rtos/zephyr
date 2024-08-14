@@ -231,14 +231,14 @@ class KconfigDomain(Domain):
     object_types = {"option": ObjType("option", "option")}
     roles = {"option": XRefRole()}
     directives = {"search": KconfigSearch}
-    initial_data: Dict[str, Any] = {"options": []}
+    initial_data: Dict[str, Any] = {"options": set()}
 
     def get_objects(self) -> Iterable[Tuple[str, str, str, str, str, int]]:
         for obj in self.data["options"]:
             yield obj
 
     def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
-        self.data["options"] += otherdata["options"]
+        self.data["options"].update(otherdata["options"])
 
     def resolve_xref(
         self,
@@ -268,7 +268,7 @@ class KconfigDomain(Domain):
     def add_option(self, option):
         """Register a new Kconfig option to the domain."""
 
-        self.data["options"].append(
+        self.data["options"].add(
             (option, option, "option", self.env.docname, option, 1)
         )
 
