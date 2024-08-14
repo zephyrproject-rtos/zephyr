@@ -530,8 +530,13 @@ config LTO
 	help
 	  This option enables Link Time Optimization.
 
+config KCONFIG_WARNINGS_AS_ERRORS
+	bool "Treat Kconfig warnings as errors"
+	help
+	  Break build when Kconfig issues a warning
+
 config COMPILER_WARNINGS_AS_ERRORS
-	bool "Treat warnings as errors"
+	bool "Treat compiler/linker warnings as errors"
 	help
 	  Turn on "warning as error" toolchain flags
 
