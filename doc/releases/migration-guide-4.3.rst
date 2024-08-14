@@ -294,5 +294,12 @@ LVGL
   This issue has now been fixed. Any workarounds previously applied to achieve the expected
   behavior should be removed, otherwise black and white will be inverted again.
 
+Trusted Firmware-M
+==================
+
+* The ``SECURE_UART1`` TF-M define is now controlled by the Zephyr buildsystem
+  :kconfig:option:`CONFIG_TFM_SECURE_UART`. This option will override any platform values previously
+  specified in the TF-M repository.
+
 Architectures
 *************
