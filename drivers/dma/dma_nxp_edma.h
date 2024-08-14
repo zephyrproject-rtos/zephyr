@@ -514,6 +514,13 @@ static inline int set_slast_dlast(struct dma_config *dma_cfg,
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA, slast);
 	EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA, dlast);
 
+	if (data->hal_cfg->flags & EDMA_HAS_64BIT_TCD_FLAG) {
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_SLAST_SDA_HIGH,
+				     slast >= 0x0 ? 0x0 : 0xffffffff);
+		EDMA_ChannelRegWrite(data->hal_cfg, chan_id, EDMA_TCD_DLAST_SGA_HIGH,
+				     dlast >= 0x0 ? 0x0 : 0xffffffff);
+	}
+
 	return 0;
 }
 
