@@ -42,7 +42,8 @@ tests:
       type: multi_line
       regex:
         - "E: call trace:"
-        - "E: (E|R)IP: \\w+"
+        - "E:      0: \\w+"
+        - "E:      1: \\w+"
   arch.common.stack_unwind.arm64:
     arch_allow:
       - arm64
