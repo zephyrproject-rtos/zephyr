@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(bq25180, CONFIG_CHARGER_LOG_LEVEL);
 #define BQ25180_VBAT_MSK                        GENMASK(6, 0)
 #define BQ25180_ICHG_CHG_DIS BIT(7)
 #define BQ25180_ICHG_MSK GENMASK(6, 0)
+#define BQ25180_IC_CTRL_VRCH_100                0x00
+#define BQ25180_IC_CTRL_VRCH_200                BIT(5)
+#define BQ25180_IC_CTRL_VRCH_MSK                BIT(5)
 #define BQ25180_WATCHDOG_SEL_1_MSK GENMASK(1, 0)
 #define BQ25180_WATCHDOG_DISABLE 0x03
 #define BQ25180_DEVICE_ID_MSK GENMASK(3, 0)
@@ -55,6 +58,7 @@ struct bq25180_config {
 	struct i2c_dt_spec i2c;
 	uint32_t initial_current_microamp;
 	uint32_t max_voltage_microvolt;
+	uint32_t recharge_voltage_microvolt;
 };
 
 /*
@@ -335,6 +339,20 @@ static int bq25180_init(const struct device *dev)
 		return ret;
 	}
 
+	if (cfg->recharge_voltage_microvolt > 0) {
+		if ((cfg->max_voltage_microvolt - cfg->recharge_voltage_microvolt) > 100000) {
+			val = BQ25180_IC_CTRL_VRCH_200;
+		} else {
+			val = BQ25180_IC_CTRL_VRCH_100;
+		}
+
+		ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL, BQ25180_IC_CTRL_VRCH_MSK,
+					     val);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	if (cfg->initial_current_microamp > 0) {
 		ret = bq25180_set_charge_current(dev, cfg->initial_current_microamp);
 		if (ret < 0) {
@@ -352,6 +370,8 @@ static int bq25180_init(const struct device *dev)
 			DT_INST_PROP(inst, constant_charge_current_max_microamp),                  \
 		.max_voltage_microvolt =                                                           \
 			DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),                 \
+		.recharge_voltage_microvolt =                                                      \
+			DT_INST_PROP_OR(inst, re_charge_voltage_microvolt, 0),                     \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, bq25180_init, NULL, NULL, &bq25180_config_##inst, POST_KERNEL, \
