@@ -38,6 +38,9 @@ LOG_MODULE_REGISTER(bq25180, CONFIG_CHARGER_LOG_LEVEL);
 #define BQ25180_IC_CTRL_VRCH_100                0x00
 #define BQ25180_IC_CTRL_VRCH_200                BIT(5)
 #define BQ25180_IC_CTRL_VRCH_MSK                BIT(5)
+#define BQ25180_VLOWV_SEL_2_8                   BIT(6)
+#define BQ25180_VLOWV_SEL_3_0                   0x00
+#define BQ25180_VLOWV_SEL_MSK                   BIT(6)
 #define BQ25180_WATCHDOG_SEL_1_MSK GENMASK(1, 0)
 #define BQ25180_WATCHDOG_DISABLE 0x03
 #define BQ25180_DEVICE_ID_MSK GENMASK(3, 0)
@@ -59,6 +62,7 @@ struct bq25180_config {
 	uint32_t initial_current_microamp;
 	uint32_t max_voltage_microvolt;
 	uint32_t recharge_voltage_microvolt;
+	uint32_t precharge_threshold_voltage_microvolt;
 };
 
 /*
@@ -353,6 +357,18 @@ static int bq25180_init(const struct device *dev)
 		}
 	}
 
+	/* Precharge threshold voltage */
+	if (cfg->precharge_threshold_voltage_microvolt <= 2800000) {
+		val = BQ25180_VLOWV_SEL_2_8;
+	} else {
+		val = BQ25180_VLOWV_SEL_3_0;
+	}
+
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, BQ25180_IC_CTRL, BQ25180_VLOWV_SEL_MSK, val);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if (cfg->initial_current_microamp > 0) {
 		ret = bq25180_set_charge_current(dev, cfg->initial_current_microamp);
 		if (ret < 0) {
@@ -372,6 +388,8 @@ static int bq25180_init(const struct device *dev)
 			DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),                 \
 		.recharge_voltage_microvolt =                                                      \
 			DT_INST_PROP_OR(inst, re_charge_voltage_microvolt, 0),                     \
+		.precharge_threshold_voltage_microvolt =                                           \
+			DT_INST_PROP(inst, precharge_voltage_threshold_microvolt),                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, bq25180_init, NULL, NULL, &bq25180_config_##inst, POST_KERNEL, \

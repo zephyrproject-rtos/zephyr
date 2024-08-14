@@ -31,3 +31,10 @@ properties:
 
   constant-charge-voltage-max-microvolt:
     required: true
+
+  precharge-voltage-threshold-microvolt:
+    type: int
+    default: 3000000
+    description: |
+      Threshold at which voltage to switch to constant current charge.
+      Must be either 3.0V or 2.8V
