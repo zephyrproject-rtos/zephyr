@@ -242,10 +242,10 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`.
     opendir(), yes
     pathconf(),
     readdir(), yes
-    remove(),
+    remove(), yes
     rename(), yes
     rewinddir(),
-    rmdir(),
+    rmdir(), yes
     stat(), yes
     statvfs(),
     tmpfile(),
