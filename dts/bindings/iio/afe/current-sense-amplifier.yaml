@@ -30,13 +30,13 @@ properties:
     type: int
     default: 1
     description: |
-      Amplifier gain multiplier. The default is <1>.
+      Amplifier gain multiplier. The default is <1>. The maximum value is <65535>.
 
   sense-gain-div:
     type: int
     default: 1
     description: |
-      Amplifier gain divider. The default is <1>.
+      Amplifier gain divider. The default is <1>. The maximum value is <65535>.
 
   power-gpios:
     type: phandle-array
