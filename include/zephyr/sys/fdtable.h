@@ -39,6 +39,18 @@
 extern "C" {
 #endif
 
+/* FIXME: use k_off_t and k_ssize_t to avoid the POSIX->Zephyr->POSIX dependency cycle */
+#ifdef CONFIG_NEWLIB_LIBC
+#ifndef _OFF_T_DECLARED
+typedef __off_t off_t;
+#define _OFF_T_DECLARED
+#endif
+#ifndef _SSIZE_T_DECLARED
+typedef _ssize_t ssize_t;
+#define _SSIZE_T_DECLARED
+#endif
+#endif
+
 /**
  * File descriptor virtual method table.
  * Currently all operations beyond read/write/close go thru ioctl method.
