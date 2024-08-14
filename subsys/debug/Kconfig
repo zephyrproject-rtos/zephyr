@@ -382,8 +382,7 @@ config EXCEPTION_STACK_TRACE
 	bool "Attempt to print stack traces upon exceptions"
 	default y
 	depends on (X86_EXCEPTION_STACK_TRACE || \
-		    ARM64_EXCEPTION_STACK_TRACE || \
-		    RISCV_EXCEPTION_STACK_TRACE)
+		    ARM64_EXCEPTION_STACK_TRACE) || ARCH_STACKWALK
 	help
 	  If the architecture fatal handling code supports it, attempt to
 	  print a stack trace of function memory addresses when an
@@ -391,7 +390,7 @@ config EXCEPTION_STACK_TRACE
 
 config EXCEPTION_STACK_TRACE_MAX_FRAMES
 	int "Configures the depth of stack trace"
-	default ARCH_STACKWALK_MAX_FRAMES if ARCH_HAS_STACKWALK
+	default ARCH_STACKWALK_MAX_FRAMES if ARCH_STACKWALK
 	default 8
 	depends on EXCEPTION_STACK_TRACE
 	help

@@ -208,7 +208,7 @@ static int cmd_kernel_threads(const struct shell *sh,
 	return 0;
 }
 
-#if defined(CONFIG_ARCH_HAS_STACKWALK)
+#if defined(CONFIG_ARCH_STACKWALK)
 
 static bool print_trace_address(void *arg, unsigned long ra)
 {
@@ -266,7 +266,7 @@ static int cmd_kernel_unwind(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-#endif /* CONFIG_ARCH_HAS_STACKWALK */
+#endif /* CONFIG_ARCH_STACKWALK */
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
@@ -462,9 +462,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 		defined(CONFIG_THREAD_MONITOR)
 	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
 	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
-#if defined(CONFIG_ARCH_HAS_STACKWALK)
+#if defined(CONFIG_ARCH_STACKWALK)
 	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_unwind, 1, 1),
-#endif /* CONFIG_ARCH_HAS_STACKWALK */
+#endif /* CONFIG_ARCH_STACKWALK */
 #endif
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	SHELL_CMD(heap, NULL, "System heap usage statistics.", cmd_kernel_heap),
