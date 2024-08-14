@@ -13,8 +13,8 @@
 struct current_sense_amplifier_dt_spec {
 	const struct adc_dt_spec port;
 	uint32_t sense_milli_ohms;
-	uint32_t sense_gain_mult;
-	uint32_t sense_gain_div;
+	uint16_t sense_gain_mult;
+	uint16_t sense_gain_div;
 	struct gpio_dt_spec power_gpio;
 };
 
@@ -51,8 +51,10 @@ current_sense_amplifier_scale_dt(const struct current_sense_amplifier_dt_spec *s
 	/* store in a temporary 64 bit variable to prevent overflow during calculation */
 	int64_t tmp = *v_to_i;
 
-	/* multiplies by 1,000 before dividing by sense resistance in milli-ohms. */
-	tmp = tmp * 1000 / spec->sense_milli_ohms * spec->sense_gain_div / spec->sense_gain_mult;
+	/* (INT32_MAX * 1000 * UINT16_MAX) < INT64_MAX
+	 * Therefore all multiplications can be done before divisions, preserving resolution.
+	 */
+	tmp = tmp * 1000 * spec->sense_gain_div / spec->sense_milli_ohms / spec->sense_gain_mult;
 
 	*v_to_i = (int32_t)tmp;
 }
