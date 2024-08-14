@@ -2,7 +2,7 @@
 
 This directory contains list of testcases that use
 the Twister's Pytest integration to run testcases against Leshan demo server.
-These tests use emulated hardware (native_posix).
+These tests use emulated hardware (native_sim).
 
 These tests require setup that is not done in Twister run, so follow this documentation to set
 up the test environment.
@@ -105,7 +105,7 @@ Install with `pip install CoAPthon3`
 ## Running tests
 
 ```
-twister -p native_posix -vv --enable-slow -T tests/net/lib/lwm2m/interop
+twister -p native_sim -vv --enable-slow -T tests/net/lib/lwm2m/interop
 ```
 
 Or use the Docker based testing
