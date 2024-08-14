@@ -163,14 +163,15 @@ config X86_DYNAMIC_IRQ_STUBS
 
 endmenu
 
-config X86_EXCEPTION_STACK_TRACE
+config ARCH_HAS_STACKWALK
 	bool
 	default y
 	select DEBUG_INFO
 	select THREAD_STACK_INFO
 	depends on !OMIT_FRAME_POINTER
 	help
-	  Internal config to enable runtime stack traces on fatal exceptions.
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
 
 config X86_USE_THREAD_LOCAL_STORAGE
 	bool
