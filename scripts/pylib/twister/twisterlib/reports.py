@@ -36,7 +36,7 @@ class Reporting:
             'deny_suite': ['footprint']
         },
         'footprint.json': {
-            'deny_status': ['filtered'],
+            'deny_status': ['FILTER'],
             'deny_suite': ['testcases', 'execution_time', 'recording', 'retries', 'runnable']
         }
     }
@@ -400,8 +400,7 @@ class Reporting:
             if instance.recording is not None:
                 suite['recording'] = instance.recording
 
-            if (instance.status
-                    and instance.status not in [TwisterStatus.ERROR, TwisterStatus.FILTER]
+            if (instance.status not in [TwisterStatus.NONE, TwisterStatus.ERROR, TwisterStatus.FILTER]
                     and self.env.options.create_rom_ram_report
                     and self.env.options.footprint_report is not None):
                 # Init as empty data preparing for filtering properties.
