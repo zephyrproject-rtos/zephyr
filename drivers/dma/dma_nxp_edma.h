@@ -417,6 +417,8 @@ static inline int edma_chan_cyclic_produce(struct edma_channel *chan,
 static inline void edma_dump_channel_registers(struct edma_data *data,
 					       uint32_t chan_id)
 {
+	uint32_t mux_reg;
+
 	LOG_DBG("dumping channel data for channel %d", chan_id);
 
 	LOG_DBG("CH_CSR: 0x%x",
@@ -431,8 +433,13 @@ static inline void edma_dump_channel_registers(struct edma_data *data,
 		EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_PRI));
 
 	if (EDMA_HAS_MUX(data->hal_cfg)) {
-		LOG_DBG("CH_MUX: 0x%x",
-			EDMA_ChannelRegRead(data->hal_cfg, chan_id, EDMA_TCD_CH_MUX));
+		if (data->hal_cfg->flags & EDMA_HAS_MP_MUX_FLAG) {
+			mux_reg = EDMA_MP_CH_MUX;
+		} else {
+			mux_reg = EDMA_TCD_CH_MUX;
+		}
+
+		LOG_DBG("CH_MUX: 0x%x", EDMA_ChannelRegRead(data->hal_cfg, chan_id, mux_reg));
 	}
 
 	LOG_DBG("TCD_SADDR: 0x%x",
