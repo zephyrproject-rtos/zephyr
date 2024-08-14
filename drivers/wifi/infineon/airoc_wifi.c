@@ -802,7 +802,7 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 	.disconnect = airoc_mgmt_disconnect,
 	.ap_enable = airoc_mgmt_ap_enable,
 	.ap_disable = airoc_mgmt_ap_disable,
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+#if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = airoc_mgmt_wifi_stats,
 #endif
 };
