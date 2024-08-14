@@ -52,5 +52,12 @@ Other subsystems
 Modules
 *******
 
+Trusted Firmware-M
+==================
+
+* The ``SECURE_UART1`` TF-M define is now controlled by Zephyr's
+  :kconfig:option:`CONFIG_TFM_SECURE_UART`. This option will override any platform values previously
+  specified in the TF-M repository.
+
 Architectures
 *************
