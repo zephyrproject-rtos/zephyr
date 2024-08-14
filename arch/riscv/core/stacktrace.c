@@ -14,8 +14,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf);
 
-#define MAX_STACK_FRAMES                                                                           \
-	MAX(CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES, CONFIG_ARCH_STACKWALK_MAX_FRAMES)
+#define MAX_STACK_FRAMES CONFIG_ARCH_STACKWALK_MAX_FRAMES
 
 struct stackframe {
 	uintptr_t fp;
@@ -85,26 +84,6 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 #endif /* CONFIG_USERSPACE */
 
 	return in_kernel_thread_stack_bound(addr, thread);
-}
-
-static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
-				 const struct arch_esf *esf)
-{
-	const uintptr_t align =
-		COND_CODE_1(CONFIG_FRAME_POINTER, (ARCH_STACK_PTR_ALIGN), (sizeof(uintptr_t)));
-
-	if (!IS_ALIGNED(addr, align)) {
-		return false;
-	}
-
-	if ((thread == NULL) || arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
-
-		return in_irq_stack_bound(addr, cpu_id);
-	}
-
-	return in_stack_bound(addr, thread, esf);
 }
 
 static inline bool in_text_region(uintptr_t addr)
@@ -242,6 +221,27 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 	walk_stackframe(callback_fn, cookie, thread, esf, in_stack_bound, &thread->callee_saved);
 }
 
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
+				 const struct arch_esf *esf)
+{
+	const uintptr_t align =
+		COND_CODE_1(CONFIG_FRAME_POINTER, (ARCH_STACK_PTR_ALIGN), (sizeof(uintptr_t)));
+
+	if (!IS_ALIGNED(addr, align)) {
+		return false;
+	}
+
+	if ((thread == NULL) || arch_is_in_isr()) {
+		/* We were servicing an interrupt */
+		uint8_t cpu_id = IS_ENABLED(CONFIG_SMP) ? arch_curr_cpu()->id : 0U;
+
+		return in_irq_stack_bound(addr, cpu_id);
+	}
+
+	return in_stack_bound(addr, thread, esf);
+}
+
 #if __riscv_xlen == 32
 #define PR_REG "%08" PRIxPTR
 #elif __riscv_xlen == 64
@@ -276,3 +276,4 @@ void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf
 	walk_stackframe(print_trace_address, &i, _current, esf, in_fatal_stack_bound, csf);
 	LOG_ERR("");
 }
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
