@@ -3,67 +3,70 @@
 
     Send perf samples to the host with console support
 
-This application can be used to demonstrate :ref:`profiling-perf` work.
+This application can be used to understand how to use the :ref:`profiling-perf`
+tool.
 
 Requirements
 ************
 
-Perf tool so far implemente only for riscv and x86_64 architectures.
+The Perf tool is currently implemented only for RISC-V and x86_64 architectures.
 
 Usage example
 *************
 
-Build an image with:
+* Build and run the sample with:
 
-.. zephyr-app-commands::
-    :zephyr-app: samples/subsys/profiling/perf
-    :board: qemu_riscv64
-    :goals: build
-    :compact:
+  .. zephyr-app-commands::
+     :zephyr-app: samples/subsys/profiling/perf
+     :board: qemu_riscv64
+     :goals: run
+     :compact:
 
-After the sample starts, enter shell command:
+* After the sample has started, enter the shell command:
 
-.. code-block:: console
+  .. code-block:: console
 
-  uart:~$ perf record <period> <frequency>
+     uart:~$ perf record <duration> <frequency>
 
-Wait for the completion message ``perf done!`` or ``perf buf override!``
-(if perf buffer size is smaller than required).
+  This command will start a timer for *duration* milliseconds at *frequency* Hz.
 
-Print made by perf samles in terminal by shell-command:
+* Wait for the completion message ``perf done!``, or ``perf buf override!`` if
+  the perf buffer size is smaller than required.
 
-.. code-block:: console
+* Print the samples captured by perf in the terminal with the shell command:
 
-  uart:~$ perf printbuf
+  .. code-block:: console
 
-Output exaple:
+     uart:~$ perf printbuf
 
-.. code-block:: console
+  The output should be similar to:
 
-    Perf buf length 2046
-    0000000000000004
-    00000000001056b2
-    0000000000108192
-    000000000010052f
-    0000000000000000
-      ....
-    000000000010052f
-    0000000000000000
+  .. code-block:: console
 
-Copy gotten output in some file, for example *perf_buf*.
+     Perf buf length 2046
+     0000000000000004
+     00000000001056b2
+     0000000000108192
+     000000000010052f
+     0000000000000000
+       ....
+     000000000010052f
+     0000000000000000
 
-Make graph.svg with :zephyr_file:`scripts/perf/stackcollapse.py` and
-`FlameGraph`_:
+* Copy the output into a file, for example :file:`perf_buf`.
 
-.. _FlameGraph: https://github.com/brendangregg/FlameGraph/
+* Generate :file:`graph.svg` with
+  :zephyr_file:`scripts/profiling/stackcollapse.py` and `FlameGraph`_:
 
-.. code-block:: shell
+  .. _FlameGraph: https://github.com/brendangregg/FlameGraph/
 
-  python scripts/perf/stackcollapse.py perf_buf build/zephyr/zephyr.elf | <flamegraph_dir_path>/flamegraph.pl > graph.svg
+  .. code-block:: shell
+
+     python scripts/perf/stackcollapse.py perf_buf build/zephyr/zephyr.elf | <flamegraph_dir_path>/flamegraph.pl > graph.svg
 
 Graph example
 =============
 
 .. image:: images/graph_example.svg
-    :align: center
-    :alt: graph example
+   :align: center
+   :alt: graph example
