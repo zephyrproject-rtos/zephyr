@@ -130,7 +130,7 @@ def test_handler_final_handle_actions(mocked_instance):
     handler.suite_name_check = True
 
     harness = twisterlib.harness.Test()
-    harness.status = mock.Mock()
+    harness.status = 'NONE'
     harness.detected_suite_names = mock.Mock()
     harness.matched_run_id = False
     harness.run_id_exists = True
