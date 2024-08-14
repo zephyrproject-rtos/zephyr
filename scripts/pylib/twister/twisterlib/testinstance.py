@@ -15,7 +15,7 @@ import csv
 
 from twisterlib.testsuite import TestCase, TestSuite
 from twisterlib.platform import Platform
-from twisterlib.error import BuildError
+from twisterlib.error import BuildError, StatusAttributeError
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
 from twisterlib.handlers import (
@@ -105,9 +105,7 @@ class TestInstance:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.error(f'TestInstance assigned status "{value}"'
-                           f' without an equivalent in TwisterStatus.'
-                           f' Assignment was ignored.')
+            raise StatusAttributeError(self.__class__, value)
 
     def add_filter(self, reason, filter_type):
         self.filters.append({'type': filter_type, 'reason': reason })
