@@ -246,38 +246,35 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 */
 	if (mutex->lock_count > 1U) {
 		mutex->lock_count--;
-		goto k_mutex_unlock_return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	adjust_owner_prio(mutex, mutex->owner_orig_prio);
-
-	/* Get the new owner, if any */
-	new_owner = z_unpend_first_thread(&mutex->wait_q);
-
-	mutex->owner = new_owner;
-
-	LOG_DBG("new owner of mutex %p: %p (prio: %d)",
-		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
-
-	if (new_owner != NULL) {
-		/*
-		 * new owner is already of higher or equal prio than first
-		 * waiter since the wait queue is priority-based: no need to
-		 * adjust its priority
-		 */
-		mutex->owner_orig_prio = new_owner->base.prio;
-		arch_thread_return_value_set(new_owner, 0);
-		z_ready_thread(new_owner);
-		z_reschedule(&lock, key);
 	} else {
-		mutex->lock_count = 0U;
-		k_spin_unlock(&lock, key);
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		adjust_owner_prio(mutex, mutex->owner_orig_prio);
+
+		/* Get the new owner, if any */
+		new_owner = z_unpend_first_thread(&mutex->wait_q);
+
+		mutex->owner = new_owner;
+
+		LOG_DBG("new owner of mutex %p: %p (prio: %d)",
+			mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
+
+		if (new_owner != NULL) {
+			/*
+			 * new owner is already of higher or equal prio than first
+			 * waiter since the wait queue is priority-based: no need to
+			 * adjust its priority
+			 */
+			mutex->owner_orig_prio = new_owner->base.prio;
+			arch_thread_return_value_set(new_owner, 0);
+			z_ready_thread(new_owner);
+			z_reschedule(&lock, key);
+		} else {
+			mutex->lock_count = 0U;
+			k_spin_unlock(&lock, key);
+		}
 	}
 
-
-k_mutex_unlock_return:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
 
 	return 0;

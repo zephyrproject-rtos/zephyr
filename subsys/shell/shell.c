@@ -1414,15 +1414,14 @@ void shell_uninit(const struct shell *sh, shell_uninit_cb_t cb)
 		/* signal kill message */
 		(void)k_poll_signal_raise(signal, 0);
 
-		return;
-	}
-
-	int err = instance_uninit(sh);
-
-	if (cb) {
-		cb(sh, err);
 	} else {
-		__ASSERT_NO_MSG(0);
+		int err = instance_uninit(sh);
+
+		if (cb) {
+			cb(sh, err);
+		} else {
+			__ASSERT_NO_MSG(0);
+		}
 	}
 }
 

@@ -612,23 +612,18 @@ int z_nrf_rtc_timer_trigger_overflow(void)
 	mcu_critical_state = full_int_lock();
 	if (sys_busy) {
 		err = -EBUSY;
-		goto bail;
-	}
-
-	if (counter() >= (COUNTER_SPAN - 100)) {
+	} else if (counter() >= (COUNTER_SPAN - 100)) {
 		err = -EAGAIN;
-		goto bail;
+	} else {
+		nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
+		k_busy_wait(80);
+
+		uint64_t now = z_nrf_rtc_timer_read();
+
+		if (err == 0) {
+			sys_clock_timeout_handler(0, now, NULL);
+		}
 	}
-
-	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_TRIGGER_OVERFLOW);
-	k_busy_wait(80);
-
-	uint64_t now = z_nrf_rtc_timer_read();
-
-	if (err == 0) {
-		sys_clock_timeout_handler(0, now, NULL);
-	}
-bail:
 	full_int_unlock(mcu_critical_state);
 
 	return err;
