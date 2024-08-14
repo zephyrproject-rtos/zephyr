@@ -6,17 +6,15 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SELECT_H_
 
-#include <zephyr/net/socket_types.h>
-#include <zephyr/net/socket_select.h>
+#include <zephyr/sys/fdtable.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#undef fd_set
-#define fd_set zsock_fd_set
-
 #define FD_SETSIZE ZVFS_FD_SETSIZE
+
+typedef struct zvfs_fd_set fd_set;
 
 struct timeval;
 
