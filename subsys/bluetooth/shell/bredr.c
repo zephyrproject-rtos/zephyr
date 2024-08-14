@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/bluetooth/classic/pnp.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
@@ -531,6 +532,53 @@ static int cmd_sdp_find_record(const struct shell *sh,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CONN)
+static uint8_t bt_pnp_discover_callback(struct bt_conn* conn, uint16_t type, uint16_t value)
+{
+    shell_print(ctx_shell, "PNP discovered, type:0x%0x, value:0x%0x", type, value);
+	return 0;
+}
+
+static int cmd_pnp_discover(const struct shell *sh,
+			       size_t argc, char *argv[])
+{
+	int res;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return 0;
+	}
+
+	shell_print(sh, "PNP discover");
+
+	res = bt_pnp_discover(default_conn, bt_pnp_discover_callback);
+	if (res) {
+		shell_error(sh, "PNP discovery failed: result %d", res);
+		return -ENOEXEC;
+	} else {
+		shell_print(sh, "PNP discovery started");
+	}
+
+	return 0;
+}
+
+#else
+static int cmd_pnp_discover(const struct shell *sh,
+			       size_t argc, char *argv[])
+{
+	int res;
+	const char *action;
+
+	if (!default_conn) {
+		shell_print(sh, "Not connected");
+		return 0;
+	}
+
+	shell_print(sh, "CONFIG_BT_PNP not eanble");
+	return 0;
+}
+#endif
+
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
@@ -545,6 +593,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG>", cmd_sdp_find_record, 2, 0),
+	SHELL_CMD_ARG(pnp, NULL, "<PNP>", cmd_pnp_discover, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
