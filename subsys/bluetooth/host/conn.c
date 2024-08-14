@@ -1091,6 +1091,7 @@ static void process_unack_tx(struct bt_conn *conn)
 		node = sys_slist_get(&conn->tx_pending);
 
 		if (!node) {
+			bt_tx_irq_raise();
 			return;
 		}
 
