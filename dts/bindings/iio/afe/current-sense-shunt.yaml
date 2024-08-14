@@ -25,3 +25,7 @@ properties:
     required: true
     description: |
       Resistance of the shunt resistor in micro-ohms
+
+      This value is specified in micro-ohms to maintain compatibility with the
+      Linux bindings, but internally it is rounded down to milli-ohms for
+      computational complexity reasons.

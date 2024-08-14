@@ -11,7 +11,7 @@
 
 struct current_sense_shunt_dt_spec {
 	const struct adc_dt_spec port;
-	uint32_t shunt_micro_ohms;
+	uint32_t shunt_milli_ohms;
 };
 
 /**
@@ -27,7 +27,7 @@ struct current_sense_shunt_dt_spec {
 #define CURRENT_SENSE_SHUNT_DT_SPEC_GET(node_id)                                                   \
 	{                                                                                          \
 		.port = ADC_DT_SPEC_GET(node_id),                                                  \
-		.shunt_micro_ohms = DT_PROP(node_id, shunt_resistor_micro_ohms),                   \
+		.shunt_milli_ohms = DT_PROP(node_id, shunt_resistor_micro_ohms) / 1000,            \
 	}
 
 /**
@@ -43,8 +43,8 @@ static inline void current_sense_shunt_scale_dt(const struct current_sense_shunt
 	/* store in a temporary 64 bit variable to prevent overflow during calculation */
 	int64_t tmp = *v_to_i;
 
-	/* multiplies by 1,000,000 before dividing by shunt resistance in micro-ohms. */
-	tmp = tmp * 1000000 / spec->shunt_micro_ohms;
+	/* multiplies by 1,000 before dividing by shunt resistance in milli-ohms. */
+	tmp = tmp * 1000 / spec->shunt_milli_ohms;
 
 	*v_to_i = (int32_t)tmp;
 }
