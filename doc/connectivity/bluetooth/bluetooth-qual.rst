@@ -6,12 +6,12 @@ Qualification
 Qualification setup
 *******************
 
-.. _auto_pts_repository:
+.. _AutoPTS automation software:
    https://github.com/auto-pts/auto-pts
 
 The Zephyr Bluetooth host can be qualified using Bluetooth's PTS (Profile Tuning
 Suite) software. It is originally a manual process, but is automated by using
-the `AutoPTS automation software <auto_pts_repository>`_.
+the `AutoPTS automation software`_.
 
 The setup is described in more details in the pages linked below.
 
@@ -24,11 +24,11 @@ The setup is described in more details in the pages linked below.
 ICS Features
 ************
 
-.. _bluetooth_qualification_website:
+.. _Bluetooth Qualification website:
    https://qualification.bluetooth.com/
 
 The Zephyr ICS file for the Host features can be downloaded here:
 :download:`ICS_Zephyr_Bluetooth_Host.pts
 </tests/bluetooth/qualification/ICS_Zephyr_Bluetooth_Host.pts>`.
 
-Use the `Bluetooth Qualification website <bluetooth_qualification_website>`_ to view and edit the ICS.
+Use the `Bluetooth Qualification website`_ to view and edit the ICS.
