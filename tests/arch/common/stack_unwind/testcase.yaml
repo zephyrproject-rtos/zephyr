@@ -54,8 +54,9 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "E: backtrace  0: fp: \\w+ lr: \\w+"
-        - "E: backtrace  1: fp: \\w+ lr: \\w+"
+        - "E: call trace:"
+        - "E:      0: fp: \\w+ lr: \\w+"
+        - "E:      1: fp: \\w+ lr: \\w+"
   arch.common.stack_unwind.symtab:
     arch_allow:
       - riscv
