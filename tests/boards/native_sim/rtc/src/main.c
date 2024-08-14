@@ -39,11 +39,11 @@ static char *us_time_to_str(char *dest, uint64_t time)
 }
 
 #define WAIT_TIME 250 /* ms */
-#define TOLERANCE 20 /* ms Tolerance in native_posix time after WAIT_TIME */
+#define TOLERANCE 20  /* ms Tolerance in native_sim time after WAIT_TIME */
 #define TICK_MS (1000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /**
- * @brief Test native_posix real time control
+ * @brief Test native_sim real time control
  */
 ZTEST(native_realtime, test_realtime)
 {
@@ -141,7 +141,7 @@ ZTEST(native_realtime, test_realtime)
 }
 
 /**
- * @brief Test native_posix RTC offset functionality
+ * @brief Test native_sim RTC offset functionality
  */
 ZTEST(native_realtime,  test_rtc_offset)
 {
