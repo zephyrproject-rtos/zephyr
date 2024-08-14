@@ -81,7 +81,7 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
 		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
 		return false;
 	case RTIO_OP_I2C_RECOVER:
-		(void)i2c_rtio_recover(ctx);
+		(void)i2c_nrfx_twi_recover_bus(dev);
 		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -104,6 +104,14 @@ static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 	}
 }
 
+static int i2c_nrfx_twi_rtio_configure(const struct device *dev, uint32_t i2c_config)
+{
+	struct i2c_rtio *const ctx = ((struct i2c_nrfx_twi_rtio_data *)
+		dev->data)->ctx;
+
+	return i2c_rtio_configure(ctx, i2c_config);
+}
+
 static int i2c_nrfx_twi_rtio_transfer(const struct device *dev, struct i2c_msg *msgs,
 				      uint8_t num_msgs, uint16_t addr)
 {
@@ -111,6 +119,14 @@ static int i2c_nrfx_twi_rtio_transfer(const struct device *dev, struct i2c_msg *
 		dev->data)->ctx;
 
 	return i2c_rtio_transfer(ctx, msgs, num_msgs, addr);
+}
+
+static int i2c_nrfx_twi_rtio_recover_bus(const struct device *dev)
+{
+	struct i2c_rtio *const ctx = ((struct i2c_nrfx_twi_rtio_data *)
+		dev->data)->ctx;
+
+	return i2c_rtio_recover(ctx);
 }
 
 static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
@@ -136,9 +152,9 @@ static void i2c_nrfx_twi_rtio_submit(const struct device *dev, struct rtio_iodev
 }
 
 static const struct i2c_driver_api i2c_nrfx_twi_rtio_driver_api = {
-	.configure   = i2c_nrfx_twi_configure,
+	.configure   = i2c_nrfx_twi_rtio_configure,
 	.transfer    = i2c_nrfx_twi_rtio_transfer,
-	.recover_bus = i2c_nrfx_twi_recover_bus,
+	.recover_bus = i2c_nrfx_twi_rtio_recover_bus,
 	.iodev_submit = i2c_nrfx_twi_rtio_submit,
 };
 
