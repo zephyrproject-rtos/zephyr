@@ -5050,6 +5050,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: libmctp":
+  status: maintained
+  maintainers:
+    - teburd
+  collaborators:
+    - nashif
+    - inteljiangwe1
+  files:
+    - samples/modules/mctp/
+  labels:
+    - "area: MCTP"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
