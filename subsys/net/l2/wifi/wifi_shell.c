@@ -475,6 +475,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					       {"eap-identity", required_argument, 0, 'I'},
 					       {"eap-password", required_argument, 0, 'P'},
 					       {"ieee-80211r", no_argument, 0, 'R'},
+					       {"domain-match", no_argument, 0, 'd'},
 					       {"help", no_argument, 0, 'h'},
 					       {0, 0, 0, 0}};
 	int opt_index = 0;
@@ -496,7 +497,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:R:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:R:d:h",
 		long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -677,6 +678,15 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'R':
 			params->ft_used = 1;
+			break;
+		case 'd':
+			params->domain_match = optarg;
+			params->domain_match_length = strlen(params->domain_match);
+			if (params->domain_match_length > WIFI_DOMAIN_NAME_MAX_LENGTH) {
+				PR_WARNING("domain_match too long (max %d characters)\n",
+					    WIFI_DOMAIN_NAME_MAX_LENGTH);
+				return -EINVAL;
+			}
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -3146,6 +3156,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		  "[-I, --eap-identity]: Client Identity.\n"
 		  "[-P, --eap-password]: Client Password.\n"
 		  "[-R, --fast-BSS-transition]: Fast BSS Transition used.\n"
+		  "[-d, --domain-match]: Server domain name constraint.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
 		  2, 20),
