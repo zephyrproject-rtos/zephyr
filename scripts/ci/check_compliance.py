@@ -274,6 +274,9 @@ class ClangFormatCheck(ComplianceTest):
 
     def run(self):
         for file in get_files():
+            if Path(file).suffix not in ['.c', '.h']:
+                continue
+
             diff = subprocess.Popen(('git', 'diff', '-U0', '--no-color', COMMIT_RANGE, '--', file),
                                     stdout=subprocess.PIPE,
                                     cwd=GIT_TOP)
