@@ -31,7 +31,7 @@ test_current: current_amp {
 	compatible = "current-sense-amplifier";
 	io-channels = <&test_adc 2>;
 	io-channel-names = "CURRENT_AMP";
-	sense-resistor-micro-ohms = <10>;
+	sense-resistor-milli-ohms = <1>;
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
 };
