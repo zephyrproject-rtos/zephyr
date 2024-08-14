@@ -26,6 +26,10 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.filesystem.littlefs.blk:
