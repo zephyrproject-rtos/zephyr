@@ -28,3 +28,6 @@ properties:
       The value specified will be rounded down to the closest implemented
       value. If set to 0 (default) skip setting the charge current value at
       driver initialization.
+
+  constant-charge-voltage-max-microvolt:
+    required: true
