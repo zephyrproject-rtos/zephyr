@@ -15,8 +15,7 @@
 #include <esp_private/esp_mmu_map_private.h>
 #include <esp_flash_internal.h>
 #if CONFIG_ESP_SPIRAM
-#include <esp_psram.h>
-#include <esp_private/esp_psram_extram.h>
+#include "psram.h"
 #endif
 
 #include <zephyr/kernel_structs.h>
@@ -43,11 +42,6 @@
 extern void rtc_clk_cpu_freq_set_xtal(void);
 extern void esp_reset_reason_init(void);
 extern void z_prep_c(void);
-
-#if CONFIG_ESP_SPIRAM
-extern int _ext_ram_bss_start;
-extern int _ext_ram_bss_end;
-#endif
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -110,27 +104,7 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_mmu_map_init();
 
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_psram_init();
-
-	if (err != ESP_OK) {
-		ESP_EARLY_LOGE(TAG, "Failed to Initialize SPIRAM, aborting.");
-		abort();
-	}
-	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
-		ESP_EARLY_LOGE(TAG, "SPIRAM size is less than configured size, aborting.");
-		abort();
-	}
-
-	if (esp_psram_is_initialized()) {
-		if (!esp_psram_extram_test()) {
-			ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
-			abort();
-		}
-	}
-
-	memset(&_ext_ram_bss_start, 0,
-	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
-
+	esp_init_psram();
 #endif /* CONFIG_ESP_SPIRAM */
 
 	esp_timer_early_init();
@@ -146,6 +120,16 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 #endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
+
+#if CONFIG_ESP_SPIRAM
+	/* Init Shared Multi Heap for PSRAM */
+	int err = esp_psram_smh_init();
+
+	if (err) {
+		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
+	}
+#endif
+
 	/* Start Zephyr */
 	z_prep_c();
 
