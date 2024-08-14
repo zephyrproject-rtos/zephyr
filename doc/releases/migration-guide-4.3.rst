@@ -229,5 +229,12 @@ Silabs
 * The separate ``em3`` power state was removed from Series 2 SoCs. The system automatically
   transitions to EM2 or EM3 depending on hardware peripheral requests for the oscillators.
 
+Trusted Firmware-M
+==================
+
+* The ``SECURE_UART1`` TF-M define is now controlled by the Zephyr buildsystem
+  :kconfig:option:`CONFIG_TFM_SECURE_UART`. This option will override any platform values previously
+  specified in the TF-M repository.
+
 Architectures
 *************
