@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <stdlib.h>
 #include <errno.h>
 
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/net/tls_credentials.h>
 
@@ -513,6 +514,10 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
 		errno = EINVAL;
 		return -1;
+	}
+
+	if ((fds[0].events & ZSOCK_POLLOUT)) {
+		fds[0].revents = ZSOCK_POLLOUT;
 	}
 
 	if (!k_fifo_is_empty(&socket->fifo)) {
