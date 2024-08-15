@@ -248,20 +248,20 @@ static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const th
 #define PR_REG "%016" PRIxPTR
 #endif
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+#ifdef CONFIG_SYMTAB
 #define LOG_STACK_TRACE(idx, ra, name, offset)                                                     \
 	LOG_ERR("     %2d: ra: " PR_REG " [%s+0x%x]", idx, ra, name, offset)
 #else
 #define LOG_STACK_TRACE(idx, ra, name, offset) LOG_ERR("     %2d: ra: " PR_REG, idx, ra)
-#endif /* CONFIG_EXCEPTION_STACK_TRACE_SYMTAB */
+#endif /* CONFIG_SYMTAB */
 
 static bool print_trace_address(void *arg, unsigned long ra)
 {
 	int *i = arg;
-#ifdef CONFIG_EXCEPTION_STACK_TRACE_SYMTAB
+#ifdef CONFIG_SYMTAB
 	uint32_t offset = 0;
 	const char *name = symtab_find_symbol_name(ra, &offset);
-#endif
+#endif /* CONFIG_SYMTAB */
 
 	LOG_STACK_TRACE((*i)++, ra, name, offset);
 
