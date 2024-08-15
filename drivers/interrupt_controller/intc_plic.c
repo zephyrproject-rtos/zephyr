@@ -76,6 +76,7 @@ struct plic_config {
 	mem_addr_t trig;
 	uint32_t max_prio;
 	uint32_t num_irqs;
+	uint32_t nr_contexts;
 	riscv_plic_irq_config_func_t irq_config_func;
 	struct _isr_table_entry *isr_table;
 };
@@ -87,6 +88,8 @@ struct plic_stats {
 
 struct plic_data {
 	struct plic_stats stats;
+	uint32_t hart0_offset;
+	uint32_t hart_ctx;
 };
 
 static uint32_t save_irq;
@@ -109,9 +112,11 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	return local_irq_to_reg_index(config->num_irqs) + 1;
 }
 
-static ALWAYS_INLINE uint32_t get_hart_context(uint32_t hartid, uint32_t nr_contexts, uint32_t context)
+static ALWAYS_INLINE uint32_t get_hart_context(const struct device *dev, uint32_t hartid)
 {
-	return hartid * nr_contexts + context;
+	const struct plic_data *data = dev->data;
+
+	return hartid * data->hart_ctx - data->hart0_offset;
 }
 
 static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t cpu_num)
@@ -130,7 +135,7 @@ static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t 
 #else
 	hartid = arch_proc_id();
 #endif
-	return  config->irq_en + get_hart_context(hartid, 2, 0) * CONTEXT_ENABLE_SIZE;
+	return  config->irq_en + get_hart_context(dev, hartid) * CONTEXT_ENABLE_SIZE;
 }
 
 static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
@@ -146,7 +151,7 @@ static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 	 * We return the m mode context.
 	 */
 
-	return config->reg + get_hart_context(arch_proc_id(), 2, 0) * CONTEXT_SIZE +
+	return config->reg + get_hart_context(dev, arch_proc_id()) * CONTEXT_SIZE +
 	       CONTEXT_CLAIM;
 }
 
@@ -162,7 +167,7 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	hartid = arch_proc_id();
 #endif
 
-	return config->reg + (get_hart_context(hartid, 2, 0) * CONTEXT_SIZE);
+	return config->reg + (get_hart_context(dev, hartid) * CONTEXT_SIZE);
 }
 
 /**
@@ -407,8 +412,17 @@ static void plic_irq_handler(const struct device *dev)
 static int plic_init(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
+	struct plic_data *data = dev->data;
 	mem_addr_t en_addr, thres_prio_addr;
 	mem_addr_t prio_addr = config->prio;
+
+	data->hart_ctx = config->nr_contexts / CONFIG_MP_MAX_NUM_CPUS;
+	if ((config->nr_contexts % CONFIG_MP_MAX_NUM_CPUS) > 0) {
+		data->hart_ctx++;
+	}
+
+	data->hart0_offset = data->hart_ctx -
+			     (config->nr_contexts - (CONFIG_MP_MAX_NUM_CPUS - 1) * data->hart_ctx);
 
 	/* Iterate through each of the contexts, HART + PRIV */
 	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
@@ -480,7 +494,7 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 
 	for (int i = 0; i < stat.irq_count_len; i++) {
 		uint16_t total_hits = stat.irq_count[((CONFIG_MP_NUM_CPUS > 1)
-							     ? arch_num_cpus() * stat.irq_count_len
+							      ? arch_num_cpus() * stat.irq_count_len
 							      : 0) +
 						     i];
 
@@ -606,6 +620,8 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+#define DT_INST_NUM_IRQS(n) DT_NUM_IRQS(DT_DRV_INST(n))
+
 #define PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_IRQ_FUNC_DECLARE(n);                                                             \
 	static const struct plic_config plic_config_##n = {                                        \
@@ -616,6 +632,7 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 			   (.trig = PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET,))               \
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
 		.num_irqs = DT_INST_PROP(n, riscv_ndev),                                           \
+		.nr_contexts = DT_INST_NUM_IRQS(n),                                                \
 		.irq_config_func = plic_irq_config_func_##n,                                       \
 		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
 	};                                                                                         \
