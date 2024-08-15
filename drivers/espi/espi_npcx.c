@@ -146,6 +146,10 @@ static const struct npcx_vw_in_config vw_in_tbl[] = {
 	/* index 42h (In)  */
 	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_LAN, vw_slp_lan),
 	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_SLP_WLAN, vw_slp_wlan),
+#if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_warn))
+	/* index 4Ah (In) */
+	NPCX_DT_VW_IN_CONF(ESPI_VWIRE_SIGNAL_DNX_WARN, vw_dnx_warn),
+#endif
 };
 
 static const struct npcx_vw_out_config vw_out_tbl[] = {
@@ -165,6 +169,9 @@ static const struct npcx_vw_out_config vw_out_tbl[] = {
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_HOST_RST_ACK, vw_host_rst_ack),
 	/* index 40h (Out) */
 	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_SUS_ACK, vw_sus_ack),
+#if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_ack))
+	NPCX_DT_VW_OUT_CONF(ESPI_VWIRE_SIGNAL_DNX_ACK, vw_dnx_ack),
+#endif
 };
 
 /*  Virtual wire GPIOs for platform level usage (High at Reset state) */
@@ -563,6 +570,11 @@ static void espi_vw_notify_host_warning(const struct device *dev,
 		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
 				wire);
 		break;
+#if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_warn))
+	case ESPI_VWIRE_SIGNAL_DNX_WARN:
+		espi_npcx_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK, wire);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -634,9 +646,16 @@ static void espi_vw_generic_isr(const struct device *dev, struct npcx_wui *wui)
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_S5
 		|| signal == ESPI_VWIRE_SIGNAL_SLP_A) {
 		espi_vw_notify_system_state(dev, signal);
+#if DT_NODE_EXISTS(DT_CHILD(DT_PATH(npcx_espi_vws_map), vw_dnx_warn))
+	} else if (signal == ESPI_VWIRE_SIGNAL_HOST_RST_WARN
+		|| signal == ESPI_VWIRE_SIGNAL_SUS_WARN
+		|| signal == ESPI_VWIRE_SIGNAL_OOB_RST_WARN
+		|| signal == ESPI_VWIRE_SIGNAL_DNX_WARN) {
+#else
 	} else if (signal == ESPI_VWIRE_SIGNAL_HOST_RST_WARN
 		|| signal == ESPI_VWIRE_SIGNAL_SUS_WARN
 		|| signal == ESPI_VWIRE_SIGNAL_OOB_RST_WARN) {
+#endif
 		espi_vw_notify_host_warning(dev, signal);
 	} else if (signal == ESPI_VWIRE_SIGNAL_PLTRST) {
 		espi_vw_notify_plt_rst(dev);
