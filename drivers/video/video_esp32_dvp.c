@@ -7,8 +7,6 @@
 #define DT_DRV_COMPAT espressif_esp32_cam
 
 #include <soc/gdma_channel.h>
-#include <soc/lcd_cam_reg.h>
-#include <soc/lcd_cam_struct.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -17,7 +15,8 @@
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
-
+#include <hal/cam_hal.h>
+#include <hal/cam_ll.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_cam, LOG_LEVEL_INF);
 
@@ -41,7 +40,8 @@ struct video_esp32_config {
 	uint32_t clock_mclk;
 	int irq_source;
 	int irq_priority;
-	uint8_t enable_16_bit;
+	uint8_t data_width;
+	uint8_t vsync_filter;
 	uint8_t invert_de;
 	uint8_t invert_byte_order;
 	uint8_t invert_bit_order;
@@ -52,6 +52,7 @@ struct video_esp32_config {
 
 struct video_esp32_data {
 	const struct video_esp32_config *config;
+	cam_hal_context_t cam_hal_context;
 	struct video_format video_format;
 	struct video_buffer *active_vbuf;
 	bool is_streaming;
@@ -155,7 +156,7 @@ static int video_esp32_stream_start(const struct device *dev)
 
 	buffer_size = data->active_vbuf->bytesused;
 	memset(data->dma_blocks, 0, sizeof(data->dma_blocks));
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
+	for (size_t i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
 		dma_block_iter->dest_address =
 			(uint32_t)data->active_vbuf->buffer + i * VIDEO_ESP32_DMA_BUFFER_MAX_SIZE;
 		if (buffer_size < VIDEO_ESP32_DMA_BUFFER_MAX_SIZE) {
@@ -171,7 +172,7 @@ static int video_esp32_stream_start(const struct device *dev)
 	}
 
 	if (dma_block_iter->next_block) {
-		LOG_ERR("Not enough descriptors available. Increase DMA_ESP32_DESCRIPTOR_NUM");
+		LOG_ERR("Not enough descriptors available. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM by %d", buffer_size / VIDEO_ESP32_DMA_BUFFER_MAX_SIZE+1);
 		return -ENOBUFS;
 	}
 
@@ -188,20 +189,13 @@ static int video_esp32_stream_start(const struct device *dev)
 		return error;
 	}
 
-	LCD_CAM.cam_ctrl1.cam_reset = 1;
-	LCD_CAM.cam_ctrl1.cam_reset = 0;
-	LCD_CAM.cam_ctrl1.cam_afifo_reset = 1;
-	LCD_CAM.cam_ctrl1.cam_afifo_reset = 0;
-
 	error = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
 	if (error) {
 		LOG_ERR("Unable to start DMA (%d)", error);
 		return error;
 	}
 
-	LCD_CAM.cam_ctrl.cam_update = 1;
-	LCD_CAM.cam_ctrl.cam_update = 0;
-	LCD_CAM.cam_ctrl1.cam_start = 1;
+	cam_hal_start_streaming(&data->cam_hal_context);
 
 	data->is_streaming = true;
 
@@ -218,7 +212,7 @@ static int video_esp32_stream_stop(const struct device *dev)
 
 	data->is_streaming = false;
 	dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
-	LCD_CAM.cam_ctrl1.cam_start = 0;
+	cam_hal_stop_streaming(&data->cam_hal_context);
 	return ret;
 }
 
@@ -331,26 +325,29 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
+	cam_dev_t *cam_dev;
 
-	LCD_CAM.cam_ctrl.cam_stop_en = 0;
-	LCD_CAM.cam_ctrl.cam_vsync_filter_thres = 4;
-	LCD_CAM.cam_ctrl.cam_byte_order = cfg->invert_byte_order;
-	LCD_CAM.cam_ctrl.cam_bit_order = cfg->invert_bit_order;
-	LCD_CAM.cam_ctrl.cam_line_int_en = 0;
-	LCD_CAM.cam_ctrl.cam_vs_eof_en = 1;
+	data->cam_hal_context.hw = CAM_LL_GET_HW(0);
+	cam_dev = data->cam_hal_context.hw;
 
-	LCD_CAM.cam_ctrl1.val = 0;
-	LCD_CAM.cam_ctrl1.cam_rec_data_bytelen = 0;
-	LCD_CAM.cam_ctrl1.cam_line_int_num = 0;
-	LCD_CAM.cam_ctrl1.cam_clk_inv = cfg->invert_pclk;
-	LCD_CAM.cam_ctrl1.cam_vsync_filter_en = 1;
-	LCD_CAM.cam_ctrl1.cam_2byte_en = cfg->enable_16_bit;
-	LCD_CAM.cam_ctrl1.cam_de_inv = cfg->invert_de;
-	LCD_CAM.cam_ctrl1.cam_hsync_inv = cfg->invert_hsync;
-	LCD_CAM.cam_ctrl1.cam_vsync_inv = cfg->invert_vsync;
-	LCD_CAM.cam_ctrl1.cam_vh_de_mode_en = 0;
+	cam_ll_enable_stop_signal(cam_dev, 0);
+	cam_ll_swap_dma_data_byte_order(cam_dev, cfg->invert_byte_order);
+	cam_ll_reverse_dma_data_bit_order(cam_dev, cfg->invert_bit_order);
+	cam_ll_enable_vsync_generate_eof(cam_dev, 1);
 
-	LCD_CAM.cam_rgb_yuv.val = 0;
+	cam_ll_enable_hs_line_int(cam_dev, 0);
+	cam_ll_set_line_int_num(cam_dev, 0);
+	cam_ll_enable_vsync_filter(cam_dev, cfg->vsync_filter != 0);
+	cam_ll_set_vsync_filter_thres(cam_dev, cfg->vsync_filter);
+
+	cam_ll_set_input_data_width(cam_dev, cfg->data_width);
+	cam_ll_enable_invert_pclk(cam_dev, cfg->invert_pclk);
+	cam_ll_enable_invert_de(cam_dev, cfg->invert_de);
+	cam_ll_enable_invert_vsync(cam_dev, cfg->invert_vsync);
+	cam_ll_enable_invert_hsync(cam_dev, cfg->invert_hsync);
+	cam_ll_set_vh_de_mode(cam_dev, 0); // Disable vh_de mode default
+	cam_ll_enable_rgb_yuv_convert(cam_dev, 0); // bypass conv module
+
 }
 
 static int esp32_init(const struct device *dev)
@@ -404,7 +401,8 @@ static const struct video_esp32_config esp32_config = {
 	.source_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, source)),
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(0, rx),
 	.rx_dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
-	.enable_16_bit = DT_INST_PROP(0, enable_16bit_mode),
+	.data_width = DT_INST_PROP(0, data_width),
+	.vsync_filter = DT_INST_PROP(0, vsync_filter),
 	.invert_bit_order = DT_INST_PROP(0, invert_bit_order),
 	.invert_byte_order = DT_INST_PROP(0, invert_byte_order),
 	.invert_pclk = DT_INST_PROP(0, invert_pclk),
