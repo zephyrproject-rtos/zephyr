@@ -210,11 +210,6 @@ def _set_firmware_load_start_address(output, esiost_args):
             f'and end ({end_ram_to_print}) of RAM'
         _exit_with_failure_delete_file(output, message)
 
-    if fw_end_addr > end_ram:
-        message = f'Firmware end address ({fw_end_addr_to_print}) should be '
-        message += f'less than end of RAM address ({end_ram_to_print})'
-        _exit_with_failure_delete_file(output, message)
-
     with output.open("r+b") as output_file:
         # check fw_entry pt location in flash or not
         with input_file_path.open("r+b") as input_file:
@@ -226,6 +221,11 @@ def _set_firmware_load_start_address(output, esiost_args):
                 input_file.seek(ARM_FW_ENTRY_POINT_OFFSET + HEADER_SIZE)
                 fw_arm_entry_byte = input_file.read(4)
                 fw_arm_entry_pt = int.from_bytes(fw_arm_entry_byte, "little")
+            else:
+                if fw_end_addr > end_ram:
+                    message = f'Firmware end address ({fw_end_addr_to_print}) should be '
+                    message += f'less than end of RAM address ({end_ram_to_print})'
+                    _exit_with_failure_delete_file(output, message)
 
             if fw_arm_entry_pt > start_flash_addr and fw_arm_entry_pt < end_flash_addr:
                 fw_load_addr = 0x0
