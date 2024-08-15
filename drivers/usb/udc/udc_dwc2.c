@@ -314,14 +314,14 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		len = buf->len;
 	} else {
 		uint32_t spcavail = dwc2_ftx_avail(dev, ep_idx);
-		uint32_t spcperpkt = ROUND_UP(USB_MPS_EP_SIZE(cfg->mps), 4);
+		uint32_t spcperpkt = ROUND_UP(udc_mps_ep_size(cfg), 4);
 		uint32_t max_pkts, max_transfer;
 
 		/* Maximum number of packets that can fit in TxFIFO */
 		max_pkts = spcavail / spcperpkt;
 
 		/* We can transfer up to max_pkts MPS packets and a short one */
-		max_transfer = (max_pkts * USB_MPS_EP_SIZE(cfg->mps)) +
+		max_transfer = (max_pkts * udc_mps_ep_size(cfg)) +
 			       (spcavail % spcperpkt);
 
 		/* If there is enough space for the transfer, there's no need
@@ -355,10 +355,10 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		 * Determine the number of packets for the current transfer;
 		 * if the pktcnt is too large, truncate the actual transfer length.
 		 */
-		pktcnt = DIV_ROUND_UP(len, USB_MPS_EP_SIZE(cfg->mps));
+		pktcnt = DIV_ROUND_UP(len, udc_mps_ep_size(cfg));
 		if (pktcnt > max_pktcnt) {
 			pktcnt = ROUND_DOWN(max_pktcnt, (1 + addnl));
-			len = pktcnt * USB_MPS_EP_SIZE(cfg->mps);
+			len = pktcnt * udc_mps_ep_size(cfg);
 		}
 	} else {
 		/* ZLP */
@@ -401,7 +401,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 		const uint8_t *src = buf->data;
 
 		while (pktcnt > 0) {
-			uint32_t pktlen = MIN(len, USB_MPS_EP_SIZE(cfg->mps));
+			uint32_t pktlen = MIN(len, udc_mps_ep_size(cfg));
 
 			for (uint32_t i = 0UL; i < pktlen; i += d) {
 				uint32_t val = src[i];
@@ -504,7 +504,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 
 	xfersize = dwc2_rx_xfer_size(priv, cfg, buf);
 
-	pktcnt = DIV_ROUND_UP(xfersize, USB_MPS_EP_SIZE(cfg->mps));
+	pktcnt = DIV_ROUND_UP(xfersize, udc_mps_ep_size(cfg));
 	doeptsiz = usb_dwc2_set_deptsizn_pktcnt(pktcnt) |
 		   usb_dwc2_set_deptsizn_xfersize(xfersize);
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
@@ -887,8 +887,7 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 			break;
 		}
 
-		if (((evt.bcnt % USB_MPS_EP_SIZE(ep_cfg->mps)) == 0) &&
-		    net_buf_tailroom(buf)) {
+		if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
 			uint32_t doeptsiz;
 
 			/* Prepare next read only when transfer finished */
@@ -1010,8 +1009,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 
 	net_buf_add(buf, evt.bcnt);
 
-	if (((evt.bcnt % USB_MPS_EP_SIZE(ep_cfg->mps)) == 0) &&
-	    net_buf_tailroom(buf)) {
+	if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg, 0);
 	} else {
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
@@ -1200,7 +1198,7 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 	/* Keep everything but FIFO number */
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
 
-	reqdep = DIV_ROUND_UP(USB_MPS_EP_SIZE(cfg->mps), 4U);
+	reqdep = DIV_ROUND_UP(udc_mps_ep_size(cfg), 4U);
 	if (priv->bufferdma) {
 		/* In DMA mode, TxFIFO capable of holding 2 packets is enough */
 		reqdep *= MIN(2, (1 + addnl));
@@ -1331,7 +1329,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		dxepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
 	}
 
-	if (priv->bufferdma && (USB_MPS_EP_SIZE(cfg->mps) % 4)) {
+	if (priv->bufferdma && (udc_mps_ep_size(cfg) % 4)) {
 		/* TODO: In Buffer DMA mode, DMA will insert padding bytes in
 		 * between packets if endpoint Max Packet Size is not multiple
 		 * of 4 (DWORD) and single transfer spans across multiple
@@ -1351,7 +1349,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 	dxepctl = sys_read32(dxepctl_reg);
 	/* Set max packet size */
 	dxepctl &= ~USB_DWC2_DEPCTL_MPS_MASK;
-	dxepctl |= usb_dwc2_set_depctl_mps(USB_MPS_EP_SIZE(cfg->mps));
+	dxepctl |= usb_dwc2_set_depctl_mps(udc_mps_ep_size(cfg));
 
 	/* Set endpoint type */
 	dxepctl &= ~USB_DWC2_DEPCTL_EPTYPE_MASK;
@@ -1375,7 +1373,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && USB_MPS_EP_SIZE(cfg->mps) != 0U) {
+	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U) {
 		int ret = dwc2_set_dedicated_fifo(dev, cfg, &dxepctl);
 
 		if (ret) {
@@ -1578,7 +1576,7 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 			cfg->addr, ep_idx, dxepctl);
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && USB_MPS_EP_SIZE(cfg->mps) != 0U &&
+	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U &&
 	    ep_idx != 0U) {
 		dwc2_unset_dedicated_fifo(dev, cfg, &dxepctl);
 	}
