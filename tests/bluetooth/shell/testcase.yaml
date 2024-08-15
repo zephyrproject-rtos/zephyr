@@ -339,6 +339,7 @@ tests:
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_TBS=n
       - CONFIG_BT_TBS_CLIENT_GTBS=n
+      - CONFIG_BT_CCP_CALL_CONTROL_CLIENT=n
     tags: bluetooth
   bluetooth.shell.audio.tbs_only_client:
     extra_args: CONF_FILE="audio.conf"
@@ -351,6 +352,7 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_TBS_CLIENT_TBS=n
+      - CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT=1
     tags: bluetooth
   bluetooth.audio_shell.no_cap_acceptor:
     extra_args: CONF_FILE="audio.conf"
