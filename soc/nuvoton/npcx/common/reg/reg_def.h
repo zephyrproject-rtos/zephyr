@@ -750,10 +750,14 @@ struct espi_reg {
 #define NPCX_VWSWIRQ_EDGE_IRQ            28
 #define NPCX_VWEVMS_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVMS_VALID                FIELD(4, 4)
+#define NPCX_VWEVMS_INDEX                FIELD(8, 7)
+#define NPCX_VWEVMS_INDEX_EN             15
 #define NPCX_VWEVMS_IE                   18
 #define NPCX_VWEVMS_WE                   20
 #define NPCX_VWEVSM_WIRE                 FIELD(0, 4)
 #define NPCX_VWEVSM_VALID                FIELD(4, 4)
+#define NPCX_VWEVSM_INDEX                FIELD(8, 7)
+#define NPCX_VWEVSM_INDEX_EN             15
 #define NPCX_VWEVSM_BIT_VALID(n)         (4+n)
 #define NPCX_VWEVSM_HW_WIRE              FIELD(24, 4)
 #define NPCX_VWGPSM_INDEX_EN             15
