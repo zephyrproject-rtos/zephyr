@@ -571,7 +571,7 @@ static int udc_mcux_ep_enable(const struct device *dev,
 	ep_init.zlt             = 0U;
 	ep_init.interval        = cfg->interval;
 	ep_init.endpointAddress = cfg->addr;
-	ep_init.maxPacketSize   = cfg->mps;
+	ep_init.maxPacketSize   = udc_mps_ep_size(cfg);
 
 	switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
 	case USB_EP_TYPE_CONTROL:
