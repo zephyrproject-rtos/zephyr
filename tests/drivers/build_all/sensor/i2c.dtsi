@@ -1082,3 +1082,11 @@ test_i2c_icm42670: icm42670@92 {
 	gyro-hz = <800>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_fxls8974: fxls8974@93 {
+	compatible = "nxp,fxls8974";
+	reg = <0x93>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
