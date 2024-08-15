@@ -838,7 +838,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         undef_to_locs = collections.defaultdict(list)
 
         # Warning: Needs to work with both --perl-regexp and the 're' module
-        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])"
+        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
         # Skip doc/releases and doc/security/vulnerabilities.rst, which often
         # reference removed symbols
@@ -881,7 +881,7 @@ If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
 CI check knows not to flag it.
 
-More generally, a reference followed by $, @, {{, *, or ## will never be
+More generally, a reference followed by $, @, {{, (, ., *, or ## will never be
 flagged.
 
 {undef_desc}""")
