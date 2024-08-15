@@ -726,8 +726,8 @@ Bluetooth Audio Stack.
    |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    |        +-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
-   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
-   |        |                               |         |                  | - Shell Module        | - Sample Application                             |
+   |        | Call Control Client           | 1.0     | 3.0              | - Feature complete    | - API refactor (in progress)                     |
+   |        |                               |         |                  | - Shell Module        | - Sample Application (in progress)               |
    |        |                               |         |                  | - BSIM test           |                                                  |
    +--------+-------------------------------+---------+------------------+-----------------------+--------------------------------------------------+
    | MCP    | Media Control Server          | 1.0     | 3.0              | - Feature complete    | - API refactor                                   |
