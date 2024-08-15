@@ -85,4 +85,26 @@
 			output-enable;
 		};
 	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PA5_CAN_0_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PA4_CAN_0_TX>;
+			output-enable;
+		};
+	};
+
+	flexcan1_default: flexcan1_default {
+		group1 {
+			pinmux = <PB7_CAN_1_RX>;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PB6_CAN_1_TX>;
+			output-enable;
+		};
+	};
 };
