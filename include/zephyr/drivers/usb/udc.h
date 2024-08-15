@@ -727,6 +727,18 @@ static inline const void *udc_get_event_ctx(const struct device *dev)
 }
 
 /**
+ * @brief Get endpoint size from UDC endpoint configuration
+ *
+ * @param[in] cfg Pointer to UDC endpoint configuration
+ *
+ * @return Endpoint size
+ */
+static inline uint16_t udc_mps_ep_size(const struct udc_ep_config *const cfg)
+{
+	return USB_MPS_EP_SIZE(cfg->mps);
+}
+
+/**
  * @}
  */
 
