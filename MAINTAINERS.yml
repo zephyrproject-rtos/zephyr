@@ -2263,6 +2263,8 @@ Google Platforms:
   maintainers:
     - fabiobaltieri
     - keith-zephyr
+  collaborators:
+    - duda-patryk
   files:
     - boards/google/
     - samples/boards/google_*/
