@@ -3117,9 +3117,9 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		return -EINVAL;
 	}
 
-	CHECKIF(user_data_not_empty(buf)) {
-		LOG_DBG("Please clear user_data first");
-		return -EINVAL;
+	if (user_data_not_empty(buf)) {
+		/* There may be issues if user_data is not empty. */
+		LOG_WRN("user_data is not empty");
 	}
 
 	/* Prepend SDU length.
