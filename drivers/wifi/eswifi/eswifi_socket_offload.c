@@ -610,6 +610,12 @@ int eswifi_socket_create(int family, int type, int proto)
 static int eswifi_socket_ioctl(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
+	case F_GETFL:
+		LOG_WRN("F_GETFL not supported, returning flags as 0");
+		return 0;
+	case F_SETFL:
+		LOG_WRN("F_SETFL not supported, ignoring flags");
+		return 0;
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
