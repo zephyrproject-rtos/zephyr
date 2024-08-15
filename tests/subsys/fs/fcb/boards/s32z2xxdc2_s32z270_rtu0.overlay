@@ -1,0 +1,13 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&s26hs512t {
+	partitions {
+		slot1_partition: partition@0 {
+			reg = <0x000000 0x10000>;
+		};
+	};
+};
