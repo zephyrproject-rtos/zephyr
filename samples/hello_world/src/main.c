@@ -301,15 +301,10 @@ int main(void)
 	} else {			
 		printf("%s spi Object is Created. Test Via DMA\n", ATTR_INF);				
 		if(flash == NULL) {
-			printf("%s flash has status disabled...%s\n", ATTR_ERR,ATTR_RST);
+			printf("%s flash has status disabled or not initialized properly...%s\n", ATTR_ERR,ATTR_RST);
 		} else {
 			printf("%s flash Object is Created. Initialize to Test Via DMA%s\n", ATTR_INF,ATTR_RST);						
-			if(flash != NULL) {
-				Flash_Test(flash, dma, 0x1000, 0, 20);
-			} else {
-				printf("%s Error Initializing DMA Device%s\n", ATTR_ERR,ATTR_RST);
-				Flash_Test(flash, NULL, 0x1000, 0, 20);
-			}
+			Flash_Test(flash, dma, 0x1000, 0, 20);
 		}
 	}
 

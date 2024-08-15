@@ -111,10 +111,10 @@ typedef void (*atcdmac100_cfg_func_t)(void);
 
 struct __attribute__((packed, aligned(4))) chain_block {
 	uint32_t ctrl;
-	uint32_t srcaddrl;
-	uint32_t dstaddrl;
+	uint32_t srcaddr;
+	uint32_t dstaddr;
 	uint32_t transize;
-	uint32_t llpointerl;
+	uint32_t llpointer;
 	struct chain_block *next_block;
 };
 
@@ -367,20 +367,20 @@ static int dma_atcdmac100_config(const struct device *dev, uint32_t channel,
 			dma_chain[channel][current_block_idx].transize =
 						cfg_blocks->block_size/cfg->source_data_size;
 
-			dma_chain[channel][current_block_idx].srcaddrl =
+			dma_chain[channel][current_block_idx].srcaddr =
 						(uint32_t)cfg_blocks->source_address;
 
-			dma_chain[channel][current_block_idx].dstaddrl =
+			dma_chain[channel][current_block_idx].dstaddr =
 						(uint32_t)((long)cfg_blocks->dest_address);
 
 			if (cfg_blocks->next_block) {
-				dma_chain[channel][current_block_idx].llpointerl =
+				dma_chain[channel][current_block_idx].llpointer =
 					(uint32_t)&dma_chain[channel][current_block_idx + 1];
 
 				current_block_idx = current_block_idx + 1;
 
 			} else {
-				dma_chain[channel][current_block_idx].llpointerl = 0x0;
+				dma_chain[channel][current_block_idx].llpointer = 0x0;
 				dma_chain[channel][current_block_idx].next_block = NULL;
 			}
 		}
