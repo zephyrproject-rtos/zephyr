@@ -190,8 +190,7 @@ static int hfp_hf_common_finish(struct at_client *at, enum at_result result,
 	}
 
 	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
-		LOG_DBG("Remove completed buf %p on %p", k_fifo_peek_head(&hf->tx_pending), hf);
-		(void)k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+		LOG_DBG("TX is done on %p", hf);
 	} else {
 		LOG_WRN("Tx is not ongoing on %p", hf);
 	}
@@ -211,16 +210,15 @@ static void hfp_hf_send_data(struct bt_hfp_hf *hf)
 		return;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
 		return;
 	}
 
-	buf = k_fifo_peek_head(&hf->tx_pending);
+	buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
 	if (!buf) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING);
 		return;
 	}
-
-	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING);
 
 	resp = (at_resp_cb_t)at_callback_set_resp(buf->user_data);
 	finish = (at_finish_cb_t)at_callback_set_finish(buf->user_data);
@@ -238,6 +236,8 @@ static void hfp_hf_send_data(struct bt_hfp_hf *hf)
 	err = bt_rfcomm_dlc_send(&hf->rfcomm_dlc, buf);
 	if (err < 0) {
 		LOG_ERR("Rfcomm send error :(%d)", err);
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING);
+		net_buf_unref(buf);
 		hfp_hf_send_failed(hf);
 	}
 }
