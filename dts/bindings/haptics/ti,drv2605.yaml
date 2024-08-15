@@ -11,6 +11,7 @@ include: i2c-device.yaml
 
 properties:
   actuator-mode:
+    required: true
     type: string
     enum:
       - "ERM"
