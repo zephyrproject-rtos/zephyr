@@ -52,6 +52,26 @@ struct espi_npcx_data {
 #endif
 };
 
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), vw_index_extend_set)
+struct espi_npcx_vw_ex {
+	uint8_t direction;
+	uint8_t group_num;
+	uint8_t index;
+};
+
+/* n = node, p = property, i = index */
+#define ESPI_NPCX_VW_EX_INFO(n, p, i)                                                              \
+	{                                                                                          \
+		.index = ESPI_NPCX_VW_EX_INDEX(DT_PROP_BY_IDX(n, p, i)),                           \
+		.group_num = ESPI_NPCX_VW_EX_GROUP_NUM(DT_PROP_BY_IDX(n, p, i)),                   \
+		.direction = ESPI_NPCX_VW_EX_DIR(DT_PROP_BY_IDX(n, p, i)),                         \
+	},
+
+static const struct espi_npcx_vw_ex espi_npcx_vw_ex_0[] = {
+	DT_FOREACH_PROP_ELEM(DT_DRV_INST(0), vw_index_extend_set, ESPI_NPCX_VW_EX_INFO)
+};
+#endif
+
 /* Driver convenience defines */
 #define HAL_INSTANCE(dev)                                                                          \
 	((struct espi_reg *)((const struct espi_npcx_config *)(dev)->config)->base)
@@ -1420,6 +1440,38 @@ static int espi_npcx_init(const struct device *dev)
 	/* Configure wake-up input and callback for ESPI_RST signal */
 	espi_init_wui_callback(dev, &espi_rst_callback,
 				&config->espi_rst_wui, espi_vw_espi_rst_isr);
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), vw_index_extend_set)
+	uint8_t vw_ex_len = ARRAY_SIZE(espi_npcx_vw_ex_0);
+	uint8_t dir, num, index;
+
+	for (i = 0; i < vw_ex_len; i++) {
+		dir = espi_npcx_vw_ex_0[i].direction;
+		num = espi_npcx_vw_ex_0[i].group_num;
+		index = espi_npcx_vw_ex_0[i].index;
+
+		if (dir == ESPI_CONTROLLER_TO_TARGET) {
+			if (num >= NPCX_VWEVMS_MAX) {
+				LOG_ERR("Error Setting for VW extend MS group (%x)", num);
+				return -EINVAL;
+			}
+			SET_FIELD(inst->VWEVMS[num], NPCX_VWEVMS_INDEX, index);
+			SET_FIELD(inst->VWEVMS[num], NPCX_VWEVMS_VALID, 0x0);
+			inst->VWEVMS[num] |= BIT(NPCX_VWEVMS_INDEX_EN);
+		} else if (dir == ESPI_TARGET_TO_CONTROLLER) {
+			if (num >= NPCX_VWEVSM_MAX) {
+				LOG_ERR("Error Setting for VW extend SM group (%x)", num);
+				return -EINVAL;
+			}
+			SET_FIELD(inst->VWEVSM[num], NPCX_VWEVSM_INDEX, index);
+			SET_FIELD(inst->VWEVSM[num], NPCX_VWEVSM_VALID, 0x0);
+			inst->VWEVSM[num] |= BIT(NPCX_VWEVSM_INDEX_EN);
+		} else {
+			LOG_ERR("Error Setting for VW extend direction (%x)", dir);
+			return -EINVAL;
+		}
+	}
+#endif
 
 	/* Configure pin-mux for eSPI bus device */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
