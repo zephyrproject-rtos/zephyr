@@ -59,4 +59,29 @@ current_sense_amplifier_scale_dt(const struct current_sense_amplifier_dt_spec *s
 	*v_to_i = (int32_t)tmp;
 }
 
+/**
+ * @brief Calculates the actual amperage from the measured voltage
+ *
+ * @param spec Current sensor specification from Devicetree.
+ * @param millivolts Measured voltage in millivolts.
+ *
+ * @return int32_t Corresponding scaled output current in microamps.
+ */
+static inline int32_t
+current_sense_amplifier_scale_ua_dt(const struct current_sense_amplifier_dt_spec *spec,
+				    int16_t millivolts)
+{
+	int64_t temp = millivolts;
+	/* Perform all multiplications first to limit rounding errors.
+	 * Milli-volts/milli-ohms would result in amps, scale by factor of 1,000,000.
+	 * Proof that the following cannot overflow:
+	 *    (millivolts * micro_scale) * max_gain <= INT64_MAX
+	 *       (INT16_MAX * 1000000) * UINT16_MAX <= INT64_MAX
+	 *                                   ~2**51 <= 2**63
+	 */
+	int64_t scaled = temp * 1000000 * spec->sense_gain_div;
+	/* Perform final divisions */
+	return scaled / spec->sense_gain_mult / spec->sense_milli_ohms;
+}
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_CURRENT_SENSE_AMPLIFIER_H_ */
