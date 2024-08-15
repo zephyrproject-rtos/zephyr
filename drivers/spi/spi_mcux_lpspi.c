@@ -574,6 +574,62 @@ out:
 }
 #endif
 
+#ifdef CONFIG_SPI_RTIO
+
+int spi_rtio_transceive(const struct device *dev,
+			const struct spi_config *config,
+			const struct spi_buf_set *tx_bufs,
+			const struct spi_buf_set *rx_bufs)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_dt_spec *dt_spec = &data->dt_spec;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	int err = 0;
+	int ret;
+
+	dt_spec->config = *config;
+
+	ret = spi_rtio_copy(data->r, &data->iodev, tx_bufs, rx_bufs, &sqe);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/** Submit request and wait */
+	rtio_submit(data->r, ret);
+
+	while (ret > 0) {
+		cqe = rtio_cqe_consume(data->r);
+		if (cqe->result < 0) {
+			err = cqe->result;
+		}
+
+		rtio_cqe_release(data->r, cqe);
+		ret--;
+	}
+
+	return err;
+}
+
+static inline int transceive_rtio(const struct device *dev,
+				  const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
+{
+	struct spi_mcux_data *data = dev->data;
+	int ret;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
+
+	ret = spi_rtio_transceive(dev, spi_cfg, tx_bufs, rx_bufs);
+
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
+
+#else
+
 static int transceive(const struct device *dev,
 			  const struct spi_config *spi_cfg,
 			  const struct spi_buf_set *tx_bufs,
@@ -608,12 +664,16 @@ out:
 	return ret;
 }
 
+#endif /* CONFIG_SPI_RTIO */
 
 static int spi_mcux_transceive(const struct device *dev,
 				   const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs)
 {
+#ifdef CONFIG_SPI_RTIO
+	return transceive_rtio(dev, spi_cfg, tx_bufs, rx_bufs);
+#else
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	const struct spi_mcux_data *data = dev->data;
 
@@ -623,6 +683,7 @@ static int spi_mcux_transceive(const struct device *dev,
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+#endif /* CONFIG_SPI_RTIO */
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -731,8 +792,20 @@ static inline void spi_spin_unlock(const struct device *dev, k_spinlock_key_t ke
 	k_spin_unlock(&data->lock, key);
 }
 
+static inline void spi_mcux_iodev_prepare_start(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_dt_spec *spi_dt_spec = data->txn_curr->sqe.iodev->data;
+	struct spi_config *spi_config = &spi_dt_spec->config;
+	int err;
 
-static void spi_mcux_iodev_next(const struct device *dev, bool completion);
+	err = spi_mcux_configure(dev, spi_config);
+	__ASSERT(!err, "%d", err);
+
+	spi_context_cs_control(&data->ctx, true);
+}
+
+static bool spi_rtio_next(const struct device *dev, bool completion);
 
 static void spi_mcux_iodev_start(const struct device *dev)
 {
@@ -773,10 +846,7 @@ static void spi_mcux_iodev_start(const struct device *dev)
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-
-		spi_mcux_iodev_next(dev, true);
-		rtio_iodev_sqe_err(txn_head, -EINVAL);
-		spi_mcux_iodev_complete(dev, 0);
+		spi_mcux_iodev_complete(dev, -EINVAL);
 		return;
 	}
 
@@ -793,7 +863,7 @@ static void spi_mcux_iodev_start(const struct device *dev)
 	}
 }
 
-static void spi_mcux_iodev_next(const struct device *dev, bool completion)
+static bool spi_rtio_next(const struct device *dev, bool completion)
 {
 	struct spi_mcux_data *data = dev->data;
 
@@ -801,7 +871,7 @@ static void spi_mcux_iodev_next(const struct device *dev, bool completion)
 
 	if (!completion && data->txn_curr != NULL) {
 		spi_spin_unlock(dev, key);
-		return;
+		return false;
 	}
 
 	struct mpsc_node *next = mpsc_pop(&data->io_q);
@@ -818,41 +888,62 @@ static void spi_mcux_iodev_next(const struct device *dev, bool completion)
 
 	spi_spin_unlock(dev, key);
 
-	if (data->txn_curr != NULL) {
-		struct spi_dt_spec *spi_dt_spec = data->txn_curr->sqe.iodev->data;
-		struct spi_config *spi_cfg = &spi_dt_spec->config;
+	return (data->txn_curr != NULL);
+}
 
-		spi_mcux_configure(dev, spi_cfg);
-		spi_context_cs_control(&data->ctx, true);
-		spi_mcux_iodev_start(dev);
+static bool spi_rtio_submit(const struct device *dev,
+			    struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct spi_mcux_data *data = dev->data;
+
+	mpsc_push(&data->io_q, &iodev_sqe->q);
+
+	return spi_rtio_next(dev, false);
+}
+
+static bool spi_rtio_complete(const struct device *dev, int status)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct rtio_iodev_sqe *txn_head = data->txn_head;
+	bool result;
+
+	result = spi_rtio_next(dev, true);
+
+	if (status < 0) {
+		rtio_iodev_sqe_err(txn_head, status);
+	} else {
+		rtio_iodev_sqe_ok(txn_head, status);
 	}
+
+	return result;
 }
 
 static void spi_mcux_iodev_submit(const struct device *dev,
 				 struct rtio_iodev_sqe *iodev_sqe)
 {
-	struct spi_mcux_data *data = dev->data;
-
-	mpsc_push(&data->io_q, &iodev_sqe->q);
-	spi_mcux_iodev_next(dev, false);
+	if (spi_rtio_submit(dev, iodev_sqe)) {
+		spi_mcux_iodev_prepare_start(dev);
+		spi_mcux_iodev_start(dev);
+	}
 }
 
 static void spi_mcux_iodev_complete(const struct device *dev, int status)
 {
 	struct spi_mcux_data *data = dev->data;
 
-	if (data->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
+	if (!status && data->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
 		data->txn_curr = rtio_txn_next(data->txn_curr);
 		spi_mcux_iodev_start(dev);
 	} else {
-		struct rtio_iodev_sqe *txn_head = data->txn_head;
-
+		/** De-assert CS-line to space from next transaction */
 		spi_context_cs_control(&data->ctx, false);
-		spi_mcux_iodev_next(dev, true);
-		rtio_iodev_sqe_ok(txn_head, status);
+
+		if (spi_rtio_complete(dev, status)) {
+			spi_mcux_iodev_prepare_start(dev);
+			spi_mcux_iodev_start(dev);
+		}
 	}
 }
-
 
 #endif
 
