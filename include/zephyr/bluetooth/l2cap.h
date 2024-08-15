@@ -272,7 +272,10 @@ struct bt_l2cap_br_chan {
 	struct k_fifo			_pdu_tx_queue;
 };
 
-/** @brief L2CAP Channel operations structure. */
+/** @brief L2CAP Channel operations structure.
+ *
+ * The object has to stay valid and constant for the lifetime of the channel.
+ */
 struct bt_l2cap_chan_ops {
 	/** @brief Channel connected callback
 	 *
@@ -341,6 +344,10 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @note This callback is mandatory, unless
+	 *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} is enabled and seg_recv is
+	 *  supplied.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 *  @return -EINPROGRESS in case where user has to confirm once the data
