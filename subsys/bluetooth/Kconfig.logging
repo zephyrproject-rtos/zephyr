@@ -191,7 +191,7 @@ source "subsys/logging/Kconfig.template.log_config_inherit"
 # VCP
 
 module = BT_VCP_VOL_REND
-module-str = "Volume Control Profile Voluem Renderer"
+module-str = "Volume Control Profile Volume Renderer"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
 module = BT_VCP_VOL_CTLR
