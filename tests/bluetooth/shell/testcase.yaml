@@ -324,6 +324,7 @@ tests:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
+      - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
       - CONFIG_BT_TBS=n
     tags: bluetooth
   bluetooth.shell.audio.only_gtbs:
@@ -431,3 +432,9 @@ tests:
       - nrf52_bsim
     integration_platforms:
       - nrf52_bsim
+  bluetooth.shell.audio.no_ccp_call_control_server:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_CCP_CALL_CONTROL_SERVER=n
+    tags: bluetooth
