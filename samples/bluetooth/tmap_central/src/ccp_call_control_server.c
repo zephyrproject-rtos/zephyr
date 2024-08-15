@@ -44,7 +44,7 @@ static struct bt_tbs_cb tbs_cbs = {
 	.authorize = NULL,
 };
 
-int ccp_server_init(void)
+int ccp_call_control_server_init(void)
 {
 	int err;
 

@@ -306,8 +306,8 @@ int main(void)
 	}
 	printk("MCP initialized\n");
 
-	/* Initialize CCP Server */
-	err = ccp_server_init();
+	/* Initialize CCP Call Control Server */
+	err = ccp_call_control_server_init();
 	if (err != 0) {
 		return err;
 	}

@@ -19,6 +19,7 @@ For specific Bluetooth functionality see also the following shell documentation
    shell/audio/csip.rst
    shell/audio/gmap.rst
    shell/audio/mcp.rst
+   shell/audio/tbs.rst
    shell/audio/tmap.rst
    shell/audio/pbp.rst
    shell/classic/a2dp.rst
