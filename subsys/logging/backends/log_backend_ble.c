@@ -144,7 +144,15 @@ LOG_OUTPUT_DEFINE(log_output_ble, line_out, output_buf, sizeof(output_buf));
 static void process(const struct log_backend *const backend, union log_msg_generic *msg)
 {
 	ARG_UNUSED(backend);
-	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_FORMAT_SYSLOG | LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_LEVEL;
+
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
+		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX)) {
+		flags |= LOG_OUTPUT_FLAG_THREAD;
+	}
 
 	if (panic_mode) {
 		return;
