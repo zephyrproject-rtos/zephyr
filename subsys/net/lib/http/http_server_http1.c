@@ -454,12 +454,9 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			/* This means that the header field is fully parsed,
 			 * and we can use it directly.
 			 */
-			if (strncasecmp(ctx->header_buffer, "Upgrade",
-					sizeof("Upgrade") - 1) == 0) {
+			if (strcasecmp(ctx->header_buffer, "Upgrade") == 0) {
 				ctx->has_upgrade_header = true;
-			} else if (strncasecmp(ctx->header_buffer,
-					       "Sec-WebSocket-Key",
-					       sizeof("Sec-WebSocket-Key") - 1) == 0) {
+			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
 			}
 
@@ -491,12 +488,9 @@ static int on_header_value(struct http_parser *parser,
 
 		if (parser->state == s_header_almost_done) {
 			if (ctx->has_upgrade_header) {
-				if (strncasecmp(ctx->header_buffer, "h2c",
-						sizeof("h2c") - 1) == 0) {
+				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
-				} else if (strncasecmp(ctx->header_buffer,
-						       "websocket",
-						       sizeof("websocket") - 1) == 0) {
+				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
 				}
 
