@@ -127,4 +127,25 @@
 			drive-open-drain;
 		};
 	};
+
+	qspi0_default: qspi0_default {
+		group1 {
+			pinmux = <PI4_QSPI_0_DATA_A_O0>, <PH14_QSPI_0_DATA_A_O1>,
+				 <PI8_QSPI_0_DATA_A_O2>, <PI1_QSPI_0_DATA_A_O3>,
+				 <PI5_QSPI_0_DATA_A_O4>, <PH15_QSPI_0_DATA_A_O5>,
+				 <PI7_QSPI_0_DATA_A_O6>, <PI0_QSPI_0_DATA_A_O7>,
+				 <PI6_QSPI_0_DQS_A_O>;
+			output-enable;
+			input-enable;
+		};
+		group2 {
+			pinmux = <PH13_QSPI_0_CS_A0>, <PI9_QSPI_0_CS_A1>,
+				 <PI2_QSPI_0_CK_A_B>, <PI3_QSPI_0_CK_A>;
+			output-enable;
+		};
+		group3 {
+			pinmux = <PH12_QSPI_0_INTA_B>;
+			input-enable;
+		};
+	};
 };
