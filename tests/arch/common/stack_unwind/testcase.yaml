@@ -68,7 +68,7 @@ tests:
       - qemu_cortex_a53
     extra_configs:
       - CONFIG_FRAME_POINTER=y
-      - CONFIG_EXCEPTION_STACK_TRACE_SYMTAB=y
+      - CONFIG_SYMTAB=y
     harness_config:
       type: multi_line
       regex:
