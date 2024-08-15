@@ -40,3 +40,13 @@
 	pinctrl-0 = <&canxl1_default>;
 	pinctrl-names = "default";
 };
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+};
