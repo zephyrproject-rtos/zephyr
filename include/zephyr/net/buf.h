@@ -1049,7 +1049,7 @@ struct net_buf {
 		/** @endcond */
 	};
 
-	/** System metadata for this buffer. */
+	/** System metadata for this buffer. Cleared on allocation. */
 	uint8_t user_data[] __net_buf_align;
 };
 
