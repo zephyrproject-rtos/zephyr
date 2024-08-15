@@ -338,6 +338,7 @@ success:
 	buf->flags = 0U;
 	buf->frags = NULL;
 	buf->size  = size;
+	memset(buf->user_data, 0, buf->user_data_size);
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
