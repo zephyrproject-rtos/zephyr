@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/testing_cfg.h>
+
 #include "bstests.h"
 #include "common.h"
 
@@ -221,7 +223,7 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	SET_FLAG(is_connected);
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	LOG_DBG("Waiting for disconnection...");
 	WAIT_FOR_FLAG_UNSET(is_connected);
@@ -388,6 +390,15 @@ static void connect_l2cap_ecred_channel(struct bt_conn *conn, void *data)
 	WAIT_FOR_FLAG_SET(flag_l2cap_connected);
 }
 
+static void test_ecred_peripheral_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_peripheral_main();
+}
+
 static void test_central_main(void)
 {
 	int err;
@@ -407,7 +418,7 @@ static void test_central_main(void)
 
 	/* Connect L2CAP channels */
 	LOG_DBG("Connect L2CAP channels");
-	if (IS_ENABLED(CONFIG_BT_L2CAP_ECRED)) {
+	if (bt_testing_cfg_val.l2cap_ecred) {
 		bt_conn_foreach(BT_CONN_TYPE_LE, connect_l2cap_ecred_channel, NULL);
 	} else {
 		bt_conn_foreach(BT_CONN_TYPE_LE, connect_l2cap_channel, NULL);
@@ -427,6 +438,15 @@ static void test_central_main(void)
 	PASS("L2CAP CREDITS Central passed\n");
 }
 
+static void test_ecred_central_main(void)
+{
+	bt_testing_cfg_val = (struct bt_testing_cfg){
+		.l2cap_ecred = true,
+	};
+
+	test_central_main();
+}
+
 static const struct bst_test_instance test_def[] = {
 	{.test_id = "peripheral",
 	 .test_descr = "Peripheral L2CAP CREDITS",
@@ -438,6 +458,16 @@ static const struct bst_test_instance test_def[] = {
 	 .test_pre_init_f = test_init,
 	 .test_tick_f = test_tick,
 	 .test_main_f = test_central_main},
+	{.test_id = "ecred/peripheral",
+	 .test_descr = "Peripheral L2CAP CREDITS",
+	 .test_pre_init_f = test_init,
+	 .test_tick_f = test_tick,
+	 .test_main_f = test_ecred_peripheral_main},
+	{.test_id = "ecred/central",
+	 .test_descr = "Central L2CAP CREDITS",
+	 .test_pre_init_f = test_init,
+	 .test_tick_f = test_tick,
+	 .test_main_f = test_ecred_central_main},
 	BSTEST_END_MARKER,
 };
 
