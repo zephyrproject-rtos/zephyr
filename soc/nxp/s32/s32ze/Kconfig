@@ -16,6 +16,7 @@ config SOC_SERIES_S32ZE
 	select HAS_NXP_S32_HAL
 	select HAS_MCUX
 	select HAS_MCUX_PIT
+	select HAS_MCUX_FLEXCAN
 
 if SOC_SERIES_S32ZE
 
