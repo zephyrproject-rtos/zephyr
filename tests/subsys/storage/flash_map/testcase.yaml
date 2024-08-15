@@ -7,6 +7,10 @@ tests:
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     tags: flash_map
     integration_platforms:
       - native_sim
@@ -30,6 +34,10 @@ tests:
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     tags: flash_map
     integration_platforms:
       - native_sim
@@ -40,6 +48,10 @@ tests:
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
     tags: flash_map
     integration_platforms:
       - native_sim

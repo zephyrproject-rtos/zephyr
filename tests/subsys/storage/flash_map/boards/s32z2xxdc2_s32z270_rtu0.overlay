@@ -1,0 +1,15 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+&s26hs512t {
+	partitions {
+		slot1_partition: partition@100000 {
+			reg = <0x100000 0x100000>;
+		};
+	};
+};
