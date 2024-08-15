@@ -258,20 +258,7 @@ static void test_central_main(void)
 	 */
 	err = bt_l2cap_chan_send(&channel.chan, buf);
 
-	if (has_checks) {
-		/* The stack is supposed to reject `buf` if it has non-null
-		 * user_data.
-		 */
-		if (err == -EINVAL) {
-			PASS("(Enabled-checks) Test passed\n");
-			return;
-		}
-
-		FAIL("Expected EINVAL (%d) got %d\n", -EINVAL, err);
-	}
-
-	/* We have bypassed runtime checks of user_data. L2CAP will take our
-	 * `buf` with non-null user_data. We verify that:
+	/* L2CAP will take our `buf` with non-null user_data. We verify that:
 	 * - it is cleared
 	 * - we don't segfault later (e.g. in `tx_notify`)
 	 */
