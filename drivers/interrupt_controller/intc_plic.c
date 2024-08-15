@@ -109,9 +109,9 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	return local_irq_to_reg_index(config->num_irqs) + 1;
 }
 
-static inline uint32_t get_first_context(uint32_t hartid)
+static ALWAYS_INLINE uint32_t get_hart_context(uint32_t hartid, uint32_t nr_contexts, uint32_t context)
 {
-	return hartid == 0 ? 0 : (hartid * 2) - 1;
+	return hartid * nr_contexts + context;
 }
 
 static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t cpu_num)
@@ -130,7 +130,7 @@ static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t 
 #else
 	hartid = arch_proc_id();
 #endif
-	return  config->irq_en + get_first_context(hartid) * CONTEXT_ENABLE_SIZE;
+	return  config->irq_en + get_hart_context(hartid, 2, 0) * CONTEXT_ENABLE_SIZE;
 }
 
 static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
@@ -146,7 +146,7 @@ static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 	 * We return the m mode context.
 	 */
 
-	return config->reg + get_first_context(arch_proc_id()) * CONTEXT_SIZE +
+	return config->reg + get_hart_context(arch_proc_id(), 2, 0) * CONTEXT_SIZE +
 	       CONTEXT_CLAIM;
 }
 
@@ -162,7 +162,7 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	hartid = arch_proc_id();
 #endif
 
-	return config->reg + (get_first_context(hartid) * CONTEXT_SIZE);
+	return config->reg + (get_hart_context(hartid, 2, 0) * CONTEXT_SIZE);
 }
 
 /**
@@ -334,10 +334,19 @@ static void plic_irq_handler(const struct device *dev)
 #ifdef CONFIG_PLIC_SHELL
 	const struct plic_data *data = dev->data;
 	struct plic_stats stat = data->stats;
+	uint32_t irq_index = arch_proc_id() * stat.irq_count_len + local_irq;
+#if CONFIG_MP_NUM_CPUS > 1
+	uint32_t irq_total = arch_num_cpus() * stat.irq_count_len + local_irq;
+#else
+	uint32_t irq_total = irq_index;
+#endif
 
 	/* Cap the count at __UINT16_MAX__ */
-	if (stat.irq_count[local_irq] != __UINT16_MAX__) {
-		stat.irq_count[local_irq]++;
+	if (stat.irq_count[irq_total] != __UINT16_MAX__) {
+		stat.irq_count[irq_index]++;
+		if (CONFIG_MP_NUM_CPUS > 1) {
+			stat.irq_count[irq_total]++;
+		}
 	}
 #endif /* CONFIG_PLIC_SHELL */
 
@@ -460,20 +469,44 @@ static int cmd_get_stats(const struct shell *sh, size_t argc, char *argv[])
 		shell_print(sh, "IRQ line with > %d hits:", min_hit);
 	}
 
-	shell_print(sh, "   IRQ        Hits\tISR(ARG)");
-	for (int i = 0; i < stat.irq_count_len; i++) {
-		if (stat.irq_count[i] > min_hit) {
-#ifdef CONFIG_SYMTAB
-			const char *name =
-				symtab_find_symbol_name((uintptr_t)config->isr_table[i].isr, NULL);
+	shell_fprintf(sh, SHELL_NORMAL, "   IRQ");
+	for (int cpu_id = 0; cpu_id < arch_num_cpus(); cpu_id++) {
+		shell_fprintf(sh, SHELL_NORMAL, "       CPU%2d", cpu_id);
+	}
+	if (CONFIG_MP_NUM_CPUS > 1) {
+		shell_fprintf(sh, SHELL_NORMAL, "       Total");
+	}
+	shell_fprintf(sh, SHELL_NORMAL, "\tISR(ARG)\n");
 
-			shell_print(sh, "  %4d  %10d\t%s(%p)", i, stat.irq_count[i], name,
-				    config->isr_table[i].arg);
-#else
-			shell_print(sh, "  %4d  %10d\t%p(%p)", i, stat.irq_count[i],
-				    (void *)config->isr_table[i].isr, config->isr_table[i].arg);
-#endif /* CONFIG_SYMTAB */
+	for (int i = 0; i < stat.irq_count_len; i++) {
+		uint16_t total_hits = stat.irq_count[((CONFIG_MP_NUM_CPUS > 1)
+							     ? arch_num_cpus() * stat.irq_count_len
+							      : 0) +
+						     i];
+
+		if (total_hits <= min_hit) {
+			continue;
 		}
+
+		shell_fprintf(sh, SHELL_NORMAL, "  %4d", i);
+		for (int cpu_id = 0; cpu_id < arch_num_cpus(); cpu_id++) {
+			uint32_t irq_index = cpu_id * stat.irq_count_len + i;
+
+			shell_fprintf(sh, SHELL_NORMAL, "  %10d", stat.irq_count[irq_index]);
+		}
+		if (CONFIG_MP_NUM_CPUS > 1) {
+			shell_fprintf(sh, SHELL_NORMAL, "  %10d",
+				      stat.irq_count[arch_num_cpus() * stat.irq_count_len + i]);
+		}
+#ifdef CONFIG_SYMTAB
+		const char *name =
+			symtab_find_symbol_name((uintptr_t)config->isr_table[i].isr, NULL);
+
+		shell_fprintf(sh, SHELL_NORMAL, "\t%s(%p)\n", name, config->isr_table[i].arg);
+#else
+		shell_fprintf(sh, SHELL_NORMAL, "\t%p(%p)\n", (void *)config->isr_table[i].isr,
+			      config->isr_table[i].arg);
+#endif
 	}
 	shell_print(sh, "");
 
@@ -492,7 +525,11 @@ static int cmd_clear_stats(const struct shell *sh, size_t argc, char *argv[])
 	const struct plic_data *data = dev->data;
 	struct plic_stats stat = data->stats;
 
-	memset(stat.irq_count, 0, stat.irq_count_len * sizeof(uint16_t));
+	memset(stat.irq_count, 0,
+	       stat.irq_count_len *
+		       COND_CODE_1(CONFIG_MP_MAX_NUM_CPUS, (1),
+				   (UTIL_INC(CONFIG_MP_MAX_NUM_CPUS))) *
+		       sizeof(uint16_t));
 
 	shell_print(sh, "Cleared stats of %s.\n", dev->name);
 
@@ -540,15 +577,18 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 
 #define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
-	static uint16_t local_irq_count_##n[PLIC_MIN_IRQ_NUM(n)];
+	static uint16_t local_irq_count_##n[COND_CODE_1(CONFIG_MP_MAX_NUM_CPUS, (1),               \
+							(UTIL_INC(CONFIG_MP_MAX_NUM_CPUS)))]       \
+					   [PLIC_MIN_IRQ_NUM(n)];
 
 #define PLIC_INTC_DATA_INIT(n)                                                                     \
 	PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n);                                                         \
 	static struct plic_data plic_data_##n = {                                                  \
-		.stats = {                                                                         \
-			.irq_count = local_irq_count_##n,                                          \
-			.irq_count_len = PLIC_MIN_IRQ_NUM(n),                                      \
-		},                                                                                 \
+		.stats =                                                                           \
+			{                                                                          \
+				.irq_count = &local_irq_count_##n[0][0],                           \
+				.irq_count_len = PLIC_MIN_IRQ_NUM(n),                              \
+			},                                                                         \
 	};
 
 #define PLIC_INTC_DATA(n) &plic_data_##n
