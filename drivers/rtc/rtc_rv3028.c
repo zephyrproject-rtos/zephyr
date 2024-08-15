@@ -377,40 +377,6 @@ static int rv3028_update_cfg(const struct device *dev, uint8_t addr, uint8_t mas
 
 #if RV3028_INT_GPIOS_IN_USE
 
-static int rv3028_int_enable_unlocked(const struct device *dev, bool enable)
-{
-	const struct rv3028_config *config = dev->config;
-	uint8_t clkout = 0;
-	int err;
-
-	if (enable || config->cof == RV3028_CLKOUT_FD_LOW) {
-		/* Disable CLKOUT */
-		clkout |= FIELD_PREP(RV3028_CLKOUT_FD, RV3028_CLKOUT_FD_LOW);
-	} else {
-		/* Configure CLKOUT frequency */
-		clkout |= RV3028_CLKOUT_CLKOE |
-			  FIELD_PREP(RV3028_CLKOUT_FD, config->cof);
-	}
-
-	/* Configure the CLKOUT register */
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_CLKOUT,
-				RV3028_CLKOUT_FD | RV3028_CLKOUT_CLKOE,
-				clkout);
-	if (err) {
-		return err;
-	}
-
-	err = gpio_pin_interrupt_configure_dt(&config->gpio_int,
-					      enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
-	if (err) {
-		LOG_ERR("failed to %s GPIO interrupt (err %d)", enable ? "enable" : "disable", err);
-		return err;
-	}
-
-	return 0;
-}
-
 static void rv3028_work_cb(struct k_work *work)
 {
 	struct rv3028_data *data = CONTAINER_OF(work, struct rv3028_data, work);
@@ -725,7 +691,6 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 #else
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
-	uint8_t control_2;
 	int err = 0;
 
 	if (config->gpio_int.port == NULL) {
@@ -742,26 +707,8 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 	data->alarm_callback = callback;
 	data->alarm_user_data = user_data;
 
-	err = rv3028_read_reg8(dev, RV3028_REG_CONTROL2, &control_2);
-	if (err) {
-		goto unlock;
-	}
-
-	if (callback != NULL) {
-		control_2 |= RV3028_CONTROL2_AIE;
-	} else {
-		control_2 &= ~(RV3028_CONTROL2_AIE);
-	}
-
-	if ((control_2 & RV3028_CONTROL2_UIE) == 0U) {
-		/* Only change INT GPIO if periodic time update interrupt not enabled */
-		err = rv3028_int_enable_unlocked(dev, callback != NULL);
-		if (err) {
-			goto unlock;
-		}
-	}
-
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, control_2);
+	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_AIE,
+				 callback != NULL ? RV3028_CONTROL2_AIE : 0);
 	if (err) {
 		goto unlock;
 	}
@@ -785,7 +732,6 @@ static int rv3028_update_set_callback(const struct device *dev, rtc_update_callb
 {
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
-	uint8_t control_2;
 	int err;
 
 	if (config->gpio_int.port == NULL) {
@@ -797,26 +743,8 @@ static int rv3028_update_set_callback(const struct device *dev, rtc_update_callb
 	data->update_callback = callback;
 	data->update_user_data = user_data;
 
-	err = rv3028_read_reg8(dev, RV3028_REG_CONTROL2, &control_2);
-	if (err) {
-		goto unlock;
-	}
-
-	if (callback != NULL) {
-		control_2 |= RV3028_CONTROL2_UIE;
-	} else {
-		control_2 &= ~(RV3028_CONTROL2_UIE);
-	}
-
-	if ((control_2 & RV3028_CONTROL2_AIE) == 0U) {
-		/* Only change INT GPIO if alarm interrupt not enabled */
-		err = rv3028_int_enable_unlocked(dev, callback != NULL);
-		if (err) {
-			goto unlock;
-		}
-	}
-
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, control_2);
+	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_UIE,
+				 callback != NULL ? RV3028_CONTROL2_UIE : 0);
 	if (err) {
 		goto unlock;
 	}
@@ -865,6 +793,12 @@ static int rv3028_init(const struct device *dev)
 		if (err) {
 			LOG_ERR("failed to configure GPIO (err %d)", err);
 			return -ENODEV;
+		}
+
+		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+		if (err) {
+			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
+			return err;
 		}
 
 		gpio_init_callback(&data->int_callback, rv3028_int_handler,
