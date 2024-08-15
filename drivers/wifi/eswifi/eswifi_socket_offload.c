@@ -391,8 +391,9 @@ static ssize_t eswifi_socket_recvfrom(void *obj, void *buf, size_t len,
 				      socklen_t *fromlen)
 {
 	if (fromlen != NULL) {
-		errno = EOPNOTSUPP;
-		return -1;
+		int sock = OBJ_TO_SD(obj);
+		struct eswifi_off_socket *socket = &eswifi->socket[sock];
+		*from = socket->peer_addr;
 	}
 
 	return eswifi_socket_recv(obj, buf, len, flags);
