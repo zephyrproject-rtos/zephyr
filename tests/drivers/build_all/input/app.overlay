@@ -154,6 +154,14 @@
 			long-delay-ms = <100>;
 		};
 
+		double_tap: doubletap {
+			input = <&double_tap>;
+			compatible = "zephyr,input-double-tap";
+			input-codes = <0>;
+			double-tap-codes = <0>;
+			double-tap-delay-ms = <0>;
+		};
+
 		i2c@1 {
 			#address-cells = <1>;
 			#size-cells = <0>;
