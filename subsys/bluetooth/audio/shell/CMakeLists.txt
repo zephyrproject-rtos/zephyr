@@ -8,6 +8,10 @@ zephyr_library_sources_ifdef(
   ccp_call_control_server.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CCP_CALL_CONTROL_CLIENT
+  ccp_call_control_client.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_VCP_VOL_REND
   vcp_vol_rend.c
   )
