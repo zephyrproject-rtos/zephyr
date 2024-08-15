@@ -1431,5 +1431,21 @@
 				status = "disabled";
 			};
 		};
+
+		qspi0: qspi@42320000 {
+			compatible = "nxp,s32-qspi";
+			reg = <0x42320000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		qspi1: qspi@42340000 {
+			compatible = "nxp,s32-qspi";
+			reg = <0x42340000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
