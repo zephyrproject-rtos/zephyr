@@ -90,6 +90,9 @@ LOG_MODULE_REGISTER(DRV2605, CONFIG_HAPTICS_LOG_LEVEL);
 #define DRV2605_LOOP_GAIN            GENMASK(3, 2)
 #define DRV2605_BEMF_GAIN            GENMASK(1, 0)
 
+#define DRV2605_ACTUATOR_MODE_ERM 0
+#define DRV2605_ACTUATOR_MODE_LRA 1
+
 #define DRV2605_REG_CONTROL1  0x1b
 #define DRV2605_STARTUP_BOOST BIT(7)
 #define DRV2605_AC_COUPLE     BIT(5)
@@ -465,6 +468,14 @@ static int drv2605_hw_config(const struct device *dev)
 				    config->overdrive_clamp_voltage);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (config->actuator_mode == DRV2605_ACTUATOR_MODE_LRA) {
+		ret = i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_CONTROL3,
+					     DRV2605_LRA_OPEN_LOOP, DRV2605_LRA_OPEN_LOOP);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
