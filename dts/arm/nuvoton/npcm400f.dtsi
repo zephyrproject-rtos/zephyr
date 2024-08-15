@@ -11,7 +11,7 @@
 
 / {
 	flash0: flash@80000 {
-		reg = <0x00080000 DT_SIZE_M(1)>;
+		reg = <0x00080000 DT_SIZE_M(2)>;
 	};
 
 	sram0: memory@10008000 {
