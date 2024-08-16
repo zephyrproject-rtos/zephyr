@@ -1,7 +1,7 @@
 .. _imx93_evk:
 
-NXP i.MX93 EVK (Cortex-A55)
-############################
+NXP i.MX93 EVK
+##############
 
 Overview
 ********
@@ -71,6 +71,25 @@ hardware features:
 | ENET      | on-chip    | ethernet port                       |
 +-----------+------------+-------------------------------------+
 
+The Zephyr imx93_evk board Cortex-M33 configuration supports the following
+hardware features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| NVIC      | on-chip    | interrupt controller                |
++-----------+------------+-------------------------------------+
+| SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO                                |
++-----------+------------+-------------------------------------+
+
 Devices
 ========
 System Clock
@@ -78,12 +97,13 @@ System Clock
 
 This board configuration uses a system clock frequency of 24 MHz.
 Cortex-A55 Core runs up to 1.7 GHz.
+Cortex-M33 Core runs up to 200MHz in which SYSTICK runs on same frequency.
 
 Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART4.
+CPU's UART2 for A55 core and M33 core.
 
 Board MUX Control
 -----------------
@@ -114,8 +134,8 @@ over dts config. For instance, if ``CONFIG_CAN`` is enabled, MUX A is selected
 even if ``mux="B";`` is configured in dts, and an warning would be reported in
 the log.
 
-Programming and Debugging
-*************************
+Programming and Debugging (A55)
+*******************************
 
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
@@ -145,7 +165,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
    :goals: run
 
 This will build an image with the synchronization sample app, boot it and
-display the following ram console output:
+display the following console output:
 
 .. code-block:: console
 
@@ -154,6 +174,45 @@ display the following ram console output:
     thread_b: Hello World from cpu 0 on mimx93_evk_a55!
     thread_a: Hello World from cpu 0 on mimx93_evk_a55!
     thread_b: Hello World from cpu 0 on mimx93_evk_a55!
+
+Programming and Debugging (M33)
+*******************************
+
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use U-Boot to load and kick zephyr.bin to Cortex-M33 Core:
+
+.. code-block:: console
+
+    load mmc 1:1 0x80000000 zephyr.bin;cp.b 0x80000000 0x201e0000 0x30000;bootaux 0x1ffe0000 0
+
+Use this configuration to run basic Zephyr applications and kernel tests,
+for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx93_evk/mimx9352/m33
+   :goals: run
+
+This will build an image with the synchronization sample app, boot it and
+display the following console output:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v3.7.0-684-g71a7d05ba60a ***
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+
+To make a container image flash.bin with ``zephyr.bin`` for SD/eMMC programming and booting
+from BootROM. Refer to user manual of i.MX93 `MCUX SDK release`_.
+
+.. _MCUX SDK release:
+   https://mcuxpresso.nxp.com/
 
 References
 ==========
