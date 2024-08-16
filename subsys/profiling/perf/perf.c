@@ -101,6 +101,34 @@ int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_perf_clear(const struct shell *sh, size_t argc, char **argv)
+{
+	if (sh != NULL) {
+		if (k_work_delayable_is_pending(&perf_data.dwork)) {
+			shell_warn(sh, "Perf is running");
+			return -EINPROGRESS;
+		}
+		shell_print(sh, "Perf buffer cleared");
+	}
+
+	perf_data.idx = 0;
+	perf_data.buf_full = false;
+
+	return 0;
+}
+
+static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
+{
+	if (k_work_delayable_is_pending(&perf_data.dwork)) {
+		shell_print(sh, "Perf is running");
+	}
+
+	shell_print(sh, "Perf buf: %zu/%d %s", perf_data.idx, CONFIG_PROFILING_PERF_BUFFER_SIZE,
+		    perf_data.buf_full ? "(full)" : "");
+
+	return 0;
+}
+
 int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
@@ -113,8 +141,7 @@ int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "%016lx", perf_data.buf[i]);
 	}
 
-	perf_data.idx = 0;
-	perf_data.buf_full = false;
+	cmd_perf_clear(NULL, 0, NULL);
 
 	return 0;
 }
@@ -126,6 +153,8 @@ int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_perf,
 	SHELL_CMD_ARG(record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 0),
 	SHELL_CMD_ARG(printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0),
+	SHELL_CMD_ARG(clear, NULL, "Clear the perf buffer", cmd_perf_clear, 0, 0),
+	SHELL_CMD_ARG(info, NULL, "Print the perf info", cmd_perf_info, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Lightweight profiler", NULL, 0, 0);
