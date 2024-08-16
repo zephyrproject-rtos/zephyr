@@ -852,11 +852,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 
 	data->transfer_len = transfer.dataSize;
 
-	k_spinlock_key_t key = spi_spin_lock(dev);
-
 	status = LPSPI_MasterTransferNonBlocking(base, &data->handle,
 						 &transfer);
-	spi_spin_unlock(dev, key);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start");
 		rtio_iodev_sqe_err(txn_head, -EIO);
