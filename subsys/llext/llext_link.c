@@ -144,8 +144,9 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			link_addr = llext_find_sym(NULL,
 				SYM_NAME_OR_SLID(name, sym_tbl.st_value));
 
-			if (!link_addr)
+			if (!link_addr) {
 				link_addr = llext_find_sym(&ext->sym_tab, name);
+			}
 
 			if (!link_addr) {
 				LOG_WRN("PLT: cannot find idx %u name %s", j, name);

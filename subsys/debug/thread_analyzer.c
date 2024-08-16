@@ -164,8 +164,9 @@ static void isr_stacks(void)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (int i = 0; i < num_cpus; i++)
+	for (int i = 0; i < num_cpus; i++) {
 		isr_stack(i);
+	}
 }
 
 void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
@@ -173,22 +174,25 @@ void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
 	struct ta_cb_user_data ud = { .cb = cb, .cpu = cpu };
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
-		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
 			k_thread_foreach_unlocked_filter_by_cpu(cpu, thread_analyze_cb, &ud);
-		else
+		} else {
 			k_thread_foreach_unlocked(thread_analyze_cb, &ud);
+		}
 	} else {
-		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
 			k_thread_foreach_filter_by_cpu(cpu, thread_analyze_cb, &ud);
-		else
+		} else {
 			k_thread_foreach(thread_analyze_cb, &ud);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
-		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES))
+		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
 			isr_stack(cpu);
-		else
+		} else {
 			isr_stacks();
+		}
 	}
 }
 

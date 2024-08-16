@@ -1835,8 +1835,9 @@ static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
 {
 	int32_t ll_addr_offset;
 
-	if (!lladdr->addr)
+	if (!lladdr->addr) {
 		return;
+	}
 
 	ll_addr_offset = net_pkt_find_offset(pkt, lladdr->addr);
 
