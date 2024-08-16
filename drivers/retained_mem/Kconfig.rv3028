@@ -1,0 +1,20 @@
+# Copyright (c) 2024 ANITRA system s.r.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_RV3028
+	bool "Micro Crystal RV3028 User RAM support"
+	default y
+	depends on RTC_RV3028
+	depends on DT_HAS_MICROCRYSTAL_RV3028_RETMEM_ENABLED
+
+if RETAINED_MEM_RV3028
+
+config RETAINED_MEM_RV3028_INIT_PRIORITY
+	int "RV3028 User RAM init priority"
+	default RTC_INIT_PRIORITY
+	help
+	  RV3028 User RAM driver device initialization priority. The memory is
+	  part of the RV3028 RTC device and has to be initialized after the
+	  RV3028 RTC driver.
+
+endif # RETAINED_MEM_RV3028

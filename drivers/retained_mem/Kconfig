@@ -34,7 +34,7 @@ module-str = retained_mem
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/retained_mem/Kconfig.nrf"
-
+source "drivers/retained_mem/Kconfig.rv3028"
 source "drivers/retained_mem/Kconfig.zephyr"
 
 endif # RETAINED_MEM

@@ -8,3 +8,7 @@ zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_GPREGRET retained_mem_nrf_g
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_NRF_RAM_CTRL retained_mem_nrf_ram_ctrl.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_ZEPHYR_RAM   retained_mem_zephyr_ram.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_ZEPHYR_REG   retained_mem_zephyr_reg.c)
+if(CONFIG_RETAINED_MEM_RV3028)
+  zephyr_library_sources(retained_mem_rv3028.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/rtc)
+endif()
