@@ -905,6 +905,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	conf->ht_op_mode_fixed  = 1;
 	conf->ieee80211ac = 1;
 	conf->vht_oper_chwidth = CHANWIDTH_USE_HT;
+	conf->vht_capab |= VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT_MAX;
 	conf->ieee80211ax = 1;
 	conf->he_oper_chwidth     = CHANWIDTH_USE_HT;
 	conf->he_phy_capab.he_su_beamformer = 0;
