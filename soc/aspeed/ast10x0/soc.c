@@ -107,10 +107,11 @@ void aspeed_print_abr_wdt_mode(void)
 	/* ABR enable */
 	if (sys_read32(HW_STRAP2_SCU510) & BIT(11)) {
 		printk("FMC ABR: Enable");
-		if (sys_read32(HW_STRAP2_SCU510) & BIT(12))
+		if (sys_read32(HW_STRAP2_SCU510) & BIT(12)) {
 			printk(", Single flash");
-		else
+		} else {
 			printk(", Dual flashes");
+		}
 
 		printk(", Source: %s (%d)",
 			(sys_read32(ASPEED_FMC_WDT2_CTRL) & BIT(4)) ? "Alternate" : "Primary",
