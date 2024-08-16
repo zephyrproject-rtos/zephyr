@@ -120,24 +120,15 @@ int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_perf(const struct shell *sh, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	shell_print(sh, "perfy");
-	return 0;
-}
-
-#define CMD_HELP_RECORD										\
-	"Start recording for <duration> ms on <frequency> Hz\n"	\
-	"Usage: record <duration> <frequency>\n"
+#define CMD_HELP_RECORD                                                                            \
+	"Start recording for <duration> ms on <frequency> Hz\n"                                    \
+	"Usage: record <duration> <frequency>"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_perf,
 	SHELL_CMD_ARG(record, NULL, CMD_HELP_RECORD, cmd_perf_record, 3, 0),
 	SHELL_CMD_ARG(printbuf, NULL, "Print the perf buffer", cmd_perf_print, 0, 0),
 	SHELL_SUBCMD_SET_END
 );
-SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Perf!", cmd_perf, 0, 0);
+SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Lightweight profiler", NULL, 0, 0);
 
 SYS_INIT(perf_init, APPLICATION, 0);
