@@ -39,8 +39,8 @@ static const char *const severity[] = {
 
 static const char *const colors[] = {
 	NULL,
-	LOG_COLOR_CODE_RED,     /* err */
-	LOG_COLOR_CODE_YELLOW,  /* warn */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_RED : NULL,    /* err */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_YELLOW : NULL, /* warn */
 	IS_ENABLED(CONFIG_LOG_INFO_COLOR_GREEN) ? LOG_COLOR_CODE_GREEN : NULL,   /* info */
 	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
