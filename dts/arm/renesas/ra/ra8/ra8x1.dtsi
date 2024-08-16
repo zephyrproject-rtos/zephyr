@@ -277,6 +277,28 @@
 			#size-cells = <1>;
 		};
 
+		adc0: adc@40332000 {
+			compatible = "renesas,ra-adc";
+			interrupts = <38 1>;
+			interrupt-names = "scanend";
+			reg = <0x40332000 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channels-num = <12>;
+			status = "disabled";
+		};
+
+		adc1: adc@40332200 {
+			compatible = "renesas,ra-adc";
+			interrupts = <39 1>;
+			interrupt-names = "scanend";
+			reg = <0x40332200 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channels-num = <13>;
+			status = "disabled";
+		};
+
 		option_setting_ofs: option_setting_ofs@300a100 {
 			compatible = "zephyr,memory-region";
 			reg = <0x0300a100 0x18>;
