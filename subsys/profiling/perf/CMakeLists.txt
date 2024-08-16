@@ -2,4 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_sources(perf.c)
+add_subdirectory(backends)
+
+zephyr_library()
+
+zephyr_library_sources(
+  perf.c
+)
