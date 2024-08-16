@@ -27,7 +27,12 @@ struct perf_data_t {
 	bool buf_full;
 };
 
-static struct perf_data_t perf_data;
+static void perf_tracer(struct k_timer *timer);
+static void perf_dwork_handler(struct k_work *work);
+static struct perf_data_t perf_data = {
+	.timer = Z_TIMER_INITIALIZER(perf_data.timer, perf_tracer, NULL),
+	.dwork = Z_WORK_DELAYABLE_INITIALIZER(perf_dwork_handler),
+};
 
 static void perf_tracer(struct k_timer *timer)
 {
@@ -63,14 +68,6 @@ static void perf_dwork_handler(struct k_work *work)
 	} else {
 		shell_print(perf_data_ptr->sh, "Perf done!");
 	}
-}
-
-static int perf_init(void)
-{
-	k_timer_init(&perf_data.timer, perf_tracer, NULL);
-	k_work_init_delayable(&perf_data.dwork, perf_dwork_handler);
-
-	return 0;
 }
 
 static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
@@ -157,5 +154,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_perf,
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_ARG_REGISTER(perf, &m_sub_perf, "Lightweight profiler", NULL, 0, 0);
-
-SYS_INIT(perf_init, APPLICATION, 0);
