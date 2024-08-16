@@ -298,8 +298,9 @@ int main(void)
 	if (peer_is_ums) {
 		/* Play media with MCP */
 		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
-		if (err != 0)
+		if (err != 0) {
 			printk("Error sending media play command!\n");
+		}
 
 		/* Start timer to send media pause command */
 		k_work_schedule(&media_pause_set_work, K_MSEC(2000));

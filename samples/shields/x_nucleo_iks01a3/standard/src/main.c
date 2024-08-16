@@ -341,8 +341,9 @@ int main(void)
 	stts751_config(stts751);
 	lis2dw12_config(lis2dw12);
 	lsm6dso_config(lsm6dso);
-	if (lis2de12_on_dil24)
+	if (lis2de12_on_dil24) {
 		lis2de12_config(lis2de12);
+	}
 
 	while (1) {
 		/* Get sensor samples */
