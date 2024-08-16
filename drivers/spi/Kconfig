@@ -32,6 +32,7 @@ config SPI_RTIO
 	bool "RTIO support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select RTIO
+	select RTIO_WORKQ
 	help
 	  This option enables the RTIO API calls. RTIO support is
 	  experimental as the API itself is unstable.
