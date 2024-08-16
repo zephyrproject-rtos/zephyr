@@ -184,9 +184,9 @@ static int sdhc_spi_card_busy(const struct device *dev)
 
 	if (response == 0xFF) {
 		return 0;
-	} else
+	} else {
 		return 1;
-
+	}
 }
 
 /* Waits for SPI SD card to stop sending busy signal */

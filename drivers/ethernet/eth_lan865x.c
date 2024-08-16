@@ -368,8 +368,9 @@ static int lan865x_default_config(const struct device *dev, uint8_t silicon_rev)
 	lan865x_set_specific_multicast_addr(dev);
 
 	ret = lan865x_init_chip(dev, silicon_rev);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (cfg->plca->enable) {
 		ret = lan865x_config_plca(dev, cfg->plca->node_id,

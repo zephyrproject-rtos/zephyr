@@ -282,8 +282,9 @@ void soc_interrupt_init(void)
 #endif
 
 	/* Ensure interrupts of soc are disabled at default */
-	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++)
+	for (int i = 0; i < ARRAY_SIZE(reg_enable); i++) {
 		*reg_enable[i] = 0;
+	}
 
 	/*
 	 * WORKAROUND: In the it8xxx2 chip, the interrupt for INT0 is reserved.

@@ -294,8 +294,9 @@ static inline int enet_qos_dma_reset(enet_qos_t *base)
 
 	if (CONFIG_ETH_NXP_ENET_QOS_DMA_RESET_WAIT_TIME == 0) {
 		/* spin and wait forever for the reset flag to clear */
-		while (ENET_QOS_REG_GET(DMA_MODE, SWR, base->DMA_MODE))
+		while (ENET_QOS_REG_GET(DMA_MODE, SWR, base->DMA_MODE)) {
 			;
+		}
 		goto done;
 	}
 
@@ -340,8 +341,9 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 
 	/* Wait for flush to finish */
 	while (ENET_QOS_REG_GET(MTL_QUEUE_MTL_TXQX_OP_MODE, FTQ,
-				base->MTL_QUEUE[0].MTL_TXQX_OP_MODE))
+				base->MTL_QUEUE[0].MTL_TXQX_OP_MODE)) {
 		;
+	}
 
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =

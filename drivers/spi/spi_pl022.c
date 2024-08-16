@@ -741,8 +741,9 @@ static void spi_pl022_xfer(const struct device *dev)
 	data->rx_count = 0;
 
 	/* Ensure writable */
-	while (!SSP_TX_FIFO_EMPTY(cfg->reg))
+	while (!SSP_TX_FIFO_EMPTY(cfg->reg)) {
 		;
+	}
 	/* Drain RX FIFO */
 	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
 		SSP_READ_REG(SSP_DR(cfg->reg));
@@ -762,8 +763,9 @@ static void spi_pl022_xfer(const struct device *dev)
 			fifo_cnt++;
 		}
 		while (data->rx_count < chunk_len && fifo_cnt > 0) {
-			if (!SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
+			if (!SSP_RX_FIFO_NOT_EMPTY(cfg->reg)) {
 				continue;
+			}
 
 			txrx = SSP_READ_REG(SSP_DR(cfg->reg));
 

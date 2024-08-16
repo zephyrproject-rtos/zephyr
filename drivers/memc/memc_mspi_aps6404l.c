@@ -144,13 +144,14 @@ static void acquire(const struct device *psram)
 
 	if (cfg->sw_multi_periph) {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg))
+				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
 			;
+		}
 	} else {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL))
+				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
-
+		}
 	}
 }
 
@@ -159,8 +160,9 @@ static void release(const struct device *psram)
 	const struct memc_mspi_aps6404l_config *cfg = psram->config;
 	struct memc_mspi_aps6404l_data *data = psram->data;
 
-	while (mspi_get_channel_status(cfg->bus, cfg->port))
+	while (mspi_get_channel_status(cfg->bus, cfg->port)) {
 		;
+	}
 
 	k_sem_give(&data->lock);
 }
