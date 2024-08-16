@@ -130,4 +130,6 @@ source "drivers/adc/Kconfig.ene"
 
 source "drivers/adc/Kconfig.ambiq"
 
+source "drivers/adc/Kconfig.renesas_ra"
+
 endif # ADC
