@@ -48,7 +48,6 @@ static void perf_tracer(struct k_timer *timer)
 	} else {
 		--perf_data_ptr->idx;
 		perf_data_ptr->buf_full = true;
-		k_timer_stop(timer);
 		k_work_reschedule(&perf_data_ptr->dwork, K_NO_WAIT);
 	}
 }
@@ -58,10 +57,10 @@ static void perf_dwork_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct perf_data_t *perf_data_ptr = CONTAINER_OF(dwork, struct perf_data_t, dwork);
 
+	k_timer_stop(&perf_data_ptr->timer);
 	if (perf_data_ptr->buf_full) {
 		shell_error(perf_data_ptr->sh, "Perf buf overflow!");
 	} else {
-		k_timer_stop(&perf_data_ptr->timer);
 		shell_print(perf_data_ptr->sh, "Perf done!");
 	}
 }
