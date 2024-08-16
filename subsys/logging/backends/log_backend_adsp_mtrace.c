@@ -133,8 +133,9 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	if (mtrace_active && mtrace_hook) {
 
 		/* if we are in panic mode, need to flush out asap */
-		if (unlikely(mtrace_panic_mode))
+		if (unlikely(mtrace_panic_mode)) {
 			space_left = 0;
+		}
 
 		mtrace_hook(out, space_left);
 	}
