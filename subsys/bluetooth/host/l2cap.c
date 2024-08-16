@@ -903,11 +903,15 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 	 */
 	struct net_buf *pdu = k_fifo_peek_head(&lechan->tx_queue);
 
+	/* We don't have anything to send for the current channel. We could
+	 * however have something to send on another channel that is attached to
+	 * the same ACL connection. Re-trigger the TX processor: it will call us
+	 * again and this time we will select another channel to pull data from.
+	 */
 	if (!pdu) {
 		bt_tx_irq_raise();
 		return NULL;
 	}
-	/* __ASSERT(pdu, "signaled ready but no PDUs in the TX queue"); */
 
 	if (bt_buf_has_view(pdu)) {
 		LOG_ERR("already have view on %p", pdu);
