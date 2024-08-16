@@ -5,6 +5,7 @@ menuconfig I2C_MAX32
 	bool "Analog Devices MAX32 I2C driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_I2C_ENABLED
+	select PINCTRL
 	help
 	  i2c driver for max32 family.
 
