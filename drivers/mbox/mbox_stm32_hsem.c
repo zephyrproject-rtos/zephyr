@@ -115,8 +115,9 @@ static void mbox_dispatcher(const struct device *dev)
 	struct mbox_stm32_hsem_data *data = dev->data;
 
 	/* Check semaphore rx_semid interrupt status */
-	if (!stm32_hsem_is_rx_interrupt_active())
+	if (!stm32_hsem_is_rx_interrupt_active()) {
 		return;
+	}
 
 	if (data->cb != NULL) {
 		data->cb(dev, MBOX_RX_HSEM_ID, data->user_data, NULL);

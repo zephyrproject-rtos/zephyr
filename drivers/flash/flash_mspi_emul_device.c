@@ -63,13 +63,14 @@ static void acquire(const struct device *flash)
 	k_sem_take(&data->lock, K_FOREVER);
 	if (cfg->sw_multi_periph) {
 		while (mspi_dev_config(data->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg))
+				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
 			;
+		}
 	} else {
 		while (mspi_dev_config(data->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL))
+				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
-
+		}
 	}
 }
 

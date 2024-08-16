@@ -121,9 +121,10 @@ static int adxl367_set_op_mode(const struct device *dev,
 		return ret;
 	}
 
-	if (op_mode == ADXL367_MEASURE)
+	if (op_mode == ADXL367_MEASURE) {
 		/* Wait 100 ms to allow the acceleration outputs to settle */
 		k_sleep(K_MSEC(100));
+	}
 
 	return 0;
 }

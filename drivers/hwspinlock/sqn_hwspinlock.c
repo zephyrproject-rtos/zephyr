@@ -56,12 +56,14 @@ static int sqn_hwspinlock_trylock(const struct device *dev, uint32_t id)
 	 */
 
 	cpuid = mpidr_to_cpuid(read_mpidr_el1());
-	if (sys_read8(get_lock_addr(dev, id)) == cpuid)
+	if (sys_read8(get_lock_addr(dev, id)) == cpuid) {
 		return 0;
+	}
 
 	sys_write8(cpuid, get_lock_addr(dev, id));
-	if (sys_read8(get_lock_addr(dev, id)) == cpuid)
+	if (sys_read8(get_lock_addr(dev, id)) == cpuid) {
 		return 0;
+	}
 
 	return -EBUSY;
 }

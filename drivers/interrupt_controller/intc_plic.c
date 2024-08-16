@@ -295,8 +295,9 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 	const uint32_t local_irq = irq_from_level_2(irq);
 	mem_addr_t prio_addr = config->prio + (local_irq * sizeof(uint32_t));
 
-	if (priority > config->max_prio)
+	if (priority > config->max_prio) {
 		priority = config->max_prio;
+	}
 
 	sys_write32(priority, prio_addr);
 }

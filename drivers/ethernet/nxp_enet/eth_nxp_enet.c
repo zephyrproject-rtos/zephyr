@@ -620,8 +620,9 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
 	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
 
-	if (id == 0xFFFFFF)
+	if (id == 0xFFFFFF) {
 		LOG_ERR("No unique MAC can be provided in this platform");
+	}
 
 	/* Setting LAA bit because it is not guaranteed universally unique */
 	mac_addr[0] = FREESCALE_OUI_B0 | 0x02;

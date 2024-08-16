@@ -151,8 +151,9 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	dma_stop(dev_dma, strm->dma_channel);
 
 	/* wait for TX FIFO to drain before disabling */
-	while ((dev_cfg->base->TCSR & I2S_TCSR_FWF_MASK) == 0)
+	while ((dev_cfg->base->TCSR & I2S_TCSR_FWF_MASK) == 0) {
 		;
+	}
 
 	/* Disable the channel FIFO */
 	dev_cfg->base->TCR3 &= ~I2S_TCR3_TCE_MASK;
@@ -196,8 +197,9 @@ static void i2s_rx_stream_disable(const struct device *dev,
 	SAI_RxEnable(dev_cfg->base, false);
 
 	/* wait for Receiver to disable */
-	while (dev_cfg->base->RCSR & I2S_RCSR_RE_MASK)
+	while (dev_cfg->base->RCSR & I2S_RCSR_RE_MASK) {
 		;
+	}
 	/* reset the FIFO pointer and clear error flags */
 	dev_cfg->base->RCSR |= (I2S_RCSR_FR_MASK | I2S_RCSR_SR_MASK);
 	dev_cfg->base->RCSR &= ~I2S_RCSR_SR_MASK;
