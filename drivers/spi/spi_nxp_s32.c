@@ -604,6 +604,9 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_s32_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_nxp_s32_release,
 };
 

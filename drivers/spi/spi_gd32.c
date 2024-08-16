@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #ifdef CONFIG_SPI_GD32_DMA
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_gd32.h>
@@ -573,6 +574,9 @@ static const struct spi_driver_api spi_gd32_driver_api = {
 	.transceive = spi_gd32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gd32_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_gd32_release
 };

@@ -12,6 +12,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #define SPI_CFG(dev) ((struct spi_sifive_cfg *) ((dev)->config))
