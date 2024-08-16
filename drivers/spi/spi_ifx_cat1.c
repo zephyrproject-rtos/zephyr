@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(cat1_spi);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/kernel.h>
 
 #include <cyhal_scb_common.h>
@@ -290,6 +291,9 @@ static const struct spi_driver_api ifx_cat1_spi_api = {
 	.transceive = ifx_cat1_spi_transceive_sync,
 #if defined(CONFIG_SPI_ASYNC)
 	.transceive_async = ifx_cat1_spi_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = ifx_cat1_spi_release,
 };

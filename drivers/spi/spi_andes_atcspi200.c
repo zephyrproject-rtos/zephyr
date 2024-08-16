@@ -744,6 +744,9 @@ static const struct spi_driver_api spi_atcspi200_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_atcspi200_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_atcspi200_release
 };
 

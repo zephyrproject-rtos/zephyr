@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_psoc6);
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <soc.h>
 
 #include "spi_context.h"
@@ -408,6 +409,9 @@ static const struct spi_driver_api spi_psoc6_driver_api = {
 	.transceive = spi_psoc6_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_psoc6_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_psoc6_release,
 };
