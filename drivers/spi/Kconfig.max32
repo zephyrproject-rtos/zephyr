@@ -5,6 +5,7 @@ config SPI_MAX32
 	bool "MAX32 MCU SPI controller driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_SPI_ENABLED
+	select PINCTRL
 	help
 	  Enable SPI support on the MAX32 family of processors.
 
