@@ -100,6 +100,8 @@ The below features are currently supported on Zephyr OS for MCB-RA8T1 board:
 +--------------+------------+----------------------+
 | SPI          | on-chip    | spi                  |
 +--------------+------------+----------------------+
+| FLASH        | on-chip    | flash                |
++--------------+------------+----------------------+
 
 Other hardware features are currently not supported by the port.
 
