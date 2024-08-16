@@ -22,6 +22,8 @@
 # 'Zephyr-sdk_FOUND'
 # True if the Zephyr SDK was found.
 
+include(extensions)
+
 # Set internal variables if set in environment.
 zephyr_get(ZEPHYR_TOOLCHAIN_VARIANT)
 
@@ -38,7 +40,8 @@ if(("zephyr" STREQUAL ${ZEPHYR_TOOLCHAIN_VARIANT}) OR
    (Zephyr-sdk_FIND_REQUIRED))
 
   # No toolchain was specified, so inform user that we will be searching.
-  if (NOT DEFINED ZEPHYR_SDK_INSTALL_DIR AND
+  if (NOT Zephyr-sdk_FIND_QUIETLY AND
+      NOT DEFINED ZEPHYR_SDK_INSTALL_DIR AND
       NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT)
     message(STATUS "ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK")
   endif()
@@ -129,5 +132,7 @@ endif()
 if(Zephyr-sdk_FOUND)
   include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/host-tools.cmake)
 
-  message(STATUS "Found host-tools: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
+  if (NOT Zephyr-sdk_FIND_QUIETLY)
+    message(STATUS "Found host-tools: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
+  endif()
 endif()
