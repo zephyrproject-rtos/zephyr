@@ -1019,6 +1019,10 @@ static uint8_t proxy_solicit(const void *cmd, uint16_t cmd_len,
 }
 #endif /* CONFIG_BT_MESH_PROXY_SOLICITATION */
 
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
+#endif /* CONFIG_BT_MESH_BRG_CFG_CLI */
+
 static const struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1071,6 +1075,12 @@ static const struct bt_mesh_model root_models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
 
 };
@@ -1127,6 +1137,12 @@ static const struct bt_mesh_model root_models_alt[] = {
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
 
 };
@@ -2064,6 +2080,161 @@ static uint8_t models_metadata_get(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+#endif
+
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static uint8_t subnet_bridge_get(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_subnet_bridge_get_cmd *cp = cmd;
+	enum bt_mesh_subnet_bridge_state state;
+	int err;
+
+	err = bt_mesh_brg_cfg_cli_subnet_bridge_get(net.net_idx, sys_le16_to_cpu(cp->addr),
+						    &state);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Subnet Bridge state: %u", state);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t subnet_bridge_set(const void *cmd, uint16_t cmd_len,
+				 void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_subnet_bridge_set_cmd *cp = cmd;
+	enum bt_mesh_subnet_bridge_state state;
+	int err;
+
+	state = cp->val;
+
+	err = bt_mesh_brg_cfg_cli_subnet_bridge_set(net.net_idx, sys_le16_to_cpu(cp->addr),
+						    state, &state);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	LOG_DBG("Subnet Bridge state: %u", state);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_add(const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_add_cmd *cp = cmd;
+	struct bt_mesh_bridging_table_entry entry;
+	struct bt_mesh_bridging_table_status rp;
+	int err;
+
+	LOG_DBG("");
+
+	entry.directions = cp->directions;
+	entry.net_idx1 = sys_le16_to_cpu(cp->net_idx1);
+	entry.net_idx2 = sys_le16_to_cpu(cp->net_idx2);
+	entry.addr1 = sys_le16_to_cpu(cp->addr1);
+	entry.addr2 = sys_le16_to_cpu(cp->addr2);
+
+	err = bt_mesh_brg_cfg_cli_bridging_table_add(net_key_idx, sys_le16_to_cpu(cp->addr),
+						    &entry, &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_remove(const void *cmd, uint16_t cmd_len,
+				     void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_remove_cmd *cp = cmd;
+	struct bt_mesh_bridging_table_status rp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_brg_cfg_cli_bridging_table_remove(net_key_idx, sys_le16_to_cpu(cp->addr),
+							sys_le16_to_cpu(cp->net_idx1),
+							sys_le16_to_cpu(cp->net_idx2),
+							sys_le16_to_cpu(cp->addr1),
+							sys_le16_to_cpu(cp->addr2), &rp);
+
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len,
+				   void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridged_subnets_get_cmd *cp = cmd;
+	struct bt_mesh_filter_netkey filter_net_idx;
+	struct bt_mesh_bridged_subnets_list rp;
+	int err;
+
+	LOG_DBG("");
+
+	filter_net_idx.filter = cp->filter;
+	filter_net_idx.net_idx = sys_le16_to_cpu(cp->net_idx);
+
+	err = bt_mesh_brg_cfg_cli_bridged_subnets_get(net_key_idx, sys_le16_to_cpu(cp->addr),
+						      filter_net_idx, cp->start_idx, &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_get_cmd *cp = cmd;
+	struct bt_mesh_bridging_table_list rp;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_brg_cfg_cli_bridging_table_get(net_key_idx, sys_le16_to_cpu(cp->addr),
+						     sys_le16_to_cpu(cp->net_idx1),
+						     sys_le16_to_cpu(cp->net_idx2),
+						     sys_le16_to_cpu(cp->start_idx), &rp);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t bridging_table_size_get(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_mesh_bridging_table_size_get_cmd *cp = cmd;
+	uint16_t size;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_brg_cfg_cli_bridging_table_size_get(net_key_idx, sys_le16_to_cpu(cp->addr),
+							  &size);
+	if (err) {
+		LOG_ERR("err=%d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
 #endif
 
 static uint8_t composition_data_get(const void *cmd, uint16_t cmd_len,
@@ -5140,6 +5311,43 @@ static const struct btp_handler handlers[] = {
 		.opcode = BTP_MESH_SRPL_CLEAR,
 		.expect_len = sizeof(struct btp_srpl_clear_cmd),
 		.func = srpl_clear
+	},
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	{
+		.opcode = BTP_MESH_SUBNET_BRIDGE_GET,
+		.expect_len = sizeof(struct btp_mesh_subnet_bridge_get_cmd),
+		.func = subnet_bridge_get
+	},
+	{
+		.opcode = BTP_MESH_SUBNET_BRIDGE_SET,
+		.expect_len = sizeof(struct btp_mesh_subnet_bridge_set_cmd),
+		.func = subnet_bridge_set
+	},
+	{
+		.opcode = BTP_MESH_BRIDGING_TABLE_ADD,
+		.expect_len = sizeof(struct btp_mesh_bridging_table_add_cmd),
+		.func = bridging_table_add
+	},
+	{
+		.opcode = BTP_MESH_BRIDGING_TABLE_REMOVE,
+		.expect_len = sizeof(struct btp_mesh_bridging_table_remove_cmd),
+		.func = bridging_table_remove
+	},
+	{
+		.opcode = BTP_MESH_BRIDGED_SUBNETS_GET,
+		.expect_len = sizeof(struct btp_mesh_bridged_subnets_get_cmd),
+		.func = bridged_subnets_get
+	},
+	{
+		.opcode = BTP_MESH_BRIDGING_TABLE_GET,
+		.expect_len = sizeof(struct btp_mesh_bridging_table_get_cmd),
+		.func = bridging_table_get
+	},
+	{
+		.opcode = BTP_MESH_BRIDGING_TABLE_SIZE_GET,
+		.expect_len = sizeof(struct btp_mesh_bridging_table_size_get_cmd),
+		.func = bridging_table_size_get
 	},
 #endif
 #if defined(CONFIG_BT_MESH_PROXY_SOLICITATION)
