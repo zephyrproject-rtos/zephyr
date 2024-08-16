@@ -41,12 +41,13 @@ config IDLE_STACK_SIZE
 endif # PM
 
 
-SLOT1_NODE_LABEL := $(dt_nodelabel_path,slot1_partition)
-SLOT1_SIZE := $(dt_node_reg_size_int,$(SLOT1_NODE_LABEL),0)
-SLOT1_PARENT := $(dt_node_parent,$(SLOT1_NODE_LABEL))
-SLOT1_GPARENT := $(dt_node_parent,$(SLOT1_PARENT))
-SLOT1_GPARENT_EB := $(dt_node_int_prop_int,$(SLOT1_GPARENT),erase-block-size)
-MAX_SECTORS := $(shell, python3 -c "print(int($(SLOT1_SIZE)/$(SLOT1_GPARENT_EB))) if $(SLOT1_SIZE) else print(0)")
+SLOT0_NODE_LABEL := $(dt_nodelabel_path,slot0_partition)
+SLOT0_SIZE := $(dt_node_reg_size_int,$(SLOT0_NODE_LABEL),0)
+SLOT0_PARENT := $(dt_node_parent,$(SLOT0_NODE_LABEL))
+SLOT0_GPARENT := $(dt_node_parent,$(SLOT0_PARENT))
+SLOT0_GPARENT_EB := $(dt_node_int_prop_int,$(SLOT0_GPARENT),erase-block-size)
+# MAX_SECTORS relies on using the FLASH device with the smallest sector size - on ATM33, that is always slot0 (RRAM)
+MAX_SECTORS := $(shell, python3 -c "print(int($(SLOT0_SIZE)/$(SLOT0_GPARENT_EB))) if $(SLOT0_SIZE) else print(0)")
 
 if MCUBOOT || BOOTLOADER_MCUBOOT
 

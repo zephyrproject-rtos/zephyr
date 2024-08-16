@@ -112,9 +112,20 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
         self.gdb_port = gdb_port
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.elf_name = Path(cfg.elf_file).as_posix()
+        self.build_config = BuildConfiguration(cfg.build_dir)
+        is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
         if cfg.hex_file is not None:
-            self.hex_name = Path(cfg.hex_file).as_posix()
+            if is_split_img:
+                # Runner hexfile string could include multiple files, delimited by ','
+                self.hex_name = [Path(hex_f).as_posix() for hex_f in cfg.hex_file.split(",")]
+            else:
+                self.hex_name = Path(cfg.hex_file).as_posix()
+
         self.use_elf = use_elf
+        if is_split_img:
+            # split image does not support fast_load currently
+            fast_load = False
+
         if fast_load and not use_elf:
             self.fast_load = True
             self.fl_bin = os.path.join(os.path.dirname(openocd_config), 'fast_load', 'fast_load.bin')
@@ -214,7 +225,7 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
             self.logger.debug('Flashing on Atmosic platform ' + self.atm_plat)
             if self.atm_plat == 'atm2':
                 self.do_flash_atm2(**kwargs)
-            elif self.atm_plat == 'atmx3':
+            elif self.atm_plat == 'atmx3' or self.atm_plat == 'atm34':
                 self.do_flash_atmx3(**kwargs)
             else:
                 self.logger.error('Flashing unsupported for platform')
@@ -233,10 +244,9 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
             ])
 
     def do_flash_atm2(self, **kwargs):
-        build_conf = BuildConfiguration(self.cfg.build_dir)
-        region_start = build_conf['CONFIG_FLASH_LOAD_OFFSET']
-        region_size = build_conf['CONFIG_FLASH_LOAD_SIZE']
-        load_address = self.flash_address_from_build_conf(build_conf)
+        region_start = self.build_config['CONFIG_FLASH_LOAD_OFFSET']
+        region_size = self.build_config['CONFIG_FLASH_LOAD_SIZE']
+        load_address = self.flash_address_from_build_conf(self.build_config)
         print("Flash: Start(%#x) Size(%#x) Load(%#x)" % (region_start,
             region_size, load_address))
         bin_file = str.replace(self.cfg.bin_file, "\\", "\\\\")
@@ -255,6 +265,15 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd_flash)
 
     def do_flash_atmx3(self, **kwargs):
+        is_split_img = self.build_config.getboolean('CONFIG_ATM_SPLIT_IMG')
+        if is_split_img:
+            if self.fast_load:
+                self.logger.error('Fast load does not support split images')
+                sys.exit(1)
+            if self.use_elf:
+                self.logger.error('--use_elf does not support split images')
+                sys.exit(1)
+
         if self.fast_load:
             if self.cfg.bin_file is None:
                 self.logger.error('The fast load requires bin file')
@@ -287,9 +306,21 @@ class AtmispBinaryRunner(ZephyrBinaryRunner):
                     image = str.replace(path.join(os.path.dirname(os.path.abspath(os.environ['ZEPHYR_BASE'])), self.elf_name), "\\", "\\\\")
             else:
                 image = self.hex_name
-            cmd_flash += ['-c atm_load_rram ' + image]
-            if self.verify:
-                cmd_flash += ['-c atm_verify_rram ' + image]
+            if is_split_img:
+                region_size = self.build_config['CONFIG_FLASH_LOAD_SIZE']
+                if (len(image) != 2):
+                    self.logger.error('2 images required when programming split image')
+                    sys.exit(1)
+                cmd_flash += ['-c atm_load_rram ' + image[0]]
+                if self.verify:
+                    cmd_flash += ['-c atm_verify_rram ' + image[0]]
+                cmd_flash += ['-c atm_load_flash ' + image[1] + " 0 " + str(region_size)]
+                if self.verify:
+                    cmd_flash += ['-c atm_verify_flash ' + image[1]]
+            else:
+                cmd_flash += ['-c atm_load_rram ' + image]
+                if self.verify:
+                    cmd_flash += ['-c atm_verify_rram ' + image]
         if not self.noreset and not self.fast_load:
             cmd_flash += ['-c set _RESET_HARD_ON_EXIT 1']
         cmd_flash += ['-c exit']

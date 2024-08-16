@@ -155,7 +155,7 @@ manifest:
       groups:
         - hal
     - name: hal_atmosic
-      revision: f8c606ae20452ba6df087224da81ee226eea78b1
+      revision: d8251eb3a31d9be250a0abec2c973215821cf15a
       path: modules/hal/atmosic
     - name: hal_espressif
       revision: 31fc5758f3507f8f0af00b1dea1a0df7af99bfc0

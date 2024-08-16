@@ -29,8 +29,15 @@
 #error "SPE size must be aligned"
 #endif
 
+#ifndef ATM_FACTORY_SIZE
+#define ATM_FACTORY_SIZE 0x800
+#endif
+#if ((ATM_FACTORY_SIZE % ATM_RRAM_BLOCK_SIZE) != 0)
+#error "Factory size must be aligned"
+#endif
+
 #ifndef ATM_STORAGE_SIZE
-#define ATM_STORAGE_SIZE 0x1000
+#define ATM_STORAGE_SIZE 0x800
 #endif
 #if ((ATM_STORAGE_SIZE % ATM_RRAM_BLOCK_SIZE) != 0)
 #error "Storage size must be aligned"
@@ -61,13 +68,15 @@
 #define ATM_SPE_OFFSET 0x0
 #define ATM_NSPE_OFFSET (ATM_SPE_OFFSET + ATM_SPE_SIZE)
 #define ATM_NSPE_SIZE (ATM_RRAM_AVAIL_SIZE - ATM_SPE_SIZE - ATMWSTK_SIZE \
-    - ATM_STORAGE_SIZE)
-#define ATM_STORAGE_OFFSET (ATM_NSPE_OFFSET + ATM_NSPE_SIZE)
+    - ATM_FACTORY_SIZE - ATM_STORAGE_SIZE)
+#define ATM_FACTORY_OFFSET (ATM_NSPE_OFFSET + ATM_NSPE_SIZE)
+#define ATM_STORAGE_OFFSET (ATM_FACTORY_OFFSET + ATM_FACTORY_SIZE)
 
 // NODE unit addresses, these are arbitrary and only need be unique
 #define ATM_SPE_NODE_ID     cece0011
 #define ATM_NSPE_NODE_ID    cece0012
-#define ATM_STORAGE_NODE_ID cece0050
+#define ATM_FACTORY_NODE_ID cece0050
+#define ATM_STORAGE_NODE_ID cece0051
 #define ATMWSTK_NODE_ID     cece0060
 
 #endif // _ATMOSIC_ATM_ATM33XX_PARTITION_DEFS_H_

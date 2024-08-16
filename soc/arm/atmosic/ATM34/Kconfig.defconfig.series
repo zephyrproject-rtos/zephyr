@@ -52,6 +52,10 @@ config MERGE_SPE_NSPE
 	  However, it can also be set to allow a single `west flash` to flash
 	  both the spe and nspe.
 
+config ATM_SPLIT_IMG
+	depends on FLASH
+	bool "Image split across multiple memory regions"
+
 config MCUBOOT_EXTRA_IMGTOOL_ARGS
 	# Need to override header-size for image tool to the SPE header allocation
 	default "--header-size=0x800" if MERGE_SPE_NSPE

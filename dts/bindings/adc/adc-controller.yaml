@@ -38,6 +38,7 @@ child-binding:
       required: true
       description: |
         Gain selection:
+        - ADC_GAIN_1_8: x 1/8
         - ADC_GAIN_1_6: x 1/6
         - ADC_GAIN_1_5: x 1/5
         - ADC_GAIN_1_4: x 1/4
@@ -59,6 +60,7 @@ child-binding:
         - ADC_GAIN_64:  x 64
         - ADC_GAIN_128: x 128
       enum:
+        - "ADC_GAIN_1_8"
         - "ADC_GAIN_1_6"
         - "ADC_GAIN_1_5"
         - "ADC_GAIN_1_4"

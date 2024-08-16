@@ -10,12 +10,13 @@
 
 &rram0 {
 	partitions {
-		compatible = "fixed-partitions";
+		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
+			secure;
 			reg = <0x00000 0xc000>;
 		};
 #ifdef DFU_IN_FLASH
@@ -31,6 +32,7 @@
 				#size-cells = <1>;
 				spe_partition: partition@10000 {
 					label = "spe_partition";
+					secure;
 					reg = <0x10000 0x5800>;
 				};
 				nspe_partition: partition@15800 {
@@ -56,6 +58,7 @@
 				#size-cells = <1>;
 				spe_partition: partition@10000 {
 					label = "spe_partition";
+					secure;
 					reg = <0x10000 0x5800>;
 				};
 				nspe_partition: partition@15800 {
@@ -75,7 +78,7 @@
 #ifdef DFU_IN_FLASH
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 

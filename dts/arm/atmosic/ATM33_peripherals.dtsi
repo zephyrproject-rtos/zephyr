@@ -237,6 +237,7 @@ mdm: mdm@156000 {
 };
 
 pmu: spi@157000 {
+	compatible = "atmosic,atmx3-pmu";
 	reg = <0x00157000 0x1000>;
 	interrupts = <49 2>;
 };

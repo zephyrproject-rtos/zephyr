@@ -6,13 +6,14 @@
 
 &rram0 {
 	partitions {
-		compatible = "fixed-partitions";
+		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 #ifndef RUN_IN_FLASH
 		spe_partition: partition@0 {
 			label = "spe_partition";
+			secure;
 			reg = <0x00000 0x5800>;
 		};
 		nspe_partition: partition@5800 {
@@ -22,15 +23,17 @@
 #elif (RUN_IN_FLASH == 2)
 		spe_partition: partition@0 {
 			label = "spe_partition";
-			reg = <0x00000 0x30000>;
+			secure;
+			reg = <0x00000 0x10000>;
 		};
-		fast_code_partition: partition@30000 {
+		fast_code_partition: partition@10000 {
 			label = "fast_code_partition";
-			reg = <0x30000 0x4b800>;
+			reg = <0x10000 0x6b800>;
 		};
 #else
 		spe_partition: partition@0 {
 			label = "spe_partition";
+			secure;
 			reg = <0x00000 0x7b800>;
 		};
 #endif
@@ -44,7 +47,7 @@
 #ifdef RUN_IN_FLASH
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 

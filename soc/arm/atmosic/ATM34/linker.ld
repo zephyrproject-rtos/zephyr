@@ -13,15 +13,16 @@ MEMORY {
 
 SECTIONS {
     fast_code : {
-	ieee802154*(.text ".text.*" .rodata ".rodata.*")
-	*/libblell*.a:(.text ".text.*" .rodata ".rodata.*")
-
-	*/libmbedTLS*.a:(.text ".text.*" .rodata ".rodata.*")
-	*/lib*mbedtls.a:(.text ".text.*" .rodata ".rodata.*")
 	*/libarch*.a:(.text ".text.*" .rodata ".rodata.*")
-	*/libc_nano.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libblell*.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libc*.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libdrivers*.a:(.text ".text.*" .rodata ".rodata.*")
 	*/libgcc.a:(.text ".text.*" .rodata ".rodata.*")
 	*/libkernel.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libmbedTLS*.a:(.text ".text.*" .rodata ".rodata.*")
+	*/lib*mbedtls.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libopenthread*.a:(.text ".text.*" .rodata ".rodata.*")
+	*/libsubsys*.a:(.text ".text.*" .rodata ".rodata.*")
 	*/libzephyr.a:(.text ".text.*" .rodata ".rodata.*")
 	. = ALIGN(4);
     } > RRAM

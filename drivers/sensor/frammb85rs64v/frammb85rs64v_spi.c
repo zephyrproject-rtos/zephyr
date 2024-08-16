@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(FRAMMB85RS64V, CONFIG_SENSOR_LOG_LEVEL);
 
 static int frammb85rs64v_bus_check_spi(const union frammb85rs64v_bus *bus)
 {
-	return spi_is_ready(&bus->spi) ? 0 : -ENODEV;
+	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
 }
 
 static int frammb85rs64v_read_id_spi(const union frammb85rs64v_bus *bus, uint8_t *data)
@@ -94,7 +94,7 @@ static int frammb85rs64v_reg_write_spi(const union frammb85rs64v_bus *bus, uint1
 	}
 
 	const struct spi_buf tx_buf[2] = { { .buf = &access, .len = 3 },
-					   { .buf = data, .len = len } };
+					   { .buf = (uint8_t *)data, .len = len } };
 	const struct spi_buf_set tx = { .buffers = tx_buf, .count = 2 };
 
 	ret = spi_write_dt(&bus->spi, &tx);

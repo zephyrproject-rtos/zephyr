@@ -5,7 +5,7 @@
  *
  * @brief Atmosic ATM33 image partition definitions for use with mcuboot
  *
- * Copyright (C) Atmosic 2023
+ * Copyright (C) Atmosic 2023-2024
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -22,6 +22,7 @@
 #undef ATM_SPE_OFFSET
 #undef ATM_NSPE_OFFSET
 #undef ATM_NSPE_SIZE
+#undef ATM_FACTORY_OFFSET
 #undef ATM_STORAGE_OFFSET
 
 #define ATM_FLASH_BLOCK_SIZE 4096
@@ -48,6 +49,11 @@
 #error "MCUBOOT scratch size must be aligned"
 #endif
 
+// reservation for the image trailer (taken from NSPE)
+#ifndef ATM_IMG_TRAILER_RSVD_SIZE
+#define ATM_IMG_TRAILER_RSVD_SIZE 0
+#endif
+
 #ifdef DFU_IN_FLASH
 // scratch located at beginning of flash
 #define ATM_MCUBOOT_SCRATCH_OFFSET 0x0
@@ -66,18 +72,24 @@
 
 // compute the slot size needed
 #define ATM_RRAM_IMAGE_AREA_SIZE (ATM_RRAM_AVAIL_SIZE - ATM_SLOT0_OFFSET - \
-    ATMWSTK_SIZE - ATM_STORAGE_SIZE)
+    ATMWSTK_SIZE - ATM_FACTORY_SIZE - ATM_STORAGE_SIZE)
 
 #ifdef DFU_IN_FLASH
 // slot0 size has to align with the flash block/erase size
 #define ATM_SLOT0_SIZE ROUND_DOWN_FLASH_BLK(ATM_RRAM_IMAGE_AREA_SIZE)
 // storage in RRAM follows slot 0
-#define ATM_STORAGE_OFFSET (ATM_SLOT0_OFFSET + ATM_SLOT0_SIZE)
+#define ATM_FACTORY_OFFSET (ATM_SLOT0_OFFSET + ATM_SLOT0_SIZE)
+#define ATM_STORAGE_OFFSET (ATM_FACTORY_OFFSET + ATM_FACTORY_SIZE)
 #else
 // split available RRAM in half, round down to RRAM block size
 #define ATM_SLOT0_SIZE ROUND_DOWN_RRAM_BLK(ATM_RRAM_IMAGE_AREA_SIZE / 2)
 // storage in RRAM follows slot 1
-#define ATM_STORAGE_OFFSET (ATM_SLOT1_OFFSET + ATM_SLOT0_SIZE)
+#define ATM_FACTORY_OFFSET (ATM_SLOT1_OFFSET + ATM_SLOT0_SIZE)
+#define ATM_STORAGE_OFFSET (ATM_FACTORY_OFFSET + ATM_FACTORY_SIZE)
+#endif
+
+#if ((ATM_FACTORY_OFFSET % ATM_RRAM_BLOCK_SIZE) != 0)
+#error "Factory offset must be aligned"
 #endif
 
 #if ((ATM_STORAGE_OFFSET % ATM_RRAM_BLOCK_SIZE) != 0)
@@ -103,7 +115,7 @@
 #define ATM_SLOT1_SIZE ATM_SLOT0_SIZE
 #define ATM_SPE_OFFSET ATM_SLOT0_OFFSET
 #define ATM_NSPE_OFFSET (ATM_SPE_OFFSET + ATM_SPE_SIZE)
-#define ATM_NSPE_SIZE (ATM_SLOT0_SIZE - ATM_SPE_SIZE)
+#define ATM_NSPE_SIZE (ATM_SLOT0_SIZE - ATM_SPE_SIZE - ATM_IMG_TRAILER_RSVD_SIZE)
 
 // NODE unit addresses, these are arbitrary and only need be unique
 #define ATM_MCUBOOT_NODE_ID         cece0000

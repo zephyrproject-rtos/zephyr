@@ -70,6 +70,12 @@
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 	};
+
+	zephyr,user {
+		mode0-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		mode1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		mode2-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &flash_controller {
@@ -106,8 +112,8 @@
 };
 
 &adc {
-    ch-cell = <1>;
-    ch-batt = <11>;
+	ch-cell = <1>;
+	ch-batt = <11>;
 };
 
 &uart1 {

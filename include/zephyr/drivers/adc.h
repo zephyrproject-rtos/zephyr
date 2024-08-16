@@ -30,6 +30,7 @@ extern "C" {
 
 /** @brief ADC channel gain factors. */
 enum adc_gain {
+	ADC_GAIN_1_8, /**< x 1/8. */
 	ADC_GAIN_1_6, /**< x 1/6. */
 	ADC_GAIN_1_5, /**< x 1/5. */
 	ADC_GAIN_1_4, /**< x 1/4. */

@@ -5,8 +5,53 @@
 
 config UART_ATM
 	bool "Atmosic UART driver"
+	default y
+	depends on DT_HAS_ATMOSIC_ATM_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_FAMILY_ATM
 	help
 	  This option enables the UART driver for Atmosic
+
+if UART_ATM && PM
+
+config UART_ATM_PM_RX_THREAD_STACK_SIZE
+	int "Receive power management thread size"
+	default 512
+
+config UART_ATM_PM_RX_THREAD_PRIO
+	int "Receive power management thread priority"
+	default 2
+
+config UART_ATM_RTT_LPC
+	int "Flow control round trip time"
+	default 4
+	help
+	  This value takes into consideration all delays that would influence RTS deassertion,
+	  including cable length and peer data equipment responsiveness.
+	  Measured in LP cycles.
+
+config UART_ATM_AFTER_ACTIVE_MS
+	int "Stay active delay after Rx activity"
+	default 20
+	help
+	  Keep RTS asserted for a finite duration after receiving data.
+	  Helps maintain good throughput with power management.
+	  Measured in milliseconds.
+
+config UART_ATM_AFTER_WAKE_MS
+	int "Stay active delay after waking from SUSPEND_TO_RAM"
+	default 2
+	help
+	  Keep RTS asserted for a finite duration after waking from SUSPEND_TO_RAM.
+	  Helps maintain good throughput with power management.
+	  Measured in milliseconds.
+
+config UART_ATM_MAX_SLEEP_MS
+	int "Maximum duration of sleep"
+	default 100
+	help
+	  Maximum time spent sleeping with RTS forced off (aka: Rx prevented).
+	  Helps maintain good Rx latency with power management.
+	  Measured in milliseconds.
+
+endif

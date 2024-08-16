@@ -297,6 +297,29 @@ static void gadc_start_measurement(struct device const *dev, GADC_CHANNEL_ID ch)
 	CMSDK_GADC->INTERRUPT_MASK = DGADC_INTERRUPT_MASK__MASK_INTRPT2__MASK;
 }
 
+static void gadc_calibrate_offset(uint8_t gainext, int16_t sample)
+{
+	int16_t result = -sample;
+	LOG_INF("%s: %u %d", __func__, gainext, result);
+	switch (gainext) {
+	case GAIN_EXT_X1:
+		gcal.offset_comp0 = DGADC_OFFSET_COMP0__OFFSET__WRITE(result);
+		break;
+	case GAIN_EXT_HALF:
+		gcal.offset_comp1 = DGADC_OFFSET_COMP1__OFFSET__WRITE(result);
+		break;
+	case GAIN_EXT_QUARTER:
+		gcal.offset_comp2 = DGADC_OFFSET_COMP2__OFFSET__WRITE(result);
+		break;
+	case GAIN_EXT_EIGHTH:
+		gcal.offset_comp3 = DGADC_OFFSET_COMP3__OFFSET__WRITE(result);
+		break;
+	default:
+		LOG_ERR("Invalid gext: %d", gainext);
+		break;
+	}
+}
+
 static void gadc_measure_or_calibrate(struct gadc_atm_data *data)
 {
 	uint32_t curts = atm_lpc_to_ms(atm_get_sys_time());
@@ -304,6 +327,10 @@ static void gadc_measure_or_calibrate(struct gadc_atm_data *data)
 	    ((curts - calts[gext[data->ch]]) > CONFIG_ADC_CAL_REFRESH_INTERVAL)) {
 		calts[gext[data->ch]] = curts;
 		firstcal[gext[data->ch]] = false;
+		gadc_calibrate_offset(gext[data->ch], 0);
+
+		// Set up the calibration channel for measurement
+		gext[CALIBRATION] = gext[data->ch];
 		data->chmask |= BIT(CALIBRATION);
 		data->ch = CALIBRATION;
 	}
@@ -393,6 +420,9 @@ static int gadc_atm_channel_setup(struct device const *dev,
 	}
 
 	switch (channel_cfg->gain) {
+	case ADC_GAIN_1_8:
+		gext[channel_cfg->channel_id] = GAIN_EXT_EIGHTH;
+		break;
 	case ADC_GAIN_1_4:
 		gext[channel_cfg->channel_id] = GAIN_EXT_QUARTER;
 		break;
@@ -426,29 +456,6 @@ static struct adc_driver_api const api_atm_driver_api = {
 #endif
 	.ref_internal = ATM_GADC_VREF_VOL,
 };
-
-static void gadc_calibrate_offset(uint8_t gainext, int16_t sample)
-{
-	int16_t result = -sample;
-	LOG_INF("%s: %u %d", __func__, gainext, result);
-	switch (gainext) {
-	case GAIN_EXT_X1: {
-		gcal.offset_comp0 = DGADC_OFFSET_COMP0__OFFSET__WRITE(result);
-	} break;
-	case GAIN_EXT_HALF: {
-		gcal.offset_comp1 = DGADC_OFFSET_COMP1__OFFSET__WRITE(result);
-	} break;
-	case GAIN_EXT_QUARTER: {
-		gcal.offset_comp2 = DGADC_OFFSET_COMP2__OFFSET__WRITE(result);
-	} break;
-	case GAIN_EXT_EIGHTH: {
-		gcal.offset_comp3 = DGADC_OFFSET_COMP3__OFFSET__WRITE(result);
-	} break;
-	default: {
-		LOG_ERR("Invalid gext: %d", gainext);
-	} break;
-	}
-}
 
 static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID ch,
 				     int16_t *sample_raw)

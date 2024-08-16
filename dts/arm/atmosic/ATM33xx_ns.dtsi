@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Atmosic
+ * Copyright (c) 2021-2024 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,7 @@
 
 		rram0: rram@10000 {
 			compatible = "soc-nv-flash";
-			erase-block-size = <2048>;
+			erase-block-size = <1024>;
 			write-block-size = <1>;
 			reg = <0x00010000 0x7f800>;
 		};

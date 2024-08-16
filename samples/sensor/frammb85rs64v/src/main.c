@@ -38,12 +38,12 @@ static const struct device *get_frammb85rs64v_device(void)
 	return dev;
 }
 
-void main(void)
+int main(void)
 {
 	const struct device *dev = get_frammb85rs64v_device();
 
 	if (dev == NULL) {
-		return;
+		return 0;
 	}
 
 	uint16_t addr = 0x0124;
@@ -54,14 +54,14 @@ void main(void)
 	err = fram_write(dev, addr, send_data, len);
 	if (err) {
 		printk("Error writing to FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Wrote %" PRIu32 " bytes to address 0x%X.\n", len, addr);
 	}
 	err = fram_read(dev, addr, receive_data, len);
 	if (err) {
 		printk("Error reading from FRAM! error code (%d)\n", err);
-		return;
+		return 0;
 	} else {
 		printk("Read %" PRIu32 " bytes to address 0x%X.\n", len, addr);
 	}
@@ -75,4 +75,6 @@ void main(void)
 	if (err == 0) {
 		printk("Data comparison successful.\n");
 	}
+
+	return 0;
 }

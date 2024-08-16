@@ -109,17 +109,17 @@ as such rather than "J-Link driver".  (In Device Manager, expand category
 Programming and Debugging
 *************************
 
-Applications for the ATMEVK-33xx-xx-5 and ATMEVK-33xxe-xx-5 boards can be built, flashed, and debugged with familiar `west build` and `west flash`.
+Applications for the ATMEVK-33xx-xx-5 and ATMEVK-33xxe-xx-5 boards can be built, flashed, and debugged with the familiar `west build` and `west flash`.  Except for the case of debugging, a convenience wrapper script is provided that can invoke all the right `west` commands as detailed in the section on `Support Script`_.  For most cases, using this script is the recommended way to build and program an atm33evk.  Needless to say, it is still important to understand concepts such as an MCUboot vs. non-MCUboot builds as well as the various BLE link controller options, which are described later in this section.
 
 The atm33evk boards require at least two images to be built -- the SPE and the application.
 
-The Atmosic SPE lives in the HAL module at ``${WEST_TOPDIR}/modules/hal/atmosic/ATM33xx-5/examples/spe``.
+The Atmosic SPE can be found under ``${WEST_TOPDIR}/apps/samples/spe``.
 
 .. _var_assignments:
 
 In the remainder of this document, use the following variable assignments/substitutions::
 
- SPE=modules/hal/atmosic/ATM33xx-5/examples/spe
+ SPE=apps/examples/spe
  APP=zephyr/samples/hello_world
  MCUBOOT=bootloader/mcuboot/boot/zephyr
 
@@ -137,7 +137,7 @@ Non-MCUboot Option
 
 If device firmware update (DFU) is not needed, the following simple option can be used::
 
-  west build -s $SPE -b $BOARD -d build/$BOARD/$SPE
+  west build -p -s $SPE -b $BOARD -d build/$BOARD/$SPE
 
 
 MCUboot Option
@@ -145,11 +145,11 @@ MCUboot Option
 
 To build with MCUboot because, for example, DFU is needed, first build MCUboot::
 
-  west build -s $MCUBOOT -b $BOARD@mcuboot -d build/$BOARD/$MCUBOOT -- -DCONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y -DCONFIG_DEBUG=n -DCONFIG_BOOT_MAX_IMG_SECTORS=512 -DDTC_OVERLAY_FILE="$WEST_TOPDIR/zephyr/boards/arm/atm33evk/${BOARD}_mcuboot_bl.overlay"
+  west build -p -s $MCUBOOT -b $BOARD@mcuboot -d build/$BOARD/$MCUBOOT -- -DCONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256=y -DCONFIG_DEBUG=n -DCONFIG_BOOT_MAX_IMG_SECTORS=512 -DDTC_OVERLAY_FILE="$WEST_TOPDIR/zephyr/boards/arm/atm33evk/${BOARD}_mcuboot_bl.overlay"
 
 and then the Atmosic SPE::
 
-  west build -s $SPE -b $BOARD@mcuboot -d build/$BOARD/$SPE -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE=n -DDTS_EXTRA_CPPFLAGS=";"
+  west build -p -s $SPE -b $BOARD@mcuboot -d build/$BOARD/$SPE -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_GENERATE_UNSIGNED_IMAGE=n -DDTS_EXTRA_CPPFLAGS=";"
 
 Note that make use of "board revision" to configure our board paritions to work for MCUboot.  On top of the "revisions," MCUboot currently needs an additional overlay that must be provided via the command line to give it the entire SRAM.
 
@@ -174,13 +174,13 @@ Non-MCUboot Option
 
 Build the app with the non-secure board variant and the SPE (see Non-MCUboot Option build above) configured as follows::
 
-  west build -s $APP -b ${BOARD}_ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\"
+  west build -p -s $APP -b ${BOARD}_ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\"
 
 Passing the path to the SPE is for linking in the non-secure-callable veneer file generated in building the SPE.
 
 With this approach, each built image has to be flashed separately.  Optionally, build a single merged image by enabling ``CONFIG_MERGE_SPE_NSPE``, thereby minimizing the flashing steps::
 
-  west build -s $APP -b ${BOARD}_ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" -DCONFIG_MERGE_SPE_NSPE=y
+  west build -p -s $APP -b ${BOARD}_ns -d build/${BOARD}_ns/$APP -- -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\" -DCONFIG_MERGE_SPE_NSPE=y
 
 
 MCUboot Option
@@ -188,7 +188,7 @@ MCUboot Option
 
 Build the application with MCUboot and SPE as follows::
 
-  west build -s $APP -b ${BOARD}_ns@mcuboot -d build/${BOARD}_ns/$APP -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-ec-p256.pem\" -DDTS_EXTRA_CPPFLAGS=";" -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\"
+  west build -p -s $APP -b ${BOARD}_ns@mcuboot -d build/${BOARD}_ns/$APP -- -DCONFIG_BOOTLOADER_MCUBOOT=y -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-ec-p256.pem\" -DDTS_EXTRA_CPPFLAGS=";" -DCONFIG_SPE_PATH=\"${WEST_TOPDIR}/build/$BOARD/$SPE\"
 
 This is somewhat of a non-standard workflow.  When passing ``-DCONFIG_BOOTLOADER_MCUBOOT=y`` on the application build command line, ``west`` automatically creates a singed, merged image (``zephyr.signed.{bin,hex}``), which is ultimately used by ``west flash`` to program the device.  The original application binaries are renamed with a ``.nspe`` suffixed to the file basename (``zephyr.{bin,hex,elf}`` renamed to ``zephyr.nspe.{bin,hex,elf}``) and are the ones that should be supplied to a debugger.
 
@@ -199,11 +199,11 @@ Flashing
 
 ``west flash`` is used to program a device with the necessary images, often only built as described above and sometimes also with a pre-built library provided as an ELF binary.
 
-In this section, substitute ``$DEVICE_ID`` with the serial for the Atmosic interface board used.  For an atmevk33 board, this is typically a J-Link serial, but it can also be an FTDI serial of the form ``ATRDIXXXX``.
+In this section, substitute ``$DEVICE_ID`` with the serial for the Atmosic interface board used.  For an atmevk33 board, this is typically a J-Link serial, but it can also be an FTDI serial of the form ``ATRDIXXXX``.  For a J-Link board, pass the ``--jlink`` option to the flash runner as in ``west flash --jlink ...``.
 
 The following subsections describe how to flash a device with and without MCUboot option.  If the application requires Bluetooth (configured with ``CONFIG_BT``), and uses the fixed BLE link controller image option, then the controller image requires programming.  This is typically done prior to programming the application and resetting (omitting the ``--noreset`` option to ``west flash``).  For example::
 
-  west flash --verify --device=$DEVICE_ID --skip-rebuild -d build/$BOARD/$MCUBOOT --use-elf --elf-file modules/hal/atmosic/ATM33xx-5/drivers/ble/atmwstk_LL.elf --noreset
+  west flash --verify --device=$DEVICE_ID --skip-rebuild -d build/$BOARD/$MCUBOOT --use-elf --elf-file modules/hal/atmosic_lib/ATM33xx-5/drivers/ble/atmwstk_LL.elf --noreset
 
 For the non-MCUboot option, substitute ``$MCUBOOT`` with ``$SPE`` in the above command.
 
@@ -212,7 +212,7 @@ Fast-Load Option
 ----------------
 Atmosic provides a mechanism to increase the legacy programming time called FAST LOAD. Apply the option ``--fast_load`` to enable the FAST LOAD. For Example::
 
-  west flash -device=$DEVICE_ID --verify --skip-rebuild --fast_load -d build/${BOARD}_ns/$APP
+  west flash --device=$DEVICE_ID --verify --skip-rebuild --fast_load -d build/${BOARD}_ns/$APP
 
 
 Non-MCUboot Option
@@ -334,7 +334,7 @@ Generate atm isp file
     -p build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/partition_info.map \
     --app_file build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/zephyr.signed.bin \
     --mcuboot_file build/ATMEVK-3330-QN-5/bootloader/mcuboot/boot/zephyr/zephyr/zephyr.bin \
-    --atmwstk_file modules/hal/atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
+    --atmwstk_file modules/hal/atmosic_lib/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp
 
 Show atm isp file
@@ -354,6 +354,71 @@ Flash atm isp file
     --openocd_pkg_root=modules/hal/atmosic_lib \
     --burn
 
+Programming Secure Journal
+=========================
+
+The secure journal is a dedicated block of RRAM that has the property of being a write once, append-only data storage area that replaces traditional OTP memory. This region is located near the end of the RRAM storage array at 0x8F800– 0x8FEEF (1776 bytes).
+
+The secure journal data updates are controlled by a secure counter (address ratchet). The counter determines the next writable location at an offset from the start of the journal. An offset greater than the counter value is writable while any offset below or equal to the counter is locked from updates. The counter can only increment monotonically and cannot be rolled back. This provides the immutability of OTP as well as the flexibility to append new data items or overriding past items using a find latest TLV search.
+
+The west extension command `secjrnl` is provided by the Atmosic HAL to allow for easy access and managment of the secure journal on supported platforms.
+
+The tool provides a help command that describes all available operations via::
+
+ west secjrnl --help
+
+Dumping Secure Journal
+----------------------
+
+To dump the secure journal, run the command::
+
+ west secjrnl dump --atm_plat atmx3 --device <DEVICE_ID>
+
+This will dump all the TLV tags located in the secure journal.
+
+Appending a tag to the Secure Journal
+-------------------------------------
+
+To append a new tag to the secure journal::
+
+ west secjrnl append --atm_plat atmx3 --device <DEVICE_ID> --tag=<TAG_ID> --data=<TAG_DATA>
+
+* replace ``<TAG_ID>`` with the appropriate tag ID (Ex: ``0xde``)
+* replace ``<TAG_DATA>`` with the data for the tag. This is passed as a string. To pass raw byte values format it like so: '\xde\xad\xbe\xef'. As such, ``--data="data"`` will result in the same output as ``--data="\x64\x61\x74\x61``.
+
+The secure journal uses a find latest search algorithm to allow overrides. If the passed tag should NOT be overridded in the future, add the flag ``--locked`` to the append command. See following section for more information regarding locking a tag.
+
+
+NOTE: The ``append`` command  does NOT increment the ratchet. The newly appended tag is still unprotected from erasing.
+
+Locking down a tag
+------------------
+
+The secure journal provides a secure method of storing data while still providing options to update the data if needed. However, there are key data entries that should never be updated across the life of the device (e.g. UUID).
+This support is provided by software and can be enabled for a tag by passing ``--locked`` to the command when appending a new tag.
+
+It is important to understand, once a tag is **locked** (and ratcheted), the specific tag can never be updated in the future - Appending a new tag of the same value will be ignored.
+
+
+Erasing non-ratcheted data from the Secure Journal
+--------------------------------------------------
+
+Appended tags are not ratcheted down. this allows for prototyping with the secure journal before needing to lock down the TLVs. To support prototyping, you can erase non-ratcheted data easily via::
+
+ west secjrnl erase --atm_plat atmx3 --device <DEVICE_ID>
+
+
+
+Ratcheting Secure Journal
+-------------------------
+
+To ratchet data, run the command::
+
+ west secjrnl ratchet_jrnl --atm_plat atmx3 --device <DEVICE_ID>
+
+This will list the non-ratcheted tags and confirm that you want to ratchet the tags. Confirm by typing 'yes'.
+
+NOTE: This process is non reversable. Once ratcheted, that region of the secure journal cannot be modified.
 
 Viewing the Console Output
 **************************

@@ -1158,6 +1158,17 @@ static void flash_init_pinmux(void)
 	PIN_SELECT(DT_INST_PROP(0, d1_pin), QSPI_D1);
 	PIN_SELECT(DT_INST_PROP(0, d2_pin), QSPI_D2);
 	PIN_SELECT(DT_INST_PROP(0, d3_pin), QSPI_D3);
+	PIN_PULL_CLR(DT_INST_PROP(0, clk_pin));
+	PIN_PULL_CLR(DT_INST_PROP(0, csn_pin));
+#ifdef CONFIG_SOC_SERIES_ATM33
+	PIN_PULLUP(DT_INST_PROP(0, d0_pin));
+	PIN_PULLUP(DT_INST_PROP(0, d1_pin));
+#else
+	PIN_PULL_CLR(DT_INST_PROP(0, d0_pin));
+	PIN_PULL_CLR(DT_INST_PROP(0, d1_pin));
+#endif
+	PIN_PULLUP(DT_INST_PROP(0, d2_pin));
+	PIN_PULLUP(DT_INST_PROP(0, d3_pin));
 }
 
 /*

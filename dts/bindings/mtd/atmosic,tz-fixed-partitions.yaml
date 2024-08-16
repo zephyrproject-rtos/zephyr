@@ -1,0 +1,33 @@
+description: Atmosic Trustzone Fixed partitions
+
+compatible: "atmosic,tz-fixed-partitions"
+
+include: fixed-partitions.yaml
+
+child-binding:
+  properties:
+    secure:
+      type: boolean
+      description: set this property if the partition is a secure parition.
+  child-binding:
+    child-binding:
+      properties:
+        secure:
+          type: boolean
+          description: set this property if the partition is a secure parition.
+        label:
+          type: string
+          description: |
+            Human readable string describing the flash partition.
+        read-only:
+          type: boolean
+          description: set this property if the partition is read-only
+        reg:
+          type: array
+          description: |
+            This should be in the format <OFFSET SIZE>, where OFFSET
+            is the offset of the flash partition relative to the base
+            address of the parent memory, and SIZE is the size of
+            the partition in bytes.
+          required: true
+

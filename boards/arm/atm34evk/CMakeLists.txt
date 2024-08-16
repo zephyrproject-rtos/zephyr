@@ -107,6 +107,35 @@ function(merge_spe spe_path spe_load_addr)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
 
+# Split Image into RRAM and FLASH parts.
+function(split_img)
+  # Extensionless prefix of any output file.
+  set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
+
+  set(NS_APP_ELF_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
+
+  # List of additional build byproducts.
+  set(byproducts)
+
+  set(RRAM_HEX_FILE ${output}.rram.hex)
+  set(FLASH_HEX_FILE ${output}.flash.hex)
+  list(APPEND byproducts ${RRAM_HEX_FILE})
+  list(APPEND byproducts ${FLASH_HEX_FILE})
+
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${CMAKE_OBJCOPY} -j fast_code -O ihex ${NS_APP_ELF_FILE} ${RRAM_HEX_FILE}
+    COMMAND ${CMAKE_OBJCOPY} -R fast_code -O ihex ${NS_APP_ELF_FILE} ${FLASH_HEX_FILE}
+  )
+
+  if(CONFIG_BUILD_OUTPUT_HEX)
+    # atmisp can parse comma-delimited strings and handle them independently.
+    set_target_properties(runners_yaml_props_target PROPERTIES "hex_file" "${RRAM_HEX_FILE},${FLASH_HEX_FILE}")
+  endif()
+
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
+endfunction()
+
+
 # Generate partition_info.map
 function(atm_partition_info)
   if(EXISTS "${CONFIG_GEN_PARTITION_INFO_SCRIPT}")
@@ -183,6 +212,9 @@ function(zephyr_atmosic_tasks)
       MATH(EXPR S_LOAD_OFFSET "${SPE_CONFIG_FLASH_BASE_ADDRESS} + ${SPE_CONFIG_FLASH_LOAD_OFFSET}")
       merge_spe(${CONFIG_SPE_PATH} ${S_LOAD_OFFSET})
     endif()
+  endif()
+  if (CONFIG_ATM_SPLIT_IMG)
+    split_img()
   endif()
   if (CONFIG_GEN_PARTITION_INFO)
     atm_partition_info()

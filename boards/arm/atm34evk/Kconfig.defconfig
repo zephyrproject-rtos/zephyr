@@ -19,12 +19,16 @@ config HEAP_MEM_POOL_SIZE
 config ENTROPY_GENERATOR
 	default y
 
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config BT_AUTO_PHY_UPDATE
+	default n
+	# To avoid procedure collision.
+
 endif # BT
 
 if SERIAL
-
-config UART_ATM
-	default y
 
 config UART_INTERRUPT_DRIVEN
 	default y

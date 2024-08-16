@@ -1,0 +1,142 @@
+# Copyright (c) 2024 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmosic PMU
+
+compatible: "atmosic,atmx3-pmu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  batt-type:
+    type: int
+    required: false
+    description:
+        The battery type is specified through OTP and is equal to BATT_TYPE_NON_RECHARGEABLE by default. It can be overwritten through this compile time flag based on the board design. Valid battery types are given below.
+        - BATT_TYPE_LI_ION
+        - BATT_TYPE_RECHARGEABLE
+        - BATT_TYPE_NO_BATTERY
+        - BATT_TYPE_NON_RECHARGEABLE
+        If you wish to use BATT_TYPE_LI_ION, you will need to first power the board using a power source that is NOT lithium ion then load a program with CONFIG_BATT_TYPE=0. This will enable the lithium ion power ciruit, at which point you can disconnect the non lithium ion power source, hook up the lithium ion battery and proceed like normal.
+
+  batt-level:
+    type: int
+    required: false
+    description:
+        The battery level is specified through OTP and is equal to BATT_LEVEL_GT_1P8V by default. It can be overwritten through this compile time flag. Valid battery levels.
+        - BATT_LEVEL_LE_1P8V (<= 1.8V)
+        - BATT_LEVEL_GT_1P8V (> 1.8V)
+
+  vddio-type:
+    type: int
+    required: false
+    description:
+        The 'vddio' type is equal to VDDIO_TYPE_INTERNAL by default and can be overwritten through this compile time flag based on the board design. Valid vddio types.
+        - VDDIO_TYPE_INTERNAL
+        - VDDIO_TYPE_EXTERNAL
+        Note that the external VDDIO type is determined by the source on the board, which is commonly assumed to be VBAT. Therefore, it is supported for battery level greater than 1.8V.
+
+  vstore-max:
+    type: int
+    required: false
+    description:
+        The vstore max is specified through OTP. It can be overwritten through this compile time flag. Suppported Vstore max values given below.
+        - Between 1500 mV - 3000 mV with 50 mV step,
+        - 3100 mV
+        - 3300 mV (default)
+
+  vddpa-src:
+    type: int
+    required: false
+    description:
+        Suppported Vddpa src values given below.
+        - VDDPA_SRC_VDDIOP
+        - VDDPA_SRC_VDDPAP
+
+  nonrf-harv:
+    type: boolean
+    required: false
+    description:
+        Enables PhotoVoltaic (PV) harvesting. Can be specified with RF_HARV to enable combined harvesting.
+
+  vharv-range:
+    type: int
+    required: false
+    description:
+        Harvesting range needs to be specified for PV harvesting. It can be done at compile time using this flag. Valid vharv range values are given below.
+        - VHARV_RANGE_0P4V_0P45V
+        - VHARV_RANGE_0P45V_0P5V
+        - VHARV_RANGE_0P525V_0P6V
+        - VHARV_RANGE_0P6V_0P7V
+        - VHARV_RANGE_0P675V_0P8V
+        - VHARV_RANGE_0P75V_0P9V
+        - VHARV_RANGE_0P825V_1P0V
+        - VHARV_RANGE_0P9V_1P1V
+        - VHARV_RANGE_0P975V_1P2V
+        - VHARV_RANGE_1P05V_1P3V
+        - VHARV_RANGE_1P175V_1P45V
+        - VHARV_RANGE_1P3V_1P6V
+        - VHARV_RANGE_1P5V_1P8V
+        - VHARV_RANGE_1P7V_2P0V
+        - VHARV_RANGE_1P95V_2P25V
+        - VHARV_RANGE_2P2V_2P5V
+
+  boost-from-vharv-inductor:
+    type: boolean
+    required: false
+    description:
+        This option is only available with BATT_TYPE=BATT_TYPE_LI_ION, and PV harvesting (CFG_NONRF_HARV and corresponding VHARV_RANGE option). Please refer to the application notes for the applicable scenarios, hardware connections and performance. Based on the characteristic of the selected PV cell, the user needs to choose the upper level or lower level of the VHARV_RANGE by enabling one of the 2 options - vharv-ll or vharv-ul
+
+  vharv-ll:
+    type: boolean
+    required: false
+    description:
+        VHARV range lower level
+
+  vharv-ul:
+    type: boolean
+    required: false
+    description:
+        VHARV range upper level
+
+  dig-test-out-pin:
+    type: int
+    required: false
+    description:
+        dig test out pin
+
+  boost-io-pin:
+    type: int
+    required: false
+    description:
+        boost io pin
+
+  boost-from-vharv-two-diode:
+    type: boolean
+    required: false
+    description:
+        This option is only available with BATT_TYPE=BATT_TYPE_LI_ION, and PV harvesting (CFG_NONRF_HARV and corresponding VHARV_RANGE option). Please refer to the application notes for the applicable scenarios, hardware connections and performance.
+
+  rf-harv:
+    type: boolean
+    required: false
+    description:
+        Enables RF harvesting. Can be specified with NONRF_HARV to enable combined harvesting.
+
+  harv-meter:
+    type: boolean
+    required: false
+    description:
+        Supported only when MPPT is disabled. The application needs to call the pmu_set_harv_meter() API to start/stop the meter. The instantaneous power computation depends on the vharv range and the inductor used.
+
+  inductor-nhenry:
+    type: int
+    required: false
+    description:
+        Inductor being used in the board design for harvesting meter

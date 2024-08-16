@@ -40,7 +40,7 @@ readonly is_undef
 
 readonly PLATFORM_HAL=modules/hal/atmosic/ATM33xx-5
 readonly PLATFORM_HAL_LIB=modules/hal/atmosic_lib/ATM33xx-5
-readonly SPE=$PLATFORM_HAL/examples/spe
+readonly SPE=apps/samples/spe
 readonly MCUBOOT=bootloader/mcuboot/boot/zephyr
 
 ################################################################################
@@ -55,7 +55,14 @@ readonly cmake_def
 
 function usage {
     cat <<EOF
-usage: ${0##*/} [+-ha APP] [+-bdefjl FLAV] [+-mns SER] [+-uw FLAV] [--] BOARD
+
+Environment variables:
+  ZEPHYR_SDK_INSTALL_DIR: The directory of Zephyr SDK.
+  ZEPHYR_TOOLCHAIN_VARIANT: The toolchain and the default setting is Zephyr.
+  DEBUG_LOG: Set if enable log, 0: disable, 1: enabled, 2: by application (default).
+  PM_SETTING: Set if enable power management, 0: disable, 1: enabled, 2: by application (default).
+
+usage: ${0##*/} [+-ha APP] [+-bdefjl FLAV] [+-mnp BPTH] [+-r BDRT] [+-s SER] [+-uw FLAV] [--] BOARD
 
   BOARD    Atmosic board (passed as -b to west build)
 
@@ -72,6 +79,7 @@ Options:
   -l FLAV  Use statically linked controller library flavor (mutually exclusive with -w)
   -m       Merge SPE/NSPE (only with -n)
   -n       No MCUboot
+  -p BPTH  Build path to existing build directory, (only applicable with -f)
   -r BDRT  BOARD_ROOT path to find out-of-tree board definitions
            (ignored if -f is set)
   -s SER   Device serial
@@ -80,7 +88,10 @@ Options:
 EOF
 }
 
-while getopts :ha:bdefgjlmnr:s:uw: OPT; do
+# Ensure these options are not set from the environment
+unset APP BUILD_ONLY DEPENDENCIES ERASE_FLASH FLASH_ONLY FAST_LOAD JLINK ATMWSTKLIB MERGE_SPE_NSPE NO_MCUBOOT BPTH BOARD_ROOT FTDI_SERIAL JLINK_SERIAL DFU_IN_FLASH ATMWSTK
+
+while getopts :ha:bdefgjl:mnp:r:s:uw: OPT; do
     case $OPT in
 	h|+h)
 	    usage
@@ -115,6 +126,9 @@ while getopts :ha:bdefgjlmnr:s:uw: OPT; do
 	    ;;
 	n|+n)
 	    NO_MCUBOOT=1
+	    ;;
+	p|+p)
+	    BPTH="$OPTARG"
 	    ;;
 	r|+r)
 	    if [[ $OPTARG == /* ]]
@@ -160,8 +174,20 @@ is_unset BUILD_ONLY || FLASH=0
 
 ################################################################################
 
-[[ -n $ZEPHYR_SDK_INSTALL_DIR ]] || die 'ZEPHYR_SDK_INSTALL_DIR not set'
 [[ -n $ZEPHYR_TOOLCHAIN_VARIANT ]] || export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+
+readonly SETTING_DISABLED=0
+readonly SETTING_ENABLED=1
+readonly SETTING_DEFAULT=2
+[[ -n $DEBUG_LOG ]] || export DEBUG_LOG=$SETTING_DEFAULT
+[[ -n $PM_SETTING ]] || export PM_SETTING=$SETTING_DEFAULT
+
+echo '--------------------------------------------'
+echo 'ZEPHYR_SDK_INSTALL_DIR:   ' $ZEPHYR_SDK_INSTALL_DIR
+echo 'ZEPHYR_TOOLCHAIN_VARIANT: ' $ZEPHYR_TOOLCHAIN_VARIANT
+echo 'DEBUG_LOG:  ' $DEBUG_LOG
+echo 'PM_SETTING: ' $PM_SETTING
+echo '--------------------------------------------'
 
 if [[ -n $WEST_TOPDIR ]]
 then cd $WEST_TOPDIR
@@ -221,13 +247,15 @@ then
 	CMAKE_DEF_BOARD_ROOT="$(cmake_def $BOARD_ROOT BOARD_ROOT)"
 	WBUILD_CMAKE_OPTS+=("$CMAKE_DEF_BOARD_ROOT")
     fi
-    if is_set DEBUG_LOG
+    if [ $DEBUG_LOG -eq $SETTING_ENABLED ]
     then WBUILD_CMAKE_OPTS+=($(cmake_def y ${CMAKE_CONF_LOG[@]}))
-    else WBUILD_CMAKE_OPTS+=($(cmake_def n ${CMAKE_CONF_LOG[@]}))
+    elif [ $DEBUG_LOG -eq $SETTING_DISABLED ]
+    then WBUILD_CMAKE_OPTS+=($(cmake_def n ${CMAKE_CONF_LOG[@]}))
     fi
-    if is_set NO_PM
+    if [ $PM_SETTING -eq $SETTING_DISABLED ]
     then WBUILD_CMAKE_OPTS+=($(cmake_def n CONFIG_PM))
-    else WBUILD_CMAKE_OPTS+=($(cmake_def y CONFIG_PM))
+    elif [ $PM_SETTING -eq $SETTING_ENABLED ]
+    then WBUILD_CMAKE_OPTS+=($(cmake_def y CONFIG_PM))
     fi
     is_unset PARALLEL_BUILD || WBUILD+=(-o=-j4)
     if is_unset NO_MCUBOOT
@@ -321,6 +349,8 @@ else echo 'Skipping dependency programming'
 fi
 
 # 3) Program the app
+[[ -n $BPTH ]] || BPTH=build/${BOARD}_ns/$APP
+
 [[ -n $APP ]] || {
     is_set DEPENDENCIES || die 'Nothing to do'
     echo 'No app to program'
@@ -334,7 +364,7 @@ then
     fi
 fi
 
-WFLASH_APP=(${WFLASH[@]} -d build/${BOARD}_ns/$APP)
+WFLASH_APP=(${WFLASH[@]} -d $BPTH)
 if is_unset MERGE_SPE_NSPE
 then ${WFLASH_APP[@]}
 elif is_set ERASE_FLASH && [[ -z $BOOTLOADER ]] && [[ -z $ATMWSTK ]]
