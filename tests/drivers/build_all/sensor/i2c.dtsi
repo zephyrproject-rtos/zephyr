@@ -588,6 +588,12 @@ test_i2c_fdc2x1x: fdc2x1x@54 {
 	};
 };
 
+test_i2c_bmp180: bmp180@77 {
+        compatible = "bosch,bmp180";
+        reg = <0x77>;
+        osr-press = <0x01>;
+};
+
 test_i2c_bmp388: bmp388@55 {
 	compatible = "bosch,bmp388";
 	reg = <0x55>;
