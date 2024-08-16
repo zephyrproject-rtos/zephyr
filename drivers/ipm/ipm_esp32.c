@@ -68,9 +68,10 @@ IRAM_ATTR static void esp32_ipm_isr(const struct device *dev)
 	}
 
 	/* first of all take the own of the shared memory */
-	while (!atomic_cas(&dev_data->control->lock,
-		ESP32_IPM_LOCK_FREE_VAL, dev_data->this_core_id))
+	while (!atomic_cas(&dev_data->control->lock, ESP32_IPM_LOCK_FREE_VAL,
+			   dev_data->this_core_id)) {
 		;
+	}
 
 	if (dev_data->cb) {
 
@@ -235,8 +236,9 @@ static int esp32_ipm_init(const struct device *dev)
 
 		LOG_DBG("Waiting CPU0 to sync");
 		while (!atomic_cas(&data->control->lock,
-			ESP32_IPM_LOCK_FREE_VAL, data->this_core_id))
+			ESP32_IPM_LOCK_FREE_VAL, data->this_core_id)) {
 			;
+		}
 
 		atomic_set(&data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 

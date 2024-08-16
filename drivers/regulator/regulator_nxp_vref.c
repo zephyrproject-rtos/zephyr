@@ -43,8 +43,9 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 	*csr |= VREF_CSR_HCBGEN_MASK;
 
 	/* Monitor until stable */
-	while (!(*csr & VREF_CSR_VREFST_MASK))
+	while (!(*csr & VREF_CSR_VREFST_MASK)) {
 		;
+	}
 
 	/* Enable output buffer */
 	*csr |= VREF_CSR_BUF21EN_MASK;

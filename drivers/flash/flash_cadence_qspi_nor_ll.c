@@ -133,8 +133,9 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 	do {
 		uint32_t reg = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD);
 
-		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT))
+		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT)) {
 			break;
+		}
 		count++;
 	} while (count < CAD_QSPI_COMMAND_TIMEOUT);
 
@@ -172,8 +173,9 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -208,8 +210,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -225,8 +228,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 
 	sys_write32(input[0], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA0);
 
-	if (num_bytes > 4)
+	if (num_bytes > 4) {
 		sys_write32(input[1], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA1);
+	}
 
 	return cad_qspi_stig_cmd_helper(cad_params, cad_params->cad_qspi_cs, cmd);
 }
@@ -236,8 +240,9 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 {
 	uint32_t cmd;
 
-	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1))
+	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -576,11 +581,13 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 		return -EINVAL;
 	}
 
-	if (cad_qspi_idle(cad_params) == 0)
+	if (cad_qspi_idle(cad_params) == 0) {
 		return -1;
+	}
 
-	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0)
+	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0) {
 		return -1;
+	}
 
 	sys_write32(mask, cad_params->reg_base + CAD_QSPI_IRQMSK);
 	return 0;

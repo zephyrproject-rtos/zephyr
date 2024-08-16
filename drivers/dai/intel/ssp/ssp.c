@@ -1999,8 +1999,9 @@ static int dai_ssp_parse_aux_data(struct dai_intel_ssp *dp, const void *spec_con
 	aux_len = cfg_len - pre_aux_len;
 	aux_ptr = (uint8_t *)blob + pre_aux_len;
 
-	if (aux_len <= 0)
+	if (aux_len <= 0) {
 		return 0;
+	}
 
 	return dai_ssp_parse_tlv(dp, aux_ptr, aux_len);
 }
@@ -2132,17 +2133,20 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 
 	if (blob15->version == SSP_BLOB_VER_1_5) {
 		err = dai_ssp_parse_aux_data(dp, spec_config);
-		if (err)
+		if (err) {
 			return err;
+		}
 		dai_ssp_set_reg_config(dp, cfg, &blob15->i2s_ssp_config);
 		err = dai_ssp_set_clock_control_ver_1_5(dp, &blob15->i2s_mclk_control);
-		if (err)
+		if (err) {
 			return err;
+		}
 	} else {
 		dai_ssp_set_reg_config(dp, cfg, &blob->i2s_driver_config.i2s_config);
 		err = dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
-		if (err)
+		if (err) {
 			return err;
+		}
 	}
 
 	ssp_plat_data->clk_active |= SSP_CLK_MCLK_ES_REQ;
