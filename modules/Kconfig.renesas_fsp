@@ -27,3 +27,8 @@ config USE_RA_FSP_SCI_UART
 	bool
 	help
 	  Enable RA FSP SCI UART driver
+
+config USE_RA_FSP_ADC
+	bool
+	help
+	  Enable RA FSP ADC driver
