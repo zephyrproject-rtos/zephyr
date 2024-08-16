@@ -81,6 +81,16 @@ config BT_SPI_INIT_PRIORITY
 	depends on BT_SPI
 	default 75
 
+config BT_SPI_BOOT_TIMEOUT_SEC
+	int "Seconds to wait for SPI device to report ready"
+	depends on BT_SPI_ZEPHYR || BT_SPI_BLUENRG
+	default 30
+	help
+	  Maximum duration for a HCI SPI Controller to report ready through the
+	  Zephyr Project defined `EVT_BLUE_INITIALIZED` HCI vendor event.
+	  Default is 30 seconds to support a bootloader image swap on the
+	  Controller.
+
 config BT_SPI_ZEPHYR
 	bool
 	default y
