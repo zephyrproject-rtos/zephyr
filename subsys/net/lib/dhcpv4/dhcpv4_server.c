@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_SERVER_ID_SIZE 6
 #define DHCPV4_OPTIONS_SUBNET_MASK_SIZE 6
 #define DHCPV4_OPTIONS_ROUTER_SIZE 6
+#define DHCPV4_OPTIONS_DNS_SERVER_SIZE 6
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(30)
@@ -398,6 +399,29 @@ static uint8_t *dhcpv4_encode_router_option(uint8_t *buf, size_t *buflen,
 	return buf + DHCPV4_OPTIONS_ROUTER_SIZE;
 }
 
+static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
+{
+	struct in_addr dns_address;
+
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_DNS_SERVER_SIZE) {
+		return NULL;
+	}
+
+	if (net_addr_pton(AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS, &dns_address)) {
+		LOG_ERR("Invalid DNS server address: %s",
+			CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_DNS_SERVER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], dns_address.s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+}
+
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 {
 	if (buf == NULL || *buflen < 1) {
@@ -494,6 +518,13 @@ static uint8_t *dhcpv4_encode_requested_params(
 		case DHCPV4_OPTIONS_ROUTER:
 			buf = dhcpv4_encode_router_option(
 				buf, buflen, &ctx->iface->config.ip.ipv4->gw);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
+
+		case DHCPV4_OPTIONS_DNS_SERVER:
+			buf = dhcpv4_encode_dns_server_option(buf, buflen);
 			if (buf == NULL) {
 				goto out;
 			}
