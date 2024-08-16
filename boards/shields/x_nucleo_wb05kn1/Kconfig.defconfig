@@ -5,21 +5,9 @@ if SHIELD_X_NUCLEO_WB05KN1_UART || SHIELD_X_NUCLEO_WB05KN1_SPI
 
 if BT
 
-config SPI
-	default y
-	depends on SHIELD_X_NUCLEO_WB05KN1_SPI
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
-
-config BT_SPI
-	default y
-	depends on DT_HAS_ST_HCI_SPI_V2_ENABLED
-
-config BT_H4
-	default y
-	depends on DT_HAS_ZEPHYR_BT_HCI_UART_ENABLED
 
 config BT_BLUENRG_ACI
 	default y
