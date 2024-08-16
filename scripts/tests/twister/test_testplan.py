@@ -1233,7 +1233,7 @@ toolchain:
     p3_yamlfile = tmp_p3_dir / 'p3_B.conf'
     p3_yamlfile.write_text('')
 
-    env = mock.Mock(board_roots=[tmp_board_root_dir])
+    env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
 
     testplan = TestPlan(env=env)
 
