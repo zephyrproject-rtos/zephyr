@@ -13,6 +13,13 @@ static bool valid_stack(uintptr_t addr, k_tid_t current)
 		addr < current->stack_info.start + current->stack_info.size;
 }
 
+static inline bool in_text_region(uintptr_t addr)
+{
+	extern uintptr_t __text_region_start, __text_region_end;
+
+	return (addr >= (uintptr_t)&__text_region_start) && (addr < (uintptr_t)&__text_region_end);
+}
+
 /*
  * This function use frame pointers to unwind stack and get trace of return addresses.
  * Return addresses are translated in corresponding function's names using .elf file.
@@ -48,6 +55,10 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	while (valid_stack((uintptr_t)fp, _current)) {
 		if (idx >= size)
 			return 0;
+
+		if (!in_text_region((uintptr_t)fp[1])) {
+			break;
+		}
 
 		buf[idx++] = (uintptr_t)fp[1];
 		void **new_fp = (void **)fp[0];
