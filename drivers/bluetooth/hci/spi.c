@@ -416,7 +416,9 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	k_thread_name_set(&spi_rx_thread_data, "bt_spi_rx_thread");
 
 	/* Device will let us know when it's ready */
-	k_sem_take(&sem_initialised, K_FOREVER);
+	if (k_sem_take(&sem_initialised, K_SECONDS(CONFIG_BT_SPI_BOOT_TIMEOUT_SEC)) < 0) {
+		return -EIO;
+	}
 
 	return 0;
 }
