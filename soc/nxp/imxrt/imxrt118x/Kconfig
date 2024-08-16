@@ -20,6 +20,7 @@ config SOC_SERIES_IMXRT118X
 	select CPU_HAS_FPU_DOUBLE_PRECISION if SOC_MIMXRT1189_CM7
 	select HAS_MCUX_IOMUXC
 	select HAS_SWO
+	select HAS_MCUX_FLEXSPI
 
 config SOC_MIMXRT1189_CM33
 	select CPU_CORTEX_M33
@@ -28,6 +29,26 @@ config SOC_MIMXRT1189_CM7
 	select CPU_CORTEX_M7
 
 if SOC_SERIES_IMXRT118X
+
+config IMAGE_CONTAINER_OFFSET
+	hex "Image container"
+	default 0x1000
+	help
+	  Image container is a boot image format that is used by ROM. Container
+	  format consists container header, image arrary entry, signature block
+	  and user program images and data. The boot ROM expects container data
+	  to be saved in external memory.
+
+# Note- This config present the offest between container header and user
+# image. If ROM_START_OFFSET changed, you also need to change CONTAINER_USER_IMAGE_OFFSET
+# value. CONTAINER_USER_IMAGE_OFFSET = ROM_START_OFFSET - IMAGE_CONTAINER_OFFSET.
+config CONTAINER_USER_IMAGE_OFFSET
+	hex "The offset between container header and user image"
+	default 0xA000
+	help
+	  The offset between container and user image. IF change the user image
+	  start address, please don't forget to modify CONTAINER_USER_IMAGE_OFFSET
+	  value, this will make ROM could get the user image start address.
 
 config MCUX_CORE_SUFFIX
 	default "_cm7" if SOC_MIMXRT1189_CM7
