@@ -17,6 +17,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/cache.h>
@@ -73,6 +74,7 @@ struct display_stm32_ltdc_config {
 	struct gpio_dt_spec disp_on_gpio;
 	struct gpio_dt_spec bl_ctrl_gpio;
 	struct stm32_pclken pclken;
+	const struct reset_dt_spec reset;
 	const struct pinctrl_dev_config *pctrl;
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *display_controller;
@@ -354,8 +356,7 @@ static int stm32_ltdc_init(const struct device *dev)
 #endif
 
 	/* reset LTDC peripheral */
-	__HAL_RCC_LTDC_FORCE_RESET();
-	__HAL_RCC_LTDC_RELEASE_RESET();
+	(void)reset_line_toggle_dt(&config->reset);
 
 	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
 	data->current_pixel_size = STM32_LTDC_INIT_PIXEL_SIZE;
@@ -421,8 +422,7 @@ static int stm32_ltdc_suspend(const struct device *dev)
 	}
 
 	/* Reset LTDC peripheral registers */
-	__HAL_RCC_LTDC_FORCE_RESET();
-	__HAL_RCC_LTDC_RELEASE_RESET();
+	(void)reset_line_toggle_dt(&config->reset);
 
 	/* Turn off LTDC peripheral clock */
 	err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -601,6 +601,7 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 				(GPIO_DT_SPEC_INST_GET(inst, disp_on_gpios)), ({ 0 })),		\
 		.bl_ctrl_gpio = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, bl_ctrl_gpios),		\
 				(GPIO_DT_SPEC_INST_GET(inst, bl_ctrl_gpios)), ({ 0 })),		\
+		.reset = RESET_DT_SPEC_INST_GET(0),						\
 		.pclken = {									\
 			.enr = DT_INST_CLOCKS_CELL(inst, bits),					\
 			.bus = DT_INST_CLOCKS_CELL(inst, bus)					\
