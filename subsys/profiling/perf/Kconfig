@@ -4,11 +4,9 @@
 
 config PROFILING_PERF
 	bool "Perf support"
-	depends on THREAD_STACK_INFO
 	depends on !SMP
-	depends on FRAME_POINTER
 	depends on SHELL
-	depends on RISCV || X86
+	depends on PROFILING_PERF_HAS_BACKEND
 	help
 	  Enable perf shell command.
 
@@ -21,3 +19,5 @@ config PROFILING_PERF_BUFFER_SIZE
 	  Size of buffer used by perf to save stack trace samples.
 
 endif
+
+rsource "backends/Kconfig"
