@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <stm32_ll_spi.h>
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/pm/policy.h>
@@ -1156,6 +1157,9 @@ static const struct spi_driver_api api_funcs = {
 	.transceive = spi_stm32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_stm32_release,
 };

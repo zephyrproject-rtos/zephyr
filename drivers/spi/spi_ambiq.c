@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(spi_ambiq);
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
@@ -402,6 +403,9 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 
 static const struct spi_driver_api spi_ambiq_driver_api = {
 	.transceive = spi_ambiq_transceive,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_ambiq_release,
 };
 

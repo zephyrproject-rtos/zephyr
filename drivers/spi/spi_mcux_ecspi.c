@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <fsl_ecspi.h>
 
 #include "spi_context.h"
@@ -305,6 +306,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.transceive = spi_mcux_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_mcux_release,
 };

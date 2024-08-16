@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <soc.h>
 #include <esp_memory_utils.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3) ||                    \
 	defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
@@ -497,6 +498,9 @@ static const struct spi_driver_api spi_api = {
 	.transceive = spi_esp32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_esp32_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_esp32_release
 };
