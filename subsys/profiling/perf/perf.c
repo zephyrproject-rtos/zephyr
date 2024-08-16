@@ -73,7 +73,7 @@ static int perf_init(void)
 	return 0;
 }
 
-int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
+static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 {
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
@@ -128,7 +128,7 @@ static int cmd_perf_info(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
+static int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
 		shell_warn(sh, "Perf is running");
