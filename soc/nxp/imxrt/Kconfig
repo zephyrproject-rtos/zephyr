@@ -89,35 +89,13 @@ endchoice # BOOT_DEVICE
 
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	hex "FlexSPI config block offset"
-	default 0x400 if SOC_SERIES_IMXRT5XX || SOC_SERIES_IMXRT6XX || SOC_MIMXRT1011
 	default 0x0 if BOOT_FLEXSPI_NOR
+	default 0x400
 	help
 	  FlexSPI configuration block consists of parameters regarding specific
 	  flash devices including read command sequence, quad mode enablement
 	  sequence (optional), etc. The boot ROM expects FlexSPI configuration
 	  parameter to be presented in serial nor flash.
-
-config IMAGE_CONTAINER_OFFSET
-	hex "Image container"
-	default 0x1000
-	depends on SOC_SERIES_IMXRT118X
-	help
-	  Image container is a boot image format that is used by ROM. Container
-	  format consists container header, image arrary entry, signature block
-	  and user program images and data. The boot ROM expects container data
-	  to be saved in external memory.
-
-# Note- This config present the offest between container header and user
-# image. If ROM_START_OFFSET changed, you also need to change CONTAINER_USER_IMAGE_OFFSET
-# value. CONTAINER_USER_IMAGE_OFFSET = ROM_START_OFFSET - IMAGE_CONTAINER_OFFSET.
-config CONTAINER_USER_IMAGE_OFFSET
-	hex "The offset between container header and user image"
-	default 0xA000
-	depends on SOC_SERIES_IMXRT118X
-	help
-	  The offset between container and user image. IF change the user image
-	  start address, please don't forget to modify CONTAINER_USER_IMAGE_OFFSET
-	  value, this will make ROM could get the user image start address.
 
 config IMAGE_VECTOR_TABLE_OFFSET
 	hex "Image vector table offset"
@@ -192,10 +170,6 @@ config SECOND_CORE_MCUX
 	  The M4 image will be loaded from flash into RAM based off a
 	  generated header specifying the VMA and LMA of each memory section
 	  to load
-
-config FLEXSPI_CONFIG_BLOCK_OFFSET
-	hex
-	default 0x400 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 

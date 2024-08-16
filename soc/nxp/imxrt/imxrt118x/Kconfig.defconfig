@@ -23,12 +23,15 @@ config DCDC_VALUE
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	default 0x400 if BOOT_FLEXSPI_NOR
 
+config ROM_START_OFFSET
+	default 0xb000 if BOOT_FLEXSPI_NOR
+
 if SECOND_CORE_MCUX
 
 # RT Boot header is only needed on primary core
 config NXP_IMXRT_BOOT_HEADER
-	default y
-	depends on !(CPU_CORTEX_M7 || BOOTLOADER_MCUBOOT)
+	depends on !CPU_CORTEX_M7
 
-endif
-endif
+endif # SECOND_CORE_MCUX
+
+endif # SOC_SERIES_IMXRT118X
