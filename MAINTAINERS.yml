@@ -808,6 +808,18 @@ Debug:
   tests:
     - debug
 
+"Debug: Profiling: Perf":
+  status: odd fixes
+  files:
+    - doc/services/profiling/perf.rst
+    - samples/subsys/profiling/perf/
+    - scripts/profiling/stackcollapse.py
+    - subsys/profiling/perf/
+  labels:
+    - "area: Profiling / Perf"
+  tests:
+    - debug.profiling.perf
+
 "Debug: Symtab":
   status: maintained
   maintainers:
