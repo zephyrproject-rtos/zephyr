@@ -25,8 +25,6 @@ zephyr_library_sources_ifdef(CONFIG_GDBSTUB		ia32/gdbstub.c)
 
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP	ia32/coredump.c)
 
-zephyr_library_sources_ifdef(CONFIG_PROFILING_PERF	ia32/perf.c)
-
 zephyr_library_sources_ifdef(
   CONFIG_X86_USE_THREAD_LOCAL_STORAGE
   ia32/tls.c
