@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: llext-modules
    :name: Linkable loadable extensions "module" sample
-   :relevant-api: llext
+   :relevant-api: llext_apis
 
     Call a function in a loadable extension module,
     either built-in or loaded at runtime.

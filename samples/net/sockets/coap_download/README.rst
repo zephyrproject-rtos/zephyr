@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: coap-download
    :name: CoAP download
-   :relevant-api: coap_client_interface
+   :relevant-api: coap
 
    Use the CoAP client API to download data via a GET request
 
