@@ -934,12 +934,7 @@ struct bt_conn *get_conn_ready(void)
 		__maybe_unused sys_snode_t *s = sys_slist_get(&bt_dev.le.conn_ready);
 
 		__ASSERT_NO_MSG(s == node);
-
 		(void)atomic_set(&conn->_conn_ready_lock, 0);
-		/* Note: we can't assert `old` is non-NULL here, as the
-		 * connection might have been marked ready by an l2cap channel
-		 * that cancelled its request to send.
-		 */
 
 		/* Append connection to list if it still has data */
 		if (conn->has_data(conn)) {
