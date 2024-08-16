@@ -32,6 +32,13 @@ Boards
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   `west blobs fetch hal_stm32` instead of `west blobs fetch stm32`.
 
+STM32
+=====
+
+* On all official STM32 boards, `west flash` selects STM32CubeProgrammer as the default west runner.
+  If you want to enforce the selection of another runner like OpenOCD or pyOCD for flashing, you should
+  specify it using the west `--runner` or `-r` option. (:github:`75284`)
+
 Modules
 *******
 
