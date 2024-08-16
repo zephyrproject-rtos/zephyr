@@ -127,8 +127,9 @@ void service_b_3_1_remove(void)
  */
 void service_b_3_1_value_v6_notify(void)
 {
-	if (!value_v6_ntf_active)
+	if (!value_v6_ntf_active) {
 		return;
+	}
 
 	bt_gatt_notify(NULL, &service_b_3_1_attrs[1], &value_v6_value,
 		       sizeof(value_v6_value));

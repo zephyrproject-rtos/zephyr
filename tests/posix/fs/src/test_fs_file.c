@@ -145,8 +145,9 @@ static int test_file_fsync(void)
 {
 	int res = 0;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = fsync(file);
 	if (res < 0) {
@@ -184,8 +185,9 @@ static int test_file_truncate(void)
 	int res = 0;
 	size_t truncate_size = sizeof(test_str) - 4;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = ftruncate(file, truncate_size);
 	if (res) {
