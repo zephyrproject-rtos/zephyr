@@ -43,7 +43,7 @@ __imr void power_init(void)
 #if CONFIG_SOC_INTEL_ACE15_MTPM
 	*((__sparse_force uint32_t *)sys_cache_cached_ptr_get(&adsp_pending_buffer)) =
 		INTEL_ADSP_ACE15_MAGIC_KEY;
-	cache_data_flush_range((__sparse_force void *)
+	sys_cache_data_flush_range((__sparse_force void *)
 			sys_cache_cached_ptr_get(&adsp_pending_buffer),
 			sizeof(adsp_pending_buffer));
 #endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
