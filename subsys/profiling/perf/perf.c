@@ -29,9 +29,7 @@ struct perf_data_t {
 
 #define PERF_EVENT_TRACING_BUF_OVERFLOW (1 << 0)
 
-static struct perf_data_t perf_data = {
-	.idx = 0,
-};
+static struct perf_data_t perf_data;
 
 static void perf_tracer(struct k_timer *timer)
 {
