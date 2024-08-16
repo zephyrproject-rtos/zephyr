@@ -114,6 +114,7 @@ int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	perf_data.idx = 0;
+	perf_data.buf_full = false;
 
 	return 0;
 }
