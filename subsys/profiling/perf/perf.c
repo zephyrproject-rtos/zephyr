@@ -77,7 +77,7 @@ static int perf_init(void)
 int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 {
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
-		shell_warn(sh, "Perf is already running");
+		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
 	}
 
@@ -104,7 +104,7 @@ int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 int cmd_perf_print(const struct shell *sh, size_t argc, char **argv)
 {
 	if (k_work_delayable_is_pending(&perf_data.dwork)) {
-		shell_warn(sh, "Perf is already running");
+		shell_warn(sh, "Perf is running");
 		return -EINPROGRESS;
 	}
 
