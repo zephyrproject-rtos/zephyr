@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: llext-shell-loader
    :name: Linkable loadable extensions shell module
-   :relevant-api: llext
+   :relevant-api: llext_apis
 
    Manage loadable extensions using shell commands.
 
