@@ -57,6 +57,8 @@
 };
 
 &edma0 {
+	/* Each channel has separate interrupt entry */
+	irq-shared-offset = <0>;
 	dma-channels = <16>;
 };
 
