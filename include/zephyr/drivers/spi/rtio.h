@@ -42,6 +42,24 @@ struct spi_rtio {
 	};
 
 /**
+ * @brief Copy the tx_bufs and rx_bufs into a set of RTIO requests
+ *
+ * @param[in] r rtio context
+ * @param[in] iodev iodev to transceive with
+ * @param[in] tx_bufs transmit buffer set
+ * @param[in] rx_bufs receive buffer set
+ * @param[out] last_sqe last sqe submitted, NULL if not enough memory
+ *
+ * @retval Number of submission queue entries
+ * @retval -ENOMEM out of memory
+ */
+int spi_rtio_copy(struct rtio *r,
+		  struct rtio_iodev *iodev,
+		  const struct spi_buf_set *tx_bufs,
+		  const struct spi_buf_set *rx_bufs,
+		  struct rtio_sqe **last_sqe);
+
+/**
  * @brief Initialize a SPI RTIO context
  *
  * @param ctx SPI RTIO driver context
