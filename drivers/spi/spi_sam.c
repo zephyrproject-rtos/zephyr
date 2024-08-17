@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <zephyr/spinlock.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
