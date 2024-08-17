@@ -26,6 +26,10 @@ zephyr_library_sources_ifdef(
   a2dp.c
   )
 zephyr_library_sources_ifdef(
+    CONFIG_BT_MAP_CLIENT
+    map_client.c
+    )
+zephyr_library_sources_ifdef(
   CONFIG_BT_PBAP_CLIENT
   pbap_client.c
   )
