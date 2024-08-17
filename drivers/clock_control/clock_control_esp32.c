@@ -28,11 +28,15 @@
 #include <zephyr/dt-bindings/clock/esp32s3_clock.h>
 #include <esp32s3/rom/rtc.h>
 #include <soc/dport_reg.h>
-#elif CONFIG_SOC_SERIES_ESP32C3
+#elif defined(CONFIG_SOC_SERIES_ESP32C2)
+#define DT_CPU_COMPAT espressif_riscv
+#include <zephyr/dt-bindings/clock/esp32c2_clock.h>
+#include <esp32c2/rom/rtc.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C3)
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
 #include <esp32c3/rom/rtc.h>
-#elif CONFIG_SOC_SERIES_ESP32C6
+#elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <soc/lp_clkrst_reg.h>
@@ -71,7 +75,7 @@ static bool reset_reason_is_cpu_reset(void)
 
 	if ((rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_SW ||
 	     rst_reason == RESET_REASON_CPU0_RTC_WDT
-#if !defined(CONFIG_SOC_SERIES_ESP32)
+#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32C2)
 	     || rst_reason == RESET_REASON_CPU0_MWDT1
 #endif
 	     )) {
@@ -153,7 +157,9 @@ static void esp32_clock_perip_init(void)
 	 * that have been enabled before reset.
 	 */
 	if (reset_reason_is_cpu_reset()) {
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 		common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
 		hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
 		wifi_bt_sdio_clk = ~READ_PERI_REG(SYSTEM_WIFI_CLK_EN_REG);
@@ -168,7 +174,18 @@ static void esp32_clock_perip_init(void)
 #endif
 	} else {
 		common_perip_clk =
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			SYSTEM_SPI2_CLK_EN |
+#if ESP_CONSOLE_UART_NUM != 0
+			SYSTEM_UART_CLK_EN |
+#endif
+#if ESP_CONSOLE_UART_NUM != 1
+			SYSTEM_UART1_CLK_EN |
+#endif
+			SYSTEM_LEDC_CLK_EN |
+			SYSTEM_I2C_EXT0_CLK_EN |
+			SYSTEM_LEDC_CLK_EN;
+#elif (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
 			SYSTEM_WDG_CLK_EN |
 			SYSTEM_I2S0_CLK_EN |
 #if ESP_CONSOLE_UART_NUM != 0
@@ -224,7 +241,7 @@ static void esp32_clock_perip_init(void)
 			DPORT_SPI3_DMA_CLK_EN |
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
 			DPORT_PWM3_CLK_EN;
-#endif /* CONFIG_SOC_SERIES_ESP32C3 || CONFIG_SOC_SERIES_ESP32S3 */
+#endif
 
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 		common_perip_clk1 = 0;
@@ -241,6 +258,9 @@ static void esp32_clock_perip_init(void)
 			DPORT_CRYPTO_SHA_CLK_EN |
 			DPORT_CRYPTO_RSA_CLK_EN;
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			SYSTEM_CRYPTO_SHA_CLK_EN;
+#endif
 #if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
 			SYSTEM_CRYPTO_AES_CLK_EN |
 			SYSTEM_CRYPTO_SHA_CLK_EN |
@@ -248,7 +268,12 @@ static void esp32_clock_perip_init(void)
 #endif /* CONFIG_SOC_SERIES_ESP32C3 ||  CONFIG_SOC_SERIES_ESP32S3 */
 
 		wifi_bt_sdio_clk =
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			SYSTEM_WIFI_CLK_WIFI_EN |
+			SYSTEM_WIFI_CLK_BT_EN_M |
+			SYSTEM_WIFI_CLK_UNUSED_BIT5 |
+			SYSTEM_WIFI_CLK_UNUSED_BIT12;
+#elif (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
 			SYSTEM_WIFI_CLK_WIFI_EN |
 			SYSTEM_WIFI_CLK_BT_EN_M |
 			SYSTEM_WIFI_CLK_I2C_CLK_EN |
@@ -269,7 +294,16 @@ static void esp32_clock_perip_init(void)
 
 	/* Reset peripherals like I2C, SPI, UART, I2S and bring them to known state */
 	common_perip_clk |=
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+			SYSTEM_SPI2_CLK_EN |
+#if ESP_CONSOLE_UART_NUM != 0
+			SYSTEM_UART_CLK_EN |
+#endif
+#if ESP_CONSOLE_UART_NUM != 1
+			SYSTEM_UART1_CLK_EN |
+#endif
+			SYSTEM_I2C_EXT0_CLK_EN;
+#elif (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
 			SYSTEM_I2S0_CLK_EN |
 #if ESP_CONSOLE_UART_NUM != 0
 			SYSTEM_UART_CLK_EN |
@@ -354,7 +388,9 @@ static void esp32_clock_perip_init(void)
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
 
 	/* Disable some peripheral clocks. */
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, common_perip_clk);
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, common_perip_clk);
 
@@ -371,7 +407,9 @@ static void esp32_clock_perip_init(void)
 #endif
 
 	/* Disable hardware crypto clocks. */
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN1_REG, hwcrypto_perip_clk);
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, hwcrypto_perip_clk);
 #elif defined(CONFIG_SOC_SERIES_ESP32)
@@ -391,7 +429,9 @@ static void esp32_clock_perip_init(void)
 #endif /* CONFIG_SOC_SERIES_ESP32S3 */
 
 	/* Disable WiFi/BT/SDIO clocks. */
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
 	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
 #else /* CONFIG_SOC_SERIES_ESP32 || CONFIG_SOC_SERIES_ESP32S2 */
@@ -403,7 +443,9 @@ static void esp32_clock_perip_init(void)
 	DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
 #endif
 
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	/* Set WiFi light sleep clock source to RTC slow clock */
 	REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
 	CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_8M);
@@ -418,7 +460,9 @@ static void esp32_clock_perip_init(void)
 	/* Enable RNG clock. */
 	periph_module_enable(PERIPH_RNG_MODULE);
 
-#if (defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S3))
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
 	periph_module_enable(PERIPH_TIMG0_MODULE);
 #endif
 }
@@ -494,6 +538,17 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	int retry_32k_xtal = 3;
 
 	do {
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+			/* external clock needs to be connected to PIN0 before it can
+			 * be used. Here we use rtc_clk_cal function to count
+			 * the number of ext clk cycles in the given number of ext clk
+			 * cycles. If the ext clk has not started up, calibration
+			 * will time out, returning 0.
+			 */
+			LOG_DBG("waiting for external clock by pin0 to start up");
+			rtc_clk_32k_enable_external();
+#else
 		if (rtc_slow_clk_src == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
 			/* 32k XTAL oscillator needs to be enabled and running before it can
 			 * be used. Hardware doesn't have a direct way of checking if the
@@ -508,11 +563,17 @@ static int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			} else if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
 				rtc_clk_32k_enable_external();
 			}
+#endif
 			/* When CONFIG_RTC_CLK_CAL_CYCLES is set to 0, clock calibration will not be
 			 * performed at startup.
 			 */
 			if (CONFIG_RTC_CLK_CAL_CYCLES > 0) {
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+				cal_val = rtc_clk_cal(RTC_CAL_32K_OSC_SLOW,
+								CONFIG_RTC_CLK_CAL_CYCLES);
+#else
 				cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, CONFIG_RTC_CLK_CAL_CYCLES);
+#endif
 				if (cal_val == 0) {
 					if (retry_32k_xtal-- > 0) {
 						continue;
@@ -624,7 +685,7 @@ static int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cf
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * rtc_clk_cfg.cpu_freq_mhz /
 				old_config.freq_mhz);
 
-#if !defined(CONFIG_SOC_SERIES_ESP32C6)
+#if !defined(CONFIG_SOC_SERIES_ESP32C2) && !defined(CONFIG_SOC_SERIES_ESP32C6)
 #if ESP_ROM_UART_CLK_IS_XTAL
 	uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
 #else

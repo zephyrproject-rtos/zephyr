@@ -28,5 +28,6 @@ properties:
     type: int
     description: Value of the external XTAL connected to ESP32. This is typically 40 MHz.
     enum:
-      - 40000000
+      - 26000000
       - 32000000
+      - 40000000

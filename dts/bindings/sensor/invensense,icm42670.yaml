@@ -4,9 +4,7 @@
 
 description: ICM-42670 motion tracking device
 
-compatible: "invensense,icm42670"
-
-include: [sensor-device.yaml, spi-device.yaml]
+include: [sensor-device.yaml]
 
 properties:
   int-gpios:

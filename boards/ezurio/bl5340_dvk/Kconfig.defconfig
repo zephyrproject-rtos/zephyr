@@ -99,12 +99,6 @@ endif # DISPLAY
 
 endif # BOARD_BL5340_DVK_NRF5340_CPUAPP || BOARD_BL5340_DVK_NRF5340_CPUAPP_NS
 
-config IPM_NRFX
-	default IPM
-
-config MBOX_NRFX_IPC
-	default MBOX
-
 if BOARD_BL5340_DVK_NRF5340_CPUNET
 
 # BT_CTLR depends on BT. When BT is enabled we should default to also
