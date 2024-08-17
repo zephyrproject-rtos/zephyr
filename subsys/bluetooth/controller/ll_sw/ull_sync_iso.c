@@ -698,9 +698,17 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 		rx->hdr.handle = sync_iso_handle_get(sync_iso);
 		rx->rx_ftr.param = sync_iso;
 
+		/* status value is stored in the PDU member of the node rx */
 		se = (void *)rx->pdu;
-		se->status = done->extra.estab_failed ?
-			BT_HCI_ERR_CONN_FAIL_TO_ESTAB : BT_HCI_ERR_SUCCESS;
+		if (done->extra.estab_failed) {
+			if (sync_iso->lll.term_reason != BT_HCI_ERR_SUCCESS) {
+				se->status = sync_iso->lll.term_reason;
+			} else {
+				se->status = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			}
+		} else {
+			se->status = BT_HCI_ERR_SUCCESS;
+		}
 
 		ll_rx_put_sched(rx->hdr.link, rx);
 	}
