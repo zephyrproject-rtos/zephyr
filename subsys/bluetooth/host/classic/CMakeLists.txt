@@ -27,3 +27,13 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_HFP_AG
   hfp_ag.c
   )
+
+if(CONFIG_BT_PBAP_CLIENT)
+  zephyr_library_sources(goep_client.c)
+endif()
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_PBAP_CLIENT
+  parse_vcard.c
+  pbap_client.c
+)
