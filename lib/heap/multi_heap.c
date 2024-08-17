@@ -5,6 +5,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/multi_heap.h>
+#include <string.h>
 
 void sys_multi_heap_init(struct sys_multi_heap *heap, sys_multi_heap_fn_t choice_fn)
 {
@@ -89,4 +90,39 @@ void sys_multi_heap_free(struct sys_multi_heap *mheap, void *block)
 	if (heap != NULL) {
 		sys_heap_free(heap->heap, block);
 	}
+}
+
+void *sys_multi_heap_aligned_realloc(struct sys_multi_heap *mheap, void *cfg,
+				     void *ptr, size_t align, size_t bytes)
+{
+	/* special realloc semantics */
+	if (ptr == NULL) {
+		return sys_multi_heap_aligned_alloc(mheap, cfg, align, bytes);
+	}
+	if (bytes == 0) {
+		sys_multi_heap_free(mheap, ptr);
+		return NULL;
+	}
+
+	const struct sys_multi_heap_rec *rec = sys_multi_heap_get_heap(mheap, ptr);
+
+	__ASSERT_NO_MSG(rec);
+
+	/* Invoke the realloc function on the same heap, to try to reuse in place */
+	void *new_ptr = sys_heap_aligned_realloc(rec->heap, ptr, align, bytes);
+
+	if (new_ptr != NULL) {
+		return new_ptr;
+	}
+
+	size_t old_size = sys_heap_usable_size(rec->heap, ptr);
+
+	/* Otherwise, allocate a new block and copy the data */
+	new_ptr = sys_multi_heap_aligned_alloc(mheap, cfg, align, bytes);
+	if (new_ptr != NULL) {
+		memcpy(new_ptr, ptr, MIN(old_size, bytes));
+		sys_multi_heap_free(mheap, ptr);
+	}
+
+	return new_ptr;
 }
