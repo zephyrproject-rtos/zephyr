@@ -28,7 +28,7 @@ zephyr_library_sources_ifdef(
   hfp_ag.c
   )
 
-if(CONFIG_BT_PBAP_CLIENT)
+if(CONFIG_BT_PBAP_CLIENT OR CONFIG_BT_MAP_CLIENT)
   zephyr_library_sources(goep_client.c)
 endif()
 
@@ -36,4 +36,10 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_PBAP_CLIENT
   parse_vcard.c
   pbap_client.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MAP_CLIENT
+  goep_client.c
+  map_client.c
 )
