@@ -32,7 +32,7 @@ static bool is_mesh_local(struct openthread_context *context,
 	const otMeshLocalPrefix *ml_prefix =
 				otThreadGetMeshLocalPrefix(context->instance);
 
-	return (memcmp(address, ml_prefix->m8, sizeof(ml_prefix)) == 0);
+	return (memcmp(address, ml_prefix->m8, sizeof(ml_prefix->m8)) == 0);
 }
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
@@ -156,9 +156,8 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 					context, address->mAddress.mFields.m8);
 
 		/* Mark address as deprecated if it is not preferred. */
-		if (!address->mPreferred) {
-			if_addr->addr_state = NET_ADDR_DEPRECATED;
-		}
+		if_addr->addr_state =
+			address->mPreferred ? NET_ADDR_PREFERRED : NET_ADDR_DEPRECATED;
 	}
 }
 
