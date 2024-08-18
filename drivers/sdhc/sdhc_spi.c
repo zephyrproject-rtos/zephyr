@@ -14,6 +14,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/crc.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(sdhc_spi, CONFIG_SDHC_LOG_LEVEL);
 
@@ -148,24 +149,30 @@ static int sdhc_spi_init_card(const struct device *dev)
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *data = dev->data;
 	struct spi_config *spi_cfg = data->spi_cfg;
-	int ret;
+	int ret, ret2;
 
 	if (spi_cfg->frequency == 0) {
 		/* Use default 400KHZ frequency */
 		spi_cfg->frequency = SDMMC_CLOCK_400KHZ;
 	}
+
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
+
 	/* the initial 74 clocks must be sent while CS is high */
 	spi_cfg->operation |= SPI_CS_ACTIVE_HIGH;
 	ret = sdhc_spi_rx(config->spi_dev, spi_cfg, data->scratch, 10);
-	if (ret != 0) {
-		spi_release(config->spi_dev, spi_cfg);
-		spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
-		return ret;
-	}
+
 	/* Release lock on SPI bus */
-	ret = spi_release(config->spi_dev, spi_cfg);
+	ret2 = spi_release(config->spi_dev, spi_cfg);
 	spi_cfg->operation &= ~SPI_CS_ACTIVE_HIGH;
-	return ret;
+
+	/* Release request for SPI bus to be active */
+	(void)pm_device_runtime_put(config->spi_dev);
+
+	return ret ? ret : ret2;
 }
 
 /* Checks if SPI SD card is sending busy signal */
@@ -623,7 +630,7 @@ static int sdhc_spi_request(const struct device *dev,
 {
 	const struct sdhc_spi_config *config = dev->config;
 	struct sdhc_spi_data *dev_data = dev->data;
-	int ret, stop_ret, retries = cmd->retries;
+	int ret, ret2, stop_ret, retries = cmd->retries;
 	const struct sdhc_command stop_cmd = {
 		.opcode = SD_STOP_TRANSMISSION,
 		.arg = 0,
@@ -631,6 +638,12 @@ static int sdhc_spi_request(const struct device *dev,
 		.timeout_ms = 1000,
 		.retries = 1,
 	};
+
+	/* Request SPI bus to be active */
+	if (pm_device_runtime_get(config->spi_dev) < 0) {
+		return -EIO;
+	}
+
 	if (data == NULL) {
 		do {
 			ret = sdhc_spi_send_cmd(dev, cmd, false);
@@ -667,13 +680,14 @@ static int sdhc_spi_request(const struct device *dev,
 			}
 		} while ((ret != 0) && (retries > 0));
 	}
-	if (ret) {
-		/* Release SPI bus */
-		spi_release(config->spi_dev, dev_data->spi_cfg);
-		return ret;
-	}
+
 	/* Release SPI bus */
-	return spi_release(config->spi_dev, dev_data->spi_cfg);
+	ret2 = spi_release(config->spi_dev, dev_data->spi_cfg);
+
+	/* Release request for SPI bus to be active */
+	(void)pm_device_runtime_put(config->spi_dev);
+
+	return ret ? ret : ret2;
 }
 
 static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
