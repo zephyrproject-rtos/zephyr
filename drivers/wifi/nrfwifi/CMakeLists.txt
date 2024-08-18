@@ -76,7 +76,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT
   src/wifi_mgmt_scan.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE
+zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE_COMMON
   src/wifi_mgmt.c
 )
 
