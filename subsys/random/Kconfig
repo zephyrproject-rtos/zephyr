@@ -31,6 +31,7 @@ config TEST_RANDOM_GENERATOR
 config TIMER_RANDOM_INITIAL_STATE
 	int "Initial state used by clock based number generator"
 	default 123456789
+	depends on TIMER_RANDOM_GENERATOR
 	help
 	  Initial state value used by TIMER_RANDOM_GENERATOR and
 	  early random number genenator.
