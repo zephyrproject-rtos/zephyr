@@ -78,6 +78,10 @@ config NRF70_SYSTEM_WITH_RAW_MODES
 
 endchoice
 
+config NRF70_SYSTEM_MODE_COMMON
+	bool
+	default y if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
+
 config NET_L2_ETHERNET
 	default y if !NRF70_RADIO_TEST
 
