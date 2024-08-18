@@ -477,7 +477,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	date[0] = bin2bcd(timeptr->tm_sec) & RV3028_SECONDS_MASK;
 	date[1] = bin2bcd(timeptr->tm_min) & RV3028_MINUTES_MASK;
 	date[2] = bin2bcd(timeptr->tm_hour) & RV3028_HOURS_24H_MASK;
-	date[3] = bin2bcd(timeptr->tm_wday) & RV3028_WEEKDAY_MASK;
+	date[3] = timeptr->tm_wday & RV3028_WEEKDAY_MASK;
 	date[4] = bin2bcd(timeptr->tm_mday) & RV3028_DATE_MASK;
 	date[5] = bin2bcd(timeptr->tm_mon + RV3028_MONTH_OFFSET) & RV3028_MONTH_MASK;
 	date[6] = bin2bcd(timeptr->tm_year - RV3028_YEAR_OFFSET) & RV3028_YEAR_MASK;
@@ -525,7 +525,7 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_sec = bcd2bin(date[0] & RV3028_SECONDS_MASK);
 	timeptr->tm_min = bcd2bin(date[1] & RV3028_MINUTES_MASK);
 	timeptr->tm_hour = bcd2bin(date[2] & RV3028_HOURS_24H_MASK);
-	timeptr->tm_wday = bcd2bin(date[3] & RV3028_WEEKDAY_MASK);
+	timeptr->tm_wday = date[3] & RV3028_WEEKDAY_MASK;
 	timeptr->tm_mday = bcd2bin(date[4] & RV3028_DATE_MASK);
 	timeptr->tm_mon = bcd2bin(date[5] & RV3028_MONTH_MASK) - RV3028_MONTH_OFFSET;
 	timeptr->tm_year = bcd2bin(date[6] & RV3028_YEAR_MASK) + RV3028_YEAR_OFFSET;
@@ -579,7 +579,7 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
 		regs[0] = bin2bcd(timeptr->tm_min) & RV3028_ALARM_MINUTES_MASK;
 	} else {
-		regs[0] = RTC_ALARM_TIME_MASK_MINUTE;
+		regs[0] = RV3028_ALARM_MINUTES_AE_M;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
