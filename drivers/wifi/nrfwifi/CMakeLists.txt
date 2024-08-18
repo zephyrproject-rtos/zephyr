@@ -80,10 +80,6 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE
   src/wifi_mgmt.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_NRF70_SCAN_ONLY
-  src/wifi_mgmt_scan.c
-)
-
 zephyr_library_sources_ifdef(CONFIG_NRF70_RADIO_TEST
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/radio_test/fmac_api.c
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_util.c
