@@ -76,6 +76,13 @@
 	pinctrl-names = "default";
 };
 
+&uart1 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default &uart1_tx_default>;
+	pinctrl-names = "default";
+};
+
 &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&i2c0_scl_default &i2c0_sda_default>;
