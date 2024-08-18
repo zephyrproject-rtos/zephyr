@@ -720,10 +720,12 @@ static int sdhc_spi_set_io(const struct device *dev, struct sdhc_io *ios)
 				if (gpio_pin_set_dt(&cfg->pwr_gpio, 1)) {
 					return -EIO;
 				}
+				LOG_INF("Powered up");
 			} else {
 				if (gpio_pin_set_dt(&cfg->pwr_gpio, 0)) {
 					return -EIO;
 				}
+				LOG_INF("Powered down");
 			}
 		}
 		data->power_mode = ios->power_mode;
