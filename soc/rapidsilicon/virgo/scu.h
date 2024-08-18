@@ -71,6 +71,7 @@ void scu_irq_map(enum map_mask_control_irq_id IRQn, uint8_t SubSystem);
 void scu_irq_unmap(enum map_mask_control_irq_id IRQn);
 void scu_irq_enable(enum map_mask_control_irq_id IRQn);
 void scu_irq_disable(enum map_mask_control_irq_id IRQn);
+uint32_t scu_get_irq_reg_val(enum map_mask_control_irq_id IRQn);
 
 #define SCU_CHIP_ID_OFFSET      16
 #define SCU_CHIP_ID_MASK        0x00FF0000

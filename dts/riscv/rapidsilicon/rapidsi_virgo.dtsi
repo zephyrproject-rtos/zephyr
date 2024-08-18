@@ -150,7 +150,7 @@
 		 spi0: spi@A0800000 {
 			 compatible = "andestech,atcspi200";
 			 reg = <0xA0800000 0xFFFF>;
-			 interrupts = <24 5>;
+			 interrupts = <24 10>;
 			 interrupt-parent = <&eclic>;
 			 dmas = <&dma0 0 0 0x009>,
 					<&dma0 1 1 0x00A>;
@@ -162,23 +162,20 @@
 		 };
  
 		 dma0: dma@A0600000 {
-			 compatible = "andestech,atcdmac300";
+			 compatible = "andestech,atcdmac100";
 			 reg = <0xA0600000 0xFFFF>;
 			 interrupts = <27 9>;
 			 interrupt-parent = <&eclic>;
 			 dma-channels = <8>;
-			 dma-requests = <16>;
+			 dma-requests = <32>;
 			 chain-transfer = <1>;
 			 #dma-cells = <3>;
 			 status = "disabled";
 		 };
  
 		 bcpu_wdt: wdt@A0120000 {
-			 compatible = "andestech,atcwdt100";
+			 compatible = "andestech,atcwdt200";
 			 reg = <0xA0120000 DT_SIZE_K(16)>;
-			 clock-frequency = <266666667>;
-			 intr-time-scale = <7>;
-			 rst-time-scale = <7>;
 			 interrupts = <0xffffffff 1>;
 			 interrupt-parent = <&eclic>;
 			 status = "disabled";

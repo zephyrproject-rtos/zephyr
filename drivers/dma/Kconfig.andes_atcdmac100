@@ -1,0 +1,12 @@
+# Andestech ATCDMAC100 configuration options
+# Copyright (c) 2024 Rapid Silicon
+
+# SPDX-License-Identifier: Apache-2.0
+
+
+config DMA_ANDES_ATCDMAC100
+	bool "Using Andes ATCDMAC100 DMA driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCDMAC100_ENABLED
+	help
+	  Andes ATCDMAC100 DMA driver.
