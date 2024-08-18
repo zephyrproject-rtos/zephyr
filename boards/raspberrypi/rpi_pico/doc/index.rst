@@ -121,8 +121,8 @@ Default Zephyr Peripheral Mapping:
 - UART0_RX : P1
 - I2C0_SDA : P4
 - I2C0_SCL : P5
-- I2C1_SDA : P14
-- I2C1_SCL : P15
+- I2C1_SDA : P6
+- I2C1_SCL : P7
 - SPI0_RX : P16
 - SPI0_CSN : P17
 - SPI0_SCK : P18
