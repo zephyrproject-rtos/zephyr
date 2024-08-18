@@ -123,7 +123,8 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
 
-#define RV3028_EEBUSY_POLL_US           10000
+#define RV3028_EEBUSY_READ_POLL_MS      1
+#define RV3028_EEBUSY_WRITE_POLL_MS     10
 #define RV3028_EEBUSY_TIMEOUT_MS        100
 
 /* RTC alarm time fields supported by the RV3028 */
@@ -240,7 +241,7 @@ static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t ma
 	return 0;
 }
 
-static int rv3028_eeprom_wait_busy(const struct device *dev)
+static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -261,7 +262,7 @@ static int rv3028_eeprom_wait_busy(const struct device *dev)
 			return -ETIME;
 		}
 
-		k_busy_wait(RV3028_EEBUSY_POLL_US);
+		k_msleep(poll_ms);
 	}
 
 	return 0;
@@ -291,7 +292,7 @@ static int rv3028_enter_eerd(const struct device *dev)
 	ret = rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
 				 RV3028_CONTROL1_EERD);
 
-	ret = rv3028_eeprom_wait_busy(dev);
+	ret = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 	if (ret) {
 		rv3028_exit_eerd(dev);
 		return ret;
@@ -321,7 +322,7 @@ static int rv3028_update(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -338,7 +339,7 @@ static int rv3028_refresh(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -691,7 +692,7 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 #else
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
-	int err = 0;
+	int err;
 
 	if (config->gpio_int.port == NULL) {
 		return -ENOTSUP;
