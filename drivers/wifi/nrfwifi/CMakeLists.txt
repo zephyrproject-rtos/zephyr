@@ -240,6 +240,10 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_LOG_VERBOSE
   -DNRF70_LOG_VERBOSE
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_NRF70_AP_MODE
+  -DNRF70_AP_MODE
+)
+
 zephyr_compile_definitions(
   -DNRF70_RX_NUM_BUFS=${CONFIG_NRF70_RX_NUM_BUFS}
   -DNRF70_MAX_TX_TOKENS=${CONFIG_NRF70_MAX_TX_TOKENS}
