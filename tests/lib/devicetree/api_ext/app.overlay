@@ -26,5 +26,53 @@
 			reg = < 0x20001000 0x1000 >;
 			zephyr,memory-region = "SRAM@REGION#2";
 		};
+
+		test_fixed_clk: test-fixed-clock {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <0>;
+		};
+
+		test_clk: test-clock {
+			compatible = "vnd,clock";
+			#clock-cells = <2>;
+		};
+
+		test_adc_1: adc@10002000 {
+			reg = <0x10002000 0x1000>;
+			compatible = "vnd,adc";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		test_adc_2: adc@10003000 {
+			reg = <0x10003000 0x1000>;
+			compatible = "vnd,adc";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		test_mbox: mbox {
+			compatible = "vnd,mbox";
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		test_mbox_zero_cell: mbox_zero_cell {
+			compatible = "vnd,mbox-zero-cell";
+			#mbox-cells = <0>;
+			status = "okay";
+		};
+
+		/* there should only be one of these */
+		test_temp_sensor: temperature-sensor {
+			compatible = "vnd,adc-temp-sensor";
+			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
+			clock-names = "clk-a", "clk-fixed", "clk-b";
+			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
+			io-channel-names = "ch1", "ch2";
+			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
+			mbox-names = "tx", "rx", "zero";
+		};
 	};
 };
