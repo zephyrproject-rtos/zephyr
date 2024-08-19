@@ -1,0 +1,8 @@
+# Copyright (c) 2021 KT-Elektronik Klaucke und Partner GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX CPU
+
+compatible: "renesas,rx"
+
+include: cpu.yaml
