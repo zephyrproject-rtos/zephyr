@@ -174,6 +174,10 @@ Networking
   :c:func:`coap_get_block2_option` now accepts an additional ``bool *has_more``
   parameter, to store the value of the more flag. (:github:`76052`)
 
+* The Ethernet bridge shell is moved under network shell. This is done so that
+  all the network shell activities can be found under ``net`` shell command.
+  After this change the bridge shell is used by ``net bridge`` command.
+
 Other Subsystems
 ****************
 
