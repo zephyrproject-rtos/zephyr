@@ -73,6 +73,7 @@ struct pcnt_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	const int irq_source;
 	const int irq_priority;
+	const int irq_flags;
 	struct pcnt_esp32_unit_config *unit_config;
 	const int unit_len;
 };
@@ -342,7 +343,8 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	data->trigger = trig;
 
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INTR_FLAG_IRAM,
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
 			(intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
@@ -405,6 +407,7 @@ static struct pcnt_esp32_config pcnt_esp32_config = {
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
 	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
 	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags),
 	.unit_config = unit_config,
 	.unit_len = ARRAY_SIZE(unit_config),
 };

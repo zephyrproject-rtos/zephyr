@@ -540,7 +540,8 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 		int ret;                                                                   \
 		ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                      \
 				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
-					ESP_INTR_FLAG_IRAM,                                            \
+				ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(idx, 0, flags)) |          \
+					ESP_INTR_FLAG_IRAM,                                        \
 				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
 		return ret;                                                                \
 	}
