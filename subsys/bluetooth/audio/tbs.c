@@ -262,19 +262,23 @@ static bool uri_scheme_in_list(const char *uri_scheme,
 	return false;
 }
 
-static struct tbs_service_inst *lookup_inst_by_uri_scheme(const char *uri,
-							  uint8_t uri_len)
+static struct tbs_service_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t uri_len)
 {
 	char uri_scheme[CONFIG_BT_TBS_MAX_URI_LENGTH] = { 0 };
 
+	if (uri_len == 0) {
+		return NULL;
+	}
+
 	/* Look for ':' between the first and last char */
-	for (int i = 1; i < uri_len - 1; i++) {
+	for (uint8_t i = 1U; i < uri_len - 1U; i++) {
 		if (uri[i] == ':') {
 			(void)memcpy(uri_scheme, uri, i);
+			break;
 		}
 	}
 
-	if (strlen(uri_scheme) == 0) {
+	if (uri_scheme[0] == '\0') {
 		/* No URI scheme found */
 		return NULL;
 	}
