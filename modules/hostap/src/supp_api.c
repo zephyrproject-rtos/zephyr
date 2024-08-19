@@ -13,7 +13,11 @@
 #include "includes.h"
 #include "common.h"
 #include "common/defs.h"
+#include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
+
 #include "wpa_supplicant/config.h"
+
 #include "wpa_supplicant_i.h"
 #include "driver_i.h"
 
@@ -26,6 +30,7 @@
 #include "ap_drv_ops.h"
 #endif
 #include "supp_events.h"
+#include "wpa_supplicant/bss.h"
 
 extern struct k_sem wpa_supplicant_ready_sem;
 extern struct wpa_global *global;
@@ -1603,6 +1608,41 @@ int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_thre
 	}
 
 	return wifi_mgmt_api->set_rts_threshold(dev, rts_threshold);
+}
+
+int supplicant_bss_ext_capab(const struct device *dev, enum wifi_ext_capab capab)
+{
+	struct wpa_supplicant *wpa_s;
+	int is_support = 0;
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		return 0;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	is_support = wpa_bss_ext_capab(wpa_s->current_bss, capab);
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return is_support;
+}
+
+int supplicant_legacy_roam(const struct device *dev)
+{
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+	if (!wpa_cli_cmd_v("scan")) {
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
