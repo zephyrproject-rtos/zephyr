@@ -115,7 +115,7 @@ endif # NET_ETHERNET_BRIDGE
 config NET_ETHERNET_BRIDGE_SHELL
 	bool "Ethernet Bridging management shell"
 	depends on NET_ETHERNET_BRIDGE
-	select SHELL
+	select NET_SHELL
 	help
 	  Enables shell utility to manage bridge configuration interactively.
 
