@@ -1,0 +1,12 @@
+# Copyright (c) 2021-2023, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink TLx-series RNG
+
+compatible: "telink,tlx-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,30 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RISCV_TELINK_TLX
+	bool "Telink TLx SoCs Implementation"
+	select RISCV
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select SOC_FAMILY_RISCV_PRIVILEGE
+	select HAS_TELINK_DRIVERS
+	select FLASH if BT
+	help
+	  Enable support for Telink TLx SoC
+
+config SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	bool "Telink TLx SoCs retention memory layout"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	help
+	  Telink TLx SoCs retention memory layout
+
+config SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE
+	bool "Telink TLx SoCs non retention ram code"
+	depends on SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	help
+	  Place Telink TLx SoCs ram code in non-retention area
+	  and restore this are after each retention.

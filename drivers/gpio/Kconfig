@@ -71,6 +71,8 @@ config GPIO_ENABLE_DISABLE_INTERRUPT
 
 source "drivers/gpio/Kconfig.b9x"
 
+source "drivers/gpio/Kconfig.tlx"
+
 source "drivers/gpio/Kconfig.w91"
 
 source "drivers/gpio/Kconfig.dw"

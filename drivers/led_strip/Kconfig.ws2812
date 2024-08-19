@@ -37,10 +37,10 @@ config WS2812_STRIP_I2S
 
 config WS2812_STRIP_GPIO_TELINK
 	bool "GPIO Telink driver"
-	depends on SOC_SERIES_RISCV_TELINK_B9X
+	depends on SOC_SERIES_RISCV_TELINK_B9X || SOC_SERIES_RISCV_TELINK_TLX
 	help
 	  The GPIO driver does bit-banging with inline assembly,
-	  and only supports Telink B9X
+	  and only supports Telink B9X/TLX
 
 config WS2812_STRIP_GPIO
 	bool "GPIO driver"

@@ -114,6 +114,8 @@ comment "Serial Drivers"
 
 source "drivers/serial/Kconfig.b9x"
 
+source "drivers/serial/Kconfig.tlx"
+
 source "drivers/serial/Kconfig.w91"
 
 source "drivers/serial/Kconfig.ns16550"

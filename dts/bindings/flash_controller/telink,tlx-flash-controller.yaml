@@ -1,0 +1,5 @@
+description: Telink TLx Flash Controller
+
+compatible: "telink,tlx-flash-controller"
+
+include: flash-controller.yaml

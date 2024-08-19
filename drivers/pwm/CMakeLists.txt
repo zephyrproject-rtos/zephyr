@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_PWM_TELINK_B9X	pwm_b9x.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_TELINK_TLX	pwm_tlx.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_TELINK_W91	pwm_w91.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_STM32		pwm_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_SIFIVE		pwm_sifive.c)

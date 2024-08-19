@@ -3,6 +3,7 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_B9X gpio_b9x.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_TLX gpio_tlx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_TELINK_W91 gpio_w91.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_INFINEON_CAT1 gpio_ifx_cat1.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC13XX_CC26XX gpio_cc13xx_cc26xx.c)

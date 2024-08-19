@@ -142,7 +142,7 @@ manifest:
         - hal
     - name: hal_telink
       url: https://github.com/telink-semi/hal_telink
-      revision: 36283106d9b0b1d5fb3025a98be5a58007ac3d77
+      revision: 17c4cedd1038aec6f432cf76357d477e1c5d7672
       path: modules/hal/telink
       groups:
         - hal
@@ -212,7 +212,7 @@ manifest:
       path: modules/lib/open-amp
     - name: openthread_telink_lib
       url: https://github.com/telink-semi/openthread_telink_lib
-      revision: 80645ba0b4b589afd8c0712cb1a01091f4b35ab8
+      revision: 84e12fd24613b2871c47378c39c2f44447f528ba
       path: modules/lib/openthread_telink_lib
     - name: openthread
       url: https://github.com/telink-semi/openthread

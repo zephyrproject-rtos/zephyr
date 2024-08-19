@@ -1,0 +1,121 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "CPU Architecture of SoC"
+depends on SOC_SERIES_RISCV_TELINK_TLX
+
+config TLxCPU_RISCV32
+	bool "RISCV32 CPU Architecture"
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+
+endchoice
+
+config TELINK_TL321X_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_TL321X
+	select RISCV_PMP
+	help
+		This option enables Telink TL321X PMP(memory protection) module.
+
+config TELINK_B95_PMP
+	bool "Support Hardware Memory Protection"
+	depends on SOC_RISCV_TELINK_B95
+	select RISCV_PMP
+	help
+		This option enables Telink B95 PMP(memory protection) module.
+
+config TELINK_TLX_HWDSP
+	bool "Support Hardware DSP"
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default n
+
+config TELINK_TLX_MBEDTLS_HW_ACCELERATION
+	bool "Use Telink TLx platform mbedtls HW acceleration"
+	depends on SOC_SERIES_RISCV_TELINK_TLX && MBEDTLS
+	default y
+	help
+		This option enables Telink TLx hardware accelerated mbedtls version.
+
+config TELINK_TLX_PFT_ARCH
+	bool "Support performance throttling"
+	default y
+	select RISCV_SOC_CONTEXT_SAVE
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+
+choice
+prompt "Telink TLx SoCs implementation"
+depends on SOC_SERIES_RISCV_TELINK_TLX
+
+config SOC_RISCV_TELINK_TL321X
+	bool "Telink TL321X SoC implementation"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_FPU
+	select INCLUDE_RESET_VECTOR
+
+endchoice
+
+config PMP_SLOTS
+	default 16
+
+config PM_DEVICE
+	default y if PM
+
+config SHELL_BACKENDS
+	default n if PM
+
+config TELINK_SOC_REBOOT_ON_FAULT
+	bool "Reboot system when fault happened"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default n
+	help
+		This option enables Telink B9x chip reboot after fault.
+
+config TELINK_SOC_REBOOT_ON_FAULT_DELAY
+	int "Reboot system delay in mS"
+	depends on SOC_SERIES_RISCV_TELINK_TLX && TELINK_SOC_REBOOT_ON_FAULT
+	default 1000
+	range 0 30000
+	help
+		This option sets Telink B91 chip reboot on fault delay in mS.
+
+config TELINK_B91_USB_SWI_DISABLE
+	bool "Don't use USB SWI interface"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default n
+	help
+		This option disables USB SWI interface
+
+config TELINK_B9X_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default n
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_TLX_2_WIRE_SPI_ENABLE
+	bool "Use 2-wire SPI interface to FLASH"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default n
+	help
+		This option enables 2-wire SPI interface to FLASH
+
+config TELINK_TLX_MALLOC_FAILED_HOOK
+	bool "Stop SW execution when system heap allocation failed"
+	depends on SOC_SERIES_RISCV_TELINK_TLX
+	default y
+	help
+		This option stops SW execution when system heap allocation failed.
+
+config TELINK_TLX_MATTER_RETENTION_LAYOUT
+	bool "Support Matter retention layout"
+	depends on SOC_SERIES_RISCV_TELINK_TLX_RETENTION
+	default n
+	help
+		This option enables support Matter retention layout

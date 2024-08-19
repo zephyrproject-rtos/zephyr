@@ -88,6 +88,11 @@ config BT_B9X
 	help
 	  Telink B9X HCI bluetooth interface
 
+config BT_TLX
+	bool "Telink TLX HCI driver"
+	help
+	  Telink TLX HCI bluetooth interface
+
 config BT_W91
 	bool "Telink W91 HCI driver"
 	help

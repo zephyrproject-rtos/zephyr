@@ -1,0 +1,119 @@
+# Copyright (c) 2021-2023 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV_TELINK_TLX
+
+config SOC_SERIES
+	string
+	default "telink_tlx"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	bool
+	default y
+
+config RISCV_HAS_PLIC
+	bool
+	default y
+
+config RISCV_GP
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 64 if SOC_RISCV_TELINK_B95
+	default 59
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	int
+	default 12
+
+config PINCTRL
+	default y
+
+config XIP
+	bool
+	default n
+
+config MAIN_STACK_SIZE
+	int
+	default 2048
+
+config IDLE_STACK_SIZE
+	int
+	default 1536
+
+config TEST_EXTRA_STACK_SIZE
+	int
+	default 1024
+
+config HAS_FLASH_LOAD_OFFSET
+	default y if BOOTLOADER_MCUBOOT
+
+config MBEDTLS_ZEPHYR_ENTROPY
+	default y if ENTROPY_HAS_DRIVER
+
+config MBEDTLS_USER_CONFIG_ENABLE
+	default y if TELINK_TLX_MBEDTLS_HW_ACCELERATION
+
+config MBEDTLS_USER_CONFIG_FILE
+	default "mbedtls-tlsr9-conf.h" if TELINK_TLX_MBEDTLS_HW_ACCELERATION
+
+config MBEDTLS_ENTROPY_ENABLED
+	default y if TELINK_TLX_MBEDTLS_HW_ACCELERATION
+
+config MBEDTLS_DEBUG
+	default y if TELINK_TLX_MBEDTLS_HW_ACCELERATION && MBEDTLS_TEST
+
+config COMMON_LIBC_MALLOC
+	default y
+
+config COMMON_LIBC_MALLOC_ARENA_SIZE
+	default 8192
+
+config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
+	default 2048 if NET_L2_OPENTHREAD && NETWORKING
+
+config STACK_SENTINEL
+	default y
+
+config THREAD_NAME
+	default y if STACK_SENTINEL
+
+config TELINK_B91_USB_SWI_DISABLE
+	bool
+	default n
+
+if SOC_RISCV_TELINK_B91
+config TELINK_B9X_2_WIRE_SPI_ENABLE
+	bool
+	default n
+endif # SOC_RISCV_TELINK_B91
+
+if SOC_RISCV_TELINK_B92
+config TELINK_B9X_2_WIRE_SPI_ENABLE
+	bool
+	default n
+endif # SOC_RISCV_TELINK_B92
+
+if SOC_RISCV_TELINK_B95
+config TELINK_B9X_2_WIRE_SPI_ENABLE
+	bool
+	default n
+endif # SOC_RISCV_TELINK_B95
+
+if SOC_RISCV_TELINK_TL321X
+config TELINK_TLX_2_WIRE_SPI_ENABLE
+	bool
+	default n
+endif # SOC_RISCV_TELINK_TL321X
+
+endif # SOC_SERIES_RISCV_TELINK_TLX

@@ -102,6 +102,8 @@ config FLASH_INIT_PRIORITY
 
 source "drivers/flash/Kconfig.b9x"
 
+source "drivers/flash/Kconfig.tlx"
+
 source "drivers/flash/Kconfig.w91"
 
 source "drivers/flash/Kconfig.cc13xx_cc26xx"
