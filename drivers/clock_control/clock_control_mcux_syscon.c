@@ -113,6 +113,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay)
+#if CONFIG_SOC_SERIES_IMXRT5XX
+	CLOCK_EnableOsc32K(true);
+#elif CONFIG_SOC_SERIES_IMXRT6XX
+	/* No configuration */
+#else /* !CONFIG_SOC_SERIES_IMXRT5XX | !CONFIG_SOC_SERIES_IMXRT6XX */
+/* 0x0 Clock Select Value Set IRTC to use FRO 16K Clk */
+#if DT_PROP(DT_NODELABEL(rtc), clock_select) == 0x0
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVbat | kCLOCK_Clk16KToMain);
+/* 0x1 Clock Select Value Set IRTC to use Osc 32K Clk */
+#elif DT_PROP(DT_NODELABEL(rtc), clock_select) == 0x1
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVbat | kCLOCK_Osc32kToMain);
+#endif /* DT_PROP(DT_NODELABEL(rtc), clock_select) */
+	CLOCK_EnableClock(kCLOCK_Rtc0);
+#endif /* CONFIG_SOC_SERIES_IMXRT5XX */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay) */
+
 	return 0;
 }
 
