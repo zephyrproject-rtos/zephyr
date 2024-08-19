@@ -238,13 +238,17 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         artifacts = Artifacts(env)
         artifacts.package()
 
-    logger.info("Run completed")
     if (
         runner.results.failed
         or runner.results.error
         or (tplan.warnings and options.warnings_as_errors)
         or (options.coverage and not coverage_completed)
     ):
+        if env.options.quit_on_failure:
+            logger.info("twister aborted because of a failure/error")
+        else:
+            logger.info("Run completed")
         return 1
 
+    logger.info("Run completed")
     return 0
