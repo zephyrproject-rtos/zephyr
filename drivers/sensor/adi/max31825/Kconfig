@@ -1,0 +1,12 @@
+# MAX31825 temperature sensor configuration options
+
+# Copyright (C) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX31825
+	bool "MAX31825 Temperature Sensor"
+	default y
+	depends on DT_HAS_ADI_MAX31825_ENABLED
+	select W1
+	help
+	  Enable driver for MAX31825 1-Wire temperature sensors.
