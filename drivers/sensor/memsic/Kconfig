@@ -4,4 +4,5 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/memsic/mc3419/Kconfig"
+source "drivers/sensor/memsic/mmc56x3/Kconfig"
 # zephyr-keep-sorted-stop
