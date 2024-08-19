@@ -32,6 +32,8 @@
 #include <zephyr/arch/posix/arch_inlines.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/arch_inlines.h>
+#elif defined(CONFIG_RX)
+#include <zephyr/arch/rx/arch_inlines.h>
 #endif
 
 #include <zephyr/arch/common/arch_inlines.h>
