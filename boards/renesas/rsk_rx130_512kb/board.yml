@@ -1,0 +1,5 @@
+board:
+  name: rsk_rx130_512kb
+  vendor: renesas
+  socs:
+  - name: r5f513083xfb
