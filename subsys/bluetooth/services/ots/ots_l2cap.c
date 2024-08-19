@@ -25,7 +25,7 @@
 #if defined(CONFIG_BT_OTS)
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
 #elif defined(CONFIG_BT_OTS_CLIENT)
-LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+LOG_MODULE_REGISTER(bt_ots, CONFIG_BT_OTS_CLIENT_LOG_LEVEL);
 #endif
 
 /* According to BLE specification Assigned Numbers that are used in the
