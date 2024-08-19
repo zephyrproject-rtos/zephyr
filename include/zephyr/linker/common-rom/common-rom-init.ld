@@ -20,24 +20,24 @@
 		 */
 #ifdef CONFIG_64BIT
 		. = ALIGN(8);
-		__ZEPHYR_CTOR_LIST__ = .;
+		PLACE_SYMBOL_HERE(__ZEPHYR_CTOR_LIST__);
 		QUAD((__ZEPHYR_CTOR_END__ - __ZEPHYR_CTOR_LIST__) / 8 - 2)
 		KEEP(*(SORT_BY_NAME(".ctors*")))
-		__CTOR_LIST__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_LIST__);
 		QUAD(0)
-		__ZEPHYR_CTOR_END__ = .;
+		PLACE_SYMBOL_HERE(__ZEPHYR_CTOR_END__);
 		QUAD(0)
-		__CTOR_END__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_END__);
 #else
 		. = ALIGN(4);
-		__ZEPHYR_CTOR_LIST__ = .;
+		PLACE_SYMBOL_HERE(__ZEPHYR_CTOR_LIST__);
 		LONG((__ZEPHYR_CTOR_END__ - __ZEPHYR_CTOR_LIST__) / 4 - 2)
 		KEEP(*(SORT_BY_NAME(".ctors*")))
-		__CTOR_LIST__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_LIST__);
 		LONG(0)
-		__ZEPHYR_CTOR_END__ = .;
+		PLACE_SYMBOL_HERE(__ZEPHYR_CTOR_END__);
 		LONG(0)
-		__CTOR_END__ = .;
+		PLACE_SYMBOL_HERE(__CTOR_END__);
 #endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -53,11 +53,11 @@
 		* __zephyr_init_array_end sybmols, so these need to be set correctly.
 		*/
 		. = ALIGN(4);
-		__init_array_start = .;
-		__init_array_end = .;
-		__zephyr_init_array_start = .;
+		PLACE_SYMBOL_HERE(__init_array_start);
+		PLACE_SYMBOL_HERE(__init_array_end);
+		PLACE_SYMBOL_HERE(__zephyr_init_array_start);
 		KEEP(*(SORT_BY_NAME(".init_array*")))
-		__zephyr_init_array_end = .;
+		PLACE_SYMBOL_HERE(__zephyr_init_array_end);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #elif defined(CONFIG_TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU) && !defined(CONFIG_NATIVE_APPLICATION)

@@ -1,0 +1,131 @@
+# Renesas RX architecture configuration options
+
+# Copyright (c) 2020 KT-Elektronik, Klaucke und Partner GmbH
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Renesas RX Options"
+	depends on RX
+
+config ARCH
+	string
+	default "rx"
+
+config CPU_RXV1
+	bool
+	help
+	  Set if the processor supports the Renesas RXv1 instruction set.
+
+config CPU_RXV2
+	bool
+	help
+	  Set if the processor supports the Renesas RXv2 instruction set.
+
+config CPU_RXV3
+	bool
+	help
+	  Set if the processor supports the Renesas RXv3 instruction set.
+
+config HAS_EXCEPT_VECTOR_TABLE
+	bool
+	help
+	  Set if the processor has the exception vector table.
+
+config XIP
+	default y
+
+config CACHE_LINE_SIZE_DETECT
+	bool "Detect d-cache line size at runtime"
+	help
+	  This option enables querying the d-cache build register for finding
+	  the d-cache line size at the expense of taking more memory and code
+	  and a slightly increased boot time.
+
+	  If the CPU's d-cache line size is known in advance, disable this
+	  option and manually enter the value for CACHE_LINE_SIZE.
+
+config CACHE_LINE_SIZE
+	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
+	default 32
+	help
+	  Size in bytes of a CPU d-cache line. Detect automatically at runtime
+	  by selecting CACHE_LINE_SIZE_DETECT.
+
+config NUM_IRQ_PRIO_LEVELS
+	int "Number of supported interrupt priority levels"
+	range 1 16
+	default 16
+	help
+	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1. The
+	  minimum value is 1. The BSP must provide a valid default for proper
+	  operation.
+
+config NUM_IRQS
+	int
+	default 256
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_IRQ_START_VECTOR
+	default 16
+
+config INCLUDE_RESET_VECTOR # check if: TODO: adaptation required
+	bool "Include Reset vector"
+	help
+	  Include the reset vector stub, which initializes the stack and prepares
+	  for running C code.
+
+config MAX_IRQ_LINES # check if: TODO: adaptation required
+	int "Number of IRQ lines"
+	default 128
+	range 0 224
+	help
+	  This option specifies the number of IRQ lines in the system. It
+	  determines the size of the _irq_to_interrupt_vector_table, which
+	  is used to track the association between vectors and IRQ numbers.
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	prompt "Hardware clock cycles per second"
+	default 120000000
+	help
+	  This option specifies hardware clock.
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config DYNAMIC_DIRECT_INTERRUPTS # check if: TODO: adaptation required
+	bool "Support for dynamic direct interrupts"
+	depends on DYNAMIC_INTERRUPTS
+	help
+	  Direct interrupts are designed for performance-critical interrupt
+	  handling and do not go through all of the common interrupt handling
+	  code. This option enables the installation of interrupt service
+	  routines for direct interrupts at runtime.
+	  Note: this requires enabling support for dynamic interrupts in the
+	  kernel.
+
+config HAS_RENESAS_RX_RDP
+	bool
+	default y
+
+config NONE_USED_PORT_INIT
+	bool "Initialize unused ports"
+	default y
+	help
+	  Initialize the unsed pins of RX MCU followed by in the "Handling of
+	  Unused Pins" section of PORT chapter of RX MCU of User's manual.
+	  Note: please MUST set "BSP_PACKAGE_PINS" definition to your device
+	  of pin type in r_bsp_config.h.
+	  Otherwise, the port may output without intention.
+
+config MAIN_STACK_SIZE
+	default 1024
+
+endmenu

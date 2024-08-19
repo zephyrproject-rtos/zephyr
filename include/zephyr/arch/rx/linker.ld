@@ -40,7 +40,6 @@ MEMORY
 {
 	ROM (rx) : ORIGIN = ROM_START, LENGTH = ROM_SIZE
 	RAM (rwx): ORIGIN = RAM_START, LENGTH = RAM_SIZE
-	OFS (r)  : ORIGIN = 0xFE7F5D00, LENGTH = 256
 
 	LINKER_DT_REGIONS()
 	/* Used by and documented in include/linker/intlist.ld */
@@ -55,14 +54,10 @@ SECTIONS
 #include <zephyr/linker/rel-sections.ld>
 
 	GROUP_START(ROMABLE_REGION)
-	__rodata_start = ROM_START;   /* for kernel logging */
+	. = ROM_START;   /* for kernel logging */
+	PLACE_SYMBOL_HERE(__rodata_region_start);
 
-	.exvectors 0xFFFFFF80: AT(0xFFFFFF80)
-	{
-		KEEP(*(.exvectors))
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-	 .fvectors 0xFFFFFFFC: AT(0xFFFFFFFC)
+	 .fvectors 0xFFFFFF80: AT(0xFFFFFF80)
 	{
 		KEEP(*(.fvectors))
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -151,7 +146,7 @@ SECTIONS
 		. = ALIGN(2);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	_rodata_end = .;
+	PLACE_SYMBOL_HERE(__rodata_region_end);
 	_mdata = .;
 	GROUP_END(ROMABLE_REGION)
 
@@ -160,7 +155,7 @@ SECTIONS
 	_image_ram_start = .;
 
 	#if CONFIG_SRAM_BASE_ADDRESS == 0
-		/* RX65N memory starts at address 0 which can be confused with NULL. To prevent this, block
+		/* RX memory starts at address 0 which can be confused with NULL. To prevent this, block
 		 * the first memory page (16 Bytes).
 		 */
 		SECTION_DATA_PROLOGUE(.null_blocker,,)
@@ -205,37 +200,9 @@ SECTIONS
 
 	_image_ram_end = .;
 	_end = .;
+	PROVIDE(__end = _end);
 
 	GROUP_END(RAMABLE_REGION)
-
-	.ofs_mde 0xFE7F5D00: AT(0xFE7F5D00)
-	{
-		KEEP(*(.ofs_mde))
-	} > OFS
-	.ofs_tminf 0xFE7F5D10: AT(0xFE7F5D10)
-	{
-		KEEP(*(.ofs_tminf))
-	} > OFS
-	.ofs_spcc 0xFE7F5D40: AT(0xFE7F5D40)
-	{
-		KEEP(*(.ofs_spcc))
-	} > OFS
-	.ofs_tmef 0xFE7F5D48: AT(0xFE7F5D48)
-	{
-		KEEP(*(.ofs_tmef))
-	} > OFS
-	.ofs_osis 0xFE7F5D50: AT(0xFE7F5D50)
-	{
-		KEEP(*(.ofs_osis))
-	} > OFS
-	.ofs_faw 0xFE7F5D64: AT(0xFE7F5D64)
-	{
-		KEEP(*(.ofs_faw))
-	} > OFS
-	.ofs_romcode 0xFE7F5D70: AT(0xFE7F5D70)
-	{
-		KEEP(*(.ofs_romcode))
-	} > OFS
 
 /* Located in generated directory. This file is populated by the
 * zephyr_linker_sources() CMake function.
