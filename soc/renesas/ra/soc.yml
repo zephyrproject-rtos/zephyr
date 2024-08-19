@@ -1,6 +1,9 @@
 family:
   - name: renesas_ra
     series:
+      - name: ra2l1
+        socs:
+          - name: r7fa2l1ab2dfp
       - name: ra4m1
         socs:
           - name: r7fa4m1ab3cfm
