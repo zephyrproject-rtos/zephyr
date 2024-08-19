@@ -82,7 +82,7 @@ enum net_request_wifi_cmd {
 	/** Setup or teardown TWT flow */
 	NET_REQUEST_WIFI_CMD_TWT,
 	/** Setup BTWT flow */
-	NET_REQUEST_WIFI_CMD_BTWT,	
+	NET_REQUEST_WIFI_CMD_BTWT,
 	/** Get power save config */
 	NET_REQUEST_WIFI_CMD_PS_CONFIG,
 	/** Set or get regulatory domain */
@@ -193,10 +193,10 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_TWT)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT);
-    
+
 #define NET_REQUEST_WIFI_BTWT			\
         (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTWT)
-    
+
     NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTWT);
 
 /** Request a Wi-Fi power save configuration */
@@ -760,7 +760,7 @@ struct wifi_twt_params {
 			uint8_t twt_exponent;
 			/** SP gap */
 			uint8_t sp_gap;
-		} btwt;        
+		} btwt;
 		/** Teardown specific parameters */
 		struct {
 			/** Teardown all flows */
@@ -1018,45 +1018,58 @@ enum wifi_ext_capab {
 	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
 };
 
+
+struct wifi_dpp_configurator_add_params {
+	int curve;
+	int net_access_key_curve;
+};
+
+struct wifi_dpp_auth_init_params {
+	int peer;
+	int configurator;
+	int role;
+	int conf;
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+};
+
+struct wifi_dpp_chirp_params {
+	int id;
+	int freq;
+};
+
+struct wifi_dpp_listen_params {
+	int freq;
+	int role;
+};
+
+struct wifi_dpp_bootstrap_gen_params {
+	int op_class;
+	int chan;
+	int curve;
+	int type;
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+};
+
+struct wifi_dpp_configurator_set_params {
+	int peer;
+	int configurator;
+	int role;
+	int conf;
+	int curve;
+	int net_access_key_curve;
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+};
+
 /* Wi-Fi DPP operation params */
 struct wifi_dpp_params {
 	int action;
 	union {
-		struct wifi_dpp_configurator_add_params {
-			int curve;
-			int net_access_key_curve;
-		} configurator_add;
-		struct wifi_dpp_auth_init_params {
-			int peer;
-			int configurator;
-			int role;
-			int conf;
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} auth_init;
-		struct wifi_dpp_chirp_params {
-			int id;
-			int freq;
-		} chirp;
-		struct wifi_dpp_listen_params {
-			int freq;
-			int role;
-		} listen;
-		struct wifi_dpp_bootstrap_gen_params {
-			int op_class;
-			int chan;
-			int curve;
-			int type;
-			uint8_t mac[WIFI_MAC_ADDR_LEN];
-		} bootstrap_gen;
-		struct wifi_dpp_configurator_set_params {
-			int peer;
-			int configurator;
-			int role;
-			int conf;
-			int curve;
-			int net_access_key_curve;
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} configurator_set;
+		struct wifi_dpp_configurator_add_params configurator_add;
+		struct wifi_dpp_auth_init_params auth_init;
+		struct wifi_dpp_chirp_params chirp;
+		struct wifi_dpp_listen_params listen;
+		struct wifi_dpp_bootstrap_gen_params bootstrap_gen;
+		struct wifi_dpp_configurator_set_params configurator_set;
 		/* bootstrap get uri id */
 		int id;
 		/* timeout for dpp frame response rx */
