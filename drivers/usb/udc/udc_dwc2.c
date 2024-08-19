@@ -1491,23 +1491,6 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		dxepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
 	}
 
-	if (priv->bufferdma && (udc_mps_ep_size(cfg) % 4)) {
-		/* TODO: In Buffer DMA mode, DMA will insert padding bytes in
-		 * between packets if endpoint Max Packet Size is not multiple
-		 * of 4 (DWORD) and single transfer spans across multiple
-		 * packets.
-		 *
-		 * In order to support such Max Packet Sizes, the driver would
-		 * have to remove the padding in between the packets. Besides
-		 * just driver shuffling the data, the buffers would have to be
-		 * large enough to temporarily hold the paddings.
-		 *
-		 * For the time being just error out early.
-		 */
-		LOG_ERR("Driver requires MPS to be multiple of 4");
-		return -EINVAL;
-	}
-
 	dxepctl = sys_read32(dxepctl_reg);
 	/* Set max packet size */
 	dxepctl &= ~USB_DWC2_DEPCTL_MPS_MASK;
