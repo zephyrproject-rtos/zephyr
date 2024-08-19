@@ -85,6 +85,7 @@ extensions = [
     "sphinx_sitemap",
     "zephyr.doxyrunner",
     "zephyr.doxybridge",
+    "zephyr.doxytooltip",
     "zephyr.gh_utils",
     "zephyr.manifest_projects_table",
     "notfound.extension",
