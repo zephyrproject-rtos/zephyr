@@ -1,7 +1,7 @@
-.. _mcp9808-sample:
+.. _jc42-sample:
 
-MCP9808 Temperature Sensor
-##########################
+JEDEC JC 42.4 compliant Temperature Sensor
+##########################################
 
 Overview
 ********
@@ -17,6 +17,9 @@ window is moved to center on the new temperature.
 Requirements
 ************
 
+The sample requires a JEDEC JC 42.4 compliant temperature sensor. The
+sample is configured to use the MCP9808 sensor.
+
 The MCP9808 digital temperature sensor converts temperatures between -20 |deg|
 C and +100 |deg| C to a digital word with |plusminus| 0.5 |deg| C (max.)
 accuracy. It is I2C compatible and supports up to 16 devices on the bus.
@@ -24,7 +27,8 @@ accuracy. It is I2C compatible and supports up to 16 devices on the bus.
 Wiring
 *******
 
-The MCP9808 is available in a discrete component form but it is much easier to
+The MCP9808, which is a JEDEC JC 42.4 compliant temperature sensor, is
+available in a discrete component form but it is much easier to
 use it mounted on a breakout board.  We used the Adafruit `MCP9808
 Sensor`_ breakout board.
 
@@ -37,7 +41,7 @@ After providing a devicetree overlay that specifies the sensor I2C bus
 and alert GPIO, build this sample app using:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/mcp9808
+   :zephyr-app: samples/sensor/jc42
    :board: particle_xenon
    :goals: build flash
 

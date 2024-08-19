@@ -1,11 +1,14 @@
 # Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2024 Vogl Electronic GmbH
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Microchip MCP9808 Digital Temperature Sensor. See
+    JEDEC JC42.4 compliant temperature sensor. See
+    http://www.jedec.org/sites/default/files/docs/4_01_04R19.pdf.
+    Driver based on the Microchip MCP9808 Digital Temperature Sensor. See
     http://ww1.microchip.com/downloads/en/DeviceDoc/25095A.pdf.
 
-compatible: "microchip,mcp9808"
+compatible: "jedec,jc-42.4-temp"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
@@ -24,6 +27,10 @@ properties:
     description: |
       Sensor resolution. Default is 0.0625C (0b11),
       which is the power-up default.
+      0 = 0.5°C
+      1 = 0.25°C
+      2 = 0.125°C
+      3 = 0.0625°C
     enum:
       - 0 # 0.5C
       - 1 # 0.25C
