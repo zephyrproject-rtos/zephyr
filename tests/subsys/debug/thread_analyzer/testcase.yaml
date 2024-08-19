@@ -11,6 +11,8 @@ common:
     - qemu_x86_64
     - qemu_riscv32
     - qemu_riscv64
+  extra_configs:
+    - CONFIG_QEMU_ICOUNT=n
   tags:
     - debug
     - thread_analyzer
