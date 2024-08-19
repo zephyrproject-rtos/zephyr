@@ -44,6 +44,7 @@ struct serial_esp32_usb_config {
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
 	int irq_priority;
+	int irq_flags;
 };
 
 struct serial_esp32_usb_data {
@@ -113,7 +114,8 @@ static int serial_esp32_usb_init(const struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority),
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags),
 			(ISR_HANDLER)serial_esp32_usb_isr,
 			(void *)dev, NULL);
 #endif
@@ -276,7 +278,8 @@ static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
 	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority)
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
 };
 
 static struct serial_esp32_usb_data serial_esp32_usb_data_0;

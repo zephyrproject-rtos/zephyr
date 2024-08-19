@@ -245,7 +245,8 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_clear_int_stat(cfg->spi);
 
 	err = esp_intr_alloc(cfg->irq_source,
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INTR_FLAG_IRAM,
+			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+			ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
 			(ISR_HANDLER)spi_esp32_isr,
 			(void *)dev,
 			NULL);
@@ -532,6 +533,7 @@ static const struct spi_driver_api spi_api = {
 		.input_delay_ns = 0, \
 		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq), \
 		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority), \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
