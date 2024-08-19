@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * common device tree elements of all (currently supported) RX MCUs
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/rx_clock.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "renesas,rx";
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+		};
+	};
+
+	icu: interrupt-controller@87000 {
+		#interrupt-cells = <2>;
+		compatible = "renesas,rx-icu";
+		interrupt-controller;
+		reg = <0x0087000 0xff>,
+		      <0x0087200 0x1f>,
+		      <0x0087300 0xff>,
+		      <0x00872f0 0x02>;
+		reg-names = "IR", "IER", "IPR", "FIR";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		device_type = "soc";
+		compatible = "simple-bus";
+		interrupt-parent = <&icu>;
+
+		pinctrl: pin-controller@8c11f {
+			compatible = "renesas,rx-pinctrl";
+			reg = <0x0008C11F 0x3c0>;
+			status = "okay";
+		};
+
+		ioport0: gpio@8c000 {
+			compatible = "renesas,rx-gpio";
+			reg = <0x0008C000 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		sci0: sci0@8a000 {
+			compatible = "renesas,rx-sci";
+			reg = <0x0008A000 0x100>;
+			status = "disabled";
+
+			uart {
+				compatible = "renesas,rx-uart-sci";
+				status = "disabled";
+			};
+		};
+
+		cmt0: timer@88004 {
+			compatible = "renesas,rx-timer-cmt";
+			reg = <0x00088004 0x02>,
+			      <0x00088000 0x02>,
+			      <0x00088002 0x02>,
+			      <0x00088006 0x02>;
+			status = "disabled";
+		};
+
+		ofsm: ofsm@ffffff80 {
+			compatible = "zephyr,memory-region";
+			reg = <0xFFFFFF80 0x0F>;
+			zephyr,memory-region = "OFSM";
+			status = "okay";
+		};
+	};
+};

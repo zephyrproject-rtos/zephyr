@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX130
+	bool
+	select SOC_FAMILY_RENESAS_RX
+	help
+	  Renesas RX130 series
+
+config SOC_R5F513083XFB
+	bool
+	select SOC_SERIES_RX130
+	help
+	  R5F513083XFB
+
+config SOC_SERIES
+	default "rx130" if SOC_SERIES_RX130
+
+config SOC
+	default "r5f513083xfb" if SOC_R5F513083XFB
