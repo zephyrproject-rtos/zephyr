@@ -143,9 +143,8 @@ void sys_clock_disable(void)
 
 static int sys_clock_driver_init(void)
 {
-
-	esp_intr_alloc(DT_IRQN(DT_NODELABEL(systimer0)),
-		0,
+	esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)),
 		sys_timer_isr,
 		NULL,
 		NULL);
