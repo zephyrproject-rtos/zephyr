@@ -345,8 +345,8 @@ static uint8_t next_free_call_index(void)
 	return BT_TBS_FREE_CALL_INDEX;
 }
 
-static struct bt_tbs_call *call_alloc(struct tbs_service_inst *inst, uint8_t state, const char *uri,
-				      uint16_t uri_len)
+static struct bt_tbs_call *call_alloc(struct tbs_service_inst *inst, uint8_t state,
+				      const uint8_t *uri, uint16_t uri_len)
 {
 	struct bt_tbs_call *free_call = NULL;
 
@@ -1947,7 +1947,7 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 	service_inst = CONTAINER_OF(inst, struct tbs_service_inst, inst);
 
-	call = call_alloc(service_inst, BT_TBS_CALL_STATE_INCOMING, from, strlen(from));
+	call = call_alloc(service_inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
 	if (call == NULL) {
 		return -ENOMEM;
 	}
