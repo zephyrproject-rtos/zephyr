@@ -77,6 +77,7 @@ LOG_MODULE_REGISTER(input_pmw3610, CONFIG_INPUT_LOG_LEVEL);
 #define PERFORMANCE_FMODE_MASK (0x0f << 4)
 #define PERFORMANCE_FMODE_NORMAL (0x00 << 4)
 #define PERFORMANCE_FMODE_FORCE_AWAKE (0x0f << 4)
+#define POWER_UP_RESET 0x5a
 #define POWER_UP_WAKEUP 0x96
 #define SHUTDOWN_ENABLE 0xe7
 #define SPI_PAGE0_1 0xff
@@ -361,6 +362,13 @@ static int pmw3610_configure(const struct device *dev)
 		k_sleep(K_MSEC(RESET_DELAY_MS));
 
 		gpio_pin_set_dt(&cfg->reset_gpio, 0);
+
+		k_sleep(K_MSEC(RESET_DELAY_MS));
+	} else {
+		ret = pmw3610_write_reg(dev, PMW3610_POWER_UP_RESET, POWER_UP_RESET);
+		if (ret < 0) {
+			return ret;
+		}
 
 		k_sleep(K_MSEC(RESET_DELAY_MS));
 	}
