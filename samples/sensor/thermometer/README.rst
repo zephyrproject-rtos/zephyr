@@ -40,6 +40,9 @@ node that supports ``SENSOR_CHAN_AMBIENT_TEMP`` and use an overlay to create an
 alias named ``ambient-temp0`` to link to the node.  See the overlay used for the
 ``nrf52840dk/nrf52840`` board within this sample:
 ``boards/nrf52840dk_nrf52840.overlay``
+If your target sensor does not support alarm mode or it is not implemented yet
+for your sensor driver disable alarm feature from sample by disabling
+``CONFIG_SAMPLES_SENSOR_THERMOMETER_ALERT`` flag.
 
 
 Temperature Alert
