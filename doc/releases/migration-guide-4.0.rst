@@ -91,6 +91,10 @@ LED Strip
 Sensors
 =======
 
+* The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
+  to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
+  :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808`` string.
+
 Serial
 ======
 
