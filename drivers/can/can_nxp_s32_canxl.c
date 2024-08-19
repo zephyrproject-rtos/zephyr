@@ -167,7 +167,7 @@ static void can_nxp_s32_config_rx_fifo_filter(const struct device *dev, int filt
 }
 
 /* Get the RxFiFO filter matched with the received RxFIFO message queue */
-static inline int can_nxp_s32_get_rx_fifo_filter(struct can_nxp_s32_data *data)
+static inline int can_nxp_s32_get_rx_fifo_filter(struct can_nxp_s32_data *data, uint8_t queue_idx)
 {
 	int alloc = -ENOSPC;
 	uint32_t mask;
@@ -179,8 +179,8 @@ static inline int can_nxp_s32_get_rx_fifo_filter(struct can_nxp_s32_data *data)
 			continue;
 		}
 
-		if ((data->rx_fifo[0].Header.Id & mask) ==
-			(data->rx_fifo_filter[filter_id].idAddrFilterH & mask)) {
+		if ((data->rx_fifo[queue_idx].Header.Id & mask) ==
+		    (data->rx_fifo_filter[filter_id].idAddrFilterH & mask)) {
 			alloc = filter_id;
 			break;
 		}
@@ -888,12 +888,17 @@ static void can_nxp_s32_ctrl_callback(const struct device *dev,
 		}
 #ifdef CONFIG_CAN_NXP_S32_RX_FIFO
 	} else if (eventType == CANEXCEL_EVENT_RXFIFO_COMPLETE) {
-		alloc = can_nxp_s32_get_rx_fifo_filter(data);
+		uint8_t queue_idx = ((config->base_rx_fifo_ctrl->RXFCSTA &
+				      CANXL_RXFIFO_CONTROL_RXFCSTA_HWPOINTER_MASK) >>
+				     CANXL_RXFIFO_CONTROL_RXFCSTA_HWPOINTER_SHIFT) -
+				    1;
+
+		alloc = can_nxp_s32_get_rx_fifo_filter(data, queue_idx);
 
 		if (alloc != -ENOSPC) {
 			rx_func = data->rx_cbs[alloc].function;
 			if (atomic_test_bit(data->rx_allocs, alloc)) {
-				nxp_s32_msg_data_to_zcan_frame(data->rx_fifo[0], &frame);
+				nxp_s32_msg_data_to_zcan_frame(data->rx_fifo[queue_idx], &frame);
 
 				LOG_DBG("%s: Received %d bytes Rx FiFo %d, "
 					"Rx Id: 0x%x, "

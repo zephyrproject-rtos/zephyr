@@ -79,6 +79,9 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
+    versions (1.0 and 1.1) are no longer supported.
+
 * Added support for these boards:
 
 * Made these board changes:
