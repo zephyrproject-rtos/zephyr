@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -255,7 +255,7 @@ void uart_nxp_s32_isr(const struct device *dev)
 
 static void uart_nxp_s32_event_handler(const uint8 instance,
 				       Linflexd_Uart_Ip_EventType event,
-				       void *user_data)
+				       const void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
 	const struct uart_nxp_s32_config *config = dev->config;
