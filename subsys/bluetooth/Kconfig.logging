@@ -28,6 +28,7 @@ parent-module = BT
 
 # COMMON (subsys/bluetooth/common/Kconfig)
 
+menu "Common"
 module = BT_HCI_DRIVER
 module-str = "Bluetooth HCI driver"
 source "subsys/logging/Kconfig.template.log_config_inherit"
@@ -35,7 +36,83 @@ source "subsys/logging/Kconfig.template.log_config_inherit"
 module = BT_RPA
 module-str = "Bluetooth Resolvable Private Address (RPA)"
 source "subsys/logging/Kconfig.template.log_config_inherit"
+endmenu # Common
 
+menu "Libraries"
+
+if BT_EAD
+module = BT_EAD
+module-str = "Bluetooth Encrypted Advertising Data"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_EAD
+
+if BT_CRYPTO
+module = BT_CRYPTO
+module-str = "Bluetooth Cryptographic Toolbox"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_CRYPTO
+
+endmenu # Libraries
+
+if BT_HCI_HOST
+menu "Host"
+module = BT_ATT
+module-str = "Bluetooth Attribute Protocol (ATT)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_GATT
+module-str = "Bluetooth Generic Attribute Profile (GATT)"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+module = BT_L2CAP
+module-str = "Bluetooth L2CAP"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+if BT_DF
+module = BT_DF
+module-str = "Bluetooth Direction Finding"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_DF
+
+if BT_SETTINGS
+module = BT_SETTINGS
+module-str = "Bluetooth storage"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_SETTINGS
+
+module = BT_HCI_CORE
+module-str = "Bluetooth HCI core"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+if BT_CONN
+module = BT_CONN
+module-str = "Bluetooth connection"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_CONN
+
+if BT_ISO
+module = BT_ISO
+module-str = "ISO channel"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_ISO
+
+module = BT_KEYS
+module-str = "Bluetooth security keys"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
+if BT_SMP
+module = BT_SMP
+module-str = "Bluetooth Security Manager Protocol"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endif # BT_SMP
+
+module = BT_SERVICE
+module-str = "Bluetooth Services"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+endmenu # LE Host
+endif # BT_HCI_HOST
+
+if BT_AUDIO
 menu "Audio"
 
 if BT_AICS
@@ -285,94 +362,7 @@ source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 endif # BT_PBP
 
 endmenu # Audio
-
-menu "Others"
-
-# CRYPTO (subsys/bluetooth/crypto/Kconfig)
-
-if BT_CRYPTO
-module = BT_CRYPTO
-module-str = "Bluetooth Cryptographic Toolbox"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_CRYPTO
-
-# GATT
-
-module = BT_ATT
-module-str = "Bluetooth Attribute Protocol (ATT)"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-module = BT_GATT
-module-str = "Bluetooth Generic Attribute Profile (GATT)"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-# L2CAP
-
-module = BT_L2CAP
-module-str = "Bluetooth L2CAP"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-# LIB (subsys/bluetooth/lib/Kconfig)
-
-if BT_EAD
-module = BT_EAD
-module-str = "Bluetooth Encrypted Advertising Data"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_EAD
-
-# HOST (subsys/bluetooth/host/Kconfig)
-
-if BT_DF
-module = BT_DF
-module-str = "Bluetooth Direction Finding"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_DF
-
-if BT_SETTINGS
-module = BT_SETTINGS
-module-str = "Bluetooth storage"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_SETTINGS
-
-module = BT_HCI_CORE
-module-str = "Bluetooth HCI core"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-if BT_CONN
-module = BT_CONN
-module-str = "Bluetooth connection"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_CONN
-
-if BT_ISO
-module = BT_ISO
-module-str = "ISO channel"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_ISO
-
-module = BT_KEYS
-module-str = "Bluetooth security keys"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-if BT_SMP
-module = BT_SMP
-module-str = "Bluetooth Security Manager Protocol"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_SMP
-
-module = BT_SERVICE
-module-str = "Bluetooth Services"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-
-# CONTROLLER (subsys/bluetooth/controller/Kconfig)
-
-if BT_ISO
-module = BT_CTLR_ISOAL
-module-str = "Bluetooth Controller ISO-AL"
-source "subsys/logging/Kconfig.template.log_config_inherit"
-endif # BT_ISO
-
-endmenu # Others
+endif # BT_AUDIO
 
 if BT_CLASSIC
 menu "Bluetooth Classic"

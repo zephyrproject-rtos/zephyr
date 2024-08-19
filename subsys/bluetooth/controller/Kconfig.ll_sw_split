@@ -219,6 +219,10 @@ config BT_CTLR_CHECK_SAME_PEER_SYNC
 
 endif # BT_CTLR_ADV_EXT
 
+module = BT_CTLR_ISOAL
+module-str = "Bluetooth Controller ISO-AL"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 config BT_CTLR_ISOAL_LOG_DBG_VERBOSE
 	bool "ISO-AL verbose debug logging"
 	depends on BT_CTLR_ISOAL_LOG_LEVEL = 4
