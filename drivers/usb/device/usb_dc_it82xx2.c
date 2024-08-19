@@ -512,11 +512,11 @@ static int it82xx2_usb_dc_ip_init(void)
 	usb_regs->host_device_control = 0;
 
 	usb_regs->dc_interrupt_status =
-		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_INT;
 
 	usb_regs->dc_interrupt_mask = 0x00;
 	usb_regs->dc_interrupt_mask =
-		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_INT;
 
 	usb_regs->dc_address = DC_ADDR_NULL;
 
@@ -834,6 +834,17 @@ static void it82xx2_usb_dc_trans_done(void)
 	}
 }
 
+static inline void emit_resume_event(void)
+{
+	if (udata0.suspended) {
+		udata0.suspended = false;
+		k_sem_give(&udata0.suspended_sem);
+		if (udata0.usb_status_cb) {
+			(*(udata0.usb_status_cb))(USB_DC_RESUME, NULL);
+		}
+	}
+}
+
 static void it82xx2_usb_dc_isr(void)
 {
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
@@ -855,7 +866,13 @@ static void it82xx2_usb_dc_isr(void)
 	/* sof received */
 	if (status & DC_SOF_RECEIVED) {
 		it82xx2_enable_sof_int(false);
+		emit_resume_event();
 		k_work_reschedule(&udata0.check_suspended_work, K_MSEC(5));
+	}
+	/* resume received */
+	if (status & DC_RESUME_INT) {
+		usb_regs->dc_interrupt_status = DC_RESUME_INT;
+		emit_resume_event();
 	}
 	/* transaction done */
 	if (status & DC_TRANS_DONE) {
@@ -877,13 +894,6 @@ static void suspended_check_handler(struct k_work *item)
 
 	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
 		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
-		if (udata->suspended) {
-			if (udata->usb_status_cb) {
-				(*(udata->usb_status_cb))(USB_DC_RESUME, NULL);
-			}
-			udata->suspended = false;
-			k_sem_give(&udata->suspended_sem);
-		}
 		k_work_reschedule(&udata->check_suspended_work, K_MSEC(5));
 		return;
 	}
