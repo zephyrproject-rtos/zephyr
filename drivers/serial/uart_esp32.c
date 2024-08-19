@@ -81,6 +81,7 @@ struct uart_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
 	int irq_priority;
+	int irq_flags;
 	bool tx_invert;
 	bool rx_invert;
 #if CONFIG_UART_ASYNC_API
@@ -937,7 +938,8 @@ static int uart_esp32_init(const struct device *dev)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority),
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags),
 			(ISR_HANDLER)uart_esp32_isr,
 			(void *)dev,
 			NULL);
@@ -1024,6 +1026,7 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
 		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
 		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),                                    \
 		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
 		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
 		ESP_UART_DMA_INIT(idx)};                                                           \

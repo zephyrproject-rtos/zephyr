@@ -52,6 +52,7 @@ struct wdt_esp32_config {
 	void (*connect_irq)(void);
 	int irq_source;
 	int irq_priority;
+	int irq_flags;
 };
 
 static inline void wdt_esp32_seal(const struct device *dev)
@@ -168,7 +169,8 @@ static int wdt_esp32_init(const struct device *dev)
 	wdt_hal_init(&data->hal, config->wdt_inst, MWDT_TICK_PRESCALER, true);
 
 	int ret = esp_intr_alloc(config->irq_source,
-				ESP_PRIO_TO_FLAGS(config->irq_priority),
+				ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				ESP_INT_FLAGS_CHECK(config->irq_flags),
 				(ISR_HANDLER)wdt_esp32_isr,
 				(void *)dev,
 				NULL);
@@ -198,6 +200,7 @@ static const struct wdt_driver_api wdt_api = {
 		.wdt_inst = WDT_MWDT##idx,	\
 		.irq_source = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, irq),	\
 		.irq_priority = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, priority),	\
+		.irq_flags = DT_IRQ_BY_IDX(DT_NODELABEL(wdt##idx), 0, flags),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	};									   \
