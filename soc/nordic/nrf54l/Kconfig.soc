@@ -27,5 +27,17 @@ config SOC_NRF54L15_ENGA_CPUFLPR
 	help
 	  NRF54L15 ENGA CPUFLPR
 
+config SOC_NRF54L15_CPUAPP
+	bool
+	select SOC_NRF54L15
+	help
+	  NRF54L15 CPUAPP
+
+config SOC_NRF54L15_CPUFLPR
+	bool
+	select SOC_NRF54L15
+	help
+	  NRF54L15 CPUFLPR
+
 config SOC
 	default "nrf54l15" if SOC_NRF54L15
