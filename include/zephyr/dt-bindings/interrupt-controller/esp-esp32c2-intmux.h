@@ -51,4 +51,12 @@
 #define CORE0_PIF_PMS_SIZE_INTR_SOURCE         41
 #define CACHE_CORE0_ACS_INTR_SOURCE            42
 
+/* RISC-V supports priority values from 1 (lowest) to 15.
+ * As interrupt controller for Xtensa and RISC-V is shared, this is
+ * set to an intermediate and compatible value.
+ */
+#define IRQ_DEFAULT_PRIORITY	3
+
+#define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
+
 #endif
