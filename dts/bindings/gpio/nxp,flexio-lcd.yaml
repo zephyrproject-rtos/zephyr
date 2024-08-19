@@ -1,0 +1,41 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+compatible: "nxp,flexio-lcd"
+
+description: |
+    GPIO pins exposed on NXP FlexIO LCD interface. These pins are
+    exposed on a 32 pin. The pins have the
+    following assignments:
+
+      Pin Number    Usage
+      1             VDD (3v3)
+      2             GND
+      3             FC2_I2C_SCL-FXIO_HDR
+      4             FC2_I2C_SDA-FXIO_HDR
+      5             LCD_INT
+      6             LCD_GPIO
+      7             LCD_RST
+      8             LCD_DC
+      9             LCD_CS
+      10            LCD_WR
+      11            LCD_RD
+      12            LCD_TE
+      13-15         FXIO_HDR
+      16            D19
+      17            D20
+      18            D21
+      19            D22
+      20            D23
+      21            D24
+      22            D25
+      23            D26
+      24            D27
+      25            D28
+      26            D29
+      27            D30
+      28            D31
+      29-32         NC
+
+include: [gpio-nexus.yaml, base.yaml]
