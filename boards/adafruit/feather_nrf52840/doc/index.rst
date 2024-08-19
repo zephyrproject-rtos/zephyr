@@ -1,6 +1,6 @@
 .. _adafruit_feather_nrf52840:
 
-Adafruit Feather nRF52840 (Express, Express UF2, Sense)
+Adafruit Feather nRF52840
 #######################################################
 
 Overview
@@ -135,16 +135,15 @@ Programming and Debugging
 Flashing
 ========
 
-Flashing Zephyr onto the ``adafruit_feather_nrf52480_express`` board is possible
+Flashing Zephyr onto the ``adafruit_feather_nrf52480`` board and is possible
 using an external programmer. The programmer is attached to the SWD header.
 
 The Feather nRF52840 ships with the `Adafruit nRF52 Bootloader`_ which
 supports flashing using `UF2`_. This allows easy flashing of new images,
 but does not support debugging the device.
 
-To flash the ``adafruit_feather_nrf52480_express`` using UF2, you must use
-the ``adafruit_feather_nrf52480_express_uf2`` board, which uses an appropriate
-flash layout.
+To flash using UF2, you must use the ``uf2`` board variants, which use
+an appropriate flash layout.
 
 #. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
@@ -154,7 +153,7 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express
+         :board: adafruit_feather_nrf52840/nRF52840
          :goals: build
          :compact:
 
@@ -162,7 +161,7 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express_uf2
+         :board: adafruit_feather_nrf52840/nRF52840/uf2
          :goals: build
          :compact:
 
@@ -170,7 +169,15 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_sense
+         :board: adafruit_feather_nrf52840/nRF52840/sense
+         :goals: build
+         :compact:
+
+   .. group-tab:: Sense UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nRF52840/sense/uf2
          :goals: build
          :compact:
 
@@ -189,7 +196,7 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express
+         :board: adafruit_feather_nrf52840/nRF52840
          :goals: flash
          :compact:
 
@@ -197,7 +204,7 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_express_uf2
+         :board: adafruit_feather_nrf52840/nRF52840/uf2
          :goals: flash
          :compact:
 
@@ -205,7 +212,15 @@ flash layout.
 
       .. zephyr-app-commands::
          :zephyr-app: samples/basic/blinky
-         :board: adafruit_feather_nrf52840_sense
+         :board: adafruit_feather_nrf52840/nRF52840/sense
+         :goals: flash
+         :compact:
+
+   .. group-tab:: Sense UF2
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: adafruit_feather_nrf52840/nRF52840/sense/uf2
          :goals: flash
          :compact:
 
