@@ -213,10 +213,9 @@ static int lis2dux12_sample_fetch_temp(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	/* fetch raw data sample */
-	lis2dux12_md_t mode;
 	lis2dux12_outt_data_t temp_data = {0};
 
-	if (lis2dux12_outt_data_get(ctx, &mode, &temp_data) < 0) {
+	if (lis2dux12_outt_data_get(ctx, &temp_data) < 0) {
 		LOG_ERR("Failed to fetch raw temperature data sample");
 		return -EIO;
 	}
