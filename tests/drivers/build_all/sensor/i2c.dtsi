@@ -180,8 +180,8 @@ test_i2c_ms5837: ms5837@18 {
 	reg = <0x18>;
 };
 
-test_i2c_mcp9808: mcp9808@19 {
-	compatible = "microchip,mcp9808";
+test_i2c_jc42: jc42@19 {
+	compatible = "jedec,jc-42.4-temp";
 	reg = <0x19>;
 	int-gpios = <&test_gpio 0 0>;
 };

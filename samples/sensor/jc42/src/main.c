@@ -36,7 +36,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-#ifdef CONFIG_MCP9808_TRIGGER
+#ifdef CONFIG_JC42_TRIGGER
 
 static struct sensor_trigger sensor_trig;
 
@@ -106,7 +106,7 @@ static void trigger_handler(const struct device *dev,
 
 int main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const struct device *const dev = DEVICE_DT_GET_ANY(jedec_jc_42_4_temp);
 	int rc;
 
 	if (dev == NULL) {
@@ -118,7 +118,7 @@ int main(void)
 		return 0;
 	}
 
-#ifdef CONFIG_MCP9808_TRIGGER
+#ifdef CONFIG_JC42_TRIGGER
 	rc = set_window_ucel(dev, TEMP_INITIAL_CEL * UCEL_PER_CEL);
 	if (rc == 0) {
 		sensor_trig.type = SENSOR_TRIG_THRESHOLD;
