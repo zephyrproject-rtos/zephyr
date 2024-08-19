@@ -241,3 +241,12 @@ config USE_RZ_FSP_SCI_UART
 	  Enable RZ FSP SCI UART driver
 
 endif
+
+config HAS_RENESAS_RX_RDP
+	bool
+	help
+	  Enable Renesas RX RDP support
+
+if HAS_RENESAS_RX_RDP
+
+endif # HAS_RENESAS_RX_RDP
