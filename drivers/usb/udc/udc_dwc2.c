@@ -184,16 +184,12 @@ static void dwc2_flush_rx_fifo(const struct device *dev)
 	}
 }
 
-static void dwc2_flush_tx_fifo(const struct device *dev, const uint8_t idx)
+static void dwc2_flush_tx_fifo(const struct device *dev, const uint8_t fnum)
 {
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t grstctl_reg = (mem_addr_t)&base->grstctl;
-	/* TODO: use dwc2_get_dxepctl_reg() */
-	mem_addr_t diepctl_reg = (mem_addr_t)&base->in_ep[idx].diepctl;
 	uint32_t grstctl;
-	uint32_t fnum;
 
-	fnum = usb_dwc2_get_depctl_txfnum(sys_read32(diepctl_reg));
 	grstctl = usb_dwc2_set_grstctl_txfnum(fnum) | USB_DWC2_GRSTCTL_TXFFLSH;
 
 	sys_write32(grstctl, grstctl_reg);
@@ -1544,7 +1540,7 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		 * were transferred to the host.
 		 */
 
-		dwc2_flush_tx_fifo(dev, ep_idx);
+		dwc2_flush_tx_fifo(dev, usb_dwc2_get_depctl_txfnum(dxepctl));
 	}
 
 	udc_ep_set_busy(dev, cfg->addr, false);
