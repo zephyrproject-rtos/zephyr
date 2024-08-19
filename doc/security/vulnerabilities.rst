@@ -1732,7 +1732,15 @@ This has been fixed in main for v3.7.0
 CVE-2024-4785
 -------------
 
-Under embargo until 2024-08-07
+Bluetooth: Missing Check in LL_CONNECTION_UPDATE_IND Packet Leads to Division by Zero
+
+- `Zephyr project bug tracker GHSA-xcr5-5g98-mchp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xcr5-5g98-mchp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 72608 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/72608>`_
 
 CVE-2024-5754
 -------------
