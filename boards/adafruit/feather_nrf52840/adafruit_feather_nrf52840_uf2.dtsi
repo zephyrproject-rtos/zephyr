@@ -5,13 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
-#include "adafruit_feather_nrf52840_common.dtsi"
-
 / {
-	model = "Adafruit Feather nRF52840 Express UF2";
-	compatible = "adafruit,feather_nrf52840-express-uf2";
 
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
@@ -20,12 +14,6 @@
 		zephyr,bt-mon-uart = &cdc_acm_uart0;
 		zephyr,bt-c2h-uart = &cdc_acm_uart0;
 		zephyr,code-partition = &code_partition;
-	};
-
-	leds {
-		led0: led_0 {
-			gpios = <&gpio1 15 0>;
-		};
 	};
 };
 

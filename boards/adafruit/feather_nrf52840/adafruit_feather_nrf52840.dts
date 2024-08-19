@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 Tobias Svehagen
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "adafruit_feather_nrf52840_common.dtsi"
+#include "adafruit_feather_nrf52840_standard.dtsi"
+
+/ {
+	model = "Adafruit Feather nRF52840 Express";
+	compatible = "adafruit,feather-nrf52840";
+
+	leds {
+		led0: led_0 {
+			gpios = <&gpio1 15 0>;
+		};
+	};
+};
