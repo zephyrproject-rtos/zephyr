@@ -71,7 +71,8 @@ struct pcnt_esp32_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	const int irq_src;
+	const int irq_source;
+	const int irq_priority;
 	struct pcnt_esp32_unit_config *unit_config;
 	const int unit_len;
 };
@@ -340,7 +341,10 @@ static int pcnt_esp32_trigger_set(const struct device *dev, const struct sensor_
 	data->trigger_handler = handler;
 	data->trigger = trig;
 
-	ret = esp_intr_alloc(config->irq_src, 0, (intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
+	ret = esp_intr_alloc(config->irq_source,
+			ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INTR_FLAG_IRAM,
+			(intr_handler_t)pcnt_esp32_isr, (void *)dev, NULL);
+
 	if (ret != 0) {
 		LOG_ERR("pcnt isr registration failed (%d)", ret);
 		return ret;
@@ -399,7 +403,8 @@ static struct pcnt_esp32_config pcnt_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_src = DT_INST_IRQN(0),
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
 	.unit_config = unit_config,
 	.unit_len = ARRAY_SIZE(unit_config),
 };

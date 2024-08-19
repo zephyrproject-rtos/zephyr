@@ -937,7 +937,7 @@ static int uart_esp32_init(const struct device *dev)
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	ret = esp_intr_alloc(config->irq_source,
-			config->irq_priority,
+			ESP_PRIO_TO_FLAGS(config->irq_priority),
 			(ISR_HANDLER)uart_esp32_isr,
 			(void *)dev,
 			NULL);
@@ -1009,12 +1009,9 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #define ESP_UART_UHCI_INIT(n)                                                                      \
 	.uhci_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (&UHCI0), (NULL))
 
-#define UART_IRQ_PRIORITY ESP_INTR_FLAG_LEVEL2
-
 #else
 #define ESP_UART_DMA_INIT(n)
 #define ESP_UART_UHCI_INIT(n)
-#define UART_IRQ_PRIORITY (0)
 #endif
 
 #define ESP32_UART_INIT(idx)                                                                       \
@@ -1025,8 +1022,8 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),          \
-		.irq_source = DT_INST_IRQN(idx),                                                   \
-		.irq_priority = UART_IRQ_PRIORITY,                                                 \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
 		.tx_invert = DT_INST_PROP_OR(idx, tx_invert, false),                               \
 		.rx_invert = DT_INST_PROP_OR(idx, rx_invert, false),                               \
 		ESP_UART_DMA_INIT(idx)};                                                           \

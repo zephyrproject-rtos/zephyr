@@ -43,6 +43,7 @@ struct serial_esp32_usb_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
+	int irq_priority;
 };
 
 struct serial_esp32_usb_data {
@@ -50,7 +51,6 @@ struct serial_esp32_usb_data {
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
 #endif
-	int irq_line;
 	int64_t last_tx_time;
 };
 
@@ -108,8 +108,10 @@ static int serial_esp32_usb_init(const struct device *dev)
 	int ret = clock_control_on(config->clock_dev, config->clock_subsys);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	data->irq_line = esp_intr_alloc(config->irq_source, 0, (ISR_HANDLER)serial_esp32_usb_isr,
-					(void *)dev, NULL);
+	esp_intr_alloc(config->irq_source,
+			ESP_PRIO_TO_FLAGS(config->irq_priority),
+			(ISR_HANDLER)serial_esp32_usb_isr,
+			(void *)dev, NULL);
 #endif
 	return ret;
 }
@@ -269,7 +271,8 @@ static const DRAM_ATTR struct uart_driver_api serial_esp32_usb_api = {
 static const DRAM_ATTR struct serial_esp32_usb_config serial_esp32_usb_cfg = {
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQN(0)
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority)
 };
 
 static struct serial_esp32_usb_data serial_esp32_usb_data_0;

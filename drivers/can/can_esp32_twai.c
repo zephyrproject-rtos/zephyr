@@ -71,6 +71,7 @@ struct can_esp32_twai_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
 	int irq_source;
+	int irq_priority;
 #ifndef CONFIG_SOC_SERIES_ESP32
 	/* 32-bit variant of output clock divider register required for non-ESP32 MCUs */
 	uint32_t cdr32;
@@ -202,7 +203,9 @@ static int can_esp32_twai_init(const struct device *dev)
 	can_esp32_twai_write_reg32(dev, TWAI_CLOCK_DIVIDER_REG, twai_config->cdr32);
 #endif /* !CONFIG_SOC_SERIES_ESP32 */
 
-	esp_intr_alloc(twai_config->irq_source, 0, can_esp32_twai_isr, (void *)dev, NULL);
+	esp_intr_alloc(twai_config->irq_source,
+			ESP_PRIO_TO_FLAGS(twai_config->irq_priority) | ESP_INTR_FLAG_IRAM,
+			can_esp32_twai_isr, (void *)dev, NULL);
 
 	return 0;
 }
@@ -271,7 +274,8 @@ const struct can_driver_api can_esp32_twai_driver_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.irq_source = DT_INST_IRQN(inst),                                                  \
+		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
+		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
 		TWAI_CDR32_INIT(inst)                                                              \
 	};                                                                                         \
 	CAN_ESP32_TWAI_ASSERT_CLKOUT_DIVIDER(inst);                                                \

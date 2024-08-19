@@ -42,6 +42,7 @@ static void counter_esp32_isr(void *arg);
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
 	int irq_source;
+	int irq_priority;
 	const struct device *clock_dev;
 };
 
@@ -63,7 +64,7 @@ static int counter_esp32_init(const struct device *dev)
 			       &data->clk_src_freq);
 
 	esp_intr_alloc(cfg->irq_source,
-			0,
+			ESP_PRIO_TO_FLAGS(cfg->irq_priority),
 			(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
 			(void *)dev,
 			NULL);
@@ -200,7 +201,8 @@ static const struct counter_esp32_config counter_config = {
 		.channels = 1
 	},
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.irq_source = DT_INST_IRQN(0),
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority)
 };
 
 static const struct counter_driver_api rtc_timer_esp32_api = {
