@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Flash memory binding of Renesas RX family
+
+include: [base.yaml, soc-nv-flash.yaml]
+
+compatible: "renesas,rx-nv-flash"

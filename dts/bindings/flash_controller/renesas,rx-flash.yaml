@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX Flash region
+
+compatible: "renesas,rx-flash"
+
+include: flash-controller.yaml
