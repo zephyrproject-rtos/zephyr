@@ -1,18 +1,18 @@
-.. _npcm400f_evb:
+.. _npcm400_evb:
 
-Nuvoton NPCM400F_EVB
+Nuvoton NPCM400_EVB
 ####################
 
 Overview
 ********
 
-The NPCX400F_EVB kit is a development platform to evaluate the
+The NPCX400_EVB kit is a development platform to evaluate the
 Nuvoton NPCM4 series microcontrollers. This board needs to be mated with
-part number NPCM400F.
+part number NPCM400.
 
-.. image:: npcm400f_evb.jpg
+.. image:: npcm400_evb.jpg
      :align: center
-     :alt: NPCM400F Evaluation Board
+     :alt: NPCM400 Evaluation Board
 
 Hardware
 ********
@@ -51,7 +51,7 @@ The following features are supported:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/nuvoton/npcm400f_evb/npcm400f_evb_defconfig`
+:zephyr_file:`boards/nuvoton/npcm400_evb/npcm400_evb_defconfig`
 
 
 Connections and IOs
@@ -62,7 +62,7 @@ Nuvoton to provide the schematic for this board.
 System Clock
 ============
 
-The NPCX400F MCU is configured to use the 96Mhz.
+The NPCX400 MCU is configured to use the 96Mhz.
 
 Serial Port
 ===========
@@ -87,7 +87,7 @@ SEGGER J-link's drivers are at https://www.segger.com/downloads/jlink/
 Build and flash the shell module sample.::
 
   west build -t clean && \
-    west build -c -p auto -b npcm400f_evb samples/subsys/shell/shell_module/ && \
+    west build -c -p auto -b npcm400_evb samples/subsys/shell/shell_module/ && \
     west flash --openocd /usr/local/bin/openocd
 
 Debugging

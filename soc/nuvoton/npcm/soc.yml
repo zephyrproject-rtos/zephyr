@@ -3,4 +3,4 @@ family:
   series:
   - name: npcm4
     socs:
-    - name: npcm400f
+    - name: npcm400

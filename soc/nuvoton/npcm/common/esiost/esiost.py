@@ -151,7 +151,7 @@ def _check_chip(output, esiost_args):
 
     if esiost_args.chip_name == INVALID_INPUT:
         message = f'Invalid chip name, '
-        message += "should be npcm400f."
+        message += "should be npcm400."
         _exit_with_failure_delete_file(output, message)
 
 def _set_anchor(output, esiost_args):

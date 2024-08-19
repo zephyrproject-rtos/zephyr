@@ -6,11 +6,11 @@
 
 /dts-v1/;
 
-#include <nuvoton/npcm400f.dtsi>
+#include <nuvoton/npcm400.dtsi>
 #include <nuvoton/npcm/npcm4/npcm4-pinctrl.dtsi>
 
 / {
-	model = "Nuvoton NPCM400F evaluation board";
+	model = "Nuvoton NPCM400 evaluation board";
 
 	chosen {
 		zephyr,sram = &sram0;

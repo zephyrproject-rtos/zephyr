@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: npcm400f_evb
-name: Nuvoton NPCM400F EVB
+identifier: npcm400_evb
+name: Nuvoton NPCM400 EVB
 type: mcu
 arch: arm
 toolchain:

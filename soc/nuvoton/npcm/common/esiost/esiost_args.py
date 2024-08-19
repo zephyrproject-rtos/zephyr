@@ -23,10 +23,10 @@ DEFAULT_VERBOSE = NO_VERBOSE
 
 # Chips: convert from name to index.
 CHIPS_INFO = {
-    'npcm400f': {'flash_address': 0x80000, 'flash_size': 0x20000, 'ram_address': 0x10008000, 'ram_size': 0xC0000},
+    'npcm400': {'flash_address': 0x80000, 'flash_size': 0x20000, 'ram_address': 0x10008000, 'ram_size': 0xC0000},
 }
 
-DEFAULT_CHIP = 'npcm400f'
+DEFAULT_CHIP = 'npcm400'
 
 class EsiostArgs:
     """creates an arguments object for the ESIOST,
