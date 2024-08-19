@@ -143,7 +143,7 @@ typedef union {
 #define EIC_CONFIG_SENSE0_BOTH               (EIC_CONFIG0_SENSE0_BOTH_Val << EIC_CONFIG0_SENSE0_Pos) /* (EIC_CONFIG0) Both edges detection Position  */
 #define EIC_CONFIG_SENSE0_HIGH               (EIC_CONFIG0_SENSE0_HIGH_Val << EIC_CONFIG0_SENSE0_Pos) /* (EIC_CONFIG0) High level detection Position  */
 #define EIC_CONFIG_SENSE0_LOW                (EIC_CONFIG0_SENSE0_LOW_Val << EIC_CONFIG0_SENSE0_Pos) /* (EIC_CONFIG0) Low level detection Position  */
-#define EIC_CONFIG_FILTEN0                   (_UINT32_(0x1) << EIC_CONFIG0_FILTEN0_Pos)           /* (EIC_CONFIG0) Filter Enable 0 Mask */
+#define EIC_CONFIG_FILTEN0                   ((uint32_t)(0x1) << EIC_CONFIG0_FILTEN0_Pos)           /* (EIC_CONFIG0) Filter Enable 0 Mask */
 /* For SAM0 compatibily end */
 
 /* -------- EIC_DEBOUNCEN : (EIC Offset: 0x30) (R/W 32) Debouncer Enable -------- */

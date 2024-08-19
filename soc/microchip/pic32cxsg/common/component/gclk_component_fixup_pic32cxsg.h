@@ -82,7 +82,7 @@ typedef union {
 } GCLK_PCHCTRL_Type;
 #endif /* !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GCLK_PCHCTRL_CHEN_BIT_MASK (_UINT32_(0x1) << GCLK_PCHCTRL_CHEN_Pos) 
+#define GCLK_PCHCTRL_CHEN_BIT_MASK ((uint32_t)(0x1) << GCLK_PCHCTRL_CHEN_Pos) 
 
 #if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 typedef struct {
