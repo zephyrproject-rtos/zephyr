@@ -442,9 +442,11 @@ static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
 
+	if (wifi_mgmt_api == NULL) {
+		return -ENOTSUP;
+	}
 	if (roaming_params.is_11r_used) {
-		if (wifi_mgmt_api == NULL ||
-		    wifi_mgmt_api->start_11r_roaming == NULL) {
+		if (wifi_mgmt_api->start_11r_roaming == NULL) {
 			return -ENOTSUP;
 		}
 
@@ -457,11 +459,17 @@ static int wifi_start_roaming(uint32_t mgmt_request, struct net_if *iface,
 		}
 
 		return wifi_mgmt_api->send_11k_neighbor_request(dev, NULL);
-	} else if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+	} else if (wifi_mgmt_api->bss_ext_capab(dev, WIFI_EXT_CAPAB_BSS_TRANSITION)) {
+		if (wifi_mgmt_api->btm_query) {
+			return wifi_mgmt_api->btm_query(dev, 0x10);
+		} else {
+			return -ENOTSUP;
+		}
+	} else if (wifi_mgmt_api->legacy_roam) {
+		return wifi_mgmt_api->legacy_roam(dev);
+	} else {
 		return -ENOTSUP;
 	}
-
-	return wifi_mgmt_api->btm_query(dev, 0x10);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING, wifi_start_roaming);
