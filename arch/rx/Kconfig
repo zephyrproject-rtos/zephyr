@@ -91,12 +91,6 @@ config MAX_IRQ_LINES # check if: TODO: adaptation required
 	  determines the size of the _irq_to_interrupt_vector_table, which
 	  is used to track the association between vectors and IRQ numbers.
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	prompt "Hardware clock cycles per second"
-	default 120000000
-	help
-	  This option specifies hardware clock.
-
 config DYNAMIC_INTERRUPTS
 	default y
 
