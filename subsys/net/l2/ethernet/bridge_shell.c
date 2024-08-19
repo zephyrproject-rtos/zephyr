@@ -221,7 +221,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bridge_commands,
 	SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(bridge, &bridge_commands, "Ethernet Bridge commands", NULL);
+SHELL_SUBCMD_ADD((net), bridge, &bridge_commands,
+		 "Ethernet bridge commands.",
+		 cmd_bridge_show, 1, 1);
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_DEFAULT)
 static ETH_BRIDGE_INIT(shell_default_bridge);
