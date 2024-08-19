@@ -409,6 +409,15 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	}
 
 	diepctl = sys_read32(diepctl_reg);
+	if (!(diepctl & USB_DWC2_DEPCTL_USBACTEP)) {
+		/* Do not attempt to write data on inactive endpoint, because
+		 * no fifo is assigned to inactive endpoint and therefore it is
+		 * possible that the write will corrupt other endpoint fifo.
+		 */
+		irq_unlock(key);
+		return -ENOENT;
+	}
+
 	if (is_iso) {
 		if (priv->sof_num & 1) {
 			diepctl |= USB_DWC2_DEPCTL_SETODDFR;
