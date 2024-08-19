@@ -387,7 +387,7 @@ Bluetooth Host:
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/audio/
     - include/zephyr/bluetooth/classic/
-    - include/zephyr/bluetooth/audio/
+    - include/zephyr/bluetooth/mesh/
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
