@@ -997,6 +997,17 @@
 			status = "disabled";
 		};
 	};
+
+	rtc: rtc@4c000 {
+		compatible = "nxp,irtc";
+		reg = <0x4c000 0x1000>;
+		status = "disabled";
+		interrupts = <52 0>;
+		prescaler = <1>;
+		clock-frequency = <16384>;
+		clock-src = <0>;
+		alarms-count = <1>;
+	};
 };
 
 &systick {
