@@ -479,7 +479,8 @@ static int gpio_esp32_init(const struct device *dev)
 
 	if (!isr_connected) {
 		int ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)),
+			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)),
 			(ISR_HANDLER)gpio_esp32_isr,
 			(void *)dev,
 			NULL);
