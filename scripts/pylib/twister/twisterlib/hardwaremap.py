@@ -144,7 +144,8 @@ class HardwareMap:
         'Microchip Technology Inc.',
         'FTDI',
         'Digilent',
-        'Microsoft'
+        'Microsoft',
+        'Nuvoton'
     ]
 
     runner_mapping = {
