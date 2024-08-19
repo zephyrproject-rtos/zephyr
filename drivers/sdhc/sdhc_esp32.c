@@ -13,8 +13,8 @@
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-/* ESP32 includes */
 #include <esp_clk_tree.h>
 #include <hal/sdmmc_ll.h>
 #include <esp_intr_alloc.h>
@@ -68,6 +68,7 @@ struct sdhc_esp32_config {
 	const int d3_pin;
 
 	int irq_source;
+	int irq_priority;
 	uint8_t bus_width_cfg;
 
 	struct sdhc_host_props props;
@@ -1339,8 +1340,10 @@ static int sdhc_esp32_init(const struct device *dev)
 	sdio_hw->ctrl.int_enable = 0;
 
 	/* Attach interrupt handler */
-	ret = esp_intr_alloc(cfg->irq_source, 0, &sdio_esp32_isr, (void *)dev,
-			     &data->s_host_ctx.intr_handle);
+	ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INTR_FLAG_IRAM,
+				&sdio_esp32_isr, (void *)dev,
+				&data->s_host_ctx.intr_handle);
 
 	if (ret != 0) {
 		k_msgq_purge(data->s_host_ctx.event_queue);
@@ -1407,7 +1410,8 @@ static const struct sdhc_driver_api sdhc_api = {.reset = sdhc_esp32_reset,
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
 		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), offset), \
-		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
+		.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                            \
+		.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority),                     \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \

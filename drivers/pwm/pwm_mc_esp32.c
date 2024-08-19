@@ -533,8 +533,10 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 #define IRQ_CONFIG_FUNC(idx)                                                                       \
 	static void mcpwm_esp32_irq_config_func_##idx(const struct device *dev)                    \
 	{                                                                                          \
-		esp_intr_alloc(DT_INST_IRQN(idx), 0, (intr_handler_t)mcpwm_esp32_isr, (void *)dev, \
-			       NULL);                                                              \
+		esp_intr_alloc(DT_INST_IRQ_BY_IDX(idx, 0, irq),                            \
+				ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(idx, 0, priority)) |          \
+					ESP_INTR_FLAG_IRAM,                                            \
+				(intr_handler_t)mcpwm_esp32_isr, (void *)dev, NULL);               \
 	}
 #define CAPTURE_INIT(idx) .irq_config_func = mcpwm_esp32_irq_config_func_##idx
 #else
