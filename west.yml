@@ -228,7 +228,7 @@ manifest:
       groups:
         - hal
     - name: hal_st
-      revision: b77157f6bc4395e398d90ab02a7d2cbc01ab2ce7
+      revision: b2f548fe672f24122c7f92027b2c9eeea8a0483a
       path: modules/hal/st
       groups:
         - hal
