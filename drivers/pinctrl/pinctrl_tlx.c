@@ -143,8 +143,7 @@
 				       ((pin & 0xf0) ? 1 : 0)))
 
 
-#if CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \
-CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION)
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
 
 static int pinctrl_b9x_init(const struct device *dev)
 {
@@ -200,8 +199,7 @@ static int pinctrl_b9x_init(void)
 
 SYS_INIT(pinctrl_b9x_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /* CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \ */
-/* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION) */
+#endif /* CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION */
 
 /* Act as GPIO function disable */
 static inline void pinctrl_b9x_gpio_function_disable(uint32_t pin)

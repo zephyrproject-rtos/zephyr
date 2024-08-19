@@ -186,8 +186,7 @@ struct gpio_b9x_retention_data {
 struct gpio_b9x_data {
 	struct gpio_driver_data common; /* driver data */
 	sys_slist_t callbacks;          /* list of callbacks */
-#if CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \
-CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION)
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
 	struct gpio_b9x_retention_data gpio_b9x_retention; /* list of necessary retained data */
 #endif
 };
@@ -688,8 +687,7 @@ static int gpio_b9x_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-#if CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \
-CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION)
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
 
 static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -799,8 +797,7 @@ static int gpio_b9x_pm_action(const struct device *dev, enum pm_device_action ac
 	return 0;
 }
 
-#endif /* CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \*/
-/* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION) */
+#endif /* CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION) */
 
 /* GPIO driver APIs structure */
 static const struct gpio_driver_api gpio_b9x_driver_api = {
@@ -901,16 +898,14 @@ static void gpio_b9x_irq_connect_6(void)
 
 #endif
 
-#if CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \
-CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION)
+#if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION
 #define PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)  \
 PM_DEVICE_DT_INST_DEFINE(n, gpio_b9x_pm_action);
 #define PM_DEVICE_INST_GET(n) PM_DEVICE_DT_INST_GET(n)
 #else
 #define PM_DEVICE_INST_DEFINE(n, gpio_b9x_pm_action)
 #define PM_DEVICE_INST_GET(n)  NULL
-#endif /* CONFIG_PM_DEVICE && (CONFIG_SOC_SERIES_RISCV_TELINK_B9X_RETENTION || \ */
-/* CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION) */
+#endif /* CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_RISCV_TELINK_TLX_RETENTION) */
 
 
 /* GPIO driver registration */

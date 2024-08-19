@@ -79,6 +79,11 @@ jobs:
         cd ..
         west build -b tl3218x                  -d build_ot_echo_client_pm_tl321x         zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y
 
+    - name: Build TL321x bootloader/mcuboot/boot
+      run: |
+        cd ..
+        west build -b tl3218x                  -d build_mcuboot_tl321x                   bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_BOOT_MAX_IMG_SECTORS=4096
+
     - name: Build TL321x subsys/mgmt/mcumgr/smp_svr for Bluetooth
       run: |
         cd ..
@@ -93,6 +98,21 @@ jobs:
       run: |
         cd ..
         west build -b tl3218x                  -d build_ot_coprocessor_rcp_usb_tl321x    zephyr/samples/net/openthread/coprocessor                -- -DDTC_OVERLAY_FILE="usb.overlay boards/tl3218x-dongle.overlay" -DOVERLAY_CONFIG=overlay-rcp-usb-telink.conf
+
+    - name: Build TL321x boards/tlsr9x/basic
+      run: |
+        cd ..
+        west build -b tl3218x_retention        -d build_retention_basic_tl321x           zephyr/samples/boards/tlsr9x/basic                       -- -DCONFIG_SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE=y
+
+    - name: Build TL321x net/sockets/echo_client for OpenThread with PM deep-sleep
+      run: |
+        cd ..
+        west build -b tl3218x_retention        -d build_ot_echo_client_pm_deep_tl321x    zephyr/samples/net/sockets/echo_client                   -- -DOVERLAY_CONFIG=overlay-ot-sed.conf -DCONFIG_OPENTHREAD_NETWORKKEY=\"09:24:01:56:04:4a:45:0b:23:22:1e:0e:3b:0d:0e:61:2f:1b:2c:24\" -DCONFIG_PM=y -DCONFIG_SOC_SERIES_RISCV_TELINK_TLX_NON_RETENTION_RAM_CODE=y -DCONFIG_TELINK_TLX_2_WIRE_SPI_ENABLE=y
+
+    - name: Build TL321x bootloader/mcuboot/boot for USB DFU
+      run: |
+        cd ..
+        west build -b tl3218x                  -d build_mcuboot_usb_dfu_tl321x           bootloader/mcuboot/boot/zephyr                           -- -DCONFIG_LOG_DEFAULT_LEVEL=3 -DCONFIG_USB_DFU_WILL_DETACH=n -DCONFIG_BOOT_USB_DFU_GPIO=y -DCONFIG_MCUBOOT_INDICATION_LED=y
 
     - name: Build TL321x basic/blinky for USB DFU
       run: |
@@ -115,9 +135,13 @@ jobs:
         cp ../build_ot_echo_server_tl321x/zephyr/zephyr.bin            telink_build_artifacts/tl321x_ot_echo_server.bin
         cp ../build_ot_echo_client_tl321x/zephyr/zephyr.bin            telink_build_artifacts/tl321x_ot_echo_client.bin
         cp ../build_ot_echo_client_pm_tl321x/zephyr/zephyr.bin         telink_build_artifacts/tl321x_ot_echo_client_pm.bin
+        cp ../build_mcuboot_tl321x/zephyr/zephyr.bin                   telink_build_artifacts/tl321x_mcuboot.bin
         cp ../build_bt_smp_svr_tl321x/zephyr/zephyr.signed.bin         telink_build_artifacts/tl321x_bt_smp_svr.signed.bin
         cp ../build_usb_console_tl321x/zephyr/zephyr.bin               telink_build_artifacts/tl321x_usb_console.bin
         cp ../build_ot_coprocessor_rcp_usb_tl321x/zephyr/zephyr.bin    telink_build_artifacts/tl321x_ot_coprocessor_rcp_usb.bin
+        cp ../build_retention_basic_tl321x/zephyr/zephyr.bin           telink_build_artifacts/tl321x_retention_basic.bin
+        cp ../build_ot_echo_client_pm_deep_tl321x/zephyr/zephyr.bin    telink_build_artifacts/tl321x_ot_echo_client_pm_retention.bin
+        cp ../build_mcuboot_usb_dfu_tl321x/zephyr/zephyr.bin           telink_build_artifacts/tl321x_mcuboot_usb_dfu.bin
         cp ../build_blinky_usb_dfu_tl321x/zephyr/zephyr.signed.bin     telink_build_artifacts/tl321x_blinky_usb_dfu.signed.bin
         cp ../build_ot_cli_tl321x/zephyr/zephyr.bin                    telink_build_artifacts/tl321x_ot_cli.bin
 
