@@ -2,7 +2,39 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP Kinetis ACMP (Analog CoMParator)
+description: |
+  NXP Kinetis ACMP (Analog CoMParator)
+
+  The following example displays the minimum node layout:
+
+    acmp0: acmp@deadbeef {
+            compatible = "nxp,kinetis-acmp";
+            reg = <0xdeadbeef 0x1000>;
+            interrupts = <0 0>;
+            clocks = <&scg KINETIS_SCG_BUS_CLK>;
+            status = "disabled";
+    };
+
+  Enabling the comparator node requires setting the minimum default
+  configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+    &pinctrl {
+            acmp0_default: acmp0_default {
+                    group0 {
+                            ...
+                    };
+            };
+    };
+
+    &acmp0 {
+            status = "okay";
+            pinctrl-0 = <&acmp0_default>;
+            pinctrl-names = "default";
+
+            positive-mux-input = "IN0";
+            negative-mux-input = "IN1";
+    };
 
 compatible: "nxp,kinetis-acmp"
 
