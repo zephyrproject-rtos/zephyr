@@ -1,11 +1,11 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
   NXP S32 Quad Serial Peripheral Interface (QSPI) Controller.
 
   QSPI acts as an interface to up to two serial flash memory devices, each with
-  up to eight bidirectional bidirectional data lines, depending on the platform.
+  up to eight bidirectional data lines, depending on the platform.
 
 compatible: "nxp,s32-qspi"
 
@@ -17,6 +17,9 @@ properties:
   reg:
     required: true
 
+  reg-names:
+    required: true
+
   "#address-cells":
     const: 1
 
@@ -24,6 +27,7 @@ properties:
     const: 0
 
   data-rate:
+    required: true
     type: string
     enum:
       - SDR
@@ -52,6 +56,7 @@ properties:
 
   cs-setup-time:
     type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     default: 3
     description: |
       Chip select setup time, in serial clock cycles. A bigger value will pull
@@ -60,6 +65,7 @@ properties:
 
   cs-hold-time:
     type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     default: 3
     description: |
       Chip select hold time, in serial clock cycles. A bigger value will release
@@ -69,6 +75,7 @@ properties:
   column-space:
     type: int
     default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     description: |
       Column Address Space bit width. For example, if the column address is
       [2:0] of QSPI_SFAR/AHB address, then the column address space bit width
@@ -88,19 +95,15 @@ properties:
       In case of Octal DDR mode, specifies whether a word unit composed of two
       bytes from posedge and negedge of a single DQS cycle needs to be swapped.
 
-  ahb-buffers-masters:
+  ahb-buffers:
     type: array
+    required: true
     description: |
-      Masters ID's for the AHB receive buffers. The master ID of every incoming
-      request is checked and the data is returned or fetched into the
-      corresponding associated buffer. The maximum number of buffers is SoC
-      specific.
-
-  ahb-buffers-sizes:
-    type: array
-    description: |
-      Sizes (in bytes) of the AHB receive buffers. The maximum buffer size and
-      maximum number of buffers is SoC specific.
+      AHB receive buffer configuration as in an array of tuples in the form
+      <master-id buffer-size>. The master ID of every incoming request is
+      checked and the data is returned or fetched into the corresponding
+      associated buffer.
+      The maximum buffer size and maximum number of buffers is SoC specific.
 
   ahb-buffers-all-masters:
     type: boolean
@@ -108,101 +111,90 @@ properties:
       Any access from a master not associated with any other buffer is routed to
       the last buffer.
 
-  a-rx-clock-source:
-    type: string
-    enum:
-      - LOOPBACK
-      - LOOPBACK DQS
-      - INTERNAL DQS
-      - EXTERNAL DQS
+  lut-size:
+    type: int
+    required: true
     description: |
-      Selects DQS clock source for sampling read data at side A:
-      - LOOPBACK: use loopback clock from dummy internal PAD as strobe signal.
-      - LOOPBACK DQS: use loopback clock from PAD as strobe signal.
-      - INTERNAL DQS: use internally generated strobe signal.
-      - EXTERNAL DQS: use external strobe signal.
+      Number of look-up table registers.
 
-  a-io2-idle-high:
+  tx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Transmit FIFO size in bytes.
+
+  rx-fifo-size:
+    type: int
+    required: true
+    description: |
+      Receive FIFO size in bytes.
+
+  chip-options:
+    type: int
+    description: |
+      Value to write to QSPI SOC configuration register (SOCCFG), if available.
+      For details, see chip-specific QSPI information in the device reference
+      manual.
+
+  has-ddr:
     type: boolean
     description: |
-      Set if the logic level of IO2 signal output of this controller must be
-      driven high in the inactive state.
-      This property applies to side A of the controller.
+      Set if the device supports Double Data Rate (DDR) mode.
 
-  a-io3-idle-high:
+  has-dqs-clock:
     type: boolean
     description: |
-      Set if the logic level of IO3 signal output of this controller must be
-      driven high in the inactive state.
-      This property applies to side A of the controller.
+      Set if the device supports internal DQS clock.
 
-  a-dll-mode:
-    type: string
-    enum:
-      - BYPASSED
-      - MANUAL UPDATE
-      - AUTO UPDATE
-    default: BYPASSED
-    description: |
-      DLL mode. The supported modes depends on the SoC.
-      This property applies to side A of the controller.
-
-  a-dll-freq-enable:
+  has-dll:
     type: boolean
     description: |
-      Selects delay-chain for high frequency of operation.
-      This property applies to side A of the controller.
+      Set if the device supports DLL.
 
-  a-dll-ref-counter:
-    type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    default: 1
+  has-dllcr-en:
+    type: boolean
     description: |
-      Select the "n+1" interval of DLL phase detection and reference delay
-      updating interval.
-      Minimum recommended value is 1 (reset value).
-      This property applies to side A of the controller.
+      Set if the device supports DLL enable (bitfield DLLCR[DLLEN]).
 
-  a-dll-resolution:
-    type: int
-    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    default: 2
+  has-dllcr-loop-control:
+    type: boolean
     description: |
-      Minimum resolution for DLL phase detector to remain locked/unlocked based
-      on flash memory clock jitter.
-      The minimum value is 2 (reset value).
-      This property applies to side A of the controller.
+      Set if the device supports DLL loop control configuration (bitfields
+      DLLCR[DLL_REFCNTR] and DLLCR[DLLRES]).
 
-  a-dll-coarse-delay:
-    type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    default: 0
+  has-dllcr-slave-auto-updt:
+    type: boolean
     description: |
-      This field sets the number of delay elements in each delay tap. The field
-      is used to overwrite DLL-generated delay values.
-      Default to 0 (reset value).
-      This property applies to side A of the controller.
+      Set if the device supports DLL slave chain auto-update
+      (bitfield DLLCR[SLAVE_AUTO_UPDT]).
 
-  a-dll-fine-delay:
-    type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-    default: 0
+  has-sfacr-cas:
+    type: boolean
     description: |
-      This field sets the number of fine offset delay elements up to 16 in
-      incoming DQS.
-      Default to 0 (reset value).
-      This property applies to side A of the controller.
+      Set if the device supports column address space (bitfield SFACR[CAS]).
 
-  a-dll-tap-select:
-    type: int
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
-    default: 0
+  has-sfacr-byte-swap:
+    type: boolean
     description: |
-      Selects the Nth tap provided by the slave delay-chain.
-      Default to 0 (reset value).
-      This property applies to side A of the controller.
+      Set if the device supports byte swapping (bitfield SFACR[BYTE_SWAP]).
+
+  has-rbct-rxbrd:
+    type: boolean
+    description: |
+      Set if the device supports receive buffer readout (bitfield RBCT[RXBRD]).
+
+  has-sptrclr-abrt-clr:
+    type: boolean
+    description: |
+      Set if the device supports flash memory abort/AHB buffer clear
+      (bifield SPTRCLR[ABRT_CLR]).
+
+  has-mcr-isd:
+    type: boolean
+    description: |
+      Set if the device supports configuration if idle lines (bitfield MCR[ISDx]).
 
 child-binding:
-  description: NXP S32 QuadSPI port
+  description: NXP S32 QuadSPI memory device
 
   include: nxp,s32-qspi-device.yaml

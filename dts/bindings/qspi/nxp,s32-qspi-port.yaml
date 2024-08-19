@@ -1,0 +1,104 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Quad Serial Peripheral Interface (QSPI) Port
+
+compatible: "nxp,s32-qspi-port"
+
+include: base.yaml
+
+properties:
+  memory-sizes:
+    required: true
+    type: array
+    description: |
+      Size of flash memories devices, in bits, connected to this port. The
+      number of elements must match the number of CS lines available on this
+      port.
+      The sizes of the flash memory devices are mapped with the system memory
+      space based on the memory sizes configuration of all available ports,
+      starting from QSPI AHB base address. The corresponding CS line is asserted
+      based on this configuration.
+      Example configurations for 'memory-sizes' property:
+
+                                   port_a        port_b (if available)
+        single mode, single-die    <A1>, <0>     <0>,  <0>
+        single mode, dual-die      <A1>, <A2>    <0>,  <0>
+        serial mode, single-die    <A1>, <0>     <B1>, <0>
+        serial mode, dual-die      <A1>, <A2>    <B1>, <B2>
+
+  rx-clock-source:
+    type: string
+    enum:
+      - LOOPBACK
+      - LOOPBACK DQS
+      - INTERNAL DQS
+      - EXTERNAL DQS
+    description: |
+      Selects DQS clock source for sampling read data at side A:
+      - LOOPBACK: use loopback clock from dummy internal PAD as strobe signal.
+      - LOOPBACK DQS: use loopback clock from PAD as strobe signal.
+      - INTERNAL DQS: use internally generated strobe signal.
+      - EXTERNAL DQS: use external strobe signal.
+
+  io2-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO2 signal output of this port must be driven
+      high in the inactive state.
+
+  io3-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO3 signal output of this port must be driven
+      high in the inactive state.
+
+  dll-mode:
+    type: string
+    enum:
+      - BYPASSED
+      - MANUAL UPDATE
+      - AUTO UPDATE
+    description: |
+      DLL mode. The supported modes depends on the SoC.
+
+  dll-freq-enable:
+    type: boolean
+    description: |
+      Selects delay-chain for high frequency of operation.
+
+  dll-ref-counter:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Select the "n+1" interval of DLL phase detection and reference delay
+      updating interval.
+      Minimum recommended value is 1.
+
+  dll-resolution:
+    type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      Minimum resolution for DLL phase detector to remain locked/unlocked based
+      on flash memory clock jitter.
+      The minimum value is 2.
+
+  dll-coarse-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      This field sets the number of delay elements in each delay tap. The field
+      is used to overwrite DLL-generated delay values.
+
+  dll-fine-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      This field sets the number of fine offset delay elements up to 16 in
+      incoming DQS.
+
+  dll-tap-select:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Selects the Nth tap provided by the slave delay-chain.

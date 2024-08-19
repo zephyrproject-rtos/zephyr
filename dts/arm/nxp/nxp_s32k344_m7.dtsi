@@ -452,9 +452,15 @@
 
 		qspi0: qspi@404cc000 {
 			compatible = "nxp,s32-qspi";
-			reg = <0x404cc000 0x4000>;
+			reg = <0x404cc000 0x4000>, <0x68000000 0x8000000>;
+			reg-names = "qspi", "qspi_amba";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			lut-size = <20>;
+			tx-fifo-size = <128>;
+			rx-fifo-size = <128>;
+			chip-options = <0x0000000e>;
+			has-dll;
 			status = "disabled";
 		};
 
