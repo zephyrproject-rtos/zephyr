@@ -1024,53 +1024,53 @@ test_i2c_lis2dux12: lis2dux12@8a {
 	status = "okay";
 };
 
-test_i2c_iis328dq: iis328dq@8a {
+test_i2c_iis328dq: iis328dq@8b {
 	compatible = "st,iis328dq";
 	status = "okay";
-	reg = <0x8a>;
+	reg = <0x8b>;
 	int2-gpios = <&test_gpio 0 0>;
 	threshold-int-pad = <2>;
 };
 
-test_i2c_nct75: test_i2c_nct75@8b {
+test_i2c_nct75: test_i2c_nct75@8c {
 	compatible = "onnn,nct75";
-	reg = <0x8b>;
+	reg = <0x8c>;
 	status = "okay";
 };
 
-test_i2c_tmp114: tmp114@8c {
+test_i2c_tmp114: tmp114@8d {
 	compatible = "ti,tmp114";
-	reg = <0x8c>;
+	reg = <0x8d>;
 };
 
-test_i2c_ina226: ina226@8d {
+test_i2c_ina226: ina226@8e {
 	compatible = "ti,ina226";
-	reg = <0x8d>;
+	reg = <0x8e>;
 	current-lsb-microamps = <5000>;
 	rshunt-micro-ohms = <500>;
 };
 
-test_i2c_shtc1: shtc1@8e {
+test_i2c_shtc1: shtc1@8f {
 	compatible = "sensirion,shtc1", "sensirion,shtcx";
-	reg = <0x8e>;
+	reg = <0x8f>;
 	measure-mode = "low-power";
 	clock-stretching;
 };
 
-test_i2c_lm95234: lm95234@8f {
+test_i2c_lm95234: lm95234@90 {
 	compatible = "national,lm95234";
-	reg = <0x8f>;
+	reg = <0x90>;
 	status = "okay";
 };
 
-test_i2c_sht21@90 {
+test_i2c_sht21@91 {
 	compatible = "sensirion,sht21";
-	reg = <0x90>;
+	reg = <0x91>;
 };
 
-test_i2c_lsm9ds1: lsm9ds1@91 {
+test_i2c_lsm9ds1: lsm9ds1@92 {
 	compatible = "st,lsm9ds1";
-	reg = <0x8e>;
+	reg = <0x92>;
 };
 
 test_i2c_icm42670: icm42670@92 {
