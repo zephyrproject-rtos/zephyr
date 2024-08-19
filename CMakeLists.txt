@@ -1486,7 +1486,7 @@ list(APPEND post_build_byproducts ${KERNEL_MAP_NAME})
 
 if(NOT CONFIG_BUILD_NO_GAP_FILL)
   # Use ';' as separator to get proper space in resulting command.
-  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0xff")
+  set(GAP_FILL "$<TARGET_PROPERTY:bintools,elfconvert_flag_gapfill>0x00")
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
