@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RENESAS_RX
+	select BUILD_OUTPUT_MOT
+
+if SOC_FAMILY_RENESAS_RX
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_RENESAS_RX
