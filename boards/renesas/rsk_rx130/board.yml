@@ -1,0 +1,13 @@
+board:
+  name: rsk_rx130
+  full_name: Renesas Starter Kit for RX130
+  vendor: renesas
+  revision:
+    format: custom
+    default: 512kb
+    exact: true
+    revisions:
+      - name: 512kb
+      - name: 128kb
+  socs:
+    - name: r5f513083xfb
