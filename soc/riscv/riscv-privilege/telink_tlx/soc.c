@@ -143,8 +143,8 @@ static int soc_b9x_init(void)
 void sys_arch_reboot(int type)
 {
 	ARG_UNUSED(type);
-	// fixme
-	// sys_reboot_lib();
+	/* fixme */
+	/* sys_reboot_lib(); */
 }
 
 /**
@@ -262,4 +262,4 @@ __attribute__((noinline)) void telink_bt_blc_mac_init(uint8_t *bt_mac)
 
 SYS_INIT(soc_b9x_init, PRE_KERNEL_1, 0);
 
-// SYS_INIT(soc_b9x_check_flash, POST_KERNEL, 0);
+/* SYS_INIT(soc_b9x_check_flash, POST_KERNEL, 0); */
