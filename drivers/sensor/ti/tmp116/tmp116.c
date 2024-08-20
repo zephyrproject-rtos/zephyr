@@ -48,7 +48,7 @@ static int tmp116_reg_write(const struct device *dev, uint8_t reg,
 	return i2c_write_dt(&cfg->bus, tx_buf, sizeof(tx_buf));
 }
 
-int tmp116_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
+static int tmp116_write_config(const struct device *dev, uint16_t mask, uint16_t conf)
 {
 	uint16_t config = 0;
 	int result;
@@ -152,7 +152,6 @@ int tmp116_eeprom_read(const struct device *dev, off_t offset, void *data,
 	return res;
 }
 
-
 /**
  * @brief Check the Device ID
  *
@@ -250,6 +249,7 @@ static int tmp116_attr_set(const struct device *dev,
 	struct tmp116_data *drv_data = dev->data;
 	int16_t value;
 	uint16_t avg;
+	uint16_t conv;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -293,6 +293,43 @@ static int tmp116_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 		return tmp116_write_config(dev, TMP116_CFGR_AVG, avg);
+
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		/*
+		 * Set the sampling frequency in tmp116
+		 * val is the requested frequency in Hz.
+		 * The valid values are 64, 8, 4, 2, 1, 0.25, 0.125, 0.062 Hz
+		 * This set the conversion cycle time bits in the configuration
+		 */
+		switch (sensor_value_to_milli(val)) {
+		case 64000:
+			conv = TMP116_CONV_64000; /* 15.5ms  */
+			break;
+		case 8000:
+			conv = TMP116_CONV_8000; /* 125 ms */
+			break;
+		case 4000:
+			conv = TMP116_CONV_4000; /* 250 ms */
+			break;
+		case 2000:
+			conv = TMP116_CONV_2000; /* 500 ms */
+			break;
+		case 1000:
+			conv = TMP116_CONV_1000; /* 1s */
+			break;
+		case 250:
+			conv = TMP116_CONV_250; /* 4s */
+			break;
+		case 125:
+			conv = TMP116_CONV_125; /* 8s */
+			break;
+		case 62:
+			conv = TMP116_CONV_62; /* 16s */
+			break;
+		default:
+			return -EINVAL;
+		}
+		return tmp116_write_config(dev, TMP116_CFGR_CONV, conv);
 
 	default:
 		return -ENOTSUP;

@@ -25,6 +25,7 @@
 #define TMP116_DEVICE_ID		0x1116
 #define TMP117_DEVICE_ID		0x0117
 
+#define TMP116_CFGR_CONV		(BIT(7) | BIT(8) | BIT(9))
 #define TMP116_CFGR_AVG			(BIT(5) | BIT(6))
 #define TMP116_CFGR_DATA_READY  BIT(13)
 #define TMP116_EEPROM_UL_UNLOCK BIT(15)
@@ -34,6 +35,15 @@
 #define TMP116_AVG_8_SAMPLES	BIT(5)
 #define TMP116_AVG_32_SAMPLES	BIT(6)
 #define TMP116_AVG_64_SAMPLES	(BIT(5) | BIT(6))
+
+#define TMP116_CONV_64000		0
+#define TMP116_CONV_8000		BIT(7)
+#define TMP116_CONV_4000		BIT(8)
+#define TMP116_CONV_2000		(BIT(7) | BIT(8))
+#define TMP116_CONV_1000		BIT(9)
+#define TMP116_CONV_250			(BIT(7) | BIT(9))
+#define TMP116_CONV_125			(BIT(8) | BIT(9))
+#define TMP116_CONV_62			(BIT(8) | BIT(9) | BIT(7))
 
 struct tmp116_data {
 	uint16_t sample;
