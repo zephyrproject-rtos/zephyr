@@ -89,6 +89,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #endif /* CONFIG_INIT_ARCH_HW_AT_BOOT */
 
+/* Needs to be done before any stack operation is executed */
 #if defined(CONFIG_PM_S2RAM)
     bl arch_pm_s2ram_resume
 #endif /* CONFIG_PM_S2RAM */

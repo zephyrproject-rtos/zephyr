@@ -99,8 +99,20 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	bx	lr
 
 
+#if defined(CONFIG_PM_S2RAM_CUSTOM_BOOTSTACK)
+GTEXT(soc_pm_s2ram_custom_bootstack)
+#endif
+
 GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
+
+#if defined(CONFIG_PM_S2RAM_CUSTOM_BOOTSTACK)
+	/* Setup stack for soc specific initialisation after wake up,
+	 * so the main stack does not get corrupted in the process.
+	 */
+	bl soc_pm_s2ram_custom_bootstack
+#endif /* CONFIG_PM_S2RAM_CUSTOM_BOOTSTACK */
+
 	/*
 	 * Check if reset occurred after suspending to RAM.
 	 */
