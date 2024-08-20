@@ -278,8 +278,9 @@ static int thread_analyzer_init(void)
 		}
 		snprintf(name, sizeof(name), "core %u thread analyzer", i);
 		ret = k_thread_name_set(tid, name);
-		if (ret < 0)
+		if (ret < 0) {
 			LOG_INF("k_thread_name_set failed: %d for %u", ret, i);
+		}
 
 		k_thread_start(tid);
 		LOG_DBG("Thread %p for core %u started", tid, i);

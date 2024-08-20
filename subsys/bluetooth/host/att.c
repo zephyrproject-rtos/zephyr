@@ -2478,8 +2478,9 @@ static int att_change_security(struct bt_conn *conn, uint8_t err)
 
 	switch (err) {
 	case BT_ATT_ERR_INSUFFICIENT_ENCRYPTION:
-		if (conn->sec_level >= BT_SECURITY_L2)
+		if (conn->sec_level >= BT_SECURITY_L2) {
 			return -EALREADY;
+		}
 		sec = BT_SECURITY_L2;
 		break;
 	case BT_ATT_ERR_AUTHENTICATION:

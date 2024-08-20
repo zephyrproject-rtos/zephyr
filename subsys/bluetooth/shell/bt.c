@@ -298,8 +298,9 @@ static bool data_cb(struct bt_data *data, void *user_data)
 
 static void print_data_hex(const uint8_t *data, uint8_t len, enum shell_vt100_color color)
 {
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	shell_fprintf(ctx_shell, color, "0x");
 	/* Reverse the byte order when printing as advertising data is LE
