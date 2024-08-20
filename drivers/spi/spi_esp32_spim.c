@@ -431,12 +431,12 @@ static int transceive(const struct device *dev,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
+	data->dfs = spi_esp32_get_frame_size(spi_cfg);
+
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
 		goto done;
 	}
-
-	data->dfs = spi_esp32_get_frame_size(spi_cfg);
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
