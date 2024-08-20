@@ -207,6 +207,10 @@ static void hfp_hf_send_data(struct bt_hfp_hf *hf)
 	at_finish_cb_t finish;
 	int err;
 
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING)) {
+		return;
+	}
+
 	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_TX_ONGOING)) {
 		return;
 	}
@@ -3248,14 +3252,24 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	if (at_parse_input(&hf->at, buf) < 0) {
 		LOG_ERR("Parsing failed");
 	}
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
+	k_work_submit(&hf->work);
 }
 
 static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
 {
 	LOG_DBG("DLC %p sent cb (err %d)", dlc, err);
+}
+
+static void bt_hf_work(struct k_work *work)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(work, struct bt_hfp_hf, work);
+
+	hfp_hf_send_data(hf);
 }
 
 static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
@@ -3296,6 +3310,8 @@ static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 		hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
 
 		k_fifo_init(&hf->tx_pending);
+
+		k_work_init(&hf->work, bt_hf_work);
 
 		k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
 
