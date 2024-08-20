@@ -88,6 +88,14 @@ Interrupt Controller
 LED Strip
 =========
 
+SDHC
+====
+
+* The NXP USDHC driver now assumes a card is present if no card detect method
+  is configured, instead of using the peripheral's internal card detect signal
+  to check for card presence. To use the internal card detect signal, the
+  devicetree property ``detect-cd`` should be added to the USDHC node in use.
+
 Sensors
 =======
 
