@@ -12,12 +12,12 @@ DT_TURBO_MODE ?= 0
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast latex pdf doxygen
+.PHONY: configure clean html html-fast latex pdf doxygen gendoc
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1
 
-html latex pdf linkcheck doxygen: configure
+html latex pdf linkcheck doxygen: configure gendoc
 	cmake --build ${BUILDDIR} --target $@
 
 configure:
@@ -33,3 +33,8 @@ configure:
 
 clean:
 	cmake --build ${BUILDDIR} --target clean
+
+gendoc:
+	find .. -name testcase.yaml -exec grep 'fixture:' {} \; | \
+	    sort -u | \
+	    ../scripts/gen_hw_fixture_table.sh develop/test/twister/hardware-fixtures.rst

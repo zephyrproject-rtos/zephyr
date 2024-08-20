@@ -9,6 +9,7 @@ Testing
    ztest
    twister
    twister/twister_blackbox
+   twister/hardware-fixtures
    pytest
    coverage
    BabbleSim<bsim>
