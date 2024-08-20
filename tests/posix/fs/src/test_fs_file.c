@@ -165,8 +165,9 @@ static int test_file_fdatasync(void)
 {
 	int res = 0;
 
-	if (file < 0)
+	if (file < 0) {
 		return res;
+	}
 
 	res = fdatasync(file);
 	if (res < 0) {
