@@ -32,6 +32,7 @@
 
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 
@@ -86,8 +87,10 @@ LOG_MODULE_REGISTER(lp5562);
 #define LP5562_MAX_CURRENT_SETTING 255
 
 /* Values for ENABLE register. */
-#define LP5562_ENABLE_CHIP_EN (1 << 6)
-#define LP5562_ENABLE_LOG_EN  (1 << 7)
+#define LP5562_ENABLE_CHIP_EN_MASK (1 << 6)
+#define LP5562_ENABLE_CHIP_EN_SET  (1 << 6)
+#define LP5562_ENABLE_CHIP_EN_CLR  (0 << 6)
+#define LP5562_ENABLE_LOG_EN       (1 << 7)
 
 /* Values for CONFIG register. */
 #define LP5562_CONFIG_EXTERNAL_CLOCK         0x00
@@ -167,6 +170,7 @@ struct lp5562_config {
 	uint8_t g_current;
 	uint8_t b_current;
 	uint8_t w_current;
+	struct gpio_dt_spec enable_gpio;
 };
 
 struct lp5562_data {
@@ -933,16 +937,73 @@ static int lp5562_led_update_current(const struct device *dev)
 	return ret;
 }
 
+static int lp5562_enable(const struct device *dev)
+{
+	const struct lp5562_config *config = dev->config;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
+	int err = 0;
+
+	/* If ENABLE_GPIO control is enabled, we need to assert ENABLE_GPIO first. */
+	if (enable_gpio->port != NULL) {
+		err = gpio_pin_set_dt(enable_gpio, 1);
+		if (err) {
+			LOG_ERR("%s: failed to set enable GPIO 1", dev->name);
+			return err;
+		}
+		/*
+		 * The I2C host should allow at least 1ms before sending data to
+		 * the LP5562 after the rising edge of the enable line.
+		 * So let's wait for 1 ms.
+		 */
+		k_sleep(K_MSEC(1));
+	}
+
+	/* Reset all internal registers to have a deterministic state. */
+	err = i2c_reg_write_byte_dt(&config->bus, LP5562_RESET, 0xFF);
+	if (err) {
+		LOG_ERR("%s: failed to soft-reset device", dev->name);
+		return err;
+	}
+
+	/* Set en bit in LP5562_ENABLE register. */
+	err = i2c_reg_update_byte_dt(&config->bus, LP5562_ENABLE, LP5562_ENABLE_CHIP_EN_MASK,
+				     LP5562_ENABLE_CHIP_EN_SET);
+	if (err) {
+		LOG_ERR("%s: failed to set EN Bit in ENABLE register", dev->name);
+		return err;
+	}
+	/* Allow 500 µs delay after setting chip_en bit to '1'. */
+	k_sleep(K_USEC(500));
+	return 0;
+}
+
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
 	struct lp5562_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
 	int ret;
+
+	if (enable_gpio->port != NULL) {
+		if (!gpio_is_ready_dt(enable_gpio)) {
+			return -ENODEV;
+		}
+		ret = gpio_pin_configure_dt(enable_gpio, GPIO_OUTPUT);
+		if (ret) {
+			LOG_ERR("LP5562 Enable GPIO Config failed");
+			return ret;
+		}
+	}
 
 	if (!device_is_ready(config->bus.bus)) {
 		LOG_ERR("I2C device not ready");
 		return -ENODEV;
+	}
+
+	ret = lp5562_enable(dev);
+	if (ret) {
+		return ret;
 	}
 
 	/* Hardware specific limits */
@@ -955,12 +1016,6 @@ static int lp5562_led_init(const struct device *dev)
 	if (ret) {
 		LOG_ERR("Setting current setting LP5562 LED chip failed.");
 		return ret;
-	}
-
-	if (i2c_reg_write_byte_dt(&config->bus, LP5562_ENABLE,
-				  LP5562_ENABLE_CHIP_EN)) {
-		LOG_ERR("Enabling LP5562 LED chip failed.");
-		return -EIO;
 	}
 
 	if (i2c_reg_write_byte_dt(&config->bus, LP5562_CONFIG,
@@ -1005,6 +1060,7 @@ static const struct led_driver_api lp5562_led_api = {
 		.g_current = DT_INST_PROP(id, green_output_current),	\
 		.b_current = DT_INST_PROP(id, blue_output_current),	\
 		.w_current = DT_INST_PROP(id, white_output_current),	\
+		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};								\
 									\
 	struct lp5562_data lp5562_data_##id;				\
