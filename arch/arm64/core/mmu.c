@@ -685,17 +685,20 @@ static uint64_t get_region_desc(uint32_t attrs)
 	case MT_NORMAL_NC:
 	case MT_NORMAL:
 		/* Make Normal RW memory as execute never */
-		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER))
+		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER)) {
 			desc |= PTE_BLOCK_DESC_PXN;
+		}
 
 		if (((attrs & MT_RW) && (attrs & MT_RW_AP_ELx)) ||
-		     (attrs & MT_U_EXECUTE_NEVER))
+		     (attrs & MT_U_EXECUTE_NEVER)) {
 			desc |= PTE_BLOCK_DESC_UXN;
+		}
 
-		if (mem_type == MT_NORMAL)
+		if (mem_type == MT_NORMAL) {
 			desc |= PTE_BLOCK_DESC_INNER_SHARE;
-		else
+		} else {
 			desc |= PTE_BLOCK_DESC_OUTER_SHARE;
+		}
 	}
 
 	/* non-Global bit */
@@ -843,8 +846,9 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 	uintptr_t max_va = 0, max_pa = 0;
 
 	MMU_DEBUG("xlat tables:\n");
-	for (index = 0U; index < CONFIG_MAX_XLAT_TABLES; index++)
+	for (index = 0U; index < CONFIG_MAX_XLAT_TABLES; index++) {
 		MMU_DEBUG("%d: %p\n", index, xlat_tables + index * Ln_XLAT_NUM_ENTRIES);
+	}
 
 	for (index = 0U; index < mmu_config.num_regions; index++) {
 		region = &mmu_config.mmu_regions[index];
@@ -1328,8 +1332,9 @@ void z_arm64_thread_mem_domains_init(struct k_thread *incoming)
 {
 	struct arm_mmu_ptables *ptables;
 
-	if ((incoming->base.user_options & K_USER) == 0)
+	if ((incoming->base.user_options & K_USER) == 0) {
 		return;
+	}
 
 	ptables = incoming->arch.ptables;
 
