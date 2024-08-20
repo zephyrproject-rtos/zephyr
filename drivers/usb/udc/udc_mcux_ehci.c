@@ -571,7 +571,8 @@ static int udc_mcux_ep_enable(const struct device *dev,
 	ep_init.zlt             = 0U;
 	ep_init.interval        = cfg->interval;
 	ep_init.endpointAddress = cfg->addr;
-	ep_init.maxPacketSize   = udc_mps_ep_size(cfg);
+	/* HAL expects wMaxPacketSize value directly in maxPacketSize field */
+	ep_init.maxPacketSize   = cfg->mps;
 
 	switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
 	case USB_EP_TYPE_CONTROL:
@@ -733,6 +734,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_out[i].caps.interrupt = 1;
 			config->ep_cfg_out[i].caps.iso = 1;
 			config->ep_cfg_out[i].caps.mps = 1024;
+			config->ep_cfg_out[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
@@ -753,6 +755,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_in[i].caps.interrupt = 1;
 			config->ep_cfg_in[i].caps.iso = 1;
 			config->ep_cfg_in[i].caps.mps = 1024;
+			config->ep_cfg_in[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
