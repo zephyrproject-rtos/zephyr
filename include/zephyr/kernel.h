@@ -250,6 +250,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * */
 #define K_ESSENTIAL (BIT(0))
 
+#define K_FP_IDX 1
 /**
  * @brief FPU registers are managed by context switch
  *
@@ -259,7 +260,6 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * and restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
-#define K_FP_IDX 1
 #define K_FP_REGS (BIT(K_FP_IDX))
 
 /**
