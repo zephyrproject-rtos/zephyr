@@ -27,8 +27,9 @@ static inline bool in_text_region(uintptr_t addr)
  */
 size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 {
-	if (size < 1U)
+	if (size < 1U) {
 		return 0;
+	}
 
 	size_t idx = 0;
 
@@ -53,8 +54,9 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	 *  ....
 	 */
 	while (valid_stack((uintptr_t)fp, _current)) {
-		if (idx >= size)
+		if (idx >= size) {
 			return 0;
+		}
 
 		if (!in_text_region((uintptr_t)fp[1])) {
 			break;

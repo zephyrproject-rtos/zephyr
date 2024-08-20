@@ -44,10 +44,12 @@ static size_t llext_file_offset(struct llext_loader *ldr, size_t offset)
 {
 	unsigned int i;
 
-	for (i = 0; i < LLEXT_MEM_COUNT; i++)
+	for (i = 0; i < LLEXT_MEM_COUNT; i++) {
 		if (ldr->sects[i].sh_addr <= offset &&
-		    ldr->sects[i].sh_addr + ldr->sects[i].sh_size > offset)
+		    ldr->sects[i].sh_addr + ldr->sects[i].sh_size > offset) {
 			return offset - ldr->sects[i].sh_addr + ldr->sects[i].sh_offset;
+		}
+	}
 
 	return offset;
 }

@@ -828,8 +828,9 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 	ssize_t len;
 	uint16_t value;
 
-	if (attr->uuid->type != BT_UUID_TYPE_16)
+	if (attr->uuid->type != BT_UUID_TYPE_16) {
 		return BT_GATT_ITER_CONTINUE;
+	}
 
 	u16 = (struct bt_uuid_16 *)attr->uuid;
 
@@ -3780,8 +3781,9 @@ static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
 			       struct bt_gatt_discover_params *params)
 {
 	/* Skip if last_handle is not set */
-	if (!last_handle)
+	if (!last_handle) {
 		goto discover;
+	}
 
 	/* Continue from the last found handle */
 	params->start_handle = last_handle;
