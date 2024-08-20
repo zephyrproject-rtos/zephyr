@@ -284,11 +284,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd2, 24);
 
 	/* Init System Pll2 pfd3. */
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
-	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 24);
-#else
 	CLOCK_InitPfd(kCLOCK_PllSys2, kCLOCK_Pfd3, 32);
-#endif
 
 	/* Init Sys Pll3. */
 	CLOCK_InitSysPll3();
@@ -330,16 +326,15 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_M4, &rootCfg);
 #endif
 
-	/* Configure BUS using SYS_PLL3_CLK */
-#if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
-	/* Configure root bus clock at 198M */
-	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
-	rootCfg.div = 2;
-	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
-#elif defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
+#if CONFIG_SOC_MIMXRT1176_CM7
 	/* Keep root bus clock at default 240M */
 	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
+#elif defined(CONFIG_SOC_MIMXRT1166_CM7)
+	/* Configure root bus clock at 200M */
+	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll1Div5;
+	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #endif
 
