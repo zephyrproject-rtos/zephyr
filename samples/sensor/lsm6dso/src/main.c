@@ -79,8 +79,9 @@ static void test_trigger_mode(const struct device *dev)
 {
 	struct sensor_trigger trig;
 
-	if (set_sampling_freq(dev) != 0)
+	if (set_sampling_freq(dev) != 0) {
 		return;
+	}
 
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
