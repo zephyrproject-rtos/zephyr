@@ -174,7 +174,7 @@ static struct mt9m114_reg mt9m114_1280_720[] = {
 	{MT9M114_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 0x008F}, /* 143 */
 	{/* NULL terminated */}};
 
-static struct mt9m114_resolution_config resolutionConfigs[] = {
+static struct mt9m114_resolution_config resolution_configs[] = {
 	{.width = 480, .height = 272, .params = mt9m114_480_272},
 	{.width = 640, .height = 480, .params = mt9m114_640_480},
 	{.width = 1280, .height = 720, .params = mt9m114_1280_720},
@@ -432,10 +432,10 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set output resolution */
-	for (i = 0; i < ARRAY_SIZE(resolutionConfigs); i++) {
-		if (fmt->width == resolutionConfigs[i].width &&
-		    fmt->height == resolutionConfigs[i].height) {
-			ret = mt9m114_write_all(dev, resolutionConfigs[i].params);
+	for (i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
+		if (fmt->width == resolution_configs[i].width &&
+		    fmt->height == resolution_configs[i].height) {
+			ret = mt9m114_write_all(dev, resolution_configs[i].params);
 			if (ret) {
 				LOG_ERR("Unable to set resolution");
 				return ret;
