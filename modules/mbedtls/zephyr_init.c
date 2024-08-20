@@ -29,12 +29,12 @@
 	defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include <mbedtls/memory_buffer_alloc.h>
 
-#if !defined(CONFIG_MBEDTLS_HEAP_SIZE)
-#error "Please set heap size to be used. Set value to CONFIG_MBEDTLS_HEAP_SIZE \
-option."
-#endif
-
-static unsigned char _mbedtls_heap[CONFIG_MBEDTLS_HEAP_SIZE];
+#ifdef CONFIG_MBEDTLS_HEAP_CUSTOM_SECTION
+#define HEAP_MEM_ATTRIBUTES Z_GENERIC_SECTION(.mbedtls_heap)
+#else
+#define HEAP_MEM_ATTRIBUTES
+#endif /* CONFIG_MBEDTLS_HEAP_CUSTOM_SECTION */
+static unsigned char _mbedtls_heap[CONFIG_MBEDTLS_HEAP_SIZE] HEAP_MEM_ATTRIBUTES;
 
 static void init_heap(void)
 {
