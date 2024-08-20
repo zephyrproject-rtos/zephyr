@@ -37,8 +37,11 @@ static struct http_resource_detail detail[] = {
 	},
 };
 
-#define DETAIL(n) &detail[n]
-#define RES(n) &detail[n]
+#define DETAIL(n)         &detail[n]
+#define RES(n)            &detail[n]
+#define RESOURCE_AMOUNT_A 3 /**<Amount of resources used in A service*/
+#define RESOURCE_AMOUNT_B 2 /**<Amount of resources used in B service*/
+#define RESOURCE_AMOUNT_C 0 /**<Amount of resources used in C service*/
 
 /*
  * Two separate HTTP server instances (A and B), each with different static
@@ -115,9 +118,9 @@ ZTEST(http_service, test_HTTP_SERVICE_COUNT)
 
 ZTEST(http_service, test_HTTP_SERVICE_RESOURCE_COUNT)
 {
-	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_A), 3);
-	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_B), 2);
-	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_C), 0);
+	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_A), RESOURCE_AMOUNT_A);
+	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_B), RESOURCE_AMOUNT_B);
+	zassert_equal(HTTP_SERVICE_RESOURCE_COUNT(&service_C), RESOURCE_AMOUNT_C);
 }
 
 ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
@@ -152,114 +155,99 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 
 ZTEST(http_service, test_HTTP_RESOURCE_FOREACH)
 {
-	size_t first_res, second_res, third_res, n_res;
+	short current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_A);
+	short count_assert = 0;
 
-	n_res = 0;
-	first_res = 0;
-	second_res = 0;
-	third_res = 0;
 	HTTP_RESOURCE_FOREACH(service_A, res) {
 		if (res == &resource_0) {
-			first_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_1) {
-			second_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_2) {
-			third_res = 1;
+			count_assert += 1;
 		} else {
 			zassert_unreachable("res (%p) not equal to &resource_0 (%p), &resource_1 "
 					    "(%p) or &resource_2 (%p)",
 					    res, &resource_0, &resource_1, &resource_2);
 		}
-
-		n_res++;
 	}
 
-	zassert_equal(n_res, 3);
-	zassert_equal(first_res + second_res + third_res, n_res);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_A);
+	zassert_equal(count_assert, current_resource_count);
 
-	n_res = 0;
-	first_res = 0;
-	second_res = 0;
+	count_assert = 0;
+	current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_B);
 	HTTP_RESOURCE_FOREACH(service_B, res) {
 		if (res == &resource_3) {
-			first_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_4) {
-			second_res = 1;
+			count_assert += 1;
 		} else {
 			zassert_unreachable(
 				"res (%p) not equal to &resource_3 (%p) or &resource_4 (%p)", res,
 				&resource_3, &resource_4);
 		}
-
-		n_res++;
 	}
 
-	zassert_equal(n_res, 2);
-	zassert_equal(first_res + second_res, n_res);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_B);
+	zassert_equal(count_assert, current_resource_count);
 
-	n_res = 0;
+	current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_C);
+
 	HTTP_SERVICE_FOREACH_RESOURCE(&service_C, res) {
 		zassert_unreachable("service_C does not have any resources");
-		n_res++;
 	}
 
-	zassert_equal(n_res, 0);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_C);
 }
 
 ZTEST(http_service, test_HTTP_SERVICE_FOREACH_RESOURCE)
 {
-	size_t first_res, second_res, third_res, n_res;
+	short current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_A);
+	short count_assert = 0;
 
-	n_res = 0;
-	first_res = 0;
-	second_res = 0;
-	third_res = 0;
 	HTTP_SERVICE_FOREACH_RESOURCE(&service_A, res) {
 		if (res == &resource_0) {
-			first_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_1) {
-			second_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_2) {
-			third_res = 1;
+			count_assert += 1;
 		} else {
 			zassert_unreachable("res (%p) not equal to &resource_0 (%p), &resource_1 "
 					    "(%p) or &resource_2 (%p)",
 					    res, &resource_0, &resource_1, &resource_2);
 		}
-
-		n_res++;
 	}
 
-	zassert_equal(n_res, 3);
-	zassert_equal(first_res + second_res + third_res, n_res);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_A);
+	zassert_equal(count_assert, current_resource_count);
 
-	n_res = 0;
-	first_res = 0;
-	second_res = 0;
+	current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_B);
+	count_assert = 0;
+
 	HTTP_SERVICE_FOREACH_RESOURCE(&service_B, res) {
 		if (res == &resource_3) {
-			first_res = 1;
+			count_assert += 1;
 		} else if (res == &resource_4) {
-			second_res = 1;
+			count_assert += 1;
 		} else {
 			zassert_unreachable(
 				"res (%p) not equal to &resource_3 (%p) or &resource_4 (%p)", res,
 				&resource_3, &resource_4);
 		}
-
-		n_res++;
 	}
 
-	zassert_equal(n_res, 2);
-	zassert_equal(first_res + second_res, n_res);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_B);
+	zassert_equal(count_assert, current_resource_count);
 
-	n_res = 0;
+	current_resource_count = HTTP_SERVICE_RESOURCE_COUNT(&service_C);
+
 	HTTP_SERVICE_FOREACH_RESOURCE(&service_C, res) {
 		zassert_unreachable("service_C does not have any resources");
-		n_res++;
 	}
 
-	zassert_equal(n_res, 0);
+	zassert_equal(current_resource_count, RESOURCE_AMOUNT_C);
 }
 
 ZTEST(http_service, test_HTTP_RESOURCE_DEFINE)
@@ -296,11 +284,14 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFINE)
 	}
 }
 
-extern struct http_resource_detail *get_resource_detail(const char *path,
-							int *path_len,
+extern struct http_resource_detail *get_resource_detail(const char *path, int *path_len,
 							bool is_websocket);
 
-#define CHECK_PATH(path, len) ({ *len = 0; get_resource_detail(path, len, false); })
+#define CHECK_PATH(path, len)                                                                      \
+	({                                                                                         \
+		*len = 0;                                                                          \
+		get_resource_detail(path, len, false);                                             \
+	})
 
 ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
 {
@@ -364,8 +355,7 @@ ZTEST(http_service, test_HTTP_SERVER_CONTENT_TYPE)
 	size_t have_svg = 0;
 	size_t have_mpg = 0;
 
-	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct)
-	{
+	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
 		if (strncmp(ct->extension, "html", ct->extension_len) == 0) {
 			have_html = 1;
 		} else if (strncmp(ct->extension, "css", ct->extension_len) == 0) {
