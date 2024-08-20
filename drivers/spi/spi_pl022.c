@@ -695,11 +695,13 @@ static void spi_pl022_start_async_xfer(const struct device *dev)
 	struct spi_pl022_data *data = dev->data;
 
 	/* Ensure writable */
-	while (!SSP_TX_FIFO_EMPTY(cfg->reg))
+	while (!SSP_TX_FIFO_EMPTY(cfg->reg)) {
 		;
+	}
 	/* Drain RX FIFO */
-	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
+	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg)) {
 		SSP_READ_REG(SSP_DR(cfg->reg));
+	}
 
 	data->tx_count = 0;
 	data->rx_count = 0;
@@ -746,8 +748,9 @@ static void spi_pl022_xfer(const struct device *dev)
 		;
 	}
 	/* Drain RX FIFO */
-	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg))
+	while (SSP_RX_FIFO_NOT_EMPTY(cfg->reg)) {
 		SSP_READ_REG(SSP_DR(cfg->reg));
+	}
 
 	while (data->rx_count < chunk_len || data->tx_count < chunk_len) {
 		/* Fill up fifo with available TX data */

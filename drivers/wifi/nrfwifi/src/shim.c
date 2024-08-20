@@ -213,8 +213,9 @@ static void *zep_shim_nbuf_alloc(unsigned int size)
 
 	nbuff = (struct nwb *)k_calloc(sizeof(struct nwb), sizeof(char));
 
-	if (!nbuff)
+	if (!nbuff) {
 		return NULL;
+	}
 
 	nbuff->priv = k_calloc(size, sizeof(char));
 
@@ -811,8 +812,9 @@ static void *zep_shim_timer_alloc(void)
 
 	timer = k_malloc(sizeof(*timer));
 
-	if (!timer)
+	if (!timer) {
 		LOG_ERR("%s: Unable to allocate memory for work", __func__);
+	}
 
 	return timer;
 }

@@ -223,8 +223,9 @@ static inline uint32_t npcx_itim_get_evt_cyc32(void)
 	 * Wait for two consecutive equal values are read since the source clock
 	 * of event timer is 32KHz.
 	 */
-	while ((cnt2 = evt_tmr->ITCNT32) != cnt1)
+	while ((cnt2 = evt_tmr->ITCNT32) != cnt1) {
 		cnt1 = cnt2;
+	}
 
 	/* Return current value of 32-bit counter of event timer  */
 	return cnt2;

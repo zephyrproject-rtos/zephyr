@@ -68,8 +68,9 @@ static void __no_inline_not_in_flash_func(flash_init_boot2_copyout)(void)
 	if (boot2_copyout_valid) {
 		return;
 	}
-	for (int i = 0; i < BOOT2_SIZE_WORDS; ++i)
+	for (int i = 0; i < BOOT2_SIZE_WORDS; ++i) {
 		boot2_copyout[i] = ((uint32_t *)FLASH_BASE)[i];
+	}
 	__compiler_memory_barrier();
 	boot2_copyout_valid = true;
 }
@@ -119,8 +120,9 @@ void __no_inline_not_in_flash_func(flash_put_get)(const uint8_t *tx, uint8_t *rx
 			if (rx_skip) {
 				--rx_skip;
 			} else {
-				if (rx)
+				if (rx) {
 					*rx++ = rxbyte;
+				}
 				--rx_count;
 			}
 		}
