@@ -85,6 +85,12 @@
            compatible = "shakti,i2c0";
            reg= <0x0 0x44000 0x0 0x100>;
     };
+    watchdog: watchdog@40400
+    {
+      compatible="shakti,wdt";
+      reg= <0x0 0x40400 0x0 0x1>;
+
+    };
 
   };
 };
