@@ -19,6 +19,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
 #include <zephyr/net/conn_mgr_connectivity_impl.h>
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 
 
 #include <util.h>
@@ -929,5 +930,5 @@ DEVICE_DT_INST_DEFINE(0,
 #endif /* CONFIG_NRF70_STA_MODE */
 
 #ifdef CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
-CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)), L2_CONN_WLAN0);
+CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
 #endif /* CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT */
