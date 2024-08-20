@@ -221,6 +221,13 @@ class CheckPatch(ComplianceTest):
                     r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
 
             matches = re.findall(regex, output, re.MULTILINE)
+
+            # add a guard here for excessive number of errors, do not try and
+            # process each one of them and instead push this as one failure.
+            if len(matches) > 500:
+                self.failure(output)
+                return
+
             for m in matches:
                 self.fmtd_failure(m[1].lower(), m[2], m[5], m[6], col=None,
                         desc=m[3])
