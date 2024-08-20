@@ -37,7 +37,7 @@ config 2ND_LVL_ISR_TBL_OFFSET
 	default 12
 
 config PINCTRL
-	default y
+	default n
 
 config XIP
 	bool

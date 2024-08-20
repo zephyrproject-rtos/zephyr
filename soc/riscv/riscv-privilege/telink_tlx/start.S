@@ -24,38 +24,11 @@ entry:
 	.org 0x20
 	.word ('T' << 24 | 'L' << 16 | 'N' << 8 | 'K')
 
-#if CONFIG_SOC_RISCV_TELINK_B91
-	.org 0x26
-#if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.short (0x173b)                 #/ 2 - wire SPI interface
-#else
-	.short (0x65eb)                 #/ 4 - wire SPI interface
-#endif
-
-#elif CONFIG_SOC_RISCV_TELINK_B92
-	.org 0x24
-#if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.word (0x3b0097a9)              #/ 2 - wire SPI interface
-#else
-	.word (0x3b0097a9)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
-#endif
-
-#elif CONFIG_SOC_RISCV_TELINK_B95
-	.org 0x24
-#if defined(CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_B9X_2_WIRE_SPI_ENABLE
-	.word (0x030020A8)              #/ 2 - wire SPI interface
-#else
-	.word (0x030020A8)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
-#endif
-
-#elif CONFIG_SOC_RISCV_TELINK_TL321X
 	.org 0x24
 #if defined(CONFIG_TELINK_TLX_2_WIRE_SPI_ENABLE) && CONFIG_TELINK_TLX_2_WIRE_SPI_ENABLE
-	.word (0x3b0097a9)              #/ 2 - wire SPI interface
+	.word (0x3b4097a9)              #/ 2 - wire SPI interface
 #else
-	.word (0x3b0097a9)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
-#endif
-
+	.word (0x3b4097a9)              #/ 4 - wire SPI interface set in soc_b9x_check_flash
 #endif
 
 	.align 2
@@ -73,11 +46,7 @@ start:
 	/* Disable vector mode */
 	csrci  0x7d0, 2
 	/* Disable vector feture enable address */
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
-	lui t0 ,0xe4000
-#elif CONFIG_SOC_RISCV_TELINK_B95
 	lui t0 ,0xc4000
-#endif
 	li  t1 ,0x00
 	sw  t1 ,0x0(t0)
 

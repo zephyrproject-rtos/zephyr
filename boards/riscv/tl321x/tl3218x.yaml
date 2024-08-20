@@ -1,11 +1,11 @@
 identifier: tl3218x
-name: Telink TLSR9268A
+name: Telink TL3218X
 type: mcu
 arch: riscv32
 toolchain:
   - cross-compile
   - zephyr
-ram: 256
+ram: 128
 flash: 1024
 supported:
   - gpio

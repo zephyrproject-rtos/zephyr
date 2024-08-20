@@ -42,7 +42,7 @@
 		compatible = "telink,telink_tl321x-soc";
 		ranges;
 
-		ram_ilm: memory@0 {
+		ram_ilm: memory@68000 {
 			compatible = "mmio-sram";
 		};
 
@@ -50,9 +50,9 @@
 			compatible = "mmio-sram";
 		};
 
-		mtimer: timer@e6000000 {
+		mtimer: timer@c6000000 {
 			compatible = "telink,machine-timer";
-			reg = <0xe6000000 0x10000>;
+			reg = <0xc6000000 0x10000>;
 			interrupts = <7 0>;
 			interrupt-parent = <&plic0>;
 		};
@@ -73,7 +73,7 @@
 		power: power@80140180 {
 			compatible = "telink,tl321x-power";
 			reg = <0x80140180 0x40>;
-			power-mode = "DCDC_1P4_LDO_2P0";
+			power-mode = "LDO_1P25_LDO_1P8";
 			vbat-type = "VBAT_MAX_VALUE_GREATER_THAN_3V6";
 			status = "okay";
 		};
