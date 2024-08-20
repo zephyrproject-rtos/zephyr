@@ -322,8 +322,9 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
-	if (!esf)
+	if (!esf) {
 		return false;
+	}
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -380,8 +381,9 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 
 			dump_esr(esr, &dump_far);
 
-			if (dump_far)
+			if (dump_far) {
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+			}
 
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
