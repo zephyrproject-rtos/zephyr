@@ -1070,7 +1070,7 @@ test_i2c_sht21@90 {
 
 test_i2c_lsm9ds1: lsm9ds1@91 {
 	compatible = "st,lsm9ds1";
-	reg = <0x8e>;
+	reg = <0x91>;
 };
 
 test_i2c_icm42670: icm42670@92 {
@@ -1089,4 +1089,10 @@ test_i2c_fxls8974: fxls8974@93 {
 	reset-gpios = <&test_gpio 0 0>;
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmp180: bmp180@94 {
+	compatible = "bosch,bmp180";
+	reg = <0x94>;
+	osr-press = <0x01>;
 };
