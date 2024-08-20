@@ -378,8 +378,9 @@ static int pl011_irq_tx_ready(const struct device *dev)
 {
 	struct pl011_data *data = dev->data;
 
-	if (!data->sbsa && !(get_uart(dev)->cr & PL011_CR_TXE))
+	if (!data->sbsa && !(get_uart(dev)->cr & PL011_CR_TXE)) {
 		return false;
+	}
 
 	return ((get_uart(dev)->imsc & PL011_IMSC_TXIM) &&
 		/* Check for TX interrupt status is set or TX FIFO is empty. */
@@ -400,8 +401,9 @@ static int pl011_irq_rx_ready(const struct device *dev)
 {
 	struct pl011_data *data = dev->data;
 
-	if (!data->sbsa && !(get_uart(dev)->cr & PL011_CR_RXE))
+	if (!data->sbsa && !(get_uart(dev)->cr & PL011_CR_RXE)) {
 		return false;
+	}
 
 	return ((get_uart(dev)->imsc & PL011_IMSC_RXIM) &&
 		(!(get_uart(dev)->fr & PL011_FR_RXFE)));

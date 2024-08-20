@@ -352,8 +352,9 @@ int adxl367_self_test(const struct device *dev)
 	x_axis_2 = ((int16_t)read_val[0] << 6) + (read_val[1] >> 2);
 
 	/* extend sign to 16 bits */
-	if ((x_axis_2 & BIT(13)) != 0)
+	if ((x_axis_2 & BIT(13)) != 0) {
 		x_axis_2 |= GENMASK(15, 14);
+	}
 
 	ret = adxl367_set_op_mode(dev, ADXL367_STANDBY);
 	if (ret != 0) {

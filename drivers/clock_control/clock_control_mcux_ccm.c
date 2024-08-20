@@ -307,10 +307,11 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	{
 		uint32_t mux = CLOCK_GetRootMux(kCLOCK_RootGpt1);
 
-		if (mux == 0)
+		if (mux == 0) {
 			*rate = OSC24M_CLK_FREQ;
-		else
+		} else {
 			*rate = 0;
+		}
 	} break;
 #endif
 #endif

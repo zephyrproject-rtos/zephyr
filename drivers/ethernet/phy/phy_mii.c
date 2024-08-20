@@ -349,15 +349,17 @@ static int phy_mii_cfg_link(const struct device *dev,
 	}
 
 	if (data->gigabit_supported) {
-		if (adv_speeds & LINK_FULL_1000BASE_T)
+		if (adv_speeds & LINK_FULL_1000BASE_T) {
 			c1kt_reg |= MII_ADVERTISE_1000_FULL;
-		else
+		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_FULL;
+		}
 
-		if (adv_speeds & LINK_HALF_1000BASE_T)
+		if (adv_speeds & LINK_HALF_1000BASE_T) {
 			c1kt_reg |= MII_ADVERTISE_1000_HALF;
-		else
+		} else {
 			c1kt_reg &= ~MII_ADVERTISE_1000_HALF;
+		}
 
 		if (reg_write(dev, MII_1KTCR, c1kt_reg) < 0) {
 			return -EIO;

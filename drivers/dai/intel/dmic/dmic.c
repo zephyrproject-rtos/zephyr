@@ -519,12 +519,14 @@ static void dai_dmic_gain_ramp(struct dai_intel_dmic *dmic)
 
 	/* Write gain to registers */
 	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
-		if (!dmic->enable[i])
+		if (!dmic->enable[i]) {
 			continue;
+		}
 
-		if (dmic->startcount == DMIC_UNMUTE_CIC)
+		if (dmic->startcount == DMIC_UNMUTE_CIC) {
 			dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL,
 					     CIC_CONTROL_MIC_MUTE, 0);
+		}
 
 		if (dmic->startcount == DMIC_UNMUTE_FIR) {
 			dai_dmic_update_bits(dmic, dmic_base[i] + FIR_CHANNEL_REGS_SIZE *
@@ -563,8 +565,9 @@ static void dai_dmic_start(struct dai_intel_dmic *dmic)
 	key = k_spin_lock(&dmic->lock);
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
-	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++)
+	for (i = 0; i < CONFIG_DAI_DMIC_HW_CONTROLLERS; i++) {
 		dai_dmic_update_bits(dmic, dmic_base[i] + CIC_CONTROL, CIC_CONTROL_SOFT_RESET, 0);
+	}
 #endif
 
 	dmic->startcount = 0;

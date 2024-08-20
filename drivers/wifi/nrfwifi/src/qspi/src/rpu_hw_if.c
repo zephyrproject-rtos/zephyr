@@ -282,10 +282,11 @@ int rpu_read(unsigned int addr, void *data, int len)
 		return -1;
 	}
 
-	if (hl_flag)
+	if (hl_flag) {
 		return qdev->hl_read(addr, data, len);
-	else
+	} else {
 		return qdev->read(addr, data, len);
+	}
 }
 
 int rpu_write(unsigned int addr, const void *data, int len)

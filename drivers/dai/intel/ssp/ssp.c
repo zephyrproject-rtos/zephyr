@@ -502,11 +502,12 @@ static int dai_ssp_find_bclk_source(struct dai_intel_ssp *dp, uint32_t bclk, uin
 	}
 
 	/* searching the smallest possible bclk source */
-	for (i = 0; i <= DAI_INTEL_SSP_MAX_FREQ_INDEX; i++)
+	for (i = 0; i <= DAI_INTEL_SSP_MAX_FREQ_INDEX; i++) {
 		if (ft[i].freq % bclk == 0) {
 			*scr_div = ft[i].freq / bclk;
 			return i;
 		}
+	}
 
 	/* check if we can get target BCLK with M/N */
 	for (i = 0; i <= DAI_INTEL_SSP_MAX_FREQ_INDEX; i++) {
@@ -958,8 +959,9 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 	if (sssr & SSSR_ROR) {
 		/* The RX FIFO is in overflow condition, empty it */
 		for (uint32_t idx = 0; idx < I2SIPCMC; ++idx) {
-			for (i = 0; i < DAI_INTEL_SSP_FIFO_DEPTH; i++)
+			for (i = 0; i < DAI_INTEL_SSP_FIFO_DEPTH; i++) {
 				sys_read32(dai_base(dp) + SSMIDyD(idx));
+			}
 		}
 
 		/* Clear the overflow status */
@@ -974,8 +976,9 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 				SSMIDyCS(idx)));
 
 			/* Empty the RX FIFO (the DMA is not running at this point) */
-			for (i = 0; i < entries + 1; i++)
+			for (i = 0; i < entries + 1; i++) {
 				sys_read32(dai_base(dp) + SSMIDyD(idx));
+			}
 
 			sssr = sys_read32(dai_base(dp) + SSSR);
 		}
@@ -1017,8 +1020,9 @@ static void ssp_empty_rx_fifo_on_stop(struct dai_intel_ssp *dp)
 			 * directly, otherwise let the next loop iteration to
 			 * check the status
 			 */
-			for (i = 0; i < entries[1] + 1; i++)
+			for (i = 0; i < entries[1] + 1; i++) {
 				sys_read32(dai_base(dp) + SSMIDyD(dp->tdm_slot_group));
+			}
 		}
 		sssr = sys_read32(dai_base(dp) + SSSR);
 	}
@@ -1037,8 +1041,9 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 
 	if (sssr & SSSR_ROR) {
 		/* The RX FIFO is in overflow condition, empty it */
-		for (i = 0; i < DAI_INTEL_SSP_FIFO_DEPTH; i++)
+		for (i = 0; i < DAI_INTEL_SSP_FIFO_DEPTH; i++) {
 			sys_read32(dai_base(dp) + SSDR);
+		}
 
 		/* Clear the overflow status */
 		dai_ssp_update_bits(dp, SSSR, SSSR_ROR, SSSR_ROR);
@@ -1050,8 +1055,9 @@ static void ssp_empty_rx_fifo_on_start(struct dai_intel_ssp *dp)
 		uint32_t entries = SSCR3_RFL_VAL(sys_read32(dai_base(dp) + SSCR3));
 
 		/* Empty the RX FIFO (the DMA is not running at this point) */
-		for (i = 0; i < entries + 1; i++)
+		for (i = 0; i < entries + 1; i++) {
 			sys_read32(dai_base(dp) + SSDR);
+		}
 
 		sssr = sys_read32(dai_base(dp) + SSSR);
 	}
@@ -1088,8 +1094,9 @@ static void ssp_empty_rx_fifo_on_stop(struct dai_intel_ssp *dp)
 			 * directly, otherwise let the next loop iteration to
 			 * check the status
 			 */
-			for (i = 0; i < entries[1] + 1; i++)
+			for (i = 0; i < entries[1] + 1; i++) {
 				sys_read32(dai_base(dp) + SSDR);
+			}
 		}
 
 		sssr = sys_read32(dai_base(dp) + SSSR);

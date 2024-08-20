@@ -182,17 +182,19 @@ static int dai_ipm_source_to_enable(struct dai_intel_dmic *dmic,
 {
 	int mic_swap;
 
-	if (source_pdm >= CONFIG_DAI_DMIC_HW_CONTROLLERS)
+	if (source_pdm >= CONFIG_DAI_DMIC_HW_CONTROLLERS) {
 		return -EINVAL;
+	}
 
 	if (*count < pdm_count) {
 		(*count)++;
 		mic_swap = FIELD_GET(MIC_CONTROL_CLK_EDGE, dai_dmic_read(
 						dmic, dmic_base[source_pdm] + MIC_CONTROL));
-		if (stereo)
+		if (stereo) {
 			dmic->enable[source_pdm] = 0x3; /* PDMi MIC A and B */
-		else
+		} else {
 			dmic->enable[source_pdm] = mic_swap ? 0x2 : 0x1; /* PDMi MIC B or MIC A */
+		}
 	}
 
 	return 0;
@@ -234,8 +236,9 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 	stereo_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_MODE, outcontrol_val);
 
 	dmic->dai_config_params.channels = (stereo_pdm + 1) * num_pdm;
-	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++)
+	for (n = 0; n < CONFIG_DAI_DMIC_HW_CONTROLLERS; n++) {
 		dmic->enable[n] = 0;
+	}
 
 	n = 0;
 	source_pdm = FIELD_GET(OUTCONTROL_IPM_SOURCE_1, outcontrol_val);

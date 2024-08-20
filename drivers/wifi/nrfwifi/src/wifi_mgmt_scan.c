@@ -262,12 +262,15 @@ out:
 
 static inline enum wifi_mfp_options drv_to_wifi_mgmt_mfp(unsigned char mfp_flag)
 {
-	if (!mfp_flag)
+	if (!mfp_flag) {
 		return WIFI_MFP_DISABLE;
-	if (mfp_flag & NRF_WIFI_MFP_REQUIRED)
+	}
+	if (mfp_flag & NRF_WIFI_MFP_REQUIRED) {
 		return WIFI_MFP_REQUIRED;
-	if (mfp_flag & NRF_WIFI_MFP_CAPABLE)
+	}
+	if (mfp_flag & NRF_WIFI_MFP_CAPABLE) {
 		return WIFI_MFP_OPTIONAL;
+	}
 
 	return WIFI_MFP_UNKNOWN;
 }

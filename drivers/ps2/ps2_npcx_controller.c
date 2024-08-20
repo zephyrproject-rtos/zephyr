@@ -361,8 +361,9 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	 */
 	inst->PSIEN = BIT(NPCX_PSIEN_SOTIE) | BIT(NPCX_PSIEN_EOTIE) |
 		      BIT(NPCX_PSIEN_PS2_WUE);
-	if (config->clk_cfg.bus == NPCX_CLOCK_BUS_FREERUN)
+	if (config->clk_cfg.bus == NPCX_CLOCK_BUS_FREERUN) {
 		inst->PSIEN |= BIT(NPCX_PSIEN_PS2_CLK_SEL);
+	}
 	/* Enable weak internal pull-up */
 	inst->PSCON |= BIT(NPCX_PSCON_WPUED);
 	/* Enable shift mechanism */

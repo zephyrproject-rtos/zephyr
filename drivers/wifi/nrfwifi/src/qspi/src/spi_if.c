@@ -103,8 +103,9 @@ int spim_read_reg(uint32_t reg_addr, uint8_t *reg_value)
 
 	LOG_DBG("err: %d -> %x %x %x %x %x %x", err, sr[0], sr[1], sr[2], sr[3], sr[4], sr[5]);
 
-	if (err == 0)
+	if (err == 0) {
 		*reg_value = sr[1];
+	}
 
 	return err;
 }

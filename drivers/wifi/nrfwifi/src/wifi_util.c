@@ -993,8 +993,9 @@ SHELL_CMD_REGISTER(wifi_util,
 static int nrf_wifi_util_init(void)
 {
 
-	if (nrf_wifi_util_conf_init(&ctx->conf_params) < 0)
+	if (nrf_wifi_util_conf_init(&ctx->conf_params) < 0) {
 		return -1;
+	}
 
 	return 0;
 }

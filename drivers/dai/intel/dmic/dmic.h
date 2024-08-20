@@ -185,12 +185,13 @@ struct dai_intel_dmic {
 
 static inline int32_t sat_int32(int64_t x)
 {
-	if (x > INT32_MAX)
+	if (x > INT32_MAX) {
 		return INT32_MAX;
-	else if (x < INT32_MIN)
+	} else if (x < INT32_MIN) {
 		return INT32_MIN;
-	else
+	} else {
 		return (int32_t)x;
+	}
 }
 /* Fractional multiplication with shift and saturation */
 static inline int32_t q_multsr_sat_32x32(int32_t x, int32_t y,

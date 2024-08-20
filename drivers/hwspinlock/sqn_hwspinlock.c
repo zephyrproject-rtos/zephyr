@@ -45,8 +45,9 @@ static int sqn_hwspinlock_trylock(const struct device *dev, uint32_t id)
 	const struct sqn_hwspinlock_config *config = dev->config;
 	uint8_t cpuid;
 
-	if (id > config->num_locks)
+	if (id > config->num_locks) {
 		return -EINVAL;
+	}
 
 	/*
 	 * If the register value is equal to cpuid, this means that the current
