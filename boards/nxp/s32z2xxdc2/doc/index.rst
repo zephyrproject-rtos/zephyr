@@ -57,6 +57,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | SAR_ADC   | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| LPI2C     | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
