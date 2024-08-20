@@ -478,9 +478,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
-				params->sae_pwe =
-					(params->security == WIFI_SECURITY_TYPE_SAE_H2E) ? 1 : 2;
-				if (!wpa_cli_cmd_v("set sae_pwe %d", params->sae_pwe)) {
+				if (!wpa_cli_cmd_v("set sae_pwe %d",
+						   (params->security == WIFI_SECURITY_TYPE_SAE_H2E)
+							   ? 1
+							   : 2)) {
 					goto out;
 				}
 			}
