@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Chris Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for BMP180
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+
+  osr-press:
+    type: int
+    required: true
+    description: |
+      Default pressure oversampling rate. Only the following values are
+      allowed:
+        0 ultra low power, 1 sample
+        1 standard,        2 sample
+        2 high,            4 sample
+        3 ultra high,      8 sample
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
