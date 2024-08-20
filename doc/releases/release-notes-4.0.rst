@@ -169,6 +169,8 @@ Drivers and Sensors
 
 * LED
 
+  * lp5562: added ``enable-gpios`` property to describe the EN/VCC GPIO of the lp5562.
+
   * lp5569: added ``charge-pump-mode`` property to configure the charge pump of the lp5569.
 
   * lp5569: added ``enable-gpios`` property to describe the EN/PWM GPIO of the lp5569.
