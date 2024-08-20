@@ -336,7 +336,7 @@ int main(void)
 		}
 
 		sync_config.subevent = num_synced % NUM_SUBEVENTS;
-		sync_config.response_slot = num_synced / NUM_RSP_SLOTS;
+		sync_config.response_slot = num_synced / NUM_SUBEVENTS;
 		num_synced++;
 
 		write_params.func = write_func;
