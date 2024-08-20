@@ -174,50 +174,20 @@ static const struct gpio_driver_api gpio_ra_drv_api_funcs = {
 			 DT_PROP(DT_NODELABEL(ioport##suffix), port), suffix,                      \
 			 DT_REG_ADDR(DT_NODELABEL(ioport##suffix)))
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport0), okay)
-GPIO_DEVICE_INIT_RA(0);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport0), okay) */
+#define GPIO_DEVICE_INIT_RA_IF_OKAY(suffix)                                                        \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(ioport##suffix), okay),                        \
+		    (GPIO_DEVICE_INIT_RA(suffix)),                                                 \
+		    ())
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport1), okay)
-GPIO_DEVICE_INIT_RA(1);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport1), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport2), okay)
-GPIO_DEVICE_INIT_RA(2);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport2), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport3), okay)
-GPIO_DEVICE_INIT_RA(3);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport3), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport4), okay)
-GPIO_DEVICE_INIT_RA(4);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport4), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport5), okay)
-GPIO_DEVICE_INIT_RA(5);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport5), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport6), okay)
-GPIO_DEVICE_INIT_RA(6);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport6), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport7), okay)
-GPIO_DEVICE_INIT_RA(7);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport7), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport8), okay)
-GPIO_DEVICE_INIT_RA(8);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport8), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioport9), okay)
-GPIO_DEVICE_INIT_RA(9);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioport9), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioporta), okay)
-GPIO_DEVICE_INIT_RA(a);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioporta), okay) */
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ioportb), okay)
-GPIO_DEVICE_INIT_RA(b);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(ioportb), okay) */
+GPIO_DEVICE_INIT_RA_IF_OKAY(0);
+GPIO_DEVICE_INIT_RA_IF_OKAY(1);
+GPIO_DEVICE_INIT_RA_IF_OKAY(2);
+GPIO_DEVICE_INIT_RA_IF_OKAY(3);
+GPIO_DEVICE_INIT_RA_IF_OKAY(4);
+GPIO_DEVICE_INIT_RA_IF_OKAY(5);
+GPIO_DEVICE_INIT_RA_IF_OKAY(6);
+GPIO_DEVICE_INIT_RA_IF_OKAY(7);
+GPIO_DEVICE_INIT_RA_IF_OKAY(8);
+GPIO_DEVICE_INIT_RA_IF_OKAY(9);
+GPIO_DEVICE_INIT_RA_IF_OKAY(a);
+GPIO_DEVICE_INIT_RA_IF_OKAY(b);
