@@ -1741,7 +1741,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri,
 
 	if (tbs == NULL || inst_is_gtbs(tbs)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(remote_uri, strlen(remote_uri))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)remote_uri, strlen(remote_uri))) {
 		LOG_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
@@ -1937,10 +1937,10 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 	if (inst == NULL || inst_is_gtbs(inst)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(to, strlen(to))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)to, strlen(to))) {
 		LOG_DBG("Invalid \"to\" URI: %s", to);
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(from, strlen(from))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)from, strlen(from))) {
 		LOG_DBG("Invalid \"from\" URI: %s", from);
 		return -EINVAL;
 	}
