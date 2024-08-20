@@ -819,10 +819,11 @@ int main(void)
 
 			edtt_read((uint8_t *)&multiple, sizeof(multiple),
 				  EDTTT_BLOCK);
-			if (multiple)
+			if (multiple) {
 				get_events(--size);
-			else
+			} else {
 				get_event(--size);
+			}
 		}
 		break;
 		case CMD_LE_FLUSH_DATA_REQ:
