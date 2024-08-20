@@ -152,6 +152,7 @@
 enum {
 	BT_HFP_HF_FLAG_CONNECTED,     /* HFP HF SLC Established */
 	BT_HFP_HF_FLAG_TX_ONGOING,    /* HFP HF TX is ongoing */
+	BT_HFP_HF_FLAG_RX_ONGOING,    /* HFP HF RX is ongoing */
 	BT_HFP_HF_FLAG_CODEC_CONN,    /* HFP HF codec connection setup */
 	BT_HFP_HF_FLAG_CLCC_PENDING,  /* HFP HF CLCC is pending */
 	/* Total number of flags - must be at the end of the enum */
@@ -217,6 +218,9 @@ struct bt_hfp_hf {
 
 	/* The features supported by AT+CHLD */
 	uint32_t chld_features;
+
+	/* Worker for pending TX */
+	struct k_work work;
 
 	struct k_work_delayable deferred_work;
 
