@@ -68,10 +68,11 @@ static void rtc_time_to_ambiq_time_set(const struct rtc_time *tm, am_hal_rtc_tim
 static void ambiq_time_to_rtc_time_set(const am_hal_rtc_time_t *atm, struct rtc_time *tm)
 {
 	tm->tm_year = atm->ui32Year;
-	if (atm->ui32CenturyBit == 0)
+	if (atm->ui32CenturyBit == 0) {
 		tm->tm_year += 100;
-	else
+	} else {
 		tm->tm_year += 200;
+	}
 	tm->tm_wday = atm->ui32Weekday;
 	tm->tm_mon = atm->ui32Month - 1;
 	tm->tm_mday = atm->ui32DayOfMonth;

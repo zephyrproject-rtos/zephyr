@@ -16,8 +16,9 @@ static void scmi_mbox_cb(const struct device *mbox,
 {
 	struct scmi_channel *scmi_chan = user_data;
 
-	if (scmi_chan->cb)
+	if (scmi_chan->cb) {
 		scmi_chan->cb(scmi_chan);
+	}
 }
 
 static int scmi_mbox_send_message(const struct device *transport,

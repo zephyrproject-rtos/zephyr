@@ -148,8 +148,9 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	enum pm_device_state state;
 	(void)pm_device_state_get(dev, &state);
 	/* Do not allow sample fetching from suspended state */
-	if (state == PM_DEVICE_STATE_SUSPENDED)
+	if (state == PM_DEVICE_STATE_SUSPENDED) {
 		return -EIO;
+	}
 #endif
 
 #ifdef CONFIG_BME280_MODE_FORCED

@@ -307,8 +307,9 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 			LOG_ERR("Error getting device status\n");
 			return -1;
 		}
-		if (!CAD_QSPI_STIG_SR_BUSY(status))
+		if (!CAD_QSPI_STIG_SR_BUSY(status)) {
 			break;
+		}
 		count++;
 	}
 
@@ -328,12 +329,14 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 		}
 
 		if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(flag_sr)) ||
-		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr)))
+		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr))) {
 			break;
+		}
 	}
 
-	if (count >= CAD_QSPI_COMMAND_TIMEOUT)
+	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
 		LOG_ERR("Timed out waiting for program and erase\n");
+	}
 
 	if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMERROR(flag_sr)) ||
 	    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEERROR(flag_sr))) {
@@ -546,10 +549,11 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 		}
 
 		if (rdid == sample_rdid) {
-			if (first_pass == -1)
+			if (first_pass == -1) {
 				first_pass = data_cap_delay;
-			else
+			} else {
 				last_pass = data_cap_delay;
+			}
 		}
 
 		data_cap_delay++;
@@ -725,8 +729,9 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 		space = MIN(write_capacity - write_fill_level,
 			    (len - write_count) / sizeof(uint32_t));
 		write_data = (uint32_t *)(buffer + write_count);
-		for (i = 0; i < space; ++i)
+		for (i = 0; i < space; ++i) {
 			sys_write32(*write_data++, cad_params->data_base);
+		}
 
 		write_count += space * sizeof(uint32_t);
 	}
@@ -756,8 +761,9 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 			level = CAD_QSPI_SRAMFILL_INDRDPART(
 				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
 			read_data = (uint32_t *)(buffer + read_count);
-			for (i = 0; i < level; ++i)
+			for (i = 0; i < level; ++i) {
 				*read_data++ = sys_read32(cad_params->data_base);
+			}
 
 			read_count += level * sizeof(uint32_t);
 			count++;

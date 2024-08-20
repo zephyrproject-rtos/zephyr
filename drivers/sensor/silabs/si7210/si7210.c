@@ -332,8 +332,9 @@ static int si7210_sample_fetch(const struct device *dev, enum sensor_channel cha
 	enum pm_device_state state;
 	(void)pm_device_state_get(dev, &state);
 	/* Do not allow sample fetching from suspended state */
-	if (state == PM_DEVICE_STATE_SUSPENDED)
+	if (state == PM_DEVICE_STATE_SUSPENDED) {
 		return -EIO;
+	}
 #endif
 
 	/* Prevent going into suspend in the middle of the conversion */

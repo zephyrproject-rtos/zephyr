@@ -331,10 +331,11 @@ void rt1718s_gpio_alert_handler(const struct device *dev)
 
 	k_sem_give(&data_port->lock);
 
-	if (reg_int8 & RT1718S_GPIO_INT_MASK)
+	if (reg_int8 & RT1718S_GPIO_INT_MASK) {
 		/* Call the GPIO callbacks for rising *or* falling edge */
 		gpio_fire_callbacks(&data_port->cb_list_gpio, config->gpio_port_dev,
 				    (reg_int8 & 0x7) | ((reg_int8 >> 4) & 0x7));
+	}
 }
 
 static const struct gpio_driver_api gpio_rt1718s_driver = {

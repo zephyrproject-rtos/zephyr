@@ -72,15 +72,17 @@ static void intel_adsp_gpdma_dump_registers(const struct device *dev, uint32_t c
 		channel, cap, ctl, ipptr, llpc, llpl, llpu);
 
 	/* Channel Register Dump */
-	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8)
+	for (i = 0; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END; i += 0x8) {
 		LOG_INF(" channel register offset: %#x value: %#x\n", chan_reg_offs[i],
 			dw_read(dw_cfg->base, DW_CHAN_OFFSET(channel) + chan_reg_offs[i]));
+	}
 
 	/* IP Register Dump */
 	for (i = DW_DMA_CHANNEL_REGISTER_OFFSET_START; i <= DW_DMA_CHANNEL_REGISTER_OFFSET_END;
-	     i += 0x8)
+	     i += 0x8) {
 		LOG_INF(" ip register offset: %#x value: %#x\n", ip_reg_offs[i],
 			dw_read(dw_cfg->base, ip_reg_offs[i]));
+	}
 }
 #endif
 

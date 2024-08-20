@@ -132,8 +132,9 @@ static int uart_sifive_fifo_fill(const struct device *dev,
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
 
-	for (i = 0; i < size && !(uart->tx & TXDATA_FULL); i++)
+	for (i = 0; i < size && !(uart->tx & TXDATA_FULL); i++) {
 		uart->tx = (int)tx_data[i];
+	}
 
 	return i;
 }
@@ -158,8 +159,9 @@ static int uart_sifive_fifo_read(const struct device *dev,
 	for (i = 0; i < size; i++) {
 		val = uart->rx;
 
-		if (val & RXDATA_EMPTY)
+		if (val & RXDATA_EMPTY) {
 			break;
+		}
 
 		rx_data[i] = (uint8_t)(val & RXDATA_MASK);
 	}
@@ -311,8 +313,9 @@ static void uart_sifive_irq_handler(const struct device *dev)
 {
 	struct uart_sifive_data *data = dev->data;
 
-	if (data->callback)
+	if (data->callback) {
 		data->callback(dev, data->cb_data);
+	}
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */

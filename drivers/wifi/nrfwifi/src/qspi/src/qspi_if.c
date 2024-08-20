@@ -204,10 +204,11 @@ static inline int qspi_get_mode(bool cpol, bool cpha)
 {
 	register int ret = -EINVAL;
 
-	if ((!cpol) && (!cpha))
+	if ((!cpol) && (!cpha)) {
 		ret = 0;
-	else if (cpol && cpha)
+	} else if (cpol && cpha) {
 		ret = 1;
+	}
 
 	__ASSERT(ret != -EINVAL, "Invalid QSPI mode");
 
@@ -458,15 +459,17 @@ static inline void qspi_complete(struct qspi_nor_data *dev_data)
 
 static inline void _qspi_complete(struct qspi_nor_data *dev_data)
 {
-	if (!qspi_cfg->easydma)
+	if (!qspi_cfg->easydma) {
 		return;
+	}
 
 	qspi_complete(dev_data);
 }
 static inline void _qspi_wait_for_completion(const struct device *dev, nrfx_err_t res)
 {
-	if (!qspi_cfg->easydma)
+	if (!qspi_cfg->easydma) {
 		return;
+	}
 
 	qspi_wait_for_completion(dev, res);
 }
@@ -482,8 +485,9 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 {
 	struct qspi_nor_data *dev_data = p_context;
 
-	if (event == NRFX_QSPI_EVENT_DONE)
+	if (event == NRFX_QSPI_EVENT_DONE) {
 		_qspi_complete(dev_data);
+	}
 }
 
 static bool qspi_initialized;
@@ -540,10 +544,11 @@ static void qspi_device_uninit(const struct device *dev)
 
 	if (last) {
 		while (nrfx_qspi_mem_busy_check() != NRFX_SUCCESS) {
-			if (IS_ENABLED(CONFIG_MULTITHREADING))
+			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 				k_msleep(50);
-			else
+			} else {
 				k_busy_wait(50000);
+			}
 		}
 
 		nrfx_qspi_uninit();
@@ -567,8 +572,9 @@ static void qspi_device_uninit(const struct device *dev)
 static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd, bool wren)
 {
 	/* Check input parameters */
-	if (!cmd)
+	if (!cmd) {
 		return -EINVAL;
+	}
 
 	const void *tx_buf = NULL;
 	size_t tx_len = 0;
@@ -587,13 +593,15 @@ static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd, b
 	}
 
 	if ((rx_len != 0) && (tx_len != 0)) {
-		if (rx_len != tx_len)
+		if (rx_len != tx_len) {
 			return -EINVAL;
+		}
 
 		xfer_len += tx_len;
-	} else
+	} else {
 		/* At least one of these is zero. */
 		xfer_len += tx_len + rx_len;
+	}
 
 	if (xfer_len > NRF_QSPI_CINSTR_LEN_9B) {
 		LOG_WRN("cinstr %02x transfer too long: %zu", cmd->op_code, xfer_len);
@@ -705,8 +713,9 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 /* Configures QSPI memory for the transfer */
 static int qspi_nrfx_configure(const struct device *dev)
 {
-	if (!dev)
+	if (!dev) {
 		return -ENXIO;
+	}
 
 	struct qspi_nor_data *dev_data = dev->data;
 
@@ -775,12 +784,14 @@ static int qspi_nrfx_configure(const struct device *dev)
 			 * commands sent while it's happening can be
 			 * corrupted.  Wait.
 			 */
-			if (ret == 0)
+			if (ret == 0) {
 				ret = qspi_wait_while_writing(dev);
+			}
 		}
 
-		if (ret < 0)
+		if (ret < 0) {
 			LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear", ret);
+		}
 	}
 
 	return ret;
@@ -794,13 +805,15 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 	int flash_prefix = (WORD_SIZE - (addr % WORD_SIZE)) % WORD_SIZE;
 
-	if (flash_prefix > size)
+	if (flash_prefix > size) {
 		flash_prefix = size;
+	}
 
 	int dest_prefix = (WORD_SIZE - (int)dptr % WORD_SIZE) % WORD_SIZE;
 
-	if (dest_prefix > size)
+	if (dest_prefix > size) {
 		dest_prefix = size;
+	}
 
 	int flash_suffix = (size - flash_prefix) % WORD_SIZE;
 	int flash_middle = size - flash_prefix - flash_suffix;
@@ -819,12 +832,14 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS)
+		if (res != NRFX_SUCCESS) {
 			return res;
+		}
 
 		/* perform shift in RAM */
-		if (flash_prefix != dest_prefix)
+		if (flash_prefix != dest_prefix) {
 			memmove(dptr + flash_prefix, dptr + dest_prefix, flash_middle);
+		}
 	}
 
 	/* read prefix */
@@ -833,8 +848,9 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS)
+		if (res != NRFX_SUCCESS) {
 			return res;
+		}
 
 		memcpy(dptr, buf + WORD_SIZE - flash_prefix, flash_prefix);
 	}
@@ -845,8 +861,9 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 		_qspi_wait_for_completion(dev, res);
 
-		if (res != NRFX_SUCCESS)
+		if (res != NRFX_SUCCESS) {
 			return res;
+		}
 
 		memcpy(dptr + flash_prefix + flash_middle, buf, flash_suffix);
 	}
@@ -856,17 +873,20 @@ static inline nrfx_err_t read_non_aligned(const struct device *dev, int addr, vo
 
 static int qspi_nor_read(const struct device *dev, int addr, void *dest, size_t size)
 {
-	if (!dest)
+	if (!dest) {
 		return -EINVAL;
+	}
 
 	/* read size must be non-zero */
-	if (!size)
+	if (!size) {
 		return 0;
+	}
 
 	int rc = qspi_device_init(dev);
 
-	if (rc != 0)
+	if (rc != 0) {
 		goto out;
+	}
 
 	qspi_lock(dev);
 
@@ -905,31 +925,35 @@ static inline nrfx_err_t write_sub_word(const struct device *dev, int addr, cons
 
 static int qspi_nor_write(const struct device *dev, int addr, const void *src, size_t size)
 {
-	if (!src)
+	if (!src) {
 		return -EINVAL;
+	}
 
 	/* write size must be non-zero, less than 4, or a multiple of 4 */
-	if ((size == 0) || ((size > 4) && ((size % 4U) != 0)))
+	if ((size == 0) || ((size > 4) && ((size % 4U) != 0))) {
 		return -EINVAL;
+	}
 
 	/* address must be 4-byte aligned */
-	if ((addr % 4U) != 0)
+	if ((addr % 4U) != 0) {
 		return -EINVAL;
+	}
 
 	nrfx_err_t res = NRFX_SUCCESS;
 
 	int rc = qspi_device_init(dev);
 
-	if (rc != 0)
+	if (rc != 0) {
 		goto out;
+	}
 
 	qspi_trans_lock(dev);
 
 	qspi_lock(dev);
 
-	if (size < 4U)
+	if (size < 4U) {
 		res = write_sub_word(dev, addr, src, size);
-	else {
+	} else {
 		res = _nrfx_qspi_write(src, size, addr);
 		_qspi_wait_for_completion(dev, res);
 	}
@@ -955,8 +979,9 @@ static int qspi_nor_configure(const struct device *dev)
 {
 	int ret = qspi_nrfx_configure(dev);
 
-	if (ret != 0)
+	if (ret != 0) {
 		return ret;
+	}
 
 	qspi_device_uninit(dev);
 
@@ -1001,13 +1026,15 @@ static int qspi_cmd_encryption(const struct device *dev, nrf_qspi_encryption_t *
 
 	int ret = qspi_device_init(dev);
 
-	if (ret == 0)
+	if (ret == 0) {
 		ret = qspi_send_cmd(dev, &cmd, false);
+	}
 
 	qspi_device_uninit(dev);
 
-	if (ret < 0)
+	if (ret < 0) {
 		LOG_DBG("cmd_encryption failed %d", ret);
+	}
 
 	return ret;
 }
@@ -1035,8 +1062,9 @@ int qspi_RDSR2(const struct device *dev, uint8_t *rdsr2)
 
 	LOG_DBG("RDSR2 = 0x%x", sr);
 
-	if (ret == 0)
+	if (ret == 0) {
 		*rdsr2 = sr;
+	}
 
 	return ret;
 }
@@ -1080,8 +1108,9 @@ int qspi_RDSR1(const struct device *dev, uint8_t *rdsr1)
 
 	LOG_DBG("RDSR1 = 0x%x", sr);
 
-	if (ret == 0)
+	if (ret == 0) {
 		*rdsr1 = sr;
+	}
 
 	return ret;
 }
@@ -1127,13 +1156,15 @@ int qspi_WRSR2(const struct device *dev, uint8_t data)
 	};
 	int ret = qspi_device_init(dev);
 
-	if (ret == 0)
+	if (ret == 0) {
 		ret = qspi_send_cmd(dev, &cmd, false);
+	}
 
 	qspi_device_uninit(dev);
 
-	if (ret < 0)
+	if (ret < 0) {
 		LOG_ERR("cmd_wakeup RPU failed %d", ret);
+	}
 
 	return ret;
 }
@@ -1183,13 +1214,15 @@ void qspi_update_nonce(unsigned int addr, int len, int hlread)
 
 	NRF_QSPI_Type *p_reg = NRF_QSPI;
 
-	if (!qspi_cfg->encryption)
+	if (!qspi_cfg->encryption) {
 		return;
+	}
 
-	if (nonce_last_addr == 0 || hlread)
+	if (nonce_last_addr == 0 || hlread) {
 		p_reg->DMA_ENC.NONCE2 = ++nonce_cnt;
-	else if ((nonce_last_addr + 4) != addr)
+	} else if ((nonce_last_addr + 4) != addr) {
 		p_reg->DMA_ENC.NONCE2 = ++nonce_cnt;
+	}
 
 	nonce_last_addr = addr + len - 4;
 
@@ -1326,8 +1359,9 @@ int qspi_enable_encryption(uint8_t *key)
 #if defined(CONFIG_SOC_SERIES_NRF53X)
 	int err = 0;
 
-	if (qspi_cfg->encryption)
+	if (qspi_cfg->encryption) {
 		return -EALREADY;
+	}
 
 	int ret = qspi_device_init(&qspi_perip);
 
