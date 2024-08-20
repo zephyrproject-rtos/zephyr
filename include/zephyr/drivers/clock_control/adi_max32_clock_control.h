@@ -30,6 +30,8 @@ struct max32_perclk {
 	 *   ADI_MAX32_PRPH_CLK_SRC_INRO
 	 *   ADI_MAX32_PRPH_CLK_SRC_ISO
 	 *   ADI_MAX32_PRPH_CLK_SRC_IBRO_DIV8
+	 *   ADI_MAX32_PRPH_CLK_SRC_IPLL
+	 *   ADI_MAX32_PRPH_CLK_SRC_EBO
 	 */
 	uint32_t clk_src;
 };
@@ -38,11 +40,13 @@ struct max32_perclk {
 #define ADI_MAX32_SYSCLK_PRESCALER DT_PROP_OR(DT_NODELABEL(gcr), sysclk_prescaler, 1)
 
 #define ADI_MAX32_CLK_IPO_FREQ    DT_PROP(DT_NODELABEL(clk_ipo), clock_frequency)
-#define ADI_MAX32_CLK_ERFO_FREQ   DT_PROP(DT_NODELABEL(clk_erfo), clock_frequency)
+#define ADI_MAX32_CLK_ERFO_FREQ   DT_PROP_OR(DT_NODELABEL(clk_erfo), clock_frequency, 0)
 #define ADI_MAX32_CLK_IBRO_FREQ   DT_PROP(DT_NODELABEL(clk_ibro), clock_frequency)
 #define ADI_MAX32_CLK_ISO_FREQ    DT_PROP_OR(DT_NODELABEL(clk_iso), clock_frequency, 0)
 #define ADI_MAX32_CLK_INRO_FREQ   DT_PROP(DT_NODELABEL(clk_inro), clock_frequency)
 #define ADI_MAX32_CLK_ERTCO_FREQ  DT_PROP(DT_NODELABEL(clk_ertco), clock_frequency)
+#define ADI_MAX32_CLK_IPLL_FREQ   DT_PROP_OR(DT_NODELABEL(clk_ipll), clock_frequency, 0)
+#define ADI_MAX32_CLK_EBO_FREQ    DT_PROP_OR(DT_NODELABEL(clk_ebo), clock_frequency, 0)
 /* External clock may not be defined so _OR is used */
 #define ADI_MAX32_CLK_EXTCLK_FREQ DT_PROP_OR(DT_NODELABEL(clk_extclk), clock_frequency, 0)
 
@@ -76,6 +80,14 @@ struct max32_perclk {
 #define ADI_MAX32_SYSCLK_SRC  ADI_MAX32_CLK_EXTCLK
 #define ADI_MAX32_SYSCLK_FREQ (ADI_MAX32_CLK_EXTCLK_FREQ / ADI_MAX32_SYSCLK_PRESCALER)
 #endif
+#if DT_SAME_NODE(DT_GCR_CLOCKS_CTRL, DT_NODELABEL(clk_ipll))
+#define ADI_MAX32_SYSCLK_SRC  ADI_MAX32_CLK_IPLL
+#define ADI_MAX32_SYSCLK_FREQ (ADI_MAX32_CLK_IPLL_FREQ / ADI_MAX32_SYSCLK_PRESCALER)
+#endif
+#if DT_SAME_NODE(DT_GCR_CLOCKS_CTRL, DT_NODELABEL(clk_ebo))
+#define ADI_MAX32_SYSCLK_SRC  ADI_MAX32_CLK_EBO
+#define ADI_MAX32_SYSCLK_FREQ (ADI_MAX32_CLK_EBO_FREQ / ADI_MAX32_SYSCLK_PRESCALER)
+#endif
 
 #ifndef ADI_MAX32_SYSCLK_SRC
 #define ADI_MAX32_SYSCLK_SRC  ADI_MAX32_CLK_IPO
@@ -93,6 +105,8 @@ struct max32_perclk {
 	 : (clk_src) == ADI_MAX32_PRPH_CLK_SRC_ISO       ? ADI_MAX32_CLK_ISO_FREQ                  \
 	 : (clk_src) == ADI_MAX32_PRPH_CLK_SRC_IBRO_DIV8 ? (ADI_MAX32_CLK_IBRO_FREQ / 8)           \
 	 : (clk_src) == ADI_MAX32_PRPH_CLK_SRC_EXTCLK    ? ADI_MAX32_CLK_EXTCLK_FREQ               \
+	 : (clk_src) == ADI_MAX32_PRPH_CLK_SRC_IPLL      ? ADI_MAX32_CLK_IPLL_FREQ                 \
+	 : (clk_src) == ADI_MAX32_PRPH_CLK_SRC_EBO       ? ADI_MAX32_CLK_EBO_FREQ                  \
 							 : 0)
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ADI_MAX32_CLOCK_CONTROL_H_ */
