@@ -35,8 +35,9 @@ static int sparkfun_thing_plus_mgm240p_init(void)
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&wake_up_gpio_dev, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	return 0;
 }
