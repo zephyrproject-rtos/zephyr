@@ -1,7 +1,7 @@
 # COMPLIANCE: required by the compliance scripts
 
 # used by ci/check_compliance
-clang-format
+clang-format>=15.0.0
 python-magic
 python-magic-bin; sys_platform == "win32"
 lxml
