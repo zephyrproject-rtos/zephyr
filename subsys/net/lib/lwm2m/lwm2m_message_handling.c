@@ -2257,8 +2257,11 @@ static int lwm2m_engine_default_content_format(uint16_t *accept_format)
 		} else if (IS_ENABLED(CONFIG_LWM2M_RW_CBOR_SUPPORT)) {
 			LOG_DBG("No accept option given. Assume CBOR.");
 			*accept_format = LWM2M_FORMAT_APP_CBOR;
+		} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
+			LOG_DBG("No accept option given. Assume OMA TLV.");
+			*accept_format = LWM2M_FORMAT_OMA_TLV;
 		} else {
-			LOG_ERR("CBOR, SenML CBOR or SenML JSON is not supported");
+			LOG_ERR("CBOR, SenML CBOR, SenML JSON or OMA TLV is not supported");
 			return -ENOTSUP;
 		}
 	} else if (IS_ENABLED(CONFIG_LWM2M_RW_OMA_TLV_SUPPORT)) {
