@@ -7,7 +7,7 @@
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/clock/rpi_pico_clock.h>
+#include <zephyr/dt-bindings/clock/rpi_pico_rp2040_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/regulator/rpi_pico.h>
 #include <zephyr/dt-bindings/reset/rp2040_reset.h>
