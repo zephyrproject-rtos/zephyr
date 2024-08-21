@@ -1,0 +1,24 @@
+# Raspberry Pi RP2350 MCU line
+
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RP2350
+	bool
+	select SOC_FAMILY_RPI_PICO
+
+config SOC_SERIES
+	default "rp2350" if SOC_SERIES_RP2350
+
+config SOC_RP2350A
+	bool
+	select SOC_SERIES_RP2350
+
+config SOC_RP2350A_M33
+	bool
+	select SOC_RP2350A
+	help
+	  Use the RP2350A with a Cortex-M33 core in both 'sockets'.
+
+config SOC
+	default "rp2350a" if SOC_RP2350A
