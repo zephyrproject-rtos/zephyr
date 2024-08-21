@@ -93,6 +93,10 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 		status = DMA_STATUS_COMPLETE;
 	} else if (intr_status == GDMA_LL_EVENT_RX_DONE) {
 		status = DMA_STATUS_BLOCK;
+#if defined(CONFIG_SOC_SERIES_ESP32S3)
+	} else if (intr_status == GDMA_LL_EVENT_RX_WATER_MARK) {
+		status = DMA_STATUS_BLOCK;
+#endif
 	} else {
 		status = -intr_status;
 	}
@@ -218,7 +222,6 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
 				    config_dma->dma_callback != NULL);
 
-	gdma_ll_rx_set_water_mark(data->hal.dev, dma_channel->channel_id, 24);
 	return dma_esp32_config_rx_descriptor(dma_channel, config_dma->head_block);
 }
 
