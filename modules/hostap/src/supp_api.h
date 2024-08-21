@@ -276,7 +276,7 @@ int supplicant_legacy_roam(const struct device *dev);
  *
  * @return 1 if support, 0 if not support
  */
-int supplicant_bss_ext_capab(const struct device *dev, enum wifi_ext_capab capab);
+int supplicant_bss_ext_capab(const struct device *dev, int capab);
 
 /** Get Wi-Fi connection parameters recently used
  *
@@ -308,14 +308,6 @@ int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_param
  */
 int hapd_state(const struct device *dev, int *state);
 
-/**
- * @brief Wi-Fi AP configuration parameter.
- *
- * @param dev Wi-Fi device
- * @param params AP parameters
- * @return 0 for OK; -1 for ERROR
- */
-int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params);
 /**
  * @brief Set/Get Wi-Fi AP Bandwidth
  *

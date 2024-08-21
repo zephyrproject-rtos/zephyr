@@ -1101,15 +1101,6 @@ enum wifi_dpp_bootstrap_type {
 	WIFI_DPP_BOOTSTRAP_TYPE_NFC_URI
 };
 
-/* Extended Capabilities */
-enum wifi_ext_capab {
-	WIFI_EXT_CAPAB_20_40_COEX = 0,
-	WIFI_EXT_CAPAB_GLK = 1,
-	WIFI_EXT_CAPAB_EXT_CHAN_SWITCH = 2,
-	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
-	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
-};
-
 /** Wi-Fi DPP params for various operations
  */
 struct wifi_dpp_params {
@@ -1215,6 +1206,15 @@ struct wifi_wps_config_params {
 	enum wifi_wps_op oper;
 	/** pin value*/
 	char pin[WIFI_WPS_PIN_MAX_LEN + 1];
+};
+
+/* Extended Capabilities */
+enum wifi_ext_capab {
+	WIFI_EXT_CAPAB_20_40_COEX = 0,
+	WIFI_EXT_CAPAB_GLK = 1,
+	WIFI_EXT_CAPAB_EXT_CHAN_SWITCH = 2,
+	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
+	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
 };
 
 #include <zephyr/net/net_if.h>
@@ -1427,7 +1427,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @return 1 if support, 0 if not support
 	 */
-	int (*bss_ext_capab)(const struct device *dev, enum wifi_ext_capab capab);
+	int (*bss_ext_capab)(const struct device *dev, int capab);
 
 	/** Send legacy scan
 	 *
