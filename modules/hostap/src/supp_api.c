@@ -2354,8 +2354,6 @@ out:
 	return ret;
 }
 
-#endif
-
 int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	int ret = 0;
@@ -2523,6 +2521,7 @@ int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_pa
 
 	return ret;
 }
+#endif
 #endif
 
 int supplicant_ap_enable(const struct device *dev,
