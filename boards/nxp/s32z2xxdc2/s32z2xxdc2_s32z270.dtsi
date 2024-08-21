@@ -50,3 +50,11 @@
 	pinctrl-0 = <&flexcan1_default>;
 	pinctrl-names = "default";
 };
+
+&sar_adc0 {
+	vref-mv = <1800>;
+};
+
+&sar_adc1 {
+	vref-mv = <1800>;
+};
