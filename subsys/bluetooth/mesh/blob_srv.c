@@ -219,6 +219,7 @@ static void cancel(struct bt_mesh_blob_srv *srv)
 	srv->state.xfer.mode = BT_MESH_BLOB_XFER_MODE_NONE;
 	srv->state.ttl = BT_MESH_TTL_DEFAULT;
 	srv->block.number = 0xffff;
+	memset(srv->block.missing, 0, sizeof(srv->block.missing));
 	srv->state.xfer.chunk_size = 0xffff;
 	k_work_cancel_delayable(&srv->rx_timeout);
 	k_work_cancel_delayable(&srv->pull.report);
