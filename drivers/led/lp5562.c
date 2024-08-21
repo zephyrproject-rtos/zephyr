@@ -150,10 +150,7 @@ enum lp5562_engine_fade_dirs {
 
 struct lp5562_config {
 	struct i2c_dt_spec bus;
-	uint8_t r_current;
-	uint8_t g_current;
-	uint8_t b_current;
-	uint8_t w_current;
+	uint8_t wrgb_current[4];
 	struct gpio_dt_spec enable_gpio;
 };
 
@@ -182,6 +179,32 @@ static int lp5562_get_pwm_reg(uint8_t color_id, uint8_t *reg)
 	}
 
 	*reg = pwm_map_reg[color_id];
+
+	return 0;
+}
+
+/**
+ * @brief Get the register for the given LED color_id used to directly
+ *    write a current value.
+ *
+ * @param channel LED color_id.
+ * @param reg     Pointer to the register address.
+ *
+ * @retval 0       On success.
+ * @retval -EINVAL If an invalid color_id is given.
+ */
+static int lp5562_get_current_reg(uint8_t color_id, uint8_t *reg)
+{
+	/* reg address map as per id values */
+	const uint8_t current_map_reg[] = {
+		LP5562_W_CURRENT, LP5562_R_CURRENT, LP5562_G_CURRENT, LP5562_B_CURRENT
+	};
+	if (color_id > LED_COLOR_ID_BLUE) {
+		LOG_ERR("Invalid color id given.");
+		return -EINVAL;
+	}
+
+	*reg = current_map_reg[color_id];
 
 	return 0;
 }
@@ -912,18 +935,22 @@ static int lp5562_led_update_current(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
 	int ret;
-	uint8_t tx_buf[4] = {
-		LP5562_B_CURRENT,
-		config->b_current,
-		config->g_current,
-		config->r_current };
+	uint8_t reg;
+	const uint8_t *current = config->wrgb_current;
 
-	ret = i2c_write_dt(&config->bus, tx_buf, sizeof(tx_buf));
-	if (ret == 0) {
-		ret = i2c_reg_write_byte_dt(&config->bus, LP5562_W_CURRENT, config->w_current);
+	for (uint8_t color_id = LED_COLOR_ID_WHITE; color_id <= LED_COLOR_ID_BLUE; color_id++) {
+		ret = lp5562_get_current_reg(color_id, &reg);
+		if (ret) {
+			return ret;
+		}
+		ret = i2c_reg_write_byte_dt(&config->bus, reg, current[color_id]);
+		if (ret) {
+			LOG_ERR("Failed to set current of color %d", color_id);
+			return ret;
+		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static int lp5562_enable(const struct device *dev, bool soft_reset)
@@ -1035,14 +1062,12 @@ static int lp5562_led_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->bus, LP5562_OP_MODE, 0x00)) {
-		LOG_ERR("Disabling all engines failed.");
-		return -EIO;
-	}
-
-	if (i2c_reg_write_byte_dt(&config->bus, LP5562_LED_MAP, 0x00)) {
-		LOG_ERR("Setting all LEDs to manual control failed.");
-		return -EIO;
+	for (uint8_t color_id = LED_COLOR_ID_WHITE; color_id <= LED_COLOR_ID_BLUE; color_id++) {
+		ret = lp5562_led_off(dev, color_id);
+		if (ret) {
+			LOG_ERR("Failed to set default state");
+			return ret;
+		}
 	}
 
 	return 0;
@@ -1080,10 +1105,12 @@ static int lp5562_pm_action(const struct device *dev, enum pm_device_action acti
 		"White channel current must be between 0 and 25.5 mA.");	\
 	static const struct lp5562_config lp5562_config_##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
-		.r_current = DT_INST_PROP(id, red_output_current),	\
-		.g_current = DT_INST_PROP(id, green_output_current),	\
-		.b_current = DT_INST_PROP(id, blue_output_current),	\
-		.w_current = DT_INST_PROP(id, white_output_current),	\
+		.wrgb_current = {					\
+			DT_INST_PROP(id, white_output_current),		\
+			DT_INST_PROP(id, red_output_current),		\
+			DT_INST_PROP(id, green_output_current),		\
+			DT_INST_PROP(id, blue_output_current),		\
+		},							\
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};								\
 									\
