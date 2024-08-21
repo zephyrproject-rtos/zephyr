@@ -368,10 +368,10 @@ static void cm_get_iface_info(struct net_if *iface, char *buf, size_t len)
 		strcpy(name, CM_IF_NAME_NONE);
 	}
 
-	snprintf(buf, len, "%d (%p - %s - %s)", net_if_get_by_iface(iface), iface, name,
+	snprintk(buf, len, "%d (%p - %s - %s)", net_if_get_by_iface(iface), iface, name,
 						iface2str(iface, NULL));
 #else
-	snprintf(buf, len, "%d (%p - %s)", net_if_get_by_iface(iface), iface,
+	snprintk(buf, len, "%d (%p - %s)", net_if_get_by_iface(iface), iface,
 					   iface2str(iface, NULL));
 #endif
 }
