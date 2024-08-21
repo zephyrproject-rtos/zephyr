@@ -419,10 +419,10 @@ class Pytest(Harness):
             for fixture in handler.options.fixture:
                 command.append(f'--twister-fixture={fixture}')
 
+        command.extend(pytest_args_yaml)
+
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
-
-        command.extend(pytest_args_yaml)
 
         return command
 
