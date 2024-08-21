@@ -1208,7 +1208,7 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
      - Selected Replacements
      - Status
 
-   * - :ref:`bluetooth_api`
+   * - :ref:`Bluetooth <bluetooth_api>`
      - See `Bluetooth Appropriate Language Mapping Tables`_
      -
 
