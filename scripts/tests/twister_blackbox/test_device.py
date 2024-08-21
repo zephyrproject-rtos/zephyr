@@ -13,6 +13,7 @@ import pytest
 import sys
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -71,5 +72,5 @@ class TestDevice:
 
         assert str(sys_exit.value) == '1'
 
-        expected_line = r'seed_native_sim.dummy  FAILED Failed \(native (\d+\.\d+)s/seed: {}\)'.format(seed[0])
+        expected_line = r'seed_native_sim.dummy FAILED Failed \(native (\d+\.\d+)s/seed: {}\)'.format(seed[0])
         assert re.search(expected_line, err)
