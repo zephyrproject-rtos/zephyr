@@ -1,0 +1,19 @@
+identifier: rpi_pico2
+name: Raspberry Pi Pico 2
+type: mcu
+arch: arm
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - clock
+  - counter
+  - gpio
+  - hwinfo
+  - i2c
+  - spi
+  - uart
