@@ -83,6 +83,7 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     assert pytest_args_from_cmd[0] in command
     assert pytest_args_from_cmd[1] in command
     assert pytest_args_from_yaml in command
+    assert command.index(pytest_args_from_yaml) < command.index(pytest_args_from_cmd[1])
 
 
 @pytest.mark.parametrize(
