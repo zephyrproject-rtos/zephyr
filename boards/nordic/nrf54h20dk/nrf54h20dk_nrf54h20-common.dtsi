@@ -21,3 +21,22 @@
 	startup-time-us = <600000>;
 	mode = "crystal";
 };
+
+&fll16m {
+	status = "okay";
+	open-loop-accuracy-ppm = <20000>;
+	closed-loop-accuracy-ppm = <5000>;
+	closed-loop-clock = <&lfxo>;
+	bypass-accuracy-ppm = <30>;
+	bypass-clock = <&hfxo>;
+};
+
+&lfclk {
+	status = "okay";
+	synth-accuracy-ppm = <30>;
+	synth-clock = <&hfxo>;
+	lfrc-accuracy-ppm = <500>;
+	lflprc-accuracy-ppm = <1000>;
+	lfxo-accuracy-ppm = <20>;
+	lfxo-clock = <&lfxo>;
+};
