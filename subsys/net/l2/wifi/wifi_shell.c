@@ -575,14 +575,15 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			}
 			break;
 		case 'e':
-			if (params->security != WIFI_SECURITY_TYPE_SAE ||
-				params->security != WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+			if (params->security == WIFI_SECURITY_TYPE_SAE ||
+			    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
+				params->sae_pwe = atoi(optarg);
+				params->pwe_configed = true;
+			} else {
 				PR_ERROR("PWE not supported for security type %s\n",
 						 wifi_security_txt(params->security));
 				return -EINVAL;
 			}
-			params->sae_pwe = atoi(optarg);
-			params->pwe_configed = true;
 			break;
 		case 'w':
 			if (params->security == WIFI_SECURITY_TYPE_NONE ||
