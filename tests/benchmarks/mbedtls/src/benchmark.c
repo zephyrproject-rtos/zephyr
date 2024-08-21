@@ -112,30 +112,6 @@ int main(void)
 		printk("Failed to import AES key (%d)", status);
 	}
 
-	status = make_cipher_key(PSA_KEY_TYPE_ARIA, PSA_ALG_ECB_NO_PADDING, &key_id);
-	if (status == PSA_SUCCESS) {
-		COMPUTE_THROUGHPUT("ARIA-256-ECB",
-			psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING,
-					   in_buf, sizeof(in_buf),
-					   out_buf, sizeof(out_buf), &out_len)
-		);
-		psa_destroy_key(key_id);
-	} else {
-		printk("Failed to import ARIA key (%d)", status);
-	}
-
-	status = make_cipher_key(PSA_KEY_TYPE_CAMELLIA, PSA_ALG_ECB_NO_PADDING, &key_id);
-	if (status == PSA_SUCCESS) {
-		COMPUTE_THROUGHPUT("CAMELLIA-256-ECB",
-			psa_cipher_encrypt(key_id, PSA_ALG_ECB_NO_PADDING,
-					   in_buf, sizeof(in_buf),
-					   out_buf, sizeof(out_buf), &out_len)
-		);
-		psa_destroy_key(key_id);
-	} else {
-		printk("Failed to import Camellia key (%d)", status);
-	}
-
 	printk("Benchmark completed\n");
 	return 0;
 }
