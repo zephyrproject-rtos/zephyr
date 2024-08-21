@@ -20,3 +20,10 @@ properties:
       Memory alignment in bytes, used to calculate padding when performing
       unaligned accesses.
       If not provided, 1 byte alignment will be selected.
+
+  reset-recovery-time:
+    type: int
+    required: true
+    description: |
+      Time, in microseconds, it takes the memory device to recover after a
+      software reset command is issued.

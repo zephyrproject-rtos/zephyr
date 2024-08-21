@@ -348,6 +348,7 @@
 		readoc = "1-4-4";
 		writeoc = "1-4-4";
 		has-32k-erase;
+		reset-recovery-time = <20000>;
 		status = "okay";
 
 		partitions {

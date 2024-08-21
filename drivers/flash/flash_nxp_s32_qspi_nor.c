@@ -33,6 +33,7 @@ struct nxp_s32_qspi_config {
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];
 	uint32_t mem_size;
 	uint32_t max_write_size;
+	uint32_t reset_recovery_time;
 	nxp_qspi_lut_seq_t *read_seq;
 	nxp_qspi_lut_seq_t *write_seq;
 	enum jesd216_dw15_qer_type qer_type;
@@ -658,6 +659,67 @@ static int qspi_erase(const struct device *dev, off_t offset, size_t size)
 	return ret;
 }
 
+#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+static int qspi_reset_memory(const struct device *dev)
+{
+	const struct nxp_s32_qspi_config *config = dev->config;
+	int ret = 0;
+
+	uint16_t vlut[NXP_QSPI_LUT_MAX_CMD] = {
+		NXP_QSPI_LUT_CMD(NXP_QSPI_LUT_INSTR_CMD, NXP_QSPI_LUT_PADS_1, 0U),
+		NXP_QSPI_LUT_CMD(NXP_QSPI_LUT_INSTR_STOP, NXP_QSPI_LUT_PADS_1, 0U),
+	};
+
+	struct memc_nxp_qspi_config transfer = {
+		.lut_seq = &vlut,
+		.port = config->port,
+		.cmd = NXP_QSPI_COMMAND,
+		.addr = 0U,
+		.data = NULL,
+		.size = 0U,
+		.alignment = config->mem_alignment,
+	};
+
+	qspi_acquire(dev);
+
+	vlut[0] = (vlut[0] & ~NXP_QSPI_LUT_OPRND_MASK) | NXP_QSPI_LUT_OPRND(SPI_NOR_CMD_RESET_EN);
+	ret = memc_nxp_qspi_transfer(config->controller, &transfer);
+	if (!ret) {
+		vlut[0] = (vlut[0] & ~NXP_QSPI_LUT_OPRND_MASK) |
+			  NXP_QSPI_LUT_OPRND(SPI_NOR_CMD_RESET_MEM);
+		ret = memc_nxp_qspi_transfer(config->controller, &transfer);
+		if (!ret) {
+			k_busy_wait(config->reset_recovery_time);
+		}
+	}
+
+	qspi_release(dev);
+
+	return ret;
+}
+
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+static int qspi_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
+{
+	int ret = 0;
+
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	switch (code) {
+	case FLASH_EX_OP_RESET:
+		ret = qspi_reset_memory(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+#endif /* !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
+
 static int qspi_read_id(const struct device *dev, uint8_t *id)
 {
 	const struct nxp_s32_qspi_config *config = dev->config;
@@ -1023,6 +1085,14 @@ static int qspi_init(const struct device *dev)
 
 	k_sem_init(&data->sem, 1, 1);
 
+#if !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+	ret = qspi_reset_memory(dev);
+	if (ret) {
+		LOG_ERR("Fail to reset memory device %p (%d)", dev, ret);
+		return -EIO;
+	}
+#endif /* !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
+
 	ret = qspi_read_id(dev, jedec_id);
 	if (ret) {
 		LOG_ERR("JEDEC ID read failed (%d)", ret);
@@ -1074,6 +1144,9 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 	.sfdp_read = qspi_sfdp_read,
 	.read_jedec_id = qspi_read_id,
 #endif /* CONFIG_FLASH_JESD216_API */
+#if defined(CONFIG_FLASH_EX_OP_ENABLED) && !defined(CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME)
+	.ex_op = qspi_ex_op,
+#endif /* CONFIG_FLASH_EX_OP_ENABLED && !CONFIG_FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME */
 };
 
 #define QSPI_SEQ_READ_1_1_1                                                                        \
@@ -1213,6 +1286,7 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 		.write_seq = (nxp_qspi_lut_seq_t *)&nxp_s32_qspi_write_seq_##n,                    \
 		.max_write_size = MIN(DT_PROP(DT_INST_BUS(n), tx_fifo_size), SPI_NOR_PAGE_SIZE),   \
 		.mem_size = DT_INST_PROP(n, size) / 8,                                             \
+		.reset_recovery_time = DT_INST_PROP(n, reset_recovery_time),                       \
 		.erase_types = {                                                                   \
 			{ .cmd = SPI_NOR_CMD_SE, .exp = 12 },        /* 4 KB*/                     \
 			IF_ENABLED(DT_INST_PROP(n, has_32k_erase), (                               \
