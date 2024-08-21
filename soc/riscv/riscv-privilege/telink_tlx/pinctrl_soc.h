@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +9,7 @@
 
 #include <stdint.h>
 #include <zephyr/devicetree.h>
-#if CONFIG_SOC_RISCV_TELINK_B91
-#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_B92
-#include <zephyr/dt-bindings/pinctrl/b92-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B95
 #include <zephyr/dt-bindings/pinctrl/b95-pinctrl.h>
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
 #include <zephyr/dt-bindings/pinctrl/tl321x-pinctrl.h>
@@ -33,10 +29,10 @@ typedef uint32_t pinctrl_soc_pin_t;
  */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)					\
 	(DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), pinmux) |				\
-	 ((B9x_PULL_DOWN * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_down))	\
-		<< B9x_PULL_POS) |							\
-	 ((B9x_PULL_UP * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_up))	\
-		<< B9x_PULL_POS)							\
+	 ((TLX_PULL_DOWN * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_down))	\
+		<< TLX_PULL_POS) |							\
+	 ((TLX_PULL_UP * DT_PROP(DT_PROP_BY_IDX(node_id, prop, idx), bias_pull_up))	\
+		<< TLX_PULL_POS)							\
 	),
 
 /**

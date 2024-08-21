@@ -1,10 +1,10 @@
-# Copyright (c) 2022-2023, Telink Semiconductor
+# Copyright (c) 2024, Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    The Telink B9x-series pin controller is a singleton node responsible for
+    The Telink TLx-series pin controller is a singleton node responsible for
     controlling pin function selection and pin properties. For example, you can
-    use this node to route UART0 TX to pin PB2 and enable the pull-up resistor
+    use this node to route UART0 TX to pin PE0 and enable the pull-up resistor
     on the pin.
 
     The node has the 'pinctrl' node label set in your SoC's devicetree,
@@ -28,12 +28,12 @@ description: |
         /* configuration for UART0 TX default state */
         uart0_tx_pb2_default: uart0_tx_pb2_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B9x_PINMUX_SET(B9X_PORT_B, B9X_PIN_2, B91_FUNC_C)>;
+          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_2, B91_FUNC_C)>;
         };
         /* configuration for UART0 RX default state */
         uart0_rx_pb3_default: uart0_rx_pb3_default {
           /* configure PB2 as B91_FUNC_C */
-          pinmux = <B9x_PINMUX_SET(B9X_PORT_B, B9X_PIN_3, B91_FUNC_C)>;
+          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_3, B91_FUNC_C)>;
         };
       };
 
@@ -83,7 +83,7 @@ properties:
 
 child-binding:
   description: |
-      This binding gives a base representation of the Telink B92 pins configration.
+      This binding gives a base representation of the Telink TL321X pins configration.
 
   include:
   - name: pincfg-node.yaml
@@ -97,4 +97,4 @@ child-binding:
       required: true
       type: int
       description: |
-          Telink B92 pin's configuration (port, pin and function).
+          Telink TL321X pin's configuration (port, pin and function).

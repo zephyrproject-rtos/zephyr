@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Telink Semiconductor
+# Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 if (CONFIG_TELINK_B91_USB_SWI_DISABLE)

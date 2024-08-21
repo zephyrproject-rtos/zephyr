@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Telink Semiconductor
+# Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 choice
@@ -75,7 +75,7 @@ config TELINK_SOC_REBOOT_ON_FAULT
 	depends on SOC_SERIES_RISCV_TELINK_TLX
 	default n
 	help
-		This option enables Telink B9x chip reboot after fault.
+		This option enables Telink TLx chip reboot after fault.
 
 config TELINK_SOC_REBOOT_ON_FAULT_DELAY
 	int "Reboot system delay in mS"

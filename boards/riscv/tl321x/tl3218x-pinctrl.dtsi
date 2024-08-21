@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,105 +12,94 @@
 	 */
 	pad-mul-sel = <1>;
 
-	/* UART0: TX(PB2), RX(PB3), RTS(PB4), CTS(PB6) */
+	/* UART0: TX(PE0), RX(PE1), RTS(PE2), CTS(PE3) */
 
-	uart0_tx_pb2_default: uart0_tx_pb2_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_2, B92_FUNC_UART0_TX)>;
+	uart0_tx_pe0_default: uart0_tx_pe0_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_0, TL321X_FUNC_UART0_TX)>;
 	};
-	uart0_rx_pb3_default: uart0_rx_pb3_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_3, B92_FUNC_UART0_RTX_IO)>;
+	uart0_rx_pe1_default: uart0_rx_pe1_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_1, TL321X_FUNC_UART0_RTX_IO)>;
 	};
-	uart0_rts_pb4_default: uart0_rts_pb4_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_4, B92_FUNC_UART0_RTS)>;
+	uart0_rts_pe2_default: uart0_rts_pe2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_2, TL321X_FUNC_UART0_RTS)>;
 	};
-	uart0_cts_pb6_default: uart0_cts_pb6_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_6, B92_FUNC_UART0_CTS_I)>;
+	uart0_cts_pe3_default: uart0_cts_pe3_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_3, TL321X_FUNC_UART0_CTS_I)>;
 	};
 
 	/* UART1: TX(PC6), RX(PC7), RTS(PC5), CTS(PC4) */
 
 	uart1_tx_pc6_default: uart1_tx_pc6_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_6, B92_FUNC_UART1_TX)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_6, TL321X_FUNC_UART1_TX)>;
 	};
 	uart1_rx_pc7_default: uart1_rx_pc7_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_7, B92_FUNC_UART1_RTX_IO)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_7, TL321X_FUNC_UART1_RTX_IO)>;
 	};
 	uart1_rts_pc5_default: uart1_rts_pc5_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_5, B92_FUNC_UART1_RTS)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_5, TL321X_FUNC_UART1_RTS)>;
 	};
 	uart1_cts_pc4_default: uart1_cts_pc4_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_4, B92_FUNC_UART1_CTS_I)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_4, TL321X_FUNC_UART1_CTS_I)>;
 	};
 
-	/* PWM Channel 0 (PD0) */
+	/* PWM Channel 0 (PE4) */
 
-	pwm_ch0_pd0_default: pwm_ch0_pd0_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_PWM0)>;
-	};
-
-	/* LSPI: CLK(PE1), MOSI(PE2), MISO(PE3) */
-
-	lspi_clk_pe1_default: lspi_clk_pe1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_1, B92_FUNC_DEFAULT)>;
-	};
-	lspi_mosi_pe2_default: lspi_mosi_pe2_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_2, B92_FUNC_DEFAULT)>;
-	};
-	lspi_miso_pe3_default: lspi_miso_pe3_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_E, B9x_PIN_3, B92_FUNC_DEFAULT)>;
+	pwm_ch0_pb2_default: pwm_ch0_pb2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_2, TL321X_FUNC_PWM0)>;
 	};
 
-	/* GSPI: CLK(PA2), MOSI(PA4), MISO(PA3) */
+	/* Note:TL321X only supports gspi!!!*/
+	/* GSPI: CLK(PE5), MISO(PE6), MOSI(PE7) */
 
-	gspi_clk_pa2_default: gspi_clk_pa2_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_2, B92_FUNC_GSPI_CK_IO)>;
+	gspi_clk_pe5_default: gspi_clk_pe5_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_5, TL321X_FUNC_GSPI_CK_IO)>;
 	};
-	gspi_mosi_pa4_default: gspi_mosi_pa4_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_4, B92_FUNC_GSPI_MOSI_IO)>;
+	gspi_miso_pe6_default: gspi_miso_pe6_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_6, TL321X_FUNC_GSPI_MISO_IO)>;
 	};
-	gspi_miso_pa3_default: gspi_miso_pa3_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_A, B9x_PIN_3, B92_FUNC_GSPI_MISO_IO)>;
-	};
-
-	/* Define I2C pins: SCL(PC0), SDA(PC1) */
-
-	i2c_scl_pc0_default: i2c_scl_pc0_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_0, B92_FUNC_I2C_SCL_IO)>;
-	};
-	i2c_sda_pc1_default: i2c_sda_pc1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_C, B9x_PIN_1, B92_FUNC_I2C_SDA_IO)>;
+	gspi_mosi_pe7_default: gspi_mosi_pe7_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_7, TL321X_FUNC_GSPI_MOSI_IO)>;
 	};
 
-	/* Define ADC pins: PB0..PB7, PD0-PD1 */
+	/* Define I2C pins: SCL(PC3), SDA(PC2) */
 
-	adc_pb0_default: adc_pb0_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_0, B92_FUNC_DEFAULT)>;
+	i2c_scl_pc3_default: i2c_scl_pc3_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_3, TL321X_FUNC_I2C_SCL_IO)>;
 	};
-	adc_pb1_default: adc_pb1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_1, B92_FUNC_DEFAULT)>;
+	i2c_sda_pc2_default: i2c_sda_pc2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_C, TLX_PIN_2, TL321X_FUNC_I2C_SDA_IO)>;
 	};
-	adc_pb2_default: adc_pb2_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_2, B92_FUNC_DEFAULT)>;
+
+	/* Define ADC pins: PE0..PE7, PD0, PD5 */
+
+	adc_pe0_default: adc_pe0_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_0, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pb3_default: adc_pb3_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_3, B92_FUNC_DEFAULT)>;
+	adc_pe1_default: adc_pe1_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_1, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pb4_default: adc_pb4_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_4, B92_FUNC_DEFAULT)>;
+	adc_pe2_default: adc_pe2_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_2, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pb5_default: adc_pb5_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_5, B92_FUNC_DEFAULT)>;
+	adc_pe3_default: adc_pe3_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_3, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pb6_default: adc_pb6_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_6, B92_FUNC_DEFAULT)>;
+	adc_pe4_default: adc_pe4_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_4, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pb7_default: adc_pb7_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_B, B9x_PIN_7, B92_FUNC_DEFAULT)>;
+	adc_pe5_default: adc_pe5_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_5, TL321X_FUNC_DEFAULT)>;
+	};
+	adc_pe6_default: adc_pe6_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_6, TL321X_FUNC_DEFAULT)>;
+	};
+	adc_pe7_default: adc_pe7_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_E, TLX_PIN_7, TL321X_FUNC_DEFAULT)>;
 	};
 	adc_pd0_default: adc_pd0_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_0, B92_FUNC_DEFAULT)>;
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_D, TLX_PIN_0, TL321X_FUNC_DEFAULT)>;
 	};
-	adc_pd1_default: adc_pd1_default {
-		pinmux = <B9x_PINMUX_SET(B9x_PORT_D, B9x_PIN_1, B92_FUNC_DEFAULT)>;
+	adc_pd5_default: adc_pd5_default {
+		pinmux = <TLX_PINMUX_SET(TLX_PORT_D, TLX_PIN_5, TL321X_FUNC_DEFAULT)>;
 	};
 };

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Telink Semiconductor
+# Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_RISCV_TELINK_TLX
@@ -91,18 +91,6 @@ config THREAD_NAME
 config TELINK_B91_USB_SWI_DISABLE
 	bool
 	default n
-
-if SOC_RISCV_TELINK_B91
-config TELINK_B9X_2_WIRE_SPI_ENABLE
-	bool
-	default n
-endif # SOC_RISCV_TELINK_B91
-
-if SOC_RISCV_TELINK_B92
-config TELINK_B9X_2_WIRE_SPI_ENABLE
-	bool
-	default n
-endif # SOC_RISCV_TELINK_B92
 
 if SOC_RISCV_TELINK_B95
 config TELINK_B9X_2_WIRE_SPI_ENABLE

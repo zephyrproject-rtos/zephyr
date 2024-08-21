@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,74 +78,74 @@
 			status = "okay";
 		};
 
-		gpioa: gpio@80140300 {
+		gpioa: gpio@80140c00 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140300 0x08>;
+			reg = <0x80140c00 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		gpiob: gpio@80140308 {
+		gpiob: gpio@80140c10 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140308 0x08>;
+			reg = <0x80140c10 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		gpioc: gpio@80140310 {
+		gpioc: gpio@80140c20 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140310 0x08>;
+			reg = <0x80140c20 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		gpiod: gpio@80140318 {
+		gpiod: gpio@80140c30 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140318 0x08>;
+			reg = <0x80140c30 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		gpioe: gpio@80140320 {
+		gpioe: gpio@80140c40 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140320 0x08>;
+			reg = <0x80140c40 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		gpiof: gpio@80140328 {
+		gpiof: gpio@80140c50 {
 			compatible = "telink,tlx-gpio";
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <37 1>, <38 1>, <39 1>;
-			reg = <0x80140328 0x08>;
+			reg = <0x80140c50 0x10>;
 			status = "disabled";
 			#gpio-cells = <2>;
 		};
 
-		plic0: interrupt-controller@e4000000 {
+		plic0: interrupt-controller@c4000000 {
 			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = < 0xe4000000 0x00001000
-					0xe4002000 0x00000800
-					0xe4200000 0x00010000 >;
+			reg = < 0xc4000000 0x00001000
+					0xc4002000 0x00000800
+					0xc4200000 0x00010000 >;
 			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <3>;
 			riscv,ndev = <46>;
@@ -175,9 +175,9 @@
 			status = "disabled";
 		};
 
-		trng0: trng@80101800 {
+		trng0: trng@80103000 {
 			compatible = "telink,tlx-trng";
-			reg = <0x80101800 0x20>;
+			reg = <0x80103000 0x20>;
 			status = "disabled";
 		};
 
@@ -229,9 +229,9 @@
 			#io-channel-cells = <1>;
 		};
 
-		usbd: usbd@80100800 {
+		usbd: usbd@80118000 {
 			compatible = "telink,tlx-usbd";
-			reg = <0x80100800 0x50>;
+			reg = <0x80118000 0x70>;
 			interrupts = <19 1>, <20 1>, <21 1>, <22 1>, <23 1>, <36 1>, <42 1>;
 			interrupt-parent = <&plic0>;
 			num-bidir-endpoints = <1>;
@@ -240,11 +240,11 @@
 			status = "disabled";
 		};
 
-		pinctrl: pinctrl@80140348 {
+		pinctrl: pinctrl@80140c70 {
 			compatible = "telink,tlx-pinctrl";
-			reg = <0x80140348 0x30
-				   0x80140306 0x30
-				   0x0000000e 0x0C>;
+			reg = <0x80140c70 0x30
+				   0x80140c06 0x30
+				   0x00000017 0x0C>;
 			reg-names = "pin_mux",
 						"gpio_en",
 						"pull_up_en";

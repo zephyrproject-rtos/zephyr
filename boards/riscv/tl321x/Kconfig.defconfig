@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Telink Semiconductor
+# Copyright (c) 2024 Telink Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_TL3218X
@@ -49,7 +49,7 @@ config FLASH_LOAD_OFFSET
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
 
 # Buffer for image writter shall be less(multiple of access alignment) or
-# equal to flash page. tlsr9518adk80d boards use external P25Q16 IC as
+# equal to flash page. tl3218x boards use external P25Q16 IC as
 # flesh memory. Flash page size of the IC is 256 bytes. So that, it is
 # maximum image writer buffer size for such kind of boards.
 config IMG_BLOCK_BUF_SIZE

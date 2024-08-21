@@ -1,16 +1,12 @@
 /*
- * Copyright (c) 2022-2023 Telink Semiconductor
+ * Copyright (c) 2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "analog.h"
 #include <zephyr/drivers/pinctrl.h>
-#if CONFIG_SOC_RISCV_TELINK_B91
-#include <zephyr/dt-bindings/pinctrl/b91-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_B92
-#include <zephyr/dt-bindings/pinctrl/b92-pinctrl.h>
-#elif CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B95
 #include <zephyr/dt-bindings/pinctrl/b95-pinctrl.h>
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
 #include <zephyr/dt-bindings/pinctrl/tl321x-pinctrl.h>
@@ -19,7 +15,7 @@
 
 #define DT_DRV_COMPAT telink_tlx_pinctrl
 
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 /**
  *      GPIO Function Enable Register
  *         ADDR              PINS
@@ -47,30 +43,7 @@
 						((pin >> 8) * 0x10)))
 #endif
 
-#if CONFIG_SOC_RISCV_TELINK_B91
-/**
- *      Function Multiplexer Register
- *         ADDR              PINS
- *      pin_mux:          PORT_A[0-3]
- *      pin_mux + 1:      PORT_A[4-7]
- *      pin_mux + 2:      PORT_B[0-3]
- *      pin_mux + 3:      PORT_B[4-7]
- *      pin_mux + 4:      PORT_C[0-3]
- *      pin_mux + 5:      PORT_C[4-7]
- *      pin_mux + 6:      PORT_D[0-3]
- *      pin_mux + 7:      PORT_D[4-7]
- *      pin_mux + 0x20:   PORT_E[0-3]
- *      pin_mux + 0x21:   PORT_E[4-7]
- *      pin_mux + 0x26:   PORT_F[0-3]
- *      pin_mux + 0x27:   PORT_F[4-7]
- */
-#define reg_pin_mux(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, pin_mux) + \
-						(((pin >> 8) < 4)  ? ((pin >> 8) * 2) : 0) +	 \
-						(((pin >> 8) == 4) ? 0x20          : 0) +	 \
-						(((pin >> 8) == 5) ? 0x26          : 0) +	 \
-						((pin & 0x0f0)     ? 1             : 0)))
-
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 /**
  *      Function Multiplexer Register
  *         ADDR              PINS
@@ -82,13 +55,13 @@
  */
 #define reg_pin_mux(pin) (*(volatile uint8_t *)((uint32_t)DT_INST_REG_ADDR_BY_NAME(0, pin_mux) + \
 						((pin >> 8) * 8) +            \
-						((pin & B9x_PIN_1) ? 1 : 0) + \
-						((pin & B9x_PIN_2) ? 2 : 0) + \
-						((pin & B9x_PIN_3) ? 3 : 0) + \
-						((pin & B9x_PIN_4) ? 4 : 0) + \
-						((pin & B9x_PIN_5) ? 5 : 0) + \
-						((pin & B9x_PIN_6) ? 6 : 0) + \
-						((pin & B9x_PIN_7) ? 7 : 0)))
+						((pin & TLX_PIN_1) ? 1 : 0) + \
+						((pin & TLX_PIN_2) ? 2 : 0) + \
+						((pin & TLX_PIN_3) ? 3 : 0) + \
+						((pin & TLX_PIN_4) ? 4 : 0) + \
+						((pin & TLX_PIN_5) ? 5 : 0) + \
+						((pin & TLX_PIN_6) ? 6 : 0) + \
+						((pin & TLX_PIN_7) ? 7 : 0)))
 #elif CONFIG_SOC_RISCV_TELINK_B95
 /**
  *      Function Multiplexer Register
@@ -148,7 +121,7 @@
 static int pinctrl_b9x_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	/* set pad_mul_sel register value from dts */
 	reg_gpio_pad_mul_sel |= DT_INST_PROP(0, pad_mul_sel);
 #endif
@@ -164,7 +137,7 @@ static int pinctrl_b9x_pm_action(const struct device *dev, enum pm_device_action
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		if (b9x_deep_sleep_retention) {
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 			/* set pad_mul_sel register value from dts */
 			reg_gpio_pad_mul_sel |= DT_INST_PROP(0, pad_mul_sel);
 #endif
@@ -190,7 +163,7 @@ DEVICE_DEFINE(pinctrl_b9x, "pinctrl_b9x", pinctrl_b9x_init, PM_DEVICE_GET(pinctr
 /* Pinctrl driver initialization */
 static int pinctrl_b9x_init(void)
 {
-#if CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_TL321X
 	/* set pad_mul_sel register value from dts */
 	reg_gpio_pad_mul_sel |= DT_INST_PROP(0, pad_mul_sel);
 #endif
@@ -212,30 +185,30 @@ static inline void pinctrl_b9x_gpio_function_disable(uint32_t pin)
 /* Get pull up (and function for B91) value bits start position (offset) */
 static inline int pinctrl_b9x_get_offset(uint32_t pin, uint8_t *offset)
 {
-	switch (B9x_PINMUX_GET_PIN_ID(pin)) {
-	case B9x_PIN_0:
-		*offset = B9x_PIN_0_PULL_UP_EN_POS;
+	switch (TLX_PINMUX_GET_PIN_ID(pin)) {
+	case TLX_PIN_0:
+		*offset = TLX_PIN_0_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_1:
-		*offset = B9x_PIN_1_PULL_UP_EN_POS;
+	case TLX_PIN_1:
+		*offset = TLX_PIN_1_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_2:
-		*offset = B9x_PIN_2_PULL_UP_EN_POS;
+	case TLX_PIN_2:
+		*offset = TLX_PIN_2_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_3:
-		*offset = B9x_PIN_3_PULL_UP_EN_POS;
+	case TLX_PIN_3:
+		*offset = TLX_PIN_3_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_4:
-		*offset = B9x_PIN_4_PULL_UP_EN_POS;
+	case TLX_PIN_4:
+		*offset = TLX_PIN_4_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_5:
-		*offset = B9x_PIN_5_PULL_UP_EN_POS;
+	case TLX_PIN_5:
+		*offset = TLX_PIN_5_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_6:
-		*offset = B9x_PIN_6_PULL_UP_EN_POS;
+	case TLX_PIN_6:
+		*offset = TLX_PIN_6_PULL_UP_EN_POS;
 		break;
-	case B9x_PIN_7:
-		*offset = B9x_PIN_7_PULL_UP_EN_POS;
+	case TLX_PIN_7:
+		*offset = TLX_PIN_7_PULL_UP_EN_POS;
 		break;
 
 	default:
@@ -251,9 +224,9 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	int status;
 	uint8_t mask;
 	uint8_t offset = 0;
-	uint8_t pull = B9x_PINMUX_GET_PULL(*pinctrl);
-	uint8_t func = B9x_PINMUX_GET_FUNC(*pinctrl);
-	uint32_t pin = B9x_PINMUX_GET_PIN(*pinctrl);
+	uint8_t pull = TLX_PINMUX_GET_PULL(*pinctrl);
+	uint8_t func = TLX_PINMUX_GET_FUNC(*pinctrl);
+	uint32_t pin = TLX_PINMUX_GET_PIN(*pinctrl);
 	uint8_t pull_up_en_addr = reg_pull_up_en(pin);
 
 	/* disable GPIO function (can be enabled back by GPIO init using GPIO driver) */
@@ -268,15 +241,11 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pinctrl)
 	mask = (uint8_t) ~(BIT(offset) | BIT(offset + 1));
 
 	/* set func value */
-#if CONFIG_SOC_RISCV_TELINK_B91
-	func = func << offset;
-	reg_pin_mux(pin) = (reg_pin_mux(pin) & mask) | func;
-#elif CONFIG_SOC_RISCV_TELINK_B92
-	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B92_PIN_FUNC_POS)) | (func & B92_PIN_FUNC_POS);
-#elif CONFIG_SOC_RISCV_TELINK_B95
+#if CONFIG_SOC_RISCV_TELINK_B95
 	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B95_PIN_FUNC_POS)) | (func & B95_PIN_FUNC_POS);
 #elif CONFIG_SOC_RISCV_TELINK_TL321X
-	reg_pin_mux(pin) = (reg_pin_mux(pin) & (~B92_PIN_FUNC_POS)) | (func & B92_PIN_FUNC_POS);
+	reg_pin_mux(pin) =
+		(reg_pin_mux(pin) & (~TL321X_PIN_FUNC_POS)) | (func & TL321X_PIN_FUNC_POS);
 #endif
 
 	/* set pull value */
