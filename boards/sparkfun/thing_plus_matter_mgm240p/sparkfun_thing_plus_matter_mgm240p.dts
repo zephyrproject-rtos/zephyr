@@ -25,6 +25,7 @@
 
 	aliases {
 		led0 = &blue_led;
+		spi0 = &eusart1;
 		watchdog0 = &wdog0;
 	};
 
@@ -53,6 +54,18 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&eusart1 {
+	compatible = "silabs,gecko-spi-eusart";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};
+
 &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
