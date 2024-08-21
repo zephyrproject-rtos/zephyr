@@ -11,6 +11,7 @@ if(CONFIG_LLEXT)
 		llext_link.c
 		llext_export.c
 		buf_loader.c
+    fs_loader.c
 	)
   zephyr_library_sources_ifdef(CONFIG_LLEXT_SHELL shell.c)
 endif()
