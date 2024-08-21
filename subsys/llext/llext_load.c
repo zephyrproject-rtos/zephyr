@@ -556,6 +556,12 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ldr->sect_map = NULL;
 
 	LOG_DBG("Loading ELF data...");
+	ret = llext_prepare(ldr);
+	if (ret != 0) {
+		LOG_ERR("Failed to prepare the loader, ret %d", ret);
+		goto out;
+	}
+
 	ret = llext_load_elf_data(ldr, ext);
 	if (ret != 0) {
 		LOG_ERR("Failed to load basic ELF data, ret %d", ret);
@@ -673,6 +679,8 @@ out:
 		LOG_DBG("loaded module, .text at %p, .rodata at %p", ext->mem[LLEXT_MEM_TEXT],
 			ext->mem[LLEXT_MEM_RODATA]);
 	}
+
+	llext_finalize(ldr);
 
 	return ret;
 }

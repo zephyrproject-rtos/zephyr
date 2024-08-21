@@ -41,6 +41,15 @@ struct llext_elf_sect_map; /* defined in llext_priv.h */
  */
 struct llext_loader {
 	/**
+	 * @brief Optional function to prepare the loader for loading extension.
+	 *
+	 * @param[in] ldr Loader
+	 *
+	 * @returns 0 on success, or a negative error.
+	 */
+	int (*prepare)(struct llext_loader *ldr);
+
+	/**
 	 * @brief Function to read (copy) from the loader
 	 *
 	 * Copies len bytes into buf from the current position of the
@@ -79,6 +88,13 @@ struct llext_loader {
 	 */
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
+	/**
+	 * @brief Optional function to clean after the extension has been loaded or error occurred.
+	 *
+	 * @param[in] ldr Loader
+	 */
+	void (*finalize)(struct llext_loader *ldr);
+
 	/** @cond ignore */
 	elf_ehdr_t hdr;
 	elf_shdr_t sects[LLEXT_MEM_COUNT];
@@ -90,6 +106,15 @@ struct llext_loader {
 };
 
 /** @cond ignore */
+static inline int llext_prepare(struct llext_loader *l)
+{
+	if (l->prepare) {
+		return l->prepare(l);
+	}
+
+	return 0;
+}
+
 static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
 {
 	return l->read(l, buf, len);
@@ -107,6 +132,13 @@ static inline void *llext_peek(struct llext_loader *l, size_t pos)
 	}
 
 	return NULL;
+}
+
+static inline void llext_finalize(struct llext_loader *l)
+{
+	if (l->finalize) {
+		l->finalize(l);
+	}
 }
 /* @endcond */
 
