@@ -9,6 +9,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 #define LOG_LEVEL 4
 #include <zephyr/logging/log.h>
@@ -25,9 +26,9 @@ LOG_MODULE_REGISTER(main);
  * We assume that the colors are connected the way it is described in the driver
  * datasheet.
  */
-#define LED_R 2
-#define LED_G 1
-#define LED_B 0
+#define LED_R LED_COLOR_ID_RED
+#define LED_G LED_COLOR_ID_GREEN
+#define LED_B LED_COLOR_ID_BLUE
 
 /*
  * The following colors are shown in the given order.
@@ -151,7 +152,7 @@ static int blink_color(const struct device *dev, bool r, bool g, bool b,
  */
 static int turn_off_all_leds(const struct device *dev)
 {
-	for (int i = 0; i < NUM_LEDS; i++) {
+	for (int i = LED_COLOR_ID_RED; i <= LED_COLOR_ID_BLUE; i++) {
 		int ret = led_off(dev, i);
 
 		if (ret) {

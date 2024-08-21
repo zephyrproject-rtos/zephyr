@@ -33,6 +33,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
@@ -109,22 +110,6 @@ LOG_MODULE_REGISTER(lp5562);
 /* Helper definitions. */
 #define LP5562_PROG_MAX_COMMANDS 16
 #define LP5562_MASK              0x03
-#define LP5562_CHANNEL_MASK(channel) ((LP5562_MASK) << (channel << 1))
-
-/*
- * Available channels. There are four LED channels usable with the LP5562. While
- * they can be mapped to LEDs of any color, the driver's typical application is
- * with a red, a green, a blue and a white LED. Since the data sheet's
- * nomenclature uses RGBW, we keep it that way.
- */
-enum lp5562_led_channels {
-	LP5562_CHANNEL_B,
-	LP5562_CHANNEL_G,
-	LP5562_CHANNEL_R,
-	LP5562_CHANNEL_W,
-
-	LP5562_CHANNEL_COUNT,
-};
 
 /*
  * Each channel can be driven by directly assigning a value between 0 and 255 to
@@ -173,34 +158,30 @@ struct lp5562_config {
 };
 
 /*
- * @brief Get the register for the given LED channel used to directly write a
+ * @brief Get the register for the given LED color_id used to directly write a
  *	brightness value instead of using the execution engines.
  *
- * @param channel LED channel.
+ * @param color_id LED color_id.
  * @param reg     Pointer to the register address.
  *
  * @retval 0       On success.
- * @retval -EINVAL If an invalid channel is given.
+ * @retval -EINVAL If an invalid color_id is given.
  */
-static int lp5562_get_pwm_reg(enum lp5562_led_channels channel, uint8_t *reg)
+static int lp5562_get_pwm_reg(uint8_t color_id, uint8_t *reg)
 {
-	switch (channel) {
-	case LP5562_CHANNEL_W:
-		*reg = LP5562_W_PWM;
-		break;
-	case LP5562_CHANNEL_R:
-		*reg = LP5562_R_PWM;
-		break;
-	case LP5562_CHANNEL_G:
-		*reg = LP5562_G_PWM;
-		break;
-	case LP5562_CHANNEL_B:
-		*reg = LP5562_B_PWM;
-		break;
-	default:
-		LOG_ERR("Invalid channel given.");
+	/* reg address map as per id values */
+	const uint8_t pwm_map_reg[] = {
+		LP5562_W_PWM,
+		LP5562_R_PWM,
+		LP5562_G_PWM,
+		LP5562_B_PWM,
+	};
+	if(color_id > LED_COLOR_ID_BLUE) {
+		LOG_ERR("Invalid color id given.");
 		return -EINVAL;
 	}
+
+	*reg = pwm_map_reg[color_id];
 
 	return 0;
 }
@@ -303,25 +284,27 @@ static void lp5562_ms_to_prescale_and_step(uint32_t ms,
 }
 
 /*
- * @brief Assign a source to the given LED channel.
+ * @brief Assign a source to the given LED color_id.
  *
  * @param dev     LP5562 device.
- * @param channel LED channel the source is assigned to.
- * @param source  Source for the channel.
+ * @param color_id LED color_id the source is assigned to.
+ * @param source  Source for the color_id.
  *
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
 static int lp5562_set_led_source(const struct device *dev,
-				 enum lp5562_led_channels channel,
+				 uint8_t color_id,
 				 enum lp5562_led_sources source)
 {
 	const struct lp5562_config *config = dev->config;
+	/* LP5562 uses WRGB, but ID is BGRW so invert it */
+	uint8_t bit_pos = ((LED_COLOR_ID_BLUE - (color_id)) << 1);
 
 	if (i2c_reg_update_byte_dt(&config->bus, LP5562_LED_MAP,
-				   LP5562_CHANNEL_MASK(channel),
-				   source << (channel << 1))) {
-		LOG_ERR("Failed to set LED[%d] source=%d.", channel, source);
+				   LP5562_MASK << bit_pos,
+				   source << bit_pos)) {
+		LOG_ERR("Failed to set LED[%d] source=%d.", color_id, source);
 		return -EIO;
 	}
 
@@ -329,28 +312,30 @@ static int lp5562_set_led_source(const struct device *dev,
 }
 
 /*
- * @brief Get the assigned source of the given LED channel.
+ * @brief Get the assigned source of the given LED color_id.
  *
  * @param dev     LP5562 device.
- * @param channel Requested LED channel.
- * @param source  Pointer to the source of the channel.
+ * @param color_id Requested LED color_id.
+ * @param source  Pointer to the source of the color_id.
  *
  * @retval 0    On success.
  * @retval -EIO If the underlying I2C call fails.
  */
 static int lp5562_get_led_source(const struct device *dev,
-				 enum lp5562_led_channels channel,
+				 uint8_t color_id,
 				 enum lp5562_led_sources *source)
 {
 	const struct lp5562_config *config = dev->config;
 	uint8_t led_map;
+	/* LP5562 uses WRGB, but ID is BGRW so invert it */
+	uint8_t bit_pos = ((LED_COLOR_ID_BLUE - (color_id)) << 1);
 
 	if (i2c_reg_read_byte_dt(&config->bus, LP5562_LED_MAP, &led_map)) {
-		LOG_ERR("Failed to get LED[%d] source.", channel);
+		LOG_ERR("Failed to get LED[%d] source.", color_id);
 		return -EIO;
 	}
 
-	*source = (led_map >> (channel << 1)) & LP5562_MASK;
+	*source = (led_map >> bit_pos) & LP5562_MASK;
 
 	return 0;
 }
