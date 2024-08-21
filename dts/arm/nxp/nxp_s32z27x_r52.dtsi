@@ -1074,5 +1074,25 @@
 			status = "disabled";
 		};
 
+		sar_adc0: adc@402c0000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x402C0000 0x1000>;
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 169 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		sar_adc1: adc@402e0000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x402e0000 0x1000>;
+			interrupts = <GIC_SPI 201 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 202 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 203 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 	};
 };
