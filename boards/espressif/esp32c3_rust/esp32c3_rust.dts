@@ -124,6 +124,10 @@
 	status = "disabled";
 };
 
+&esp32_bt_hci {
+	status = "okay";
+};
+
 &flash0 {
 	status = "okay";
 	partitions {
