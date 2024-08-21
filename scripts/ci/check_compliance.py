@@ -11,6 +11,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import platform
 import re
 import subprocess
 import sys
@@ -273,6 +274,8 @@ class ClangFormatCheck(ComplianceTest):
     path_hint = "<git-top>"
 
     def run(self):
+        exe = f"clang-format-diff.{'exe' if platform.system() == 'Windows' else 'py'}"
+
         for file in get_files():
             if Path(file).suffix not in ['.c', '.h']:
                 continue
@@ -281,7 +284,7 @@ class ClangFormatCheck(ComplianceTest):
                                     stdout=subprocess.PIPE,
                                     cwd=GIT_TOP)
             try:
-                subprocess.run(('clang-format-diff.py', '-p1'),
+                subprocess.run((exe, '-p1'),
                                check=True,
                                stdin=diff.stdout,
                                stdout=subprocess.PIPE,
