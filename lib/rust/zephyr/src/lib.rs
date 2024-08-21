@@ -9,6 +9,8 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
 
+pub mod time;
+
 // Bring in the generated kconfig module
 include!(concat!(env!("OUT_DIR"), "/kconfig.rs"));
 
