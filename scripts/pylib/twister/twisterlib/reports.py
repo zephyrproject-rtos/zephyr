@@ -584,39 +584,43 @@ class Reporting:
             pass_rate = 0
 
         logger.info(
-            "{}{} of {}{} test configurations passed ({:.2%}), {} built (not run), {}{}{} failed, {}{}{} errored, {} skipped with {}{}{} warnings in {:.2f} seconds".format(
-                Fore.RED if failed else Fore.GREEN,
-                results.passed,
-                results.total,
-                Fore.RESET,
-                pass_rate,
-                results.notrun,
-                Fore.RED if results.failed else Fore.RESET,
-                results.failed,
-                Fore.RESET,
-                Fore.RED if results.error else Fore.RESET,
-                results.error,
-                Fore.RESET,
-                results.skipped_configs,
-                Fore.YELLOW if self.plan.warnings else Fore.RESET,
-                self.plan.warnings,
-                Fore.RESET,
-                duration))
+            f"{TwisterStatus.get_color(TwisterStatus.FAIL) if failed else TwisterStatus.get_color(TwisterStatus.PASS)}{results.passed}"
+            f" of {results.total - results.skipped_configs}{Fore.RESET}"
+            f" executed test configurations passed ({pass_rate:.2%}),"
+            f" {f'{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun}{Fore.RESET}' if results.notrun else f'{results.notrun}'} built (not run),"
+            f" {f'{TwisterStatus.get_color(TwisterStatus.FAIL)}{results.failed}{Fore.RESET}' if results.failed else f'{results.failed}'} failed,"
+            f" {f'{TwisterStatus.get_color(TwisterStatus.ERROR)}{results.error}{Fore.RESET}' if results.error else f'{results.error}'} errored,"
+            f" with {f'{Fore.YELLOW}{self.plan.warnings}{Fore.RESET}' if self.plan.warnings else 'no'} warnings"
+            f" in {duration:.2f} seconds."
+        )
 
         total_platforms = len(self.platforms)
         # if we are only building, do not report about tests being executed.
         if self.platforms and not self.env.options.build_only:
-            logger.info("In total {} test cases were executed, {} skipped on {} out of total {} platforms ({:02.2f}%)".format(
-                results.cases - results.skipped_cases - results.notrun,
-                results.skipped_cases,
-                len(self.filtered_platforms),
-                total_platforms,
-                (100 * len(self.filtered_platforms) / len(self.platforms))
-            ))
+            executed_cases = results.cases - results.filtered_cases - results.skipped_cases - results.notrun_cases
+            pass_rate = 100 * (float(results.passed_cases) / float(executed_cases)) \
+                if executed_cases != 0 else 0
+            platform_rate = (100 * len(self.filtered_platforms) / len(self.platforms))
+            logger.info(
+                f'{results.passed_cases} of {executed_cases} executed test cases passed ({pass_rate:02.2f}%)'
+                f'{", " + str(results.blocked_cases) + " blocked" if results.blocked_cases else ""}'
+                f'{", " + str(results.failed_cases) + " failed" if results.failed_cases else ""}'
+                f'{", " + str(results.error_cases) + " errored" if results.error_cases else ""}'
+                f'{", " + str(results.none_cases) + " without a status" if results.none_cases else ""}'
+                f' on {len(self.filtered_platforms)} out of total {total_platforms} platforms ({platform_rate:02.2f}%).'
+            )
+            if results.skipped_cases or results.filtered_cases or results.notrun_cases:
+                logger.info(
+                    f'{results.skipped_cases + results.filtered_cases} selected test cases not executed:' \
+                    f'{" " + str(results.skipped_cases) + " skipped" if results.skipped_cases else ""}' \
+                    f'{(", " if results.skipped_cases else " ") + str(results.filtered_cases) + " filtered" if results.filtered_cases else ""}' \
+                    f'{(", " if results.skipped_cases or results.filtered_cases else " ") + str(results.notrun_cases) + " not run (built only)" if results.notrun_cases else ""}' \
+                    f'.'
+                )
 
         built_only = results.total - run - results.skipped_configs
         logger.info(f"{Fore.GREEN}{run}{Fore.RESET} test configurations executed on platforms, \
-{Fore.RED}{built_only}{Fore.RESET} test configurations were only built.")
+{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{built_only}{Fore.RESET} test configurations were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, platform_reports):
         if not self.instances:
