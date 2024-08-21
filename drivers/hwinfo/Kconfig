@@ -130,7 +130,7 @@ config HWINFO_IMXRT
 config HWINFO_RPI_PICO
 	bool "Raspberry Pi Pico hwinfo driver"
 	default y
-	depends on SOC_SERIES_RP2XXX
+	depends on SOC_FAMILY_RPI_PICO
 	select HWINFO_HAS_DRIVER
 	select PICOSDK_USE_FLASH
 	help
