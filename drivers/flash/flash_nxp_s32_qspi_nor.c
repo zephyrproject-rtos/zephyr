@@ -633,17 +633,6 @@ static int nxp_s32_qspi_write(const struct device *dev, off_t offset, const void
 			break;
 		}
 
-		if (IS_ENABLED(CONFIG_FLASH_NXP_S32_QSPI_VERIFY_WRITE)) {
-			status = Qspi_Ip_ProgramVerify(data->instance, (uint32_t)offset,
-						       (const uint8_t *)src, (uint32_t)len);
-			if (status != STATUS_QSPI_IP_SUCCESS) {
-				LOG_ERR("Write verification failed at 0x%lx (%d)",
-					offset, status);
-				ret = -EIO;
-				break;
-			}
-		}
-
 		size -= len;
 		src = (const uint8_t *)src + len;
 		offset += len;
@@ -726,17 +715,6 @@ static int nxp_s32_qspi_erase(const struct device *dev, off_t offset, size_t siz
 			ret = nxp_s32_qspi_wait_until_ready(dev);
 			if (ret != 0) {
 				break;
-			}
-
-			if (IS_ENABLED(CONFIG_FLASH_NXP_S32_QSPI_VERIFY_ERASE)) {
-				status = Qspi_Ip_EraseVerify(data->instance, (uint32_t)offset,
-							erase_size);
-				if (status != STATUS_QSPI_IP_SUCCESS) {
-					LOG_ERR("Erase verification failed at 0x%lx (%d)",
-						offset, status);
-					ret = -EIO;
-					break;
-				}
 			}
 
 			offset += erase_size;

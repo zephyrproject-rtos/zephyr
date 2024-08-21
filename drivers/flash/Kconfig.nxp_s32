@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_NXP_S32_QSPI_NOR
@@ -32,16 +32,6 @@ config FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME
 	  If not selected, the driver uses a fixed configuration assuming 256 By
 	  page size and 4 KiBy, 32 KiBy and 64 KiBy erase instructions. The
 	  device size and jedec-id properties must be set in devicetree node.
-
-config FLASH_NXP_S32_QSPI_VERIFY_ERASE
-	bool "Verify memory after erased"
-	help
-	  Verify contents of memory after erased.
-
-config FLASH_NXP_S32_QSPI_VERIFY_WRITE
-	bool "Verify memory after written"
-	help
-	  Verify contents of memory after written.
 
 config FLASH_NXP_S32_QSPI_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
