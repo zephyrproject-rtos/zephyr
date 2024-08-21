@@ -1,0 +1,29 @@
+# Raspberry Pi RP235XX MCU line
+
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RP2350
+	select HAS_RPI_PICO
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select SOC_RESET_HOOK
+	select XIP
+
+config SOC_RP2350A_M33
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+
+config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
+	bool
+	default y
+	# Currently the IDF only supports using the Cortex-M33 cores. Enforce
+	# this at build configuration time.
+	depends on SOC_SERIES_RP2350 && CPU_CORTEX_M33
+	help
+	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
+	  RP23XX devices to consider this a valid image in flash.
