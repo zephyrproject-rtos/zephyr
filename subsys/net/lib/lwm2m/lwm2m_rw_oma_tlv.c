@@ -907,6 +907,27 @@ static int write_tlv_resource(struct lwm2m_message *msg, struct oma_tlv *tlv)
 	return 0;
 }
 
+#if defined(CONFIG_LWM2M_VERSION_1_1)
+static int write_tlv_resource_instance(struct lwm2m_message *msg, struct oma_tlv *tlv)
+{
+	int ret;
+
+	if (msg->in.block_ctx) {
+		msg->in.block_ctx->path.res_inst_id = tlv->id;
+	}
+
+	msg->path.res_inst_id = tlv->id;
+	msg->path.level = LWM2M_PATH_LEVEL_RESOURCE_INST;
+	ret = do_write_op_tlv_item(msg);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#endif
+
 static int lwm2m_multi_resource_tlv_parse(struct lwm2m_message *msg,
 					  struct oma_tlv *multi_resource_tlv)
 {
@@ -1044,6 +1065,16 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 			if (ret) {
 				return ret;
 			}
+#if defined(CONFIG_LWM2M_VERSION_1_1)
+		} else if (tlv.type == OMA_TLV_TYPE_RESOURCE_INSTANCE) {
+			if (msg->path.level < LWM2M_PATH_LEVEL_OBJECT_INST) {
+				return -ENOTSUP;
+			}
+			ret = write_tlv_resource_instance(msg, &tlv);
+			if (ret) {
+				return ret;
+			}
+#endif
 		} else {
 			return -ENOTSUP;
 		}
