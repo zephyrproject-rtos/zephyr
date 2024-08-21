@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+description: Nordic FLL16M
+
+compatible: "nordic,nrf-fll16m"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 16000000
+
+  open-loop-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if open-loop clock source is used
+
+  closed-loop-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if closed-loop clock source is used
+
+  closed-loop-clock:
+    type: phandle
+    description: Closed-loop clock source node
+
+  bypass-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if bypass clock source is used
+
+  bypass-clock:
+    type: phandle
+    description: Bypass clock source node

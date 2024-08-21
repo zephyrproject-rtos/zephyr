@@ -156,7 +156,7 @@
 		};
 
 		fll16m: fll16m {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-fll16m";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 		};
@@ -169,7 +169,7 @@
 		};
 
 		lfclk: lfclk {
-			compatible = "fixed-clock";
+			compatible = "nordic,nrf-lfclk";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
 		};

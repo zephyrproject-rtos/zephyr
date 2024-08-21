@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+description: Nordic LFCLK
+
+compatible: "nordic,nrf-lfclk"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  synth-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if SYNTH clock source is used
+
+  synth-clock:
+    type: phandle
+    description: Synth clock source node
+
+  lfrc-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if LFRC clock source is used
+
+  lflprc-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if LFLPRC clock source is used
+
+  lfxo-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if LFXO clock source is used
+
+  lfxo-clock:
+    type: phandle
+    description: LFXO clock source node
