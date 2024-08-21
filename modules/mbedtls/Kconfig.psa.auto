@@ -88,7 +88,9 @@ config PSA_WANT_ALG_HMAC
 config PSA_WANT_ALG_MD5
 	bool "PSA_WANT_ALG_MD5" if !MBEDTLS_PROMPTLESS
 	default y if PSA_CRYPTO_ENABLE_ALL
-
+	help
+	  Warning: The MD5 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
 
 config PSA_WANT_ALG_PBKDF2_HMAC
 	bool "PSA_WANT_ALG_PBKDF2_HMAC" if !MBEDTLS_PROMPTLESS
@@ -119,6 +121,9 @@ config PSA_WANT_ALG_RSA_PSS
 config PSA_WANT_ALG_SHA_1
 	bool "PSA_WANT_ALG_SHA_1" if !MBEDTLS_PROMPTLESS
 	default y if PSA_CRYPTO_ENABLE_ALL
+	help
+	  Warning: The SHA-1 hash is weak and deprecated and is only recommended
+	  for use in legacy protocols.
 
 config PSA_WANT_ALG_SHA_224
 	bool "PSA_WANT_ALG_SHA_224" if !MBEDTLS_PROMPTLESS
