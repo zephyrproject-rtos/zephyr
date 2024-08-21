@@ -190,6 +190,7 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -203,6 +204,8 @@ jobs:
         run: |
           cmake --version
           gcc --version
+          cargo --version
+          rustup target list --installed
           ls -la
           echo "github.ref: ${{ github.ref }}"
           echo "github.base_ref: ${{ github.base_ref }}"
