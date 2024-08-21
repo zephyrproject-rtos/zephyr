@@ -729,6 +729,24 @@ def test_devicehandler_monitor_serial(
     )
 
 
+def test_devicehandler_monitor_serial_splitlines(mocked_instance):
+    halt_event = mock.Mock(is_set=mock.Mock(return_value=False))
+    ser = mock.Mock(
+        isOpen=mock.Mock(side_effect=[True, True, False]),
+        in_waiting=mock.Mock(return_value=False),
+        readline=mock.Mock(return_value='\nline1\nline2\n'.encode('utf-8'))
+    )
+    harness = mock.Mock(status=TwisterStatus.PASS)
+
+    handler = DeviceHandler(mocked_instance, 'build')
+    handler.options = mock.Mock(enable_coverage=False)
+
+    with mock.patch('builtins.open', mock.mock_open(read_data='')):
+        handler.monitor_serial(ser, halt_event, harness)
+
+    assert harness.handle.call_count == 2
+
+
 TESTDATA_10 = [
     (
         'dummy_platform',
