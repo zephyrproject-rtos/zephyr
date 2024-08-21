@@ -1,0 +1,31 @@
+description: TI LP55XX LED
+
+compatible: "ti,lp55xx"
+
+include: i2c-device.yaml
+
+properties:
+  red-output-current:
+    type: int
+    default: 175
+    description: Output current of red channel in 0.1 mA (0-25.5 mA).
+                 Default value is the power-on default. Valid range = 0 - 255
+
+  green-output-current:
+    type: int
+    default: 175
+    description: Output current of green channel in 0.1 mA (0-25.5 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+
+  blue-output-current:
+    type: int
+    default: 175
+    description: Output current of blue channel in 0.1 mA (0-25.5 mA)
+                 Default value is the power-on default. Valid range = 0 - 255
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO to enable LP5562 (both Charge-pump and Digital Communications interface).
+      If not provided, user must ensure enable pin is already asserted externally (e.g:
+      pull-up resistor).

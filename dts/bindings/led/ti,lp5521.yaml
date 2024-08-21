@@ -1,0 +1,5 @@
+description: TI LP5521 LED
+
+compatible: "ti,lp5521"
+
+include: ti,lp55xx.yaml
