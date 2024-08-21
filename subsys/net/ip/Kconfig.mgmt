@@ -126,4 +126,14 @@ config NET_DEBUG_MGMT_EVENT_STACK
 	help
 	  Add debug messages output on how much Net MGMT event stack is used.
 
+config NET_MGMT_THREAD_PRIO_CUSTOM
+	bool "Customize net mgmt thread priority"
+
+if NET_MGMT_THREAD_PRIO_CUSTOM
+config NET_MGMT_THREAD_PRIORITY
+	int "Priority of net_mgmt thread"
+	default NUM_PREEMPT_PRIORITIES
+
+endif # NET_MGMT_THREAD_PRIO_CUSTOM
+
 endif # NET_MGMT_EVENT
