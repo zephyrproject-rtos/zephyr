@@ -8,5 +8,4 @@
 #define RA_SOC_HAS_MSTPCRE 1
 #define RA_SOC_MSTPD5_CHANNELS 1
 
-#include <zephyr/dt-bindings/clock/r7fa4m1xxxxxx-clock.h>
 #include <renesas/ra/ra4-cm4-common.dtsi>
