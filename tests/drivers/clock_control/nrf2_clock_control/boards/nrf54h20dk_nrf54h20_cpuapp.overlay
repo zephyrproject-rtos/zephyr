@@ -1,0 +1,23 @@
+&hfxo {
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
+};
+
+&fll16m {
+	status = "okay";
+};
+
+&hsfll120 {
+	status = "okay";
+};
+
+&cpuapp_hsfll {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
