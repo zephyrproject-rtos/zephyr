@@ -127,6 +127,7 @@
 			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
 			status = "disabled";
 		};
+
 		eusart1: eusart@500a0000 {
 			compatible = "silabs,gecko-spi-eusart";
 			reg = <0x500A0000 0x4000>;
