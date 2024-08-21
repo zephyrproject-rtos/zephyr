@@ -236,9 +236,12 @@ void llcp_rr_flush_procedures(struct ll_conn *conn)
 void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		struct node_rx_pdu *rx)
 {
-	/* Store RX node and link */
-	ctx->node_ref.rx = rx;
-	ctx->node_ref.link = link;
+	/* See comment in ull_llcp_local.c::llcp_lr_rx() */
+	if (!ctx->node_ref.rx) {
+		/* Store RX node and link */
+		ctx->node_ref.rx = rx;
+		ctx->node_ref.link = link;
+	}
 
 	switch (ctx->proc) {
 	case PROC_UNKNOWN:
