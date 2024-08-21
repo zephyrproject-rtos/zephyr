@@ -52,6 +52,9 @@ static int sparkfun_thing_plus_mgm240p_init_clocks(void)
 #if defined(_CMU_EM01GRPBCLKCTRL_MASK)
 	CMU_ClockSelectSet(cmuClock_EM01GRPBCLK, cmuSelect_HFRCODPLL);
 #endif
+#if defined(_CMU_EM01GRPCCLKCTRL_MASK)
+	CMU_ClockSelectSet(cmuClock_EM01GRPCCLK, cmuSelect_HFRCODPLL);
+#endif
 	CMU_ClockSelectSet(cmuClock_EM23GRPACLK, cmuSelect_LFRCO);
 	CMU_ClockSelectSet(cmuClock_EM4GRPACLK, cmuSelect_LFRCO);
 #if defined(RTCC_PRESENT)
