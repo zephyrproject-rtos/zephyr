@@ -124,6 +124,17 @@ bool net_context_is_recv_pktinfo_set(struct net_context *context)
 #endif
 }
 
+bool net_context_is_timestamping_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+	return (bool)(context->options.timestamping > 0);
+#else
+	ARG_UNUSED(context);
+
+	return false;
+#endif
+}
+
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static inline bool is_in_tcp_listen_state(struct net_context *context)
 {
