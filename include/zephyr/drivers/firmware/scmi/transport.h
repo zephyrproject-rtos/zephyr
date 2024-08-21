@@ -13,7 +13,7 @@
 #define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
 
 #include <zephyr/device.h>
-#include <zephyr/sys/mutex.h>
+#include <zephyr/kernel.h>
 
 struct scmi_message;
 struct scmi_channel;
