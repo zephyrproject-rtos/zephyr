@@ -145,7 +145,11 @@ static int dma_esp32_config_rx_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)) {
+	if (!esp_ptr_dma_capable((uint32_t *)block->dest_address)
+#if defined(CONFIG_ESP_SPIRAM)
+	&& !esp_ptr_dma_ext_capable((uint32_t *)block->dest_address)
+#endif
+	) {
 		LOG_ERR("Rx buffer not in DMA capable memory: %p", (uint32_t *)block->dest_address);
 		return -EINVAL;
 	}
@@ -214,6 +218,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 	gdma_ll_rx_enable_interrupt(data->hal.dev, dma_channel->channel_id, UINT32_MAX,
 				    config_dma->dma_callback != NULL);
 
+	gdma_ll_rx_set_water_mark(data->hal.dev, dma_channel->channel_id, 24);
 	return dma_esp32_config_rx_descriptor(dma_channel, config_dma->head_block);
 }
 
@@ -225,7 +230,11 @@ static int dma_esp32_config_tx_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-	if (!esp_ptr_dma_capable((uint32_t *)block->source_address)) {
+	if (!esp_ptr_dma_capable((uint32_t *)block->source_address)
+#if defined(CONFIG_ESP_SPIRAM)
+	&& !esp_ptr_dma_ext_capable((uint32_t *)block->source_address)
+#endif
+	) {
 		LOG_ERR("Tx buffer not in DMA capable memory: %p",
 			(uint32_t *)block->source_address);
 		return -EINVAL;
