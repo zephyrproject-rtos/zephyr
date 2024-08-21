@@ -35,10 +35,10 @@ set(actinius_icarus_som_ns_DEPRECATED
     actinius_icarus_som/nrf9160/ns
 )
 set(adafruit_feather_DEPRECATED
-    adafruit_feather_nrf52840_express
+    adafruit_feather_nrf52840/nrf52840
 )
 set(adafruit_feather_nrf52840_DEPRECATED
-    adafruit_feather_nrf52840_express
+    adafruit_feather_nrf52840/nrf52840
 )
 set(adafruit_itsybitsy_nrf52840_DEPRECATED
     adafruit_itsybitsy
