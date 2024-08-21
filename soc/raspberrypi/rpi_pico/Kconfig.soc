@@ -1,0 +1,25 @@
+# Raspberry Pi (RP) MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RPI_PICO
+	bool
+
+config SOC_FAMILY
+	default "rpi_pico" if SOC_FAMILY_RPI_PICO
+
+config SOC_SERIES
+	default "rp2040" if SOC_SERIES_RP2040
+	default "rp2350" if SOC_SERIES_RP2350
+
+config SOC_SERIES_RP2040
+	bool
+	select SOC_FAMILY_RPI_PICO
+
+config SOC_SERIES_RP2350
+	bool
+	select SOC_FAMILY_RPI_PICO
+
+rsource "*/Kconfig.soc"
