@@ -20,6 +20,7 @@ config SOC_FAMILY_MAX32_M33
 	select ARM_TRUSTZONE_M
 	select CPU_HAS_ARM_SAU
 	select ARMV8_M_DSP
+	select HAS_PM
 
 config SOC_FAMILY_MAX32_M4
 	select ARM
