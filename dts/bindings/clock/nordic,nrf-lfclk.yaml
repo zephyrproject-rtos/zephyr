@@ -1,0 +1,42 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF LFCLK (Low Frequency CLocK)
+
+  The LFCLK can use the following clocks as clock sources:
+
+    - HFXO: The HFXO clock is used as a clock source if the
+      LFCLK SYNTH mode is selected and the LFXO clock is not
+      available. The HFXO clock is used indirectly through
+      the FLL16M clock in BYPASS mode.
+
+    - LFXO: The LFXO clock is used as a clock source if the
+      LFCLK SYNTH mode is selected and the LFXO clock is
+      available. The LFXO clock is used indirectly through
+      the FLL16M clock in BYPASS mode.
+
+  Devicetree example:
+
+    lfclk {
+            lfrc-accuracy-ppm = <500>;
+            lflprc-accuracy-ppm = <1000>;
+            clocks = <&hfxo>, <&lfxo>;
+            clock-names = "hfxo", "lfxo";
+    };
+
+compatible: "nordic,nrf-lfclk"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  lfrc-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if LFRC clock source is used.
+
+  lflprc-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if LFLPRC clock source is used.
