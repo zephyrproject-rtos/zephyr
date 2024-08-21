@@ -51,13 +51,11 @@ static void z_power_soc_deep_sleep(void)
 {
 	struct pcr_regs *pcr = PCR_XEC_REG_BASE;
 	struct htmr_regs *htmr0 = HTMR_0_XEC_REG_BASE;
-	uint32_t basepri = 0U;
 	uint32_t temp = 0U;
 
 	PM_DP_ENTER();
 
 	__disable_irq();
-	basepri = __get_BASEPRI();
 
 	soc_deep_sleep_periph_save();
 	soc_deep_sleep_wake_en();
@@ -78,6 +76,7 @@ static void z_power_soc_deep_sleep(void)
 	soc_debug_sleep_clk_req();
 #endif
 	__set_BASEPRI(0);
+	__DSB();
 	__WFI();	/* triggers sleep hardware */
 	__NOP();
 	__NOP();
@@ -102,8 +101,6 @@ static void z_power_soc_deep_sleep(void)
 	}
 
 	htmr0->PRLD = 0U; /* stop */
-
-	__set_BASEPRI(basepri);
 
 	soc_deep_sleep_non_wake_dis();
 	soc_deep_sleep_wake_dis();
@@ -133,6 +130,7 @@ static void z_power_soc_sleep(void)
 	pcr->SYS_SLP_CTRL = MCHP_PCR_SYS_SLP_LIGHT;
 	pcr->OSC_ID = pcr->SYS_SLP_CTRL;
 	__set_BASEPRI(0);
+	__DSB();
 	__WFI();	/* triggers sleep hardware */
 	__NOP();
 	__NOP();
@@ -171,5 +169,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	__enable_irq();
+	__ISB();
 	irq_unlock(0);
 }
