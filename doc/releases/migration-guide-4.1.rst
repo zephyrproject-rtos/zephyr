@@ -57,13 +57,17 @@ Devicetree
   the devicetree property ``poll-interval-ms``.
   In interrupt mode, the devicetree property ``repeat`` is supported.
 
+Raspberry Pi
+============
+
+* ``CONFIG_SOC_SERIES_RP2XXX`` is renamed to :kconfig:option:`CONFIG_SOC_SERIES_RP2040`.
+
 STM32
 =====
 
 * MCO clock source and prescaler are now exclusively configured by the DTS
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
-
 
 Modules
 *******
