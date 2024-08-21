@@ -443,12 +443,13 @@ class DeviceHandler(Handler):
             # Just because ser_fileno has data doesn't mean an entire line
             # is available yet.
             if serial_line:
-                sl = serial_line.decode('utf-8', 'ignore').lstrip()
-                logger.debug("DEVICE: {0}".format(sl.rstrip()))
-
-                log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
-                log_out_fp.flush()
-                harness.handle(sl.rstrip())
+                # can be more lines in serial_line so split them before handling
+                for sl in serial_line.decode('utf-8', 'ignore').splitlines():
+                    log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
+                    log_out_fp.flush()
+                    if sl := sl.strip():
+                        logger.debug("DEVICE: {0}".format(sl))
+                        harness.handle(sl)
 
             if harness.status != TwisterStatus.NONE:
                 if not harness.capture_coverage:
