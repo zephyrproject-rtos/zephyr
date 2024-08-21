@@ -4,7 +4,7 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_RP2XXX
+config SOC_SERIES_RP2040
 	select ARM
 	select CPU_CORTEX_M0PLUS
 	select CPU_CORTEX_M_HAS_SYSTICK
@@ -14,7 +14,9 @@ config SOC_SERIES_RP2XXX
 	select XIP
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	help
-	  Enable support for Raspberry Pi RP2 MCU series
+	  Enable support for Raspberry Pi RP2040 MCU series
+
+if SOC_SERIES_RP2040
 
 config RP2_REQUIRES_SECOND_STAGE_BOOT
 	bool
@@ -51,3 +53,5 @@ config RP2_FLASH_AT25SF128A
 	help
 	  Configure RP2 to use a AT25SF128A flash chip, or similar. Should be selected
 	  by the board definition, not the user.
+
+endif
