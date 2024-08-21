@@ -24,6 +24,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 	(void)base;
 #endif /*USART_COUNT > 1*/
 
+#ifdef CONFIG_SPI_GECKO_EUSART
+	EUSART_TypeDef *ebase = (EUSART_TypeDef *)reg;
+	int eusart_num = EUSART_NUM(ebase);
+#endif
+
 #endif
 
 #ifdef CONFIG_I2C_GECKO
@@ -171,7 +176,53 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_UART_GECKO */
 
-#ifdef CONFIG_SPI_GECKO
+#ifdef CONFIG_SPI_GECKO_EUSART
+		case GECKO_FUN_SPI_SCK:
+			pin_config.mode = gpioModePushPull;
+			pin_config.out = 1;
+			GPIO->EUSARTROUTE[eusart_num].SCLKROUTE =
+				(pin_config.port << _GPIO_EUSART_SCLKROUTE_PORT_SHIFT) |
+				(pin_config.pin << _GPIO_EUSART_SCLKROUTE_PIN_SHIFT);
+			GPIO->EUSARTROUTE[eusart_num].ROUTEEN |= GPIO_EUSART_ROUTEEN_SCLKPEN;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			break;
+
+		case GECKO_FUN_SPI_CSN:
+			pin_config.mode = gpioModePushPull;
+			pin_config.out = 1;
+			GPIO->EUSARTROUTE[eusart_num].CSROUTE =
+				(pin_config.port << _GPIO_EUSART_CSROUTE_PORT_SHIFT) |
+				(pin_config.pin << _GPIO_EUSART_CSROUTE_PIN_SHIFT);
+			GPIO->EUSARTROUTE[eusart_num].ROUTEEN |= GPIO_EUSART_ROUTEEN_CSPEN;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			break;
+
+		case GECKO_FUN_SPI_MOSI:
+			pin_config.mode = gpioModePushPull;
+			pin_config.out = 1;
+			GPIO->EUSARTROUTE[eusart_num].TXROUTE =
+				(pin_config.port << _GPIO_EUSART_TXROUTE_PORT_SHIFT) |
+				(pin_config.pin << _GPIO_EUSART_TXROUTE_PIN_SHIFT);
+			GPIO->EUSARTROUTE[eusart_num].ROUTEEN |= GPIO_EUSART_ROUTEEN_TXPEN;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			break;
+
+		case GECKO_FUN_SPI_MISO:
+			pin_config.mode = gpioModeInput;
+			pin_config.out = 1;
+			GPIO->EUSARTROUTE[eusart_num].RXROUTE =
+				(pin_config.port << _GPIO_EUSART_RXROUTE_PORT_SHIFT) |
+				(pin_config.pin << _GPIO_EUSART_RXROUTE_PIN_SHIFT);
+			GPIO->EUSARTROUTE[EUSART_NUM(EUSART1)].ROUTEEN |= GPIO_EUSART_ROUTEEN_RXPEN;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+					pin_config.out);
+			break;
+#endif /*CONFIG_SPI_GECKO_EUSART*/
+
+#ifdef CONFIG_SPI_GECKO_USART
 #ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_SPIM_SCK:
 			pin_config.mode = gpioModePushPull;
@@ -287,7 +338,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 					pin_config.out);
 			break;
 #endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
-#endif /* CONFIG_SPI_GECKO */
+#endif /* CONFIG_SPI_GECKO_USART */
 
 #ifdef CONFIG_I2C_GECKO
 		case GECKO_FUN_I2C_SDA:
