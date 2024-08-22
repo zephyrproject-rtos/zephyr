@@ -3,6 +3,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/**
+ * Connections:
+ * 1)Display:
+ * Display -> SPI1
+ * Display D/C -> GPIO2
+ * Display CS -> GPIO3
+ * Display RST -> GPIO1
+ * Display BL -> 3V3
+ * 2)Touch :
+ * Touch -> I2C0
+ * Touch interrupt -> GPIO0
+ * Touch RST -> 3V3
+ * 3)Wakeup button : Push button to GPIO7
+ * 4)Vibration Motor : +ve of motor to GPIO6
+ * 5)IMU : I2C0
+ * 6)RTC :I2C1
+ */
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
@@ -18,6 +35,9 @@
 #include "RTC.h"
 #include "acc_gyro.h"
 #include "cst816s.h"
+#include<zephyr/devicetree.h>
+#include <zephyr/irq.h>
+
 LOG_MODULE_REGISTER(app);
 
 #define MY_STACK_SIZE 2048
@@ -178,7 +198,6 @@ void step_count_task_handler(void){
 		{
 			update_stepcount_in_screen(&guider_ui,steps);
 			printf("Steps :%d\n",steps);
-			
 		}
 		prev_step = steps;
 		k_yield();

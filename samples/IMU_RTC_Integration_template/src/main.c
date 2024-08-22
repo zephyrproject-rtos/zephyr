@@ -74,7 +74,7 @@ void thread1(void)
 	CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
 	IRQ_CONNECT(32, 4, touch_isr, NULL, NULL);
 	gpio_pin_interrupt_configure(dev1, 0, 1);
-// CST816S_begin(&touch_dev_handle);// 
+// CST816S_begin(&touch_dev_handle);//
 // /* Enabling intterupts*/
 while (1)
 {
