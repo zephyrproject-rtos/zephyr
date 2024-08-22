@@ -21,7 +21,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For STM32L0 series */
-#include <zephyr/drivers/interrupt_controller/exti_stm32.h>
+#include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 
@@ -41,7 +41,7 @@ static IRQn_Type exti_irq_table[NUM_EXTI_LINES] = {[0 ... NUM_EXTI_LINES - 1] = 
 
 /* User callback wrapper */
 struct __exti_cb {
-	stm32_exti_callback_t cb;
+	stm32_gpio_irq_cb_t cb;
 	void *data;
 };
 
@@ -75,7 +75,7 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
  *
  * @param line EXTI line number
  */
-static inline int stm32_exti_is_pending(stm32_exti_line_t line)
+static inline int stm32_exti_is_pending(stm32_gpio_irq_line_t line)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	return (LL_EXTI_IsActiveRisingFlag_0_31(line) ||
@@ -92,7 +92,7 @@ static inline int stm32_exti_is_pending(stm32_exti_line_t line)
  *
  * @param line EXTI line number
  */
-static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
+static inline void stm32_exti_clear_pending(stm32_gpio_irq_line_t line)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 	LL_EXTI_ClearRisingFlag_0_31(line);
@@ -107,7 +107,7 @@ static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
 /**
  * @returns the LL_EXTI_LINE_n define for EXTI line number @p linenum
  */
-static inline stm32_exti_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
+static inline stm32_gpio_irq_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
 {
 	return BIT(linenum);
 }
@@ -115,7 +115,7 @@ static inline stm32_exti_line_t linenum_to_ll_exti_line(gpio_pin_t linenum)
 /**
  * @returns EXTI line number for LL_EXTI_LINE_n define
  */
-static inline gpio_pin_t ll_exti_line_to_linenum(stm32_exti_line_t line)
+static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line)
 {
 	return LOG2(line);
 }
@@ -132,7 +132,7 @@ static void stm32_exti_isr(const void *exti_range)
 	const struct device *dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
 	const struct stm32_exti_range *range = exti_range;
-	stm32_exti_line_t line;
+	stm32_gpio_irq_line_t line;
 	uint32_t line_num;
 
 	/* see which bits are set */
@@ -241,7 +241,7 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 /**
  * @internal
  * STM32 EXTI driver:
- * The type @ref stm32_exti_line_t is used to hold the LL_EXTI_LINE_xxx
+ * The type @ref stm32_gpio_irq_line_t is used to hold the LL_EXTI_LINE_xxx
  * defines of the LL EXTI API that corresponds to the provided pin.
  *
  * The port is not part of these definitions because port configuration
@@ -249,13 +249,13 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
  * returned by @ref stm32_exti_linenum_to_src_cfg_line instead.
  * @endinternal
  */
-stm32_exti_line_t stm32_exti_get_pin_exti_line(uint32_t port, gpio_pin_t pin)
+stm32_gpio_irq_line_t stm32_gpio_intc_get_pin_irq_line(uint32_t port, gpio_pin_t pin)
 {
 	ARG_UNUSED(port);
 	return linenum_to_ll_exti_line(pin);
 }
 
-void stm32_exti_enable(stm32_exti_line_t line)
+void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 {
 	unsigned int irqnum;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
@@ -277,7 +277,7 @@ void stm32_exti_enable(stm32_exti_line_t line)
 	irq_enable(irqnum);
 }
 
-void stm32_exti_disable(stm32_exti_line_t line)
+void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
 {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_DisableIT_0_31(line);
@@ -286,24 +286,24 @@ void stm32_exti_disable(stm32_exti_line_t line)
 #endif
 }
 
-void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
+void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trigger)
 {
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	switch (trigger) {
-	case STM32_EXTI_TRIG_NONE:
+	case STM32_GPIO_IRQ_TRIG_NONE:
 		LL_EXTI_DisableRisingTrig_0_31(line);
 		LL_EXTI_DisableFallingTrig_0_31(line);
 		break;
-	case STM32_EXTI_TRIG_RISING:
+	case STM32_GPIO_IRQ_TRIG_RISING:
 		LL_EXTI_EnableRisingTrig_0_31(line);
 		LL_EXTI_DisableFallingTrig_0_31(line);
 		break;
-	case STM32_EXTI_TRIG_FALLING:
+	case STM32_GPIO_IRQ_TRIG_FALLING:
 		LL_EXTI_EnableFallingTrig_0_31(line);
 		LL_EXTI_DisableRisingTrig_0_31(line);
 		break;
-	case STM32_EXTI_TRIG_BOTH:
+	case STM32_GPIO_IRQ_TRIG_BOTH:
 		LL_EXTI_EnableRisingTrig_0_31(line);
 		LL_EXTI_EnableFallingTrig_0_31(line);
 		break;
@@ -314,7 +314,7 @@ void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
-int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *arg)
+int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line, stm32_gpio_irq_cb_t cb, void *arg)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
@@ -335,7 +335,7 @@ int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, vo
 	return 0;
 }
 
-void stm32_exti_unset_callback(stm32_exti_line_t line)
+void stm32_gpio_intc_remove_irq_callback(stm32_gpio_irq_line_t line)
 {
 	const struct device *const dev = DEVICE_DT_GET(EXTI_NODE);
 	struct stm32_exti_data *data = dev->data;
