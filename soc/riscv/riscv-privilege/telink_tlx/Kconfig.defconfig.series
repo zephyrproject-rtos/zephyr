@@ -29,15 +29,14 @@ config RISCV_GP
 
 config NUM_IRQS
 	int
-	default 64 if SOC_RISCV_TELINK_B95
-	default 59
+	default 64
 
 config 2ND_LVL_ISR_TBL_OFFSET
 	int
 	default 12
 
 config PINCTRL
-	default n
+	default y
 
 config XIP
 	bool

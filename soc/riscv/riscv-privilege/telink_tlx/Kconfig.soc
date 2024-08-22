@@ -56,7 +56,6 @@ depends on SOC_SERIES_RISCV_TELINK_TLX
 config SOC_RISCV_TELINK_TL321X
 	bool "Telink TL321X SoC implementation"
 	select ATOMIC_OPERATIONS_BUILTIN
-	select CPU_HAS_FPU
 	select INCLUDE_RESET_VECTOR
 
 endchoice

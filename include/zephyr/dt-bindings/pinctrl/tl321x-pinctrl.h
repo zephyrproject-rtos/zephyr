@@ -22,9 +22,9 @@
 #define TL321X_FUNC_PWM3_N             10
 #define TL321X_FUNC_PWM4_N             11
 #define TL321X_FUNC_PWM5_N             12
-#define TL321X_FUNC_MSPI_CN1           13
-#define TL321X_FUNC_MSPI_CN2           14
-#define TL321X_FUNC_MSPI_CN3           15
+#define TL321X_FUNC_MSPI_CN2           13
+#define TL321X_FUNC_MSPI_CN3           14
+#define TL321X_FUNC_MSPI_CN1           15
 #define TL321X_FUNC_GSPI_CN1           16
 #define TL321X_FUNC_GSPI_CN2           17
 #define TL321X_FUNC_GSPI_CN3           18
@@ -61,20 +61,20 @@
 #define TL321X_FUNC_DMIC0_CLK          49
 #define TL321X_FUNC_DMIC0_DAT_I        50
 #define TL321X_FUNC_SDM0_P             51
-#define TL321X_FUNC_SDM0_N             52,
-#define TL321X_FUNC_SDM1_P             53,
-#define TL321X_FUNC_SDM1_N             54,
-#define TL321X_FUNC_IR_LEARN_I         55,
-#define TL321X_FUNC_SSPI_CN_I          56,
-#define TL321X_FUNC_SSPI_CK_I          57,
-#define TL321X_FUNC_SSPI_SI_IO         58,
-#define TL321X_FUNC_SSPI_SO_IO         59,
-#define TL321X_FUNC_KEYS0_IO           60,
-#define TL321X_FUNC_TMR0_CMP           61,
-#define TL321X_FUNC_TMR1_CMP           62,
-#define TL321X_FUNC_ RZ_TX             63,
-#define TL321X_FUNC_SWM_IO             64,
-#define TL321X_FUNC_TX_CYC2PA          65,
+#define TL321X_FUNC_SDM0_N             52
+#define TL321X_FUNC_SDM1_P             53
+#define TL321X_FUNC_SDM1_N             54
+#define TL321X_FUNC_IR_LEARN_I         55
+#define TL321X_FUNC_SSPI_CN_I          56
+#define TL321X_FUNC_SSPI_CK_I          57
+#define TL321X_FUNC_SSPI_SI_IO         58
+#define TL321X_FUNC_SSPI_SO_IO         59
+#define TL321X_FUNC_KEYS0_IO           60
+#define TL321X_FUNC_TMR0_CMP           61
+#define TL321X_FUNC_TMR1_CMP           62
+#define TL321X_FUNC_RZ_TX              63
+#define TL321X_FUNC_SWM_IO             64
+#define TL321X_FUNC_TX_CYC2PA          65
 #define TL321X_FUNC_WIFI_DENY_I        66
 #define TL321X_FUNC_BT_ACTIVITY        67
 #define TL321X_FUNC_BT_STATUS          68
@@ -85,9 +85,25 @@
 #define TL321X_FUNC_ATSEL_4            73
 #define TL321X_FUNC_ATSEL_5            74
 #define TL321X_FUNC_RX_CYC2LNA         75
-
+#define TL321X_FUNC_DBG_PROBE_CLK      76
 #define TL321X_FUNC_DBG_BB0            77
+#define TL321X_FUNC_DBG_BB5_IO         77
+#define TL321X_FUNC_DBG_RX_CLK         77
+#define TL321X_FUNC_DBG_TX_EN_I        77
+#define TL321X_FUNC_DBG_TX_ON_I        77
+#define TL321X_FUNC_DBG_TX_DATA_VALID_I 77
+#define TL321X_FUNC_DBG_TX_CLK_I       77
 #define TL321X_FUNC_DBG_ADC_I_DAT0     78
+#define TL321X_FUNC_DBG_ADC_Q_DAT0     78
+#define TL321X_FUNC_DBG_RATE0_I        78
+#define TL321X_FUNC_DBG_RX_EN_I        78
+#define TL321X_FUNC_DBG_FREQ_CHN_I     78
+#define TL321X_FUNC_DBG_TRNG0          79
+#define TL321X_FUNC_DBG_IR_ANA2DIG     79
+#define TL321X_FUNC_DBG_TX_DAT1_I      79
+#define TL321X_FUNC_DBG_TX_PWR_I       79
+#define TL321X_FUNC_DBG_TX_DAT0_I      79
+#define TL321X_FUNC_DBG_AUDIO_DAC      79
 
 /* IDs for GPIO Ports  */
 
@@ -109,7 +125,7 @@
 #define TLX_PIN_6        0x40
 #define TLX_PIN_7        0x80
 
-/* B9x pinctrl pull-up/down */
+/* TLx pinctrl pull-up/down */
 
 #define TLX_PULL_NONE    0
 #define TLX_PULL_DOWN    2
@@ -117,7 +133,7 @@
 
 /* Pin function positions */
 
-#define TL321X_PIN_FUNC_POS    0x3F
+#define TL321X_PIN_FUNC_POS    0xFF
 
 /* Pin pull up positions */
 
@@ -132,10 +148,10 @@
 
 /* TL321X pin configuration bit field positions and masks */
 
-#define TLX_PULL_POS     21
+#define TLX_PULL_POS     24
 #define TLX_PULL_MSK     0x3
 #define TLX_FUNC_POS     16
-#define TL321X_FUNC_MSK     0x1F
+#define TL321X_FUNC_MSK  0xFF
 #define TLX_PORT_POS     8
 #define TLX_PORT_MSK     0xFF
 
@@ -146,8 +162,8 @@
 /* Setters and getters */
 
 #define TLX_PINMUX_SET(port, pin, func)   ((func << TLX_FUNC_POS) | \
-					   (port << TLX_PORT_POS) | \
-					   (pin << TLX_PIN_POS))
+					    (port << TLX_PORT_POS) | \
+					    (pin << TLX_PIN_POS))
 #define TLX_PINMUX_GET_PULL(pinmux)       ((pinmux >> TLX_PULL_POS) & TLX_PULL_MSK)
 #define TLX_PINMUX_GET_FUNC(pinmux)       ((pinmux >> TLX_FUNC_POS) & TL321X_FUNC_MSK)
 #define TLX_PINMUX_GET_PIN(pinmux)        ((pinmux >> TLX_PIN_POS) & TLX_PIN_MSK)

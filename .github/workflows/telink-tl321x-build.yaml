@@ -42,7 +42,12 @@ jobs:
     - name: Build TL321x basic/blinky
       run: |
         cd ..
-        west build -b tl3218x -d build_blinky_tl321x zephyr/samples/basic/blinky
+        west build -b tl3218x                  -d build_blinky_tl321x                 zephyr/samples/basic/blinky
+
+    - name: Build TL321x hello_world
+      run: |
+        cd ..
+        west build -b tl3218x                  -d build_hello_tl321x                  zephyr/samples/hello_world
 
     - name: Collect artifacts
       run: |

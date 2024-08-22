@@ -22,18 +22,18 @@ description: |
        */
 
       /* include pre-defined pins and functions for the SoC used by the board */
-      #include <dt-bindings/pinctrl/b91-pinctrl.h>
+      #include <dt-bindings/pinctrl/tl321x-pinctrl.h>
 
       &pinctrl {
         /* configuration for UART0 TX default state */
         uart0_tx_pb2_default: uart0_tx_pb2_default {
-          /* configure PB2 as B91_FUNC_C */
-          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_2, B91_FUNC_C)>;
+          /* configure PB2 as TL321X_FUNC_C */
+          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_2, TL321X_FUNC_C)>;
         };
         /* configuration for UART0 RX default state */
         uart0_rx_pb3_default: uart0_rx_pb3_default {
-          /* configure PB2 as B91_FUNC_C */
-          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_3, B91_FUNC_C)>;
+          /* configure PB2 as TL321X_FUNC_C */
+          pinmux = <TLX_PINMUX_SET(TLX_PORT_B, TLX_PIN_3, TL321X_FUNC_C)>;
         };
       };
 
