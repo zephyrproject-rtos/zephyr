@@ -264,11 +264,13 @@ static ALWAYS_INLINE void clock_init(void)
 #ifdef CONFIG_INIT_ENET_PLL
 	CLOCK_InitSysPll1(&sysPll1Config);
 #else
+#ifndef CONFIG_SECOND_CORE_MCUX
 	/* Bypass Sys Pll1. */
 	CLOCK_SetPllBypass(kCLOCK_PllSys1, true);
 
 	/* DeInit Sys Pll1. */
 	CLOCK_DeinitSysPll1();
+#endif
 #endif
 
 	/* Init Sys Pll2. */
