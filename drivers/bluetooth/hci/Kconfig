@@ -71,6 +71,7 @@ config BT_STM32WBA
 	bool
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR
 	help
@@ -80,6 +81,7 @@ config BT_SILABS_HCI
 	bool
 	default y
 	depends on DT_HAS_SILABS_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
 	select ENTROPY_GENERATOR
@@ -107,6 +109,7 @@ config BT_ESP32
 	bool
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
 	help
 	  Espressif HCI bluetooth interface
 
@@ -114,6 +117,7 @@ config BT_PSOC6_BLESS
 	bool
 	default y
 	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	select BT_HCI_SETUP
 	help
 	  PSOC6 BLESS driver with BLE Controller which operates in
