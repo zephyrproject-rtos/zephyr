@@ -7,6 +7,7 @@ Developing with Zephyr
    :maxdepth: 1
 
    getting_started/index.rst
+   devcontainer.rst
    beyond-GSG.rst
    env_vars.rst
    application/index.rst

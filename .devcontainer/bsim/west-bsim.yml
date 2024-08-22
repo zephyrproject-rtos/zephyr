@@ -1,0 +1,26 @@
+# A minimal manifest file to develop the Bluetooth stack using the bsim framework
+#
+# TODO: nRF53 / multi-cpu support
+
+manifest:
+  defaults:
+    remote: upstream
+
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+    - name: babblesim
+      url-base: https://github.com/BabbleSim
+
+  group-filter: [-optional]
+
+  self:
+    path: zephyr
+    import:
+      file: west.yml
+      name-allowlist:
+        - bsim
+        - cmsis
+        - hal_nordic
+        - nrf_hw_models
+        - tinycrypt
