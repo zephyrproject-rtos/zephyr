@@ -277,6 +277,28 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 }
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(channels_shared_irq_mask)
+static void dma_mcux_edma_multi_channels_irq_handler(const struct device *dev, uint32_t idx,
+			uint32_t *buf, uint32_t mask_width)
+{
+	uint32_t *num = &buf[mask_width * idx];
+	uint32_t count = 0;
+
+	for (int _i = 0; _i < mask_width; _i++) {
+		uint32_t value = (*num);
+
+		while (value > 0) {
+			if ((value & 0x1) == 1) {
+				dma_mcux_edma_irq_handler(dev, count);
+			}
+			value = value >> 1;
+			count++;
+		}
+		num++;
+	}
+}
+#endif
+
 /* Configure a channel */
 static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 				   struct dma_config *config)
@@ -861,10 +883,22 @@ static int dma_mcux_edma_init(const struct device *dev)
 			    irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));	\
 	}
 
+#define EDMA_CHANNELS_MASK(n) static uint32_t edma_channel_mask_##n[] =  \
+				DT_PROP(DT_DRV_INST(n), channels_shared_irq_mask);
+
+#define GET_EDMA_CHANNEL_SHARED_IRQ_MASK_WIDTH(n) \
+			(DT_INST_PROP(n, dma_channels) / 32)
+
+#define EDMA_CHANNELS_SHARED_REGISTER_IN_IRQ(dev, idx, n) \
+		dma_mcux_edma_multi_channels_irq_handler(dev, idx, edma_channel_mask_##n, \
+			GET_EDMA_CHANNEL_SHARED_IRQ_MASK_WIDTH(n));
+
 #define DMA_MCUX_EDMA_IRQ_DEFINE(idx, n)					\
 	static void dma_mcux_edma_##n##_irq_##idx(const struct device *dev)	\
 	{									\
-		dma_mcux_edma_irq_handler(dev, idx);				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, channels_shared_irq_mask), \
+			(EDMA_CHANNELS_SHARED_REGISTER_IN_IRQ(dev, idx, n)),	\
+			(dma_mcux_edma_irq_handler(dev, idx);))	\
 										\
 		IF_ENABLED(UTIL_BOOL(DT_INST_PROP(n, irq_shared_offset)),	\
 			  (dma_mcux_edma_irq_handler(dev,			\
@@ -877,6 +911,8 @@ static int dma_mcux_edma_init(const struct device *dev)
 	IRQ_CONFIG(n, idx, dma_mcux_edma_##n##_irq_##idx)
 
 #define DMA_MCUX_EDMA_CONFIG_FUNC(n)						\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, channels_shared_irq_mask), \
+				(EDMA_CHANNELS_MASK(n))) \
 	LISTIFY(NUM_IRQS_WITHOUT_ERROR_IRQ(n), DMA_MCUX_EDMA_IRQ_DEFINE, (), n) \
 	static void dma_imx_config_func_##n(const struct device *dev)		\
 	{									\
