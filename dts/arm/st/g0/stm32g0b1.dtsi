@@ -8,17 +8,19 @@
 #include <st/g0/stm32g071.dtsi>
 
 / {
+
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hsi48-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32g0b1", "st,stm32g0", "simple-bus";
 
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "st,stm32-hsi48-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
-			};
-		};
 
 		pinctrl: pin-controller@50000000 {
 			gpioe: gpio@50001000 {
