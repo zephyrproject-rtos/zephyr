@@ -282,8 +282,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 			}
 			break;
 		case SHT_RELA:
-			/* FIXME: currently implemented only on the Xtensa code path */
-			if (!IS_ENABLED(CONFIG_XTENSA)) {
+			if (IS_ENABLED(CONFIG_ARM)) {
 				LOG_ERR("Found unsupported SHT_RELA section %d", i);
 				return -ENOTSUP;
 			}
