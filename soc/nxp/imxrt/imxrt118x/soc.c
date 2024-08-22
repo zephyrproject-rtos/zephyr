@@ -42,6 +42,7 @@
 #define ELE_TRDC_WAKEUP_ID 0x78
 #define ELE_CORE_CM33_ID   0x1
 #define ELE_CORE_CM7_ID    0x2
+#define EDMA_DID           0x7U
 
 #ifdef CONFIG_INIT_ARM_PLL
 static const clock_arm_pll_config_t armPllConfig_BOARD_BootClockRUN = {
@@ -260,14 +261,33 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpi2c0506, &rootCfg);
 #endif
 
-#if defined(CONFIG_SPI_MCUX_LPSPI) && \
-	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1)) \
-	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi2)))
+#if defined(CONFIG_SPI_MCUX_LPSPI)
+
+#if	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay))
 	/* Configure LPSPI0102 using SYS_PLL3_PFD1_CLK */
 	rootCfg.mux = kCLOCK_LPSPI0102_ClockRoot_MuxSysPll3Pfd1;
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi0102, &rootCfg);
 #endif
+
+#if	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi4), okay))
+	/* Configure LPSPI0304 using SYS_PLL3_PFD1_CLK */
+	rootCfg.mux = kCLOCK_LPSPI0304_ClockRoot_MuxSysPll3Pfd1;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi0304, &rootCfg);
+#endif
+
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi5), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi6), okay))
+	/* Configure LPSPI0506 using SYS_PLL3_PFD1_CLK */
+	rootCfg.mux = kCLOCK_LPSPI0506_ClockRoot_MuxSysPll3Pfd1;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Lpspi0506, &rootCfg);
+#endif
+
+#endif /* CONFIG_SPI_MCUX_LPSPI */
 
 #if defined(CONFIG_COUNTER_MCUX_GPT)
 
@@ -477,13 +497,6 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_SetNextCpuMode(1, kGPC_RunMode);
 	GPC_CM_EnableCpuSleepHold(0, false);
 	GPC_CM_EnableCpuSleepHold(1, false);
-
-#if !defined(CONFIG_PM)
-	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
-	 * to TCM
-	 */
-	BLK_CTRL_S_AONMIX->M7_CFG |= BLK_CTRL_S_AONMIX_M7_CFG_TCM_SIZE_MASK;
-#endif
 }
 
 /**
@@ -522,6 +535,26 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 #endif
 	} while (ELE_IS_FAILED(sts));
 
+
+	/* Set the master domain access configuration for eDMA3/eDMA4 */
+	trdc_non_processor_domain_assignment_t edmaAssignment;
+
+	/* By default, EDMA access is done in privilege and security mode,
+	 * However, the NSE bit reset value in TRDC is 0, so that TRDC does
+	 * not allow nonsecurity access to other memory by default.
+	 * So by DAC module, EDMA access mode is changed to security/privilege
+	 * mode by the DAC module
+	 */
+	(void)memset(&edmaAssignment, 0, sizeof(edmaAssignment));
+	edmaAssignment.domainId       = EDMA_DID;
+	edmaAssignment.privilegeAttr  = kTRDC_MasterPrivilege;
+	edmaAssignment.secureAttr     = kTRDC_ForceSecure;
+	edmaAssignment.bypassDomainId = true;
+	edmaAssignment.lock           = false;
+
+	TRDC_SetNonProcessorDomainAssignment(TRDC1, kTRDC1_MasterDMA3, &edmaAssignment);
+	TRDC_SetNonProcessorDomainAssignment(TRDC2, kTRDC2_MasterDMA4, &edmaAssignment);
+
 	/* Enable all access modes for MBC and MRC of TRDCA and TRDCW */
 	trdc_hardware_config_t hwConfig;
 	trdc_memory_access_control_config_t memAccessConfig;
@@ -542,12 +575,18 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 
 	TRDC_GetHardwareConfig(TRDC1, &hwConfig);
 	for (i = 0U; i < hwConfig.mrcNumber; i++) {
+		/* Set TRDC1(A) secure access for eDMA domain, MRC i, all region for i memory */
+		TRDC_MrcDomainNseClear(TRDC1, i, 1UL << EDMA_DID);
+
 		for (j = 0U; j < 8; j++) {
 			TRDC_MrcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
 		}
 	}
 
 	for (i = 0U; i < hwConfig.mbcNumber; i++) {
+		/* Set TRDC1(A) secure access for eDMA domain, MBC i, all memory blocks */
+		TRDC_MbcNseClearAll(TRDC1, i, 1UL << EDMA_DID, 0xF);
+
 		for (j = 0U; j < 8; j++) {
 			TRDC_MbcSetMemoryAccessConfig(TRDC1, &memAccessConfig, i, j);
 		}
@@ -555,12 +594,18 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 
 	TRDC_GetHardwareConfig(TRDC2, &hwConfig);
 	for (i = 0U; i < hwConfig.mrcNumber; i++) {
+		/* Set TRDC2(W) secure access for eDMA domain, MRC i, all region for i memory */
+		TRDC_MrcDomainNseClear(TRDC2, i, 1UL << EDMA_DID);
+
 		for (j = 0U; j < 8; j++) {
 			TRDC_MrcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
 		}
 	}
 
 	for (i = 0U; i < hwConfig.mbcNumber; i++) {
+		/* Set TRDC2(W) secure access for eDMA domain, MBC i, all memory blocks */
+		TRDC_MbcNseClearAll(TRDC2, i, 1UL << EDMA_DID, 0xF);
+
 		for (j = 0U; j < 8; j++) {
 			TRDC_MbcSetMemoryAccessConfig(TRDC2, &memAccessConfig, i, j);
 		}
