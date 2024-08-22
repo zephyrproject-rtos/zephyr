@@ -59,9 +59,6 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         self.logger.debug(f'Executing op: {op}')
         # Translate the op
 
-        families = {'NRF51_FAMILY': 'NRF51', 'NRF52_FAMILY': 'NRF52',
-                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L',
-                    'NRF91_FAMILY': 'NRF91'}
         cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
                  'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
 
@@ -112,8 +109,7 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
             raise RuntimeError(f'Invalid operation: {op_type}')
 
         try:
-            self.check_call(cmd + ['-f', families[self.family]] + core_opt +
-                            ['--snr', self.dev_id] + self.tool_opt)
+            self.check_call(cmd + core_opt + ['--snr', self.dev_id] + self.tool_opt)
         except subprocess.CalledProcessError as cpe:
             # Translate error codes
             if cpe.returncode == UnavailableOperationBecauseProtectionError:

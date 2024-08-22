@@ -92,8 +92,7 @@ class NrfUtilBinaryRunner(NrfBinaryRunner):
 
     def _exec_batch(self):
         # prepare the dictionary and convert to JSON
-        batch = json.dumps({'family': f'{self.family}',
-                            'operations': [op for op in self._ops]},
+        batch = json.dumps({'operations': [op for op in self._ops]},
                             indent=4) + '\n'
 
         hex_dir = Path(self.hex_).parent
