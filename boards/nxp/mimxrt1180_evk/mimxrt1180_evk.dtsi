@@ -47,6 +47,12 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&lpuart3 {
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &user_button {
 	status = "okay";
 };
@@ -137,5 +143,12 @@
 &flexpwm2_pwm1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2>;
+	pinctrl-names = "default";
+};
+
+&lpspi3 {
+	dmas = <&edma4 1 13>, <&edma4 2 12>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
 };
