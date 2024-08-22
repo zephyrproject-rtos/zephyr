@@ -256,14 +256,6 @@ static int mcux_adc12_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api mcux_adc12_driver_api = {
-	.channel_setup = mcux_adc12_channel_setup,
-	.read = mcux_adc12_read,
-#ifdef CONFIG_ADC_ASYNC
-	.read_async = mcux_adc12_read_async,
-#endif
-};
-
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
 	BUILD_ASSERT(val >= min && val <= max, str)
 #define ASSERT_ADC12_CLK_DIV_VALID(val, str) \
@@ -276,10 +268,19 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 				 (kADC12_ReferenceVoltageSourceValt),	\
 				 (kADC12_ReferenceVoltageSourceVref))
 
+#define ADC12_MCUX_DRIVER_API(n)				\
+	static const struct adc_driver_api mcux_adc12_driver_api_##n = {	\
+		.channel_setup = mcux_adc12_channel_setup,	\
+		.read = mcux_adc12_read,	\
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = mcux_adc12_read_async,))	\
+		.ref_internal = DT_INST_PROP(n, vref_mv),	\
+	};
+
 #define ACD12_MCUX_INIT(n)						\
 	static void mcux_adc12_config_func_##n(const struct device *dev); \
 									\
 	PINCTRL_DT_INST_DEFINE(n);					\
+	ADC12_MCUX_DRIVER_API(n);					\
 									\
 	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, clk_source), 0, 3,		\
 			    "Invalid clock source");			\
@@ -308,7 +309,7 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 			    NULL, &mcux_adc12_data_##n,			\
 			    &mcux_adc12_config_##n, POST_KERNEL,	\
 			    CONFIG_ADC_INIT_PRIORITY,			\
-			    &mcux_adc12_driver_api);			\
+			    &mcux_adc12_driver_api_##n);		\
 									\
 	static void mcux_adc12_config_func_##n(const struct device *dev) \
 	{								\
