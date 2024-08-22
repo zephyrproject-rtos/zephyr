@@ -46,11 +46,11 @@ LOG_MODULE_REGISTER(test_llext_simple);
 
 struct llext_test {
 	const char *name;
-	bool try_userspace;
-	size_t buf_len;
 
 	LLEXT_CONST uint8_t *buf;
+	size_t buf_len;
 
+	bool kernel_only;
 	void (*perm_setup)(struct k_thread *llext_thread);
 };
 
@@ -111,7 +111,7 @@ static void threads_objects_perm_setup(struct k_thread *llext_thread)
 #define threads_objects_perm_setup NULL
 #endif /* CONFIG_USERSPACE */
 
-void load_call_unload(struct llext_test *test_case)
+void load_call_unload(const struct llext_test *test_case)
 {
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(test_case->buf, test_case->buf_len);
@@ -176,7 +176,7 @@ void load_call_unload(struct llext_test *test_case)
 	 * of a userspace thread along with the usual supervisor context
 	 * tried above.
 	 */
-	if (test_case->try_userspace) {
+	if (!test_case->kernel_only) {
 		k_thread_create(&llext_thread, llext_stack,
 				K_THREAD_STACK_SIZEOF(llext_stack),
 				&llext_entry, test_entry_fn, NULL, NULL,
@@ -206,17 +206,16 @@ void load_call_unload(struct llext_test *test_case)
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */
-#define LLEXT_LOAD_UNLOAD(_name, _userspace, _perm_setup)			\
-	ZTEST(llext, test_load_unload_##_name)					\
-	{									\
-		struct llext_test test_case = {					\
-			.name = STRINGIFY(_name),				\
-			.try_userspace = _userspace,				\
-			.buf_len = ARRAY_SIZE(_name ## _ext),			\
-			.buf = _name ## _ext,					\
-			.perm_setup = _perm_setup,				\
-		};								\
-		load_call_unload(&test_case);					\
+#define LLEXT_LOAD_UNLOAD(_name, extra_args...)			\
+	ZTEST(llext, test_load_unload_##_name)			\
+	{							\
+		const struct llext_test test_case = {		\
+			.name = STRINGIFY(_name),		\
+			.buf = _name ## _ext,			\
+			.buf_len = ARRAY_SIZE(_name ## _ext),	\
+			extra_args                              \
+		};						\
+		load_call_unload(&test_case);			\
 	}
 
 /*
@@ -229,40 +228,44 @@ void load_call_unload(struct llext_test *test_case)
 static LLEXT_CONST uint8_t hello_world_ext[] ELF_ALIGN = {
 	#include "hello_world.inc"
 };
-LLEXT_LOAD_UNLOAD(hello_world, false, NULL)
+LLEXT_LOAD_UNLOAD(hello_world,
+	.kernel_only = true
+)
 
 static LLEXT_CONST uint8_t logging_ext[] ELF_ALIGN = {
 	#include "logging.inc"
 };
-LLEXT_LOAD_UNLOAD(logging, true, NULL)
+LLEXT_LOAD_UNLOAD(logging)
 
 static LLEXT_CONST uint8_t relative_jump_ext[] ELF_ALIGN = {
 	#include "relative_jump.inc"
 };
-LLEXT_LOAD_UNLOAD(relative_jump, true, NULL)
+LLEXT_LOAD_UNLOAD(relative_jump)
 
 static LLEXT_CONST uint8_t object_ext[] ELF_ALIGN = {
 	#include "object.inc"
 };
-LLEXT_LOAD_UNLOAD(object, true, NULL)
+LLEXT_LOAD_UNLOAD(object)
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_RELOCATABLE
 static LLEXT_CONST uint8_t syscalls_ext[] ELF_ALIGN = {
 	#include "syscalls.inc"
 };
-LLEXT_LOAD_UNLOAD(syscalls, true, NULL)
+LLEXT_LOAD_UNLOAD(syscalls)
 
 static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 	#include "threads_kernel_objects.inc"
 };
-LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
+LLEXT_LOAD_UNLOAD(threads_kernel_objects,
+	.perm_setup = threads_objects_perm_setup,
+)
 #endif
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
 static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
 	#include "multi_file.inc"
 };
-LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
+LLEXT_LOAD_UNLOAD(multi_file)
 #endif
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
