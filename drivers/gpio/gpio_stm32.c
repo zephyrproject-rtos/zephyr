@@ -15,7 +15,6 @@
 #include <stm32_ll_exti.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
-#include <stm32_ll_system.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
@@ -294,93 +293,6 @@ static int gpio_stm32_clock_request(const struct device *dev, bool on)
 	return ret;
 }
 
-static inline uint32_t gpio_stm32_pin_to_exti_src_cfg_line(gpio_pin_t pin)
-{
-#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X)
-	return ((pin % 4 * 4) << 16) | (pin / 4);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	return ((pin & 0x3) << (16 + 3)) | (pin >> 2);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
-	/* Gives the LL_SBS_EXTI_LINEn corresponding to the pin */
-	return (((pin % 4 * 4) << LL_SBS_REGISTER_PINPOS_SHFT) | (pin / 4));
-#else
-	return (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
-#endif
-}
-
-
-/**
- * @brief Set which GPIO port triggers events on specified EXTI line.
- *
- * @param line	EXTI line number (= pin number)
- * @param port	GPIO port number (STM32_PORTA, STM32_PORTB, ...)
- */
-static void gpio_stm32_set_exti_line_src_port(gpio_pin_t line, uint32_t port)
-{
-	uint32_t ll_line = gpio_stm32_pin_to_exti_src_cfg_line(line);
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
-	/*
-	 * Ports F and G are not present on some STM32L0 parts, so
-	 * for these parts port H external interrupt should be enabled
-	 * by writing value 0x5 instead of 0x7.
-	 */
-	if (port == STM32_PORTH) {
-		port = LL_SYSCFG_EXTI_PORTH;
-	}
-#endif
-
-	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	LL_GPIO_AF_SetEXTISource(port, ll_line);
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	LL_EXTI_SetEXTISource(port, ll_line);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
-	LL_SBS_SetEXTISource(port, ll_line);
-#else
-	LL_SYSCFG_SetEXTISource(port, ll_line);
-#endif
-	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
-}
-
-/**
- * @brief Get port which is triggering events on specified EXTI line.
- *
- * @param line	EXTI line number (= pin number)
- * @returns GPIO port number (STM32_PORTA, STM32_PORTB, ...)
- */
-static uint32_t gpio_stm32_get_exti_line_src_port(gpio_pin_t line)
-{
-	uint32_t ll_line = gpio_stm32_pin_to_exti_src_cfg_line(line);
-	uint32_t port;
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	port = LL_GPIO_AF_GetEXTISource(ll_line);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
-	port = LL_EXTI_GetEXTISource(ll_line);
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
-	port = LL_SBS_GetEXTISource(ll_line);
-#else
-	port = LL_SYSCFG_GetEXTISource(ll_line);
-#endif
-
-#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
-	/*
-	 * Ports F and G are not present on some STM32L0 parts, so
-	 * for these parts port H external interrupt is enabled
-	 * by writing value 0x5 instead of 0x7.
-	 */
-	if (port == LL_SYSCFG_EXTI_PORTH) {
-		port = STM32_PORTH;
-	}
-#endif
-
-	return port;
-}
-
 static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -607,7 +519,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		if (gpio_stm32_get_exti_line_src_port(pin) == cfg->port) {
+		if (stm32_exti_get_line_src_port(pin) == cfg->port) {
 			stm32_exti_disable(pin);
 			stm32_exti_unset_callback(pin);
 			stm32_exti_trigger(pin, STM32_EXTI_TRIG_NONE);
@@ -642,7 +554,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	gpio_stm32_set_exti_line_src_port(pin, cfg->port);
+	stm32_exti_set_line_src_port(pin, cfg->port);
 
 	stm32_exti_trigger(pin, edge);
 

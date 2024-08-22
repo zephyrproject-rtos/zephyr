@@ -22,6 +22,7 @@
 #define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_
 
 #include <zephyr/types.h>
+#include <zephyr/drivers/gpio.h>
 
 /**
  * @brief Type representing an EXTI line number
@@ -90,5 +91,21 @@ int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, vo
  * @param line	EXTI interrupt line
  */
 void stm32_exti_unset_callback(stm32_exti_line_t line);
+
+/**
+ * @brief Set which GPIO port triggers events on specified EXTI line.
+ *
+ * @param line	EXTI line number (= pin number)
+ * @param port	GPIO port number (STM32_PORTA, STM32_PORTB, ...)
+ */
+void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port);
+
+/**
+ * @brief Get port which is triggering events on specified EXTI line.
+ *
+ * @param line	EXTI line number (= pin number)
+ * @returns GPIO port number (STM32_PORTA, STM32_PORTB, ...)
+ */
+uint32_t stm32_exti_get_line_src_port(gpio_pin_t line);
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_EXTI_STM32_H_ */
