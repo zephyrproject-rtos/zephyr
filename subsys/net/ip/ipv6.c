@@ -510,8 +510,15 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		net_sprint_ipv6_addr(&hdr->dst));
 
 	if (net_ipv6_is_addr_unspecified((struct in6_addr *)hdr->src)) {
-		NET_DBG("DROP: src addr is %s", "unspecified");
-		goto drop;
+		/* If this is a possible DAD message, let it pass. Extra checks
+		 * are done in duplicate address detection code to verify that
+		 * the packet is ok.
+		 */
+		if (!(IS_ENABLED(CONFIG_NET_IPV6_DAD) &&
+		      net_ipv6_is_addr_solicited_node((struct in6_addr *)hdr->dst))) {
+			NET_DBG("DROP: src addr is %s", "unspecified");
+			goto drop;
+		}
 	}
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
