@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_ina230
-
 #include "ina230.h"
 #include "ina23x_common.h"
 
@@ -20,9 +18,11 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
 /** @brief The LSB value for the bus voltage register, in microvolts/LSB. */
 #define INA230_BUS_VOLTAGE_UV_LSB 1250U
+#define INA236_BUS_VOLTAGE_UV_LSB 1600U
 
 /** @brief The scaling for the power register. */
 #define INA230_POWER_SCALING 25
+#define INA236_POWER_SCALING 32
 
 static int ina230_channel_get(const struct device *dev, enum sensor_channel chan,
 			      struct sensor_value *val)
@@ -34,7 +34,7 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
-		bus_uv = data->bus_voltage * INA230_BUS_VOLTAGE_UV_LSB;
+		bus_uv = data->bus_voltage * config->uv_lsb;
 
 		/* convert to fractional volts (units for voltage channel) */
 		val->val1 = bus_uv / 1000000U;
@@ -51,7 +51,7 @@ static int ina230_channel_get(const struct device *dev, enum sensor_channel chan
 		break;
 
 	case SENSOR_CHAN_POWER:
-		power_uw = data->power * INA230_POWER_SCALING * config->current_lsb;
+		power_uw = data->power * config->power_scale * config->current_lsb;
 
 		/* convert to fractional watts */
 		val->val1 = (int32_t)(power_uw / 1000000U);
@@ -248,23 +248,32 @@ static const struct sensor_driver_api ina230_driver_api = {
 #define INA230_CFG_IRQ(inst)
 #endif /* CONFIG_INA230_TRIGGER */
 
-#define INA230_DRIVER_INIT(inst)                                                                   \
+#define INA230_DRIVER_INIT(inst, type)                                                             \
 	static struct ina230_data drv_data_##inst;                                                 \
-	static const struct ina230_config drv_config_##inst = {                                    \
+	static const struct ina230_config drv_config_##type##inst = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.config = DT_INST_PROP(inst, config) |                           \
-			(DT_INST_ENUM_IDX(inst, avg_count) << 9) |                   \
-			(DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |     \
-			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |   \
-			DT_INST_ENUM_IDX(inst, adc_mode),                            \
+		.config = (DT_INST_PROP_OR(inst, high_precision, 0) << 12) |                       \
+			  DT_INST_PROP(inst, config) | (DT_INST_ENUM_IDX(inst, avg_count) << 9) |  \
+			  (DT_INST_ENUM_IDX(inst, vbus_conversion_time_us) << 6) |                 \
+			  (DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |               \
+			  DT_INST_ENUM_IDX(inst, adc_mode),                                        \
 		.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),                          \
-		.cal = (uint16_t)((INA230_CAL_SCALING * 10000000ULL) /                             \
-				  ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *           \
-				   DT_INST_PROP(inst, rshunt_micro_ohms))),                        \
+		.uv_lsb = type##_BUS_VOLTAGE_UV_LSB,                                               \
+		.power_scale = type##_POWER_SCALING,                                               \
+		.cal = (uint16_t)(((INA230_CAL_SCALING * 10000000ULL) /                            \
+				   ((uint64_t)DT_INST_PROP(inst, current_lsb_microamps) *          \
+				    DT_INST_PROP(inst, rshunt_micro_ohms))) >>                     \
+				  (DT_INST_PROP_OR(inst, high_precision, 0) << 1)),                \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
-			    ())};                                                                  \
+			    ())};   \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
-				     &drv_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
-				     &ina230_driver_api);
+				     &drv_config_##type##inst, POST_KERNEL,                        \
+				     CONFIG_SENSOR_INIT_PRIORITY, &ina230_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(INA230_DRIVER_INIT)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina230
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_DRIVER_INIT, INA230)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_ina236
+DT_INST_FOREACH_STATUS_OKAY_VARGS(INA230_DRIVER_INIT, INA236)
