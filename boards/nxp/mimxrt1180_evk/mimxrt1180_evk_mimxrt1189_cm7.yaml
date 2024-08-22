@@ -24,4 +24,6 @@ supported:
   - pwm
   - uart
   - i3c
+  - dma
+  - spi
 vendor: nxp
