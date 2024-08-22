@@ -12,6 +12,7 @@ common:
     - native_sim
   platform_exclude:
     - arduino_giga_r1/stm32h747xx/m4
+    - arduino_nicla_vision/stm32h747xx/m4
     - arduino_portenta_h7/stm32h747xx/m4
     - lpcxpresso51u68
     - nucleo_h745zi_q/stm32h745xx/m4
