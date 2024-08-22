@@ -5464,6 +5464,29 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
+ * @brief Reallocate aligned memory from a k_heap
+ *
+ * Behaves in all ways like k_heap_realloc(), except that the returned
+ * memory (if available) will have a starting address in memory which
+ * is a multiple of the specified power-of-two alignment value in bytes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param ptr Original pointer returned from a previous allocation
+ * @param align Alignment in bytes, must be a power of two
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ *
+ * @return Pointer to memory the caller can now use, or NULL
+ */
+void *k_heap_aligned_realloc(struct k_heap *h, void *ptr, size_t align, size_t bytes,
+			     k_timeout_t timeout) __attribute_nonnull(1);
+
+/**
  * @brief Reallocate memory from a k_heap
  *
  * Reallocates and returns a memory buffer from the memory region owned

@@ -116,7 +116,8 @@ void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 	return ret;
 }
 
-void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t timeout)
+void *k_heap_aligned_realloc(struct k_heap *heap, void *ptr, size_t align, size_t bytes,
+			     k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
@@ -128,7 +129,7 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	while (ret == NULL) {
-		ret = sys_heap_aligned_realloc(&heap->heap, ptr, sizeof(void *), bytes);
+		ret = sys_heap_aligned_realloc(&heap->heap, ptr, align, bytes);
 
 		if (!IS_ENABLED(CONFIG_MULTITHREADING) ||
 		    (ret != NULL) || K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -143,6 +144,17 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, realloc, heap, ptr, bytes, timeout, ret);
 
 	k_spin_unlock(&heap->lock, key);
+	return ret;
+}
+
+void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t timeout)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, alloc, heap, timeout);
+
+	void *ret = k_heap_aligned_realloc(heap, ptr, sizeof(void *), bytes, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap, alloc, heap, timeout, ret);
+
 	return ret;
 }
 
