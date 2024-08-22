@@ -273,3 +273,66 @@ int llext_call_fn(struct llext *ext, const char *sym_name)
 
 	return 0;
 }
+
+static int call_fn_table(struct llext *ext, bool is_init)
+{
+	ssize_t ret;
+
+	ret = llext_get_fn_table(ext, is_init, NULL, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to get table size: %d", (int)ret);
+		return ret;
+	}
+
+	typedef void (*elf_void_fn_t)(void);
+
+	int fn_count = ret / sizeof(elf_void_fn_t);
+	elf_void_fn_t fn_table[fn_count];
+
+	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
+	if (ret < 0) {
+		LOG_ERR("Failed to get function table: %d", (int)ret);
+		return ret;
+	}
+
+	for (int i = 0; i < fn_count; i++) {
+		LOG_DBG("calling %s function %p()",
+			is_init ? "bringup" : "teardown", fn_table[i]);
+		fn_table[i]();
+	}
+
+	return 0;
+}
+
+inline int llext_bringup(struct llext *ext)
+{
+	return call_fn_table(ext, true);
+}
+
+inline int llext_teardown(struct llext *ext)
+{
+	return call_fn_table(ext, false);
+}
+
+void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_data)
+{
+	int ret;
+
+	/* Call initialization functions */
+	ret = llext_bringup(ext);
+	if (ret < 0) {
+		LOG_ERR("Failed to call init functions: %d", ret);
+		return;
+	}
+
+	/* Start extension main function */
+	LOG_DBG("calling entry function %p(%p)", entry_fn, user_data);
+	entry_fn(user_data);
+
+	/* Call de-initialization functions */
+	ret = llext_teardown(ext);
+	if (ret < 0) {
+		LOG_ERR("Failed to call de-init functions: %d", ret);
+		return;
+	}
+}
