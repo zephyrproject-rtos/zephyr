@@ -246,8 +246,8 @@ static void gpio_mspm0_isr(const struct device *port)
 		data = dev_list[i]->data;
 		config = dev_list[i]->config;
 
-		status = DL_GPIO_getRawInterruptStatus(config->base,
-						       0xFFFFFFFF);
+		status = DL_GPIO_getEnabledInterruptStatus(config->base,
+							   0xFFFFFFFF);
 
 		DL_GPIO_clearInterruptStatus(config->base, status);
 		if (status != 0) {
