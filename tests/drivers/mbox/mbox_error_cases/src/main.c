@@ -450,7 +450,7 @@ ZTEST(mbox_error_cases, test_05c_mbox_set_enabled_on_already_enabled_rx_channel)
  * -EALREADY when user tries to disable already disabled RX mbox channel.
  *
  */
-ZTEST(mbox_error_cases, test_05d_mbox_set_enabled_on_already_disabled_rx_channel)
+ZTEST(mbox_error_cases, test_05d_mbox_set_disable_on_already_disabled_rx_channel)
 {
 	const struct mbox_dt_spec rx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
