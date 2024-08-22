@@ -14,6 +14,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
@@ -28,6 +29,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/testing.h>
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
 #else
@@ -263,12 +265,22 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	BT_ASSERT_MSG(err == 0, "Unable to send Host NCP (err %d)", err);
 }
 
+#if defined(CONFIG_BT_TESTING)
+__weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
+{
+}
+#endif
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
 	uint16_t handle = acl(buf)->handle;
 	struct bt_conn *conn;
 	uint8_t index = acl(buf)->index;
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_testing_trace_event_acl_pool_destroy(buf);
+	}
 
 	net_buf_destroy(buf);
 
