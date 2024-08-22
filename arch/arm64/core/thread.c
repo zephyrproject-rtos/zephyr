@@ -14,6 +14,7 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/random/random.h>
 
 /*
  * Note about stack usage:
@@ -82,12 +83,60 @@ static bool is_user(struct k_thread *thread)
 }
 #endif
 
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ASLR)
+/*
+ * Generates a random address for the stack to be virtually mapped to
+ */
+uintptr_t random_address(void)
+{
+	uintptr_t offset;
+
+	sys_rand_get(&offset, sizeof(offset));
+
+	/*
+	 * Setting the offset to stay between the max VA bits and
+	 * the lower bound
+	 */
+	offset %= GENMASK(CONFIG_ARM64_VA_BITS - 1, 0) -
+			  CONFIG_ASLR_LOWER_BOUND_VA_ADDRESS;
+
+	/*
+	 * Align the virtual address to the page size
+	 * only using ARM_VA_BITS - 1 bits to avoid the
+	 * round up making the va invalid
+	 */
+	const uintptr_t fuzz = ROUND_UP(CONFIG_ASLR_LOWER_BOUND_VA_ADDRESS + offset,
+					CONFIG_MMU_PAGE_SIZE);
+	return fuzz;
+}
+#endif
+
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
 	extern void z_arm64_exit_exc(void);
 	struct arch_esf *pInitCtx;
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ASLR)
+	/*
+	 * Choose a random address for the stack in virtual memory when
+	 * creating a user thread
+	 */
+	if (is_user(thread)) {
+		thread->stack_info.va_addr = (k_thread_stack_t *)random_address();
+		thread->stack_info.start =
+			(uintptr_t)K_THREAD_STACK_BUFFER(thread->stack_info.va_addr);
+
+		/*
+		 * the tls is used later on as a base pointer for accessing all the variables
+		 * inside of the user thread using offsets
+		 */
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+		thread->tls = (uintptr_t)thread->stack_info.va_addr;
+#endif
+	}
+#endif
 
 	/*
 	 * Clean the thread->arch to avoid unexpected behavior because the
@@ -125,7 +174,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	} else {
 		pInitCtx->elr = (uint64_t)z_thread_entry;
 	}
-
 #else
 	pInitCtx->elr = (uint64_t)z_thread_entry;
 #endif
@@ -162,12 +210,17 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_arm64_thread_mem_domains_init(_current);
 
 	/* Top of the user stack area */
-	stack_el0 = Z_STACK_PTR_ALIGN(_current->stack_info.start +
-				      _current->stack_info.size -
-				      _current->stack_info.delta);
+	stack_el0 = Z_STACK_PTR_ALIGN(
+		_current->stack_info.start +
+		_current->stack_info.size -
+		_current->stack_info.delta);
 
 	/* Top of the privileged non-user-accessible part of the stack */
+#ifdef CONFIG_ASLR
+	stack_el1 = (uintptr_t)(_current->stack_info.va_addr + ARCH_THREAD_STACK_RESERVED);
+#else
 	stack_el1 = (uintptr_t)(_current->stack_obj + ARCH_THREAD_STACK_RESERVED);
+#endif
 
 	register void *x0 __asm__("x0") = user_entry;
 	register void *x1 __asm__("x1") = p1;

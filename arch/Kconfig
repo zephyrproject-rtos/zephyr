@@ -55,6 +55,7 @@ config ARM64
 	select ARCH_HAS_DIRECTED_IPIS
 	select ARCH_HAS_DEMAND_PAGING
 	select ARCH_HAS_DEMAND_MAPPING
+	select ARCH_SUPPORTS_ASLR
 	help
 	  ARM64 (AArch64) architecture
 
@@ -727,6 +728,11 @@ config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
 	bool
 	help
 	  Select when the architecture implements arch_thread_priv_stack_space_get().
+
+config ARCH_SUPPORTS_ASLR
+	bool
+	help
+	  Select when the architecture supports the experimental aslr
 
 #
 # Other architecture related options

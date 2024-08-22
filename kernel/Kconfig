@@ -202,6 +202,27 @@ config THREAD_STACK_MEM_MAPPED
 	  mapped with guard pages on both ends to catch undesired
 	  accesses.
 
+config ASLR
+	bool "Thread stack address randomization [EXPERIMENTAL]"
+	depends on MMU && ARCH_SUPPORTS_ASLR
+	select EXPERIMENTAL
+	help
+	  Enables the ability to map do a non 1:1 mapping for the user thread
+	  stack. The kernel will randomly choose an address that "should" not
+	  be used for.
+
+if ASLR
+
+config ASLR_LOWER_BOUND_VA_ADDRESS
+	hex "Lower Bound for the VA address when choosing it randomly"
+	default 0x50000000
+	depends on MMU && ARCH_SUPPORTS_ASLR
+	help
+	  This value should never be lower than the .text section as to not
+	  overwrite it in a user thread table when mapping PA to VA
+
+endif
+
 config THREAD_ABORT_HOOK
 	bool
 	help
