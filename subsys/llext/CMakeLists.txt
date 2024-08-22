@@ -1,4 +1,6 @@
 if(CONFIG_LLEXT)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/llext/llext.h)
+
   zephyr_library()
 
   # For strnlen()
@@ -10,6 +12,7 @@ if(CONFIG_LLEXT)
 		llext_load.c
 		llext_link.c
 		llext_export.c
+		llext_handlers.c
 		buf_loader.c
     fs_loader.c
 	)
