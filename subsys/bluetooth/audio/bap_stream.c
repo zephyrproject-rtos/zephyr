@@ -208,17 +208,6 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos
 	return BT_BAP_ASCS_REASON_NONE;
 }
 
-static bool valid_ltv_cb(struct bt_data *data, void *user_data)
-{
-	/* just return true to continue parsing as bt_data_parse will validate for us */
-	return true;
-}
-
-bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
-{
-	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
-}
-
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	if (codec_cfg == NULL) {
