@@ -15,9 +15,12 @@
 #include <zephyr/device.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_gpio.h> /* For STM32F1 series */
 #include <stm32_ll_exti.h>
+#include <stm32_ll_system.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h> /* For STM32L0 series */
 #include <zephyr/drivers/interrupt_controller/exti_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
@@ -47,6 +50,25 @@ struct stm32_exti_data {
 	/* per-line callbacks */
 	struct __exti_cb cb[NUM_EXTI_LINES];
 };
+
+/**
+ * @returns the LL_<PPP>_EXTI_LINE_xxx define that corresponds to specified @p linenum
+ * This value can be used with the LL EXTI source configuration functions.
+ */
+static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X)
+	return ((linenum % 4 * 4) << 16) | (linenum / 4);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
+	return ((linenum & 0x3) << (16 + 3)) | (linenum >> 2);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	/* Gives the LL_SBS_EXTI_LINEn corresponding to the line number */
+	return (((linenum % 4 * 4) << LL_SBS_REGISTER_PINPOS_SHFT) | (linenum / 4));
+#else
+	return (0xF << ((linenum % 4 * 4) + 16)) | (linenum / 4);
+#endif
+}
 
 /**
  * @brief Checks interrupt pending bit for specified EXTI line
@@ -296,4 +318,63 @@ void stm32_exti_unset_callback(stm32_exti_line_t line)
 
 	data->cb[line].cb = NULL;
 	data->cb[line].data = NULL;
+}
+
+void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port)
+{
+	uint32_t ll_line = stm32_exti_linenum_to_src_cfg_line(line);
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt should be enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == STM32_PORTH) {
+		port = LL_SYSCFG_EXTI_PORTH;
+	}
+#endif
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	LL_GPIO_AF_SetEXTISource(port, ll_line);
+
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
+	LL_EXTI_SetEXTISource(port, ll_line);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	LL_SBS_SetEXTISource(port, ll_line);
+#else
+	LL_SYSCFG_SetEXTISource(port, ll_line);
+#endif
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+}
+
+uint32_t stm32_exti_get_line_src_port(gpio_pin_t line)
+{
+	uint32_t ll_line = stm32_exti_linenum_to_src_cfg_line(line);
+	uint32_t port;
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	port = LL_GPIO_AF_GetEXTISource(ll_line);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
+	port = LL_EXTI_GetEXTISource(ll_line);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
+	port = LL_SBS_GetEXTISource(ll_line);
+#else
+	port = LL_SYSCFG_GetEXTISource(ll_line);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) && defined(LL_SYSCFG_EXTI_PORTH)
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt is enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == LL_SYSCFG_EXTI_PORTH) {
+		port = STM32_PORTH;
+	}
+#endif
+
+	return port;
 }
