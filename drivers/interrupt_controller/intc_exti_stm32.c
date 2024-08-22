@@ -46,40 +46,6 @@ struct stm32_exti_data {
 	struct __exti_cb cb[NUM_EXTI_LINES];
 };
 
-void stm32_exti_enable(stm32_exti_line_t line)
-{
-	int irqnum = 0;
-
-	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
-
-	/* Get matching exti irq provided line thanks to irq_table */
-	irqnum = exti_irq_table[line];
-	__ASSERT_NO_MSG(irqnum != 0xFF);
-
-	/* Enable requested line interrupt */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-	LL_C2_EXTI_EnableIT_0_31(BIT(line));
-#else
-	LL_EXTI_EnableIT_0_31(BIT(line));
-#endif
-
-	/* Enable exti irq interrupt */
-	irq_enable(irqnum);
-}
-
-void stm32_exti_disable(stm32_exti_line_t line)
-{
-	if (line < NUM_EXTI_LINES) {
-#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
-		LL_C2_EXTI_DisableIT_0_31(BIT(line));
-#else
-		LL_EXTI_DisableIT_0_31(BIT(line));
-#endif
-	} else {
-		__ASSERT_NO_MSG(0);
-	}
-}
-
 /**
  * @brief Checks interrupt pending bit for specified EXTI line
  *
@@ -121,36 +87,6 @@ static inline void stm32_exti_clear_pending(stm32_exti_line_t line)
 	} else {
 		__ASSERT_NO_MSG(0);
 	}
-}
-
-void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
-{
-	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
-
-	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-
-	switch (trigger) {
-	case STM32_EXTI_TRIG_NONE:
-		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
-		break;
-	case STM32_EXTI_TRIG_RISING:
-		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
-		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
-		break;
-	case STM32_EXTI_TRIG_FALLING:
-		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
-		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
-		break;
-	case STM32_EXTI_TRIG_BOTH:
-		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
-		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
-		break;
-	default:
-		__ASSERT_NO_MSG(0);
-		break;
-	}
-	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
 }
 
 /**
@@ -229,6 +165,74 @@ DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
 		 &exti_data, NULL,
 		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		 NULL);
+
+/**
+ * @brief EXTI GPIO interrupt controller API implementation
+ */
+
+void stm32_exti_enable(stm32_exti_line_t line)
+{
+	int irqnum = 0;
+
+	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
+
+	/* Get matching exti irq provided line thanks to irq_table */
+	irqnum = exti_irq_table[line];
+	__ASSERT_NO_MSG(irqnum != 0xFF);
+
+	/* Enable requested line interrupt */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_EnableIT_0_31(BIT(line));
+#else
+	LL_EXTI_EnableIT_0_31(BIT(line));
+#endif
+
+	/* Enable exti irq interrupt */
+	irq_enable(irqnum);
+}
+
+void stm32_exti_disable(stm32_exti_line_t line)
+{
+	if (line < NUM_EXTI_LINES) {
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+		LL_C2_EXTI_DisableIT_0_31(BIT(line));
+#else
+		LL_EXTI_DisableIT_0_31(BIT(line));
+#endif
+	} else {
+		__ASSERT_NO_MSG(0);
+	}
+}
+
+void stm32_exti_trigger(stm32_exti_line_t line, uint32_t trigger)
+{
+	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
+
+	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+	switch (trigger) {
+	case STM32_EXTI_TRIG_NONE:
+		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
+		break;
+	case STM32_EXTI_TRIG_RISING:
+		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
+		LL_EXTI_DisableFallingTrig_0_31(BIT(line));
+		break;
+	case STM32_EXTI_TRIG_FALLING:
+		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
+		LL_EXTI_DisableRisingTrig_0_31(BIT(line));
+		break;
+	case STM32_EXTI_TRIG_BOTH:
+		LL_EXTI_EnableRisingTrig_0_31(BIT(line));
+		LL_EXTI_EnableFallingTrig_0_31(BIT(line));
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
+}
 
 int stm32_exti_set_callback(stm32_exti_line_t line, stm32_exti_callback_t cb, void *arg)
 {
