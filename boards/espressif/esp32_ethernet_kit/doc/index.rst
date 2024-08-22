@@ -479,7 +479,7 @@ To build the sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :app: samples/hello_world
-   :board: esp32_ethernet_kit
+   :board: esp32_ethernet_kit/esp32/procpu
    :goals: build
    :west-args: --sysbuild
    :compact:
