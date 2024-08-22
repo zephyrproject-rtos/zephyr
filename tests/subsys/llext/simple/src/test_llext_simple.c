@@ -67,16 +67,6 @@ struct llext_test {
 K_THREAD_STACK_DEFINE(llext_stack, 1024);
 struct k_thread llext_thread;
 
-#ifdef CONFIG_USERSPACE
-void llext_entry(void *arg0, void *arg1, void *arg2)
-{
-	void (*fn)(void) = arg0;
-
-	LOG_INF("calling fn %p from thread %p", fn, k_current_get());
-	fn();
-}
-#endif /* CONFIG_USERSPACE */
-
 
 /* syscalls test */
 
@@ -169,7 +159,8 @@ void load_call_unload(const struct llext_test *test_case)
 	/* Should be runnable from newly created thread */
 	k_thread_create(&llext_thread, llext_stack,
 			K_THREAD_STACK_SIZEOF(llext_stack),
-			&llext_entry, test_entry_fn, NULL, NULL,
+			(k_thread_entry_t) &llext_bootstrap,
+			ext, test_entry_fn, NULL,
 			1, 0, K_FOREVER);
 
 	k_mem_domain_add_thread(&domain, &llext_thread);
@@ -192,7 +183,8 @@ void load_call_unload(const struct llext_test *test_case)
 	if (!test_case->kernel_only) {
 		k_thread_create(&llext_thread, llext_stack,
 				K_THREAD_STACK_SIZEOF(llext_stack),
-				&llext_entry, test_entry_fn, NULL, NULL,
+				(k_thread_entry_t) &llext_bootstrap,
+				ext, test_entry_fn, NULL,
 				1, K_USER, K_FOREVER);
 
 		k_mem_domain_add_thread(&domain, &llext_thread);
@@ -210,12 +202,24 @@ void load_call_unload(const struct llext_test *test_case)
 	}
 
 #else /* CONFIG_USERSPACE */
+	/* No userspace support: run the test only in supervisor mode, without
+	 * creating a new thread.
+	 */
 	if (test_case->test_setup) {
 		test_case->test_setup(ext, NULL);
 	}
 
+#ifdef CONFIG_LLEXT_TYPE_ELF_SHAREDLIB
+	/* The ELF specification forbids shared libraries from defining init
+	 * entries, so calling llext_bootstrap here would be redundant. Use
+	 * this opportunity to test llext_call_fn, even though llext_bootstrap
+	 * would have behaved simlarly.
+	 */
 	zassert_ok(llext_call_fn(ext, "test_entry"),
 		   "test_entry call should succeed");
+#else /* !USERSPACE && !SHAREDLIB */
+	llext_bootstrap(ext, test_entry_fn, NULL);
+#endif
 
 	if (test_case->test_cleanup) {
 		test_case->test_cleanup(ext);
@@ -256,6 +260,29 @@ static LLEXT_CONST uint8_t hello_world_ext[] ELF_ALIGN = {
 LLEXT_LOAD_UNLOAD(hello_world,
 	.kernel_only = true
 )
+
+#ifndef CONFIG_LLEXT_TYPE_ELF_SHAREDLIB
+static LLEXT_CONST uint8_t init_fini_ext[] ELF_ALIGN = {
+	#include "init_fini.inc"
+};
+
+static void init_fini_test_cleanup(struct llext *ext)
+{
+	/* Make sure fini_fn() was called during teardown.
+	 * (see init_fini_ext.c for more details).
+	 */
+	const int *number = llext_find_sym(&ext->exp_tab, "number");
+	const int expected = (((((1 << 4) | 2) << 4) | 3) << 4) | 4; /* 0x1234 */
+
+	zassert_not_null(number, "number should be an exported symbol");
+	zassert_equal(*number, expected, "got 0x%x instead of 0x%x during cleanup",
+		      *number, expected);
+}
+
+LLEXT_LOAD_UNLOAD(init_fini,
+	.test_cleanup = init_fini_test_cleanup
+)
+#endif
 
 static LLEXT_CONST uint8_t logging_ext[] ELF_ALIGN = {
 	#include "logging.inc"
