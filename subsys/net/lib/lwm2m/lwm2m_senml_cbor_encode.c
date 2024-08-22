@@ -96,33 +96,33 @@ static bool encode_repeated_record_union(zcbor_state_t *state, const struct reco
 				   ? (((zcbor_uint32_put(state, (2)))) &&
 				      (zcbor_float64_encode(state, (&(*input).union_vf))))
 				   : (((*input).record_union_choice == union_vs_c)
-					      ? (((zcbor_uint32_put(state, (3)))) &&
-						 (zcbor_tstr_encode(state, (&(*input).union_vs))))
-					      : (((*input).record_union_choice == union_vb_c)
-							 ? (((zcbor_uint32_put(state, (4)))) &&
-							    (zcbor_bool_encode(
-								    state, (&(*input).union_vb))))
-							 : (((*input).record_union_choice ==
-							     union_vd_c)
-								    ? (((zcbor_uint32_put(state,
-											  (8)))) &&
-								       (zcbor_bstr_encode(
-									       state,
-									       (&(*input).union_vd))))
-								    : (((*input).record_union_choice ==
-									union_vlo_c)
-									       ? (((zcbor_tstr_encode(
-											  state,
-											  ((tmp_str.value =
-												    (uint8_t *)"vlo",
-											    tmp_str.len =
-												    sizeof("vlo") -
-												    1,
-											    &tmp_str))))) &&
-										  (zcbor_tstr_encode(
-											  state,
-											  (&(*input).union_vlo))))
-									       : false))))))));
+				      ? (((zcbor_uint32_put(state, (3)))) &&
+					 (zcbor_tstr_encode(state, (&(*input).union_vs))))
+				      : (((*input).record_union_choice == union_vb_c)
+						 ? (((zcbor_uint32_put(state, (4)))) &&
+						    (zcbor_bool_encode(
+							    state, (&(*input).union_vb))))
+						 : (((*input).record_union_choice ==
+						     union_vd_c)
+							    ? (((zcbor_uint32_put(state,
+										  (8)))) &&
+							       (zcbor_bstr_encode(
+								       state,
+								       (&(*input).union_vd))))
+							    : (((*input).record_union_choice ==
+								union_vlo_c)
+								       ? (((zcbor_tstr_encode(
+								  state,
+								  ((tmp_str.value =
+									(uint8_t *)"vlo",
+								    tmp_str.len =
+									sizeof("vlo") -
+									    1,
+								    &tmp_str))))) &&
+								  (zcbor_tstr_encode(
+									  state,
+									  (&(*input).union_vlo))))
+								       : false))))))));
 
 	log_result(state, res, __func__);
 	return res;
@@ -138,15 +138,15 @@ static bool encode_value(zcbor_state_t *state, const struct value_r *input)
 			: (((*input).value_choice == value_bstr_c)
 				   ? ((zcbor_bstr_encode(state, (&(*input).value_bstr))))
 				   : (((*input).value_choice == value_int_c)
-					      ? ((zcbor_int64_encode(state, (&(*input).value_int))))
-					      : (((*input).value_choice == value_float_c)
-							 ? ((zcbor_float64_encode(
-								   state, (&(*input).value_float))))
-							 : (((*input).value_choice == value_bool_c)
-								    ? ((zcbor_bool_encode(
-									      state,
-									      (&(*input).value_bool))))
-								    : false)))))));
+				      ? ((zcbor_int64_encode(state, (&(*input).value_int))))
+				      : (((*input).value_choice == value_float_c)
+						 ? ((zcbor_float64_encode(
+						   state, (&(*input).value_float))))
+						 : (((*input).value_choice == value_bool_c)
+							    ? ((zcbor_bool_encode(
+							      state,
+							      (&(*input).value_bool))))
+							    : false)))))));
 
 	log_result(state, res, __func__);
 	return res;
