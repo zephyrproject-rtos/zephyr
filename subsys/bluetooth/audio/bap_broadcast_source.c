@@ -33,6 +33,7 @@
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
 
+#include "audio_internal.h"
 #include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_stream.h"
