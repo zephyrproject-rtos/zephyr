@@ -876,7 +876,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			ptr = &maddr->address.in_addr;
 
-		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
+		} else if (UNALIGNED_GET(&addr4->sin_addr.s_addr) == INADDR_ANY) {
 			if (iface == NULL) {
 				iface = net_if_ipv4_select_src_iface(
 					&net_sin(&context->remote)->sin_addr);
