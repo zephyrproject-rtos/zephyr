@@ -31,6 +31,11 @@ if (CONFIG_LLEXT_STORAGE_WRITABLE)
     list(APPEND ext_names find_section)
 endif()
 
+if (NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+    # ELF shared libraries do not support init sections
+    list(APPEND ext_names init_fini)
+endif()
+
 # generate extension targets foreach extension given by 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)
