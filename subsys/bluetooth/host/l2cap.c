@@ -3147,7 +3147,7 @@ static int bt_l2cap_dyn_chan_send(struct bt_l2cap_le_chan *le_chan, struct net_b
 		/* Call `net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE)`
 		 * when allocating buffers intended for bt_l2cap_chan_send().
 		 */
-		LOG_DBG("Not enough headroom in buf %p", buf);
+		LOG_ERR("Not enough headroom in buf %p", buf);
 		return -EINVAL;
 	}
 
@@ -3195,7 +3195,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	LOG_DBG("chan %p buf %p len %zu", chan, buf, buf->len);
 
 	if (buf->ref != 1) {
-		LOG_DBG("Expecting 1 ref, got %d", buf->ref);
+		LOG_WRN("Expecting 1 ref, got %d", buf->ref);
 		return -EINVAL;
 	}
 
