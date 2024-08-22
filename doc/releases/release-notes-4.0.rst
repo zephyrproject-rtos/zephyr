@@ -242,6 +242,8 @@ Networking
   used optionally as per the location object's specification. Users of these
   resources will now need to provide a read buffer.
 
+  * lwm2m_senml_cbor: Regenerated generated code files using zcbor 0.9.0
+
 * Misc:
 
 * MQTT:
