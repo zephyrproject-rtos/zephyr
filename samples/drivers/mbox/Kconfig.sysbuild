@@ -17,3 +17,4 @@ string
 	default "nrf54h20dk/nrf54h20/cpuppr" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpuapp"
 	default "nrf54h20dk/nrf54h20/cpuapp" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpurad"
 	default "nrf54l15pdk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15pdk"
+	default "nrf54l15dk/nrf54l15/cpuflpr" if $(BOARD) = "nrf54l15dk"
