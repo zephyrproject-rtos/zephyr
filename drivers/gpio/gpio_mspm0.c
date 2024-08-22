@@ -186,11 +186,11 @@ static int gpio_mspm0_pin_interrupt_configure(const struct device *port,
 		uint32_t polarity = 0x00;
 
 		if (trig & GPIO_INT_TRIG_LOW) {
-			polarity |= BIT(0);
+			polarity |= BIT(1);
 		}
 
 		if (trig & GPIO_INT_TRIG_HIGH) {
-			polarity |= BIT(1);
+			polarity |= BIT(0);
 		}
 
 		if (pin < MSPM0_PINS_LOW_GROUP) {
