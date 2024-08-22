@@ -1,0 +1,20 @@
+identifier: pico_plus2/rp2350b/m33
+name: Pimoroni Pico Plus 2 (Cortex-M33)
+type: mcu
+arch: arm
+flash: 16384
+ram: 8192
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
