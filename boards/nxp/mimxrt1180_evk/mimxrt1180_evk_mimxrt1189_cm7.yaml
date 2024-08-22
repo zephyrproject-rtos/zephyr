@@ -23,4 +23,6 @@ supported:
   - i2c
   - pwm
   - uart
+  - dma
+  - spi
 vendor: nxp
