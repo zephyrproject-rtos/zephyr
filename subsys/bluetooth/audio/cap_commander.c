@@ -28,6 +28,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
+#include "audio_internal.h"
 #include "bap_endpoint.h"
 #include "bap_internal.h"
 #include "cap_internal.h"
