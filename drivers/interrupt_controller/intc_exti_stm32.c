@@ -50,15 +50,11 @@ void stm32_exti_enable(int line)
 {
 	int irqnum = 0;
 
-	if (line >= NUM_EXTI_LINES) {
-		__ASSERT_NO_MSG(line);
-	}
+	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
 
 	/* Get matching exti irq provided line thanks to irq_table */
 	irqnum = exti_irq_table[line];
-	if (irqnum == 0xFF) {
-		__ASSERT_NO_MSG(line);
-	}
+	__ASSERT_NO_MSG(irqnum != 0xFF);
 
 	/* Enable requested line interrupt */
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
@@ -73,14 +69,14 @@ void stm32_exti_enable(int line)
 
 void stm32_exti_disable(int line)
 {
-	if (line < 32) {
+	if (line < NUM_EXTI_LINES) {
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 		LL_C2_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #else
 		LL_EXTI_DisableIT_0_31(BIT((uint32_t)line));
 #endif
 	} else {
-		__ASSERT_NO_MSG(line);
+		__ASSERT_NO_MSG(0);
 	}
 }
 
@@ -91,7 +87,7 @@ void stm32_exti_disable(int line)
  */
 static inline int stm32_exti_is_pending(int line)
 {
-	if (line < 32) {
+	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 		return (LL_EXTI_IsActiveRisingFlag_0_31(BIT((uint32_t)line)) ||
 			LL_EXTI_IsActiveFallingFlag_0_31(BIT((uint32_t)line)));
@@ -101,7 +97,7 @@ static inline int stm32_exti_is_pending(int line)
 		return LL_EXTI_IsActiveFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
-		__ASSERT_NO_MSG(line);
+		__ASSERT_NO_MSG(0);
 		return 0;
 	}
 }
@@ -113,7 +109,7 @@ static inline int stm32_exti_is_pending(int line)
  */
 static inline void stm32_exti_clear_pending(int line)
 {
-	if (line < 32) {
+	if (line < NUM_EXTI_LINES) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
 		LL_EXTI_ClearRisingFlag_0_31(BIT((uint32_t)line));
 		LL_EXTI_ClearFallingFlag_0_31(BIT((uint32_t)line));
@@ -123,16 +119,13 @@ static inline void stm32_exti_clear_pending(int line)
 		LL_EXTI_ClearFlag_0_31(BIT((uint32_t)line));
 #endif
 	} else {
-		__ASSERT_NO_MSG(line);
+		__ASSERT_NO_MSG(0);
 	}
 }
 
 void stm32_exti_trigger(int line, int trigger)
 {
-
-	if (line >= 32) {
-		__ASSERT_NO_MSG(line);
-	}
+	__ASSERT_NO_MSG(line < NUM_EXTI_LINES);
 
 	z_stm32_hsem_lock(CFG_HW_EXTI_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
@@ -154,7 +147,7 @@ void stm32_exti_trigger(int line, int trigger)
 		LL_EXTI_EnableFallingTrig_0_31(BIT((uint32_t)line));
 		break;
 	default:
-		__ASSERT_NO_MSG(trigger);
+		__ASSERT_NO_MSG(0);
 		break;
 	}
 	z_stm32_hsem_unlock(CFG_HW_EXTI_SEMID);
