@@ -401,40 +401,39 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 	};
 #endif
 
-#define ADC_AMBIQ_INIT(n)                                                                  \
-	PINCTRL_DT_INST_DEFINE(n);                                                             \
-	ADC_AMBIQ_DRIVER_API(n);                                                               \
-	static int pwr_on_ambiq_adc_##n(void)                                                  \
-	{                                                                                      \
+#define ADC_AMBIQ_INIT(n)                                                                          \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	ADC_AMBIQ_DRIVER_API(n);                                                                   \
+	static int pwr_on_ambiq_adc_##n(void)                                                      \
+	{                                                                                          \
 		uint32_t addr = DT_REG_ADDR(DT_INST_PHANDLE(n, ambiq_pwrcfg)) +                    \
 				DT_INST_PHA(n, ambiq_pwrcfg, offset);                              \
 		sys_write32((sys_read32(addr) | DT_INST_PHA(n, ambiq_pwrcfg, mask)), addr);        \
 		k_busy_wait(PWRCTRL_MAX_WAIT_US);                                                  \
 		return 0;                                                                          \
-	}                                                                                      \
-	static void adc_irq_config_func_##n(void)                                              \
-	{                                                                                      \
+	}                                                                                          \
+	static void adc_irq_config_func_##n(void)                                                  \
+	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), adc_ambiq_isr,              \
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
-	};                                                                                     \
-	static struct adc_ambiq_data adc_ambiq_data_##n = {                                    \
+	};                                                                                         \
+	static struct adc_ambiq_data adc_ambiq_data_##n = {                                        \
 		ADC_CONTEXT_INIT_TIMER(adc_ambiq_data_##n, ctx),                                   \
 		ADC_CONTEXT_INIT_LOCK(adc_ambiq_data_##n, ctx),                                    \
 		ADC_CONTEXT_INIT_SYNC(adc_ambiq_data_##n, ctx),                                    \
-	};                                                                                     \
-	const static struct adc_ambiq_config adc_ambiq_config_##n = {                          \
+	};                                                                                         \
+	const static struct adc_ambiq_config adc_ambiq_config_##n = {                              \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
 		.num_channels = DT_PROP(DT_DRV_INST(n), channel_count),                            \
 		.irq_config_func = adc_irq_config_func_##n,                                        \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                      \
 		.pwr_func = pwr_on_ambiq_adc_##n,                                                  \
-	};                                                                                     \
-	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                      \
-	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n),       \
-				&adc_ambiq_data_##n,                                          \
-				&adc_ambiq_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
-				&adc_ambiq_driver_api_##n);
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                          \
+	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,   \
+			      &adc_ambiq_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
+			      &adc_ambiq_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_AMBIQ_INIT)
