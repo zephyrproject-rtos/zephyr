@@ -7,6 +7,38 @@
 #include <nxp/nxp_imx/rt/mimxrt1189cvm8b-pinctrl.dtsi>
 
 &pinctrl {
+	emdio_default: emdio_default {
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_30_netc_emdc>,
+				<&iomuxc_gpio_ad_31_netc_emdio>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "high";
+		};
+	};
+
+	eth4_default: eth4_default {
+		group1 {
+			pinmux = <&iomuxc_gpio_emc_b2_13_eth4_tx_data0>,
+				<&iomuxc_gpio_emc_b2_14_eth4_tx_data1>,
+				<&iomuxc_gpio_emc_b2_15_eth4_tx_en>,
+				<&iomuxc_gpio_emc_b2_17_eth4_rx_data0>,
+				<&iomuxc_gpio_emc_b2_18_eth4_rx_data1>,
+				<&iomuxc_gpio_emc_b2_19_eth4_rx_en>,
+				<&iomuxc_gpio_emc_b2_20_eth4_rx_er>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "high";
+		};
+		group2 {
+			pinmux = <&iomuxc_gpio_emc_b2_16_eth4_tx_clk>;
+			input-enable;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "high";
+		};
+	};
+
 	pinmux_lpspi3: pinmux_lpspi3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_sd_b1_00_lpspi3_pcs0>,
