@@ -86,7 +86,7 @@ int main(void)
 	fs.offset = NVS_PARTITION_OFFSET;
 	rc = flash_get_page_info_by_offs(fs.flash_device, fs.offset, &info);
 	if (rc) {
-		printk("Unable to get page info\n");
+		printk("Unable to get page info, rc=%d\n", rc);
 		return 0;
 	}
 	fs.sector_size = info.size;
@@ -94,7 +94,7 @@ int main(void)
 
 	rc = nvs_mount(&fs);
 	if (rc) {
-		printk("Flash Init failed\n");
+		printk("Flash Init failed, rc=%d\n", rc);
 		return 0;
 	}
 
