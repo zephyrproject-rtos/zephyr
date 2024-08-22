@@ -5169,6 +5169,24 @@ macro(zephyr_check_arguments_required function prefix)
 endmacro()
 
 #
+# Helper macro for verifying that at least one of the required arguments has
+# been provided by the caller. Arguments with empty values are allowed.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_arguments_required_allow_empty(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required_allow_empty function prefix)
+  set(check_defined DEFINED)
+  set(allow_empty TRUE)
+  zephyr_check_flags_required(${function} ${prefix} ${ARGN})
+  set(allow_empty)
+  set(check_defined)
+endmacro()
+
+#
 # Helper macro for verifying that at least one of the required flags has
 # been provided by the caller.
 #
@@ -5182,6 +5200,8 @@ macro(zephyr_check_flags_required function prefix)
   set(required_found FALSE)
   foreach(required ${ARGN})
     if(${check_defined} ${prefix}_${required})
+      set(required_found TRUE)
+    elseif("${allow_empty}" AND ${required} IN_LIST ${prefix}_KEYWORDS_MISSING_VALUES)
       set(required_found TRUE)
     endif()
   endforeach()
