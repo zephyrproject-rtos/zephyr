@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Telink Semiconductor
+ * Copyright (c) 2021-2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,56 +23,56 @@ LOG_MODULE_REGISTER(flash_tlx, CONFIG_FLASH_LOG_LEVEL);
 /* driver definitions */
 #define SECTOR_SIZE            (0x1000u)
 
-#define FLASH_B9X_ACCESS_TIMEOUT_MS  30
+#define FLASH_TLX_ACCESS_TIMEOUT_MS  30
 
-#define FLASH_B9X_PROT_TIMEROUT_MS   100
+#define FLASH_TLX_PROT_TIMEROUT_MS   100
 
 /* driver data structure */
-struct flash_b9x_data {
+struct flash_tlx_data {
 	struct k_mutex flash_lock;
 };
 
 /* driver parameters structure */
-static const struct flash_parameters flash_b9x_parameters = {
+static const struct flash_parameters flash_tlx_parameters = {
 	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
 	.erase_value = 0xff,
 };
 
-static void flash_b9x_unlock(unsigned int offset)
+static void flash_tlx_unlock(unsigned int offset)
 {
 
-#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if  CONFIG_SOC_RISCV_TELINK_TL321X
 	flash_protection_unlock_operation(offset);
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
+#elif  CONFIG_SOC_RISCV_TELINK_B95 
 
 #endif
 
 }
 
-static void flash_b9x_lock(unsigned int offset)
+static void flash_tlx_lock(unsigned int offset)
 {
 
-#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if  CONFIG_SOC_RISCV_TELINK_TL321X
 	flash_protection_lock_operation(offset);
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
+#elif  CONFIG_SOC_RISCV_TELINK_B95 
 
 #endif
 
 }
 
 
-static void flash_b9x_lock_init(void)
+static void flash_tlx_lock_init(void)
 {
-#if CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if  CONFIG_SOC_RISCV_TELINK_TL321X
 	flash_protection_lock_init();
-#elif CONFIG_SOC_RISCV_TELINK_B91 || CONFIG_SOC_RISCV_TELINK_B95
+#elif  CONFIG_SOC_RISCV_TELINK_B95 
 
 #endif
 }
 
 
 /* Check if flash page area is clean */
-static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data,
+static bool flash_tlx_is_clean(const struct flash_tlx_data *dev_data,
 		uintptr_t addr_flash, uintptr_t offset, size_t len)
 {
 
@@ -84,7 +84,7 @@ static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data,
 	}
 	flash_read_page(addr_flash, len, &p_sector_clean[0]);
 	for (size_t i = 0; i < len; i++) {
-		if (p_sector_clean[i] != flash_b9x_parameters.erase_value) {
+		if (p_sector_clean[i] != flash_tlx_parameters.erase_value) {
 			result = false;
 			break;
 		}
@@ -95,7 +95,7 @@ static bool flash_b9x_is_clean(const struct flash_b9x_data *dev_data,
 
 
 /* Modify flash data */
-static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
+static void flash_tlx_modify(struct flash_tlx_data *dev_data, uintptr_t offset,
 	const void *data, size_t len)
 {
 	uintptr_t addr_flash = CONFIG_FLASH_BASE_ADDRESS + offset;
@@ -109,7 +109,7 @@ static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
 		if (len < len_page_end) {
 			len_current = len;
 		}
-		clean_flag = flash_b9x_is_clean(dev_data, addr_flash, off_sector, len_current);
+		clean_flag = flash_tlx_is_clean(dev_data, addr_flash, off_sector, len_current);
 		if (!clean_flag) {
 			uint8_t *p_sector = malloc(SECTOR_SIZE);
 
@@ -151,7 +151,7 @@ static void flash_b9x_modify(struct flash_b9x_data *dev_data, uintptr_t offset,
 
 
 /* Check for correct offset and length */
-static bool flash_b9x_is_range_valid(off_t offset, size_t len)
+static bool flash_tlx_is_range_valid(off_t offset, size_t len)
 {
 	if ((offset < 0) || (len < 1) || ((offset + len) > FLASH_SIZE)) {
 		return false;
@@ -160,30 +160,30 @@ static bool flash_b9x_is_range_valid(off_t offset, size_t len)
 }
 
 /* API implementation: driver initialization */
-static int flash_b9x_init(const struct device *dev)
+static int flash_tlx_init(const struct device *dev)
 {
-	struct flash_b9x_data *dev_data = dev->data;
+	struct flash_tlx_data *dev_data = dev->data;
 
 	k_mutex_init(&dev_data->flash_lock);
 
-	flash_b9x_lock_init();
+	flash_tlx_lock_init();
 
-	flash_change_rw_func(flash_4read, flash_quad_page_program);
+	// flash_change_rw_func(flash_4read, flash_quad_page_program);
 
 	return 0;
 }
 
 /* API implementation: erase */
-static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
+static int flash_tlx_erase(const struct device *dev, off_t offset, size_t len)
 {
-	struct flash_b9x_data *dev_data = dev->data;
+	struct flash_tlx_data *dev_data = dev->data;
 
 	/* check for valid range */
-	if (!flash_b9x_is_range_valid(offset, len)) {
+	if (!flash_tlx_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
 
-	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_TLX_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
 	}
 
@@ -193,7 +193,7 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 		BM_CLR(reg_tmr_ctrl2, FLD_TMR_WD_EN);
 		wdt_been_enabled = true;
 	}
-	flash_b9x_unlock(offset);
+	flash_tlx_unlock(offset);
 
 	if (offset % SECTOR_SIZE == 0 && len % SECTOR_SIZE == 0) {
 		/* erase directly , it will save some time for read */
@@ -203,9 +203,9 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 			flash_erase_sector(CONFIG_FLASH_BASE_ADDRESS + offset + i*SECTOR_SIZE);
 		}
 	} else {
-		flash_b9x_modify(dev_data, offset, NULL, len);
+		flash_tlx_modify(dev_data, offset, NULL, len);
 	}
-	flash_b9x_lock(offset);
+	flash_tlx_lock(offset);
 
 	if (wdt_been_enabled) {
 		BM_SET(reg_tmr_ctrl2, FLD_TMR_WD_EN);
@@ -216,18 +216,18 @@ static int flash_b9x_erase(const struct device *dev, off_t offset, size_t len)
 }
 
 /* API implementation: write */
-static int flash_b9x_write(const struct device *dev, off_t offset,
+static int flash_tlx_write(const struct device *dev, off_t offset,
 			   const void *data, size_t len)
 {
 	void *buf = NULL;
-	struct flash_b9x_data *dev_data = dev->data;
+	struct flash_tlx_data *dev_data = dev->data;
 
 	/* check for valid range */
-	if (!flash_b9x_is_range_valid(offset, len)) {
+	if (!flash_tlx_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
 
-	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_TLX_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
 	}
 
@@ -258,9 +258,9 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 		data = buf;
 	}
 	/* write flash */
-	flash_b9x_unlock(offset);
-	flash_b9x_modify(dev_data, offset, data, len);
-	flash_b9x_lock(offset);
+	flash_tlx_unlock(offset);
+	flash_tlx_modify(dev_data, offset, data, len);
+	flash_tlx_lock(offset);
 
 	/* if ram memory is allocated for flash writing it should be free */
 	if (buf != NULL) {
@@ -276,10 +276,10 @@ static int flash_b9x_write(const struct device *dev, off_t offset,
 }
 
 /* API implementation: read */
-static int flash_b9x_read(const struct device *dev, off_t offset,
+static int flash_tlx_read(const struct device *dev, off_t offset,
 			  void *data, size_t len)
 {
-	struct flash_b9x_data *dev_data = dev->data;
+	struct flash_tlx_data *dev_data = dev->data;
 
 	/* return SUCCESS if len equals 0 (required by tests/drivers/flash) */
 	if (!len) {
@@ -287,11 +287,11 @@ static int flash_b9x_read(const struct device *dev, off_t offset,
 	}
 
 	/* check for valid range */
-	if (!flash_b9x_is_range_valid(offset, len)) {
+	if (!flash_tlx_is_range_valid(offset, len)) {
 		return -EINVAL;
 	}
 
-	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_B9X_ACCESS_TIMEOUT_MS))) {
+	if (k_mutex_lock(&dev_data->flash_lock, K_MSEC(FLASH_TLX_ACCESS_TIMEOUT_MS))) {
 		return -EACCES;
 	}
 
@@ -316,11 +316,11 @@ static int flash_b9x_read(const struct device *dev, off_t offset,
 
 /* API implementation: get_parameters */
 static const struct flash_parameters *
-flash_b9x_get_parameters(const struct device *dev)
+flash_tlx_get_parameters(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return &flash_b9x_parameters;
+	return &flash_tlx_parameters;
 }
 
 /* API implementation: page_layout */
@@ -330,7 +330,7 @@ static const struct flash_pages_layout dev_layout = {
 	.pages_size = SECTOR_SIZE,
 };
 
-static void flash_b9x_pages_layout(const struct device *dev,
+static void flash_tlx_pages_layout(const struct device *dev,
 				   const struct flash_pages_layout **layout,
 				   size_t *layout_size)
 {
@@ -339,25 +339,25 @@ static void flash_b9x_pages_layout(const struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static const struct flash_driver_api flash_b9x_api = {
-	.erase = flash_b9x_erase,
-	.write = flash_b9x_write,
-	.read = flash_b9x_read,
-	.get_parameters = flash_b9x_get_parameters,
+static const struct flash_driver_api flash_tlx_api = {
+	.erase = flash_tlx_erase,
+	.write = flash_tlx_write,
+	.read = flash_tlx_read,
+	.get_parameters = flash_tlx_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = flash_b9x_pages_layout,
+	.page_layout = flash_tlx_pages_layout,
 #endif
 };
 
 /* Driver registration */
-#define FLASH_B9X_INIT(n)						\
-	static struct flash_b9x_data flash_data_##n;			\
-	DEVICE_DT_INST_DEFINE(n, flash_b9x_init,			\
+#define FLASH_TLX_INIT(n)						\
+	static struct flash_tlx_data flash_data_##n;			\
+	DEVICE_DT_INST_DEFINE(n, flash_tlx_init,			\
 			      NULL,					\
 			      &flash_data_##n,				\
 			      NULL,					\
 			      POST_KERNEL,				\
 			      CONFIG_FLASH_INIT_PRIORITY,		\
-			      &flash_b9x_api);
+			      &flash_tlx_api);
 
-DT_INST_FOREACH_STATUS_OKAY(FLASH_B9X_INIT)
+DT_INST_FOREACH_STATUS_OKAY(FLASH_TLX_INIT)

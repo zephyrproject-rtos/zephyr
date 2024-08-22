@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Telink Semiconductor
+ * Copyright (c) 2021-2024 Telink Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,21 +11,21 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 
-struct pwm_b9x_config {
+struct pwm_tlx_config {
 	const pinctrl_soc_pin_t *pins;
 	uint32_t clock_frequency;
 	uint8_t channels;
 	uint8_t clk32k_ch_enable;
 };
 
-struct pwm_b9x_data {
+struct pwm_tlx_data {
 	uint8_t out_pin_ch_connected;
 };
 
 /* API implementation: init */
-static int pwm_b9x_init(const struct device *dev)
+static int pwm_tlx_init(const struct device *dev)
 {
-	const struct pwm_b9x_config *config = dev->config;
+	const struct pwm_tlx_config *config = dev->config;
 
 	uint32_t pwm_clk_div;
 
@@ -42,12 +42,12 @@ static int pwm_b9x_init(const struct device *dev)
 }
 
 /* API implementation: set_cycles */
-static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
+static int pwm_tlx_set_cycles(const struct device *dev, uint32_t channel,
 			      uint32_t period_cycles, uint32_t pulse_cycles,
 			      pwm_flags_t flags)
 {
-	struct pwm_b9x_data *data = dev->data;
-	const struct pwm_b9x_config *config = dev->config;
+	struct pwm_tlx_data *data = dev->data;
+	const struct pwm_tlx_config *config = dev->config;
 
 	/* check pwm channel */
 	if (channel >= config->channels) {
@@ -72,9 +72,7 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 	pwm_set_tmax(channel, period_cycles);
 
 	/* start pwm */
-#if CONFIG_SOC_RISCV_TELINK_B91
-	pwm_start(channel);
-#elif CONFIG_SOC_RISCV_TELINK_B92 || CONFIG_SOC_RISCV_TELINK_B95 || CONFIG_SOC_RISCV_TELINK_TL321X
+#if CONFIG_SOC_RISCV_TELINK_B95 || CONFIG_SOC_RISCV_TELINK_TL321X
 	pwm_start((channel == 0)?FLD_PWM0_EN:BIT(channel));
 #endif
 
@@ -107,10 +105,10 @@ static int pwm_b9x_set_cycles(const struct device *dev, uint32_t channel,
 }
 
 /* API implementation: get_cycles_per_sec */
-static int pwm_b9x_get_cycles_per_sec(const struct device *dev,
+static int pwm_tlx_get_cycles_per_sec(const struct device *dev,
 				      uint32_t channel, uint64_t *cycles)
 {
-	const struct pwm_b9x_config *config = dev->config;
+	const struct pwm_tlx_config *config = dev->config;
 
 	/* check pwm channel */
 	if (channel >= config->channels) {
@@ -127,15 +125,15 @@ static int pwm_b9x_get_cycles_per_sec(const struct device *dev,
 }
 
 /* PWM driver APIs structure */
-static const struct pwm_driver_api pwm_b9x_driver_api = {
-	.set_cycles = pwm_b9x_set_cycles,
-	.get_cycles_per_sec = pwm_b9x_get_cycles_per_sec,
+static const struct pwm_driver_api pwm_tlx_driver_api = {
+	.set_cycles = pwm_tlx_set_cycles,
+	.get_cycles_per_sec = pwm_tlx_get_cycles_per_sec,
 };
 
 /* PWM driver registration */
-#define PWM_b9x_INIT(n)                                                 \
+#define PWM_tlx_INIT(n)                                                 \
                                                                         \
-	static const pinctrl_soc_pin_t pwm_b9x_pins##n[] = {                \
+	static const pinctrl_soc_pin_t pwm_tlx_pins##n[] = {                \
 		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), pinctrl_ch0),      \
 		(Z_PINCTRL_STATE_PIN_INIT(DT_DRV_INST(n), pinctrl_ch0, 0)),     \
 		(UINT32_MAX,))                                                  \
@@ -156,8 +154,8 @@ static const struct pwm_driver_api pwm_b9x_driver_api = {
 		(UINT32_MAX,))                                                  \
 	};                                                                  \
                                                                         \
-	static const struct pwm_b9x_config config##n = {                    \
-		.pins = pwm_b9x_pins##n,                                        \
+	static const struct pwm_tlx_config config##n = {                    \
+		.pins = pwm_tlx_pins##n,                                        \
 		.clock_frequency = DT_INST_PROP(n, clock_frequency),            \
 		.channels = DT_INST_PROP(n, channels),                          \
 		.clk32k_ch_enable = (                                           \
@@ -170,11 +168,11 @@ static const struct pwm_driver_api pwm_b9x_driver_api = {
 		),                                                              \
 	};                                                                  \
                                                                         \
-	struct pwm_b9x_data data##n;                                        \
+	struct pwm_tlx_data data##n;                                        \
                                                                         \
-	DEVICE_DT_INST_DEFINE(n, pwm_b9x_init,                              \
+	DEVICE_DT_INST_DEFINE(n, pwm_tlx_init,                              \
 		NULL, &data##n, &config##n,                                     \
 		POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,                          \
-		&pwm_b9x_driver_api);
+		&pwm_tlx_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_b9x_INIT);
+DT_INST_FOREACH_STATUS_OKAY(PWM_tlx_INIT);
