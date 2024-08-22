@@ -61,4 +61,6 @@ struct net_stats_eth *nrf_wifi_eth_stats_get(const struct device *dev);
 void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						struct nrf_wifi_umac_event_set_interface *event,
 						unsigned int event_len);
+
+int nrf_wifi_stats_reset(const struct device *dev);
 #endif /* __ZEPHYR_NET_IF_H__ */

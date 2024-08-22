@@ -50,6 +50,8 @@ struct counter_esp32_config {
 	timer_group_t group;
 	timer_idx_t index;
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 };
 
 struct counter_esp32_data {
@@ -94,10 +96,19 @@ static int counter_esp32_init(const struct device *dev)
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.alarm_en);
 	timer_ll_set_reload_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->config.counter_en);
-	esp_intr_alloc(cfg->irq_source, 0, (ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+
 	k_spin_unlock(&lock, key);
 
-	return 0;
+	int ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+				(ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
+
+	return ret;
 }
 
 static int counter_esp32_start(const struct device *dev)
@@ -254,7 +265,9 @@ static void counter_esp32_isr(void *arg)
 		},								 \
 		.group = DT_INST_PROP(idx, group),				 \
 		.index = DT_INST_PROP(idx, index),				 \
-		.irq_source = DT_INST_IRQN(idx),				 \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),			\
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),	\
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags)	\
 	};									 \
 										 \
 										 \

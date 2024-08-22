@@ -115,3 +115,10 @@ config COMMON_LIBC_THRD
 	default y
 	help
 	  Common implementation of C11 <threads.h> API.
+
+config COMMON_LIBC_REMOVE
+	bool "Common C library remove"
+	depends on !SEMIHOST
+	default y if FILE_SYSTEM
+	help
+	  Common implementation of remove().

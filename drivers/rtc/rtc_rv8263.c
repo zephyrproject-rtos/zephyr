@@ -226,7 +226,7 @@ static int rv8263c8_time_set(const struct device *dev, const struct rtc_time *ti
 	regs[3] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
 	regs[4] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
 	regs[5] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
-	regs[6] = bin2bcd(timeptr->tm_mon) & MONTHS_BITS;
+	regs[6] = (bin2bcd(timeptr->tm_mon) & MONTHS_BITS) + 1;
 	regs[7] = bin2bcd(timeptr->tm_year - RV8263_YEAR_OFFSET) & YEAR_BITS;
 
 	return i2c_write_dt(&config->i2c_bus, regs, sizeof(regs));
@@ -257,7 +257,7 @@ static int rv8263c8_time_get(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_hour = bcd2bin(regs[2] & HOURS_BITS);
 	timeptr->tm_mday = bcd2bin(regs[3] & DATE_BITS);
 	timeptr->tm_wday = bcd2bin(regs[4] & WEEKDAY_BITS);
-	timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS);
+	timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS) - 1;
 	timeptr->tm_year = bcd2bin(regs[6] & YEAR_BITS) + RV8263_YEAR_OFFSET;
 
 	/* Unused. */
@@ -461,7 +461,7 @@ static int rv8263c8_alarm_set_time(const struct device *dev, uint16_t id, uint16
 
 	err = i2c_write_dt(&config->i2c_bus, regs, sizeof(regs));
 	if (err < 0) {
-		LOG_ERR("Error while setting alarm time! Error: %i", < err);
+		LOG_ERR("Error while setting alarm time! Error: %i", err);
 		return err;
 	}
 

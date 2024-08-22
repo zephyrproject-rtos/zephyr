@@ -76,12 +76,8 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT
   src/wifi_mgmt_scan.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE
+zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE_COMMON
   src/wifi_mgmt.c
-)
-
-zephyr_library_sources_ifdef(CONFIG_NRF70_SCAN_ONLY
-  src/wifi_mgmt_scan.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_RADIO_TEST
@@ -242,6 +238,10 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_2_4G_ONLY
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF70_LOG_VERBOSE
   -DNRF70_LOG_VERBOSE
+)
+
+zephyr_compile_definitions_ifdef(CONFIG_NRF70_AP_MODE
+  -DNRF70_AP_MODE
 )
 
 zephyr_compile_definitions(

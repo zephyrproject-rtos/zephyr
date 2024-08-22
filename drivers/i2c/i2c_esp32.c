@@ -90,6 +90,8 @@ struct i2c_esp32_config {
 	} mode;
 
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 
 	const uint32_t bitrate;
 	const uint32_t scl_timeout;
@@ -761,7 +763,17 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	esp_intr_alloc(config->irq_source, 0, i2c_esp32_isr, (void *)dev, NULL);
+	ret = esp_intr_alloc(config->irq_source,
+			ESP_PRIO_TO_FLAGS(config->irq_priority) |
+			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			i2c_esp32_isr,
+			(void *)dev,
+			NULL);
+
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
+	}
 
 	i2c_hal_master_init(&data->hal);
 
@@ -822,7 +834,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
 			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
 		},										   \
-		.irq_source = ETS_I2C_EXT##idx##_INTR_SOURCE,					   \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),				   \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),		   \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
 	};											   \

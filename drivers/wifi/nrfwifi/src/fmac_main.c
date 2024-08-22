@@ -45,6 +45,7 @@
 LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
+extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
 
 /* 3 bytes for addreess, 3 bytes for length */
 #define MAX_PKT_RAM_TX_ALIGN_OVERHEAD 6
@@ -73,7 +74,6 @@ BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
 static const unsigned char aggregation = 1;
-static const unsigned char wmm = 1;
 static const unsigned char max_num_tx_agg_sessions = 4;
 static const unsigned char max_num_rx_agg_sessions = 8;
 static const unsigned char reorder_buf_size = 16;
@@ -261,7 +261,7 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 
 	vif_ctx_zep->rssi = MBM_TO_DBM(signal);
 	vif_ctx_zep->rssi_record_timestamp_us =
-		nrf_wifi_osal_time_get_curr_us(fmac_dev_ctx->fpriv->opriv);
+		nrf_wifi_osal_time_get_curr_us();
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
@@ -707,7 +707,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;
-	data_config.wmm = wmm;
+	data_config.wmm = IS_ENABLED(CONFIG_NRF_WIFI_FEAT_WMM);
 	data_config.max_num_tx_agg_sessions = max_num_tx_agg_sessions;
 	data_config.max_num_rx_agg_sessions = max_num_rx_agg_sessions;
 	data_config.max_tx_aggregation = max_tx_aggregation;
@@ -764,11 +764,21 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.get_conn_info_callbk_fn = nrf_wifi_supp_event_proc_get_conn_info;
 #endif /* CONFIG_NRF70_STA_MODE */
 
+	/* The OSAL layer needs to be initialized before any other initialization
+	 * so that other layers (like FW IF,HW IF etc) have access to OS ops
+	 */
+	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
+
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init(&data_config,
 							rx_buf_pools,
 							&callbk_fns);
 #else /* !CONFIG_NRF70_RADIO_TEST */
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+
+	/* The OSAL layer needs to be initialized before any other initialization
+	 * so that other layers (like FW IF,HW IF etc) have access to OS ops
+	 */
+	nrf_wifi_osal_init(&nrf_wifi_os_zep_ops);
 
 	rpu_drv_priv_zep.fmac_priv = nrf_wifi_fmac_init_rt();
 #endif /* CONFIG_NRF70_RADIO_TEST */
@@ -810,6 +820,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
 	nrf_wifi_fmac_deinit_rt(rpu_drv_priv_zep.fmac_priv);
+	nrf_wifi_osal_deinit();
 #endif /* CONFIG_NRF70_RADIO_TEST */
 err:
 	return -1;
@@ -821,6 +832,7 @@ static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.scan = nrf_wifi_disp_scan_zep,
 #ifdef CONFIG_NET_STATISTICS_WIFI
 	.get_stats = nrf_wifi_stats_get,
+	.reset_stats = nrf_wifi_stats_reset,
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 #ifdef CONFIG_NRF70_STA_MODE
 	.set_power_save = nrf_wifi_set_power_save,

@@ -33,8 +33,12 @@ struct esp32_ipm_memory {
 };
 
 struct esp32_ipm_config {
-	uint32_t irq_source_pro_cpu;
-	uint32_t irq_source_app_cpu;
+	int irq_source_pro_cpu;
+	int irq_priority_pro_cpu;
+	int irq_flags_pro_cpu;
+	int irq_source_app_cpu;
+	int irq_priority_app_cpu;
+	int irq_flags_app_cpu;
 };
 
 struct esp32_ipm_data {
@@ -206,6 +210,7 @@ static int esp32_ipm_init(const struct device *dev)
 {
 	struct esp32_ipm_data *data = (struct esp32_ipm_data *)dev->data;
 	struct esp32_ipm_config *cfg = (struct esp32_ipm_config *)dev->config;
+	int ret;
 
 	data->this_core_id = esp_core_id();
 	data->other_core_id = (data->this_core_id  == 0) ? 1 : 0;
@@ -217,22 +222,36 @@ static int esp32_ipm_init(const struct device *dev)
 
 	/* pro_cpu is responsible to initialize the lock of shared memory */
 	if (data->this_core_id == 0) {
-		esp_intr_alloc(cfg->irq_source_pro_cpu,
-			ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)esp32_ipm_isr,
-			(void *)dev,
-			NULL);
+		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
+					ESP_INTR_FLAG_IRAM,
+				(intr_handler_t)esp32_ipm_isr,
+				(void *)dev,
+				NULL);
+
+		if (ret != 0) {
+			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			return ret;
+		}
 
 		atomic_set(&data->control->lock, ESP32_IPM_LOCK_FREE_VAL);
 	} else {
 		/* app_cpu wait for initialization from pro_cpu, then takes it,
 		 * after that releases
 		 */
-		esp_intr_alloc(cfg->irq_source_app_cpu,
-			ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)esp32_ipm_isr,
-			(void *)dev,
-			NULL);
+		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
+					ESP_INTR_FLAG_IRAM,
+				(intr_handler_t)esp32_ipm_isr,
+				(void *)dev,
+				NULL);
+
+		if (ret != 0) {
+			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			return ret;
+		}
 
 		LOG_DBG("Waiting CPU0 to sync");
 		while (!atomic_cas(&data->control->lock,
@@ -265,9 +284,13 @@ static const struct ipm_driver_api esp32_ipm_driver_api = {
 
 #define ESP32_IPM_INIT(idx)			\
 										\
-static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {	\
-	.irq_source_pro_cpu = DT_INST_IRQN(idx),		\
-	.irq_source_app_cpu = DT_INST_IRQN(idx) + 1,	\
+static struct esp32_ipm_config esp32_ipm_device_cfg_##idx = {		\
+	.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),			\
+	.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),	\
+	.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),			\
+	.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),			\
+	.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),	\
+	.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),			\
 };	\
 	\
 static struct esp32_ipm_data esp32_ipm_device_data_##idx = {	\

@@ -30,6 +30,8 @@ struct spi_esp32_config {
 	int duty_cycle;
 	int input_delay_ns;
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 	const struct pinctrl_dev_config *pcfg;
 	clock_control_subsys_t clock_subsys;
 	bool use_iomux;

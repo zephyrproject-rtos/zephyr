@@ -1,0 +1,142 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32690FTHR";
+	compatible = "adi,max32690fthr";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+		green_led: led_1 {
+			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		pb1: pb1 {
+			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		pb2: pb2 {
+			gpios = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW4";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &pb1;
+		sw1 = &pb2;
+	 };
+
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio3 0 0>,	/* A0 */
+			   <1 0 &gpio3 1 0>,	/* A1 */
+			   <2 0 &gpio3 4 0>,	/* A2 */
+			   <3 0 &gpio0 9 0>,	/* A3 */
+			   <4 0 &gpio0 10 0>,	/* A4 */
+			   <5 0 &gpio0 7 0>,	/* A5 */
+			   <6 0 &gpio2 29 0>,	/* SCK */
+			   <7 0 &gpio2 28 0>,	/* MOSI */
+			   <8 0 &gpio2 27 0>,	/* MISO */
+			   <9 0 &gpio1 9 0>,	/* RXD */
+			   <10 0 &gpio1 10 0>,	/* TXD */
+			   /* 11 (D2) not connected */
+			   <12 0 &gpio2 7 0>,	/* SDA */
+			   <13 0 &gpio2 8 0>,	/* SCL */
+			   <14 0 &gpio1 7 0>,	/* D5 */
+			   <15 0 &gpio1 8 0>,	/* D6 */
+			   <16 0 &gpio2 26 0>,	/* D9 */
+			   <17 0 &gpio0 23 0>,	/* D10 */
+			   <18 0 &gpio1 12 0>,	/* D11 */
+			   <19 0 &gpio1 11 0>,	/* D12 */
+			   <20 0 &gpio0 8 0>;	/* D13 */
+	};
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&uart0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+feather_serial: &uart2 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart2a_tx_p1_10 &uart2a_rx_p1_9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+feather_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
+	pinctrl-names = "default";
+};
+
+feather_spi: &spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29>;
+	pinctrl-names = "default";
+};
