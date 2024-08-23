@@ -127,6 +127,10 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		    k_thread_state_str(thread, state_str, sizeof(state_str)),
 		    thread->entry.pEntry);
 
+#ifdef CONFIG_SCHED_CPU_MASK
+	shell_print(sh, "\tcpu_mask: 0x%x", thread->base.cpu_mask);
+#endif /* CONFIG_SCHED_CPU_MASK */
+
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
 
