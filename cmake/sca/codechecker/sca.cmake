@@ -6,12 +6,38 @@ find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
 message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
 # Get CodeChecker specific variables
+zephyr_get(CODECHECKER_ANALYZE_JOBS)
 zephyr_get(CODECHECKER_ANALYZE_OPTS)
+zephyr_get(CODECHECKER_CONFIG_FILE)
 zephyr_get(CODECHECKER_EXPORT)
+zephyr_get(CODECHECKER_NAME)
 zephyr_get(CODECHECKER_PARSE_EXIT_STATUS)
 zephyr_get(CODECHECKER_PARSE_OPTS)
+zephyr_get(CODECHECKER_PARSE_SKIP)
 zephyr_get(CODECHECKER_STORE)
 zephyr_get(CODECHECKER_STORE_OPTS)
+zephyr_get(CODECHECKER_STORE_TAG)
+zephyr_get(CODECHECKER_TRIM_PATH_PREFIX)
+
+if(NOT CODECHECKER_NAME)
+  set(CODECHECKER_NAME zephyr)
+endif()
+
+if(CODECHECKER_ANALYZE_JOBS)
+  set(CODECHECKER_ANALYZE_JOBS "--jobs;${CODECHECKER_ANALYZE_JOBS}")
+endif()
+
+if(CODECHECKER_CONFIG_FILE)
+  set(CODECHECKER_CONFIG_FILE "--config;${CODECHECKER_CONFIG_FILE}")
+endif()
+
+if(CODECHECKER_STORE_TAG)
+  set(CODECHECKER_STORE_TAG "--tag;${CODECHECKER_STORE_TAG}")
+endif()
+
+if(CODECHECKER_TRIM_PATH_PREFIX)
+  set(CODECHECKER_TRIM_PATH_PREFIX "--trim-path-prefix;${CODECHECKER_TRIM_PATH_PREFIX}")
+endif()
 
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -31,7 +57,9 @@ add_custom_target(codechecker ALL
     --keep-gcc-include-fixed
     --keep-gcc-intrin
     --output ${output_dir}/codechecker.plist
-    --name zephyr # Set a default metadata name
+    --name ${CODECHECKER_NAME} # Set a default metadata name
+    ${CODECHECKER_CONFIG_FILE}
+    ${CODECHECKER_ANALYZE_JOBS}
     ${CODECHECKER_ANALYZE_OPTS}
     ${CMAKE_BINARY_DIR}/compile_commands.json
     || ${CMAKE_COMMAND} -E true # allow to continue processing results
@@ -67,6 +95,8 @@ if(DEFINED CODECHECKER_EXPORT)
         ${output_dir}/codechecker.plist
         --export ${export_item}
         --output ${output_dir}/codechecker.${export_item}
+        ${CODECHECKER_CONFIG_FILE}
+        ${CODECHECKER_TRIM_PATH_PREFIX}
         ${CODECHECKER_PARSE_OPTS}
       BYPRODUCTS ${output_dir}/codechecker.${export_item}
       VERBATIM
@@ -74,12 +104,14 @@ if(DEFINED CODECHECKER_EXPORT)
       COMMAND_EXPAND_LISTS
     )
   endforeach()
-else()
+elseif(NOT CODECHECKER_PARSE_SKIP)
   # Output parse results
   add_custom_command(
     TARGET codechecker POST_BUILD
     COMMAND ${CODECHECKER_EXE} parse
       ${output_dir}/codechecker.plist
+      ${CODECHECKER_CONFIG_FILE}
+      ${CODECHECKER_TRIM_PATH_PREFIX}
       ${CODECHECKER_PARSE_OPTS}
     VERBATIM
     USES_TERMINAL
@@ -91,6 +123,9 @@ if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
   add_custom_command(
     TARGET codechecker POST_BUILD
     COMMAND ${CODECHECKER_EXE} store
+      ${CODECHECKER_CONFIG_FILE}
+      ${CODECHECKER_STORE_TAG}
+      ${CODECHECKER_TRIM_PATH_PREFIX}
       ${CODECHECKER_STORE_OPTS}
       ${output_dir}/codechecker.plist
     VERBATIM
