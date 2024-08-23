@@ -19,7 +19,7 @@ namespace thrift
 namespace transport
 {
 
-class TFDServer: public TServerTransport
+class TFDServer : public TServerTransport
 {
 
 public:
