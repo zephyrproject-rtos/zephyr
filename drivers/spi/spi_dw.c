@@ -566,6 +566,12 @@ int spi_dw_init(const struct device *dev)
 	write_imr(dev, DW_SPI_IMR_MASK);
 	clear_bit_ssienr(dev);
 
+	/* SSI component version */
+	spi->version = read_ssi_comp_version(dev);
+	LOG_DBG("Version: %c.%c%c%c", (spi->version >> 24) & 0xff,
+		(spi->version >> 16) & 0xff, (spi->version >> 8) & 0xff,
+		spi->version & 0xff);
+
 	LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
 	err = spi_context_cs_configure_all(&spi->ctx);
