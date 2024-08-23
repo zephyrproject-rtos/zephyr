@@ -8,25 +8,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_
 
 #include <stdint.h>
+#include <zephyr/sys/slist.h>
 
 #if defined(CONFIG_BT_MESH)
 #include <zephyr/bluetooth/mesh.h>
 #endif /* CONFIG_BT_MESH */
-
-/**
- * @brief Bluetooth testing
- * @defgroup bt_test_cb Bluetooth testing callbacks
- * @ingroup bluetooth
- * @{
- */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** @brief Bluetooth Testing callbacks structure.
  *
@@ -95,12 +83,15 @@ int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count);
  */
 int bt_test_mesh_rpl_clear(void);
 
-/**
- * @}
- */
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_ */
+#if defined(CONFIG_BT_MESH)
+void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
+			   const void *payload, size_t payload_len);
+void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
+			     size_t payload_len);
+void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
+			      uint16_t key_idx);
+void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
+				uint16_t key_idx);
+void bt_test_mesh_prov_invalid_bearer(uint8_t opcode);
+void bt_test_mesh_trans_incomp_timer_exp(void);
+#endif /* CONFIG_BT_MESH */

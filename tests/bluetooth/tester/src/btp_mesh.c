@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <zephyr/bluetooth/mesh.h>
-#include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/mesh/cfg.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/settings/settings.h>
@@ -18,6 +17,7 @@
 #include <sar_cfg_internal.h>
 #include <string.h>
 #include "mesh/access.h"
+#include "mesh/testing.h"
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_mesh
