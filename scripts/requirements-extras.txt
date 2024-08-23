@@ -33,3 +33,7 @@ graphviz
 
 # used to generate CBOR encoders and decoders, e.g. lwm2m_senml_cbor.
 zcbor>=0.8.0
+
+# DTSh requirements.
+rich
+gnureadline; sys_platform == "darwin"
