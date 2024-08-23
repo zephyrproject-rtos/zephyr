@@ -1,0 +1,678 @@
+/**
+ * Copyright (c) 2021-2024 MUNIC SA
+ *
+ * Renesas RA2AL1 MCU series device tree
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/lpm/lpm_ra2.h>
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+
+/ {
+	sysc: sysc@4001e000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg = <0x4001e000 0x700>;
+		reg-names = "sysc";
+
+		status = "okay";
+
+		arch-type-a;
+
+		/* Keep the clocks in order, the regs values are using in clocks
+		 * management
+		 */
+		hoco: clk@0 {
+			compatible = "renesas,ra2-hoco-osc";
+			reg = <0>;
+			reg-names = "id";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		moco: clk@1 {
+			compatible = "renesas,ra2-root-osc";
+			reg = <1>, <0x4001e038>;
+			reg-names = "id", "cr";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(8)>;
+			status = "okay";
+			stabilisation-time = <1>;
+		};
+
+		loco: clk@2 {
+			compatible = "renesas,ra2-root-osc";
+			reg = <2>, <0x4001e490>;
+			reg-names = "id", "cr";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "okay";
+			stabilisation-time = <100>;
+		};
+
+		mosc: clk@3 {
+			compatible = "renesas,ra2-main-osc";
+			reg = <3>;
+			reg-names = "id";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		sosc: clk@4 {
+			compatible = "renesas,ra2-root-osc";
+			reg = <4>, <0x4001e480>;
+			reg-names = "id", "cr";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+			/* This value should be replaced by the oscillator wait
+			 * time recommended by the oscillator manufacturer.
+			 */
+			stabilisation-time = <500000>;
+		};
+
+		/* "Virtual" clock to work around DTS limitations:
+		 * some of internal clocks must to use same source
+		 */
+		sysclk: clk@5 {
+			compatible = "renesas,ra2-sysclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <5>;
+
+			#clock-cells = <0>;
+			status = "okay";
+
+			pclkd: clk@0 {
+				reg = <0>;
+				compatible = "renesas,ra2-internal-clk";
+				status = "okay";
+				#clock-cells = <0>;
+				max-clock-div = <64>;
+			};
+
+			pclkb: clk@1 {
+				reg = <1>;
+				compatible = "renesas,ra2-internal-clk";
+				status = "okay";
+				#clock-cells = <0>;
+				max-clock-div = <64>;
+			};
+
+			iclk: clk@3 {
+				compatible = "renesas,ra2-internal-clk";
+				reg = <3>;
+				status = "okay";
+				#clock-cells = <0>;
+				max-clock-div = <64>;
+			};
+		};
+
+		iwdtloco: iwdtloco {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(15)>;
+			status = "okay";
+		};
+
+		lvd0: lvd@0 {
+			reg = <0>;
+			compatible = "renesas,ra-lvd0";
+			status = "disabled";
+		};
+
+		lvd1: lvd@1 {
+			compatible = "renesas,ra-lvd1";
+			reg = <1>;
+			status = "disabled";
+		};
+
+		lvd2: lvd@2 {
+			reg = <2>;
+			compatible = "renesas,ra-lvd2";
+			status = "disabled";
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m23";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&sleep &standby>;
+			clocks = <&iclk>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <10>;
+				exit-latency-us = <6>;
+			};
+		};
+	};
+
+	soc {
+		interrupt-parent = <&icu>;
+
+		icu: interrupt-controller@40006000 {
+			compatible = "renesas,ra2-icu";
+			status = "okay";
+
+			reg = <0x40006000 0x380>;
+			#address-cells = <0>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			clocks = <&iclk>;
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x8000>;
+			clocks = <&iclk>;
+		};
+
+		flcn: flash-controller@407ec000 {
+			reg = <0x407ec000 0x10000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			clocks = <&iclk>;
+
+			flash0: code@0 {
+				/* "reg" property should be defined in the
+				 * chip specific .dtsi file
+				 */
+			};
+
+			flash1: data@40100000 {
+				reg = <0x40100000 DT_SIZE_K(8)>;
+			};
+		};
+
+		cac: cac@40044600 {
+			compatible = "renesas,ra-cac";
+			reg = <0x40044600 0xc>;
+			lpm-id = <LPM_RA_CAC>;
+			status = "disabled";
+			clocks = <&pclkb>;
+		};
+
+		lpm: lpm@40047000 {
+			compatible = "renesas,ra2-lpm";
+			reg = <0x40047000 0x10>;
+			reg-names = "mstp";
+			clocks = <&iclk>;
+		};
+
+		wdt: watchdog@40044200 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40044200 0xc>;
+			status = "disabled";
+			clocks = <&pclkb>;
+		};
+
+		iwdt: independent-watchdog@40044400 {
+			compatible = "renesas,ra-iwdt";
+			reg = <0x40044400 0x6>;
+			status = "disabled";
+			clocks = <&pclkb>, <&iwdtloco>;
+		};
+
+		adc: adc@4005c000 {
+			compatible = "renesas,ra2l-adc";
+			reg = <0x4005c000 0x100>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+			lpm-id = <LPM_RA_ADC120>;
+			clocks = <&pclkb>, <&pclkd>;
+		};
+
+		elc: elc@40041000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40041000 0x7e>;
+			lpm-id = <LPM_RA_ELC>;
+			status = "disabled";
+			#elc-event-cells = <2>;
+			clocks = <&pclkb>;
+		};
+
+		dma: dma@40005400 {
+			compatible = "renesas,ra-dtc";
+			reg = <0x40005400 0x24>;
+			dma-channels = <32>;
+			icu = <&icu>;
+			#dma-cells = <2>;
+			lpm-id = <LPM_RA_DTC>;
+			clocks = <&iclk>;
+		};
+
+		doc: doc@40054100 {
+			compatible = "renesas,ra-doc";
+			reg = <0x40054100 0x6>;
+			lpm-id = <LPM_RA_DOC>;
+			clocks = <&pclkb>;
+		};
+
+		sci0: sci@40070000 {
+			reg = <0x40070000 0x20>;
+			status = "disabled";
+			lpm-id = <LPM_RA_SCI0>;
+			clocks = <&pclkb>;
+		};
+
+		sci1: sci@40070020 {
+			reg = <0x40070020 0x20>;
+			status = "disabled";
+			lpm-id = <LPM_RA_SCI1>;
+			clocks = <&pclkb>;
+		};
+
+		sci2: sci@40070040 {
+			reg = <0x40070040 0x20>;
+			status = "disabled";
+			lpm-id = <LPM_RA_SCI2>;
+			clocks = <&pclkb>;
+		};
+
+		sci3: sci@40070060 {
+			reg = <0x40070060 0x20>;
+			status = "disabled";
+			lpm-id = <LPM_RA_SCI3>;
+			clocks = <&pclkb>;
+		};
+
+		sci9: sci@40070120 {
+			reg = <0x40070120 0x20>;
+			status = "disabled";
+			lpm-id = <LPM_RA_SCI9>;
+			clocks = <&pclkb>;
+		};
+
+		agt0: agt@40084000 {
+			compatible = "renesas,ra-agt";
+			reg = <0x40084000 0x10>;
+			status = "disabled";
+			lpm-id = <LPM_RA_AGT0>;
+			clock-names = "regs", "cnt";
+			#timer-cells = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			agt0_clk: agt0@0 {
+				reg = <0>;
+				reg-names = "id";
+				#clock-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		agt1: agt@40084100 {
+			compatible = "renesas,ra-agt";
+			reg = <0x40084100 0x10>;
+			status = "disabled";
+			lpm-id = <LPM_RA_AGT1>;
+			clock-names = "regs", "cnt";
+			#timer-cells = <0>;
+		};
+
+		poegga: poeg@40042000 {
+			compatible = "renesas,ra-poeg";
+			reg = <0x40042000 0x4>;
+			status = "disabled";
+			lpm-id = <LPM_RA_POEG>;
+			clocks = <&pclkb>;
+		};
+
+		poeggb: poeg@40042100 {
+			compatible = "renesas,ra-poeg";
+			reg = <0x40042100 0x4>;
+			status = "disabled";
+			lpm-id = <LPM_RA_POEG>;
+			clocks = <&pclkb>;
+		};
+
+		gpt0: gpt@40078000 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078000 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_LO>;
+			size = <32>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt1: gpt@40078100 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078100 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_LO>;
+			size = <32>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt2: gpt@40078200 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078200 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_LO>;
+			size = <32>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt3: gpt@40078300 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078300 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_LO>;
+			size = <32>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt4: gpt@40078400 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078400 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt5: gpt@40078500 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078500 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt6: gpt@40078600 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078600 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt7: gpt@40078700 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078700 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt8: gpt@40078800 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078800 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		gpt9: gpt@40078900 {
+			compatible = "renesas,ra-gpt-timer";
+			reg = <0x40078900 0xd8>;
+			status = "disabled";
+			lpm-id = <LPM_RA_GPT_HI>;
+			size = <16>;
+			clocks = <&pclkb>, <&pclkd>;
+			clock-names = "regs", "cnt";
+		};
+
+		i2c0: i2c@40053000 {
+			compatible = "renesas,ra-i2c";
+			reg = <0x40053000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			lpm-id = <LPM_RA_IIC0>;
+			clocks = <&pclkb>;
+		};
+
+		i2c1: i2c@40053100 {
+			compatible = "renesas,ra-i2c";
+			reg = <0x40053100 0x18>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			lpm-id = <LPM_RA_IIC1>;
+			clocks = <&pclkb>;
+		};
+
+		can0: can@40050000 {
+			compatible = "renesas,ra-can";
+			reg = <0x40050000 0x860>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			lpm-id = <LPM_RA_CAN0>;
+			clocks = <&mosc>;
+		};
+
+		kint: kint@40080000 {
+			compatible = "renesas,ra2-kint";
+			reg = <0x40080000 0x12>;
+			status = "disabled";
+		};
+
+		ra-ioports@40040800 {
+			compatible = "renesas,ra2-ioports";
+
+			reg-names = "base", "pwpr", "prwcntr";
+			reg = <0x40040800 0x510>, <0x503 0x1>, <0x50f 0x1>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			clocks = <&pclkb>;
+
+			status = "okay";
+
+			ioport0: ioport@0 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x0 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport1: ioport@40 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x40 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport2: ioport@80 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x80 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport3: ioport@c0 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0xc0 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport4: ioport@100 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x100 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport5: ioport@140 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x140 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport6: ioport@180 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x180 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport7: ioport@1c0 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x1c0 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			ioport8: ioport@200 {
+				compatible = "renesas,ra2-pfs";
+				reg = <0x200 0x40>;
+				#pinmux-cells = <2>;
+				ngpios = <16>;
+			};
+
+			pinctrl: pinctrl {
+				status = "okay";
+				compatible = "renesas,ra2-pinctrl";
+			};
+		};
+
+		gpio0: gpio@40040000 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040000 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport0>;
+			interrupts = <0 6>, < 1 7 >, < 2 2 >, < 4 3 >, < 15 7 >;
+			clocks = <&pclkb>;
+		};
+
+		gpio1: gpio@40040020 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040020 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport1>;
+			interrupts = < 0 2 >, < 1 1 >, < 4 1 >,
+					< 5 0 >, < 10 3 >, < 11 4 >;
+			clocks = <&pclkb>;
+		};
+
+		gpio2: gpio@40040040 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040040 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport2>;
+			interrupts = < 5 1 >, < 6 0 >, < 12 3 >, < 13 2 >;
+			clocks = <&pclkb>;
+		};
+
+		gpio3: gpio@40040060 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040060 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport3>;
+			interrupts = < 1 6 >, < 2 5 >;
+			clocks = <&pclkb>;
+		};
+
+		gpio4: gpio@40040080 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040080 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport4>;
+			interrupts = < 0 0 >, < 1 5 >, < 2 4 >, < 8 7 >,
+					< 9 6 >, < 10 5 >, < 11 4 >;
+			clocks = <&pclkb>;
+		};
+
+		gpio5: gpio@400400a0 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x400400a0 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport5>;
+			clocks = <&pclkb>;
+		};
+
+		gpio6: gpio@400400c0 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x400400c0 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport6>;
+			clocks = <&pclkb>;
+		};
+
+		gpio7: gpio@400400e0 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x400400e0 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport7>;
+			clocks = <&pclkb>;
+		};
+
+		gpio8: gpio@40040100 {
+			compatible = "renesas,ra2-gpio";
+			reg = <0x40040100 0x20>;
+			status = "disabled";
+			gpio-controller;
+			#gpio-cells = <2>;
+			renesas,ra2-pfs = <&ioport8>;
+			clocks = <&pclkb>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

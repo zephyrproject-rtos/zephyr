@@ -1,0 +1,45 @@
+/**
+ * Copyright (c) 2024 MUNIC SA
+ *
+ * Renesas R7FA2AL1AxxxFM MCU device tree for 64 pins socket
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+&adc {
+	channel-count = <13>;
+};
+
+&ioport0 {
+	gpio-reserved-ranges = <5 5>;
+};
+
+&ioport1 {
+	gpio-reserved-ranges = <14 2>;
+};
+
+&ioport2 {
+	gpio-reserved-ranges = <2 2>, <9 3>;
+};
+
+&ioport3 {
+	gpio-reserved-ranges = <5 11>;
+};
+
+&ioport4 {
+	gpio-reserved-ranges = <4 3>, <12 4>;
+};
+
+&ioport5 {
+	gpio-reserved-ranges = <3 13>;
+};
+
+/delete-node/ &ioport6;
+/delete-node/ &gpio6;
+
+/delete-node/ &ioport7;
+/delete-node/ &gpio7;
+
+/delete-node/ &ioport8;
+/delete-node/ &gpio8;

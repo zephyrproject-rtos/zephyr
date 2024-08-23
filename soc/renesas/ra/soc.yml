@@ -37,3 +37,13 @@ family:
       - name: ra8t1
         socs:
           - name: r7fa8t1ahecbd
+      - name: ra2l1
+        socs:
+          - name: r7fa2l1a9xxfp
+          - name: r7fa2l1a9xxfn
+          - name: r7fa2l1a9xxfm
+          - name: r7fa2l1a9xxne
+          - name: r7fa2l1abxxfp
+          - name: r7fa2l1abxxfn
+          - name: r7fa2l1abxxfm
+          - name: r7fa2l1abxxne
