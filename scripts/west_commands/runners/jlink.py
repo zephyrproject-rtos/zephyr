@@ -31,7 +31,7 @@ DEFAULT_JLINK_RTT_PORT = 19021
 
 def is_ip(ip):
     try:
-        ipaddress.ip_address(ip)
+        ipaddress.ip_address(ip.split(':')[0])
     except ValueError:
         return False
     return True
