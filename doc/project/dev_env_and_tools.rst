@@ -377,13 +377,13 @@ Labels applicable to both pull requests and issues
      - The issue is to be discussed in the following `dev-review`_ if time
        permits.
 
-       .. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-dev-meeting
+       .. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
    * - :guilabel:`TSC`
      - TSC stands for Technical Steering Committee. The issue is to be discussed in the
        following `TSC meeting`_ if time permits.
 
-       .. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#technical-steering-committee-tsc
+       .. _`TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Technical-Steering-Committee-(TSC)
 
    * - :guilabel:`Breaking API Change`
      - The issue or PR describes a breaking change to a stable API. See additional information
