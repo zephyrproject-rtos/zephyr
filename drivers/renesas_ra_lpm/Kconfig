@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2024 MUNIC SA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Top-level configuration file for Renesas LPM drivers.
+
+menuconfig RENESAS_RA_LPM
+	bool "Renesas RA Low Power Module drivers"
+	help
+	  Include LPM drivers in the system configuration.
+
+if RENESAS_RA_LPM
+
+module = RENESAS_RA_LPM
+module-str = renesas_ra_lpm
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/renesas_ra_lpm/Kconfig.renesas_ra2"
+
+endif

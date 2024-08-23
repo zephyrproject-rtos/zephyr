@@ -1,0 +1,18 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: |
+  RA2 family LPM
+
+  The Renesas Low Power Manager module handles starting and stopping
+  peripherals, as well as switching between low power modes and speed modes.
+
+compatible: "renesas,ra2-lpm"
+
+properties:
+  reg:
+    required: true
+  reg-names:
+    required: true

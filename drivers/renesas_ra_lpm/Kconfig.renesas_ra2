@@ -1,0 +1,7 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RA_LPM_RA2
+	bool
+	depends on DT_HAS_RENESAS_RA2_LPM_ENABLED
+	default y
