@@ -253,8 +253,10 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 			memcpy(region, shdr, sizeof(*region));
 		} else {
 			/* Make sure this section is compatible with the region */
-			if (shdr->sh_flags != region->sh_flags) {
-				LOG_ERR("Unsupported section flags for %s (region %d)",
+			if ((shdr->sh_flags & SHF_BASIC_TYPE_MASK) !=
+			    (region->sh_flags & SHF_BASIC_TYPE_MASK)) {
+				LOG_ERR("Unsupported section flags %#x / %#x for %s (region %d)",
+					(uint32_t)shdr->sh_flags, (uint32_t)region->sh_flags,
 					name, mem_idx);
 				return -ENOEXEC;
 			}
