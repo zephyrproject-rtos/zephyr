@@ -159,7 +159,7 @@ static int dac_stm32_init(const struct device *dev)
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
+	if ((err < 0) && (err != -ENOENT)) {
 		LOG_ERR("DAC pinctrl setup failed (%d)", err);
 		return err;
 	}
