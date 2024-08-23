@@ -638,6 +638,11 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
+	}
+
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
 		return 0;
