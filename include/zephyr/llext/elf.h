@@ -212,6 +212,8 @@ struct elf64_shdr {
 #define SHF_ALLOC 0x2           /**< Section is present in memory */
 #define SHF_EXECINSTR 0x4       /**< Section contains executable instructions */
 
+#define SHF_BASIC_TYPE_MASK	(SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR)
+
 /**
  * @brief Symbol table entry(32-bit)
  */
