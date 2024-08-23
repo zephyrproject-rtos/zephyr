@@ -18,7 +18,7 @@
 
 #include "common/bt_str.h"
 
-#include "host/testing.h"
+#include "testing.h"
 
 #include "mesh.h"
 #include "net.h"

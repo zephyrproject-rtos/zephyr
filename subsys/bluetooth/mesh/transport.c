@@ -19,8 +19,6 @@
 
 #include "common/bt_str.h"
 
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "mesh.h"
 #include "net.h"
@@ -33,6 +31,7 @@
 #include "sar_cfg_internal.h"
 #include "settings.h"
 #include "heartbeat.h"
+#include "testing.h"
 #include "transport.h"
 #include "va.h"
 
