@@ -5,6 +5,14 @@
 find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
 message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
+# Get CodeChecker specific variables
+zephyr_get(CODECHECKER_ANALYZE_OPTS)
+zephyr_get(CODECHECKER_EXPORT)
+zephyr_get(CODECHECKER_PARSE_EXIT_STATUS)
+zephyr_get(CODECHECKER_PARSE_OPTS)
+zephyr_get(CODECHECKER_STORE)
+zephyr_get(CODECHECKER_STORE_OPTS)
+
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -47,8 +55,7 @@ if(NOT CODECHECKER_PARSE_EXIT_STATUS)
   set(CODECHECKER_PARSE_OPTS ${CODECHECKER_PARSE_OPTS} || ${CMAKE_COMMAND} -E true)
 endif()
 
-
-if(CODECHECKER_EXPORT)
+if(DEFINED CODECHECKER_EXPORT)
   string(REPLACE "," ";" export_list ${CODECHECKER_EXPORT})
 
   foreach(export_item IN LISTS export_list)
@@ -80,7 +87,7 @@ else()
   )
 endif()
 
-if(CODECHECKER_STORE OR CODECHECKER_STORE_OPTS)
+if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
   add_custom_command(
     TARGET codechecker POST_BUILD
     COMMAND ${CODECHECKER_EXE} store
