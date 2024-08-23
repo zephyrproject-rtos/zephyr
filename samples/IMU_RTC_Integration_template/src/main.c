@@ -25,7 +25,7 @@ void touch_isr(void);
 lv_ui guider_ui;
 data_struct data;
 uint8_t data_arr[8];
-const struct device *dev =  DEVICE_DT_GET(DT_NODELABEL(i2c0));
+const struct device *dev =  DEVICE_DT_GET(DT_NODELABEL(i2c1));
 const struct device *dev1 =  DEVICE_DT_GET(DT_NODELABEL(gpio0));
 bool is_first = true;
 cst816s_t touch_dev_handle;

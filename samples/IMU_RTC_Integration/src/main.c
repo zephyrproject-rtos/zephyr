@@ -65,6 +65,9 @@ const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));
 const struct device * dev2 = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 struct gpio_dt_spec vPin;
+uint8_t data_arr[8];
+data_struct data_send;
+K_MSGQ_DEFINE(touch_msg_q, sizeof(data_struct), 10, 1);
 void num_to_string(char *str,uint16_t num,uint8_t padd);
 void update_time_in_screen(lv_ui *ui,Time const *time,Date const *date);
 void update_stepcount_in_screen(lv_ui *ui,uint32_t steps);
@@ -73,9 +76,9 @@ typedef struct{
 	char sender[15];
 	char message[30];
 }msg_data;
-
+cst816s_t touch_dev_handle;
+void touch_isr(void);
 K_MSGQ_DEFINE(sms_msg_q, sizeof(msg_data), 5, 1);
-K_MSGQ_DEFINE(touch_input_q, sizeof(msg_data), 5, 1);
 void vibration_motor()
 {
 	gpio_pin_set_dt(&vPin,1);
@@ -165,6 +168,14 @@ void main_task_handler(void)
     //   DS3231_setHours(dev1,DS3231_ADDR,2);
     //   DS3231_setMinutes(dev1,DS3231_ADDR,57);
 	//   DS3231_setHourMode(dev1,DS3231_ADDR,CLOCK_H12);
+
+	CST816S_init(&touch_dev_handle,dev2,dev1,5,6,data_arr);
+	IRQ_CONNECT(32, 4, touch_isr, NULL, NULL);
+	gpio_pin_interrupt_configure(dev2, 0, 1);
+	irq_enable(32);
+	gpio_pin_configure(dev2, 0, 0);
+	plic_irq_enable(32);
+
 	gpio_pin_configure(dev2,7,GPIO_INPUT);
 	display_blanking_off(display_dev);
 	while (1) {
@@ -248,18 +259,18 @@ void process_message_notification_handler(void)
 }
 void gesture_control_handler(void)
 {
-	data_struct touch_data;
+	data_struct data_recv;
 	while(1){
-		k_msgq_get(&touch_input_q, &touch_data, K_FOREVER);
-		if(touch_data.gestureID == SWIPE_LEFT)
-		{
-			lv_scr_load(guider_ui.screen_2);
+		k_msgq_get(&touch_msg_q, &data_recv, K_FOREVER);
+		printk("Gesture ID:%d\n",data_recv.gestureID);
+		if(data_recv.gestureID == SWIPE_DOWN){
+				lv_scr_load(guider_ui.screen_2);
+				printf("Completed screen 2\n");
 		}
-		else if (touch_data.gestureID == SWIPE_RIGHT)
-		{
-			lv_scr_load(guider_ui.screen_1);
+		else if(data_recv.gestureID == SWIPE_UP){
+				lv_scr_load(guider_ui.screen_1);
+				printf("Completed screen 1\n");
 		}
-	
 	}
 }
 void screen_refresh_task_handler(void)
@@ -267,9 +278,21 @@ void screen_refresh_task_handler(void)
 	while(1)
 	{
 		lv_task_handler();
+		irq_enable(32);
+		gpio_pin_configure(dev2, 0, 0);
+		plic_irq_enable(32);
 		k_yield();
 	}
 }
+
+void touch_isr(void)
+{
+    printf("Touch detected\n");
+    data_send = CST816S_read_touch(&touch_dev_handle);
+	if(data_send.gestureID !=0)
+    k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
+}
+
 K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
