@@ -190,8 +190,7 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 
 }
 
-static int cmd_kernel_threads(const struct shell *sh,
-			      size_t argc, char **argv)
+static int cmd_kernel_thread_list(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -207,66 +206,6 @@ static int cmd_kernel_threads(const struct shell *sh,
 
 	return 0;
 }
-
-#if defined(CONFIG_ARCH_STACKWALK)
-
-static bool print_trace_address(void *arg, unsigned long ra)
-{
-	const struct shell *sh = arg;
-#ifdef CONFIG_SYMTAB
-	uint32_t offset = 0;
-	const char *name = symtab_find_symbol_name(ra, &offset);
-
-	shell_print(sh, "ra: %p [%s+0x%x]", (void *)ra, name, offset);
-#else
-	shell_print(sh, "ra: %p", (void *)ra);
-#endif
-
-	return true;
-}
-
-struct unwind_entry {
-	const struct k_thread *const thread;
-	bool valid;
-};
-
-static void is_valid_thread(const struct k_thread *cthread, void *user_data)
-{
-	struct unwind_entry *entry = user_data;
-
-	if (cthread == entry->thread) {
-		entry->valid = true;
-	}
-}
-
-static int cmd_kernel_unwind(const struct shell *sh, size_t argc, char **argv)
-{
-	struct k_thread *thread;
-
-	if (argc == 1) {
-		thread = _current;
-	} else {
-		thread = UINT_TO_POINTER(strtoll(argv[1], NULL, 16));
-		struct unwind_entry entry = {
-			.thread = thread,
-			.valid = false,
-		};
-
-		k_thread_foreach_unlocked(is_valid_thread, &entry);
-
-		if (!entry.valid) {
-			shell_error(sh, "Invalid thread id %p", (void *)thread);
-			return -EINVAL;
-		}
-	}
-	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
-
-	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
-
-	return 0;
-}
-
-#endif /* CONFIG_ARCH_STACKWALK */
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
@@ -299,8 +238,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static int cmd_kernel_stacks(const struct shell *sh,
-			     size_t argc, char **argv)
+static int cmd_kernel_thread_stacks(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -337,7 +275,86 @@ static int cmd_kernel_stacks(const struct shell *sh,
 
 	return 0;
 }
+#endif /* CONFIG_INIT_STACKS & CONFIG_THREAD_STACK_INFO & CONFIG_THREAD_MONITOR */
+
+struct thread_entry {
+	const struct k_thread *const thread;
+	bool valid;
+};
+
+static void thread_valid_cb(const struct k_thread *cthread, void *user_data)
+{
+	struct thread_entry *entry = user_data;
+
+	if (cthread == entry->thread) {
+		entry->valid = true;
+	}
+}
+
+__maybe_unused
+static bool thread_is_valid(const struct k_thread *thread)
+{
+	struct thread_entry entry = {
+		.thread = thread,
+		.valid = false,
+	};
+
+	k_thread_foreach(thread_valid_cb, &entry);
+
+	return entry.valid;
+}
+
+#if defined(CONFIG_ARCH_STACKWALK)
+
+static bool print_trace_address(void *arg, unsigned long ra)
+{
+	const struct shell *sh = arg;
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(ra, &offset);
+
+	shell_print(sh, "ra: %p [%s+0x%x]", (void *)ra, name, offset);
+#else
+	shell_print(sh, "ra: %p", (void *)ra);
 #endif
+
+	return true;
+}
+
+static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **argv)
+{
+	struct k_thread *thread;
+
+	if (argc == 1) {
+		thread = _current;
+	} else {
+		thread = UINT_TO_POINTER(strtoll(argv[1], NULL, 16));
+
+		if (!thread_is_valid(thread)) {
+			shell_error(sh, "Invalid thread id %p", (void *)thread);
+			return -EINVAL;
+		}
+	}
+	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
+
+	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
+
+	return 0;
+}
+
+#endif /* CONFIG_ARCH_STACKWALK */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_thread,
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
+		defined(CONFIG_THREAD_MONITOR)
+	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_thread_stacks),
+	SHELL_CMD(list, NULL, "List kernel threads.", cmd_kernel_thread_list),
+#endif
+#if defined(CONFIG_ARCH_STACKWALK)
+	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_thread_unwind, 1, 1),
+#endif /* CONFIG_ARCH_STACKWALK */
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
 
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 extern struct sys_heap _system_heap;
@@ -458,14 +475,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 #if defined(CONFIG_REBOOT)
 	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", NULL),
 #endif
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
-		defined(CONFIG_THREAD_MONITOR)
-	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
-	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
-#if defined(CONFIG_ARCH_STACKWALK)
-	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_unwind, 1, 1),
-#endif /* CONFIG_ARCH_STACKWALK */
-#endif
+	SHELL_CMD(thread, &sub_kernel_thread, "Kernel threads.", NULL),
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	SHELL_CMD(heap, NULL, "System heap usage statistics.", cmd_kernel_heap),
 #endif
