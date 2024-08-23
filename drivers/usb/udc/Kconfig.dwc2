@@ -17,6 +17,13 @@ config UDC_DWC2_DMA
 	help
 	  Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
 
+config UDC_DWC2_HIBERNATION
+	bool "DWC2 USB Hibernation support"
+	default y
+	depends on UDC_DWC2
+	help
+	  Enable Hibernation if DWC2 USB controller supports hibernation.
+
 config UDC_DWC2_STACK_SIZE
 	int "UDC DWC2 driver internal thread stack size"
 	depends on UDC_DWC2
