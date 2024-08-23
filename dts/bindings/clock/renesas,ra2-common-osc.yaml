@@ -1,0 +1,11 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+#
+# Common fields for R2L clocks
+
+properties:
+  clock-source:
+    type: boolean
+    description: |
+      Defines that the clock (aka 'oscillator' in the datasheet) is the source
+      for the others clock generators

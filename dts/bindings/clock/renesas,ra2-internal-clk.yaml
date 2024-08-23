@@ -1,0 +1,39 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 internal clock (ICLK, PCLKB and PCLKD)
+
+compatible: "renesas,ra2-internal-clk"
+
+include:
+  - name: fixed-factor-clock.yaml
+    property-allowlist:
+      - clock-div
+      - "#clock-cells"
+  - name: base.yaml
+    property-allowlist:
+      - reg
+      - compatible
+      - status
+
+properties:
+  reg:
+    required: true
+
+  clock-div:
+    required: true
+    default: 16
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+
+  max-clock-div:
+    type: int
+    required: true
+    const: 64
+    description: the highest allowed clock divisor

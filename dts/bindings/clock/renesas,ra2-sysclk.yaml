@@ -1,0 +1,23 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 "virtual" source clock controller for ICLK, PCLKB and PCLKD
+
+compatible: "renesas,ra2-sysclk"
+
+include:
+  - clock-controller.yaml
+  - name: base.yaml
+    property-allowlist:
+      - reg
+      - compatible
+      - clocks
+      - clock-names
+      - status
+
+properties:
+  clocks:
+    required: true
+
+  "#clock-cells":
+    const: 0

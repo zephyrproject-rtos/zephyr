@@ -82,3 +82,10 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AST10X0 clock_control_ast10x0.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_MAX32 clock_control_max32.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_AUXPLL clock_control_nrf_auxpll.c)
+
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RENESAS_RA2L1
+  clock_control_ra2_root_osc.c
+  clock_control_ra2_main_osc.c
+  clock_control_ra2_hoco_osc.c
+  clock_control_ra2_sysclk.c
+)

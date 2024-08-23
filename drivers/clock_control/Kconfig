@@ -84,6 +84,8 @@ source "drivers/clock_control/Kconfig.renesas_ra"
 
 source "drivers/clock_control/Kconfig.renesas_ra_cgc"
 
+source "drivers/clock_control/Kconfig.renesas_ra2"
+
 source "drivers/clock_control/Kconfig.max32"
 
 source "drivers/clock_control/Kconfig.ambiq"
