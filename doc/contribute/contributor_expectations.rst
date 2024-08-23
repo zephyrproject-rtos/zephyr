@@ -254,7 +254,7 @@ the steps below:
 
 .. _dev-review: https://github.com/zephyrproject-rtos/zephyr/labels/dev-review
 
-.. _Zephyr Dev Meeting: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings#zephyr-dev-meeting
+.. _Zephyr Dev Meeting: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
 .. _Architecture Project: https://github.com/zephyrproject-rtos/zephyr/projects/18
 
