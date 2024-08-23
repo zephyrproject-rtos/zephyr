@@ -551,6 +551,10 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 	k_work_cancel_delayable(&audio_send_work);
 }
 
+static void stream_started(struct bt_bap_stream *stream)
+{
+	printk("Audio Stream %p started\n", stream);
+}
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
@@ -573,6 +577,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = stream_recv,
 #endif
 	.stopped = stream_stopped,
+	.started = stream_started,
 	.enabled = stream_enabled_cb,
 };
 
