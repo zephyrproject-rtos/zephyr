@@ -1,24 +1,27 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#if defined(CONFIG_BT_MESH)
-#include "mesh/net.h"
-#include "mesh/lpn.h"
-#include "mesh/rpl.h"
-#include "mesh/transport.h"
-#endif /* CONFIG_BT_MESH */
+#include <zephyr/bluetooth/mesh/access.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
+#include "net.h"
+#include "lpn.h"
+#include "rpl.h"
 #include "testing.h"
+#include "transport.h"
 
 static sys_slist_t cb_slist;
 
-int bt_test_cb_register(struct bt_test_cb *cb)
+int bt_mesh_test_cb_register(struct bt_mesh_test_cb *cb)
 {
 	if (sys_slist_find(&cb_slist, &cb->node, NULL)) {
 		return -EEXIST;
@@ -29,92 +32,87 @@ int bt_test_cb_register(struct bt_test_cb *cb)
 	return 0;
 }
 
-void bt_test_cb_unregister(struct bt_test_cb *cb)
+void bt_mesh_test_cb_unregister(struct bt_mesh_test_cb *cb)
 {
 	sys_slist_find_and_remove(&cb_slist, &cb->node);
 }
 
-#if defined(CONFIG_BT_MESH)
-void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
+void bt_mesh_test_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 			   const void *payload, size_t payload_len)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_net_recv) {
-			cb->mesh_net_recv(ttl, ctl, src, dst, payload,
-					  payload_len);
+		if (cb->net_recv) {
+			cb->net_recv(ttl, ctl, src, dst, payload, payload_len);
 		}
 	}
 }
 
-void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
-			     size_t payload_len)
+void bt_mesh_test_model_recv(uint16_t src, uint16_t dst, const void *payload, size_t payload_len)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_model_recv) {
-			cb->mesh_model_recv(src, dst, payload, payload_len);
+		if (cb->model_recv) {
+			cb->model_recv(src, dst, payload, payload_len);
 		}
 	}
 }
 
-void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
-			      uint16_t key_idx)
+void bt_mesh_test_model_bound(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_model_bound) {
-			cb->mesh_model_bound(addr, model, key_idx);
+		if (cb->model_bound) {
+			cb->model_bound(addr, model, key_idx);
 		}
 	}
 }
 
-void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
-				uint16_t key_idx)
+void bt_mesh_test_model_unbound(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_model_unbound) {
-			cb->mesh_model_unbound(addr, model, key_idx);
+		if (cb->model_unbound) {
+			cb->model_unbound(addr, model, key_idx);
 		}
 	}
 }
 
-void bt_test_mesh_prov_invalid_bearer(uint8_t opcode)
+void bt_mesh_test_prov_invalid_bearer(uint8_t opcode)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_prov_invalid_bearer) {
-			cb->mesh_prov_invalid_bearer(opcode);
+		if (cb->prov_invalid_bearer) {
+			cb->prov_invalid_bearer(opcode);
 		}
 	}
 }
 
-void bt_test_mesh_trans_incomp_timer_exp(void)
+void bt_mesh_test_trans_incomp_timer_exp(void)
 {
-	struct bt_test_cb *cb;
+	struct bt_mesh_test_cb *cb;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
-		if (cb->mesh_trans_incomp_timer_exp) {
-			cb->mesh_trans_incomp_timer_exp();
+		if (cb->trans_incomp_timer_exp) {
+			cb->trans_incomp_timer_exp();
 		}
 	}
 }
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-int bt_test_mesh_lpn_group_add(uint16_t group)
+int bt_mesh_test_lpn_group_add(uint16_t group)
 {
 	bt_mesh_lpn_group_add(group);
 
 	return 0;
 }
 
-int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
+int bt_mesh_test_lpn_group_remove(uint16_t *groups, size_t groups_count)
 {
 	bt_mesh_lpn_group_del(groups, groups_count);
 
@@ -122,10 +120,9 @@ int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count)
 }
 #endif /* CONFIG_BT_MESH_LOW_POWER */
 
-int bt_test_mesh_rpl_clear(void)
+int bt_mesh_test_rpl_clear(void)
 {
 	bt_mesh_rpl_clear();
 
 	return 0;
 }
-#endif /* CONFIG_BT_MESH */

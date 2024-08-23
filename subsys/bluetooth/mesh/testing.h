@@ -5,53 +5,48 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
-#include <zephyr/sys/slist.h>
 
-#if defined(CONFIG_BT_MESH)
 #include <zephyr/bluetooth/mesh.h>
-#endif /* CONFIG_BT_MESH */
+#include <zephyr/bluetooth/mesh/access.h>
+#include <zephyr/sys/slist.h>
 
 /** @brief Bluetooth Testing callbacks structure.
  *
  *  Callback structure to be used for Bluetooth testing purposes.
  *  Allows access to Bluetooth stack internals, not exposed by public API.
  */
-struct bt_test_cb {
-#if defined(CONFIG_BT_MESH)
-	void (*mesh_net_recv)(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
-			      const void *payload, size_t payload_len);
-	void (*mesh_model_recv)(uint16_t src, uint16_t dst, const void *payload,
-				size_t payload_len);
-	void (*mesh_model_bound)(uint16_t addr, const struct bt_mesh_model *model,
-				 uint16_t key_idx);
-	void (*mesh_model_unbound)(uint16_t addr, const struct bt_mesh_model *model,
-				   uint16_t key_idx);
-	void (*mesh_prov_invalid_bearer)(uint8_t opcode);
-	void (*mesh_trans_incomp_timer_exp)(void);
-#endif /* CONFIG_BT_MESH */
+struct bt_mesh_test_cb {
+	void (*net_recv)(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst, const void *payload,
+			 size_t payload_len);
+	void (*model_recv)(uint16_t src, uint16_t dst, const void *payload, size_t payload_len);
+	void (*model_bound)(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx);
+	void (*model_unbound)(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx);
+	void (*prov_invalid_bearer)(uint8_t opcode);
+	void (*trans_incomp_timer_exp)(void);
 
 	sys_snode_t node;
 };
 
 /** Register callbacks for Bluetooth testing purposes
  *
- *  @param cb bt_test_cb callback structure
+ *  @param cb bt_mesh_test_cb callback structure
  *
  * @retval 0 Success.
  * @retval -EEXIST if @p cb was already registered.
  */
-int bt_test_cb_register(struct bt_test_cb *cb);
+int bt_mesh_test_cb_register(struct bt_mesh_test_cb *cb);
 
 /** Unregister callbacks for Bluetooth testing purposes
  *
- *  @param cb bt_test_cb callback structure
+ *  @param cb bt_mesh_test_cb callback structure
  */
-void bt_test_cb_unregister(struct bt_test_cb *cb);
+void bt_mesh_test_cb_unregister(struct bt_mesh_test_cb *cb);
 
 /** Send Friend Subscription List Add message.
  *
@@ -62,7 +57,7 @@ void bt_test_cb_unregister(struct bt_test_cb *cb);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_test_mesh_lpn_group_add(uint16_t group);
+int bt_mesh_test_lpn_group_add(uint16_t group);
 
 /** Send Friend Subscription List Remove message.
  *
@@ -75,23 +70,18 @@ int bt_test_mesh_lpn_group_add(uint16_t group);
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_test_mesh_lpn_group_remove(uint16_t *groups, size_t groups_count);
+int bt_mesh_test_lpn_group_remove(uint16_t *groups, size_t groups_count);
 
 /** Clear replay protection list cache.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_test_mesh_rpl_clear(void);
+int bt_mesh_test_rpl_clear(void);
 
-#if defined(CONFIG_BT_MESH)
-void bt_test_mesh_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
+void bt_mesh_test_net_recv(uint8_t ttl, uint8_t ctl, uint16_t src, uint16_t dst,
 			   const void *payload, size_t payload_len);
-void bt_test_mesh_model_recv(uint16_t src, uint16_t dst, const void *payload,
-			     size_t payload_len);
-void bt_test_mesh_model_bound(uint16_t addr, const struct bt_mesh_model *model,
-			      uint16_t key_idx);
-void bt_test_mesh_model_unbound(uint16_t addr, const struct bt_mesh_model *model,
-				uint16_t key_idx);
-void bt_test_mesh_prov_invalid_bearer(uint8_t opcode);
-void bt_test_mesh_trans_incomp_timer_exp(void);
-#endif /* CONFIG_BT_MESH */
+void bt_mesh_test_model_recv(uint16_t src, uint16_t dst, const void *payload, size_t payload_len);
+void bt_mesh_test_model_bound(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx);
+void bt_mesh_test_model_unbound(uint16_t addr, const struct bt_mesh_model *model, uint16_t key_idx);
+void bt_mesh_test_prov_invalid_bearer(uint8_t opcode);
+void bt_mesh_test_trans_incomp_timer_exp(void);

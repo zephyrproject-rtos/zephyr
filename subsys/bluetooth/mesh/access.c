@@ -1530,8 +1530,7 @@ int bt_mesh_model_recv(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 	LOG_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_mesh_model_recv(ctx->addr, ctx->recv_dst, buf->data,
-					buf->len);
+		bt_mesh_test_model_recv(ctx->addr, ctx->recv_dst, buf->data, buf->len);
 	}
 
 	if (get_opcode(buf, &opcode) < 0) {
