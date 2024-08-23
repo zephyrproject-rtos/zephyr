@@ -104,6 +104,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH,
 	/** Set enterprise mode credential */
 	NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
+	/** Get RTS threshold */
+	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
 /** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -241,6 +243,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
+
+/** Request a Wi-Fi RTS threshold configuration */
+#define NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -1242,6 +1250,14 @@ struct wifi_mgmt_ops {
 	int (*enterprise_creds)(const struct device *dev,
 			struct wifi_enterprise_creds_params *creds);
 #endif
+	/** Get RTS threshold value
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param rts_threshold Pointer to the RTS threshold value.
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_rts_threshold)(const struct device *dev, unsigned int *rts_threshold);
 };
 
 /** Wi-Fi management offload API */
