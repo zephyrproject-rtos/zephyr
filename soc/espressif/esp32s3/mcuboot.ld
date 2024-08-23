@@ -10,10 +10,6 @@
 
 #include "memory.h"
 
-#ifdef CONFIG_XIP
-#error "Xtensa bootloader cannot use XIP"
-#endif /* CONFIG_XIP */
-
 /* Disable all romable LMA */
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
