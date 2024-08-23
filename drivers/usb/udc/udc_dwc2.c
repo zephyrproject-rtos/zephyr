@@ -33,12 +33,22 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_DOUT,
 	/* IN transaction for specific endpoint is finished */
 	DWC2_DRV_EVT_DIN,
+	/* Core should exit hibernation */
+	DWC2_DRV_EVT_HIBERNATION_EXIT,
+};
+
+enum dwc2_hibernation_exit_reason {
+	DWC2_HIBERNATION_EXIT_BUS_RESET,
+	DWC2_HIBERNATION_EXIT_HOST_WAKEUP,
 };
 
 struct dwc2_drv_event {
 	const struct device *dev;
 	enum dwc2_drv_event_type type;
-	uint8_t ep;
+	union {
+		uint8_t ep;
+		enum dwc2_hibernation_exit_reason exit_reason;
+	};
 };
 
 K_MSGQ_DEFINE(drv_msgq, sizeof(struct dwc2_drv_event),
@@ -64,11 +74,45 @@ K_MSGQ_DEFINE(drv_msgq, sizeof(struct dwc2_drv_event),
 /* Get Data FIFO access register */
 #define UDC_DWC2_EP_FIFO(base, idx)	((mem_addr_t)base + 0x1000 * (idx + 1))
 
+enum dwc2_suspend_type {
+	DWC2_SUSPEND_NO_POWER_SAVING,
+	DWC2_SUSPEND_HIBERNATION,
+};
+
+/* Registers that have to be stored before Partial Power Down or Hibernation */
+struct dwc2_reg_backup {
+	uint32_t gotgctl;
+	uint32_t gahbcfg;
+	uint32_t gusbcfg;
+	uint32_t gintmsk;
+	uint32_t grxfsiz;
+	uint32_t gnptxfsiz;
+	uint32_t gi2cctl;
+	uint32_t glpmcfg;
+	uint32_t gdfifocfg;
+	union {
+		uint32_t dptxfsiz[15];
+		uint32_t dieptxf[15];
+	};
+	uint32_t dcfg;
+	uint32_t dctl;
+	uint32_t diepmsk;
+	uint32_t doepmsk;
+	uint32_t daintmsk;
+	uint32_t diepctl[16];
+	uint32_t dieptsiz[16];
+	uint32_t diepdma[16];
+	uint32_t doepctl[16];
+	uint32_t doeptsiz[16];
+	uint32_t doepdma[16];
+	uint32_t pcgcctl;
+};
+
 /* Driver private data per instance */
 struct udc_dwc2_data {
 	struct k_thread thread_data;
+	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
-	uint32_t enumspd;
 	uint32_t txf_set;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
@@ -78,8 +122,14 @@ struct udc_dwc2_data {
 	uint16_t rxfifo_depth;
 	uint16_t max_txfifo_depth[16];
 	uint16_t sof_num;
+	/* Configuration flags */
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
+	/* Runtime state flags */
+	unsigned int hibernated : 1;
+	unsigned int enumdone : 1;
+	unsigned int enumspd : 2;
+	enum dwc2_suspend_type suspend_type;
 	/* Number of endpoints including control endpoint */
 	uint8_t numdeveps;
 	/* Number of IN endpoints including control endpoint */
@@ -89,6 +139,10 @@ struct udc_dwc2_data {
 	uint8_t setup[8];
 };
 
+static void dwc2_on_bus_reset(const struct device *dev);
+static void dwc2_exit_hibernation(const struct device *dev);
+static void dwc2_wait_for_bit(const struct device *dev,
+			      mem_addr_t addr, uint32_t bit);
 static void udc_dwc2_ep_disable(const struct device *dev,
 				struct udc_ep_config *const cfg, bool stall);
 
@@ -771,6 +825,8 @@ static int dwc2_handle_evt_din(const struct device *dev,
 static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 {
 	const struct device *dev = (const struct device *)arg;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_ep_config *ep_cfg;
 	struct dwc2_drv_event evt;
 
@@ -795,6 +851,24 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	case DWC2_DRV_EVT_DIN:
 		LOG_DBG("DIN event");
 		dwc2_handle_evt_din(dev, ep_cfg);
+		break;
+	case DWC2_DRV_EVT_HIBERNATION_EXIT:
+		LOG_DBG("Hibernation exit event");
+		config->irq_disable_func(dev);
+
+		if (priv->hibernated) {
+			dwc2_exit_hibernation(dev);
+
+			/* Let stack know we are no longer suspended */
+			udc_set_suspended(dev, false);
+			udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
+			if (evt.exit_reason == DWC2_HIBERNATION_EXIT_BUS_RESET) {
+				dwc2_on_bus_reset(dev);
+			}
+		}
+
+		config->irq_enable_func(dev);
 		break;
 	}
 
@@ -840,6 +914,9 @@ static void dwc2_on_bus_reset(const struct device *dev)
 
 	/* Clear device address during reset. */
 	sys_clear_bits((mem_addr_t)&base->dcfg, USB_DWC2_DCFG_DEVADDR_MASK);
+
+	/* Speed enumeration must happen after reset. */
+	priv->enumdone = 0;
 }
 
 static void dwc2_handle_enumdone(const struct device *dev)
@@ -850,6 +927,7 @@ static void dwc2_handle_enumdone(const struct device *dev)
 
 	dsts = sys_read32((mem_addr_t)&base->dsts);
 	priv->enumspd = usb_dwc2_get_dsts_enumspd(dsts);
+	priv->enumdone = 1;
 }
 
 static inline int dwc2_read_fifo_setup(const struct device *dev, uint8_t ep,
@@ -1240,6 +1318,239 @@ static void dwc2_handle_incompisoout(const struct device *dev)
 	sys_write32(USB_DWC2_GINTSTS_INCOMPISOOUT, gintsts_reg);
 }
 
+static void dwc2_backup_registers(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct dwc2_reg_backup *backup = &priv->backup;
+
+	backup->gotgctl = sys_read32((mem_addr_t)&base->gotgctl);
+	backup->gahbcfg = sys_read32((mem_addr_t)&base->gahbcfg);
+	backup->gusbcfg = sys_read32((mem_addr_t)&base->gusbcfg);
+	backup->gintmsk = sys_read32((mem_addr_t)&base->gintmsk);
+	backup->grxfsiz = sys_read32((mem_addr_t)&base->grxfsiz);
+	backup->gnptxfsiz = sys_read32((mem_addr_t)&base->gnptxfsiz);
+	backup->gi2cctl = sys_read32((mem_addr_t)&base->gi2cctl);
+	backup->glpmcfg = sys_read32((mem_addr_t)&base->glpmcfg);
+	backup->gdfifocfg = sys_read32((mem_addr_t)&base->gdfifocfg);
+
+	for (uint8_t i = 1U; i < priv->ineps; i++) {
+		backup->dieptxf[i - 1] = sys_read32((mem_addr_t)&base->dieptxf[i - 1]);
+	}
+
+	backup->dcfg = sys_read32((mem_addr_t)&base->dcfg);
+	backup->dctl = sys_read32((mem_addr_t)&base->dctl);
+	backup->diepmsk = sys_read32((mem_addr_t)&base->diepmsk);
+	backup->doepmsk = sys_read32((mem_addr_t)&base->doepmsk);
+	backup->daintmsk = sys_read32((mem_addr_t)&base->daintmsk);
+
+	for (uint8_t i = 0U; i < 16; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			backup->diepctl[i] = sys_read32((mem_addr_t)&base->in_ep[i].diepctl);
+			if (backup->diepctl[i] & USB_DWC2_DEPCTL_DPID) {
+				backup->diepctl[i] |= USB_DWC2_DEPCTL_SETD1PID;
+			} else {
+				backup->diepctl[i] |= USB_DWC2_DEPCTL_SETD0PID;
+			}
+			backup->dieptsiz[i] = sys_read32((mem_addr_t)&base->in_ep[i].dieptsiz);
+			backup->diepdma[i] = sys_read32((mem_addr_t)&base->in_ep[i].diepdma);
+		}
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_OUT || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			backup->doepctl[i] = sys_read32((mem_addr_t)&base->out_ep[i].doepctl);
+			if (backup->doepctl[i] & USB_DWC2_DEPCTL_DPID) {
+				backup->doepctl[i] |= USB_DWC2_DEPCTL_SETD1PID;
+			} else {
+				backup->doepctl[i] |= USB_DWC2_DEPCTL_SETD0PID;
+			}
+			backup->doeptsiz[i] = sys_read32((mem_addr_t)&base->out_ep[i].doeptsiz);
+			backup->doepdma[i] = sys_read32((mem_addr_t)&base->out_ep[i].doepdma);
+		}
+	}
+
+	backup->pcgcctl = sys_read32((mem_addr_t)&base->pcgcctl);
+}
+
+static void dwc2_restore_essential_registers(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct dwc2_reg_backup *backup = &priv->backup;
+	uint32_t pcgcctl = backup->pcgcctl & USB_DWC2_PCGCCTL_RESTOREVALUE_MASK;
+
+	sys_write32(backup->glpmcfg, (mem_addr_t)&base->glpmcfg);
+	sys_write32(backup->gi2cctl, (mem_addr_t)&base->gi2cctl);
+	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
+
+	sys_write32(backup->gahbcfg | USB_DWC2_GAHBCFG_GLBINTRMASK,
+		    (mem_addr_t)&base->gahbcfg);
+
+	sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
+	sys_write32(USB_DWC2_GINTSTS_RSTRDONEINT, (mem_addr_t)&base->gintmsk);
+
+	sys_write32(backup->gusbcfg, (mem_addr_t)&base->gusbcfg);
+	sys_write32(backup->dcfg, (mem_addr_t)&base->dcfg);
+
+	pcgcctl |= USB_DWC2_PCGCCTL_RESTOREMODE | USB_DWC2_PCGCCTL_RSTPDWNMODULE;
+	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
+	k_busy_wait(1);
+
+	pcgcctl |= USB_DWC2_PCGCCTL_ESSREGRESTORED;
+	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
+}
+
+static void dwc2_restore_device_registers(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct dwc2_reg_backup *backup = &priv->backup;
+
+	sys_write32(backup->gotgctl, (mem_addr_t)&base->gotgctl);
+	sys_write32(backup->gahbcfg, (mem_addr_t)&base->gahbcfg);
+	sys_write32(backup->gusbcfg, (mem_addr_t)&base->gusbcfg);
+	sys_write32(backup->gintmsk, (mem_addr_t)&base->gintmsk);
+	sys_write32(backup->grxfsiz, (mem_addr_t)&base->grxfsiz);
+	sys_write32(backup->gnptxfsiz, (mem_addr_t)&base->gnptxfsiz);
+	sys_write32(backup->gdfifocfg, (mem_addr_t)&base->gdfifocfg);
+
+	for (uint8_t i = 1U; i < priv->ineps; i++) {
+		sys_write32(backup->dieptxf[i - 1], (mem_addr_t)&base->dieptxf[i - 1]);
+	}
+
+	sys_write32(backup->dctl, (mem_addr_t)&base->dctl);
+	sys_write32(backup->diepmsk, (mem_addr_t)&base->diepmsk);
+	sys_write32(backup->doepmsk, (mem_addr_t)&base->doepmsk);
+	sys_write32(backup->daintmsk, (mem_addr_t)&base->daintmsk);
+
+	for (uint8_t i = 0U; i < 16; i++) {
+		uint32_t epdir = usb_dwc2_get_ghwcfg1_epdir(priv->ghwcfg1, i);
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_IN || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			sys_write32(backup->dieptsiz[i], (mem_addr_t)&base->in_ep[i].dieptsiz);
+			sys_write32(backup->diepdma[i], (mem_addr_t)&base->in_ep[i].diepdma);
+			sys_write32(backup->diepctl[i], (mem_addr_t)&base->in_ep[i].diepctl);
+		}
+
+		if (epdir == USB_DWC2_GHWCFG1_EPDIR_OUT || epdir == USB_DWC2_GHWCFG1_EPDIR_BDIR) {
+			sys_write32(backup->doeptsiz[i], (mem_addr_t)&base->out_ep[i].doeptsiz);
+			sys_write32(backup->doepdma[i], (mem_addr_t)&base->out_ep[i].doepdma);
+			sys_write32(backup->doepctl[i], (mem_addr_t)&base->out_ep[i].doepctl);
+		}
+	}
+}
+
+static void dwc2_enter_hibernation(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	mem_addr_t gpwrdn_reg = (mem_addr_t)&base->gpwrdn;
+	mem_addr_t pcgcctl_reg = (mem_addr_t)&base->pcgcctl;
+
+	dwc2_backup_registers(dev);
+
+	/* This code currently only supports UTMI+. UTMI+ runs at either 30 or
+	 * 60 MHz and therefore 1 us busy waits have sufficiently large margin.
+	 */
+
+	/* Enable PMU Logic */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUACTV);
+	k_busy_wait(1);
+
+	/* Stop PHY clock */
+	sys_set_bits(pcgcctl_reg, USB_DWC2_PCGCCTL_STOPPCLK);
+	k_busy_wait(1);
+
+	/* Enable PMU interrupt */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUINTSEL);
+	k_busy_wait(1);
+
+	/* Unmask PMU interrupt bits */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_LINESTAGECHANGEMSK |
+				 USB_DWC2_GPWRDN_RESETDETMSK |
+				 USB_DWC2_GPWRDN_DISCONNECTDETECTMSK |
+				 USB_DWC2_GPWRDN_STSCHNGINTMSK);
+	k_busy_wait(1);
+
+	/* Enable power clamps */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNCLMP);
+	k_busy_wait(1);
+
+	/* Switch off power to the controller */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNSWTCH);
+
+	/* Mark that the core is hibernated */
+	priv->hibernated = 1;
+	LOG_DBG("Hibernated");
+}
+
+static void dwc2_exit_hibernation(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	mem_addr_t gpwrdn_reg = (mem_addr_t)&base->gpwrdn;
+	mem_addr_t pcgcctl_reg = (mem_addr_t)&base->pcgcctl;
+
+	/* Switch on power to the controller */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNSWTCH);
+	k_busy_wait(1);
+
+	/* Reset the controller */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNRST_N);
+	k_busy_wait(1);
+
+	/* Enable restore from PMU */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_RESTORE);
+	k_busy_wait(1);
+
+	/* Disable power clamps */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNCLMP);
+
+	/* Remove reset to the controller */
+	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNRST_N);
+	k_busy_wait(1);
+
+	/* Disable PMU interrupt */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUINTSEL);
+
+	dwc2_restore_essential_registers(dev);
+
+	/* Wait for Restore Done Interrupt */
+	dwc2_wait_for_bit(dev, (mem_addr_t)&base->gintsts, USB_DWC2_GINTSTS_RSTRDONEINT);
+	sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
+
+	/* Disable restore from PMU */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_RESTORE);
+	k_busy_wait(1);
+
+	/* Clear reset to power down module */
+	sys_clear_bits(pcgcctl_reg, USB_DWC2_PCGCCTL_RSTPDWNMODULE);
+
+	/* Restore GUSBCFG, DCFG and DCTL */
+	sys_write32(priv->backup.gusbcfg, (mem_addr_t)&base->gusbcfg);
+	sys_write32(priv->backup.dcfg, (mem_addr_t)&base->dcfg);
+	sys_write32(priv->backup.dctl, (mem_addr_t)&base->dctl);
+
+	/* Disable PMU */
+	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUACTV);
+	k_busy_wait(5);
+
+	sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_PWRONPRGDONE);
+	k_msleep(1);
+	sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
+
+	dwc2_restore_device_registers(dev);
+
+	priv->hibernated = 0;
+	LOG_DBG("Hibernation exit complete");
+}
+
 static void udc_dwc2_isr_handler(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
@@ -1248,6 +1559,39 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 	mem_addr_t gintsts_reg = (mem_addr_t)&base->gintsts;
 	uint32_t int_status;
 	uint32_t gintmsk;
+
+	if (priv->hibernated) {
+		uint32_t gpwrdn = sys_read32((mem_addr_t)&base->gpwrdn);
+		bool reset, resume = false;
+		enum dwc2_hibernation_exit_reason exit_reason;
+
+		/* Clear interrupts */
+		sys_write32(gpwrdn, (mem_addr_t)&base->gpwrdn);
+
+		if (gpwrdn & USB_DWC2_GPWRDN_LNSTSCHNG) {
+			resume = usb_dwc2_get_gpwrdn_linestate(gpwrdn) ==
+				 USB_DWC2_GPWRDN_LINESTATE_DM1DP0;
+			exit_reason = DWC2_HIBERNATION_EXIT_HOST_WAKEUP;
+		}
+
+		reset = gpwrdn & USB_DWC2_GPWRDN_RESETDETECTED;
+		if (reset) {
+			exit_reason = DWC2_HIBERNATION_EXIT_BUS_RESET;
+		}
+
+		if (reset || resume) {
+			struct dwc2_drv_event evt = {
+				.dev = dev,
+				.type = DWC2_DRV_EVT_HIBERNATION_EXIT,
+				.exit_reason = exit_reason,
+			};
+
+			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		}
+
+		(void)dwc2_quirk_irq_clear(dev);
+		return;
+	}
 
 	gintmsk = sys_read32((mem_addr_t)&base->gintmsk);
 
@@ -1281,13 +1625,6 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			udc_submit_event(dev, UDC_EVT_RESET, 0);
 		}
 
-		if (int_status & USB_DWC2_GINTSTS_USBSUSP) {
-			/* Clear USB Suspend interrupt. */
-			sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
-			udc_set_suspended(dev, true);
-			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
-		}
-
 		if (int_status & USB_DWC2_GINTSTS_WKUPINT) {
 			/* Clear Resume/Remote Wakeup Detected interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_WKUPINT, gintsts_reg);
@@ -1316,6 +1653,27 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 		if (int_status & USB_DWC2_GINTSTS_INCOMPISOOUT) {
 			dwc2_handle_incompisoout(dev);
+		}
+
+		if (int_status & USB_DWC2_GINTSTS_USBSUSP) {
+			if (!priv->enumdone) {
+				/* Clear stale suspend interrupt */
+				sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
+				continue;
+			}
+
+			/* Notify the stack */
+			udc_set_suspended(dev, true);
+			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
+
+			if (priv->suspend_type == DWC2_SUSPEND_HIBERNATION) {
+				dwc2_enter_hibernation(dev);
+				/* Next interrupt will be from PMU */
+				break;
+			}
+
+			/* Clear USB Suspend interrupt. */
+			sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
 		}
 	}
 
@@ -1989,6 +2347,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	if (ghwcfg2 & USB_DWC2_GHWCFG2_DYNFIFOSIZING) {
 		LOG_DBG("Dynamic FIFO Sizing is enabled");
 		priv->dynfifosizing = true;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_DWC2_HIBERNATION) &&
+	    ghwcfg4 & USB_DWC2_GHWCFG4_HIBERNATION) {
+		LOG_INF("Hibernation enabled");
+		priv->suspend_type = DWC2_SUSPEND_HIBERNATION;
+	} else {
+		priv->suspend_type = DWC2_SUSPEND_NO_POWER_SAVING;
 	}
 
 	/* Get the number or endpoints and IN endpoints we can use later */
