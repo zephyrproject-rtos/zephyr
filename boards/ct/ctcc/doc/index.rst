@@ -155,7 +155,7 @@ Zephyr repositories using :ref:`west` tool.
 #. Flash other Zephyr application to fill in slot0 e.g:
 
    .. zephyr-app-commands::
-      :app: samples/subsys/usb/dfu
+      :zephyr-app: samples/subsys/usb/dfu
       :board: ctcc/nrf52840
       :build-dir: dfu
       :goals: build

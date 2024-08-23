@@ -28,7 +28,7 @@ Building and Running
  sensor, which is present on the disco_l475_iot1 board.
 
  .. zephyr-app-commands::
-    :app: samples/sensor/vl53l0x/
+    :zephyr-app: samples/sensor/vl53l0x/
     :goals: build flash
 
 

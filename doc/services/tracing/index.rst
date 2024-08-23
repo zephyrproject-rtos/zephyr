@@ -464,7 +464,7 @@ port, build the sample as follows:
 
 .. zephyr-app-commands::
    :tool: all
-   :app: samples/subsys/tracing
+   :zephyr-app: samples/subsys/tracing
    :board: native_sim
    :gen-args: -DCONF_FILE=prj_native_ctf.conf
    :goals: build

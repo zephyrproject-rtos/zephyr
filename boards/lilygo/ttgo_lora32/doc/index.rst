@@ -125,7 +125,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
@@ -214,7 +214,7 @@ To build the LoRa transmit sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/drivers/lora/send
+   :zephyr-app: samples/drivers/lora/send
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
@@ -224,7 +224,7 @@ To build the LoRa receive sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/drivers/lora/receive
+   :zephyr-app: samples/drivers/lora/receive
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild

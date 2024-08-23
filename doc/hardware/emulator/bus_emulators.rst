@@ -184,7 +184,7 @@ Here are some examples present in Zephyr:
 #. Bosch BMI160 sensor driver connected via both I2C and SPI to an emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/sensor/accel/
+      :zephyr-app: tests/drivers/sensor/accel/
       :board: native_sim
       :goals: build
 
@@ -192,7 +192,7 @@ Here are some examples present in Zephyr:
    connected via I2C an emulator:
 
    .. zephyr-app-commands::
-      :app: tests/drivers/eeprom/api
+      :zephyr-app: tests/drivers/eeprom/api
       :board: native_sim
       :goals: build
       :gen-args: -DDTC_OVERLAY_FILE=at2x_emul.overlay -DOVERLAY_CONFIG=at2x_emul.conf

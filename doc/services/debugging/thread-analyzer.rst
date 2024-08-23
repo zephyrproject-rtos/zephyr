@@ -14,7 +14,7 @@ For example, to build the synchronization sample with Thread Analyser enabled,
 do the following:
 
    .. zephyr-app-commands::
-      :app: samples/synchronization/
+      :zephyr-app: samples/synchronization/
       :board: qemu_x86
       :goals: build
       :gen-args: -DCONFIG_QEMU_ICOUNT=n -DCONFIG_THREAD_ANALYZER=y \

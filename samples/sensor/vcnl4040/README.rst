@@ -30,7 +30,7 @@ Building and Running
  sensor to be connected to the desired board.
 
  .. zephyr-app-commands::
-    :app: samples/sensor/vcnl4040/
+    :zephyr-app: samples/sensor/vcnl4040/
     :goals: build flash
 
 

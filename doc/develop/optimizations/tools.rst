@@ -54,7 +54,7 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: ram_report
 
@@ -116,7 +116,7 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: rom_report
 
@@ -182,7 +182,7 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
 
@@ -192,7 +192,7 @@ To view worst-case stack usage analysis, build this with the
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
     :gen-args: -DCONFIG_STACK_USAGE=y
@@ -227,7 +227,7 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: pahole
 
