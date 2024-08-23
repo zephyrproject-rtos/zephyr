@@ -230,7 +230,14 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  *
  * @param [in] pf The page frame to add
  */
+#ifndef CONFIG_EVICTION_NRU
 void k_mem_paging_eviction_add(struct k_mem_page_frame *pf);
+#else
+static ALWAYS_INLINE void k_mem_paging_eviction_add(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+#endif
 
 /**
  * Remove a page frame from potential eviction candidates
@@ -245,7 +252,14 @@ void k_mem_paging_eviction_add(struct k_mem_page_frame *pf);
  *
  * @param [in] pf The page frame to remove
  */
+#ifndef CONFIG_EVICTION_NRU
 void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
+#else
+static ALWAYS_INLINE void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf)
+{
+	ARG_UNUSED(pf);
+}
+#endif
 
 /**
  * Process a page frame as being newly accessed
@@ -259,7 +273,14 @@ void k_mem_paging_eviction_remove(struct k_mem_page_frame *pf);
  *
  * @param [in] phys The physical address being accessed
  */
+#ifndef CONFIG_EVICTION_NRU
 void k_mem_paging_eviction_accessed(uintptr_t phys);
+#else
+static ALWAYS_INLINE void k_mem_paging_eviction_accessed(uintptr_t phys)
+{
+	ARG_UNUSED(phys);
+}
+#endif
 
 /**
  * Select a page frame for eviction
