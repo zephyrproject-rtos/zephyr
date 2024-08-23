@@ -391,7 +391,6 @@ Bluetooth Host:
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
-    - include/zephyr/bluetooth/testing.h
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
@@ -449,7 +448,6 @@ Bluetooth Mesh:
     - doc/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh.h
-    - include/zephyr/bluetooth/testing.h
     - samples/bluetooth/mesh*/
     - subsys/bluetooth/mesh/
     - tests/bluetooth/mesh*/

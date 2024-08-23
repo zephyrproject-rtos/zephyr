@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/net/buf.h>
-#include "host/testing.h"
+#include "testing.h"
 #include "net.h"
 #include "crypto.h"
 #include "beacon.h"
