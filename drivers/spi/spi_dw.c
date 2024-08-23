@@ -226,7 +226,7 @@ static int spi_dw_configure(const struct device *dev,
 	}
 
 	/* Word size */
-	if (info->max_xfer_size == 32) {
+	if (!IS_ENABLED(CONFIG_SPI_DW_HSSI) && (info->max_xfer_size == 32)) {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_32(SPI_WORD_SIZE_GET(config->operation));
 	} else {
 		ctrlr0 |= DW_SPI_CTRLR0_DFS_16(SPI_WORD_SIZE_GET(config->operation));
