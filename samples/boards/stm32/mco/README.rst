@@ -21,7 +21,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :app: samples/boards/stm32/mco
+   :zephyr-app: samples/boards/stm32/mco
    :board: nucleo_u5a5zj_q
    :goals: build flash
 
