@@ -130,7 +130,8 @@ struct uart_shakti_data {
 #define DEV_UART(dev)						\
 	((struct uart_shakti_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\
-	((struct uart_shakti_data * const)(dev)->driver_data)
+	((struct uart_shakti_data * const)(dev)->data)
+
 
 /**
  * @brief Output a character in polled mode.
@@ -189,7 +190,7 @@ static int uart_shakti_poll_in(struct device *dev, unsigned char *c)
  * @return Number of bytes sent
  */
 static int uart_shakti_fifo_fill(struct device *dev,
-				const u8_t *tx_data,
+				const uint8_t *tx_data,
 				int size)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
@@ -211,7 +212,7 @@ static int uart_shakti_fifo_fill(struct device *dev,
  * @return Number of bytes read
  */
 static int uart_shakti_fifo_read(struct device *dev,
-				u8_t *rx_data,
+				uint8_t *rx_data,
 				const int size)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
@@ -224,7 +225,7 @@ static int uart_shakti_fifo_read(struct device *dev,
 		if (val & RXDATA_EMPTY)
 			break;
 
-		rx_data[i] = (u8_t)(val & RXDATA_MASK);
+		rx_data[i] = (uint8_t)(val & RXDATA_MASK);
 	}
 
 	return i;
@@ -269,7 +270,7 @@ static int uart_shakti_irq_tx_ready(struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & IE_TXWM);
+	return !!(uart->ie & IE_TXWM);
 }
 
 /**
@@ -329,7 +330,7 @@ static int uart_shakti_irq_rx_ready(struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & IE_RXWM);
+	return !!(uart->ie & IE_RXWM);
 }
 
 /* No error interrupt for this controller */
@@ -359,7 +360,7 @@ static int uart_shakti_irq_is_pending(struct device *dev)
 {
 	volatile struct uart_shakti_regs_t *uart = DEV_UART(dev);
 
-	return !!(uart->ip & (IE_RXWM | IE_TXWM));
+	return !!(uart->ie & (IE_RXWM | IE_TXWM));
 }
 
 static int uart_shakti_irq_update(struct device *dev)
@@ -387,11 +388,7 @@ static void uart_shakti_irq_callback_set(struct device *dev,
 
 static void uart_shakti_irq_handler(void *arg)
 {
-	struct device *dev = (struct device *)arg;
-	struct uart_shakti_data *data = DEV_DATA(dev);
-
-	if (data->callback)
-		data->callback(data->cb_data);
+	printf("Entered deafult UART Handler\n");
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
