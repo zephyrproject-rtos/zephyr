@@ -35,6 +35,7 @@ struct spi_dw_config {
 	bool serial_target;
 	uint8_t fifo_depth;
 	uint8_t max_xfer_size;
+	uint8_t rx_sample_delay;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
 #endif
@@ -272,6 +273,9 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_IMR_MASK_RX		(~(DW_SPI_IMR_RXUIM | \
 					   DW_SPI_IMR_RXOIM | \
 					   DW_SPI_IMR_RXFIM))
+
+/* RX Sample Delay */
+#define DW_SPI_RX_SAMPLE_DELAY_MASK	GENMASK(7, 0)
 
 /*
  * Including the right register definition file

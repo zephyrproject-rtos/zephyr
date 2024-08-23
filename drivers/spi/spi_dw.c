@@ -423,6 +423,15 @@ static int transceive(const struct device *dev,
 	/* Rx Threshold */
 	write_rxftlr(dev, reg_data);
 
+	/* Rx sample delay */
+	if (info->rx_sample_delay) {
+		reg_data = read_rx_sample_dly(dev);
+		reg_data &= ~DW_SPI_RX_SAMPLE_DELAY_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_RX_SAMPLE_DELAY_MASK,
+				       info->rx_sample_delay);
+		write_rx_sample_dly(dev, reg_data);
+	}
+
 	/* Enable interrupts */
 	reg_data = !rx_bufs ?
 		DW_SPI_IMR_UNMASK & DW_SPI_IMR_MASK_RX :
@@ -647,6 +656,7 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 		.serial_target = DT_INST_PROP(inst, serial_target),                         \
 		.fifo_depth = DT_INST_PROP(inst, fifo_depth),                               \
 		.max_xfer_size = DT_INST_PROP(inst, max_xfer_size),                         \
+		.rx_sample_delay = DT_INST_PROP(inst, rx_sample_delay),                     \
 		IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),)) \
 		COND_CODE_1(DT_INST_PROP(inst, aux_reg),                                    \
 			(.read_func = aux_reg_read,                                         \

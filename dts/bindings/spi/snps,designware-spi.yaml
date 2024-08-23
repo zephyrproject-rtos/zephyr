@@ -44,3 +44,12 @@ properties:
     enum:
       - 16
       - 32
+
+  rx-sample-delay:
+    type: int
+    default: 0
+    description: |
+      Receive Data(rxd) Sample Delay. This is used to delay
+      the sample of the rxd input port. Each value represents
+      a single ssi_clk delay on the sample of rxd. Default is
+      0 and delay ranges from 0-255.
