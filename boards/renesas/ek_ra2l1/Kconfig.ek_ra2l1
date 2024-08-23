@@ -1,0 +1,5 @@
+# Copyright (c) 2021-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EK_RA2L1
+	select SOC_R7FA2L1ABXXFP

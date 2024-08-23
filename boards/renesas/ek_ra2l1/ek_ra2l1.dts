@@ -1,0 +1,139 @@
+/**
+ * Copyright (c) 2021-2024 MUNIC SA
+ *
+ * DTS for Renesas EK-RA2L1 eval. board
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra2/ra2l1.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xb.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xxxxfp.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra2-icu.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Renesas EK-RA2L1";
+	compatible = "renesas,r7fa2l1ab", "renesas,ra2l1";
+
+	aliases {
+		uart-0 = &sci9;
+		led0 = &leds;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &sci9;
+		zephyr,shell-uart = &sci9;
+	};
+
+	leds: leds {
+		status = "okay";
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio5 5 GPIO_ACTIVE_HIGH>;
+			label = "RED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+			label = "GREEN";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
+			label = "BLUE";
+		};
+	};
+};
+
+&hoco {
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+	enable-after-reset;
+};
+
+&moco {
+	status = "disabled";
+};
+
+&mosc {
+	clock-frequency = <DT_FREQ_M(20)>;
+	stabilisation-time = <2048000>;
+	clock-type = "xtal";
+	status = "okay";
+};
+
+&sysclk {
+	clocks = <&hoco>;
+	status = "okay";
+};
+
+&iclk {
+	clock-div = <1>;
+	status = "okay";
+};
+
+&pclkb {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&pclkd {
+	clock-div = <1>;
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&sci9 {
+	compatible = "renesas,ra2-sci-uart";
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&sci_uart9_default>;
+
+	interrupts = <ICU_EVENT_GROUP5_SCI9_TXI>,
+		<ICU_EVENT_GROUP4_SCI9_RXI>,
+		<ICU_EVENT_GROUP6_SCI9_TEI>,
+		<ICU_EVENT_GROUP7_SCI9_ERI>;
+	interrupt-names = "txi", "rxi", "tei", "eri";
+
+	dma = <&dma>;
+};
+
+&pinctrl {
+	sci_uart9_default: sci_uart9_default {
+		p110_uart_rxd {
+			pinmux = <&ioport1 10 RA_PSEL_SCI_9>;
+			input-enable;
+		};
+
+		p109_uart_txd {
+			pinmux = <&ioport1 9 RA_PSEL_SCI_9>;
+		};
+	};
+};
