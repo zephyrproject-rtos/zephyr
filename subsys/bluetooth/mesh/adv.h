@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+
 #ifndef ZEPHYR_SUBSYS_BLUETOOTH_MESH_ADV_H_
 #define ZEPHYR_SUBSYS_BLUETOOTH_MESH_ADV_H_
 

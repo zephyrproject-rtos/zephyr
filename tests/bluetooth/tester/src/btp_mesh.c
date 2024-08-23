@@ -1829,7 +1829,7 @@ static uint8_t lpn_subscribe(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("address 0x%04x", address);
 
-	err = bt_test_mesh_lpn_group_add(address);
+	err = bt_mesh_test_lpn_group_add(address);
 	if (err) {
 		LOG_ERR("Failed to subscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -1847,7 +1847,7 @@ static uint8_t lpn_unsubscribe(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("address 0x%04x", address);
 
-	err = bt_test_mesh_lpn_group_remove(&address, 1);
+	err = bt_mesh_test_lpn_group_remove(&address, 1);
 	if (err) {
 		LOG_ERR("Failed to unsubscribe (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -1864,7 +1864,7 @@ static uint8_t rpl_clear(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
-	err = bt_test_mesh_rpl_clear();
+	err = bt_mesh_test_rpl_clear();
 	if (err) {
 		LOG_ERR("Failed to clear RPL (err %d)", err);
 		return BTP_STATUS_FAILED;
@@ -5338,13 +5338,13 @@ static void incomp_timer_exp_cb(void)
 	tester_event(BTP_SERVICE_ID_MESH, BTP_MESH_EV_INCOMP_TIMER_EXP, NULL, 0);
 }
 
-static struct bt_test_cb bt_test_cb = {
-	.mesh_net_recv = net_recv_ev,
-	.mesh_model_recv = model_recv_ev,
-	.mesh_model_bound = model_bound_cb,
-	.mesh_model_unbound = model_unbound_cb,
-	.mesh_prov_invalid_bearer = invalid_bearer_cb,
-	.mesh_trans_incomp_timer_exp = incomp_timer_exp_cb,
+static struct bt_mesh_test_cb bt_mesh_test_cb = {
+	.net_recv = net_recv_ev,
+	.model_recv = model_recv_ev,
+	.model_bound = model_bound_cb,
+	.model_unbound = model_unbound_cb,
+	.prov_invalid_bearer = invalid_bearer_cb,
+	.trans_incomp_timer_exp = incomp_timer_exp_cb,
 };
 
 static void friend_established(uint16_t net_idx, uint16_t lpn_addr,
@@ -5417,7 +5417,7 @@ BT_MESH_LPN_CB_DEFINE(lpn_cb) = {
 uint8_t tester_init_mesh(void)
 {
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_cb_register(&bt_test_cb);
+		bt_mesh_test_cb_register(&bt_mesh_test_cb);
 	}
 
 #if defined(CONFIG_BT_MESH_COMP_PAGE_2)
