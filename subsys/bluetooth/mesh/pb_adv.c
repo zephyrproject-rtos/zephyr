@@ -683,7 +683,7 @@ static void gen_prov_ctl(struct prov_rx *rx, struct net_buf_simple *buf)
 		LOG_ERR("Unknown bearer opcode: 0x%02x", BEARER_CTL(rx->gpc));
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
-			bt_test_mesh_prov_invalid_bearer(BEARER_CTL(rx->gpc));
+			bt_mesh_test_prov_invalid_bearer(BEARER_CTL(rx->gpc));
 		}
 
 		return;
