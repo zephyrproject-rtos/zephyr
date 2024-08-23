@@ -18,6 +18,72 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM4268X_LL, CONFIG_SENSOR_LOG_LEVEL);
 
+static struct icm4268x_aaf_cfg aaf_cfg_tbl[AAF_BW_MAX_IDX] = {
+	{1, 1, 15},
+	{2, 4, 13},
+	{3, 9, 12},
+	{4, 16, 11},
+	{5, 25, 10},
+	{6, 36, 10},
+	{7, 49, 9},
+	{8, 64, 9},
+	{9, 81, 9},
+	{10, 100, 8},
+	{11, 122, 8},
+	{12, 144, 8},
+	{13, 170, 8},
+	{14, 196, 7},
+	{15, 224, 7},
+	{16, 256, 7},
+	{17, 288, 7},
+	{18, 324, 7},
+	{19, 360, 6},
+	{20, 400, 6},
+	{21, 440, 6},
+	{22, 488, 6},
+	{23, 528, 6},
+	{24, 576, 6},
+	{25, 624, 6},
+	{26, 680, 6},
+	{27, 736, 5},
+	{28, 784, 5},
+	{29, 848, 5},
+	{30, 896, 5},
+	{31, 960, 5},
+	{32, 1024, 5},
+	{33, 1088, 5},
+	{34, 1152, 5},
+	{35, 1232, 5},
+	{36, 1296, 5},
+	{37, 1376, 4},
+	{38, 1440, 4},
+	{39, 1536, 4},
+	{40, 1600, 4},
+	{41, 1696, 4},
+	{42, 1760, 4},
+	{43, 1856, 4},
+	{44, 1952, 4},
+	{45, 2016, 4},
+	{46, 2112, 4},
+	{47, 2208, 4},
+	{48, 2304, 4},
+	{49, 2400, 4},
+	{50, 2496, 4},
+	{51, 2592, 4},
+	{52, 2720, 4},
+	{53, 2816, 3},
+	{54, 2944, 3},
+	{55, 3008, 3},
+	{56, 3136, 3},
+	{57, 3264, 3},
+	{58, 3392, 3},
+	{59, 3456, 3},
+	{60, 3584, 3},
+	{61, 3712, 3},
+	{62, 3840, 3},
+	{63, 3968, 3}
+};
+
 int icm4268x_reset(const struct device *dev)
 {
 	int res;
@@ -150,7 +216,6 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 	}
 
 	/* TODO maybe do the next few steps intelligently by checking current config */
-
 	/* Power management to set gyro/accel modes */
 	uint8_t pwr_mgmt0 = FIELD_PREP(MASK_GYRO_MODE, cfg->gyro_pwr_mode) |
 			    FIELD_PREP(MASK_ACCEL_MODE, cfg->accel_pwr_mode) |
@@ -189,6 +254,93 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 		return -EINVAL;
 	}
 
+	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_GYRO_CONFIG1, 0);
+	if (res != 0) {
+		LOG_ERR("Error writing GYRO_CONFIG1");
+		return -EINVAL;
+	}
+
+	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_GYRO_ACCEL_CONFIG0, 0);
+	if (res != 0) {
+		LOG_ERR("Error writing GYRO_ACCEL_CONFIG0");
+		return -EINVAL;
+	}
+
+	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_ACCEL_CONFIG1, 0);
+	if (res != 0) {
+		LOG_ERR("Error writing ACCEL_CONFIG1");
+		return -EINVAL;
+	}
+
+	/* Accelerometer AAF Configuration */
+	uint8_t aaf_tbl_idx = ((cfg->aaf_cfg[AAF_ACCEL_IDX].aaf_delt) - 1);
+
+	uint8_t aaf_cfg_static2 =
+		((cfg->aaf_cfg[AAF_ACCEL_IDX].aaf_delt << 1) & MASK_ACCEL_AAF_DELT);
+
+	LOG_DBG("ACCEL_CONFIG_STATIC2 (0x%x) 0x%x", ACCEL_CONFIG_STATIC2, aaf_cfg_static2);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, ACCEL_CONFIG_STATIC2, aaf_cfg_static2);
+	if (res != 0) {
+		LOG_ERR("Error writing ACCEL_CONFIG_STATIC2");
+		return -EINVAL;
+	}
+
+	uint8_t aaf_deltsqr_lsb =
+		(aaf_cfg_tbl[aaf_tbl_idx].aaf_deltsqr) & MASK_ACCEL_AAF_DELTSQR_LSB;
+
+	LOG_DBG("ACCEL_CONFIG_STATIC3 (0x%x) 0x%x", ACCEL_CONFIG_STATIC3, aaf_deltsqr_lsb);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, ACCEL_CONFIG_STATIC3, aaf_deltsqr_lsb);
+	if (res != 0) {
+		LOG_ERR("Error writing ACCEL_CONFIG_STATIC3");
+		return -EINVAL;
+	}
+
+	uint8_t aaf_deltsqr_msb =
+		((aaf_cfg_tbl[aaf_tbl_idx].aaf_deltsqr) >> 0x8) & MASK_ACCEL_AAF_DELTSQR_MSB;
+	uint8_t aaf_bitshift =
+		((aaf_cfg_tbl[aaf_tbl_idx].aaf_bitshift) << 0x4) & MASK_ACCEL_AAF_BITSHIFT;
+	uint8_t aaf_cfg_static4 = (aaf_bitshift | aaf_deltsqr_msb);
+
+	LOG_DBG("ACCEL_CONFIG_STATIC4 (0x%x) 0x%x", ACCEL_CONFIG_STATIC4, aaf_cfg_static4);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, ACCEL_CONFIG_STATIC4, aaf_cfg_static4);
+	if (res != 0) {
+		LOG_ERR("Error writing ACCEL_CONFIG_STATIC4");
+		return -EINVAL;
+	}
+
+	/* Gyroscope AAF Configuration */
+	aaf_tbl_idx = ((cfg->aaf_cfg[AAF_GYRO_IDX].aaf_delt) - 1);
+
+	uint8_t aaf_cfg_static3 = ((cfg->aaf_cfg[AAF_GYRO_IDX].aaf_delt << 1) & MASK_GYRO_AAF_DELT);
+
+	LOG_DBG("GYRO_CONFIG_STATIC3 (0x%x) 0x%x", GYRO_CONFIG_STATIC3, aaf_cfg_static3);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, GYRO_CONFIG_STATIC3, aaf_cfg_static3);
+	if (res != 0) {
+		LOG_ERR("Error writing GYRO_CONFIG_STATIC3");
+		return -EINVAL;
+	}
+
+	aaf_deltsqr_lsb = (aaf_cfg_tbl[aaf_tbl_idx].aaf_deltsqr) & MASK_GYRO_AAF_DELTSQR_LSB;
+
+	LOG_DBG("GYRO_CONFIG_STATIC4 (0x%x) 0x%x", GYRO_CONFIG_STATIC4, aaf_deltsqr_lsb);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, GYRO_CONFIG_STATIC4, aaf_deltsqr_lsb);
+	if (res != 0) {
+		LOG_ERR("Error writing GYRO_CONFIG_STATIC4");
+		return -EINVAL;
+	}
+
+	aaf_deltsqr_msb =
+		((aaf_cfg_tbl[aaf_tbl_idx].aaf_deltsqr) >> 0x8) & MASK_GYRO_AAF_DELTSQR_MSB;
+	aaf_bitshift = ((aaf_cfg_tbl[aaf_tbl_idx].aaf_bitshift) << 0x4) & MASK_GYRO_AAF_BITSHIFT;
+	uint8_t aaf_cfg_static5 = (aaf_bitshift | aaf_deltsqr_msb);
+
+	LOG_DBG("GYRO_CONFIG_STATIC5 (0x%x) 0x%x", GYRO_CONFIG_STATIC5, aaf_cfg_static5);
+	res = icm4268x_spi_single_write(&dev_cfg->spi, GYRO_CONFIG_STATIC5, aaf_cfg_static5);
+	if (res != 0) {
+		LOG_ERR("Error writing GYRO_CONFIG_STATIC5");
+		return -EINVAL;
+	}
+
 	/*
 	 * Accelerometer sensor need at least 10ms startup time
 	 * Gyroscope sensor need at least 30ms startup time
@@ -199,6 +351,7 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 	uint8_t fifo_config_bypass = FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_BYPASS);
 
 	LOG_DBG("FIFO_CONFIG (0x%x) 0x%x", REG_FIFO_CONFIG, fifo_config_bypass);
+
 	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG, fifo_config_bypass);
 	if (res != 0) {
 		LOG_ERR("Error writing FIFO_CONFIG");
@@ -218,19 +371,57 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 		LOG_ERR("Error reading TMST_CONFIG");
 		return -EINVAL;
 	}
+
+	tmst_config |= (cfg->tmst_dis ? 0 : BIT_TMST_EN);
+	tmst_config |= (cfg->tmst_fsync_en ? BIT_TMST_FSYNC_EN : 0);
+	tmst_config |= (cfg->tmst_delta_en ? BIT_TMST_DELTA_EN : 0);
+	tmst_config |= (cfg->tmst_res ? BIT_TMST_RES : 0);
+	tmst_config |= (cfg->tmst_regs_en ? BIT_TMST_TO_REGS_EN : 0);
+
 	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_TMST_CONFIG, tmst_config & ~BIT(1));
 	if (res != 0) {
 		LOG_ERR("Error writing TMST_CONFIG");
 		return -EINVAL;
 	}
 
-	/* Pulse mode with async reset (resets interrupt line on int status read) */
+	/* Interface Configuration */
+	uint8_t intf_config0 = FIELD_PREP(MASK_UI_SIFS_CFG, BIT_UI_SIFS_CFG_DISABLE_I2C)
+				| BIT_SENSOR_DATA_ENDIAN | BIT_FIFO_COUNT_ENDIAN;
+
+	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG0, intf_config0);
+	if (res != 0) {
+		LOG_ERR("Error writing INTF_CONFIG0");
+		return -EINVAL;
+	}
+
+	uint8_t intf_config1;
+
+	res = icm4268x_spi_read(&dev_cfg->spi, REG_INTF_CONFIG1, &intf_config1, 1);
+	if (res != 0) {
+		LOG_ERR("Error reading INTF_CONFIG1");
+		return -EINVAL;
+	}
+
+	/* Disable Adaptive Full Scale Range Mode */
+	intf_config1 = BIT_AFSR_SET | (intf_config1 & 0x1F);
+
+	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG1, intf_config1);
+	if (res != 0) {
+		LOG_ERR("Error writing INTF_CONFIG1");
+		return -EINVAL;
+	}
+
+	/* Select the interrupt mode */
 	if (IS_ENABLED(CONFIG_ICM4268X_TRIGGER)) {
 		res = icm4268x_trigger_enable_interrupt(dev, cfg);
 	} else {
+		uint8_t int1_pol = (cfg->int1_pol ? BIT_INT1_POLARITY:0);
+
 		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_INT_CONFIG,
-						BIT_INT1_DRIVE_CIRCUIT | BIT_INT1_POLARITY);
+						BIT_INT1_DRIVE_CIRCUIT | int1_pol
+						| (cfg->int1_mode ? BIT_INT1_MODE : 0));
 	}
+
 	if (res) {
 		LOG_ERR("Error writing to INT_CONFIG");
 		return res;
@@ -257,9 +448,16 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 		/* Setup desired FIFO packet fields based on the other
 		 * temp/accel/gyro en fields in cfg
 		 */
+		/* FSYNC is not used in this driver so as per 14.45 its is not
+		 * mandatory to set it to 1.
+		 */
+		/* Enabling watermark interrupt based on REG_INT_SOURCE0
+		 * Enabling High Resolution for better accuracy
+		 */
 		uint8_t fifo_cfg1 =
 			FIELD_PREP(BIT_FIFO_TEMP_EN, 1) | FIELD_PREP(BIT_FIFO_GYRO_EN, 1) |
-			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) | FIELD_PREP(BIT_FIFO_TMST_FSYN, 1);
+			FIELD_PREP(BIT_FIFO_ACCEL_EN, 1) | FIELD_PREP(BIT_FIFO_HIRES_EN, 1) |
+			FIELD_PREP(BIT_FIFO_WM_GT_TH, 1);
 
 		LOG_DBG("FIFO_CONFIG1 (0x%x) 0x%x", REG_FIFO_CONFIG1, fifo_cfg1);
 		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG1, fifo_cfg1);
@@ -289,11 +487,31 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 		}
 
 		/* Begin streaming */
-		uint8_t fifo_config = FIELD_PREP(MASK_FIFO_MODE, BIT_FIFO_MODE_STREAM);
+		uint8_t fifo_config = FIELD_PREP(MASK_FIFO_MODE, cfg->fifo_mode);
 
-		LOG_DBG("FIFO_CONFIG (0x%x) 0x%x", REG_FIFO_CONFIG, 1 << 6);
+		LOG_DBG("FIFO_CONFIG (0x%x) 0x%x", REG_FIFO_CONFIG, fifo_config);
+
 		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_FIFO_CONFIG, fifo_config);
 
+		if (res != 0) {
+			LOG_ERR("Error writing FIFO_CONFIG");
+			return -EINVAL;
+		}
+
+		/* Select the condition to clear the interrupt line in latched mode */
+		if (cfg->int1_mode == ICM4268X_DT_INT1_MODE_LATCHED) {
+			uint8_t int_config0;
+
+			int_config0 = FIELD_PREP(MASK_FIFO_FULL_INT_CLR, cfg->fifo_full_int_clr)
+				| FIELD_PREP(MASK_FIFO_THS_INT_CLEAR, cfg->fifo_ths_int_clr);
+
+			res = icm4268x_spi_single_write(&dev_cfg->spi, REG_INT_CONFIG0,
+					int_config0);
+			if (res != 0) {
+				LOG_ERR("Error writing INT_CONFIG0");
+				return -EINVAL;
+			}
+		}
 		/* Config interrupt source to only be fifo wm/full */
 		uint8_t int_source0 = BIT_FIFO_FULL_INT1_EN | BIT_FIFO_THS_INT1_EN;
 

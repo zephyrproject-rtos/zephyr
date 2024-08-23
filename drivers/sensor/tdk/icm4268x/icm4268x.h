@@ -15,6 +15,14 @@
 #include <zephyr/dt-bindings/sensor/icm4268x.h>
 #include <stdlib.h>
 
+/* ICM4268x parts support 63 AAF Bandwidths */
+#define AAF_BW_MAX_IDX	63
+
+/* AAF is for 2 sensors Accel & Gyro */
+#define AAF_SENSORS_NUM	2
+#define AAF_ACCEL_IDX	0
+#define AAF_GYRO_IDX	1
+
 static inline uint8_t icm42686_accel_fs_to_reg(uint8_t g)
 {
 	if (g >= 32) {
@@ -371,6 +379,12 @@ static inline void icm4268x_gyro_reg_to_odr(uint8_t odr, struct sensor_value *ou
 /**
  * @brief All sensor configuration options
  */
+struct icm4268x_aaf_cfg {
+	uint8_t	aaf_delt;
+	uint16_t aaf_deltsqr;
+	uint8_t	aaf_bitshift;
+};
+
 struct icm4268x_cfg {
 	uint16_t dev_id;
 	uint8_t accel_pwr_mode;
@@ -383,17 +397,30 @@ struct icm4268x_cfg {
 	uint8_t gyro_odr;
 	/* TODO gyro signal processing options */
 
+	/* AAF cfg for accel and gyro */
+	struct icm4268x_aaf_cfg aaf_cfg[AAF_SENSORS_NUM];
+
 	bool temp_dis;
 	/* TODO temp signal processing options */
 
 	/* TODO timestamp options */
+	bool tmst_dis;
+	bool tmst_fsync_en;
+	bool tmst_delta_en;
+	bool tmst_res;
+	bool tmst_regs_en;
 
 	bool fifo_en;
+	uint8_t	fifo_mode;
+	uint8_t	fifo_ths_int_clr;
+	uint8_t	fifo_full_int_clr;
 	int32_t batch_ticks;
 	bool fifo_hires;
 	/* TODO additional FIFO options */
 
 	/* TODO interrupt options */
+	bool int1_mode;
+	bool int1_pol;
 	bool interrupt1_drdy;
 	bool interrupt1_fifo_ths;
 	bool interrupt1_fifo_full;
