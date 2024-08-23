@@ -130,7 +130,7 @@ To build the sample application using sysbuild, use this command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp32c3_042_oled
    :goals: build
    :west-args: --sysbuild

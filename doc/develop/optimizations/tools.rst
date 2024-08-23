@@ -53,7 +53,7 @@ Use the ``ram_report`` target with your board, as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: ram_report
 
@@ -114,7 +114,7 @@ Use the ``rom_report`` target with your board, as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: rom_report
 
@@ -179,7 +179,7 @@ as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
 
@@ -189,7 +189,7 @@ To view worst-case stack usage analysis, build this with the
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
     :gen-args: -DCONFIG_STACK_USAGE=y
@@ -223,7 +223,7 @@ as in the following example.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: pahole
 

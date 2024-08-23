@@ -123,7 +123,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: ttgo_t8c3
    :goals: build
    :west-args: --sysbuild
@@ -212,7 +212,7 @@ To build the blinky sample:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/basic/blinky
+   :zephyr-app: samples/basic/blinky
    :board: ttgo_t8c3
    :goals: build
 
@@ -220,7 +220,7 @@ To build the bluetooth beacon sample:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/bluetooth/beacon
+   :zephyr-app: samples/bluetooth/beacon
    :board: ttgo_t8c3
    :goals: build
 
