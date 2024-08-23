@@ -1,0 +1,28 @@
+# Copyright (c) 2021-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_GROUPING_ICU
+	bool
+	help
+	 This option enables Renesas ICU with
+	 grouping interrupts mapping.
+
+config RENESAS_RA2_ICU
+	bool
+	depends on DT_HAS_RENESAS_RA2_ICU_ENABLED
+	select RENESAS_GROUPING_ICU
+	default y
+	help
+	 This option enables the ICU driver for RA2 family of
+	 processors.
+
+if RENESAS_RA2_ICU
+
+config NUM_RENESAS_ICU_GROUPS
+	int
+	depends on RENESAS_GROUPING_ICU
+	default 8
+	help
+	 Number of Renesas ICU interrupt's groups.
+
+endif
