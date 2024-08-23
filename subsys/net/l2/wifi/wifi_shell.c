@@ -1695,28 +1695,49 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 
 	context.sh = sh;
 
-	if (strcmp(argv[1], "off") != 0) {
-		long rts_val = shell_strtol(argv[1], 10, &err);
-
-		if (err) {
-			shell_error(sh, "Unable to parse input (err %d)", err);
-			return err;
-		}
-
-		rts_threshold = (unsigned int)rts_val;
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
-		     &rts_threshold, sizeof(rts_threshold))) {
-		shell_fprintf(sh, SHELL_WARNING,
-			      "Setting RTS threshold failed.\n");
+	if (argc > 2) {
+		PR_WARNING("Invalid number of arguments\n");
 		return -ENOEXEC;
 	}
 
-	if ((int)rts_threshold >= 0) {
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
-	} else {
-		shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+	if (argc == 1) {
+		if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, iface,
+			     &rts_threshold, sizeof(rts_threshold))) {
+			PR_WARNING("Failed to get rts_threshold\n");
+			return -ENOEXEC;
+		}
+
+		if ((int)rts_threshold < 0) {
+			PR("RTS threshold is off\n");
+		} else {
+			PR("RTS threshold: %d\n", rts_threshold);
+		}
+	}
+
+	if (argc == 2) {
+		if (strcmp(argv[1], "off") != 0) {
+			long rts_val = shell_strtol(argv[1], 10, &err);
+
+			if (err) {
+				shell_error(sh, "Unable to parse input (err %d)", err);
+				return err;
+			}
+
+			rts_threshold = (unsigned int)rts_val;
+		}
+
+		if (net_mgmt(NET_REQUEST_WIFI_RTS_THRESHOLD, iface,
+			     &rts_threshold, sizeof(rts_threshold))) {
+			shell_fprintf(sh, SHELL_WARNING,
+					"Setting RTS threshold failed.\n");
+			return -ENOEXEC;
+		}
+
+		if ((int)rts_threshold >= 0) {
+			shell_fprintf(sh, SHELL_NORMAL, "RTS threshold: %d\n", rts_threshold);
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
+		}
 	}
 
 	return 0;
@@ -2723,7 +2744,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      NULL,
 		      "<rts_threshold: rts threshold/off>.\n",
 		      cmd_wifi_set_rts_threshold,
-		      2, 0),
+		      1, 1),
 	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
 	SHELL_CMD_ARG(pmksa_flush, NULL,
 		     "Flush PMKSA cache entries.\n",
