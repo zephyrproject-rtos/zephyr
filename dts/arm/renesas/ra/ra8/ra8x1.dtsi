@@ -284,7 +284,7 @@
 			reg = <0x40332000 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
-			channels-num = <12>;
+			channel-count = <12>;
 			status = "disabled";
 		};
 
@@ -295,7 +295,7 @@
 			reg = <0x40332200 0x100>;
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
-			channels-num = <13>;
+			channel-count = <13>;
 			status = "disabled";
 		};
 

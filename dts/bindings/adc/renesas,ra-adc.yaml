@@ -16,10 +16,10 @@ properties:
     required: true
     description: ADC reference voltage (Unit:mV)
 
-  channels-num:
+  channel-count:
     type: int
     required: true
-    description: ADC channels number
+    description: The number of ADC channels
 
   "#io-channel-cells":
     const: 1
