@@ -46,3 +46,4 @@ tests:
       - max32666evkit/max32666/cpu0
       - max32680evkit/max32680/m4
       - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
