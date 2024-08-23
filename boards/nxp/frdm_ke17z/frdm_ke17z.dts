@@ -102,6 +102,7 @@
 &adc0 {
 	status = "okay";
 	sample-time = <12>;
+	vref-mv = <3300>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
 };
