@@ -124,7 +124,11 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 	int err;
 
 	default_conn = bt_conn_ref(conn);
-	bt_tbs_client_register_cb(&tbs_client_cb);
+	err = bt_tbs_client_register_cb(&tbs_client_cb);
+	if (err != 0) {
+		return err;
+	}
+
 	err = bt_tbs_client_discover(conn);
 	if (err != 0) {
 		return err;

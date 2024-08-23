@@ -30,6 +30,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
@@ -680,6 +681,9 @@ struct bt_tbs_client_cb {
 	/** Bearer friendly name has been read */
 	bt_tbs_client_read_string_cb         friendly_name;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t _node;
 };
 
 /**
@@ -998,8 +1002,12 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
  * @brief Register the callbacks for CCP.
  *
  * @param cbs Pointer to the callback structure.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p cbs is NULL
+ * @retval -EEXIST @p cbs is already registered
  */
-void bt_tbs_client_register_cb(const struct bt_tbs_client_cb *cbs);
+int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
 
 /**
  * @brief Look up Telephone Bearer Service instance by CCID

@@ -301,7 +301,7 @@ struct bt_tbs_in_uri {
 	defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) || \
 	defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) || \
 	defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
-#define BT_TBS_CLIENT_INST_READ_BUF_SIZE (BT_ATT_MAX_ATTRIBUTE_LEN)
+#define BT_TBS_CLIENT_INST_READ_BUF_SIZE (BT_ATT_MAX_ATTRIBUTE_LEN + 1 /* NULL terminator*/)
 #else
 /* Need only be the size of call state reads which is the largest of the
  * remaining characteristic values

@@ -78,6 +78,8 @@ Bluetooth
 
 * Audio
 
+  * :c:func:`bt_tbs_client_register_cb` now supports multiple listeners and may now return an error.
+
 * Host
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
