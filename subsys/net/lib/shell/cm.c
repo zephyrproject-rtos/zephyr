@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/net/net_if.h>
 #include <strings.h>
+#include <stdio.h>
 #include <ctype.h>
 
 #include "net_shell_private.h"
