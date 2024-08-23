@@ -1,0 +1,71 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM-42686 motion tracking device.
+    The properties included in this bindings file are the ones which
+    are different in different models. Common ones are in icm4268x.yaml.
+    When setting the accel-pwr-mode, accel-fs, accel-odr, gyro-pwr-mode,
+    gyro-fs, gyro-odr properties in a .dts or .dtsi file you may include
+    icm4268x.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm4268x.h>
+
+    icm42686: icm42686@0 {
+      ...
+
+      accel-pwr-mode = <ICM4268X_DT_ACCEL_LN>;
+      accel-fs = <ICM42686_DT_ACCEL_FS_32>;
+      accel-odr = <ICM4268X_DT_ACCEL_ODR_2000>;
+      gyro-pwr-mode= <ICM4268X_DT_GYRO_LN>;
+      gyro-fs = <ICM42686_DT_GYRO_FS_2000>;
+      gyro-odr = <ICM4268X_DT_GYRO_ODR_2000>;
+    };
+
+    Where,
+    ICM42686_DT_GYRO_FS_2000 represents +-2000 deg per sec
+    as the full scale range of the gyroscope.
+
+    ICM42686_DT_ACCEL_FS_32 represents +-32 times g as the maximum
+    acceleration this device can measure.
+
+compatible: "invensense,icm42686"
+include: invensense,icm4268x-common.yaml
+
+properties:
+  accel-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer range in g.
+      Default accel full scale as recommended in manufacturer datasheet is 32g.
+
+      0 # ICM42686_DT_ACCEL_FS_32
+      1 # ICM42686_DT_ACCEL_FS_16
+      2 # ICM42686_DT_ACCEL_FS_8
+      3 # ICM42686_DT_ACCEL_FS_4
+      4 # ICM42686_DT_ACCEL_FS_2
+
+    enum: [0, 1, 2, 3, 4]
+
+  gyro-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro range in degrees per second.
+      Default gyro full scale as recommended in manufacturer datasheet is 4000 degrees per second.
+
+      0 # ICM42686_DT_GYRO_FS_4000
+      1 # ICM42686_DT_GYRO_FS_2000
+      2 # ICM42686_DT_GYRO_FS_1000
+      3 # ICM42686_DT_GYRO_FS_500
+      4 # ICM42686_DT_GYRO_FS_250
+      5 # ICM42686_DT_GYRO_FS_125
+      6 # ICM42686_DT_GYRO_FS_62_5
+      7 # ICM42686_DT_GYRO_FS_31_25
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]

@@ -1,0 +1,115 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Generic bindings file for ICM-4268X models of motion tracking devices.
+    When setting the enum properties in a .dts or .dtsi file you may
+    include icm4268x.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm4268x.h>
+
+    icm42688: icm42688@0 {
+      ...
+
+      accel-pwr-mode = <ICM4268X_DT_ACCEL_LN>;
+      accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+      accel-odr = <ICM4268X_DT_ACCEL_ODR_2000>;
+      gyro-pwr-mode= <ICM4268X_DT_GYRO_LN>;
+      gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+      gyro-odr = <ICM4268X_DT_GYRO_ODR_2000>;
+    };
+
+    Where,
+    ICM4268X_DT_ACCEL_ODR_2000 represents 2kHz as rate of sample capture by the
+    accelerometer.
+
+    ICM4268X_DT_GYRO_ODR_2000 represents 2kHz as rate of sample capture by the
+    gyroscope.
+
+compatible: "invensense,icm4268x-common"
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property describes the GPIO specification for INT line from ICM4268x package
+      on to your device. The property values should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  accel-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer power mode.
+      Default power mode for accelerometer as recommended in manufacturer datasheet
+      is accelerometer off.
+
+      0 # ICM4268X_DT_ACCEL_OFF
+      2 # ICM4268X_DT_ACCEL_LP
+      3 # ICM4268X_DT_ACCEL_LN
+
+    enum: [0, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the accelerometer output data rate expressed in samples per second (Hz).
+      Default accelerometer ODR as recommended in manufacturer datasheet is 1kHz in Low Noise Mode.
+
+      1  # ICM4268X_DT_ACCEL_ODR_32000
+      2  # ICM4268X_DT_ACCEL_ODR_16000
+      3  # ICM4268X_DT_ACCEL_ODR_8000
+      4  # ICM4268X_DT_ACCEL_ODR_4000
+      5  # ICM4268X_DT_ACCEL_ODR_2000
+      6  # ICM4268X_DT_ACCEL_ODR_1000
+      7  # ICM4268X_DT_ACCEL_ODR_200
+      8  # ICM4268X_DT_ACCEL_ODR_100
+      9  # ICM4268X_DT_ACCEL_ODR_50
+      10 # ICM4268X_DT_ACCEL_ODR_25
+      11 # ICM4268X_DT_ACCEL_ODR_12_5
+      12 # ICM4268X_DT_ACCEL_ODR_6_25
+      13 # ICM4268X_DT_ACCEL_ODR_3_125
+      14 # ICM4268X_DT_ACCEL_ODR_1_5625
+      15 # ICM4268X_DT_ACCEL_ODR_500
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+  gyro-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro power mode.
+      Default power mode for gyroscope as recommended in manufacturer datasheet is gyroscope off.
+
+      0 # ICM4268X_DT_GYRO_OFF
+      1 # ICM4268X_DT_GYRO_STANDBY
+      3 # ICM4268X_DT_GYRO_LN
+
+    enum: [0, 1, 3]
+
+  gyro-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the gyro output data rate expressed in samples per second (Hz).
+      Default gyroscope ODR as recommended in manufacturer datasheet is 1kHz.
+
+      1  # ICM4268X_DT_GYRO_ODR_32000
+      2  # ICM4268X_DT_GYRO_ODR_16000
+      3  # ICM4268X_DT_GYRO_ODR_8000
+      4  # ICM4268X_DT_GYRO_ODR_4000
+      5  # ICM4268X_DT_GYRO_ODR_2000
+      6  # ICM4268X_DT_GYRO_ODR_1000
+      7  # ICM4268X_DT_GYRO_ODR_200
+      8  # ICM4268X_DT_GYRO_ODR_100
+      9  # ICM4268X_DT_GYRO_ODR_50
+      10 # ICM4268X_DT_GYRO_ODR_25
+      11 # ICM4268X_DT_GYRO_ODR_12_5
+      15 # ICM4268X_DT_GYRO_ODR_500
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15]

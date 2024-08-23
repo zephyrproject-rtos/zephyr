@@ -89,7 +89,7 @@
 	};
 };
 
-#include <zephyr/dt-bindings/sensor/icm42688.h>
+#include <zephyr/dt-bindings/sensor/icm4268x.h>
 
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
@@ -105,11 +105,11 @@
 		reg = <0>;
 		int-gpios = <&pioc 5 GPIO_ACTIVE_HIGH>;
 		spi-max-frequency = <24000000>;
-		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
-		accel-odr = <ICM42688_DT_ACCEL_ODR_2000>;
+		accel-pwr-mode = <ICM4268X_DT_ACCEL_LN>;
+		accel-odr = <ICM4268X_DT_ACCEL_ODR_2000>;
 		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
-		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
-		gyro-odr = <ICM42688_DT_GYRO_ODR_2000>;
+		gyro-pwr-mode = <ICM4268X_DT_GYRO_LN>;
+		gyro-odr = <ICM4268X_DT_GYRO_ODR_2000>;
 		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
 	};
 	spi_adc: adc@1 {
