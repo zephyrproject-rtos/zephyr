@@ -708,7 +708,6 @@
 		io-channels = <&adc1 16>;
 		status = "disabled";
 		v25 = <760>;
-		ntc;
 		avgslope = <25>;
 	};
 
