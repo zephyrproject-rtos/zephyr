@@ -194,6 +194,11 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #define DW_SPI_CTRLR0_SRL_BIT		(13)
 #endif
 
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+/* TXFTLR setting. Only valid for Controller operation mode. */
+#define DW_SPI_TXFTLR_TXFTLR_SHIFT	(16)
+#endif
+
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
