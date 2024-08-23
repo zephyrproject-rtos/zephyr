@@ -79,6 +79,13 @@ Artificially long but functional example:
                                  __/fifo_api/testcase.yaml
     """)
 
+    test_plan_report = parser.add_argument_group(
+        title="Test plan reporting",
+        description="Report the composed test plan details and exit (dry-run)."
+    )
+
+    test_plan_report_xor = test_plan_report.add_mutually_exclusive_group()
+
     platform_group_option = parser.add_mutually_exclusive_group()
 
     run_group_option = parser.add_mutually_exclusive_group()
@@ -97,19 +104,20 @@ Artificially long but functional example:
        title="Memory footprint",
        description="Collect and report ROM/RAM size footprint for the test instance images built.")
 
-    case_select.add_argument(
+    test_plan_report_xor.add_argument(
         "-E",
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Write a list of tests and platforms to be run to file.")
+        help="Write a list of tests and platforms to be run to %(metavar)s file and stop execution. "
+             "The resulting file will have the same content as 'testplan.json'.")
 
     case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load a list of tests and platforms to be run from file.")
+        help="Load a list of tests and platforms to be run from a JSON file ('testplan.json' schema).")
 
     case_select.add_argument(
         "-T", "--testsuite-root", action="append", default=[], type = norm_path,
@@ -125,7 +133,7 @@ Artificially long but functional example:
         help="Run only those tests that failed the previous twister run "
              "invocation.")
 
-    case_select.add_argument("--list-tests", action="store_true",
+    test_plan_report_xor.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
         all --testsuite-root arguments. Note different sub-tests can share
         the same section name and come from different directories.
@@ -134,8 +142,8 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the test plan in a tree form""")
+    test_plan_report_xor.add_argument("--test-tree", action="store_true",
+                             help="""Output the test plan in a tree form.""")
 
     platform_group_option.add_argument(
         "-G",
@@ -495,7 +503,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Build/test on all platforms. Any --platform arguments "
              "ignored.")
 
-    parser.add_argument("--list-tags", action="store_true",
+    test_plan_report_xor.add_argument("--list-tags", action="store_true",
                         help="List all tags occurring in selected tests.")
 
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
