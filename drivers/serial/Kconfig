@@ -280,4 +280,6 @@ rsource "Kconfig.rzt2m"
 
 rsource "Kconfig.renesas_ra8"
 
+rsource "Kconfig.renesas_ra2"
+
 endif # SERIAL

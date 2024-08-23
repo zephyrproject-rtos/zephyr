@@ -1,0 +1,36 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA2 family SCI based UART
+
+compatible: renesas,ra2-sci-uart
+
+include:
+  - name: renesas,ra-lpm-module.yaml
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dma:
+    type: phandle
+    description: |
+      Specifies the DMA node. The presence of this property means that the
+      driver will be configured for the async API and will not work with the
+      interrupt driven API.
+
+  wakeup-gpios:
+    type: phandle-array
+    description: |
+      Specifies wakeup gpio pin (should be the same as RX).
