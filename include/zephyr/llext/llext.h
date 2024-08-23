@@ -62,6 +62,9 @@ enum llext_mem {
 struct llext_loader;
 /** @endcond */
 
+/* Maximim number of dependency LLEXTs */
+#define LLEXT_MAX_DEPENDENCIES 8
+
 /**
  * @brief Structure describing a linkable loadable extension
  *
@@ -111,6 +114,9 @@ struct llext {
 
 	/** Extension use counter, prevents unloading while in use */
 	unsigned int use_count;
+
+	/** Array of extensions, whose symbols this extension accesses */
+	struct llext *dependency[LLEXT_MAX_DEPENDENCIES];
 };
 
 /**
