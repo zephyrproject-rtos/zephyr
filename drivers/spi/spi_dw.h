@@ -199,6 +199,18 @@ static int reg_test_bit(uint8_t bit, mm_reg_t addr, uint32_t off)
 #if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
 /* TXFTLR setting. Only valid for Controller operation mode. */
 #define DW_SPI_TXFTLR_TXFTLR_SHIFT	(16)
+
+/* SPI Frame Format */
+#define DW_SPI_CTRLR0_SPI_FRF_SHIFT	(22)
+#define DW_SPI_CTRLR0_SPI_STANDARD	(0 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_DUAL		(1 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_QUAD		(2 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+#define DW_SPI_CTRLR0_SPI_OCTAL		(3 << DW_SPI_CTRLR0_SPI_FRF_SHIFT)
+
+/* SPI_CTRLR0 settings */
+#define DW_SPI_ESPI_CTRLR0_INST_L_MASK		GENMASK(9, 8)
+#define DW_SPI_ESPI_CTRLR0_ADDR_L_MASK		GENMASK(5, 2)
+#define DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK	GENMASK(1, 0)
 #endif
 
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)

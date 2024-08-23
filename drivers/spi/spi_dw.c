@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <zephyr/drivers/pinctrl.h>
 #endif
 
+#define DW_HSSI_VER_102A		(0x3130322a)
+
 static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 {
 	return (IS_ENABLED(CONFIG_SPI_SLAVE) &&
@@ -213,6 +215,7 @@ static int spi_dw_configure(const struct device *dev,
 
 	if ((config->operation & SPI_TRANSFER_LSB) ||
 	    (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES) &&
+	     !IS_ENABLED(CONFIG_SPI_DW_HSSI) &&
 	     (config->operation & (SPI_LINES_DUAL |
 				   SPI_LINES_QUAD | SPI_LINES_OCTAL)))) {
 		LOG_ERR("Unsupported configuration");
@@ -247,6 +250,23 @@ static int spi_dw_configure(const struct device *dev,
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
 		ctrlr0 |= DW_SPI_CTRLR0_SRL;
 	}
+
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+	if (spi->version >= DW_HSSI_VER_102A) {
+		/* SPI frame format for Tx/Rx data */
+		switch (SPI_LINES_GET(config->operation)) {
+		case SPI_LINES_DUAL:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_DUAL;
+			break;
+		case SPI_LINES_QUAD:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_QUAD;
+			break;
+		case SPI_LINES_OCTAL:
+			ctrlr0 |= DW_SPI_CTRLR0_SPI_OCTAL;
+			break;
+		}
+	}
+#endif
 
 	/* Installing the configuration */
 	write_ctrlr0(dev, ctrlr0);
@@ -409,6 +429,23 @@ static int transceive(const struct device *dev,
 	reg_data |= tmod;
 
 	write_ctrlr0(dev, reg_data);
+
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+	if (spi->version >= DW_HSSI_VER_102A) {
+		/* Enhanced SPI operation */
+		reg_data = read_spi_ctrlr0(dev);
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_TRANS_TYPE_MASK,
+				       SPI_TRANS_TYPE_FIELD_GET(config->operation));
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_ADDR_L_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_ADDR_L_MASK,
+				       SPI_ADDR_L_FIELD_GET(config->operation));
+		reg_data &= ~DW_SPI_ESPI_CTRLR0_INST_L_MASK;
+		reg_data |= FIELD_PREP(DW_SPI_ESPI_CTRLR0_INST_L_MASK,
+				       SPI_INST_L_FIELD_GET(config->operation));
+		write_spi_ctrlr0(dev, reg_data);
+	}
+#endif
 
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
