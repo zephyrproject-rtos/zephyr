@@ -8,11 +8,13 @@
 #include<zephyr/device.h>
 #include<zephyr/devicetree.h>
 #include"cst816s.h"
-
+#include <zephyr/irq.h>
+#include <zephyr/drivers/gpio.h>
 data_struct data;
 uint8_t data_arr[8];
 const struct device *dev =  DEVICE_DT_GET(DT_NODELABEL(i2c0));
 const struct device *dev1 =  DEVICE_DT_GET(DT_NODELABEL(gpio0));
+bool is_first = true;
 cst816s_t touch_dev_handle;
 
 K_MSGQ_DEFINE(touch_msg_q, sizeof(data_struct), 10, 1);
@@ -21,16 +23,20 @@ void touch_isr(void);
 void thread1(void)
 {
 
-// /* Enabling intterupts*/
-// IRQ_CONNECT(32, 1, touch_isr, NULL, NULL);
-// irq_enable(32);
-// plic_irq_enable(32);
+
 
 data_struct data_recv;
-// CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
-// CST816S_begin(&touch_dev_handle);
+CST816S_init(&touch_dev_handle,dev1,dev,5,6,data_arr);
+// CST816S_begin(&touch_dev_handle);// 
+// /* Enabling intterupts*/
+IRQ_CONNECT(32, 1, touch_isr, NULL, NULL);
+irq_enable(32);
+gpio_pin_configure(dev1, 0, 0);
+gpio_pin_interrupt_configure(dev1, 0, 1);
+plic_irq_enable(32);
 while (1)
 {
+		printf("Running main thread\n");
 		k_msgq_get(&touch_msg_q, &data_recv, K_FOREVER);
 		printk("Gesture ID:%d\n",data_recv.gestureID);
 	}
@@ -39,8 +45,9 @@ while (1)
 void touch_isr(void)
 {
     printf("Touch detected\n");
-    // data = CST816S_read_touch(&touch_dev_handle);
-    // k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
+    data_send = CST816S_read_touch(&touch_dev_handle);
+	if(data_send.gestureID != 0)
+    k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
 }
 
 

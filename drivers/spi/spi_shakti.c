@@ -415,8 +415,8 @@ void sspi_shakti_disable(const struct device *dev)
 
 int sspi8_shakti_transmit_data(const struct device *dev, struct spi_buf *tx_data)
 {
-uint32_t length = tx_data->len/4;
-uint32_t *buffer = tx_data->buf;
+uint32_t length = tx_data->len;
+uint8_t *buffer = tx_data->buf;
 uint32_t i=0;
 uint32_t fs;
 while(i<length){
@@ -426,7 +426,7 @@ while(i<length){
     sspi_instance[spi_number]->comm_control|=SPI_ENABLE(ENABLE);
     continue;
   }
-  sspi_instance[spi_number]->data_tx.data_32 = buffer[i];
+  sspi_instance[spi_number]->data_tx.data_8 = buffer[i];
   sspi_instance[spi_number]->comm_control|=SPI_ENABLE(ENABLE);
   i++;
 }

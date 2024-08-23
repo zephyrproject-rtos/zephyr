@@ -66,7 +66,6 @@ data_struct CST816S_read_touch(cst816s_t *handle) {
   uint8_t *data_raw = handle->data_arr;
   CST816S_read(handle,CST816S_ADDRESS, 0x01, data_raw, 6);
   data_struct data;
-  // printf("Data: %x\n %x\n %x\n %x\n %x\n %x\n",data_raw[0],data_raw[1],data_raw[2],data_raw[3],data_raw[4],data_raw[5]);
   data.gestureID = data_raw[0];
   data.points = data_raw[1];
   data.event = data_raw[2] >> 6;
