@@ -5,9 +5,6 @@ Zephyr Extension
 Copyright (c) 2023 The Linux Foundation
 SPDX-License-Identifier: Apache-2.0
 
-Introduction
-============
-
 This extension adds a new ``zephyr`` domain for handling the documentation of various entities
 specific to the Zephyr RTOS project (ex. code samples).
 
@@ -15,35 +12,11 @@ Directives
 ----------
 
 - ``zephyr:code-sample::`` - Defines a code sample.
-  The directive takes an ID as the main argument, and accepts ``:name:`` (human-readable short name
-  of the sample) and ``:relevant-api:`` (a space separated list of Doxygen group(s) for APIs the
-  code sample is a good showcase of) as options.
-  The content of the directive is used as the description of the code sample.
-
-  Example:
-
-  ```
-  .. zephyr:code-sample:: blinky
-     :name: Blinky
-     :relevant-api: gpio_interface
-
-     Blink an LED forever using the GPIO API.
- ```
 
 Roles
 -----
 
 - ``:zephyr:code-sample:`` - References a code sample.
-  The role takes the ID of the code sample as the argument. The role renders as a link to the code
-  sample, and the link text is the name of the code sample (or a custom text if an explicit name is
-  provided).
-
-  Example:
-
-  ```
-  Check out :zephyr:code-sample:`sample-foo` for an example of how to use the foo API. You may
-  also be interested in :zephyr:code-sample:`this one <sample-bar>`.
-  ```
 
 """
 from typing import Any, Dict, Iterator, List, Tuple
