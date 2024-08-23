@@ -348,7 +348,7 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
 		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_ra_read_async))};                  \
 	static const struct adc_ra_config adc_ra_config_##idx = {                                  \
-		.num_channels = DT_INST_PROP(idx, channels_num),                                   \
+		.num_channels = DT_INST_PROP(idx, channel_count),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
 		IRQ_CONFIGURE_DEFINE(idx),                                                         \
 	};                                                                                         \
