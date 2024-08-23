@@ -74,5 +74,6 @@ static inline const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct
  */
 
 int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local);
+void llext_dependency_remove_all(struct llext *ext);
 
 #endif /* ZEPHYR_SUBSYS_LLEXT_PRIV_H_ */

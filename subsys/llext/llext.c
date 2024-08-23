@@ -248,6 +248,8 @@ int llext_unload(struct llext **ext)
 	/* FIXME: protect the global list */
 	sys_slist_find_and_remove(&_llext_list, &tmp->_llext_list);
 
+	llext_dependency_remove_all(tmp);
+
 	*ext = NULL;
 	k_mutex_unlock(&llext_lock);
 
