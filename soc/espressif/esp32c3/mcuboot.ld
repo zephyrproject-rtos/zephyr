@@ -10,12 +10,8 @@
 
 #include "memory.h"
 
-#ifdef CONFIG_XIP
-#error "ESP32C3 bootloader cannot use XIP"
-#endif /* CONFIG_XIP */
-
 /* Disable all romable LMA */
-#udef GROUP_DATA_LINK_IN
+#undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
 
 #define RAMABLE_REGION dram_seg

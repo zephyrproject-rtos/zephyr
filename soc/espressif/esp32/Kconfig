@@ -8,7 +8,6 @@ config SOC_SERIES_ESP32
 	select ARCH_HAS_GDBSTUB
 	select ARCH_SUPPORTS_COREDUMP
 	select PINCTRL
-	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
 	select HAS_PM
