@@ -1,0 +1,100 @@
+# Copyright (c) 2023-2024 MUNIC SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA2 pinctrl node.
+
+  This node will define pin configurations in pin groups,
+  and has the 'pinctrl' node identifier in the SOC's devicetree. Each group
+  within the pin configuration defines the pin configuration for a peripheral,
+  and each subgroup in the pin group defines all the pins for that
+  peripheral with the same configuration properties. The 'pinmux' property in
+  a group selects the pins to be configured, and the remaining properties set
+
+  configuration values for those pins, as in the i2c0 example shown at the end
+
+
+  Here is a list of supported standard pin properties:
+
+  - bias-disable: Disable pull-up/down.
+  - bias-pull-up: Enable pull-up resistor.
+  - drive-open-drain: Output driver is open-drain.
+  - input-enable: enable input.
+  - output-enable: enable output
+  - output-low: set output low
+
+  - output-high: set output high
+  - analog-enable: use as an analog pin
+  - irq-enable: enable interrupt attached to the pin
+
+  The pinctrl I2C controller example:
+     &i2c0 {
+        pinctrl-0 = <&i2c0_default>;
+        pinctrl-1 = <&i2c0_sleep>;
+        pinctrl-names = "default", "sleep";
+     }
+
+     &pinctrl {
+        i2c0_default: i2c0_default {
+           i2c0_scl {
+              pinmux = <&iport1 0 RA_PSEL_I2C>;
+              bias-pull-up;
+              drive-open-drain;
+              input-enable;
+           };
+           i2c0_sda {
+              pinmux = <&iport1 1 RA_PSEL_I2C>;
+              bias-pull-up;
+              drive-open-drain;
+              input-enable;
+           };
+        };
+
+        i2c0_sleep: i2c0_sleep {
+           i2c0 {
+              pinmux = <&iport1 0 RA_PSEL_IO>,
+                       <&iport1 1 RA_PSEL_IO>;
+              input-enable;
+           };
+        };
+     };
+
+compatible: renesas,ra2-pinctrl
+include: base.yaml
+child-binding:
+
+  description: PFS pin group
+  child-binding:
+    description: |
+      This binding gives a base representation of the Renesas RA family
+      pins configuration.
+
+    include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+      - bias-disable
+      - bias-pull-up
+
+      - drive-open-drain
+      - input-enable
+      - output-enable
+      - output-low
+      - output-high
+
+    properties:
+      pinmux:
+        required: true
+        type: phandle-array
+        specifier-space: pinmux
+        description: |
+          Renesas RA pin's configuration (IO portmux, IO pin, IO function).
+
+      analog-enable:
+        type: boolean
+        description: |
+          Set the pin to analog mode. Only valid for analog type pins.
+
+      irq-enable:
+        type: boolean
+        description: |
+          Enable interrupt line attached to the pin.
