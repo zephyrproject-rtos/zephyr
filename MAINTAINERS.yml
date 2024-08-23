@@ -414,6 +414,8 @@ Bluetooth Host:
     - subsys/bluetooth/shell/ll.h
     - subsys/bluetooth/shell/ticker.c
     - subsys/bluetooth/Kconfig.iso
+    - subsys/bluetooth/host/iso.c
+    - subsys/bluetooth/host/iso_internal.h
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
     - tests/bluetooth/ctrl*/
@@ -526,6 +528,8 @@ Bluetooth ISO:
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
+    - subsys/bluetooth/host/iso.c
+    - subsys/bluetooth/host/iso_internal.h
   labels:
     - "area: Bluetooth ISO"
     - "area: Bluetooth"
