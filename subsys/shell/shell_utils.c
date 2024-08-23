@@ -550,7 +550,7 @@ const struct device *shell_device_get_binding(const char *name)
 long shell_strtol(const char *str, int base, int *err)
 {
 	long val;
-	char *endptr = NULL;
+	char *endptr;
 
 	errno = 0;
 	val = strtol(str, &endptr, base);
@@ -568,7 +568,7 @@ long shell_strtol(const char *str, int base, int *err)
 unsigned long shell_strtoul(const char *str, int base, int *err)
 {
 	unsigned long val;
-	char *endptr = NULL;
+	char *endptr;
 
 	if (*str == '-') {
 		*err = -EINVAL;
@@ -591,7 +591,7 @@ unsigned long shell_strtoul(const char *str, int base, int *err)
 unsigned long long shell_strtoull(const char *str, int base, int *err)
 {
 	unsigned long long val;
-	char *endptr = NULL;
+	char *endptr;
 
 	if (*str == '-') {
 		*err = -EINVAL;
