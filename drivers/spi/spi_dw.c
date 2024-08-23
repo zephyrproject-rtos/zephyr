@@ -323,6 +323,18 @@ static void spi_dw_update_txftlr(const struct device *dev,
 		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
 			reg_data = spi->ctx.tx_len - 1;
 		}
+	} else {
+#if defined(CONFIG_SPI_DW_HSSI) && defined(CONFIG_SPI_EXTENDED_MODES)
+		/*
+		 * TXFTLR field in the TXFTLR register is valid only for
+		 * Controller mode operation
+		 */
+		if (!spi->ctx.tx_len) {
+			reg_data = 0U;
+		} else if (spi->ctx.tx_len < dw_spi_txftlr_dflt) {
+			reg_data = (spi->ctx.tx_len - 1) << DW_SPI_TXFTLR_TXFTLR_SHIFT;
+		}
+#endif
 	}
 
 	LOG_DBG("TxFTLR: %u", reg_data);
