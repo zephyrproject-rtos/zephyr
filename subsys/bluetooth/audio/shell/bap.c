@@ -3643,8 +3643,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED ||
-	    ctx_val > BT_AUDIO_CONTEXT_TYPE_ANY) {
+	if (ctx_val > BT_AUDIO_CONTEXT_TYPE_ANY) {
 		shell_error(sh, "Invalid context: %lu", ctx_val);
 
 		return -ENOEXEC;
@@ -3653,6 +3652,12 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	ctx = ctx_val;
 
 	if (!strcmp(argv[3], "supported")) {
+		if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED) {
+			shell_error(sh, "Invalid context: %lu", ctx_val);
+
+			return -ENOEXEC;
+		}
+
 		err = bt_pacs_set_supported_contexts(dir, ctx);
 		if (err) {
 			shell_error(ctx_shell, "Set supported contexts err %d", err);
