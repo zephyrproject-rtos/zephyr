@@ -324,11 +324,16 @@ static bool print_trace_address(void *arg, unsigned long ra)
 static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **argv)
 {
 	struct k_thread *thread;
+	int err = 0;
 
 	if (argc == 1) {
 		thread = _current;
 	} else {
-		thread = UINT_TO_POINTER(strtoll(argv[1], NULL, 16));
+		thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+		if (err != 0) {
+			shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+			return err;
+		}
 
 		if (!thread_is_valid(thread)) {
 			shell_error(sh, "Invalid thread id %p", (void *)thread);
