@@ -201,3 +201,6 @@ tests:
     platform_allow:
       - frdm_ke17z
       - frdm_ke17z512
+  drivers.spi.max32_dma.loopback:
+    extra_args: OVERLAY_CONFIG="overlay-max32-spi-dma.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
