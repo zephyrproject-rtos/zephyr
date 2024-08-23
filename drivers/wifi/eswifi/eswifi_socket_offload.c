@@ -533,7 +533,7 @@ static int eswifi_socket_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 	ret = k_sem_take(&socket->read_sem, timeout);
 	if (ret) {
 		errno = ETIMEDOUT;
-		return -1;
+		return 0;
 	}
 
 done:
