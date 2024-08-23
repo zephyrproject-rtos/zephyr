@@ -161,5 +161,4 @@ This test shows how the code relocation feature is used.
 This test will place .text, .data, .bss from 3 files to various parts in the SRAM
 using a custom linker file derived from ``include/zephyr/arch/arm/cortex_m/scripts/linker.ld``
 
-A sample showcasing the NOCOPY flag is provided at
-``$ZEPHYR_BASE/samples/application_development/code_relocation_nocopy/``
+A sample showcasing the NOCOPY flag is provided here: :zephyr:code-sample:`code_relocation_nocopy`.
