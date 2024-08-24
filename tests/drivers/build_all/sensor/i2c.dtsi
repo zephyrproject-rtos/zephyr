@@ -1090,3 +1090,9 @@ test_i2c_fxls8974: fxls8974@93 {
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_bmp180: bmp180@94 {
+	compatible = "bosch,bmp180";
+	reg = <0x94>;
+	osr-press = <0x01>;
+};
