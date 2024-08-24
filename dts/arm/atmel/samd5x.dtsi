@@ -30,6 +30,13 @@
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+
+			itm: itm@e0000000 {
+				compatible = "arm,armv7m-itm";
+				reg = <0xe0000000 0x1000>;
+
+				// reference frequency depends on GCLK_CM4_TRACE channel
+			};
 		};
 	};
 
