@@ -16,7 +16,7 @@ Once the proper rust toolchain has been installed.  This configuration
 can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/rust/hello_rust
+   :zephyr-app: samples/rust/hello_world
    :host-os: unix
    :board: qemu_riscv32
    :goals: run
