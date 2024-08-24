@@ -591,6 +591,14 @@ void *_sbrk_r(struct _reent *r, int count)
 
 	return _sbrk(count);
 }
+
+int _unlink_r(struct _reent *r, const char *name)
+{
+	ARG_UNUSED(r);
+
+	return _unlink(name);
+}
+
 #endif /* CONFIG_XTENSA */
 
 int _gettimeofday(struct timeval *__tp, void *__tzp)
