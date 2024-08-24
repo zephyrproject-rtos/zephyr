@@ -252,8 +252,10 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
 
+	/* Panel controller's phandle is not passed to LTDC in devicetree */
 	if (display_dev == NULL) {
-		return 0;
+		LOG_ERR("There is no panel controller to forward blanking_off call to");
+		return -ENOSYS;
 	}
 
 	if (!device_is_ready(display_dev)) {
@@ -269,8 +271,10 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
 
+	/* Panel controller's phandle is not passed to LTDC in devicetree */
 	if (display_dev == NULL) {
-		return 0;
+		LOG_ERR("There is no panel controller to forward blanking_on call to");
+		return -ENOSYS;
 	}
 
 	if (!device_is_ready(config->display_controller)) {
