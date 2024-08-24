@@ -25,14 +25,14 @@ the rust command needed to install the appropriate target support:
 
 .. _rustup: https://rustup.rs/
 
-.. code-block::
+.. code-block:: console
 
    $ west build ...
    ...
    error[E0463]: can't find crate for `core`
      |
    = note: the `thumbv7m-none-eabi` target may not be installed
-   = help: consider downloading the target with `rustup target add thumb7m-none-eabi`
+   = help: consider downloading the target with `rustup target add thumbv7m-none-eabi`
 
 In this case, the given ``rustup`` command will install the needed target support.  The target
 needed will depend on both the board selected, as well as certain configuration choices (such as
@@ -46,7 +46,7 @@ See :zephyr_file:`samples/rust` for examples of an application.
 CMake files
 -----------
 
-The application should contain a :file:`CMakeFiles.txt`, similar to the following:
+The application should contain a :file:`CMakeLists.txt`, similar to the following:
 
 .. code-block:: cmake
 
@@ -72,7 +72,7 @@ you use crates that support building with no-std.
 Application
 -----------
 
-The application source itself should live in file:`src/lib.rs`.  A few things are needed.  A minimal
+The application source itself should live in :file:`src/lib.rs`.  A few things are needed.  A minimal
 file would be:
 
 .. code-block:: rust
@@ -128,7 +128,7 @@ For example:
    #[cfg(CONFIG_SCHED_DUMB)]
    one_declaration;
 
-   #[cfg(not(CONFIG_SCHED_DUMB)]
+   #[cfg(not(CONFIG_SCHED_DUMB))]
    other_declaration;
 
 Other Kconfig settings
