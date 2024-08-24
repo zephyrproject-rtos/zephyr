@@ -24,6 +24,7 @@ Samples and Demos
    application_development/*
    shields/*
    cpp/*
+   rust/*
    posix/*
    kernel/*
    tfm_integration/tfm_integration.rst
