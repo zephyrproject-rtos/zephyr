@@ -931,8 +931,20 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
     endif()
   endif()
 
-  # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} zephyr_generated_headers)
+  #
+  # XXX KLUDGE - intel_adsp_common gets involved in a circular dependency loop if we add this
+  # dependency, so skip it.
+  #
+  # intel_adsp_common ->
+  # zephyr_generated_headers ->
+  # offsets_h ->
+  # offsets ->
+  # intel_adsp_common
+  #
+  if(NOT ${zephyr_lib} STREQUAL intel_adsp_common)
+    # TODO: Could this become an INTERFACE property of zephyr_interface?
+    add_dependencies(${zephyr_lib} zephyr_generated_headers)
+  endif()
 endforeach()
 
 # Convenience variable for linkers
