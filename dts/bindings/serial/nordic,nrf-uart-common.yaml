@@ -1,4 +1,4 @@
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
 
 properties:
   reg:
@@ -8,6 +8,9 @@ properties:
     required: true
 
   pinctrl-0:
+    required: true
+
+  pinctrl-names:
     required: true
 
   disable-rx:

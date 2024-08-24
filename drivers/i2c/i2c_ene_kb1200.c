@@ -145,8 +145,9 @@ static int i2c_kb1200_poll_write(const struct device *dev, struct i2c_msg msg, u
 	}
 	config->fsmbm->FSMBMIE = (FSMBM_COMPLETE_EVENT | FSMBM_BLOCK_FINISH_EVENT);
 	config->fsmbm->FSMBMPRTC_P = FLEXIBLE_PROTOCOL;
-	while (data->state != STATE_COMPLETE)
+	while (data->state != STATE_COMPLETE) {
 		;
+	}
 	data->state = STATE_IDLE;
 	if (data->err_code != 0) {
 		/* reset HW  */
@@ -187,8 +188,9 @@ static int i2c_kb1200_poll_read(const struct device *dev, struct i2c_msg msg, ui
 	}
 	config->fsmbm->FSMBMIE = (FSMBM_COMPLETE_EVENT | FSMBM_BLOCK_FINISH_EVENT);
 	config->fsmbm->FSMBMPRTC_P = FLEXIBLE_PROTOCOL;
-	while (data->state != STATE_COMPLETE)
+	while (data->state != STATE_COMPLETE) {
 		;
+	}
 	data->state = STATE_IDLE;
 	if (data->err_code != 0) {
 		/* reset HW  */

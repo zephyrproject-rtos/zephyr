@@ -269,7 +269,7 @@ static int modem_backend_uart_async_close(void *data)
 	return 0;
 }
 
-struct modem_pipe_api modem_backend_uart_async_api = {
+static const struct modem_pipe_api modem_backend_uart_async_api = {
 	.open = modem_backend_uart_async_open,
 	.transmit = modem_backend_uart_async_transmit,
 	.receive = modem_backend_uart_async_receive,

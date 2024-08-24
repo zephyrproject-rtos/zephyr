@@ -1435,12 +1435,7 @@ This has been fixed in main for v3.5.0
 CVE-2023-4262
 -------------
 
-Potential buffer overflow vulnerabilities in the Zephyr Mgmt subsystem
-
-- `Zephyr project bug tracker GHSA-56p9-5p3v-hhrc
-  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-56p9-5p3v-hhrc>`_
-
-- This issue has not been fixed.
+- This issue has been determined to be a false positive after further analysis.
 
 CVE-2023-4263
 -------------
@@ -1737,7 +1732,15 @@ This has been fixed in main for v3.7.0
 CVE-2024-4785
 -------------
 
-Under embargo until 2024-08-07
+Bluetooth: Missing Check in LL_CONNECTION_UPDATE_IND Packet Leads to Division by Zero
+
+- `Zephyr project bug tracker GHSA-xcr5-5g98-mchp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xcr5-5g98-mchp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 72608 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/72608>`_
 
 CVE-2024-5754
 -------------

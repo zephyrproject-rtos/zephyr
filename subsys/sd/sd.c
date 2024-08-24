@@ -56,7 +56,7 @@ static int sd_send_interface_condition(struct sd_card *card)
 		resp = cmd.response[0];
 	}
 	if ((resp & 0xFF) != SD_IF_COND_CHECK) {
-		LOG_INF("Legacy card detected, no CMD8 support");
+		LOG_DBG("Legacy card detected, no CMD8 support");
 		/* Retry probe */
 		return SD_RETRY;
 	}

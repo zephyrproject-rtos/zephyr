@@ -447,11 +447,6 @@ config USE_STM32_HAL_RAMECC
 	help
 	  Enable STM32Cube RAM ECC monitoring (RAMECC) HAL module driver
 
-config USE_STM32_HAL_RAMCFG
-	bool
-	help
-	  Enable STM32Cube RAM config (RAMCFG) HAL module driver
-
 config USE_STM32_HAL_RNG
 	bool
 	help

@@ -180,13 +180,14 @@ static void acquire(const struct device *flash)
 
 	if (cfg->sw_multi_periph) {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg))
+				       MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg)) {
 			;
+		}
 	} else {
 		while (mspi_dev_config(cfg->bus, &cfg->dev_id,
-				       MSPI_DEVICE_CONFIG_NONE, NULL))
+				       MSPI_DEVICE_CONFIG_NONE, NULL)) {
 			;
-
+		}
 	}
 }
 
@@ -195,8 +196,9 @@ static void release(const struct device *flash)
 	const struct flash_mspi_atxp032_config *cfg = flash->config;
 	struct flash_mspi_atxp032_data *data = flash->data;
 
-	while (mspi_get_channel_status(cfg->bus, cfg->port))
+	while (mspi_get_channel_status(cfg->bus, cfg->port)) {
 		;
+	}
 
 	k_sem_give(&data->lock);
 }
@@ -826,9 +828,8 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 
 #define FLASH_MSPI_ATXP032(n)                                                                     \
 	static const struct flash_mspi_atxp032_config flash_mspi_atxp032_config_##n = {           \
-		.port = (DT_REG_ADDR(DT_INST_BUS(n)) - REG_MSPI_BASEADDR) /                       \
-			(DT_REG_SIZE(DT_INST_BUS(n)) * 4),                                        \
 		.mem_size = DT_INST_PROP(n, size) / 8,                                            \
+		.port        = MSPI_PORT(n),                                                      \
 		.flash_param =                                                                    \
 			{                                                                         \
 				.write_block_size = NOR_WRITE_SIZE,                               \

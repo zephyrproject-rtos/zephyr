@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ambiq LLC
+ * Copyright (c) 2024 Ambiq Micro Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

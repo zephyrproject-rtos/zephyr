@@ -58,6 +58,13 @@ static bool server_running;
 
 static void close_client_connection(struct http_client_ctx *client);
 
+HTTP_SERVER_CONTENT_TYPE(html, "text/html")
+HTTP_SERVER_CONTENT_TYPE(css, "text/css")
+HTTP_SERVER_CONTENT_TYPE(js, "text/javascript")
+HTTP_SERVER_CONTENT_TYPE(jpg, "image/jpeg")
+HTTP_SERVER_CONTENT_TYPE(png, "image/png")
+HTTP_SERVER_CONTENT_TYPE(svg, "image/svg+xml")
+
 int http_server_init(struct http_server_ctx *ctx)
 {
 	int proto;
@@ -683,7 +690,8 @@ struct http_resource_detail *get_resource_detail(const char *path,
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_RESOURCE_WILDCARD)) {
 				int ret;
 
-				ret = fnmatch(resource->resource, path, FNM_PATHNAME);
+				ret = fnmatch(resource->resource, path,
+					      (FNM_PATHNAME | FNM_LEADING_DIR));
 				if (ret == 0) {
 					*path_len = strlen(resource->resource);
 					return resource->detail;
@@ -702,6 +710,43 @@ struct http_resource_detail *get_resource_detail(const char *path,
 	NET_DBG("No match for %s", path);
 
 	return NULL;
+}
+
+int http_server_find_file(char *fname, size_t fname_size, size_t *file_size, bool *gzipped)
+{
+	struct fs_dirent dirent;
+	size_t len;
+	int ret;
+
+	ret = fs_stat(fname, &dirent);
+	if (ret < 0) {
+		len = strlen(fname);
+		snprintk(fname + len, fname_size - len, ".gz");
+		ret = fs_stat(fname, &dirent);
+		*gzipped = (ret == 0);
+	}
+
+	if (ret == 0) {
+		*file_size = dirent.size;
+		return ret;
+	}
+
+	return -ENOENT;
+}
+
+void http_server_get_content_type_from_extension(char *url, char *content_type,
+						 size_t content_type_size)
+{
+	size_t url_len = strlen(url);
+
+	HTTP_SERVER_CONTENT_TYPE_FOREACH(ct) {
+		char *ext = &url[url_len - ct->extension_len];
+
+		if (strncmp(ext, ct->extension, ct->extension_len) == 0) {
+			strncpy(content_type, ct->content_type, content_type_size);
+			return;
+		}
+	}
 }
 
 int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t len)

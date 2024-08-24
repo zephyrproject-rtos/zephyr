@@ -26,6 +26,7 @@ from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError
+from twisterlib.statuses import TwisterStatus
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -284,9 +285,9 @@ class CMake:
             msg = f"Finished building {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
             logger.debug(msg)
 
-            self.instance.status = "passed"
+            self.instance.status = TwisterStatus.PASS
             if not self.instance.run:
-                self.instance.add_missing_case_status("skipped", "Test was built only")
+                self.instance.add_missing_case_status(TwisterStatus.SKIP, "Test was built only")
             ret = {"returncode": p.returncode}
 
             if out:
@@ -308,15 +309,15 @@ class CMake:
                 imgtool_overflow_found = re.findall(r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size", log_msg)
                 if overflow_found and not self.options.overflow_as_errors:
                     logger.debug("Test skipped due to {} Overflow".format(overflow_found[0]))
-                    self.instance.status = "skipped"
+                    self.instance.status = TwisterStatus.SKIP
                     self.instance.reason = "{} overflow".format(overflow_found[0])
                     change_skip_to_error_if_integration(self.options, self.instance)
                 elif imgtool_overflow_found and not self.options.overflow_as_errors:
-                    self.instance.status = "skipped"
+                    self.instance.status = TwisterStatus.SKIP
                     self.instance.reason = "imgtool overflow"
                     change_skip_to_error_if_integration(self.options, self.instance)
                 else:
-                    self.instance.status = "error"
+                    self.instance.status = TwisterStatus.ERROR
                     self.instance.reason = "Build failure"
 
             ret = {
@@ -415,7 +416,7 @@ class CMake:
                     'filter': filter_results
                     }
         else:
-            self.instance.status = "error"
+            self.instance.status = TwisterStatus.ERROR
             self.instance.reason = "Cmake build failure"
 
             for tc in self.instance.testcases:
@@ -607,16 +608,16 @@ class ProjectBuilder(FilterBuilder):
 
         if op == "filter":
             ret = self.cmake(filter_stages=self.instance.filter_stages)
-            if self.instance.status in ["failed", "error"]:
+            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Here we check the dt/kconfig filter results coming from running cmake
                 if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = "filtered"
+                    self.instance.status = TwisterStatus.FILTER
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
-                    self.instance.add_missing_case_status("skipped")
+                    self.instance.add_missing_case_status(TwisterStatus.SKIP)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "cmake", "test": self.instance})
@@ -624,20 +625,20 @@ class ProjectBuilder(FilterBuilder):
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
             ret = self.cmake()
-            if self.instance.status in ["failed", "error"]:
+            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.options.cmake_only:
-                if self.instance.status is None:
-                    self.instance.status = "passed"
+                if self.instance.status == TwisterStatus.NONE:
+                    self.instance.status = TwisterStatus.PASS
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Here we check the runtime filter results coming from running cmake
                 if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = "filtered"
+                    self.instance.status = TwisterStatus.FILTER
                     self.instance.reason = "runtime filter"
                     results.skipped_runtime += 1
-                    self.instance.add_missing_case_status("skipped")
+                    self.instance.add_missing_case_status(TwisterStatus.SKIP)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -646,34 +647,37 @@ class ProjectBuilder(FilterBuilder):
             logger.debug("build test: %s" % self.instance.name)
             ret = self.build()
             if not ret:
-                self.instance.status = "error"
+                self.instance.status = TwisterStatus.ERROR
                 self.instance.reason = "Build Failure"
                 pipeline.put({"op": "report", "test": self.instance})
             else:
                 # Count skipped cases during build, for example
                 # due to ram/rom overflow.
-                if  self.instance.status == "skipped":
+                if  self.instance.status == TwisterStatus.SKIP:
                     results.skipped_runtime += 1
-                    self.instance.add_missing_case_status("skipped", self.instance.reason)
+                    self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
 
                 if ret.get('returncode', 1) > 0:
-                    self.instance.add_missing_case_status("blocked", self.instance.reason)
+                    self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
-                    logger.debug(f"Determine test cases for test instance: {self.instance.name}")
-                    try:
-                        self.determine_testcases(results)
+                    if self.instance.testsuite.harness in ['ztest', 'test']:
+                        logger.debug(f"Determine test cases for test instance: {self.instance.name}")
+                        try:
+                            self.determine_testcases(results)
+                            pipeline.put({"op": "gather_metrics", "test": self.instance})
+                        except BuildError as e:
+                            logger.error(str(e))
+                            self.instance.status = TwisterStatus.ERROR
+                            self.instance.reason = str(e)
+                            pipeline.put({"op": "report", "test": self.instance})
+                    else:
                         pipeline.put({"op": "gather_metrics", "test": self.instance})
-                    except BuildError as e:
-                        logger.error(str(e))
-                        self.instance.status = "error"
-                        self.instance.reason = str(e)
-                        pipeline.put({"op": "report", "test": self.instance})
 
         elif op == "gather_metrics":
             ret = self.gather_metrics(self.instance)
             if not ret or ret.get('returncode', 1) > 0:
-                self.instance.status = "error"
+                self.instance.status = TwisterStatus.ERROR
                 self.instance.reason = "Build Failure at gather_metrics."
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.instance.run and self.instance.handler.ready:
@@ -710,7 +714,7 @@ class ProjectBuilder(FilterBuilder):
             if not self.options.coverage:
                 if self.options.prep_artifacts_for_testing:
                     pipeline.put({"op": "cleanup", "mode": "device", "test": self.instance})
-                elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == "passed":
+                elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == TwisterStatus.PASS:
                     pipeline.put({"op": "cleanup", "mode": "passed", "test": self.instance})
                 elif self.options.runtime_artifact_cleanup == "all":
                     pipeline.put({"op": "cleanup", "mode": "all", "test": self.instance})
@@ -963,8 +967,8 @@ class ProjectBuilder(FilterBuilder):
         if results.iteration == 1:
             results.cases += len(instance.testcases)
 
-        if instance.status in ["error", "failed"]:
-            if instance.status == "error":
+        if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            if instance.status == TwisterStatus.ERROR:
                 results.error += 1
                 txt = " ERROR "
             else:
@@ -983,17 +987,17 @@ class ProjectBuilder(FilterBuilder):
                         instance.reason))
             if not self.options.verbose:
                 self.log_info_file(self.options.inline_logs)
-        elif instance.status in ["skipped", "filtered"]:
+        elif instance.status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
             status = Fore.YELLOW + "SKIPPED" + Fore.RESET
             results.skipped_configs += 1
             # test cases skipped at the test instance level
             results.skipped_cases += len(instance.testsuite.testcases)
-        elif instance.status == "passed":
+        elif instance.status == TwisterStatus.PASS:
             status = Fore.GREEN + "PASSED" + Fore.RESET
             results.passed += 1
             for case in instance.testcases:
                 # test cases skipped at the test case level
-                if case.status == 'skipped':
+                if case.status == TwisterStatus.SKIP:
                     results.skipped_cases += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
@@ -1002,7 +1006,7 @@ class ProjectBuilder(FilterBuilder):
         if self.options.verbose:
             if self.options.cmake_only:
                 more_info = "cmake"
-            elif instance.status in ["skipped", "filtered"]:
+            elif instance.status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
                 more_info = instance.reason
             else:
                 if instance.handler.ready and instance.run:
@@ -1015,7 +1019,7 @@ class ProjectBuilder(FilterBuilder):
                 else:
                     more_info = "build"
 
-                if ( instance.status in ["error", "failed", "timeout", "flash_error"]
+                if ( instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]
                      and hasattr(self.instance.handler, 'seed')
                      and self.instance.handler.seed is not None ):
                     more_info += "/seed: " + str(self.options.seed)
@@ -1023,7 +1027,7 @@ class ProjectBuilder(FilterBuilder):
                 results.done, total_tests_width, total_to_do , instance.platform.name,
                 instance.testsuite.name, status, more_info))
 
-            if instance.status in ["error", "failed", "timeout"]:
+            if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 self.log_info_file(self.options.inline_logs)
         else:
             completed_perc = 0
@@ -1106,7 +1110,7 @@ class ProjectBuilder(FilterBuilder):
                 harness.instance = self.instance
                 harness.build()
         except ConfigurationError as error:
-            self.instance.status = "error"
+            self.instance.status = TwisterStatus.ERROR
             self.instance.reason = str(error)
             logger.error(self.instance.reason)
             return
@@ -1118,7 +1122,7 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler.ready:
             logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
-            instance.status = None
+            instance.status = TwisterStatus.NONE
 
             if instance.handler.type_str == "device":
                 instance.handler.duts = self.duts
@@ -1136,7 +1140,7 @@ class ProjectBuilder(FilterBuilder):
             try:
                 harness.configure(instance)
             except ConfigurationError as error:
-                instance.status = "error"
+                instance.status = TwisterStatus.ERROR
                 instance.reason = str(error)
                 logger.error(instance.reason)
                 return
@@ -1164,7 +1168,7 @@ class ProjectBuilder(FilterBuilder):
 
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):
-        if instance.status not in ["error", "failed", "skipped"]:
+        if instance.status not in [TwisterStatus.ERROR, TwisterStatus.FAIL, TwisterStatus.SKIP]:
             if not instance.platform.type in ["native", "qemu", "unit"]:
                 generate_warning = bool(instance.platform.type == "mcu")
                 size_calc = instance.calculate_sizes(from_buildlog=from_buildlog, generate_warning=generate_warning)
@@ -1275,12 +1279,12 @@ class TwisterRunner:
         the static filter stats. So need to prepare them before pipline starts.
         '''
         for instance in self.instances.values():
-            if instance.status == 'filtered' and not instance.reason == 'runtime filter':
+            if instance.status == TwisterStatus.FILTER and not instance.reason == 'runtime filter':
                 self.results.skipped_filter += 1
                 self.results.skipped_configs += 1
                 self.results.skipped_cases += len(instance.testsuite.testcases)
                 self.results.cases += len(instance.testsuite.testcases)
-            elif instance.status == 'error':
+            elif instance.status == TwisterStatus.ERROR:
                 self.results.error += 1
 
     def show_brief(self):
@@ -1296,15 +1300,15 @@ class TwisterRunner:
             if build_only:
                 instance.run = False
 
-            no_retry_statuses = ['passed', 'skipped', 'filtered']
+            no_retry_statuses = [TwisterStatus.PASS, TwisterStatus.SKIP, TwisterStatus.FILTER]
             if not retry_build_errors:
-                no_retry_statuses.append("error")
+                no_retry_statuses.append(TwisterStatus.ERROR)
 
             if instance.status not in no_retry_statuses:
                 logger.debug(f"adding {instance.name}")
-                if instance.status:
+                if instance.status != TwisterStatus.NONE:
                     instance.retries += 1
-                instance.status = None
+                instance.status = TwisterStatus.NONE
 
                 # Check if cmake package_helper script can be run in advance.
                 instance.filter_stages = []

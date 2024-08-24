@@ -293,6 +293,7 @@ struct bt_att_req {
 
 void bt_att_init(void);
 uint16_t bt_att_get_mtu(struct bt_conn *conn);
+uint16_t bt_att_get_uatt_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, uint8_t op,
 				  size_t len);
 

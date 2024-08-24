@@ -331,7 +331,7 @@ static const struct uart_driver_api usart_gd32_driver_api = {
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),	\
 		 GD32_USART_IRQ_HANDLER_FUNC_INIT(n)				\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, &usart_gd32_init,				\
+	DEVICE_DT_INST_DEFINE(n, usart_gd32_init,				\
 			      NULL,						\
 			      &usart_gd32_data_##n,				\
 			      &usart_gd32_config_##n, PRE_KERNEL_1,		\

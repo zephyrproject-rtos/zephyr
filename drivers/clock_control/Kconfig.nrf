@@ -57,7 +57,7 @@ endchoice
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 	bool "LF clock calibration"
 	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
-	default y if !BOARD_ENABLE_CPUNET
+	default y if !SOC_NRF53_CPUNET_ENABLE
 	help
 	  If calibration is disabled when RC is used for low frequency clock then
 	  accuracy of the low frequency clock will degrade. Disable on your own
@@ -94,7 +94,7 @@ config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
 config CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
 	int "Maximum number of calibration skips"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Calibration is skipped when temperature change since last calibration
 	  was less than configured threshold. If number of consecutive skips

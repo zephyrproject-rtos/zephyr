@@ -15,7 +15,7 @@ family:
           - name: nsim_hs5x_smp
           - name: nsim_hs6x
           - name: nsim_hs6x_smp
-      - name: nsim_vpx
+      - name: nsim_vpx5
         socs:
           - name: nsim_vpx5
       - name: nsim_sem

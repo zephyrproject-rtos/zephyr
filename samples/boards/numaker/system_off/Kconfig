@@ -1,0 +1,7 @@
+# Copyright 2024, Nuvoton
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "numaker SYSTEM_OFF demo"
+
+source "Kconfig.zephyr"

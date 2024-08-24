@@ -14,6 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <stdarg.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
@@ -52,29 +53,14 @@ __attribute__((weak)) int arch_printk_char_out(int c)
 }
 /* LCOV_EXCL_STOP */
 
-int (*_char_out)(int c) = arch_printk_char_out;
+static printk_hook_fn_t _char_out = arch_printk_char_out;
 
-/**
- * @brief Install the character output routine for printk
- *
- * To be called by the platform's console driver at init time. Installs a
- * routine that outputs one ASCII character at a time.
- * @param fn putc routine to install
- */
-void __printk_hook_install(int (*fn)(int c))
+void __printk_hook_install(printk_hook_fn_t fn)
 {
 	_char_out = fn;
 }
 
-/**
- * @brief Get the current character output routine for printk
- *
- * To be called by any console driver that would like to save
- * current hook - if any - for later re-installation.
- *
- * @return a function pointer or NULL if no hook is set
- */
-void *__printk_get_hook(void)
+printk_hook_fn_t __printk_get_hook(void)
 {
 	return _char_out;
 }

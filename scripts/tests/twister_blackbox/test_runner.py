@@ -24,7 +24,7 @@ class TestRunner:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'executed_on_platform': 0,
                 'only_built': 6
@@ -32,7 +32,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'executed_on_platform': 0,
                 'only_built': 1
@@ -42,7 +42,7 @@ class TestRunner:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 6,

@@ -17,6 +17,8 @@
 /**
  * @brief Precision Time Protocol (PTP) support
  * @defgroup ptp PTP support
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

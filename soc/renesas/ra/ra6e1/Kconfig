@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA6E1
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select HAS_RENESAS_RA_FSP
+	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select FPU
+	select HAS_SWO
+	select XIP

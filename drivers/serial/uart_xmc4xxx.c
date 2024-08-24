@@ -1004,7 +1004,7 @@ XMC4XXX_IRQ_STRUCT_INIT(index)						\
 	.fifo_rx_size = DT_INST_ENUM_IDX(index, fifo_rx_size),          \
 };									\
 									\
-	DEVICE_DT_INST_DEFINE(index, &uart_xmc4xxx_init,		\
+	DEVICE_DT_INST_DEFINE(index, uart_xmc4xxx_init,			\
 			    NULL,					\
 			    &xmc4xxx_data_##index,			\
 			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\

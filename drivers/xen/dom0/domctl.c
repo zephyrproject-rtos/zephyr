@@ -114,8 +114,9 @@ int xen_domctl_get_paging_mempool_size(int domid, uint64_t *size_mb)
 	};
 
 	rc = do_domctl(&domctl);
-	if (rc)
+	if (rc) {
 		return rc;
+	}
 
 	*size_mb = domctl.u.paging_mempool.size;
 

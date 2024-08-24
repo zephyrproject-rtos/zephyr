@@ -474,12 +474,24 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * @brief Check if the current message is a read operation
  *
  * @param msg The message to check
- * @return true if the I2C message is sa read operation
+ * @return true if the I2C message is a read operation
  * @return false if the I2C message is a write operation
  */
-static inline bool i2c_is_read_op(struct i2c_msg *msg)
+static inline bool i2c_is_read_op(const struct i2c_msg *msg)
 {
 	return (msg->flags & I2C_MSG_READ) == I2C_MSG_READ;
+}
+
+/**
+ * @brief Check if the current message includes a stop.
+ *
+ * @param msg The message to check
+ * @return true if the I2C message includes a stop
+ * @return false if the I2C message includes a stop
+ */
+static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
+{
+	return (msg->flags & I2C_MSG_STOP) == I2C_MSG_STOP;
 }
 
 /**
@@ -785,6 +797,12 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->api;
 
+	if (!num_msgs) {
+		return 0;
+	}
+
+	msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
+
 	int res =  api->transfer(dev, msgs, num_msgs, addr);
 
 	i2c_xfer_stats(dev, msgs, num_msgs);
@@ -821,17 +839,25 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
  */
 static inline int i2c_transfer_cb(const struct device *dev,
-				 struct i2c_msg *msgs,
-				 uint8_t num_msgs,
-				 uint16_t addr,
-				 i2c_callback_t cb,
-				 void *userdata)
+				  struct i2c_msg *msgs,
+				  uint8_t num_msgs,
+				  uint16_t addr,
+				  i2c_callback_t cb,
+				  void *userdata)
 {
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->api;
 
 	if (api->transfer_cb == NULL) {
 		return -ENOSYS;
 	}
+
+	if (!num_msgs) {
+		cb(dev, 0, userdata);
+		return 0;
+	}
+
+	msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
 
 	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
 }

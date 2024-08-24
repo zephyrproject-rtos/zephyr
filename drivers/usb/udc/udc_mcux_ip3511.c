@@ -151,7 +151,7 @@ static int udc_mcux_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 
 	ret = udc_mcux_ep_feed(dev, cfg, buf);
 
@@ -454,6 +454,9 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 	case kUSB_DeviceNotifyAttach:
 		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		break;
+	case kUSB_DeviceNotifySOF:
+		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		break;
 	default:
 		ep  = mcux_msg->code;
 		if (mcux_msg->isSetup) {
@@ -568,6 +571,7 @@ static int udc_mcux_ep_enable(const struct device *dev,
 	ep_init.zlt             = 0U;
 	ep_init.interval        = cfg->interval;
 	ep_init.endpointAddress = cfg->addr;
+	/* HAL expects wMaxPacketSize value directly in maxPacketSize field */
 	ep_init.maxPacketSize   = cfg->mps;
 
 	switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
@@ -744,6 +748,10 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_out[i].caps.interrupt = 1;
 			config->ep_cfg_out[i].caps.iso = 1;
 			config->ep_cfg_out[i].caps.mps = 1024;
+			if ((priv->controller_id == kUSB_ControllerLpcIp3511Hs0) ||
+			    (priv->controller_id == kUSB_ControllerLpcIp3511Hs1)) {
+				config->ep_cfg_out[i].caps.high_bandwidth = 1;
+			}
 		}
 
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
@@ -764,6 +772,10 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_in[i].caps.interrupt = 1;
 			config->ep_cfg_in[i].caps.iso = 1;
 			config->ep_cfg_in[i].caps.mps = 1024;
+			if ((priv->controller_id == kUSB_ControllerLpcIp3511Hs0) ||
+			    (priv->controller_id == kUSB_ControllerLpcIp3511Hs1)) {
+				config->ep_cfg_in[i].caps.high_bandwidth = 1;
+			}
 		}
 
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;

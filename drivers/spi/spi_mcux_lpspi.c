@@ -753,23 +753,23 @@ static void spi_mcux_iodev_start(const struct device *dev)
 	switch (sqe->op) {
 	case RTIO_OP_RX:
 		transfer.txData = NULL;
-		transfer.rxData = sqe->buf;
-		transfer.dataSize = sqe->buf_len;
+		transfer.rxData = sqe->rx.buf;
+		transfer.dataSize = sqe->rx.buf_len;
 		break;
 	case RTIO_OP_TX:
 		transfer.rxData = NULL;
-		transfer.txData = sqe->buf;
-		transfer.dataSize = sqe->buf_len;
+		transfer.txData = sqe->tx.buf;
+		transfer.dataSize = sqe->tx.buf_len;
 		break;
 	case RTIO_OP_TINY_TX:
 		transfer.rxData = NULL;
-		transfer.txData = sqe->tiny_buf;
-		transfer.dataSize = sqe->tiny_buf_len;
+		transfer.txData = sqe->tiny_tx.buf;
+		transfer.dataSize = sqe->tiny_tx.buf_len;
 		break;
 	case RTIO_OP_TXRX:
-		transfer.txData = sqe->tx_buf;
-		transfer.rxData = sqe->rx_buf;
-		transfer.dataSize = sqe->txrx_buf_len;
+		transfer.txData = sqe->txrx.tx_buf;
+		transfer.rxData = sqe->txrx.rx_buf;
+		transfer.dataSize = sqe->txrx.buf_len;
 		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
@@ -966,10 +966,10 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 									\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,			\
-				&spi_mcux_data_##n,				\
-				&spi_mcux_config_##n, POST_KERNEL,		\
-				CONFIG_SPI_INIT_PRIORITY,			\
+	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,			\
+				&spi_mcux_data_##n,			\
+				&spi_mcux_config_##n, POST_KERNEL,	\
+				CONFIG_SPI_INIT_PRIORITY,		\
 				&spi_mcux_driver_api);			\
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev)	\

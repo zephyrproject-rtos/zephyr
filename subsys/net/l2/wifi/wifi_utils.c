@@ -102,6 +102,23 @@ bool wifi_utils_validate_chan(uint8_t band,
 	return result;
 }
 
+/**
+ * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
+ * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.
+ *
+ * @param chan Current channel number.
+ * @return Next valid channel number.
+ */
+uint16_t wifi_utils_get_next_chan_6g(uint16_t chan)
+{
+	if (chan == 1) {
+		return 2;
+	} else if (chan == 2) {
+		return 5;
+	} else {
+		return chan + 4;
+	}
+}
 
 static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 		uint8_t chan_end,
@@ -135,7 +152,7 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 	case WIFI_FREQ_BAND_2_4_GHZ:
 		idx = *chan_idx;
 
-		for (i = chan_start; i <= chan_end; i++) {
+		for (i = chan_start+1; i <= chan_end; i++) {
 			band_chan[idx].band = band_idx;
 			band_chan[idx].channel = i;
 			idx++;
@@ -173,20 +190,14 @@ static int wifi_utils_get_all_chans_in_range(uint8_t chan_start,
 	case WIFI_FREQ_BAND_6_GHZ:
 		idx = *chan_idx;
 
-		i = chan_start;
+		i = wifi_utils_get_next_chan_6g(chan_start);
 
 		while (i <= chan_end) {
 			band_chan[idx].band = band_idx;
 			band_chan[idx].channel = i;
 			idx++;
 
-			if (i == 1) {
-				i++;
-			} else if (i == 2) {
-				i += 3;
-			} else {
-				i += 4;
-			}
+			i = wifi_utils_get_next_chan_6g(i);
 		}
 
 		*chan_idx = idx;

@@ -202,7 +202,7 @@ struct uart_async_to_irq_tx_data {
 	size_t len;
 };
 
-/** @briref Data associated with the asynchronous to the interrupt driven API adaptation layer. */
+/** @brief Data associated with the asynchronous to the interrupt driven API adaptation layer. */
 struct uart_async_to_irq_data {
 	/** User callback for interrupt driven API. */
 	uart_irq_callback_user_data_t callback;

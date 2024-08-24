@@ -244,11 +244,17 @@ static int spi_esp32_init(const struct device *dev)
 	spi_ll_disable_int(cfg->spi);
 	spi_ll_clear_int_stat(cfg->spi);
 
-	esp_intr_alloc(cfg->irq_source,
-			0,
+	err = esp_intr_alloc(cfg->irq_source,
+			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+			ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
 			(ISR_HANDLER)spi_esp32_isr,
 			(void *)dev,
 			NULL);
+
+	if (err != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", err);
+		return err;
+	}
 #endif
 
 	err = spi_context_cs_configure_all(&data->ctx);
@@ -425,12 +431,12 @@ static int transceive(const struct device *dev,
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 
+	data->dfs = spi_esp32_get_frame_size(spi_cfg);
+
 	ret = spi_esp32_configure(dev, spi_cfg);
 	if (ret) {
 		goto done;
 	}
-
-	data->dfs = spi_esp32_get_frame_size(spi_cfg);
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
@@ -525,7 +531,9 @@ static const struct spi_driver_api spi_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),	\
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
-		.irq_source = DT_INST_IRQN(idx), \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq), \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority), \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),	\
 		.clock_subsys =	\
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset),	\
@@ -539,7 +547,7 @@ static const struct spi_driver_api spi_api = {
 		.clock_source = SPI_CLK_SRC_DEFAULT,	\
 	};	\
 		\
-	DEVICE_DT_INST_DEFINE(idx, &spi_esp32_init,	\
+	DEVICE_DT_INST_DEFINE(idx, spi_esp32_init,	\
 			      NULL, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
 			      CONFIG_SPI_INIT_PRIORITY, &spi_api);

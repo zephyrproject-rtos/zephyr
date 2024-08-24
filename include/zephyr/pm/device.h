@@ -718,10 +718,16 @@ static inline int pm_device_driver_init(const struct device *dev, pm_device_acti
 
 	/* When power management is not enabled, all drivers should initialise to active state */
 	rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
-	if (rc == 0) {
-		rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	if (rc < 0) {
+		return rc;
 	}
-	return rc;
+
+	rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_PM_DEVICE */

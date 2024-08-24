@@ -21,4 +21,5 @@ supported:
   - pwm
   - dma
   - display
+  - counter
 vendor: nxp

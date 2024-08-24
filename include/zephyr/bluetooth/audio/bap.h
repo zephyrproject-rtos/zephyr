@@ -1158,8 +1158,10 @@ struct bt_bap_unicast_group_param {
 /**
  * @brief Create audio unicast group.
  *
- * Create a new audio unicast group with one or more audio streams as a unicast client. Streams in
- * a unicast group shall share the same interval, framing and latency (see @ref bt_audio_codec_qos).
+ * Create a new audio unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_audio_codec_qos).
  *
  * @param[in]  param          The unicast group create parameters.
  * @param[out] unicast_group  Pointer to the unicast group created.
@@ -2012,8 +2014,11 @@ int bt_bap_scan_delegator_set_bis_sync_state(
 
 /** Parameters for bt_bap_scan_delegator_add_src() */
 struct bt_bap_scan_delegator_add_src_param {
-	/** The periodic adverting sync */
-	struct bt_le_per_adv_sync *pa_sync;
+	/** Periodic Advertiser Address */
+	bt_addr_le_t addr;
+
+	/** Advertiser SID */
+	uint8_t sid;
 
 	/** The broadcast isochronous group encryption state */
 	enum bt_bap_big_enc_state encrypt_state;

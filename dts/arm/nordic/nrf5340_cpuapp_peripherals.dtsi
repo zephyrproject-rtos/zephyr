@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
+
 dcnf: dcnf@0 {
 	compatible = "nordic,nrf-dcnf";
 	reg = <0x0 0x1000>;
@@ -17,9 +19,34 @@ oscillators: oscillator@4000 {
 };
 
 regulators: regulator@4000 {
-	compatible = "nordic,nrf-regulators";
+	compatible = "nordic,nrf53x-regulators";
 	reg = <0x4000 0x1000>;
 	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	vregmain: regulator@4704 {
+		compatible = "nordic,nrf5x-regulator";
+		reg = <0x4704 0x1>;
+		status = "okay";
+		regulator-name = "VREGMAIN";
+		regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+	};
+
+	vregradio: regulator@4904 {
+		compatible = "nordic,nrf5x-regulator";
+		reg = <0x4904 0x1>;
+		status = "okay";
+		regulator-name = "VREGRADIO";
+		regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+	};
+
+	vregh: regulator@4b00 {
+		compatible = "nordic,nrf53x-regulator-hv";
+		reg = <0x4b00 0x44>;
+		status = "disabled";
+		regulator-name = "VREGH";
+	};
 };
 
 clock: clock@5000 {

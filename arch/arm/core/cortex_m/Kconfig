@@ -330,7 +330,7 @@ config ZERO_LATENCY_IRQS
 config ZERO_LATENCY_LEVELS
 	int "Number of interrupt priority levels reserved for zero latency"
 	depends on ZERO_LATENCY_IRQS
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  The amount of interrupt priority levels reserved for zero latency
 	  interrupts. Increase this value to reserve more than one priority

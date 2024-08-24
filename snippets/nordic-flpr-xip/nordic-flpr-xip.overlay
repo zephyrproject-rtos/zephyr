@@ -6,7 +6,3 @@
 &cpuflpr_vpr {
 	status = "okay";
 };
-
-&cpuapp_vevif_tx {
-	status = "okay";
-};

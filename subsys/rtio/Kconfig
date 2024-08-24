@@ -8,20 +8,28 @@ if RTIO
 
 config RTIO_SUBMIT_SEM
 	bool "Use a semaphore when waiting for completions in rtio_submit"
+	default n if !MULTITHREADING
+	default y
 	help
 	  When calling rtio_submit a semaphore is available to sleep the calling
 	  thread for each completion queue event until the wait count is met. This
 	  adds a small RAM overhead for a single semaphore. By default wait_for will
 	  use polling on the completion queue with a k_yield() in between iterations.
 
+	  Enabled by default unless !MULTITHREADING
+
 config RTIO_CONSUME_SEM
 	bool "Use a semaphore when waiting for completions in rtio_cqe_consume_block"
+	default n if !MULTITHREADING
+	default y
 	help
 	  When calling rtio_cqe_consume_block a semaphore is available to sleep the
 	  calling thread for each completion queue event until the wait count is met.
 	  This adds a small RAM overhead for a single semaphore. By default the call
 	  will use polling on the completion queue with a k_yield() in between
 	  iterations.
+
+	  Enabled by default unless !MULTIHREADING
 
 config RTIO_SYS_MEM_BLOCKS
 	bool "Include system memory blocks as an optional backing read memory pool"

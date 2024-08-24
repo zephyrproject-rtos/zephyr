@@ -30,6 +30,12 @@ LOG_MODULE_REGISTER(main);
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 #endif
 
+#if !defined(CONFIG_DISK_DRIVER_FLASH) && \
+	!defined(CONFIG_DISK_DRIVER_RAM) && \
+	!defined(CONFIG_DISK_DRIVER_SDMMC)
+#error No supported disk driver enabled
+#endif
+
 #define STORAGE_PARTITION		storage_partition
 #define STORAGE_PARTITION_ID		FIXED_PARTITION_ID(STORAGE_PARTITION)
 

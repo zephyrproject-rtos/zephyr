@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include "common/bt_str.h"
@@ -329,7 +330,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	if (default_conn != conn) {
 		return;
@@ -348,7 +349,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", addr, level);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr, level, err);
+		LOG_DBG("Security failed: %s level %u err %d %s", addr, level,
+			err, bt_security_err_to_str(err));
 	}
 }
 

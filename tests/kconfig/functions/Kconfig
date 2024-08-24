@@ -1,0 +1,116 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 CSIRO
+
+config KCONFIG_ARITHMETIC_ADD_10
+	int
+	default $(add, 10)
+
+config KCONFIG_ARITHMETIC_ADD_10_3
+	int
+	default $(add, 10, 3)
+
+config KCONFIG_ARITHMETIC_ADD_10_3_2
+	int
+	default $(add, 10, 3, 2)
+
+config KCONFIG_ARITHMETIC_SUB_10
+	int
+	default $(sub, 10)
+
+config KCONFIG_ARITHMETIC_SUB_10_3
+	int
+	default $(sub, 10, 3)
+
+config KCONFIG_ARITHMETIC_SUB_10_3_2
+	int
+	default $(sub, 10, 3, 2)
+
+config KCONFIG_ARITHMETIC_MUL_10
+	int
+	default $(mul, 10)
+
+config KCONFIG_ARITHMETIC_MUL_10_3
+	int
+	default $(mul, 10, 3)
+
+config KCONFIG_ARITHMETIC_MUL_10_3_2
+	int
+	default $(mul, 10, 3, 2)
+
+config KCONFIG_ARITHMETIC_DIV_10
+	int
+	default $(div, 10)
+
+config KCONFIG_ARITHMETIC_DIV_10_3
+	int
+	default $(div, 10, 3)
+
+config KCONFIG_ARITHMETIC_DIV_10_3_2
+	int
+	default $(div, 10, 3, 2)
+
+config KCONFIG_ARITHMETIC_MOD_10
+	int
+	default $(mod, 10)
+
+config KCONFIG_ARITHMETIC_MOD_10_3
+	int
+	default $(mod, 10, 3)
+
+config KCONFIG_ARITHMETIC_MOD_10_3_2
+	int
+	default $(mod, 10, 3, 2)
+
+config KCONFIG_ARITHMETIC_INC_1
+	int
+	default $(inc, 1)
+
+config KCONFIG_ARITHMETIC_INC_1_1
+	string
+	default "$(inc, 1, 1)"
+
+config KCONFIG_ARITHMETIC_INC_INC_1_1
+	string
+	default "$(inc, $(inc, 1, 1))"
+
+config KCONFIG_ARITHMETIC_DEC_1
+	int
+	default $(dec, 1)
+
+config KCONFIG_ARITHMETIC_DEC_1_1
+	string
+	default "$(dec, 1, 1)"
+
+config KCONFIG_ARITHMETIC_DEC_DEC_1_1
+	string
+	default "$(dec, $(dec, 1, 1))"
+
+config KCONFIG_ARITHMETIC_ADD_INC_1_1
+	int
+	default $(add, $(inc, 1, 1))
+
+config KCONFIG_MIN_10
+	int
+	default $(min, 10)
+
+config KCONFIG_MIN_10_3
+	int
+	default $(min, 10, 3)
+
+config KCONFIG_MIN_10_3_2
+	int
+	default $(min, 10, 3, 2)
+
+config KCONFIG_MAX_10
+	int
+	default $(max, 10)
+
+config KCONFIG_MAX_10_3
+	int
+	default $(max, 10, 3)
+
+config KCONFIG_MAX_10_3_2
+	int
+	default $(max, 10, 3, 2)
+
+source "Kconfig.zephyr"

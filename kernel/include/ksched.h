@@ -57,7 +57,6 @@ void *z_get_next_switch_handle(void *interrupted);
 
 void z_time_slice(void);
 void z_reset_time_slice(struct k_thread *curr);
-void z_sched_abort(struct k_thread *thread);
 void z_sched_ipi(void);
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);

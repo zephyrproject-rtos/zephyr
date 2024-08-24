@@ -1,0 +1,43 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: FXLS8974 3-axis accelerometer sensor
+
+include: sensor-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RST pin
+      This pin defaults to active high when consumed by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT1 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT2 pin
+      This pin defaults to active low when produced by the sensor.
+      The property value should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  range:
+    type: int
+    default: 2
+    description: |
+      Range in g. Default value is 2 because it is the most sensitive setting.
+      16g (7.81 mg/LSB), 8g (3.91 mg/LSB), 4g (1.95 mg/LSB), 2g (0.98 mg/LSB).
+    enum:
+      - 16
+      - 8
+      - 4
+      - 2

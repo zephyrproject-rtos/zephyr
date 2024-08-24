@@ -431,6 +431,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
 
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
+	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
 
 	/* The peripheral does not have the concept of a CIG, so once a CIS
 	 * disconnects it is completely freed by unref'ing it
@@ -778,6 +779,8 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn,
 		LOG_DBG("channel has been disconnected");
 		__ASSERT_NO_MSG(b == frag);
 
+		net_buf_unref(b);
+
 		/* Service other connections */
 		bt_tx_irq_raise();
 
@@ -840,12 +843,7 @@ int conn_iso_send(struct bt_conn *conn, struct net_buf *buf, enum bt_iso_timesta
 		return -EINVAL;
 	}
 
-	/* push the TS flag on the buffer itself.
-	 * It will be popped and read back by conn before adding the ISO HCI header.
-	 */
-	net_buf_push_u8(buf, has_ts);
-
-	net_buf_put(&conn->iso.txq, buf);
+	k_fifo_put(&conn->iso.txq, buf);
 	BT_ISO_DATA_DBG("%p put on list", buf);
 
 	/* only one ISO channel per conn-object */
@@ -876,6 +874,18 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 	if (!iso_conn->iso.info.can_send) {
 		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
+	}
+
+	if (net_buf_headroom(buf) != BT_BUF_ISO_SIZE(0)) {
+		LOG_DBG("Buffer headroom (%d) != BT_BUF_ISO_SIZE(0) (%d) bytes",
+			net_buf_headroom(buf), BT_BUF_ISO_SIZE(0));
+
+		/* DO NOT remove this check. We rely on precise headroom further
+		 * below in the stack to determine if `buf` contains a timestamp
+		 * field or not. See conn.c:contains_iso_timestamp.
+		 */
+
+		return -EMSGSIZE;
 	}
 
 	if (buf->size < hdr_size) {
@@ -1162,7 +1172,7 @@ void hci_le_cis_established(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->conn_handle);
 	struct bt_conn *iso;
 
-	LOG_DBG("status 0x%02x handle %u", evt->status, handle);
+	LOG_DBG("status 0x%02x %s handle %u", evt->status, bt_hci_err_to_str(evt->status), handle);
 
 	/* ISO connection handles are already assigned at this point */
 	iso = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ISO);
@@ -2334,7 +2344,8 @@ void bt_iso_security_changed(struct bt_conn *acl, uint8_t hci_status)
 			param[param_count].iso_chan = iso_chan;
 			param_count++;
 		} else {
-			LOG_DBG("Failed to encrypt ACL %p for ISO %p: %u", acl, iso, hci_status);
+			LOG_DBG("Failed to encrypt ACL %p for ISO %p: %u %s",
+				acl, iso, hci_status, bt_hci_err_to_str(hci_status));
 
 			/* We utilize the disconnected callback to make the
 			 * upper layers aware of the error
@@ -3053,7 +3064,8 @@ void hci_le_big_complete(struct net_buf *buf)
 	big = lookup_big_by_handle(evt->big_handle);
 	atomic_clear_bit(big->flags, BT_BIG_PENDING);
 
-	LOG_DBG("BIG[%u] %p completed, status 0x%02x", big->handle, big, evt->status);
+	LOG_DBG("BIG[%u] %p completed, status 0x%02x %s",
+		big->handle, big, evt->status, bt_hci_err_to_str(evt->status));
 
 	if (evt->status || evt->num_bis != big->num_bis) {
 		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
@@ -3227,7 +3239,8 @@ void hci_le_big_sync_established(struct net_buf *buf)
 	big = lookup_big_by_handle(evt->big_handle);
 	atomic_clear_bit(big->flags, BT_BIG_SYNCING);
 
-	LOG_DBG("BIG[%u] %p sync established, status 0x%02x", big->handle, big, evt->status);
+	LOG_DBG("BIG[%u] %p sync established, status 0x%02x %s",
+		big->handle, big, evt->status, bt_hci_err_to_str(evt->status));
 
 	if (evt->status || evt->num_bis != big->num_bis) {
 		if (evt->status == BT_HCI_ERR_SUCCESS && evt->num_bis != big->num_bis) {
@@ -3296,7 +3309,7 @@ static int hci_le_big_create_sync(const struct bt_le_per_adv_sync *sync, struct 
 	req->num_bis = big->num_bis;
 	/* Transform from bitfield to array */
 	for (int i = 1; i <= BT_ISO_MAX_GROUP_ISO_COUNT; i++) {
-		if (param->bis_bitfield & BIT(i)) {
+		if (param->bis_bitfield & BT_ISO_BIS_INDEX_BIT(i)) {
 			if (bit_idx == big->num_bis) {
 				LOG_DBG("BIG cannot contain %u BISes", bit_idx + 1);
 				return -EINVAL;
@@ -3340,7 +3353,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
-	CHECKIF(param->bis_bitfield <= BIT(0)) {
+	CHECKIF(param->bis_bitfield == 0U || param->bis_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
 		LOG_DBG("Invalid BIS bitfield 0x%08x", param->bis_bitfield);
 		return -EINVAL;
 	}

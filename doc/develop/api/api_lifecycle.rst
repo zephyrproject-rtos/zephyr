@@ -219,8 +219,8 @@ The following are the requirements for deprecating an existing API:
 
 - Deprecation Time (stable APIs): 2 Releases
   The API needs to be marked as deprecated in at least two full releases.
-  For example, if an API was first deprecated in release 1.14,
-  it will be ready to be removed in 1.16 at the earliest.
+  For example, if an API was first deprecated in release 4.0,
+  it will be ready to be removed in 4.2 at the earliest.
   There may be special circumstances, determined by the Architecture working group,
   where an API is deprecated sooner.
 - What is required when deprecating:
@@ -236,9 +236,10 @@ The following are the requirements for deprecating an existing API:
   - Code using the deprecated API needs to be modified to remove usage of said
     API
   - The change needs to be atomic and bisectable
-  - Create a GitHub issue to track the removal of the deprecated API, and
-    add it to the roadmap targeting the appropriate release
-    (in the example above, 1.16).
+  - Add an entry in the corresponding release
+    `GitHub issue <https://github.com/zephyrproject-rtos/zephyr/labels/deprecation_tracker>`_
+    tracking removal of deprecated APIs.
+    In this example in the one corresponding to the 4.2 release.
 
 During the deprecation waiting period, the API will be in the ``deprecated``
 state. The Zephyr maintainers will track usage of deprecated APIs on

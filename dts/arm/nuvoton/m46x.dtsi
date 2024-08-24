@@ -51,9 +51,11 @@
 			#clock-cells = <0>;
 			/* hxt = "enable"; */
 			lxt = "enable";
+			hirc48m = "enable";
 			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV2 |
 					 NUMAKER_CLK_PCLKDIV_APB1DIV_DIV2)>;
 			core-clock = <200000000>;
+			powerdown-mode = <NUMAKER_CLK_PMUCTL_PDMSEL_DPD>;
 
 			pcc: peripheral-clock-controller {
 				compatible = "nuvoton,numaker-pcc";
@@ -605,8 +607,8 @@
 			reg = <0x400c0000 0x1000>;
 			interrupts = <53 0>;
 			resets = <&rst NUMAKER_USBD_RST>;
-			clocks = <&pcc NUMAKER_USBD_MODULE NUMAKER_CLK_CLKSEL0_USBSEL_PLL_DIV2
-				  NUMAKER_CLK_CLKDIV0_USB(2)>;
+			clocks = <&pcc NUMAKER_USBD_MODULE NUMAKER_CLK_CLKSEL0_USBSEL_HIRC48M
+				  NUMAKER_CLK_CLKDIV0_USB(1)>;
 			dma-buffer-size = <1536>;
 			status = "disabled";
 			num-bidir-endpoints = <25>;

@@ -22,6 +22,8 @@ extern "C" {
 /**
  * @brief Simple Network Time Protocol API
  * @defgroup sntp SNTP
+ * @since 1.10
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

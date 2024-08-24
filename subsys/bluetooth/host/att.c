@@ -448,27 +448,27 @@ static struct net_buf *get_first_buf_matching_chan(struct k_fifo *fifo, struct b
 
 		k_fifo_init(&skipped);
 
-		while ((buf = net_buf_get(fifo, K_NO_WAIT))) {
+		while ((buf = k_fifo_get(fifo, K_NO_WAIT))) {
 			meta = bt_att_get_tx_meta_data(buf);
 			if (!ret &&
 			    att_chan_matches_chan_opt(chan, meta->chan_opt)) {
 				ret = buf;
 			} else {
-				net_buf_put(&skipped, buf);
+				k_fifo_put(&skipped, buf);
 			}
 		}
 
 		__ASSERT_NO_MSG(k_fifo_is_empty(fifo));
 
-		while ((buf = net_buf_get(&skipped, K_NO_WAIT))) {
-			net_buf_put(fifo, buf);
+		while ((buf = k_fifo_get(&skipped, K_NO_WAIT))) {
+			k_fifo_put(fifo, buf);
 		}
 
 		__ASSERT_NO_MSG(k_fifo_is_empty(&skipped));
 
 		return ret;
 	} else {
-		return net_buf_get(fifo, K_NO_WAIT);
+		return k_fifo_get(fifo, K_NO_WAIT);
 	}
 }
 
@@ -779,7 +779,7 @@ static void bt_att_chan_send_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	err = chan_send(chan, buf);
 	if (err) {
 		/* Responses need to be sent back using the same channel */
-		net_buf_put(&chan->tx_queue, buf);
+		k_fifo_put(&chan->tx_queue, buf);
 	}
 }
 
@@ -3063,7 +3063,7 @@ static void att_reset(struct bt_att *att)
 	(void)k_work_cancel_delayable_sync(&att->eatt.connection_work, &sync);
 #endif /* CONFIG_BT_EATT */
 
-	while ((buf = net_buf_get(&att->tx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&att->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -3098,7 +3098,7 @@ static void att_chan_detach(struct bt_att_chan *chan)
 	sys_slist_find_and_remove(&chan->att->chans, &chan->node);
 
 	/* Release pending buffers */
-	while ((buf = net_buf_get(&chan->tx_queue, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&chan->tx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -3237,8 +3237,8 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_conn *conn = le_chan->chan.conn;
 	uint8_t err;
 
-	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x", le_chan, conn,
-		conn->handle, conn->sec_level, hci_status);
+	LOG_DBG("chan %p conn %p handle %u sec_level 0x%02x status 0x%02x %s", le_chan, conn,
+		conn->handle, conn->sec_level, hci_status, bt_hci_err_to_str(hci_status));
 
 	if (!att_chan->att) {
 		LOG_DBG("Ignore encrypt change on detached ATT chan");
@@ -3832,6 +3832,27 @@ uint16_t bt_att_get_mtu(struct bt_conn *conn)
 	return mtu;
 }
 
+uint16_t bt_att_get_uatt_mtu(struct bt_conn *conn)
+{
+	struct bt_att_chan *chan, *tmp;
+	struct bt_att *att;
+
+	att = att_get(conn);
+	if (!att) {
+		return 0;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->chans, chan, tmp, node) {
+		if (!bt_att_is_enhanced(chan)) {
+			return bt_att_mtu(chan);
+		}
+	}
+
+	LOG_WRN("No UATT channel found in %p", conn);
+
+	return 0;
+}
+
 static void att_chan_mtu_updated(struct bt_att_chan *updated_chan)
 {
 	struct bt_att *att = updated_chan->att;
@@ -3906,7 +3927,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	net_buf_put(&att->tx_queue, buf);
+	k_fifo_put(&att->tx_queue, buf);
 	att_send_process(att);
 
 	return 0;

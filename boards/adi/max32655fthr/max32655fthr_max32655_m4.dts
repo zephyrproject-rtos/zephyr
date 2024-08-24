@@ -10,6 +10,7 @@
 #include <adi/max32/max32655-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/dma/max32655_dma.h>
 
 / {
 	model = "Analog Devices MAX32655FTHR";
@@ -65,6 +66,7 @@
 		led2 = &led3;
 		sw0 = &pb1;
 		sw1 = &pb2;
+		watchdog0 = &wdt0;
 	};
 
 	/* Used for accessing other pins */
@@ -124,4 +126,28 @@
 
 &gpio3 {
 	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_p0_30 &i2c2_sda_p0_31>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_mosi_p0_21 &spi1_miso_p0_22 &spi1_sck_p0_23 &spi1_ss0_p0_20>;
+	pinctrl-names = "default";
 };

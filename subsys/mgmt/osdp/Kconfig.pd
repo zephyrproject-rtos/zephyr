@@ -59,14 +59,14 @@ config OSDP_PD_ID_VENDOR_CODE
 config OSDP_PD_ID_MODEL
 	int "PD Product Model Number"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Manufacturer's model number. Least 8 bits are valid.
 
 config OSDP_PD_ID_VERSION
 	int "PD Product Version"
 	default 1
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  Manufacturer's version of this product. Least 8 bits are valid.
 

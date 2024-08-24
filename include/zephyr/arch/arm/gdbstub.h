@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_GDBSTUB_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_GDBSTUB_H_
 
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 
 #ifndef _ASMLANGUAGE
 

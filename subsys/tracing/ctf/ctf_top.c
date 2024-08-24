@@ -8,8 +8,11 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
+#include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket_poll.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
 
 static void _get_thread_name(struct k_thread *thread,
 			     ctf_bounded_string_t *name)
@@ -634,4 +637,112 @@ void sys_trace_socket_socketpair_enter(int family, int type, int proto, int *sv)
 void sys_trace_socket_socketpair_exit(int sock_A, int sock_B, int ret)
 {
 	ctf_top_socket_socketpair_exit(sock_A, sock_B, ret);
+}
+
+void sys_trace_net_recv_data_enter(struct net_if *iface, struct net_pkt *pkt)
+{
+	ctf_top_net_recv_data_enter((int32_t)net_if_get_by_iface(iface),
+				    (uint32_t)(uintptr_t)iface,
+				    (uint32_t)(uintptr_t)pkt,
+				    (uint32_t)net_pkt_get_len(pkt));
+}
+
+void sys_trace_net_recv_data_exit(struct net_if *iface, struct net_pkt *pkt, int ret)
+{
+	ctf_top_net_recv_data_exit((int32_t)net_if_get_by_iface(iface),
+				   (uint32_t)(uintptr_t)iface,
+				   (uint32_t)(uintptr_t)pkt,
+				   (int32_t)ret);
+}
+
+void sys_trace_net_send_data_enter(struct net_pkt *pkt)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_enter((int32_t)ifindex,
+				    (uint32_t)(uintptr_t)iface,
+				    (uint32_t)(uintptr_t)pkt,
+				    (uint32_t)net_pkt_get_len(pkt));
+}
+
+void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret)
+{
+	struct net_if *iface;
+	int ifindex;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+	}
+
+	ctf_top_net_send_data_exit((int32_t)ifindex,
+				   (uint32_t)(uintptr_t)iface,
+				   (uint32_t)(uintptr_t)pkt,
+				   (int32_t)ret);
+}
+
+void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time)
+{
+	struct net_if *iface;
+	int ifindex;
+	uint32_t diff;
+	int tc;
+	uint32_t duration_us;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+		tc = 0;
+		duration_us = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+		diff = end_time - net_pkt_create_time(pkt);
+		tc = net_rx_priority2tc(net_pkt_priority(pkt));
+		duration_us = k_cyc_to_ns_floor64(diff) / 1000U;
+	}
+
+	ctf_top_net_rx_time((int32_t)ifindex,
+			    (uint32_t)(uintptr_t)iface,
+			    (uint32_t)(uintptr_t)pkt,
+			    (uint32_t)net_pkt_priority(pkt),
+			    (uint32_t)tc,
+			    (uint32_t)duration_us);
+}
+
+void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time)
+{
+	struct net_if *iface;
+	int ifindex;
+	uint32_t diff;
+	int tc;
+	uint32_t duration_us;
+
+	iface = net_pkt_iface(pkt);
+	if (iface == NULL) {
+		ifindex = -1;
+		tc = 0;
+		duration_us = 0;
+	} else {
+		ifindex = net_if_get_by_iface(iface);
+		diff = end_time - net_pkt_create_time(pkt);
+		tc = net_rx_priority2tc(net_pkt_priority(pkt));
+		duration_us = k_cyc_to_ns_floor64(diff) / 1000U;
+	}
+
+	ctf_top_net_tx_time((int32_t)ifindex,
+			    (uint32_t)(uintptr_t)iface,
+			    (uint32_t)(uintptr_t)pkt,
+			    (uint32_t)net_pkt_priority(pkt),
+			    (uint32_t)tc,
+			    (uint32_t)duration_us);
 }

@@ -8,6 +8,7 @@
 
 /**
  * @defgroup ICM42688 Invensense (TDK) ICM42688 DT Options
+ * @ingroup sensor_interface
  * @{
  */
 

@@ -108,4 +108,70 @@ child-binding:
         type: int
         default: 0
         description: |
-          IOM nCE module select. The default value is reset value.
+          IOM nCE module select, selects the SPI channel (CE) number (0-42).
+            0,     IOM0CE0 : IOM 0 NCE 0 module
+            1,     IOM0CE1 : IOM 0 NCE 1 module
+            2,     IOM0CE2 : IOM 0 NCE 2 module
+            3,     IOM0CE3 : IOM 0 NCE 3 module
+            4,     IOM1CE0 : IOM 1 NCE 0 module
+            5,     IOM1CE1 : IOM 1 NCE 1 module
+            6,     IOM1CE2 : IOM 1 NCE 2 module
+            7,     IOM1CE3 : IOM 1 NCE 3 module
+            8,     IOM2CE0 : IOM 2 NCE 0 module
+            9,     IOM2CE1 : IOM 2 NCE 1 module
+            10,    IOM2CE2 : IOM 2 NCE 2 module
+            11,    IOM2CE3 : IOM 2 NCE 3 module
+            12,    IOM3CE0 : IOM 3 NCE 0 module
+            13,    IOM3CE1 : IOM 3 NCE 1 module
+            14,    IOM3CE2 : IOM 3 NCE 2 module
+            15,    IOM3CE3 : IOM 3 NCE 3 module
+            16,    IOM4CE0 : IOM 4 NCE 0 module
+            17,    IOM4CE1 : IOM 4 NCE 1 module
+            18,    IOM4CE2 : IOM 4 NCE 2 module
+            19,    IOM4CE3 : IOM 4 NCE 3 module
+            20,    IOM5CE0 : IOM 5 NCE 0 module
+            21,    IOM5CE1 : IOM 5 NCE 1 module
+            22,    IOM5CE2 : IOM 5 NCE 2 module
+            23,    IOM5CE3 : IOM 5 NCE 3 module
+            24,    IOM6CE0 : IOM 6 NCE 0 module
+            25,    IOM6CE1 : IOM 6 NCE 1 module
+            26,    IOM6CE2 : IOM 6 NCE 2 module
+            27,    IOM6CE3 : IOM 6 NCE 3 module
+            28,    IOM7CE0 : IOM 7 NCE 0 module
+            29,    IOM7CE1 : IOM 7 NCE 1 module
+            30,    IOM7CE2 : IOM 7 NCE 2 module
+            31,    IOM7CE3 : IOM 7 NCE 3 module
+            32,    MSPI0CEN0 : MSPI 0 NCE 0 module
+            33,    MSPI0CEN1 : MSPI 0 NCE 1 module
+            34,    MSPI1CEN0 : MSPI 1 NCE 0 module
+            35,    MSPI1CEN1 : MSPI 1 NCE 1 module
+            36,    MSPI2CEN0 : MSPI 2 NCE 0 module
+            37,    MSPI2CEN1 : MSPI 2 NCE 1 module
+            38,    DC_DPI_DE : DC DPI DE module
+            39,    DISP_CONT_CSX : DISP CONT CSX module
+            40,    DC_SPI_CS_N : DC SPI CS_N module
+            41,    DC_QSPI_CS_N : DC QSPI CS_N module
+            42,    DC_RESX : DC module RESX
+          If the pin is not a CE, this descriptor will be ignored.
+          Default value 0, which is the reset value.
+      ambiq,iom-mspi:
+        type: int
+        default: 0
+        description: |
+          Indicates the module which uses specific CE pin, 1 if CE is IOM, 0 if MSPI.
+          Default value 0, which is the reset value.
+          If the pin is not a CE, this descriptor will be ignored.
+      ambiq,iom-num:
+        type: int
+        default: 0
+        description: |
+          Indicates the instance which uses specific CE pin.
+          IOM number (0-7) or MSPI (0-2).
+          Default value 0, which is the reset value.
+          If the pin is not a CE, this descriptor will be ignored.
+      ambiq,interrupt-direction:
+        type: int
+        default: 0
+        description: |
+          Indicates the pininterrupt direction.
+          Default value 0, which is the reset value.

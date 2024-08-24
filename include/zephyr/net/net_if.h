@@ -15,6 +15,8 @@
 /**
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
+ * @since 1.5
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */
@@ -2561,6 +2563,15 @@ __syscall bool net_if_ipv4_set_netmask_by_addr_by_index(int index,
 bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
 				     const struct in_addr *addr,
 				     const struct in_addr *netmask);
+
+/**
+ * @brief Get IPv4 gateway of an interface.
+ *
+ * @param iface Interface to use.
+ *
+ * @return The gateway set on the interface, unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface);
 
 /**
  * @brief Set IPv4 gateway for an interface.

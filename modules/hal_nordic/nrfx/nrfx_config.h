@@ -109,8 +109,17 @@
 #ifdef CONFIG_NRFX_EGU5
 #define NRFX_EGU5_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_EGU10
+#define NRFX_EGU10_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_EGU20
+#define NRFX_EGU20_ENABLED 1
+#endif
 #ifdef CONFIG_NRFX_EGU020
 #define NRFX_EGU020_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_EGU130
+#define NRFX_EGU130_ENABLED 1
 #endif
 
 #ifdef CONFIG_NRFX_GRTC
@@ -1032,12 +1041,20 @@
     #include <nrfx_config_nrf54h20_radiocore.h>
 #elif defined(NRF54H20_XXAA) && defined(NRF_PPR)
     #include <nrfx_config_nrf54h20_ppr.h>
+#elif defined(NRF54H20_XXAA) && defined(NRF_FLPR)
+    #include <nrfx_config_nrf54h20_flpr.h>
 #elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_APPLICATION)
     #include <nrfx_config_nrf54l15_enga_application.h>
 #elif (defined(NRF54L15_XXAA) || defined(NRF54L15_ENGA_XXAA)) && defined(NRF_FLPR)
     #include <nrfx_config_nrf54l15_enga_flpr.h>
 #elif defined(NRF9120_XXAA) || defined(NRF9160_XXAA)
     #include <nrfx_config_nrf91.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_APPLICATION)
+    #include <nrfx_config_nrf9230_engb_application.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_RADIOCORE)
+    #include <nrfx_config_nrf9230_engb_radiocore.h>
+#elif defined(NRF9230_ENGB_XXAA) && defined(NRF_PPR)
+    #include <nrfx_config_nrf9230_engb_ppr.h>
 #else
     #error "Unknown device."
 #endif

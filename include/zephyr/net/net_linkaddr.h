@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Network link address library
  * @defgroup net_linkaddr Network Link Address Library
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */

@@ -740,7 +740,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	case MODEM_CMUX_RECEIVE_STATE_RESYNC:
 		/*
-		 * Allow any number of consequtive flags (0xF9).
+		 * Allow any number of consecutive flags (0xF9).
 		 * 0xF9 could also be a valid address field for DLCI 62.
 		 */
 		if (byte == 0xF9) {
@@ -992,7 +992,7 @@ static void modem_cmux_connect_handler(struct k_work *item)
 
 	cmux->state = MODEM_CMUX_STATE_CONNECTING;
 
-	struct modem_cmux_frame frame = {
+	static const struct modem_cmux_frame frame = {
 		.dlci_address = 0,
 		.cr = true,
 		.pf = true,
@@ -1154,7 +1154,7 @@ static int modem_cmux_dlci_pipe_api_close(void *data)
 	return ret;
 }
 
-struct modem_pipe_api modem_cmux_dlci_pipe_api = {
+static const struct modem_pipe_api modem_cmux_dlci_pipe_api = {
 	.open = modem_cmux_dlci_pipe_api_open,
 	.transmit = modem_cmux_dlci_pipe_api_transmit,
 	.receive = modem_cmux_dlci_pipe_api_receive,

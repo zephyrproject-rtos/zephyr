@@ -3477,7 +3477,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 
-			bis_bitfield |= BIT(val);
+			bis_bitfield |= BT_ISO_BIS_INDEX_BIT(val);
 			stream_cnt++;
 		}
 	}

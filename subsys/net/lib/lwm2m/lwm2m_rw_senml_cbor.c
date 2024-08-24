@@ -615,7 +615,17 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 		return -EINVAL;
 	}
 
-	*value = fd->current->record_union.union_vf;
+	switch (fd->current->record_union.record_union_choice) {
+	case union_vi_c:
+		*value = (double)fd->current->record_union.union_vi;
+		break;
+	case union_vf_c:
+		*value = fd->current->record_union.union_vf;
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	fd->current = NULL;
 
 	return 0;

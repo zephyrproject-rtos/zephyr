@@ -1456,10 +1456,9 @@ int ull_iso_reset(void)
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 {
-	struct ll_iso_datapath *dp = NULL;
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO) && IS_CIS_HANDLE(handle)) {
 		struct ll_conn_iso_stream *cis;
+		struct ll_iso_datapath *dp;
 
 		cis = ll_conn_iso_stream_get(handle);
 		dp  = cis->hdr.datapath_in;
@@ -1467,13 +1466,19 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		if (dp) {
 			isoal_tx_pdu_release(dp->source_hdl, node_tx);
 		} else {
-			/* Race with Data Path remove */
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+			/* Possible race with Data Path remove - handle release in vendor
+			 * function.
+			 */
+			ll_data_path_tx_pdu_release(handle, node_tx);
+#else
 			/* FIXME: ll_tx_ack_put is not LLL callable as it is
 			 * used by ACL connections in ULL context to dispatch
 			 * ack.
 			 */
 			ll_tx_ack_put(handle, (void *)node_tx);
 			ll_rx_sched();
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 		}
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
 		/* Process as TX ack. TODO: Can be unified with CIS and use

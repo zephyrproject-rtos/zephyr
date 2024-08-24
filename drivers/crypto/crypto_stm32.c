@@ -11,6 +11,7 @@
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
@@ -39,17 +40,8 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
-#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_CRYP_FORCE_RESET
-#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_CRYP_RELEASE_RESET
 #define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
-#if defined(CONFIG_SOC_SERIES_STM32WBX)
-#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_AES1_FORCE_RESET
-#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_AES1_RELEASE_RESET
-#else
-#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_AES_FORCE_RESET
-#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_AES_RELEASE_RESET
-#endif
 #define STM32_CRYPTO_TYPEDEF            AES_TypeDef
 #endif
 
@@ -433,6 +425,7 @@ static int crypto_stm32_session_free(const struct device *dev,
 	int i;
 
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	session->in_use = false;
@@ -454,8 +447,7 @@ static int crypto_stm32_session_free(const struct device *dev,
 		return -EIO;
 	}
 
-	STM32_RCC_CRYPTO_FORCE_RESET();
-	STM32_RCC_CRYPTO_RELEASE_RESET();
+	(void)reset_line_toggle_dt(&cfg->reset);
 
 	k_sem_give(&data->session_sem);
 
@@ -508,6 +500,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 };
 
 static const struct crypto_stm32_config crypto_stm32_dev_config = {
+	.reset = RESET_DT_SPEC_INST_GET(0),
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 		.bus = DT_INST_CLOCKS_CELL(0, bus)

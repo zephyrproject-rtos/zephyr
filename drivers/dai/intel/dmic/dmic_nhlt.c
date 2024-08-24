@@ -668,8 +668,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 
 	/* Configure clock source */
 	ret = dai_dmic_set_clock(dmic, dmic_cfg->clock_source);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	/* Get OUTCONTROLx configuration */
 	if (num_fifos < 1 || num_fifos > DMIC_HW_FIFOS_MAX) {
@@ -678,8 +679,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 	}
 
 	for (n = 0; n < DMIC_HW_FIFOS_MAX; n++) {
-		if (!(channel_ctrl_mask & (1 << n)))
+		if (!(channel_ctrl_mask & (1 << n))) {
 			continue;
+		}
 
 		val = *(uint32_t *)p;
 		ret = print_outcontrol(val);
@@ -802,8 +804,9 @@ int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *bespoke_cf
 #else
 	ret = dai_nhlt_dmic_dai_params_get(dmic);
 #endif
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	LOG_INF("dmic_set_config_nhlt(): enable0 %u, enable1 %u",
 		dmic->enable[0], dmic->enable[1]);

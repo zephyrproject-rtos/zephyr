@@ -181,7 +181,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	LOG_DBG("started");
 
-	uint16_t frame_size = 0;
+	ssize_t frame_size = 0;
 
 	while (1) {
 		static uint8_t frame[512];

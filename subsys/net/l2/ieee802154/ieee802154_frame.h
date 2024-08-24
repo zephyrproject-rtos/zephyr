@@ -472,6 +472,20 @@ ieee802154_validate_aux_security_hdr(uint8_t *buf, uint8_t **p_buf, uint8_t *len
 struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(uint8_t *buf, uint8_t **p_buf,
 						      uint8_t *length);
 
+/**
+ * @brief Calculate the beacon header length.
+ *
+ * @details Returns the length of the MAC payload without the beacon payload,
+ * see section 7.3.1.1, figure 7-5.
+ *
+ * @param buf pointer to the MAC payload
+ * @param length buffer length
+ *
+ * @retval -EINVAL The header is invalid.
+ * @return the length of the beacon header
+ */
+int ieee802514_beacon_header_length(uint8_t *buf, uint8_t length);
+
 bool ieee802154_validate_frame(uint8_t *buf, uint8_t length, struct ieee802154_mpdu *mpdu);
 
 void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_linkaddr *dst,

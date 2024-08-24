@@ -2,7 +2,7 @@ common:
   tags:
     - cmake
 tests:
-  cmake.overlays.soc_folder_overlay.default:
+  buildsystem.cmake.overlays.soc_folder_overlay.default:
     platform_allow:
       - native_sim
       - native_sim/native/64
@@ -11,7 +11,7 @@ tests:
       - native_sim/native/64
     extra_args:
       - CONFIG_TEST_TYPE=0
-  cmake.overlays.soc_folder_overlay.suffix:
+  buildsystem.cmake.overlays.soc_folder_overlay.suffix:
     platform_allow:
       - native_sim
       - native_sim/native/64
@@ -21,7 +21,7 @@ tests:
     extra_args:
       - CONFIG_TEST_TYPE=1
       - FILE_SUFFIX=somesuffix
-  cmake.overlays.soc_folder_overlay.app:
+  buildsystem.cmake.overlays.soc_folder_overlay.app:
     platform_allow:
       - qemu_cortex_m3
     integration_platforms:

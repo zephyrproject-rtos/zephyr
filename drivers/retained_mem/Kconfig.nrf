@@ -8,3 +8,11 @@ config RETAINED_MEM_NRF_GPREGRET
 	help
 	  Enable driver for Nordic nRF GPREGRET-based retained memory
 	  register support.
+
+config RETAINED_MEM_NRF_RAM_CTRL
+	bool "nRF RAM retention driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED && RETAINED_MEM_ZEPHYR_RAM && POWEROFF
+	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF53X || SOC_SERIES_NRF54LX || SOC_SERIES_NRF91X
+	help
+	  Enable driver for Nordic RAM retention.

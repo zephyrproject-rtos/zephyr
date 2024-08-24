@@ -117,6 +117,8 @@ config BT_DIS_FW_REV
 config BT_DIS_FW_REV_STR
 	string "Firmware revision"
 	depends on BT_DIS_FW_REV
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
+	default "0.0.0+0"
 	help
 	  Enable firmware revision characteristic in Device Information Service.
 

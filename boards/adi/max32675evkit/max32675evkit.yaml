@@ -1,0 +1,18 @@
+identifier: max32675evkit
+name: max32675evkit
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - dma
+  - gpio
+  - i2c
+  - serial
+  - trng
+  - spi
+ram: 160
+flash: 384

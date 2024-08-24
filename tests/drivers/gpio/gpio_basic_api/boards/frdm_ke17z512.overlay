@@ -7,7 +7,11 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		out-gpios = <&gpioe 0 0>; /* Arduino D13 */
-		in-gpios  = <&gpioe 1 0>; /* Arduino D12 */
+		out-gpios = <&gpioc 6 0>; /* Arduino D0 J1-2 */
+		in-gpios  = <&gpioc 7 0>; /* Arduino D1 J1-4 */
 	};
+};
+
+&gpioc {
+	status = "okay";
 };

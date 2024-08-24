@@ -1613,11 +1613,14 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
   math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  set(args_adjustment ${CONFIG_BUILD_OUTPUT_ADJUST_LMA_SECTIONS})
+  list(TRANSFORM args_adjustment PREPEND $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>)
+  list(TRANSFORM args_adjustment APPEND +${adjustment})
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            ${args_adjustment}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
     )
@@ -2133,12 +2136,15 @@ endif()
 set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
 
 # TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_definitions_for_lang(C zephyr_defs)
 zephyr_get_compile_options_for_lang(C zephyr_flags)
 
 # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
-llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
 
+set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
+list(APPEND llext_edk_cflags ${llext_filt_flags})
 list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
 list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
@@ -2162,7 +2168,7 @@ add_custom_command(
         -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
         -DINTERFACE_INCLUDE_DIRECTORIES="$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>"
         -Dllext_edk_file=${llext_edk_file}
-        -Dllext_cflags="${llext_edk_cflags}"
+        -Dllext_edk_cflags="${llext_edk_cflags}"
         -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
         -DWEST_TOPDIR=${WEST_TOPDIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}

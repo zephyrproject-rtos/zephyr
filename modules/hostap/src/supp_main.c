@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +46,7 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "wpa_cli_zephyr.h"
 
 static const struct wifi_mgmt_ops mgmt_ops = {
+	.get_version = supplicant_get_version,
 	.scan = supplicant_scan,
 	.connect = supplicant_connect,
 	.disconnect = supplicant_disconnect,
@@ -59,11 +61,20 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.mode = supplicant_mode,
 	.filter = supplicant_filter,
 	.channel = supplicant_channel,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+	.btm_query = supplicant_btm_query,
+#endif
+	.get_conn_params = supplicant_get_wifi_conn_params,
 #ifdef CONFIG_AP
 	.ap_enable = supplicant_ap_enable,
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 #endif /* CONFIG_AP */
+	.dpp_dispatch = supplicant_dpp_dispatch,
+	.pmksa_flush = supplicant_pmksa_flush,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	.enterprise_creds = supplicant_add_enterprise_creds,
+#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
@@ -234,7 +245,9 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_register_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
+	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
+					      WIFI_TYPE_STA,
+					      iface);
 	if (ret) {
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);

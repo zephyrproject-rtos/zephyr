@@ -320,7 +320,7 @@ struct dai_intel_ipc4_ssp_configuration_blob {
 	struct dai_intel_ipc4_ssp_driver_config i2s_driver_config;
 
 	/* optional configuration parameters */
-	union dai_intel_ipc4_ssp_dma_control i2s_dma_control[0];
+	FLEXIBLE_ARRAY_DECLARE(union dai_intel_ipc4_ssp_dma_control, i2s_dma_control);
 } __packed;
 
 #define SSP_BLOB_VER_1_5 0xee000105

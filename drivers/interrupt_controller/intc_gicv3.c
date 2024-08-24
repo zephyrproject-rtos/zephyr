@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Broadcom
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -225,6 +226,14 @@ bool arm_gic_irq_is_pending(unsigned int intid)
 	val = sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
 
 	return (val & mask) != 0;
+}
+
+void arm_gic_irq_set_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+
+	sys_write32(mask, ISPENDR(GET_DIST_BASE(intid), idx));
 }
 
 void arm_gic_irq_clear_pending(unsigned int intid)

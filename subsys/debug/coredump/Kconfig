@@ -58,6 +58,17 @@ config DEBUG_COREDUMP_MEMORY_DUMP_MIN
 	  Don't use this unless you want absolutely
 	  minimum core dump.
 
+config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	bool "Threads"
+	depends on !SMP
+	depends on ARCH_SUPPORTS_COREDUMP_THREADS
+	select THREAD_STACK_INFO
+	select DEBUG_THREAD_INFO
+	select DEBUG_COREDUMP_THREADS_METADATA
+	help
+	  Dumps the thread struct and stack of all
+	  threads and all data required to debug threads.
+
 config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	bool "RAM defined by linker section"
 	help
@@ -69,10 +80,31 @@ config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 
 endchoice
 
+if DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
+
+config DEBUG_COREDUMP_FLASH_CHUNK_SIZE
+	int "Chunk size for flash write operations"
+	default 64
+	help
+	  Larger values can speed up writing due to fewer write operations
+	  being performed in total, but consume more memory.
+
+
+endif # DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
+
 config DEBUG_COREDUMP_SHELL
 	bool "Coredump shell"
 	depends on SHELL
 	help
 	  This shell provides access to coredump and its backends.
+
+config DEBUG_COREDUMP_THREADS_METADATA
+	bool "Threads metadata"
+	depends on !SMP
+	depends on ARCH_SUPPORTS_COREDUMP_THREADS
+	select DEBUG_THREAD_INFO
+	help
+	  Core dump will contain the threads metadata section containing
+	  any necessary data to enable debugging threads
 
 endif # DEBUG_COREDUMP

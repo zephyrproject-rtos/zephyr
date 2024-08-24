@@ -50,7 +50,14 @@ K_MSGQ_DEFINE(drv_msgq, sizeof(struct dwc2_drv_event),
  * of 512 bytes. The value must be adjusted according to the number of OUT
  * endpoints.
  */
-#define UDC_DWC2_GRXFSIZ_DEFAULT	(15U + 512U/4U)
+#define UDC_DWC2_GRXFSIZ_FS_DEFAULT	(15U + 512U/4U)
+/* Default Rx FIFO size in 32-bit words calculated to support High-Speed with:
+ *   * 1 control endpoint in Completer/Buffer DMA mode: 13 locations
+ *   * Global OUT NAK: 1 location
+ *   * Space for 3 * 1024 packets: ((1024/4) + 1) * 3 = 774 locations
+ * Driver adds 2 locations for each OUT endpoint to this value.
+ */
+#define UDC_DWC2_GRXFSIZ_HS_DEFAULT	(13 + 1 + 774)
 
 /* TX FIFO0 depth in 32-bit words (used by control IN endpoint) */
 #define UDC_DWC2_FIFO0_DEPTH		16U
@@ -64,11 +71,12 @@ struct udc_dwc2_data {
 	uint32_t ghwcfg1;
 	uint32_t enumspd;
 	uint32_t txf_set;
-	uint32_t grxfsiz;
-	uint32_t dfifodepth;
 	uint32_t max_xfersize;
 	uint32_t max_pktcnt;
 	uint32_t tx_len[16];
+	uint16_t dfifodepth;
+	uint16_t rxfifo_depth;
+	uint16_t max_txfifo_depth[16];
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
 	/* Number of endpoints including control endpoint */
@@ -250,6 +258,18 @@ static void dwc2_set_epint(const struct device *dev,
 	}
 }
 
+static bool dwc2_ep_is_periodic(struct udc_ep_config *const cfg)
+{
+	switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
+	case USB_EP_TYPE_INTERRUPT:
+		__fallthrough;
+	case USB_EP_TYPE_ISO:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
 				      uint32_t xfersize, uint16_t mps)
 {
@@ -260,8 +280,8 @@ static bool dwc2_dma_buffer_ok_to_use(const struct device *dev, void *buf,
 		return false;
 	}
 
-	/* If Max Packet Size is not */
-	if (unlikely(mps % 4) && (xfersize > mps)) {
+	/* We can only do 1 packet if Max Packet Size is not multiple of 4 */
+	if (unlikely(mps % 4) && (xfersize > USB_MPS_EP_SIZE(mps))) {
 		LOG_ERR("Padding not supported");
 		return false;
 	}
@@ -282,28 +302,42 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	mem_addr_t diepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
 	mem_addr_t diepint_reg = (mem_addr_t)&base->in_ep[ep_idx].diepint;
 
-	uint32_t max_xfersize, max_pktcnt, pktcnt, spcavail;
+	uint32_t max_xfersize, max_pktcnt, pktcnt;
+	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
 	const size_t d = sizeof(uint32_t);
 	unsigned int key;
 	uint32_t len;
+	const bool is_periodic = dwc2_ep_is_periodic(cfg);
 
-	spcavail = dwc2_ftx_avail(dev, ep_idx);
-	/* Round down to multiple of endpoint MPS */
-	spcavail -= spcavail % cfg->mps;
-	/*
-	 * Here, the available space should be equal to the FIFO space
-	 * assigned/configured for that endpoint because we do not schedule another
-	 * transfer until the previous one has not finished. For simplicity,
-	 * we only check that the available space is not less than the endpoint
-	 * MPS.
-	 */
-	if (spcavail < cfg->mps) {
-		LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
-			cfg->addr, spcavail, dwc2_ftx_avail(dev, ep_idx));
-		return -EAGAIN;
+	if (priv->bufferdma) {
+		/* DMA automatically handles packet split */
+		len = buf->len;
+	} else {
+		uint32_t spcavail = dwc2_ftx_avail(dev, ep_idx);
+		uint32_t spcperpkt = ROUND_UP(udc_mps_ep_size(cfg), 4);
+		uint32_t max_pkts, max_transfer;
+
+		/* Maximum number of packets that can fit in TxFIFO */
+		max_pkts = spcavail / spcperpkt;
+
+		/* We can transfer up to max_pkts MPS packets and a short one */
+		max_transfer = (max_pkts * udc_mps_ep_size(cfg)) +
+			       (spcavail % spcperpkt);
+
+		/* If there is enough space for the transfer, there's no need
+		 * to check any additional conditions. If the transfer is larger
+		 * than TxFIFO then TxFIFO must be able to hold at least one
+		 * packet (for periodic transfers at least the number of packets
+		 * per microframe).
+		 */
+		if ((buf->len > max_transfer) && ((1 + addnl) > max_pkts)) {
+			LOG_ERR("ep 0x%02x FIFO space is too low, %u (%u)",
+				cfg->addr, spcavail, buf->len);
+			return -EAGAIN;
+		}
+
+		len = MIN(buf->len, max_transfer);
 	}
-
-	len = MIN(buf->len, spcavail);
 
 	if (len != 0U) {
 		max_pktcnt = dwc2_get_iept_pktctn(dev, ep_idx);
@@ -314,32 +348,34 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 			 * Avoid short packets if the transfer size cannot be
 			 * handled in one set.
 			 */
-			len = ROUND_DOWN(max_xfersize, cfg->mps);
+			len = ROUND_DOWN(max_xfersize, USB_MPS_TO_TPL(cfg->mps));
 		}
 
 		/*
 		 * Determine the number of packets for the current transfer;
 		 * if the pktcnt is too large, truncate the actual transfer length.
 		 */
-		pktcnt = DIV_ROUND_UP(len, cfg->mps);
+		pktcnt = DIV_ROUND_UP(len, udc_mps_ep_size(cfg));
 		if (pktcnt > max_pktcnt) {
-			pktcnt = max_pktcnt;
-			len = pktcnt * cfg->mps;
+			pktcnt = ROUND_DOWN(max_pktcnt, (1 + addnl));
+			len = pktcnt * udc_mps_ep_size(cfg);
 		}
 	} else {
 		/* ZLP */
 		pktcnt = 1U;
 	}
 
-	LOG_DBG("Prepare ep 0x%02x xfer len %u pktcnt %u spcavail %u",
-		cfg->addr, len, pktcnt, spcavail);
+	LOG_DBG("Prepare ep 0x%02x xfer len %u pktcnt %u addnl %u",
+		cfg->addr, len, pktcnt, addnl);
 	priv->tx_len[ep_idx] = len;
 
 	/* Lock and write to endpoint FIFO */
 	key = irq_lock();
 
 	/* Set number of packets and transfer size */
-	sys_write32((pktcnt << USB_DWC2_DEPTSIZN_PKTCNT_POS) | len, dieptsiz_reg);
+	sys_write32((is_periodic ? usb_dwc2_set_deptsizn_mc(1 + addnl) : 0) |
+		    usb_dwc2_set_deptsizn_pktcnt(pktcnt) |
+		    usb_dwc2_set_deptsizn_xfersize(len), dieptsiz_reg);
 
 	if (priv->bufferdma) {
 		if (!dwc2_dma_buffer_ok_to_use(dev, buf->data, len, cfg->mps)) {
@@ -362,22 +398,30 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	sys_write32(USB_DWC2_DIEPINT_INEPNAKEFF, diepint_reg);
 
 	if (!priv->bufferdma) {
-		/* FIFO access is always in 32-bit words */
+		const uint8_t *src = buf->data;
 
-		for (uint32_t i = 0UL; i < len; i += d) {
-			uint32_t val = buf->data[i];
+		while (pktcnt > 0) {
+			uint32_t pktlen = MIN(len, udc_mps_ep_size(cfg));
 
-			if (i + 1 < len) {
-				val |= ((uint32_t)buf->data[i + 1UL]) << 8;
-			}
-			if (i + 2 < len) {
-				val |= ((uint32_t)buf->data[i + 2UL]) << 16;
-			}
-			if (i + 3 < len) {
-				val |= ((uint32_t)buf->data[i + 3UL]) << 24;
+			for (uint32_t i = 0UL; i < pktlen; i += d) {
+				uint32_t val = src[i];
+
+				if (i + 1 < pktlen) {
+					val |= ((uint32_t)src[i + 1UL]) << 8;
+				}
+				if (i + 2 < pktlen) {
+					val |= ((uint32_t)src[i + 2UL]) << 16;
+				}
+				if (i + 3 < pktlen) {
+					val |= ((uint32_t)src[i + 3UL]) << 24;
+				}
+
+				sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
 			}
 
-			sys_write32(val, UDC_DWC2_EP_FIFO(base, ep_idx));
+			pktcnt--;
+			src += pktlen;
+			len -= pktlen;
 		}
 	}
 
@@ -429,14 +473,17 @@ static uint32_t dwc2_rx_xfer_size(struct udc_dwc2_data *const priv,
 
 		/* Do as many packets in a single DMA as possible */
 		if (size > priv->max_xfersize) {
-			size = ROUND_DOWN(priv->max_xfersize, cfg->mps);
+			size = ROUND_DOWN(priv->max_xfersize,
+					  USB_MPS_TO_TPL(cfg->mps));
 		}
 	} else {
 		/* Completer mode can always program Max Packet Size, RxFLvl
 		 * interrupt will drop excessive data if necessary (i.e. buffer
-		 * is too short).
+		 * is too short). The value returned must be Max Packet Size
+		 * multiple in order for dwc2_handle_rxflvl() to correctly
+		 * detect when RX has to be prepared during large transfers.
 		 */
-		size = cfg->mps;
+		size = USB_MPS_TO_TPL(cfg->mps);
 	}
 
 	return size;
@@ -451,12 +498,15 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
 	mem_addr_t doeptsiz_reg = (mem_addr_t)&base->out_ep[ep_idx].doeptsiz;
 	mem_addr_t doepctl_reg = dwc2_get_dxepctl_reg(dev, ep_idx);
+	uint32_t pktcnt;
 	uint32_t doeptsiz;
 	uint32_t xfersize;
 
 	xfersize = dwc2_rx_xfer_size(priv, cfg, buf);
 
-	doeptsiz = xfersize | usb_dwc2_set_deptsizn_pktcnt(DIV_ROUND_UP(xfersize, cfg->mps));
+	pktcnt = DIV_ROUND_UP(xfersize, udc_mps_ep_size(cfg));
+	doeptsiz = usb_dwc2_set_deptsizn_pktcnt(pktcnt) |
+		   usb_dwc2_set_deptsizn_xfersize(xfersize);
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		/* Use 1 to allow 8 byte long buffers for SETUP data */
 		doeptsiz |= (1 << USB_DWC2_DOEPTSIZ0_SUPCNT_POS);
@@ -589,7 +639,7 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 
 	buf = udc_buf_get(dev, cfg->addr);
 	if (buf == NULL) {
-		LOG_ERR("No buffer queued for control ep");
+		LOG_ERR("No buffer queued for ep 0x%02x", cfg->addr);
 		return -ENODATA;
 	}
 
@@ -837,8 +887,14 @@ static inline void dwc2_handle_rxflvl(const struct device *dev)
 			break;
 		}
 
-		if (net_buf_tailroom(buf) && evt.bcnt == ep_cfg->mps) {
-			dwc2_prep_rx(dev, buf, ep_cfg, 0);
+		if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
+			uint32_t doeptsiz;
+
+			/* Prepare next read only when transfer finished */
+			doeptsiz = sys_read32((mem_addr_t)&base->out_ep[evt.ep].doeptsiz);
+			if (usb_dwc2_get_deptsizn_xfersize(doeptsiz) == 0) {
+				dwc2_prep_rx(dev, buf, ep_cfg, 0);
+			}
 		} else {
 			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 		}
@@ -953,7 +1009,7 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 
 	net_buf_add(buf, evt.bcnt);
 
-	if (((evt.bcnt % ep_cfg->mps) == 0) && net_buf_tailroom(buf)) {
+	if ((evt.bcnt % udc_mps_ep_size(ep_cfg)) == 0 && net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg, 0);
 	} else {
 		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
@@ -1133,12 +1189,22 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	uint8_t ep_idx = USB_EP_GET_IDX(cfg->addr);
+	const uint32_t addnl = USB_MPS_ADDITIONAL_TRANSACTIONS(cfg->mps);
+	uint32_t reqdep;
 	uint32_t txfaddr;
 	uint32_t txfdep;
 	uint32_t tmp;
 
 	/* Keep everything but FIFO number */
 	tmp = *diepctl & ~USB_DWC2_DEPCTL_TXFNUM_MASK;
+
+	reqdep = DIV_ROUND_UP(udc_mps_ep_size(cfg), 4U);
+	if (priv->bufferdma) {
+		/* In DMA mode, TxFIFO capable of holding 2 packets is enough */
+		reqdep *= MIN(2, (1 + addnl));
+	} else {
+		reqdep *= (1 + addnl);
+	}
 
 	if (priv->dynfifosizing) {
 		if (priv->txf_set & ~BIT_MASK(ep_idx)) {
@@ -1155,17 +1221,23 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			txfaddr = dwc2_get_txfdep(dev, ep_idx - 2) +
 				  dwc2_get_txfaddr(dev, ep_idx - 2);
 		} else {
-			txfaddr = UDC_DWC2_FIFO0_DEPTH + priv->grxfsiz;
+			txfaddr = priv->rxfifo_depth +
+				MAX(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+		}
+
+		/* Make sure to not set TxFIFO greater than hardware allows */
+		txfdep = reqdep;
+		if (txfdep > priv->max_txfifo_depth[ep_idx]) {
+			return -ENOMEM;
 		}
 
 		/* Set FIFO depth (32-bit words) and address */
-		txfdep = cfg->mps / 4U;
 		dwc2_set_txf(dev, ep_idx - 1, txfdep, txfaddr);
 	} else {
 		txfdep = dwc2_get_txfdep(dev, ep_idx - 1);
 		txfaddr = dwc2_get_txfaddr(dev, ep_idx - 1);
 
-		if (cfg->mps < txfdep * 4U) {
+		if (reqdep > txfdep) {
 			return -ENOMEM;
 		}
 
@@ -1186,8 +1258,6 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 static int dwc2_ep_control_enable(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
-	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t dxepctl0_reg;
 	uint32_t dxepctl0;
 
@@ -1213,21 +1283,6 @@ static int dwc2_ep_control_enable(const struct device *dev,
 	}
 
 	dxepctl0 |= USB_DWC2_DEPCTL_USBACTEP;
-
-	/*
-	 * The following applies to the Control IN endpoint only.
-	 *
-	 * Set endpoint 0 TxFIFO depth when dynfifosizing is enabled.
-	 * Note that only dedicated mode is supported at this time.
-	 */
-	if (cfg->addr == USB_CONTROL_EP_IN && priv->dynfifosizing) {
-		uint32_t gnptxfsiz;
-
-		gnptxfsiz = usb_dwc2_set_gnptxfsiz_nptxfdep(UDC_DWC2_FIFO0_DEPTH) |
-			    usb_dwc2_set_gnptxfsiz_nptxfstaddr(priv->grxfsiz);
-
-		sys_write32(gnptxfsiz, (mem_addr_t)&base->gnptxfsiz);
-	}
 
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		int ret;
@@ -1274,11 +1329,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		dxepctl_reg = (mem_addr_t)&base->in_ep[ep_idx].diepctl;
 	}
 
-	if (cfg->mps > usb_dwc2_get_depctl_mps(UINT16_MAX)) {
-		return -EINVAL;
-	}
-
-	if (priv->bufferdma && (cfg->mps % 4)) {
+	if (priv->bufferdma && (udc_mps_ep_size(cfg) % 4)) {
 		/* TODO: In Buffer DMA mode, DMA will insert padding bytes in
 		 * between packets if endpoint Max Packet Size is not multiple
 		 * of 4 (DWORD) and single transfer spans across multiple
@@ -1298,7 +1349,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 	dxepctl = sys_read32(dxepctl_reg);
 	/* Set max packet size */
 	dxepctl &= ~USB_DWC2_DEPCTL_MPS_MASK;
-	dxepctl |= cfg->mps << USB_DWC2_DEPCTL_MPS_POS;
+	dxepctl |= usb_dwc2_set_depctl_mps(udc_mps_ep_size(cfg));
 
 	/* Set endpoint type */
 	dxepctl &= ~USB_DWC2_DEPCTL_EPTYPE_MASK;
@@ -1322,7 +1373,7 @@ static int udc_dwc2_ep_activate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && cfg->mps != 0U) {
+	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U) {
 		int ret = dwc2_set_dedicated_fifo(dev, cfg, &dxepctl);
 
 		if (ret) {
@@ -1525,7 +1576,8 @@ static int udc_dwc2_ep_deactivate(const struct device *dev,
 			cfg->addr, ep_idx, dxepctl);
 	}
 
-	if (USB_EP_DIR_IS_IN(cfg->addr) && cfg->mps != 0U && ep_idx != 0U) {
+	if (USB_EP_DIR_IS_IN(cfg->addr) && udc_mps_ep_size(cfg) != 0U &&
+	    ep_idx != 0U) {
 		dwc2_unset_dedicated_fifo(dev, cfg, &dxepctl);
 	}
 
@@ -1740,6 +1792,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = config->base;
+	mem_addr_t grxfsiz_reg = (mem_addr_t)&base->grxfsiz;
 	mem_addr_t gahbcfg_reg = (mem_addr_t)&base->gahbcfg;
 	mem_addr_t gusbcfg_reg = (mem_addr_t)&base->gusbcfg;
 	mem_addr_t dcfg_reg = (mem_addr_t)&base->dcfg;
@@ -1749,7 +1802,9 @@ static int udc_dwc2_init_controller(const struct device *dev)
 	uint32_t ghwcfg2;
 	uint32_t ghwcfg3;
 	uint32_t ghwcfg4;
+	uint32_t val;
 	int ret;
+	bool hs_phy;
 
 	ret = dwc2_core_soft_reset(dev);
 	if (ret) {
@@ -1850,12 +1905,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_ULPI;
 		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
 			<< USB_DWC2_DCFG_DEVSPD_POS;
+		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_UTMIPLUS:
 		gusbcfg |= USB_DWC2_GUSBCFG_PHYSEL_USB20 |
 			   USB_DWC2_GUSBCFG_ULPI_UTMI_SEL_UTMI;
 		dcfg |= USB_DWC2_DCFG_DEVSPD_USBHS20
 			<< USB_DWC2_DCFG_DEVSPD_POS;
+		hs_phy = true;
 		break;
 	case USB_DWC2_GHWCFG2_HSPHYTYPE_NO_HS:
 		__fallthrough;
@@ -1867,6 +1924,7 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 		dcfg |= USB_DWC2_DCFG_DEVSPD_USBFS1148
 			<< USB_DWC2_DCFG_DEVSPD_POS;
+		hs_phy = false;
 	}
 
 	if (usb_dwc2_get_ghwcfg4_phydatawidth(ghwcfg4)) {
@@ -1892,15 +1950,55 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 	LOG_DBG("Number of OUT endpoints %u", priv->outeps);
 
-	if (priv->dynfifosizing) {
-		priv->grxfsiz = UDC_DWC2_GRXFSIZ_DEFAULT + priv->outeps * 2U;
-		sys_write32(usb_dwc2_set_grxfsiz(priv->grxfsiz), (mem_addr_t)&base->grxfsiz);
+	/* Read and store all TxFIFO depths because Programmed FIFO Depths must
+	 * not exceed the power-on values.
+	 */
+	val = sys_read32((mem_addr_t)&base->gnptxfsiz);
+	priv->max_txfifo_depth[0] = usb_dwc2_get_gnptxfsiz_nptxfdep(val);
+	for (uint8_t i = 1; i < priv->ineps; i++) {
+		priv->max_txfifo_depth[i] = dwc2_get_txfdep(dev, i - 1);
 	}
 
-	LOG_DBG("RX FIFO size %u bytes", priv->grxfsiz * 4);
+	priv->rxfifo_depth = usb_dwc2_get_grxfsiz(sys_read32(grxfsiz_reg));
+
+	if (priv->dynfifosizing) {
+		uint32_t gnptxfsiz;
+		uint32_t default_depth;
+
+		/* TODO: For proper runtime FIFO sizing UDC driver would have to
+		 * have prior knowledge of the USB configurations. Only with the
+		 * prior knowledge, the driver will be able to fairly distribute
+		 * available resources. For the time being just use different
+		 * defaults based on maximum configured PHY speed, but this has
+		 * to be revised if e.g. thresholding support would be necessary
+		 * on some target.
+		 */
+		if (hs_phy) {
+			default_depth = UDC_DWC2_GRXFSIZ_HS_DEFAULT;
+		} else {
+			default_depth = UDC_DWC2_GRXFSIZ_FS_DEFAULT;
+		}
+		default_depth += priv->outeps * 2U;
+
+		/* Driver does not dynamically resize RxFIFO so there is no need
+		 * to store reset value. Read the reset value and make sure that
+		 * the programmed value is not greater than what driver sets.
+		 */
+		priv->rxfifo_depth = MIN(priv->rxfifo_depth, default_depth);
+		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
+
+		/* Set TxFIFO 0 depth */
+		val = MAX(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+		gnptxfsiz = usb_dwc2_set_gnptxfsiz_nptxfdep(val) |
+			    usb_dwc2_set_gnptxfsiz_nptxfstaddr(priv->rxfifo_depth);
+
+		sys_write32(gnptxfsiz, (mem_addr_t)&base->gnptxfsiz);
+	}
+
+	LOG_DBG("RX FIFO size %u bytes", priv->rxfifo_depth * 4);
 	for (uint8_t i = 1U; i < priv->ineps; i++) {
 		LOG_DBG("TX FIFO%u depth %u addr %u",
-			i, dwc2_get_txfdep(dev, i), dwc2_get_txfaddr(dev, i));
+			i, priv->max_txfifo_depth[i], dwc2_get_txfaddr(dev, i));
 	}
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
@@ -2065,6 +2163,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 			config->ep_cfg_out[n].caps.bulk = 1;
 			config->ep_cfg_out[n].caps.interrupt = 1;
 			config->ep_cfg_out[n].caps.iso = 1;
+			config->ep_cfg_out[n].caps.high_bandwidth = data->caps.hs;
 			config->ep_cfg_out[n].caps.mps = mps;
 		}
 
@@ -2100,6 +2199,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 			config->ep_cfg_in[n].caps.bulk = 1;
 			config->ep_cfg_in[n].caps.interrupt = 1;
 			config->ep_cfg_in[n].caps.iso = 1;
+			config->ep_cfg_in[n].caps.high_bandwidth = data->caps.hs;
 			config->ep_cfg_in[n].caps.mps = mps;
 		}
 
@@ -2243,14 +2343,6 @@ static const struct udc_api udc_dwc2_api = {
 		.ghwcfg2 = DT_INST_PROP(n, ghwcfg2),				\
 		.ghwcfg4 = DT_INST_PROP(n, ghwcfg4),				\
 	};									\
-										\
-	IF_ENABLED(CONFIG_DCACHE, (BUILD_ASSERT(				\
-		!IS_ENABLED(CONFIG_UDC_DWC2_DMA) ||				\
-		(DT_INST_PROP(n, ghwcfg2) & USB_DWC2_GHWCFG2_OTGARCH_MASK) !=	\
-			(USB_DWC2_GHWCFG2_OTGARCH_INTERNALDMA <<		\
-			 USB_DWC2_GHWCFG2_OTGARCH_POS),				\
-		"USB stack does not provide D-Cache aware buffers yet");	\
-	))									\
 										\
 	static struct udc_dwc2_data udc_priv_##n = {				\
 	};									\

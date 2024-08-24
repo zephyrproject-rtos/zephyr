@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
  * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
  */
 #define ADC_CLIP_MVOLT_11DB	2550
+#elif CONFIG_SOC_SERIES_ESP32S3
+#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
 #else
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
 #endif

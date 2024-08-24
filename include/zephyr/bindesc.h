@@ -27,6 +27,7 @@ extern "C" {
 /**
  * @brief Binary Descriptor Definition
  * @defgroup bindesc_define Bindesc Define
+ * @ingroup os_services
  * @{
  */
 

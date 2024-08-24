@@ -27,6 +27,8 @@ struct dirent {
 DIR *opendir(const char *dirname);
 int closedir(DIR *dirp);
 struct dirent *readdir(DIR *dirp);
+int readdir_r(DIR *ZRESTRICT dirp, struct dirent *ZRESTRICT entry,
+	      struct dirent **ZRESTRICT result);
 
 #ifdef __cplusplus
 }

@@ -608,13 +608,21 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	irq_unlock(irq_lock_key);
 }
 
+static const struct device *eth_nxp_enet_get_phy(const struct device *dev)
+{
+	const struct nxp_enet_mac_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
 /* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
 	uint32_t id = ETH_NXP_ENET_UNIQUE_ID;
 
-	if (id == 0xFFFFFF)
+	if (id == 0xFFFFFF) {
 		LOG_ERR("No unique MAC can be provided in this platform");
+	}
 
 	/* Setting LAA bit because it is not guaranteed universally unique */
 	mac_addr[0] = FREESCALE_OUI_B0 | 0x02;
@@ -634,20 +642,25 @@ static inline void nxp_enet_fused_mac(uint8_t *mac_addr)
 #ifdef CONFIG_SOC_FAMILY_NXP_IMXRT
 	uint32_t mac_addr_fuse[2] = {0};
 
-	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
 #if defined(CONFIG_SOC_SERIES_IMXRT10XX)
-		0x620,
+	OCOTP_Init((OCOTP_Type *)OCOTP_BASE, CLOCK_GetIpgFreq());
+	/* OTP bank 4, word 2: MAC0 */
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
+		0x22, &mac_addr_fuse[0], 1);
+	/* OTP bank 4, word 3: MAC1*/
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
+		0x23, &mac_addr_fuse[1], 1);
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
-		0xA90,
+	OCOTP_Init((OCOTP_Type *)OCOTP_BASE, 0);
+	OCOTP_ReadFuseShadowRegisterExt((OCOTP_Type *)OCOTP_BASE,
+		0x28, &mac_addr_fuse[0], 2);
 #endif
-		mac_addr_fuse, 2);
-
 	mac_addr[0] = mac_addr_fuse[0] & 0x000000FF;
-	mac_addr[1] = mac_addr_fuse[0] & 0x0000FF00;
-	mac_addr[2] = mac_addr_fuse[0] & 0x00FF0000;
-	mac_addr[3] = mac_addr_fuse[0] & 0xFF000000;
-	mac_addr[4] = mac_addr_fuse[1] & 0x00FF;
-	mac_addr[5] = mac_addr_fuse[1] & 0xFF00;
+	mac_addr[1] = (mac_addr_fuse[0] & 0x0000FF00) >> 8;
+	mac_addr[2] = (mac_addr_fuse[0] & 0x00FF0000) >> 16;
+	mac_addr[3] = (mac_addr_fuse[0] & 0xFF000000) >> 24;
+	mac_addr[4] = (mac_addr_fuse[1] & 0x00FF);
+	mac_addr[5] = (mac_addr_fuse[1] & 0xFF00) >> 8;
 #else
 	ARG_UNUSED(mac_addr);
 #endif
@@ -820,6 +833,7 @@ static int eth_nxp_enet_device_pm_action(const struct device *dev, enum pm_devic
 static const struct ethernet_api api_funcs = {
 	.iface_api.init		= eth_nxp_enet_iface_init,
 	.get_capabilities	= eth_nxp_enet_get_capabilities,
+	.get_phy                = eth_nxp_enet_get_phy,
 	.set_config		= eth_nxp_enet_set_config,
 	.send			= NXP_ENET_SEND_FUNC,
 #if defined(CONFIG_PTP_CLOCK)

@@ -25,6 +25,10 @@ config LOG_BACKEND_SWO_REF_FREQ_HZ
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
 	depends on LOG_BACKEND_SWO
 
+# Tick of 10000 is too high for a sysclock lower than 32MHz
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8000 if SYS_CLOCK_HW_CYCLES_PER_SEC <= 32000000
+
 # set the tick per sec as a divider of the LPTIM clock source
 # with a minimum value of 4096 for SYS_CLOCK_TICKS_PER_SEC to keep
 # SYS_CLOCK_TICKS_PER_SEC not too high compared to the LPTIM counter clock

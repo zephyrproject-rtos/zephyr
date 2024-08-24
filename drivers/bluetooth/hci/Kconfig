@@ -63,6 +63,7 @@ config BT_STM32_IPM
 	depends on DT_HAS_ST_STM32WB_RF_ENABLED
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
+	select BT_HCI_SETUP
 	help
 	  TODO
 
@@ -84,15 +85,15 @@ config BT_SILABS_HCI
 	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_ZEPHYR_ENTROPY
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
 
 config BT_USERCHAN
 	bool "HCI User Channel based driver"
-	depends on BOARD_NATIVE_POSIX
+	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	help
@@ -131,6 +132,7 @@ config BT_NXP
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
 	select BT_HCI_SETUP
+	select USE_DT_CODE_PARTITION if !NXP_MONOLITHIC_BT
 	help
 	  NXP HCI bluetooth interface
 

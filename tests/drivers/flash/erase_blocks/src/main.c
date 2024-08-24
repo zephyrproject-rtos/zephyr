@@ -38,13 +38,13 @@ LOG_MODULE_REGISTER(test_flash);
 	DT_MTD_FROM_FIXED_PARTITION(TEST_FLASH_PART_NODE)
 
 static const struct device *flash_controller = DEVICE_DT_GET(TEST_FLASH_CONTROLLER_NODE);
-static uint8_t test_write_block[128];
-static uint8_t test_read_block[128];
+static uint8_t test_write_block[512];
+static uint8_t test_read_block[512];
 
 static void test_flash_fill_test_write_block(void)
 {
-	for (uint8_t i = 0; i < sizeof(test_write_block); i++) {
-		test_write_block[i] = i;
+	for (size_t i = 0; i < sizeof(test_write_block); i++) {
+		test_write_block[i] = (uint8_t)i;
 	}
 }
 

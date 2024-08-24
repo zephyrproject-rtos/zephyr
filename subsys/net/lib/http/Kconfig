@@ -69,14 +69,14 @@ config HTTP_SERVER_MAX_STREAMS
 config HTTP_SERVER_CLIENT_BUFFER_SIZE
 	int "Client Buffer Size"
 	default 256
-	range 64 4294967295
+	range 64 $(UINT32_MAX)
 	help
 	  This setting determines the buffer size for each client.
 
 config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
 	int "Size of the buffer used for decoding Huffman-encoded strings"
 	default 256
-	range 64 4294967295
+	range 64 $(UINT32_MAX)
 	help
 	  Size of the buffer used for decoding Huffman-encoded strings when
 	  processing HPACK compressed headers. This effectively limits the

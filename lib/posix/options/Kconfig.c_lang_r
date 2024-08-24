@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+# Copyright (c) 2024 Meta Platforms
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config POSIX_C_LANG_SUPPORT_R
+	bool "Thread-Safe General ISO C Library"
+	select COMMON_LIBC_ASCTIME_R
+	select COMMON_LIBC_CTIME_R
+	select COMMON_LIBC_GMTIME_R
+	select COMMON_LIBC_LOCALTIME_R_UTC
+	help
+	  Select 'y' here and Zephyr will provide an implementation of the POSIX_C_LANG_SUPPORT_R
+	  Option Group, consisting of asctime_r(), ctime_r(), gmtime_r(), localtime_r(), rand_r(),
+	  strerror_r(), and strtok_r()
+
+	  For more informnation, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html

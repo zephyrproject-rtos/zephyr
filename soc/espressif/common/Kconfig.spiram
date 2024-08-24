@@ -6,6 +6,7 @@ if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
 	default n if MCUBOOT
+	default n if ESP32_USE_UNSUPPORTED_REVISION && SOC_SERIES_ESP32
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.

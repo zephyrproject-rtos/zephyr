@@ -13,6 +13,7 @@
 
 /delete-node/ &cpuapp_cpurad_ipc;
 /delete-node/ &cpuapp_cpusys_ipc;
+/delete-node/ &cpuapp_cpuflpr_ipc;
 /delete-node/ &cpurad_cpusys_ipc;
 /delete-node/ &cpusec_cpuapp_ipc;
 /delete-node/ &cpusec_cpurad_ipc;

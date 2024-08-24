@@ -1,4 +1,4 @@
-.. lora_reyax:
+.. _reyax_lora:
 
 Reyax LoRa RYLR896 and RYLR915 Modules
 ######################################

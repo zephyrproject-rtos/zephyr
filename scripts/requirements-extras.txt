@@ -9,9 +9,6 @@ gitlint
 # helper for developers
 junit2html
 
-# helper for developers - code formatter
-clang-format>=15.0.0
-
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum
 

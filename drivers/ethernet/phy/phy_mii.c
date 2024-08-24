@@ -488,6 +488,7 @@ static const struct ethphy_driver_api phy_mii_driver_api = {
 #define PHY_MII_CONFIG(n)						 \
 static const struct phy_mii_dev_config phy_mii_dev_config_##n = {	 \
 	.phy_addr = DT_INST_REG_ADDR(n),				 \
+	.no_reset = DT_INST_PROP(n, no_reset),				 \
 	.fixed = IS_FIXED_LINK(n),					 \
 	.fixed_speed = DT_INST_ENUM_IDX_OR(n, fixed_link, 0),		 \
 	.mdio = UTIL_AND(UTIL_NOT(IS_FIXED_LINK(n)),			 \

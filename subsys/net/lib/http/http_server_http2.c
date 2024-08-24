@@ -371,6 +371,102 @@ out:
 	return ret;
 }
 
+static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
+					   struct http2_frame *frame,
+					   struct http_client_ctx *client)
+{
+	int ret;
+	struct fs_file_t file;
+	char fname[HTTP_SERVER_MAX_URL_LENGTH];
+	char content_type[HTTP_SERVER_MAX_CONTENT_TYPE_LEN] = "text/html";
+	struct http_resource_detail res_detail = {
+		.bitmask_of_supported_http_methods =
+			static_fs_detail->common.bitmask_of_supported_http_methods,
+		.content_type = content_type,
+		.path_len = static_fs_detail->common.path_len,
+		.type = static_fs_detail->common.type,
+	};
+	bool gzipped;
+	int len;
+	int remaining;
+	char tmp[64];
+
+	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
+		return -ENOTSUP;
+	}
+
+	if (client->current_stream == NULL) {
+		return -ENOENT;
+	}
+
+	/* get filename and content-type from url */
+	len = strlen(client->url_buffer);
+	if (len == 1) {
+		/* url is just the leading slash, use index.html as filename */
+		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
+	} else {
+		http_server_get_content_type_from_extension(client->url_buffer, content_type,
+							    sizeof(content_type));
+		snprintk(fname, sizeof(fname), "%s%s", static_fs_detail->fs_path,
+			 client->url_buffer);
+	}
+
+	/* open file, if it exists */
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, &gzipped);
+	if (ret < 0) {
+		LOG_ERR("fs_stat %s: %d", fname, ret);
+
+		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
+					 0);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+		}
+		return ret;
+	}
+	fs_file_t_init(&file);
+	ret = fs_open(&file, fname, FS_O_READ);
+	if (ret < 0) {
+		LOG_ERR("fs_open %s: %d", fname, ret);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* send headers */
+	if (gzipped) {
+		res_detail.content_encoding = "gzip";
+	}
+	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		goto out;
+	}
+
+	client->current_stream->headers_sent = true;
+
+	/* read and send file */
+	remaining = client->data_len;
+	while (remaining > 0) {
+		len = fs_read(&file, tmp, sizeof(tmp));
+
+		remaining -= len;
+		ret = send_data_frame(client, tmp, len, frame->stream_identifier,
+				      (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			goto out;
+		}
+	}
+
+	client->current_stream->end_stream_sent = true;
+
+out:
+	/* close file */
+	fs_close(&file);
+
+	return ret;
+}
+
 static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
 			      struct http_client_ctx *client)
 {
@@ -869,6 +965,12 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
+			ret = handle_http2_static_fs_resource(
+				(struct http_resource_detail_static_fs *)detail, frame, client);
+			if (ret < 0) {
+				goto error;
+			}
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1287,6 +1389,12 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			ret = handle_http2_static_resource(
 				(struct http_resource_detail_static *)detail,
 				frame, client);
+			if (ret < 0) {
+				return ret;
+			}
+		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
+			ret = handle_http2_static_fs_resource(
+				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				return ret;
 			}

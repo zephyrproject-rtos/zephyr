@@ -70,7 +70,7 @@ config SETTINGS_NVS_NAME_CACHE
 config SETTINGS_NVS_NAME_CACHE_SIZE
 	int "NVS name lookup cache size"
 	default 128
-	range 1 65535
+	range 1 $(UINT16_MAX)
 	depends on SETTINGS_NVS_NAME_CACHE
 	help
 	  Number of entries in Settings NVS name cache.

@@ -16,6 +16,8 @@
 /**
  * @brief generic Precision Time Protocol (gPTP) support
  * @defgroup gptp gPTP support
+ * @since 1.13
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

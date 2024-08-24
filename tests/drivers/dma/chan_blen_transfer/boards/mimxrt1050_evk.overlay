@@ -7,7 +7,7 @@
 
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
-&itcm {
+&dtcm {
 	zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 };
 

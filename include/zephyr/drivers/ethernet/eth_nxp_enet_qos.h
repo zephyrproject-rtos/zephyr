@@ -11,7 +11,7 @@
 #include <zephyr/drivers/clock_control.h>
 
 /* Different platforms named the peripheral different in the register definitions */
-#ifdef CONFIG_SOC_FAMILY_NXP_MCX
+#ifdef CONFIG_SOC_SERIES_MCXN
 #undef ENET
 #define ENET_QOS_NAME ENET
 #define ENET_QOS_ALIGNMENT 4

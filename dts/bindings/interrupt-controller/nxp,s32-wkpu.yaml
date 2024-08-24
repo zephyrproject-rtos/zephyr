@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP S32 Wake-up Unit
@@ -13,11 +13,11 @@ properties:
 
 child-binding:
   description: |
-    NXP S32 WKPU interrupt line configuration. Specific requirements for each
+    NXP S32 WKPU external interrupt configuration. Specific requirements for each
     interrupt line can be specified by adding children nodes to this controller,
-    labeled `line_<line_number>`. For example:
+    labeled `irq_<irq_number>`. For example:
 
-      line_0: line_0 {
+      irq_0: irq_0 {
           filter-enable;
       };
 

@@ -227,6 +227,7 @@ struct eth_enc28j60_config {
 	uint8_t full_duplex;
 	int32_t timeout;
 	uint8_t hw_rx_filter;
+	bool random_mac;
 };
 
 struct eth_enc28j60_runtime {

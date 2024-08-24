@@ -223,8 +223,9 @@ static int npcx_clock_control_init(const struct device *dev)
 		/* Load M and N values into the frequency multiplier */
 		inst_cdcg->HFCGCTRL |= BIT(NPCX_HFCGCTRL_LOAD);
 		/* Wait for stable */
-		while (IS_BIT_SET(inst_cdcg->HFCGCTRL, NPCX_HFCGCTRL_CLK_CHNG))
+		while (IS_BIT_SET(inst_cdcg->HFCGCTRL, NPCX_HFCGCTRL_CLK_CHNG)) {
 			;
+		}
 	}
 
 	/* Set all clock prescalers of core and peripherals. */
@@ -232,7 +233,9 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCBCD  = VAL_HFCBCD;
 	inst_cdcg->HFCBCD1 = VAL_HFCBCD1;
 	inst_cdcg->HFCBCD2 = VAL_HFCBCD2;
+#if defined(CONFIG_SOC_SERIES_NPCX4)
 	inst_cdcg->HFCBCD3 = VAL_HFCBCD3;
+#endif
 
 	/*
 	 * Power-down (turn off clock) the modules initially for better

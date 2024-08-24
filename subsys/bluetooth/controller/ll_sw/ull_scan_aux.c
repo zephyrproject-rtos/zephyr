@@ -126,6 +126,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	uint8_t acad_len;
 	uint8_t data_len;
 	uint8_t hdr_len;
+	uint32_t pdu_us;
 	uint8_t *ptr;
 	uint8_t phy;
 
@@ -546,6 +547,11 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		lll_hdr_init(lll_aux, aux);
 
 		aux->parent = lll ? (void *)lll : (void *)sync_lll;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		if (lll) {
+			lll_aux->hdr.score = lll->scan_aux_score;
+		}
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 		aux->rx_incomplete = rx_incomplete;
@@ -700,6 +706,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * lll_aux->window_size_us;
 
+	/* Skip reception if invalid aux offset */
+	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	if (aux_offset_us < pdu_us) {
+		goto ull_scan_aux_rx_flush;
+	}
+
 	/* CA field contains the clock accuracy of the advertiser;
 	 * 0 - 51 ppm to 500 ppm
 	 * 1 - 0 ppm to 50 ppm
@@ -718,7 +730,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
@@ -1266,6 +1278,9 @@ static void flush(void *param)
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
 		lll->lll_aux = NULL;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		lll->scan_aux_score = aux->lll.hdr.score;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	} else {
 		struct lll_sync *sync_lll;
 		struct ll_sync_set *sync;

@@ -17,7 +17,7 @@ config BT_ATT_TX_COUNT
 	int "Number of ATT buffers"
 	default BT_BUF_ACL_TX_COUNT
 	default 3
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  These buffers are only used for sending anything over ATT.
 	  Requests, responses, indications, confirmations, notifications.
@@ -231,14 +231,14 @@ if BT_GAP_PERIPHERAL_PREF_PARAMS
 config BT_PERIPHERAL_PREF_MIN_INT
 	int "Peripheral preferred minimum connection interval in 1.25ms units"
 	default 24
-	range 6 65535 if !BT_CONN_PARAM_ANY
+	range 6 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
 config BT_PERIPHERAL_PREF_MAX_INT
 	int "Peripheral preferred maximum connection interval in 1.25ms units"
 	default 40
-	range 6 65535 if !BT_CONN_PARAM_ANY
+	range 6 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
 	help
 	  Range 3200 to 65534 is invalid. 65535 represents no specific value.
 
@@ -250,7 +250,7 @@ config BT_PERIPHERAL_PREF_LATENCY
 config BT_PERIPHERAL_PREF_TIMEOUT
 	int "Peripheral preferred supervision timeout in 10ms units"
 	default 42
-	range 10 65535 if !BT_CONN_PARAM_ANY
+	range 10 $(UINT16_MAX) if !BT_CONN_PARAM_ANY
 	help
 	  It is up to user to provide valid timeout which pass required minimum
 	  value: in milliseconds it shall be larger than

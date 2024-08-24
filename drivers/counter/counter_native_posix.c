@@ -181,8 +181,9 @@ static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 {
 	ARG_UNUSED(dev);
 
-	if (is_alarm_pending[chan_id])
+	if (is_alarm_pending[chan_id]) {
 		return -EBUSY;
+	}
 
 	uint32_t ticks = alarm_cfg->ticks;
 

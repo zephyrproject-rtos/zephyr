@@ -23,7 +23,9 @@ extern "C" {
 
 /**
  * @brief SocketCAN library
- * @defgroup socket_can Network Core Library
+ * @defgroup socket_can SocketCAN library
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

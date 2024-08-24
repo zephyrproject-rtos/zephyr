@@ -102,7 +102,7 @@ extern const struct device *vega_debug_portd;
 		\
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 1); \
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 0); \
-	} while (0)
+	} while (false)
 
 #define DEBUG_CPU_SLEEP(flag) gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, flag)
 
@@ -126,7 +126,7 @@ extern const struct device *vega_debug_portd;
 			gpio_pin_set(DEBUG5_PORT, DEBUG5_PIN, flag); \
 			gpio_pin_set(DEBUG6_PORT, DEBUG6_PIN, flag); \
 		} \
-	} while (0)
+	} while (false)
 
 #define DEBUG_RADIO_PREPARE_A(flag) \
 		gpio_pin_set(DEBUG3_PORT, DEBUG3_PIN, flag)

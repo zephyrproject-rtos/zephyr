@@ -104,6 +104,7 @@
 		blue-pwm-led = &blue_pwm_led;
 		spi = &spi2;
 		watchdog0 = &wdt0;
+		accel0 = &lsm9ds1;
 	};
 };
 
@@ -166,6 +167,12 @@ arduino_i2c: &i2c0 {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+
+	lsm9ds1: lsm9ds1@6b {
+		compatible = "st,lsm9ds1";
+		reg = <0x6b>;
+	};
+
 };
 
 /* SPI2 is used because SPI1/0 shares conflicts with I2C1/0 */

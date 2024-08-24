@@ -187,16 +187,16 @@ static void usbd_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	struct usbd_context *uds_ctx;
 	struct udc_event event;
 
 	while (true) {
 		k_msgq_get(&usbd_msgq, &event, K_FOREVER);
 
-		STRUCT_SECTION_FOREACH(usbd_context, uds_ctx) {
-			if (uds_ctx->dev == event.dev) {
-				usbd_event_handler(uds_ctx, &event);
-			}
-		}
+		uds_ctx = (void *)udc_get_event_ctx(event.dev);
+		__ASSERT(uds_ctx != NULL && usbd_is_initialized(uds_ctx),
+			 "USB device is not initialized");
+		usbd_event_handler(uds_ctx, &event);
 	}
 }
 
@@ -204,7 +204,7 @@ int usbd_device_init_core(struct usbd_context *const uds_ctx)
 {
 	int ret;
 
-	ret = udc_init(uds_ctx->dev, usbd_event_carrier);
+	ret = udc_init(uds_ctx->dev, usbd_event_carrier, uds_ctx);
 	if (ret != 0) {
 		LOG_ERR("Failed to init device driver");
 		return ret;

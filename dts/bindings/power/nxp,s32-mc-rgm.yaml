@@ -1,0 +1,37 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Module Reset Generation (MC_RGM)
+
+compatible: "nxp,s32-mc-rgm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  func-reset-threshold:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 15
+    description: |
+      Functional Reset Escalation threshold.
+      If the value of this property is 0, the Functional reset escalation
+      function is disabled. Any other value is the number of Functional
+      resets that causes a Destructive reset, if the FRET register isn't
+      written to beforehand.
+      Default to maximum threshold (hardware reset value).
+
+  dest-reset-threshold:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 0
+    description: |
+      Destructive Reset Escalation threshold.
+      If the value of this property is 0, the Destructive reset escalation
+      function is disabled. Any other value is the number of Destructive
+      resets which keeps the chip in the reset state until the next power-on
+      reset triggers a new reset sequence, if the DRET register isn't
+      written to beforehand.
+      Default to disabled (hardware reset value).

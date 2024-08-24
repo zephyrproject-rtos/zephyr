@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32680_dma.h>
 
 &pinctrl {
 	reg = <0x40008000 0x2400>;
@@ -53,6 +54,45 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			interrupts = <88 0>;
+			status = "disabled";
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+			dma-channels = <4>;
+			status = "disabled";
+			#dma-cells = <2>;
+		};
+
+		wdt1: watchdog@40080800  {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40080800 0x400>;
+			interrupts = <57 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+			status = "disabled";
+		};
+
+		spi0: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 16>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
 			status = "disabled";
 		};
 	};

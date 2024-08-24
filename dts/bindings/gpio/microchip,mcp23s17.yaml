@@ -1,26 +1,11 @@
 #
-# Copyright (c) 2020 Geanix ApS
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: |
-    This is a representation of the Microchip MCP23S17 SPI Gpio Expander.
+description: This is a representation of the Microchip MCP23S17 SPI GPIO Expander.
 
 compatible: "microchip,mcp23s17"
 
-include: [gpio-controller.yaml, spi-device.yaml]
-
-properties:
-  "#gpio-cells":
-    const: 2
-
-  ngpios:
-    type: int
-    required: true
-    const: 16
-    description: Number of gpios supported
-
-gpio-cells:
-  - pin
-  - flags
+include: ["microchip,mcp23xxx.yaml", spi-device.yaml]

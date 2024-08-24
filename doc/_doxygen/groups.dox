@@ -68,6 +68,7 @@
 
 @brief Modem APIs
 @defgroup modem Modem APIs
+@ingroup connectivity
 @since 3.5
 @version 0.1.0
 @{

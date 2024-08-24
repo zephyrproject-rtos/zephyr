@@ -433,9 +433,6 @@ static int i2c_gd32_transfer(const struct device *dev,
 			if (current->flags & I2C_MSG_STOP) {
 				return -EINVAL;
 			}
-		} else {
-			/* Last message flags implicitly contain I2C_MSG_STOP flag. */
-			current->flags |= I2C_MSG_STOP;
 		}
 
 		if ((current->buf == NULL) ||

@@ -12,6 +12,7 @@
 #include <DA1469xAB.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(smartbond_entropy, CONFIG_ENTROPY_LOG_LEVEL);
@@ -27,7 +28,7 @@ struct rng_pool {
 	uint8_t last;
 	uint8_t mask;
 	uint8_t threshold;
-	uint8_t buffer[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, buffer);
 };
 
 #define RNG_POOL_DEFINE(name, len) uint8_t name[sizeof(struct rng_pool) + (len)]
@@ -93,6 +94,7 @@ static void trng_enable(bool enable)
 	} else {
 		CRG_TOP->CLK_AMBA_REG &= ~CRG_TOP_CLK_AMBA_REG_TRNG_CLK_ENABLE_Msk;
 		TRNG->TRNG_CTRL_REG = 0;
+		NVIC_ClearPendingIRQ(IRQN);
 
 		entropy_smartbond_pm_policy_state_lock_put();
 	}

@@ -10,8 +10,10 @@ toolchain:
 supported:
   - arduino_serial
   - arduino_spi
+  - pmod_spi
   - gpio
   - serial
   - spi
+  - trng
 ram: 1024
 flash: 3072

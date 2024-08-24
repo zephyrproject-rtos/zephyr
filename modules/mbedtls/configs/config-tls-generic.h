@@ -23,7 +23,7 @@
 #define MBEDTLS_PLATFORM_ZEROIZE_ALT
 #endif
 
-#if defined(CONFIG_MBEDTLS_ZEPHYR_ENTROPY)
+#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR)
 #define MBEDTLS_ENTROPY_HARDWARE_ALT
 #else
 #define MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
@@ -51,22 +51,13 @@
 /* mbedTLS feature support */
 
 /* Supported TLS versions */
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_0)
-#define MBEDTLS_SSL_PROTO_TLS1
-#endif
 
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_1)
-#define MBEDTLS_SSL_PROTO_TLS1_1
-#endif
 
 #if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
 #define MBEDTLS_SSL_PROTO_TLS1_2
 #endif
 
-
-#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_0) || \
-    defined(CONFIG_MBEDTLS_TLS_VERSION_1_1) || \
-    defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
+#if defined(CONFIG_MBEDTLS_TLS_VERSION_1_2)
 
 /* Modules required for TLS */
 #define MBEDTLS_SSL_TLS_C
@@ -329,7 +320,7 @@
 #define MBEDTLS_GENPRIME
 #endif
 
-#if defined(CONFIG_MBEDTLS_ENTROPY_ENABLED)
+#if defined(CONFIG_MBEDTLS_ENTROPY_C)
 #define MBEDTLS_ENTROPY_C
 #endif
 
@@ -378,6 +369,7 @@
 #if defined(CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT) && \
     defined(MBEDTLS_X509_CRT_PARSE_C)
 #define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_PEM_WRITE_C
 #define MBEDTLS_BASE64_C
 #endif
 

@@ -7,3 +7,16 @@ tests:
     platform_allow:
       - lpcxpresso55s69/lpc55s69/cpu0
     harness: TBD
+  sample.drivers.i2c.target.kinetis:
+    tags: i2c_target
+    filter: dt_nodelabel_enabled("target_eeprom")
+    platform_allow:
+      - frdm_ke17z
+      - frdm_ke17z512
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "i2c target sample"
+        - "i2c target driver registered"
+        - "i2c target driver unregistered"

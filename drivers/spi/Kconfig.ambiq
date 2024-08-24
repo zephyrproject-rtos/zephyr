@@ -10,6 +10,7 @@ menuconfig SPI_AMBIQ
 	bool "AMBIQ SPI driver"
 	default y
 	depends on DT_HAS_AMBIQ_SPI_ENABLED
+	select GPIO
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_SPI
 	help
@@ -31,15 +32,6 @@ config SPI_DMA_TCB_BUFFER_SIZE
 	  DMA Transfer Control Buffer size in words
 
 endif # SPI_AMBIQ
-
-config MSPI_AMBIQ
-	bool "AMBIQ MSPI driver"
-	default y
-	depends on DT_HAS_AMBIQ_MSPI_ENABLED
-	select AMBIQ_HAL
-	select AMBIQ_HAL_USE_MSPI
-	help
-	  Enable driver for Ambiq MSPI.
 
 config SPI_AMBIQ_BLEIF
 	bool "AMBIQ SPI-BLEIF driver"

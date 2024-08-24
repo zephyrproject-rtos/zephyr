@@ -1,0 +1,12 @@
+identifier: mck_ra8t1
+name: Renesas MCK-RA8T1
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart

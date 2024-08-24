@@ -200,7 +200,7 @@ static struct uart_numicro_data uart_numicro_data_##index = {		\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &uart_numicro_init,					\
+		    uart_numicro_init,					\
 		    NULL,						\
 		    &uart_numicro_data_##index,				\
 		    &uart_numicro_cfg_##index,				\

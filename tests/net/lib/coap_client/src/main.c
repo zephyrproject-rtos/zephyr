@@ -6,6 +6,7 @@
 
 #include <zephyr/fff.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/ztest.h>
 
 #include "stubs.h"
@@ -23,13 +24,7 @@ static uint16_t messages_needing_response[2];
 static struct coap_client client;
 
 static char *short_payload = "testing";
-static char *long_payload = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
-				  "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut "
-				  "enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-				  "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor "
-				  "in reprehenderit in voluptate velit esse cillum dolore eu fugiat"
-				  " nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
-				  " sunt in culpa qui officia deserunt mollit anim id est laborum.";
+static char *long_payload = LOREM_IPSUM_SHORT;
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max_len, int flags,
 					  struct sockaddr *src_addr, socklen_t *addrlen)

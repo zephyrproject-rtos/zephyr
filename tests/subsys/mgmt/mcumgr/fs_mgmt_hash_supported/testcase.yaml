@@ -15,6 +15,7 @@ common:
     - arduino_portenta_h7/stm32h747xx/m4
     - lpcxpresso51u68
     - nucleo_h745zi_q/stm32h745xx/m4
+    - nucleo_h755zi_q/stm32h755xx/m4
     - stm32h747i_disco/stm32h747xx/m4
     - lpcxpresso55s69/lpc55s69/cpu1
     - mpfs_icicle

@@ -41,13 +41,16 @@
 #endif /* CONFIG_SOC_ENABLE_APPCPU */
 
 #include <zephyr/sys/printk.h>
+#include "esp_log.h"
+
+#define TAG "boot.esp32"
 
 #if CONFIG_ESP_SPIRAM
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
 
-extern void z_cstart(void);
+extern void z_prep_c(void);
 extern void esp_reset_reason_init(void);
 
 #ifdef CONFIG_SOC_ENABLE_APPCPU
@@ -120,7 +123,7 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
+	 * z_prep_c() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
@@ -155,17 +158,17 @@ void IRAM_ATTR __esp_platform_start(void)
 	esp_err_t err = esp_psram_init();
 
 	if (err != ESP_OK) {
-		printk("Failed to Initialize SPIRAM, aborting.\n");
+		ESP_EARLY_LOGE(TAG, "Failed to Initialize SPIRAM, aborting.");
 		abort();
 	}
 	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
-		printk("SPIRAM size is less than configured size, aborting.\n");
+		ESP_EARLY_LOGE(TAG, "SPIRAM size is less than configured size, aborting.");
 		abort();
 	}
 
 	if (esp_psram_is_initialized()) {
 		if (!esp_psram_extram_test()) {
-			printk("External RAM failed memory test!");
+			ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
 			abort();
 		}
 	}
@@ -188,7 +191,7 @@ void IRAM_ATTR __esp_platform_start(void)
 	esp_intr_initialize();
 
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

@@ -227,10 +227,12 @@ static int ps2_npcx_ctrl_is_rx_error(const struct device *dev)
 
 	status = inst->PSTAT & (BIT(NPCX_PSTAT_PERR) | BIT(NPCX_PSTAT_RFERR));
 	if (status) {
-		if (status & BIT(NPCX_PSTAT_PERR))
+		if (status & BIT(NPCX_PSTAT_PERR)) {
 			LOG_ERR("RX parity error");
-		if (status & BIT(NPCX_PSTAT_RFERR))
+		}
+		if (status & BIT(NPCX_PSTAT_RFERR)) {
 			LOG_ERR("RX Frame error");
+		}
 		return -EIO;
 	}
 

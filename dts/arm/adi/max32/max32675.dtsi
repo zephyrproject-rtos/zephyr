@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32675_dma.h>
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_K(384)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(16)>;
+};
+
+&clk_inro {
+	clock-frequency = <DT_FREQ_K(80)>;
+};
+
+/delete-node/ &clk_iso;
+/delete-node/ &uart1;
+
+/* MAX32675 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(16)>;
+		};
+
+		sram2: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(32)>;
+		};
+
+		sram3: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(64)>;
+		};
+
+		sram4: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(4)>;
+		};
+
+		sram5: memory@20021000 {
+			compatible = "mmio-sram";
+			reg = <0x20021000 DT_SIZE_K(4)>;
+		};
+
+		sram6: memory@20022000 {
+			compatible = "mmio-sram";
+			reg = <0x20022000 DT_SIZE_K(8)>;
+		};
+
+		sram7: memory@20024000 {
+			compatible = "mmio-sram";
+			reg = <0x20024000 DT_SIZE_K(16)>;
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
+			dma-channels = <8>;
+			status = "disabled";
+			#dma-cells = <2>;
+		};
+
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+	};
+};

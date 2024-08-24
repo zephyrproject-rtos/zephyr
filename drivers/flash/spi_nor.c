@@ -135,16 +135,16 @@ struct spi_nor_config {
 #endif
 
 #if ANY_INST_HAS_DPD
-	uint16_t t_enter_dpd; /* in microseconds */
-	uint16_t t_dpdd_ms;   /* in microseconds */
+	uint16_t t_enter_dpd; /* in milliseconds */
+	uint16_t t_dpdd_ms;   /* in milliseconds */
 #if ANY_INST_HAS_T_EXIT_DPD
-	uint16_t t_exit_dpd;  /* in microseconds */
+	uint16_t t_exit_dpd;  /* in milliseconds */
 #endif
 #endif
 
 #if ANY_INST_HAS_DPD_WAKEUP_SEQUENCE
-	uint16_t t_crdp_ms; /* in microseconds */
-	uint16_t t_rdp_ms;  /* in microseconds */
+	uint16_t t_crdp_ms; /* in milliseconds */
+	uint16_t t_rdp_ms;  /* in milliseconds */
 #endif
 
 #if ANY_INST_HAS_MXICY_MX25R_POWER_MODE
@@ -1097,7 +1097,10 @@ static int spi_nor_process_bfp(const struct device *dev,
 	struct jesd216_erase_type *etp = data->erase_types;
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 
-	LOG_INF("%s: %u MiBy flash", dev->name, (uint32_t)(flash_size >> 20));
+	LOG_INF("%s: %u %ciBy flash", dev->name,
+		(flash_size < (1024U * 1024U)) ? (uint32_t)(flash_size >> 10)
+					       : (uint32_t)(flash_size >> 20),
+		(flash_size < (1024U * 1024U)) ? 'k' : 'M');
 
 	/* Copy over the erase types, preserving their order.  (The
 	 * Sector Map Parameter table references them by index.)

@@ -41,6 +41,11 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 GTEXT(z_arm_cortex_ar_exit_exc)
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 
+	/* Note:
+	 * This function is expected to be *always* called with
+	 * processor mode set to MODE_SYS.
+	 */
+
 	/* decrement exception depth */
 	get_cpu r2
 	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
@@ -51,7 +56,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.
 	 */
-	ldmia sp, {r0-r3, r12, lr}^
-	add sp, #24
+	pop {r0-r3, r12, lr}
 	rfeia sp!
 #endif

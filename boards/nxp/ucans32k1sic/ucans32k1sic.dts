@@ -98,6 +98,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <80000000>;
+};
+
 &gpioa {
 	status = "okay";
 };

@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: mspi-nor
+.. zephyr:code-sample:: mspi-flash
    :name: JEDEC MSPI-NOR flash
    :relevant-api: flash_interface
 
@@ -18,7 +18,7 @@ Building and Running
 The application will build only for a target that has a :ref:`devicetree <dt-guide>`
 ``flash0`` alias that refers to an entry with the following bindings as a compatible:
 
-* :dtcompatible:`jedec,spi-nor`, `ambiq,mspi-device`
+* :dtcompatible:`ambiq,mspi-device`, `mspi-atxp032`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mspi/mspi_flash

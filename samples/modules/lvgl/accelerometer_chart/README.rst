@@ -7,7 +7,7 @@
 Overview
 ********
 
-A sample application that demonstrates how to use LVGL and the :ref:`sensor API <sensor_api>` to
+A sample application that demonstrates how to use LVGL and the :ref:`sensor` to
 display acceleration data on a line chart that is updated in real time.
 
 This sample creates a line chart with three series, one for each axis of the accelerometer. An LVGL

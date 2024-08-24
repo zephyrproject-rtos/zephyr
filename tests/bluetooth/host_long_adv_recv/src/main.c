@@ -1,11 +1,14 @@
 /* main.c - Host long advertising receive */
 
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
+
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -18,6 +21,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/ztest_assert.h>
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -201,6 +205,7 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 	(void)memset(&rp->le_states, 0xFF, sizeof(rp->le_states));
 }
 
+
 /* Setup handlers needed for bt_enable to function. */
 static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_READ_LOCAL_VERSION_INFO, sizeof(struct bt_hci_rp_read_local_version_info),
@@ -219,6 +224,8 @@ static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_LE_RAND, sizeof(struct bt_hci_rp_le_rand), generic_success },
 	{ BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(struct bt_hci_cp_le_set_random_address),
 	  generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, 0, generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, 0, generic_success },
 	{ BT_HCI_OP_RESET, 0, generic_success },
 };
 
@@ -382,6 +389,8 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	static struct bt_le_scan_cb scan_callbacks = { .recv = scan_recv_cb,
 						       .timeout = scan_timeout_cb };
 	bt_le_scan_cb_register(&scan_callbacks);
+	zassert_true((bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL) == 0), "bt_le_scan_start failed");
+
 	bt_addr_le_t addr_a;
 	bt_addr_le_t addr_b;
 	bt_addr_le_t addr_c;

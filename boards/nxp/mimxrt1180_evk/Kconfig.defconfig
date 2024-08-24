@@ -1,0 +1,15 @@
+# MIMXRT1180-EVK board
+
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1180_EVK
+
+# Use External Memory Configuration Data (XMCD) by default when booting primary core (M33)
+config EXTERNAL_MEM_CONFIG_DATA
+	default y if CPU_CORTEX_M33
+
+config NXP_IMX_EXTERNAL_HYPERRAM
+	default y if CPU_CORTEX_M33
+
+endif # BOARD_MIMXRT1180_EVK

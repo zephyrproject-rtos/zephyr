@@ -179,7 +179,7 @@ struct regulator_common_config {
 	uint8_t allowed_modes_cnt;
 	/** Regulator initial mode */
 	regulator_mode_t initial_mode;
-	/** Flags (@reg REGULATOR_FLAGS). */
+	/** Flags (@ref REGULATOR_FLAGS). */
 	uint8_t flags;
 };
 

@@ -17,8 +17,6 @@
 #include <da1469x_pdc.h>
 #include <da1469x_pd.h>
 
-#define GPIO_MODE_RESET		0x200
-
 #define GPIO_PUPD_INPUT		0
 #define GPIO_PUPD_INPUT_PU	1
 #define GPIO_PUPD_INPUT_PD	2
@@ -117,8 +115,8 @@ static int gpio_smartbond_pin_configure(const struct device *dev,
 	const struct gpio_smartbond_config *config = dev->config;
 
 	if (flags == GPIO_DISCONNECTED) {
-		/* Reset to default value */
-		config->mode_regs[pin] = GPIO_MODE_RESET;
+		/* Set pin as input with no resistors selected */
+		config->mode_regs[pin] = GPIO_PUPD_INPUT << GPIO_P0_00_MODE_REG_PUPD_Pos;
 		return 0;
 	}
 
@@ -166,7 +164,8 @@ static int gpio_smartbond_port_set_masked_raw(const struct device *dev,
 {
 	const struct gpio_smartbond_config *config = dev->config;
 
-	config->data_regs->data = value & mask;
+	config->data_regs->set = value & mask;
+	config->data_regs->reset = ~value & mask;
 
 	return 0;
 }
@@ -244,7 +243,9 @@ static int gpio_smartbond_pin_interrupt_configure(const struct device *dev,
 		config->wkup_regs->clear = pin_mask;
 		data->both_edges_pins &= ~pin_mask;
 #if CONFIG_PM
-		da1469x_pdc_del(pdc_ix);
+		if (pdc_ix >= 0) {
+			da1469x_pdc_del(pdc_ix);
+		}
 #endif
 	} else {
 		if (trig == GPIO_INT_TRIG_BOTH) {

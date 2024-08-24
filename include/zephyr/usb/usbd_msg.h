@@ -40,6 +40,8 @@ enum usbd_msg_type {
 	USBD_MSG_SUSPEND,
 	/** Bus reset detected */
 	USBD_MSG_RESET,
+	/** Device changed configuration */
+	USBD_MSG_CONFIGURATION,
 	/** Non-correctable UDC error message  */
 	USBD_MSG_UDC_ERROR,
 	/** Unrecoverable device stack error message  */
@@ -61,6 +63,7 @@ static const char *const usbd_msg_type_list[] = {
 	"Device resumed",
 	"Device suspended",
 	"Bus reset",
+	"New device configuration",
 	"Controller error",
 	"Stack error",
 	"CDC ACM line coding",

@@ -123,7 +123,8 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
 
-#define RV3028_EEBUSY_POLL_US           10000
+#define RV3028_EEBUSY_READ_POLL_MS      1
+#define RV3028_EEBUSY_WRITE_POLL_MS     10
 #define RV3028_EEBUSY_TIMEOUT_MS        100
 
 /* RTC alarm time fields supported by the RV3028 */
@@ -240,7 +241,7 @@ static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t ma
 	return 0;
 }
 
-static int rv3028_eeprom_wait_busy(const struct device *dev)
+static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -261,7 +262,7 @@ static int rv3028_eeprom_wait_busy(const struct device *dev)
 			return -ETIME;
 		}
 
-		k_busy_wait(RV3028_EEBUSY_POLL_US);
+		k_msleep(poll_ms);
 	}
 
 	return 0;
@@ -291,7 +292,7 @@ static int rv3028_enter_eerd(const struct device *dev)
 	ret = rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
 				 RV3028_CONTROL1_EERD);
 
-	ret = rv3028_eeprom_wait_busy(dev);
+	ret = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 	if (ret) {
 		rv3028_exit_eerd(dev);
 		return ret;
@@ -321,7 +322,7 @@ static int rv3028_update(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -338,7 +339,7 @@ static int rv3028_refresh(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -376,40 +377,6 @@ static int rv3028_update_cfg(const struct device *dev, uint8_t addr, uint8_t mas
 }
 
 #if RV3028_INT_GPIOS_IN_USE
-
-static int rv3028_int_enable_unlocked(const struct device *dev, bool enable)
-{
-	const struct rv3028_config *config = dev->config;
-	uint8_t clkout = 0;
-	int err;
-
-	if (enable || config->cof == RV3028_CLKOUT_FD_LOW) {
-		/* Disable CLKOUT */
-		clkout |= FIELD_PREP(RV3028_CLKOUT_FD, RV3028_CLKOUT_FD_LOW);
-	} else {
-		/* Configure CLKOUT frequency */
-		clkout |= RV3028_CLKOUT_CLKOE |
-			  FIELD_PREP(RV3028_CLKOUT_FD, config->cof);
-	}
-
-	/* Configure the CLKOUT register */
-	err = rv3028_update_cfg(dev,
-				RV3028_REG_CLKOUT,
-				RV3028_CLKOUT_FD | RV3028_CLKOUT_CLKOE,
-				clkout);
-	if (err) {
-		return err;
-	}
-
-	err = gpio_pin_interrupt_configure_dt(&config->gpio_int,
-					      enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
-	if (err) {
-		LOG_ERR("failed to %s GPIO interrupt (err %d)", enable ? "enable" : "disable", err);
-		return err;
-	}
-
-	return 0;
-}
 
 static void rv3028_work_cb(struct k_work *work)
 {
@@ -511,7 +478,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	date[0] = bin2bcd(timeptr->tm_sec) & RV3028_SECONDS_MASK;
 	date[1] = bin2bcd(timeptr->tm_min) & RV3028_MINUTES_MASK;
 	date[2] = bin2bcd(timeptr->tm_hour) & RV3028_HOURS_24H_MASK;
-	date[3] = bin2bcd(timeptr->tm_wday) & RV3028_WEEKDAY_MASK;
+	date[3] = timeptr->tm_wday & RV3028_WEEKDAY_MASK;
 	date[4] = bin2bcd(timeptr->tm_mday) & RV3028_DATE_MASK;
 	date[5] = bin2bcd(timeptr->tm_mon + RV3028_MONTH_OFFSET) & RV3028_MONTH_MASK;
 	date[6] = bin2bcd(timeptr->tm_year - RV3028_YEAR_OFFSET) & RV3028_YEAR_MASK;
@@ -559,7 +526,7 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_sec = bcd2bin(date[0] & RV3028_SECONDS_MASK);
 	timeptr->tm_min = bcd2bin(date[1] & RV3028_MINUTES_MASK);
 	timeptr->tm_hour = bcd2bin(date[2] & RV3028_HOURS_24H_MASK);
-	timeptr->tm_wday = bcd2bin(date[3] & RV3028_WEEKDAY_MASK);
+	timeptr->tm_wday = date[3] & RV3028_WEEKDAY_MASK;
 	timeptr->tm_mday = bcd2bin(date[4] & RV3028_DATE_MASK);
 	timeptr->tm_mon = bcd2bin(date[5] & RV3028_MONTH_MASK) - RV3028_MONTH_OFFSET;
 	timeptr->tm_year = bcd2bin(date[6] & RV3028_YEAR_MASK) + RV3028_YEAR_OFFSET;
@@ -613,7 +580,7 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
 		regs[0] = bin2bcd(timeptr->tm_min) & RV3028_ALARM_MINUTES_MASK;
 	} else {
-		regs[0] = RTC_ALARM_TIME_MASK_MINUTE;
+		regs[0] = RV3028_ALARM_MINUTES_AE_M;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
@@ -725,8 +692,7 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 #else
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
-	uint8_t control_2;
-	int err = 0;
+	int err;
 
 	if (config->gpio_int.port == NULL) {
 		return -ENOTSUP;
@@ -742,26 +708,8 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 	data->alarm_callback = callback;
 	data->alarm_user_data = user_data;
 
-	err = rv3028_read_reg8(dev, RV3028_REG_CONTROL2, &control_2);
-	if (err) {
-		goto unlock;
-	}
-
-	if (callback != NULL) {
-		control_2 |= RV3028_CONTROL2_AIE;
-	} else {
-		control_2 &= ~(RV3028_CONTROL2_AIE);
-	}
-
-	if ((control_2 & RV3028_CONTROL2_UIE) == 0U) {
-		/* Only change INT GPIO if periodic time update interrupt not enabled */
-		err = rv3028_int_enable_unlocked(dev, callback != NULL);
-		if (err) {
-			goto unlock;
-		}
-	}
-
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, control_2);
+	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_AIE,
+				 callback != NULL ? RV3028_CONTROL2_AIE : 0);
 	if (err) {
 		goto unlock;
 	}
@@ -785,7 +733,6 @@ static int rv3028_update_set_callback(const struct device *dev, rtc_update_callb
 {
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
-	uint8_t control_2;
 	int err;
 
 	if (config->gpio_int.port == NULL) {
@@ -797,26 +744,8 @@ static int rv3028_update_set_callback(const struct device *dev, rtc_update_callb
 	data->update_callback = callback;
 	data->update_user_data = user_data;
 
-	err = rv3028_read_reg8(dev, RV3028_REG_CONTROL2, &control_2);
-	if (err) {
-		goto unlock;
-	}
-
-	if (callback != NULL) {
-		control_2 |= RV3028_CONTROL2_UIE;
-	} else {
-		control_2 &= ~(RV3028_CONTROL2_UIE);
-	}
-
-	if ((control_2 & RV3028_CONTROL2_AIE) == 0U) {
-		/* Only change INT GPIO if alarm interrupt not enabled */
-		err = rv3028_int_enable_unlocked(dev, callback != NULL);
-		if (err) {
-			goto unlock;
-		}
-	}
-
-	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, control_2);
+	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL2, RV3028_CONTROL2_UIE,
+				 callback != NULL ? RV3028_CONTROL2_UIE : 0);
 	if (err) {
 		goto unlock;
 	}
@@ -865,6 +794,12 @@ static int rv3028_init(const struct device *dev)
 		if (err) {
 			LOG_ERR("failed to configure GPIO (err %d)", err);
 			return -ENODEV;
+		}
+
+		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
+		if (err) {
+			LOG_ERR("failed to enable GPIO interrupt (err %d)", err);
+			return err;
 		}
 
 		gpio_init_callback(&data->int_callback, rv3028_int_handler,

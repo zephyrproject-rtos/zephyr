@@ -1,4 +1,4 @@
-.. _rtio_api:
+.. _rtio:
 
 Real Time I/O (RTIO)
 ####################

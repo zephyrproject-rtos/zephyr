@@ -1545,8 +1545,13 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	k_mutex_unlock(&sh->ctx->wr_mtx);
 }
 
-/* This function mustn't be used from shell context to avoid deadlock.
- * However it can be used in shell command handlers.
+/* These functions mustn't be used from shell context to avoid deadlock:
+ * - shell_fprintf_impl
+ * - shell_info_impl
+ * - shell_print_impl
+ * - shell_warn_impl
+ * - shell_error_impl
+ * However, they can be used in shell command handlers.
  */
 void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 		   const char *fmt, ...)
@@ -1558,6 +1563,42 @@ void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 	va_end(args);
 }
 
+void shell_info_impl(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_INFO, fmt, args);
+	va_end(args);
+}
+
+void shell_print_impl(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_NORMAL, fmt, args);
+	va_end(args);
+}
+
+void shell_warn_impl(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_WARNING, fmt, args);
+	va_end(args);
+}
+
+void shell_error_impl(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_ERROR, fmt, args);
+	va_end(args);
+}
+
 void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 			const uint8_t *data, size_t len)
 {
@@ -1565,35 +1606,35 @@ void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 
 	int i;
 
-	shell_fprintf(sh, SHELL_NORMAL, "%08X: ", offset);
+	shell_print_impl(sh, "%08X: ", offset);
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_print_impl(sh, " ");
 		}
 
 		if (i < len) {
-			shell_fprintf(sh, SHELL_NORMAL, "%02x ",
-				      data[i] & 0xFF);
+			shell_print_impl(sh, "%02x ",
+					 data[i] & 0xFF);
 		} else {
-			shell_fprintf(sh, SHELL_NORMAL, "   ");
+			shell_print_impl(sh, "   ");
 		}
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "|");
+	shell_print_impl(sh, "|");
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_print_impl(sh, " ");
 		}
 
 		if (i < len) {
 			char c = data[i];
 
-			shell_fprintf(sh, SHELL_NORMAL, "%c",
-				      isprint((int)c) != 0 ? c : '.');
+			shell_print_impl(sh, "%c",
+					 isprint((int)c) != 0 ? c : '.');
 		} else {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_print_impl(sh, " ");
 		}
 	}
 

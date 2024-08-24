@@ -32,12 +32,20 @@ family:
               - name: cpuapp
               - name: cpurad
               - name: cpuppr
+              - name: cpuflpr
       - name: nrf91
         socs:
           - name: nrf9131
           - name: nrf9151
           - name: nrf9160
           - name: nrf9161
+      - name: nrf92
+        socs:
+          - name: nrf9280
+            cpuclusters:
+              - name: cpuapp
+              - name: cpurad
+              - name: cpuppr
 
 # Recovery/erase is only needed once per core. Prevent resetting the cores whilst flashing
 # multiple images until all images for each core have been flashed, this allows security
@@ -90,6 +98,10 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+          - qualifiers:
+              - nrf9280/cpuapp
+              - nrf9280/cpurad
+              - nrf9280/cpuppr
     '--erase':
       - runners:
           - nrfjprog
@@ -137,6 +149,10 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+          - qualifiers:
+              - nrf9280/cpuapp
+              - nrf9280/cpurad
+              - nrf9280/cpuppr
     '--reset':
       - runners:
           - nrfjprog
@@ -184,3 +200,7 @@ runners:
               - nrf54h20/cpuapp
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
+          - qualifiers:
+              - nrf9280/cpuapp
+              - nrf9280/cpurad
+              - nrf9280/cpuppr

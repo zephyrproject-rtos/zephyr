@@ -80,8 +80,9 @@ static bool bcm2711_mu_lowlevel_can_putc(mem_addr_t base)
 static void bcm2711_mu_lowlevel_putc(mem_addr_t base, uint8_t ch)
 {
 	/* Wait until there is data in the FIFO */
-	while (!bcm2711_mu_lowlevel_can_putc(base))
+	while (!bcm2711_mu_lowlevel_can_putc(base)) {
 		;
+	}
 
 	/* Send the character */
 	sys_write32(ch, base + BCM2711_MU_IO);
@@ -93,8 +94,9 @@ static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool skip_baudrate_config,
 	uint32_t divider;
 
 	/* Wait until there is data in the FIFO */
-	while (!bcm2711_mu_lowlevel_can_putc(base))
+	while (!bcm2711_mu_lowlevel_can_putc(base)) {
 		;
+	}
 
 	/* Disable port */
 	sys_write32(0x0, base + BCM2711_MU_CNTL);
@@ -148,8 +150,9 @@ static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
 
-	while (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr))
+	while (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr)) {
 		;
+	}
 
 	return sys_read32(uart_data->uart_addr + BCM2711_MU_IO) & 0xFF;
 }

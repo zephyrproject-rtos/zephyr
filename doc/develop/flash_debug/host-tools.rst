@@ -464,6 +464,17 @@ afterwards detach the debug session:
 
    west debug --tool-opt='--batch'
 
+probe-rs Debug Host Tools
+*************************
+
+probe-rs is an open-source embedded toolkit written in Rust. It provides
+out-of-the-box support for a variety of debug probes, including CMSIS-DAP,
+ST-Link, SEGGER J-Link, FTDI and built-in USB-JTAG interface on ESP32 devices.
+
+Check `probe-rs Installation`_ for more setup details.
+
+Check if your SoC is listed in `probe-rs Supported Devices`_.
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -508,3 +519,9 @@ afterwards detach the debug session:
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
+
+.. _probe-rs Installation:
+   https://probe.rs/docs/getting-started/installation/
+
+.. _probe-rs Supported Devices:
+   https://probe.rs/targets/

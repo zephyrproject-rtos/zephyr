@@ -11,8 +11,10 @@
  */
 
 /**
- * @defgroup wifi_mgmt Wi-Fi Management
  * @brief Wi-Fi Management API.
+ * @defgroup wifi_mgmt Wi-Fi Management
+ * @since 1.12
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -46,10 +48,18 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_PSK_SHA256,
 	/** WPA3-SAE security. */
 	WIFI_SECURITY_TYPE_SAE,
+	/** WPA3-SAE security with hunting-and-pecking loop. */
+	WIFI_SECURITY_TYPE_SAE_HNP = WIFI_SECURITY_TYPE_SAE,
+	/** WPA3-SAE security with hash-to-element. */
+	WIFI_SECURITY_TYPE_SAE_H2E,
+	/** WPA3-SAE security with both hunting-and-pecking loop and hash-to-element enabled. */
+	WIFI_SECURITY_TYPE_SAE_AUTO,
 	/** GB 15629.11-2003 WAPI security. */
 	WIFI_SECURITY_TYPE_WAPI,
 	/** EAP security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP,
+	/** EAP TLS security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS = WIFI_SECURITY_TYPE_EAP,
 	/** WEP security. */
 	WIFI_SECURITY_TYPE_WEP,
 	/** WPA-PSK security. */
@@ -118,6 +128,10 @@ const char *wifi_band_txt(enum wifi_frequency_bands band);
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
 #define WIFI_MAC_ADDR_LEN 6
+/** Max enterprise identity length */
+#define WIFI_ENT_IDENTITY_MAX_LEN 64
+/** Max enterprise password length */
+#define WIFI_ENT_PSWD_MAX_LEN 128
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
@@ -483,6 +497,20 @@ static const char * const wifi_ps_param_config_err_code_tbl[] = {
 		"Parameter out of range",
 };
 /** @endcond */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+/** IEEE 802.11v BTM (BSS transition management) Query reasons.
+ * Refer to IEEE Std 802.11v-2011 - Table 7-43x-Transition and Transition Query reasons table.
+ */
+enum wifi_btm_query_reason {
+	/** Unspecified. */
+	WIFI_BTM_QUERY_REASON_UNSPECIFIED = 0,
+	/** Low RSSI. */
+	WIFI_BTM_QUERY_REASON_LOW_RSSI = 16,
+	/** Leaving ESS. */
+	WIFI_BTM_QUERY_REASON_LEAVING_ESS = 20,
+};
+#endif
 
 /** Helper function to get user-friendly power save error code name. */
 static inline const char *wifi_ps_get_config_err_code_str(int16_t err_no)

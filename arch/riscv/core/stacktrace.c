@@ -58,12 +58,12 @@ static inline bool in_user_thread_stack_bound(uintptr_t addr, const struct k_thr
 
 	/* See: zephyr/include/zephyr/arch/riscv/arch.h */
 	if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
-		start = thread->arch.priv_stack_start - CONFIG_PRIVILEGED_STACK_SIZE;
-		end = thread->arch.priv_stack_start;
+		start = thread->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE;
 	} else {
 		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
-		end = thread->stack_info.start;
 	}
+	end = Z_STACK_PTR_ALIGN(thread->arch.priv_stack_start + K_KERNEL_STACK_RESERVED +
+				CONFIG_PRIVILEGED_STACK_SIZE);
 
 	return (addr >= start) && (addr < end);
 }
@@ -90,7 +90,10 @@ static bool in_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 static bool in_fatal_stack_bound(uintptr_t addr, const struct k_thread *const thread,
 				 const struct arch_esf *esf)
 {
-	if (!IS_ALIGNED(addr, sizeof(uintptr_t))) {
+	const uintptr_t align =
+		COND_CODE_1(CONFIG_FRAME_POINTER, (ARCH_STACK_PTR_ALIGN), (sizeof(uintptr_t)));
+
+	if (!IS_ALIGNED(addr, align)) {
 		return false;
 	}
 
@@ -134,22 +137,53 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie, const stru
 		ra = csf->ra;
 	}
 
-	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp);) {
-		if (in_text_region(ra)) {
-			if (!cb(cookie, ra)) {
-				break;
-			}
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
+	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy(fp, thread, esf) && (fp > last_fp); i++) {
+		if (in_text_region(ra) && !cb(cookie, ra)) {
+			break;
 		}
 		last_fp = fp;
+
 		/* Unwind to the previous frame */
 		frame = (struct stackframe *)fp - 1;
-		ra = frame->ra;
+
+		if ((i == 0) && (esf != NULL)) {
+			/* Print `esf->ra` if we are at the top of the stack */
+			if (in_text_region(esf->ra) && !cb(cookie, esf->ra)) {
+				break;
+			}
+			/**
+			 * For the first stack frame, the `ra` is not stored in the frame if the
+			 * preempted function doesn't call any other function, we can observe:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *                     :-------------:
+			 *   frame[0]->ra ---> | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Instead of:
+			 *
+			 *                     .-------------.
+			 *   frame[0]->fp ---> | frame[0] fp |
+			 *   frame[0]->ra ---> | frame[1] ra |
+			 *                     :-------------:
+			 *                     | frame[1] fp |
+			 *                     | frame[1] ra |
+			 *                     :~~~~~~~~~~~~~:
+			 *                     | frame[N] fp |
+			 *
+			 * Check if `frame->ra` actually points to a `fp`, and adjust accordingly
+			 */
+			if (vrfy(frame->ra, thread, esf)) {
+				fp = frame->ra;
+				frame = (struct stackframe *)fp;
+			}
+		}
+
 		fp = frame->fp;
+		ra = frame->ra;
 	}
 }
 #else  /* !CONFIG_FRAME_POINTER */

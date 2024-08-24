@@ -58,6 +58,7 @@ class DUT(object):
         self.serial_pty = serial_pty
         self._counter = Value("i", 0)
         self._available = Value("i", 1)
+        self._failures = Value("i", 0)
         self.connected = connected
         self.pre_script = pre_script
         self.id = id
@@ -96,9 +97,27 @@ class DUT(object):
         with self._counter.get_lock():
             self._counter.value = value
 
+    def counter_increment(self, value=1):
+        with self._counter.get_lock():
+            self._counter.value += value
+
+    @property
+    def failures(self):
+        with self._failures.get_lock():
+            return self._failures.value
+
+    @failures.setter
+    def failures(self, value):
+        with self._failures.get_lock():
+            self._failures.value = value
+
+    def failures_increment(self, value=1):
+        with self._failures.get_lock():
+            self._failures.value += value
+
     def to_dict(self):
         d = {}
-        exclude = ['_available', '_counter', 'match']
+        exclude = ['_available', '_counter', '_failures', 'match']
         v = vars(self)
         for k in v.keys():
             if k not in exclude and v[k]:
@@ -125,7 +144,8 @@ class HardwareMap:
         'Microchip Technology Inc.',
         'FTDI',
         'Digilent',
-        'Microsoft'
+        'Microsoft',
+        'Nuvoton'
     ]
 
     runner_mapping = {
@@ -204,10 +224,10 @@ class HardwareMap:
     def summary(self, selected_platforms):
         print("\nHardware distribution summary:\n")
         table = []
-        header = ['Board', 'ID', 'Counter']
+        header = ['Board', 'ID', 'Counter', 'Failures']
         for d in self.duts:
             if d.connected and d.platform in selected_platforms:
-                row = [d.platform, d.id, d.counter]
+                row = [d.platform, d.id, d.counter, d.failures]
                 table.append(row)
         print(tabulate(table, headers=header, tablefmt="github"))
 

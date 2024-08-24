@@ -221,8 +221,10 @@ static void paw32xx_motion_work_handler(struct k_work *work)
 	input_report_rel(data->dev, cfg->axis_x, x, false, K_FOREVER);
 	input_report_rel(data->dev, cfg->axis_y, y, true, K_FOREVER);
 
-	/* Trigger one more scan in case more data is available. */
-	k_work_submit(&data->motion_work);
+	/* Trigger one more scan if more data is available. */
+	if (gpio_pin_get_dt(&cfg->motion_gpio)) {
+		k_work_submit(&data->motion_work);
+	}
 }
 
 static void paw32xx_motion_handler(const struct device *gpio_dev,

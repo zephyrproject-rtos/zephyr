@@ -12,8 +12,10 @@ tests:
       fixture: dac_adc_loopback
     platform_allow:
       - frdm_k64f
+      - ek_ra8m1
   drivers.adc.accuracy.ref_volt:
     harness_config:
       fixture: adc_ref_volt
     platform_allow:
       - frdm_kl25z
+      - ek_ra8m1

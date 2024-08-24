@@ -45,14 +45,18 @@ static const uint8_t disc_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
  */
 static int pack_uint8(uint8_t val, struct buf_ctx *buf)
 {
-	if ((buf->end - buf->cur) < sizeof(uint8_t)) {
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	if ((end - cur) < sizeof(uint8_t)) {
 		return -ENOMEM;
 	}
 
-	NET_DBG(">> val:%02x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
+	NET_DBG(">> val:%02x cur:%p, end:%p", val, (void *)cur, (void *)end);
 
 	/* Pack value. */
-	*(buf->cur++) = val;
+	cur[0] = val;
+	buf->cur = (cur + sizeof(uint8_t));
 
 	return 0;
 }
@@ -69,15 +73,18 @@ static int pack_uint8(uint8_t val, struct buf_ctx *buf)
  */
 static int pack_uint16(uint16_t val, struct buf_ctx *buf)
 {
-	if ((buf->end - buf->cur) < sizeof(uint16_t)) {
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	if ((end - cur) < sizeof(uint16_t)) {
 		return -ENOMEM;
 	}
 
-	NET_DBG(">> val:%04x cur:%p, end:%p", val, (void *)buf->cur, (void *)buf->end);
+	NET_DBG(">> val:%04x cur:%p, end:%p", val, (void *)cur, (void *)end);
 
 	/* Pack value. */
-	*(buf->cur++) = (val >> 8) & 0xFF;
-	*(buf->cur++) = val & 0xFF;
+	sys_put_be16(val, cur);
+	buf->cur = (cur + sizeof(uint16_t));
 
 	return 0;
 }
@@ -470,12 +477,15 @@ int publish_complete_encode(const struct mqtt_pubcomp_param *param,
 
 int disconnect_encode(struct buf_ctx *buf)
 {
-	if (buf->end - buf->cur < sizeof(disc_packet)) {
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	if ((end - cur) < sizeof(disc_packet)) {
 		return -ENOMEM;
 	}
 
-	memcpy(buf->cur, disc_packet, sizeof(disc_packet));
-	buf->end = buf->cur + sizeof(disc_packet);
+	memcpy(cur, disc_packet, sizeof(disc_packet));
+	buf->end = (cur + sizeof(disc_packet));
 
 	return 0;
 }
@@ -546,12 +556,15 @@ int unsubscribe_encode(const struct mqtt_subscription_list *param,
 
 int ping_request_encode(struct buf_ctx *buf)
 {
-	if (buf->end - buf->cur < sizeof(ping_packet)) {
+	uint8_t *cur = buf->cur;
+	uint8_t *end = buf->end;
+
+	if ((end - cur) < sizeof(ping_packet)) {
 		return -ENOMEM;
 	}
 
-	memcpy(buf->cur, ping_packet, sizeof(ping_packet));
-	buf->end = buf->cur + sizeof(ping_packet);
+	memcpy(cur, ping_packet, sizeof(ping_packet));
+	buf->end = (cur + sizeof(ping_packet));
 
 	return 0;
 }

@@ -39,7 +39,6 @@ config SOC_SERIES_IMXRT11XX
 	select HAS_MCUX_GPC
 	select HAS_MCUX_I2S
 	select HAS_MCUX_USB_EHCI
-	select HAS_MCUX_ACMP
 	select HAS_MCUX_SRC_V2
 	select HAS_MCUX_IOMUXC
 	select HAS_MCUX_XBARA

@@ -616,6 +616,11 @@ void z_log_dropped(bool buffered)
 	if (buffered) {
 		atomic_dec(&buffered_cnt);
 	}
+
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD)) {
+		k_timer_stop(&log_process_thread_timer);
+		k_sem_give(&log_process_thread_sem);
+	}
 }
 
 uint32_t z_log_dropped_read_and_clear(void)

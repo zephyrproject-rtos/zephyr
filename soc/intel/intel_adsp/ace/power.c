@@ -43,7 +43,7 @@ __imr void power_init(void)
 #if CONFIG_SOC_INTEL_ACE15_MTPM
 	*((__sparse_force uint32_t *)sys_cache_cached_ptr_get(&adsp_pending_buffer)) =
 		INTEL_ADSP_ACE15_MAGIC_KEY;
-	cache_data_flush_range((__sparse_force void *)
+	sys_cache_data_flush_range((__sparse_force void *)
 			sys_cache_cached_ptr_get(&adsp_pending_buffer),
 			sizeof(adsp_pending_buffer));
 #endif /* CONFIG_SOC_INTEL_ACE15_MTPM */
@@ -339,18 +339,22 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 					(void *)rom_entry;
 			sys_cache_data_flush_range((void *)imr_layout, sizeof(*imr_layout));
 #endif /* CONFIG_ADSP_IMR_CONTEXT_SAVE */
-			/* This assumes a single HPSRAM segment */
-			static uint32_t hpsram_mask;
 #ifdef CONFIG_ADSP_POWER_DOWN_HPSRAM
+			const int dcache_words = XCHAL_DCACHE_LINESIZE / sizeof(uint32_t);
+			uint32_t hpsram_mask[dcache_words] __aligned(XCHAL_DCACHE_LINESIZE);
+
+			hpsram_mask[0] = 0;
 			/* turn off all HPSRAM banks - get a full bitmap */
 			uint32_t ebb_banks = ace_hpsram_get_bank_count();
-			hpsram_mask = (1 << ebb_banks) - 1;
+			hpsram_mask[0] = (1 << ebb_banks) - 1;
+#define HPSRAM_MASK_ADDR sys_cache_cached_ptr_get(&hpsram_mask)
+#else
+#define HPSRAM_MASK_ADDR NULL
 #endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
-			/* do power down - this function won't return */
 			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
 			__ASSERT_NO_MSG(ret == 0);
-			power_down(true, sys_cache_cached_ptr_get(&hpsram_mask),
-				   true);
+			/* do power down - this function won't return */
+			power_down(true, HPSRAM_MASK_ADDR, true);
 		} else {
 			power_gate_entry(cpu);
 		}
@@ -441,7 +445,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 #endif /* CONFIG_PM */
 
-#ifdef CONFIG_ARCH_CPU_IDLE_CUSTOM
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 
 __no_optimization
 void arch_cpu_idle(void)
@@ -461,4 +465,4 @@ void arch_cpu_idle(void)
 	__asm__ volatile ("waiti 0");
 }
 
-#endif /* CONFIG_ARCH_CPU_IDLE_CUSTOM */
+#endif /* CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE */

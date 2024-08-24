@@ -10,12 +10,14 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/printk-hooks.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/drivers/ipm.h>
 #include <zephyr/drivers/console/ipm_console.h>
 
 static const struct device *ipm_console_device;
 
-static int consoleOut(int character)
+static int console_out(int character)
 {
 	if (character == '\r') {
 		return character;
@@ -29,9 +31,6 @@ static int consoleOut(int character)
 
 	return character;
 }
-
-extern void __printk_hook_install(int (*fn)(int));
-extern void __stdout_hook_install(int (*fn)(int));
 
 int ipm_console_sender_init(const struct device *d)
 {
@@ -47,10 +46,10 @@ int ipm_console_sender_init(const struct device *d)
 	}
 
 	if (config_info->flags & IPM_CONSOLE_STDOUT) {
-		__stdout_hook_install(consoleOut);
+		__stdout_hook_install(console_out);
 	}
 	if (config_info->flags & IPM_CONSOLE_PRINTK) {
-		__printk_hook_install(consoleOut);
+		__printk_hook_install(console_out);
 	}
 
 	return 0;

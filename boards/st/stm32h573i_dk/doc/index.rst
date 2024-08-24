@@ -249,13 +249,48 @@ Applications for the ``stm32h573i_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+OpenOCD Support
+===============
+
+For now, openocd support  for stm32h5 is not available on upstream OpenOCD.
+You can check `OpenOCD official Github mirror`_.
+In order to use it though, you should clone from the cutomized
+`STMicroelectronics OpenOCD Github`_ and compile it following usual README guidelines.
+Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
+:zephyr_file:`boards/st/stm32h573i_dk/board.cmake` to point the build
+to the paths of the OpenOCD binary and its scripts,  before
+including the common openocd.board.cmake file:
+
+   .. code-block:: none
+
+      set(OPENOCD "<path_to_openocd_repo>/src/openocd" CACHE FILEPATH "" FORCE)
+      set(OPENOCD_DEFAULT_PATH <path_to_opneocd_repo>/tcl)
+      include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
+
 Flashing
 ========
 
 STM32H573I-DK Discovery board includes an ST-LINK/V3E embedded debug tool
 interface. Support is available on STM32CubeProgrammer V2.13.0.
 
-Alternatively, this interface will be supported by a next openocd version.
+
+Alternatively, pyocd or jlink via an external probe can also be used to flash
+and debug the board if west is told to use it as runner, which can be done by
+passing either or ``-r pyocd``, or ``-r jlink``.
+
+For pyocd additional target information needs to be installed.
+This can be done by executing the following commands.
+
+.. code-block:: console
+
+   $ pyocd pack --update
+   $ pyocd pack --install stm32h5
+
+
+Alternatively, the openocd interface will be supported by a next openocd version.
+When available, OpenOCD could be used in the same way as other tools.
+
 
 Flashing an application to STM32H573I-DK Discovery
 --------------------------------------------------
@@ -317,3 +352,9 @@ example for the :ref:`hello_world` application.
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _OpenOCD official Github mirror:
+   https://github.com/openocd-org/openocd/
+
+.. _STMicroelectronics OpenOCD Github:
+   https://github.com/STMicroelectronics/OpenOCD/tree/openocd-cubeide-r6

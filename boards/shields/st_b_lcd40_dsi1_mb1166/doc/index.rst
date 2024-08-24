@@ -1,4 +1,4 @@
-.. _st_b_lcd40_dsi1_mb1166_shield:
+.. _st_b_lcd40_dsi1_mb1166:
 
 ST B-LCD40-DSI1
 ###############

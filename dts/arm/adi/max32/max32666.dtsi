@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2023-2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+
+&clk_ipo {
+	clock-frequency = <DT_FREQ_M(96)>;
+};
+
+&uart0 {
+	/delete-property/ clock-source;
+};
+
+&uart1 {
+	/delete-property/ clock-source;
+};
+
+&uart2 {
+	/delete-property/ clock-source;
+};
+
+/* MAX32666 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(32)>;
+		};
+
+		sram2: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(64)>;
+		};
+
+		sram3: memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 DT_SIZE_K(64)>;
+		};
+
+		sram4: memory@20030000 {
+			compatible = "mmio-sram";
+			reg = <0x20030000 DT_SIZE_K(128)>;
+		};
+
+		sram5: memory@20050000 {
+			compatible = "mmio-sram";
+			reg = <0x20050000 DT_SIZE_K(128)>;
+		};
+
+		sram6: memory@20070000 {
+			compatible = "mmio-sram";
+			reg = <0x20070000 DT_SIZE_K(8)>;
+		};
+
+		sram7: memory@20072000 {
+			compatible = "mmio-sram";
+			reg = <0x20072000 DT_SIZE_K(8)>;
+		};
+
+		sram8: memory@20074000 {
+			compatible = "mmio-sram";
+			reg = <0x20074000 DT_SIZE_K(16)>;
+		};
+
+		sram9: memory@20078000 {
+			compatible = "mmio-sram";
+			reg = <0x20078000 DT_SIZE_K(16)>;
+		};
+
+		sram10: memory@2007c000 {
+			compatible = "mmio-sram";
+			reg = <0x2007c000 DT_SIZE_K(32)>;
+		};
+
+		sram11: memory@20084000 {
+			compatible = "mmio-sram";
+			reg = <0x20084000 DT_SIZE_K(32)>;
+		};
+
+		flc1: flash_controller@40029400 {
+			compatible = "adi,max32-flash-controller";
+			reg = <0x40029400 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash1: flash@10080000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10080000 DT_SIZE_K(512)>;
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
+			dma-channels = <8>;
+			status = "disabled";
+			#dma-cells = <2>;
+		};
+
+		dma1: dma@40035000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40035000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 21>;
+			interrupts = <72 0>, <73 0>, <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>;
+			dma-channels = <8>;
+			status = "disabled";
+			#dma-cells = <2>;
+		};
+
+		spi0: spi@400be000 {
+			compatible = "adi,max32-spi";
+			reg = <0x400be000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 14>;
+			interrupts = <56 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		spi2: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+	};
+};

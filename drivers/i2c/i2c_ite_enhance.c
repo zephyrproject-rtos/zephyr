@@ -53,7 +53,7 @@ struct i2c_cq_packet {
 	uint8_t id;
 	uint8_t cmd_l;
 	uint8_t cmd_h;
-	uint8_t wdata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, wdata);
 };
 #endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
 

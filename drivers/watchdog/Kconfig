@@ -53,7 +53,7 @@ if WDT_COUNTER
 config WDT_COUNTER_CH_COUNT
 	int "Maximum number of supported channel"
 	default 4
-	range 1 255
+	range 1 $(UINT8_MAX)
 	help
 	  Note that actual channel count will be limited to number of channels
 	  supported by the counter device which is used for watchdog.
@@ -124,10 +124,14 @@ source "drivers/watchdog/Kconfig.ambiq"
 
 source "drivers/watchdog/Kconfig.shell"
 
+source "drivers/watchdog/Kconfig.max32"
+
 source "drivers/watchdog/Kconfig.xmc4xxx"
 
 source "drivers/watchdog/Kconfig.numaker"
 
 source "drivers/watchdog/Kconfig.ene"
+
+source "drivers/watchdog/Kconfig.litex"
 
 endif # WATCHDOG

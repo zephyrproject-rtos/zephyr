@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,7 @@
 #define _CONCAT3(a, b, c)	DT_CAT3(a, b, c)
 
 struct nxp_s32_eth_msix {
-	void (*handler)(uint8_t chan, const uint32_t *buf, uint8_t buf_size);
+	void (*handler)(uint8_t chan, const uint32 *buf, uint8_t buf_size);
 	struct mbox_dt_spec mbox_spec;
 };
 

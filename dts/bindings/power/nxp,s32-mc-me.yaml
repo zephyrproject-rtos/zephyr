@@ -1,0 +1,12 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 Module Entry (MC_ME)
+
+compatible: "nxp,s32-mc-me"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -116,32 +116,29 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
  */
 #define PDU_MEM_COUNT_MIN  (((BT_CTLR_ADV_SET) * 3) + \
 			    ((BT_CTLR_ADV_AUX_SET) * \
-			     PAYLOAD_BASED_FRAG_COUNT) + \
-			    ((BT_CTLR_ADV_SYNC_SET) * \
-			     PAYLOAD_FRAG_COUNT))
+			     PAYLOAD_BASED_FRAG_COUNT))
 
 /* Maximum advertising PDU buffers to allocate, which is the sum of minimum
  * plus configured additional count in CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
  */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-/* NOTE: When Periodic Advertising is supported then one additional PDU buffer
- *       plus the additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers
- *       is allocated.
+/* NOTE: When Periodic Advertising is supported then one chain of PDU buffers
+ *       plus the additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of chain
+ *       buffers is allocated.
  *       Set CONFIG_BT_CTLR_ADV_DATA_BUF_MAX to (BT_CTLR_ADV_AUX_SET +
- *       BT_CTLR_ADV_SYNC_SET) if
- *       PDU data is updated more frequently compare to the advertising
- *       interval with random delay included.
+ *       BT_CTLR_ADV_SYNC_SET) if PDU data is updated more frequently compare to
+ *       the advertising interval with random delay included.
  */
 #define PDU_MEM_COUNT_MAX ((PDU_MEM_COUNT_MIN) + \
 			   ((BT_CTLR_ADV_SYNC_SET) * \
 			    PAYLOAD_FRAG_COUNT) + \
 			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
-			    PAYLOAD_BASED_FRAG_COUNT))
+			    PAYLOAD_FRAG_COUNT))
 #else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
 /* NOTE: When Extended Advertising is supported but no Periodic Advertising
- *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers is
- *       allocated.
+ *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of chain buffers
+ *       is allocated.
  *       Set CONFIG_BT_CTLR_ADV_DATA_BUF_MAX to BT_CTLR_ADV_AUX_SET if
  *       PDU data is updated more frequently compare to the advertising
  *       interval with random delay included.
@@ -1290,6 +1287,11 @@ static void isr_rx(void *param)
 
 			return;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+		lll_prof_send();
 	}
 
 isr_rx_do_close:

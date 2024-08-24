@@ -500,9 +500,13 @@ The following peripherals are currently provided with this board:
     :ref:`its section <nsim_per_disp_sdl>`.
 
 **CAN controller**
-  It is possible to use a host CAN controller with the native SockerCAN Linux driver. It can be
+  It is possible to use a host CAN controller with the native SocketCAN Linux driver. It can be
   enabled with :kconfig:option:`CONFIG_CAN_NATIVE_LINUX` and configured with the device tree binding
   :dtcompatible:`zephyr,native-linux-can`.
+
+  It is possible to specify which CAN interface will be used by the app using the ``--can-if``
+  command-line option. This option overrides **every** Linux SocketCAN driver instance to use the specified
+  interface.
 
 .. _native_ptty_uart:
 

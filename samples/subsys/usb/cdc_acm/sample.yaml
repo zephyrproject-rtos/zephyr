@@ -27,18 +27,6 @@ tests:
       type: one_line
       regex:
         - "Wait for DTR"
-  sample.usb.cdc-acm.comp:
-    depends_on: usb_device
-    tags: usb
-    arch_exclude: posix
-    extra_args:
-      - OVERLAY_CONFIG=overlay-composite-cdc-msc.conf
-      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "Wait for DTR"
   sample.usb.cdc-acm.buildonly:
     depends_on: usb_device
     tags: usb

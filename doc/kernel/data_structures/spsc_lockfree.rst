@@ -3,7 +3,7 @@
 Single Producer Single Consumer Lock Free Queue
 ===============================================
 
-A :dfn:`Single Producer Single Consumer Lock Free Queue (MPSC)` is a lock free
+A :dfn:`Single Producer Single Consumer Lock Free Queue (SPSC)` is a lock free
 atomic ring buffer based queue.
 
 API Reference

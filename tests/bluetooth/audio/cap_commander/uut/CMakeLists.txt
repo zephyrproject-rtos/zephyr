@@ -16,6 +16,7 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/net/buf_simple.c
   bap_broadcast_assistant.c
   aics.c
+  cap_commander.c
   csip.c
   micp.c
   vcp.c
@@ -25,5 +26,6 @@ add_library(uut STATIC
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/audio/mocks mocks)
 
 target_link_libraries(uut PUBLIC test_interface mocks)
+target_include_directories(uut PRIVATE ${ZEPHYR_BASE}/tests/bluetooth/audio/cap_commander/include)
 
 target_compile_options(uut PRIVATE -std=c11 -include ztest.h)

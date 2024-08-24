@@ -156,6 +156,8 @@ config POSIX_THREAD_PRIO_PROTECT
 
 config POSIX_THREAD_SAFE_FUNCTIONS
 	bool "POSIX thread-safe functions"
+	select POSIX_FILE_SYSTEM_R if POSIX_FILE_SYSTEM
+	select POSIX_C_LANG_SUPPORT_R
 	help
 	  Select 'y' here to enable POSIX thread-safe functions including asctime_r(), ctime_r(),
 	  flockfile(), ftrylockfile(), funlockfile(), getc_unlocked(), getchar_unlocked(),

@@ -638,7 +638,7 @@ config TIMESLICING
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
 	default 0
-	range 0 2147483647
+	range 0 $(INT32_MAX)
 	depends on TIMESLICING
 	help
 	  This option specifies the maximum amount of time a thread can execute
@@ -752,13 +752,6 @@ endif # KERNEL_MEM_POOL
 
 endmenu
 
-config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	bool
-	help
-	  It's possible that an architecture port cannot use _Swap() to swap to
-	  the _main() thread, but instead must do something custom. It must
-	  enable this option in that case.
-
 config SWAP_NONATOMIC
 	bool
 	help
@@ -771,12 +764,11 @@ config SWAP_NONATOMIC
 	  ARM when the PendSV exception priority sits below that of
 	  Zephyr-handled interrupts.
 
-config ARCH_HAS_CUSTOM_BUSY_WAIT
+config ARCH_HAS_THREAD_NAME_HOOK
 	bool
 	help
-	  It's possible that an architecture port cannot or does not want to use
-	  the provided k_busy_wait(), but instead must do something custom. It must
-	  enable this option in that case.
+	  The architecture provides a hook to handle thread name changes beyond
+	  just storing it in the kernel structure.
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"

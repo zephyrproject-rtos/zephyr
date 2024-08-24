@@ -214,7 +214,7 @@ config BT_CTLR_ISO_RX_BUFFERS
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
-	range 1 255
+	range 1 $(UINT8_MAX)
 	default BT_ISO_TX_BUF_COUNT if BT_ISO
 	default 3
 	help
@@ -225,7 +225,7 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 9 4103 if BT_LL_SW_SPLIT
-	range 1 65535
+	range 1 $(UINT16_MAX)
 	default 9 if BT_LL_SW_SPLIT
 	default 1
 	help
@@ -568,6 +568,7 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING
 	bool "LE Path Loss Monitoring Feature"
 	depends on BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 	default y if BT_PATH_LOSS_MONITORING
+	select BT_CTLR_LE_POWER_CONTROL
 	help
 	  Enable support for LE Path Loss Monitoring feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.32.
@@ -750,7 +751,7 @@ config BT_CTLR_SYNC_PERIODIC_ADV_LIST
 config BT_CTLR_SYNC_PERIODIC_ADV_LIST_SIZE
 	int "LE Periodic Advertiser List size"
 	depends on BT_CTLR_SYNC_PERIODIC_ADV_LIST
-	range 1 255
+	range 1 $(UINT8_MAX)
 	default 8
 	help
 	  Set Periodic Advertiser List size, this will be return in the HCI LE
@@ -987,8 +988,8 @@ config BT_CTLR_CONN_ISO_STREAMS_MAX_NSE
 config BT_CTLR_CONN_ISO_STREAMS_MAX_FT
 	int "LE Connected Isochronous Streams max flush timeout"
 	depends on BT_CTLR_CONN_ISO
-	range 1 255
-	default 255
+	range 1 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Maximum number of CIS flush timeout events.
 
@@ -1032,6 +1033,7 @@ config BT_CTLR_SUBRATING
 	bool "LE Connection Subrating"
 	depends on BT_CTLR_SUBRATING_SUPPORT
 	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_SUBRATING
 	help
 	  Enable support for Bluetooth v5.3 LE Connection Subrating
 	  in the Controller.

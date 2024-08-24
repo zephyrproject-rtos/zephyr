@@ -1,0 +1,16 @@
+identifier: nucleo_h503rb
+name: ST Nucleo H503RB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+flash: 128
+supported:
+  - arduino_gpio
+  - arduino_serial
+  - gpio
+  - uart
+  - i2c
+  - watchdog
+vendor: st

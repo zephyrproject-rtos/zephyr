@@ -101,7 +101,7 @@ static inline int _zbus_notify_observer(const struct zbus_channel *chan,
 			return -ENOMEM;
 		}
 
-		net_buf_put(obs->message_fifo, cloned_buf);
+		k_fifo_put(obs->message_fifo, cloned_buf);
 
 		break;
 	}
@@ -464,7 +464,7 @@ int zbus_sub_wait_msg(const struct zbus_observer *sub, const struct zbus_channel
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(msg != NULL, "msg is required");
 
-	struct net_buf *buf = net_buf_get(sub->message_fifo, timeout);
+	struct net_buf *buf = k_fifo_get(sub->message_fifo, timeout);
 
 	if (buf == NULL) {
 		return -ENOMSG;

@@ -1,4 +1,4 @@
-# Copyright 2019,2023 NXP
+# Copyright 2019,2023-2024 NXP
 # Copyright (c) 2022, Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
@@ -102,6 +102,33 @@ config MCUX_ELCDIF_PXP_ROTATE_270
 	help
 	  Rotate display counter-clockwise by 270 degrees
 	  For LVGL, this corresponds to a rotation of 90 degrees
+
+endchoice
+
+choice MCUX_ELCDIF_PXP_FLIP_DIRECTION
+	default MCUX_ELCDIF_PXP_FLIP_DISABLE
+	prompt "Flip direction of PXP"
+	help
+	  Set flip direction of PXP. The ELCDIF cannot detect the correct
+	  rotation angle based on the call to display_write, so the user should
+	  configure it here. In order for PXP flip to work, calls to
+	  display_write MUST supply a framebuffer equal in size to screen width
+	  and height (without flip applied).  Note that the width and
+	  height settings of the screen in devicetree should not be modified
+	  from their values in the default screen orientation when using this
+	  functionality.
+
+config MCUX_ELCDIF_PXP_FLIP_DISABLE
+	bool "Do not flip display"
+
+config MCUX_ELCDIF_PXP_FLIP_HORIZONTAL
+	bool "Flip display horizontally"
+
+config MCUX_ELCDIF_PXP_FLIP_VERTICAL
+	bool "Flip display vertically"
+
+config MCUX_ELCDIF_PXP_FLIP_BOTH
+	bool "Flib display both horizontally and vertically"
 
 endchoice
 

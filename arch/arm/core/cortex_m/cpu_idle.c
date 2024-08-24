@@ -53,6 +53,7 @@ void z_arm_cpu_idle_init(void)
 } while (false)
 #endif
 
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
 #if defined(CONFIG_TRACING)
@@ -96,7 +97,9 @@ void arch_cpu_idle(void)
 	__enable_irq();
 	__ISB();
 }
+#endif
 
+#ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
 #if defined(CONFIG_TRACING)
@@ -135,3 +138,4 @@ void arch_cpu_atomic_idle(unsigned int key)
 	__enable_irq();
 #endif
 }
+#endif

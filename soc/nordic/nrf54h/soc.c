@@ -14,6 +14,7 @@
 #include <hal/nrf_lrcconf.h>
 #include <hal/nrf_spu.h>
 #include <soc/nrfx_coredep.h>
+#include <dmm.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -88,12 +89,19 @@ static int trim_hsfll(void)
 
 static int nordicsemi_nrf54h_init(void)
 {
+	int err;
+
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
 	power_domain_init();
 
 	trim_hsfll();
+
+	err = dmm_init();
+	if (err < 0) {
+		return err;
+	}
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(ccm030), okay)
 	/* DMASEC is set to non-secure by default, which prevents CCM from
