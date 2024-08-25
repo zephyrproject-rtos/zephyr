@@ -53,7 +53,12 @@ void k_free(void *ptr)
 
 		k_heap_free(*heap_ref, ptr);
 
+		#pragma GCC diagnostic push
+		#if TOOLCHAIN_GCC_VERSION >= 120000
+		#pragma GCC diagnostic ignored "-Wuse-after-free"
+		#endif
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, *heap_ref, heap_ref);
+		#pragma GCC diagnostic pop
 	}
 }
 
