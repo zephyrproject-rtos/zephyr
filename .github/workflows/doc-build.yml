@@ -37,7 +37,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
     - name: Check if Documentation related files changed
-      uses: tj-actions/changed-files@v44
+      uses: tj-actions/changed-files@v45
       id: check-doc-files
       with:
         files: |
