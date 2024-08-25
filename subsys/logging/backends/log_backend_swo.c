@@ -92,29 +92,31 @@ static int format_set(const struct log_backend *const backend, uint32_t log_type
 
 static void log_backend_swo_init(struct log_backend const *const backend)
 {
-	/* Enable DWT and ITM units */
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-	/* Enable access to ITM registers */
-	ITM->LAR  = 0xC5ACCE55;
-	/* Disable stimulus ports ITM_STIM0-ITM_STIM31 */
-	ITM->TER  = 0x0;
-	/* Disable ITM */
-	ITM->TCR  = 0x0;
-	/* Select TPIU encoding protocol */
-	TPI->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
-	/* Set SWO baud rate prescaler value: SWO_clk = ref_clock/(ACPR + 1) */
-	TPI->ACPR = SWO_FREQ_DIV - 1;
-	/* Enable unprivileged access to ITM stimulus ports */
-	ITM->TPR  = 0x0;
-	/* Configure Debug Watchpoint and Trace */
-	DWT->CTRL &= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk | DWT_CTRL_CYCCNTENA_Msk);
-	DWT->CTRL |= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk);
-	/* Configure Formatter and Flush Control Register */
-	TPI->FFCR = 0x00000100;
-	/* Enable ITM, set TraceBusID=1, no local timestamp generation */
-	ITM->TCR  = 0x0001000D;
-	/* Enable stimulus port used by the logger */
-	ITM->TER  = 1 << ITM_PORT_LOGGER;
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_SWO_CONFIGURE_ITM)) {
+		/* Enable DWT and ITM units */
+		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+		/* Enable access to ITM registers */
+		ITM->LAR  = 0xC5ACCE55;
+		/* Disable stimulus ports ITM_STIM0-ITM_STIM31 */
+		ITM->TER  = 0x0;
+		/* Disable ITM */
+		ITM->TCR  = 0x0;
+		/* Select TPIU encoding protocol */
+		TPI->SPPR = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_PROTOCOL_NRZ) ? 2 : 1;
+		/* Set SWO baud rate prescaler value: SWO_clk = ref_clock/(ACPR + 1) */
+		TPI->ACPR = SWO_FREQ_DIV - 1;
+		/* Enable unprivileged access to ITM stimulus ports */
+		ITM->TPR  = 0x0;
+		/* Configure Debug Watchpoint and Trace */
+		DWT->CTRL &= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk | DWT_CTRL_CYCCNTENA_Msk);
+		DWT->CTRL |= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk);
+		/* Configure Formatter and Flush Control Register */
+		TPI->FFCR = 0x00000100;
+		/* Enable ITM, set TraceBusID=1, no local timestamp generation */
+		ITM->TCR  = 0x0001000D;
+		/* Enable stimulus port used by the logger */
+		ITM->TER  = 1 << ITM_PORT_LOGGER;
+	}
 
 	/* Initialize pin control settings, if any are defined */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(itm), pinctrl_0)
