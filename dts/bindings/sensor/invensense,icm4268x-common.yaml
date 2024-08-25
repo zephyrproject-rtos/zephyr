@@ -1,0 +1,369 @@
+# Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Generic bindings file for ICM-4268X models of motion tracking devices.
+    When setting the enum properties in a .dts or .dtsi file you may
+    include icm4268x.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm4268x.h>
+
+    icm42688: icm42688@0 {
+      ...
+
+      accel-pwr-mode = <ICM4268X_DT_ACCEL_LN>;
+      accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+      accel-odr = <ICM4268X_DT_ACCEL_ODR_2000>;
+      gyro-pwr-mode= <ICM4268X_DT_GYRO_LN>;
+      gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+      gyro-odr = <ICM4268X_DT_GYRO_ODR_2000>;
+      accel-aaf-bw = <ICM4268X_DT_ACCEL_AAF_42HZ>;
+      gyro-aaf-bw = <ICM4268X_DT_GYRO_AAF_42HZ>;
+    };
+
+    Where,
+    ICM4268X_DT_ACCEL_ODR_2000 represents 2kHz as rate of sample capture by the
+    accelerometer.
+
+    ICM4268X_DT_GYRO_ODR_2000 represents 2kHz as rate of sample capture by the
+    gyroscope.
+
+    ICM4268X_DT_ACCEL_AAF_42HZ represents 42kHz as the bandwidth of the
+    Anti Alias Filter for the Accelerometer device.
+
+    ICM4268X_DT_GYRO_AAF_42HZ represents 42kHz as the bandwidth of the
+    Anti Alias Filter for the Gyroscope device.
+
+compatible: "invensense,icm4268x-common"
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This property describes the GPIO specification for INT line from ICM4268x package
+      on to your device. The property values should ensure the flags properly describe
+      the signal that is presented to the driver.
+
+  int1-pol:
+    type: int
+    default: 0
+    description: |
+      Choose if the interrupt1 polarity will be Active High or Ative Low.
+      Default polarity is active low.
+
+      0 # ICM4268X_DT_INT1_POLARITY_ACTIVE_LOW
+      1 # ICM4268X_DT_INT1_POLARITY_ACTIVE_HIGH
+
+    enum: [0, 1]
+
+  int1-mode:
+    type: int
+    default: 0
+    description: |
+      Choose if the interrupt will be automatically latched and then cleared (pulsed mode)
+      Or latch and clear happens only when user code requests the data (latched mode).
+      Default interrupt mode recommended by manufacturer datssheet is pulsed.
+
+      0 # ICM4268X_DT_INT1_MODE_PULSED
+      1 # ICM4268X_DT_INT1_MODE_LATCHED
+
+    enum: [0, 1]
+
+  fifo-mode:
+    type: int
+    default: 0
+    description: |
+      Select what to do when FIFO is full. Stream to FIFO mode will overwrite LRU frame.
+      Stop on Full mode will prevent writing any frame if both FIFO and cache are full.
+      Default fifo mode recommended by manufacturer datasheet is bypass.
+
+      0 # ICM4268X_DT_FIFO_MODE_BYPASS
+      1 # ICM4268X_DT_FIFO_MODE_STREAM
+      3 # ICM4268X_DT_FIFO_MODE_STOP_ON_FULL
+
+    enum: [0, 1, 3]
+
+  fifo-ths-int-clr:
+    type: int
+    default: 1
+    description: |
+      Fifo threshold Interrupt Clearing Options.
+      Default fifo threshold interrupt (in latched mode) gets cleared on status bit read.
+
+      1 # ICM4268X_DT_FIFO_THS_INT_CLR_STSRD
+      2 # ICM4268X_DT_FIFO_THS_INT_CLR_DATARD
+      3 # ICM4268X_DT_FIFO_THS_INT_CLR_BOTH
+
+    enum: [1, 2, 3]
+
+  fifo-full-int-clr:
+    type: int
+    default: 1
+    description: |
+      Fifo Full Interrupt Clearing Options.
+      Default fifo full interrupt (in latched mode) gets cleared on status bit read.
+
+      1 # ICM4268X_DT_FIFO_FULL_INT_CLR_STSRD
+      2 # ICM4268X_DT_FIFO_FULL_INT_CLR_DATARD
+      3 # ICM4268X_DT_FIFO_FULL_INT_CLR_BOTH
+
+    enum: [1, 2, 3]
+
+  tmst-dis:
+    type: boolean
+    description: |
+      Enable or disable the timestamp register.
+      Timestamp register is enabled by default.
+
+  tmst-fsync-en:
+    type: boolean
+    description: |
+      Enable/disable timestamp fsync register.
+      Default timestamp feature of FSYNC is disabled.
+
+  tmst-delta-en:
+    type: boolean
+    description: |
+      Timestamp register will have absolute or delta values from the last occurrence of ODR.
+
+  tmst-res:
+    type: int
+    default: 0
+    description: |
+      If 0, Timestamp Resolution is 1us, if 1 and RTC is enabled then time res is
+      RTC clock period else 16us.
+      Default timestamp resolution as per manufacturer datasheet is set to 1us.
+
+      0 # ICM4268X_DT_TMST_RES_1US
+      1 # ICM4268X_DT_TMST_RES_RTC
+
+    enum: [0, 1]
+
+  tmst-regs-en:
+    type: boolean
+    description: |
+      If false, TMST_VALUE returns zeros else returns timestamp values.
+
+  accel-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer power mode.
+      Default power mode for accelerometer as recommended in manufacturer datasheet
+      is accelerometer off.
+
+      0 # ICM4268X_DT_ACCEL_OFF
+      2 # ICM4268X_DT_ACCEL_LP
+      3 # ICM4268X_DT_ACCEL_LN
+
+    enum: [0, 2, 3]
+
+  accel-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the accelerometer output data rate expressed in samples per second (Hz).
+      Default accelerometer ODR as recommended in manufacturer datasheet is 1kHz in Low Noise Mode.
+
+      1  # ICM4268X_DT_ACCEL_ODR_32000
+      2  # ICM4268X_DT_ACCEL_ODR_16000
+      3  # ICM4268X_DT_ACCEL_ODR_8000
+      4  # ICM4268X_DT_ACCEL_ODR_4000
+      5  # ICM4268X_DT_ACCEL_ODR_2000
+      6  # ICM4268X_DT_ACCEL_ODR_1000
+      7  # ICM4268X_DT_ACCEL_ODR_200
+      8  # ICM4268X_DT_ACCEL_ODR_100
+      9  # ICM4268X_DT_ACCEL_ODR_50
+      10 # ICM4268X_DT_ACCEL_ODR_25
+      11 # ICM4268X_DT_ACCEL_ODR_12_5
+      12 # ICM4268X_DT_ACCEL_ODR_6_25
+      13 # ICM4268X_DT_ACCEL_ODR_3_125
+      14 # ICM4268X_DT_ACCEL_ODR_1_5625
+      15 # ICM4268X_DT_ACCEL_ODR_500
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+  accel-aaf-bw:
+    type: int
+    description: |
+      Specify the Anti Aliasing Filter bandwidth for the accelerometer.
+
+      1  # ICM4268X_DT_ACCEL_AAF_42HZ
+      2  # ICM4268X_DT_ACCEL_AAF_84HZ
+      3  # ICM4268X_DT_ACCEL_AAF_126HZ
+      4  # ICM4268X_DT_ACCEL_AAF_170HZ
+      5  # ICM4268X_DT_ACCEL_AAF_213HZ
+      6  # ICM4268X_DT_ACCEL_AAF_258HZ
+      7  # ICM4268X_DT_ACCEL_AAF_303HZ
+      8  # ICM4268X_DT_ACCEL_AAF_348HZ
+      9  # ICM4268X_DT_ACCEL_AAF_394HZ
+      10 # ICM4268X_DT_ACCEL_AAF_441HZ
+      11 # ICM4268X_DT_ACCEL_AAF_488HZ
+      12 # ICM4268X_DT_ACCEL_AAF_536HZ
+      13 # ICM4268X_DT_ACCEL_AAF_585HZ
+      14 # ICM4268X_DT_ACCEL_AAF_634HZ
+      15 # ICM4268X_DT_ACCEL_AAF_684HZ
+      16 # ICM4268X_DT_ACCEL_AAF_734HZ
+      17 # ICM4268X_DT_ACCEL_AAF_785HZ
+      18 # ICM4268X_DT_ACCEL_AAF_837HZ
+      19 # ICM4268X_DT_ACCEL_AAF_890HZ
+      20 # ICM4268X_DT_ACCEL_AAF_943HZ
+      21 # ICM4268X_DT_ACCEL_AAF_997HZ
+      22 # ICM4268X_DT_ACCEL_AAF_1051HZ
+      23 # ICM4268X_DT_ACCEL_AAF_1107HZ
+      24 # ICM4268X_DT_ACCEL_AAF_1163HZ
+      25 # ICM4268X_DT_ACCEL_AAF_1220HZ
+      26 # ICM4268X_DT_ACCEL_AAF_1277HZ
+      27 # ICM4268X_DT_ACCEL_AAF_1336HZ
+      28 # ICM4268X_DT_ACCEL_AAF_1395HZ
+      29 # ICM4268X_DT_ACCEL_AAF_1454HZ
+      30 # ICM4268X_DT_ACCEL_AAF_1515HZ
+      31 # ICM4268X_DT_ACCEL_AAF_1577HZ
+      32 # ICM4268X_DT_ACCEL_AAF_1639HZ
+      33 # ICM4268X_DT_ACCEL_AAF_1702HZ
+      34 # ICM4268X_DT_ACCEL_AAF_1766HZ
+      35 # ICM4268X_DT_ACCEL_AAF_1830HZ
+      36 # ICM4268X_DT_ACCEL_AAF_1896HZ
+      37 # ICM4268X_DT_ACCEL_AAF_1962HZ
+      38 # ICM4268X_DT_ACCEL_AAF_2029HZ
+      39 # ICM4268X_DT_ACCEL_AAF_2097HZ
+      40 # ICM4268X_DT_ACCEL_AAF_2166HZ
+      41 # ICM4268X_DT_ACCEL_AAF_2235HZ
+      42 # ICM4268X_DT_ACCEL_AAF_2306HZ
+      43 # ICM4268X_DT_ACCEL_AAF_2377HZ
+      44 # ICM4268X_DT_ACCEL_AAF_2449HZ
+      45 # ICM4268X_DT_ACCEL_AAF_2522HZ
+      46 # ICM4268X_DT_ACCEL_AAF_2596HZ
+      47 # ICM4268X_DT_ACCEL_AAF_2671HZ
+      48 # ICM4268X_DT_ACCEL_AAF_2746HZ
+      49 # ICM4268X_DT_ACCEL_AAF_2823HZ
+      50 # ICM4268X_DT_ACCEL_AAF_2900HZ
+      51 # ICM4268X_DT_ACCEL_AAF_2978HZ
+      52 # ICM4268X_DT_ACCEL_AAF_3057HZ
+      53 # ICM4268X_DT_ACCEL_AAF_3137HZ
+      54 # ICM4268X_DT_ACCEL_AAF_3217HZ
+      55 # ICM4268X_DT_ACCEL_AAF_3299HZ
+      56 # ICM4268X_DT_ACCEL_AAF_3381HZ
+      57 # ICM4268X_DT_ACCEL_AAF_3464HZ
+      58 # ICM4268X_DT_ACCEL_AAF_3548HZ
+      59 # ICM4268X_DT_ACCEL_AAF_3633HZ
+      60 # ICM4268X_DT_ACCEL_AAF_3718HZ
+      61 # ICM4268X_DT_ACCEL_AAF_3805HZ
+      62 # ICM4268X_DT_ACCEL_AAF_3892HZ
+      63 # ICM4268X_DT_ACCEL_AAF_3979HZ
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+           23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+           43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
+
+  gyro-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro power mode.
+      Default power mode for gyroscope as recommended in manufacturer datasheet is gyroscope off.
+
+      0 # ICM4268X_DT_GYRO_OFF
+      1 # ICM4268X_DT_GYRO_STANDBY
+      3 # ICM4268X_DT_GYRO_LN
+
+    enum: [0, 1, 3]
+
+  gyro-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the gyro output data rate expressed in samples per second (Hz).
+      Default gyroscope ODR as recommended in manufacturer datasheet is 1kHz.
+
+      1  # ICM4268X_DT_GYRO_ODR_32000
+      2  # ICM4268X_DT_GYRO_ODR_16000
+      3  # ICM4268X_DT_GYRO_ODR_8000
+      4  # ICM4268X_DT_GYRO_ODR_4000
+      5  # ICM4268X_DT_GYRO_ODR_2000
+      6  # ICM4268X_DT_GYRO_ODR_1000
+      7  # ICM4268X_DT_GYRO_ODR_200
+      8  # ICM4268X_DT_GYRO_ODR_100
+      9  # ICM4268X_DT_GYRO_ODR_50
+      10 # ICM4268X_DT_GYRO_ODR_25
+      11 # ICM4268X_DT_GYRO_ODR_12_5
+      15 # ICM4268X_DT_GYRO_ODR_500
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15]
+
+  gyro-aaf-bw:
+    type: int
+    description: |
+      Specify the Anti Aliasing Filter bandwidth for the gyroscope.
+
+      1  # ICM4268X_DT_GYRO_AAF_42HZ
+      2  # ICM4268X_DT_GYRO_AAF_84HZ
+      3  # ICM4268X_DT_GYRO_AAF_126HZ
+      4  # ICM4268X_DT_GYRO_AAF_170HZ
+      5  # ICM4268X_DT_GYRO_AAF_213HZ
+      6  # ICM4268X_DT_GYRO_AAF_258HZ
+      7  # ICM4268X_DT_GYRO_AAF_303HZ
+      8  # ICM4268X_DT_GYRO_AAF_348HZ
+      9  # ICM4268X_DT_GYRO_AAF_394HZ
+      10 # ICM4268X_DT_GYRO_AAF_441HZ
+      11 # ICM4268X_DT_GYRO_AAF_488HZ
+      12 # ICM4268X_DT_GYRO_AAF_536HZ
+      13 # ICM4268X_DT_GYRO_AAF_585HZ
+      14 # ICM4268X_DT_GYRO_AAF_634HZ
+      15 # ICM4268X_DT_GYRO_AAF_684HZ
+      16 # ICM4268X_DT_GYRO_AAF_734HZ
+      17 # ICM4268X_DT_GYRO_AAF_785HZ
+      18 # ICM4268X_DT_GYRO_AAF_837HZ
+      19 # ICM4268X_DT_GYRO_AAF_890HZ
+      20 # ICM4268X_DT_GYRO_AAF_943HZ
+      21 # ICM4268X_DT_GYRO_AAF_997HZ
+      22 # ICM4268X_DT_GYRO_AAF_1051HZ
+      23 # ICM4268X_DT_GYRO_AAF_1107HZ
+      24 # ICM4268X_DT_GYRO_AAF_1163HZ
+      25 # ICM4268X_DT_GYRO_AAF_1220HZ
+      26 # ICM4268X_DT_GYRO_AAF_1277HZ
+      27 # ICM4268X_DT_GYRO_AAF_1336HZ
+      28 # ICM4268X_DT_GYRO_AAF_1395HZ
+      29 # ICM4268X_DT_GYRO_AAF_1454HZ
+      30 # ICM4268X_DT_GYRO_AAF_1515HZ
+      31 # ICM4268X_DT_GYRO_AAF_1577HZ
+      32 # ICM4268X_DT_GYRO_AAF_1639HZ
+      33 # ICM4268X_DT_GYRO_AAF_1702HZ
+      34 # ICM4268X_DT_GYRO_AAF_1766HZ
+      35 # ICM4268X_DT_GYRO_AAF_1830HZ
+      36 # ICM4268X_DT_GYRO_AAF_1896HZ
+      37 # ICM4268X_DT_GYRO_AAF_1962HZ
+      38 # ICM4268X_DT_GYRO_AAF_2029HZ
+      39 # ICM4268X_DT_GYRO_AAF_2097HZ
+      40 # ICM4268X_DT_GYRO_AAF_2166HZ
+      41 # ICM4268X_DT_GYRO_AAF_2235HZ
+      42 # ICM4268X_DT_GYRO_AAF_2306HZ
+      43 # ICM4268X_DT_GYRO_AAF_2377HZ
+      44 # ICM4268X_DT_GYRO_AAF_2449HZ
+      45 # ICM4268X_DT_GYRO_AAF_2522HZ
+      46 # ICM4268X_DT_GYRO_AAF_2596HZ
+      47 # ICM4268X_DT_GYRO_AAF_2671HZ
+      48 # ICM4268X_DT_GYRO_AAF_2746HZ
+      49 # ICM4268X_DT_GYRO_AAF_2823HZ
+      50 # ICM4268X_DT_GYRO_AAF_2900HZ
+      51 # ICM4268X_DT_GYRO_AAF_2978HZ
+      52 # ICM4268X_DT_GYRO_AAF_3057HZ
+      53 # ICM4268X_DT_GYRO_AAF_3137HZ
+      54 # ICM4268X_DT_GYRO_AAF_3217HZ
+      55 # ICM4268X_DT_GYRO_AAF_3299HZ
+      56 # ICM4268X_DT_GYRO_AAF_3381HZ
+      57 # ICM4268X_DT_GYRO_AAF_3464HZ
+      58 # ICM4268X_DT_GYRO_AAF_3548HZ
+      59 # ICM4268X_DT_GYRO_AAF_3633HZ
+      60 # ICM4268X_DT_GYRO_AAF_3718HZ
+      61 # ICM4268X_DT_GYRO_AAF_3805HZ
+      62 # ICM4268X_DT_GYRO_AAF_3892HZ
+      63 # ICM4268X_DT_GYRO_AAF_3979HZ
+
+    enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+           23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+           43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
