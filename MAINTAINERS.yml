@@ -2661,6 +2661,7 @@ LoRa and LoRaWAN:
     - Mani-Sadhasivam
     - martinjaeger
     - mniestroj
+    - Salamandar
   files:
     - drivers/lora/
     - include/zephyr/drivers/lora.h
@@ -2671,6 +2672,11 @@ LoRa and LoRaWAN:
     - include/zephyr/dt-bindings/lora/
     - dts/bindings/lora/
     - doc/connectivity/lora_lorawan/index.rst
+
+    - drivers/lora_lbm/
+    - include/zephyr/lorawan_lbm/
+    - samples/drivers/lora_lbm/
+    - subsys/lorawan_lbm/
   labels:
     - "area: LoRa"
   tests:
@@ -5135,6 +5141,15 @@ West:
     - Mani-Sadhasivam
   files:
     - modules/loramac-node/
+  labels:
+    - "area: LoRa"
+
+"West project: lora_basics_modem":
+  status: maintained
+  maintainers:
+    - Salamandar
+  files:
+    - modules/lora_basics_modem/
   labels:
     - "area: LoRa"
 
