@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: lora-net
+      url-base: https://github.com/lora-net
 
   group-filter: [-babblesim, -optional]
 
@@ -294,6 +296,11 @@ manifest:
     - name: loramac-node
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
+    - name: lora_basics_modem
+      remote: lora-net
+      repo-path: SWL2001
+      revision: v4.8.0
+      path: modules/lib/lora_basics_modem
     - name: lvgl
       revision: 6decbb7f7783f6e48d4591fcb9f7810c2fb08e61
       path: modules/lib/gui/lvgl
