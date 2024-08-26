@@ -19,7 +19,7 @@ The key features of the EK-RA6M2 board are categorized in three groups as follow
 - Native pin access through 4 x 40-pin male headers
 - MCU and USB current measurement points for precision current consumption measurement
 - Multiple clock sources - RA6M2 MCU oscillator and sub-clock oscillator crystals,
-  providing precision 24.000 MHz and 32,768 Hz reference clock.
+  providing precision 12.000 MHz and 32,768 Hz reference clock.
   Additional low precision clocks are avaialbe internal to the RA6M2 MCU
 
 **System Control and Ecosystem Access**
