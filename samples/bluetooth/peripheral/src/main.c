@@ -40,6 +40,8 @@ static const struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef2));
 
 #define VND_MAX_LEN 20
+#define BT_HR_HEARTRATE_DEFAULT_MIN 90U
+#define BT_HR_HEARTRATE_DEFAULT_MAX 160U
 
 static uint8_t vnd_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
 static uint8_t vnd_auth_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
@@ -334,17 +336,17 @@ static void bas_notify(void)
 	bt_bas_set_battery_level(battery_level);
 }
 
+static uint8_t bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
+
 static void hrs_notify(void)
 {
-	static uint8_t heartrate = 90U;
-
 	/* Heartrate measurements simulation */
-	heartrate++;
-	if (heartrate == 160U) {
-		heartrate = 90U;
+	bt_heartrate++;
+	if (bt_heartrate == BT_HR_HEARTRATE_DEFAULT_MAX) {
+		bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
 	}
 
-	bt_hrs_notify(heartrate);
+	bt_hrs_notify(bt_heartrate);
 }
 
 /**
@@ -396,6 +398,21 @@ const struct bt_cts_cb cts_cb = {
 	.fill_current_cts_time = bt_cts_fill_current_cts_time,
 };
 
+static int bt_hrs_ctrl_point_write(uint8_t request)
+{
+	printk("HRS Control point request: %d\n", request);
+	if (request != BT_HRS_CONTROL_POINT_RESET_ENERGY_EXPANDED_REQ) {
+		return -ENOTSUP;
+	}
+
+	bt_heartrate = BT_HR_HEARTRATE_DEFAULT_MIN;
+	return 0;
+}
+
+static struct bt_hrs_cb hrs_cb = {
+	.ctrl_point_write = bt_hrs_ctrl_point_write,
+};
+
 int main(void)
 {
 	struct bt_gatt_attr *vnd_ind_attr;
@@ -410,6 +427,7 @@ int main(void)
 
 	bt_ready();
 	bt_cts_init(&cts_cb);
+	bt_hrs_cb_register(&hrs_cb);
 
 	bt_gatt_cb_register(&gatt_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
