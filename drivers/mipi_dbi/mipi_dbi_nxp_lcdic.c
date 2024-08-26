@@ -563,6 +563,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, uint32_t delay)
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	LCDIC_Type *base = config->base;
 	uint32_t lcdic_freq;
+	uint32_t delay_ms = k_ticks_to_ms_ceil32(delay.ticks);
 	uint8_t rst_width, pulse_cnt;
 
 	/* Calculate delay based off timer0 ratio. Formula given
