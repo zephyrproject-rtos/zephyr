@@ -19,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -92,4 +93,8 @@
 		current-speed = <115200>;
 		status = "okay";
 	};
+};
+
+&trng {
+	status = "okay";
 };
