@@ -700,4 +700,11 @@ config NRF_WIFI_QOS_NULL_BASED_RETRIEVAL
 
 endchoice
 
+config NRF_WIFI_BUILD_ONLY_MODE
+	bool "Build only mode"
+	help
+	  Enable this option to build the driver without firmware loading, removes
+	  dependency on firmware binary and patches.
+	  This is useful to check the build and link errors.
+
 endif # WIFI_NRF70
