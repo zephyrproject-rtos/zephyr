@@ -1,3 +1,4 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
@@ -58,6 +59,7 @@ add_subdirectory_ifdef(CONFIG_KSCAN kscan)
 add_subdirectory_ifdef(CONFIG_LED led)
 add_subdirectory_ifdef(CONFIG_LED_STRIP led_strip)
 add_subdirectory_ifdef(CONFIG_LORA lora)
+add_subdirectory_ifdef(CONFIG_LORA_BASICS_MODEM_DRIVERS lora_lbm)
 add_subdirectory_ifdef(CONFIG_MBOX mbox)
 add_subdirectory_ifdef(CONFIG_MDIO mdio)
 add_subdirectory_ifdef(CONFIG_MEMC memc)

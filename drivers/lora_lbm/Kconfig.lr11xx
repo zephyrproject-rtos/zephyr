@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Semtech Corporation - Félix Piédallu
+# SPDX-License-Identifier: Apache-2.0
+
+# LoRa transceiver drivers configuration options
+
+config SEMTECH_LR11XX
+	bool "Semtech LR11xx family LoRa transceiver driver"
+	default y
+	depends on DT_HAS_SEMTECH_LR1110_ENABLED || DT_HAS_SEMTECH_LR1120_ENABLED || DT_HAS_SEMTECH_LR1121_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable driver for the LR11xx family LoRa transceiver driver
+
+
+if SEMTECH_LR11XX
+
+config LR11XX_USE_CRC_OVER_SPI
+	bool "Use CRC over SPI communication"
+
+endif # SEMTECH_LR11XX

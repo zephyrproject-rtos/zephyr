@@ -1,0 +1,85 @@
+# LoRa Basics Modem drivers configuration options
+#
+# Copyright (c) 2024 Semtech Corporation - Félix Piédallu
+#
+# SPDX-License-Identifier: Apache-2.0
+
+#FIXME: Might be renamed LORA_DRIVERS
+menuconfig LORA_BASICS_MODEM_DRIVERS
+	bool "LoRa drivers from the new LoRa Basics Modem stack [EXPERIMENTAL]"
+	select POLL
+	select EXPERIMENTAL
+	select ZEPHYR_LORA_BASICS_MODEM_MODULE
+	depends on !LORA
+	help
+	  Include LoRa drivers from the new LoRa Basics Modem stack in the system configuration.
+
+if LORA_BASICS_MODEM_DRIVERS
+
+module = LORA_BASICS_MODEM_DRIVERS
+module-str = lora-lbm
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.lr11xx"
+rsource "Kconfig.sx12xx"
+
+config LORA_BASICS_MODEM_DRIVERS_INIT_PRIORITY
+	int "Init priority"
+	default 50
+
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER
+	bool
+
+choice
+	prompt "Event trigger mode"
+	default LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the LORA_BASICS_MODEM_DRIVERS driver.
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_NONE
+	bool "No trigger on event"
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER
+
+endchoice
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LORA_BASICS_MODEM_DRIVERS_EVENT_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config LORA_BASICS_MODEM_DRIVERS_HAL_WAIT_ON_BUSY_TIMEOUT_MSEC
+	int "Time to wait on BUSY pin in ms before aborting"
+	default 600000
+	help
+	  Busy pin wait time in milliseconds. As WiFi and GPS scanning can take
+	  seconds/minutes, the default is set to 10 minutes.
+
+
+config LORA_BASICS_MODEM_DRIVERS_RAL_RALF
+	bool "LoRa Radio Abstration Layer from the new LoRa Basics Modem stack"
+	default y
+	help
+	  Include the Radio Abstration Layer from the new LoRa Basics Modem stack
+
+# TODO: LORA_SHELL
+
+endif # LORA_BASICS_MODEM_DRIVERS
