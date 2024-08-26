@@ -176,6 +176,7 @@ static void mbox_callback_process(struct icmsg_data_t *dev_data)
 #ifdef CONFIG_MULTITHREADING
 	struct icmsg_data_t *dev_data = CONTAINER_OF(item, struct icmsg_data_t, mbox_work);
 #endif
+	uint8_t rx_buffer[CONFIG_PBUF_RX_READ_BUF_SIZE] __aligned(4);
 
 	atomic_t state = atomic_get(&dev_data->state);
 
@@ -186,9 +187,13 @@ static void mbox_callback_process(struct icmsg_data_t *dev_data)
 		return;
 	}
 
-	uint8_t rx_buffer[len];
+	__ASSERT_NO_MSG(len <= sizeof(rx_buffer));
 
-	len = pbuf_read(dev_data->rx_pb, rx_buffer, len);
+	if (sizeof(rx_buffer) < len) {
+		return;
+	}
+
+	len = pbuf_read(dev_data->rx_pb, rx_buffer, sizeof(rx_buffer));
 
 	if (state == ICMSG_STATE_READY) {
 		if (dev_data->cb->received) {
