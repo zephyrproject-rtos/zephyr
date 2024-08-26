@@ -56,9 +56,18 @@ Architectures
 
 * ARM64
 
+  * Added initial support for :c:func:`arch_stack_walk` that supports unwinding via esf only
+
 * RISC-V
 
+  * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
+    pointer (fp) depending on the build configuration.
+
 * Xtensa
+
+* x86
+
+  * Added initial support for :c:func:`arch_stack_walk` that supports unwinding via esf only
 
 Kernel
 ******
