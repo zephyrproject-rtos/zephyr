@@ -1,0 +1,10 @@
+/**
+ * Copyright (c) 2024 MUNIC SA
+ *
+ * Renesas R7FA2AL1AxxxFP MCU device tree for 100 pins socket
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/* This file is empty for now */
