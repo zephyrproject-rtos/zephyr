@@ -127,6 +127,11 @@ static int gt911_process(const struct device *dev)
 		return 0;
 	}
 
+	/*
+	 * Note- since we program the max number of touch inputs during init,
+	 * the controller won't report more than the maximum number of touch
+	 * points we are configured to support
+	 */
 	points = status & TOUCH_POINTS_MSK;
 
 	/* need to clear the status */
@@ -138,7 +143,7 @@ static int gt911_process(const struct device *dev)
 	}
 
 	/* current points array */
-	for (i = 0; i <= points; i++) {
+	for (i = 0; i < points; i++) {
 		reg_addr = REG_POINT_ADDR(i);
 		r = gt911_i2c_write_read(dev, &reg_addr, sizeof(reg_addr), &point_reg[i],
 					 sizeof(point_reg[i]));
