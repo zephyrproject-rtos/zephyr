@@ -133,6 +133,7 @@ static int adc_convert_acq_time(uint16_t acquisition_time, nrf_saadc_acqtime_t *
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20):
 		*p_tacq_val = NRF_SAADC_ACQTIME_20US;
 		break;
+	case ADC_ACQ_TIME_MAX:
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40):
 		*p_tacq_val = NRF_SAADC_ACQTIME_40US;
 		break;
