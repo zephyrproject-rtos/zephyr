@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		/*
+		* Note that TX and RX are swapped on this board compared
+		* to original Arduino Uno boards. This definition follows
+		* the Adafruit official documentation (and the silkscreen
+		* on the board itself), so problems will arise when using
+		* UART enabled Shields intended for Arduino Uno.
+		*/
+		group1 {
+			pinmux = <UART0_TX_GPIO40>;
+			output-high;
+		};
+		group2 {
+			pinmux = <UART0_RX_GPIO41>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_arduino_header: i2c0_arduino_header {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO47>,
+			<I2C0_SCL_GPIO48>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_arduino_header: spim2_arduino_header {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO12>,
+			<SPIM2_SCLK_GPIO13>,
+			<SPIM2_CSEL_GPIO10>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO11>;
+			output-low;
+		};
+	};
+
+	spim2_neopixel: spim2_neopixel {
+		/*
+		* Alternative use of SPIM2 is to drive the
+		* on-board addressable Neopixel RGB LED.
+		* This pinctrl config is not selected by
+		* the &spi2 node by default.
+		*/
+		group1 {
+			pinmux = <SPIM2_MOSI_GPIO46>;
+			output-low;
+		};
+	};
+
+	spim3_sd_card: spim3_sd_card {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO21>,
+			<SPIM3_SCLK_GPIO39>,
+			<SPIM3_CSEL_GPIO45>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO42>;
+			output-low;
+		};
+	};
+
+	spim3_neopixel: spim3_neopixel {
+		/*
+		* Alternative use of SPIM3 is to drive the
+		* on-board addressable Neopixel RGB LED.
+		* This pinctrl config is not selected by
+		* the &spi3 node by default.
+		*/
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO46>;
+			output-low;
+		};
+	};
+
+	twai_default: twai_default {
+		group1 {
+			pinmux = <TWAI_TX_GPIO5>,
+			<TWAI_RX_GPIO6>;
+		};
+	};
+};
