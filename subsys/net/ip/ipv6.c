@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
+
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+#include <zephyr/random/random.h>
+#include <mbedtls/md.h>
+#endif /* CONFIG_NET_IPV6_IID_STABLE */
+
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
@@ -813,6 +819,194 @@ bad_hdr:
 	net_stats_update_ip_errors_protoerr(pkt_iface);
 
 	return NET_DROP;
+}
+
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+static bool check_reserved(const uint8_t *buf, size_t len)
+{
+	/* Subnet-Router Anycast (RFC 4291) */
+	if (memcmp(buf, (uint8_t *)&(struct in6_addr)IN6ADDR_ANY_INIT, len) == 0) {
+		return true;
+	}
+
+	/* Reserved Subnet Anycast Addresses (RFC 2526)
+	 *    FDFF:FFFF:FFFF:FF80 - FDFF:FFFF:FFFF:FFFF
+	 */
+	if (buf[0] == 0xFD && buf[1] == 0xFF && buf[2] == 0xFF &&
+	    buf[3] == 0xFF && buf[4] == 0xFF && buf[5] == 0xFF &&
+	    buf[6] == 0xFF && buf[7] >= 0x80) {
+		return true;
+	}
+
+	return false;
+}
+#endif /* CONFIG_NET_IPV6_IID_STABLE */
+
+static int gen_stable_iid(uint8_t if_index,
+			  const struct in6_addr *prefix,
+			  uint8_t *network_id, size_t network_id_len,
+			  uint8_t dad_counter,
+			  uint8_t *stable_iid,
+			  size_t stable_iid_len)
+{
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+	const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+	mbedtls_md_context_t ctx;
+	uint8_t digest[32];
+	int ret;
+	static bool once;
+	static uint8_t secret_key[16]; /* Min 128 bits, RFC 7217 ch 5 */
+	struct {
+		struct in6_addr prefix;
+		uint8_t if_index;
+		uint8_t network_id[16];
+		uint8_t dad_counter;
+	} buf = {
+		.dad_counter = dad_counter,
+	};
+
+	if (prefix == NULL) {
+		NET_ERR("IPv6 prefix must be set for generating a stable IID");
+		return -EINVAL;
+	}
+
+	memcpy(&buf.prefix, prefix, sizeof(struct in6_addr));
+
+	buf.if_index = if_index;
+
+	if (network_id != NULL && network_id_len > 0) {
+		memcpy(buf.network_id, network_id,
+		       MIN(network_id_len, sizeof(buf.network_id)));
+	}
+
+	if (!once) {
+		sys_rand_get(&secret_key, sizeof(secret_key));
+		once = true;
+	}
+
+	mbedtls_md_init(&ctx);
+	mbedtls_md_setup(&ctx, md_info, true);
+	ret = mbedtls_md_hmac_starts(&ctx, secret_key, sizeof(secret_key));
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "start", ret);
+		goto err;
+	}
+
+	ret = mbedtls_md_hmac_update(&ctx, (uint8_t *)&buf, sizeof(buf));
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "update", ret);
+		goto err;
+	}
+
+	ret = mbedtls_md_hmac_finish(&ctx, digest);
+	if (ret != 0) {
+		NET_DBG("Cannot %s hmac (%d)", "finish", ret);
+		goto err;
+	}
+
+	memcpy(stable_iid, digest, MIN(sizeof(digest), stable_iid_len));
+
+	/* Check reserved addresses, RFC 5453 ch 3 */
+	if (unlikely(check_reserved(stable_iid, stable_iid_len))) {
+		LOG_HEXDUMP_DBG(stable_iid, stable_iid_len,
+				"Generated IID is reserved");
+		ret = -EINVAL;
+		goto err;
+	}
+
+err:
+	mbedtls_md_free(&ctx);
+
+	return ret;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int net_ipv6_addr_generate_iid(struct net_if *iface,
+			       const struct in6_addr *prefix,
+			       uint8_t *network_id,
+			       size_t network_id_len,
+			       uint8_t dad_counter,
+			       struct in6_addr *addr,
+			       struct net_linkaddr *lladdr)
+{
+	struct in6_addr tmp_addr;
+	uint8_t if_index;
+
+	if_index = (iface == NULL) ? net_if_get_by_iface(net_if_get_default())
+		: net_if_get_by_iface(iface);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_IID_STABLE)) {
+		struct in6_addr tmp_prefix = { 0 };
+		int ret;
+
+		if (prefix == NULL) {
+			UNALIGNED_PUT(htonl(0xfe800000), &tmp_prefix.s6_addr32[0]);
+		} else {
+			UNALIGNED_PUT(prefix->s6_addr32[0], &tmp_prefix.s6_addr32[0]);
+			UNALIGNED_PUT(prefix->s6_addr32[1], &tmp_prefix.s6_addr32[1]);
+		}
+
+		ret = gen_stable_iid(if_index, &tmp_prefix, network_id, network_id_len,
+				     dad_counter, (uint8_t *)&tmp_addr + 8,
+				     sizeof(tmp_addr) / 2);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (prefix == NULL) {
+		UNALIGNED_PUT(htonl(0xfe800000), &tmp_addr.s6_addr32[0]);
+		UNALIGNED_PUT(0, &tmp_addr.s6_addr32[1]);
+	} else {
+		UNALIGNED_PUT(prefix->s6_addr32[0], &tmp_addr.s6_addr32[0]);
+		UNALIGNED_PUT(prefix->s6_addr32[1], &tmp_addr.s6_addr32[1]);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6_IID_EUI_64)) {
+		switch (lladdr->len) {
+		case 2:
+			/* The generated IPv6 shall not toggle the
+			 * Universal/Local bit. RFC 6282 ch 3.2.2
+			 */
+			if (lladdr->type == NET_LINK_IEEE802154) {
+				UNALIGNED_PUT(0, &tmp_addr.s6_addr32[2]);
+				tmp_addr.s6_addr[11] = 0xff;
+				tmp_addr.s6_addr[12] = 0xfe;
+				tmp_addr.s6_addr[13] = 0U;
+				tmp_addr.s6_addr[14] = lladdr->addr[0];
+				tmp_addr.s6_addr[15] = lladdr->addr[1];
+			}
+
+			break;
+		case 6:
+			/* We do not toggle the Universal/Local bit
+			 * in Bluetooth. See RFC 7668 ch 3.2.2
+			 */
+			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, 3);
+			tmp_addr.s6_addr[11] = 0xff;
+			tmp_addr.s6_addr[12] = 0xfe;
+			memcpy(&tmp_addr.s6_addr[13], lladdr->addr + 3, 3);
+
+			if (lladdr->type == NET_LINK_ETHERNET) {
+				tmp_addr.s6_addr[8] ^= 0x02;
+			}
+
+			break;
+		case 8:
+			memcpy(&tmp_addr.s6_addr[8], lladdr->addr, lladdr->len);
+			tmp_addr.s6_addr[8] ^= 0x02;
+			break;
+		}
+	}
+
+	NET_DBG("%s IID for iface %d %s",
+		IS_ENABLED(CONFIG_NET_IPV6_IID_STABLE) ? "Stable" : "EUI-64",
+		if_index, net_sprint_ipv6_addr(&tmp_addr));
+
+	memcpy(addr, &tmp_addr, sizeof(*addr));
+	return 0;
 }
 
 void net_ipv6_init(void)

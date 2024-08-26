@@ -331,6 +331,16 @@ struct net_if_ipv6 {
 	/** Retransmit timer (RFC 4861, page 52) */
 	uint32_t retrans_timer;
 
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+	/** IID (Interface Identifier) pointer used for link local address */
+	struct net_if_addr *iid;
+
+	/** Incremented when network interface goes down so that we can
+	 * generate new stable addresses when interface comes back up.
+	 */
+	uint32_t network_counter;
+#endif /* CONFIG_NET_IPV6_IID_STABLE */
+
 #if defined(CONFIG_NET_IPV6_PE)
 	/** Privacy extension DESYNC_FACTOR value from RFC 8981 ch 3.4.
 	 * "DESYNC_FACTOR is a random value within the range 0 - MAX_DESYNC_FACTOR.

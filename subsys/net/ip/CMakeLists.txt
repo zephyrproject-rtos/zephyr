@@ -54,7 +54,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_SOCKETS  connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      packet_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN         canbus_socket.c)
 
-if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE)
+if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE OR CONFIG_NET_IPV6_IID_STABLE)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 endif()
 endif()
