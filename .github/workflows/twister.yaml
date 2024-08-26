@@ -310,7 +310,7 @@ jobs:
     if: success() || failure()
 
     steps:
-      # Needed for opensearch and upload script
+      # Needed for elasticearch and upload script
       - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
         uses: actions/checkout@v4
@@ -324,7 +324,7 @@ jobs:
           path: artifacts
 
       - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Upload to opensearch
+        name: Upload to elasticsearch
         run: |
           pip3 install elasticsearch
           # set run date on upload to get consistent and unified data across the matrix.
