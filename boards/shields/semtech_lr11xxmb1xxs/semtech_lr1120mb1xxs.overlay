@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "semtech_lr11xxmb1xxs_common.dtsi"
+
+lora_semtech_lr1120mb1xxs: &lora_semtech_lr11xxmb1xxs {
+	compatible = "semtech,lr1120";
+
+	tcxo-wakeup-time = <8>;
+};
