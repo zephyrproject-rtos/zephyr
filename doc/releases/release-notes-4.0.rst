@@ -302,6 +302,13 @@ Libraries / Subsystems
 
 * SD
 
+* Shell:
+
+  * Reorganized the ``kernel threads`` and ``kernel stacks`` shell command under the
+    L1 ``kernel thread`` shell command as ``kernel thread list`` & ``kernel thread stacks``
+  * Added multiple shell command to configure the CPU mask affinity / pinning a thread in
+    runtime, do ``kernel thread -h`` for more info.
+
 * State Machine Framework
 
 * Storage
