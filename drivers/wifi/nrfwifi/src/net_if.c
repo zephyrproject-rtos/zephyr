@@ -1141,6 +1141,7 @@ int nrf_wifi_stats_get(const struct device *dev, struct net_stats_wifi *zstats)
 	zstats->multicast.tx = stats.fw.umac.interface_data_stats.tx_multicast_pkt_count;
 	zstats->unicast.rx   = stats.fw.umac.interface_data_stats.rx_unicast_pkt_count;
 	zstats->unicast.tx   = stats.fw.umac.interface_data_stats.tx_unicast_pkt_count;
+	zstats->overrun_count = stats.host.total_tx_drop_pkts + stats.host.total_rx_drop_pkts;
 
 #ifdef CONFIG_NRF70_RAW_DATA_TX
 	def_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
