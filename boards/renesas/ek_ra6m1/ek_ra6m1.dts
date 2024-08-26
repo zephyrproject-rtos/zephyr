@@ -49,7 +49,7 @@
 };
 
 &xtal {
-	clock-frequency = <DT_FREQ_M(20)>;
+	clock-frequency = <DT_FREQ_M(12)>;
 	mosel = <0>;
 	#clock-cells = <0>;
 	status = "okay";
