@@ -1342,13 +1342,31 @@ void net_if_start_dad(struct net_if *iface)
 		goto out;
 	}
 
-	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+	ret = net_ipv6_addr_generate_iid(iface, NULL,
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     ((uint8_t *)&ipv6->network_counter),
+						     (NULL)),
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     (sizeof(ipv6->network_counter)),
+						     (0U)),
+					 COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+						     (ipv6->iid ? ipv6->iid->dad_count : 0U),
+						     (0U)),
+					 &addr,
+					 net_if_get_link_addr(iface));
+	if (ret < 0) {
+		NET_WARN("IPv6 IID generation issue (%d)", ret);
+		goto out;
+	}
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (!ifaddr) {
 		NET_ERR("Cannot add %s address to interface %p, DAD fails",
 			net_sprint_ipv6_addr(&addr), iface);
+		goto out;
 	}
+
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = ifaddr));
 
 	/* Start DAD for all the addresses that were added earlier when
 	 * the interface was down.
@@ -1383,10 +1401,11 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_IPV6_IID_STABLE) || IS_ENABLED(CONFIG_NET_IPV6_PE)) {
+		ifaddr->dad_count++;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6_PE)) {
-		ifaddr->dad_count++;
-
 		timeout = COND_CODE_1(CONFIG_NET_IPV6_PE,
 				      (ifaddr->addr_timeout), (0));
 		preferred_lifetime = COND_CODE_1(CONFIG_NET_IPV6_PE,
@@ -3251,16 +3270,29 @@ static void iface_ipv6_start(struct net_if *iface)
 
 static void iface_ipv6_stop(struct net_if *iface)
 {
-	struct in6_addr addr = { };
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6) ||
 	    net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		return;
 	}
 
-	net_ipv6_addr_create_iid(&addr, net_if_get_link_addr(iface));
+	if (ipv6 == NULL) {
+		return;
+	}
 
-	(void)net_if_ipv6_addr_rm(iface, &addr);
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->network_counter++));
+	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = NULL));
+
+	/* Remove all autoconf addresses */
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		if (ipv6->unicast[i].is_used &&
+		    ipv6->unicast[i].address.family == AF_INET6 &&
+		    ipv6->unicast[i].addr_type == NET_ADDR_AUTOCONF) {
+			(void)net_if_ipv6_addr_rm(iface,
+						  &ipv6->unicast[i].address.in6_addr);
+		}
+	}
 }
 
 static void iface_ipv6_init(int if_count)
