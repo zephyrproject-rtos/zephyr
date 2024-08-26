@@ -55,4 +55,6 @@ source "drivers/video/Kconfig.ov5640"
 
 source "drivers/video/Kconfig.ov7670"
 
+source "drivers/video/Kconfig.gc2145"
+
 endif # VIDEO
