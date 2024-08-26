@@ -1,0 +1,77 @@
+# Copyright (c) 2024 XuYang Shen  <shenxuyang@shlinyuantech.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: IST3931 65x132 display controller
+
+compatible: "istech,ist3931"
+
+include: [i2c-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      RESET pin.
+
+      The RESET pin of IST3931 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  x-offset:
+    type: int
+    required: true
+    description: The column offset in pixels of the LCD to the controller memory
+
+  y-offset:
+    type: int
+    required: true
+    description: The row offset in pixels of the LCD to the controller memory
+
+  voltage-converter:
+    type: boolean
+    description: Internal voltage converter circuits will be enabled if true
+
+  voltage-follower:
+    type: boolean
+    description: Internal voltage follower circuits will be enabled if true
+
+  lcd-bias:
+    type: int
+    required: true
+    description: LCD bias ratio of the voltage required for driving the LCD
+
+  lcd-ct:
+    type: int
+    required: true
+    description: reference voltage V0= [0.7+CT*0.005]/Bias at 24 degree Celsius
+
+  duty-ratio:
+    type: int
+    required: true
+    description: Com_1~COM_N is select, N=Duty-ratio.
+
+  frame-control:
+    type: int
+    required: true
+    description: Frame-control of row frequency and frame frequency.
+      Row frequency = 3X10^6/ Frame-control
+      Frame frequency = Row frequency / Duty-ratio
+
+  reverse-com-output:
+    type: boolean
+    description: Common Output Mode Select, the output mode will be COM_1->COM_N if set to 0
+
+  reverse-seg-driver:
+    type: boolean
+    description:
+      Defines the relationship between RAM column address and segment driver.
+      the mapping will be SEG1->SEG132 if set to 0
+
+  e-force-on:
+    type: boolean
+    description: turn on whole LCD points regardless of display RAM
+
+  reverse-ram-lcd:
+    type: boolean
+    description: Reverse the lit and unlit display relation between RAM bit data and LCD cell
