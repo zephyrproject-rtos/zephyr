@@ -15,3 +15,5 @@ add_link_options(-gdwarf-4)
 
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors -Wl,--fatal-warnings)
+
+set_linker_property(PROPERTY specs -specs=)
