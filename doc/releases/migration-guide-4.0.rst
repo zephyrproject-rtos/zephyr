@@ -210,5 +210,11 @@ MCUmgr
 Modem
 =====
 
+Shell
+=====
+
+* ``kernel threads`` and ``kernel stacks`` shell command have been renamed to
+  ``kernel thread list`` & ``kernel thread stacks``
+
 Architectures
 *************
