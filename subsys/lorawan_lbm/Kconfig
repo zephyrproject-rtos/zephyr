@@ -1,0 +1,369 @@
+# LoRaWAN configuration options
+
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LORA_BASICS_MODEM
+	bool "LoRa Basics Modem LoRaWAN stack support [EXPERIMENTAL]"
+	depends on LORA_BASICS_MODEM_DRIVERS
+	select EXPERIMENTAL
+	select LORA_BASICS_MODEM_DRIVERS_RAL_RALF
+	select REBOOT
+	# depends on REQUIRES_FULL_LIBC
+	select ENTROPY_GENERATOR
+	select ZEPHYR_LORA_BASICS_MODEM_MODULE
+	depends on !LORAWAN
+	help
+	  This option enables the LoRa Basics Modem stack for LoRaWAN support.
+	  Full libc is required for floorf.
+	  Also make sure some source of randomness is used.
+
+if LORA_BASICS_MODEM
+
+choice
+	prompt "LoRaWAN storage implementation"
+	default LORA_BASICS_MODEM_PROVIDED_STORAGE_IMPL
+	help
+	  Use a basic flash-based storage implementation or a user-provided implementation
+
+config LORA_BASICS_MODEM_PROVIDED_STORAGE_IMPL
+	bool "Use a flash-based LoRa Basics Modem storage implementation"
+	depends on FLASH
+	select FLASH_MAP
+	select FLASH_PAGE_LAYOUT
+	help
+	  This storage implementation uses the standard storage-partition to store
+	  the LBM context and logs.
+
+config LORA_BASICS_MODEM_USER_STORAGE_IMPL
+	bool "Use an application-provided LoRa Basics Modem storage implementation"
+	help
+	  Enable if user storage implementation is required.
+	  This disables the default storage implementation in the HAL
+	  that uses the settings subsystem.
+
+endchoice
+
+module = LORA_BASICS_MODEM
+module-str = LoRa Basics Modem
+source "subsys/logging/Kconfig.template.log_config"
+
+config LORA_BASICS_MODEM_LOG_VERBOSE
+	bool "Additional very verbose logging"
+	help
+	 An even more verbose log level than debug
+
+config LORA_BASICS_MODEM_RADIO_PLANNER_LOG_VERBOSE
+	bool "Additional very verbose logging for the Radio Planner"
+	default n
+
+config LORA_BASICS_MODEM_GEOLOCATION_LOG_VERBOSE
+	bool "Additional very verbose logging for the Geolocation and Wifi middlewares"
+	default n
+
+#-----------------------------------------------------------------------------
+# Internal LBM features management
+#-----------------------------------------------------------------------------
+
+choice
+	prompt "LoRaWAN Regional Parameters version"
+	default LORA_BASICS_MODEM_RP2_103
+	help
+	  Specify which Regional Parameters version to use
+
+config LORA_BASICS_MODEM_RP2_101
+	bool "Use RP 1.0.1"
+
+config LORA_BASICS_MODEM_RP2_103
+	bool "Use RP 1.0.3"
+
+endchoice
+
+config LORA_BASICS_MODEM_ENABLE_ALL_REGIONS
+	bool "Support for all supported regions"
+	default y
+	select LORA_BASICS_MODEM_REGION_AS_923
+	select LORA_BASICS_MODEM_REGION_AU_915
+	select LORA_BASICS_MODEM_REGION_CN_470
+	select LORA_BASICS_MODEM_REGION_CN_470_RP_1_0
+	select LORA_BASICS_MODEM_REGION_EU_868
+	select LORA_BASICS_MODEM_REGION_IN_865
+	select LORA_BASICS_MODEM_REGION_KR_920
+	select LORA_BASICS_MODEM_REGION_RU_864
+	select LORA_BASICS_MODEM_REGION_US_915
+	select LORA_BASICS_MODEM_REGION_WW_2G4
+
+config LORA_BASICS_MODEM_REGION_AS_923
+	bool "Support for AS_923 region"
+
+config LORA_BASICS_MODEM_REGION_AU_915
+	bool "Support for AU_915 region"
+
+config LORA_BASICS_MODEM_REGION_CN_470
+	bool "Support for CN_470 region"
+
+config LORA_BASICS_MODEM_REGION_CN_470_RP_1_0
+	bool "Support for CN_470_RP_1_0 region"
+
+config LORA_BASICS_MODEM_REGION_EU_868
+	bool "Support for EU_868 region"
+
+config LORA_BASICS_MODEM_REGION_IN_865
+	bool "Support for IN_865 region"
+
+config LORA_BASICS_MODEM_REGION_KR_920
+	bool "Support for KR_920 region"
+
+config LORA_BASICS_MODEM_REGION_RU_864
+	bool "Support for RU_864 region"
+
+config LORA_BASICS_MODEM_REGION_US_915
+	bool "Support for US_915 region"
+
+config LORA_BASICS_MODEM_REGION_WW_2G4
+	bool "Support for WW_2G4 region"
+
+
+choice
+	prompt "Cryptography engine"
+	default LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+	help
+	  Specify which crypto engine will be used
+
+config LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+	bool "Use software based cryptography module"
+
+config LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX
+	bool "Use lr11xx hardware cryptography module"
+	depends on DT_HAS_SEMTECH_LR1110_ENABLED || DT_HAS_SEMTECH_LR1120_ENABLED
+
+config LORA_BASICS_MODEM_CRYPTOGRAPHY_LR11XX_WITH_CREDENTIALS
+	bool "Use lr11xx hardware cryptography module with its embedded credentials"
+	depends on DT_HAS_SEMTECH_LR1110_ENABLED || DT_HAS_SEMTECH_LR1120_ENABLED
+
+endchoice
+
+#-----------------------------------------------------------------------------
+# LoRaWAN Stack related options
+#-----------------------------------------------------------------------------
+
+config LORA_BASICS_MODEM_CLASS_B
+	bool "LoRaWAN Class B support"
+	default n
+
+config LORA_BASICS_MODEM_CLASS_C
+	bool "LoRaWAN Class C support"
+	default n
+
+config LORA_BASICS_MODEM_MULTICAST
+	bool "LoRaWAN multicast support"
+	default n
+	depends on LORA_BASICS_MODEM_CLASS_B || LORA_BASICS_MODEM_CLASS_C
+
+config LORA_BASICS_MODEM_CSMA
+	bool "LoRaWAN CSMA support"
+	default y
+	depends on SEMTECH_LR11XX || SEMTECH_SX126X
+
+config LORA_BASICS_MODEM_CSMA_BY_DEFAULT
+	bool "LoRaWAN CSMA enabled at startup"
+	default n
+	depends on LORA_BASICS_MODEM_CSMA
+
+#-----------------------------------------------------------------------------
+# LoRaWAN Package related options
+#-----------------------------------------------------------------------------
+
+config LORA_BASICS_MODEM_ALC_SYNC
+	bool "ALCSync service"
+	default n
+
+choice
+	prompt "ALCSync service version to be used"
+	depends on LORA_BASICS_MODEM_ALC_SYNC
+	default LORA_BASICS_MODEM_ALC_SYNC_V1 if LORA_BASICS_MODEM_FUOTA_V1
+	default LORA_BASICS_MODEM_ALC_SYNC_V2 if LORA_BASICS_MODEM_FUOTA_V2
+	config LORA_BASICS_MODEM_ALC_SYNC_V1
+		bool "1"
+	config LORA_BASICS_MODEM_ALC_SYNC_V2
+		bool "2"
+endchoice
+
+config LORA_BASICS_MODEM_ALC_SYNC_VERSION
+	int
+	default 1 if LORA_BASICS_MODEM_ALC_SYNC_V1
+	default 2 if LORA_BASICS_MODEM_ALC_SYNC_V2
+
+
+config LORA_BASICS_MODEM_FUOTA
+	bool "LoRaWan services for Firmware Upgrade Over The Air (FUOTA)"
+	default n
+	select LORA_BASICS_MODEM_CLASS_B
+	select LORA_BASICS_MODEM_CLASS_C
+	select LORA_BASICS_MODEM_MULTICAST
+	select LORA_BASICS_MODEM_ALC_SYNC
+
+# FIXME: maybe use 0 as not-configured value?
+config LORA_BASICS_MODEM_FUOTA_MAX_NB_OF_FRAGMENTS_CONFIG
+	bool "Allow configuration of the maximum number of fragments for LBM FUOTA"
+	default n
+
+config LORA_BASICS_MODEM_FUOTA_MAX_NB_OF_FRAGMENTS
+	int "The maximum number of fragments for LBM FUOTA"
+	depends on LORA_BASICS_MODEM_FUOTA_MAX_NB_OF_FRAGMENTS_CONFIG
+
+config LORA_BASICS_MODEM_FUOTA_MAX_SIZE_OF_FRAGMENTS_CONFIG
+	bool "Allow configuration of the maximum fragments size for LBM FUOTA"
+	default n
+
+config LORA_BASICS_MODEM_FUOTA_MAX_SIZE_OF_FRAGMENTS
+	int "The maximum fragments size for LBM FUOTA"
+	depends on LORA_BASICS_MODEM_FUOTA_MAX_SIZE_OF_FRAGMENTS_CONFIG
+
+config LORA_BASICS_MODEM_FUOTA_MAX_FRAGMENTS_REDUNDANCY_CONFIG
+	bool "Allow configuration of the maximum fragments redundancy for LBM FUOTA"
+	default n
+
+config LORA_BASICS_MODEM_FUOTA_MAX_FRAGMENTS_REDUNDANCY
+	int "The maximum fragments redundancy for LBM FUOTA"
+	depends on LORA_BASICS_MODEM_FUOTA_MAX_FRAGMENTS_REDUNDANCY_CONFIG
+
+
+choice
+	prompt "LoRaWan services for Firmware Upgrade Over The Air (FUOTA) version to use"
+	depends on LORA_BASICS_MODEM_FUOTA
+	config LORA_BASICS_MODEM_FUOTA_V1
+		bool "1"
+	config LORA_BASICS_MODEM_FUOTA_V2
+		bool "2"
+endchoice
+
+config LORA_BASICS_MODEM_FUOTA_VERSION
+	int
+	default 1 if LORA_BASICS_MODEM_FUOTA_V1
+	default 2 if LORA_BASICS_MODEM_FUOTA_V2
+
+
+config LORA_BASICS_MODEM_FUOTA_FMP
+	bool "LoRaWAN FUOTA Firmware Management Package support"
+	depends on LORA_BASICS_MODEM_FUOTA
+	default y
+
+config LORA_BASICS_MODEM_FUOTA_MPA
+	bool "LoRaWAN FUOTA Multi-Package Access support"
+	depends on LORA_BASICS_MODEM_FUOTA
+	default n
+
+#-----------------------------------------------------------------------------
+# LoRaCloud related options
+#-----------------------------------------------------------------------------
+
+config LORA_BASICS_MODEM_ALMANAC
+	bool "Cloud Almanac Update service (only applicable for lr1110 and lr1120 targets)"
+	depends on DT_HAS_SEMTECH_LR1110_ENABLED || DT_HAS_SEMTECH_LR1120_ENABLED
+	default n
+
+config LORA_BASICS_MODEM_STREAM
+	bool "Stream service"
+	default n
+
+config LORA_BASICS_MODEM_LFU
+	bool "Large File Upload service"
+	default n
+
+config LORA_BASICS_MODEM_DEVICE_MANAGEMENT
+	bool "Device Management service"
+	default n
+
+config LORA_BASICS_MODEM_GEOLOCATION
+	bool "Geolocation service"
+	depends on DT_HAS_SEMTECH_LR1110_ENABLED || DT_HAS_SEMTECH_LR1120_ENABLED
+	default n
+
+config LORA_BASICS_MODEM_STORE_AND_FORWARD
+	bool "Store And Forward service"
+	default n
+
+#-----------------------------------------------------------------------------
+# Relay and beacon options
+#-----------------------------------------------------------------------------
+
+# TODO:
+config LORA_BASICS_MODEM_BEACON_TX
+	bool "Beacon transmission support"
+	default n
+
+
+config LORA_BASICS_MODEM_RELAY_RX
+	bool "Relay RX support"
+	depends on LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+	select LORA_BASICS_MODEM_RELAY
+	default n
+
+config LORA_BASICS_MODEM_RELAY_TX
+	bool "Relay TX feature"
+	depends on LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+	select LORA_BASICS_MODEM_RELAY
+	default n
+
+config LORA_BASICS_MODEM_RELAY
+	bool
+
+#-----------------------------------------------------------------------------
+# Miscellaneous options
+#-----------------------------------------------------------------------------
+
+config LORA_BASICS_MODEM_NUMBER_OF_STACKS
+	int # "Number of LoRa Basics Modem stacks (only 1 is supported for now)"
+	default 1
+	help
+	 Number of stacks to be used by the modem library.
+
+
+config LORA_BASICS_MODEM_PERF_TEST
+	bool "Build LoRa Basics Modem in perf test"
+	default n
+	help
+	 Useful only when building the hardware modem sample
+
+config LORA_BASICS_MODEM_DISABLE_JOIN_DUTY_CYCLE
+	bool "Disable the Join duty cycle. ONLY ENABLE FOR ISOLATED SETUPS!"
+	default n
+	help
+	 Enable this if you are testing in an isolated setup (e.g with coaxial cables
+	 between gateway and device) for faster joins.
+	 You should keep this disabled to follow the LoRaWAN standard.
+
+
+config LORA_BASICS_MODEM_MAIN_THREAD
+	bool "Build a main loop thread that runs the LBM stack."
+	default n
+	help
+	 This thread needs to be manually started. It initializes the LBM stack,
+	 and runs it.
+	 The chosen zephyr,lora-transceiver device will be used as transceiver.
+	 TODO: Add this to the doc/build/dts/api/api.rst too.
+
+if LORA_BASICS_MODEM_MAIN_THREAD
+
+config LORA_BASICS_MODEM_MAIN_THREAD_STACK_SIZE
+	int "Stack size of the LBM main thread"
+	default 2048
+	help
+	  Stack size for the LBM main thread
+
+config LORA_BASICS_MODEM_MAIN_THREAD_PRIORITY
+	int "Priority of the LBM main thread"
+	default 2
+	help
+	  Thread priority of the LBM main thread
+
+config LORA_BASICS_MODEM_MAIN_THREAD_MAX_SLEEP_MS
+	int "Maximum sleeping time for the LBM main thread"
+	default 60000
+	help
+	  Present as a fail-safe if the thread wake-up fails for some reason
+
+endif # LORA_BASICS_MODEM_MAIN_THREAD
+
+endif # LORA_BASICS_MODEM
