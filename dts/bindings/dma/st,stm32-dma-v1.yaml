@@ -15,42 +15,46 @@ description: |
     or a value between <1> .. <dma-generators> (not supported yet)
     or a value between <dma-generators>+1  ..  <dma-generators>+<dma-requests>
     3. channel-config: A 32bit mask specifying the DMA channel configuration
-    which is device dependent:
+    which is device dependent. See stm32_dma.h:
         -bit 6-7 : Direction  (see dma.h)
-               0x0: MEM to MEM
-               0x1: MEM to PERIPH
-               0x2: PERIPH to MEM
+               0x0: STM32_DMA_MEMORY_TO_MEMORY: MEM to MEM
+               0x1: STM32_DMA_MEMORY_TO_PERIPH: MEM to PERIPH
+               0x2: STM32_DMA_PERIPH_TO_MEMORY: PERIPH to MEM
                0x3: reserved for PERIPH to PERIPH
         -bit 9 : Peripheral Increment Address
-               0x0: no address increment between transfers
-               0x1: increment address between transfers
+               0x0: STM32_DMA_PERIPH_NO_INC: no address increment between transfers
+               0x1: STM32_DMA_PERIPH_INC: increment address between transfers
         -bit 10 : Memory Increment Address
-               0x0: no address increment between transfers
-               0x1: increment address between transfers
+               0x0: STM32_DMA_MEM_NO_INC: no address increment between transfers
+               0x1: STM32_DMA_MEM_INC: increment address between transfers
         -bit 11-12 : Peripheral data size
-               0x0: Byte (8 bits)
-               0x1: Half-word (16 bits)
-               0x2: Word (32 bits)
+               0x0: STM32_DMA_PERIPH_8BITS: Byte (8 bits)
+               0x1: STM32_DMA_PERIPH_16BITS: Half-word (16 bits)
+               0x2: STM32_DMA_PERIPH_32BITS: Word (32 bits)
                0x3: reserved
         -bit 13-14 : Memory data size
-               0x0: Byte (8 bits)
-               0x1: Half-word (16 bits)
-               0x2: Word (32 bits)
+               0x0: STM32_DMA_MEM_8BITS: Byte (8 bits)
+               0x1: STM32_DMA_MEM_16BITS: Half-word (16 bits)
+               0x2: STM32_DMA_MEM_32BITS: Word (32 bits)
                0x3: reserved
         -bit 15: Peripheral Increment Offset Size
-               0x0: offset size is linked to the peripheral bus width
-               0x1: offset size is fixed to 4 (32-bit alignment)
+               0x0: STM32_DMA_OFFSET_LINKED_BUS: offset size is linked to the peripheral bus width
+               0x1: STM32_DMA_OFFSET_FIXED_4: offset size is fixed to 4 (32-bit alignment)
         -bit 16-17 : Priority level
-               0x0: low
-               0x1: medium
-               0x2: high
-               0x3: very high
+               0x0: STM32_DMA_PRIORITY_LOW: low
+               0x1: STM32_DMA_PRIORITY_MEDIUM: medium
+               0x2: hSTM32_DMA_PRIORITY_HIGH: high
+               0x3: STM32_DMA_PRIORITY_VERY_HIGH: very high
     4. features: A 32bit bitfield value specifying DMA features
         -bit 0-1: DMA FIFO threshold selection
-               0x0: 1/4 full FIFO
-               0x1: 1/2 full FIFO
-               0x2: 3/4 full FIFO
-               0x3: full FIFO
+               0x0: STM32_DMA_FIFO_1_4: 1/4 full FIFO
+               0x1: STM32_DMA_FIFO_HALF: 1/2 full FIFO
+               0x2: STM32_DMA_FIFO_3_4: 3/4 full FIFO
+               0x3: STM32_DMA_FIFO_FULL: full FIFO
+
+  Example of dma usual combination for peripheral transfer
+       #define STM32_DMA_PERIPH_TX	(STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC)
+       #define STM32_DMA_PERIPH_RX	(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC)
 
     examples for stm32f411
      dma2: dma-controller@40020400 {
@@ -65,8 +69,8 @@ description: |
     Tx using stream 5 on channel 3 (stream 2 on channel 2 is also possible)
     Rx using stream 2 on channel 3 (stream 0 on channel 3 is also possible)
     spi1 {
-     dmas = <&dma2 5 3 0x28440 0x03>,
-           <&dma2 2 3 0x28480 0x03>;
+     dmas = <&dma2 5 3 STM32_DMA_PERIPH_TX STM32_DMA_FIFO_FULL>,
+           <&dma2 2 3 STM32_DMA_PERIPH_RX STM32_DMA_FIFO_FULL>;
      dma-names = "tx", "rx";
      };
 
