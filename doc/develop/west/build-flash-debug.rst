@@ -250,6 +250,39 @@ To merge the :file:`file.conf` Kconfig fragment into your build's
 
 .. _west-building-cmake-config:
 
+Extra KConfig file without rebuild
+----------------------------------
+
+As mentioned above, the ``-DEXTRA_CONF_FILE`` argument can be passed to
+CMake in order to define an additional Kconfig fragment. However, defining 
+``-DEXTRA_CONF_FILE`` via the additional CMake arguments after the ``--``
+implies the ``-c`` option, i.e. ``west`` will always re-run CMake which increases
+build time.
+
+This issue is solved by the ``-k`` / ``--kconfig-extra`` option which also
+allows to specify an additional Kconfig fragment. This uses ``-DEXTRA_CONF_FILE``
+on the command line to CMake as well, but it does **not** imply ``-c``, i.e.
+``west`` will not call CMake unless there is some other reason for it. When a
+different file is passed via ``-k`` than before, or its contents has changed,
+CMake will always be run.
+
+Multiple build configurations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``-k`` option can be used to implement multiple build configurations, i.e.
+having two (or more) build directories which are built using two (or more)
+different Kconfig configurations
+
+For example, place your common configuration into :file:`prj.conf` as usual,
+debug-specific configuration into :file:`debug.conf` and release-specific
+configuration into :file:`release.conf`. You can then build using::
+
+  west build -d debug -k debug.conf
+  west build -d release -k release.conf
+
+The build files for the two different configurations will end up in the two
+directories :file:`debug` and :file:`release`.
+
 Permanent CMake Arguments
 -------------------------
 

@@ -26,7 +26,7 @@ BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
-           [-n] [-o BUILD_OPT] [-f]
+           [-n] [-o BUILD_OPT] [-f] [-k FILE]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
@@ -150,6 +150,15 @@ class Build(Forceable):
                            Do not use this option with manually specified
                            -DSHIELD... cmake arguments: the results are
                            undefined''')
+        group.add_argument('-k', '--kconfig-extra', help='''Additional Kconfig
+                           file to pass to cmake via EXTRA_CONF_FILE. Unlike
+                           specifying -DEXTRA_CONF_FILE=FILE as additional
+                           cmake arguments via cmake_opt, this does not imply
+                           '-c', i.e. cmake will not be forcibly re-run,
+                           unless there is some other reason to, e.g. FILE
+                           was modified. This can be used to implement
+                           multiple build configurations
+                           (e.g. Debug/Release).''')
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--sysbuild', action='store_true',
@@ -227,6 +236,28 @@ class Build(Forceable):
                     self.run_cmake = True
         else:
             self.run_cmake = True
+        
+        if not self.run_cmake and self.cmake_cache:
+            cached_conf = self.cmake_cache.get('EXTRA_CONF_FILE')
+
+            # Check if the extra conf file name specified by '-k' has been changed.
+            # Either of those two can be None, i.e. a file may be specified now
+            # after none was specified in the last call or vice versa, in which
+            # this condition is also True.
+            # If the file name is identical but the contents was modified, ninja
+            # will call cmake.
+            if cached_conf != args.kconfig_extra:
+                self.run_cmake = True
+
+        # Do this *after* checking self.args.cmake_opts for setting run_cmake in order
+        # to avoid re-running cmake if -k is specified
+        if args.kconfig_extra:
+            if self.args.cmake_opts:
+                self.args.cmake_opts.append(f"-DEXTRA_CONF_FILE={args.kconfig_extra}")
+            else:
+                self.args.cmake_opts = [f"-DEXTRA_CONF_FILE={args.kconfig_extra}"]
+        
+        
         self.source_dir = self._find_source_dir()
         self._sanity_check()
 
