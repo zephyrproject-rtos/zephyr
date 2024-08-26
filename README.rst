@@ -3,9 +3,7 @@
    <a href="https://www.zephyrproject.org">
      <p align="center">
        <picture>
-         <source media="(prefers-color-scheme: dark)" srcset="doc/_static/images/logo-readme-dark.svg">
-         <source media="(prefers-color-scheme: light)" srcset="doc/_static/images/logo-readme-light.svg">
-         <img src="doc/_static/images/logo-readme-light.svg">
+         <img src="doc/_static/images/Zephyr-support-for-Ambiq.svg">
        </picture>
      </p>
    </a>
@@ -20,18 +18,46 @@
      <img src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push">
    </a>
 
+Ambiq® is an Austin-based SoC vendor who at the forefront of enabling ambient intelligence on billions of
+devices with the unique SPOT platform and extreme-low power semiconductor solutions.
 
-The Zephyr Project is a scalable real-time operating system (RTOS) supporting
-multiple hardware architectures, optimized for resource constrained devices,
-and built with security in mind.
+Whether it’s the Real Time Clock (RTC) IC, or a System-on-a-Chip (SoC), Ambiq® is committed to enabling the 
+lowest power consumption with the highest computing performance possible for our customers to make the most
+innovative battery-power endpoint devices for their end-users. `Ambiq Products`_
 
-The Zephyr OS is based on a small-footprint kernel designed for use on
-resource-constrained systems: from simple embedded environmental sensors and
-LED wearables to sophisticated smart watches and IoT wireless gateways.
+Status
+***************
+Ambiq SoCs that support zephyr now include:
 
-The Zephyr kernel supports multiple architectures, including ARM (Cortex-A,
-Cortex-R, Cortex-M), Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V,
-SPARC, MIPS, and a large number of `supported boards`_.
+  | Apollo3 Blue
+  | Apollo3 Blue Plus
+  | Apollo4 Plus
+  | Apollo4 Blue Plus KXR
+
+As well as the following Evaluation Kits:
+
+  | Apollo3 Blue EVB
+  | Apollo3 Blue Plus EVB
+  | Apollo4 Plus EVB
+  | Apollo4 Blue Plus KXR EVB
+
+As of now, Ambiq provides zephyr support for a set of peripherals:
+
+  | ADC
+  | Bluetooth hci
+  | Counter
+  | Flash controller
+  | GPIO controller
+  | I2C controller
+  | Power management
+  | RTC
+  | SPI controller
+  | SPI device
+  | MSPI controller
+  | System timer
+  | Watchdog
+
+Together with generic support for ARM Cortex-M peripherals like cache, interrupt controller, serial, etc.
 
 .. below included in doc/introduction/introduction.rst
 
@@ -39,8 +65,9 @@ SPARC, MIPS, and a large number of `supported boards`_.
 Getting Started
 ***************
 
-Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
+Welcome to Ambiq Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
+Check `Ambiq SoC`_ for Ambiq Apollo SoCs documents.
 
 .. start_include_here
 
@@ -69,6 +96,7 @@ Code and Development
 --------------------
 
   | 🌐 `Source Code Repository`_
+  | 🌐 `Ambiq HAL Repository`_
   | 📦 `Releases`_
   | 🤝 `Contribution Guide`_
 
@@ -96,13 +124,12 @@ Additional Resources
 
 .. _Zephyr Project Website: https://www.zephyrproject.org
 .. _Discord Server: https://chat.zephyrproject.org
-.. _supported boards: https://docs.zephyrproject.org/latest/boards/index.html
 .. _Zephyr Documentation: https://docs.zephyrproject.org
 .. _Introduction to Zephyr: https://docs.zephyrproject.org/latest/introduction/index.html
 .. _Getting Started Guide: https://docs.zephyrproject.org/latest/develop/getting_started/index.html
 .. _Contribution Guide: https://docs.zephyrproject.org/latest/contribute/index.html
-.. _Source Code Repository: https://github.com/zephyrproject-rtos/zephyr
-.. _GitHub Issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _Source Code Repository: https://github.com/AmbiqMicro/ambiqzephyr
+.. _GitHub Issues: https://github.com/AmbiqMicro/ambiqzephyr/issues
 .. _Releases: https://github.com/zephyrproject-rtos/zephyr/releases
 .. _Project Wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _User mailing list (users@lists.zephyrproject.org): https://lists.zephyrproject.org/g/users
@@ -113,3 +140,6 @@ Additional Resources
 .. _Security Advisories Repository: https://github.com/zephyrproject-rtos/zephyr/security
 .. _Tips when asking for help: https://docs.zephyrproject.org/latest/develop/getting_started/index.html#asking-for-help
 .. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
+.. _Ambiq SoC: https://contentportal.ambiq.com/soc
+.. _Ambiq Products: https://ambiq.com/products/
+.. _Source Code Repository: https://github.com/AmbiqMicro/ambiqhal_ambiq
