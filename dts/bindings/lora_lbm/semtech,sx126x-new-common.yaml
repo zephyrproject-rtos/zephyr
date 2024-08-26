@@ -1,0 +1,125 @@
+# Copyright (c) 2024 Semtech Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech SX126X LoRa radio module
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the radio's NRESET signal.
+
+      This signal is open-drain, active-low as interpreted by the modem.
+
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO connected to the radio's BUSY signal.
+
+      This signal is high when the radio is ready to accept commands, and
+      low when it is processing a command.
+
+
+  dio1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the radio's DIO1 signal. This GPIO will be used as
+      a generic IRQ line from the chip.
+
+  dio2-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the radio's DIO2 signal. This GPIO will be used as
+      a generic IRQ line from the chip.
+
+      Note that this conflicts with dio2-as-rf-switch.
+
+  dio2-as-rf-switch:
+    type: boolean
+    description: |
+      Use DIO2 to drive an RF switch selecting between the TX and RX paths.
+
+      When enabled, DIO2 goes high when the chip is transmitting.
+      Note that this conflicts with dio2-gpios.
+
+  dio3-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the radio's DIO3 signal. This GPIO will be used as
+      a generic IRQ line from the chip.
+
+      Note that this conflicts with dio3-as-tcxo-enable.
+
+  dio3-as-tcxo-control:
+    type: boolean
+    description: |
+      Use DIO3 to control a TCXO.
+
+      When enabled, DIO3 supplies power to a TCXO when needed. Its voltage is
+      controlled by tcxo-voltage.
+      Note that this conflicts with dio3-gpios.
+
+  tcxo-voltage:
+    type: int
+    required: true
+    description: |
+      Supply voltage on the radio's DIO3, if set as TCXO control.
+
+      See constants SX126X_TCXO_SUPPLY_* in dt-bindings/lora_lbm/sx126x.h.
+
+  tcxo-wakeup-time:
+    type: int
+    required: true
+    description: |
+      In milliseconds, the wakeup (or stabilization) time of the TCXO used
+      by the radio.
+
+      Set this value to 0 to disable the TCXO management feature.
+
+  xtal-capacitor-value-xta:
+    type: int
+    description: |
+      Internal trimming capacitor value on the radio's XTA pin as register value.
+
+      Values from 0x00 to 0x2F code a capacitance from 11.3pF to 33.4pF, in
+      approximative 0.47pF steps, as described in section 4.1.3 of the datasheet.
+
+      Values over 0x2F are not supported. Ignored when a TCXO is configured.
+
+  xtal-capacitor-value-xtb:
+    type: int
+    description: |
+      Internal trimming capacitor value on the radio's XTB pin as register value.
+
+      Values from 0x00 to 0x2F code a capacitance from 11.3pF to 33.4pF, in
+      approximative 0.47pF steps, as described in section 4.1.3 of the datasheet.
+
+      Values over 0x2F are not supported. Ignored when a TCXO is configured.
+
+  reg-mode:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      Configuration of the radio's power regulator mode.
+
+      See constants SX126X_REG_MODE_* in dt-bindings/lora_lbm/sx126x.h
+
+  rx-boosted:
+    type: boolean
+    description: |
+      Sets the radio in RX Boosted mode, allowing a ~2dB increased sensitivity,
+      at the expense of a ~2mA higher current consumption in RX mode.
+
+  tx-power-offset:
+    type: int
+    description: |
+      Default board-specific TX Power offset in dB. Defaults to 0.
+
+      Can be reconfigured at runtime via radio_utilities_set_tx_power_offset.
