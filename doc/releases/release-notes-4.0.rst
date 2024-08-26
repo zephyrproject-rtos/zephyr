@@ -329,6 +329,18 @@ Libraries / Subsystems
     secure random sources when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
     is also enabled. This is only meant to be used for test purposes, not in production.
     (:github:`76408`)
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_3` was added to
+    enable TLS 1.3 support from Mbed TLS. When this is enabled the following
+    new Kconfig symbols can also be enabled:
+
+    * :kconfig:option:`CONFIG_MBEDTLS_TLS_SESSION_TICKETS` to enable session tickets
+      (RFC 5077);
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED`
+      for TLS 1.3 PSK key exchange mode;
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED`
+      for TLS 1.3 ephemeral key exchange mode;
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED`
+      for TLS 1.3 PSK ephemeral key exchange mode.
 
 * CMSIS-NN
 
