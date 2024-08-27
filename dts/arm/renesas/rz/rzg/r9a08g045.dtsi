@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 EPAM Systems
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+
+/ {
+	compatible = "renesas,r9a08g045";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <250000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <7>;
+};
