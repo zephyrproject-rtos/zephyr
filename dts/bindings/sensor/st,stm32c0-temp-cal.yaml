@@ -12,7 +12,7 @@ include: "st,stm32-temp-cal-common.yaml"
 properties:
   avgslope:
     type: int
-    default: 2530
+    required: true
     description: |
       Average slope of T-V chart (in uV/C) according to
       datasheet "Electrical characteristics/Operating conditions"
