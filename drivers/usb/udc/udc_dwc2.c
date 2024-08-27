@@ -585,9 +585,21 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 		dwc2_prep_rx(dev, buf, cfg);
 	} else {
-		if (dwc2_tx_fifo_write(dev, cfg, buf)) {
-			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x",
-				cfg->addr);
+		int err = dwc2_tx_fifo_write(dev, cfg, buf);
+
+		if (err) {
+			if (err == -ENOENT) {
+				LOG_WRN("Cannot write to TX FIFO, ep 0x%02x inactive", cfg->addr);
+			} else {
+				LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
+					cfg->addr, err);
+			}
+			buf = udc_buf_get(dev, cfg->addr);
+			if (udc_submit_ep_event(dev, buf, -ECONNREFUSED)) {
+				LOG_ERR("Failed to submit EP event");
+			};
+			/* Early return to avoid setting endpoint as busy. */
+			return;
 		}
 	}
 
