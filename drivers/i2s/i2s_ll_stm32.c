@@ -139,10 +139,19 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	uint8_t i2s_div, i2s_odd;
 
 	if (cfg->pclk_len > 1) {
+		/* Handle multiple clock sources */
 		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					   (clock_control_subsys_t)&cfg->pclken[1],
 					   &freq_in) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return -EIO;
+		}
+	} else {
+		/* Handle single clock source */
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+					   (clock_control_subsys_t)&cfg->pclken[0],
+					   &freq_in) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
 			return -EIO;
 		}
 	}
