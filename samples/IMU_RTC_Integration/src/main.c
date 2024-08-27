@@ -61,7 +61,7 @@ volatile Date date;
 char num_str[5];
 uint16_t steps;
 const struct device * dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
-const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));
+const struct device * dev1 = DEVICE_DT_GET(DT_NODELABEL(i2c1));//for RTC and touch
 const struct device * dev2 = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 struct gpio_dt_spec vPin;
@@ -262,7 +262,7 @@ void gesture_control_handler(void)
 	data_struct data_recv;
 	while(1){
 		k_msgq_get(&touch_msg_q, &data_recv, K_FOREVER);
-		printk("Gesture ID:%d\n",data_recv.gestureID);
+		printf("Gesture ID:%d\n",data_recv.gestureID);
 		if(data_recv.gestureID == SWIPE_DOWN){
 				lv_scr_load(guider_ui.screen_2);
 				printf("Completed screen 2\n");
@@ -289,10 +289,13 @@ void touch_isr(void)
 {
     printf("Touch detected\n");
     data_send = CST816S_read_touch(&touch_dev_handle);
+	printf("Gesture ID ISR:%d\n",data_send.gestureID);
 	if(data_send.gestureID !=0)
     k_msgq_put(&touch_msg_q, &data_send, K_NO_WAIT);
 }
-
+K_THREAD_DEFINE(gesture_control_task, MY_STACK_SIZE,
+                gesture_control_handler, NULL, NULL, NULL,
+                MY_PRIORITY, 0, 0);
 K_THREAD_DEFINE(main_task, MY_STACK_SIZE,
                 main_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
@@ -305,9 +308,7 @@ K_THREAD_DEFINE(lcd_display_blank_task, MY_STACK_SIZE,
 K_THREAD_DEFINE(process_message_notification, MY_STACK_SIZE,
                 process_message_notification_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
-K_THREAD_DEFINE(gesture_control_task, MY_STACK_SIZE,
-                gesture_control_handler, NULL, NULL, NULL,
-                MY_PRIORITY, 0, 0);
+
 K_THREAD_DEFINE(screen_refresh_task, MY_STACK_SIZE,
                 screen_refresh_task_handler, NULL, NULL, NULL,
                 MY_PRIORITY, 0, 0);
