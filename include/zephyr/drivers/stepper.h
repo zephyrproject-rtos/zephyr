@@ -168,7 +168,7 @@ typedef int (*stepper_enable_constant_velocity_mode_t)(const struct device *dev,
 /**
  * @brief Stepper Motor Controller API
  */
-__subsystem struct stepper_api {
+__subsystem struct stepper_driver_api {
 	stepper_enable_t enable;
 	stepper_move_t move;
 	stepper_set_max_velocity_t set_max_velocity;
@@ -198,7 +198,7 @@ __syscall int stepper_enable(const struct device *dev, const bool enable);
 
 static inline int z_impl_stepper_enable(const struct device *dev, const bool enable)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	return api->enable(dev, enable);
 }
@@ -222,7 +222,7 @@ __syscall int stepper_move(const struct device *dev, int32_t micro_steps,
 static inline int z_impl_stepper_move(const struct device *dev, const int32_t micro_steps,
 				      struct k_poll_signal *async)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	return api->move(dev, micro_steps, async);
 }
@@ -248,7 +248,7 @@ __syscall int stepper_set_max_velocity(const struct device *dev, uint32_t micro_
 static inline int z_impl_stepper_set_max_velocity(const struct device *dev,
 						  const uint32_t micro_steps_per_second)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	return api->set_max_velocity(dev, micro_steps_per_second);
 }
@@ -270,7 +270,7 @@ __syscall int stepper_set_micro_step_res(const struct device *dev,
 static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
 						    enum micro_step_resolution resolution)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->set_micro_step_res == NULL) {
 		return -ENOSYS;
@@ -294,7 +294,7 @@ __syscall int stepper_get_micro_step_res(const struct device *dev,
 static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
 						    enum micro_step_resolution *resolution)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->get_micro_step_res == NULL) {
 		return -ENOSYS;
@@ -316,7 +316,7 @@ __syscall int stepper_set_actual_position(const struct device *dev, int32_t valu
 
 static inline int z_impl_stepper_set_actual_position(const struct device *dev, const int32_t value)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->set_actual_position == NULL) {
 		return -ENOSYS;
@@ -338,7 +338,7 @@ __syscall int stepper_get_actual_position(const struct device *dev, int32_t *val
 
 static inline int z_impl_stepper_get_actual_position(const struct device *dev, int32_t *value)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->get_actual_position == NULL) {
 		return -ENOSYS;
@@ -366,7 +366,7 @@ __syscall int stepper_set_target_position(const struct device *dev, int32_t valu
 static inline int z_impl_stepper_set_target_position(const struct device *dev, const int32_t value,
 						     struct k_poll_signal *async)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->set_target_position == NULL) {
 		return -ENOSYS;
@@ -388,7 +388,7 @@ __syscall int stepper_is_moving(const struct device *dev, bool *is_moving);
 
 static inline int z_impl_stepper_is_moving(const struct device *dev, bool *is_moving)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->is_moving == NULL) {
 		return -ENOSYS;
@@ -421,7 +421,7 @@ __syscall int stepper_enable_constant_velocity_mode(const struct device *dev,
 static inline int z_impl_stepper_enable_constant_velocity_mode(
 	const struct device *dev, const enum stepper_direction direction, const uint32_t value)
 {
-	const struct stepper_api *api = (const struct stepper_api *)dev->api;
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->enable_constant_velocity_mode == NULL) {
 		return -ENOSYS;
