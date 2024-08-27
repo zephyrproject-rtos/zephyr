@@ -281,7 +281,7 @@ static int rv8263c8_time_get(const struct device *dev, struct rtc_time *timeptr)
 static int rv8263c8_init(const struct device *dev)
 {
 	int err;
-	int temp;
+	uint8_t temp;
 	struct rv8263c8_data *data = dev->data;
 	const struct rv8263c8_config *config = dev->config;
 
