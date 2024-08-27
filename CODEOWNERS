@@ -422,7 +422,7 @@
 /dts/arm/nxp/                             @mmahadevan108 @dleach02
 /dts/arm/nxp/nxp_s32*                     @manuargue
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @sjvasanth1
-/dts/arm/rpi_pico/                        @yonsch
+/dts/arm/raspberry/rpi_pico/              @yonsch
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efr32bg13p*               @mnkp
