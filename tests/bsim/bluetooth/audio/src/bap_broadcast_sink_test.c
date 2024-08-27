@@ -59,6 +59,7 @@ static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
 static uint32_t requested_bis_sync;
 static struct bt_le_ext_adv *ext_adv;
 static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
+static uint8_t recv_state_broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE];
 
 #define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
 #define SUPPORTED_MIN_OCTETS_PER_FRAME 30
@@ -385,6 +386,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
+	req_recv_state = recv_state;
+
 	printk("BIS sync request received for %p: 0x%08x\n", recv_state, bis_sync_req[0]);
 	/* We only care about a single subgroup in this test */
 	requested_bis_sync = bis_sync_req[0];
@@ -398,10 +401,20 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	return 0;
 }
 
+static void broadcast_code_cb(struct bt_conn *conn,
+			      const struct bt_bap_scan_delegator_recv_state *recv_state,
+			      const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
+{
+	req_recv_state = recv_state;
+
+	memcpy(recv_state_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.bis_sync_req = bis_sync_req_cb,
+	.broadcast_code = broadcast_code_cb,
 };
 
 static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
@@ -1138,6 +1151,50 @@ static void broadcast_sink_with_assistant(void)
 	PASS("Broadcast sink with assistant passed\n");
 }
 
+static void broadcast_sink_with_assistant_incorrect_code(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	test_start_adv();
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	test_scan_and_pa_sync();
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	test_broadcast_sync(recv_state_broadcast_code);
+	/* Wait for MIC failure */
+	WAIT_FOR_FLAG(flag_big_sync_mic_failure);
+
+	backchannel_sync_send_all(); /* let other devices know we have received data */
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	PASS("Broadcast sink with assistant and incorrect code passed\n");
+}
+
 static const struct bst_test_instance test_broadcast_sink[] = {
 	{
 		.test_id = "broadcast_sink",
@@ -1168,6 +1225,12 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = broadcast_sink_with_assistant,
+	},
+	{
+		.test_id = "broadcast_sink_with_assistant_incorrect_code",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_assistant_incorrect_code,
 	},
 	BSTEST_END_MARKER,
 };
