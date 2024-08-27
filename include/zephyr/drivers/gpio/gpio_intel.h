@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_INTEL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_INTEL_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,3 +24,5 @@ struct gpio_acpi_res {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_INTEL_H_ */
