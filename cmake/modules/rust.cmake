@@ -178,8 +178,4 @@ ${config_paths}
   # Presumably, Rust applications will have no C source files, but cmake will require them.
   # Add an empty file so that this will build.  The main will come from the rust library.
   target_sources(app PRIVATE ${ZEPHYR_BASE}/lib/rust/main.c ${WRAPPER_FILE})
-  set_source_files_properties(
-    ${WRAPPER_FILE}
-    COMPILE_FLAGS "-I${ZEPHYR_BASE}/lib/rust/zephyr-sys"
-  )
 endfunction()
