@@ -33,16 +33,17 @@ tests:
   sample.llext.modules.module_build:
     filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
     extra_configs:
+      - CONFIG_HELLO_WORLD_MODE=m
+      # Disabling MPU is the most compatible option. If the target supports
+      # CONFIG_USERSPACE, that should be preferred as it has many additional
+      # security benefits.
       - arch:arm:CONFIG_ARM_MPU=n
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
-      - CONFIG_HELLO_WORLD_MODE=m
     harness_config:
       type: one_line
       regex:
         - "Hello, world, from an llext!"
   sample.llext.modules.builtin_build:
-    extra_configs:
-      - CONFIG_HELLO_WORLD_MODE=y
     harness_config:
       type: one_line
       regex:

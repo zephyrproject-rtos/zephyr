@@ -7,7 +7,7 @@ source "Kconfig.zephyr"
 
 config HELLO_WORLD_MODE
 	tristate "Include the hello_world function"
-	default m
+	default y
 	help
 	  This enables building the hello_world function, implemented in
 	  hello_world_ext.c, either as an llext module or as a built-in part of
@@ -16,3 +16,7 @@ config HELLO_WORLD_MODE
 	  If you select 'm', the hello_world function will be built as an llext
 	  "module". If you select 'y', the hello_world function will be directly
 	  linked in the Zephyr image.
+
+	  Note that additional architecture-specific configuration may be
+	  required if you select 'm'. Please review this sample's documentation
+	  and sample.yaml for more information.
