@@ -23,6 +23,7 @@
 .github/workflows/stale-workflow-queue-cleanup.yml
 .github/workflows/greet_first_time_contributor.yml
 .github/workflows/issues-report-config.json
+.github/workflows/backport_issue_check.yml
 CODEOWNERS
 MAINTAINERS.yml
 LICENSE
