@@ -6,7 +6,7 @@
 
 #include <freq.h>
 
-#include <rpi_pico/rp2040.dtsi>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
 #include "rpi_pico-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
