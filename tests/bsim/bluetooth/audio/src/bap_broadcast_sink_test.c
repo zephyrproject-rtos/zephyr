@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -46,6 +47,7 @@ CREATE_FLAG(flag_pa_sync_lost);
 CREATE_FLAG(flag_received);
 CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
+CREATE_FLAG(flag_big_sync_mic_failure);
 
 static struct bt_bap_broadcast_sink *g_sink;
 static struct bt_le_scan_recv_info broadcaster_info;
@@ -551,6 +553,10 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
 	k_sem_give(&sem_stopped);
+
+	if (reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) {
+		SET_FLAG(flag_big_sync_mic_failure);
+	}
 }
 
 static void recv_cb(struct bt_bap_stream *stream,
@@ -745,22 +751,15 @@ static void test_broadcast_sink_create_inval(void)
 	}
 }
 
-static void test_broadcast_sync(bool encryption)
+static void test_broadcast_sync(const uint8_t broadcast_code[BT_AUDIO_BROADCAST_CODE_SIZE])
 {
 	int err;
 
 	printk("Syncing the sink\n");
-	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams,
-					 encryption ? BROADCAST_CODE : NULL);
+	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, broadcast_code);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
 		return;
-	}
-
-	/* Wait for all to be started */
-	printk("Waiting for streams to be started\n");
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		k_sem_take(&sem_started, K_FOREVER);
 	}
 }
 
@@ -932,7 +931,13 @@ static void test_common(void)
 	WAIT_FOR_FLAG(flag_syncable);
 
 	test_broadcast_sync_inval();
-	test_broadcast_sync(false);
+	test_broadcast_sync(NULL);
+
+	/* Wait for all to be started */
+	printk("Waiting for streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_started, K_FOREVER);
+	}
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
@@ -974,7 +979,14 @@ static void test_sink_disconnect(void)
 	test_broadcast_stop();
 
 	/* Retry sync*/
-	test_broadcast_sync(false);
+	test_broadcast_sync(NULL);
+
+	/* Wait for all to be started */
+	printk("Waiting for streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_started, K_FOREVER);
+	}
+
 	test_broadcast_stop();
 
 	test_broadcast_delete_inval();
@@ -1006,7 +1018,13 @@ static void test_sink_encrypted(void)
 	printk("Waiting for BIG syncable\n");
 	WAIT_FOR_FLAG(flag_syncable);
 
-	test_broadcast_sync(true);
+	test_broadcast_sync(BROADCAST_CODE);
+
+	/* Wait for all to be started */
+	printk("Waiting for streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_started, K_FOREVER);
+	}
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
@@ -1027,7 +1045,38 @@ static void test_sink_encrypted(void)
 		k_sem_take(&sem_stopped, K_FOREVER);
 	}
 
-	PASS("Broadcast sink passed\n");
+	PASS("Broadcast sink encrypted passed\n");
+}
+
+static void test_sink_encrypted_incorrect_code(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	test_scan_and_pa_sync();
+
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	test_broadcast_sync(INCORRECT_BROADCAST_CODE);
+	/* Wait for MIC failure */
+	WAIT_FOR_FLAG(flag_big_sync_mic_failure);
+
+	backchannel_sync_send_all(); /* let other devices know we have received data */
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	PASS("Broadcast sink incorrect code passed\n");
 }
 
 static void broadcast_sink_with_assistant(void)
@@ -1058,7 +1107,13 @@ static void broadcast_sink_with_assistant(void)
 
 	printk("Waiting for BIG sync request\n");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
-	test_broadcast_sync(false);
+	test_broadcast_sync(NULL);
+
+	/* Wait for all to be started */
+	printk("Waiting for streams to be started\n");
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		k_sem_take(&sem_started, K_FOREVER);
+	}
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
@@ -1101,6 +1156,12 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_sink_encrypted,
+	},
+	{
+		.test_id = "broadcast_sink_encrypted_incorrect_code",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_sink_encrypted_incorrect_code,
 	},
 	{
 		.test_id = "broadcast_sink_with_assistant",
