@@ -26,8 +26,6 @@ static struct k_spinlock obs_slock;
 NET_BUF_POOL_HEAP_DEFINE(_zbus_msg_subscribers_pool, CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE,
 			 sizeof(struct zbus_channel *), NULL);
 
-BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE > 0, "MSG_SUBSCRIBER feature requires heap memory pool.");
-
 static inline struct net_buf *_zbus_create_net_buf(struct net_buf_pool *pool, size_t size,
 						   k_timeout_t timeout)
 {
