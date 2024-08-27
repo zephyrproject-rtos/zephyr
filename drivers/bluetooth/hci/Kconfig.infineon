@@ -138,6 +138,7 @@ if CYW20829
 
 config CYW20829_BT_FW_TX10DBM_POWER
 	bool "CYW20829_BT_FW_TX10DBM_POWER"
+	default y
 	help
 	  Enable 10dBm TX Power variant of CYW20829 FW patch.
 
