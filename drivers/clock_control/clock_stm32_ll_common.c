@@ -113,8 +113,7 @@ static uint32_t get_msi_frequency(void)
 }
 
 /** @brief Verifies clock is part of active clock configuration */
-__unused
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 	int r = 0;
 
