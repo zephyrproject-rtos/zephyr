@@ -4698,3 +4698,29 @@ int bt_hfp_ag_battery_level(struct bt_hfp_ag *ag, uint8_t level)
 
 	return err;
 }
+
+int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_update_indicator(ag, BT_HFP_AG_SERVICE_IND,
+		available ? 1 : 0, NULL, NULL);
+	if (err) {
+		LOG_ERR("Fail to set service availability err :(%d)", err);
+	}
+
+	return err;
+}
