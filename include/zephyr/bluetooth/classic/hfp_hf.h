@@ -383,6 +383,39 @@ struct bt_hfp_hf_cb {
 	 *  @param number Value of `<Phone number>`.
 	 */
 	void (*request_phone_number)(struct bt_hfp_hf *hf, const char *number);
+
+	/** Query subscriber number callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  result code `+CUNM: [<alpha>],<number>, <type>,[<speed> ,<service>]`
+	 *  is received from AG.
+	 *  `<alpha>`: This optional field is not supported, and shall be left
+	 *  blank.
+	 *  `<number>`: Quoted string containing the phone number in the format
+	 *  specified by `<type>`.
+	 *  `<type>` field specifies the format of the phone number provided,
+	 *  and can be one of the following values:
+	 *  - values 128-143: The phone number format may be a national or
+	 *  international format, and may contain prefix and/or escape digits.
+	 *  No changes on the number presentation are required.
+	 *  - values 144-159: The phone number format is an international
+	 *  number, including the country code prefix. If the plus sign ("+")
+	 *  is not included as part of the number and shall be added by the AG
+	 *  as needed.
+	 *  - values 160-175: National number. No prefix nor escape digits
+	 *  included.
+	 *  `<speed>`: This optional field is not supported, and shall be left
+	 *  blank.
+	 *  `<service>`: Indicates which service this phone number relates to.
+	 *  Shall be either 4 (voice) or 5 (fax).
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param number Value of `<number>` without quotes.
+	 *  @param type Value of `<type>`.
+	 *  @param service Value of `<service>`.
+	 */
+	void (*subscriber_number)(struct bt_hfp_hf *hf, const char *number, uint8_t type,
+				  uint8_t service);
 };
 
 /** @brief Register HFP HF profile
@@ -796,6 +829,16 @@ int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code);
+
+/** @brief Handsfree HF Query Subscriber Number Information
+ *
+ *  It allows HF to query the AG subscriber number by sending `AT+CNUM`.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_query_subscriber(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }
