@@ -8,6 +8,11 @@ config HAS_RENESAS_RA_FSP
 	help
 	  Enable Renesas RA FSP support
 
+config HAS_RENESAS_RZ_FSP
+	bool
+	help
+	  Enable Renesas RZ FSP support
+
 if HAS_RENESAS_RA_FSP
 
 config USE_RA_FSP_SCI_B_UART
