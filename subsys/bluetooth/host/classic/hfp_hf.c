@@ -1603,6 +1603,45 @@ error:
 }
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 
+static int cnum_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+	char *alpha;
+	char *number;
+	uint32_t type;
+	char *speed;
+	uint32_t service = 4;
+
+	alpha = at_get_raw_string(hf_at, NULL);
+	number = at_get_string(hf_at);
+	if (!number) {
+		LOG_INF("Cannot get number");
+		return -EINVAL;
+	}
+
+	err = at_get_number(hf_at, &type);
+	if (err) {
+		LOG_INF("Cannot get type");
+		return -EINVAL;
+	}
+
+	speed = at_get_raw_string(hf_at, NULL);
+
+	err = at_get_number(hf_at, &service);
+	if (err) {
+		LOG_INF("Cannot get service");
+	}
+
+	if (bt_hf->subscriber_number) {
+		bt_hf->subscriber_number(hf, number, (uint8_t)type, (uint8_t)service);
+	}
+
+	LOG_DBG("CNUM number %s type %d service %d", number, type, service);
+
+	return 0;
+}
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -1632,6 +1671,7 @@ static const struct unsolicited {
 #if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
 	{ "BVRA", AT_CMD_TYPE_UNSOLICITED, bvra_handle },
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
+	{ "CNUM", AT_CMD_TYPE_UNSOLICITED, cnum_handle },
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -2382,6 +2422,40 @@ int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code)
 	err = hfp_hf_send_cmd(hf, NULL, vts_finish, "AT+VTS=%c", code);
 	if (err < 0) {
 		LOG_ERR("Fail to tramsit DTMF Codes on %p", hf);
+	}
+
+	return err;
+}
+
+static int cnum_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CNUM (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_query_subscriber(struct bt_hfp_hf *hf)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -ENOTCONN;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, cnum_finish, "AT+CNUM");
+	if (err < 0) {
+		LOG_ERR("Fail to query subscriber number information on %p", hf);
 	}
 
 	return err;
