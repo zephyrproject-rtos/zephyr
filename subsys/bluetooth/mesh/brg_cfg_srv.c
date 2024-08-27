@@ -111,12 +111,12 @@ static int bridging_table_remove(const struct bt_mesh_model *model, struct bt_me
 	struct bt_mesh_bridging_table_entry entry;
 	uint8_t status = STATUS_SUCCESS;
 
+	entry.directions = 0;
 	key_idx_unpack_pair(buf, &entry.net_idx1, &entry.net_idx2);
 	entry.addr1 = net_buf_simple_pull_le16(buf);
 	entry.addr2 = net_buf_simple_pull_le16(buf);
 
 	if (!netkey_check(entry.net_idx1, entry.net_idx2)) {
-		entry.directions = 0;
 		status = STATUS_INVALID_NETKEY;
 		goto rmv_respond;
 	}
