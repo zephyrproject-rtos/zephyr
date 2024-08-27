@@ -35,6 +35,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 
 #define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -937,7 +938,7 @@ static int lp5562_led_update_current(const struct device *dev)
 	return ret;
 }
 
-static int lp5562_enable(const struct device *dev)
+static int lp5562_enable(const struct device *dev, bool soft_reset)
 {
 	const struct lp5562_config *config = dev->config;
 	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
@@ -958,11 +959,13 @@ static int lp5562_enable(const struct device *dev)
 		k_sleep(K_MSEC(1));
 	}
 
-	/* Reset all internal registers to have a deterministic state. */
-	err = i2c_reg_write_byte_dt(&config->bus, LP5562_RESET, 0xFF);
-	if (err) {
-		LOG_ERR("%s: failed to soft-reset device", dev->name);
-		return err;
+	if (soft_reset) {
+		/* Reset all internal registers to have a deterministic state. */
+		err = i2c_reg_write_byte_dt(&config->bus, LP5562_RESET, 0xFF);
+		if (err) {
+			LOG_ERR("%s: failed to soft-reset device", dev->name);
+			return err;
+		}
 	}
 
 	/* Set en bit in LP5562_ENABLE register. */
@@ -976,6 +979,33 @@ static int lp5562_enable(const struct device *dev)
 	k_sleep(K_USEC(500));
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int lp5562_disable(const struct device *dev)
+{
+	const struct lp5562_config *config = dev->config;
+	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
+	int err = 0;
+
+	/* clear en bit in register configurations */
+	err = i2c_reg_update_byte_dt(&config->bus, LP5562_ENABLE, LP5562_ENABLE_CHIP_EN_MASK,
+				     LP5562_ENABLE_CHIP_EN_CLR);
+	if (err) {
+		LOG_ERR("%s: failed to clear EN Bit in ENABLE register", dev->name);
+		return err;
+	}
+
+	/* if gpio control is enabled, we can de-assert EN_GPIO now */
+	if (enable_gpio->port != NULL) {
+		err = gpio_pin_set_dt(enable_gpio, 0);
+		if (err) {
+			LOG_ERR("%s: failed to set enable GPIO to 0", dev->name);
+			return err;
+		}
+	}
+	return 0;
+}
+#endif
 
 static int lp5562_led_init(const struct device *dev)
 {
@@ -1001,7 +1031,7 @@ static int lp5562_led_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = lp5562_enable(dev);
+	ret = lp5562_enable(dev, true);
 	if (ret) {
 		return ret;
 	}
@@ -1045,6 +1075,20 @@ static const struct led_driver_api lp5562_led_api = {
 	.off = lp5562_led_off,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int lp5562_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lp5562_disable(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		return lp5562_enable(dev, false);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define LP5562_DEFINE(id)						\
 	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP5562_MAX_CURRENT_SETTING,\
 		"Red channel current must be between 0 and 25.5 mA.");	\
@@ -1063,8 +1107,10 @@ static const struct led_driver_api lp5562_led_api = {
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);			\
+									\
 	struct lp5562_data lp5562_data_##id;				\
-	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, NULL,		\
+	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),	\
 			&lp5562_data_##id,				\
 			&lp5562_config_##id, POST_KERNEL,		\
 			CONFIG_LED_INIT_PRIORITY,			\
