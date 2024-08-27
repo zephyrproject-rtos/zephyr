@@ -19,7 +19,7 @@ properties:
 
   v25:
     type: int
-    default: 760
+    required: true
     description: |
       Voltage of temperature sensor at 25C in mV according to
       datasheet "Electrical characteristics/Operating conditions"
