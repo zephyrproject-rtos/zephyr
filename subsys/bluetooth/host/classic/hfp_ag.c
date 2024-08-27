@@ -3046,6 +3046,35 @@ static int bt_hfp_ag_vts_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
+static int send_subscriber_number(struct bt_hfp_ag *ag, char *number,
+		uint8_t type, uint8_t service)
+{
+	int err;
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CNUM:,\"%s\",%d,,%d\r\n",
+		number, type, service);
+	if (err) {
+		LOG_ERR("Fail to send subscriber number :(%d)", err);
+	}
+	return err;
+}
+
+static int bt_hfp_ag_cnum_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->subscriber_number) {
+		err = bt_ag->subscriber_number(ag, send_subscriber_number);
+		return err;
+	}
+
+	return 0;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -3059,7 +3088,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
 	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
 	{"AT+BVRA", bt_hfp_ag_bvra_handler}, {"AT+BINP", bt_hfp_ag_binp_handler},
-	{"AT+VTS", bt_hfp_ag_vts_handler},
+	{"AT+VTS", bt_hfp_ag_vts_handler},   {"AT+CNUM", bt_hfp_ag_cnum_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
