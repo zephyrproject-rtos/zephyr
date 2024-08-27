@@ -353,6 +353,20 @@ Trusted Firmware-M
 LVGL
 ****
 
+zcbor
+*****
+
+* Updated the zcbor library to version 0.9.0.
+  Full release notes at https://github.com/NordicSemiconductor/zcbor/blob/0.9.0/RELEASE_NOTES.md
+  Migration guide at https://github.com/NordicSemiconductor/zcbor/blob/0.9.0/MIGRATION_GUIDE.md
+  Highlights:
+
+    * Many code generation bugfixes
+
+    * You can now decide at run-time whether the decoder should enforce canonical encoding.
+
+    * Allow --file-header to accept a path to a file with header contents
+
 Tests and Samples
 *****************
 
