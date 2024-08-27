@@ -3366,11 +3366,11 @@ Broadcom Platforms:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - cameled
     - nandojve
   collaborators:
     - gmarull
     - soburi
+    - cameled
   files:
     - boards/gd/
     - drivers/*/*gd32*
