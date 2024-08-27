@@ -322,7 +322,7 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 			.control_pins = gpio_stepper_motor_control_pins_##child};
 
 #define GPIO_STEPPER_API_DEFINE(child)                                                             \
-	static const struct stepper_api gpio_stepper_api_##child = {                               \
+	static const struct stepper_driver_api gpio_stepper_api_##child = {                        \
 		.enable = gpio_stepper_enable,                                                     \
 		.move = gpio_stepper_move,                                                         \
 		.is_moving = gpio_stepper_is_moving,                                               \
