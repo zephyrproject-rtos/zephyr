@@ -76,6 +76,18 @@ const clock_sys_pll2_config_t sysPll2Config_BOARD_BootClockRUN = {
 	.ssEnable = false,
 };
 
+/* Function Name : board_flexspi_clock_safe_config
+ * Description   : FLEXSPI clock source safe configuration weak function.
+ *                 Called before clock source configuration.
+ * Note          : Users need override this function to change FLEXSPI clock source to stable
+ *                 source when executing code on FLEXSPI memory(XIP). If XIP, the function
+ *                 should runs in RAM and move the FLEXSPI clock source to a stable clock
+ *                 to avoid instruction/data fetch issue during clock updating.
+ */
+__attribute__((weak)) void board_flexspi_clock_safe_config(void)
+{
+}
+
 /**
  * @brief Initialize the system clock
  */
@@ -122,6 +134,12 @@ static ALWAYS_INLINE void clock_init(void)
 	while (ANADIG_OSC_OSC_24M_CTRL_OSC_24M_STABLE_MASK !=
 			(ANADIG_OSC->OSC_24M_CTRL & ANADIG_OSC_OSC_24M_CTRL_OSC_24M_STABLE_MASK)) {
 	}
+
+	/* Call function board_flexspi_clock_safe_config() to move FlexSPI clock to a stable
+	 * clock source to avoid instruction/data fetch issue when updating PLL if XIP
+	 * (execute code on FLEXSPI memory).
+	 */
+	board_flexspi_clock_safe_config();
 
 #ifdef CONFIG_INIT_ARM_PLL
 	/* Init Arm Pll. */
@@ -391,6 +409,14 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_MCUX_LPTMR_TIMER || CONFIG_COUNTER_MCUX_LPTMR */
 
+#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi_nor)) &&  \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	/* Configure FLEXSPI1 using SYS_PLL3_PFD0_CLK */
+	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxSysPll3Pfd0;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
@@ -511,8 +537,10 @@ void soc_early_init_hook(void)
 
 	/* Enable data cache */
 #if defined(CONFIG_IMXRT118X_CM33_XCACHE_PS)
+	XCACHE_EnableCache(XCACHE_PC);
 	XCACHE_EnableCache(XCACHE_PS);
 #elif defined(CONFIG_SOC_MIMXRT1189_CM7)
+	sys_cache_instr_enable();
 	sys_cache_data_enable();
 #endif
 	__ISB();
