@@ -727,6 +727,17 @@ int bt_hfp_ag_roaming_status(struct bt_hfp_ag *ag, uint8_t status);
  */
 int bt_hfp_ag_battery_level(struct bt_hfp_ag *ag, uint8_t level);
 
+/** @brief Set service availability
+ *
+ *  Set service availability.
+ *
+ *  @param ag HFP AG object.
+ *  @param available service availability
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available);
+
 #ifdef __cplusplus
 }
 #endif
