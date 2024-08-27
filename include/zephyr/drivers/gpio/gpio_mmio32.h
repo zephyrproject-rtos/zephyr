@@ -11,6 +11,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const struct gpio_driver_api gpio_mmio32_api;
 
 struct gpio_mmio32_config {
@@ -68,5 +72,8 @@ DEVICE_DT_DEFINE(node_id,								\
 
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_MMIO32_H_ */

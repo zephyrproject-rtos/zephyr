@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct gpio_acpi_res {
 	uint8_t num_pins;
 	uint32_t pad_base;
@@ -13,3 +17,7 @@ struct gpio_acpi_res {
 	uint16_t base_num;
 	uintptr_t reg_base;
 };
+
+#ifdef __cplusplus
+}
+#endif
