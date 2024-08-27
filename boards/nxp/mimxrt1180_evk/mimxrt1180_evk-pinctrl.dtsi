@@ -115,4 +115,18 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_flexspi1: pinmux_flexspi1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b2_05_flexspi1_b_dqs>,
+				<&iomuxc_gpio_sd_b2_06_flexspi1_b_ss0_b>,
+				<&iomuxc_gpio_sd_b2_07_flexspi1_b_sclk>,
+				<&iomuxc_gpio_sd_b2_08_flexspi1_b_data0>,
+				<&iomuxc_gpio_sd_b2_09_flexspi1_b_data1>,
+				<&iomuxc_gpio_sd_b2_10_flexspi1_b_data2>,
+				<&iomuxc_gpio_sd_b2_11_flexspi1_b_data3>;
+			bias-pull-down;
+			input-enable;
+		};
+	};
 };
