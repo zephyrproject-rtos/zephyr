@@ -97,10 +97,6 @@ static void auxdisplay_hd44780_command(const struct device *dev, bool rs, uint8_
 
 	gpio_pin_set_dt(&config->rs_gpio, rs);
 
-	if (config->rw_gpio.port) {
-		gpio_pin_set_dt(&config->rw_gpio, 0);
-	}
-
 	gpio_pin_set_dt(&config->e_gpio, 1);
 	k_sleep(K_USEC(config->enable_line_rise_delay));
 	gpio_pin_set_dt(&config->e_gpio, 0);
@@ -148,6 +144,8 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 			LOG_ERR("Configuration of RW GPIO failed: %d", rc);
 			return rc;
 		}
+
+		gpio_pin_set_dt(&config->rw_gpio, 0);
 	}
 
 	rc = gpio_pin_configure_dt(&config->e_gpio, GPIO_OUTPUT);
