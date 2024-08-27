@@ -716,6 +716,17 @@ int bt_hfp_ag_signal_strength(struct bt_hfp_ag *ag, uint8_t strength);
  */
 int bt_hfp_ag_roaming_status(struct bt_hfp_ag *ag, uint8_t status);
 
+/** @brief Set battery level
+ *
+ *  Set battery level.
+ *
+ *  @param ag HFP AG object.
+ *  @param level battery level.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_battery_level(struct bt_hfp_ag *ag, uint8_t level);
+
 #ifdef __cplusplus
 }
 #endif
