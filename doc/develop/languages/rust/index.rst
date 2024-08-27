@@ -11,6 +11,11 @@ efficient low-level code.  Rust's expressive syntax and modern features make it 
 for developers working on embedded systems, operating systems, and other performance-critical
 applications.
 
+.. toctree::
+   :maxdepth: 2
+
+   bindings.rst
+
 Enabling Rust Support
 *********************
 
