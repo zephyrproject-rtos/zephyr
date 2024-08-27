@@ -2334,6 +2334,59 @@ int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf)
 	return err;
 }
 
+static int vts_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+VTS (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -ENOTCONN;
+	}
+
+	hf = call->hf;
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING) ||
+		(!(!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD) &&
+		(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)))) {
+		LOG_ERR("Invalid call status");
+		return -EINVAL;
+	}
+
+	if (!IS_VALID_DTMF(code)) {
+		LOG_ERR("Invalid code");
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, vts_finish, "AT+VTS=%c", code);
+	if (err < 0) {
+		LOG_ERR("Fail to tramsit DTMF Codes on %p", hf);
+	}
+
+	return err;
+}
+
 static int ata_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
 {
