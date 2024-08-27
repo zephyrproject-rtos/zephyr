@@ -13,21 +13,18 @@
 
 #if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
 #define SPI_FLASH_TEST_REGION_OFFSET 0xf000
-#elif defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M1) || \
+#elif defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M1) ||                                  \
 	defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M3)
 /* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
-#define SPI_FLASH_TEST_REGION_OFFSET \
-	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
-#elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
-	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
+#define SPI_FLASH_TEST_REGION_OFFSET DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
+#elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || defined(CONFIG_BOARD_NPCX7M6FB_EVB)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
 #else
 #define SPI_FLASH_TEST_REGION_OFFSET 0xff000
 #endif
-#define SPI_FLASH_SECTOR_SIZE        4096
+#define SPI_FLASH_SECTOR_SIZE 4096
 
-#if defined(CONFIG_FLASH_STM32_OSPI) || \
-	defined(CONFIG_FLASH_STM32_QSPI) || \
+#if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI) ||                        \
 	defined(CONFIG_FLASH_STM32_XSPI)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
@@ -46,11 +43,12 @@
 #define SPI_FLASH_COMPAT invalid
 #endif
 
-const uint8_t erased[] = { 0xff, 0xff, 0xff, 0xff };
+const uint8_t erased[] = {0xff, 0xff, 0xff, 0xff};
+struct flash_pages_info test_page_info;
 
 void single_sector_test(const struct device *flash_dev)
 {
-	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	const uint8_t expected[] = {0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
 	uint8_t buf[sizeof(expected)];
 	int rc;
@@ -61,13 +59,34 @@ void single_sector_test(const struct device *flash_dev)
 	 * automatically after completion of write and erase
 	 * operations.
 	 */
+
+	printf("Pre test info\n");
+
+	rc = flash_get_page_count(flash_dev);
+	if (rc == 0) {
+		printf("Get flash pages count returned 0 \n");
+		return;
+	}
+	printf("Flash device page count: %d\n", rc)
+
+		rc = flash_get_page_info_by_offs(flash_dev, SPI_FLASH_TEST_REGION_OFFSET,
+						 &test_page_info);
+	if (rc != 0) {
+		printf("Get flash page info by offset failed: %d\n", rc);
+	}
+	rc = flash_get_page_info_by_idx(flash_dev, test_page_info.index, &test_page_info);
+	if (rc != 0) {
+		printf("Get flash page info by ID failed: %d\n", rc);
+	}
+	printf("Test page info: start_offset %ld, size: %d, index: %d\n",
+	       test_page_info.start_offset, (uint32_t)test_page_info.size, test_page_info.index);
+
 	printf("\nTest 1: Flash erase\n");
 
 	/* Full flash erase if SPI_FLASH_TEST_REGION_OFFSET = 0 and
 	 * SPI_FLASH_SECTOR_SIZE = flash size
 	 */
-	rc = flash_erase(flash_dev, SPI_FLASH_TEST_REGION_OFFSET,
-			 SPI_FLASH_SECTOR_SIZE);
+	rc = flash_erase(flash_dev, SPI_FLASH_TEST_REGION_OFFSET, SPI_FLASH_SECTOR_SIZE);
 	if (rc != 0) {
 		printf("Flash erase failed! %d\n", rc);
 	} else {
@@ -80,7 +99,7 @@ void single_sector_test(const struct device *flash_dev)
 		}
 		if (memcmp(erased, buf, len) != 0) {
 			printf("Flash erase failed at offset 0x%x got 0x%x\n",
-				SPI_FLASH_TEST_REGION_OFFSET, *(uint32_t *)buf);
+			       SPI_FLASH_TEST_REGION_OFFSET, *(uint32_t *)buf);
 			return;
 		}
 		printf("Flash erase succeeded!\n");
@@ -111,8 +130,8 @@ void single_sector_test(const struct device *flash_dev)
 		printf("Data read does not match data written!!\n");
 		while (rp < rpe) {
 			printf("%08x wrote %02x read %02x %s\n",
-			       (uint32_t)(SPI_FLASH_TEST_REGION_OFFSET + (rp - buf)),
-			       *wp, *rp, (*rp == *wp) ? "match" : "MISMATCH");
+			       (uint32_t)(SPI_FLASH_TEST_REGION_OFFSET + (rp - buf)), *wp, *rp,
+			       (*rp == *wp) ? "match" : "MISMATCH");
 			++rp;
 			++wp;
 		}
@@ -122,7 +141,7 @@ void single_sector_test(const struct device *flash_dev)
 #if defined SPI_FLASH_MULTI_SECTOR_TEST
 void multi_sector_test(const struct device *flash_dev)
 {
-	const uint8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	const uint8_t expected[] = {0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
 	uint8_t buf[sizeof(expected)];
 	int rc;
@@ -155,8 +174,8 @@ void multi_sector_test(const struct device *flash_dev)
 				return;
 			}
 			if (memcmp(erased, buf, len) != 0) {
-				printf("Flash erase failed at offset 0x%x got 0x%x\n",
-				offs, *(uint32_t *)buf);
+				printf("Flash erase failed at offset 0x%x got 0x%x\n", offs,
+				       *(uint32_t *)buf);
 				return;
 			}
 			offs += SPI_FLASH_SECTOR_SIZE;
@@ -193,8 +212,8 @@ void multi_sector_test(const struct device *flash_dev)
 			printf("Data read does not match data written!!\n");
 			while (rp < rpe) {
 				printf("%08x wrote %02x read %02x %s\n",
-					(uint32_t)(offs + (rp - buf)),
-					*wp, *rp, (*rp == *wp) ? "match" : "MISMATCH");
+				       (uint32_t)(offs + (rp - buf)), *wp, *rp,
+				       (*rp == *wp) ? "match" : "MISMATCH");
 				++rp;
 				++wp;
 			}
