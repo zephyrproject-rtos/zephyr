@@ -783,6 +783,20 @@ int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf);
  */
 int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf);
 
+/** @brief Handsfree HF Transmit A specific DTMF Code
+ *
+ *  During an ongoing call, the HF transmits the AT+VTS command to
+ *  instruct the AG to transmit a specific DTMF code to its network
+ *  connection.
+ *  The set of the code is "0-9,#,*,A-D".
+ *
+ *  @param call HFP HF call object.
+ *  @param code A specific DTMF code.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code);
+
 #ifdef __cplusplus
 }
 #endif
