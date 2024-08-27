@@ -29,6 +29,11 @@ fn panic(_ :&PanicInfo) -> ! {
     }
 }
 
+/// Re-export of zephyr-sys as `zephyr::raw`.
+pub mod raw {
+    pub use zephyr_sys::*;
+}
+
 /// Provide symbols used by macros in a crate-local namespace.
 #[doc(hidden)]
 pub mod _export {
