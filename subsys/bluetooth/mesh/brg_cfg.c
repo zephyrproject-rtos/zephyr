@@ -303,13 +303,16 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 			    (addr2 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr1 == addr1) ||
 			    (addr1 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr2 == addr2)) {
 				memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
-				brg_tbl_compact();
 #if IS_ENABLED(CONFIG_BT_SETTINGS)
 				store = true;
 #endif
 			}
 		}
 	}
+
+	/* Compact when all rows have been deleted. */
+	brg_tbl_compact();
+
 #if IS_ENABLED(CONFIG_BT_SETTINGS)
 	if (store) {
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
