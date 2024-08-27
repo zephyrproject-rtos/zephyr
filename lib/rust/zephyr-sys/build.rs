@@ -16,7 +16,7 @@ use anyhow::Result;
 use bindgen::Builder;
 
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn main() -> Result<()> {
     // Pass in the target used to build the native code.
@@ -30,7 +30,7 @@ fn main() -> Result<()> {
 
     // Bindgen everything.
     let bindings = Builder::default()
-        .header("wrapper.h")
+        .header(Path::new("wrapper.h").canonicalize().unwrap().to_str().unwrap())
         .use_core()
         .clang_arg(&target_arg);
     let bindings = define_args(bindings, "-I", "INCLUDE_DIRS");
