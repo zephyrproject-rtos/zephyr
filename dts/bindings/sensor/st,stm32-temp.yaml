@@ -10,7 +10,7 @@ include: [base.yaml, "st,stm32-temp-common.yaml"]
 properties:
   avgslope:
     type: int
-    default: 25
+    required: true
     description: |
       Average slope of T-V chart (in mV/C x10) according to
       datasheet "Electrical characteristics/Operating conditions"
