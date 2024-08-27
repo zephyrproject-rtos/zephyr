@@ -83,6 +83,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return vexriscv_litex_irq_getmask() & (1 << irq);
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 static int vexriscv_litex_irq_init(const struct device *dev)
 {
 	__asm__ volatile ("csrrs x0, mie, %0"

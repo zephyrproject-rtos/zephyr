@@ -313,6 +313,13 @@ void arch_irq_enable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
 
 /**
+ *  Set the affinity of the specified interrupt line
+ *
+ * @see irq_set_affinity()
+ */
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask);
+
+/**
  * Arch-specific hook to install a dynamic interrupt.
  *
  * @param irq IRQ line number

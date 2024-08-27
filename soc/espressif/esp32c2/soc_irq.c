@@ -49,6 +49,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return res;
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 uint32_t soc_intr_get_next_source(void)
 {
 	uint32_t status;

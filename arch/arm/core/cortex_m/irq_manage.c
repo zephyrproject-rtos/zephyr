@@ -49,6 +49,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 /**
  * @internal
  *

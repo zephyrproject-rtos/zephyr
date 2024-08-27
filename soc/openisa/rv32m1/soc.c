@@ -133,6 +133,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	}
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 /*
  * SoC-level interrupt initialization. Clear any pending interrupts or
  * events, and find the INTMUX device if necessary.

@@ -184,6 +184,12 @@ int arch_irq_is_enabled(unsigned int irq)
 		return z_arc_v2_irq_unit_int_enabled(irq);
 	}
 }
+
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
 #else
 void arch_irq_enable(unsigned int irq)
 {
@@ -198,6 +204,12 @@ void arch_irq_disable(unsigned int irq)
 int arch_irq_is_enabled(unsigned int irq)
 {
 	return z_arc_v2_irq_unit_int_enabled(irq);
+}
+
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
 }
 #endif /* CONFIG_ARC_CONNECT */
 

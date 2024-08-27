@@ -32,6 +32,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return riscv_clic_irq_is_enabled(irq);
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	riscv_clic_irq_priority_set(irq, prio, flags);
@@ -103,6 +109,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	mie = csr_read(mie);
 
 	return !!(mie & (1 << irq));
+}
+
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
 }
 
 #if defined(CONFIG_RISCV_HAS_PLIC)

@@ -39,6 +39,7 @@ GTEXT(z_soc_irq_eoi)
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+extern void arch_irq_set_affinity(unsigned int irq, unsigned int mask);
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
 extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
@@ -55,6 +56,7 @@ void z_soc_irq_init(void);
 void z_soc_irq_enable(unsigned int irq);
 void z_soc_irq_disable(unsigned int irq);
 int z_soc_irq_is_enabled(unsigned int irq);
+int z_soc_irq_set_affinity(unsigned int irq, unsigned int mask);
 
 void z_soc_irq_priority_set(
 	unsigned int irq, unsigned int prio, unsigned int flags);
@@ -65,6 +67,7 @@ void z_soc_irq_eoi(unsigned int irq);
 #define arch_irq_enable(irq)		z_soc_irq_enable(irq)
 #define arch_irq_disable(irq)		z_soc_irq_disable(irq)
 #define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+#define arch_irq_set_affinity(irq, mask) z_soc_irq_set_affinity(irq, mask)
 
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)

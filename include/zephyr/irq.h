@@ -310,6 +310,16 @@ void z_smp_global_unlock(unsigned int key);
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
 
 /**
+ * @brief Set IRQ affinity.
+ *
+ * This routine configure a set of CPU cores that can service the @a irq.
+ *
+ * @param irq IRQ line.
+ * @param mask CPU bit mask.
+ */
+#define irq_set_affinity(irq, mask) arch_irq_set_affinity(irq, mask)
+
+/**
  * @}
  */
 

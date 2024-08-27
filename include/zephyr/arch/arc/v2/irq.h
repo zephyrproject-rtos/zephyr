@@ -32,6 +32,7 @@ extern void z_arc_firq_stack_set(void);
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+extern void arch_irq_set_affinity(unsigned int irq, unsigned int mask);
 #ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);

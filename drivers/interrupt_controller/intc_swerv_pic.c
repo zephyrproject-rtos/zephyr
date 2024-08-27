@@ -238,5 +238,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return !!(mie & (1 << irq));
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 DEVICE_DT_INST_DEFINE(0, swerv_pic_init, NULL,  NULL,  NULL,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);

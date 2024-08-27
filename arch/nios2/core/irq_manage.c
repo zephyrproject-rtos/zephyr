@@ -69,6 +69,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return ienable & BIT(irq);
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 /**
  * @brief Interrupt demux function
  *

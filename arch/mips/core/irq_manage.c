@@ -60,6 +60,12 @@ int arch_irq_is_enabled(unsigned int irq)
 	return read_c0_status() & (ST0_IP0 << irq);
 }
 
+void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
+{
+	ARG_UNUSED(irq);
+	ARG_UNUSED(mask);
+}
+
 void z_mips_enter_irq(uint32_t ipending)
 {
 	_current_cpu->nested++;
