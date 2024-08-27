@@ -550,7 +550,7 @@ struct gpio_dt_spec {
  *		.ngpios = 32,
  *		.gpios_reserved = 0xdeadbeef,
  *		               // 0b1101 1110 1010 1101 1011 1110 1110 1111
- *
+ *	};
  *	static const struct some_config dev_cfg_b = {
  *		.ngpios = 18,
  *		.gpios_reserved = 0xfffc0418,
