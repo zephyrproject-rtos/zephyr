@@ -357,3 +357,6 @@ enum hfp_hf_ag_indicators {
 #define BT_HFP_BVRA_STATE_SEND_AUDIO BIT(1)
 /* BVRA VRE state: the AG is processing the audio input */
 #define BT_HFP_BVRA_STATE_PROCESS_AUDIO BIT(2)
+
+#define IS_VALID_DTMF(c) ((((c) >= '0') && ((c) <= '9')) || \
+	(((c) >= 'A') && ((c) <= 'D')) || ((c) == '#') || ((c) == '*'))
