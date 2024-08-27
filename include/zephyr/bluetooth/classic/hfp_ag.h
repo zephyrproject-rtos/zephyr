@@ -44,6 +44,24 @@ enum bt_hfp_ag_indicator {
 struct bt_hfp_ag;
 struct bt_hfp_ag_call;
 
+/** @typedef bt_hfp_ag_query_subscriber_func_t
+ *  @brief Query subscriber number callback function
+ *
+ *  When AG wants to send subscriber number information, all information
+ *  will be passed through the callback. And the subscriber number
+ *  information will be sent out in this function.
+ *
+ *  @param ag HFP AG object.
+ *  @param number Subscriber number.
+ *  @param type Type of subscriber number.
+ *  @param service Service of subscriber number.
+ *
+ *  @return 0 if should continue to the next subscriber number information.
+ *  @return negative value to stop.
+ */
+typedef int (*bt_hfp_ag_query_subscriber_func_t)(struct bt_hfp_ag *ag, char *number, uint8_t type,
+						 uint8_t service);
+
 /** @brief HFP profile AG application callback */
 struct bt_hfp_ag_cb {
 	/** HF AG connected callback to application
@@ -349,6 +367,18 @@ struct bt_hfp_ag_cb {
 	 *  @param code A specific DTMF code.
 	 */
 	void (*transmit_dtmf_code)(struct bt_hfp_ag *ag, char code);
+
+	/** Get subscriber number callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  AT command `AT+CNUM` is received.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param func Query subscriber number callback.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*subscriber_number)(struct bt_hfp_ag *ag, bt_hfp_ag_query_subscriber_func_t func);
 };
 
 /** @brief Register HFP AG profile
