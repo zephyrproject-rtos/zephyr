@@ -180,6 +180,9 @@ Drivers and Sensors
 
 * Modem
 
+  * Added support for the U-Blox LARA-R6 modem.
+  * Added support for setting the modem's UART baudrate during init.
+
 * MIPI-DBI
 
 * MSPI
