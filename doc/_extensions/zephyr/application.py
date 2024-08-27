@@ -191,17 +191,13 @@ class ZephyrAppCommandsDirective(Directive):
         # Allow build directories which are nested.
         build_dir = ('build' + '/' + build_dir_append).rstrip('/')
 
-        # Create host_os array
+        # Prepare repeatable arguments
         host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS
                                                         if v != 'all']
-        # Create tools array
         tools = [tool] if tool != "all" else [v for v in self.TOOLS
                                                 if v != 'all']
-
-        # Create snippet array
+        build_args_list = build_args.split(' ') if build_args is not None else None
         snippet_list = snippets.split(',') if snippets is not None else None
-
-        # Create shields array
         shield_list = shield.split(',') if shield is not None else None
 
         # Build the command content as a list, then convert to string.
@@ -219,7 +215,7 @@ class ZephyrAppCommandsDirective(Directive):
             'shield': shield_list,
             'conf': conf,
             'gen_args': gen_args,
-            'build_args': build_args,
+            'build_args': build_args_list,
             'snippets': snippet_list,
             'build_dir': build_dir,
             'build_dir_fmt': build_dir_fmt,
@@ -280,6 +276,7 @@ class ZephyrAppCommandsDirective(Directive):
         compact = kwargs['compact']
         shield = kwargs['shield']
         snippets = kwargs['snippets']
+        build_args = kwargs["build_args"]
         west_args = kwargs['west_args']
         flash_args = kwargs['flash_args']
         kwargs['board'] = None
@@ -287,6 +284,7 @@ class ZephyrAppCommandsDirective(Directive):
         gen_arg = ' -G\'Unix Makefiles\'' if generator == 'make' else ''
         cmake_args = gen_arg + self._cmake_args(**kwargs)
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
+        build_args = "".join(f" -o {b}" for b in build_args) if build_args else ""
         west_args = ' {}'.format(west_args) if west_args else ''
         flash_args = ' {}'.format(flash_args) if flash_args else ''
         snippet_args = ''.join(f' -S {s}' for s in snippets) if snippets else ''
@@ -320,8 +318,10 @@ class ZephyrAppCommandsDirective(Directive):
         # defaulting to west.
         #
         # For now, this keeps the resulting commands working.
-        content.append('west build -b {}{}{}{}{}{}{}'.
-                       format(board, west_args, snippet_args, shield_args, build_dst, src, cmake_args))
+        content.append(
+            f"west build -b {board}{build_args}{west_args}{snippet_args}"
+            f"{shield_args}{build_dst}{src}{cmake_args}"
+        )
 
         # If we're signing, we want to do that next, so that flashing
         # etc. commands can use the signed file which must be created
