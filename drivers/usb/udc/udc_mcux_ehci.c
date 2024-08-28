@@ -873,10 +873,10 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 											\
 	static void udc_irq_enable_func##n(const struct device *dev)			\
 	{										\
-		IRQ_CONNECT(DT_INST_IRQN(n),						\
-			    DT_INST_IRQ(n, priority),					\
-			    udc_mcux_isr,						\
-			    DEVICE_DT_INST_GET(n), 0);					\
+		irq_connect_dynamic(DT_INST_IRQN(n),					\
+				    DT_INST_IRQ(n, priority),				\
+				    (void (*)(const void *))udc_mcux_isr,		\
+				    DEVICE_DT_INST_GET(n), 0);				\
 											\
 		irq_enable(DT_INST_IRQN(n));						\
 	}										\
