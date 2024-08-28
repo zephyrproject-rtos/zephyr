@@ -350,8 +350,6 @@ Bluetooth controller:
     - subsys/bluetooth/shell/ticker.c
     - tests/bluetooth/controller/
     - tests/bsim/bluetooth/ll/
-    - tests/bluetooth/ctrl*/
-    - tests/bluetooth/ll_settings/
   labels:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
@@ -416,8 +414,6 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso_internal.h
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
-    - tests/bluetooth/ctrl*/
-    - tests/bluetooth/ll_settings/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
     - tests/bluetooth/tester/
