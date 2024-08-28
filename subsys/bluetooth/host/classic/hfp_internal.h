@@ -126,6 +126,12 @@
 #define BT_HFP_HF_SDP_FEATURE_VOICE_RECG_TEXT_ENABLE 0
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG_TEXT */
 
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATORS)
+#define BT_HFP_HF_FEATURE_HF_IND_ENABLE BT_HFP_HF_FEATURE_HF_IND
+#else
+#define BT_HFP_HF_FEATURE_HF_IND_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+
 /* HFP HF Supported features */
 #define BT_HFP_HF_SUPPORTED_FEATURES (\
 	BT_HFP_HF_FEATURE_CLI_ENABLE | \
@@ -137,7 +143,8 @@
 	BT_HFP_HF_FEATURE_ECC_ENABLE | \
 	BT_HFP_HF_FEATURE_VOICE_RECG_ENABLE | \
 	BT_HFP_HF_FEATURE_ENH_VOICE_RECG_ENABLE | \
-	BT_HFP_HF_FEATURE_VOICE_RECG_TEXT_ENABLE)
+	BT_HFP_HF_FEATURE_VOICE_RECG_TEXT_ENABLE | \
+	BT_HFP_HF_FEATURE_HF_IND_ENABLE)
 
 /* HFP HF Supported features in SDP */
 #define BT_HFP_HF_SDP_SUPPORTED_FEATURES (\
@@ -245,6 +252,10 @@ struct bt_hfp_hf {
 	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
 
+	uint32_t hf_ind;
+	uint32_t ag_ind;
+	uint32_t ind_enable;
+
 	/* AT command initialization indicator */
 	uint8_t cmd_init_seq;
 
@@ -350,3 +361,12 @@ struct bt_hfp_hf {
 
 #define IS_VALID_DTMF(c) ((((c) >= '0') && ((c) <= '9')) || \
 	(((c) >= 'A') && ((c) <= 'D')) || ((c) == '#') || ((c) == '*'))
+
+/* HFP HF Indicators */
+enum {
+	HFP_HF_ENHANCED_SAFETY_IND = 1, /* Enhanced Safety */
+	HFP_HF_BATTERY_LEVEL_IND = 2,   /* Remaining level of Battery */
+	HFP_HF_IND_MAX
+};
+
+#define IS_VALID_BATTERY_LEVEL(level) (((level) >= 0) && ((level) <= 100))
