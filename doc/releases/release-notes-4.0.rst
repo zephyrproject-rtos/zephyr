@@ -111,6 +111,8 @@ Boards & SoC Support
   * :ref:`native_posix<native_posix>` has been deprecated in favour of
     :ref:`native_sim<native_sim>`.
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
+  * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
+    See ``samples/boards/stm32/mco`` sample.
 
 * Added support for the following shields:
 
