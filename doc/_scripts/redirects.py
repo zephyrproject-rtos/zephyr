@@ -206,6 +206,8 @@ REDIRECTS = [
     ('samples/bluetooth/broadcast_audio_assistant/README', 'samples/bluetooth/bap_broadcast_assistant/README'),
     ('samples/bluetooth/broadcast_audio_sink/README', 'samples/bluetooth/bap_broadcast_sink/README'),
     ('samples/bluetooth/broadcast_audio_source/README', 'samples/bluetooth/bap_broadcast_source/README'),
+    ('samples/bluetooth/central_iso/README', 'samples/bluetooth/iso_central/README'),
+    ('samples/bluetooth/peripheral_iso/README', 'samples/bluetooth/iso_peripheral/README'),
     ('samples/bluetooth/public_broadcast_sink/README', 'samples/bluetooth/pbp_public_broadcast_sink/README'),
     ('samples/bluetooth/public_broadcast_source/README', 'samples/bluetooth/pbp_public_broadcast_source/README'),
     ('samples/bluetooth/unicast_audio_client/README', 'samples/bluetooth/bap_unicast_client/README'),

@@ -1,6 +1,6 @@
-.. _peripheral_iso:
+.. _iso_peripheral:
 
-Bluetooth: Peripheral ISO
+Bluetooth: ISO Peripheral
 #########################
 
 Overview
@@ -9,7 +9,7 @@ Overview
 This sample demonstrates how to use isochronous channels as a peripheral.
 The sample starts advertising, waits for a central to connect to it and set up an isochronous channel.
 Once the isochronous channel is set up, received isochronous data is printed out.
-It is recommended to run this sample together with the :ref:`Bluetooth: Central ISO <bluetooth_central_iso>` sample.
+It is recommended to run this sample together with the :ref:`Bluetooth: Central ISO <bluetooth_iso_central>` sample.
 
 Requirements
 ************
@@ -22,7 +22,7 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/bluetooth/peripheral_iso` in the Zephyr tree.
+This sample can be found under :zephyr_file:`samples/bluetooth/iso_peripheral` in the Zephyr tree.
 
 1. Start the application.
    In the terminal window, check that it is advertising.
