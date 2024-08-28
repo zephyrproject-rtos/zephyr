@@ -11,11 +11,8 @@ config MODEM
 config MODEM_HL7800
 	default NETWORKING
 
-config NORDIC_QSPI_NOR
-	default BOOTLOADER_MCUBOOT
-
 config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
-	default 4096 if NORDIC_QSPI_NOR
+	default 4096
 
 config BT_CTLR
 	default BT
