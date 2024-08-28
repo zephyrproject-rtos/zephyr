@@ -1668,6 +1668,30 @@ bool net_ipaddr_parse(const char *str, size_t str_len,
 		      struct sockaddr *addr);
 
 /**
+ * @brief Parse a string that contains either IPv4 or IPv6 address
+ * and optional IPv4 netmask or IPv6 prefix length, and store the address
+ * information in user supplied sockaddr struct.
+ *
+ * @details Syntax of the IP address string:
+ *   192.0.2.1/24
+ *   192.0.2.42
+ *   2001:db8::1/64
+ *   2001:db::42
+ * Note that the str_len parameter is used to restrict the amount of
+ * characters that are checked. If the string does not contain mask length
+ * value, then the mask_len parameter is not modified.
+ *
+ * @param str String that contains the IP address.
+ * @param str_len Length of the string to be parsed.
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param mask_len IPv4 netmask length or IPv6 prefix length.
+ *
+ * @return True if parsing could be done, false otherwise.
+ */
+bool net_ipaddr_mask_parse(const char *str, size_t str_len,
+			   struct sockaddr *addr, uint8_t *mask_len);
+
+/**
  * @brief Set the default port in the sockaddr structure.
  * If the port is already set, then do nothing.
  *
