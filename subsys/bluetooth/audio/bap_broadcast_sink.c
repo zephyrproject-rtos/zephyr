@@ -170,12 +170,13 @@ static void update_recv_state_big_cleared(const struct bt_bap_broadcast_sink *si
 		mod_src_param.encrypt_state = recv_state->encrypt_state;
 	}
 
-	/* BIS syncs will be automatically cleared since the mod_src_param
-	 * struct is 0-initialized
-	 *
-	 * Since the metadata_len is also 0, then the metadata won't be
-	 * modified by the operation either.
-	 */
+	if (reason != BT_HCI_ERR_LOCALHOST_TERM_CONN) {
+		for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
+			mod_src_param.subgroups[i].bis_sync = BT_BAP_BIS_SYNC_FAILED;
+		}
+	}
+
+	/* Since the metadata_len is 0 then the metadata won't be modified by the operation either*/
 
 	/* Copy existing unchanged data */
 	mod_src_param.num_subgroups = recv_state->num_subgroups;

@@ -1419,9 +1419,8 @@ static bool valid_bt_bap_scan_delegator_mod_src_param(
 	for (uint8_t i = 0U; i < param->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &param->subgroups[i];
 
-		if (subgroup->bis_sync == BT_BAP_BIS_SYNC_NO_PREF ||
-		    !bis_syncs_unique_or_no_pref(subgroup->bis_sync,
-						 aggregated_bis_syncs)) {
+		if (subgroup->bis_sync != BT_BAP_BIS_SYNC_FAILED &&
+		    !bis_syncs_unique_or_no_pref(subgroup->bis_sync, aggregated_bis_syncs)) {
 			LOG_DBG("Invalid BIS sync: %u", subgroup->bis_sync);
 
 			return false;
@@ -1483,7 +1482,8 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 		const uint32_t bis_sync = param->subgroups[i].bis_sync;
 		const uint32_t bis_sync_requested = internal_state->requested_bis_sync[i];
 
-		if (!bits_subset_of(bis_sync, bis_sync_requested)) {
+		if (bis_sync != BT_BAP_BIS_SYNC_FAILED &&
+		    !bits_subset_of(bis_sync, bis_sync_requested)) {
 			LOG_DBG("Subgroup[%d] invalid bis_sync value %x for %x",
 				i, bis_sync, bis_sync_requested);
 
