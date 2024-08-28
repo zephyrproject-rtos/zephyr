@@ -32,4 +32,4 @@ void test_entry(void)
 	__asm volatile ("blx r0");
 	zassert_equal(test_var, 1, "mov.w and mov.t test failed");
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);
