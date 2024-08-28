@@ -149,13 +149,6 @@ enum {
 	BT_HFP_AG_CALL_NUM_FLAGS,
 };
 
-/* HFP HF Indicators */
-enum {
-	HFP_HF_ENHANCED_SAFETY_IND = 1, /* Enhanced Safety */
-	HFP_HF_BATTERY_LEVEL_IND = 2,   /* Remaining level of Battery */
-	HFP_HF_IND_MAX
-};
-
 typedef enum __packed {
 	/** Session disconnected */
 	BT_HFP_DISCONNECTED,
