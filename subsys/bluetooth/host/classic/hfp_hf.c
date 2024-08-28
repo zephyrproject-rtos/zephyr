@@ -1789,51 +1789,6 @@ static int at_vgs_finish(struct at_client *hf_at, enum at_result result,
 }
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 
-#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
-static void get_codec_ids(struct bt_hfp_hf *hf, char *buffer, size_t buffer_len)
-{
-	size_t len = 0;
-	uint8_t ids = hf->hf_codec_ids;
-	int index = 0;
-
-	while (ids && (len < (buffer_len-2))) {
-		if (ids & 0x01) {
-			buffer[len++] = index + '0';
-			buffer[len++] = ',';
-		}
-		index ++;
-		ids = ids >> 1;
-	}
-
-	if (len > 0) {
-		len --;
-	}
-
-	buffer[len] = '\0';
-}
-
-static int send_at_bac(struct bt_hfp_hf *hf, at_finish_cb_t cb)
-{
-	if (hf->ag_features & BT_HFP_AG_FEATURE_CODEC_NEG) {
-		char ids[sizeof(hf->hf_codec_ids)*2*8 + 1];
-		get_codec_ids(hf, &ids[0], ARRAY_SIZE(ids));
-		return hfp_hf_send_cmd(hf, NULL, cb, "AT+BAC=%s", ids);
-	}
-
-	return -ENOTSUP;
-}
-
-static int at_bac_finish(struct at_client *hf_at, enum at_result result,
-		   enum at_cme cme_err)
-{
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-
-	LOG_DBG("BAC set (result %d) on %p", result, hf);
-
-	return 0;
-}
-#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
-
 #if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
 static int send_at_ccwa(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
@@ -1876,9 +1831,6 @@ static struct at_cmd_init
 #if defined(CONFIG_BT_HFP_HF_CLI)
 	{send_at_clip, at_clip_finish, false},
 #endif /* CONFIG_BT_HFP_HF_CLI */
-#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
-	{send_at_bac, at_bac_finish, false},
-#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 #if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
 	{send_at_ccwa, at_ccwa_finish, false},
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
@@ -1962,114 +1914,152 @@ static void slc_completed(struct at_client *hf_at)
 }
 
 #if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
-int chld_finish(struct at_client *hf_at, enum at_result result,
-		enum at_cme cme_err)
+static int send_at_chld_supported(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		hf_slc_error(hf_at);
-		return -EINVAL;
-	}
-
-	slc_completed(hf_at);
-
-	return 0;
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+CHLD=?");
 }
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 
-int cmer_finish(struct at_client *hf_at, enum at_result result,
-		enum at_cme cme_err)
+static int send_at_cmer(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
-#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	int err;
-#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+	at_register_unsolicited(&hf->at, unsolicited_cb);
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+CMER=3,0,0,1");
+}
 
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		hf_slc_error(hf_at);
-		return -EINVAL;
-	}
+static int send_at_cind_status(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, cind_status_resp, cb, "AT+CIND?");
+}
 
-#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
-	if ((hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
-		(hf->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL)) {
-		err = hfp_hf_send_cmd(hf, NULL, chld_finish, "AT+CHLD=?");
-		if (err < 0) {
-			hf_slc_error(hf_at);
+static int send_at_cind_supported(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, cind_resp, cb, "AT+CIND=?");
+}
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static void get_codec_ids(struct bt_hfp_hf *hf, char *buffer, size_t buffer_len)
+{
+	size_t len = 0;
+	uint8_t ids = hf->hf_codec_ids;
+	int index = 0;
+
+	while (ids && (len < (buffer_len-2))) {
+		if (ids & 0x01) {
+			buffer[len++] = index + '0';
+			buffer[len++] = ',';
 		}
-		return err;
+		index++;
+		ids = ids >> 1;
 	}
+
+	if (len > 0) {
+		len--;
+	}
+
+	buffer[len] = '\0';
+}
+
+static int send_at_bac(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	char ids[sizeof(hf->hf_codec_ids)*2*8 + 1];
+
+	get_codec_ids(hf, &ids[0], ARRAY_SIZE(ids));
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+BAC=%s", ids);
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
+static int send_at_brsf(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, brsf_resp, cb, "AT+BRSF=%u", hf->hf_features);
+}
+
+static struct slc_init
+{
+	at_send_t send;
+	bool disconnect; /* Disconnect if command failed. */
+	uint32_t ag_feature_mask; /* AG feature mask */
+} slc_init_list[] = {
+	{send_at_brsf, true, 0},
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	{send_at_bac, true, BT_HFP_AG_FEATURE_CODEC_NEG},
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+	{send_at_cind_supported, true, 0},
+	{send_at_cind_status, true, 0},
+	{send_at_cmer, true, 0},
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	{send_at_chld_supported, true, BT_HFP_AG_FEATURE_3WAY_CALL},
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+};
 
-	slc_completed(hf_at);
+static int slc_init_start(struct bt_hfp_hf *hf);
 
+static int slc_init_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	if (result != AT_RESULT_OK) {
+		LOG_WRN("It is ERROR response of AT command %d.", hf->cmd_init_seq);
+		if (slc_init_list[hf->cmd_init_seq].disconnect) {
+			hf_slc_error(&hf->at);
+			return 0;
+		}
+	}
+
+	if (ARRAY_SIZE(slc_init_list) <= hf->cmd_init_seq) {
+		LOG_ERR("Invalid indicator (%d>=%d)", hf->cmd_init_seq,
+		    ARRAY_SIZE(slc_init_list));
+	}
+
+	/* Goto next AT command */
+	hf->cmd_init_seq++;
+	(void)slc_init_start(hf);
 	return 0;
 }
 
-int cind_status_finish(struct at_client *hf_at, enum at_result result,
-		       enum at_cme cme_err)
+static int slc_init_start(struct bt_hfp_hf *hf)
 {
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	int err;
+	at_send_t send;
+	uint32_t feture_mask;
+	int err = -EINVAL;
 
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		hf_slc_error(hf_at);
-		return -EINVAL;
+	while (ARRAY_SIZE(slc_init_list) > hf->cmd_init_seq) {
+		LOG_DBG("Fetch AT command (%d)", hf->cmd_init_seq);
+		feture_mask = slc_init_list[hf->cmd_init_seq].ag_feature_mask;
+		if (feture_mask && (!(feture_mask & hf->ag_features))) {
+			/* The feature is not supported by AG. Skip the step. */
+			LOG_INF("Skip SLC init step %d", hf->cmd_init_seq);
+			hf->cmd_init_seq++;
+			continue;
+		}
+
+		send = slc_init_list[hf->cmd_init_seq].send;
+		if (send) {
+			LOG_DBG("Send AT command");
+			err = send(hf, slc_init_finish);
+		} else {
+			LOG_WRN("Invalid send func of AT command");
+		}
+
+		if (!err) {
+			break;
+		}
+
+		LOG_WRN("AT command sending failed");
+		if (slc_init_list[hf->cmd_init_seq].disconnect) {
+			hfp_hf_send_failed(hf);
+			break;
+		}
+		/* Goto next AT command */
+		LOG_WRN("Send next AT command");
+		hf->cmd_init_seq++;
 	}
 
-	at_register_unsolicited(hf_at, unsolicited_cb);
-	err = hfp_hf_send_cmd(hf, NULL, cmer_finish, "AT+CMER=3,0,0,1");
-	if (err < 0) {
-		hf_slc_error(hf_at);
-		return err;
+	if (ARRAY_SIZE(slc_init_list) <= hf->cmd_init_seq) {
+		slc_completed(&hf->at);
 	}
 
-	return 0;
-}
-
-int cind_finish(struct at_client *hf_at, enum at_result result,
-		enum at_cme cme_err)
-{
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	int err;
-
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		hf_slc_error(hf_at);
-		return -EINVAL;
-	}
-
-	err = hfp_hf_send_cmd(hf, cind_status_resp, cind_status_finish,
-			      "AT+CIND?");
-	if (err < 0) {
-		hf_slc_error(hf_at);
-		return err;
-	}
-
-	return 0;
-}
-
-int brsf_finish(struct at_client *hf_at, enum at_result result,
-		enum at_cme cme_err)
-{
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	int err;
-
-	if (result != AT_RESULT_OK) {
-		LOG_ERR("SLC Connection ERROR in response");
-		hf_slc_error(hf_at);
-		return -EINVAL;
-	}
-
-	err = hfp_hf_send_cmd(hf, cind_resp, cind_finish, "AT+CIND=?");
-	if (err < 0) {
-		hf_slc_error(hf_at);
-		return err;
-	}
-
-	return 0;
+	return err;
 }
 
 int hf_slc_establish(struct bt_hfp_hf *hf)
@@ -2078,8 +2068,8 @@ int hf_slc_establish(struct bt_hfp_hf *hf)
 
 	LOG_DBG("");
 
-	err = hfp_hf_send_cmd(hf, brsf_resp, brsf_finish, "AT+BRSF=%u",
-			      hf->hf_features);
+	hf->cmd_init_seq = 0;
+	err = slc_init_start(hf);
 	if (err < 0) {
 		hf_slc_error(&hf->at);
 		return err;
