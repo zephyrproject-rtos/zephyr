@@ -3817,6 +3817,7 @@ int bt_hfp_ag_reject(struct bt_hfp_ag_call *call)
 	int err = 0;
 	struct bt_hfp_ag *ag;
 	bt_hfp_call_state_t call_state;
+	uint32_t ag_features;
 
 	LOG_DBG("");
 
@@ -3837,10 +3838,16 @@ int bt_hfp_ag_reject(struct bt_hfp_ag_call *call)
 	}
 
 	call_state = call->call_state;
+	ag_features = ag->ag_features;
 	hfp_ag_unlock(ag);
 
 	if (!atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING)) {
 		return -EINVAL;
+	}
+
+	if (!(ag_features & BT_HFP_AG_FEATURE_REJECT_CALL)) {
+		LOG_ERR("AG has not ability to reject call");
+		return -ENOTSUP;
 	}
 
 	if (atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING_3WAY)) {
