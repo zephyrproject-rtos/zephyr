@@ -1,6 +1,6 @@
-.. _bluetooth_central_iso:
+.. _bluetooth_iso_central:
 
-Bluetooth: Central ISO
+Bluetooth: ISO Central
 ######################
 
 Overview
@@ -9,7 +9,7 @@ Overview
 This sample demonstrates how to use an isochronous channel as a central.
 The sample scans for a peripheral, establishes a connection, and sets up a connected isochronous channel to it.
 Once the isochronous channel is connected, isochronous data is transferred to the peer device every 10 milliseconds.
-It is recommended to run this sample together with the :ref:`Bluetooth: Peripheral ISO <peripheral_iso>` sample.
+It is recommended to run this sample together with the :ref:`Bluetooth: ISO Peripheral <iso_peripheral>` sample.
 
 To run the sample with an encrypted isochronous channel, enable :kconfig:option:`CONFIG_BT_SMP`.
 
@@ -23,7 +23,7 @@ Requirements
 
 Building and Running
 ********************
-This sample can be found under :zephyr_file:`samples/bluetooth/central_iso` in
+This sample can be found under :zephyr_file:`samples/bluetooth/iso_central` in
 the Zephyr tree.
 
 1. Start the application.
