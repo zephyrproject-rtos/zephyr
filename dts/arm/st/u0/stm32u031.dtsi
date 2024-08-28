@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/u0/stm32u031.dtsi>
+#include <st/u0/stm32u0.dtsi>
 
 / {
 	soc {
-		compatible = "st,stm32u083", "st,stm32u0", "simple-bus";
+		compatible = "st,stm32u031", "st,stm32u0", "simple-bus";
 	};
 };
