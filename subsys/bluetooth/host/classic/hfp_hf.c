@@ -1642,6 +1642,66 @@ static int cnum_handle(struct at_client *hf_at)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATORS)
+static int bind_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+	uint32_t index;
+	uint32_t value;
+	uint32_t ind = 0;
+	uint32_t ind_enable = hf->ind_enable;
+
+	err = at_open_list(hf_at);
+	if (!err) {
+		/* It is a list. */
+		while (at_has_next_list(hf_at)) {
+			err = at_get_number(hf_at, &index);
+			if (err) {
+				LOG_INF("Cannot get indicator");
+				goto failed;
+			}
+
+			ind |= BIT(index);
+		}
+
+		if (at_close_list(hf_at) < 0) {
+			LOG_ERR("Could not get close list");
+			goto failed;
+		}
+
+		hf->ag_ind = ind;
+		return 0;
+	}
+
+	err = at_get_number(hf_at, &index);
+	if (err) {
+		LOG_INF("Cannot get indicator");
+		goto failed;
+	}
+
+	err = at_get_number(hf_at, &value);
+	if (err) {
+		LOG_INF("Cannot get status");
+		goto failed;
+	}
+
+	if (!value) {
+		ind_enable &= ~BIT(index);
+	} else {
+		ind_enable |= BIT(index);
+	}
+
+	hf->ind_enable = ind_enable;
+	return 0;
+
+failed:
+	LOG_ERR("Error on AT+BIND response");
+	hf_slc_error(hf_at);
+	return -EINVAL;
+}
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -1672,6 +1732,9 @@ static const struct unsolicited {
 	{ "BVRA", AT_CMD_TYPE_UNSOLICITED, bvra_handle },
 #endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
 	{ "CNUM", AT_CMD_TYPE_UNSOLICITED, cnum_handle },
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATORS)
+	{ "BIND", AT_CMD_TYPE_UNSOLICITED, bind_handle },
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -1913,6 +1976,51 @@ static void slc_completed(struct at_client *hf_at)
 	}
 }
 
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATORS)
+static int send_at_bind_status(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+BIND?");
+}
+
+static int send_at_bind_hf_supported(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	char buffer[4];
+	char *bind;
+
+	hf->hf_ind = 0;
+
+	bind = &buffer[0];
+	if (IS_ENABLED(CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY)) {
+		*bind = '0' + HFP_HF_ENHANCED_SAFETY_IND;
+		bind++;
+		*bind = ',';
+		bind++;
+		hf->hf_ind |= BIT(HFP_HF_ENHANCED_SAFETY_IND);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY)) {
+		*bind = '0' + HFP_HF_BATTERY_LEVEL_IND;
+		bind++;
+		*bind = ',';
+		bind++;
+		hf->hf_ind |= BIT(HFP_HF_BATTERY_LEVEL_IND);
+	}
+
+	if (bind <= &buffer[0]) {
+		return -EINVAL;
+	}
+
+	bind--;
+	*bind = '\0';
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+BIND=%s", buffer);
+}
+
+static int send_at_bind_supported(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+BIND=?");
+}
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+
 #if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
 static int send_at_chld_supported(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
@@ -1989,6 +2097,11 @@ static struct slc_init
 #if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
 	{send_at_chld_supported, true, BT_HFP_AG_FEATURE_3WAY_CALL},
 #endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATORS)
+	{send_at_bind_hf_supported, true, BT_HFP_AG_FEATURE_HF_IND},
+	{send_at_bind_supported, true, BT_HFP_AG_FEATURE_HF_IND},
+	{send_at_bind_status, true, BT_HFP_AG_FEATURE_HF_IND},
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 };
 
 static int slc_init_start(struct bt_hfp_hf *hf);
@@ -2510,6 +2623,115 @@ int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
 	}
 
 	return err;
+}
+
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY)
+static int biev_enh_safety_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BIEV (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY */
+
+int bt_hfp_hf_enhanced_safety(struct bt_hfp_hf *hf, bool enable)
+{
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY)
+	int err;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -ENOTCONN;
+	}
+
+	if (!((hf->hf_ind & BIT(HFP_HF_ENHANCED_SAFETY_IND)) &&
+		(hf->ag_ind & BIT(HFP_HF_ENHANCED_SAFETY_IND)))) {
+		LOG_ERR("The indicator is unsupported");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->ind_enable & BIT(HFP_HF_ENHANCED_SAFETY_IND))) {
+		LOG_ERR("The indicator is disabled");
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, biev_enh_safety_finish, "AT+BIEV=%d,%d",
+		HFP_HF_ENHANCED_SAFETY_IND, enable ? 1 : 0);
+	if (err < 0) {
+		LOG_ERR("Fail to transfer enhanced safety value on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY */
+}
+
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY)
+static int biev_battery_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BIEV (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
+
+int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level)
+{
+#if defined(CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY)
+	int err;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -ENOTCONN;
+	}
+
+	if (!((hf->hf_ind & BIT(HFP_HF_BATTERY_LEVEL_IND)) &&
+		(hf->ag_ind & BIT(HFP_HF_BATTERY_LEVEL_IND)))) {
+		LOG_ERR("The indicator is unsupported");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->ind_enable & BIT(HFP_HF_BATTERY_LEVEL_IND))) {
+		LOG_ERR("The indicator is disabled");
+		return -EINVAL;
+	}
+
+	if (!IS_VALID_BATTERY_LEVEL(level)) {
+		LOG_ERR("Invalid battery level %d", level);
+		return -EINVAL;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, biev_battery_finish, "AT+BIEV=%d,%d",
+		HFP_HF_BATTERY_LEVEL_IND, level);
+	if (err < 0) {
+		LOG_ERR("Fail to transfer remaining battery level on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY */
 }
 
 static int ata_finish(struct at_client *hf_at, enum at_result result,
