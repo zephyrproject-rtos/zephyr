@@ -4036,35 +4036,27 @@ static void hfp_hf_sco_disconnected(struct bt_sco_chan *chan, uint8_t reason)
 static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
 		      struct bt_sco_chan **chan)
 {
-	int i;
 	static struct bt_sco_chan_ops ops = {
 		.connected = hfp_hf_sco_connected,
 		.disconnected = hfp_hf_sco_disconnected,
 	};
+	size_t index;
+	struct bt_hfp_hf *hf;
 
 	LOG_DBG("conn %p", info->acl);
 
-	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
-		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
-
-		if (NULL == hf->rfcomm_dlc.session) {
-			continue;
-		}
-
-		if (info->acl != hf->rfcomm_dlc.session->br_chan.chan.conn) {
-			continue;
-		}
-
-		hf->chan.ops = &ops;
-
-		*chan = &hf->chan;
-
-		return 0;
+	index = (size_t)bt_conn_index(info->acl);
+	hf = &bt_hfp_hf_pool[index];
+	if (hf->acl != info->acl) {
+		LOG_ERR("ACL %p of HF is unaligned with SCO's %p", hf->acl, info->acl);
+		return -EINVAL;
 	}
 
-	LOG_ERR("Unable to establish HF connection (%p)", info->acl);
+	hf->chan.ops = &ops;
 
-	return -ENOMEM;
+	*chan = &hf->chan;
+
+	return 0;
 }
 
 static void hfp_hf_init(void)
