@@ -231,7 +231,7 @@ struct dai_intel_ipc4_ssp_config {
 	uint32_t ssc1;
 	uint32_t sscto;
 	uint32_t sspsp;
-#ifndef CONFIG_SOC_INTEL_ACE30_PTL
+#if SSP_IP_VER < SSP_IP_VER_3_0
 	uint32_t sstsa;
 	uint32_t ssrsa;
 #endif
@@ -239,7 +239,7 @@ struct dai_intel_ipc4_ssp_config {
 	uint32_t sspsp2;
 	uint32_t ssc3;
 	uint32_t ssioc;
-#ifdef CONFIG_SOC_INTEL_ACE30_PTL
+#if SSP_IP_VER > SSP_IP_VER_2_0
 	uint64_t ssmidytsa[I2SIPCMC];
 	uint64_t ssmodytsa[I2SOPCMC];
 #endif
