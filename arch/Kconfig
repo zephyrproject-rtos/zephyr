@@ -95,6 +95,7 @@ config X86
 					  && !SOC_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  x86 architecture
 
@@ -120,6 +121,7 @@ config RISCV
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	imply XIP
 	help
 	  RISCV architecture
@@ -135,6 +137,7 @@ config XTENSA
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
+	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	help
 	  Xtensa architecture
 
@@ -699,6 +702,11 @@ config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	bool
 	help
 	  Select when the architecture supports memory mapped stacks.
+
+config ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET
+	bool
+	help
+	  Select when the architecture implements arch_thread_priv_stack_space_get().
 
 #
 # Other architecture related options

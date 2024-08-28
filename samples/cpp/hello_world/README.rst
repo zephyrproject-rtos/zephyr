@@ -1,7 +1,7 @@
-.. _hello_cpp_world:
+.. zephyr:code-sample:: hello_cpp_world
+   :name: Hello C++ world
 
-Hello C++ World
-###############
+   Print "Hello World" to the console in C++.
 
 Overview
 ********

@@ -1446,9 +1446,10 @@ int shell_start(const struct shell *sh)
 		z_shell_vt100_color_set(sh, SHELL_NORMAL);
 	}
 
-	if (z_shell_strlen(sh->default_prompt) > 0) {
-		z_shell_raw_fprintf(sh->fprintf_ctx, "\n\n");
-	}
+	/* print new line before printing the prompt to clear the line
+	 * vt100 are not used here for compatibility reasons
+	 */
+	z_cursor_next_line_move(sh);
 	state_set(sh, SHELL_STATE_ACTIVE);
 
 	k_mutex_unlock(&sh->ctx->wr_mtx);

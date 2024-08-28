@@ -1549,6 +1549,23 @@ static uint8_t att_read_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	/* Reading Database Hash is special as it may be used to make client change aware
+	 * (Core Specification 5.4 Vol 3. Part G. 2.5.2.1 Robust Caching).
+	 *
+	 * GATT client shall always use GATT Read Using Characteristic UUID sub-procedure for
+	 * reading Database Hash
+	 * (Core Specification 5.4 Vol 3. Part G. 7.3 Databse Hash)
+	 */
+	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_DB_HASH) != 0) {
+		if (!bt_gatt_change_aware(chan->att->conn, true)) {
+			if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
+				return BT_ATT_ERR_DB_OUT_OF_SYNC;
+			} else {
+				return 0;
+			}
+		}
+	}
+
 	return att_read_type_rsp(chan, &u.uuid, start_handle, end_handle);
 }
 

@@ -303,11 +303,14 @@ class ClangFormatCheck(ComplianceTest):
                 for patch in patchset:
                     for hunk in patch:
                         # Strip the before and after context
-                        msg = "".join([str(l) for l in hunk[3:-3]])
+                        before = next(i for i,v in enumerate(hunk) if str(v).startswith('-'))
+                        after = next(i for i,v in enumerate(reversed(hunk)) if str(v).startswith('+'))
+                        msg = "".join([str(l) for l in hunk[before:-after or None]])
+
                         # show the hunk at the last line
                         self.fmtd_failure("notice",
                                           "You may want to run clang-format on this change",
-                                          file, line=hunk.source_start + hunk.source_length - 3,
+                                          file, line=hunk.source_start + hunk.source_length - after,
                                           desc=f'\r\n{msg}')
 
 
@@ -380,11 +383,6 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
-        if self.no_modules:
-            with open(modules_file, 'w') as fp_module_file:
-                fp_module_file.write("# Empty\n")
-            return
-
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
@@ -411,6 +409,18 @@ class KconfigCheck(ComplianceTest):
                     modules_dir + '/' + module + '/Kconfig'
                 ))
             fp_module_file.write(content)
+
+        if self.no_modules:
+            module_define_content = ""
+            module_definition = re.compile('config ZEPHYR_.*_MODULE.*').search
+            with open(modules_file, 'r+') as fp_module_file:
+                for line in fp_module_file:
+                    if module_definition(line):
+                        module_define_content += line
+                        module_define_content += "\tbool\n"
+                fp_module_file.seek(0)
+                fp_module_file.write(module_define_content)
+                fp_module_file.truncate()
 
     def get_module_setting_root(self, root, settings_file):
         """

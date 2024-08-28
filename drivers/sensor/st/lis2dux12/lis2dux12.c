@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
@@ -198,9 +197,9 @@ static int lis2dux12_sample_fetch_accel(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_x = sys_le16_to_cpu(xzy_data.raw[0]);
-	data->sample_y = sys_le16_to_cpu(xzy_data.raw[1]);
-	data->sample_z = sys_le16_to_cpu(xzy_data.raw[2]);
+	data->sample_x = xzy_data.raw[0];
+	data->sample_y = xzy_data.raw[1];
+	data->sample_z = xzy_data.raw[2];
 
 	return 0;
 }
@@ -220,7 +219,7 @@ static int lis2dux12_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_temp = sys_le16_to_cpu(temp_data.heat.deg_c);
+	data->sample_temp = temp_data.heat.deg_c;
 
 	return 0;
 }

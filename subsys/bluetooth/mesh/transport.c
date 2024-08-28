@@ -19,8 +19,6 @@
 
 #include "common/bt_str.h"
 
-#include "host/testing.h"
-
 #include "crypto.h"
 #include "mesh.h"
 #include "net.h"
@@ -33,6 +31,7 @@
 #include "sar_cfg_internal.h"
 #include "settings.h"
 #include "heartbeat.h"
+#include "testing.h"
 #include "transport.h"
 #include "va.h"
 
@@ -1193,7 +1192,7 @@ static void seg_discard(struct k_work *work)
 	rx->block = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_mesh_trans_incomp_timer_exp();
+		bt_mesh_test_trans_incomp_timer_exp();
 	}
 }
 
@@ -1636,8 +1635,8 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	LOG_DBG("Payload %s", bt_hex(buf->data, buf->len));
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_mesh_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr,
-				      rx->ctx.recv_dst, buf->data, buf->len);
+		bt_mesh_test_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr, rx->ctx.recv_dst,
+				      buf->data, buf->len);
 	}
 
 	/* If LPN mode is enabled messages are only accepted when we've

@@ -1,7 +1,7 @@
-.. _posix-philosophers-sample:
+.. zephyr:code-sample:: posix-philosophers
+   :name: POSIX Philosophers
 
-POSIX Philosophers
-##################
+   Implement a solution to the Dining Philosophers problem using the POSIX API.
 
 Overview
 ********

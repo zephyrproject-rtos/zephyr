@@ -100,6 +100,7 @@ Boards & SoC Support
 
   * :ref:`native_posix<native_posix>` has been deprecated in favour of
     :ref:`native_sim<native_sim>`.
+  * Support for Google Kukui EC board (``google_kukui``) has been dropped.
 
 * Added support for the following shields:
 

@@ -27,7 +27,10 @@
 	current-speed = <115200>;
 };
 
-
 &systick {
+	status = "okay";
+};
+
+&gpt2 {
 	status = "okay";
 };

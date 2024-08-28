@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+
+#include <zephyr/bluetooth/mesh/keys.h>
 #include <zephyr/net/buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>

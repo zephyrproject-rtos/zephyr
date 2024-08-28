@@ -276,6 +276,23 @@
 		clocks = <&ccm IMX_CCM_LPI2C0506_CLK 0x80 24>;
 		status = "disabled";
 	};
+
+	gpt1: gpt@46c0000 {
+		compatible = "nxp,imx-gpt";
+		reg = <0x46c0000 0x4000>;
+		interrupts = <209 0>;
+		gptfreq = <240000000>;
+		clocks = <&ccm IMX_CCM_GPT1_CLK 0x41 0>;
+		status = "disabled";
+	};
+
+	gpt2: gpt@2ec0000 {
+		compatible = "nxp,imx-gpt";
+		reg = <0x2ec0000 0x4000>;
+		interrupts = <210 0>;
+		gptfreq = <240000000>;
+		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
+	};
 };
 
 &flexspi1 {
