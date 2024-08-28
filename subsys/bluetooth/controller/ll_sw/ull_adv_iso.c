@@ -541,6 +541,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	PDU_BIG_INFO_IRC_SET(big_info, lll_adv_iso->irc);
 
 	big_info->max_pdu = lll_adv_iso->max_pdu;
+	big_info->rfu = 0U;
 
 	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
 		     sizeof(big_info->seed_access_addr));
