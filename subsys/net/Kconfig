@@ -61,6 +61,14 @@ config NET_BUF_ALIGNMENT
 	  Default value of 0 means the alignment will be the size of a void pointer,
 	  any other value will force the alignment of a net buffer in bytes.
 
+config NET_BUF_NO_TIMEOUT_OVERRIDE
+	bool
+	help
+	  This option disables overriding the timeout to K_NO_WAIT when
+	  allocating a buffer on the system worqueue.
+
+	  Might introduce deadlocks, use at your own risk.
+
 endif # NET_BUF
 
 config NETWORKING

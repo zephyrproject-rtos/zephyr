@@ -6,6 +6,7 @@
 menuconfig BT_MESH
 	bool "Bluetooth Mesh support"
 	depends on BT_OBSERVER && BT_BROADCASTER
+	select NET_BUF_NO_TIMEOUT_OVERRIDE
 	help
 	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features

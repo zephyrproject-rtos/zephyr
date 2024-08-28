@@ -271,7 +271,8 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 
 	k_spin_unlock(&pool->lock, key);
 
-	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+	if (!IS_ENABLED(CONFIG_NET_BUF_NO_TIMEOUT_OVERRIDE) &&
+	    !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		LOG_DBG("Timeout discarded. No blocking in syswq");
 		timeout = K_NO_WAIT;
