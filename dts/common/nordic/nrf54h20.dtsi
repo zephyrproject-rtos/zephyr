@@ -106,13 +106,9 @@
 		};
 
 		fll16m: fll16m {
-			compatible = "nordic,nrf-fll16m";
+			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
-			open-loop-accuracy-ppm = <20000>;
-			closed-loop-base-accuracy-ppm = <5000>;
-			clocks = <&hfxo>, <&lfxo>;
-			clock-names = "hfxo", "lfxo";
 		};
 
 		hsfll120: hsfll120 {
@@ -123,14 +119,9 @@
 		};
 
 		lfclk: lfclk {
-			compatible = "nordic,nrf-lfclk";
+			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <32768>;
-			status = "okay";
-			lfrc-accuracy-ppm = <500>;
-			lflprc-accuracy-ppm = <1000>;
-			clocks = <&hfxo>, <&lfxo>;
-			clock-names = "hfxo", "lfxo";
 		};
 	};
 
