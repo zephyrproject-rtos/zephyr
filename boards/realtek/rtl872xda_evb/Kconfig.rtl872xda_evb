@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RTL872XDA_EVB
+	select SOC_AMEBADPLUS
