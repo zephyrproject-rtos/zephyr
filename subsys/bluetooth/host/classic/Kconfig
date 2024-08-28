@@ -155,6 +155,23 @@ config BT_HFP_HF_VOICE_RECG_TEXT
 	help
 	  This option enables Voice Recognition Text for HFP HF
 
+config BT_HFP_HF_HF_INDICATORS
+	bool "HF Indicators for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables HF Indicators for HFP HF
+
+config BT_HFP_HF_HF_INDICATOR_ENH_SAFETY
+	bool "HF Indicator Enhanced Safety for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_HF_INDICATORS
+	help
+	  This option enables HF Indicator Enhanced Safety for HFP HF
+
+config BT_HFP_HF_HF_INDICATOR_BATTERY
+	bool "HF Indicator Battery level for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_HF_INDICATORS
+	help
+	  This option enables HF Indicator Battery level for HFP HF
+
 endif # BT_HFP_HF
 
 if BT_HFP_AG

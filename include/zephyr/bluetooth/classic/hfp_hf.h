@@ -869,6 +869,32 @@ enum hfp_hf_ag_indicators {
  */
 int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status);
 
+/** @brief Handsfree HF enable/disable enhanced safety
+ *
+ *  It allows HF to transfer of HF indicator enhanced safety value.
+ *  If @kconfig{CONFIG_BT_HFP_HF_HF_INDICATOR_ENH_SAFETY} is not enabled,
+ *  the error `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *  @param enable The enhanced safety is enabled/disabled.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_enhanced_safety(struct bt_hfp_hf *hf, bool enable);
+
+/** @brief Handsfree HF remaining battery level
+ *
+ *  It allows HF to transfer of HF indicator remaining battery level value.
+ *  If @kconfig{CONFIG_BT_HFP_HF_HF_INDICATOR_BATTERY} is not enabled,
+ *  the error `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *  @param level The remaining battery level.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
+
 #ifdef __cplusplus
 }
 #endif
