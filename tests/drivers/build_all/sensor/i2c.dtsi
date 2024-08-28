@@ -1131,3 +1131,9 @@ test_i2c_sts4x: sts4x@9d {
 	reg = <0x99>;
 	repeatability = <2>;
 };
+
+test_i2c_scd4x: scd4x@9e {
+	compatible = "sensirion,scd41";
+	reg = <0x9e>;
+	mode = <0>;
+};
