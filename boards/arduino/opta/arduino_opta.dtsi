@@ -1,0 +1,45 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		status_led_1: led_1 {
+			gpios = <&gpioi 0 GPIO_ACTIVE_LOW>;
+		};
+		status_led_2: led_2 {
+			gpios = <&gpioi 1 GPIO_ACTIVE_LOW>;
+		};
+		status_led_3: led_3 {
+			gpios = <&gpioi 3 GPIO_ACTIVE_LOW>;
+		};
+		status_led_4: led_4 {
+			gpios = <&gpioh 15 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_WAKEUP>;
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&mailbox {
+	status = "okay";
+};

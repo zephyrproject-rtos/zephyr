@@ -1,0 +1,174 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "arduino_opta.dtsi"
+
+/ {
+	model = "Arduino OPTA M7 core Programmable Logic Controller";
+	compatible = "arduino,opta-m4";
+
+	chosen {
+		zephyr,console = &usart6;
+		/* Use the serial of the expansion bus as console (USB might also be used) */
+		zephyr,shell-uart = &usart6;
+		zephyr,uart-mcumgr = &usart6;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	ethernet_phy_en: ethernet_phy_en {
+		compatible = "regulator-fixed";
+		regulator-name = "ethernet-phy-reset-release";
+		enable-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	aliases {
+		led0 = &status_led_1;
+		led1 = &status_led_2;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(25)>;
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+};
+
+&usart6 {
+	status = "okay";
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_scl_ph7 &i2c3_sda_ph8>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg12>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "microchip,ksz8081";
+		reg = <0x00>;
+		status = "okay";
+		microchip,interface-type = "rmii-25MHz";
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		slot0_partition: partition@40000 {
+			label = "image-0";
+			reg = <0x40000 0x000c0000>;
+		};
+	};
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	n25q128a1: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		qspi-max-frequency = <72000000>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 DT_SIZE_M(1)>;
+			};
+
+			storage_partition: partition@100000 {
+				label = "storage";
+				reg = <0x00100000 DT_SIZE_M(15)>;
+			};
+		};
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	status = "okay";
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+};
