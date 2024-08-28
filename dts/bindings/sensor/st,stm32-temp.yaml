@@ -25,7 +25,3 @@ properties:
       datasheet "Electrical characteristics/Operating conditions"
       STM32F1 Table 5.3.19 (min 1340, max 1520, default 1430)
       STM32F4 Table 6.3.21 default 760
-
-  ntc:
-    type: boolean
-    description: Negative Temperature Coefficient. True if STM32F1
