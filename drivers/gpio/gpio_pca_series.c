@@ -211,18 +211,16 @@ static inline uint8_t gpio_pca_series_reg_get_addr(const struct device *dev,
 }
 
 /**
- * @brief get read size for register
+ * @brief get per-port size for register
  *
  * @param dev device struct
  * @param reg_type value from enum gpio_pca_series_reg_type
  * @return uint32_t size in bytes
  *                  0 if fail
  */
-static inline uint32_t gpio_pca_series_reg_size(const struct device *dev,
-							enum gpio_pca_series_reg_type reg_type)
+static inline uint32_t gpio_pca_series_reg_size_per_port(const struct device *dev,
+						enum gpio_pca_series_reg_type reg_type)
 {
-	const struct gpio_pca_series_config *cfg = dev->config;
-
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	if (reg_type >= PCA_REG_TYPE_COUNT) {
 		LOG_ERR("reg_type %d out of range", reg_type);
@@ -250,16 +248,32 @@ static inline uint32_t gpio_pca_series_reg_size(const struct device *dev,
 	case PCA_REG_TYPE_1B_INTERRUPT_FALL:
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
-		return cfg->part_cfg->port_no;
+		return 1;
 	case PCA_REG_TYPE_2B_OUTPUT_DRIVE_STRENGTH:
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	case PCA_REG_TYPE_2B_INTERRUPT_EDGE:
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
-		return (cfg->part_cfg->port_no * 2U);
+		return 2;
 	default:
 		LOG_ERR("unsupported reg type %d", reg_type);
 		return 0; /** should never happen */
 	}
+}
+
+/**
+ * @brief get read size for register
+ *
+ * @param dev device struct
+ * @param reg_type value from enum gpio_pca_series_reg_type
+ * @return uint32_t size in bytes
+ *                  0 if fail
+ */
+static inline uint32_t gpio_pca_series_reg_size(const struct device *dev,
+						enum gpio_pca_series_reg_type reg_type)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+
+	return gpio_pca_series_reg_size_per_port(dev, reg_type) * cfg->part_cfg->port_no;
 }
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
