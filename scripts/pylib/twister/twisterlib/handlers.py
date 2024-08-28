@@ -48,7 +48,7 @@ except ImportError as capture_error:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native", "custom"]
+SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native", "custom", "simics"]
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 
 
