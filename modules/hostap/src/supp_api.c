@@ -440,6 +440,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char *chan_list = NULL;
 	struct net_eth_addr mac = {0};
 	int ret = 0;
+	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
+	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
+	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		goto out;
@@ -459,8 +462,16 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
+		wpa_printf(MSG_ERROR, "SSID too long (max %d characters)", WIFI_SSID_MAX_LEN);
+		goto out;
+	}
+
+	strncpy(ssid_null_terminated, params->ssid, WIFI_SSID_MAX_LEN);
+	ssid_null_terminated[params->ssid_length] = '\0';
+
 	if (!wpa_cli_cmd_v("set_network %d ssid \"%s\"",
-			   resp.network_id, params->ssid)) {
+			   resp.network_id, ssid_null_terminated)) {
 		goto out;
 	}
 
@@ -494,6 +505,28 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
+		if (params->sae_password) {
+			if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
+			    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+				wpa_printf(MSG_ERROR,
+					   "Passphrase should be in range (%d-%d) characters",
+					   WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
+				goto out;
+			}
+			strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
+			sae_null_terminated[params->sae_password_length] = '\0';
+		} else {
+			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
+			    (params->psk_length > WIFI_PSK_MAX_LEN)) {
+				wpa_printf(MSG_ERROR,
+					   "Passphrase should be in range (%d-%d) characters",
+					   WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
+				goto out;
+			}
+			strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
+			psk_null_terminated[params->psk_length] = '\0';
+		}
+
 		/* SAP - only open and WPA2-PSK are supported for now */
 		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK) {
 			ret = -1;
@@ -515,12 +548,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
 			if (params->sae_password) {
 				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, params->sae_password)) {
+						   resp.network_id, sae_null_terminated)) {
 					goto out;
 				}
 			} else {
 				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, params->psk)) {
+						   resp.network_id, psk_null_terminated)) {
 					goto out;
 				}
 			}
@@ -540,7 +573,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, params->psk)) {
+					   resp.network_id, psk_null_terminated)) {
 				goto out;
 			}
 
@@ -551,7 +584,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK ||
 			   params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, params->psk)) {
+					   resp.network_id, psk_null_terminated)) {
 				goto out;
 			}
 
