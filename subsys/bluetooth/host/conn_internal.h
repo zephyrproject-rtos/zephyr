@@ -62,6 +62,7 @@ enum {
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
