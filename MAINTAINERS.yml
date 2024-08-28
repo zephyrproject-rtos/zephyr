@@ -3180,6 +3180,7 @@ Rust:
     - cmake/modules/rust.cmake
     - lib/rust/
     - samples/rust/
+    - doc/develop/languages/rust/
   labels:
     - "area: Rust"
 
