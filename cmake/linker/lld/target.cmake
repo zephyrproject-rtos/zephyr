@@ -6,6 +6,10 @@ set(CMAKE_LINKER ${LLVMLLD_LINKER})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
+list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=lld)
+list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=lld)
+string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
