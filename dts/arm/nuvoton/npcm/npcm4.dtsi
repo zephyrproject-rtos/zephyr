@@ -41,6 +41,10 @@
 			apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
 		};
 
+		qspi_fiu0: quad-fiu@40020000 {
+			clocks = <&pcc NPCM_CLOCK_BUS_FIU NPCM_PWDWN_CTL1 2>;
+		};
+
 		gpio0: gpio@40081000 {
 			wui-maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
 				    &wui_io04 &wui_io05 &wui_io06 &wui_io07>;

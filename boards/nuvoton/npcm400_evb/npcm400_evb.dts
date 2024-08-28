@@ -186,3 +186,20 @@
 	pinctrl-0 = <&emac_rmii_en &emac_mdio_en &emac_phy>;
 	pinctrl-names = "default";
 };
+
+&qspi_fiu0 {
+	ext_flash: w25q256jv@0 {
+		compatible ="nuvoton,npcm-nor";
+		size = <DT_SIZE_M(32 * 8)>;
+		reg = <0>;
+		enter-4byte-addr = <0xa5>;
+		status = "okay";
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NPCM_QSPI_SW_CS1>;
+		mapped-addr = <0x70000000>;
+		pinctrl-0 = <&fiu0_shd_cs_io0_io1_clk_gp44_45_46_47
+			     &fiu0_shd_quad_io2_io3_clk_gp55_56>;
+		pinctrl-names = "default";
+	};
+};

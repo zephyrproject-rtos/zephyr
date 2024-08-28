@@ -70,6 +70,24 @@ static void npcm_pinctrl_alt_sel(const struct npcm_alt *alt, int alt_func)
 	}
 }
 
+int npcm_pinctrl_flash_write_protect_set(int interface)
+{
+	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
+
+	switch (interface) {
+		case NPCM_FIU_FLASH_WP:
+			inst_scfg->DEV_CTL3 |= BIT(NPCM_DEV_CTL3_WP_GPIO55);
+			if (!IS_BIT_SET(inst_scfg->DEV_CTL3, NPCM_DEV_CTL3_WP_GPIO55)) {
+				return -EIO;
+			}
+			break;
+		default:
+			return -EIO;
+	}
+
+        return 0;
+}
+
 void npcm_dbg_freeze_enable(bool enable)
 {
 	const uintptr_t scfg_base = npcm_scfg_cfg.base_scfg;

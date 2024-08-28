@@ -9,6 +9,7 @@
 /* Macros for device tree declarations of npcm soc family */
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcm_clock.h>
+#include <zephyr/dt-bindings/flash_controller/npcm_qspi.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pinctrl/npcm-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -106,6 +107,13 @@
 			reg = <0x400bf000 0x2000>;
 			index = <2>;
 			#miwu-cells = <2>;
+		};
+
+		qspi_fiu0: quad-fiu@40020000 {
+			compatible = "nuvoton,npcm-fiu-qspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x2000>;
 		};
 
 		gpio0: gpio@40081000 {

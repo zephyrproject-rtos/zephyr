@@ -28,6 +28,10 @@ struct npcm_alt {
 	uint8_t reserved:4;
 };
 
+#define NPCM_FIU_FLASH_WP	BIT(0)
+
+int npcm_pinctrl_flash_write_protect_set(int interface);
+
 #ifdef __cplusplus
 }
 #endif
