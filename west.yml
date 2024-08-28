@@ -34,7 +34,7 @@ manifest:
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 9351ae1ad44864a49c351f9704f65f43046abeb0
+      revision: 9ee22c707970f6621adba0375841c0a609e24628
       path: tools/bsim
       groups:
         - babblesim
@@ -42,14 +42,14 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 4bd907be0b2abec3b31a23fd8ca98db2a07209d2
+      revision: a3dff9a57f334fb25daa9625841cd64cbfe56681
       groups:
         - babblesim
     - name: babblesim_ext_2G4_libPhyComv1
       remote: babblesim
       repo-path: ext_2G4_libPhyComv1
       path: tools/bsim/components/ext_2G4_libPhyComv1
-      revision: 93f5eba512c438b0c9ebc1b1a947517c865b3643
+      revision: aa4951317cc7d84f24152ea38ac9ac21e6d78a76
       groups:
         - babblesim
     - name: babblesim_ext_2G4_phy_v1
@@ -84,7 +84,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_modem_BLE_simple
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
-      revision: a38d2d24b04a6f970a225d1316047256ebf5a539
+      revision: 4d2379de510684cd4b1c3bbbb09bce7b5a20bc1f
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_burst_interferer
@@ -112,7 +112,7 @@ manifest:
       remote: babblesim
       repo-path: ext_libCryptov1
       path: tools/bsim/components/ext_libCryptov1
-      revision: eed6d7038e839153e340bd333bc43541cb90ba64
+      revision: 236309584c90be32ef12848077bd6de54e9f4deb
       groups:
         - babblesim
     - name: cmsis
