@@ -840,6 +840,7 @@ static struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.reg_domain = nrf_wifi_reg_domain,
 	.get_power_save_config = nrf_wifi_get_power_save_config,
 	.set_rts_threshold = nrf_wifi_set_rts_threshold,
+	.get_rts_threshold = nrf_wifi_get_rts_threshold,
 #endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 	.mode = nrf_wifi_mode,
