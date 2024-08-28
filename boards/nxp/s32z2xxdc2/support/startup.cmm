@@ -20,20 +20,17 @@
 ;                  - Core0 and Core2 (redundancy) operate as a lockstep pair   *
 ;                  - Core1 and Core3 (redundancy) operate as a lockstep pair   *
 ;                 default: yes                                                 *
-;   - thumb       set to "yes" to select the T32 instruction set at reset      *
-;                 default: no                                                 *
 ;                                                                              *
 ;*******************************************************************************
 
 ENTRY %LINE &args
-LOCAL &rtuStartAddr &cfgCoreAddr &coreId &rtuId &thumbBit &spltLckBit
+LOCAL &rtuStartAddr &cfgCoreAddr &coreId &rtuId &spltLckBit
 
 &command=STRing.SCANAndExtract("&args","command=","debug")
 &elfFile=STRing.SCANAndExtract("&args","elfFile=","")
 &rtu=STRing.SCANAndExtract("&args","rtu=","0")
 &core=STRing.SCANAndExtract("&args","core=","0")
 &lockstep=STRing.SCANAndExtract("&args","lockstep=","yes")
-&thumb=STRing.SCANAndExtract("&args","thumb=","no")
 
 IF ("&elfFile"=="")
 (
@@ -58,12 +55,6 @@ IF (&core<0||&core>3)
   STOP
   ENDDO
 )
-
-; select ARMv8 instruction set at reset for all Cortex-R52 cores (CFG_CORE.THUMB bit)
-IF ("&thumb"=="yes")
-  &thumbBit="1"
-ELSE
-  &thumbBit="0"
 
 ; select lock-step or split-lock mode (CFG_CORE.SPLT_LCK bit)
 IF ("&lockstep"=="yes")
@@ -126,8 +117,8 @@ GOSUB EnableRTU1
 ; Init RTU SRAM
 DO ~~/demo/arm/hardware/s32z27/misc/s32z27_init_rtu&(rtu)_sram.cmm
 
-; Set reset value for TE bit and split-lock mode
-Data.Set EZAXI:&cfgCoreAddr %Long 0yXXXXxxxxXXXXxxxxXXXXxxxxXXXXx&(thumbBit)x&(spltLckBit)  ; CFG_CORE
+; Set reset value for split-lock mode
+Data.Set EZAXI:&cfgCoreAddr %Long 0yXXXXxxxxXXXXxxxxXXXXxxxxXXXXxxx&(spltLckBit)  ; CFG_CORE
 
 ; Write loop to self instruction
 Data.Set EAXI:&rtuStartAddr %Long 0xFFFEF7FF

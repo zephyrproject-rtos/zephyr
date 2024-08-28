@@ -30,4 +30,20 @@ config NET_L2_ETHERNET
 
 endif # NETWORKING
 
+if XIP
+# Offset between CRAM AXIM and CRAM AXIF, code will be downloaded
+# over AXIM interface
+config BUILD_OUTPUT_ADJUST_LMA
+	default "-0x47800000"
+
+config CPU_CORTEX_R52_CACHE_SEGREGATION
+	default y
+
+config CPU_CORTEX_R52_ICACHE_FLASH_WAY
+	default 4
+
+config CPU_CORTEX_R52_DCACHE_FLASH_WAY
+	default 1
+endif # XIP
+
 endif # BOARD_S32Z2XXDC2_S32Z270_RTU0 || BOARD_S32Z2XXDC2_S32Z270_RTU1
