@@ -17,6 +17,7 @@
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_ag.h>
+#include <zephyr/bluetooth/classic/sdp.h>
 
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
@@ -79,9 +80,78 @@ static struct bt_ag_tx ag_tx[CONFIG_BT_HFP_AG_TX_BUF_COUNT * 2];
 static K_FIFO_DEFINE(ag_tx_free);
 static K_FIFO_DEFINE(ag_tx_notify);
 
-struct k_thread ag_thread;
-static K_KERNEL_STACK_MEMBER(ag_thread_stack, CONFIG_BT_HFP_AG_THREAD_STACK_SIZE);
-static k_tid_t ag_thread_id;
+/* HFP Gateway SDP record */
+static struct bt_sdp_attribute hfp_ag_attrs[] = {
+	BT_SDP_NEW_SERVICE,
+	BT_SDP_LIST(
+		BT_SDP_ATTR_SVCLASS_ID_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_AGW_SVCLASS)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_GENERIC_AUDIO_SVCLASS)
+		}
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROTO_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 12),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
+			},
+			)
+		},
+		{
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 5),
+			BT_SDP_DATA_ELEM_LIST(
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_RFCOMM)
+			},
+			{
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+				BT_SDP_ARRAY_8(BT_RFCOMM_CHAN_HFP_AG)
+			},
+			)
+		},
+		)
+	),
+	BT_SDP_LIST(
+		BT_SDP_ATTR_PROFILE_DESC_LIST,
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
+		BT_SDP_DATA_ELEM_LIST(
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_HANDSFREE_SVCLASS)
+		},
+		{
+			BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+			BT_SDP_ARRAY_16(0x0109)
+		},
+		)
+	),
+
+	BT_SDP_LIST(
+		BT_SDP_ATTR_NETWORK,
+		BT_SDP_TYPE_SIZE(BT_SDP_UINT8),
+		BT_SDP_ARRAY_8(IS_ENABLED(CONFIG_BT_HFP_AG_REJECT_CALL))
+	),
+	/* The values of the “SupportedFeatures” bitmap shall be the same as the
+	 * values of the Bits 0 to 4 of the AT-command AT+BRSF (see Section 5.3).
+	 */
+	BT_SDP_SUPPORTED_FEATURES(BT_HFP_AG_SDP_SUPPORTED_FEATURES),
+};
+
+static struct bt_sdp_record hfp_ag_rec = BT_SDP_RECORD(hfp_ag_attrs);
 
 static enum at_cme bt_hfp_ag_get_cme_err(int err)
 {
@@ -3205,6 +3275,8 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 		}
 	}
 
+	ag->acl_conn = NULL;
+
 	LOG_DBG("AG %p", ag);
 }
 
@@ -3481,121 +3553,133 @@ static void bt_ag_ringing_work(struct k_work *work)
 	(void)hfp_ag_next_step(call->ag, bt_ag_ringing_work_cb, call);
 }
 
-int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t channel)
-{
-	int i;
-	int err;
+static K_KERNEL_STACK_MEMBER(ag_thread_stack, CONFIG_BT_HFP_AG_THREAD_STACK_SIZE);
 
+static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
+{
 	static struct bt_rfcomm_dlc_ops ops = {
 		.connected = hfp_ag_connected,
 		.disconnected = hfp_ag_disconnected,
 		.recv = hfp_ag_recv,
 		.sent = hfp_ag_sent,
 	};
+	static k_tid_t ag_thread_id;
+	static struct k_thread ag_thread;
+	size_t index;
+	struct bt_hfp_ag *ag;
 
-	LOG_DBG("");
-
-	if (ag == NULL) {
-		return -EINVAL;
-	}
-
-	*ag = NULL;
+	LOG_DBG("conn %p", conn);
 
 	if (ag_thread_id == NULL) {
 
 		k_fifo_init(&ag_tx_free);
 		k_fifo_init(&ag_tx_notify);
 
-		for (i = 0; i < ARRAY_SIZE(ag_tx); i++) {
-			k_fifo_put(&ag_tx_free, &ag_tx[i]);
+		for (index = 0; index < ARRAY_SIZE(ag_tx); index++) {
+			k_fifo_put(&ag_tx_free, &ag_tx[index]);
 		}
 
 		ag_thread_id = k_thread_create(
 			&ag_thread, ag_thread_stack, K_KERNEL_STACK_SIZEOF(ag_thread_stack),
 			bt_hfp_ag_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_HFP_AG_THREAD_PRIO), 0, K_NO_WAIT);
-		if (ag_thread_id == NULL) {
-			return -ENOMEM;
-		}
+		__ASSERT(ag_thread_id, "Cannot create thread for AG");
 		k_thread_name_set(ag_thread_id, "HFP AG");
 	}
 
-	for (i = 0; i < ARRAY_SIZE(bt_hfp_ag_pool); i++) {
-		struct bt_hfp_ag *_ag = &bt_hfp_ag_pool[i];
-
-		if (_ag->rfcomm_dlc.session) {
-			continue;
-		}
-
-		(void)memset(_ag, 0, sizeof(struct bt_hfp_ag));
-
-		sys_slist_init(&_ag->tx_pending);
-
-		k_sem_init(&_ag->lock, 1, 1);
-
-		_ag->rfcomm_dlc.ops = &ops;
-		_ag->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
-
-		/* Set the supported features*/
-		_ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
-
-		/* Support HF indicators */
-		if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
-			_ag->hf_indicators_of_ag |= BIT(HFP_HF_ENHANCED_SAFETY_IND);
-		}
-
-		if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_BATTERY)) {
-			_ag->hf_indicators_of_ag |= BIT(HFP_HF_BATTERY_LEVEL_IND);
-		}
-
-		_ag->hf_indicators = _ag->hf_indicators_of_ag;
-
-		/* If supported codec ids cannot be notified, disable codec negotiation. */
-		if (!(bt_ag && bt_ag->codec)) {
-			_ag->ag_features &= ~BT_HFP_AG_FEATURE_CODEC_NEG;
-		}
-
-		_ag->hf_features = 0;
-		_ag->hf_codec_ids = 0;
-
-		_ag->acl_conn = conn;
-
-		/* Set AG indicator value */
-		_ag->indicator_value[BT_HFP_AG_SERVICE_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_CALL_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_CALL_SETUP_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_CALL_HELD_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_SIGNAL_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_ROAM_IND] = 0;
-		_ag->indicator_value[BT_HFP_AG_BATTERY_IND] = 0;
-
-		/* Set AG indicator status */
-		_ag->indicator = BIT(BT_HFP_AG_SERVICE_IND) | BIT(BT_HFP_AG_CALL_IND) |
-				 BIT(BT_HFP_AG_CALL_SETUP_IND) | BIT(BT_HFP_AG_CALL_HELD_IND) |
-				 BIT(BT_HFP_AG_SIGNAL_IND) | BIT(BT_HFP_AG_ROAM_IND) |
-				 BIT(BT_HFP_AG_BATTERY_IND);
-
-		/* Set AG operator */
-		memcpy(_ag->operator, "UNKNOWN", sizeof("UNKNOWN"));
-
-		/* Set Codec ID*/
-		_ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
-
-		/* Init delay work */
-		k_work_init_delayable(&_ag->tx_work, bt_ag_tx_work);
-
-		*ag = _ag;
+	index = (size_t)bt_conn_index(conn);
+	ag = &bt_hfp_ag_pool[index];
+	if (ag->acl_conn) {
+		LOG_ERR("AG connection (%p) is established", conn);
+		return NULL;
 	}
 
-	if (*ag == NULL) {
-		return -ENOMEM;
+	(void)memset(ag, 0, sizeof(struct bt_hfp_ag));
+
+	sys_slist_init(&ag->tx_pending);
+
+	k_sem_init(&ag->lock, 1, 1);
+
+	ag->rfcomm_dlc.ops = &ops;
+	ag->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
+
+	/* Set the supported features*/
+	ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
+
+	/* Support HF indicators */
+	if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
+		ag->hf_indicators_of_ag |= BIT(HFP_HF_ENHANCED_SAFETY_IND);
 	}
 
-	err = bt_rfcomm_dlc_connect(conn, &(*ag)->rfcomm_dlc, channel);
+	if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_BATTERY)) {
+		ag->hf_indicators_of_ag |= BIT(HFP_HF_BATTERY_LEVEL_IND);
+	}
+
+	ag->hf_indicators = ag->hf_indicators_of_ag;
+
+	/* If supported codec ids cannot be notified, disable codec negotiation. */
+	if (!(bt_ag && bt_ag->codec)) {
+		ag->ag_features &= ~BT_HFP_AG_FEATURE_CODEC_NEG;
+	}
+
+	ag->hf_features = 0;
+	ag->hf_codec_ids = 0;
+
+	ag->acl_conn = conn;
+
+	/* Set AG indicator value */
+	ag->indicator_value[BT_HFP_AG_SERVICE_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_CALL_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_CALL_SETUP_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_CALL_HELD_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_SIGNAL_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_ROAM_IND] = 0;
+	ag->indicator_value[BT_HFP_AG_BATTERY_IND] = 0;
+
+	/* Set AG indicator status */
+	ag->indicator = BIT(BT_HFP_AG_SERVICE_IND) | BIT(BT_HFP_AG_CALL_IND) |
+				BIT(BT_HFP_AG_CALL_SETUP_IND) | BIT(BT_HFP_AG_CALL_HELD_IND) |
+				BIT(BT_HFP_AG_SIGNAL_IND) | BIT(BT_HFP_AG_ROAM_IND) |
+				BIT(BT_HFP_AG_BATTERY_IND);
+
+	/* Set AG operator */
+	memcpy(ag->operator, "UNKNOWN", sizeof("UNKNOWN"));
+
+	/* Set Codec ID*/
+	ag->selected_codec_id = BT_HFP_AG_CODEC_CVSD;
+
+	/* Init delay work */
+	k_work_init_delayable(&ag->tx_work, bt_ag_tx_work);
+
+	return ag;
+}
+
+int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t channel)
+{
+	struct bt_hfp_ag *new_ag;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn || !ag || !channel) {
+		return -EINVAL;
+	}
+
+	if (!bt_ag) {
+		return -EFAULT;
+	}
+
+	new_ag = hfp_ag_create(conn);
+	if (!new_ag) {
+		return -ECONNREFUSED;
+	}
+
+	err = bt_rfcomm_dlc_connect(conn, &new_ag->rfcomm_dlc, channel);
 	if (err != 0) {
-		(void)memset(*ag, 0, sizeof(struct bt_hfp_ag));
+		(void)memset(new_ag, 0, sizeof(*new_ag));
 		*ag = NULL;
 	} else {
+		*ag = new_ag;
 		bt_hfp_ag_set_state(*ag, BT_HFP_CONNECTING);
 	}
 
@@ -3615,6 +3699,71 @@ int bt_hfp_ag_disconnect(struct bt_hfp_ag *ag)
 	return bt_rfcomm_dlc_disconnect(&ag->rfcomm_dlc);
 }
 
+static int hfp_ag_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
+			 struct bt_rfcomm_dlc **dlc)
+{
+	struct bt_hfp_ag *ag;
+
+	ag = hfp_ag_create(conn);
+
+	if (!ag) {
+		return -ECONNREFUSED;
+	}
+
+	*dlc = &ag->rfcomm_dlc;
+
+	return 0;
+}
+
+static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
+		struct bt_sco_chan **chan)
+{
+	static struct bt_sco_chan_ops ops = {
+		.connected = hfp_ag_sco_connected,
+		.disconnected = hfp_ag_sco_disconnected,
+	};
+	size_t index;
+	struct bt_hfp_ag *ag;
+
+	LOG_DBG("conn %p", info->acl);
+
+	index = (size_t)bt_conn_index(info->acl);
+	ag = &bt_hfp_ag_pool[index];
+	if (ag->acl_conn != info->acl) {
+		LOG_ERR("ACL %p of AG is unaligned with SCO's %p", ag->acl_conn, info->acl);
+		return -EINVAL;
+	}
+
+	if (ag->sco_chan.sco) {
+		return -ECONNREFUSED;
+	}
+
+	ag->sco_chan.ops = &ops;
+
+	*chan = &ag->sco_chan;
+
+	return 0;
+}
+
+static void hfp_ag_init(void)
+{
+	static struct bt_rfcomm_server chan = {
+		.channel = BT_RFCOMM_CHAN_HFP_AG,
+		.accept = hfp_ag_accept,
+	};
+
+	bt_rfcomm_server_register(&chan);
+
+	static struct bt_sco_server sco_server = {
+		.sec_level = BT_SECURITY_L0,
+		.accept = bt_hfp_ag_sco_accept,
+	};
+
+	bt_sco_server_register(&sco_server);
+
+	bt_sdp_register_service(&hfp_ag_rec);
+}
+
 int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb)
 {
 	if (!cb) {
@@ -3626,6 +3775,8 @@ int bt_hfp_ag_register(struct bt_hfp_ag_cb *cb)
 	}
 
 	bt_ag = cb;
+
+	hfp_ag_init();
 
 	return 0;
 }
