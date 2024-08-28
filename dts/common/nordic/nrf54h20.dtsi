@@ -92,17 +92,9 @@
 
 	clocks {
 		hfxo: hfxo {
-			compatible = "nordic,nrf54h-hfxo";
-			status = "disabled";
+			compatible = "fixed-clock";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
-		};
-
-		lfxo: lfxo {
-			compatible = "nordic,nrf54h-lfxo";
-			status = "disabled";
-			#clock-cells = <0>;
-			clock-frequency = <32768>;
 		};
 
 		fll16m: fll16m {
