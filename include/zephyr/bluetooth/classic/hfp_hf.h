@@ -840,6 +840,35 @@ int bt_hfp_hf_transmit_dtmf_code(struct bt_hfp_hf_call *call, char code);
  */
 int bt_hfp_hf_query_subscriber(struct bt_hfp_hf *hf);
 
+/* HFP HF Indicators */
+enum hfp_hf_ag_indicators {
+	HF_SERVICE_IND = 0, /* AG service indicator */
+	HF_CALL_IND,        /* AG call indicator */
+	HF_CALL_SETUP_IND,  /* AG call setup indicator */
+	HF_CALL_HELD_IND,   /* AG call held indicator */
+	HF_SINGNAL_IND,     /* AG signal indicator */
+	HF_ROAM_IND,        /* AG roaming indicator */
+	HF_BATTERY_IND      /* AG battery indicator */
+};
+
+/** @brief Handsfree HF set AG indicator activated/deactivated status
+ *
+ *  It allows HF to issue the AT+BIA command if it needs to change the
+ *  activated/deactivated status of indicators in the AG.
+ *  The index of all indicators can be activated/deactivated are
+ *  defined in `enum hfp_hf_ag_indicators`.
+ *  The each bit of parameter `status` represents the indicator status
+ *  corresponding to the index. Such as, value 0b111110 of `status`
+ *  means the AG indicator `service` is required to be deactivated.
+ *  Others are required to be activated.
+ *
+ *  @param hf HFP HF object.
+ *  @param status The activated/deactivated bitmap status of AG indicators.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status);
+
 #ifdef __cplusplus
 }
 #endif
