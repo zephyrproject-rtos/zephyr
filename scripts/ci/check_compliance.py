@@ -303,8 +303,8 @@ class ClangFormatCheck(ComplianceTest):
                 for patch in patchset:
                     for hunk in patch:
                         # Strip the before and after context
-                        before = next(i for i,v in enumerate(hunk) if str(v).startswith('-'))
-                        after = next(i for i,v in enumerate(reversed(hunk)) if str(v).startswith('+'))
+                        before = next(i for i,v in enumerate(hunk) if str(v).startswith(('-', '+')))
+                        after = next(i for i,v in enumerate(reversed(hunk)) if str(v).startswith(('-', '+')))
                         msg = "".join([str(l) for l in hunk[before:-after or None]])
 
                         # show the hunk at the last line
