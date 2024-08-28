@@ -91,7 +91,9 @@ enum bt_bap_bass_att_err {
  * Value indicating that the Broadcast Assistant has no preference to which BIS
  * the Scan Delegator syncs to
  */
-#define BT_BAP_BIS_SYNC_NO_PREF                0xFFFFFFFF
+#define BT_BAP_BIS_SYNC_NO_PREF 0xFFFFFFFF
+/** BIS sync value indicating that the BIG sync has failed for any reason */
+#define BT_BAP_BIS_SYNC_FAILED  0xFFFFFFFF
 
 /** Endpoint states */
 enum bt_bap_ep_state {
@@ -305,7 +307,11 @@ struct bt_bap_scan_delegator_recv_state {
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 
-	/** Subgroup specific information */
+	/** Subgroup specific information
+	 *
+	 * If the @ref bt_bap_bass_subgroup.bis_sync value is @ref BT_BAP_BIS_SYNC_FAILED then it
+	 * indicates that the BIG sync failed.
+	 */
 	struct bt_bap_bass_subgroup subgroups[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
@@ -2420,7 +2426,11 @@ struct bt_bap_broadcast_assistant_add_src_param {
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 
-	/** Pointer to array of subgroups */
+	/** Pointer to array of subgroups
+	 *
+	 * The @ref bt_bap_bass_subgroup.bis_sync value can be set to BT_BAP_BIS_SYNC_NO_PREF to
+	 * let the broadcast sink decide which BIS to synchronize to.
+	 */
 	struct bt_bap_bass_subgroup *subgroups;
 };
 
