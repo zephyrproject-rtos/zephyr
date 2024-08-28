@@ -2461,6 +2461,67 @@ int bt_hfp_hf_query_subscriber(struct bt_hfp_hf *hf)
 	return err;
 }
 
+static int bia_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BIA (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+int bt_hfp_hf_indicator_status(struct bt_hfp_hf *hf, uint8_t status)
+{
+	int err;
+	size_t index;
+	char buffer[HF_MAX_AG_INDICATORS * 2 + 1];
+	char *bia_status;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC is not established on %p", hf);
+		return -ENOTCONN;
+	}
+
+	bia_status = &buffer[0];
+	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
+		if ((hf->ind_table[index] != -1) && (index < NUM_BITS(sizeof(status)))) {
+			if (status & BIT(hf->ind_table[index])) {
+				*bia_status = '1';
+			} else {
+				*bia_status = '0';
+			}
+			bia_status++;
+			*bia_status = ',';
+			bia_status++;
+		} else {
+			break;
+		}
+	}
+
+	if (bia_status <= &buffer[0]) {
+		LOG_ERR("Not found valid AG indicator on %p", hf);
+		return -EINVAL;
+	}
+
+	bia_status--;
+	*bia_status = '\0';
+
+	err = hfp_hf_send_cmd(hf, NULL, bia_finish, "AT+BIA=%s", buffer);
+	if (err < 0) {
+		LOG_ERR("Fail to activated/deactivated AG indicators on %p", hf);
+	}
+
+	return err;
+}
+
 static int ata_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
 {
