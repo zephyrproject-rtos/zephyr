@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/kernel.h>
 
 #define GPIO_STATUS(base, n) (base + 0x8 * n)
 #define GPIO_CTRL(base, n)   (GPIO_STATUS(base, n) + 0x4)
@@ -217,6 +218,6 @@ int gpio_rp1_init(const struct device *port)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_rp1_init, NULL, &gpio_rp1_data_##n, &gpio_rp1_cfg_##n,       \
-			      POST_KERNEL, CONFIG_GPIO_RP1_INIT_PRIORITY, &gpio_rp1_api);
+			      POST_KERNEL, 99, &gpio_rp1_api);  // TODO: POST_KERNEL is set to use printk, revert this after the development is done
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RP1_INIT)

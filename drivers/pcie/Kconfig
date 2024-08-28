@@ -2,3 +2,4 @@
 
 source "drivers/pcie/host/Kconfig"
 source "drivers/pcie/endpoint/Kconfig"
+source "drivers/pcie/controller/Kconfig"
