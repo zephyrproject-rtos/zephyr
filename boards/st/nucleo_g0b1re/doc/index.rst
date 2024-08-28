@@ -168,10 +168,8 @@ the ``--runner`` (or ``-r``) option:
    $ west flash --runner jlink
    $ west flash --runner pyocd
 
-Pyocd support is currently limited: As the stm32g0b1 target causes issues,
-the stm32g071 target is used. For STM32G0 support pyOCD needs additional target
-information, which can be installed by adding "pack" support with the
-following pyOCD commands:
+For STM32G0 support pyocd needs additional target information,
+which can be installed by adding "pack" support with the following pyocd command:
 
 .. code-block:: console
 
