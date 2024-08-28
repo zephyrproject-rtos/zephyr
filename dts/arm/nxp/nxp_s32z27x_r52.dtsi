@@ -110,12 +110,12 @@
 			status = "okay";
 		};
 
-		sram0: memory@31780000 {
+		dram0: memory@31780000 {
 			compatible = "mmio-sram";
 			reg = <0x31780000 DT_SIZE_M(1)>;
 		};
 
-		sram1: memory@35780000 {
+		dram1: memory@35780000 {
 			compatible = "mmio-sram";
 			reg = <0x35780000 DT_SIZE_M(1)>;
 		};

@@ -16,6 +16,12 @@
 	};
 
 	soc {
+		/* Accessing code RAM over AXIF - a read-only flash memory bus */
+		cram1: memory@7d900000 {
+			compatible = "mmio-sram";
+			reg = <0x7d900000 DT_SIZE_M(7)>;
+		};
+
 		stm0: stm@76a00000 {
 			compatible = "nxp,s32-sys-timer";
 			reg = <0x76a00000 0x10000>;
