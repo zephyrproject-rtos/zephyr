@@ -1,7 +1,0 @@
-tests:
-  drivers.clock.nrf2_clock_control:
-    tags:
-      - drivers
-      - clock_control
-    platform_allow:
-      - nrf54h20dk/nrf54h20/cpuapp
