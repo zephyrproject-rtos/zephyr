@@ -1026,6 +1026,7 @@ Release Notes:
     - anangl
   collaborators:
     - decsny
+    - viniciusmiguel
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h

@@ -1,0 +1,46 @@
+# Copyright (c) 2024 Vinicius Miguel
+# SPDX-License-Identifier: Apache-2.0
+
+description: AVIA Semiconductor HX711 24 Bit ADC for Weigh Scales
+
+compatible: "avia,hx711"
+
+include: [adc-controller.yaml]
+
+bus: hx711
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+  sck-gpios:
+    type: phandle-array
+    required: true
+    description: "GPIO for Clock signal"
+
+  dout-gpios:
+    type: phandle-array
+    required: true
+    description: "GPIO for Data output signal"
+
+  rate-gpios:
+    type: phandle-array
+    required: true
+    description: "GPIO for data rate setting signal"
+
+  gain:
+    type: int
+    enum:
+      - 32
+      - 64
+      - 128
+    default: 32
+    description: "Gain setting"
+
+  rate:
+    type: int
+    enum:
+      - 10
+      - 80
+    default: 10
+    description: "Data rate setting in SPS"

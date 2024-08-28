@@ -156,6 +156,7 @@
 /drivers/adc/adc_rpi_pico.c               @soburi
 /drivers/adc/*ads114s0x*                  @benediktibk
 /drivers/adc/*max11102_17*                @benediktibk
+/drivers/adc/adc_hx711.c                  @viniciusmiguel
 /drivers/adc/*kb1200*                     @ene-steven
 /drivers/adc/adc_ad559x.c                 @bbilas
 /drivers/audio/*nrfx*                     @anangl
