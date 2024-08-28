@@ -10,43 +10,13 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 
-static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
-{
-	struct k_thread *thread = (struct k_thread *)cthread;
-	const struct shell *sh = (const struct shell *)user_data;
-	unsigned int pcnt;
-	size_t unused;
-	size_t size = thread->stack_info.size;
-	const char *tname;
-	int ret;
-	char state_str[32];
-
 #ifdef CONFIG_THREAD_RUNTIME_STATS
+static void rt_stats_dump(const struct shell *sh, struct k_thread *thread)
+{
 	k_thread_runtime_stats_t rt_stats_thread;
 	k_thread_runtime_stats_t rt_stats_all;
-#endif /* CONFIG_THREAD_RUNTIME_STATS */
-
-	tname = k_thread_name_get(thread);
-
-	shell_print(sh, "%s%p %-10s",
-		      (thread == k_current_get()) ? "*" : " ",
-		      thread,
-		      tname ? tname : "NA");
-	/* Cannot use lld as it's less portable. */
-	shell_print(sh, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
-		      thread->base.user_options,
-		      thread->base.prio,
-		      (int64_t)thread->base.timeout.dticks);
-	shell_print(sh, "\tstate: %s, entry: %p",
-		    k_thread_state_str(thread, state_str, sizeof(state_str)),
-		    thread->entry.pEntry);
-
-#ifdef CONFIG_SCHED_CPU_MASK
-	shell_print(sh, "\tcpu_mask: 0x%x", thread->base.cpu_mask);
-#endif /* CONFIG_SCHED_CPU_MASK */
-
-#ifdef CONFIG_THREAD_RUNTIME_STATS
-	ret = 0;
+	int ret = 0;
+	unsigned int pcnt;
 
 	if (k_thread_runtime_stats_get(thread, &rt_stats_thread) != 0) {
 		ret++;
@@ -86,7 +56,40 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		shell_print(sh, "\tAverage execution cycles: ?");
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 	}
+}
 #endif /* CONFIG_THREAD_RUNTIME_STATS */
+
+static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
+{
+	struct k_thread *thread = (struct k_thread *)cthread;
+	const struct shell *sh = (const struct shell *)user_data;
+	unsigned int pcnt;
+	size_t unused;
+	size_t size = thread->stack_info.size;
+	const char *tname;
+	int ret;
+	char state_str[32];
+
+	tname = k_thread_name_get(thread);
+
+	shell_print(sh, "%s%p %-10s",
+		      (thread == k_current_get()) ? "*" : " ",
+		      thread,
+		      tname ? tname : "NA");
+	/* Cannot use lld as it's less portable. */
+	shell_print(sh, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
+		      thread->base.user_options,
+		      thread->base.prio,
+		      (int64_t)thread->base.timeout.dticks);
+	shell_print(sh, "\tstate: %s, entry: %p",
+		    k_thread_state_str(thread, state_str, sizeof(state_str)),
+		    thread->entry.pEntry);
+
+#ifdef CONFIG_SCHED_CPU_MASK
+	shell_print(sh, "\tcpu_mask: 0x%x", thread->base.cpu_mask);
+#endif /* CONFIG_SCHED_CPU_MASK */
+
+	IF_ENABLED(CONFIG_THREAD_RUNTIME_STATS, (rt_stats_dump(sh, thread)));
 
 	ret = k_thread_stack_space_get(thread, &unused);
 	if (ret) {
