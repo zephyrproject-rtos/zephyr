@@ -66,6 +66,10 @@ Cargo.lock
 # Cargo encourages a .cargo/config.toml file to symlink to a generated file.  Don't save these.
 .cargo/
 
+# Normal west builds will place the Rust target directory under the build directory.  However,
+# sometimes IDEs and such will litter these target directories as well.
+target/
+
 # CI output
 compliance.xml
 _error.types
