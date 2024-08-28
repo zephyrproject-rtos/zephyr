@@ -6,6 +6,14 @@ set(CMAKE_LINKER ${GNULD_LINKER})
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
+if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
+   ${GNULD_LINKER_IS_BFD})
+  # ld.bfd was found so let's explicitly use that for linking, see #32237
+  list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=bfd)
+  list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=bfd)
+  string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+endif()
+
 if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
   if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
     # When building with C++ Exceptions, it is important that crtbegin and crtend
@@ -118,16 +126,9 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
-     ${GNULD_LINKER_IS_BFD})
-    # ld.bfd was found so let's explicitly use that for linking, see #32237
-    set(use_linker "-fuse-ld=bfd")
-  endif()
-
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
-    ${use_linker}
     ${TOPT}
     ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
