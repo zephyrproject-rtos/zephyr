@@ -15,7 +15,7 @@ struct clock_control_ra_pclk_cfg {
 };
 
 struct clock_control_ra_subsys_cfg {
-	uint32_t mstp;
+	volatile uint32_t *mstp;
 	uint32_t stop_bit;
 };
 
