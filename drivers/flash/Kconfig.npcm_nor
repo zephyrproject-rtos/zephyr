@@ -7,7 +7,7 @@ config FLASH_NPCM_NOR
 	bool "Nuvoton NPCM Enhanced Super I/O (eSIO) SPI-NOR Flash driver"
 	default y
 	depends on DT_HAS_NUVOTON_NPCM_NOR_ENABLED
-	depends on FLASH_NPCM_FIU_QSPI
+	depends on FLASH_NPCM_FIU_QSPI || FLASH_NPCM_SPIM_QSPI
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_JESD216

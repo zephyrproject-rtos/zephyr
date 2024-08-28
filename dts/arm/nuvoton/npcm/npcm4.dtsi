@@ -41,6 +41,10 @@
 			apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
 		};
 
+		qspi_spim0: quad-spim@40017000 {
+			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL1 0>;
+		};
+
 		qspi_fiu0: quad-fiu@40020000 {
 			clocks = <&pcc NPCM_CLOCK_BUS_FIU NPCM_PWDWN_CTL1 2>;
 		};

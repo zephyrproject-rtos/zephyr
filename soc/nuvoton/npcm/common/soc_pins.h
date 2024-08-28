@@ -29,6 +29,7 @@ struct npcm_alt {
 };
 
 #define NPCM_FIU_FLASH_WP	BIT(0)
+#define NPCM_SPIM_FLASH_WP	BIT(1)
 
 int npcm_pinctrl_flash_write_protect_set(int interface);
 

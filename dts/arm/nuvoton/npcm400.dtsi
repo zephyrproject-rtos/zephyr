@@ -22,3 +22,17 @@
 	soc {
 	};
 };
+
+&qspi_spim0 {
+	int_flash: w25q16@0 {
+		compatible ="nuvoton,npcm-nor";
+		size = <DT_SIZE_M(2 * 8)>;
+		reg = <0>;
+		status = "okay";
+
+		/* quad spi bus configuration of nor flash device */
+		qspi-flags = <NPCM_QSPI_SW_CS0>;
+		rd-mode = "NPCM_RD_MODE_QUAD";
+		mapped-addr = <0x80000>;
+        };
+};
