@@ -19,8 +19,30 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 fn main() -> Result<()> {
+    // Determine which version of Clang we linked with.
+    let version = bindgen::clang_version();
+    println!("Clang version: {:?}", version);
+
     // Pass in the target used to build the native code.
-    let target_arg = format!("--target={}", env::var("TARGET")?);
+    let target = env::var("TARGET")?;
+
+    // Rustc uses some complex target tuples for the riscv targets, whereas clang uses other
+    // options.  Fortunately, these variants shouldn't affect the structures generated, so just
+    // turn this into a generic target.
+    let target = if target.starts_with("riscv32") {
+        "riscv32-unknown-none-elf".to_string()
+    } else {
+        target
+    };
+
+    // Likewise, do the same with RISCV-64.
+    let target = if target.starts_with("riscv64") {
+        "riscv64-unknown-none-elf".to_string()
+    } else {
+        target
+    };
+
+    let target_arg = format!("--target={}", target);
 
     // println!("includes: {:?}", env::var("INCLUDE_DIRS"));
     // println!("defines: {:?}", env::var("INCLUDE_DEFINES"));
