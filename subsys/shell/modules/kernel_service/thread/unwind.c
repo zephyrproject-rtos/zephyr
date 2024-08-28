@@ -1,7 +1,5 @@
 /*
  * Copyright (c) 2024 Meta Platforms
- * Copyright (c) 2018 Nordic Semiconductor ASA
- * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
