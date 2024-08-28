@@ -15,14 +15,15 @@ printf "\n\n======== Running BASS Client Sync =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=bap_scan_delegator_client_sync \
-  -rs=24 -D=3
+  -RealEncryption=1 -rs=24 -D=3
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \
-  -testid=bap_broadcast_assistant_client_sync -rs=46 -D=3
+  -testid=bap_broadcast_assistant_client_sync -RealEncryption=1 -rs=46 -D=3
 
   Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
-  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster -rs=69 -D=3
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=2 -testid=bass_broadcaster \
+  -RealEncryption=1 -rs=69 -D=3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -D=3 \
