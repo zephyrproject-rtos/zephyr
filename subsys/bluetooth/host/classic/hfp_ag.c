@@ -401,6 +401,12 @@ static int hfp_ag_update_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicato
 
 	LOG_DBG("indicator %d, old %d -> new %d", index, old_value, value);
 
+	if (!(ag->indicator & BIT(index))) {
+		LOG_INF("The indicator %d is deactivated", index);
+		/* If the indicator is deactivated, consider it a successful set. */
+		return 0;
+	}
+
 	err = hfp_ag_send_data(ag, cb, user_data, "\r\n+CIEV:%d,%d\r\n", (uint8_t)index + 1, value);
 	if (err) {
 		hfp_ag_lock(ag);
@@ -1923,7 +1929,7 @@ static int bt_hfp_ag_bia_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	}
 
 	/* Force call, call setup and held call indicators are enabled. */
-	indicator = BIT(BT_HFP_AG_CALL_IND) | BIT(BT_HFP_AG_CALL_SETUP_IND) |
+	indicator |= BIT(BT_HFP_AG_CALL_IND) | BIT(BT_HFP_AG_CALL_SETUP_IND) |
 		    BIT(BT_HFP_AG_CALL_HELD_IND);
 
 	hfp_ag_lock(ag);
