@@ -317,6 +317,12 @@ config BT_HFP_AG_HF_INDICATOR_BATTERY
 	help
 	  This option enables HF Indicator Battery level for HFP AG
 
+config BT_HFP_AG_REJECT_CALL
+	bool "Ability to reject a call for HFP AG [EXPERIMENTAL]"
+	default y
+	help
+	  This option enables ability to reject a call for HFP AG
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
