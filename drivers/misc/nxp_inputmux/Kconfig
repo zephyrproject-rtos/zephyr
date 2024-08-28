@@ -1,0 +1,20 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_INPUTMUX
+	bool "NXP INPUTMUX driver"
+	depends on DT_HAS_NXP_INPUTMUX_ENABLED
+	default y
+	help
+	  Enables a driver for the NXP INPUTMUX peripheral.
+	  It is useful for routing internal signals in supported NXP microcontrollers.
+
+if NXP_INPUTMUX
+
+config NXP_INPUTMUX_INIT_PRIORITY
+	int "INPUTMUX driver init priority"
+	default KERNEL_INIT_PRIORITY_OBJECTS
+	help
+	  INPUTMUX peripheral driver initialization priority.
+
+endif # NXP_INPUTMUX

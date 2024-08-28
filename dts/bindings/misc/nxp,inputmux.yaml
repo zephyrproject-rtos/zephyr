@@ -1,0 +1,43 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml]
+
+compatible: "nxp,inputmux"
+description: NXP i.MX INPUTMUX driver. Routes internal SoC signals.
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    INPUTMUX attachment or signal enablement.
+
+    For signal enablement, specify the "signal" property and use "MUX_*_ENA"
+    constants defined in used device's DT binding for this driver. For example:
+
+    flexcomm12_dma0_rx {
+        signal = <MUX_FLEXCOMM12_RX_TO_DMAC0_CH34_REQUEST_ENA>;
+    };
+
+    For signal attachment (routing), specify the "selector" and "source"
+    properties. The "selector" property specifies which signal is to be
+    assigned and the "source" property specifies the source to which the
+    assignment will be made. For example:
+
+    dsp_int0 {
+       selector = <0>;
+       source = <MUX_FLEXCOMM0_TO_DSP_INTERRUPT>;
+    };
+
+  properties:
+    selector:
+      type: int
+      description: Multiplexer signal selector.
+    source:
+      type: int
+      description: Multiplexer signal source.
+    signal:
+      type: int
+      description: Signal to enable.
