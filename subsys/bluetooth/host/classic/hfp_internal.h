@@ -262,16 +262,6 @@ struct bt_hfp_hf {
 	ATOMIC_DEFINE(flags, BT_HFP_HF_NUM_FLAGS);
 };
 
-enum hfp_hf_ag_indicators {
-	HF_SERVICE_IND,
-	HF_CALL_IND,
-	HF_CALL_SETUP_IND,
-	HF_CALL_HELD_IND,
-	HF_SINGNAL_IND,
-	HF_ROAM_IND,
-	HF_BATTERY_IND
-};
-
 /* HFP call setup status */
 #define BT_HFP_CALL_SETUP_NONE            0
 #define BT_HFP_CALL_SETUP_INCOMING        1
