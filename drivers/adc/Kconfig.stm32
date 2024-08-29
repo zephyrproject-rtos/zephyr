@@ -11,6 +11,7 @@ config ADC_STM32
 	bool "STM32 ADC driver"
 	default y
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
+	select PINCTRL
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
