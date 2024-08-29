@@ -1219,7 +1219,7 @@ static void seg_ack(struct k_work *work)
 	rx->last_ack = k_uptime_get_32();
 
 	if (rx->attempts_left == 0) {
-		LOG_DBG("Ran out of retransmit attempts");
+		LOG_DBG("Ran out of ack retransmit attempts");
 		return;
 	}
 
