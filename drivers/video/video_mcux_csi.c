@@ -198,6 +198,11 @@ static int video_mcux_csi_stream_start(const struct device *dev)
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
 	status_t ret;
+	struct video_buf *vbuf;
+
+	while ((vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT))) {
+		k_fifo_put(&data->fifo_in, vbuf);
+	};
 
 	ret = CSI_TransferStart(config->base, &data->csi_handle);
 	if (ret != kStatus_Success) {
