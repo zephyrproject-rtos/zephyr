@@ -633,6 +633,38 @@ int bsir_handle(struct at_client *hf_at)
 	return 0;
 }
 
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+int bcs_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->acl;
+	uint32_t codec_id;
+	int err;
+
+	err = at_get_number(hf_at, &codec_id);
+	if (err) {
+		LOG_ERR("could not get bcs value");
+		return err;
+	}
+
+	if (!(hf->hf_codec_ids & BIT(codec_id))) {
+		LOG_ERR("Invalid codec id %d", codec_id);
+		err = bt_hfp_hf_set_codecs(conn, hf->hf_codec_ids);
+		return err;
+	}
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_CODEC_CONN);
+
+	if (bt_hf->codec_negotiate) {
+		bt_hf->codec_negotiate(conn, codec_id);
+		return 0;
+	}
+
+	err = bt_hfp_hf_select_codec(conn, codec_id);
+	return err;
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -648,6 +680,9 @@ static const struct unsolicited {
 	{ "VGS", AT_CMD_TYPE_UNSOLICITED, vgs_handle },
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 	{ "BSIR", AT_CMD_TYPE_UNSOLICITED, bsir_handle },
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	{ "BCS", AT_CMD_TYPE_UNSOLICITED, bcs_handle },
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -798,6 +833,51 @@ static int at_vgs_finish(struct at_client *hf_at, enum at_result result,
 }
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static void get_codec_ids(struct bt_hfp_hf *hf, char *buffer, size_t buffer_len)
+{
+	size_t len = 0;
+	uint8_t ids = hf->hf_codec_ids;
+	int index = 0;
+
+	while (ids && (len < (buffer_len-2))) {
+		if (ids & 0x01) {
+			buffer[len++] = index + '0';
+			buffer[len++] = ',';
+		}
+		index ++;
+		ids = ids >> 1;
+	}
+
+	if (len > 0) {
+		len --;
+	}
+
+	buffer[len] = '\0';
+}
+
+static int send_at_bac(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	if (hf->ag_features & BT_HFP_AG_FEATURE_CODEC_NEG) {
+		char ids[sizeof(hf->hf_codec_ids)*2*8 + 1];
+		get_codec_ids(hf, &ids[0], ARRAY_SIZE(ids));
+		return hfp_hf_send_cmd(hf, NULL, cb, "AT+BAC=%s", ids);
+	}
+
+	return -ENOTSUP;
+}
+
+static int at_bac_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("BAC set (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
 typedef int (*at_send_t)(struct bt_hfp_hf *hf, at_finish_cb_t cb);
 
 static struct at_cmd_init
@@ -815,6 +895,9 @@ static struct at_cmd_init
 #if defined(CONFIG_BT_HFP_HF_CLI)
 	{send_at_clip, at_clip_finish, false},
 #endif /* CONFIG_BT_HFP_HF_CLI */
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	{send_at_bac, at_bac_finish, false},
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 };
 
 static int at_cmd_init_start(struct bt_hfp_hf *hf);
@@ -1327,6 +1410,145 @@ int bt_hfp_hf_accept(struct bt_conn *conn)
 	return err;
 }
 
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static int bcc_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("BCC (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
+int bt_hfp_hf_audio_connect(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (hf->chan.sco) {
+		LOG_ERR("Audio conenction has been connected");
+		return -ECONNREFUSED;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, bcc_finish, "AT+BCC");
+	if (err < 0) {
+		LOG_ERR("Fail to setup audio connection on %p", hf);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+}
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static int bcs_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("BCC (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
+int bt_hfp_hf_select_codec(struct bt_conn *conn, uint8_t codec_id)
+{
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	struct bt_hfp_hf *hf;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->hf_codec_ids & BIT(codec_id))) {
+		LOG_ERR("Codec ID is unsupported");
+		return -ENOTSUP;
+	}
+
+	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_CODEC_CONN)) {
+		LOG_ERR("Invalid context");
+		return -ESRCH;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, bcs_finish, "AT+BCS=%d", codec_id);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+}
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+static int bac_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("BCC (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
+int bt_hfp_hf_set_codecs(struct bt_conn *conn, uint8_t codec_ids)
+{
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+	struct bt_hfp_hf *hf;
+	char ids[sizeof(hf->hf_codec_ids)*2*8 + 1];
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (codec_ids & BT_HFP_HF_CODEC_CVSD) {
+		LOG_ERR("CVSD should be supported");
+		return -EINVAL;
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CODEC_CONN);
+	hf->hf_codec_ids = codec_ids;
+
+	get_codec_ids(hf, &ids[0], ARRAY_SIZE(ids));
+	return hfp_hf_send_cmd(hf, NULL, bac_finish, "AT+BAC=%s", ids);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
@@ -1395,6 +1617,9 @@ static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
 
 		/* Set the supported features*/
 		hf->hf_features = BT_HFP_HF_SUPPORTED_FEATURES;
+
+		/* Set supported codec ids */
+		hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
 
 		k_fifo_init(&hf->tx_pending);
 

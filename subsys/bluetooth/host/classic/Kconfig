@@ -90,6 +90,24 @@ config BT_HFP_HF_VOLUME
 	default y
 	help
 	  This option enables Remote audio volume control for HFP HF
+
+config BT_HFP_HF_CODEC_NEG
+	bool "Codec Negotiation for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec Negotiation for HFP HF
+
+if BT_HFP_HF_CODEC_NEG
+config BT_HFP_HF_CODEC_MSBC
+	bool "Support Codec mSBC for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP HF
+
+config BT_HFP_HF_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP HF
+endif # BT_HFP_HF_CODEC_NEG
+
 endif # BT_HFP_HF
 
 if BT_HFP_AG
