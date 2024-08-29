@@ -285,7 +285,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x6000f000 0x1000>;
-			interrupts = <I2S0_INTR_SOURCE>;
+			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_I2S0_MODULE>;
 			dmas = <&dma 2>, <&dma 3>;
@@ -299,7 +299,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x6002d000 0x1000>;
-			interrupts = <I2S1_INTR_SOURCE>;
+			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_I2S1_MODULE>;
 			dmas = <&dma 4>, <&dma 5>;
