@@ -1508,6 +1508,7 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 {
 	uint32_t indicator;
 	uint32_t hf_indicators = 0U;
+	uint32_t supported_indicators = 0U;
 	int err;
 	char *data;
 	uint32_t len;
@@ -1526,20 +1527,27 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		}
 
 		hfp_ag_lock(ag);
-		hf_indicators = ag->hf_indicators_of_hf & ag->hf_indicators_of_ag;
+		hf_indicators = ag->hf_indicators;
+		supported_indicators = ag->hf_indicators_of_ag & ag->hf_indicators_of_hf;
 		hfp_ag_unlock(ag);
-		len = (sizeof(hf_indicators) * 8) > HFP_HF_IND_MAX ? HFP_HF_IND_MAX
-								   : (sizeof(hf_indicators) * 8);
+		len = MIN(NUM_BITS(sizeof(supported_indicators)), HFP_HF_IND_MAX);
 		for (int i = 1; i < len; i++) {
-			if (BIT(i) & hf_indicators) {
-				err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BIND:%d,%d\r\n", i, 1);
-			} else {
-				err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BIND:%d,%d\r\n", i, 0);
+			bool enabled;
+
+			if (!(BIT(i) & supported_indicators)) {
+				continue;
 			}
-			if (err < 0) {
+
+			enabled = BIT(i) & hf_indicators;
+			err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BIND:%d,%d\r\n", i,
+				enabled ? 1 : 0);
+			if (err) {
 				return err;
 			}
-			if (hf_indicators == 0) {
+
+			supported_indicators &= ~BIT(i);
+
+			if (!supported_indicators) {
 				break;
 			}
 		}
@@ -1561,12 +1569,11 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		hfp_ag_lock(ag);
 		hf_indicators = ag->hf_indicators_of_ag;
 		hfp_ag_unlock(ag);
-		len = (sizeof(hf_indicators) * 8) > HFP_HF_IND_MAX ? HFP_HF_IND_MAX
-								   : (sizeof(hf_indicators) * 8);
+		len = MIN(NUM_BITS(sizeof(hf_indicators)), HFP_HF_IND_MAX);
 		for (int i = 1; (i < len) && (hf_indicators != 0); i++) {
 			if (BIT(i) & hf_indicators) {
 				int length = snprintk(
-					data, (char *)&ag->buffer[HF_MAX_BUF_LEN - 1] - data - 3,
+					data, (char *)&ag->buffer[HF_MAX_BUF_LEN - 1] - data - 2,
 					"%d", i);
 				data += length;
 				hf_indicators &= ~BIT(i);
@@ -1577,8 +1584,6 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			}
 		}
 		*data = ')';
-		data++;
-		*data = '\r';
 		data++;
 		*data = '\0';
 		data++;
@@ -1599,7 +1604,7 @@ static int bt_hfp_ag_bind_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 			}
 		}
 
-		if (indicator < (sizeof(hf_indicators) * 8)) {
+		if (indicator < NUM_BITS(sizeof(hf_indicators))) {
 			hf_indicators |= BIT(indicator);
 		}
 	}
@@ -3089,6 +3094,47 @@ static int bt_hfp_ag_cnum_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
+static int bt_hfp_ag_biev_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	uint32_t indicator;
+	uint32_t value;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	if (get_number(buf, &indicator)) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, ',')) {
+		return -ENOTSUP;
+	}
+
+	if (get_number(buf, &value)) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	hfp_ag_lock(ag);
+	if (!(ag->hf_indicators_of_ag & BIT(indicator))) {
+		hfp_ag_unlock(ag);
+		return -ENOTSUP;
+	}
+	hfp_ag_unlock(ag);
+
+#if defined(CONFIG_BT_HFP_AG_HF_INDICATORS)
+	if (bt_ag && bt_ag->hf_indicator_value) {
+		bt_ag->hf_indicator_value(ag, indicator, value);
+	}
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+
+	return 0;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -3103,6 +3149,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
 	{"AT+BVRA", bt_hfp_ag_bvra_handler}, {"AT+BINP", bt_hfp_ag_binp_handler},
 	{"AT+VTS", bt_hfp_ag_vts_handler},   {"AT+CNUM", bt_hfp_ag_cnum_handler},
+	{"AT+BIEV", bt_hfp_ag_biev_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
@@ -3491,6 +3538,17 @@ int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t chann
 
 		/* Set the supported features*/
 		_ag->ag_features = BT_HFP_AG_SUPPORTED_FEATURES;
+
+		/* Support HF indicators */
+		if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_ENH_SAFETY)) {
+			_ag->hf_indicators_of_ag |= BIT(HFP_HF_ENHANCED_SAFETY_IND);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_HFP_AG_HF_INDICATOR_BATTERY)) {
+			_ag->hf_indicators_of_ag |= BIT(HFP_HF_BATTERY_LEVEL_IND);
+		}
+
+		_ag->hf_indicators = _ag->hf_indicators_of_ag;
 
 		/* If supported codec ids cannot be notified, disable codec negotiation. */
 		if (!(bt_ag && bt_ag->codec)) {
@@ -4729,4 +4787,50 @@ int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available)
 	}
 
 	return err;
+}
+
+int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator, bool enable)
+{
+#if defined(CONFIG_BT_HFP_AG_HF_INDICATORS)
+	int err;
+	uint32_t supported_indicators;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+
+	supported_indicators = ag->hf_indicators_of_ag & ag->hf_indicators_of_hf;
+	hfp_ag_unlock(ag);
+
+	if (!(supported_indicators & BIT(indicator))) {
+		LOG_ERR("Unsupported indicator %d", indicator);
+		return -ENOTSUP;
+	}
+
+	hfp_ag_lock(ag);
+	if (enable) {
+		ag->hf_indicators |= BIT(indicator);
+	} else {
+		ag->hf_indicators &= ~BIT(indicator);
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BIND:%d,%d\r\n",
+		indicator, enable ? 1  : 0);
+	if (err) {
+		LOG_ERR("Fail to update registration status of indicator:(%d)", err);
+	}
+
+	return err;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
 }
