@@ -1,7 +1,7 @@
-.. _canopennode-sample:
+.. zephyr:code-sample:: canopennode
+   :name: CANopenNode
 
-CANopenNode
-###########
+   Use the CANopenNode CANopen protocol stack in Zephyr.
 
 Overview
 ********
