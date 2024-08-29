@@ -241,7 +241,7 @@ void load_call_unload(const struct llext_test *test_case)
 		const struct llext_test test_case = {		\
 			.name = STRINGIFY(_name),		\
 			.buf = _name ## _ext,			\
-			.buf_len = ARRAY_SIZE(_name ## _ext),	\
+			.buf_len = sizeof(_name ## _ext),	\
 			extra_args                              \
 		};						\
 		load_call_unload(&test_case);			\
@@ -328,7 +328,7 @@ static LLEXT_CONST uint8_t pre_located_ext[] ELF_ALIGN = {
 ZTEST(llext, test_pre_located)
 {
 	struct llext_buf_loader buf_loader =
-		LLEXT_BUF_LOADER(pre_located_ext, ARRAY_SIZE(pre_located_ext));
+		LLEXT_BUF_LOADER(pre_located_ext, sizeof(pre_located_ext));
 	struct llext_loader *loader = &buf_loader.loader;
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
@@ -364,7 +364,7 @@ ZTEST(llext, test_find_section)
 	ssize_t section_ofs;
 
 	struct llext_buf_loader buf_loader =
-		LLEXT_BUF_LOADER(find_section_ext, ARRAY_SIZE(find_section_ext));
+		LLEXT_BUF_LOADER(find_section_ext, sizeof(find_section_ext));
 	struct llext_loader *loader = &buf_loader.loader;
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
