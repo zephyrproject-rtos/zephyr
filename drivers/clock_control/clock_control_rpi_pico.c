@@ -608,14 +608,13 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	/* Reset all function before clock configuring */
 	reset_block(~(RESETS_RESET_IO_QSPI_BITS | RESETS_RESET_PADS_QSPI_BITS |
 		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_USBCTRL_BITS |
-		      RESETS_RESET_PLL_USB_BITS | RESETS_RESET_SYSCFG_BITS |
-		      RESETS_RESET_PLL_SYS_BITS));
+		      RESETS_RESET_SYSCFG_BITS | RESETS_RESET_PLL_SYS_BITS));
 
 	unreset_block_wait(RESETS_RESET_BITS &
 			   ~(RESETS_RESET_ADC_BITS | RESETS_RESET_RTC_BITS |
 			     RESETS_RESET_SPI0_BITS | RESETS_RESET_SPI1_BITS |
 			     RESETS_RESET_UART0_BITS | RESETS_RESET_UART1_BITS |
-			     RESETS_RESET_USBCTRL_BITS | RESETS_RESET_PWM_BITS));
+			     RESETS_RESET_USBCTRL_BITS));
 
 	/* Start tick in watchdog */
 	watchdog_hw->tick = ((CLOCK_FREQ_xosc/1000000) | WATCHDOG_TICK_ENABLE_BITS);
