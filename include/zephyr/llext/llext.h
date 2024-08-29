@@ -50,6 +50,9 @@ enum llext_mem {
 	LLEXT_MEM_SYMTAB,       /**< Symbol table */
 	LLEXT_MEM_STRTAB,       /**< Symbol name strings */
 	LLEXT_MEM_SHSTRTAB,     /**< Section name strings */
+	LLEXT_MEM_PREINIT,      /**< Array of early setup functions */
+	LLEXT_MEM_INIT,         /**< Array of setup functions */
+	LLEXT_MEM_FINI,         /**< Array of cleanup functions */
 
 	LLEXT_MEM_COUNT,        /**< Number of regions managed by LLEXT */
 };

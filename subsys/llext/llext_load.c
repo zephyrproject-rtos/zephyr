@@ -208,6 +208,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
+		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
+			LOG_DBG("section %d name %s already mapped to region %d",
+				i, name, ldr->sect_map[i].mem_idx);
+			continue;
+		}
+
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
 
@@ -224,6 +230,15 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				mem_idx = LLEXT_MEM_RODATA;
 			}
 			break;
+		case SHT_PREINIT_ARRAY:
+			mem_idx = LLEXT_MEM_PREINIT;
+			break;
+		case SHT_INIT_ARRAY:
+			mem_idx = LLEXT_MEM_INIT;
+			break;
+		case SHT_FINI_ARRAY:
+			mem_idx = LLEXT_MEM_FINI;
+			break;
 		default:
 			mem_idx = LLEXT_MEM_COUNT;
 			break;
@@ -239,6 +254,19 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 		    shdr->sh_size == 0) {
 			LOG_DBG("section %d name %s skipped", i, name);
 			continue;
+		}
+
+		switch (mem_idx) {
+		case LLEXT_MEM_PREINIT:
+		case LLEXT_MEM_INIT:
+		case LLEXT_MEM_FINI:
+			if (shdr->sh_entsize != sizeof(void *) ||
+			    shdr->sh_size % shdr->sh_entsize != 0) {
+				LOG_ERR("Invalid %s array in section %d", name, i);
+				return -ENOEXEC;
+			}
+		default:
+			break;
 		}
 
 		LOG_DBG("section %d name %s maps to region %d", i, name, mem_idx);
@@ -261,7 +289,9 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				return -ENOEXEC;
 			}
 
-			if (mem_idx == LLEXT_MEM_BSS) {
+			/* Check if this region type is extendable */
+			switch (mem_idx) {
+			case LLEXT_MEM_BSS:
 				/* SHT_NOBITS sections cannot be merged properly:
 				 * as they use no space in the file, the logic
 				 * below does not work; they must be treated as
@@ -269,6 +299,16 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 				 */
 				LOG_ERR("Multiple SHT_NOBITS sections are not supported");
 				return -ENOTSUP;
+			case LLEXT_MEM_PREINIT:
+			case LLEXT_MEM_INIT:
+			case LLEXT_MEM_FINI:
+				/* These regions are not extendable and must be
+				 * referenced at most once in the ELF file.
+				 */
+				LOG_ERR("Region %d redefined", mem_idx);
+				return -ENOEXEC;
+			default:
+				break;
 			}
 
 			if (ldr->hdr.e_type == ET_DYN) {
