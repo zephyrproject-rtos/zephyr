@@ -50,7 +50,7 @@ static inline void llext_free(void *ptr)
  */
 
 int do_llext_load(struct llext_loader *ldr, struct llext *ext,
-		  struct llext_load_param *ldr_parm);
+		  const struct llext_load_param *ldr_parm);
 
 static inline const char *llext_string(struct llext_loader *ldr, struct llext *ext,
 				       enum llext_mem mem_idx, unsigned int idx)

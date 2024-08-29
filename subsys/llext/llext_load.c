@@ -585,7 +585,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
  * Load a valid ELF as an extension
  */
 int do_llext_load(struct llext_loader *ldr, struct llext *ext,
-			 struct llext_load_param *ldr_parm)
+		  const struct llext_load_param *ldr_parm)
 {
 	int ret;
 

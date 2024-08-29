@@ -177,7 +177,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
  * @retval -ENOTSUP Unsupported ELF features
  */
 int llext_load(struct llext_loader *loader, const char *name, struct llext **ext,
-	       struct llext_load_param *ldr_parm);
+	       const struct llext_load_param *ldr_parm);
 
 /**
  * @brief Unload an extension
