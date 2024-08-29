@@ -55,9 +55,11 @@ static uint8_t __aligned(4) expected[EXPECTED_SIZE];
 static uint8_t erase_value;
 static bool ebw_required;
 
-static void *flash_driver_setup(void)
+static void flash_driver_before(void *arg)
 {
 	int rc;
+
+	ARG_UNUSED(arg);
 
 	TC_PRINT("Test will run on device %s\n", flash_dev->name);
 	zassert_true(device_is_ready(flash_dev));
@@ -120,8 +122,6 @@ static void *flash_driver_setup(void)
 			zassert_equal(rc, 0, "Flash memory not properly erased");
 		}
 	}
-
-	return NULL;
 }
 
 ZTEST(flash_driver, test_read_unaligned_address)
@@ -374,4 +374,4 @@ ZTEST(flash_driver, test_flash_page_layout)
 		     test_cb_data.page_counter, test_cb_data.exit_page);
 }
 
-ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);
+ZTEST_SUITE(flash_driver, NULL, NULL, flash_driver_before, NULL, NULL);
