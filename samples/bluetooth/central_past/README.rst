@@ -1,7 +1,8 @@
-.. _bluetooth-central-past-sample:
+.. zephyr:code-sample:: ble_central_past
+   :name: Central Periodic Advertising Sync Transfer (PAST)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Central Periodic Advertising Sync Transfer (PAST)
-############################################################
+   Use the Periodic Advertising Sync Transfer (PAST) feature as the sender.
 
 Overview
 ********

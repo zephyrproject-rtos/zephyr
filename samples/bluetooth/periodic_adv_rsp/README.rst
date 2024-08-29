@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-rsp-sample:
+.. zephyr:code-sample:: ble_periodic_adv_rsp
+   :name: Periodic Advertising with Responses (PAwR) Advertiser
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising with Responses (PAwR) Advertiser
-################################################################
+   Use BLE Periodic Advertising with Responses (PAwR) Advertiser functionality.
 
 Overview
 ********

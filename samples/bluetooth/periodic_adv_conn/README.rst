@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-conn-sample:
+.. zephyr:code-sample:: ble_periodic_adv_conn
+   :name: Periodic Advertising Connection Procedure (Initiator)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Connection Procedure - Initiator
-################################################################
+   Initiate a connection to a device using the Periodic Advertising Connection Procedure.
 
 Overview
 ********

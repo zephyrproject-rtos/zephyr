@@ -1,7 +1,8 @@
-.. _bluetooth_central_multilink:
+.. zephyr:code-sample:: ble_central_multilink
+   :name: Central Multilink
+   :relevant-api: bluetooth
 
-Bluetooth: Central
-##################
+   Scan, connect and establish connection to up to 62 peripherals.
 
 Overview
 ********

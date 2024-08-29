@@ -1,12 +1,13 @@
-.. _central_otc:
+.. zephyr:code-sample:: ble_central_otc
+   :name: Central OTC
+   :relevant-api: bluetooth
 
-Bluetooth: Central OTC
-######################
+   Connect to a BLE peripheral that supports the Object Transfer Service (OTS)
 
 Overview
 ********
 
-Similar to the :ref:`Central <bluetooth_central>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_central` sample, except that this
 application specifically looks for the OTS (Object Transfer) GATT Service.
 And this sample is to select object sequentially, to read metadata, to write data,
 to read data, and to calculate checksum of selected objects.

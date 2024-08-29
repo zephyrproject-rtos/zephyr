@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-sync-rsp-sample:
+.. zephyr:code-sample:: ble_periodic_adv_sync_rsp
+   :name: Periodic Advertising with Responses (PAwR) Synchronization
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising with Responses (PAwR) Synchronization
-#####################################################################
+   Implement BLE Periodic Advertising with Responses Synchronization.
 
 Overview
 ********

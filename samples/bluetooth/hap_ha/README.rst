@@ -1,7 +1,8 @@
-.. _bluetooth_hap_ha:
+.. zephyr:code-sample:: bluetooth_hap_ha
+   :name: Hearing Access Profile (HAP) Hearing Aid (HA)
+   :relevant-api: bt_has
 
-Bluetooth: HAP Hearing Aid (HA)
-###############################
+   Advertise and await connection from a Hearing Aid Unicast Client or Remote Controller.
 
 Overview
 ********

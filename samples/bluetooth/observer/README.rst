@@ -1,7 +1,8 @@
-.. _bluetooth-observer-sample:
+.. zephyr:code-sample:: bluetooth_observer
+   :name: Observer
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Observer
-###################
+   Scan for Bluetooth devices nearby and print their information.
 
 Overview
 ********

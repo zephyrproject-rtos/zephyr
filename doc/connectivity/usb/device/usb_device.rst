@@ -64,7 +64,7 @@ the next interface, preventing other composite functions from working.
 Because of this problem, HCI USB should not be used in a composite configuration.
 This problem is fixed in the implementation for new USB support.
 
-See :ref:`bluetooth-hci-usb-sample` sample for reference.
+See :zephyr:code-sample:`bluetooth_hci_usb` sample for reference.
 
 .. _usb_device_cdc_acm:
 
@@ -168,7 +168,7 @@ List of few Zephyr specific chosen properties which can be used to select
 CDC ACM UART as backend for a subsystem or application:
 
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
-  for example see :ref:`bluetooth-hci-uart-sample`
+  for example see :zephyr:code-sample:`bluetooth_hci_uart`
 * ``zephyr,ot-uart`` used in OpenThread,
   for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
@@ -595,9 +595,9 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`webusb`                       | 0x000A |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
+| :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
+| :zephyr:code-sample:`bluetooth_hci_usb_h4`         | 0x000C |
 +----------------------------------------------------+--------+
 | Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+

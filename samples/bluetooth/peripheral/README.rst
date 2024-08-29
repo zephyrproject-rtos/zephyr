@@ -1,7 +1,8 @@
-.. _ble_peripheral:
+.. zephyr:code-sample:: ble_peripheral
+   :name: Peripheral
+   :relevant-api: bt_gatt bluetooth
 
-Bluetooth: Peripheral
-#####################
+   Implement basic BLE Peripheral role functionality (advertising and exposing GATT services).
 
 Overview
 ********

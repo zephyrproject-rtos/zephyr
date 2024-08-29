@@ -1,12 +1,13 @@
-.. _peripheral_hids:
+.. zephyr:code-sample:: ble_peripheral_hids
+   :name: HID Peripheral
+   :relevant-api: bt_gatt bluetooth
 
-Bluetooth: Peripheral HIDs
-##########################
+   Implement a Bluetooth HID peripheral (generic mouse)
 
 Overview
 ********
 
-Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_peripheral` sample, except that this
 application specifically exposes the HID GATT Service. The report map used is
 for a generic mouse.
 

@@ -1,9 +1,13 @@
-.. _bluetooth-hci-uart-async-sample:
+.. zephyr:code-sample:: bluetooth_hci_uart_async
+   :name: HCI UART async
+   :relevant-api: hci_raw bluetooth uart_interface
 
-Bluetooth: HCI UART based on ASYNC UART
-#######################################
+   Expose a Bluetooth controller to another device or CPU over asynchronous UART.
 
-Expose a Zephyr Bluetooth Controller over a standard Bluetooth HCI UART interface.
+Overview
+*********
+
+Expose Bluetooth Controller support over a standard Bluetooth HCI UART interface.
 
 This sample performs the same basic function as the HCI UART sample, but it uses the UART_ASYNC_API
 instead of UART_INTERRUPT_DRIVEN API. Not all boards implement both UART APIs, so the board support

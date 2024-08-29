@@ -1,12 +1,13 @@
-.. _peripheral_sc_only:
+.. zephyr:code-sample:: ble_peripheral_sc_only
+   :name: Peripheral SC-only
+   :relevant-api: bt_conn bluetooth
 
-Bluetooth: Peripheral SC-only
-#############################
+   Enable "Secure Connections Only" mode for a BLE peripheral.
 
 Overview
 ********
 
-Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_peripheral` sample, except that this
 application enables the Secure Connections Only mode, i.e. will only
 accept connections that are secured using security level 4 (FIPS).
 

@@ -1,7 +1,8 @@
-.. _bluetooth-broadcaster-sample:
+.. zephyr:code-sample:: bluetooth_broadcaster
+   :name: Broadcaster
+   :relevant-api: bluetooth
 
-Bluetooth: Broadcaster
-###########################
+   Periodically send out advertising packets with a manufacturer data element.
 
 Overview
 ********

@@ -1,7 +1,8 @@
-.. _peripheral_identity:
+.. zephyr:code-sample:: ble_peripheral_identity
+   :name: Peripheral Identity
+   :relevant-api: bluetooth
 
-Bluetooth: Peripheral Identity
-##############################
+   Use multiple identities to allow connections from multiple central devices.
 
 Overview
 ********

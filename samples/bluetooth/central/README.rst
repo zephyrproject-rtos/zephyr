@@ -1,7 +1,8 @@
-.. _bluetooth_central:
+.. zephyr:code-sample:: ble_central
+   :name: Central
+   :relevant-api: bluetooth
 
-Bluetooth: Central
-##################
+   Implement basic BLE Central role functionality (scanning and connecting).
 
 Overview
 ********
@@ -9,8 +10,6 @@ Overview
 Application demonstrating very basic BLE Central role functionality by scanning
 for other BLE devices and establishing a connection to the first one with a
 strong enough signal.
-
-
 
 Requirements
 ************

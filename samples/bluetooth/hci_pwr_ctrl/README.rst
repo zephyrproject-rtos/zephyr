@@ -1,7 +1,8 @@
-.. _bluetooth-hci-pwr-ctrl-sample:
+.. zephyr:code-sample:: bluetooth_hci_pwr_ctrl
+   :name: HCI Power Control
+   :relevant-api: bt_hrs bluetooth
 
-Bluetooth: HCI Power Control
-############################
+   Dynamically control the Tx power of a BLE Controller using HCI vendor-specific commands.
 
 Overview
 ********
