@@ -1,7 +1,7 @@
-.. _lz4:
+.. zephyr:code-sample:: lz4
+   :name: LZ4
 
-LZ4
-###
+   Compress and decompress data using the LZ4 module.
 
 Overview
 ********
