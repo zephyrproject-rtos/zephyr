@@ -92,6 +92,12 @@
 #define BT_HFP_AG_SDP_FEATURE_VOICE_TAG_ENABLE 0
 #endif /* CONFIG_BT_HFP_AG_VOICE_TAG */
 
+#if defined(CONFIG_BT_HFP_AG_HF_INDICATORS)
+#define BT_HFP_AG_FEATURE_HF_IND_ENABLE BT_HFP_AG_FEATURE_HF_IND
+#else
+#define BT_HFP_AG_FEATURE_HF_IND_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_HF_INDICATORS */
+
 /* HFP AG Supported features */
 #define BT_HFP_AG_SUPPORTED_FEATURES (\
 	BT_HFP_AG_FEATURE_3WAY_CALL_ENABLE | \
@@ -104,7 +110,8 @@
 	BT_HFP_AG_FEATURE_VOICE_RECG_ENABLE | \
 	BT_HFP_AG_FEATURE_ENH_VOICE_RECG_ENABLE | \
 	BT_HFP_AG_FEATURE_VOICE_RECG_TEXT_ENABLE | \
-	BT_HFP_AG_FEATURE_VOICE_TAG_ENABLE)
+	BT_HFP_AG_FEATURE_VOICE_TAG_ENABLE | \
+	BT_HFP_AG_FEATURE_HF_IND_ENABLE)
 
 /* HFP AG Supported features in SDP */
 #define BT_HFP_AG_SDP_SUPPORTED_FEATURES (\
@@ -221,7 +228,7 @@ struct bt_hfp_ag {
 	/* HF Indicators */
 	uint32_t hf_indicators_of_ag;
 	uint32_t hf_indicators_of_hf;
-	uint8_t hf_indicator_value[HFP_HF_IND_MAX];
+	uint32_t hf_indicators;
 
 	/* operator */
 	uint8_t mode;
