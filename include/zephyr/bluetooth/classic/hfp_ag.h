@@ -62,6 +62,12 @@ struct bt_hfp_ag_call;
 typedef int (*bt_hfp_ag_query_subscriber_func_t)(struct bt_hfp_ag *ag, char *number, uint8_t type,
 						 uint8_t service);
 
+/* HF indicators */
+enum hfp_ag_hf_indicators {
+	HFP_AG_ENHANCED_SAFETY_IND = 1, /* Enhanced Safety */
+	HFP_AG_BATTERY_LEVEL_IND = 2,   /* Remaining level of Battery */
+};
+
 /** @brief HFP profile AG application callback */
 struct bt_hfp_ag_cb {
 	/** HF AG connected callback to application
@@ -379,6 +385,20 @@ struct bt_hfp_ag_cb {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*subscriber_number)(struct bt_hfp_ag *ag, bt_hfp_ag_query_subscriber_func_t func);
+
+	/** HF indicator value callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  AT command `AT+BIEV` is received.
+	 *  If @kconfig{CONFIG_BT_HFP_AG_HF_INDICATORS} is not enabled,
+	 *  the callback will not be notified.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param indicator HF indicator
+	 *  @param value The value of specific indicator
+	 */
+	void (*hf_indicator_value)(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator,
+				   uint32_t value);
 };
 
 /** @brief Register HFP AG profile
@@ -737,6 +757,29 @@ int bt_hfp_ag_battery_level(struct bt_hfp_ag *ag, uint8_t level);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_service_availability(struct bt_hfp_ag *ag, bool available);
+
+/** @brief Activate/deactivate HF indicator
+ *
+ *  It allows HF to issue the +BIND unsolicited result code to
+ *  activate/deactivate of the AG’s supported HF Indicators.
+ *  The indicator of supported indicators can be activated/deactivated
+ *  are defined in `enum hfp_ag_hf_indicators`.
+ *  `BT_HFP_AG_HF_INDICATOR_ENH_SAFETY` is used to support
+ *  `Enhanced Safety`. Only the configuration has been enabled, the
+ *  `indicator` can be HFP_AG_ENHANCED_SAFETY_IND.
+ *  `BT_HFP_AG_HF_INDICATOR_BATTERY` is used to support
+ *  `Remaining level of Battery`. Only the configuration has been
+ *  enabled, the `indicator` can be HFP_AG_BATTERY_LEVEL_IND.
+ *  If @kconfig{CONFIG_BT_HFP_HF_HF_INDICATORS} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param ag HFP AG object.
+ *  @param indicator The indicator of the AG’s supported HF Indicators.
+ *  @param enable enable/disable specific HF Indicator.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_hf_indicator(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indicator, bool enable);
 
 #ifdef __cplusplus
 }

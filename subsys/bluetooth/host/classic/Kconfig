@@ -300,6 +300,23 @@ config BT_HFP_AG_VOICE_TAG
 	help
 	  This option enables Attach a phone number for a voice tag for HFP AG
 
+config BT_HFP_AG_HF_INDICATORS
+	bool "HF Indicators for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables HF Indicators for HFP AG
+
+config BT_HFP_AG_HF_INDICATOR_ENH_SAFETY
+	bool "HF Indicator Enhanced Safety for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_HF_INDICATORS
+	help
+	  This option enables HF Indicator Enhanced Safety for HFP AG
+
+config BT_HFP_AG_HF_INDICATOR_BATTERY
+	bool "HF Indicator Battery level for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_HF_INDICATORS
+	help
+	  This option enables HF Indicator Battery level for HFP AG
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
