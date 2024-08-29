@@ -122,7 +122,7 @@ static int mipi_dbi_stm32_fmc_write_display(const struct device *dev,
 	return 0;
 }
 
-static int mipi_dbi_stm32_fmc_reset(const struct device *dev, uint32_t delay)
+static int mipi_dbi_stm32_fmc_reset(const struct device *dev, k_timeout_t delay)
 {
 	const struct mipi_dbi_stm32_fmc_config *config = dev->config;
 	int ret;
@@ -136,7 +136,7 @@ static int mipi_dbi_stm32_fmc_reset(const struct device *dev, uint32_t delay)
 		return ret;
 	}
 
-	k_msleep(delay);
+	k_sleep(delay);
 
 	return gpio_pin_set_dt(&config->reset, 0);
 }

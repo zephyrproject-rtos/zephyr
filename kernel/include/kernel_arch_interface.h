@@ -208,6 +208,34 @@ int arch_float_disable(struct k_thread *thread);
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
+/**
+ * @brief Obtain privileged stack usage information for the specified thread
+ *
+ * Must be called under supervisor mode.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * error will be generated.
+ *
+ * @param[in]  thread     Thread to inspect stack information
+ * @param[out] stack_size Filled in with the size of the stack space of
+ *                        the target thread in bytes.
+ * @param[out] unused_ptr Filled in with the unused stack space of
+ *                        the target thread in bytes.
+ *
+ * @return 0 on success
+ * @return -EBADF Bad thread object
+ * @return -EPERM No permissions on thread object
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited or not a user thread
+ * @return -EFAULT Bad memory address for unused_ptr
+ */
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr);
+#endif /* CONFIG_USERSPACE && CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET */
+
 /** @} */
 
 /**

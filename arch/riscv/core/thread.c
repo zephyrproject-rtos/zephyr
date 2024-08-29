@@ -144,6 +144,12 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					      K_KERNEL_STACK_RESERVED +
 					      CONFIG_PRIVILEGED_STACK_SIZE);
 
+#ifdef CONFIG_INIT_STACKS
+	/* Initialize the privileged stack */
+	(void)memset((void *)_current->arch.priv_stack_start, 0xaa,
+		     Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE));
+#endif /* CONFIG_INIT_STACKS */
+
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
 				_current->stack_info.start +
 				_current->stack_info.size -
@@ -187,6 +193,18 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	: "memory");
 
 	CODE_UNREACHABLE;
+}
+
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr)
+{
+	if ((thread->base.user_options & K_USER) != K_USER) {
+		return -EINVAL;
+	}
+
+	*stack_size = Z_STACK_PTR_ALIGN(K_KERNEL_STACK_RESERVED + CONFIG_PRIVILEGED_STACK_SIZE);
+
+	return z_stack_space_get((void *)thread->arch.priv_stack_start, *stack_size, unused_ptr);
 }
 
 #endif /* CONFIG_USERSPACE */

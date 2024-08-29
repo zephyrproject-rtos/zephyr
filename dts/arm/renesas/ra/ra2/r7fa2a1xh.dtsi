@@ -22,6 +22,9 @@
 	};
 
 	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		xtal: clock-xtal {
 			compatible = "renesas,ra-cgc-external-clock";
 			clock-frequency = <DT_FREQ_M(12)>;
@@ -54,8 +57,12 @@
 			status = "disabled";
 		};
 
-		pclkblock: pclkblock {
+		pclkblock: pclkblock@4001e01c {
 			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x4001e01c 4>, <0x40047000 4>, <0x40047004 4>,
+			      <0x40047008 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD";
 			#clock-cells = <0>;
 			sysclock-src = <RA_CLOCK_SOURCE_HOCO>;
 			status = "okay";

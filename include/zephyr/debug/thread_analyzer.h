@@ -39,6 +39,14 @@ struct thread_analyzer_info {
 	k_thread_runtime_stats_t  usage;
 #endif
 #endif
+
+#ifdef CONFIG_THREAD_ANALYZER_PRIV_STACK_USAGE
+	/** Total size of privileged stack */
+	size_t priv_stack_size;
+
+	/** Privileged stack size in used */
+	size_t priv_stack_used;
+#endif
 };
 
 /** @brief Thread analyzer stack size callback function

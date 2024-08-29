@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_lptmr)
 #define DT_DRV_COMPAT nxp_kinetis_lptmr
 #else
@@ -158,99 +159,51 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 	.get_top_value = mcux_lptmr_get_top_value,
 };
 
-#define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
-#define TO_LPTMR_PIN_SEL(val) _DO_CONCAT(kLPTMR_PinSelectInput_, val)
+#define COUNTER_MCUX_LPTMR_DEVICE_INIT(n)					\
+	static void mcux_lptmr_irq_config_##n(const struct device *dev)		\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
+			mcux_lptmr_isr, DEVICE_DT_INST_GET(n), 0);		\
+		irq_enable(DT_INST_IRQN(n));					\
+	}									\
+										\
+	static struct mcux_lptmr_data mcux_lptmr_data_##n;			\
+	static void mcux_lptmr_irq_config_##n(const struct device *dev);	\
+										\
+	BUILD_ASSERT(!(DT_INST_PROP(n, timer_mode_sel) == 1 &&			\
+		DT_INST_PROP(n, prescale_glitch_filter) == 16),			\
+		"Pulse mode cannot have a glitch value of 16");			\
+										\
+	BUILD_ASSERT(DT_INST_PROP(n, resolution) <= 32 &&			\
+		DT_INST_PROP(n, resolution) > 0,				\
+		"LPTMR resolution property should be a width between 0 and 32");\
+										\
+	static struct mcux_lptmr_config mcux_lptmr_config_##n = {		\
+		.info = {							\
+			.max_top_value =					\
+				GENMASK(DT_INST_PROP(n, resolution) - 1, 0),	\
+			.freq = DT_INST_PROP(n, clock_frequency) /		\
+				DT_INST_PROP(n, prescaler),			\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
+			.channels = 0,						\
+		},								\
+		.base = (LPTMR_Type *)DT_INST_REG_ADDR(n),			\
+		.clk_source = DT_INST_PROP(n, clk_source),			\
+		.bypass_prescaler_glitch =					\
+			1 - DT_INST_PROP(n, timer_mode_sel),			\
+		.mode = DT_INST_PROP(n, timer_mode_sel),			\
+		.pin = DT_INST_PROP_OR(n, input_pin, 0),			\
+		.polarity = DT_INST_PROP(n, active_low),			\
+		.prescaler_glitch = DT_INST_PROP(n, prescale_glitch_filter) +	\
+			DT_INST_PROP(n, timer_mode_sel) - 1,			\
+		.irq_config_func = mcux_lptmr_irq_config_##n,			\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL,			\
+		&mcux_lptmr_data_##n,						\
+		&mcux_lptmr_config_##n,						\
+		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
+		&mcux_lptmr_driver_api);
 
-/* Prescaler mapping */
-#define LPTMR_PRESCALER_2     kLPTMR_Prescale_Glitch_0
-#define LPTMR_PRESCALER_4     kLPTMR_Prescale_Glitch_1
-#define LPTMR_PRESCALER_8     kLPTMR_Prescale_Glitch_2
-#define LPTMR_PRESCALER_16    kLPTMR_Prescale_Glitch_3
-#define LPTMR_PRESCALER_32    kLPTMR_Prescale_Glitch_4
-#define LPTMR_PRESCALER_64    kLPTMR_Prescale_Glitch_5
-#define LPTMR_PRESCALER_128   kLPTMR_Prescale_Glitch_6
-#define LPTMR_PRESCALER_256   kLPTMR_Prescale_Glitch_7
-#define LPTMR_PRESCALER_512   kLPTMR_Prescale_Glitch_8
-#define LPTMR_PRESCALER_1024  kLPTMR_Prescale_Glitch_9
-#define LPTMR_PRESCALER_2048  kLPTMR_Prescale_Glitch_10
-#define LPTMR_PRESCALER_4096  kLPTMR_Prescale_Glitch_11
-#define LPTMR_PRESCALER_8192  kLPTMR_Prescale_Glitch_12
-#define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
-#define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
-#define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
 
-/* Glitch filter mapping */
-#define LPTMR_GLITCH_2     kLPTMR_Prescale_Glitch_1
-#define LPTMR_GLITCH_4     kLPTMR_Prescale_Glitch_2
-#define LPTMR_GLITCH_8     kLPTMR_Prescale_Glitch_3
-#define LPTMR_GLITCH_16    kLPTMR_Prescale_Glitch_4
-#define LPTMR_GLITCH_32    kLPTMR_Prescale_Glitch_5
-#define LPTMR_GLITCH_64    kLPTMR_Prescale_Glitch_6
-#define LPTMR_GLITCH_128   kLPTMR_Prescale_Glitch_7
-#define LPTMR_GLITCH_256   kLPTMR_Prescale_Glitch_8
-#define LPTMR_GLITCH_512   kLPTMR_Prescale_Glitch_9
-#define LPTMR_GLITCH_1024  kLPTMR_Prescale_Glitch_10
-#define LPTMR_GLITCH_2048  kLPTMR_Prescale_Glitch_11
-#define LPTMR_GLITCH_4096  kLPTMR_Prescale_Glitch_12
-#define LPTMR_GLITCH_8192  kLPTMR_Prescale_Glitch_13
-#define LPTMR_GLITCH_16384 kLPTMR_Prescale_Glitch_14
-#define LPTMR_GLITCH_32768 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_GLITCH(val) _DO_CONCAT(LPTMR_GLITCH_, val)
-
-/*
- * This driver is single-instance. If the devicetree contains multiple
- * instances, this will fail and the driver needs to be revisited.
- */
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
-	     "unsupported lptmr instance");
-
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
-static struct mcux_lptmr_data mcux_lptmr_data_0;
-
-static void mcux_lptmr_irq_config_0(const struct device *dev);
-
-static struct mcux_lptmr_config mcux_lptmr_config_0 = {
-	.info = {
-		.max_top_value = ((DT_INST_PROP(0, resolution) == 32)
-				? UINT32_MAX : UINT16_MAX),
-		.freq = DT_INST_PROP(0, clock_frequency) /
-			DT_INST_PROP(0, prescaler),
-		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
-		.channels = 0,
-	},
-	.base = (LPTMR_Type *)DT_INST_REG_ADDR(0),
-	.clk_source = TO_LPTMR_CLK_SEL(DT_INST_PROP(0, clk_source)),
-#if DT_INST_NODE_HAS_PROP(0, input_pin)
-#if DT_INST_PROP(0, prescaler) == 1
-	.bypass_prescaler_glitch = true,
-#else
-	.prescaler_glitch = TO_LPTMR_GLITCH(DT_INST_PROP(0, prescaler)),
-#endif
-	.mode = kLPTMR_TimerModePulseCounter,
-	.pin = TO_LPTMR_PIN_SEL(DT_INST_PROP(0, input_pin)),
-	.polarity = DT_INST_PROP(0, active_low),
-#else /* !DT_INST_NODE_HAS_PROP(0, input_pin) */
-	.mode = kLPTMR_TimerModeTimeCounter,
-#if DT_INST_PROP(0, prescaler) == 1
-	.bypass_prescaler_glitch = true,
-#else
-	.prescaler_glitch = TO_LPTMR_PRESCALER(DT_INST_PROP(0, prescaler)),
-#endif
-#endif /* !DT_INST_NODE_HAS_PROP(0, input_pin) */
-	.irq_config_func = mcux_lptmr_irq_config_0,
-};
-
-DEVICE_DT_INST_DEFINE(0, &mcux_lptmr_init, NULL,
-		    &mcux_lptmr_data_0,
-		    &mcux_lptmr_config_0,
-		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		    &mcux_lptmr_driver_api);
-
-static void mcux_lptmr_irq_config_0(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
-		    mcux_lptmr_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
-}
-#endif	/* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)

@@ -6,13 +6,10 @@ Espressif ESP32 SPIRAM test
 Overview
 ********
 
-This sample allocates memory from internal DRAM and SPIRAM by calling
-:c:func:`k_malloc`, frees allocated memory by calling :c:func:`k_free` and
-checks if memory can be allocated again. Capability of allocated memory is
-decided by ESP_HEAP_MIN_EXTRAM_THRESHOLD. If size is less than
-ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from internal DRAM. If
-size is greater than ESP_HEAP_MIN_EXTRAM_THRESHOLD, memory is allocated from
-SPIRAM.
+This sample shows how to allocate memory from SPIRAM by using
+:c:func:`shared_multi_heap_aligned_alloc` with `SMH_REG_ATTR_EXTERNAL` attribute. Checks if the
+memory was correctly allocated then frees it by calling :c:func:`shared_multi_heap_free`.
+It also allocates memory from internal memory and checks if the address range is correct.
 
 Supported SoCs
 **************
@@ -21,6 +18,7 @@ The following SoCs are supported by this sample code so far:
 
 * ESP32
 * ESP32-S2
+* ESP32-S3
 
 Building and Running
 ********************
@@ -29,7 +27,7 @@ Make sure you have your board connected over USB port.
 
 .. code-block:: console
 
-   west build -b esp32_devkitc_wrover samples/boards/esp32/spiram_test
+   west build -b esp32s3_devkitm/esp32s3/procpu samples/boards/esp32/spiram_test
    west flash
 
 If using another supported Espressif board, replace the argument in the above
@@ -49,7 +47,6 @@ port at ``/dev/ttyUSB0``:
 
 .. code-block:: console
 
-    mem test ok! 209
-    SPIRAM mem test pass
-    mem test ok! 194
-    Internal mem test pass
+   *** Booting Zephyr OS build v3.7.0-446-g93c9da66944c ***
+   SPIRAM mem test pass
+   Internal mem test pass

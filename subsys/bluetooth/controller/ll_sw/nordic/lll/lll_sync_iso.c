@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -435,6 +436,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 static void isr_rx_estab(void *param)
 {
 	struct event_done_extra *e;
+	struct lll_sync_iso *lll;
 	uint8_t trx_done;
 	uint8_t crc_ok;
 
@@ -454,6 +456,36 @@ static void isr_rx_estab(void *param)
 	/* Clear radio rx status and events */
 	lll_isr_rx_status_reset();
 
+	/* Get reference to LLL context */
+	lll = param;
+
+	/* Check for MIC failures for encrypted Broadcast ISO streams */
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && crc_ok && lll->enc) {
+		struct node_rx_pdu *node_rx;
+		struct pdu_bis *pdu;
+
+		/* By design, there shall always be one free node rx available when setting up radio
+		 * for new PDU reception.
+		 */
+		node_rx = ull_iso_pdu_rx_alloc_peek(1U);
+		LL_ASSERT(node_rx);
+
+		/* Get reference to received PDU and validate MIC for non-empty PDU */
+		pdu = (void *)node_rx->pdu;
+		if (pdu->len) {
+			bool mic_failure;
+			uint32_t done;
+
+			done = radio_ccm_is_done();
+			LL_ASSERT(done);
+
+			mic_failure = !radio_ccm_mic_is_valid();
+			if (mic_failure) {
+				lll->term_reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
+			}
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
 	}
@@ -463,14 +495,11 @@ static void isr_rx_estab(void *param)
 	LL_ASSERT(e);
 
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_ESTAB;
-	e->estab_failed = 0U;
+	e->estab_failed = lll->term_reason ? 1U : 0U;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
 
 	if (trx_cnt) {
-		struct lll_sync_iso *lll;
-
-		lll = param;
 		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 		e->drift.start_to_address_actual_us =
 			radio_tmr_aa_get() - radio_tmr_ready_get();
@@ -492,7 +521,6 @@ static void isr_rx_estab(void *param)
 static void isr_rx(void *param)
 {
 	struct lll_sync_iso_stream *stream;
-	struct node_rx_pdu *node_rx;
 	struct lll_sync_iso *lll;
 	uint8_t access_addr[4];
 	uint16_t data_chan_id;
@@ -562,6 +590,7 @@ static void isr_rx(void *param)
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
 		struct lll_sync_iso_stream *sync_stream;
+		struct node_rx_pdu *node_rx;
 		uint32_t payload_offset;
 		uint16_t payload_index;
 		uint16_t stream_handle;
@@ -631,14 +660,18 @@ static void isr_rx(void *param)
 
 			if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
 			    lll->enc) {
-				uint32_t mic_failure;
+				bool mic_failure;
 				uint32_t done;
 
 				done = radio_ccm_is_done();
 				LL_ASSERT(done);
 
 				mic_failure = !radio_ccm_mic_is_valid();
-				LL_ASSERT(!mic_failure);
+				if (mic_failure) {
+					lll->term_reason = BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
+
+					goto isr_rx_mic_failure;
+				}
 			}
 
 			ull_iso_pdu_rx_alloc();
@@ -893,6 +926,7 @@ isr_rx_find_subevent:
 		goto isr_rx_next_subevent;
 	}
 
+isr_rx_mic_failure:
 	isr_rx_done(param);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -972,6 +1006,8 @@ isr_rx_next_subevent:
 
 		payload_count = lll->payload_count - lll->bn;
 		if (bis) {
+			struct node_rx_pdu *node_rx;
+
 			payload_count += (lll->bn_curr - 1U) +
 					 (lll->ptc_curr * lll->pto);
 
@@ -1000,6 +1036,8 @@ isr_rx_next_subevent:
 		struct pdu_bis *pdu;
 
 		if (bis) {
+			struct node_rx_pdu *node_rx;
+
 			/* By design, there shall always be one free node rx
 			 * available for setting up radio for new PDU reception.
 			 */

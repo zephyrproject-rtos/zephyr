@@ -76,4 +76,13 @@
 			slew-rate = "slow";
 		};
 	};
+
+	flexio_pwm_default: flexio_pwm_default {
+		group0 {
+			pinmux = <FXIO_D3_PTD5>,
+				<FXIO_D5_PTD3>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };

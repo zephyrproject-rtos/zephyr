@@ -71,6 +71,10 @@ Enhanced Serial Peripheral Interface (eSPI)
 GNSS
 ====
 
+ * The u-blox M10 driver has been renamed to M8 as it only supports M8 based devices.
+   Existing devicetree compatibles should be updated to :dtcompatible:`u-blox,m8`, and Kconfig
+   symbols swapped to :kconfig:option:`CONFIG_GNSS_U_BLOX_M8`.
+
 Input
 =====
 
@@ -98,6 +102,10 @@ SDHC
 
 Sensors
 =======
+
+* The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
+  to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
+  :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808`` string.
 
 Serial
 ======
@@ -192,6 +200,11 @@ Other Subsystems
 Flash map
 =========
 
+ * ``CONFIG_SPI_NOR_IDLE_IN_DPD`` has been removed from the :kconfig:option:`CONFIG_SPI_NOR`
+   driver. An enhanced version of this functionality can be obtained by enabling
+   :ref:`pm-device-runtime` on the device (Tunable with
+   :kconfig:option:`CONFIG_SPI_NOR_ACTIVE_DWELL_MS`).
+
 hawkBit
 =======
 
@@ -200,6 +213,12 @@ MCUmgr
 
 Modem
 =====
+
+Shell
+=====
+
+* ``kernel threads`` and ``kernel stacks`` shell command have been renamed to
+  ``kernel thread list`` & ``kernel thread stacks``
 
 Architectures
 *************

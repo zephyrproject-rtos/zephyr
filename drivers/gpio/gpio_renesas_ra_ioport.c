@@ -28,7 +28,8 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 {
 	const struct gpio_ra_config *config = dev->config;
 
-	struct ra_pinctrl_soc_pin pincfg = {0};
+	struct ra_pinctrl_soc_pin pincfg;
+	uint32_t pfs_cfg;
 
 	if (((flags & GPIO_INPUT) != 0U) && ((flags & GPIO_OUTPUT) != 0U)) {
 		return -ENOTSUP;
@@ -61,33 +62,33 @@ static int gpio_ra_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	pincfg.port_num = config->port_num;
 	pincfg.pin_num = pin;
 
-	/* Change mode to general IO mode and disable IRQ and Analog input */
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PMR_Pos, 0);
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_ASEL_Pos, 0);
-	WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_ISEL_Pos, 0);
+	/* Initial pin settings when PFS is zeroed:
+	 * - Low output, input mode
+	 * - Pull-up disabled, CMOS output
+	 * - Low drive strength
+	 * - Not used for IRQ or analog
+	 * - Configured as general I/O
+	 */
+	pfs_cfg = 0;
 
 	if ((flags & GPIO_OUTPUT) != 0U) {
 		/* Set output pin initial value */
-		if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 0);
-		} else if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 1);
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PODR_Pos, 1);
 		}
 
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 1);
-	} else {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 0);
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PDR_Pos, 1);
 	}
 
 	if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_NCODR_Pos, 1);
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_NCODR_Pos, 1);
 	}
 
 	if ((flags & GPIO_PULL_UP) != 0) {
-		WRITE_BIT(pincfg.cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
+		WRITE_BIT(pfs_cfg, R_PFS_PORT_PIN_PmnPFS_PCR_Pos, 1);
 	}
 
-	pincfg.cfg = pincfg.cfg |
+	pincfg.cfg = pfs_cfg |
 		     (((flags & RENESAS_GPIO_DS_MSK) >> 8) << R_PFS_PORT_PIN_PmnPFS_DSCR_Pos);
 
 	return pinctrl_configure_pins(&pincfg, 1, PINCTRL_REG_NONE);

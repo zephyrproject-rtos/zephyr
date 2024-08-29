@@ -29,6 +29,7 @@
 #define MC3419_REG_ANY_MOTION_THRES	0x43
 
 #define MC3419_RANGE_MASK		GENMASK(6, 4)
+#define MC3419_LPF_MASK                 GENMASK(3, 0)
 #define MC3419_DATA_READY_MASK		BIT(7)
 #define MC3419_ANY_MOTION_MASK		BIT(2)
 #define MC3419_INT_CLEAR		0x00
@@ -71,6 +72,8 @@ struct mc3419_config {
 	struct gpio_dt_spec int_gpio;
 	bool int_cfg;
 #endif
+	uint8_t lpf_fc_sel;
+	uint8_t decimation_rate;
 };
 
 struct mc3419_driver_data {

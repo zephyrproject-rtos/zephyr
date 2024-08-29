@@ -391,7 +391,6 @@ Bluetooth Host:
     - include/zephyr/bluetooth/iso.h
     - include/zephyr/bluetooth/controller.h
     - include/zephyr/bluetooth/mesh.h
-    - include/zephyr/bluetooth/testing.h
     - doc/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
@@ -414,6 +413,8 @@ Bluetooth Host:
     - subsys/bluetooth/shell/ll.h
     - subsys/bluetooth/shell/ticker.c
     - subsys/bluetooth/Kconfig.iso
+    - subsys/bluetooth/host/iso.c
+    - subsys/bluetooth/host/iso_internal.h
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
     - tests/bluetooth/ctrl*/
@@ -447,7 +448,6 @@ Bluetooth Mesh:
     - doc/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
     - include/zephyr/bluetooth/mesh.h
-    - include/zephyr/bluetooth/testing.h
     - samples/bluetooth/mesh*/
     - subsys/bluetooth/mesh/
     - tests/bluetooth/mesh*/
@@ -526,6 +526,8 @@ Bluetooth ISO:
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
+    - subsys/bluetooth/host/iso.c
+    - subsys/bluetooth/host/iso_internal.h
   labels:
     - "area: Bluetooth ISO"
     - "area: Bluetooth"
@@ -2056,6 +2058,21 @@ Release Notes:
   tests:
     - drivers.spi
 
+"Drivers: Stepper":
+  status: maintained
+  maintainers:
+    - jilaypandya
+  files:
+    - drivers/stepper/
+    - include/zephyr/drivers/stepper.h
+    - dts/bindings/stepper/
+    - doc/hardware/peripherals/stepper.rst
+    - tests/drivers/build_all/stepper/
+  labels:
+    - "area: Stepper"
+  tests:
+    - drivers.stepper
+
 "Drivers: System timer":
   status: maintained
   maintainers:
@@ -3366,11 +3383,11 @@ Broadcom Platforms:
 GD32 Platforms:
   status: maintained
   maintainers:
-    - cameled
     - nandojve
   collaborators:
     - gmarull
     - soburi
+    - cameled
   files:
     - boards/gd/
     - drivers/*/*gd32*
@@ -3491,6 +3508,27 @@ Silabs Platforms:
     - drivers/*/*_gecko*
   labels:
     - "platform: Silabs"
+
+Silabs SiM3U Platforms:
+  status: maintained
+  maintainers:
+    - rettichschnidi
+  collaborators:
+    - M1cha
+    - asmellby
+    - jerome-pouiller
+    - jhedberg
+  files:
+    - boards/silabs/dev_kits/sim3u1xx_dk/
+    - drivers/*/*_si32*
+    - drivers/*/Kconfig.si32
+    - dts/arm/silabs/sim3u*
+    - dts/bindings/*/*silabs,si32*
+    - soc/silabs/silabs_sim3/
+  labels:
+    - "platform: Silabs SiM3U"
+  description: >-
+    SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
 
 Intel Platforms (X86):
   status: maintained
@@ -4721,6 +4759,7 @@ West:
     - sateeshkotapati
     - yonsch
     - mnkp
+    - rettichschnidi
   files:
     - modules/Kconfig.silabs
   labels:
