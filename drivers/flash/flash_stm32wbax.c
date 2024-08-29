@@ -20,7 +20,20 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
+#if defined(FLASH_OPTR_DUAL_BANK)
+/* The stm32wba6x MCUs have 2MB dual-bank */
+#define STM32_SERIES_MAX_FLASH	2048
+#define STM32_FLASH_HAS_2_BANKS(flash_device) \
+	((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_STM32_DBANK) \
+	== FLASH_STM32_DBANK)
+#else
 #define STM32_SERIES_MAX_FLASH	1024
+#define STM32_FLASH_HAS_2_BANKS(flash_device) (false)
+#endif /* FLASH_OPTR_DUAL_BANK */
+
+#define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+
+#define BANK2_OFFSET	(KB(STM32_SERIES_MAX_FLASH) / 2)
 
 #define ICACHE_DISABLE_TIMEOUT_VALUE           1U   /* 1ms */
 #define ICACHE_INVALIDATE_TIMEOUT_VALUE        1U   /* 1ms */
@@ -105,6 +118,34 @@ static int icache_wait_for_invalidate_complete(void)
 	return status;
 }
 
+/*
+ * offset and len must be aligned on write-block-size for write,
+ * positive and not beyond end of flash
+ */
+bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+			     uint32_t len, bool write)
+{
+	if (STM32_FLASH_HAS_2_BANKS(dev) &&
+			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+		/*
+		 * In case of bank1/2 discontinuity, the range should not
+		 * start before bank2 and end beyond bank1 at the same time.
+		 * Locations beyond bank2 are caught by
+		 * flash_stm32_range_exists.
+		 */
+		if ((offset < BANK2_OFFSET) &&
+					(offset + len > FLASH_SIZE / 2)) {
+			return false;
+		}
+	}
+
+	if (write && !flash_stm32_valid_write(offset, len)) {
+		return false;
+	}
+
+	return flash_stm32_range_exists(dev, offset, len);
+}
+
 static int write_qword(const struct device *dev, off_t offset, const uint32_t *buff)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -172,9 +213,40 @@ static int erase_page(const struct device *dev, unsigned int offset)
 		return rc;
 	}
 
+#if defined(FLASH_OPTR_DUAL_BANK)
+	bool bank_swap;
+	/* Check whether bank1/2 are swapped */
+	bank_swap =
+	((regs->OPTR & FLASH_OPTR_SWAP_BANK) == FLASH_OPTR_SWAP_BANK);
+
+	if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
+		/* The pages to be erased is in bank 1 */
+		regs->NSCR &= ~FLASH_STM32_NSBKER_MSK;
+		page = offset / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 1", page);
+	} else if ((offset >= BANK2_OFFSET) && bank_swap) {
+		/* The pages to be erased is in bank 1 */
+		regs->NSCR &= ~FLASH_STM32_NSBKER_MSK;
+		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 1", page);
+	} else if ((offset < (FLASH_SIZE / 2)) && bank_swap) {
+		/* The pages to be erased is in bank 2 */
+		regs->NSCR |= FLASH_STM32_NSBKER;
+		page = offset / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 2", page);
+	} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
+		/* The pages to be erased is in bank 2 */
+		regs->NSCR |= FLASH_STM32_NSBKER;
+		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
+		LOG_DBG("Erase page %d on bank 2", page);
+	} else {
+		LOG_ERR("Offset %d does not exist", offset);
+		return -EINVAL;
+	}
+#else
 	page = offset / FLASH_PAGE_SIZE;
 	LOG_DBG("Erase page %d\n", page);
-
+#endif
 	/* Set the NSPER bit and select the page you wish to erase */
 	regs->NSCR |= FLASH_STM32_NSPER;
 	regs->NSCR &= ~FLASH_STM32_NSPNB_MSK;
@@ -282,6 +354,55 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
+#if defined(FLASH_OPTR_DUAL_BANK)
+/* The STM32WBA6x has a dual-bank flash */
+void flash_stm32_page_layout(const struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	static struct flash_pages_layout stm32_flash_layout[3];
+	static size_t stm32_flash_layout_size;
+
+	*layout = stm32_flash_layout;
+
+	if (stm32_flash_layout[0].pages_count != 0) {
+		/* Short circuit calculation logic if already performed (size is known) */
+		*layout_size = stm32_flash_layout_size;
+		return;
+	}
+
+	if (STM32_FLASH_HAS_2_BANKS(dev) &&
+			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
+		/* For device, which has space between banks 1 and 2 */
+
+		/* Bank1 */
+		stm32_flash_layout[0].pages_count = PAGES_PER_BANK;
+		stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+
+		/* Dummy page corresponding to space between banks 1 and 2 */
+		stm32_flash_layout[1].pages_count = 1;
+		stm32_flash_layout[1].pages_size = BANK2_OFFSET
+				- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
+
+		/* Bank2 */
+		stm32_flash_layout[2].pages_count = PAGES_PER_BANK;
+		stm32_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
+
+		stm32_flash_layout_size = ARRAY_SIZE(stm32_flash_layout);
+	} else {
+		/*
+		 * For device, which has no space between banks 1 and 2
+		 * Considering one layout of full flash size, even with 2 banks
+		 */
+		stm32_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
+		stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+
+		stm32_flash_layout_size = 1;
+	}
+
+	*layout_size = stm32_flash_layout_size;
+}
+#else
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
@@ -301,3 +422,4 @@ void flash_stm32_page_layout(const struct device *dev,
 	*layout = &stm32wba_flash_layout;
 	*layout_size = 1;
 }
+#endif /* FLASH_OPTR_DUAL_BANK */
