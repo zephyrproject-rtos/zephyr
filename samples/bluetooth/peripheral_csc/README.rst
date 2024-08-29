@@ -1,12 +1,13 @@
-.. _peripheral_csc:
+.. zephyr:code-sample:: ble_peripheral_csc
+   :name: Cycling Speed and Cadence (CSC) Peripheral
+   :relevant-api: bt_gatt bluetooth
 
-Bluetooth: Peripheral CSC
-#########################
+   Expose a Cycling Speed and Cadence (CSC) GATT Service.
 
 Overview
 ********
 
-Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_peripheral` sample, except that this
 application specifically exposes the CSC (Cycling Speed and Cadence) GATT
 Service.
 

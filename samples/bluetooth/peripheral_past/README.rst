@@ -1,7 +1,8 @@
-.. _bluetooth-peripheral-past-sample:
+.. zephyr:code-sample:: ble_peripheral_past
+   :name: Periodic Advertising Synchronization Transfer Peripheral
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Synchronization Transfer
-########################################################
+   Use the Periodic Advertising Sync Transfer (PAST) feature as the receiver.
 
 Overview
 ********

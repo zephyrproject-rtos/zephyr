@@ -1,7 +1,8 @@
-.. _bluetooth_direction_finding_connectionless_tx:
+.. zephyr:code-sample:: ble_direction_finding_connectionless_tx
+   :name: Direction Finding Periodic Advertising Beacon
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Direction Finding Periodic Advertising Beacon
-########################################################
+   Implement BLE Direction Finding CTE Broadcaster functionality.
 
 Overview
 ********
@@ -73,7 +74,7 @@ this overlay. See :ref:`set-devicetree-overlays` for information on setting up
 and using overlays.
 
 Note that antenna matrix configuration for the nRF5340 SoC is part of the
-network core application. When :ref:`bluetooth-hci-ipc-sample` is used as
+network core application. When :zephyr:code-sample:`bluetooth_hci_ipc` is used as
 network core application, the antenna matrix configuration should be stored in
 the file
 :file:`samples/bluetooth/hci_ipc/boards/nrf5340dk_nrf5340_cpunet.overlay`

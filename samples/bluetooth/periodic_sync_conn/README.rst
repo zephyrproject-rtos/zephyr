@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-sync-conn-sample:
+.. zephyr:code-sample:: ble_periodic_adv_sync_conn
+   :name: Periodic Advertising Connection Procedure (Responder)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Connection Procedure - Responder
-#####################################################################
+   Respond to periodic advertising and establish a connection.
 
 Overview
 ********

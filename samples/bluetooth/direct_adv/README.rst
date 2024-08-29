@@ -1,7 +1,8 @@
-.. _ble_direct_adv:
+.. zephyr:code-sample:: ble_direct_adv
+   :name: Direct Advertising
+   :relevant-api: bluetooth
 
-Bluetooth: Direct Advertising
-#############################
+   Advertise directly to a bonded central device.
 
 Overview
 ********

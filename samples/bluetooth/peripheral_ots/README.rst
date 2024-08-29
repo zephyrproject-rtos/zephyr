@@ -1,12 +1,13 @@
-.. _peripheral_ots:
+.. zephyr:code-sample:: ble_peripheral_ots
+   :name: Peripheral Object Transfer Service (OTS)
+   :relevant-api: bt_ots bluetooth
 
-Bluetooth: Peripheral OTS
-#########################
+   Expose an Object Transfer Service (OTS) GATT Service.
 
 Overview
 ********
 
-Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_peripheral` sample, except that this
 application specifically exposes the OTS (Object Transfer) GATT Service.
 
 

@@ -1,12 +1,13 @@
-.. _bluetooth-hci-uart-sample:
+.. zephyr:code-sample:: bluetooth_hci_uart
+   :name: HCI UART
+   :relevant-api: hci_raw bluetooth uart_interface
 
-Bluetooth: HCI UART
-####################
+   Expose a Bluetooth controller to another device or CPU over UART.
 
 Overview
 *********
 
-Expose the Zephyr Bluetooth controller support over UART to another device/CPU
+Expose Bluetooth controller support over UART to another device/CPU
 using the H:4 HCI transport protocol (requires HW flow control from the UART).
 
 Requirements
@@ -142,7 +143,8 @@ You can use following targets:
 * ``nrf5340dk/nrf5340/cpunet@df``
 * ``nrf52833dk/nrf52833@df``
 
-Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`bluetooth_direction_finding_connectionless_tx` for more details.
+Check the :zephyr:code-sample:`ble_direction_finding_connectionless_rx` and the
+:zephyr:code-sample:`ble_direction_finding_connectionless_tx` for more details.
 
 Using a USB CDC ACM UART
 ========================

@@ -1,7 +1,8 @@
-.. _bluetooth_extended_advertising_sample:
+.. zephyr:code-sample:: bluetooth_extended_advertising
+   :name: Extended Advertising
+   :relevant-api: bluetooth
 
-Bluetooth: Extended Advertising
-################################
+   Use the BLE extended advertising feature.
 
 Overview
 ********

@@ -1,12 +1,13 @@
-.. _bluetooth_central_ht:
+.. zephyr:code-sample:: ble_central_ht
+   :name: Health Thermometer (Central)
+   :relevant-api: bluetooth
 
-Bluetooth: Central / Health Thermometer sensor
-##############################################
+   Connect to a BLE health thermometer sensor and read temperature measurements.
 
 Overview
 ********
 
-Similar to the :ref:`Central <bluetooth_central>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_central` sample, except that this
 application specifically looks for health thermometer sensor and reports the
 die temperature readings once connected.
 

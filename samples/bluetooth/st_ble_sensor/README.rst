@@ -1,7 +1,8 @@
-.. _bluetooth-st_ble_sensor:
+.. zephyr:code-sample:: bluetooth_st_ble_sensor
+   :name: ST BLE Sensor Demo
+   :relevant-api: bt_gatt bluetooth
 
-Bluetooth: ST BLE Sensor Demo
-#############################
+   Export vendor-specific GATT services over BLE.
 
 Overview
 ********

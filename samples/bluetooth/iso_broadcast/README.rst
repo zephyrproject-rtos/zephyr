@@ -1,7 +1,8 @@
-.. _bluetooth-isochronous-broadcaster-sample:
+.. zephyr:code-sample:: bluetooth_isochronous_broadcaster
+   :name: Isochronous Broadcaster
+   :relevant-api: bt_iso bluetooth
 
-Bluetooth: Isochronous Broadcaster
-##################################
+   Use the Bluetooth Low Energy Isochronous Broadcaster functionality.
 
 Overview
 ********
