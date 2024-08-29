@@ -68,13 +68,41 @@
 #define BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE 0
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 
+#if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
+#define BT_HFP_HF_CODEC_NEG_ENABLE BT_HFP_HF_FEATURE_CODEC_NEG
+#else
+#define BT_HFP_HF_CODEC_NEG_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+
 /* HFP HF Supported features */
-#define BT_HFP_HF_SUPPORTED_FEATURES \
-(BT_HFP_HF_FEATURE_CLI_ENABLE | BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE)
+#define BT_HFP_HF_SUPPORTED_FEATURES (\
+	BT_HFP_HF_FEATURE_CLI_ENABLE | \
+	BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE |\
+	BT_HFP_HF_CODEC_NEG_ENABLE)
 
 /* HFP HF Supported features in SDP */
 #define BT_HFP_HF_SDP_SUPPORTED_FEATURES \
 (BT_HFP_HF_SDP_FEATURE_CLI_ENABLE | BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE)
+
+#define BT_HFP_HF_CODEC_CVSD_MASK BIT(BT_HFP_HF_CODEC_CVSD)
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_MSBC)
+#define BT_HFP_HF_CODEC_MSBC_ENABLE BIT(BT_HFP_HF_CODEC_MSBC)
+#else
+#define BT_HFP_HF_CODEC_MSBC_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CODEC_MSBC */
+
+#if defined(CONFIG_BT_HFP_HF_CODEC_LC3_SWB)
+#define BT_HFP_HF_CODEC_LC3_SWB_ENABLE BIT(BT_HFP_HF_CODEC_LC3_SWB)
+#else
+#define BT_HFP_HF_CODEC_LC3_SWB_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_CODEC_LC3_SWB */
+
+/* HFP HF Supported Codec IDs*/
+#define BT_HFP_HF_SUPPORTED_CODEC_IDS \
+	BT_HFP_HF_CODEC_CVSD_MASK | \
+	BT_HFP_HF_CODEC_MSBC_ENABLE | \
+	BT_HFP_HF_CODEC_LC3_SWB_ENABLE
 
 #define HF_MAX_BUF_LEN       BT_HF_CLIENT_MAX_PDU
 #define HF_MAX_AG_INDICATORS 20
@@ -90,6 +118,7 @@ enum {
 	BT_HFP_HF_FLAG_CONNECTED,  /* HFP HF SLC Established */
 	BT_HFP_HF_FLAG_TX_ONGOING, /* HFP HF TX is ongoing */
 	BT_HFP_HF_FLAG_INCOMING,   /* HFP HF call incoming */
+	BT_HFP_HF_FLAG_CODEC_CONN, /* HFP HF codec connection setup */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
@@ -107,6 +136,7 @@ struct bt_hfp_hf {
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;
+	uint8_t hf_codec_ids;
 	uint8_t vgm;
 	uint8_t vgs;
 	int8_t ind_table[HF_MAX_AG_INDICATORS];
