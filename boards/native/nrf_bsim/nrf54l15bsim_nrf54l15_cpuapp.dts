@@ -103,3 +103,8 @@
 &clock {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+	compatible = "zephyr,native-posix-rng";
+};
