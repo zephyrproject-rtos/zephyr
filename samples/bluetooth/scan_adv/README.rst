@@ -1,7 +1,8 @@
-.. _bluetooth-scan-adv-sample:
+.. zephyr:code-sample:: ble_scan_adv
+   :name: Scan & Advertise
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Scan & Advertise
-###########################
+   Combine BLE Broadcaster & Observer roles to advertise and scan for devices simultaneously.
 
 Overview
 ********

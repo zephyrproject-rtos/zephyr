@@ -1,12 +1,13 @@
-.. _bluetooth_central_hr:
+.. zephyr:code-sample:: ble_central_hr
+   :name: Heart-rate Monitor (Central)
+   :relevant-api: bluetooth
 
-Bluetooth: Central / Heart-rate Monitor
-#######################################
+   Connect to a BLE heart-rate monitor and read heart-rate measurements.
 
 Overview
 ********
 
-Similar to the :ref:`Central <bluetooth_central>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_central` sample, except that this
 application specifically looks for heart-rate monitors and reports the
 heart-rate readings once connected.
 

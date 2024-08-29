@@ -1,7 +1,8 @@
-.. _ble_peripheral_accept_list:
+.. zephyr:code-sample:: ble_peripheral_accept_list
+   :name: Peripheral Accept List
+   :relevant-api: bt_conn bt_gatt bluetooth
 
-Bluetooth: Peripheral Accept List
-#################################
+   Advertise and accept connections only from devices on an accept list.
 
 Overview
 ********

@@ -1,7 +1,8 @@
-.. _bluetooth-eddystone-sample:
+.. zephyr:code-sample:: bluetooth_eddystone
+   :name: Eddystone
+   :relevant-api: bluetooth
 
-Bluetooth: Eddystone
-####################
+   Export an Eddystone Configuration Service as a BLE GATT service.
 
 Overview
 ********

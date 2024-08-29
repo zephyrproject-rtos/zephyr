@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-sync-sample:
+.. zephyr:code-sample:: ble_periodic_adv_sync
+   :name: Periodic Advertising Synchronization
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Synchronization
-###############################################
+   Use BLE Periodic Advertising Synchronization functionality.
 
 Overview
 ********

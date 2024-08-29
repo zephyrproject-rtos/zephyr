@@ -1,7 +1,8 @@
-.. _bluetooth-hci-usb-sample:
+.. zephyr:code-sample:: bluetooth_hci_usb
+   :name: HCI USB
+   :relevant-api: hci_raw bluetooth _usb_device_core_api usbd_api
 
-Bluetooth: HCI USB
-##################
+   Turn a Zephyr board into a USB Bluetooth dongle (compatible with all operating systems).
 
 Overview
 ********

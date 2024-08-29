@@ -382,7 +382,7 @@ device.
      - Purpose
    * - zephyr,bt-c2h-uart
      - Selects the UART used for host communication in the
-       :ref:`bluetooth-hci-uart-sample`
+       :zephyr:code-sample:`bluetooth_hci_uart`
    * - zephyr,bt-mon-uart
      - Sets UART device used for the Bluetooth monitor logging
    * - zephyr,bt-hci

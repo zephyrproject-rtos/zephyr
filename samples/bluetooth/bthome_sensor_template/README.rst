@@ -1,9 +1,13 @@
-.. _bluetooth-bthome-sensor-template-sample:
+.. zephyr:code-sample:: bluetooth_bthome_sensor_template
+   :name: BTHome sensor template
+   :relevant-api: bluetooth
 
-Bluetooth: BTHome sensor template
-#################################
+   Implement a BTHome sensor.
 
-Template for a `BTHome <https://bthome.io/>`_ sensor.
+Overview
+********
+
+This code sample provides a template for implementing a `BTHome <https://bthome.io/>`_ sensor.
 
 Requirements
 ************

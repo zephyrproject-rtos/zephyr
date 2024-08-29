@@ -1,8 +1,8 @@
 .. zephyr:code-sample:: bluetooth_bap_broadcast_assistant
-   :name: Bluetooth: Broadcast Audio Assistant
+   :name: Broadcast Audio Assistant
    :relevant-api: bt_bap
 
-   Use LE Audio Broadcast Assistant functionality
+   Use LE Audio Broadcast Assistant functionality.
 
 Overview
 ********
