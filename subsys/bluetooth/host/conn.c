@@ -2812,7 +2812,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 int bt_conn_get_remote_info(struct bt_conn *conn,
 			    struct bt_conn_remote_info *remote_info)
 {
-	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) ||
+	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) ||
 	    (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
 	     !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
 		return -EBUSY;
