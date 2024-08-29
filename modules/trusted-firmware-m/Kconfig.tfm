@@ -188,6 +188,7 @@ config TFM_BL2_NOT_SUPPORTED
 
 config TFM_IMAGE_VERSION_S
 	string "Version of the Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 1
 	default "0.0.0+0"
 	help
 	  Version of the secure image. This version is also used for merged
@@ -195,6 +196,7 @@ config TFM_IMAGE_VERSION_S
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 2
 	default "0.0.0+0"
 	help
 	  Version of the non-secure image.
