@@ -20,8 +20,6 @@ CONFIG_ARM_MPU=y
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
 
-# enable pin controller
-CONFIG_PINCTRL=y
 
 # Enable the internal SMPS regulator
 CONFIG_POWER_SUPPLY_DIRECT_SMPS=y

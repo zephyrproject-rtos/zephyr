@@ -19,6 +19,3 @@ CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
-# enable pin controller
-CONFIG_PINCTRL=y
