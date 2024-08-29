@@ -632,6 +632,8 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
+	llext_adjust_mmu_permissions(ext);
+
 out:
 	/*
 	 * Free resources only used during loading. Note that this exploits
