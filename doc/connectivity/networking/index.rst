@@ -13,6 +13,7 @@ operation of the stacks and how they were implemented.
    overview.rst
    net-stack-architecture.rst
    net_config_guide.rst
+   net_init_config.rst
    networking_with_host.rst
    network_monitoring.rst
    network_tracing.rst
