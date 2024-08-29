@@ -204,3 +204,9 @@ tests:
   drivers.spi.max32_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-max32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_MAX32
+  drivers.spi.s32z_dspi.loopback:
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/s32z2xxdc2_s32z270_dspi.overlay
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
