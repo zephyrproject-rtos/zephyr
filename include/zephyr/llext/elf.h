@@ -206,6 +206,9 @@ struct elf64_shdr {
 #define SHT_NOBITS 0x8          /**< Program data with no file image */
 #define SHT_REL 0x9             /**< Relocation entries without addends */
 #define SHT_DYNSYM 0xB          /**< Dynamic linking symbol table */
+#define SHT_INIT_ARRAY 0xe      /**< Array of pointers to init functions */
+#define SHT_FINI_ARRAY 0xf      /**< Array of pointers to termination functions */
+#define SHT_PREINIT_ARRAY 0x10  /**< Array of pointers to early init functions */
 
 /** ELF section flags */
 #define SHF_WRITE 0x1           /**< Section is writable */
