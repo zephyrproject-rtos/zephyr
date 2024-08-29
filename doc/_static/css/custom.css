@@ -866,7 +866,7 @@ dark-mode-toggle::part(toggleLabel){
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
-    border-radius: 0.5rem;
+    border-radius: 1rem;
     background: linear-gradient(135deg, #0070c5 0%, #5c13a5 100%);
     color: white;
 }
@@ -888,6 +888,10 @@ dark-mode-toggle::part(toggleLabel){
     font-size: 0.9rem;
     margin-top: 0.5rem;
     color: var(--body-color);
+    font-weight: 200;
+    margin-left: -0.9em;
+    margin-right: -0.9em;
+    line-height: 1.4rem;
 }
 
 .grid-icon {
