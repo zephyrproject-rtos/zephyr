@@ -89,6 +89,13 @@
 #define DGLPIBI(base, regblock_size, stream) \
 	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x28))
 
+/* Gateway Linear Link Position registers (ACE2 and onwards */
+#define DGLLLPL(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x20))
+
+#define DGLLLPU(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x24))
+
 /**
  * @brief Dump all the useful registers of an HDA stream to printk
  *
