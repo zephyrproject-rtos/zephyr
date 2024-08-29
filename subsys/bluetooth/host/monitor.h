@@ -75,21 +75,29 @@ struct bt_monitor_user_logging {
 	uint8_t  ident_len;
 } __packed;
 
-static inline uint8_t bt_monitor_opcode(struct net_buf *buf)
+static inline uint8_t bt_monitor_opcode_rx(enum bt_hci_h4 h4_type)
 {
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_CMD:
-		return BT_MONITOR_COMMAND_PKT;
-	case BT_BUF_EVT:
+	switch (h4_type) {
+	case BT_HCI_H4_EVT:
 		return BT_MONITOR_EVENT_PKT;
-	case BT_BUF_ACL_OUT:
-		return BT_MONITOR_ACL_TX_PKT;
-	case BT_BUF_ACL_IN:
+	case BT_HCI_H4_ACL:
 		return BT_MONITOR_ACL_RX_PKT;
-	case BT_BUF_ISO_OUT:
-		return BT_MONITOR_ISO_TX_PKT;
-	case BT_BUF_ISO_IN:
+	case BT_HCI_H4_ISO:
 		return BT_MONITOR_ISO_RX_PKT;
+	default:
+		return BT_MONITOR_NOP;
+	}
+}
+
+static inline uint8_t bt_monitor_opcode_tx(enum bt_hci_h4 h4_type)
+{
+	switch (h4_type) {
+	case BT_HCI_H4_CMD:
+		return BT_MONITOR_COMMAND_PKT;
+	case BT_HCI_H4_ACL:
+		return BT_MONITOR_ACL_TX_PKT;
+	case BT_HCI_H4_ISO:
+		return BT_MONITOR_ISO_TX_PKT;
 	default:
 		return BT_MONITOR_NOP;
 	}

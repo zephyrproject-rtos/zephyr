@@ -12,6 +12,7 @@
 
 #include "babblekit/flags.h"
 #include "babblekit/testcase.h"
+#include "bs_types.h"
 
 LOG_MODULE_REGISTER(broadcaster, LOG_LEVEL_INF);
 
@@ -260,9 +261,13 @@ int __real_bt_send(struct net_buf *buf);
 
 int __wrap_bt_send(struct net_buf *buf)
 {
-	struct bt_hci_iso_hdr *hci_hdr = (void *)buf->data;
+	uint8_t h4_type = buf->data[0];
 
-	if (bt_buf_get_type(buf) == BT_BUF_ISO_OUT) {
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+
+	if (h4_type == BT_HCI_H4_ISO) {
+		struct bt_hci_iso_hdr *hci_hdr = (void *)&buf->data[sizeof(h4_type)];
+
 		uint16_t handle = sys_le16_to_cpu(hci_hdr->handle);
 		uint8_t flags = bt_iso_flags(handle);
 		uint8_t pb_flag = bt_iso_flags_pb(flags);
