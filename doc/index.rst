@@ -91,9 +91,6 @@ licensing, as described in :ref:`Zephyr_Licensing`.
        </li>
    </ul>
 
-Sections
-********
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents
