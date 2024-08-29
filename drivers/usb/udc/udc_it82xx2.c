@@ -579,6 +579,7 @@ static int it82xx2_ep_enable(const struct device *dev, struct udc_ep_config *con
 	/* Configure endpoint */
 	if (ep_idx != 0) {
 		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_DATA_SEQ_1, false);
 			it82xx2_usb_set_ep_ctrl(dev, ep_idx, EP_IN_DIRECTION_SET, true);
 			/* clear fifo control registers */
 			it82xx2_usb_fifo_ctrl(dev, cfg->addr, true);
