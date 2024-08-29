@@ -320,6 +320,45 @@ static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
 LLEXT_LOAD_UNLOAD(multi_file)
 #endif
 
+#ifndef CONFIG_USERSPACE
+static LLEXT_CONST uint8_t export_dependent_ext[] ELF_ALIGN = {
+	#include "export_dependent.inc"
+};
+
+static LLEXT_CONST uint8_t export_dependency_ext[] ELF_ALIGN = {
+	#include "export_dependency.inc"
+};
+
+ZTEST(llext, test_inter_ext)
+{
+	const void *dependency_buf = export_dependency_ext;
+	const void *dependent_buf = export_dependent_ext;
+	struct llext_buf_loader buf_loader_dependency =
+		LLEXT_BUF_LOADER(dependency_buf, sizeof(hello_world_ext));
+	struct llext_buf_loader buf_loader_dependent =
+		LLEXT_BUF_LOADER(dependent_buf, sizeof(export_dependent_ext));
+	struct llext_loader *loader_dependency = &buf_loader_dependency.loader;
+	struct llext_loader *loader_dependent = &buf_loader_dependent.loader;
+	const struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext_dependency = NULL, *ext_dependent = NULL;
+	int ret = llext_load(loader_dependency, "inter_ext_dependency", &ext_dependency, &ldr_parm);
+
+	zassert_ok(ret, "dependency load should succeed");
+
+	ret = llext_load(loader_dependent, "export_dependent", &ext_dependent, &ldr_parm);
+
+	zassert_ok(ret, "dependent load should succeed");
+
+	int (*test_entry_fn)() = llext_find_sym(&ext_dependent->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_dependent should be an exported symbol");
+	test_entry_fn();
+
+	llext_unload(&ext_dependent);
+	llext_unload(&ext_dependency);
+}
+#endif
+
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
 static LLEXT_CONST uint8_t pre_located_ext[] ELF_ALIGN = {
 	#include "pre_located.inc"
