@@ -30,7 +30,7 @@ properties:
       In this case, the driver defines the time unit as 60/(50 * Speed). With a
       default speed of 20 wps the time unit is equal to 0.06s.
 
-  gpios:
+  pwms:
     type: phandle-array
     required: true
     description: The GPIO configuration which will be used to send the morse code.

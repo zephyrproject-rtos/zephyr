@@ -9,7 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/misc/morse_code/morse_code.h>
 
 #include <zephyr/logging/log.h>
@@ -54,7 +54,7 @@ struct morse_code_data {
 
 struct morse_code_config {
 	const struct device *const timer;
-	const struct gpio_dt_spec gpio;
+	const struct pwm_dt_spec pwm;
 	uint32_t speed;
 };
 
@@ -319,7 +319,7 @@ static void morse_code_dot_tick_handler(const struct device *dev, void *user_dat
 	if (ctx->data_idx == ctx->data_size) {
 		LOG_DBG("Finish transmission");
 		counter_stop(dev);
-		gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT_INACTIVE);
+		pwm_set_dt(&cfg->pwm, PWM_MSEC(20), 0);
 		ctx->cb_info.status = 0;
 		k_work_submit(&ctx->cb_work);
 		return;
@@ -335,8 +335,8 @@ static void morse_code_dot_tick_handler(const struct device *dev, void *user_dat
 	}
 
 	bit_state = morse_code_peak_bit_state(ctx);
-	gpio_pin_configure_dt(&cfg->gpio, bit_state ? GPIO_OUTPUT_ACTIVE
-						    : GPIO_OUTPUT_INACTIVE);
+	pwm_set_dt(&cfg->pwm, PWM_MSEC(20), bit_state ? PWM_MSEC(20)
+						    : 0);
 	LOG_DBG("%d", bit_state);
 }
 
@@ -427,7 +427,6 @@ static int morse_code_init(const struct device *dev)
 {
 	const struct morse_code_config *const cfg = dev->config;
 	struct morse_code_data *ctx = dev->data;
-	int ret;
 
 	LOG_DBG("Timer");
 	if (!device_is_ready(cfg->timer)) {
@@ -435,17 +434,13 @@ static int morse_code_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_DBG("GPIO");
-	if (!gpio_is_ready_dt(&cfg->gpio)) {
-		LOG_ERR("Error: GPIO device %s is not ready", cfg->gpio.port->name);
+	LOG_DBG("PWM"); 
+	if (!pwm_is_ready_dt (&cfg->pwm)) {
+		LOG_ERR("Error: PWM device is not ready");
 		return -ENODEV;
 	}
-
-	ret = gpio_pin_configure_dt(&cfg->gpio, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("Error: GPIO device %s do not configure", cfg->gpio.port->name);
-		return -EFAULT;
-	}
+	
+	pwm_set_dt(&cfg->pwm, PWM_MSEC(20), PWM_MSEC(20));
 
 	k_work_init(&ctx->cb_work, morse_code_cb_handler);
 
@@ -462,7 +457,7 @@ static int morse_code_init(const struct device *dev)
 #define MORSE_CODE_DEVICE_CONFIG(n)						\
 	static const struct morse_code_config morse_code_cfg_##n = {		\
 		.timer = DEVICE_DT_GET(DT_MORSE_PROP(n, timer_unit)),		\
-		.gpio = GPIO_DT_SPEC_GET(DT_DRV_INST(n), gpios),		\
+		.pwm = PWM_DT_SPEC_GET(DT_DRV_INST(n)),		\
 		.speed = DT_MORSE_PROP(n, speed),				\
 	}
 
