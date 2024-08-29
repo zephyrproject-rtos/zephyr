@@ -20,6 +20,7 @@ extern "C" {
 /* 0xfb: Gather interrupt enable control register */
 #define IT8801_REG_GIECR            0xfb
 #define IT8801_REG_MASK_GKSIIE      BIT(3)
+#define IT8801_REG_MASK_GGPIOIE     BIT(2)
 
 /*
  * General control register fields
