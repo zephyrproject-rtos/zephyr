@@ -1,0 +1,35 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+# RISCV64 OpenHW Group cva6 configuration options
+
+# Shared properties
+config SOC_CV64A6
+	bool
+	select RISCV
+	select RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_HAS_PLIC
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select SCHED_IPI_SUPPORTED
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+
+# Variant with FPU
+config SOC_CV64A6_IMAFDC
+	select SOC_CV64A6
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+# Variant without FPU
+config SOC_CV64A6_IMAC
+	select SOC_CV64A6
