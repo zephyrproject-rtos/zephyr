@@ -59,6 +59,7 @@ LOG_MODULE_REGISTER(udc_it82xx2, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
 /* DC_INTERRUPT_STATUS_REG */
 #define DC_TRANS_DONE   BIT(0)
+#define DC_RESUME_EVENT BIT(1)
 #define DC_RESET_EVENT  BIT(2)
 #define DC_SOF_RECEIVED BIT(3)
 #define DC_NAK_SENT_INT BIT(4)
@@ -634,7 +635,7 @@ static int it82xx2_host_wakeup(const struct device *dev)
 	struct it82xx2_data *priv = udc_get_private(dev);
 	const struct usb_it82xx2_config *config = dev->config;
 	struct usb_it82xx2_regs *const usb_regs = config->base;
-	int ret;
+	int ret = -EACCES;
 
 	if (udc_is_suspended(dev)) {
 		usb_regs->dc_control = DC_GLOBAL_ENABLE | DC_FULL_SPEED_LINE_POLARITY |
@@ -654,7 +655,7 @@ static int it82xx2_host_wakeup(const struct device *dev)
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int it82xx2_set_address(const struct device *dev, const uint8_t addr)
@@ -683,14 +684,29 @@ static int it82xx2_usb_dc_ip_init(const struct device *dev)
 	/* clear reset bit */
 	usb_regs->host_device_control = 0;
 
-	usb_regs->dc_interrupt_status = DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+	usb_regs->dc_interrupt_status =
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_EVENT;
 
 	usb_regs->dc_interrupt_mask = 0x00;
-	usb_regs->dc_interrupt_mask = DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED;
+	usb_regs->dc_interrupt_mask =
+		DC_TRANS_DONE | DC_RESET_EVENT | DC_SOF_RECEIVED | DC_RESUME_EVENT;
 
 	usb_regs->dc_address = DC_ADDR_NULL;
 
 	return 0;
+}
+
+static void it82xx2_enable_resume_int(const struct device *dev, bool enable)
+{
+	const struct usb_it82xx2_config *config = dev->config;
+	struct usb_it82xx2_regs *const usb_regs = config->base;
+
+	usb_regs->dc_interrupt_status = DC_RESUME_EVENT;
+	if (enable) {
+		usb_regs->dc_interrupt_mask |= DC_RESUME_EVENT;
+	} else {
+		usb_regs->dc_interrupt_mask &= ~DC_RESUME_EVENT;
+	}
 }
 
 static void it82xx2_enable_sof_int(const struct device *dev, bool enable)
@@ -1295,6 +1311,17 @@ static void it82xx2_usb_xfer_done(const struct device *dev)
 	}
 }
 
+static inline void emit_resume_event(const struct device *dev)
+{
+	struct it82xx2_data *priv = udc_get_private(dev);
+
+	if (udc_is_suspended(dev) && udc_is_enabled(dev)) {
+		udc_set_suspended(dev, false);
+		udc_submit_event(dev, UDC_EVT_RESUME, 0);
+		k_sem_give(&priv->suspended_sem);
+	}
+}
+
 static void it82xx2_usb_dc_isr(const void *arg)
 {
 	const struct device *dev = arg;
@@ -1320,18 +1347,22 @@ static void it82xx2_usb_dc_isr(const void *arg)
 	/* sof received */
 	if (status & DC_SOF_RECEIVED) {
 		it82xx2_enable_sof_int(dev, false);
+		it82xx2_enable_resume_int(dev, false);
+		emit_resume_event(dev);
+		k_work_cancel_delayable(&priv->suspended_work);
 		k_work_reschedule(&priv->suspended_work, K_MSEC(5));
+	}
+
+	/* resume event */
+	if (status & DC_RESUME_EVENT) {
+		it82xx2_enable_resume_int(dev, false);
+		emit_resume_event(dev);
 	}
 
 	/* transaction done */
 	if (status & DC_TRANS_DONE) {
 		/* clear interrupt before new transaction */
 		usb_regs->dc_interrupt_status = DC_TRANS_DONE;
-		if (udc_is_suspended(dev) && udc_is_enabled(dev)) {
-			udc_set_suspended(dev, false);
-			udc_submit_event(dev, UDC_EVT_RESUME, 0);
-			k_sem_give(&priv->suspended_sem);
-		}
 		it82xx2_usb_xfer_done(dev);
 		return;
 	}
@@ -1344,20 +1375,15 @@ static void suspended_handler(struct k_work *item)
 	const struct device *dev = priv->dev;
 	const struct usb_it82xx2_config *config = dev->config;
 	struct usb_it82xx2_regs *const usb_regs = config->base;
+	unsigned int key;
 
 	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
 		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
-		if (udc_is_suspended(dev) && udc_is_enabled(dev)) {
-			udc_set_suspended(dev, false);
-			udc_submit_event(dev, UDC_EVT_RESUME, 0);
-			k_sem_give(&priv->suspended_sem);
-		}
 		k_work_reschedule(&priv->suspended_work, K_MSEC(5));
 		return;
 	}
 
-	it82xx2_enable_sof_int(dev, true);
-
+	key = irq_lock();
 	if (!udc_is_suspended(dev) && udc_is_enabled(dev)) {
 		udc_set_suspended(dev, true);
 		udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
@@ -1366,6 +1392,10 @@ static void suspended_handler(struct k_work *item)
 
 		k_sem_reset(&priv->suspended_sem);
 	}
+
+	it82xx2_enable_resume_int(dev, true);
+	it82xx2_enable_sof_int(dev, true);
+	irq_unlock(key);
 }
 
 static int it82xx2_enable(const struct device *dev)
