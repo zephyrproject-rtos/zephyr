@@ -1035,6 +1035,7 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
+	/* Results in BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE */
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf, NULL);
 }
 
@@ -1206,7 +1207,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 		return;
 	}
 
-	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) &&
+	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) &&
 	    ((conn->role == BT_HCI_ROLE_CENTRAL) ||
 	     BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features))) {
 		err = hci_le_read_remote_features(conn);
@@ -1801,7 +1802,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	atomic_set_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH);
+	atomic_set_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED);
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
 	    !IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
