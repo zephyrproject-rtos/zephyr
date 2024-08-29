@@ -67,6 +67,44 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pcal6524a: pcal6524@22 {
+				compatible = "nxp,pcal6524";
+				reg = <0x22>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <24>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pcal6534a: pcal6534@42 {
+				compatible = "nxp,pcal6534";
+				reg = <0x42>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca9538: pca9538@70 {
+				compatible = "nxp,pca9538";
+				reg = <0x70>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca9539: pca9539@74 {
+				compatible = "nxp,pca9539";
+				reg = <0x74>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_pca95xx: pca95xx@3 {
 				compatible = "nxp,pca95xx";
 				reg = <0x03>;
