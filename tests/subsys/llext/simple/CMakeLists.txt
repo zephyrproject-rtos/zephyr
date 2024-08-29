@@ -15,7 +15,16 @@ target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/arch/${ARCH}/include
 )
 
-set(ext_names hello_world logging relative_jump object syscalls threads_kernel_objects)
+set(ext_names
+	hello_world
+	logging
+	relative_jump
+	object
+	syscalls
+	threads_kernel_objects
+	export_dependent
+	export_dependency
+)
 
 if(CONFIG_ARM)
   if(NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
