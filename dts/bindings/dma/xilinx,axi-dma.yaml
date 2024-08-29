@@ -1,0 +1,12 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx AXI DMA LogiCORE IP controller with compatibility string
+  generated for use of the DMA outside of the AXI Ethernet subsystem.
+
+include: xilinx,axi-dma-base.yaml
+
+compatible: "xlnx,axi-dma-1.00.a"
+
+# no custom properties, just different compatible
