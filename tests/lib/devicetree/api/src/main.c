@@ -751,6 +751,9 @@ ZTEST(devicetree_api, test_irq)
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 
+	/* DT_INST_NUM_IRQS */
+	zassert_equal(DT_INST_NUM_IRQS(0), 3);
+
 	/* DT_INST_IRQ_HAS_IDX */
 	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 0), 1, "");
 	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 1), 1, "");
