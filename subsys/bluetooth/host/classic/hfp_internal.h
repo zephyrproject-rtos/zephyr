@@ -214,3 +214,18 @@ enum hfp_hf_ag_indicators {
  * optional for the HF.
  */
 #define BT_HFP_CALL_QUITE	                    4
+
+/* Active */
+#define BT_HFP_CLCC_STATUS_ACTIVE         0
+/* Held */
+#define BT_HFP_CLCC_STATUS_HELD           1
+/* Dialing (outgoing calls only) */
+#define BT_HFP_CLCC_STATUS_DIALING        2
+/* Alerting (outgoing calls only) */
+#define BT_HFP_CLCC_STATUS_ALERTING       3
+/* Incoming (incoming calls only) */
+#define BT_HFP_CLCC_STATUS_INCOMING       4
+/* Waiting (incoming calls only) */
+#define BT_HFP_CLCC_STATUS_WAITING        5
+/* Call held by Response and Hold */
+#define BT_HFP_CLCC_STATUS_CALL_HELD_HOLD 6
