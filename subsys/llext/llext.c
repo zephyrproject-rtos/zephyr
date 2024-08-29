@@ -139,7 +139,7 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 }
 
 int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
-	       struct llext_load_param *ldr_parm)
+	       const struct llext_load_param *ldr_parm)
 {
 	int ret;
 
