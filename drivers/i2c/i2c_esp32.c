@@ -800,8 +800,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
 #define I2C_ESP32_TIMEOUT(inst)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, scl_timeout_us),	\
-		    (DT_INST_PROP(inst, scl_timeout_us)), (0))
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
+		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
 #define I2C_ESP32_FREQUENCY(bitrate)					\
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
@@ -833,9 +833,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
 			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
 		},										   \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),				   \
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),		   \
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),				   \
+		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),				   \
+		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),		   \
+		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
 	};											   \
