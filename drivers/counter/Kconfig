@@ -116,4 +116,6 @@ source "drivers/counter/Kconfig.neorv32"
 
 source "drivers/counter/Kconfig.max32_wut"
 
+source "drivers/counter/Kconfig.cc23x0_rtc"
+
 endif # COUNTER
