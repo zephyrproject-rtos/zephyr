@@ -15,6 +15,3 @@ CONFIG_UART_CONSOLE=y
 
 # GPIO Controller
 CONFIG_GPIO=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

@@ -15,6 +15,3 @@ CONFIG_CLOCK_CONTROL=y
 # Console
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y
