@@ -1666,7 +1666,16 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		err = trans_seg(buf, rx, &pdu_type, &seq_auth, &seg_count);
 	} else {
 		seg_count = 1;
-		err = trans_unseg(buf, rx, &seq_auth);
+
+		if(!rx->ctl){
+			if (!rx->local_match) {
+				/* if friend_match was set the frame is for LPN which we are
+				* friends. */
+				return rx->friend_match ? 0 : -ENXIO;
+			} else {
+				err = trans_unseg(buf, rx, &seq_auth);
+			}
+		}
 	}
 
 	/* Notify LPN state machine so a Friend Poll will be sent. */
