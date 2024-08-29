@@ -1779,7 +1779,7 @@ static int bt_hfp_ag_chup_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 
 static uint8_t bt_hfp_get_call_state(struct bt_hfp_ag_call *call)
 {
-	uint8_t status = HFP_AG_CLCC_STATUS_INVALID;
+	uint8_t status = 0;
 	struct bt_hfp_ag *ag = call->ag;
 
 	hfp_ag_lock(ag);
@@ -1792,27 +1792,27 @@ static uint8_t bt_hfp_get_call_state(struct bt_hfp_ag_call *call)
 		}
 		break;
 	case BT_HFP_CALL_OUTGOING:
-		status = HFP_AG_CLCC_STATUS_DIALING;
+		status = BT_HFP_CLCC_STATUS_DIALING;
 		break;
 	case BT_HFP_CALL_INCOMING:
-		status = HFP_AG_CLCC_STATUS_INCOMING;
+		status = BT_HFP_CLCC_STATUS_INCOMING;
 		break;
 	case BT_HFP_CALL_ALERTING:
 		if (atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING)) {
-			status = HFP_AG_CLCC_STATUS_WAITING;
+			status = BT_HFP_CLCC_STATUS_WAITING;
 		} else {
-			status = HFP_AG_CLCC_STATUS_ALERTING;
+			status = BT_HFP_CLCC_STATUS_ALERTING;
 		}
 		break;
 	case BT_HFP_CALL_ACTIVE:
 		if (atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING_HELD)) {
-			status = BT_HFP_AG_CALL_INCOMING_HELD;
+			status = BT_HFP_CLCC_STATUS_CALL_HELD_HOLD;
 		} else {
-			status = HFP_AG_CLCC_STATUS_ACTIVE;
+			status = BT_HFP_CLCC_STATUS_ACTIVE;
 		}
 		break;
 	case BT_HFP_CALL_HOLD:
-		status = HFP_AG_CLCC_STATUS_HELD;
+		status = BT_HFP_CLCC_STATUS_HELD;
 		break;
 	default:
 		break;
@@ -1848,7 +1848,7 @@ static int bt_hfp_ag_clcc_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 		dir = atomic_test_bit(call->flags, BT_HFP_AG_CALL_INCOMING) ? 1 : 0;
 		status = bt_hfp_get_call_state(call);
 		mode = 0;
-		mpty = (status == HFP_AG_CLCC_STATUS_ACTIVE) && (active_calls > 1) ? 1 : 0;
+		mpty = (status == BT_HFP_CLCC_STATUS_ACTIVE) && (active_calls > 1) ? 1 : 0;
 		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+CLCC:%d,%d,%d,%d,%d,\"%s\",%d\r\n",
 				       index + 1, dir, status, mode, mpty, call->number,
 				       call->type);
