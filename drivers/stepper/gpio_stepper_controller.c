@@ -98,8 +98,12 @@ static void update_direction_from_step_count(struct gpio_stepper_motor_controlle
 
 static void position_mode_task(const struct device *dev)
 {
-	stepper_motor_set_coil_charge(dev);
-	update_coil_charge(dev);
+	struct gpio_stepper_motor_controller_data *data = dev->data;
+
+	if (data->step_count) {
+		stepper_motor_set_coil_charge(dev);
+		update_coil_charge(dev);
+	}
 	update_remaining_steps(dev->data);
 }
 
