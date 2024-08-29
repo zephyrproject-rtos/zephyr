@@ -259,6 +259,23 @@ static inline void k_mem_unmap(void *addr, size_t size)
 }
 
 /**
+ * Modify memory mapping attribute flags
+ *
+ * This updates caching, access and control flags for the provided
+ * page-aligned memory region.
+ *
+ * Calling this function on a region which was not mapped to begin with is
+ * undefined behavior. However system memory implicitly mapped at boot time
+ * is supported.
+ *
+ * @param addr Page-aligned memory region base virtual address
+ * @param size Page-aligned memory region size
+ * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
+ * @return 0 for success, negative error code otherwise.
+ */
+int k_mem_update_flags(void *addr, size_t size, uint32_t flags);
+
+/**
  * Given an arbitrary region, provide a aligned region that covers it
  *
  * The returned region will have both its base address and size aligned

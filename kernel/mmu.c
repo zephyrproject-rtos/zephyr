@@ -813,6 +813,36 @@ out:
 	k_spin_unlock(&z_mm_lock, key);
 }
 
+int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
+{
+	uintptr_t phys;
+	k_spinlock_key_t key;
+	int ret;
+
+	k_mem_assert_virtual_region(addr, size);
+
+	key = k_spin_lock(&z_mm_lock);
+
+	/*
+	 * We can achieve desired result without explicit architecture support
+	 * by unmapping and remapping the same physical memory using new flags.
+	 */
+
+	ret = arch_page_phys_get(addr, &phys);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* TODO: detect and handle paged-out memory as well */
+
+	arch_mem_unmap(addr, size);
+	arch_mem_map(addr, phys, size, flags);
+
+out:
+	k_spin_unlock(&z_mm_lock, key);
+	return ret;
+}
+
 size_t k_mem_free_get(void)
 {
 	size_t ret;
