@@ -1200,7 +1200,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 	case HF_CALL_HELD_IND:
 		ag_indicator_handle_call_held(hf, value);
 		break;
-	case HF_SINGNAL_IND:
+	case HF_SIGNAL_IND:
 		if (bt_hf->signal) {
 			bt_hf->signal(hf, value);
 		}

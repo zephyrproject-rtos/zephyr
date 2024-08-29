@@ -846,7 +846,7 @@ enum hfp_hf_ag_indicators {
 	HF_CALL_IND,        /* AG call indicator */
 	HF_CALL_SETUP_IND,  /* AG call setup indicator */
 	HF_CALL_HELD_IND,   /* AG call held indicator */
-	HF_SINGNAL_IND,     /* AG signal indicator */
+	HF_SIGNAL_IND,      /* AG signal indicator */
 	HF_ROAM_IND,        /* AG roaming indicator */
 	HF_BATTERY_IND      /* AG battery indicator */
 };
