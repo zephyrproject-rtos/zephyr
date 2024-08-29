@@ -168,8 +168,13 @@ ${config_paths}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
+  # Be sure we don't try building this until al of the generated headers have been generated.
   add_custom_target(librustapp ALL
     DEPENDS ${DUMMY_FILE}
+        # The variables, defined at the top level, don't seem to be accessible here.
+        syscall_list_h_target
+        driver_validation_h_target
+        kobj_types_h_target
   )
 
   target_link_libraries(app PUBLIC -Wl,--allow-multiple-definition ${RUST_LIBRARY})
