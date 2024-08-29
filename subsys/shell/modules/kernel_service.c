@@ -673,7 +673,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_reboot,
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 	SHELL_CMD(cycles, NULL, "Kernel cycles.", cmd_kernel_cycles),
 #if defined(CONFIG_REBOOT)
-	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", NULL),
+	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", cmd_kernel_reboot_cold),
 #endif
 	SHELL_CMD(thread, &sub_kernel_thread, "Kernel threads.", NULL),
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
