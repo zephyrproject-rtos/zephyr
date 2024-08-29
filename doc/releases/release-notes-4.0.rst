@@ -212,6 +212,9 @@ Drivers and Sensors
 
 * GPIO
 
+  * tle9104: Add support for the parallel output mode via setting the properties ``parallel-out12`` and
+    ``parallel-out34``.
+
 * Hardware info
 
 * I2C
