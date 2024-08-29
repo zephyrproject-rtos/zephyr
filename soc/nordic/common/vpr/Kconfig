@@ -20,5 +20,6 @@ config RISCV_CORE_NORDIC_VPR
 	select ARCH_HAS_CUSTOM_CPU_IDLE
 	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 	select INCLUDE_RESET_VECTOR
+	imply XIP
 	help
 	  Enable support for the RISC-V Nordic VPR core.

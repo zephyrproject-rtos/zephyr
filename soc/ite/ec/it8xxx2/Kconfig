@@ -20,6 +20,7 @@ config SOC_IT8XXX2
 	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
 	select RISCV_ISA_EXT_A
 	select RISCV_ISA_EXT_C
+	imply XIP
 
 config SOC_IT8XXX2_REG_SET_V1
 	bool
