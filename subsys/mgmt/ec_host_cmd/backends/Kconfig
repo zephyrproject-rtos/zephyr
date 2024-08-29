@@ -103,6 +103,7 @@ choice EC_HOST_CMD_BACKEND_SPI_DRIVER
 
 config EC_HOST_CMD_BACKEND_SPI_STM32
 	bool "SPI by STM32"
+	select PINCTRL
 	help
 	  This option enables the driver for SPI backend in the
 	  STM32 chip family.
