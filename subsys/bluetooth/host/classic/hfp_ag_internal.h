@@ -210,20 +210,3 @@ struct bt_hfp_ag {
 	/* TX work */
 	struct k_work_delayable tx_work;
 };
-
-/* Active */
-#define HFP_AG_CLCC_STATUS_ACTIVE         0
-/* Held */
-#define HFP_AG_CLCC_STATUS_HELD           1
-/* Dialing (outgoing calls only) */
-#define HFP_AG_CLCC_STATUS_DIALING        2
-/* Alerting (outgoing calls only) */
-#define HFP_AG_CLCC_STATUS_ALERTING       3
-/* Incoming (incoming calls only) */
-#define HFP_AG_CLCC_STATUS_INCOMING       4
-/* Waiting (incoming calls only) */
-#define HFP_AG_CLCC_STATUS_WAITING        5
-/* Call held by Response and Hold */
-#define HFP_AG_CLCC_STATUS_CALL_HELD_HOLD 6
-/* Invalid status */
-#define HFP_AG_CLCC_STATUS_INVALID        0xFFU
