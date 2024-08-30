@@ -33,6 +33,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart0;
 	};
 
 	leds {

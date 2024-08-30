@@ -29,6 +29,7 @@
 		zephyr,flash-controller = &s26ks512s0;
 		zephyr,flash = &s26ks512s0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart7;
 		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;

@@ -18,6 +18,7 @@
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm4_lpuart4;
 		zephyr,console = &flexcomm4_lpuart4;
 		zephyr,shell-uart = &flexcomm4_lpuart4;
 	};
