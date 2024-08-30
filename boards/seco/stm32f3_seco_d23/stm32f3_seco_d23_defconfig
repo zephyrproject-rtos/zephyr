@@ -24,6 +24,3 @@ CONFIG_CLOCK_CONTROL=y
 
 # enable regulators
 CONFIG_REGULATOR=y
-
-# enable pin controller
-CONFIG_PINCTRL=y
