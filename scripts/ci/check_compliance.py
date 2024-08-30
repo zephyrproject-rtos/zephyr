@@ -264,8 +264,12 @@ class BoardYmlCheck(ComplianceTest):
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                vendor, _ = line.split("\t", 2)
-                vendor_prefixes.append(vendor)
+                try:
+                    vendor, _ = line.split("\t", 2)
+                    vendor_prefixes.append(vendor)
+                except ValueError:
+                    self.error(f"Invalid line in vendor-prefixes.txt:\"{line}\".")
+                    self.error("Did you forget the tab character?")
 
         path = Path(ZEPHYR_BASE)
         for file in path.glob("**/board.yml"):
