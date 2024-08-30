@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STEMMA QT is a 1.0mm-JST-SH connector for I2C devices.
+    STEMMA QT is a 4-pin JST-SH connector for I2C devices.
     The pin assignments are as follows.
 
         0  SCL
