@@ -581,6 +581,24 @@ config IRQ_OFFLOAD_NESTED
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
 
+config IRQ_HAS_AFFINITY
+	bool
+	help
+	  Selected when IRQ affinity is implemented by the interrupt controller driver.
+
+config IRQ_AFFINITY
+	bool "IRQ affinity"
+	depends on IRQ_HAS_AFFINITY
+	help
+	  Enable the runtime configuration of IRQ affinity.
+
+config IRQ_AFFINITY_MASK
+	hex "IRQ default affinity mask"
+	depends on IRQ_AFFINITY
+	help
+	  Default affinity mask for the interrupt lines.
+	  Can be overridden in runtime via `irq_set_affinity()`.
+
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"
 	default y
