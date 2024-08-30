@@ -58,6 +58,10 @@ static struct http_server_ctx server_ctx;
 static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+static const char *const alpn_list[] = {"h2", "http/1.1"};
+#endif
+
 static void close_client_connection(struct http_client_ctx *client);
 
 HTTP_SERVER_CONTENT_TYPE(html, "text/html")
@@ -185,8 +189,17 @@ int http_server_init(struct http_server_ctx *ctx)
 				zsock_close(fd);
 				continue;
 			}
+
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+			if (zsock_setsockopt(fd, SOL_TLS, TLS_ALPN_LIST, alpn_list,
+					     sizeof(alpn_list)) < 0) {
+				LOG_ERR("setsockopt: %d", errno);
+				zsock_close(fd);
+				continue;
+			}
+#endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 		}
-#endif
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
 		if (zsock_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &(int){1},
 				     sizeof(int)) < 0) {
