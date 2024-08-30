@@ -481,6 +481,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openhwgroup	OpenHW Group
 openisa	open-isa.org
 openrisc	OpenRISC.io
 openthread	OpenThread.io
