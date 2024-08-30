@@ -351,12 +351,23 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 	uint16_t clen, len = net_pkt_get_len(pkt);
 	uint32_t hdr;
 	uint8_t chunks, i;
-	int ret, txc, cur;
+	int ret, txc, cur, ebo;
 
 	chunks = len / ctx->oa_cps;
 
 	if (len % ctx->oa_cps) {
 		chunks++;
+	}
+
+	if (chunks > 1) {
+		/* we have to calculate EBO so we do not exceed maximum Ethernet frame length */
+		ebo = (len % ctx->oa_cps) - 1;
+		if (ebo < 0) {
+			ebo += ctx->oa_cps;
+		}
+	} else {
+		/* we have to pad to the minimum Ethernet frame length */
+		ebo = ctx->oa_cps - 1;
 	}
 
 	ret = eth_adin2111_reg_read(dev, ADIN2111_BUFSTS, &txc);
@@ -380,7 +391,7 @@ static int eth_adin2111_send_oa_frame(const struct device *dev, struct net_pkt *
 		}
 		if (i == chunks) {
 			hdr |= ADIN2111_OA_DATA_HDR_EV;
-			hdr |= (ctx->oa_cps - 1) << ADIN2111_OA_DATA_HDR_EBO;
+			hdr |= ebo << ADIN2111_OA_DATA_HDR_EBO;
 		}
 
 		hdr |= eth_adin2111_oa_get_parity(hdr);
