@@ -624,6 +624,8 @@ static int spi_stm32_configure(const struct device *dev,
 		uint32_t clk = clock >> br;
 
 		if (clk <= config->frequency) {
+			LOG_DBG("%s frequency set to %uHz (requested %uHz)", dev->name, clk,
+				config->frequency);
 			break;
 		}
 	}
