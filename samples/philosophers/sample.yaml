@@ -1,6 +1,8 @@
 sample:
   name: Dining Philosophers
 common:
+  platform_key:
+    - arch
   extra_args: DEBUG_PRINTF=1
   tags:
     - introduction
@@ -20,24 +22,40 @@ common:
 tests:
   sample.kernel.philosopher: {}
   sample.kernel.philosopher.same_prio:
+    platform_allow:
+      - native_sim
     extra_args: SAME_PRIO=1
   sample.kernel.philosopher.static:
+    platform_allow:
+      - native_sim
     extra_args: STATIC_OBJS=1
   sample.kernel.philosopher.semaphores:
+    platform_allow:
+      - native_sim
     extra_args: FORKS=SEMAPHORES
   sample.kernel.philosopher.stacks:
+    platform_allow:
+      - native_sim
     extra_args: FORKS=STACKS
   sample.kernel.philosopher.fifos:
+    platform_allow:
+      - native_sim
     extra_args: FORKS=FIFOS
   sample.kernel.philosopher.lifos:
+    platform_allow:
+      - native_sim
     extra_args: FORKS=LIFOS
   sample.kernel.philosopher.preempt_only:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
       - CONFIG_NETWORKING=n
   sample.kernel.philosopher.coop_only:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=0
       - CONFIG_NUM_COOP_PRIORITIES=7

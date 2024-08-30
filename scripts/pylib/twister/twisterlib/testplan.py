@@ -889,7 +889,7 @@ class TestPlan:
                 if ts.depends_on_anyof:
                     dep_intersection = ts.depends_on_anyof.intersection(set(plat.supported))
                     if not dep_intersection:
-                        instance.add_filter("No hardware support", Filters.PLATFORM)
+                        instance.add_filter("No hardware support (depends_on_anyof)", Filters.PLATFORM)
 
                 if plat.flash < ts.min_flash:
                     instance.add_filter("Not enough FLASH", Filters.PLATFORM)

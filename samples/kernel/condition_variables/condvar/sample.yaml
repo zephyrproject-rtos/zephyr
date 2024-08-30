@@ -1,5 +1,7 @@
 tests:
   sample.kernel.cond_var:
+    platform_key:
+      - arch
     integration_platforms:
       - native_sim
     tags:

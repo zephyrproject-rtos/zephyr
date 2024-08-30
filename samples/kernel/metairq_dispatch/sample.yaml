@@ -3,6 +3,8 @@ sample:
     MetaIRQ thread
   name: MetaIRQ Dispatch
 common:
+  platform_key:
+    - arch
   tags:
     - kernel
   integration_platforms:

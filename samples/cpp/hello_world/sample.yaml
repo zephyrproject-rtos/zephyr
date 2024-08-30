@@ -2,6 +2,9 @@ sample:
   description: Hello World C++ sample, the simplest C++ Zephyr application
   name: hello cpp world
 common:
+  platform_key:
+    - arch
+    - simulation
   tags: introduction
   integration_platforms:
     - qemu_riscv32
