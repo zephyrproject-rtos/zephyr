@@ -162,12 +162,11 @@ static uint8_t dynamic_payload[32];
 static size_t dynamic_payload_len = sizeof(dynamic_payload);
 static uint8_t dynamic_buffer[32];
 
-static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status,
-		      uint8_t *buffer, size_t len, void *user_data)
+static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status, uint8_t *buffer,
+		      size_t len, struct http_response_ctx *response_ctx, void *user_data)
 {
 	static size_t offset;
-	size_t copy_len;
-	int ret = 0;
+	size_t copy_len = 0;
 
 	if (status == HTTP_SERVER_DATA_ABORTED) {
 		offset = 0;
@@ -178,8 +177,6 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 	case HTTP_GET:
 		copy_len = MIN(sizeof(dynamic_buffer),
 			       dynamic_payload_len - offset);
-
-		ret = copy_len;
 
 		if (copy_len > 0) {
 			memcpy(buffer, dynamic_payload + offset, copy_len);
@@ -211,7 +208,10 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 		return -ENOTSUP;
 	}
 
-	return ret;
+	response_ctx->body = buffer;
+	response_ctx->body_len = copy_len;
+
+	return 0;
 }
 
 struct http_resource_detail_dynamic dynamic_detail = {
@@ -234,7 +234,8 @@ static uint8_t dynamic_headers_buffer[32];
 static struct http_header_capture_ctx header_capture_ctx_clone;
 
 static int dynamic_headers_cb(struct http_client_ctx *client, enum http_data_status status,
-			      uint8_t *buffer, size_t len, void *user_data)
+			      uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
+			      void *user_data)
 {
 	ptrdiff_t offset;
 	struct http_header *hdrs_src;
@@ -627,12 +628,11 @@ ZTEST(server_function_tests, test_http1_dynamic_post)
 		"Content-Length: 17\r\n"
 		"\r\n"
 		TEST_DYNAMIC_POST_PAYLOAD;
-	static const char expected_response[] =
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/plain\r\n"
-		"Transfer-Encoding: chunked\r\n"
-		"\r\n"
-		"0\r\n\r\n";
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
 	size_t offset = 0;
 	int ret;
 
@@ -734,13 +734,12 @@ ZTEST(server_function_tests, test_http1_dynamic_get)
 		"Accept: */*\r\n"
 		"Accept-Encoding: deflate, gzip, br\r\n"
 		"\r\n";
-	static const char expected_response[] =
-		"HTTP/1.1 200 OK\r\n"
-		"Content-Type: text/plain\r\n"
-		"Transfer-Encoding: chunked\r\n"
-		"\r\n"
-		"10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n"
-		"0\r\n\r\n";
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n"
+						"0\r\n\r\n";
 	size_t offset = 0;
 	int ret;
 
@@ -987,9 +986,9 @@ ZTEST(server_function_tests, test_http2_rst_stream)
 	zassert_equal(ret, 0, "Connection should've been closed");
 }
 
-static const char http1_header_capture_common_response[] = "HTTP/1.1 200 OK\r\n"
-							   "Content-Type: text/plain\r\n"
+static const char http1_header_capture_common_response[] = "HTTP/1.1 200\r\n"
 							   "Transfer-Encoding: chunked\r\n"
+							   "Content-Type: text/plain\r\n"
 							   "\r\n"
 							   "0\r\n\r\n";
 
@@ -1116,8 +1115,8 @@ static void common_verify_http2_get_header_capture_request(const uint8_t *reques
 
 	expect_http2_settings_frame(&offset, false);
 	expect_http2_settings_frame(&offset, true);
-	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS);
-	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0, HTTP2_FLAG_END_STREAM);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM);
 }
 
 ZTEST(server_function_tests, test_http2_header_capture)
