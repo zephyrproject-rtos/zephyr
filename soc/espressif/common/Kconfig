@@ -24,6 +24,14 @@ config ESP_SIMPLE_BOOT
 	  Please note that this method brings the system up with all memories set-up, but
 	  all other features, such as secure boot OTA or slots management are not available.
 
+config ESP_RUNTIME_HEAP
+	bool
+	default y
+	help
+	  Enabling this will allocate SRAM area starting by a last linked data at symbolic `_end`,
+	  ending by a last memory location that can be safely accesed (depending on a boot mode).
+	  This is a memory pool used in runtime to create a new heap memory.
+
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
