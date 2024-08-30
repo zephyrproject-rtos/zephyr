@@ -3,6 +3,7 @@
 # Copyright (c) 2022 Google
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import colorama
 import logging
 import os
@@ -63,7 +64,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options, default_options):
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
