@@ -363,6 +363,20 @@ zephyr_compile_options(
 # @Intent: Set fundamental linker specific flags
 toolchain_ld_base()
 
+if(DEFINED TOOLCHAIN_LD_FLAGS)
+  zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
+endif()
+
+zephyr_link_libraries(PROPERTY base)
+
+zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
+
+zephyr_link_libraries_ifdef(CONFIG_LINKER_USE_RELAX PROPERTY relax)
+
+# Sort the common symbols and each input section by alignment
+# in descending order to minimize padding between these symbols.
+zephyr_link_libraries_ifdef(CONFIG_LINKER_SORT_BY_ALIGNMENT PROPERTY sort_alignment)
+
 toolchain_ld_force_undefined_symbols(
   _OffsetAbsSyms
   _ConfigAbsSyms
@@ -373,9 +387,13 @@ if(NOT CONFIG_NATIVE_BUILD)
   toolchain_ld_baremetal()
 endif()
 
-if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
-  # @Intent: Set linker specific flags for C++
-  toolchain_ld_cpp()
+if(CONFIG_CPP)
+  if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
+    # @Intent: Set linker specific flags for C++
+    toolchain_ld_cpp()
+  endif()
+
+  zephyr_link_libraries(PROPERTY cpp_base)
 endif()
 
 # @Intent: Add the basic toolchain warning flags
