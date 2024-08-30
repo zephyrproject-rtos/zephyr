@@ -10,7 +10,7 @@
 
 / {
 	model = "Adafruit Feather nRF52840 Sense";
-	compatible = "adafruit,feather_nrf52840-sense";
+	compatible = "adafruit,feather-nrf52840-sense";
 
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
@@ -48,6 +48,7 @@
 		 */
 		reserved_partition_0: partition@0 {
 			label = "SoftDevice";
+			read-only;
 			reg = <0x000000000 DT_SIZE_K(152)>;
 		};
 		code_partition: partition@26000 {
@@ -66,6 +67,7 @@
 
 		boot_partition: partition@f4000 {
 			label = "UF2";
+			read-only;
 			reg = <0x000f4000 DT_SIZE_K(48)>;
 		};
 	};
