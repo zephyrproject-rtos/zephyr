@@ -3,11 +3,6 @@
 # See root CMakeLists.txt for description and expectations of these macros
 
 macro(toolchain_ld_base)
-
-  if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
-    set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__LLD_LINKER_CMD__)
-  endif()
-
   # TOOLCHAIN_LD_FLAGS comes from compiler/clang/target.cmake
   # LINKERFLAGPREFIX comes from linker/lld/target.cmake
   zephyr_ld_options(
