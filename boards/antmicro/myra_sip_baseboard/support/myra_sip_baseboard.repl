@@ -1,0 +1,87 @@
+flash0: Memory.MappedMemory @ sysbus 0x8000000
+    size: 0x80000
+
+sram0: Memory.MappedMemory @ sysbus 0x20000000
+    size: 0x1c000
+
+timers2: Timers.STM32_Timer @ sysbus <0x40000000, +0x400>
+    frequency: 10000000
+    initialLimit: 0xffffffff
+    ->nvic0@28
+
+timers6: Timers.STM32_Timer @ sysbus <0x40001000, +0x400>
+    frequency: 10000000
+    initialLimit: 0xffffffff
+    ->nvic0@54
+
+timers7: Timers.STM32_Timer @ sysbus <0x40001400, +0x400>
+    frequency: 10000000
+    initialLimit: 0xffffffff
+    ->nvic0@55
+
+clk_lse: Python.PythonPeripheral @ sysbus 0x40007000
+    size: 0x4
+    initable: true
+    filename: "scripts/pydev/rolling-bit.py"
+
+gpioa: GPIOPort.STM32_GPIOPort @ sysbus <0x48000000, +0x400>
+
+gpiob: GPIOPort.STM32_GPIOPort @ sysbus <0x48000400, +0x400>
+
+gpioc: GPIOPort.STM32_GPIOPort @ sysbus <0x48000800, +0x400>
+
+gpiod: GPIOPort.STM32_GPIOPort @ sysbus <0x48000c00, +0x400>
+
+gpioe: GPIOPort.STM32_GPIOPort @ sysbus <0x48001000, +0x400>
+
+gpiof: GPIOPort.STM32_GPIOPort @ sysbus <0x48001400, +0x400>
+
+gpiog: GPIOPort.STM32_GPIOPort @ sysbus <0x48001800, +0x400>
+
+greenled: Miscellaneous.LED @ gpioa 0x5
+
+gpioa:
+    5 -> greenled@0
+
+nvic0: IRQControllers.NVIC @ {
+    sysbus new Bus.BusPointRegistration { address: 0xe000e000; cpu: cpu0 }
+}
+    -> cpu0@0
+
+cpu0: CPU.CortexM @ sysbus
+    cpuType: "cortex-m4f"
+    nvic: nvic0
+
+i2c1: I2C.STM32F7_I2C @ sysbus 0x40005400
+    EventInterrupt->nvic0@31
+    ErrorInterrupt->nvic0@32
+
+sht4x: I2C.SHT45 @ i2c1 0x44
+
+adc1: Analog.STM32_ADC @ sysbus 0x50000000
+    IRQ->nvic0@18
+
+lpuart1: UART.STM32F7_USART @ sysbus 0x40008000
+    frequency: 200000000
+    lowPowerMode: true
+    IRQ->nvic0@91
+
+rcc: Python.PythonPeripheral @ sysbus 0x40021000
+    size: 0x400
+    initable: true
+    filename: "scripts/pydev/flipflop.py"
+
+rng: Miscellaneous.STM32F4_RNG @ sysbus 0x50060800
+    ->nvic0@90
+
+rtc: Timers.STM32F4_RTC @ sysbus 0x40002800
+    AlarmIRQ->nvic0@41
+
+spi2: SPI.STM32SPI @ sysbus 0x40003800
+    IRQ->nvic0@36
+
+iwdg: Timers.STM32_IndependentWatchdog @ sysbus 0x40003000
+    frequency: 32000
+
+dwt: Miscellaneous.DWT @ sysbus 0xE0001000
+    frequency: 72000000
