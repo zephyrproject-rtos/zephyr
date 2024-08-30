@@ -107,6 +107,8 @@ Boards & SoC Support
 Build system and Infrastructure
 *******************************
 
+* Added support for .elf files to the west flash command for jlink, pyocd and linkserver runners.
+
 Documentation
 *************
 
