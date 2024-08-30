@@ -105,6 +105,17 @@ int arch_irq_is_enabled(unsigned int irq)
 	return !!(mie & (1 << irq));
 }
 
+void arch_irq_set_affinity(unsigned int irq, uint32_t mask)
+{
+#if defined(CONFIG_PLIC_IRQ_AFFINITY)
+	unsigned int level = irq_get_level(irq);
+
+	if (level == 2) {
+		riscv_plic_irq_set_affinity(irq, mask);
+	}
+#endif /* CONFIG_PLIC_IRQ_AFFINITY */
+}
+
 #if defined(CONFIG_RISCV_HAS_PLIC)
 void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
