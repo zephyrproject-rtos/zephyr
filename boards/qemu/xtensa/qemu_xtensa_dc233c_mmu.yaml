@@ -6,6 +6,8 @@ arch: xtensa
 toolchain:
   - zephyr
   - xtools
+supported:
+  - mmu
 testing:
   default: true
   ignore_tags:

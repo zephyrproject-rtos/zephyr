@@ -9,6 +9,7 @@ toolchain:
   - xtools
   - llvm
 supported:
+  - mmu
   - pci
   - nvs
   - netif:serial-net

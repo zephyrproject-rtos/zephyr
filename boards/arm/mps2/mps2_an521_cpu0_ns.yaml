@@ -9,6 +9,8 @@ toolchain:
   - gnuarmemb
   - zephyr
   - xtools
+supported:
+  - mpu
 testing:
   default: true
   only_tags:
