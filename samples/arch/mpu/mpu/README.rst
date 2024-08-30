@@ -1,4 +1,4 @@
-.. _mpu_test:
+.. _mpu_sample:
 
 Memory Protection Unit (MPU) Sample
 ###################################
@@ -21,7 +21,7 @@ Building and Running
 This project can be built and executed as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/arch/mpu/mpu_test
+   :zephyr-app: samples/arch/mpu/mpu
    :board: mps2/an385
    :goals: build flash
    :compact:
@@ -30,7 +30,7 @@ To build the single thread version, use the supplied configuration file for
 single thread: :file:`prj_single.conf`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/arch/mpu/mpu_test
+   :zephyr-app: samples/arch/mpu/mpu
    :board: mps2/an385
    :conf: prj_single.conf
    :goals: run
