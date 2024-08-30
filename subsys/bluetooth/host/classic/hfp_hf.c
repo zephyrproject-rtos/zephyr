@@ -26,7 +26,7 @@
 #include "rfcomm_internal.h"
 #include "at.h"
 #include "sco_internal.h"
-#include "hfp_internal.h"
+#include "hfp_hf_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HFP_HF_LOG_LEVEL
 #include <zephyr/logging/log.h>
