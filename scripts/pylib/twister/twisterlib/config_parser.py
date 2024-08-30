@@ -58,6 +58,7 @@ class TwisterConfigParser:
                        "min_ram": {"type": "int", "default": 8},
                        "modules": {"type": "list", "default": []},
                        "depends_on": {"type": "set"},
+                       "depends_on_anyof": {"type": "set"},
                        "min_flash": {"type": "int", "default": 32},
                        "arch_allow": {"type": "set"},
                        "arch_exclude": {"type": "set"},

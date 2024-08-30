@@ -391,6 +391,10 @@ depends_on: <list of features>
     A board or platform can announce what features it supports, this option
     will enable the test only those platforms that provide this feature.
 
+depends_on_anyof: <list of features>
+    A board or platform can announce what features it supports, this option
+    will enable the test if any of the listed features is supported.
+
 levels: <list of levels>
     Test levels this test should be part of. If a level is present, this
     test will be selectable using the command line option ``--level <level name>``
