@@ -1,0 +1,17 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+sample:
+  description: Hello World sample adapted for CVA6 testbench
+  name: hello world test
+common:
+  tags: introduction
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Hello World! (.*)"
+tests:
+  sample.basic.helloworld:
+    tags: introduction
