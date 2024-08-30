@@ -28,6 +28,7 @@
 		zephyr,flash-controller = &is25wp128;
 		zephyr,flash = &is25wp128;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
 	};

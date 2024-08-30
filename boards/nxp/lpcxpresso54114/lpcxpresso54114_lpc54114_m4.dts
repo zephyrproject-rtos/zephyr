@@ -26,6 +26,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
 	};
 
 	gpio_keys {
