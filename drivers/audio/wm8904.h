@@ -102,7 +102,7 @@
  * [1:0] - x_MODE: Input mode
  */
 #define WM8904_REGVAL_INSEL(cm, nin, pin, mode) \
-	(((cm) & 0b1) << 6) | (((nin) & 0b11) << 4)
+	(((cm) & 0b1) << 6) | (((nin) & 0b11) << 4) | (((pin) & 0b11) << 2)
 #define WM8904_REGMASK_INSEL_CMENA		0b01000000
 #define WM8904_REGMASK_INSEL_IP_SEL_N	0b00110000
 #define WM8904_REGMASK_INSEL_IP_SEL_P	0b00001100
