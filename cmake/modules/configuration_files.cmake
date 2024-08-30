@@ -16,6 +16,7 @@
 # - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
 # - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
 # - APPLICATION_CONFIG_DIR: Root folder for application configuration
+# - NET_INIT_CONFIG_FILE:   Name of the network init configuration file
 #
 # If any of the above variables are already set when this CMake module is
 # loaded, then no changes to the variable will happen.
@@ -99,5 +100,6 @@ zephyr_boilerplate_watch(DTC_OVERLAY_FILE)
 zephyr_get(EXTRA_CONF_FILE SYSBUILD LOCAL VAR EXTRA_CONF_FILE OVERLAY_CONFIG MERGE REVERSE)
 zephyr_get(EXTRA_DTC_OVERLAY_FILE SYSBUILD LOCAL MERGE REVERSE)
 zephyr_get(DTS_EXTRA_CPPFLAGS SYSBUILD LOCAL MERGE REVERSE)
+zephyr_get(NET_INIT_CONFIG_FILE)
 build_info(application source-dir VALUE ${APPLICATION_SOURCE_DIR})
 build_info(application configuration-dir VALUE ${APPLICATION_CONFIG_DIR})
