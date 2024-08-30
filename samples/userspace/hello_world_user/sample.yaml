@@ -3,9 +3,12 @@ sample:
     Zephyr application
   name: hello world user
 common:
+  platform_key:
+    - arch
   integration_platforms:
     - mps2/an385
-  tags: introduction
+  tags:
+    - userspace
   harness: console
   harness_config:
     type: one_line
@@ -13,9 +16,8 @@ common:
       - "Hello World from UserSpace! (.*)"
 tests:
   sample.helloworld:
-    filter: CONFIG_ARCH_HAS_USERSPACE
-    arch_exclude:
-      - posix
+    depends_on_anyof:
+      - mmu
+      - mpu
     platform_exclude:
       - qemu_xtensa/dc233c/mmu
-    tags: introduction

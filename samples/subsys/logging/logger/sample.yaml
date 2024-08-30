@@ -3,6 +3,8 @@ sample:
   name: logger sample
 tests:
   sample.logger.basic:
+    platform_key:
+      - arch
     integration_platforms:
       - native_sim
     tags: logging
@@ -22,8 +24,8 @@ tests:
       - frdm_k64f
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
-    arch_exclude:
-      - posix
+    arch_allow:
+      - arm
     harness: keyboard
     extra_configs:
       - CONFIG_LOG_BACKEND_RTT=y
@@ -37,10 +39,7 @@ tests:
     tags:
       - logging
       - bluetooth
-    filter: CONFIG_DT_HAS_ZEPHYR_NUS_UART_ENABLED
     harness: bluetooth_nus
-    arch_exclude:
-      - posix
     extra_args:
       - OVERLAY_CONFIG="overlay-bt.conf"
       - DTC_OVERLAY_FILE="bt.overlay"
@@ -48,20 +47,12 @@ tests:
   sample.logger.usermode:
     integration_platforms:
       - mps2/an385
-    platform_exclude:
-      - ip_k66f
-      - bl652_dvk
-      - bl654_dvk
-      - decawave_dwm1001_dev
-      - segger_trb_stm32f407
-      - bytesensi_l
-      - bl654_dvk/nrf52840/pa
-    arch_exclude:
-      - posix
+    depends_on_anyof:
+      - mmu
+      - mpu
     tags:
       - logging
-      - usermode
-    filter: CONFIG_ARCH_HAS_USERSPACE
+      - userspace
     harness: keyboard
     extra_configs:
       - CONFIG_USERSPACE=y

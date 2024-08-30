@@ -10,7 +10,9 @@ common:
       - "User thread"
 tests:
   sample.syscall_performances:
-    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_key:
+      - arch
+    depends_on_anyof:
+      - mmu
+      - mpu
     arch_allow: riscv
-    integration_platforms:
-      - hifive1@B
