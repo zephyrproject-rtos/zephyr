@@ -3,6 +3,8 @@
 #
 # Copyright (c) 2018 Intel Corporation
 # Copyright 2022 NXP
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -931,7 +933,7 @@ def strip_ansi_sequences(s: str) -> str:
 
 class TwisterEnv:
 
-    def __init__(self, options=None, default_options=None) -> None:
+    def __init__(self, options, default_options=None) -> None:
         self.version = "Unknown"
         self.toolchain = None
         self.commit_date = "Unknown"
@@ -939,7 +941,7 @@ class TwisterEnv:
         self.options = options
         self.default_options = default_options
 
-        if options and options.ninja:
+        if options.ninja:
             self.generator_cmd = "ninja"
             self.generator = "Ninja"
         else:
@@ -947,17 +949,13 @@ class TwisterEnv:
             self.generator = "Unix Makefiles"
         logger.info(f"Using {self.generator}..")
 
-        self.test_roots = options.testsuite_root if options else None
+        self.test_roots = options.testsuite_root
 
-        if options:
-            if not isinstance(options.board_root, list):
-                self.board_roots = [self.options.board_root]
-            else:
-                self.board_roots = self.options.board_root
-            self.outdir = os.path.abspath(options.outdir)
+        if not isinstance(options.board_root, list):
+            self.board_roots = [options.board_root]
         else:
-            self.board_roots = None
-            self.outdir = None
+            self.board_roots = options.board_root
+        self.outdir = os.path.abspath(options.outdir)
 
         self.snippet_roots = [Path(ZEPHYR_BASE)]
         modules = zephyr_module.parse_modules(ZEPHYR_BASE)
@@ -984,14 +982,14 @@ class TwisterEnv:
 
         self.hwm = None
 
-        self.test_config = options.test_config if options else None
+        self.test_config = options.test_config
 
-        self.alt_config_root = options.alt_config_root if options else None
+        self.alt_config_root = options.alt_config_root
 
     def non_default_options(self) -> dict:
         """Returns current command line options which are set to non-default values."""
         diff = {}
-        if not self.options or not self.default_options:
+        if not self.default_options:
             return diff
         dict_options = vars(self.options)
         dict_default = vars(self.default_options)
