@@ -76,6 +76,7 @@ properties:
       - "crystal"
       - "external-sine"
       - "external-square"
+      - "disabled"
 
   lfosc-loadcap:
     type: int
