@@ -222,7 +222,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 						uint32_t *RegVal)
 {
 #if defined(CONFIG_MDIO)
-	return phy_read(eth_stm32_phy_dev, PHYReg, RegVal);
+	return phy_read(eth_stm32_phy_dev, PHYAddr, PHYReg, RegVal);
 #elif defined(CONFIG_ETH_STM32_HAL_API_V2)
 	return HAL_ETH_ReadPHYRegister(heth, PHYAddr, PHYReg, RegVal);
 #else
