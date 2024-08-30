@@ -11,7 +11,7 @@
 
 / {
 	model = "Adafruit Feather nRF52840 Express";
-	compatible = "adafruit,feather_nrf52840-express";
+	compatible = "adafruit,feather-nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
