@@ -2845,6 +2845,11 @@ int bt_hfp_hf_reject(struct bt_hfp_hf_call *call)
 		return -EINVAL;
 	}
 
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_REJECT_CALL)) {
+		LOG_ERR("AG has not ability to reject call");
+		return -ENOTSUP;
+	}
+
 	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING) {
 		err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 		if (err < 0) {
