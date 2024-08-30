@@ -25,8 +25,7 @@
 
 static struct bt_conn *default_conn;
 struct bt_hfp_ag *hfp_ag;
-
-static struct bt_br_discovery_param br_discover;
+struct bt_hfp_ag_call *hfp_ag_call;
 
 static struct bt_br_discovery_param br_discover;
 static struct bt_br_discovery_result scan_result[CONFIG_BT_HFP_AG_DISCOVER_RESULT_COUNT];
@@ -43,6 +42,9 @@ NET_BUF_POOL_DEFINE(sdp_discover_pool, 10, BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_
 
 static void ag_connected(struct bt_hfp_ag *ag)
 {
+	if (!hfp_ag) {
+		hfp_ag = ag;
+	}
 	printk("HFP AG connected!\n");
 	k_work_schedule(&call_connect_work, K_MSEC(CONFIG_BT_HFP_AG_START_CALL_DELAY_TIME));
 }
@@ -62,38 +64,40 @@ static void ag_sco_disconnected(struct bt_hfp_ag *ag)
 	printk("HFP AG SCO disconnected!\n");
 }
 
-static void ag_ringing(struct bt_hfp_ag *ag, bool in_band)
+static void ag_ringing(struct bt_hfp_ag_call *call, bool in_band)
 {
 	printk("Ringing (in bond? %s)\n", in_band ? "Yes" : "No");
 }
 
-static void ag_accept(struct bt_hfp_ag *ag)
+static void ag_accept(struct bt_hfp_ag_call *call)
 {
 	printk("Call Accepted\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(10));
 }
 
-static void ag_reject(struct bt_hfp_ag *ag)
+static void ag_reject(struct bt_hfp_ag_call *call)
 {
 	printk("Call Rejected\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(1));
 }
 
-static void ag_terminate(struct bt_hfp_ag *ag)
+static void ag_terminate(struct bt_hfp_ag_call *call)
 {
 	printk("Call terminated\n");
 	k_work_schedule(&call_disconnect_work, K_SECONDS(1));
 }
 
-static void ag_outgoing(struct bt_hfp_ag *ag, const char *number)
+static void ag_outgoing(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
+	hfp_ag_call = call;
 	printk("Call outgoing, remote number %s\n", number);
 	k_work_cancel_delayable(&call_connect_work);
 	k_work_schedule(&call_remote_ringing_work, K_SECONDS(1));
 }
 
-static void ag_incoming(struct bt_hfp_ag *ag, const char *number)
+static void ag_incoming(struct bt_hfp_ag *ag, struct bt_hfp_ag_call *call, const char *number)
 {
+	hfp_ag_call = call;
 	printk("Incoming call, remote number %s\n", number);
 	k_work_cancel_delayable(&call_connect_work);
 }
@@ -329,7 +333,7 @@ static void call_remote_ringing_work_handler(struct k_work *work)
 
 	printk("Remote starts ringing\n");
 
-	err = bt_hfp_ag_remote_ringing(hfp_ag);
+	err = bt_hfp_ag_remote_ringing(hfp_ag_call);
 
 	if (err != 0) {
 		printk("Fail to notify hfp unit that the remote starts ringing (err %d)\n", err);
@@ -344,7 +348,7 @@ static void call_remote_accept_work_handler(struct k_work *work)
 
 	printk("Remote accepts the call\n");
 
-	err = bt_hfp_ag_remote_accept(hfp_ag);
+	err = bt_hfp_ag_remote_accept(hfp_ag_call);
 
 	if (err != 0) {
 		printk("Fail to notify hfp unit that the remote accepts call (err %d)\n", err);
