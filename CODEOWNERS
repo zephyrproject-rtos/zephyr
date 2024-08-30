@@ -318,6 +318,7 @@
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
+/drivers/sensor/magntek/mt6701/magntek_mt6701.c   @viniciusmiguel
 /drivers/sensor/qdec_stm32/               @valeriosetti
 /drivers/sensor/rpi_pico_temp/            @soburi
 /drivers/sensor/st*/                      @avisconti
@@ -487,3 +488,4 @@
 /dts/bindings/gpio/*ads114s0x*            @benediktibk
 /dts/bindings/pwm/*max31790*              @benediktibk
 /dts/bindings/dac/*ad56*                  @benediktibk
+/dts/bindings/sensor/magntek,mt6701.yaml  @viniciusmiguel

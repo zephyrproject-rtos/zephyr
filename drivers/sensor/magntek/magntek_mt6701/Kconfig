@@ -1,0 +1,12 @@
+# MT6701 Angular position sensor configuration option
+
+# Copyright (c) 2024, Vinicius Miguel
+# SPDX-License-Identifier: Apache-2.0
+
+config MAGNTEK_MT6701
+	bool "MT6701 Angular position sensor"
+	default y
+	depends on DT_HAS_MAGNTEK_MT6701_ENABLED
+	select SPI
+	help
+	  Enable driver for MT6701 Angular position sensor.

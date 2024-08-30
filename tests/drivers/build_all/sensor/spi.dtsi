@@ -379,3 +379,10 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_mt6701: mt6701@2f {
+	compatible = "magntek,mt6701";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	status = "okay";
+};

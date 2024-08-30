@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Vinicius Miguel
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/magntek/magntek_mt6701/Kconfig"
+# zephyr-keep-sorted-stop

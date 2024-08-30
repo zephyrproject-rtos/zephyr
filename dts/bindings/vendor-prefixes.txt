@@ -393,6 +393,7 @@ lxa	Linux Automation GmbH
 m5stack	M5Stack
 macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
+magntek	Shanghai MagnTek Microelectronics Inc.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
