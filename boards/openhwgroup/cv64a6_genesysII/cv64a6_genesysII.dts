@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2024 CISPA Helmholtz Center for Information Security gGmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <openhwgroup/cv64a6.dtsi>
+
+/ {
+	model = "Openhardwaregroup CV64A6 on Genesys II";
+	compatible = "ariane,cv64a6_genesysII";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &memory0;
+	};
+
+	// these devices are missing in the Northcape board
+	eth: lowrisc-eth@30000000 {
+		compatible = "lowrisc-eth";
+		device_type = "network";
+		interrupt-parent = <&PLIC0>;
+		interrupts = <3 0>;
+		local-mac-address = [00 18 3e 02 e3 7f];
+		reg = <0x0 0x30000000 0x0 0x8000>;
+	};
+    xlnx_gpio: gpio@40000000 {
+		#gpio-cells = <2>;
+		compatible = "xlnx,xps-gpio-1.00.a";
+		gpio-controller ;
+		reg = <0x0 0x40000000 0x0 0x10000 >;
+		xlnx,all-inputs = <0x0>;
+		xlnx,all-inputs-2 = <0x0>;
+		xlnx,dout-default = <0x0>;
+		xlnx,dout-default-2 = <0x0>;
+		xlnx,gpio-width = <0x8>;
+		xlnx,gpio2-width = <0x8>;
+		xlnx,interrupt-present = <0x0>;
+		xlnx,is-dual = <0x1>;
+		xlnx,tri-default = <0xffffffff>;
+		xlnx,tri-default-2 = <0xffffffff>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	// different interrupt than the CISPA version of the SoC
+	interrupts = <1>;
+};
+
+&spi0 {
+	status = "okay";
+	// different interrupt than the CISPA version of the SoC
+	interrupts = <2 2>;
+};
+
+&clint{
+	status = "okay";
+};
+
+&dma0 {
+	status = "disabled";
+};
+
+
+&mdio0{
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
