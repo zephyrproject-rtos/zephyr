@@ -159,12 +159,6 @@ endmacro()
 
 # base linker options
 macro(toolchain_ld_base)
-  # Sort the common symbols and each input section by alignment
-  # in descending order to minimize padding between these symbols.
-  zephyr_ld_option_ifdef(
-    CONFIG_LINKER_SORT_BY_ALIGNMENT
-    ${LINKERFLAGPREFIX}--sort-section=alignment
-  )
 endmacro()
 
 # generate linker script snippets from configure files
@@ -188,9 +182,6 @@ endmacro()
 
 # link C++ libraries
 macro(toolchain_ld_cpp)
-  zephyr_link_libraries(
-    -Hcplus
-  )
 endmacro()
 
 # use linker for relocation
