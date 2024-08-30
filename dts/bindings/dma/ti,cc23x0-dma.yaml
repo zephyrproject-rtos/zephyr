@@ -1,0 +1,38 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC23X0 DMA controller
+
+compatible: "ti,cc23x0-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 2
+    description: |
+      The 1st cell specifies the DMA channel to be used for the data transfer.
+      This channel should be unique between all peripherals that are using the
+      DMA instance.
+      The 2nd cell defines the peripheral trigger which is the source of the transfer.
+      See the SoC's reference manual for all the supported request sources.
+
+      Example of devicetree DMA channel configuration for the client part:
+
+      &uart0 {
+          dmas = <&dma 0 7>, <&dma 1 6>;
+          dma-names = "rx", "tx";
+      };
+
+      Above, fragment 0 and 1 represent the different channels used to transfer
+      data between peripheral and RAM. The numbers 7/6 are uart0 rx/tx triggers.
+
+dma-cells:
+  - channel
+  - trigsrc
