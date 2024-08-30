@@ -72,7 +72,8 @@ static struct http_resource_detail_static main_js_gz_resource_detail = {
 };
 
 static int echo_handler(struct http_client_ctx *client, enum http_data_status status,
-			uint8_t *buffer, size_t len, void *user_data)
+			uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
+			void *user_data)
 {
 #define MAX_TEMP_PRINT_LEN 32
 	static char print_str[MAX_TEMP_PRINT_LEN];
@@ -98,10 +99,12 @@ static int echo_handler(struct http_client_ctx *client, enum http_data_status st
 		processed = 0;
 	}
 
-	/* This will echo data back to client as the buffer and recv_buffer
-	 * point to same area.
-	 */
-	return len;
+	/* Echo data back to client */
+	response_ctx->body = buffer;
+	response_ctx->body_len = len;
+	response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
+
+	return 0;
 }
 
 static struct http_resource_detail_dynamic echo_resource_detail = {
@@ -116,42 +119,30 @@ static struct http_resource_detail_dynamic echo_resource_detail = {
 };
 
 static int uptime_handler(struct http_client_ctx *client, enum http_data_status status,
-			  uint8_t *buffer, size_t len, void *user_data)
+			  uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
+			  void *user_data)
 {
-	static bool response_sent;
+	int ret;
+	static uint8_t uptime_buf[sizeof(STRINGIFY(INT64_MAX))];
 
-	LOG_DBG("Uptime handler status %d, response_sent %d", status, response_sent);
+	LOG_DBG("Uptime handler status %d", status);
 
-	switch (status) {
-	case HTTP_SERVER_DATA_ABORTED: {
-		response_sent = false;
-		return 0;
-	}
-
-	case HTTP_SERVER_DATA_MORE: {
-		/* A payload is not expected with the GET request. Ignore any data and wait until
-		 * final callback before sending response
-		 */
-		return 0;
-	}
-
-	case HTTP_SERVER_DATA_FINAL: {
-		if (response_sent) {
-			/* Response already sent, return 0 to indicate to server that the callback
-			 * does not need to be called again.
-			 */
-			response_sent = false;
-			return 0;
+	/* A payload is not expected with the GET request. Ignore any data and wait until
+	 * final callback before sending response
+	 */
+	if (status == HTTP_SERVER_DATA_FINAL) {
+		ret = snprintf(uptime_buf, sizeof(uptime_buf), "%" PRId64, k_uptime_get());
+		if (ret < 0) {
+			LOG_ERR("Failed to snprintf uptime, err %d", ret);
+			return ret;
 		}
 
-		response_sent = true;
-		return snprintf(buffer, sizeof(uptime_buf), "%" PRId64, k_uptime_get());
+		response_ctx->body = uptime_buf;
+		response_ctx->body_len = ret;
+		response_ctx->final_chunk = true;
 	}
-	default: {
-		LOG_WRN("Unexpected status %d", status);
-		return -1;
-	}
-	}
+
+	return 0;
 }
 
 static struct http_resource_detail_dynamic uptime_resource_detail = {
@@ -189,7 +180,8 @@ static void parse_led_post(uint8_t *buf, size_t len)
 }
 
 static int led_handler(struct http_client_ctx *client, enum http_data_status status,
-		       uint8_t *buffer, size_t len, void *user_data)
+		       uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
+		       void *user_data)
 {
 	static uint8_t post_payload_buf[32];
 	static size_t cursor;
