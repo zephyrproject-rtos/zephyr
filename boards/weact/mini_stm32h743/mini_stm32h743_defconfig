@@ -19,8 +19,6 @@ CONFIG_GPIO=y
 # Enable clocks
 CONFIG_CLOCK_CONTROL=y
 
-# Enable pin controller
-CONFIG_PINCTRL=y
 
 # Logger cannot use itself to log
 CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y
