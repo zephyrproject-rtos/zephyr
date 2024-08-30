@@ -1,8 +1,13 @@
 sample:
-  name: MPU Test
+  name: Memory Protection Unit (MPU) Sample
 tests:
-  sample.mpu.mpu_test:
-    arch_allow: arm
-    filter: CONFIG_CPU_HAS_MPU and not CONFIG_ARM64
-    tags: mpu
+  sample.mpu.read_write:
+    platform_key:
+      - arch
+    arch_allow:
+      - arm
+    tags:
+      - mpu
+    depends_on:
+      - mpu
     harness: keyboard
