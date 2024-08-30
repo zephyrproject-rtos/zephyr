@@ -1,0 +1,45 @@
+/*
+ * Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <openhwgroup/cv32a6.dtsi>
+
+/ {
+	model = "CVA6 CPU in testbench";
+	compatible = "ariane,cv32a6_testbench";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &memory0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&clint{
+	status = "okay";
+};
+
+
+&dma0 {
+	status = "disabled";
+};
+
+
+
+&mdio0{
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
