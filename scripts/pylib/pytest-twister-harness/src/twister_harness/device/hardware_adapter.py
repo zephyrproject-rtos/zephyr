@@ -30,7 +30,7 @@ class HardwareAdapter(DeviceAdapter):
 
     def __init__(self, device_config: DeviceConfig) -> None:
         super().__init__(device_config)
-        self._flashing_timeout: float = self.base_timeout
+        self._flashing_timeout: float = device_config.flash_timeout
         self._serial_connection: serial.Serial | None = None
         self._serial_pty_proc: subprocess.Popen | None = None
         self._serial_buffer: bytearray = bytearray()
