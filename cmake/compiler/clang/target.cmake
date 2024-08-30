@@ -83,11 +83,3 @@ if(NOT "${ARCH}" STREQUAL "posix")
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 endif()
-
-# Load toolchain_cc-family macros
-
-macro(toolchain_cc_nostdinc)
-  if(NOT "${ARCH}" STREQUAL "posix")
-    zephyr_compile_options( -nostdinc)
-  endif()
-endmacro()
