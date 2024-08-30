@@ -317,7 +317,7 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
 				LOG_ERR("OA RX: cannot allcate packet space, skipping.");
-				return -EIO;
+				return -ENOMEM;
 			}
 			/* Skipping CRC32 */
 			ret = net_pkt_write(pkt, ctx->buf, ctx->scur - sizeof(uint32_t));
@@ -693,58 +693,47 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			adin2111_port_on_phyint(ctx->port[1]);
 		}
 
-		if (ctx->oa) {
-			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
-				ret = eth_adin2111_oa_data_read(dev, 0);
-				if (ret < 0) {
-					goto continue_unlock;
-				}
-			}
-			if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
-				ret = eth_adin2111_oa_data_read(dev, 1);
-				if (ret < 0) {
-					goto continue_unlock;
-				}
-			}
-		} else {
+		if (!ctx->oa) {
 #if CONFIG_ETH_ADIN2111_SPI_CFG0
 			if (status0 & ADIN2111_STATUS1_SPI_ERR) {
 				LOG_WRN("Detected TX SPI CRC error");
 			}
-#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
+#endif
+		}
 
+		/* handle rx interrupt(s) */
+		do {
 			/* handle port 1 rx */
 			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
-				do {
+				if (ctx->oa) {
+					ret = eth_adin2111_oa_data_read(dev, 0);
+				} else {
 					ret = adin2111_read_fifo(dev, 0U);
-					if (ret < 0) {
-						break;
-					}
+				}
 
-					ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1,
-								    &status1);
-					if (ret < 0) {
-						goto continue_unlock;
-					}
-				} while (!!(status1 & ADIN2111_STATUS1_P1_RX_RDY));
+				if (ret < 0) {
+					break;
+				}
 			}
 
 			/* handle port 2 rx */
 			if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
-				do {
+				if (ctx->oa) {
+					ret = eth_adin2111_oa_data_read(dev, 1);
+				} else {
 					ret = adin2111_read_fifo(dev, 1U);
-					if (ret < 0) {
-						break;
-					}
+				}
 
-					ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1,
-								    &status1);
-					if (ret < 0) {
-						goto continue_unlock;
-					}
-				} while (!!(status1 & ADIN2111_STATUS1_P2_RX_RDY));
+				if (ret < 0) {
+					break;
+				}
 			}
-		}
+
+			ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1, &status1);
+			if (ret < 0) {
+				break;
+			}
+		} while (status1 & (ADIN2111_STATUS1_P1_RX_RDY | ADIN2111_STATUS1_P2_RX_RDY));
 
 continue_unlock:
 		/* clear interrupts */
