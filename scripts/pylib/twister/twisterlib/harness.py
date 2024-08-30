@@ -443,6 +443,9 @@ class Pytest(Harness):
                 f'--device-serial-baud={hardware.baud}'
             ])
 
+        if hardware.flash_timeout:
+            command.append(f'--flash-timeout={hardware.flash_timeout}')
+
         options = handler.options
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
