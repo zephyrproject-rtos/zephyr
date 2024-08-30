@@ -110,7 +110,7 @@ selected by setting the ``zephyr,settings-partition`` property of the
 chosen node in the devicetree.
 
 The file path used by the file backend to store settings is selected via the
-option ``CONFIG_SETTINGS_FILE_PATH``.
+option :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`.
 
 Loading data from persisted storage
 ***********************************
@@ -319,7 +319,7 @@ handler (:kconfig:option:`CONFIG_SETTINGS_CUSTOM`).
 API Reference
 *************
 
-The Settings subsystem APIs are provided by ``settings.h``:
+The Settings subsystem APIs are provided by :zephyr_file:`include/zephyr/settings/settings.h`.
 
 API for general settings usage
 ==============================
