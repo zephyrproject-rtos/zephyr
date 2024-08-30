@@ -364,6 +364,12 @@ struct usb_association_descriptor {
 	 ((tpl) > 1024) ? ((1 << 11) | ((tpl) / 2)) :	\
 	 (tpl))
 
+/** Round up total payload length to next valid value */
+#define USB_TPL_ROUND_UP(tpl)				\
+	(((tpl) > 2048) ? ROUND_UP(tpl, 3) :		\
+	 ((tpl) > 1024) ? ROUND_UP(tpl, 2) :		\
+	 (tpl))
+
 /** Determine whether total payload length value is valid according to USB 2.0 */
 #define USB_TPL_IS_VALID(tpl)				\
 	(((tpl) > 3072) ? false :			\
