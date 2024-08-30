@@ -25,8 +25,6 @@
 #include "rfcomm_internal.h"
 #include "at.h"
 #include "sco_internal.h"
-
-#include "hfp_internal.h"
 #include "hfp_ag_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_HFP_AG_LOG_LEVEL
