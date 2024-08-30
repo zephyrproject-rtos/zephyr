@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_MDIO)
 
 #define DEVICE_PHY_BY_NAME(n) \
-	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), __CONCAT(ethernet_phy_, PHY_ADDR)))
+	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), _CONCAT(ethernet_phy_, PHY_ADDR)))
 
 static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 
