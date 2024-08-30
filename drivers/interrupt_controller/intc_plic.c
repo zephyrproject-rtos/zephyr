@@ -214,15 +214,11 @@ static void plic_irq_enable_set_state(uint32_t irq, bool enable)
 	for (uint32_t cpu_num = 0; cpu_num < arch_num_cpus(); cpu_num++) {
 		mem_addr_t en_addr =
 			get_context_en_addr(dev, cpu_num) + local_irq_to_reg_offset(local_irq);
-
 		uint32_t en_value;
-		uint32_t key;
 
-		key = irq_lock();
 		en_value = sys_read32(en_addr);
 		WRITE_BIT(en_value, local_irq & PLIC_REG_MASK, enable);
 		sys_write32(en_value, en_addr);
-		irq_unlock(key);
 	}
 }
 
@@ -238,7 +234,11 @@ static void plic_irq_enable_set_state(uint32_t irq, bool enable)
  */
 void riscv_plic_irq_enable(uint32_t irq)
 {
+	uint32_t key = irq_lock();
+
 	plic_irq_enable_set_state(irq, true);
+
+	irq_unlock(key);
 }
 
 /**
@@ -253,7 +253,11 @@ void riscv_plic_irq_enable(uint32_t irq)
  */
 void riscv_plic_irq_disable(uint32_t irq)
 {
+	uint32_t key = irq_lock();
+
 	plic_irq_enable_set_state(irq, false);
+
+	irq_unlock(key);
 }
 
 /**
