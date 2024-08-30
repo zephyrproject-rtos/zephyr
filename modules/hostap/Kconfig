@@ -168,7 +168,6 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
-	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	help
 	  Support Mbedtls 3.x to use PSA apis instead of legacy apis.
 
