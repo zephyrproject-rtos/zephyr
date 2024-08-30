@@ -45,6 +45,14 @@ int riscv_plic_irq_is_enabled(uint32_t irq);
 void riscv_plic_set_priority(uint32_t irq, uint32_t prio);
 
 /**
+ * @brief Set IRQ affinity.
+ *
+ * @param irq IRQ line.
+ * @param mask CPU bit mask.
+ */
+void riscv_plic_irq_set_affinity(uint32_t irq, uint32_t mask);
+
+/**
  * @brief Get active interrupt ID
  *
  * @return Returns the ID of an active interrupt
