@@ -30,7 +30,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
-  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
 # the command to generate linker file from template
   add_custom_command(
@@ -48,9 +47,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
+    -D__MWDT_LINKER_CMD__
     -imacros ${AUTOCONF_H}
     ${current_includes}
-    ${current_defines}
     ${template_script_defines}
     ${LINKER_SCRIPT}
     -E
@@ -160,10 +159,6 @@ endmacro()
 
 # base linker options
 macro(toolchain_ld_base)
-  if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
-    set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__MWDT_LINKER_CMD__)
-  endif()
-
   # Sort the common symbols and each input section by alignment
   # in descending order to minimize padding between these symbols.
   zephyr_ld_option_ifdef(
