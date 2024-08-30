@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Deng Baoan <dengbaoan@foxmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_AXP2101
+	bool "AXP2101 PMIC regulator driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP2101_REGULATOR_ENABLED
+	select I2C
+	help
+	  Enable the AXP2101 PMIC regulator driver
+
+if REGULATOR_AXP2101
+
+config REGULATOR_AXP2101_INIT_PRIORITY
+	int "AXP2101 regulator init priority"
+	default 75
+	help
+	  AXP2101 regulator initialization priority.
+
+endif # REGULATOR_AXP2101

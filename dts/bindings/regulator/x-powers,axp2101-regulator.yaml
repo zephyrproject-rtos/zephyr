@@ -1,0 +1,130 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Deng Baoan <dengbaoan@foxmail.com>
+
+description: |
+  AXP2101 PMIC
+
+  The AXP2101 PMIC has multiple DCDC converters and LDOs. All need to be defined as children nodes.
+  For example:
+
+  &i2c0 {
+      axp2101: axp2101@34 {
+          compatible = "x-powers,axp2101";
+          reg = <0x34>;
+          status = "okay";
+      axp2101_regulator:axp2101_regulator{
+        compatible = "x-powers,axp2101_regulator";
+        status = "okay";
+        DCDC1: DCDC1 {
+          regulator-name = "DCDC1";
+          regulator-min-microvolt = <1500000>;
+          regulator-max-microvolt = <3400000>;
+          status = "okay";
+        };
+
+        DCDC2: DCDC2 {
+          regulator-name = "DCDC2";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <1540000>;
+          status = "okay";
+        };
+
+        DCDC3: DCDC3 {
+          regulator-name = "DCDC3";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3400000>;
+          status = "okay";
+        };
+
+        DCDC4: DCDC4 {
+          regulator-name = "DCDC4";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <1840000>;
+          status = "okay";
+        };
+
+        DCDC5: DCDC5 {
+          regulator-name = "DCDC5";
+          regulator-min-microvolt = <1400000>;
+          regulator-max-microvolt = <3700000>;
+          status = "okay";
+        };
+
+        LDOA1: LDOA1 {
+          regulator-name = "LDOA1";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+
+        LDOA2: LDOA2 {
+          regulator-name = "LDOA2";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+
+        LDOA3: LDOA3 {
+          regulator-name = "LDOA3";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+        LDOA4: LDOA4 {
+          regulator-name = "LDOA4";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+        LDOB1: LDOB1 {
+          regulator-name = "LDOB1";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+        LDOB2: LDOB2 {
+          regulator-name = "LDOB2";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3500000>;
+          status = "okay";
+        };
+
+        LDOC1: LDOC1 {
+          regulator-name = "LDOC1";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <1400000>;
+          status = "okay";
+        };
+
+        LDOD1: LDOD1 {
+          regulator-name = "LDOD1";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3400000>;
+          status = "okay";
+        };
+
+        LDOD2: LDOD2 {
+          regulator-name = "LDOD2";
+          regulator-min-microvolt = <500000>;
+          regulator-max-microvolt = <3400000>;
+          status = "okay";
+        };
+      };
+    };
+  };
+
+compatible: "x-powers,axp2101-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - regulator.yaml
+
+  properties:
+    regulator-initial-mode:
+      type: int
+      default: 0
+      enum: [0, 1]
+      description: |
+        Initial operating mode. AXP2101 supports different power modes.
