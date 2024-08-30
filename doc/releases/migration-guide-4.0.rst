@@ -181,6 +181,11 @@ Bluetooth Classic
 Bluetooth Host
 ==============
 
+* The Bluetooth connection callback function :code:`bt_conn_cb.recycled` now contains an additional
+  parameter for the connection that was freed. This can be used by the callback to match against
+  connections created from an advertising set. This parameter needs to be added to all instances of
+  this callback.
+
 Bluetooth Crypto
 ================
 

@@ -77,7 +77,7 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 static void tx_complete_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN_TX */
 
-static void notify_recycled_conn_slot(void);
+static void notify_recycled_conn_slot(const void *conn);
 
 void bt_tx_irq_raise(void);
 
@@ -1477,6 +1477,7 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 
 void bt_conn_unref(struct bt_conn *conn)
 {
+	const void *recycled = conn;
 	atomic_val_t old;
 	bool deallocated;
 	enum bt_conn_type conn_type;
@@ -1505,7 +1506,7 @@ void bt_conn_unref(struct bt_conn *conn)
 	 * to claim connection object as only the first claim will be served.
 	 */
 	if (deallocated) {
-		notify_recycled_conn_slot();
+		notify_recycled_conn_slot(recycled);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
@@ -1627,20 +1628,20 @@ static void tx_complete_work(struct k_work *work)
 }
 #endif /* CONFIG_BT_CONN_TX */
 
-static void notify_recycled_conn_slot(void)
+static void notify_recycled_conn_slot(const void *conn)
 {
 #if defined(CONFIG_BT_CONN)
 	struct bt_conn_cb *callback;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
 		if (callback->recycled) {
-			callback->recycled();
+			callback->recycled(conn);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->recycled) {
-			cb->recycled();
+			cb->recycled(conn);
 		}
 	}
 #endif

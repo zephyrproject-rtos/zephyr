@@ -64,7 +64,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 }
 
-static void recycled_cb(void)
+static void recycled_cb(const void *conn)
 {
 	printk("Connection object available from previous conn. Disconnect is complete!\n");
 	raise_evt(BT_SAMPLE_EVT_DISCONNECTED);

@@ -154,7 +154,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	UNSET_FLAG(flag_connected);
 }
 
-static void recycled(void)
+static void recycled(const void *conn)
 {
 	SET_FLAG(flag_conn_recycled);
 }

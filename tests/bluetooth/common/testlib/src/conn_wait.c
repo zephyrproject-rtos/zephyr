@@ -30,7 +30,7 @@ static void on_change(struct bt_conn *conn, uint8_t err)
 	k_mutex_unlock(&conn_wait_mutex);
 }
 
-static void on_conn_recycled(void)
+static void on_conn_recycled(const void *conn)
 {
 	k_mutex_lock(&conn_wait_mutex, K_FOREVER);
 	k_condvar_broadcast(&conn_recycled);

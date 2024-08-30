@@ -60,7 +60,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	default_conn = NULL;
 }
 
-static void recycled_cb(void)
+static void recycled_cb(const void *conn)
 {
 	printk("Connection object available from previous conn. Disconnect is complete!\n");
 	raise_evt(BT_SAMPLE_EVT_DISCONNECTED);

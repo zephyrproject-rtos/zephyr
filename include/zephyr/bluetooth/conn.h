@@ -1173,8 +1173,11 @@ struct bt_conn_cb {
 	 * @ref bt_conn_unref which is used by the BT stack. Making
 	 * Bluetooth API calls in this context is error-prone and strongly
 	 * discouraged.
+	 *
+	 * @param conn Connection object that was returned. Can ONLY be used
+	 *             for comparison purposes, not API calls.
 	 */
-	void (*recycled)(void);
+	void (*recycled)(const void *conn);
 
 	/** @brief LE connection parameter update request.
 	 *

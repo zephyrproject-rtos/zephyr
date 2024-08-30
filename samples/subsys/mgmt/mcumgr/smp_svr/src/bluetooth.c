@@ -57,7 +57,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected, reason 0x%02x %s", reason, bt_hci_err_to_str(reason));
 }
 
-static void on_conn_recycled(void)
+static void on_conn_recycled(const void *conn)
 {
 	k_work_submit(&advertise_work);
 }

@@ -35,7 +35,7 @@ static DEFINE_FLAG(indicated);
 
 extern unsigned long runtime_log_level;
 
-static void recycled(void)
+static void recycled(const void *conn)
 {
 	LOG_DBG("");
 	SET_FLAG(conn_recycled);
