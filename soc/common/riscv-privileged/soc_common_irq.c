@@ -113,8 +113,13 @@ int arch_irq_is_enabled(unsigned int irq)
 
 void arch_irq_set_affinity(unsigned int irq, unsigned int mask)
 {
-	ARG_UNUSED(irq);
-	ARG_UNUSED(mask);
+#if defined(CONFIG_RISCV_PLIC_HAS_IRQ_AFFINITY)
+	unsigned int level = irq_get_level(irq);
+
+	if (level == 2) {
+		riscv_plic_irq_set_affinity(irq, mask);
+	}
+#endif
 }
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
