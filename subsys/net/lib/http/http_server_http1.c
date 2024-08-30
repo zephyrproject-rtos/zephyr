@@ -92,11 +92,6 @@ static int handle_http1_static_resource(
 	return 0;
 }
 
-#define RESPONSE_TEMPLATE_CHUNKED			\
-	"HTTP/1.1 200 OK\r\n"				\
-	"%s%s\r\n"					\
-	"Transfer-Encoding: chunked\r\n\r\n"
-
 #define RESPONSE_TEMPLATE_DYNAMIC			\
 	"HTTP/1.1 200 OK\r\n"				\
 	"%s%s\r\n\r\n"
@@ -117,26 +112,159 @@ static int handle_http1_static_resource(
 					  sizeof(http_response) - 1));	\
 	ret; })
 
+#define RESPONSE_TEMPLATE_DYNAMIC_PART1                                                            \
+	"HTTP/1.1 %d\r\n"                                                                          \
+	"Transfer-Encoding: chunked\r\n"
+
+static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
+			      const struct http_header *headers, size_t header_count)
+{
+	int ret;
+	bool content_type_sent = false;
+	char http_response[MAX(sizeof(RESPONSE_TEMPLATE_DYNAMIC_PART1) + sizeof("xxx"),
+			       CONFIG_HTTP_SERVER_MAX_HEADER_LEN + 2)];
+
+	if (status < HTTP_100_CONTINUE || status > HTTP_511_NETWORK_AUTHENTICATION_REQUIRED) {
+		LOG_DBG("Invalid HTTP status code: %d", status);
+		return -EINVAL;
+	}
+
+	if (headers == NULL && header_count > 0) {
+		LOG_DBG("NULL headers, but count is > 0");
+		return -EINVAL;
+	}
+
+	/* Send response code and transfer encoding */
+	snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_DYNAMIC_PART1, status);
+
+	ret = http_server_sendall(client, http_response,
+				  strnlen(http_response, sizeof(http_response) - 1));
+	if (ret < 0) {
+		LOG_DBG("Failed to send HTTP headers part 1");
+		return ret;
+	}
+
+	/* Send user-defined headers */
+	for (size_t i = 0; i < header_count; i++) {
+		const struct http_header *hdr = &headers[i];
+
+		if (strcasecmp(hdr->name, "Transfer-Encoding") == 0) {
+			LOG_DBG("Application is not permitted to change Transfer-Encoding header");
+			return -EACCES;
+		}
+
+		if (strcasecmp(hdr->name, "Content-Type") == 0) {
+			content_type_sent = true;
+		}
+
+		snprintk(http_response, sizeof(http_response), "%s: ", hdr->name);
+
+		ret = http_server_sendall(client, http_response,
+					  strnlen(http_response, sizeof(http_response) - 1));
+		if (ret < 0) {
+			LOG_DBG("Failed to send HTTP header name");
+			return ret;
+		}
+
+		ret = http_server_sendall(client, hdr->value, strlen(hdr->value));
+		if (ret < 0) {
+			LOG_DBG("Failed to send HTTP header value");
+			return ret;
+		}
+
+		ret = http_server_sendall(client, crlf, 2);
+		if (ret < 0) {
+			LOG_DBG("Failed to send CRLF");
+			return ret;
+		}
+	}
+
+	/* Send content-type header if it was not already sent */
+	if (!content_type_sent) {
+		const char *content_type = NULL;
+
+		if (client->current_detail != NULL) {
+			content_type = client->current_detail->content_type;
+		}
+
+		snprintk(http_response, sizeof(http_response), "Content-Type: %s\r\n",
+			 content_type == NULL ? "text/html" : content_type);
+
+		ret = http_server_sendall(client, http_response,
+					  strnlen(http_response, sizeof(http_response) - 1));
+		if (ret < 0) {
+			LOG_DBG("Failed to send Content-Type");
+			return ret;
+		}
+	}
+
+	/* Send final CRLF */
+	ret = http_server_sendall(client, crlf, 2);
+	if (ret < 0) {
+		LOG_DBG("Failed to send CRLF");
+		return ret;
+	}
+
+	return ret;
+}
+
+static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp)
+{
+	int ret;
+	char tmp[TEMP_BUF_LEN];
+
+	if (client->http1_headers_sent && (rsp->header_count > 0 || rsp->status != 0)) {
+		LOG_WRN("Already sent headers, dropping new headers and/or response code");
+	}
+
+	/* Send headers and response code if not already sent */
+	if (!client->http1_headers_sent) {
+		/* Use '200 OK' status if not specified by application */
+		if (rsp->status == 0) {
+			rsp->status = 200;
+		}
+
+		ret = http1_send_headers(client, rsp->status, rsp->headers, rsp->header_count);
+		if (ret < 0) {
+			return ret;
+		}
+
+		client->http1_headers_sent = true;
+	}
+
+	/* Send body data if provided */
+	if (rsp->body != NULL && rsp->body_len > 0) {
+		ret = snprintk(tmp, sizeof(tmp), "%x\r\n", rsp->body_len);
+		ret = http_server_sendall(client, tmp, ret);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = http_server_sendall(client, rsp->body, rsp->body_len);
+		if (ret < 0) {
+			return ret;
+		}
+
+		(void)http_server_sendall(client, crlf, 2);
+	}
+
+	return 0;
+}
+
 static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 			   struct http_client_ctx *client)
 {
 	/* offset tells from where the GET params start */
 	int ret, remaining, offset = dynamic_detail->common.path_len;
 	char *ptr;
-	char tmp[TEMP_BUF_LEN];
-
-	ret = SEND_RESPONSE(RESPONSE_TEMPLATE_CHUNKED,
-			    dynamic_detail->common.content_type);
-	if (ret < 0) {
-		return ret;
-	}
 
 	remaining = strlen(&client->url_buffer[dynamic_detail->common.path_len]);
 
 	/* Pass URL to the client */
 	while (1) {
-		int copy_len, send_len;
+		int copy_len;
 		enum http_data_status status;
+		struct http_response_ctx response_ctx;
 
 		ptr = &client->url_buffer[offset];
 		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
@@ -149,32 +277,25 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 			status = HTTP_SERVER_DATA_MORE;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len, dynamic_detail->user_data);
-		if (send_len > 0) {
-			ret = snprintk(tmp, sizeof(tmp), "%x\r\n", send_len);
-			ret = http_server_sendall(client, tmp, ret);
-			if (ret < 0) {
-				return ret;
-			}
+		memset(&response_ctx, 0, sizeof(response_ctx));
 
-			ret = http_server_sendall(client,
-						  dynamic_detail->data_buffer,
-						  send_len);
-			if (ret < 0) {
-				return ret;
-			}
-
-			(void)http_server_sendall(client, crlf, 2);
-
-			offset += copy_len;
-			remaining -= copy_len;
-
-			continue;
+		ret = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
+					 &response_ctx, dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
 		}
 
-		break;
+		ret = http1_dynamic_response(client, &response_ctx);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (http_response_is_final(&response_ctx, status)) {
+			break;
+		}
+
+		offset += copy_len;
+		remaining -= copy_len;
 	}
 
 	dynamic_detail->holder = NULL;
@@ -192,29 +313,19 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 			    struct http_client_ctx *client)
 {
 	/* offset tells from where the POST params start */
+	struct http_response_ctx response_ctx;
 	char *start = client->cursor;
 	int ret, remaining = client->data_len, offset = 0;
 	int copy_len;
 	char *ptr;
-	char tmp[TEMP_BUF_LEN];
 
 	if (start == NULL) {
 		return -ENOENT;
 	}
 
-	if (!client->http1_headers_sent) {
-		ret = SEND_RESPONSE(RESPONSE_TEMPLATE_CHUNKED,
-				    dynamic_detail->common.content_type);
-		if (ret < 0) {
-			return ret;
-		}
-		client->http1_headers_sent = true;
-	}
-
 	copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
 	while (copy_len > 0) {
 		enum http_data_status status;
-		int send_len;
 
 		ptr = &start[offset];
 
@@ -227,29 +338,38 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 			status = HTTP_SERVER_DATA_MORE;
 		}
 
-		send_len = dynamic_detail->cb(client, status,
-					      dynamic_detail->data_buffer,
-					      copy_len, dynamic_detail->user_data);
-		if (send_len > 0) {
-			ret = snprintk(tmp, sizeof(tmp), "%x\r\n", send_len);
-			ret = http_server_sendall(client, tmp, ret);
+		memset(&response_ctx, 0, sizeof(response_ctx));
+
+		ret = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
+					 &response_ctx, dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (http_response_is_provided(&response_ctx)) {
+			ret = http1_dynamic_response(client, &response_ctx);
 			if (ret < 0) {
 				return ret;
 			}
 
-			ret = http_server_sendall(client,
-						  dynamic_detail->data_buffer,
-						  send_len);
-			if (ret < 0) {
-				return ret;
+			if (http_response_is_final(&response_ctx, status)) {
+				break;
 			}
-
-			(void)http_server_sendall(client, crlf, 2);
 		}
 
 		offset += copy_len;
 		remaining -= copy_len;
 		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
+	}
+
+	/* Ensure headers are sent if not done already */
+	if (!client->http1_headers_sent) {
+		memset(&response_ctx, 0, sizeof(response_ctx));
+		response_ctx.final_chunk = true;
+		ret = http1_dynamic_response(client, &response_ctx);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {

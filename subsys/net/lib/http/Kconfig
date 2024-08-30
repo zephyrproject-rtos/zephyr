@@ -107,6 +107,17 @@ config HTTP_SERVER_MAX_HEADER_LEN
 	  internal header processing, and only needs to be increased if the
 	  application wishes to access headers of a greater length.
 
+config HTTP_SERVER_HTTP2_MAX_HEADER_FRAME_LEN
+	int "Maximum HTTP/2 response header frame length"
+	default 64
+	range 64 2048
+	help
+	  This setting determines the maximum length of an HTTP/2 header frame
+	  (applies to response headers only, not request headers). The default
+	  value is sufficient for the standard headers included with a response,
+	  and only needs to be increased if the application wishes to send
+	  additional response headers.
+
 config HTTP_SERVER_CAPTURE_HEADERS
 	bool "Allow capturing HTTP headers for application use"
 	help

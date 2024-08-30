@@ -25,6 +25,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/http/parser.h>
 #include <zephyr/net/http/hpack.h>
+#include <zephyr/net/http/status.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -161,6 +162,22 @@ enum http_data_status {
 	HTTP_SERVER_DATA_FINAL = 1,
 };
 
+/** @brief HTTP header representation */
+struct http_header {
+	const char *name;  /**< Pointer to header name NULL-terminated string. */
+	const char *value; /**< Pointer to header value NULL-terminated string. */
+};
+
+/** @brief HTTP response context */
+struct http_response_ctx {
+	enum http_status status;           /** HTTP status code to include in response */
+	const struct http_header *headers; /** Array of HTTP headers */
+	size_t header_count;               /** Length of headers array */
+	const uint8_t *body;               /** Pointer to body data */
+	size_t body_len;                   /** Length of body data */
+	bool final_chunk; /** Flag set to true when the application has no more data to send */
+};
+
 /**
  * @typedef http_resource_dynamic_cb_t
  * @brief Callback used when data is received. Data to be sent to client
@@ -170,6 +187,7 @@ enum http_data_status {
  * @param status HTTP data status, indicate whether more data is expected or not.
  * @param data_buffer Data received.
  * @param data_len Amount of data received.
+ * @param response_ctx
  * @param user_data User specified data.
  *
  * @return >0 amount of data to be sent to client, let server to call this
@@ -181,6 +199,7 @@ typedef int (*http_resource_dynamic_cb_t)(struct http_client_ctx *client,
 					  enum http_data_status status,
 					  uint8_t *data_buffer,
 					  size_t data_len,
+					  struct http_response_ctx *response_ctx,
 					  void *user_data);
 
 /**
@@ -328,12 +347,6 @@ struct http2_frame {
 };
 
 #if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
-/** @brief HTTP header representation */
-struct http_header {
-	const char *name;  /**< Pointer to header name NULL-terminated string. */
-	const char *value; /**< Pointer to header value NULL-terminated string. */
-};
-
 /** @brief Status of captured headers */
 enum http_header_status {
 	HTTP_HEADER_STATUS_OK,      /**< All available headers were successfully captured. */
