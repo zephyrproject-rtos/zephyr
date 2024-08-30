@@ -3,7 +3,12 @@ sample:
     a number of threads
   name: SMP Pi
 common:
-  tags: introduction
+  platform_key:
+    - arch
+  tags:
+    - smp
+  depends_on:
+    - smp
   integration_platforms:
     - qemu_x86_64
   harness: console
@@ -15,6 +20,4 @@ common:
       - "Pi value calculated by thread #[0-9]+: [0-9]+(.*)"
       - "All [0-9]+ threads executed by [0-9]+ cores in [0-9]+ msec(.*)"
 tests:
-  sample.smp.pi:
-    tags: introduction
-    filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+  sample.smp.pi: {}
