@@ -158,13 +158,12 @@ static const uint8_t reference_as_ep_descriptor[] = {
 	0x00, 0x00,		/* wLockDelay = 0 */
 };
 
-DT_FOREACH_CHILD(DT_NODELABEL(uac2_headset), VALIDATE_NODE)
+VALIDATE_INSTANCE(DT_NODELABEL(uac2_headset))
 
 UAC2_DESCRIPTOR_ARRAYS(DT_NODELABEL(uac2_headset))
 
-const static struct usb_desc_header *generated_uac2_descriptor_set[] = {
-	UAC2_DESCRIPTOR_PTRS(DT_NODELABEL(uac2_headset))
-};
+const static struct usb_desc_header *generated_uac2_descriptor_set[] =
+	UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_NODELABEL(uac2_headset));
 
 ZTEST(uac2_desc, test_uac2_descriptors)
 {
