@@ -3,8 +3,11 @@
 #
 # Copyright (c) 2018-2022 Intel Corporation
 # Copyright 2022 NXP
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import logging
 import math
 import os
@@ -24,6 +27,7 @@ from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.platform import Platform
 from twisterlib.statuses import TwisterStatus
+from typing import Optional
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
@@ -69,11 +73,12 @@ def terminate_process(proc):
 
 
 class Handler:
-    def __init__(self, instance, type_str="build"):
+    def __init__(self, instance, type_str: str, options: argparse.Namespace,
+                 generator_cmd: Optional[str] = None, suite_name_check: bool = True):
         """Constructor
 
         """
-        self.options = None
+        self.options = options
 
         self.run = False
         self.type_str = type_str
@@ -87,8 +92,8 @@ class Handler:
         self.build_dir = instance.build_dir
         self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
-        self.generator_cmd = None
-        self.suite_name_check = True
+        self.generator_cmd = generator_cmd
+        self.suite_name_check = suite_name_check
         self.ready = False
 
         self.args = []
@@ -170,16 +175,18 @@ class Handler:
 
 
 class BinaryHandler(Handler):
-    def __init__(self, instance, type_str):
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+                 suite_name_check: bool = True):
         """Constructor
 
         @param instance Test Instance
         """
-        super().__init__(instance, type_str)
+        super().__init__(instance, type_str, options, generator_cmd, suite_name_check)
 
         self.seed = None
         self.extra_test_args = None
         self.line = b""
+        self.binary: Optional[str] = None
 
     def try_kill_process_by_pid(self):
         if self.pid_fn:
@@ -359,12 +366,13 @@ class BinaryHandler(Handler):
 
 
 class SimulationHandler(BinaryHandler):
-    def __init__(self, instance, type_str):
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+                 suite_name_check: bool = True):
         """Constructor
 
         @param instance Test Instance
         """
-        super().__init__(instance, type_str)
+        super().__init__(instance, type_str, options, generator_cmd, suite_name_check)
 
         if type_str == 'renode':
             self.pid_fn = os.path.join(instance.build_dir, "renode.pid")
@@ -374,14 +382,6 @@ class SimulationHandler(BinaryHandler):
 
 
 class DeviceHandler(Handler):
-
-    def __init__(self, instance, type_str):
-        """Constructor
-
-        @param instance Test Instance
-        """
-        super().__init__(instance, type_str)
-
     def get_test_timeout(self):
         timeout = super().get_test_timeout()
         if self.options.enable_coverage:
@@ -809,13 +809,14 @@ class QEMUHandler(Handler):
     for these to collect whether the test passed or failed.
     """
 
-    def __init__(self, instance, type_str):
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+                 suite_name_check: bool = True):
         """Constructor
 
         @param instance Test instance
         """
 
-        super().__init__(instance, type_str)
+        super().__init__(instance, type_str, options, generator_cmd, suite_name_check)
         self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
 
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
@@ -1110,13 +1111,14 @@ class QEMUWinHandler(Handler):
      for these to collect whether the test passed or failed.
      """
 
-    def __init__(self, instance, type_str):
+    def __init__(self, instance, type_str: str, options: argparse.Namespace, generator_cmd: Optional[str] = None,
+                 suite_name_check: bool = True):
         """Constructor
 
         @param instance Test instance
         """
 
-        super().__init__(instance, type_str)
+        super().__init__(instance, type_str, options, generator_cmd, suite_name_check)
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
         self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
         self.pipe_handle = None
