@@ -618,6 +618,11 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
+	if (!api->send) {
+		ret = -ENOTSUP;
+		goto error;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) &&
 	    net_pkt_is_l2_bridged(pkt)) {
 		net_pkt_cursor_init(pkt);
