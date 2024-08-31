@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2024 ATL Electronics
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +54,7 @@
 
 		sram0: memory@42020000 {
 			compatible = "mmio-sram";
+			reg = <0x42020000 DT_SIZE_K(64)>;
 		};
 		sram1: memory@42030000 {
 			compatible = "mmio-sram";
@@ -83,11 +85,11 @@
 			ranges = <0x40000000 0x40000000 0x1000>;
 			status = "okay";
 
-			glb: gpio@40000000 {
+			gpio: gpio@40000000 {
 				compatible = "bflb,bl-gpio";
 				reg = <0x40000000 0x1000>;
 				interrupts = <1 0>;
-				interrupt-parent = <&ictrl>;
+				interrupt-parent = <&clic>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				#bflb,pin-cells = <2>;
@@ -98,20 +100,17 @@
 		spi0: spi@4000a200 {
 			compatible = "bflb,bl-spi";
 			reg = <0x4000a200 0x100>;
-			peripheral-id = <0>;
-			interrupts = <27 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <43 0>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
-
 		spi1: spi@4000b000 {
 			compatible = "bflb,bl-qspi";
 			reg = <0x4000b000 0x1000>;
-			peripheral-id = <0>;
-			interrupts = <23 0>;
-			interrupt-parent = <&ictrl>;
+			interrupts = <39 0>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -120,17 +119,15 @@
 		uart0: uart@4000a000 {
 			compatible = "bflb,bl-uart";
 			reg = <0x4000a000 0x100>;
-			peripheral-id = <0>;
 			interrupts = <29 0>;
-			interrupt-parent = <&ictrl>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
 		uart1: uart@4000a100 {
 			compatible = "bflb,bl-uart";
 			reg = <0x4000a100 0x100>;
-			peripheral-id = <1>;
 			interrupts = <30 0>;
-			interrupt-parent = <&ictrl>;
+			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
 	};
