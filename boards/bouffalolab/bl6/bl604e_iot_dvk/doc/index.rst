@@ -39,6 +39,8 @@ The board configuration supports the following hardware features:
 +===========+============+=======================+
 | MTIMER    | on-chip    | RISC-V Machine Timer  |
 +-----------+------------+-----------------------+
+| GPIO      | on-chip    | gpio                  |
++-----------+------------+-----------------------+
 | PINCTRL   | on-chip    | pin muxing            |
 +-----------+------------+-----------------------+
 | UART      | on-chip    | serial port-polling;  |

@@ -11,20 +11,20 @@ include:
   - name: gpio-controller.yaml
 
 properties:
-    reg:
-      required: true
+  reg:
+    required: true
 
-    interrupts:
-      required: true
+  interrupts:
+    required: true
 
-    "#gpio-cells":
-      const: 2
+  "#gpio-cells":
+    const: 2
 
-    "#bflb,pin-cells":
-      type: int
-      required: true
-      const: 2
-      description: Number of items to expect in a bflb,pins specifier
+  "#bflb,pin-cells":
+    type: int
+    required: true
+    const: 2
+    description: Number of items to expect in a bflb,pins specifier
 
 gpio-cells:
   - pin
