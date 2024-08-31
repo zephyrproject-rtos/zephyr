@@ -269,6 +269,20 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_COUNTER_MCUX_GPT */
 
+#ifdef CONFIG_MCUX_ACMP
+
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(acmp1), okay)  \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp2), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp3), okay) \
+	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp4), okay))
+	/* Configure ACMP using MuxSysPll3Out */
+	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Acmp, &rootCfg);
+#endif
+
+#endif /* CONFIG_MCUX_ACMP */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
