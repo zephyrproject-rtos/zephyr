@@ -119,14 +119,14 @@
 		uart0: uart@4000a000 {
 			compatible = "bflb,bl-uart";
 			reg = <0x4000a000 0x100>;
-			interrupts = <29 0>;
+			interrupts = <45 0>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
 		uart1: uart@4000a100 {
 			compatible = "bflb,bl-uart";
 			reg = <0x4000a100 0x100>;
-			interrupts = <30 0>;
+			interrupts = <46 0>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
 		};

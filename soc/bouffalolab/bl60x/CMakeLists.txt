@@ -11,3 +11,4 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld 
 zephyr_code_relocate_ifdef(CONFIG_GPIO_BFLB LIBRARY drivers__gpio LOCATION ITCM)
 zephyr_code_relocate_ifdef(CONFIG_PINCTRL_BFLB LIBRARY drivers__pinctrl LOCATION ITCM)
 zephyr_code_relocate_ifdef(CONFIG_RISCV_MACHINE_TIMER LIBRARY drivers__timer LOCATION ITCM)
+zephyr_code_relocate_ifdef(CONFIG_UART_BFLB LIBRARY drivers__serial LOCATION ITCM)
