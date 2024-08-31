@@ -26,6 +26,10 @@ zephyr_library_sources_ifdef(
   a2dp.c
   )
 zephyr_library_sources_ifdef(
+    CONFIG_BT_SPP
+    spp.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_ISO
   iso.c
   )
