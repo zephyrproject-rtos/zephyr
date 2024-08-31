@@ -7,7 +7,7 @@
 /dts-v1/;
 #include <st/l4/stm32l4r5Xi.dtsi>
 #include <st/l4/stm32l4r5z(g-i)yx-pinctrl.dtsi>
-#include "feather_connector.dtsi"
+#include <adafruit/feather_connector.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {

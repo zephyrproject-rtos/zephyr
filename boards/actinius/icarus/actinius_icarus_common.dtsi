@@ -221,7 +221,7 @@
 };
 
 /* Include file with mappings and aliases for feather compatibility */
-#include "feather_connector.dtsi"
+#include <adafruit/feather_connector.dtsi>
 
 /* Include partition configuration file */
 #include "actinius_icarus_partition_conf.dtsi"
