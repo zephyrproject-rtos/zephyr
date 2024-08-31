@@ -115,12 +115,16 @@ Boards & SoC Support
 
 * Added support for these SoC series:
 
+  * Raspberry Pi RP2350
+
 * Made these changes in other SoC series:
 
   * NXP S32Z270: Added support for the new silicon cut version 2.0. Note that the previous
     versions (1.0 and 1.1) are no longer supported.
 
 * Added support for these boards:
+
+  * :ref:`Raspberry Pi Pico 2 <rpi_pico2>`: ``rpi_pico2``.
 
 * Made these board changes:
 
