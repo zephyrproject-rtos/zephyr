@@ -196,18 +196,20 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
 		},
 	};
-	const struct device *dev;
-	const struct ethernet_api *api;
+
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
 
 	/* Make sure we're an ethernet device */
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return;
 	}
 
-	dev = net_if_get_device(iface);
-	api = dev->api;
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
+		return;
+	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) || api->set_config == NULL) {
+	if (!api || !api->set_config) {
 		return;
 	}
 
