@@ -137,10 +137,15 @@ static void netusb_init(struct net_if *iface)
 	LOG_INF("netusb initialized");
 }
 
+static enum ethernet_hw_caps netusb_get_capabilities(const struct device *dev)
+{
+	return 0;
+}
+
 static const struct ethernet_api netusb_api_funcs = {
 	.iface_api.init = netusb_init,
 
-	.get_capabilities = NULL,
+	.get_capabilities = netusb_get_capabilities,
 	.send = netusb_send,
 };
 
