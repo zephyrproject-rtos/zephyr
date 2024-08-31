@@ -164,9 +164,9 @@ manifest:
       groups:
         - hal
     - name: hal_bouffalolab
-      remote: nandojve
+      revision: main
       path: modules/hal/bouffalolab
-      revision: sdk-v1.4.5
+      remote: nandojve
       groups:
         - hal
     - name: hal_espressif
