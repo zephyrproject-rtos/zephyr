@@ -14,6 +14,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/types.h>
+#include <zephyr/dt-bindings/pinctrl/bflb-common-pinctrl.h>
 
 /* clang-format off */
 

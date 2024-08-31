@@ -5,3 +5,4 @@
  */
 
 #include <bouffalolab/bl60x.dtsi>
+#include <dt-bindings/pinctrl/bl602x-pinctrl.h>
