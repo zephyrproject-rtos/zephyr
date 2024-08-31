@@ -2,7 +2,7 @@
    :name: LED strip
    :relevant-api: led_strip_interface
 
-   Control an LED strip example.
+   Control an LED strip.
 
 Overview
 ********
@@ -68,7 +68,7 @@ modified by changing the :kconfig:option:`CONFIG_SAMPLE_LED_UPDATE_DELAY`.
 Then build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_strip
+   :zephyr-app: samples/drivers/led/led_strip
    :board: <board>
    :goals: flash
    :compact:

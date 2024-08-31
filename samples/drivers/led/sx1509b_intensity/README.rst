@@ -14,7 +14,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_sx1509b_intensity
+   :zephyr-app: samples/drivers/led/sx1509b_intensity
    :board: thingy52/nrf52832
    :goals: build flash
    :compact:
