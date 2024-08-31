@@ -34,6 +34,13 @@
 #define MTIME_REG	DT_INST_REG_ADDR(0)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
 #define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
+/* sifive,clic */
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clic)
+#define DT_DRV_COMPAT sifive_clic
+
+#define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
+#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
+#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* sifive,clint0 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
 #define DT_DRV_COMPAT sifive_clint0
