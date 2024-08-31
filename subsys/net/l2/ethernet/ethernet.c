@@ -166,10 +166,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
-	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
-
-	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
+	return (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN_TAG_STRIP);
 }
 
 /* Drop packet if it has broadcast destination MAC address but the IP
@@ -210,7 +207,7 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 	dev = net_if_get_device(iface);
 	api = dev->api;
 
-	if (!(api->get_capabilities(dev) & ETHERNET_HW_FILTERING) || api->set_config == NULL) {
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) || api->set_config == NULL) {
 		return;
 	}
 
@@ -868,7 +865,7 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!(api->get_capabilities(dev) & ETHERNET_PTP)) {
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PTP)) {
 		return NULL;
 	}
 
