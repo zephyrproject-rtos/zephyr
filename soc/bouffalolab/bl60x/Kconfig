@@ -1,15 +1,18 @@
 # Copyright (c) 2021-2024 ATL Electronics
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_BL6
+config SOC_SERIES_BL60X
 	select RISCV
-	select RISCV_HAS_CPU_IDLE
 	select RISCV_MACHINE_TIMER
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_CLIC
+	select RISCV_VECTORED_MODE
 	select ATOMIC_OPERATIONS_C
-	select COMPRESSED_ISA
+	select CODE_DATA_RELOCATION
 	select CPU_HAS_FPU
+	select GEN_IRQ_VECTOR_TABLE
 	select INCLUDE_RESET_VECTOR
 	select SOC_EARLY_INIT_HOOK
 	select XIP
@@ -17,6 +20,7 @@ config SOC_SERIES_BL6
 	select RISCV_ISA_RV32I
 	select RISCV_ISA_EXT_M
 	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select RISCV_ISA_EXT_ZIFENCEI

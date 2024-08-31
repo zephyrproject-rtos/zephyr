@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2024 ATL Electronics
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,18 +16,11 @@
 #define _SOC__H_
 
 #include <zephyr/sys/util.h>
-#include <../common/soc_common.h>
 
 #ifndef _ASMLANGUAGE
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>
-
-#if defined(CONFIG_SOC_SERIES_BL6)
-#include <bl602.h>
-#else
-#error Library does not support the specified device.
-#endif
 
 /* clang-format off */
 
@@ -39,8 +33,15 @@
 #define RISCV_RAM_SIZE                    KB(DT_SRAM_SIZE)
 
 #define SOC_BOUFFALOLAB_BL_PLL160_FREQ_HZ (160000000)
+#define SOC_BOUFFALOLAB_BL_PLL96_FREQ_HZ  (96000000)
 #define SOC_BOUFFALOLAB_BL_HCLK_FREQ_HZ	\
 		DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#define ITCMF __attribute__((section(".itcm")))
+#else
+#define ITCMF
+#endif
 
 /* clang-format on */
 

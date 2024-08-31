@@ -1,23 +1,24 @@
 # Copyright (c) 2021-2024 ATL Electronics
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_BL6
+config SOC_SERIES_BL60X
 	bool
 	select SOC_FAMILY_BFLB
 	help
 	  Enable support for BouffaloLab BL6xx MCU series
 
 config SOC_SERIES
-	default "bl6" if SOC_SERIES_BL6
+	default "bl60x" if SOC_SERIES_BL60X
 
 config SOC_BL602C00Q2I
 	bool
-	select SOC_SERIES_BL6
+	select SOC_SERIES_BL60X
 
 config SOC_BL602C20Q2I
 	bool
-	select SOC_SERIES_BL6
+	select SOC_SERIES_BL60X
 
 config SOC_BL602C20Q2IS
 	bool
@@ -37,7 +38,7 @@ config SOC_BL602l20Q2H
 
 config SOC_BL604E20Q2I
 	bool
-	select SOC_SERIES_BL6
+	select SOC_SERIES_BL60X
 
 config SOC
 	default "bl602c00q2i"  if SOC_BL602C00Q2I
