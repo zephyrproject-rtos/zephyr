@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Andrew Featherstone
+ */
+
+#include "rpi_pico.overlay"
+
+&adc {
+	status="okay";
+};
