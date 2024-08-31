@@ -25,7 +25,7 @@ Build the application for the :ref:`96b_neonkey` board, which has an
 LP3943 driver included.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_lp3943
+   :zephyr-app: samples/drivers/led/lp3943
    :board: 96b_neonkey
    :goals: build
    :compact:

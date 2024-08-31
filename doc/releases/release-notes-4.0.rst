@@ -164,6 +164,8 @@ Drivers and Sensors
 
   * lp5569: added ``enable-gpios`` property to describe the EN/PWM GPIO of the lp5569.
 
+  * LED code samples have been consolidated under the :zephyr_file:`samples/drivers/led` directory.
+
 * LED Strip
 
 * LoRa

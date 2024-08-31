@@ -1739,7 +1739,7 @@ Release Notes:
     - drivers/led/
     - include/zephyr/drivers/led/
     - include/zephyr/drivers/led.h
-    - samples/drivers/led_*/
+    - samples/drivers/led/
     - tests/drivers/led/
     - doc/hardware/peripherals/led.rst
     - tests/drivers/build_all/led/
