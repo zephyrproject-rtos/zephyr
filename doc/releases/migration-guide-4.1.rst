@@ -34,6 +34,7 @@ STM32
   as it was introduced earlier.
   The Kconfig method for configuration is now removed.
 
+* Raspberry Pi: ``CONFIG_SOC_SERIES_RP2XXX`` is renamed to :kconfig:option:`CONFIG_SOC_SERIES_RP2040`.
 
 Modules
 *******
