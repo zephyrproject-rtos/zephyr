@@ -24,7 +24,7 @@ Build the application for the :ref:`nucleo_f334r8_board` board, and connect
 a PCA9633 LED driver on the bus I2C Arduino.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_pca9633
+   :zephyr-app: samples/drivers/led/pca9633
    :board: nucleo_f334r8_board
    :goals: build
    :compact:

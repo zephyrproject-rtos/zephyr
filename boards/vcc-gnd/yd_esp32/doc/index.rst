@@ -239,7 +239,7 @@ The board contains an addressable RGB LED (`XL-5050RGBC-WS2812B`_), driven by GP
 Here is an example of how to test it using the :zephyr:code-sample:`led-strip` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_strip
+   :zephyr-app: samples/drivers/led/led_strip
    :board: yd_esp32/esp32/procpu
    :goals: flash
 
