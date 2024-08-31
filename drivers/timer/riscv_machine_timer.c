@@ -13,6 +13,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
+/* clang-format off */
+
 /* andestech,machine-timer */
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_machine_timer)
 #define DT_DRV_COMPAT andestech_machine_timer
@@ -33,6 +35,13 @@
 
 #define MTIME_REG	DT_INST_REG_ADDR(0)
 #define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 8)
+#define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
+/* sifive,clic */
+#elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clic)
+#define DT_DRV_COMPAT sifive_clic
+
+#define MTIME_REG	(DT_INST_REG_ADDR(0) + 0xbff8U)
+#define MTIMECMP_REG	(DT_INST_REG_ADDR(0) + 0x4000U)
 #define TIMER_IRQN	DT_INST_IRQ_BY_IDX(0, 1, irq)
 /* sifive,clint0 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifive_clint0)
@@ -104,6 +113,8 @@
 #define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
 #define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
 #define CYCLES_MAX	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+
+/* clang-format on */
 
 static struct k_spinlock lock;
 static uint64_t last_count;
