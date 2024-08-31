@@ -354,6 +354,222 @@
 		#io-channel-cells = <1>;
 		clocks = <&ccm IMX_CCM_LPADC2_CLK 0 0>;
 	};
+
+	qtmr1: qtmr@2690000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x2690000 0x4000>;
+		interrupts = <0 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr1_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr1_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr1_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr1_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr2: qtmr@26a0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26a0000 0x4000>;
+		interrupts = <233 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr2_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr2_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr2_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr2_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr3: qtmr@26b0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26b0000 0x4000>;
+		interrupts = <164 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr3_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr3_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr3_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr3_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr4: qtmr@26c0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26c0000 0x4000>;
+		interrupts = <151 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr4_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr4_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr4_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr4_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr5: qtmr@26d0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26d0000 0x4000>;
+		interrupts = <4 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr5_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr5_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr5_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr5_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr6: qtmr@26e0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26e0000 0x4000>;
+		interrupts = <5 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr6_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr6_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr6_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr6_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr7: qtmr@26f0000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x26f0000 0x4000>;
+		interrupts = <6 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr7_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr7_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr7_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr7_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	qtmr8: qtmr@2700000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x2700000 0x4000>;
+		interrupts = <7 0>;
+		clocks = <&ccm IMX_CCM_QTMR_CLK 0x0 0>;
+		qtmr8_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+		qtmr8_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+		qtmr8_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+		qtmr8_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
 };
 
 &flexspi1 {

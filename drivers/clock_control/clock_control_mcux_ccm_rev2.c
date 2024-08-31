@@ -187,14 +187,20 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_PWM_MCUX_QTMR
+#if defined(CONFIG_PWM_MCUX_QTMR) || defined(CONFIG_COUNTER_MCUX_QTMR)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_QTMR_CLK:
+		clock_root = kCLOCK_Root_Bus_Aon;
+		break;
+#else
 	case IMX_CCM_QTMR1_CLK:
 	case IMX_CCM_QTMR2_CLK:
 	case IMX_CCM_QTMR3_CLK:
 	case IMX_CCM_QTMR4_CLK:
 		clock_root = kCLOCK_Root_Bus;
 		break;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMXRT118X */
+#endif /* CONFIG_PWM_MCUX_QTMR || CONFIG_COUNTER_MCUX_QTMR */
 
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 	case IMX_CCM_FLEXSPI_CLK:
