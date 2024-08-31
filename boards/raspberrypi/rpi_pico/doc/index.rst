@@ -96,6 +96,8 @@ hardware features:
      - :kconfig:option:`CONFIG_SPI`
      - :dtcompatible:`raspberrypi,pico-spi-pio`
 
+.. _rpi_pico_pin_mapping:
+
 Pin Mapping
 ===========
 

@@ -24,6 +24,8 @@ Kernel
 Boards
 ******
 
+* Raspberry Pi: ``CONFIG_SOC_SERIES_RP2XXX`` is renamed to :kconfig:option:`CONFIG_SOC_SERIES_RP2040`.
+
 Modules
 *******
 
