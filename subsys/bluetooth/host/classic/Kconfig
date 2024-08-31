@@ -178,6 +178,22 @@ config BT_A2DP_SINK
 
 endif # BT_A2DP
 
+config BT_SPP
+	bool "Bluetooth SPP Profile [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_RFCOMM
+	default n
+	help
+	  This option enables the Bluetooth SPP profile
+
+if BT_SPP
+config BT_SPP_MAX_CHANNEL_NUM
+	int "Bluetooth SPP Server Channel Max Number"
+	default 4
+	help
+	  This option sets the SPP server channel max number
+endif # BT_SPP
+
 config BT_PAGE_TIMEOUT
 	hex "Bluetooth Page Timeout"
 	default 0x2000

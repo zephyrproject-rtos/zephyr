@@ -74,6 +74,7 @@ BT_PASSKEY_KEYPRESS,n,experimental
 BT_PER_ADV_RSP,n,experimental
 BT_PER_ADV_SYNC_RSP,n,experimental
 BT_RFCOMM,n,experimental
+BT_SPP,n,experimental
 CAN_NET,n,experimental
 CRYPTO_MBEDTLS_SHIM,n,experimental
 CRYPTO_TINYCRYPT_SHIM,n,experimental
