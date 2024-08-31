@@ -5,7 +5,6 @@ tests:
   sample.sensor.max30101:
     harness: sensor
     tags: sensors
-    platform_allow: hexiwear/mk64f12
-    depends_on: i2c
-    integration_platforms:
+    platform_allow:
       - hexiwear/mk64f12
+    depends_on: i2c

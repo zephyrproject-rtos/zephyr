@@ -8,7 +8,12 @@ common:
 
 tests:
   sample.sensor.qdec_sensor:
-    filter: dt_alias_exists("qdec0")
+    platform_allow:
+      - mimxrt1050_evk@qspi
+      - mimxrt1050_evk
+      - esp32s3_luatos_core/esp32s3/procpu
+    integration_platforms:
+      - mimxrt1050_evk
     harness_config:
       type: multi_line
       ordered: true
@@ -28,7 +33,8 @@ tests:
         - "Position = (.*) degrees"
 
   sample.sensor.st_qdec_sensor:
-    platform_allow: nucleo_f401re
+    platform_allow:
+      - nucleo_f401re
     harness_config:
       fixture: fixture_mech_encoder
       type: multi_line

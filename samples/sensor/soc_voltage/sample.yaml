@@ -6,7 +6,8 @@ tests:
     depends_on: adc
     tags: sensors
     timeout: 10
-    filter: dt_alias_exists("volt-sensor0")
+    platform_allow:
+      - nucleo_g071rb
     harness: console
     harness_config:
       type: one_line

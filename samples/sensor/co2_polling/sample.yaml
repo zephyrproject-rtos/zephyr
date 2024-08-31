@@ -4,5 +4,7 @@ tests:
   sample.sensor.co2:
     harness: sensor
     tags: sensors
-    filter: dt_alias_exists("co2")
-    depends_on: serial uart_interrupt_driven
+    platform_allow:
+      - nucleo_h563zi
+    integration_platforms:
+      - nucleo_h563zi

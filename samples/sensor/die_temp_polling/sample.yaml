@@ -5,9 +5,10 @@ tests:
   sample.sensor.die_temperature_polling:
     tags:
       - sensors
-    filter: dt_alias_exists("die-temp0")
-    integration_platforms:
+    platform_allow:
       - stm32f3_disco
+      - nucleo_h7a3zi_q
+    integration_platforms:
       - nucleo_h7a3zi_q
     harness: console
     harness_config:

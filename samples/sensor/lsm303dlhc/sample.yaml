@@ -9,3 +9,5 @@ tests:
     depends_on:
       - i2c
       - lsm303dlhc
+    integration_platforms:
+      - stm32f3_disco

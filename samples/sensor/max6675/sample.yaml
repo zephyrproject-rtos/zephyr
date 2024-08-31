@@ -4,11 +4,13 @@ tests:
   sample.sensor.max6675:
     tags: sensors
     harness: console
-    depends_on: spi
+    depends_on:
+      - spi
+    platform_allow:
+      - nucleo_f030r8
     harness_config:
       type: multi_line
       ordered: true
       regex:
         - "Temperature: ([0-9\\.]+) C"
       fixture: fixture_spi_max6675
-    filter: dt_compat_enabled("maxim,max6675")
