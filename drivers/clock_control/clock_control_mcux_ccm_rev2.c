@@ -111,10 +111,16 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 
 #ifdef CONFIG_PWM_MCUX
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_PWM_CLK:
+		clock_root = kCLOCK_Root_Bus_Aon;
+		break;
+#else
 	case IMX_CCM_PWM_CLK:
 		clock_root = kCLOCK_Root_Bus;
 		break;
-#endif
+#endif /* CONFIG_SOC_SERIES_IMXRT118X */
+#endif /* CONFIG_PWM_MCUX */
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
 	case IMX_CCM_CAN1_CLK:
