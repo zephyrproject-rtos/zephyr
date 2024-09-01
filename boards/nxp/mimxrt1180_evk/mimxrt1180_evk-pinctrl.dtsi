@@ -129,4 +129,12 @@
 			input-enable;
 		};
 	};
+
+	pinmux_flexpwm2: pinmux_flexpwm2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_27_flexpwm2_pwm1_b>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
 };

@@ -11,6 +11,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		pwm-led0 = &green_pwm_led;
 	};
 
 	leds {
@@ -27,6 +28,13 @@
 			label = "User SW8";
 			gpios = <&gpio1 4 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm2_pwm1 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 };
@@ -124,4 +132,10 @@
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
+};
+
+&flexpwm2_pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm2>;
+	pinctrl-names = "default";
 };
