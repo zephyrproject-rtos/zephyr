@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	cpus {
@@ -662,6 +663,190 @@
 		clk-source = <0>;
 		resolution = <32>;
 		status = "disabled";
+	};
+
+	flexpwm1: flexpwm@2650000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x2650000 0x4000>;
+		interrupts = <23 0>;
+
+		flexpwm1_pwm0: flexpwm1_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <24 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm1: flexpwm1_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <25 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm2: flexpwm1_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <26 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm1_pwm3: flexpwm1_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <27 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm2: flexpwm@2660000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x2660000 0x4000>;
+		interrupts =  <170 0>;
+
+		flexpwm2_pwm0: flexpwm2_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <171 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm1: flexpwm2_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <172 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm2: flexpwm2_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <173 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm2_pwm3: flexpwm2_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <174 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm3: flexpwm@2670000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x2670000 0x4000>;
+		interrupts =  <175 0>;
+
+		flexpwm3_pwm0: flexpwm3_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <176 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm1: flexpwm3_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <177 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm2: flexpwm3_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <178 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm3_pwm3: flexpwm3_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <179 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+	};
+
+	flexpwm4: flexpwm@2680000 {
+		compatible = "nxp,flexpwm";
+		reg = <0x2680000 0x4000>;
+		interrupts = <180 0>;
+
+		flexpwm4_pwm0: flexpwm4_pwm0 {
+			compatible = "nxp,imx-pwm";
+			index = <0>;
+			interrupts = <181 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm4_pwm1: flexpwm4_pwm1 {
+			compatible = "nxp,imx-pwm";
+			index = <1>;
+			interrupts = <182 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm4_pwm2: flexpwm4_pwm2 {
+			compatible = "nxp,imx-pwm";
+			index = <2>;
+			interrupts = <183 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
+
+		flexpwm4_pwm3: flexpwm4_pwm3 {
+			compatible = "nxp,imx-pwm";
+			index = <3>;
+			interrupts = <184 0>;
+			#pwm-cells = <3>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			nxp,prescaler = <128>;
+			status = "disabled";
+		};
 	};
 };
 
