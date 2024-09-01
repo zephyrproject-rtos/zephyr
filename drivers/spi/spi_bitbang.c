@@ -37,7 +37,7 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD)) {
+	if (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD | SPI_LINES_OCTAL)) {
 		LOG_ERR("Unsupported configuration");
 		return -ENOTSUP;
 	}
