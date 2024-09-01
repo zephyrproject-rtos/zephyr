@@ -70,6 +70,13 @@ properties:
       Delay time (in ns) to wait after enable line falls before sending
       another command. Default is as per Hitachi HD44780 specification.
 
+  rs-line-delay-ns:
+    type: int
+    default: 60
+    description: |
+      Delay time (in ns) to wait after rs/rw line state has been set up before
+      sending another command. Default is as per Hitachi HD44780 specification.
+
   clear-command-delay-us:
     type: int
     default: 5000
