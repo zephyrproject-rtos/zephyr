@@ -22,6 +22,7 @@
 #include <hardware/pll.h>
 #include <hardware/watchdog.h>
 #include <hardware/resets.h>
+#include <hardware/ticks.h>
 
 /* Undefine to prevent conflicts with header definitions */
 #undef pll_sys
@@ -646,6 +647,7 @@ void rpi_pico_clkid_tuple_reorder_by_dependencies(struct rpi_pico_clkid_tuple *t
 
 static int clock_control_rpi_pico_init(const struct device *dev)
 {
+	const uint32_t cycles_per_tick = CLOCK_FREQ_xosc / 1000000;
 	const struct clock_control_rpi_pico_config *config = dev->config;
 	struct clock_control_rpi_pico_data *data = dev->data;
 	clocks_hw_t *clocks_regs = config->clocks_regs;
@@ -674,7 +676,11 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 			     RESETS_RESET_USBCTRL_BITS));
 
 	/* Start tick in watchdog */
-	watchdog_start_tick(CLOCK_FREQ_xosc / 1000000);
+	watchdog_start_tick(cycles_per_tick);
+#if defined(CONFIG_SOC_SERIES_RP2350)
+	tick_start(TICK_TIMER0, cycles_per_tick);
+	tick_start(TICK_TIMER1, cycles_per_tick);
+#endif
 
 	clocks_regs->resus.ctrl = 0;
 
