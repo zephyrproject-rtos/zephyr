@@ -27,6 +27,10 @@ if(CONFIG_HAS_SDL)
   add_subdirectory(${ZEPHYR_BASE}/boards/native/common/sdl/ ${CMAKE_CURRENT_BINARY_DIR}/sdl)
 endif()
 
+if(CONFIG_LOG_FRONTEND)
+  message(FATAL_ERROR "LOG_FRONTEND is not supported on the native_sim board.")
+endif()
+
 add_subdirectory(${ZEPHYR_BASE}/boards/native/common/extra_args/
 	${CMAKE_CURRENT_BINARY_DIR}/extra_args
 )
