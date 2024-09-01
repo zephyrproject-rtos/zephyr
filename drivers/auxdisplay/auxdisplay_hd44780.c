@@ -82,9 +82,9 @@ static void hd44780_pulse_enable_line(const struct device *dev)
 	const struct auxdisplay_hd44780_config *const config = dev->config;
 
 	gpio_pin_set_dt(&config->e_gpio, 1);
-	k_sleep(K_USEC(config->enable_line_rise_delay));
+	k_sleep(K_NSEC(config->enable_line_rise_delay));
 	gpio_pin_set_dt(&config->e_gpio, 0);
-	k_sleep(K_USEC(config->enable_line_fall_delay));
+	k_sleep(K_NSEC(config->enable_line_fall_delay));
 }
 
 static void auxdisplay_hd44780_command(const struct device *dev, bool rs, uint8_t cmd,
@@ -567,8 +567,8 @@ static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
 		.line_addresses[2] = DT_INST_PROP_BY_IDX(inst, line_addresses, 2),		\
 		.line_addresses[3] = DT_INST_PROP_BY_IDX(inst, line_addresses, 3),		\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),		\
-		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_us),	\
-		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_us),	\
+		.enable_line_rise_delay = DT_INST_PROP(inst, enable_line_rise_delay_ns),	\
+		.enable_line_fall_delay = DT_INST_PROP(inst, enable_line_fall_delay_ns),	\
 		.clear_delay = DT_INST_PROP(inst, clear_command_delay_us),			\
 		.boot_delay = DT_INST_PROP(inst, boot_delay_ms),				\
 	};											\
