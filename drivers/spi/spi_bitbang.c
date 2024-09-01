@@ -36,8 +36,7 @@ static int spi_bitbang_configure(const struct spi_bitbang_config *info,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB | SPI_LINES_DUAL
-			| SPI_LINES_QUAD)) {
+	if (config->operation & (SPI_LINES_DUAL | SPI_LINES_QUAD)) {
 		LOG_ERR("Unsupported configuration");
 		return -ENOTSUP;
 	}
@@ -124,6 +123,7 @@ static int spi_bitbang_transceive(const struct device *dev,
 	int clock_state = 0;
 	int cpha = 0;
 	bool loop = false;
+	bool lsb = false;
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
 		clock_state = 1;
@@ -133,6 +133,9 @@ static int spi_bitbang_transceive(const struct device *dev,
 	}
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP) {
 		loop = true;
+	}
+	if (spi_cfg->operation & SPI_TRANSFER_LSB) {
+		lsb = true;
 	}
 
 	/* set the initial clock state before CS */
@@ -156,8 +159,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 			}
 		}
 
-		int shift = data->bits - 1;
 		uint16_t r = 0;
+		uint8_t i = 0;
 		int b = 0;
 		bool do_read = false;
 
@@ -165,7 +168,8 @@ static int spi_bitbang_transceive(const struct device *dev,
 			do_read = true;
 		}
 
-		while (shift >= 0) {
+		while (i < data->bits) {
+			const int shift = lsb ? i : (data->bits - 1 - i);
 			const int d = (w >> shift) & 0x1;
 
 			b = 0;
@@ -197,9 +201,9 @@ static int spi_bitbang_transceive(const struct device *dev,
 				b = d;
 			}
 
-			r = (r << 1) | (b ? 0x1 : 0x0);
+			r |= (b ? 0x1 : 0x0) << shift;
 
-			--shift;
+			++i;
 		}
 
 		if (spi_context_rx_buf_on(ctx)) {
