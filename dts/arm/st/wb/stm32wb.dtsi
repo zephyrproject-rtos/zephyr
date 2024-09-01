@@ -228,6 +228,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <5>;
 				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
 			};
@@ -236,6 +237,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <4>;
 				reg = <0x48001c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			};
