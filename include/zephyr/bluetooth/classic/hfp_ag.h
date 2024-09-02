@@ -318,6 +318,24 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 */
 	void (*ready_to_accept_audio)(struct bt_hfp_ag *ag);
+
+	/** Request phone number callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  AT command `AT+BINP=1` is received.
+	 *  If the upper layer accepts the request, it shall obtain a
+	 *  phone number.
+	 *  If the upper layer rejects the request, it shall return a
+	 *  an error.
+	 *  If @kconfig{CONFIG_BT_HFP_AG_VOICE_TAG} is not enabled,
+	 *  the callback will not be notified.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param number Phone number of voice tag.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 */
+	int (*request_phone_number)(struct bt_hfp_ag *ag, char **number);
 };
 
 /** @brief Register HFP AG profile
