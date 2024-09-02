@@ -2261,6 +2261,79 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf)
 	return err;
 }
 
+static int binp_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	char *number;
+
+	number = at_get_string(hf_at);
+
+	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_BINP);
+
+	if (bt_hf && bt_hf->request_phone_number) {
+		bt_hf->request_phone_number(hf, number);
+	}
+
+	return 0;
+}
+
+static int binp_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	int err;
+
+	LOG_DBG("");
+
+	err = at_parse_cmd_input(hf_at, buf, "BINP", binp_handle,
+				 AT_CMD_TYPE_NORMAL);
+	if (err < 0) {
+		LOG_ERR("Cannot parse response of AT+BINP=1");
+		return err;
+	}
+
+	return 0;
+}
+
+static int binp_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BINP=1 (result %d) on %p", result, hf);
+
+	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_BINP)) {
+		if (bt_hf && bt_hf->request_phone_number) {
+			bt_hf->request_phone_number(hf, NULL);
+		}
+	}
+
+	return 0;
+}
+
+int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		return 0;
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_BINP);
+
+	err = hfp_hf_send_cmd(hf, binp_resp, binp_finish, "AT+BINP=1");
+	if (err < 0) {
+		LOG_ERR("Fail to request phone number to the AG on %p", hf);
+	}
+
+	return err;
+}
+
 static int ata_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
 {
