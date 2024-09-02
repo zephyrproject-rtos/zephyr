@@ -113,6 +113,31 @@ config BT_HFP_HF_CODEC_LC3_SWB
 	  This option enables Codec LC3 SWB for HFP HF
 endif # BT_HFP_HF_CODEC_NEG
 
+config BT_HFP_HF_3WAY_CALL
+	bool "Three-way calling for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Three-way calling for HFP HF
+
+config BT_HFP_HF_ECS
+	bool "Enhanced Call Status for HFP HF [EXPERIMENTAL]"
+	default y if BT_HFP_HF_3WAY_CALL
+	help
+	  This option enables Enhanced Call Status for HFP HF
+
+config BT_HFP_HF_ECC
+	bool "Enhanced Call Control for HFP HF [EXPERIMENTAL]"
+	default y if BT_HFP_HF_3WAY_CALL
+	help
+	  This option enables Enhanced Call Control for HFP HF
+
+config BT_HFP_HF_MAX_CALLS
+	int "Maximum supported calls for HFP HF [EXPERIMENTAL]"
+	default 2 if BT_HFP_HF_3WAY_CALL
+	default 1
+	range 1 2
+	help
+	  This option sets maximum supported calls for HFP HF
+
 endif # BT_HFP_HF
 
 if BT_HFP_AG

@@ -30,6 +30,8 @@ extern "C" {
 
 struct bt_hfp_hf;
 
+struct bt_hfp_hf_call;
+
 /** @brief HFP profile application callback */
 struct bt_hfp_hf_cb {
 	/** HF connected callback to application
@@ -84,64 +86,72 @@ struct bt_hfp_hf_cb {
 	 *  the application.
 	 *
 	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*outgoing)(struct bt_hfp_hf *hf);
+	void (*outgoing)(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call);
 	/** HF call outgoing call is ringing Callback
 	 *
 	 *  This callback provides the outgoing call is ringing
 	 *  status to the application.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*remote_ringing)(struct bt_hfp_hf *hf);
+	void (*remote_ringing)(struct bt_hfp_hf_call *call);
 	/** HF call incoming Callback
 	 *
 	 *  This callback provides the incoming call status to
 	 *  the application.
 	 *
 	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*incoming)(struct bt_hfp_hf *hf);
+	void (*incoming)(struct bt_hfp_hf *hf, struct bt_hfp_hf_call *call);
 	/** HF incoming call on hold Callback
 	 *
 	 *  This callback provides the incoming call on hold status to
 	 *  the application.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*incoming_held)(struct bt_hfp_hf *hf);
+	void (*incoming_held)(struct bt_hfp_hf_call *call);
 	/** HF call accept Callback
 	 *
 	 *  This callback provides the incoming/outgoing call active
 	 *  status to the application.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*accept)(struct bt_hfp_hf *hf);
+	void (*accept)(struct bt_hfp_hf_call *call);
 	/** HF call reject Callback
 	 *
 	 *  This callback provides the incoming/outgoing call reject
 	 *  status to the application.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*reject)(struct bt_hfp_hf *hf);
+	void (*reject)(struct bt_hfp_hf_call *call);
 	/** HF call terminate Callback
 	 *
 	 *  This callback provides the incoming/outgoing call terminate
 	 *  status to the application.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*terminate)(struct bt_hfp_hf *hf);
-	/** HF indicator Callback
+	void (*terminate)(struct bt_hfp_hf_call *call);
+	/** HF call held Callback
 	 *
-	 *  This callback provides call held indicator value to the application
+	 *  This callback provides call held to the application
 	 *
-	 *  @param hf HFP HF object.
-	 *  @param value call held indicator value received from the AG.
+	 *  @param call HFP HF call object.
 	 */
-	void (*call_held)(struct bt_hfp_hf *hf, uint32_t value);
+	void (*held)(struct bt_hfp_hf_call *call);
+	/** HF call retrieve Callback
+	 *
+	 *  This callback provides call retrieved to the application
+	 *
+	 *  @param call HFP HF call object.
+	 */
+	void (*retrieve)(struct bt_hfp_hf_call *call);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides signal indicator value to the application
@@ -171,9 +181,9 @@ struct bt_hfp_hf_cb {
 	 *  If this callback is provided it will be called whenever there
 	 *  is an incoming call.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 */
-	void (*ring_indication)(struct bt_hfp_hf *hf);
+	void (*ring_indication)(struct bt_hfp_hf_call *call);
 	/** HF call dialing Callback
 	 *
 	 *  This callback provides call dialing result to the application.
@@ -190,11 +200,11 @@ struct bt_hfp_hf_cb {
 	 *  result code +CLIP will be ignored. And the callback will not be
 	 *  notified.
 	 *
-	 *  @param hf HFP HF object.
+	 *  @param call HFP HF call object.
 	 *  @param number Notified phone number.
 	 *  @param type Specify the format of the phone number.
 	 */
-	void (*clip)(struct bt_hfp_hf *hf, char *number, uint8_t type);
+	void (*clip)(struct bt_hfp_hf_call *call, char *number, uint8_t type);
 	/** HF microphone gain notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -280,6 +290,21 @@ struct bt_hfp_hf_cb {
 	 *  @param err The result of request.
 	 */
 	void (*ecnr_turn_off)(struct bt_hfp_hf *hf, int err);
+	/** HF call waiting notification callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is a unsolicited result code +CCWA.
+	 *  This notification can be enabled/disabled by calling function
+	 *  `bt_hfp_hf_call_waiting_notify`.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the
+	 *  unsolicited result code +CCWA will be ignored. And the callback
+	 *  will not be notified.
+	 *
+	 *  @param call HFP HF call object.
+	 *  @param number Notified phone number.
+	 *  @param type Specify the format of the phone number.
+	 */
+	void (*call_waiting)(struct bt_hfp_hf_call *call, char *number, uint8_t type);
 };
 
 /** @brief Register HFP HF profile
@@ -371,11 +396,11 @@ int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf);
  *  OR, send the AT+BTRH=1 command to accept a held incoming
  *  call.
  *
- *  @param hf HFP HF object.
+ *  @param call HFP HF call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_accept(struct bt_hfp_hf *hf);
+int bt_hfp_hf_accept(struct bt_hfp_hf_call *call);
 
 /** @brief Handsfree HF reject the incoming call
  *
@@ -383,21 +408,21 @@ int bt_hfp_hf_accept(struct bt_hfp_hf *hf);
  *  OR, send the AT+BTRH=2 command to reject a held incoming
  *  call.
  *
- *  @param hf HFP HF object.
+ *  @param call HFP HF call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_reject(struct bt_hfp_hf *hf);
+int bt_hfp_hf_reject(struct bt_hfp_hf_call *call);
 
 /** @brief Handsfree HF terminate the incoming call
  *
  *  Send the AT+CHUP command to terminate the incoming call.
  *
- *  @param hf HFP HF object.
+ *  @param call HFP HF call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_terminate(struct bt_hfp_hf *hf);
+int bt_hfp_hf_terminate(struct bt_hfp_hf_call *call);
 
 /** @brief Handsfree HF put the incoming call on hold
  *
@@ -405,11 +430,11 @@ int bt_hfp_hf_terminate(struct bt_hfp_hf *hf);
  *  If the incoming call has been held, the callback `on_hold` will
  *  be triggered.
  *
- *  @param hf HFP HF object.
+ *  @param call HFP HF call object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_hold_incoming(struct bt_hfp_hf *hf);
+int bt_hfp_hf_hold_incoming(struct bt_hfp_hf_call *call);
 
 /** @brief Handsfree HF query respond and hold status of AG
  *
@@ -524,6 +549,124 @@ int bt_hfp_hf_set_codecs(struct bt_hfp_hf *hf, uint8_t codec_ids);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_turn_off_ecnr(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF enable/disable call waiting notification
+ *
+ *  Enable call waiting notification by sending `AT+CCWA=1`.
+ *  Disable call waiting notification by sending `AT+CCWA=0`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *  @param enable Enable/disable.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_call_waiting_notify(struct bt_hfp_hf *hf, bool enable);
+
+/** @brief Handsfree HF release all held calls
+ *
+ *  Release all held calls by sending `AT+CHLD=0`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_release_all_held(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF set User Determined User Busy (UDUB) for a waiting call
+ *
+ *  Set User Determined User Busy (UDUB) for a waiting call
+ *  by sending `AT+CHLD=0`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_set_udub(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF release all active calls and accept other call
+ *
+ *  Release all active calls (if any exist) and accepts the other
+ *  (held or waiting) call by sending `AT+CHLD=1`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_release_active_accept_other(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF hold all active calls and accept other call
+ *
+ *  Hold all active calls (if any exist) and accepts the other
+ *  (held or waiting) call by sending `AT+CHLD=2`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_hold_active_accept_other(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF add a held call to the conversation
+ *
+ *  Add a held call to the conversation by sending `AT+CHLD=3`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_join_conversation(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF explicit call transfer
+ *
+ *  Connects the two calls and disconnects the subscriber from
+ *  both calls (Explicit Call Transfer) by sending `AT+CHLD=4`.
+ *  If @kconfig{CONFIG_BT_HFP_HF_3WAY_CALL} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_explicit_call_transfer(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF release call with specified index
+ *
+ *  Release call with specified index by sending `AT+CHLD=1<idx>`.
+ *  `<idx>` is index of specified call.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ECC} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param call HFP HF call object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_release_specified_call(struct bt_hfp_hf_call *call);
+
+/** @brief Handsfree HF request private consultation mode with specified call
+ *
+ *  Request private consultation mode with specified call (Place all calls
+ *  on hold EXCEPT the call indicated by `<idx>`.) by sending
+ *  `AT+CHLD=2<idx>`.
+ *  `<idx>` is index of specified call.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ECC} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param call HFP HF call object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_private_consultation_mode(struct bt_hfp_hf_call *call);
 
 #ifdef __cplusplus
 }
