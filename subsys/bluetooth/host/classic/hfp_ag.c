@@ -809,6 +809,21 @@ static int get_number(struct net_buf *buf, uint32_t *number)
 	return err;
 }
 
+static int get_char(struct net_buf *buf, char *c)
+{
+	int err = -EINVAL;
+
+	skip_space(buf);
+	if (buf->len > 0) {
+		*c = (char)buf->data[0];
+		(void)net_buf_pull(buf, 1);
+		err = 0;
+	}
+	skip_space(buf);
+
+	return err;
+}
+
 static bool is_char(struct net_buf *buf, uint8_t c)
 {
 	bool found = false;
@@ -2994,6 +3009,43 @@ static int bt_hfp_ag_binp_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return -ENOTSUP;
 }
 
+static int bt_hfp_ag_vts_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	char code;
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_char(buf, &code);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (!IS_VALID_DTMF(code)) {
+		LOG_ERR("Invalid code");
+		return -EINVAL;
+	}
+
+	if (!get_active_calls(ag)) {
+		LOG_ERR("Not valid ongoing call");
+		return -ENOTSUP;
+	}
+
+	if (bt_ag && bt_ag->transmit_dtmf_code) {
+		bt_ag->transmit_dtmf_code(ag, code);
+	} else {
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -3007,6 +3059,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
 	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
 	{"AT+BVRA", bt_hfp_ag_bvra_handler}, {"AT+BINP", bt_hfp_ag_binp_handler},
+	{"AT+VTS", bt_hfp_ag_vts_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)

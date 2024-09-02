@@ -336,6 +336,19 @@ struct bt_hfp_ag_cb {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int (*request_phone_number)(struct bt_hfp_ag *ag, char **number);
+
+	/** Transmit a DTMF Code callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  AT command `AT+VTS=<code>` is received.
+	 *  During an ongoing call, the HF transmits the AT+VTS command
+	 *  to instruct the AG to transmit a specific DTMF code to its
+	 *  network connection.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param code A specific DTMF code.
+	 */
+	void (*transmit_dtmf_code)(struct bt_hfp_ag *ag, char code);
 };
 
 /** @brief Register HFP AG profile
