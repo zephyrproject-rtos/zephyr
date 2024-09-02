@@ -373,6 +373,16 @@ struct bt_hfp_hf_cb {
 	 */
 	void (*textual_representation)(struct bt_hfp_hf *hf, char *id, uint8_t type,
 				       uint8_t operation, char *text);
+	/** Request phone number callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  result code `+BINP: <Phone number>` is received from AG.
+	 *  If the request is failed, the `number` will be NULL.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param number Value of `<Phone number>`.
+	 */
+	void (*request_phone_number)(struct bt_hfp_hf *hf, const char *number);
 };
 
 /** @brief Register HFP HF profile
@@ -762,6 +772,16 @@ int bt_hfp_hf_voice_recognition(struct bt_hfp_hf *hf, bool activate);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf);
+
+/** @brief Handsfree HF attach a phone number for a voice tag
+ *
+ *  Send AT command "AT+BINP=1" to request phone number to the AG.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_request_phone_number(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }
