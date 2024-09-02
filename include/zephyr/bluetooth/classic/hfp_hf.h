@@ -168,6 +168,30 @@ struct bt_hfp_hf_cb {
 	 *  @param type Specify the format of the phone number.
 	 */
 	void (*clip)(struct bt_conn *conn, char *number, uint8_t type);
+	/** HF microphone gain notification callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is a unsolicited result code +VGM.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the unsolicited
+	 *  result code +VGM will be ignored. And the callback will not be
+	 *  notified.
+	 *
+	 *  @param conn Connection object.
+	 *  @param gain Microphone gain.
+	 */
+	void (*vgm)(struct bt_conn *conn, uint8_t gain);
+	/** HF speaker gain notification callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is a unsolicited result code +VGS.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the unsolicited
+	 *  result code +VGS will be ignored. And the callback will not be
+	 *  notified.
+	 *
+	 *  @param conn Connection object.
+	 *  @param gain Speaker gain.
+	 */
+	void (*vgs)(struct bt_conn *conn, uint8_t gain);
 };
 
 /** @brief Register HFP HF profile
