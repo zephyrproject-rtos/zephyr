@@ -376,6 +376,14 @@ static int hfp_ag_update_indicator(struct bt_hfp_ag *ag, enum bt_hfp_ag_indicato
 	int err;
 	uint8_t old_value;
 
+	if (index >= BT_HFP_AG_IND_MAX) {
+		return -EINVAL;
+	}
+
+	if ((ag_ind[index].max < value) || (ag_ind[index].min > value)) {
+		return -EINVAL;
+	}
+
 	hfp_ag_lock(ag);
 	old_value = ag->indicator_value[index];
 	if (value == old_value) {
@@ -4611,4 +4619,30 @@ int bt_hfp_ag_vre_textual_representation(struct bt_hfp_ag *ag, uint8_t state, co
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_HFP_AG_VOICE_RECG_TEXT */
+}
+
+int bt_hfp_ag_signal_strength(struct bt_hfp_ag *ag, uint8_t strength)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	err = hfp_ag_update_indicator(ag, BT_HFP_AG_SIGNAL_IND, strength,
+						NULL, NULL);
+	if (err) {
+		LOG_ERR("Fail to set signal strength err :(%d)", err);
+	}
+
+	return err;
 }
