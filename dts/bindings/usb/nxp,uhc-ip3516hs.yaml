@@ -1,0 +1,12 @@
+# # Copyright  2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP IP3516HS USB host controller
+
+compatible: "nxp,uhc-ip3516hs"
+
+include: [usb-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  phy_handle:
+    type: phandle
