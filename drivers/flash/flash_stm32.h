@@ -351,14 +351,9 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev);
 void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level);
 #endif
 
-/* Flash extended operations */
-#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-int flash_stm32_ex_op_sector_wp(const struct device *dev, const uintptr_t in,
-				void *out);
-#endif
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
-			  void *out);
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+int flash_stm32_control_register_disable(const struct device *dev);
+int flash_stm32_option_bytes_disable(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_ */
