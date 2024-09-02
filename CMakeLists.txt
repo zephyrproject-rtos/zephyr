@@ -360,8 +360,7 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-# @Intent: Set fundamental linker specific flags
-toolchain_ld_base()
+find_package(Deprecated COMPONENTS toolchain_ld_base)
 
 if(DEFINED TOOLCHAIN_LD_FLAGS)
   zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
@@ -383,8 +382,7 @@ toolchain_ld_force_undefined_symbols(
 )
 
 if(NOT CONFIG_NATIVE_BUILD)
-  # @Intent: Set linker specific flags for bare metal target
-  toolchain_ld_baremetal()
+  find_package(Deprecated COMPONENTS toolchain_ld_baremetal)
 
   zephyr_link_libraries(PROPERTY baremetal)
 
@@ -411,8 +409,7 @@ endif()
 
 if(CONFIG_CPP)
   if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
-    # @Intent: Set linker specific flags for C++
-    toolchain_ld_cpp()
+    find_package(Deprecated COMPONENTS toolchain_ld_cpp)
   endif()
 
   zephyr_link_libraries(PROPERTY cpp_base)
