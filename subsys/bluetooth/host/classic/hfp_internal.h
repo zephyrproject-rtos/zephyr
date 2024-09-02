@@ -186,6 +186,7 @@ enum {
 	BT_HFP_HF_FLAG_CODEC_CONN,    /* HFP HF codec connection setup */
 	BT_HFP_HF_FLAG_CLCC_PENDING,  /* HFP HF CLCC is pending */
 	BT_HFP_HF_FLAG_VRE_ACTIVATE,  /* VRE is activated */
+	BT_HFP_HF_FLAG_BINP,          /* +BINP result code is received */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
