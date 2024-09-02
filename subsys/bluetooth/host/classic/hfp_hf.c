@@ -1479,6 +1479,100 @@ int bt_hfp_hf_terminate(struct bt_conn *conn)
 	return err;
 }
 
+static int bt_hfp_ag_get_cme_err(enum at_cme cme_err)
+{
+	int err;
+
+	switch (cme_err) {
+	case CME_ERROR_OPERATION_NOT_SUPPORTED:
+		err = -EOPNOTSUPP;
+		break;
+	case CME_ERROR_AG_FAILURE:
+		err = -EFAULT;
+		break;
+	case CME_ERROR_MEMORY_FAILURE:
+		err = -ENOSR;
+		break;
+	case CME_ERROR_MEMORY_FULL:
+		err = -ENOMEM;
+		break;
+	case CME_ERROR_DIAL_STRING_TO_LONG:
+		err = -ENAMETOOLONG;
+		break;
+	case CME_ERROR_INVALID_INDEX:
+		err = -EINVAL;
+		break;
+	case CME_ERROR_OPERATION_NOT_ALLOWED:
+		err = -ENOTSUP;
+		break;
+	case CME_ERROR_NO_CONNECTION_TO_PHONE:
+		err = -ENOTCONN;
+		break;
+	default:
+		err = -ENOTSUP;
+		break;
+	}
+
+	return err;
+}
+
+static int atd_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	LOG_DBG("ATD (result %d) on %p", result, hf);
+
+	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
+		LOG_WRN("No dialing call");
+	}
+
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->dialing) {
+		bt_hf->dialing(hf->acl, err);
+	}
+	return 0;
+}
+
+int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number)
+{
+	struct bt_hfp_hf *hf;
+	int err;
+
+	LOG_DBG("");
+
+	if (!conn) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	hf = bt_hfp_hf_lookup_bt_conn(conn);
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
+		LOG_ERR("Outgoing call is started");
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD%s", number);
+	if (err < 0) {
+		LOG_ERR("Fail to start phone number call on %p", hf);
+	}
+
+	return err;
+}
+
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 static int bcc_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
