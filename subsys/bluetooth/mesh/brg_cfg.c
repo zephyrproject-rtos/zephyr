@@ -68,6 +68,8 @@ BT_MESH_SETTINGS_DEFINE(brg_en, "brg_en", brg_en_set);
 /* Set function for initializing bridging table rows from values stored in settings. */
 static int brg_tbl_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
 {
+	ssize_t len;
+
 	if (len_rd == 0) {
 		memset(brg_tbl, 0, sizeof(brg_tbl));
 		bt_mesh_brg_cfg_row_cnt = 0;
@@ -75,14 +77,24 @@ static int brg_tbl_set(const char *name, size_t len_rd, settings_read_cb read_cb
 		return 0;
 	}
 
-	int err = bt_mesh_settings_set(read_cb, cb_arg, brg_tbl, sizeof(brg_tbl));
-
-	if (err) {
-		LOG_ERR("Failed to set bridging table entries");
-		return err;
+	if (len_rd % sizeof(brg_tbl[0])) {
+		LOG_ERR("Invalid data size");
+		return -EINVAL;
 	}
 
-	LOG_DBG("Restored bridging table");
+	if (len_rd > sizeof(brg_tbl)) {
+		LOG_ERR("Too many entries to fit in bridging table");
+		return -ENOMEM;
+	}
+
+	len = read_cb(cb_arg, brg_tbl, sizeof(brg_tbl));
+	if (len < 0 || len % sizeof(brg_tbl[0])) {
+		LOG_ERR("Failed to read bridging table entries (err %zd)", len);
+		return len < 0 ? len : -EINVAL;
+	}
+
+	bt_mesh_brg_cfg_row_cnt = len / sizeof(brg_tbl[0]);
+	LOG_DBG("Restored %d entries in bridging table", bt_mesh_brg_cfg_row_cnt);
 
 	return 0;
 }
