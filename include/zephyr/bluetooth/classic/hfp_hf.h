@@ -192,6 +192,17 @@ struct bt_hfp_hf_cb {
 	 *  @param gain Speaker gain.
 	 */
 	void (*vgs)(struct bt_conn *conn, uint8_t gain);
+	/** HF in-band ring tone notification callback to application
+	 *
+	 *  If this callback is provided it will be called whenever there
+	 *  is a unsolicited result code +BSIR issued by the AG to
+	 *  indicate to the HF that the in-band ring tone setting
+	 *  has been locally changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param inband In-band ring tone status from the AG.
+	 */
+	void (*inband_ring)(struct bt_conn *conn, bool inband);
 };
 
 /** @brief Register HFP HF profile
