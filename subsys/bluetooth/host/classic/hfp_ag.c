@@ -2831,6 +2831,118 @@ static int bt_hfp_ag_ccwa_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return 0;
 }
 
+static void bt_hfp_ag_vr_activate(struct bt_hfp_ag *ag, void *user_data)
+{
+	bool feature;
+
+	hfp_ag_lock(ag);
+	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
+		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
+	hfp_ag_unlock(ag);
+
+#if defined(CONFIG_BT_HFP_AG_VOICE_RECG)
+	if (bt_ag && bt_ag->voice_recognition) {
+		bt_ag->voice_recognition(ag, true);
+	} else {
+		(void)bt_hfp_ag_audio_connect(ag, BT_HFP_AG_CODEC_CVSD);
+	}
+#endif /* CONFIG_BT_HFP_AG_VOICE_RECG */
+
+	atomic_set_bit_to(ag->flags, BT_HFP_AG_VRE_R2A, !feature);
+
+#if defined(CONFIG_BT_HFP_AG_ENH_VOICE_RECG)
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_VRE_R2A)) {
+		if (bt_ag && bt_ag->ready_to_accept_audio) {
+			bt_ag->ready_to_accept_audio(ag);
+		}
+	}
+#endif /* CONFIG_BT_HFP_AG_ENH_VOICE_RECG */
+}
+
+static void bt_hfp_ag_vr_deactivate(struct bt_hfp_ag *ag, void *user_data)
+{
+#if defined(CONFIG_BT_HFP_AG_ENH_VOICE_RECG)
+	if (bt_ag && bt_ag->voice_recognition) {
+		bt_ag->voice_recognition(ag, false);
+	}
+#endif /* CONFIG_BT_HFP_AG_ENH_VOICE_RECG */
+}
+
+static void bt_hfp_ag_vr_ready2accept(struct bt_hfp_ag *ag, void *user_data)
+{
+	atomic_set_bit(ag->flags, BT_HFP_AG_VRE_R2A);
+
+#if defined(CONFIG_BT_HFP_AG_ENH_VOICE_RECG)
+	if (bt_ag && bt_ag->ready_to_accept_audio) {
+		bt_ag->ready_to_accept_audio(ag);
+	}
+#endif /* CONFIG_BT_HFP_AG_ENH_VOICE_RECG */
+}
+
+static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t value;
+
+	hfp_ag_lock(ag);
+	if (!((ag->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG) &&
+	      (ag->hf_features & BT_HFP_HF_FEATURE_VOICE_RECG))) {
+		hfp_ag_unlock(ag);
+		return -EOPNOTSUPP;
+	}
+	hfp_ag_unlock(ag);
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &value);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	switch (value) {
+	case BT_HFP_BVRA_DEACTIVATION:
+		if (!atomic_test_and_clear_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+			LOG_WRN("VR is not activated");
+			return -ENOTSUP;
+		}
+		err = hfp_ag_next_step(ag, bt_hfp_ag_vr_deactivate, NULL);
+		break;
+	case BT_HFP_BVRA_ACTIVATION:
+		if (atomic_test_and_set_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+			LOG_WRN("VR has been activated");
+			return -ENOTSUP;
+		}
+		atomic_clear_bit(ag->flags, BT_HFP_AG_VRE_R2A);
+		err = hfp_ag_next_step(ag, bt_hfp_ag_vr_activate, NULL);
+		break;
+	case BT_HFP_BVRA_READY_TO_ACCEPT:
+		hfp_ag_lock(ag);
+		if (!((ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
+		      (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG))) {
+			hfp_ag_unlock(ag);
+			LOG_WRN("Enhance voice recognition is not supported");
+			return -EOPNOTSUPP;
+		}
+		hfp_ag_unlock(ag);
+		if (!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+			LOG_WRN("Voice recognition is not activated");
+			return -ENOTSUP;
+		}
+		err = hfp_ag_next_step(ag, bt_hfp_ag_vr_ready2accept, NULL);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return err;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -2843,6 +2955,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+CLIP", bt_hfp_ag_clip_handler}, {"AT+VGM", bt_hfp_ag_vgm_handler},
 	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
 	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
+	{"AT+BVRA", bt_hfp_ag_bvra_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
@@ -4202,4 +4315,167 @@ int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband)
 
 	atomic_set_bit_to(ag->flags, BT_HFP_AG_INBAND_RING, inband);
 	return 0;
+}
+
+int bt_hfp_ag_voice_recognition(struct bt_hfp_ag *ag, bool activate)
+{
+#if defined(CONFIG_BT_HFP_AG_VOICE_RECG)
+	int err;
+	bool feature;
+	char *bvra;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	if (activate && atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+		LOG_WRN("VR has been activated");
+		return -ENOTSUP;
+	} else if (!activate && !atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+		LOG_WRN("VR is not activated");
+		return -ENOTSUP;
+	}
+
+	hfp_ag_lock(ag);
+	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
+		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
+	hfp_ag_unlock(ag);
+
+	if (!feature) {
+		bvra = "";
+	} else {
+		bvra = ",0";
+	}
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BVRA:%d%s\r\n", activate, bvra);
+	if (err) {
+		LOG_ERR("Fail to notify VR activation :(%d)", err);
+		return err;
+	}
+
+	atomic_set_bit_to(ag->flags, BT_HFP_AG_VRE_ACTIVATE, activate);
+	atomic_clear_bit(ag->flags, BT_HFP_AG_VRE_R2A);
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_AG_VOICE_RECG */
+}
+
+int bt_hfp_ag_vre_state(struct bt_hfp_ag *ag, uint8_t state)
+{
+#if defined(CONFIG_BT_HFP_AG_ENH_VOICE_RECG)
+	int err;
+	bool feature;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+		LOG_WRN("Voice Recognition is not activated");
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
+		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
+	hfp_ag_unlock(ag);
+	if (!feature) {
+		return -ENOTSUP;
+	}
+
+	if ((state & BT_HFP_BVRA_STATE_SEND_AUDIO) &&
+		!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_R2A)) {
+		LOG_ERR("HFP HF is not ready to accept audio input");
+		return -EINVAL;
+	}
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BVRA:1,%d\r\n", state);
+	if (err) {
+		LOG_ERR("Fail to send state of VRE :(%d)", err);
+		return err;
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_AG_ENH_VOICE_RECG */
+}
+
+int bt_hfp_ag_vre_textual_representation(struct bt_hfp_ag *ag, uint8_t state, const char *id,
+					 uint8_t type, uint8_t operation, const char *text)
+{
+#if defined(CONFIG_BT_HFP_AG_VOICE_RECG_TEXT)
+	int err;
+	bool feature;
+
+	LOG_DBG("");
+
+	if (ag == NULL) {
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	if (ag->state != BT_HFP_CONNECTED) {
+		hfp_ag_unlock(ag);
+		return -ENOTCONN;
+	}
+	hfp_ag_unlock(ag);
+
+	if (!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_ACTIVATE)) {
+		LOG_WRN("Voice Recognition is not activated");
+		return -EINVAL;
+	}
+
+	hfp_ag_lock(ag);
+	feature = (ag->ag_features & BT_HFP_AG_FEATURE_ENH_VOICE_RECG) &&
+		  (ag->hf_features & BT_HFP_HF_FEATURE_ENH_VOICE_RECG);
+	hfp_ag_unlock(ag);
+	if (!feature) {
+		return -ENOTSUP;
+	}
+
+	hfp_ag_lock(ag);
+	feature = (ag->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG_TEXT) &&
+		  (ag->hf_features & BT_HFP_HF_FEATURE_VOICE_RECG_TEXT);
+	hfp_ag_unlock(ag);
+	if (!feature) {
+		return -ENOTSUP;
+	}
+
+	if ((state & BT_HFP_BVRA_STATE_SEND_AUDIO) &&
+		!atomic_test_bit(ag->flags, BT_HFP_AG_VRE_R2A)) {
+		LOG_ERR("HFP HF is not ready to accept audio input");
+		return -EINVAL;
+	}
+
+	err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BVRA:1,%d,%s,%d,%d,\"%s\"\r\n",
+		state, id, type, operation, text);
+	if (err) {
+		LOG_ERR("Fail to send state of VRE :(%d)", err);
+		return err;
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_AG_VOICE_RECG_TEXT */
 }

@@ -348,3 +348,11 @@ enum hfp_hf_ag_indicators {
  * less than 4 characters in length is valid.
  */
 #define BT_HFP_BVRA_TEXT_ID_MAX_LEN 4
+
+/* BVRA VRE state */
+/* BVRA VRE state: the AG is ready to accept audio input */
+#define BT_HFP_BVRA_STATE_ACCEPT_INPUT BIT(0)
+/* BVRA VRE state: the AG is sending audio to the HF */
+#define BT_HFP_BVRA_STATE_SEND_AUDIO BIT(1)
+/* BVRA VRE state: the AG is processing the audio input */
+#define BT_HFP_BVRA_STATE_PROCESS_AUDIO BIT(2)
