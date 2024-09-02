@@ -282,6 +282,42 @@ struct bt_hfp_ag_cb {
 	 *  @param ag HFP AG object.
 	 */
 	void (*explicit_call_transfer)(struct bt_hfp_ag *ag);
+
+	/** Voice recognition activation/deactivation callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  voice recognition activation is changed.
+	 *  If voice recognition is activated, the upper layer should
+	 *  call `bt_hfp_ag_audio_connect` with appropriate codec ID to
+	 *  setup audio connection.
+	 *  If the callback is not provided by upper layer, the function
+	 *  `bt_hfp_ag_audio_connect` will be called with default codec
+	 *  ID `BT_HFP_AG_CODEC_CVSD`.
+	 *  If @kconfig{CONFIG_BT_HFP_AG_VOICE_RECG} is not enabled,
+	 *  the callback will not be notified.
+	 *
+	 *  @param ag HFP AG object.
+	 *  @param activate Voice recognition activation/deactivation.
+	 */
+	void (*voice_recognition)(struct bt_hfp_ag *ag, bool activate);
+
+	/** Ready to accept audio callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  HF is ready ti accept audio callback.
+	 *  If the feature `Enhanced Voice Recognition Status` is supported
+	 *  by HF, the callback will be notified if the AT command `AT+BVRA=2`
+	 *  is received. The HF may send this value during an ongoing VR
+	 *  (Voice Recognition) session to terminate audio output from the
+	 *  AG (if there is any) and prepare the AG for new audio input.
+	 *  Or, the callback will be notified after the voice recognition
+	 *  is activated.
+	 *  If @kconfig{CONFIG_BT_HFP_AG_ENH_VOICE_RECG} is not enabled,
+	 *  the callback will not be notified.
+	 *
+	 *  @param ag HFP AG object.
+	 */
+	void (*ready_to_accept_audio)(struct bt_hfp_ag *ag);
 };
 
 /** @brief Register HFP AG profile
@@ -521,6 +557,81 @@ int bt_hfp_ag_audio_connect(struct bt_hfp_ag *ag, uint8_t id);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_ag_inband_ringtone(struct bt_hfp_ag *ag, bool inband);
+
+/** @brief Enable/disable the voice recognition function
+ *
+ *  Enables/disables the voice recognition function.
+ *  If @kconfig{CONFIG_BT_HFP_AG_VOICE_RECG} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param ag HFP AG object.
+ *  @param activate Activate/deactivate the voice recognition function.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_voice_recognition(struct bt_hfp_ag *ag, bool activate);
+
+/** @brief set voice recognition engine state
+ *
+ *  It is used to set the voice recognition engine state.
+ *  The unsolicited result code `+BVRA: 1,<vrecstate>` will be sent.
+ *  `<vrecstate>`: Bitmask that reflects the current state of the voice
+ *  recognition engine on the AG.
+ *  Bit 0 - If it is 1, the AG is ready to accept audio input
+ *  Bit 1 - If it is 1, the AG is sending audio to the HF
+ *  Bit 2 - If it is 1, the AG is processing the audio input
+ *  If @kconfig{CONFIG_BT_HFP_AG_ENH_VOICE_RECG} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param ag HFP AG object.
+ *  @param state The value of `<vrecstate>`.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vre_state(struct bt_hfp_ag *ag, uint8_t state);
+
+/** @brief set voice recognition engine state and textual representation
+ *
+ *  It is used to set the voice recognition engine state with
+ *  textual representation.
+ *  unsolicited result code `+BVRA: 1,<vrecstate>,
+ *  <textualRepresentation>` will be sent.
+ *  `<vrecstate>` is same as parameter `state` of function
+ *  `bt_hfp_ag_vre_state`.
+ *  `<textualRepresentation>: <textID>,<textType>,<textOperation>,
+ *  <string>`.
+ *  `<textID>`: Unique ID of the current text as a hexadecimal string
+ *  (a maximum of 4 characters in length, but less than 4 characters
+ *  in length is valid).
+ *  `<textType>`: ID of the textType from the following list:
+ *  0 - Text recognized by the AG from the audio input provided by the HF
+ *  1 - Text of the audio output from the AG
+ *  2 - Text of the audio output from the AG that contains a question
+ *  3 - Text of the audio output from the AG that contains an error
+ *      description
+ *  `<textOperation>`: ID of the operation of the text
+ *  1 - NewText: Indicates that a new text started. Shall be used when the
+ *               `<textID>` changes
+ *  2 - Replace: Replace any existing text with the same `<textID>` and
+ *               same `<textType>`
+ *  3 - Append: Attach new text to existing text and keep the same
+ *              `<textID>` and same `<textType>`
+ *  `<string>`: The `<string>` parameter shall be a UTF-8 text string and
+ *  shall always be contained within double quotes.
+ *  If @kconfig{CONFIG_BT_HFP_AG_VOICE_RECG_TEXT} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param ag HFP AG object.
+ *  @param state The value of `<vrecstate>`.
+ *  @param id Value of `<textID>`.
+ *  @param type Value of `<textType>`.
+ *  @param operation Value of `<textOperation>`.
+ *  @param text Value of `<string>`.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_vre_textual_representation(struct bt_hfp_ag *ag, uint8_t state, const char *id,
+					 uint8_t type, uint8_t operation, const char *text);
 
 #ifdef __cplusplus
 }

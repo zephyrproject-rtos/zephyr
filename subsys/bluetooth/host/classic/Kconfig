@@ -259,6 +259,24 @@ config BT_HFP_AG_RING_NOTIFY_INTERVAL
 	help
 	  Ring notification interval if the call is in alert state.
 	  The unit is seconds.
+
+config BT_HFP_AG_VOICE_RECG
+	bool "Voice recognition activation for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Voice recognition activation for HFP AG
+
+config BT_HFP_AG_ENH_VOICE_RECG
+	bool "Enhanced Voice Recognition Status for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_VOICE_RECG
+	help
+	  This option enables Enhanced Voice Recognition Status for HFP AG
+
+config BT_HFP_AG_VOICE_RECG_TEXT
+	bool "Voice Recognition Text for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_ENH_VOICE_RECG
+	help
+	  This option enables Voice Recognition Text for HFP AG
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
