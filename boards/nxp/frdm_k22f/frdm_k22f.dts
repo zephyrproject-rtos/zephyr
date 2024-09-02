@@ -178,6 +178,10 @@ zephyr_udc0: &usbotg {
 	num-bidir-endpoints = <8>;
 };
 
+zephyr_uhc0: &usbh {
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };
