@@ -117,3 +117,4 @@ int at_close_list(struct at_client *at);
 int at_open_list(struct at_client *at);
 int at_has_next_list(struct at_client *at);
 char *at_get_string(struct at_client *at);
+char *at_get_raw_string(struct at_client *at, size_t *string_len);
