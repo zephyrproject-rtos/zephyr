@@ -449,7 +449,7 @@ int at_parse_cmd_input(struct at_client *at, struct net_buf *buf,
 
 int at_has_next_list(struct at_client *at)
 {
-	return at->buf[at->pos] != '\0';
+	return at->buf[at->pos] != '\0' && at->buf[at->pos] != ')';
 }
 
 int at_open_list(struct at_client *at)
@@ -583,6 +583,30 @@ char *at_get_string(struct at_client *at)
 
 	at->buf[at->pos] = '\0';
 	at->pos++;
+
+	skip_space(at);
+	next_list(at);
+
+	return string;
+}
+
+char *at_get_raw_string(struct at_client *at, size_t *string_len)
+{
+	char *string;
+
+	skip_space(at);
+
+	string = &at->buf[at->pos];
+
+	while (at->buf[at->pos] != '\0' &&
+		   at->buf[at->pos] != ',' &&
+		   at->buf[at->pos] != ')') {
+		at->pos++;
+	}
+
+	if (string_len) {
+		*string_len = &at->buf[at->pos] - string;
+	}
 
 	skip_space(at);
 	next_list(at);
