@@ -1,14 +1,15 @@
-.. _vl53l0x:
+.. zephyr:code-sample:: vl53l0x
+   :name: VL53L0X Time Of Flight sensor
+   :relevant-api: sensor_interface
 
-VL53L0X: Time Of Flight sensor
-##############################
+   Get distance data from a VL53L0X sensor (polling mode).
 
 Overview
 ********
+
 This sample periodically measures distance between vl53l0x sensor
 and target. The result is displayed on the console.
 It also shows how we can use the vl53l0x as a proximity sensor.
-
 
 Requirements
 ************
