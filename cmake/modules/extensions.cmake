@@ -113,7 +113,14 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    if(ARGC GREATER 2)
+      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    endif()
+    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
+  else()
+    target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 function(zephyr_libc_link_libraries)
