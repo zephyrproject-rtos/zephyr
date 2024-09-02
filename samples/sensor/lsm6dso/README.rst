@@ -1,7 +1,9 @@
-.. _lsm6dso:
+.. zephyr:code-sample:: lsmd6dso
+   :name: LSM6DSO IMU sensor
+   :relevant-api: sensor_interface
 
-LSM6DSO: IMU Sensor Monitor
-###########################
+   Get accelerometer and gyroscope data from an LSM6DSO sensor (polling & trigger
+   mode).
 
 Overview
 ********
