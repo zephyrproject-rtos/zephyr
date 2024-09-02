@@ -87,6 +87,36 @@ static const struct it8801_vendor_id_t it8801_id_verify[] = {
 #define IT8801_PWMMCR_MCR_BREATHING 2
 #define IT8801_PWMMCR_MCR_ON        3
 
+/*
+ * For IT8801 MFD alternate function controller
+ */
+#define IT8801_DT_INST_MFDCTRL(inst, idx) DT_INST_PHANDLE_BY_IDX(inst, mfdctrl, idx)
+
+#define IT8801_DT_INST_MFDCTRL_LEN(inst) DT_INST_PROP_LEN_OR(inst, mfdctrl, 0)
+
+#define IT8801_DEV_MFD(idx, inst)                                                                  \
+	DEVICE_DT_GET(DT_PHANDLE(IT8801_DT_INST_MFDCTRL(inst, idx), altctrls))
+#define IT8801_DEV_MFD_PIN(idx, inst)  DT_PHA(IT8801_DT_INST_MFDCTRL(inst, idx), altctrls, pin)
+#define IT8801_DEV_MFD_FUNC(idx, inst) DT_PHA(IT8801_DT_INST_MFDCTRL(inst, idx), altctrls, alt_func)
+
+#define IT8801_DT_MFD_ITEMS_FUNC(idx, inst)                                                        \
+	{                                                                                          \
+		.gpiocr = IT8801_DEV_MFD(idx, inst),                                               \
+		.pin = IT8801_DEV_MFD_PIN(idx, inst),                                              \
+		.alt_func = IT8801_DEV_MFD_FUNC(idx, inst),                                        \
+	}
+
+#define IT8801_DT_MFD_ITEMS_LIST(inst)                                                             \
+	{LISTIFY(IT8801_DT_INST_MFDCTRL_LEN(inst),                                                 \
+		IT8801_DT_MFD_ITEMS_FUNC, (,),                                                     \
+		inst) }
+
+/*
+ * Configure alternate function pin
+ */
+int mfd_it8801_configure_pins(const struct i2c_dt_spec *i2c_dev, const struct device *dev,
+			      uint8_t pin, uint8_t func);
+
 /* Define the IT8801 MFD interrupt callback function handler */
 typedef void (*it8801_callback_handler_t)(const struct device *dev);
 
