@@ -927,9 +927,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 		return;
 	}
 
-	struct bt_mesh_rpl *rpl = NULL;
-
-	if (bt_mesh_rpl_check(&rx, &rpl)) {
+	if (bt_mesh_rpl_check(&rx, NULL, true)) {
 		return;
 	}
 
