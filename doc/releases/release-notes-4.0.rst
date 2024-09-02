@@ -306,6 +306,9 @@ Libraries / Subsystems
 
 * Crypto
 
+  * Mbed TLS was updated to version 3.6.1. The release notes can be found at:
+    https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+
 * CMSIS-NN
 
 * FPGA
