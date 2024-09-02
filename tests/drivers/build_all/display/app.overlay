@@ -188,5 +188,31 @@
 			circulative;
 			start-from-right;
 		};
+
+		test_i2c:i2c@60013000{
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible="vnd,i2c";
+			reg = <0x60013000 0x1000>;
+			status="okay";
+			clock-frequency=<100000>;
+
+			test_ist3931:ist3931@3f{
+				reg=<0x3f>;
+				width=<64>;
+				height=<32>;
+				compatible = "istech,ist3931";
+				reset-gpios =<&test_gpio 1 0>;
+				x-offset=<0>;
+				y-offset=<32>;
+				voltage-converter;
+				voltage-follower;
+				lcd-bias=<3>;
+				lcd-ct=<223>;
+				duty-ratio=<64>;
+				frame-control=<400>;
+				reverse-com-output;
+			};
+		};
 	};
 };
