@@ -82,18 +82,42 @@
 #define BT_HFP_HF_SDP_FEATURE_ECNR_ENABLE 0
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+#define BT_HFP_HF_FEATURE_3WAY_CALL_ENABLE BT_HFP_HF_FEATURE_3WAY_CALL
+#define BT_HFP_HF_SDP_FEATURE_3WAY_CALL_ENABLE BT_HFP_HF_SDP_FEATURE_3WAY_CALL
+#else
+#define BT_HFP_HF_FEATURE_3WAY_CALL_ENABLE 0
+#define BT_HFP_HF_SDP_FEATURE_3WAY_CALL_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+#if defined(CONFIG_BT_HFP_HF_ECS)
+#define BT_HFP_HF_FEATURE_ECS_ENABLE BT_HFP_HF_FEATURE_ECS
+#else
+#define BT_HFP_HF_FEATURE_ECS_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
+#if defined(CONFIG_BT_HFP_HF_ECC)
+#define BT_HFP_HF_FEATURE_ECC_ENABLE BT_HFP_HF_FEATURE_ECC
+#else
+#define BT_HFP_HF_FEATURE_ECC_ENABLE 0
+#endif /* CONFIG_BT_HFP_HF_ECC */
+
 /* HFP HF Supported features */
 #define BT_HFP_HF_SUPPORTED_FEATURES (\
 	BT_HFP_HF_FEATURE_CLI_ENABLE | \
 	BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE |\
 	BT_HFP_HF_CODEC_NEG_ENABLE | \
-	BT_HFP_HF_FEATURE_ECNR_ENABLE)
+	BT_HFP_HF_FEATURE_ECNR_ENABLE | \
+	BT_HFP_HF_FEATURE_3WAY_CALL_ENABLE | \
+	BT_HFP_HF_FEATURE_ECS_ENABLE | \
+	BT_HFP_HF_FEATURE_ECC_ENABLE)
 
 /* HFP HF Supported features in SDP */
 #define BT_HFP_HF_SDP_SUPPORTED_FEATURES (\
 	BT_HFP_HF_SDP_FEATURE_CLI_ENABLE | \
 	BT_HFP_HF_SDP_FEATURE_VOLUME_ENABLE | \
-	BT_HFP_HF_SDP_FEATURE_ECNR_ENABLE)
+	BT_HFP_HF_SDP_FEATURE_ECNR_ENABLE | \
+	BT_HFP_HF_SDP_FEATURE_3WAY_CALL_ENABLE)
 
 #define BT_HFP_HF_CODEC_CVSD_MASK BIT(BT_HFP_HF_CODEC_CVSD)
 
@@ -128,14 +152,46 @@
 enum {
 	BT_HFP_HF_FLAG_CONNECTED,     /* HFP HF SLC Established */
 	BT_HFP_HF_FLAG_TX_ONGOING,    /* HFP HF TX is ongoing */
-	BT_HFP_HF_FLAG_INCOMING,      /* HFP HF call incoming */
-	BT_HFP_HF_FLAG_INCOMING_HELD, /* HFP HF call incoming is held */
-	BT_HFP_HF_FLAG_QUERY_HOLD,    /* HFP HF query response and hold status */
-	BT_HFP_HF_FLAG_ACTIVE,        /* HFP HF call active */
-	BT_HFP_HF_FLAG_DIALING,       /* HFP HF call dialing */
 	BT_HFP_HF_FLAG_CODEC_CONN,    /* HFP HF codec connection setup */
+	BT_HFP_HF_FLAG_CLCC_PENDING,  /* HFP HF CLCC is pending */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
+};
+
+/* bt_hfp_hf_call flags: the flags defined here represent hfp hf call parameters */
+enum {
+	BT_HFP_HF_CALL_IN_USING,      /* Object is in using */
+	BT_HFP_HF_CALL_CLCC,          /* CLCC report received */
+	BT_HFP_HF_CALL_INCOMING,      /* Incoming call */
+	BT_HFP_HF_CALL_INCOMING_HELD, /* Incoming call held */
+	BT_HFP_HF_CALL_OUTGOING_3WAY, /* Outgoing 3 way call */
+	BT_HFP_HF_CALL_INCOMING_3WAY, /* Incoming 3 way call */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_HFP_HF_CALL_NUM_FLAGS,
+};
+
+/* bt_hfp_hf_call state: the flags defined here represent hfp hf call state parameters */
+enum {
+	/* Call state flags */
+	BT_HFP_HF_CALL_STATE_TERMINATE, /* Call terminate */
+	BT_HFP_HF_CALL_STATE_OUTGOING,  /* Call outgoing */
+	BT_HFP_HF_CALL_STATE_INCOMING,  /* Call incoming */
+	BT_HFP_HF_CALL_STATE_ALERTING,  /* Call alerting */
+	BT_HFP_HF_CALL_STATE_WAITING,   /* Call waiting */
+	BT_HFP_HF_CALL_STATE_ACTIVE,    /* Call active */
+	BT_HFP_HF_CALL_STATE_HELD,      /* Call held */
+
+	/* Total number of flags - must be at the end of the enum */
+	BT_HFP_HF_CALL_STATE_NUM_FLAGS,
+};
+
+struct bt_hfp_hf_call {
+	struct bt_hfp_hf *hf;
+	uint8_t index;
+
+	ATOMIC_DEFINE(flags, BT_HFP_HF_CALL_NUM_FLAGS);
+	ATOMIC_DEFINE(state, BT_HFP_HF_CALL_STATE_NUM_FLAGS);
 };
 
 struct bt_hfp_hf {
@@ -158,6 +214,14 @@ struct bt_hfp_hf {
 
 	/* AT command initialization indicator */
 	uint8_t cmd_init_seq;
+
+	/* The features supported by AT+CHLD */
+	uint32_t chld_features;
+
+	struct k_work_delayable deferred_work;
+
+	/* calls */
+	struct bt_hfp_hf_call calls[CONFIG_BT_HFP_HF_MAX_CALLS];
 
 	ATOMIC_DEFINE(flags, BT_HFP_HF_NUM_FLAGS);
 };
@@ -214,6 +278,13 @@ enum hfp_hf_ag_indicators {
  * optional for the HF.
  */
 #define BT_HFP_CALL_QUITE	                    4
+/* Release a specific active call */
+#define BT_HFP_CALL_RELEASE_SPECIFIED_ACTIVE    10
+/* Private Consultation Mode
+ * place all parties of a multiparty call on hold with the
+ * exception of the specified call.
+ */
+#define BT_HFP_CALL_PRIVATE_CNLTN_MODE          20
 
 /* Active */
 #define BT_HFP_CLCC_STATUS_ACTIVE         0
