@@ -2,12 +2,12 @@
    :name: Direction Finding Central
    :relevant-api: bluetooth
 
-   Connect to a BLE Direction Finding peripheral and request Constant Tone Extension.
+   Connect to a Bluetooth LE Direction Finding peripheral and request Constant Tone Extension.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Direction Finding CTE reception in
+A simple application demonstrating the Bluetooth LE Direction Finding CTE reception in
 connected mode by requesting transmission of a packet containing Constant
 Tone Extension by connected peer device.
 

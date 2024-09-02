@@ -18,7 +18,7 @@ wait for disconnect before connecting to another synced device.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A controller that supports the Periodic Advertising with Responses (PAwR) - Advertiser feature
 
 Building and Running

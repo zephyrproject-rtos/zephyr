@@ -17,7 +17,7 @@ for a new connection to be established.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A controller that supports the Periodic Advertising with Responses (PAwR) - Scanner feature
 
 Building and Running

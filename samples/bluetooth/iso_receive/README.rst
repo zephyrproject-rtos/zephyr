@@ -2,7 +2,7 @@
    :name: Synchronized Receiver
    :relevant-api: bt_iso bluetooth
 
-   Use BLE Synchronized Receiver functionality.
+   Use Bluetooth LE Synchronized Receiver functionality.
 
 Overview
 ********

@@ -2,12 +2,12 @@
    :name: Direction Finding Peripheral
    :relevant-api: bluetooth
 
-   Implement BLE Direction Finding peripheral transmitting CTE in connected mode.
+   Implement Bluetooth LE Direction Finding peripheral transmitting CTE in connected mode.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Direction Finding CTE transmission in
+A simple application demonstrating the Bluetooth LE Direction Finding CTE transmission in
 connected mode by response to a request received from connected peer device.
 
 Requirements

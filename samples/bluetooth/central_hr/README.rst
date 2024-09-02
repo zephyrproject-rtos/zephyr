@@ -2,7 +2,7 @@
    :name: Heart-rate Monitor (Central)
    :relevant-api: bluetooth
 
-   Connect to a BLE heart-rate monitor and read heart-rate measurements.
+   Connect to a Bluetooth LE heart-rate monitor and read heart-rate measurements.
 
 Overview
 ********
@@ -15,7 +15,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

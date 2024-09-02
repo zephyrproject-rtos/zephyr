@@ -18,7 +18,7 @@ connection can also be added, depending on configuration choices.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A central device & monitor (e.g. nRF Connect) to check the advertiments and
   send scan requests.
 
