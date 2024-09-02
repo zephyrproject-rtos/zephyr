@@ -28,18 +28,6 @@ macro(toolchain_ld_base)
     )
   endif()
 
-  if (CONFIG_LLVM_USE_LD)
-    if(CONFIG_LIBGCC_RTLIB)
-      set(runtime_lib "libgcc")
-    elseif(CONFIG_COMPILER_RT_RTLIB)
-      set(runtime_lib "compiler_rt")
-    endif()
-
-    zephyr_link_libraries(
-      --config ${ZEPHYR_BASE}/cmake/toolchain/llvm/clang_${runtime_lib}.cfg
-    )
-  endif()
-
   if(CONFIG_CPP AND (CMAKE_C_COMPILER_ID STREQUAL "Clang"))
     # GNU ld complains when used with llvm/clang:
     #   error: section: init_array is not contiguous with other relro sections
