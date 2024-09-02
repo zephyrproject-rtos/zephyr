@@ -15,8 +15,9 @@ to route network traffic between these systems.
 Prerequisites
 *************
 
-On the Linux Host, fetch the Zephyr ``net-tools`` project, which is located
-in a separate Git repository:
+On the Linux Host, find the Zephyr `net-tools`_ project, which can either be
+found in a Zephyr standard installation under the ``tools/net-tools`` directory
+or installed stand alone from its own git repository:
 
 .. code-block:: console
 
@@ -190,3 +191,5 @@ or if you want to use native_sim board, type this:
 
 Also if you have firewall enabled in your host, you need to allow traffic
 between ``zeth.1``, ``zeth.2`` and ``zeth-br`` interfaces.
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
