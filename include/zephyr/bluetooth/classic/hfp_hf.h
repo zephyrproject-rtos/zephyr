@@ -429,6 +429,55 @@ struct bt_hfp_hf_cb {
  */
 int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
 
+/** @brief Initiate the service level connection establishment procedure
+ *
+ *  Initiate the service level connection establishment procedure on the
+ *  ACL connection specified by the parameter `conn` using the specific
+ *  RFCOMM channel discovered by the function `bt_br_discovery_start`.
+ *
+ *  The parameter `hf` is a output parameter. When the service level
+ *  connection establishment procedure is initiated without any error,
+ *  the HFP HF object is allocated and it will be returned via the parameter
+ *  `hf` if the parameter `hf` is not a NULL pointer.
+ *
+ *  When service level conenction is established, the registered callback
+ *  `connected` will be triggered to notify the application that the service
+ *  level connection establishment procedure is done. And the HFP HF object
+ *  is valid at this time. It means after the function is called without
+ *  any error, all interfaces provided by HFP HF can only be called after
+ *  the registered callback `connected` is triggered.
+ *
+ *  @param conn ACL connection object.
+ *  @param hf Created HFP HF object.
+ *  @param channel Peer RFCOMM channel to be connected.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_connect(struct bt_conn *conn, struct bt_hfp_hf **hf, uint8_t channel);
+
+/** @brief Release the service level connection
+ *
+ *  Release the service level connection from the peer device.
+ *
+ *  The function can only be called after the registered callback `connected`
+ *  is triggered.
+ *
+ *  If the function is called without any error, the HFP HF object is
+ *  invalid at this time. All interfaces provided by HFP HF should not
+ *  be called anymore.
+ *
+ *  If the service level connection is released, the registered callback
+ *  `disconnected` will be triggered to notify the application that the
+ *  service level connection release procedure is done. And the HFP HF
+ *  object will be freed after the registered callback `disconnected`
+ *  returned.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_disconnect(struct bt_hfp_hf *hf);
+
 /** @brief Handsfree HF enable/disable Calling Line Identification (CLI) Notification
  *
  *  Enable/disable Calling Line Identification (CLI) Notification.
