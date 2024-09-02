@@ -553,6 +553,58 @@ int clip_handle(struct at_client *hf_at)
 }
 #endif /* CONFIG_BT_HFP_HF_CLI */
 
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+int vgm_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->acl;
+	uint32_t gain;
+	int err;
+
+	err = at_get_number(hf_at, &gain);
+	if (err) {
+		LOG_ERR("could not get the microphone gain");
+		return err;
+	}
+
+	if (gain > BT_HFP_HF_VGM_GAIN_MAX) {
+		LOG_ERR("Invalid microphone gain (%d > %d)", gain, BT_HFP_HF_VGM_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	if (bt_hf->vgm) {
+		bt_hf->vgm(conn, (uint8_t)gain);
+	}
+
+	return 0;
+}
+
+int vgs_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->acl;
+	uint32_t gain;
+	int err;
+
+	err = at_get_number(hf_at, &gain);
+	if (err) {
+		LOG_ERR("could not get the speaker gain");
+		return err;
+	}
+
+	if (gain > BT_HFP_HF_VGS_GAIN_MAX) {
+		LOG_ERR("Invalid speaker gain (%d > %d)", gain, BT_HFP_HF_VGS_GAIN_MAX);
+		return -EINVAL;
+	}
+
+	if (bt_hf->vgs) {
+		bt_hf->vgs(conn, (uint8_t)gain);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -563,6 +615,10 @@ static const struct unsolicited {
 #if defined(CONFIG_BT_HFP_HF_CLI)
 	{ "CLIP", AT_CMD_TYPE_UNSOLICITED, clip_handle },
 #endif /* CONFIG_BT_HFP_HF_CLI */
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+	{ "VGM", AT_CMD_TYPE_UNSOLICITED, vgm_handle },
+	{ "VGS", AT_CMD_TYPE_UNSOLICITED, vgs_handle },
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
