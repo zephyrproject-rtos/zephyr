@@ -2,7 +2,7 @@
    :name: Peripheral SC-only
    :relevant-api: bt_conn bluetooth
 
-   Enable "Secure Connections Only" mode for a BLE peripheral.
+   Enable "Secure Connections Only" mode for a Bluetooth LE peripheral.
 
 Overview
 ********
@@ -16,7 +16,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

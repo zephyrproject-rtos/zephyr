@@ -2,7 +2,7 @@
    :name: Central / GATT Write
    :relevant-api: bluetooth
 
-   Scan for a BLE device, connect to it and write a value to a characteristic.
+   Scan for a Bluetooth LE device, connect to it and write a value to a characteristic.
 
 Overview
 ********
@@ -14,7 +14,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

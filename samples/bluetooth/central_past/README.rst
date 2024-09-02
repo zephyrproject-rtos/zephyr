@@ -7,13 +7,13 @@
 Overview
 ********
 
-A simple application demonstrating the BLE Periodic Advertising Sync Transfer
+A simple application demonstrating the Bluetooth LE Periodic Advertising Sync Transfer
 functionality as the sender.
 
 Requirements
 ************
 
-* A board with BLE 5.1 support
+* A board with Bluetooth LE 5.1 support
 
 Building and Running
 ********************

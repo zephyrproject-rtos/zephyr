@@ -2,7 +2,7 @@
    :name: Extended Advertising
    :relevant-api: bluetooth
 
-   Use the BLE extended advertising feature.
+   Use the Bluetooth LE extended advertising feature.
 
 Overview
 ********

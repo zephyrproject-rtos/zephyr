@@ -2,12 +2,12 @@
    :name: Periodic Advertising with Responses (PAwR) Advertiser
    :relevant-api: bt_gap bluetooth
 
-   Use BLE Periodic Advertising with Responses (PAwR) Advertiser functionality.
+   Use Bluetooth LE Periodic Advertising with Responses (PAwR) Advertiser functionality.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Periodic Advertising with
+A simple application demonstrating the Bluetooth LE Periodic Advertising with
 Responses Advertiser functionality.
 
 This sample will scan for the corresponding sync sample and send the required
@@ -24,7 +24,7 @@ the assigned subevent and response slot.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A controller that supports the Periodic Advertising with Responses (PAwR) - Advertiser feature
 
 Building and Running

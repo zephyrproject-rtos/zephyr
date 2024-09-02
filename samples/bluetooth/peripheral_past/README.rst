@@ -7,13 +7,13 @@
 Overview
 ********
 
-A simple application demonstrating the BLE Periodic Advertising Synchronization
+A simple application demonstrating the Bluetooth LE Periodic Advertising Synchronization
 Transfer (PAST) functionality as the receiver.
 
 Requirements
 ************
 
-* A board with BLE 5.1 support
+* A board with Bluetooth LE 5.1 support
 
 Building and Running
 ********************
