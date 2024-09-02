@@ -258,6 +258,10 @@ elseif(QEMU_NET_STACK)
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
       COMMAND
+      #Disable Ctrl-C to ensure that users won't accidentally exit
+      #w/o killing the monitor.
+      stty intr ^d
+      COMMAND
       #This command is run in the background using '&'. This prevents
       #chaining other commands with '&&'. The command is enclosed in '{}'
       #to fix this.
@@ -268,7 +272,11 @@ elseif(QEMU_NET_STACK)
       /tmp/ip-stack-client
       > /dev/null &
       }
-      # TODO: Support cleanup of the monitor_15_4 process
+      )
+    set(POST_QEMU_COMMANDS_FOR_server
+      COMMAND
+      # Kill the monitor_15_4 sub-process
+      pkill -P $$$$
       )
   endif()
 endif(QEMU_PIPE_STACK)
@@ -440,6 +448,7 @@ foreach(target ${qemu_targets})
     ${MORE_FLAGS_FOR_${target}}
     ${QEMU_SMP_FLAGS}
     ${QEMU_KERNEL_OPTION}
+    ${POST_QEMU_COMMANDS_FOR_${target}}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
