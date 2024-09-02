@@ -277,6 +277,12 @@ config BT_HFP_AG_VOICE_RECG_TEXT
 	help
 	  This option enables Voice Recognition Text for HFP AG
 
+config BT_HFP_AG_VOICE_TAG
+	bool "Attach a phone number for a voice tag for HFP AG [EXPERIMENTAL]"
+	select BT_HFP_AG_VOICE_RECG
+	help
+	  This option enables Attach a phone number for a voice tag for HFP AG
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
