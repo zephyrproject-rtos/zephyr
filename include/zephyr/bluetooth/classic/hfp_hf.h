@@ -28,6 +28,8 @@ extern "C" {
 #define BT_HFP_HF_CODEC_MSBC    0x02
 #define BT_HFP_HF_CODEC_LC3_SWB 0x03
 
+struct bt_hfp_hf;
+
 /** @brief HFP profile application callback */
 struct bt_hfp_hf_cb {
 	/** HF connected callback to application
@@ -36,32 +38,35 @@ struct bt_hfp_hf_cb {
 	 *  connection completes.
 	 *
 	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*connected)(struct bt_conn *conn);
+	void (*connected)(struct bt_conn *conn, struct bt_hfp_hf *hf);
 	/** HF disconnected callback to application
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  connection gets disconnected, including when a connection gets
 	 *  rejected or cancelled or any error in SLC establishment.
+	 *  And the HFP HF object will be freed after the registered
+	 *  callback `disconnected` returned.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*disconnected)(struct bt_conn *conn);
+	void (*disconnected)(struct bt_hfp_hf *hf);
 	/** HF SCO/eSCO connected Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  SCO/eSCO connection completes.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param sco_conn SCO/eSCO Connection object.
 	 */
-	void (*sco_connected)(struct bt_conn *conn, struct bt_conn *sco_conn);
+	void (*sco_connected)(struct bt_hfp_hf *hf, struct bt_conn *sco_conn);
 	/** HF SCO/eSCO disconnected Callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  SCO/eSCO connection gets disconnected.
 	 *
-	 *  @param conn Connection object.
+	 *  @param conn SCO/eSCO Connection object.
 	 *  @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */
 	void (*sco_disconnected)(struct bt_conn *sco_conn, uint8_t reason);
@@ -69,114 +74,114 @@ struct bt_hfp_hf_cb {
 	 *
 	 *  This callback provides service indicator value to the application
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param value service indicator value received from the AG.
 	 */
-	void (*service)(struct bt_conn *conn, uint32_t value);
+	void (*service)(struct bt_hfp_hf *hf, uint32_t value);
 	/** HF call outgoing Callback
 	 *
 	 *  This callback provides the outgoing call status to
 	 *  the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*outgoing)(struct bt_conn *conn);
+	void (*outgoing)(struct bt_hfp_hf *hf);
 	/** HF call outgoing call is ringing Callback
 	 *
 	 *  This callback provides the outgoing call is ringing
 	 *  status to the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*remote_ringing)(struct bt_conn *conn);
+	void (*remote_ringing)(struct bt_hfp_hf *hf);
 	/** HF call incoming Callback
 	 *
 	 *  This callback provides the incoming call status to
 	 *  the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*incoming)(struct bt_conn *conn);
+	void (*incoming)(struct bt_hfp_hf *hf);
 	/** HF incoming call on hold Callback
 	 *
 	 *  This callback provides the incoming call on hold status to
 	 *  the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*incoming_held)(struct bt_conn *conn);
+	void (*incoming_held)(struct bt_hfp_hf *hf);
 	/** HF call accept Callback
 	 *
 	 *  This callback provides the incoming/outgoing call active
 	 *  status to the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*accept)(struct bt_conn *conn);
+	void (*accept)(struct bt_hfp_hf *hf);
 	/** HF call reject Callback
 	 *
 	 *  This callback provides the incoming/outgoing call reject
 	 *  status to the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*reject)(struct bt_conn *conn);
+	void (*reject)(struct bt_hfp_hf *hf);
 	/** HF call terminate Callback
 	 *
 	 *  This callback provides the incoming/outgoing call terminate
 	 *  status to the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*terminate)(struct bt_conn *conn);
+	void (*terminate)(struct bt_hfp_hf *hf);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides call held indicator value to the application
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param value call held indicator value received from the AG.
 	 */
-	void (*call_held)(struct bt_conn *conn, uint32_t value);
+	void (*call_held)(struct bt_hfp_hf *hf, uint32_t value);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides signal indicator value to the application
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param value signal indicator value received from the AG.
 	 */
-	void (*signal)(struct bt_conn *conn, uint32_t value);
+	void (*signal)(struct bt_hfp_hf *hf, uint32_t value);
 	/** HF indicator Callback
 	 *
 	 *  This callback provides roaming indicator value to the application
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param value roaming indicator value received from the AG.
 	 */
-	void (*roam)(struct bt_conn *conn, uint32_t value);
+	void (*roam)(struct bt_hfp_hf *hf, uint32_t value);
 	/** HF indicator Callback
 	 *
 	 *  This callback battery service indicator value to the application
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param value battery indicator value received from the AG.
 	 */
-	void (*battery)(struct bt_conn *conn, uint32_t value);
+	void (*battery)(struct bt_hfp_hf *hf, uint32_t value);
 	/** HF incoming call Ring indication callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
 	 *  is an incoming call.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 */
-	void (*ring_indication)(struct bt_conn *conn);
+	void (*ring_indication)(struct bt_hfp_hf *hf);
 	/** HF call dialing Callback
 	 *
 	 *  This callback provides call dialing result to the application.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param err Result of calling dialing.
 	 */
-	void (*dialing)(struct bt_conn *conn, int err);
+	void (*dialing)(struct bt_hfp_hf *hf, int err);
 	/** HF calling line identification notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -185,11 +190,11 @@ struct bt_hfp_hf_cb {
 	 *  result code +CLIP will be ignored. And the callback will not be
 	 *  notified.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param number Notified phone number.
 	 *  @param type Specify the format of the phone number.
 	 */
-	void (*clip)(struct bt_conn *conn, char *number, uint8_t type);
+	void (*clip)(struct bt_hfp_hf *hf, char *number, uint8_t type);
 	/** HF microphone gain notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -198,10 +203,10 @@ struct bt_hfp_hf_cb {
 	 *  result code +VGM will be ignored. And the callback will not be
 	 *  notified.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param gain Microphone gain.
 	 */
-	void (*vgm)(struct bt_conn *conn, uint8_t gain);
+	void (*vgm)(struct bt_hfp_hf *hf, uint8_t gain);
 	/** HF speaker gain notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -210,10 +215,10 @@ struct bt_hfp_hf_cb {
 	 *  result code +VGS will be ignored. And the callback will not be
 	 *  notified.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param gain Speaker gain.
 	 */
-	void (*vgs)(struct bt_conn *conn, uint8_t gain);
+	void (*vgs)(struct bt_hfp_hf *hf, uint8_t gain);
 	/** HF in-band ring tone notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -221,10 +226,10 @@ struct bt_hfp_hf_cb {
 	 *  indicate to the HF that the in-band ring tone setting
 	 *  has been locally changed.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param inband In-band ring tone status from the AG.
 	 */
-	void (*inband_ring)(struct bt_conn *conn, bool inband);
+	void (*inband_ring)(struct bt_hfp_hf *hf, bool inband);
 	/** HF network operator notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -232,7 +237,7 @@ struct bt_hfp_hf_cb {
 	 *  response the AT+COPS? command issued by the HF by calling
 	 *  function `bt_hfp_hf_get_operator`.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param mode Current mode.
 	 *  @param format Format of the `operator` parameter string.
 	 *                It should be zero.
@@ -240,7 +245,7 @@ struct bt_hfp_hf_cb {
 	 *                  representing the name of the network
 	 *                  operator.
 	 */
-	void (*operator)(struct bt_conn *conn, uint8_t mode, uint8_t format, char *operator);
+	void (*operator)(struct bt_hfp_hf *hf, uint8_t mode, uint8_t format, char *operator);
 	/** Codec negotiate callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -260,10 +265,10 @@ struct bt_hfp_hf_cb {
 	 *  unsolicited result code +BCS will be ignored. And the callback
 	 *  will not be notified.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param id Negotiated Codec ID.
 	 */
-	void (*codec_negotiate)(struct bt_conn *conn, uint8_t id);
+	void (*codec_negotiate)(struct bt_hfp_hf *hf, uint8_t id);
 	/** HF ECNR turns off callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -271,10 +276,10 @@ struct bt_hfp_hf_cb {
 	 *  If @kconfig{CONFIG_BT_HFP_HF_ECNR} is not enabled, the
 	 *  callback will not be notified.
 	 *
-	 *  @param conn Connection object.
+	 *  @param hf HFP HF object.
 	 *  @param err The result of request.
 	 */
-	void (*ecnr_turn_off)(struct bt_conn *conn, int err);
+	void (*ecnr_turn_off)(struct bt_hfp_hf *hf, int err);
 };
 
 /** @brief Register HFP HF profile
@@ -296,12 +301,12 @@ int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
  *  If @kconfig{CONFIG_BT_HFP_HF_CLI} is not enabled, the error `-ENOTSUP` will
  *  be returned if the function called.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param enable Enable/disable CLI.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
+int bt_hfp_hf_cli(struct bt_hfp_hf *hf, bool enable);
 
 /** @brief Handsfree HF report Gain of Microphone (VGM)
  *
@@ -319,12 +324,12 @@ int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
  *  function. Then after the HF connection callback returned, VGM gain
  *  will be sent to HFP AG.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param gain Gain of microphone.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
+int bt_hfp_hf_vgm(struct bt_hfp_hf *hf, uint8_t gain);
 
 /** @brief Handsfree HF report Gain of Speaker (VGS)
  *
@@ -342,23 +347,23 @@ int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
  *  function. Then after the HF connection callback returned, VGS gain
  *  will be sent to HFP AG.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param gain Gain of speaker.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_vgs(struct bt_conn *conn, uint8_t gain);
+int bt_hfp_hf_vgs(struct bt_hfp_hf *hf, uint8_t gain);
 
 /** @brief Handsfree HF requests currently selected operator
  *
  *  Send the AT+COPS? (Read) command to find the currently
  *  selected operator.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_get_operator(struct bt_conn *conn);
+int bt_hfp_hf_get_operator(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF accept the incoming call
  *
@@ -366,11 +371,11 @@ int bt_hfp_hf_get_operator(struct bt_conn *conn);
  *  OR, send the AT+BTRH=1 command to accept a held incoming
  *  call.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_accept(struct bt_conn *conn);
+int bt_hfp_hf_accept(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF reject the incoming call
  *
@@ -378,21 +383,21 @@ int bt_hfp_hf_accept(struct bt_conn *conn);
  *  OR, send the AT+BTRH=2 command to reject a held incoming
  *  call.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_reject(struct bt_conn *conn);
+int bt_hfp_hf_reject(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF terminate the incoming call
  *
  *  Send the AT+CHUP command to terminate the incoming call.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_terminate(struct bt_conn *conn);
+int bt_hfp_hf_terminate(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF put the incoming call on hold
  *
@@ -400,11 +405,11 @@ int bt_hfp_hf_terminate(struct bt_conn *conn);
  *  If the incoming call has been held, the callback `on_hold` will
  *  be triggered.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_hold_incoming(struct bt_conn *conn);
+int bt_hfp_hf_hold_incoming(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF query respond and hold status of AG
  *
@@ -412,11 +417,11 @@ int bt_hfp_hf_hold_incoming(struct bt_conn *conn);
  *  The status respond and hold will be notified through callback
  *  `on_hold`.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_query_respond_hold_status(struct bt_conn *conn);
+int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF phone number call
  *
@@ -426,12 +431,12 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_conn *conn);
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param number Phone number.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number);
+int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number);
 
 /** @brief Handsfree HF memory dialing call
  *
@@ -441,12 +446,12 @@ int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number);
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param location Memory location.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location);
+int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location);
 
 /** @brief Handsfree HF redial last number
  *
@@ -456,11 +461,11 @@ int bt_hfp_hf_memory_dial(struct bt_conn *conn, const char *location);
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_redial(struct bt_conn *conn);
+int bt_hfp_hf_redial(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF setup audio connection
  *
@@ -468,11 +473,11 @@ int bt_hfp_hf_redial(struct bt_conn *conn);
  *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
  *  `-ENOTSUP` will be returned if the function called.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_audio_connect(struct bt_conn *conn);
+int bt_hfp_hf_audio_connect(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF set selected codec id
  *
@@ -485,12 +490,12 @@ int bt_hfp_hf_audio_connect(struct bt_conn *conn);
  *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
  *  `-ENOTSUP` will be returned if the function called.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param codec_id Selected codec id.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_select_codec(struct bt_conn *conn, uint8_t codec_id);
+int bt_hfp_hf_select_codec(struct bt_hfp_hf *hf, uint8_t codec_id);
 
 /** @brief Handsfree HF set supported codec ids
  *
@@ -499,12 +504,12 @@ int bt_hfp_hf_select_codec(struct bt_conn *conn, uint8_t codec_id);
  *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
  *  `-ENOTSUP` will be returned if the function called.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *  @param codec_ids Supported codec IDs.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_set_codecs(struct bt_conn *conn, uint8_t codec_ids);
+int bt_hfp_hf_set_codecs(struct bt_hfp_hf *hf, uint8_t codec_ids);
 
 /** @brief Handsfree HF turns off AG's EC and NR
  *
@@ -514,11 +519,11 @@ int bt_hfp_hf_set_codecs(struct bt_conn *conn, uint8_t codec_ids);
  *  If @kconfig{CONFIG_BT_HFP_HF_ECNR} is not enabled, the error
  *  `-ENOTSUP` will be returned if the function called.
  *
- *  @param conn Connection object.
+ *  @param hf HFP HF object.
  *
  *  @return 0 in case of success or negative value in case of error.
  */
-int bt_hfp_hf_turn_off_ecnr(struct bt_conn *conn);
+int bt_hfp_hf_turn_off_ecnr(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }
