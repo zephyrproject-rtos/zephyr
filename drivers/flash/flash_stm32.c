@@ -364,7 +364,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 }
 
 #if defined(CONFIG_FLASH_EX_OP_ENABLED) && defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
-static int flash_stm32_control_register_disable(const struct device *dev)
+int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
@@ -394,7 +394,7 @@ static int flash_stm32_control_register_disable(const struct device *dev)
 #endif
 }
 
-static int flash_stm32_option_bytes_disable(const struct device *dev)
+int flash_stm32_option_bytes_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
@@ -431,41 +431,6 @@ flash_stm32_get_parameters(const struct device *dev)
 
 	return &flash_stm32_parameters;
 }
-
-#ifdef CONFIG_FLASH_EX_OP_ENABLED
-static int flash_stm32_ex_op(const struct device *dev, uint16_t code,
-			     const uintptr_t in, void *out)
-{
-	int rv = -ENOTSUP;
-
-	flash_stm32_sem_take(dev);
-
-	switch (code) {
-#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
-	case FLASH_STM32_EX_OP_SECTOR_WP:
-		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
-		break;
-#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-	case FLASH_STM32_EX_OP_RDP:
-		rv = flash_stm32_ex_op_rdp(dev, in, out);
-		break;
-#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
-#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
-	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
-		rv = flash_stm32_option_bytes_disable(dev);
-		break;
-	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
-		rv = flash_stm32_control_register_disable(dev);
-		break;
-#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
-	}
-
-	flash_stm32_sem_give(dev);
-
-	return rv;
-}
-#endif
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),

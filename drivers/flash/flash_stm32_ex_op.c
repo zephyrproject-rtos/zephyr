@@ -225,3 +225,36 @@ int flash_stm32_ex_op_rdp(const struct device *dev, const uintptr_t in,
 	return rc;
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+int flash_stm32_ex_op(const struct device *dev, uint16_t code,
+			     const uintptr_t in, void *out)
+{
+	int rv = -ENOTSUP;
+
+	flash_stm32_sem_take(dev);
+
+	switch (code) {
+#if defined(CONFIG_FLASH_STM32_WRITE_PROTECT)
+	case FLASH_STM32_EX_OP_SECTOR_WP:
+		rv = flash_stm32_ex_op_sector_wp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_WRITE_PROTECT */
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+	case FLASH_STM32_EX_OP_RDP:
+		rv = flash_stm32_ex_op_rdp(dev, in, out);
+		break;
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+	case FLASH_STM32_EX_OP_BLOCK_OPTION_REG:
+		rv = flash_stm32_option_bytes_disable(dev);
+		break;
+	case FLASH_STM32_EX_OP_BLOCK_CONTROL_REG:
+		rv = flash_stm32_control_register_disable(dev);
+		break;
+#endif /* CONFIG_FLASH_STM32_BLOCK_REGISTERS */
+	}
+
+	flash_stm32_sem_give(dev);
+
+	return rv;
+}
