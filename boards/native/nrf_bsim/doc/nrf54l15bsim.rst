@@ -21,7 +21,7 @@ run applications natively on the development system. This has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
-Just like for the nrf54l15pdk target,
+Just like for the nrf54l15dk target,
 the nrf54l15bsim/nrf54l15/cpuapp build target provides support for the application core,
 on the simulated nRF54L15 SOC.
 
@@ -51,7 +51,7 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * TIMER
 * UICR (User Information Configuration Registers)
 
-and will use the same drivers as the nrf54l15pdk targets for these.
+and will use the same drivers as the nrf54l15dk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
 
