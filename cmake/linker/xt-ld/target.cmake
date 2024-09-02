@@ -139,8 +139,5 @@ endfunction(toolchain_ld_link_elf)
 
 # xt-ld is Xtensa's own version of binutils' ld.
 # So we can reuse most of the ld configurations.
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)
