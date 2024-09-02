@@ -138,6 +138,23 @@ config BT_HFP_HF_MAX_CALLS
 	help
 	  This option sets maximum supported calls for HFP HF
 
+config BT_HFP_HF_VOICE_RECG
+	bool "Voice recognition activation for HFP HF [EXPERIMENTAL]"
+	help
+	  This option enables Voice recognition activation for HFP HF
+
+config BT_HFP_HF_ENH_VOICE_RECG
+	bool "Enhanced Voice Recognition Status for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_VOICE_RECG
+	help
+	  This option enables Enhanced Voice Recognition Status for HFP HF
+
+config BT_HFP_HF_VOICE_RECG_TEXT
+	bool "Voice Recognition Text for HFP HF [EXPERIMENTAL]"
+	select BT_HFP_HF_ENH_VOICE_RECG
+	help
+	  This option enables Voice Recognition Text for HFP HF
+
 endif # BT_HFP_HF
 
 if BT_HFP_AG

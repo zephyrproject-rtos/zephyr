@@ -305,6 +305,74 @@ struct bt_hfp_hf_cb {
 	 *  @param type Specify the format of the phone number.
 	 */
 	void (*call_waiting)(struct bt_hfp_hf_call *call, char *number, uint8_t type);
+	/** Voice recognition activation/deactivation callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  unsolicited result code +BVRA is notified the HF when the
+	 *  voice recognition function in the AG is activated/deactivated
+	 *  autonomously from the AG.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_VOICE_RECG} is not enabled, the
+	 *  unsolicited result code +BVRA will be ignored. And the callback
+	 *  will not be notified.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param activate Voice recognition activation/deactivation.
+	 */
+	void (*voice_recognition)(struct bt_hfp_hf *hf, bool activate);
+	/** Voice recognition engine state callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  unsolicited result code `+BVRA: 1,<vrecstate>` is received from AG.
+	 *  `<vrecstate>`: Bitmask that reflects the current state of the voice
+	 *  recognition engine on the AG.
+	 *  Bit 0 - If it is 1, the AG is ready to accept audio input
+	 *  Bit 1 - If it is 1, the AG is sending audio to the HF
+	 *  Bit 2 - If it is 1, the AG is processing the audio input
+	 *  If @kconfig{CONFIG_BT_HFP_HF_ENH_VOICE_RECG} is not enabled, the
+	 *  unsolicited result code +BVRA will be ignored. And the callback
+	 *  will not be notified.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param state Value of `<vrecstate>`.
+	 */
+	void (*vre_state)(struct bt_hfp_hf *hf, uint8_t state);
+	/** Textual representation callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  unsolicited result code `+BVRA: 1,<vrecstate>,
+	 *  <textualRepresentation>` is received from AG.
+	 *  `<textualRepresentation>: <textID>,<textType>,<textOperation>,
+	 *  <string>`.
+	 *  `<textID>`: Unique ID of the current text as a hexadecimal string
+	 *  (a maximum of 4 characters in length, but less than 4 characters
+	 *  in length is valid).
+	 *  `<textType>`: ID of the textType from the following list:
+	 *  0 - Text recognized by the AG from the audio input provided by the HF
+	 *  1 - Text of the audio output from the AG
+	 *  2 - Text of the audio output from the AG that contains a question
+	 *  3 - Text of the audio output from the AG that contains an error
+	 *      description
+	 *  `<textOperation>`: ID of the operation of the text
+	 *  1 - NewText: Indicates that a new text started. Shall be used when the
+	 *               `<textID>` changes
+	 *  2 - Replace: Replace any existing text with the same `<textID>` and
+	 *               same `<textType>`
+	 *  3 - Append: Attach new text to existing text and keep the same
+	 *              `<textID>` and same `<textType>`
+	 *  `<string>`: The `<string>` parameter shall be a UTF-8 text string and
+	 *  shall always be contained within double quotes.
+	 *  If @kconfig{CONFIG_BT_HFP_HF_VOICE_RECG_TEXT} is not enabled, the
+	 *  unsolicited result code +BVRA will be ignored. And the callback
+	 *  will not be notified.
+	 *
+	 *  @param hf HFP HF object.
+	 *  @param id Value of `<textID>`.
+	 *  @param type Value of `<textType>`.
+	 *  @param operation Value of `<textOperation>`.
+	 *  @param text Value of `<string>`.
+	 */
+	void (*textual_representation)(struct bt_hfp_hf *hf, char *id, uint8_t type,
+				       uint8_t operation, char *text);
 };
 
 /** @brief Register HFP HF profile
@@ -667,6 +735,33 @@ int bt_hfp_hf_release_specified_call(struct bt_hfp_hf_call *call);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_private_consultation_mode(struct bt_hfp_hf_call *call);
+
+/** @brief Handsfree HF enable/disable the voice recognition function
+ *
+ *  Enables/disables the voice recognition function in the AG.
+ *  If @kconfig{CONFIG_BT_HFP_HF_VOICE_RECG} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *  @param activate Activate/deactivate the voice recognition function.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_voice_recognition(struct bt_hfp_hf *hf, bool activate);
+
+/** @brief Handsfree HF indicate that the HF is ready to accept audio
+ *
+ *  This value indicates that the HF is ready to accept audio when
+ *  the Audio Connection is first established. The HF shall only send
+ *  this value if the eSCO link has been established.
+ *  If @kconfig{CONFIG_BT_HFP_HF_ENH_VOICE_RECG} is not enabled, the error
+ *  `-ENOTSUP` will be returned if the function called.
+ *
+ *  @param hf HFP HF object.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf);
 
 #ifdef __cplusplus
 }
