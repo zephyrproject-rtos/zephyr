@@ -18,6 +18,15 @@ config SOC_RP2350A_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
 
+config SOC_RP2350B_M33
+	select ARM
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
 	default y
