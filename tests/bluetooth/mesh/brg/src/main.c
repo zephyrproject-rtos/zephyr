@@ -205,8 +205,7 @@ ZTEST(bt_mesh_brg_cfg, test_basic_functionality_storage)
 	}
 }
 
-static void pending_store_enable_create_expectations(bool *enable_val,
-		int n, const struct bt_mesh_brg_cfg_row *tbl_val)
+static void pending_store_enable_create_expectations(bool *enable_val)
 {
 	if (*enable_val) {
 		ztest_expect_data(settings_save_one, name, "bt/mesh/brg_en");
@@ -215,7 +214,11 @@ static void pending_store_enable_create_expectations(bool *enable_val,
 	} else {
 		ztest_expect_data(settings_delete, name, "bt/mesh/brg_en");
 	}
+}
 
+static void pending_store_tbl_create_expectations(int n,
+						  const struct bt_mesh_brg_cfg_row *tbl_val)
+{
 	if (n > 0) {
 		ztest_expect_data(settings_save_one, name, "bt/mesh/brg_tbl");
 		ztest_expect_value(settings_save_one, val_len,
@@ -230,16 +233,12 @@ static void pending_store_enable_create_expectations(bool *enable_val,
 ZTEST(bt_mesh_brg_cfg, test_brg_cfg_en)
 {
 	int err;
-	int n;
 	bool val;
-	const struct bt_mesh_brg_cfg_row *tbl;
 
 	check_bt_mesh_brg_cfg_tbl_reset();
 	val = bt_mesh_brg_cfg_enable_get();
-	n = bt_mesh_brg_cfg_tbl_get(&tbl);
 	zassert_equal(val, false, NULL);
-	pending_store_enable_create_expectations(&val, n, tbl);
-	bt_mesh_brg_cfg_pending_store();
+	/* No changed to the states, nothing to check. */
 
 
 	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
@@ -247,8 +246,7 @@ ZTEST(bt_mesh_brg_cfg, test_brg_cfg_en)
 	err = bt_mesh_brg_cfg_enable_set(true);
 	zassert_equal(err, 0, NULL);
 	val = bt_mesh_brg_cfg_enable_get();
-	n = bt_mesh_brg_cfg_tbl_get(&tbl);
-	pending_store_enable_create_expectations(&val, n, tbl);
+	pending_store_enable_create_expectations(&val);
 	bt_mesh_brg_cfg_pending_store();
 
 	zassert_equal(bt_mesh_brg_cfg_enable_get(), true, NULL);
@@ -258,7 +256,6 @@ ZTEST(bt_mesh_brg_cfg, test_brg_cfg_en)
 ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 {
 	int n, err;
-	bool b_en;
 	struct bt_mesh_brg_cfg_row test_vec = {
 		.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
 		.net_idx1 = 1,
@@ -277,12 +274,11 @@ ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 	const struct bt_mesh_brg_cfg_row *tbl;
 
 	n = bt_mesh_brg_cfg_tbl_get(&tbl);
-	b_en = bt_mesh_brg_cfg_enable_get();
 
 	zassert_equal(n, 1);
 	zassert_true(tbl);
 
-	pending_store_enable_create_expectations(&b_en, 1, &test_vec);
+	pending_store_tbl_create_expectations(1, &test_vec);
 	bt_mesh_brg_cfg_pending_store();
 }
 
