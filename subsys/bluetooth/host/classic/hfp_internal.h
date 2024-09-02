@@ -79,6 +79,11 @@
 #define HF_MAX_BUF_LEN       BT_HF_CLIENT_MAX_PDU
 #define HF_MAX_AG_INDICATORS 20
 
+#define BT_HFP_HF_VGM_GAIN_MAX 15
+#define BT_HFP_HF_VGM_GAIN_MIN 0
+
+#define BT_HFP_HF_VGS_GAIN_MAX 15
+#define BT_HFP_HF_VGS_GAIN_MIN 0
 
 /* bt_hfp_hf flags: the flags defined here represent hfp hf parameters */
 enum {
