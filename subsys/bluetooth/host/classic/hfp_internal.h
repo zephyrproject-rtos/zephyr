@@ -119,6 +119,7 @@ enum {
 	BT_HFP_HF_FLAG_TX_ONGOING, /* HFP HF TX is ongoing */
 	BT_HFP_HF_FLAG_INCOMING,   /* HFP HF call incoming */
 	BT_HFP_HF_FLAG_ACTIVE,     /* HFP HF call active */
+	BT_HFP_HF_FLAG_DIALING,    /* HFP HF call dialing */
 	BT_HFP_HF_FLAG_CODEC_CONN, /* HFP HF codec connection setup */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,

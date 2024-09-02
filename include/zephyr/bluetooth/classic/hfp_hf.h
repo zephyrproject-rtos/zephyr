@@ -160,6 +160,14 @@ struct bt_hfp_hf_cb {
 	 */
 	void (*cmd_complete_cb)(struct bt_conn *conn,
 			      struct bt_hfp_hf_cmd_complete *cmd);
+	/** HF call dialing Callback
+	 *
+	 *  This callback provides call dialing result to the application.
+	 *
+	 *  @param conn Connection object.
+	 *  @param err Result of calling dialing.
+	 */
+	void (*dialing)(struct bt_conn *conn, int err);
 	/** HF calling line identification notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -372,6 +380,21 @@ int bt_hfp_hf_reject(struct bt_conn *conn);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_hfp_hf_terminate(struct bt_conn *conn);
+
+/** @brief Handsfree HF phone number call
+ *
+ *  Initiate outgoing voice calls by providing the destination phone
+ *  number to the AG.
+ *  Send the ATDdd…dd command to start phone number call.
+ *  The result of the command will be notified through the callback
+ *  `dialing`.
+ *
+ *  @param conn Connection object.
+ *  @param number Phone number.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_hf_number_call(struct bt_conn *conn, const char *number);
 
 /** @brief Handsfree HF setup audio connection
  *
