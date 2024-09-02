@@ -23,12 +23,12 @@ user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
 #endif
 
 /* User available SRAM memory segments */
-user_iram_seg_org = (SRAM_IRAM_START + SRAM_CACHE_SIZE);
-user_dram_seg_org = (SRAM_DRAM_START + SRAM_CACHE_SIZE);
-user_dram_end = (user_iram_end - IRAM_DRAM_OFFSET);
-user_idram_size = (user_dram_end - user_dram_seg_org);
-user_iram_seg_len = user_idram_size;
-user_dram_seg_len = user_idram_size;
+user_iram_seg_org = SRAM_IRAM_START + SRAM_CACHE_SIZE;
+user_dram_seg_org = SRAM_DRAM_START + SRAM_CACHE_SIZE;
+user_dram_end = user_iram_end - IRAM_DRAM_OFFSET;
+user_sram_size = (user_dram_end - user_dram_seg_org);
+user_iram_seg_len = user_sram_size;
+user_dram_seg_len = user_sram_size;
 
 /* Aliases */
 #define FLASH_CODE_REGION irom0_0_seg
@@ -102,7 +102,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 _rom_store_table = 0;
 
 /* Used as a pointer to the heap end */
-_heap_sentry = DRAM_BUFFERS_START;
+_heap_sentry = DRAM_RESERVED_START;
 
 SECTIONS
 {
@@ -797,17 +797,17 @@ SECTIONS
 
   .dram0.noinit (NOLOAD) :
   {
-    . = ALIGN(8);
+    . = ALIGN(4);
     *(.noinit)
     *(.noinit.*)
-    . = ALIGN(8);
+    . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "SRAM code/data does not fit.")
 
   /* --- END OF DRAM --- */
 
@@ -946,6 +946,8 @@ SECTIONS
 
   /* --- END OF .rodata --- */
 
+  /* --- XTENSA GLUE AND DEBUG BEGIN --- */
+
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
 #endif
@@ -987,11 +989,7 @@ SECTIONS
   }
 }
 
-ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
-          "DRAM0 segment data does not fit.")
-
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
+  /* --- XTENSA GLUE AND DEBUG END --- */
 
 #ifdef CONFIG_ESP_SPIRAM
 ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),
