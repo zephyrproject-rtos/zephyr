@@ -694,6 +694,17 @@ int bt_hfp_ag_vre_state(struct bt_hfp_ag *ag, uint8_t state);
 int bt_hfp_ag_vre_textual_representation(struct bt_hfp_ag *ag, uint8_t state, const char *id,
 					 uint8_t type, uint8_t operation, const char *text);
 
+/** @brief Set signal strength
+ *
+ *  Set signal strength.
+ *
+ *  @param ag HFP AG object.
+ *  @param strength Signal strength.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_hfp_ag_signal_strength(struct bt_hfp_ag *ag, uint8_t strength);
+
 #ifdef __cplusplus
 }
 #endif
