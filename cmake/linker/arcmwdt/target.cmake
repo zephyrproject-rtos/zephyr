@@ -110,51 +110,6 @@ endfunction(toolchain_ld_link_elf)
 
 # linker options of temporary linkage for code generation
 macro(toolchain_ld_baremetal)
-  zephyr_ld_options(
-    -Hlld
-    -Hnosdata
-    -Xtimer0 # to suppress the warning message
-    -Hnoxcheck_obj
-    -Hnocplus
-    -Hhostlib=
-    -Hheap=0
-    -Hnoivt
-    -Hnocrt
-  )
-
-  # There are two options:
-  # - We have full MWDT libc support and we link MWDT libc - this is default
-  #   behavior and we don't need to do something for that.
-  # - We use minimal libc provided by Zephyr itself. In that case we must not
-  #   link MWDT libc, but we still need to link libmw
-  if(CONFIG_MINIMAL_LIBC)
-    zephyr_ld_options(
-      -Hnolib
-      -Hldopt=-lmw
-    )
-  endif()
-
-  # Funny thing is if this is set to =error, some architectures will
-  # skip this flag even though the compiler flag check passes
-  # (e.g. ARC and Xtensa). So warning should be the default for now.
-  #
-  # Skip this for native application as Zephyr only provides
-  # additions to the host toolchain linker script. The relocation
-  # sections (.rel*) requires us to override those provided
-  # by host toolchain. As we can't account for all possible
-  # combination of compiler and linker on all machines used
-  # for development, it is better to turn this off.
-  #
-  # CONFIG_LINKER_ORPHAN_SECTION_PLACE is to place the orphan sections
-  # without any warnings or errors, which is the default behavior.
-  # So there is no need to explicitly set a linker flag.
-  if(CONFIG_LINKER_ORPHAN_SECTION_WARN)
-    message(WARNING "MWDT toolchain does not support
-           CONFIG_LINKER_ORPHAN_SECTION_WARN")
-  elseif(CONFIG_LINKER_ORPHAN_SECTION_ERROR)
-    zephyr_ld_options(
-      ${LINKERFLAGPREFIX}--orphan-handling=error)
-  endif()
 endmacro()
 
 # base linker options

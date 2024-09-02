@@ -11,6 +11,21 @@ if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERN
   set_property(TARGET linker PROPERTY cpp_base -lstdc++)
 endif()
 
+check_set_linker_property(TARGET linker PROPERTY baremetal
+                          -nostdlib
+                          -static
+                          ${LINKERFLAGPREFIX},-X
+                          ${LINKERFLAGPREFIX},-N
+)
+
+check_set_linker_property(TARGET linker PROPERTY orphan_warning
+                          ${LINKERFLAGPREFIX},--orphan-handling=warn
+)
+
+check_set_linker_property(TARGET linker PROPERTY orphan_error
+                          ${LINKERFLAGPREFIX},--orphan-handling=error
+)
+
 check_set_linker_property(TARGET linker PROPERTY memusage "${LINKERFLAGPREFIX},--print-memory-usage")
 
 # -no-pie is not supported until binutils 2.37.

@@ -11,6 +11,13 @@ set_property(TARGET linker PROPERTY base)
 # using C++.
 set_property(TARGET linker PROPERTY cpp_base)
 
+# Base properties when building Zephyr for an embedded target (baremetal).
+set_property(TARGET linker PROPERTY baremetal)
+
+# Property for controlling linker reporting / handling when placing orphaned sections.
+set_property(TARGET linker PROPERTY orphan_warning)
+set_property(TARGET linker PROPERTY orphan_error)
+
 # coverage is a property holding the linker flag required for coverage support on the toolchain.
 # For example, on ld/gcc this would be: -lgcov
 # Set the property for the corresponding flags of the given toolchain.
