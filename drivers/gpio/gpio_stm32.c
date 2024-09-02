@@ -156,6 +156,49 @@ static inline uint32_t stm32_pinval_get(gpio_pin_t pin)
 	return pinval;
 }
 
+static inline void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* On STM32WB0, the PWRC PU/PD control registers should be used instead
+	 * of the GPIO controller registers, so we cannot use LL_GPIO_SetPinPull.
+	 */
+	const uint32_t gpio = (GPIOx == GPIOA) ? LL_PWR_GPIO_A : LL_PWR_GPIO_B;
+
+	if (Pull == LL_GPIO_PULL_UP) {
+		LL_PWR_EnableGPIOPullUp(gpio, Pin);
+		LL_PWR_DisableGPIOPullDown(gpio, Pin);
+	} else if (Pull == LL_GPIO_PULL_DOWN) {
+		LL_PWR_EnableGPIOPullDown(gpio, Pin);
+		LL_PWR_DisableGPIOPullUp(gpio, Pin);
+	} else if (Pull == LL_GPIO_PULL_NO) {
+		LL_PWR_DisableGPIOPullUp(gpio, Pin);
+		LL_PWR_DisableGPIOPullDown(gpio, Pin);
+	}
+#else
+	LL_GPIO_SetPinPull(GPIOx, Pin, Pull);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
+static inline uint32_t ll_gpio_get_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* On STM32WB0, the PWRC PU/PD control registers should be used instead
+	 * of the GPIO controller registers, so we cannot use LL_GPIO_GetPinPull.
+	 */
+	const uint32_t gpio = (GPIOx == GPIOA) ? LL_PWR_GPIO_A : LL_PWR_GPIO_B;
+
+	if (LL_PWR_IsEnabledGPIOPullDown(gpio, Pin)) {
+		return LL_GPIO_PULL_DOWN;
+	} else if (LL_PWR_IsEnabledGPIOPullUp(gpio, Pin)) {
+		return LL_GPIO_PULL_UP;
+	} else {
+		return LL_GPIO_PULL_NO;
+	}
+#else
+	return LL_GPIO_GetPinPull(GPIOx, Pin);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
 static inline void gpio_stm32_disable_pin_irqs(uint32_t port, gpio_pin_t pin)
 {
 #if defined(CONFIG_EXTI_STM32)
@@ -267,7 +310,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, gpio_pin_t pin,
 
 	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_SHIFT);
 
-	LL_GPIO_SetPinPull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
+	ll_gpio_set_pin_pull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
 
 	if (mode == STM32_MODER_ALT_MODE) {
 		if (pin < 8) {
@@ -503,7 +546,7 @@ static int gpio_stm32_get_config(const struct device *dev,
 
 	pin_ll = stm32_pinval_get(pin);
 	pin_config.type = LL_GPIO_GetPinOutputType(gpio, pin_ll);
-	pin_config.pupd = LL_GPIO_GetPinPull(gpio, pin_ll);
+	pin_config.pupd = ll_gpio_get_pin_pull(gpio, pin_ll);
 	pin_config.mode = LL_GPIO_GetPinMode(gpio, pin_ll);
 	pin_config.out_state = LL_GPIO_IsOutputPinSet(gpio, pin_ll);
 
@@ -521,7 +564,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 	const struct gpio_stm32_config *cfg = dev->config;
 	struct gpio_stm32_data *data = dev->data;
 	const stm32_gpio_irq_line_t irq_line = stm32_gpio_intc_get_pin_irq_line(cfg->port, pin);
-	uint32_t edge = 0;
+	uint32_t irq_trigger = 0;
 	int err = 0;
 
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
@@ -539,10 +582,39 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	/* Level trigger interrupts not supported */
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		err = -ENOTSUP;
-		goto exit;
+		/* Level-sensitive interrupts are only supported on STM32WB0. */
+		if (!IS_ENABLED(CONFIG_SOC_SERIES_STM32WB0X)) {
+			err = -ENOTSUP;
+			goto exit;
+		} else {
+			switch (trig) {
+			case GPIO_INT_TRIG_LOW:
+				irq_trigger = STM32_GPIO_IRQ_TRIG_LOW_LEVEL;
+				break;
+			case GPIO_INT_TRIG_HIGH:
+				irq_trigger = STM32_GPIO_IRQ_TRIG_HIGH_LEVEL;
+				break;
+			default:
+				err = -EINVAL;
+				goto exit;
+			}
+		}
+	} else {
+		switch (trig) {
+		case GPIO_INT_TRIG_LOW:
+			irq_trigger = STM32_GPIO_IRQ_TRIG_FALLING;
+			break;
+		case GPIO_INT_TRIG_HIGH:
+			irq_trigger = STM32_GPIO_IRQ_TRIG_RISING;
+			break;
+		case GPIO_INT_TRIG_BOTH:
+			irq_trigger = STM32_GPIO_IRQ_TRIG_BOTH;
+			break;
+		default:
+			err = -EINVAL;
+			goto exit;
+		}
 	}
 
 	if (stm32_gpio_intc_set_irq_callback(irq_line, gpio_stm32_isr, data) != 0) {
@@ -550,26 +622,11 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	switch (trig) {
-	case GPIO_INT_TRIG_LOW:
-		edge = STM32_GPIO_IRQ_TRIG_FALLING;
-		break;
-	case GPIO_INT_TRIG_HIGH:
-		edge = STM32_GPIO_IRQ_TRIG_RISING;
-		break;
-	case GPIO_INT_TRIG_BOTH:
-		edge = STM32_GPIO_IRQ_TRIG_BOTH;
-		break;
-	default:
-		err = -EINVAL;
-		goto exit;
-	}
-
 #if defined(CONFIG_EXTI_STM32)
 	stm32_exti_set_line_src_port(pin, cfg->port);
 #endif
 
-	stm32_gpio_intc_select_line_trigger(irq_line, edge);
+	stm32_gpio_intc_select_line_trigger(irq_line, irq_trigger);
 
 	stm32_gpio_intc_enable_line(irq_line);
 
