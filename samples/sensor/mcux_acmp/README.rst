@@ -1,7 +1,8 @@
-.. _mcux_acmp:
+.. zephyr:code-sample:: mcux_acmp
+   :name: NXP MCUX Analog Comparator (ACMP)
+   :relevant-api: sensor_interface
 
-NXP MCUX Analog Comparator (ACMP)
-#################################
+   Get analog comparator data from an NXP MCUX Analog Comparator (ACMP).
 
 Overview
 ********
