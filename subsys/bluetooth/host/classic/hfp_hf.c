@@ -42,6 +42,8 @@ NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 
+#define HF_ENHANCED_CALL_STATUS_TIMEOUT 50 /* ms */
+
 struct at_callback_set {
 	void *resp;
 	void *finish;
@@ -391,29 +393,685 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
+static void free_call(struct bt_hfp_hf_call *call)
+{
+	memset(call, 0, sizeof(*call));
+}
+
+#if defined(CONFIG_BT_HFP_HF_ECS)
+static struct bt_hfp_hf_call *get_call_with_index(struct bt_hfp_hf *hf, uint8_t index)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t i = 0; i < ARRAY_SIZE(hf->calls); i++) {
+		call = &hf->calls[i];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (call->index == index) {
+			return call;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_hfp_hf_call *get_call_without_index(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (!call->index) {
+			return call;
+		}
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
+static void hf_reject_call(struct bt_hfp_hf_call *call)
+{
+	if (bt_hf->reject) {
+		bt_hf->reject(call);
+	}
+	free_call(call);
+}
+
+static void hf_terminate_call(struct bt_hfp_hf_call *call)
+{
+	if (bt_hf->terminate) {
+		bt_hf->terminate(call);
+	}
+	free_call(call);
+}
+
+static void clear_call_without_clcc(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (atomic_test_and_clear_bit(call->flags, BT_HFP_HF_CALL_CLCC)) {
+			continue;
+		}
+
+		switch (atomic_get(call->state)) {
+		case BT_HFP_HF_CALL_STATE_TERMINATE:
+			break;
+		case BT_HFP_HF_CALL_STATE_OUTGOING:
+		case BT_HFP_HF_CALL_STATE_INCOMING:
+		case BT_HFP_HF_CALL_STATE_ALERTING:
+		case BT_HFP_HF_CALL_STATE_WAITING:
+			hf_reject_call(call);
+			break;
+		case BT_HFP_HF_CALL_STATE_ACTIVE:
+		case BT_HFP_HF_CALL_STATE_HELD:
+			hf_terminate_call(call);
+			break;
+		default:
+			free_call(call);
+			break;
+		}
+	}
+}
+
+static int clcc_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CLCC (result %d) on %p", result, hf);
+
+	if (result == AT_RESULT_OK) {
+		clear_call_without_clcc(hf);
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING);
+
+	return 0;
+}
+
+static void clear_call_clcc_state(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		atomic_clear_bit(call->flags, BT_HFP_HF_CALL_CLCC);
+	}
+}
+
+static void hf_query_current_calls(struct bt_hfp_hf *hf)
+{
+	int err;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		return;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECS)) {
+		return;
+	}
+
+	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECS)) {
+		return;
+	}
+
+	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CLCC_PENDING)) {
+		k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+		return;
+	}
+
+	clear_call_clcc_state(hf);
+
+	err = hfp_hf_send_cmd(hf, NULL, clcc_finish, "AT+CLCC");
+	if (err < 0) {
+		LOG_ERR("Fail to query current calls on %p", hf);
+	}
+}
+
+static void hf_call_state_update(struct bt_hfp_hf_call *call, int state)
+{
+	int old_state;
+
+	old_state = atomic_get(call->state);
+	atomic_set(call->state, state);
+
+	LOG_DBG("Call %p state update %d->%d", call, old_state, state);
+
+	switch (state) {
+	case BT_HFP_HF_CALL_STATE_TERMINATE:
+		free_call(call);
+		break;
+	case BT_HFP_HF_CALL_STATE_OUTGOING:
+		break;
+	case BT_HFP_HF_CALL_STATE_INCOMING:
+		break;
+	case BT_HFP_HF_CALL_STATE_ALERTING:
+		k_work_reschedule(&call->hf->deferred_work,
+				  K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+		break;
+	case BT_HFP_HF_CALL_STATE_WAITING:
+		k_work_reschedule(&call->hf->deferred_work,
+				  K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+		break;
+	case BT_HFP_HF_CALL_STATE_ACTIVE:
+		break;
+	case BT_HFP_HF_CALL_STATE_HELD:
+		break;
+	}
+}
+
+#if defined(CONFIG_BT_HFP_HF_ECS)
+static void call_state_update(struct bt_hfp_hf_call *call, uint32_t status)
+{
+	switch (status) {
+	case BT_HFP_CLCC_STATUS_ACTIVE:
+		if ((atomic_get(call->state) != BT_HFP_HF_CALL_STATE_ACTIVE) ||
+		    ((atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE) &&
+		    atomic_test_and_clear_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD))) {
+			atomic_val_t state;
+
+			state = atomic_get(call->state);
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ACTIVE);
+			if (state == BT_HFP_HF_CALL_STATE_HELD) {
+				if (bt_hf->retrieve) {
+					bt_hf->retrieve(call);
+				}
+			} else {
+				if (bt_hf->accept) {
+					bt_hf->accept(call);
+				}
+			}
+		}
+		break;
+	case BT_HFP_CLCC_STATUS_HELD:
+		if ((atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE) &&
+		    !atomic_test_and_clear_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD)) {
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_HELD);
+			if (bt_hf->held) {
+				bt_hf->held(call);
+			}
+		}
+		break;
+	case BT_HFP_CLCC_STATUS_DIALING:
+		break;
+	case BT_HFP_CLCC_STATUS_ALERTING:
+		break;
+	case BT_HFP_CLCC_STATUS_INCOMING:
+		break;
+	case BT_HFP_CLCC_STATUS_WAITING:
+		break;
+	case BT_HFP_CLCC_STATUS_CALL_HELD_HOLD:
+		if ((atomic_get(call->state) == BT_HFP_HF_CALL_STATE_INCOMING) ||
+		    (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING)) {
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD);
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ACTIVE);
+			if (bt_hf->incoming_held) {
+				bt_hf->incoming_held(call);
+			}
+		}
+		break;
+	}
+}
+
+static int clcc_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+	struct bt_hfp_hf_call *call;
+	uint32_t index;
+	uint32_t dir;
+	uint32_t status;
+	uint32_t mode;
+	uint32_t mpty;
+	char *number = NULL;
+	uint32_t type = 0;
+	bool incoming = false;
+
+	err = at_get_number(hf_at, &index);
+	if (err < 0) {
+		LOG_ERR("Error getting index");
+		return err;
+	}
+
+	call = get_call_with_index(hf, (uint8_t)index);
+	if (!call) {
+		LOG_INF("Valid call with index %d not found", index);
+		call = get_call_without_index(hf);
+		if (!call) {
+			LOG_INF("Not available call");
+			return 0;
+		}
+		call->index = (uint8_t)index;
+	}
+
+	atomic_set_bit(call->flags, BT_HFP_HF_CALL_CLCC);
+
+	err = at_get_number(hf_at, &dir);
+	if (err < 0) {
+		LOG_ERR("Error getting dir");
+		return err;
+	}
+
+	if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING) ||
+		atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY)) {
+		incoming = true;
+	}
+
+	if (incoming != !!dir) {
+		LOG_ERR("Call dir of HF is not aligned with AG");
+		return 0;
+	}
+
+	err = at_get_number(hf_at, &status);
+	if (err < 0) {
+		LOG_ERR("Error getting status");
+		return err;
+	}
+
+	err = at_get_number(hf_at, &mode);
+	if (err < 0) {
+		LOG_ERR("Error getting mode");
+		return err;
+	}
+
+	err = at_get_number(hf_at, &mpty);
+	if (err < 0) {
+		LOG_ERR("Error getting mpty");
+		return err;
+	}
+
+	number = at_get_string(hf_at);
+
+	if (number) {
+		(void)at_get_number(hf_at, &type);
+	}
+
+	call_state_update(call, status);
+
+	LOG_DBG("CLCC idx %d dir %d status %d mode %d mpty %d number %s type %d",
+		index, dir, status, mode, mpty, number, type);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_ECS */
+
+static struct bt_hfp_hf_call *get_dialing_call(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		switch (atomic_get(call->state)) {
+		case BT_HFP_HF_CALL_STATE_OUTGOING:
+		case BT_HFP_HF_CALL_STATE_INCOMING:
+		case BT_HFP_HF_CALL_STATE_ALERTING:
+		case BT_HFP_HF_CALL_STATE_WAITING:
+			return call;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_hfp_hf_call *get_call_with_state(struct bt_hfp_hf *hf, int state)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (atomic_get(call->state) == state) {
+			return call;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_hfp_hf_call *get_call_with_flag(struct bt_hfp_hf *hf, int flag)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (atomic_test_bit(call->flags, flag)) {
+			return call;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_hfp_hf_call *get_call_with_state_and_flag(struct bt_hfp_hf *hf,
+		int state, int flag)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if ((atomic_get(call->state) == state) &&
+			atomic_test_bit(call->flags, flag)) {
+			return call;
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_hfp_hf_call *get_using_call(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		return call;
+	}
+
+	return NULL;
+}
+
+static void bt_hf_deferred_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_hfp_hf *hf = CONTAINER_OF(dwork, struct bt_hfp_hf, deferred_work);
+
+	hf_query_current_calls(hf);
+}
+
+static struct bt_hfp_hf_call *get_new_call(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (atomic_test_and_set_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		call->hf = hf;
+
+		return call;
+	}
+
+	return NULL;
+}
+
+static int get_using_call_count(struct bt_hfp_hf *hf)
+{
+	struct bt_hfp_hf_call *call;
+	int count = 0;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
+static void set_all_calls_held_state(struct bt_hfp_hf *hf, bool held)
+{
+	struct bt_hfp_hf_call *call;
+
+	for (size_t index = 0; index < ARRAY_SIZE(hf->calls); index++) {
+		call = &hf->calls[index];
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+			continue;
+		}
+
+		if (held && (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)) {
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_HELD);
+			if (bt_hf->held) {
+				bt_hf->held(call);
+			}
+		}
+
+		if (!held && (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_HELD)) {
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ACTIVE);
+			if (bt_hf->retrieve) {
+				bt_hf->retrieve(call);
+			}
+		}
+	}
+}
+
 static void ag_indicator_handle_call(struct bt_hfp_hf *hf, uint32_t value)
 {
-	atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_ACTIVE, value);
+	struct bt_hfp_hf_call *call;
+
+	LOG_DBG("call %d", value);
+
 	if (value) {
-		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
+		call = get_dialing_call(hf);
+		if (!call) {
+			return;
+		}
+
+		hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ACTIVE);
+
+		if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD)) {
 			if (bt_hf->incoming_held) {
-				bt_hf->incoming_held(hf);
+				bt_hf->incoming_held(call);
 			}
 		} else {
 			if (bt_hf->accept) {
-				bt_hf->accept(hf);
+				bt_hf->accept(call);
 			}
 		}
 	} else {
-		if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
-			if (bt_hf->reject) {
-				bt_hf->reject(hf);
+		do {
+			call = get_using_call(hf);
+			if (!call) {
+				return;
 			}
+
+			switch (atomic_get(call->state)) {
+			case BT_HFP_HF_CALL_STATE_OUTGOING:
+			case BT_HFP_HF_CALL_STATE_INCOMING:
+			case BT_HFP_HF_CALL_STATE_ALERTING:
+			case BT_HFP_HF_CALL_STATE_WAITING:
+				hf_reject_call(call);
+				break;
+			case BT_HFP_HF_CALL_STATE_ACTIVE:
+				if (atomic_test_and_clear_bit(call->flags,
+							      BT_HFP_HF_CALL_INCOMING_HELD)) {
+					hf_reject_call(call);
+					break;
+				}
+				__fallthrough;
+			case BT_HFP_HF_CALL_STATE_HELD:
+				hf_terminate_call(call);
+				break;
+			default:
+				free_call(call);
+				break;
+			}
+		} while (call);
+	}
+}
+
+static void ag_indicator_handle_call_setup(struct bt_hfp_hf *hf, uint32_t value)
+{
+	struct bt_hfp_hf_call *call;
+	int call_count;
+
+	call_count = get_using_call_count(hf);
+
+	LOG_DBG("call setup %d", value);
+
+	switch (value) {
+	case BT_HFP_CALL_SETUP_NONE:
+		if (call_count == 1) {
+			call = get_using_call(hf);
+			if (!call) {
+				break;
+			}
+
+			if ((atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE) ||
+				(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_HELD)) {
+				break;
+			}
+
+			hf_reject_call(call);
 		} else {
-			if (bt_hf->terminate) {
-				bt_hf->terminate(hf);
+			call = get_dialing_call(hf);
+			if (!call) {
+				break;
+			}
+
+			if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_OUTGOING) {
+				LOG_INF("The outgoing is not alerted");
+				hf_reject_call(call);
+			} else {
+				LOG_INF("Waiting for +CIEV: (callheld = 1)");
+				k_work_reschedule(&hf->deferred_work,
+						  K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
 			}
 		}
+		break;
+	case BT_HFP_CALL_SETUP_INCOMING:
+		call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_INCOMING);
+		if (!call) {
+			call = get_new_call(hf);
+			if (!call) {
+				break;
+			}
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_INCOMING);
+		}
+
+		if (call_count == 0) {
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING);
+		} else {
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
+		}
+		if (bt_hf->incoming) {
+			bt_hf->incoming(hf, call);
+		}
+		hf_call_state_update(call, BT_HFP_HF_CALL_STATE_WAITING);
+		break;
+	case BT_HFP_CALL_SETUP_OUTGOING:
+		call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_OUTGOING);
+		if (!call) {
+			call = get_new_call(hf);
+			if (!call) {
+				break;
+			}
+			hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
+		}
+
+		if (call_count) {
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
+		}
+		if (bt_hf->outgoing) {
+			bt_hf->outgoing(hf, call);
+		}
+		break;
+	case BT_HFP_CALL_SETUP_REMOTE_ALERTING:
+		call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_OUTGOING);
+		if (!call) {
+			break;
+		}
+
+		hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ALERTING);
+		if (bt_hf->remote_ringing) {
+			bt_hf->remote_ringing(call);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+static void ag_indicator_handle_call_held(struct bt_hfp_hf *hf, uint32_t value)
+{
+	struct bt_hfp_hf_call *call;
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	LOG_DBG("call setup %d", value);
+
+	switch (value) {
+	case BT_HFP_CALL_HELD_NONE:
+		set_all_calls_held_state(hf, false);
+		break;
+	case BT_HFP_CALL_HELD_ACTIVE_HELD:
+		call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_ALERTING);
+		if (!call) {
+			call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_WAITING);
+			if (!call) {
+				break;
+			}
+		}
+
+		hf_call_state_update(call, BT_HFP_HF_CALL_STATE_ACTIVE);
+		if (bt_hf->accept) {
+			bt_hf->accept(call);
+		}
+		break;
+	case BT_HFP_CALL_HELD_HELD:
+		set_all_calls_held_state(hf, true);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -445,27 +1103,10 @@ void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
 		ag_indicator_handle_call(hf, value);
 		break;
 	case HF_CALL_SETUP_IND:
-		atomic_set_bit_to(hf->flags, BT_HFP_HF_FLAG_INCOMING,
-		    value == BT_HFP_CALL_SETUP_INCOMING);
-
-		if (value == BT_HFP_CALL_SETUP_INCOMING) {
-			if (bt_hf->incoming) {
-				bt_hf->incoming(hf);
-			}
-		} else if (value == BT_HFP_CALL_SETUP_OUTGOING) {
-			if (bt_hf->outgoing) {
-				bt_hf->outgoing(hf);
-			}
-		} else if (value == BT_HFP_CALL_SETUP_REMOTE_ALERTING) {
-			if (bt_hf->remote_ringing) {
-				bt_hf->remote_ringing(hf);
-			}
-		}
+		ag_indicator_handle_call_setup(hf, value);
 		break;
 	case HF_CALL_HELD_IND:
-		if (bt_hf->call_held) {
-			bt_hf->call_held(hf, value);
-		}
+		ag_indicator_handle_call_held(hf, value);
 		break;
 	case HF_SINGNAL_IND:
 		if (bt_hf->signal) {
@@ -554,9 +1195,19 @@ int ciev_handle(struct at_client *hf_at)
 int ring_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_hfp_hf_call *call;
+
+	call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_WAITING);
+	if (!call) {
+		return 0;
+	}
+
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING)) {
+		LOG_WRN("Invalid call dir (outgoing)");
+	}
 
 	if (bt_hf->ring_indication) {
-		bt_hf->ring_indication(hf);
+		bt_hf->ring_indication(call);
 	}
 
 	return 0;
@@ -569,6 +1220,7 @@ int clip_handle(struct at_client *hf_at)
 	char *number;
 	uint32_t type;
 	int err;
+	struct bt_hfp_hf_call *call;
 
 	number = at_get_string(hf_at);
 
@@ -579,8 +1231,18 @@ int clip_handle(struct at_client *hf_at)
 		type = 0;
 	}
 
+
+	call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_WAITING);
+	if (!call) {
+		return 0;
+	}
+
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING)) {
+		LOG_WRN("Invalid call dir (outgoing)");
+	}
+
 	if (bt_hf->clip) {
-		bt_hf->clip(hf, number, (uint8_t)type);
+		bt_hf->clip(call, number, (uint8_t)type);
 	}
 
 	return 0;
@@ -697,6 +1359,7 @@ static int btrh_handle(struct at_client *hf_at)
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	uint32_t on_hold;
 	int err;
+	struct bt_hfp_hf_call *call;
 
 	err = at_get_number(hf_at, &on_hold);
 	if (err < 0) {
@@ -705,26 +1368,148 @@ static int btrh_handle(struct at_client *hf_at)
 	}
 
 	if (on_hold == BT_HFP_BTRH_ON_HOLD) {
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD);
-		atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD);
-	} else if (on_hold == BT_HFP_BTRH_ACCEPTED) {
-		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE) &&
-			atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
-			if (bt_hf && bt_hf->accept) {
-				bt_hf->accept(hf);
-			}
+		call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_WAITING);
+		if (!call) {
+			return 0;
 		}
-	} else if (on_hold == BT_HFP_BTRH_REJECTED) {
-		if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE) &&
-			atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD)) {
-			if (bt_hf && bt_hf->reject) {
-				bt_hf->reject(hf->acl);
+
+		if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING)) {
+			LOG_WRN("Invalid call dir (outgoing)");
+		}
+		atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD);
+	} else {
+		call = get_call_with_state_and_flag(hf,
+			BT_HFP_HF_CALL_STATE_ACTIVE, BT_HFP_HF_CALL_INCOMING_HELD);
+		if (!call) {
+			return 0;
+		}
+
+		if (on_hold == BT_HFP_BTRH_ACCEPTED) {
+			atomic_clear_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD);
+			if (bt_hf && bt_hf->accept) {
+				bt_hf->accept(call);
 			}
+		} else if (on_hold == BT_HFP_BTRH_REJECTED) {
+			hf_reject_call(call);
+		} else {
+			return -EINVAL;
 		}
 	}
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int ccwa_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	char *number;
+	uint32_t type;
+	int err;
+	struct bt_hfp_hf_call *call;
+
+	number = at_get_string(hf_at);
+
+	err = at_get_number(hf_at, &type);
+	if (err) {
+		LOG_WRN("could not get the type");
+	} else {
+		type = 0;
+	}
+
+	call = get_new_call(hf);
+	if (!call) {
+		LOG_ERR("Not available call object");
+		return 0;
+	}
+
+	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_INCOMING);
+	if (bt_hf->call_waiting) {
+		bt_hf->call_waiting(call, number, (uint8_t)type);
+	}
+
+	return 0;
+}
+
+static struct _chld_feature {
+	const char *name;
+	int value;
+} chld_feature_map[] = {
+	{ "1x", BT_HFP_CALL_RELEASE_SPECIFIED_ACTIVE },
+	{ "2x", BT_HFP_CALL_PRIVATE_CNLTN_MODE },
+	{ "0",  BT_HFP_CHLD_RELEASE_ALL },
+	{ "1",  BT_HFP_CHLD_RELEASE_ACTIVE_ACCEPT_OTHER },
+	{ "2",  BT_HFP_CALL_HOLD_ACTIVE_ACCEPT_OTHER },
+	{ "3",  BT_HFP_CALL_ACTIVE_HELD },
+	{ "4",  BT_HFP_CALL_QUITE },
+};
+
+static int get_chld_feature(const char *name)
+{
+	struct _chld_feature *chld;
+
+	for (size_t index = 0; index < ARRAY_SIZE(chld_feature_map); index++) {
+		chld = &chld_feature_map[index];
+		if (!strncmp(name, chld->name, strlen(chld->name))) {
+			return chld->value;
+		}
+	}
+
+	return -EINVAL;
+}
+
+int chld_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	char *value;
+	uint32_t chld_features = 0;
+	int err;
+
+	/* Parsing Example: CHLD: (0,1,2,3,4) */
+	if (at_open_list(hf_at) < 0) {
+		LOG_ERR("Could not get open list");
+		goto error;
+	}
+
+	while (at_has_next_list(hf_at)) {
+		value = at_get_raw_string(hf_at, NULL);
+		if (!value) {
+			LOG_ERR("Could not get value");
+			goto error;
+		}
+
+		err = get_chld_feature(value);
+		if (err < 0) {
+			LOG_ERR("Cannot parse the value %s", value);
+			goto error;
+		}
+
+		if (NUM_BITS(sizeof(chld_features)) > err) {
+			chld_features |= BIT(err);
+		}
+	}
+
+	if (at_close_list(hf_at) < 0) {
+		LOG_ERR("Could not get close list");
+		goto error;
+	}
+
+	if (!((chld_features & BIT(BT_HFP_CHLD_RELEASE_ACTIVE_ACCEPT_OTHER)) &&
+	    (chld_features & BIT(BT_HFP_CALL_HOLD_ACTIVE_ACCEPT_OTHER)))) {
+		LOG_ERR("AT+CHLD values 1 and 2 should be supported by AG");
+		goto error;
+	}
+
+	hf->chld_features = chld_features;
+
+	return 0;
+
+error:
+	LOG_ERR("Error on AT+CHLD=? response");
+	hf_slc_error(hf_at);
+	return -EINVAL;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 
 static const struct unsolicited {
 	const char *cmd;
@@ -745,6 +1530,13 @@ static const struct unsolicited {
 	{ "BCS", AT_CMD_TYPE_UNSOLICITED, bcs_handle },
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 	{ "BTRH", AT_CMD_TYPE_UNSOLICITED, btrh_handle },
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	{ "CCWA", AT_CMD_TYPE_UNSOLICITED, ccwa_handle },
+	{ "CHLD", AT_CMD_TYPE_UNSOLICITED, chld_handle },
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+#if defined(CONFIG_BT_HFP_HF_ECS)
+	{ "CLCC", AT_CMD_TYPE_UNSOLICITED, clcc_handle },
+#endif /* CONFIG_BT_HFP_HF_ECS */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -907,6 +1699,31 @@ static int at_bac_finish(struct at_client *hf_at, enum at_result result,
 }
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
 
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int send_at_ccwa(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		return -ENOTSUP;
+	}
+
+	if (!(hf->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL)) {
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+CCWA=1");
+}
+
+static int at_ccwa_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("CCWA set (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
 typedef int (*at_send_t)(struct bt_hfp_hf *hf, at_finish_cb_t cb);
 
 static struct at_cmd_init
@@ -927,6 +1744,9 @@ static struct at_cmd_init
 #if defined(CONFIG_BT_HFP_HF_CODEC_NEG)
 	{send_at_bac, at_bac_finish, false},
 #endif /* CONFIG_BT_HFP_HF_CODEC_NEG */
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	{send_at_ccwa, at_ccwa_finish, false},
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 };
 
 static int at_cmd_init_start(struct bt_hfp_hf *hf);
@@ -1006,7 +1826,8 @@ static void slc_completed(struct at_client *hf_at)
 	}
 }
 
-int cmer_finish(struct at_client *hf_at, enum at_result result,
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+int chld_finish(struct at_client *hf_at, enum at_result result,
 		enum at_cme cme_err)
 {
 	if (result != AT_RESULT_OK) {
@@ -1014,6 +1835,37 @@ int cmer_finish(struct at_client *hf_at, enum at_result result,
 		hf_slc_error(hf_at);
 		return -EINVAL;
 	}
+
+	slc_completed(hf_at);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int cmer_finish(struct at_client *hf_at, enum at_result result,
+		enum at_cme cme_err)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+	if (result != AT_RESULT_OK) {
+		LOG_ERR("SLC Connection ERROR in response");
+		hf_slc_error(hf_at);
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	if ((hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL) &&
+		(hf->hf_features & BT_HFP_HF_FEATURE_3WAY_CALL)) {
+		err = hfp_hf_send_cmd(hf, NULL, chld_finish, "AT+CHLD=?");
+		if (err < 0) {
+			hf_slc_error(hf_at);
+		}
+		return err;
+	}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
 
 	slc_completed(hf_at);
 
@@ -1334,18 +2186,37 @@ static int btrh_finish(struct at_client *hf_at, enum at_result result,
 	return 0;
 }
 
-int bt_hfp_hf_accept(struct bt_hfp_hf *hf)
+int bt_hfp_hf_accept(struct bt_hfp_hf_call *call)
 {
 	int err;
+	struct bt_hfp_hf *hf;
+	int count;
 
 	LOG_DBG("");
 
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -EINVAL;
+	}
+
+	hf = call->hf;
 	if (!hf) {
 		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+		LOG_ERR("No valid call");
+		return -EINVAL;
+	}
+
+	count = get_using_call_count(call->hf);
+	if (count > 1) {
+		LOG_ERR("Unsupported 3Way call");
+		return -EINVAL;
+	}
+
+	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING) {
 		err = hfp_hf_send_cmd(hf, NULL, ata_finish, "ATA");
 		if (err < 0) {
 			LOG_ERR("Fail to accept the incoming call on %p", hf);
@@ -1353,8 +2224,8 @@ int bt_hfp_hf_accept(struct bt_hfp_hf *hf)
 		return err;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD) &&
-		atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE)) {
+	if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD) &&
+		(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)) {
 		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
 			BT_HFP_BTRH_ACCEPTED);
 		if (err < 0) {
@@ -1376,18 +2247,37 @@ static int chup_finish(struct at_client *hf_at, enum at_result result,
 	return 0;
 }
 
-int bt_hfp_hf_reject(struct bt_hfp_hf *hf)
+int bt_hfp_hf_reject(struct bt_hfp_hf_call *call)
 {
 	int err;
+	struct bt_hfp_hf *hf;
+	int count;
 
 	LOG_DBG("");
 
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -EINVAL;
+	}
+
+	hf = call->hf;
 	if (!hf) {
 		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+		LOG_ERR("No valid call");
+		return -EINVAL;
+	}
+
+	count = get_using_call_count(call->hf);
+	if (count > 1) {
+		LOG_ERR("Unsupported 3Way call");
+		return -EINVAL;
+	}
+
+	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING) {
 		err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 		if (err < 0) {
 			LOG_ERR("Fail to reject the incoming call on %p", hf);
@@ -1395,8 +2285,8 @@ int bt_hfp_hf_reject(struct bt_hfp_hf *hf)
 		return err;
 	}
 
-	if (atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING_HELD) &&
-		atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_ACTIVE)) {
+	if (atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_HELD) &&
+		(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_ACTIVE)) {
 		err = hfp_hf_send_cmd(hf, NULL, btrh_finish, "AT+BTRH=%d",
 			BT_HFP_BTRH_REJECTED);
 		if (err < 0) {
@@ -1408,37 +2298,80 @@ int bt_hfp_hf_reject(struct bt_hfp_hf *hf)
 	return -EINVAL;
 }
 
-int bt_hfp_hf_terminate(struct bt_hfp_hf *hf)
+int bt_hfp_hf_terminate(struct bt_hfp_hf_call *call)
 {
 	int err;
+	struct bt_hfp_hf *hf;
+	int count;
 
 	LOG_DBG("");
 
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -EINVAL;
+	}
+
+	hf = call->hf;
 	if (!hf) {
 		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+		LOG_ERR("No valid call");
+		return -EINVAL;
+	}
+
+	count = get_using_call_count(call->hf);
+	if (count > 1) {
+		LOG_ERR("Unsupported 3Way call");
+		return -EINVAL;
+	}
+
+	if (atomic_get(call->state) == BT_HFP_HF_CALL_STATE_HELD) {
+		LOG_ERR("Held call cannot be terminated");
+		return -EINVAL;
+	}
+
 	err = hfp_hf_send_cmd(hf, NULL, chup_finish, "AT+CHUP");
 	if (err < 0) {
-		LOG_ERR("Fail to terminate the active call on %p", hf);
+		LOG_ERR("Fail to terminate the none held call on %p", hf);
 	}
 
 	return err;
 }
 
-int bt_hfp_hf_hold_incoming(struct bt_hfp_hf *hf)
+int bt_hfp_hf_hold_incoming(struct bt_hfp_hf_call *call)
 {
 	int err;
+	struct bt_hfp_hf *hf;
+	int count;
 
 	LOG_DBG("");
 
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -EINVAL;
+	}
+
+	hf = call->hf;
 	if (!hf) {
 		LOG_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
 
-	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_INCOMING)) {
+	if (!atomic_test_bit(call->flags, BT_HFP_HF_CALL_IN_USING)) {
+		LOG_ERR("No valid call");
+		return -EINVAL;
+	}
+
+	count = get_using_call_count(call->hf);
+	if (count > 1) {
+		LOG_ERR("Unsupported 3Way call");
+		return -EINVAL;
+	}
+
+	if (!(atomic_get(call->state) == BT_HFP_HF_CALL_STATE_WAITING)) {
 		LOG_ERR("No incoming call setup in progress");
 		return -EINVAL;
 	}
@@ -1452,17 +2385,57 @@ int bt_hfp_hf_hold_incoming(struct bt_hfp_hf *hf)
 	return err;
 }
 
+static int query_btrh_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+	struct bt_hfp_hf_call *call;
+	uint32_t value;
+
+	err = at_get_number(hf_at, &value);
+	if (err < 0) {
+		LOG_ERR("Cannot get value");
+		return err;
+	}
+
+	if (value) {
+		LOG_ERR("Only support value 0");
+		return 0;
+	}
+
+	call = get_call_with_flag(hf, BT_HFP_HF_CALL_INCOMING_HELD);
+	if (!call) {
+		LOG_ERR("Held incoming call is not found");
+		return -EINVAL;
+	}
+
+	if (bt_hf->incoming_held) {
+		bt_hf->incoming_held(call);
+	}
+
+	return 0;
+}
+
+static int query_btrh_resp(struct at_client *hf_at, struct net_buf *buf)
+{
+	int err;
+
+	err = at_parse_cmd_input(hf_at, buf, "BTRH", query_btrh_handle,
+				 AT_CMD_TYPE_NORMAL);
+	if (err < 0) {
+		LOG_ERR("Error parsing CMD input");
+		hf_slc_error(hf_at);
+	}
+
+	return 0;
+}
+
 static int query_btrh_finish(struct at_client *hf_at, enum at_result result,
 		   enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 
 	LOG_DBG("AT+BTRH? (result %d) on %p", result, hf);
-
-	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD) &&
-		bt_hf->incoming_held) {
-		bt_hf->incoming_held(hf);
-	}
 
 	return 0;
 }
@@ -1478,9 +2451,7 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf)
 		return -ENOTCONN;
 	}
 
-	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_QUERY_HOLD);
-
-	err = hfp_hf_send_cmd(hf, NULL, query_btrh_finish, "AT+BTRH?");
+	err = hfp_hf_send_cmd(hf, query_btrh_resp, query_btrh_finish, "AT+BTRH?");
 	if (err < 0) {
 		LOG_ERR("Fail to query respond and hold status of AG on %p", hf);
 	}
@@ -1530,12 +2501,9 @@ static int atd_finish(struct at_client *hf_at, enum at_result result,
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
+	struct bt_hfp_hf_call *call;
 
 	LOG_DBG("ATD (result %d) on %p", result, hf);
-
-	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
-		LOG_WRN("No dialing call");
-	}
 
 	if (result == AT_RESULT_CME_ERROR) {
 		err = bt_hfp_ag_get_cme_err(cme_err);
@@ -1543,6 +2511,15 @@ static int atd_finish(struct at_client *hf_at, enum at_result result,
 		err = -ENOTSUP;
 	} else {
 		err = 0;
+	}
+
+	call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_OUTGOING);
+	if (!call) {
+		return -EINVAL;
+	}
+
+	if (err) {
+		free_call(call);
 	}
 
 	if (bt_hf && bt_hf->dialing) {
@@ -1553,6 +2530,7 @@ static int atd_finish(struct at_client *hf_at, enum at_result result,
 
 int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 {
+	struct bt_hfp_hf_call *call;
 	int err;
 
 	LOG_DBG("");
@@ -1562,10 +2540,19 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 		return -ENOTCONN;
 	}
 
-	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
-		LOG_ERR("Outgoing call is started");
+	call = get_dialing_call(hf);
+	if (call) {
+		LOG_ERR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
+
+	call = get_new_call(hf);
+	if (!call) {
+		LOG_ERR("Not available call object");
+		return -ENOMEM;
+	}
+
+	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
 
 	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD%s", number);
 	if (err < 0) {
@@ -1577,6 +2564,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number)
 
 int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location)
 {
+	struct bt_hfp_hf_call *call;
 	int err;
 
 	LOG_DBG("");
@@ -1586,14 +2574,23 @@ int bt_hfp_hf_memory_dial(struct bt_hfp_hf *hf, const char *location)
 		return -ENOTCONN;
 	}
 
-	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
-		LOG_ERR("Outgoing call is started");
+	call = get_dialing_call(hf);
+	if (call) {
+		LOG_ERR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
 
+	call = get_new_call(hf);
+	if (!call) {
+		LOG_ERR("Not available call object");
+		return -ENOMEM;
+	}
+
+	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
+
 	err = hfp_hf_send_cmd(hf, NULL, atd_finish, "ATD>%s", location);
 	if (err < 0) {
-		LOG_ERR("Fail to start memory dialing on %p", hf);
+		LOG_ERR("Fail to last number re-Dial on %p", hf);
 	}
 
 	return err;
@@ -1604,12 +2601,9 @@ static int bldn_finish(struct at_client *hf_at, enum at_result result,
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int err;
+	struct bt_hfp_hf_call *call;
 
 	LOG_DBG("AT+BLDN (result %d) on %p", result, hf);
-
-	if (!atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
-		LOG_WRN("No dialing call");
-	}
 
 	if (result == AT_RESULT_CME_ERROR) {
 		err = bt_hfp_ag_get_cme_err(cme_err);
@@ -1617,6 +2611,15 @@ static int bldn_finish(struct at_client *hf_at, enum at_result result,
 		err = -ENOTSUP;
 	} else {
 		err = 0;
+	}
+
+	call = get_call_with_state(hf, BT_HFP_HF_CALL_STATE_OUTGOING);
+	if (!call) {
+		return -EINVAL;
+	}
+
+	if (err) {
+		free_call(call);
 	}
 
 	if (bt_hf && bt_hf->dialing) {
@@ -1627,6 +2630,7 @@ static int bldn_finish(struct at_client *hf_at, enum at_result result,
 
 int bt_hfp_hf_redial(struct bt_hfp_hf *hf)
 {
+	struct bt_hfp_hf_call *call;
 	int err;
 
 	LOG_DBG("");
@@ -1636,10 +2640,19 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf)
 		return -ENOTCONN;
 	}
 
-	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_DIALING)) {
-		LOG_ERR("Outgoing call is started");
+	call = get_dialing_call(hf);
+	if (call) {
+		LOG_ERR("There is a call in alerting or waiting");
 		return -EBUSY;
 	}
+
+	call = get_new_call(hf);
+	if (!call) {
+		LOG_ERR("Not available call object");
+		return -ENOMEM;
+	}
+
+	hf_call_state_update(call, BT_HFP_HF_CALL_STATE_OUTGOING);
 
 	err = hfp_hf_send_cmd(hf, NULL, bldn_finish, "AT+BLDN");
 	if (err < 0) {
@@ -1695,7 +2708,7 @@ static int bcs_finish(struct at_client *hf_at, enum at_result result,
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 
-	LOG_DBG("BCC (result %d) on %p", result, hf);
+	LOG_DBG("BCS (result %d) on %p", result, hf);
 
 	return 0;
 }
@@ -1733,7 +2746,7 @@ static int bac_finish(struct at_client *hf_at, enum at_result result,
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 
-	LOG_DBG("BCC (result %d) on %p", result, hf);
+	LOG_DBG("BAC (result %d) on %p", result, hf);
 
 	return 0;
 }
@@ -1816,6 +2829,401 @@ int bt_hfp_hf_turn_off_ecnr(struct bt_hfp_hf *hf)
 #endif /* CONFIG_BT_HFP_HF_ECNR */
 }
 
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int ccwa_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CCWA (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_call_waiting_notify(struct bt_hfp_hf *hf, bool enable)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, ccwa_finish, "AT+CCWA=%d", enable ? 1 : 0);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_release_all_held_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=0 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_release_all_held(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CHLD_RELEASE_ALL))) {
+		LOG_ERR("Releasing all held calls is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_release_all_held_finish, "AT+CHLD=0");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_set_udub_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=0 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_set_udub(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CHLD_RELEASE_ALL))) {
+		LOG_ERR("UDUB is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_set_udub_finish, "AT+CHLD=0");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_release_active_accept_other_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=1 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_release_active_accept_other(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_release_active_accept_other_finish,
+	    "AT+CHLD=1");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_hold_active_accept_other_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=2 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_hold_active_accept_other(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_hold_active_accept_other_finish,
+	    "AT+CHLD=2");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_join_conversation_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=3 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_join_conversation(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CALL_ACTIVE_HELD))) {
+		LOG_ERR("Adding a held call to the conversation is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_join_conversation_finish,
+	    "AT+CHLD=3");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+static int chld_explicit_call_transfer_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=4 (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+
+int bt_hfp_hf_explicit_call_transfer(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_3WAY_CALL)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CALL_QUITE))) {
+		LOG_ERR("Expliciting Call Transfer is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_explicit_call_transfer_finish,
+	    "AT+CHLD=4");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_3WAY_CALL */
+}
+
+#if defined(CONFIG_BT_HFP_HF_ECC)
+static int chld_release_specified_call_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=1<idx> (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_ECC */
+
+int bt_hfp_hf_release_specified_call(struct bt_hfp_hf_call *call)
+{
+#if defined(CONFIG_BT_HFP_HF_ECC)
+	struct bt_hfp_hf *hf;
+
+	LOG_DBG("");
+
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -ENOTCONN;
+	}
+
+	hf = call->hf;
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECC)) {
+		LOG_ERR("Enhanced Call Control is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECC)) {
+		LOG_ERR("Enhanced Call Control is unsupported by HF");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CALL_RELEASE_SPECIFIED_ACTIVE))) {
+		LOG_ERR("Releasing a specific active call is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!call->index) {
+		LOG_ERR("Invalid call index");
+		return -EINVAL;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_release_specified_call_finish,
+	    "AT+CHLD=1%d", call->index);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_ECC */
+}
+
+#if defined(CONFIG_BT_HFP_HF_ECC)
+static int chld_private_consultation_mode_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+CHLD=2<idx> (result %d) on %p", result, hf);
+
+	k_work_reschedule(&hf->deferred_work, K_MSEC(HF_ENHANCED_CALL_STATUS_TIMEOUT));
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_ECC */
+
+int bt_hfp_hf_private_consultation_mode(struct bt_hfp_hf_call *call)
+{
+#if defined(CONFIG_BT_HFP_HF_ECC)
+	struct bt_hfp_hf *hf;
+
+	LOG_DBG("");
+
+	if (!call) {
+		LOG_ERR("Invalid call");
+		return -ENOTCONN;
+	}
+
+	hf = call->hf;
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_3WAY_CALL)) {
+		LOG_ERR("Three-way calling is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_ECC)) {
+		LOG_ERR("Enhanced Call Control is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->hf_features & BT_HFP_HF_FEATURE_ECC)) {
+		LOG_ERR("Enhanced Call Control is unsupported by HF");
+		return -ENOTSUP;
+	}
+
+	if (!(hf->chld_features & BIT(BT_HFP_CALL_PRIVATE_CNLTN_MODE))) {
+		LOG_ERR("Private Consultation Mode is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!call->index) {
+		LOG_ERR("Invalid call index");
+		return -EINVAL;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, chld_private_consultation_mode_finish,
+			       "AT+CHLD=2%d", call->index);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_ECC */
+}
+
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
@@ -1889,6 +3297,8 @@ static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 		hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
 
 		k_fifo_init(&hf->tx_pending);
+
+		k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
 
 		for (j = 0; j < HF_MAX_AG_INDICATORS; j++) {
 			hf->ind_table[j] = -1;
