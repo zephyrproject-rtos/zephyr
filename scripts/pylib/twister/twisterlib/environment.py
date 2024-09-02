@@ -966,6 +966,22 @@ class TwisterEnv:
             if snippet_root:
                 self.snippet_roots.append(Path(module.project) / snippet_root)
 
+
+        self.soc_roots = [Path(ZEPHYR_BASE), Path(ZEPHYR_BASE) / 'subsys' / 'testsuite']
+        self.dts_roots = [Path(ZEPHYR_BASE)]
+        self.arch_roots = [Path(ZEPHYR_BASE)]
+
+        for module in modules:
+            soc_root = module.meta.get("build", {}).get("settings", {}).get("soc_root")
+            if soc_root:
+                self.soc_roots.append(os.path.join(module.project, soc_root))
+            dts_root = module.meta.get("build", {}).get("settings", {}).get("dts_root")
+            if soc_root:
+                self.dts_roots.append(os.path.join(module.project, dts_root))
+            arch_root = module.meta.get("build", {}).get("settings", {}).get("arch_root")
+            if arch_root:
+                self.arch_roots.append(os.path.join(module.project, arch_root))
+
         self.hwm = None
 
         self.test_config = options.test_config if options else None

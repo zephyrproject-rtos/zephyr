@@ -117,6 +117,8 @@ features:
 +-------------+------------+-------------------------------------+
 | USB OTG FS  | on-chip    | USB device                          |
 +-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -138,6 +140,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD2 : PB7
 - LD3 : PB14
 - I2C : PB8, PB9
+- SPI : PA5, PA6, PB5, PD14
 
 System Clock
 ------------

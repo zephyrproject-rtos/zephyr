@@ -121,14 +121,21 @@ static void bt_bas_bls_update_battery_level_status(void)
 #endif
 		};
 
-		/* Notify/Indicate all connections */
+		/* Indicate all connections */
 		ind_params.attr = attr;
 		ind_params.data = &le_battery_level_status;
 		ind_params.len = sizeof(le_battery_level_status);
 		ind_params.func = indicate_cb;
 		err = bt_gatt_indicate(NULL, &ind_params);
 		if (err) {
-			LOG_DBG("Failed to send ntf/ind to all connections (err %d)\n", err);
+			LOG_DBG("Failed to send ind to all connections (err %d)\n", err);
+		}
+
+		/* Notify all connections */
+		err = bt_gatt_notify(NULL, attr, &le_battery_level_status,
+				     sizeof(le_battery_level_status));
+		if (err) {
+			LOG_DBG("Failed to send ntf to all connections (err %d)\n", err);
 		}
 	}
 }

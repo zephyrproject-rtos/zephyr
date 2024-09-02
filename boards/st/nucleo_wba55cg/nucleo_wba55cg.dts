@@ -173,19 +173,15 @@ stm32_lp_tick_source: &lptim1 {
 		};
 		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00010000 DT_SIZE_K(448)>;
+			reg = <0x00010000 DT_SIZE_K(456)>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@82000 {
 			label = "image-1";
-			reg = <0x00080000 DT_SIZE_K(448)>;
+			reg = <0x00082000 DT_SIZE_K(448)>;
 		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 DT_SIZE_K(16)>;
-		};
-		storage_partition: partition@f4000 {
+		storage_partition: partition@f2000 {
 			label = "storage";
-			reg = <0x000f4000 DT_SIZE_K(48)>;
+			reg = <0x000f2000 DT_SIZE_K(56)>;
 		};
 	};
 };

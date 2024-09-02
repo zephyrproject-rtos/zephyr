@@ -492,6 +492,14 @@ module-str = BAS
 source "subsys/logging/Kconfig.template.log_config"
 endif # BT_BAS
 
+# CTS
+
+if BT_CTS
+module = BT_CTS
+module-str = CTS
+source "subsys/logging/Kconfig.template.log_config"
+endif # BT_CTS
+
 # HRS
 
 if BT_HRS

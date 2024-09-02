@@ -750,6 +750,22 @@
 			};
 		};
 
+		flexio1: flexio@400ac000 {
+			compatible = "nxp,flexio";
+			reg = <0x400ac000 0x4000>;
+			interrupts = <110 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@400b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x400b0000 0x4000>;
+			interrupts = <111 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_CLK 0 0>;
+			status = "disabled";
+		};
+
 		enet: ethernet@40424000 {
 			compatible = "nxp,enet";
 			reg = <0x40424000 0x628>;

@@ -15,6 +15,7 @@
 	#size-cells = <1>;
 
 	chosen {
+		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -98,6 +99,13 @@
 			clocks = <&rtc ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		trng0: trng@600b2808 {
+			compatible = "espressif,esp32-trng";
+			reg = <0x600B2808 0x4>;
+			clocks = <&rtc ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
 

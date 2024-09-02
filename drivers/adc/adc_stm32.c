@@ -1308,6 +1308,11 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
+#ifdef CONFIG_SOC_SERIES_STM32H5X
+	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = config->base;
+#endif
+
 	if (channel_cfg->differential) {
 		LOG_ERR("Differential channels are not supported");
 		return -EINVAL;
@@ -1328,6 +1333,14 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid sampling time");
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_SOC_SERIES_STM32H5X
+	if (adc == ADC1) {
+		if (channel_cfg->channel_id == 0) {
+			LL_ADC_EnableChannel0_GPIO(adc);
+		}
+	}
+#endif
 
 	LOG_DBG("Channel setup succeeded!");
 

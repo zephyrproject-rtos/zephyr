@@ -12,6 +12,7 @@ supported:
   - arduino_gpio
   - gpio
   - netif:eth
+  - spi
 testing:
   ignore_tags:
     - mpu

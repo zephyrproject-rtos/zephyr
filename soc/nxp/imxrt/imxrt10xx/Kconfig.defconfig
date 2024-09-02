@@ -24,5 +24,7 @@ config DCDC_VALUE
 config GPIO
 	default y
 
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	default 0x400 if SOC_MIMXRT1011
 
 endif # SOC_SERIES_IMXRT10XX

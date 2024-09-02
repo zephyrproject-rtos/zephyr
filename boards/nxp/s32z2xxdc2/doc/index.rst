@@ -55,6 +55,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLEXCAN   | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| SAR_ADC   | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -149,6 +151,15 @@ FlexCAN
 -------
 
 FlexCAN supports CAN Classic (CAN 2.0) and CAN FD modes.
+
+ADC
+===
+
+ADC is provided through ADC SAR controller with 2 instances. Each ADC SAR instance has
+12-bit resolution. ADC channels are divided into 2 groups (precision and internal/standard).
+
+.. note::
+   All channels of an instance only run on 1 group channel at the same time.
 
 Programming and Debugging
 *************************

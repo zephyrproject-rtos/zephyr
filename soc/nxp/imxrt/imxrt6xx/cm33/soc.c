@@ -270,6 +270,13 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM3);
 #endif
 
+#if CONFIG_AUDIO_CODEC_WM8904
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#endif
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay))
 	CLOCK_AttachClk(kLPOSC_to_WDT0_CLK);
 #else
@@ -308,6 +315,18 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kADC0_RST_SHIFT_RSTn);
 	CLOCK_AttachClk(kSFRO_to_ADC_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+	/* Using the Audio PLL as input clock leads to better clock dividers
+	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
+	 */
+	/* DMIC source from audio pll, divider 8, 24.576M/8=3.072MHZ
+	 * Select Audio PLL as clock source. This should produce a bit clock
+	 * of 3.072MHZ
+	 */
+	CLOCK_AttachClk(kAUDIO_PLL_to_DMIC_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 8);
 #endif
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP

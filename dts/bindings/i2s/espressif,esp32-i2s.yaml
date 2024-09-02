@@ -1,0 +1,36 @@
+description: ESP32 I2S
+
+compatible: "espressif,esp32-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+
+  unit:
+    type: int
+    required: true
+    description: I2S unit number.
+      Possible values are 0,1,.. depending on chip.

@@ -196,7 +196,7 @@ To fetch Binary Blobs:
 
 .. code-block:: console
 
-   west blobs fetch stm32
+   west blobs fetch hal_stm32
 
 Connections and IOs
 ===================

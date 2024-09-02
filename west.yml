@@ -34,7 +34,7 @@ manifest:
       path: modules/lib/acpica
     - name: bsim
       repo-path: babblesim-manifest
-      revision: 9351ae1ad44864a49c351f9704f65f43046abeb0
+      revision: 9ee22c707970f6621adba0375841c0a609e24628
       path: tools/bsim
       groups:
         - babblesim
@@ -42,14 +42,14 @@ manifest:
       remote: babblesim
       repo-path: base
       path: tools/bsim/components
-      revision: 4bd907be0b2abec3b31a23fd8ca98db2a07209d2
+      revision: a3dff9a57f334fb25daa9625841cd64cbfe56681
       groups:
         - babblesim
     - name: babblesim_ext_2G4_libPhyComv1
       remote: babblesim
       repo-path: ext_2G4_libPhyComv1
       path: tools/bsim/components/ext_2G4_libPhyComv1
-      revision: 93f5eba512c438b0c9ebc1b1a947517c865b3643
+      revision: aa4951317cc7d84f24152ea38ac9ac21e6d78a76
       groups:
         - babblesim
     - name: babblesim_ext_2G4_phy_v1
@@ -84,7 +84,7 @@ manifest:
       remote: babblesim
       repo-path: ext_2G4_modem_BLE_simple
       path: tools/bsim/components/ext_2G4_modem_BLE_simple
-      revision: a38d2d24b04a6f970a225d1316047256ebf5a539
+      revision: 4d2379de510684cd4b1c3bbbb09bce7b5a20bc1f
       groups:
         - babblesim
     - name: babblesim_ext_2G4_device_burst_interferer
@@ -112,7 +112,7 @@ manifest:
       remote: babblesim
       repo-path: ext_libCryptov1
       path: tools/bsim/components/ext_libCryptov1
-      revision: eed6d7038e839153e340bd333bc43541cb90ba64
+      revision: 236309584c90be32ef12848077bd6de54e9f4deb
       groups:
         - babblesim
     - name: cmsis
@@ -127,7 +127,7 @@ manifest:
       revision: ea987c1ca661be723de83bd159aed815d6cbd430
       path: modules/lib/cmsis-nn
     - name: edtt
-      revision: 8d7b543d4d2f2be0f78481e4e1d8d73a88024803
+      revision: b9ca3c7030518f07b7937dacf970d37a47865a76
       path: tools/edtt
       groups:
         - tools
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: e400b5dba27d9abe1403fc799d48b58fa1b1daee
+      revision: 466000a80e6eb5bbcb691bae936ec5654a7796d4
       path: modules/hal/nxp
       groups:
         - hal
@@ -233,7 +233,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 484af4f994737bef9e6ccc3e267cc319b85da332
+      revision: 4c1adf8a2e2e9888f3b43374bf6521b0788aa82d
       path: modules/hal/stm32
       groups:
         - hal
@@ -300,7 +300,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 3ede17158a9fe85c160e0384c0ad0306e24ee47e
+      revision: 6e70c2dc5d4c67c4da5913b2969c0774b27f0cd0
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
       revision: 76d2168bcdfcd23a9a7dce8c21f2083b90a1e60a

@@ -606,6 +606,25 @@ static inline void rtio_sqe_prep_callback(struct rtio_sqe *sqe,
 }
 
 /**
+ * @brief Prepare a callback op submission that does not create a CQE
+ *
+ * Similar to @ref rtio_sqe_prep_callback, but the @ref RTIO_SQE_NO_RESPONSE
+ * flag is set on the SQE to prevent the generation of a CQE upon completion.
+ *
+ * This can be useful when the callback is the last operation in a sequence
+ * whose job is to clean up all the previous CQE's. Without @ref RTIO_SQE_NO_RESPONSE
+ * the completion itself will result in a CQE that cannot be consumed in the callback.
+ */
+static inline void rtio_sqe_prep_callback_no_cqe(struct rtio_sqe *sqe,
+						 rtio_callback_t callback,
+						 void *arg0,
+						 void *userdata)
+{
+	rtio_sqe_prep_callback(sqe, callback, arg0, userdata);
+	sqe->flags |= RTIO_SQE_NO_RESPONSE;
+}
+
+/**
  * @brief Prepare a transceive op submission
  */
 static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,

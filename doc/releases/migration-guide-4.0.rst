@@ -27,6 +27,9 @@ Boards
 * :ref:`native_posix<native_posix>` has been deprecated in favour of
   :ref:`native_sim<native_sim>` (:github:`76898`).
 
+* STM32WBA: The command used for fetching blobs required to build ble applications is now
+  `west blobs fetch hal_stm32` instead of `west blobs fetch stm32`.
+
 Modules
 *******
 

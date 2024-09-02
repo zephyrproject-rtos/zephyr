@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_ESP32
+	bool "ESP32 I2S driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_I2S_ENABLED
+	depends on DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
+	select DMA
+	help
+	  Enables the ESP32 I2S driver (GDMA SoCs only).
+
+if I2S_ESP32
+
+config I2S_ESP32_RX_BLOCK_COUNT
+	int "ESP32 I2S RX block count"
+	default 5
+	help
+	  Max number of blocks waiting to be read from the I2S RX channel.
+
+config I2S_ESP32_TX_BLOCK_COUNT
+	int "ESP32 I2S TX block count"
+	default 5
+	help
+	  Max number of blocks waiting to be transmitted by the I2S TX channel.
+
+endif
