@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Default flash layout for nrf52840 using UF2
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* To enable flashing with UF2 bootloader, we
+		 * must reserve a partition for SoftDevice.
+		 * See https://learn.adafruit.com/
+		 *     introducing-the-adafruit-nrf52840-feather?view=all#hathach-memory-map
+		 */
+		reserved_partition_0: partition@0 {
+			label = "SoftDevice";
+			read-only;
+			reg = <0x000000000 DT_SIZE_K(152)>;
+		};
+		code_partition: partition@26000 {
+			label = "Application";
+			reg = <0x00026000 DT_SIZE_K(796)>;
+		};
+
+		/*
+		 * The flash starting at 0x000ed000 and ending at
+		 * 0x000f4000 is reserved for use by the application.
+		 */
+		storage_partition: partition@ed000 {
+			label = "storage";
+			reg = <0x0000ed000 DT_SIZE_K(28)>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "UF2";
+			read-only;
+			reg = <0x000f4000 DT_SIZE_K(48)>;
+		};
+	};
+};
