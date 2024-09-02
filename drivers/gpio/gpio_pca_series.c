@@ -294,7 +294,7 @@ static inline int gpio_pca_series_reg_cache_update(const struct device *dev,
  *
  * @param dev           device struct
  * @param reg_type      value from enum gpio_pca_series_reg_type
- * @param buf           pointer to data
+ * @param buf           pointer to data in little-endian byteorder
  * @return int 0        if success
  *             -EFAULT  if register is not supported
  *             -EIO     if i2c failure
@@ -335,7 +335,7 @@ static inline int gpio_pca_series_reg_read(const struct device *dev,
  *
  * @param dev           device struct
  * @param reg_type      value from enum gpio_pca_series_reg_type
- * @param buf           pointer to data
+ * @param buf           pointer to data in little-endian byteorder
  * @return int 0        if success
  *             -EFAULT  if register is not supported
  *             -EIO     if i2c failure
@@ -388,11 +388,14 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
  * gpio_pca_reg_access_api
  */
 
-#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 /**
  * gpio_pca_reg_cache_api
  * {
+ * @note full cache is stored in le byteorder, consistent with reg layout.
+ *       mini cache is stored in cpu byteorder
  */
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 
 /**
  * @brief get memory offset of register cache from register type
@@ -491,7 +494,7 @@ static inline int gpio_pca_series_reg_cache_reset(const struct device *dev)
  *
  * @param dev device struct
  * @param reg_type value from enum gpio_pca_series_reg_type
- * @param buf pointer to read data
+ * @param buf pointer to read data in little-endian byteorder
  * @return int 0        if success
  *             -EINVAL  if invalid arguments
  *             -EACCES  if register is uncacheable
@@ -528,7 +531,7 @@ static inline int gpio_pca_series_reg_cache_read(const struct device *dev,
  *
  * @param dev device struct
  * @param reg_type value from enum gpio_pca_series_reg_type
- * @param buf pointer to new data to update from.
+ * @param buf pointer to new data to update from, in little-endian byteorder
  * @return int 0        if success
  *             -EINVAL  if invalid arguments
  *             -EACCES  if register is uncacheable
@@ -601,6 +604,9 @@ static inline int gpio_pca_series_reg_cache_mini_reset(const struct device *dev)
 		LOG_ERR("minimum cache failed to read initial output: %d", ret);
 		goto out;
 	}
+
+	cache->output = sys_le32_to_cpu(cache->output);
+
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	cache->int_rise = 0;
 	cache->int_fall = 0;
@@ -614,6 +620,8 @@ static inline int gpio_pca_series_reg_cache_mini_reset(const struct device *dev)
 	if (ret) {
 		LOG_ERR("minimum cache failed to read initial input: %d", ret);
 	}
+
+	cache->input_old = sys_le32_to_cpu(cache->input_old);
 #else
 	ARG_UNUSED(cfg);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
@@ -702,6 +710,12 @@ sw_rst:
 }
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
+
+/**
+ * @brief Dump all available register and cache for debug purpose.
+ *
+ * @note This function does not consider cpu byteorder.
+ */
 void gpio_pca_series_debug_dump(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
@@ -806,6 +820,9 @@ void gpio_pca_series_debug_dump(const struct device *dev)
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 
+/**
+ * @brief Validate the cache api by filling data to the cache.
+ */
 void gpio_pca_series_cache_test(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
@@ -914,68 +931,53 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	 * single byte access.
 	 * This applies to: pin_configure, pin_interrupt_configure
 	 */
-
-	if (flags & GPIO_SINGLE_ENDED) {
-		if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
-			/* configure PCA_REG_TYPE_1B_OUTPUT_CONFIG */
-			ret = gpio_pca_series_reg_cache_read(dev,
-				PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
+	if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
+		/* configure PCA_REG_TYPE_1B_OUTPUT_CONFIG */
+		ret = gpio_pca_series_reg_cache_read(dev,
+			PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
+		reg_value = sys_le32_to_cpu(reg_value);
+		if (flags & GPIO_SINGLE_ENDED) {
 			reg_value |= (BIT(pin)); /* set bit to set open-drain */
-			ret = gpio_pca_series_reg_write(dev,
-				PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
-		}
-	} else {
-		if (cfg->part_cfg->flags & PCA_HAS_OUT_CONFIG) {
-			ret = gpio_pca_series_reg_cache_read(dev,
-				PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
+		} else {
 			reg_value &= (~BIT(pin)); /* clear bit to set push-pull */
-			ret = gpio_pca_series_reg_write(dev,
-			 PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
 		}
+		reg_value = sys_cpu_to_le32(reg_value);
+		ret = gpio_pca_series_reg_write(dev,
+			PCA_REG_TYPE_1B_OUTPUT_CONFIG, (uint8_t *)&reg_value);
 	}
 
-	if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
-		if (cfg->part_cfg->flags & PCA_HAS_PULL) {
+	if ((cfg->part_cfg->flags & PCA_HAS_PULL)) {
+		if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
 			/* configure PCA_REG_TYPE_1B_PULL_SELECT */
 			ret = gpio_pca_series_reg_cache_read(dev,
 				PCA_REG_TYPE_1B_PULL_SELECT, (uint8_t *)&reg_value);
+			reg_value = sys_le32_to_cpu(reg_value);
 			if (flags & GPIO_PULL_UP) {
 				reg_value |= (BIT(pin));
 			} else {
 				reg_value &= (~BIT(pin));
 			}
+			reg_value = sys_cpu_to_le32(reg_value);
 			ret = gpio_pca_series_reg_write(dev,
 				PCA_REG_TYPE_1B_PULL_SELECT, (uint8_t *)&reg_value);
-
-			/* configure PCA_REG_TYPE_1B_PULL_ENABLE */
-			ret = gpio_pca_series_reg_cache_read(dev,
-				PCA_REG_TYPE_1B_PULL_ENABLE, (uint8_t *)&reg_value);
-			reg_value &= (~BIT(pin)); /* clear bit to disable pull */
-			ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE,
-							(uint8_t *)&reg_value);
+		}
+		/* configure PCA_REG_TYPE_1B_PULL_ENABLE */
+		ret = gpio_pca_series_reg_cache_read(dev,
+			PCA_REG_TYPE_1B_PULL_ENABLE, (uint8_t *)&reg_value);
+		reg_value = sys_le32_to_cpu(reg_value);
+		if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
+			reg_value |= (BIT(pin)); /* set bit to enable pull */
 		} else {
-			ret = -ENOTSUP;
-			goto out;
-		}
-	} else {
-		if (cfg->part_cfg->flags & PCA_HAS_PULL) {
-			ret = gpio_pca_series_reg_cache_read(dev,
-				PCA_REG_TYPE_1B_PULL_ENABLE, (uint8_t *)&reg_value);
 			reg_value &= (~BIT(pin)); /* clear bit to disable pull */
-			ret = gpio_pca_series_reg_write(dev,
-				PCA_REG_TYPE_1B_PULL_ENABLE, (uint8_t *)&reg_value);
 		}
+		reg_value = sys_cpu_to_le32(reg_value);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_PULL_ENABLE,
+						(uint8_t *)&reg_value);
 	}
 
-	if (flags & GPIO_INPUT) {
-		/* configure PCA_REG_TYPE_1B_CONFIGURATION */
-		ret = gpio_pca_series_reg_cache_read(dev,
-			PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
-		reg_value |= (BIT(pin)); /* set bit to set input */
-		ret = gpio_pca_series_reg_write(dev,
-			PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
-	} else {
-		uint32_t out_old, out;
+	/* configure PCA_REG_TYPE_1B_OUTPUT */
+	if ((flags & GPIO_OUTPUT_INIT_HIGH) || (flags & GPIO_OUTPUT_INIT_LOW)) {
+		uint32_t out_old;
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 		/* get output register old value from reg cache */
 		ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
@@ -984,33 +986,42 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 			ret = -EINVAL; /* should never fail */
 			goto out;
 		}
+		out_old = sys_le32_to_cpu(out_old);
 #else  /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 		out_old = gpio_pca_series_reg_cache_mini_get(dev)->output;
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			out = out_old | BIT(pin);
-			ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
-							(uint8_t *)&out);
+			reg_value = out_old | (BIT(pin));
 		}
 		if (flags & GPIO_OUTPUT_INIT_LOW) {
-			out = out_old & (~BIT(pin));
-			ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
-							(uint8_t *)&out);
+			reg_value = out_old & (~BIT(pin));
 		}
-		if (ret == 0) {
-#ifndef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
-			/** update output register old value to void* cache raw value */
-			gpio_pca_series_reg_cache_mini_get(dev)->output = out;
-#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
-		}
-		/* configure PCA_REG_TYPE_1B_CONFIGURATION */
-		ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_CONFIGURATION,
-							 (uint8_t *)&reg_value);
-		reg_value &= (~BIT(pin)); /* clear bit to set output */
-		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION,
+		reg_value = sys_cpu_to_le32(reg_value);
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT,
 						(uint8_t *)&reg_value);
+		if (ret != 0) {
+			goto out;
+		}
+#ifndef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+		/** update output register old value to void* cache raw value */
+		gpio_pca_series_reg_cache_mini_get(dev)->output =
+		sys_le32_to_cpu(reg_value);
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	}
+
+	/* configure PCA_REG_TYPE_1B_CONFIGURATION */
+	ret = gpio_pca_series_reg_cache_read(dev,
+		PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
+	reg_value = sys_le32_to_cpu(reg_value);
+	if (flags & GPIO_INPUT) {
+		reg_value |= (BIT(pin)); /* set bit to set input */
+	} else {
+		reg_value &= (~BIT(pin)); /* clear bit to set output */
+	}
+	reg_value = sys_cpu_to_le32(reg_value);
+	ret = gpio_pca_series_reg_write(dev,
+		PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
 
 out:
 	k_sem_give(&data->lock);
@@ -1047,20 +1058,23 @@ static int gpio_pca_series_port_read_standard(
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
 	gpio_pca_series_interrupt_handler_standard(dev, value);
 	ARG_UNUSED(data);
+	ARG_UNUSED(input_data);
 #else
 	k_sem_take(&data->lock, K_FOREVER);
 
 	/* Read Input Register */
 	ret = gpio_pca_series_reg_read(dev,
-		PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)value);
+		PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)&input_data);
 	if (ret) {
 		LOG_ERR("port read error %d", ret);
+	} else {
+		value = sys_le32_to_cpu(input_data);
 	}
 	k_sem_give(&data->lock);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 
 	LOG_DBG("dev %s standard_read return %d result 0x%8.8x",
-		dev->name, ret, input_data);
+		dev->name, ret, (uint32_t) *value);
 	return ret;
 }
 
@@ -1110,14 +1124,14 @@ static int gpio_pca_series_port_read_extended(
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_STATUS,
 					   (uint8_t *)&input_data);
 	if (ret) {
-		goto out;
+		LOG_ERR("port read error %d", ret);
+	} else {
+		*value = sys_le32_to_cpu(input_data);
 	}
-	*value = input_data;
 
-out:
 	k_sem_give(&data->lock);
 	LOG_DBG("dev %s extended_read return %d result 0x%8.8x",
-		dev->name, ret, input_data);
+		dev->name, ret, (uint32_t) *value);
 	return ret;
 }
 
@@ -1145,18 +1159,20 @@ static int gpio_pca_series_port_write(const struct device *dev,
 	if (ret) {
 		return -EINVAL; /** should never fail */
 	}
+	out_old = sys_le32_to_cpu(out_old);
 #else  /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	LOG_DBG("access address 0x%8.8x", (uint32_t)data->cache);
 	out_old = gpio_pca_series_reg_cache_mini_get(dev)->output;
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
 	out = ((out_old & ~mask) | (value & mask)) ^ toggle;
+	out = sys_cpu_to_le32(out);
 
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, (uint8_t *)&out);
 	if (ret == 0) {
 #ifndef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 		/** update output register old value to void* cache raw value */
-		gpio_pca_series_reg_cache_mini_get(dev)->output = out;
+		gpio_pca_series_reg_cache_mini_get(dev)->output = sys_le32_to_cpu(out);
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	}
 
@@ -1242,12 +1258,14 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 	if (ret) {
 		goto out;
 	}
+	int_rise = sys_le32_to_cpu(int_rise);
 	/** read from cache even if this register is not present on device */
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
 						 (uint8_t *)&int_fall);
 	if (ret) {
 		goto out;
 	}
+	int_fall = sys_le32_to_cpu(int_fall);
 #else
 	int_rise = gpio_pca_series_reg_cache_mini_get(dev)->int_rise;
 	int_fall = gpio_pca_series_reg_cache_mini_get(dev)->int_fall;
@@ -1274,12 +1292,14 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	/** read from cache even if this register is not present on device */
+	int_rise = sys_cpu_to_le32(int_rise);
 	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INTERRUPT_RISE,
 						 (uint8_t *)&int_rise);
 	if (ret) {
 		goto out;
 	}
 	/** read from cache even if this register is not present on device */
+	int_fall = sys_cpu_to_le32(int_fall);
 	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
 						 (uint8_t *)&int_fall);
 	if (ret) {
@@ -1292,6 +1312,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 
 	/** enable latch if available, so we do not lost interrupt */
 	if (cfg->part_cfg->flags & PCA_HAS_LATCH) {
+		input_latch = sys_cpu_to_le32(input_latch);
 		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH,
 						(uint8_t *)&input_latch);
 		if (ret) {
@@ -1300,6 +1321,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 	}
 	/** update interrupt mask register if available */
 	if (cfg->part_cfg->flags & PCA_HAS_INT_MASK) {
+		int_mask = sys_cpu_to_le32(int_mask);
 		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK,
 						(uint8_t *)&int_mask);
 		if (ret) {
@@ -1386,12 +1408,14 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 		LOG_ERR("get current interrupt edge config fail [%d]", ret);
 		goto out;
 	}
+	int_edge = sys_le64_to_cpu(int_edge);
 
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK,
 						 (uint8_t *)&int_mask);
 	if (ret) {
 		goto out;
 	}
+	int_mask = sys_le32_to_cpu(int_mask);
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		int_mask |= BIT(pin); /** set 1 to disable interrupt */
@@ -1410,6 +1434,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	}
 
 	/** update interrupt edge config */
+	int_edge = sys_cpu_to_le64(int_edge);
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_2B_INTERRUPT_EDGE,
 						 (uint8_t *)&int_edge);
 	if (ret) {
@@ -1417,12 +1442,14 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	}
 	/** enable latch, so we do not lost interrupt */
 	input_latch = ~int_mask;
+	input_latch = sys_cpu_to_le32(input_latch);
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH,
 					(uint8_t *)&input_latch);
 	if (ret) {
 		goto out;
 	}
 	/** update interrupt mask register */
+	int_mask = sys_cpu_to_le32(int_mask);
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK,
 					(uint8_t *)&int_mask);
 	if (ret) {
@@ -1461,18 +1488,21 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 	if (ret) {
 		goto out;
 	}
+	input_old = sys_le32_to_cpu(input_old);
 	/** read from cache even if this register is not present on device */
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_RISE,
 						 (uint8_t *)&int_rise);
 	if (ret) {
 		goto out;
 	}
+	int_rise = sys_le32_to_cpu(int_rise);
 	/** read from cache even if this register is not present on device */
 	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
 						 (uint8_t *)&int_fall);
 	if (ret) {
 		goto out;
 	}
+	int_fall = sys_le32_to_cpu(int_fall);
 #else
 	input_old = gpio_pca_series_reg_cache_mini_get(dev)->input_old;
 	int_rise = gpio_pca_series_reg_cache_mini_get(dev)->int_rise;
@@ -1489,6 +1519,7 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 	if (ret) {
 		goto out;
 	}
+	input = sys_le32_to_cpu(input);
 	/** compare input to input_old to get transitioned_pins */
 	transitioned_pins = input_old ^ input;
 
@@ -1498,8 +1529,10 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 
 	/** update current input to cache */
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	uint32_t input_le = sys_cpu_to_le32(input);
+
 	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INPUT_HISTORY,
-						   (uint8_t *)&input);
+						   (uint8_t *)&input_le);
 #else
 	gpio_pca_series_reg_cache_mini_get(dev)->input_old = input;
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
@@ -1521,7 +1554,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 	struct gpio_pca_series_data *data = dev->data;
 
 	int ret = 0;
-	uint32_t int_status;
+	uint32_t int_status = 0;
 
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	/**
@@ -1551,7 +1584,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 		goto out;
 	}
 
-	/** clear status  */
+	/** clear status */
 	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_CLEAR,
 					(uint8_t *)&int_status);
 	if (ret) {
@@ -1562,6 +1595,7 @@ out:
 	k_sem_give(&data->lock);
 
 	if ((ret == 0) && (int_status)) {
+		int_status = sys_le32_to_cpu(int_status);
 		gpio_fire_callbacks(&data->callbacks, dev, int_status);
 	}
 }
