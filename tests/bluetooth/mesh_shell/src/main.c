@@ -110,6 +110,9 @@ static const struct bt_mesh_model root_models[] = {
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	BT_MESH_MODEL_OD_PRIV_PROXY_SRV,
 #endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
 #if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
 	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
