@@ -46,4 +46,22 @@
 		};
 	};
 
+	pinmux_usbhfs: pinmux_usbhfs {
+		group0 {
+			pinmux = <USB0_VBUS_PIO0_22>,
+				<USB0_OVERCURRENTN_PIO0_28>,
+				<USB0_PORTPWRN_PIO1_12>;
+			bias-pull-up;
+			slew-rate = "standard";
+		};
+	};
+
+	pinmux_usbhhs: pinmux_usbhhs {
+		group0 {
+			pinmux = <USB1_OVERCURRENTN_PIO1_30>,
+				<USB1_PORTPWRN_PIO1_29>;
+			bias-pull-up;
+			slew-rate = "standard";
+		};
+	};
 };
