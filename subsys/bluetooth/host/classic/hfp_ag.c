@@ -2943,6 +2943,57 @@ static int bt_hfp_ag_bvra_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
 	return err;
 }
 
+static int bt_hfp_ag_binp_handler(struct bt_hfp_ag *ag, struct net_buf *buf)
+{
+	int err;
+	uint32_t value;
+#if defined(CONFIG_BT_HFP_AG_VOICE_TAG)
+	char *number = NULL;
+#endif /* CONFIG_BT_HFP_AG_VOICE_TAG */
+
+	hfp_ag_lock(ag);
+	if (!(ag->ag_features & BT_HFP_AG_FEATURE_VOICE_TAG)) {
+		hfp_ag_unlock(ag);
+		return -EOPNOTSUPP;
+	}
+	hfp_ag_unlock(ag);
+
+	if (!is_char(buf, '=')) {
+		return -ENOTSUP;
+	}
+
+	err = get_number(buf, &value);
+	if (err != 0) {
+		return -ENOTSUP;
+	}
+
+	if (!is_char(buf, '\r')) {
+		return -ENOTSUP;
+	}
+
+	if (value != 1) {
+		return -ENOTSUP;
+	}
+
+#if defined(CONFIG_BT_HFP_AG_VOICE_TAG)
+	if (bt_ag && bt_ag->request_phone_number) {
+		err = bt_ag->request_phone_number(ag, &number);
+		if (err) {
+			LOG_DBG("Cannot request phone number :(%d)", err);
+			return err;
+		}
+
+		err = hfp_ag_send_data(ag, NULL, NULL, "\r\n+BINP:\"%s\"\r\n", number);
+		if (err) {
+			LOG_ERR("Fail to send err :(%d)", err);
+		}
+		return err;
+	}
+#endif /* CONFIG_BT_HFP_AG_VOICE_TAG */
+
+	return -ENOTSUP;
+}
+
 static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+BRSF", bt_hfp_ag_brsf_handler}, {"AT+BAC", bt_hfp_ag_bac_handler},
 	{"AT+CIND", bt_hfp_ag_cind_handler}, {"AT+CMER", bt_hfp_ag_cmer_handler},
@@ -2955,7 +3006,7 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 	{"AT+CLIP", bt_hfp_ag_clip_handler}, {"AT+VGM", bt_hfp_ag_vgm_handler},
 	{"AT+VGS", bt_hfp_ag_vgs_handler},   {"AT+NREC", bt_hfp_ag_nrec_handler},
 	{"AT+BTRH", bt_hfp_ag_btrh_handler}, {"AT+CCWA", bt_hfp_ag_ccwa_handler},
-	{"AT+BVRA", bt_hfp_ag_bvra_handler},
+	{"AT+BVRA", bt_hfp_ag_bvra_handler}, {"AT+BINP", bt_hfp_ag_binp_handler},
 };
 
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
