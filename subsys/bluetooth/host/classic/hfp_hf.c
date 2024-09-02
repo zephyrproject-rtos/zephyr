@@ -3919,6 +3919,10 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	if (bt_hf->disconnected) {
 		bt_hf->disconnected(hf);
 	}
+
+	k_work_cancel(&hf->work);
+	k_work_cancel_delayable(&hf->deferred_work);
+	hf->acl = NULL;
 }
 
 static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
@@ -3945,59 +3949,67 @@ static void bt_hf_work(struct k_work *work)
 	hfp_hf_send_data(hf);
 }
 
-static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 {
-	int i;
+	size_t index;
 	static struct bt_rfcomm_dlc_ops ops = {
 		.connected = hfp_hf_connected,
 		.disconnected = hfp_hf_disconnected,
 		.recv = hfp_hf_recv,
 		.sent = hfp_hf_sent,
 	};
+	struct bt_hfp_hf *hf;
 
 	LOG_DBG("conn %p", conn);
 
-	for (i = 0; i < ARRAY_SIZE(bt_hfp_hf_pool); i++) {
-		struct bt_hfp_hf *hf = &bt_hfp_hf_pool[i];
-		int j;
-
-		if (hf->rfcomm_dlc.session) {
-			continue;
-		}
-
-		memset(hf, 0, sizeof(*hf));
-
-		hf->acl = conn;
-		hf->at.buf = hf->hf_buffer;
-		hf->at.buf_max_len = HF_MAX_BUF_LEN;
-
-		hf->rfcomm_dlc.ops = &ops;
-		hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
-
-		*dlc = &hf->rfcomm_dlc;
-
-		/* Set the supported features*/
-		hf->hf_features = BT_HFP_HF_SUPPORTED_FEATURES;
-
-		/* Set supported codec ids */
-		hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
-
-		k_fifo_init(&hf->tx_pending);
-
-		k_work_init(&hf->work, bt_hf_work);
-
-		k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
-
-		for (j = 0; j < HF_MAX_AG_INDICATORS; j++) {
-			hf->ind_table[j] = -1;
-		}
-
-		return 0;
+	index = (size_t)bt_conn_index(conn);
+	hf = &bt_hfp_hf_pool[index];
+	if (hf->acl) {
+		LOG_ERR("HF connection (%p) is established", conn);
+		return NULL;
 	}
 
-	LOG_ERR("Unable to establish HF connection (%p)", conn);
+	memset(hf, 0, sizeof(*hf));
 
-	return -ENOMEM;
+	hf->acl = conn;
+	hf->at.buf = hf->hf_buffer;
+	hf->at.buf_max_len = HF_MAX_BUF_LEN;
+
+	hf->rfcomm_dlc.ops = &ops;
+	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
+
+	/* Set the supported features*/
+	hf->hf_features = BT_HFP_HF_SUPPORTED_FEATURES;
+
+	/* Set supported codec ids */
+	hf->hf_codec_ids = BT_HFP_HF_SUPPORTED_CODEC_IDS;
+
+	k_fifo_init(&hf->tx_pending);
+
+	k_work_init(&hf->work, bt_hf_work);
+
+	k_work_init_delayable(&hf->deferred_work, bt_hf_deferred_work);
+
+	for (index = 0; index < ARRAY_SIZE(hf->ind_table); index++) {
+		hf->ind_table[index] = -1;
+	}
+
+	return hf;
+}
+
+static int hfp_hf_accept(struct bt_conn *conn, struct bt_rfcomm_dlc **dlc)
+{
+	struct bt_hfp_hf *hf;
+
+	hf = hfp_hf_create(conn);
+
+	if (!hf) {
+		return -ECONNREFUSED;
+	}
+
+	*dlc = &hf->rfcomm_dlc;
+
+	return 0;
 }
 
 static void hfp_hf_sco_connected(struct bt_sco_chan *chan)
@@ -4084,4 +4096,44 @@ int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb)
 	hfp_hf_init();
 
 	return 0;
+}
+
+int bt_hfp_hf_connect(struct bt_conn *conn, struct bt_hfp_hf **hf, uint8_t channel)
+{
+	struct bt_hfp_hf *new_hf;
+	int err;
+
+	if (!conn || !hf || !channel) {
+		return -EINVAL;
+	}
+
+	if (!bt_hf) {
+		return -EFAULT;
+	}
+
+	new_hf = hfp_hf_create(conn);
+	if (!new_hf) {
+		return -ECONNREFUSED;
+	}
+
+	err = bt_rfcomm_dlc_connect(conn, &new_hf->rfcomm_dlc, channel);
+	if (err != 0) {
+		(void)memset(new_hf, 0, sizeof(*new_hf));
+		*hf = NULL;
+	} else {
+		*hf = new_hf;
+	}
+
+	return err;
+}
+
+int bt_hfp_hf_disconnect(struct bt_hfp_hf *hf)
+{
+	LOG_DBG("");
+
+	if (!hf) {
+		return -EINVAL;
+	}
+
+	return bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
 }
