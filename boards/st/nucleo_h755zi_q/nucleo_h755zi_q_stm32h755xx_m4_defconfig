@@ -1,9 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2024 S&C Electric Company <Michael.Banducci@sandc.com>
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # Enable clock
 CONFIG_CLOCK_CONTROL=y
 

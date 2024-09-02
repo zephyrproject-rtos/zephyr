@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# GPIO Controller
-CONFIG_GPIO=y
-
 # Enable Clocks
 CONFIG_CLOCK_CONTROL=y
 

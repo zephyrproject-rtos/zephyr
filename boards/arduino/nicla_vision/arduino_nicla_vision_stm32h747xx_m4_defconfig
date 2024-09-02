@@ -1,9 +1,6 @@
 # Copyright 2024 Felipe Neves
 # SPDX-License-Identifier: Apache-2.0
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # Clock configuration
 CONFIG_CLOCK_CONTROL=y
 

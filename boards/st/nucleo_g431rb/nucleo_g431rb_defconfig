@@ -3,9 +3,6 @@
 # enable uart driver
 CONFIG_SERIAL=y
 
-# enable GPIO
-CONFIG_GPIO=y
-
 # enable clocks
 CONFIG_CLOCK_CONTROL=y
 

@@ -13,12 +13,8 @@ CONFIG_SERIAL=y
 # Enable console
 CONFIG_CONSOLE=y
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # Enable clocks
 CONFIG_CLOCK_CONTROL=y
-
 
 # Logger cannot use itself to log
 CONFIG_USB_CDC_ACM_LOG_LEVEL_OFF=y

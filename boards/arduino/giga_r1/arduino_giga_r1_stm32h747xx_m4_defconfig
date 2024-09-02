@@ -1,9 +1,6 @@
 # Copyright 2023 Google LLC
 # SPDX-License-Identifier: Apache-2.0
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # Clock configuration
 CONFIG_CLOCK_CONTROL=y
 
