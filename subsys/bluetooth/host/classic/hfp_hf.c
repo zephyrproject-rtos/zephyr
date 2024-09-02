@@ -788,39 +788,6 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	return -ENOMSG;
 }
 
-int cmd_complete(struct at_client *hf_at, enum at_result result,
-	       enum at_cme cme_err)
-{
-	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	struct bt_conn *conn = hf->acl;
-	struct bt_hfp_hf_cmd_complete cmd = { 0 };
-
-	LOG_DBG("");
-
-	switch (result) {
-	case AT_RESULT_OK:
-		cmd.type = HFP_HF_CMD_OK;
-		break;
-	case AT_RESULT_ERROR:
-		cmd.type = HFP_HF_CMD_ERROR;
-		break;
-	case AT_RESULT_CME_ERROR:
-		cmd.type = HFP_HF_CMD_CME_ERROR;
-		cmd.cme = cme_err;
-		break;
-	default:
-		LOG_ERR("Unknown error code");
-		cmd.type = HFP_HF_CMD_UNKNOWN_ERROR;
-		break;
-	}
-
-	if (bt_hf->cmd_complete_cb) {
-		bt_hf->cmd_complete_cb(conn, &cmd);
-	}
-
-	return 0;
-}
-
 static int send_at_cmee(struct bt_hfp_hf *hf, at_finish_cb_t cb)
 {
 	if (hf->ag_features & BT_HFP_AG_FEATURE_EXT_ERR) {
@@ -1156,47 +1123,6 @@ static struct bt_hfp_hf *bt_hfp_hf_lookup_bt_conn(struct bt_conn *conn)
 	}
 
 	return NULL;
-}
-
-int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
-{
-	struct bt_hfp_hf *hf;
-	int err;
-
-	LOG_DBG("");
-
-	if (!conn) {
-		LOG_ERR("Invalid connection");
-		return -ENOTCONN;
-	}
-
-	hf = bt_hfp_hf_lookup_bt_conn(conn);
-	if (!hf) {
-		LOG_ERR("No HF connection found");
-		return -ENOTCONN;
-	}
-
-	switch (cmd) {
-	case BT_HFP_HF_ATA:
-		err = hfp_hf_send_cmd(hf, NULL, cmd_complete, "ATA");
-		if (err < 0) {
-			LOG_ERR("Failed ATA");
-			return err;
-		}
-		break;
-	case BT_HFP_HF_AT_CHUP:
-		err = hfp_hf_send_cmd(hf, NULL, cmd_complete, "AT+CHUP");
-		if (err < 0) {
-			LOG_ERR("Failed AT+CHUP");
-			return err;
-		}
-		break;
-	default:
-		LOG_ERR("Invalid AT Command");
-		return -EINVAL;
-	}
-
-	return 0;
 }
 
 #if defined(CONFIG_BT_HFP_HF_CLI)
