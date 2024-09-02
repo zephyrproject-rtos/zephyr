@@ -22,7 +22,6 @@
 #include <zephyr/logging/log.h>
 
 #include "flash_stm32.h"
-#include "stm32_hsem.h"
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
@@ -59,32 +58,6 @@ int __weak flash_stm32_check_configuration(void)
 	return 0;
 }
 
-#if defined(CONFIG_MULTITHREADING)
-/*
- * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
- * similarly for flash_stm32_sem_give) to avoid confusion with locking
- * actual flash pages.
- */
-static inline void _flash_stm32_sem_take(const struct device *dev)
-{
-	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
-	z_stm32_hsem_lock(CFG_HW_FLASH_SEMID, HSEM_LOCK_WAIT_FOREVER);
-}
-
-static inline void _flash_stm32_sem_give(const struct device *dev)
-{
-	z_stm32_hsem_unlock(CFG_HW_FLASH_SEMID);
-	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-}
-
-#define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
-#define flash_stm32_sem_take(dev) _flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev) _flash_stm32_sem_give(dev)
-#else
-#define flash_stm32_sem_init(dev)
-#define flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev)
-#endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
 static int flash_stm32_check_status(const struct device *dev)
@@ -319,7 +292,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
 	if (enable) {
 		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
 	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
@@ -395,7 +368,7 @@ static int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, WB, WL   \
 			    */
 	/*
 	 * Access to control register can be disabled by writing wrong key to
@@ -425,7 +398,7 @@ static int flash_stm32_option_bytes_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
 	/*
 	 * Access to option register can be disabled by writing wrong key to
 	 * the key register. Option register will remain disabled until reset.
