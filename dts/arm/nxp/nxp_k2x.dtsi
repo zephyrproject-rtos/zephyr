@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Prevas A/S
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -372,6 +373,14 @@
 			interrupts = <53 1>;
 			interrupt-names = "usb_otg";
 			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		usbh: usbh@40072000 {
+			compatible = "nxp,uhc-khci";
+			reg = <0x40072000 0x1000>;
+			interrupts = <53 1>;
+			interrupt-names = "usb_otg";
 			status = "disabled";
 		};
 
