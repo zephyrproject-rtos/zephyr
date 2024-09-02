@@ -43,6 +43,10 @@ LOG_MODULE_REGISTER(gpio_pca_series);
  * @brief part number definition.
  */
 enum gpio_pca_series_part_no {
+	PCA_PART_NO_PCA9538,
+	PCA_PART_NO_PCA9539,
+	PCA_PART_NO_PCA9554,
+	PCA_PART_NO_PCA9555,
 	PCA_PART_NO_PCAL6524,
 	PCA_PART_NO_PCAL6534,
 };
@@ -53,6 +57,10 @@ enum gpio_pca_series_part_no {
  * @note must be consistent in order with @ref enum gpio_pca_series_part_no
  */
 const char *const gpio_pca_series_part_name[] = {
+	"pca9538",
+	"pca9539",
+	"pca9554",
+	"pca9555",
 	"pcal6524",
 	"pcal6534",
 };
@@ -839,6 +847,12 @@ void gpio_pca_series_cache_test(const struct device *dev)
  * {
  */
 
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+/** Forward declaration */
+static inline void gpio_pca_series_interrupt_handler_standard(
+		const struct device *dev, gpio_port_value_t *input_value);
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+
 /**
  * @brief configure gpio port.
  *
@@ -993,6 +1007,52 @@ out:
 /**
  * @brief read gpio port
  *
+ * @note read input_port register will clear interrupt masks
+ *       on supported devices. This API is used for part no
+ *       without PCA_HAS_INT_EXTEND capability.
+ *
+ * @param dev
+ * @param value
+ * @return int 0            if success
+ *             -EWOULDBLOCK if called from ISR context
+ */
+static int gpio_pca_series_port_read_standard(
+		const struct device *dev, gpio_port_value_t *value)
+{
+	struct gpio_pca_series_data *data = dev->data;
+	uint32_t input_data;
+	int ret = 0;
+
+	/* Can't do I2C bus operations from an ISR */
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	LOG_DBG("dev %s standard_read", dev->name);
+
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	gpio_pca_series_interrupt_handler_standard(dev, value);
+	ARG_UNUSED(data);
+#else
+	k_sem_take(&data->lock, K_FOREVER);
+
+	/* Read Input Register */
+	ret = gpio_pca_series_reg_read(dev,
+		PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)value);
+	if (ret) {
+		LOG_ERR("port read error %d", ret);
+	}
+	k_sem_give(&data->lock);
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+
+	LOG_DBG("dev %s standard_read return %d result 0x%8.8x",
+		dev->name, ret, input_data);
+	return ret;
+}
+
+/**
+ * @brief read gpio port
+ *
  * @note This API is used for part no with PCA_HAS_INT_EXTEND capability.
  *       It read input_status register, which will NOT clear interrupt masks.
  *
@@ -1114,6 +1174,133 @@ static int gpio_pca_series_port_toggle_bits(const struct device *dev, gpio_port_
 }
 
 #ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+/**
+ * @brief Configure interrupt for device with software-compared interrupt edge
+ *
+ * @note This version is used by devices that does not have interrupt edge config
+ *       (aka PCA_HAS_INT_EXTEND), and relies on software to check the edge.
+ *       This applies to all pca(l)9xxx and pcal64xxa devices.
+ *       This will also configure interrupt mask register if the device has it.
+ *
+ * @param dev
+ * @param pin
+ * @param mode
+ * @param trig
+ * @return int
+ */
+static int gpio_pca_series_pin_interrupt_configure_standard(
+	const struct device *dev, gpio_pin_t pin, enum gpio_int_mode mode,
+	enum gpio_int_trig trig)
+{
+	const struct gpio_pca_series_config *cfg = dev->config;
+	struct gpio_pca_series_data *data = dev->data;
+	uint32_t int_rise, int_fall;
+	uint32_t int_mask, input_latch;
+	int ret = 0;
+
+	if (cfg->gpio_int.port == NULL) {
+		return -ENOTSUP;
+	}
+	/* Device does not support level-triggered interrupts. */
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		return -ENOTSUP;
+	}
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	/**
+	 * TODO: Only write 1 byte.
+	 *
+	 * The config api only configures 1 pin, so only need to write the
+	 * modified byte. Need to create new register & cache api to provide
+	 * single byte access.
+	 * This applies to: pin_configure, pin_interrupt_configure
+	 */
+
+	/** get current interrupt config */
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_RISE,
+						 (uint8_t *)&int_rise);
+	if (ret) {
+		goto out;
+	}
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
+						 (uint8_t *)&int_fall);
+	if (ret) {
+		goto out;
+	}
+#else
+	int_rise = gpio_pca_series_reg_cache_mini_get(dev)->int_rise;
+	int_fall = gpio_pca_series_reg_cache_mini_get(dev)->int_fall;
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		int_fall &= ~BIT(pin);
+		int_rise &= ~BIT(pin);
+	} else {
+		if (trig == GPIO_INT_TRIG_BOTH) {
+			int_fall |= BIT(pin);
+			int_rise |= BIT(pin);
+		} else if (trig == GPIO_INT_TRIG_LOW) {
+			int_fall |= BIT(pin);
+			int_rise &= ~BIT(pin);
+		} else if (trig == GPIO_INT_TRIG_HIGH) {
+			int_fall &= ~BIT(pin);
+			int_rise |= BIT(pin);
+		}
+	}
+
+	int_mask = int_fall | int_rise;
+	input_latch = ~int_mask;
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INTERRUPT_RISE,
+						 (uint8_t *)&int_rise);
+	if (ret) {
+		goto out;
+	}
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
+						 (uint8_t *)&int_fall);
+	if (ret) {
+		goto out;
+	}
+#else
+	gpio_pca_series_reg_cache_mini_get(dev)->int_rise = int_rise;
+	gpio_pca_series_reg_cache_mini_get(dev)->int_fall = int_fall;
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+	/** enable latch if available, so we do not lost interrupt */
+	if (cfg->part_cfg->flags & PCA_HAS_LATCH) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INPUT_LATCH,
+						(uint8_t *)&input_latch);
+		if (ret) {
+			goto out;
+		}
+	}
+	/** update interrupt mask register if available */
+	if (cfg->part_cfg->flags & PCA_HAS_INT_MASK) {
+		ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_INTERRUPT_MASK,
+						(uint8_t *)&int_mask);
+		if (ret) {
+			goto out;
+		}
+	}
+
+out:
+	k_sem_give(&data->lock);
+
+	if (ret) {
+		LOG_ERR("int config(s) error %d", ret);
+	}
+	return ret;
+}
 
 /**
  * @brief Configure interrupt for device with hardware-selected interrupt edge
@@ -1241,6 +1428,79 @@ static int gpio_pca_series_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
+static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
+		gpio_port_value_t *input_value)
+{
+	struct gpio_pca_series_data *data = dev->data;
+	int ret = 0;
+	uint32_t input_old, int_rise, int_fall;
+	uint32_t input;
+	uint32_t transitioned_pins;
+	uint32_t int_status = 0;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INPUT_HISTORY,
+						 (uint8_t *)&input_old);
+	if (ret) {
+		goto out;
+	}
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_RISE,
+						 (uint8_t *)&int_rise);
+	if (ret) {
+		goto out;
+	}
+	/** read from cache even if this register is not present on device */
+	ret = gpio_pca_series_reg_cache_read(dev, PCA_REG_TYPE_1B_INTERRUPT_FALL,
+						 (uint8_t *)&int_fall);
+	if (ret) {
+		goto out;
+	}
+#else
+	input_old = gpio_pca_series_reg_cache_mini_get(dev)->input_old;
+	int_rise = gpio_pca_series_reg_cache_mini_get(dev)->int_rise;
+	int_fall = gpio_pca_series_reg_cache_mini_get(dev)->int_fall;
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+	/** check if any interrupt enabled */
+	if ((!int_rise) && (!int_fall)) {
+		goto out;
+	}
+
+	/** read current input value, and clear status if reg is present */
+	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_PORT, (uint8_t *)&input);
+	if (ret) {
+		goto out;
+	}
+	/** compare input to input_old to get transitioned_pins */
+	transitioned_pins = input_old ^ input;
+
+	/** Mask gpio transactions with rising/falling edge interrupt config */
+	int_status = (int_rise & transitioned_pins & input)
+				| (int_fall & transitioned_pins & (~input));
+
+	/** update current input to cache */
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	ret = gpio_pca_series_reg_cache_update(dev, PCA_REG_TYPE_1B_INPUT_HISTORY,
+						   (uint8_t *)&input);
+#else
+	gpio_pca_series_reg_cache_mini_get(dev)->input_old = input;
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+out:
+	k_sem_give(&data->lock);
+
+	if (input_value) {
+		*input_value = input;
+	}
+	if ((ret == 0) && (int_status)) {
+		gpio_fire_callbacks(&data->callbacks, dev, int_status);
+	}
+}
+
 static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
@@ -1292,6 +1552,15 @@ out:
 	}
 }
 
+static void gpio_pca_series_interrupt_worker_standard(struct k_work *work)
+{
+	struct gpio_pca_series_data *data =
+		CONTAINER_OF(work, struct gpio_pca_series_data, int_work);
+	const struct device *dev = data->self;
+
+	gpio_pca_series_interrupt_handler_standard(dev, NULL);
+}
+
 static void gpio_pca_series_interrupt_worker_extended(struct k_work *work)
 {
 	struct gpio_pca_series_data *data =
@@ -1321,6 +1590,19 @@ static void gpio_pca_series_gpio_int_handler(const struct device *dev,
  * }
  * gpio_pca_zephyr_gpio_api
  */
+
+static const struct gpio_driver_api gpio_pca_series_api_funcs_standard = {
+	.pin_configure = gpio_pca_series_pin_configure,
+	.port_get_raw = gpio_pca_series_port_read_standard,
+	.port_set_masked_raw = gpio_pca_series_port_set_masked,
+	.port_set_bits_raw = gpio_pca_series_port_set_bits,
+	.port_clear_bits_raw = gpio_pca_series_port_clear_bits,
+	.port_toggle_bits = gpio_pca_series_port_toggle_bits,
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	.pin_interrupt_configure = gpio_pca_series_pin_interrupt_configure_standard,
+	.manage_callback = gpio_pca_series_manage_callback,
+#endif
+};
 
 static const struct gpio_driver_api gpio_pca_series_api_funcs_extended = {
 	.pin_configure = gpio_pca_series_pin_configure,
@@ -1381,8 +1663,14 @@ static int gpio_pca_series_init(const struct device *dev)
 	/** save dev pointer */
 	data->self = dev;
 
-	/** init work obj */
-	k_work_init(&data->int_work, gpio_pca_series_interrupt_worker_extended);
+	/** check the flags and init work obj */
+	const uint8_t check_flags = (PCA_HAS_LATCH | PCA_HAS_INT_MASK | PCA_HAS_INT_EXTEND);
+
+	if ((cfg->part_cfg->flags & check_flags) == check_flags) {
+		k_work_init(&data->int_work, gpio_pca_series_interrupt_worker_extended);
+	} else {
+		k_work_init(&data->int_work, gpio_pca_series_interrupt_worker_standard);
+	}
 
 	/** Interrupt pin connected, enable interrupt */
 	if (cfg->gpio_int.port != NULL) {
@@ -1433,7 +1721,7 @@ out_bus:
 #define GPIO_PCA_GET_API_BY_PART_NO(part_no) ( \
 	(part_no == PCA_PART_NO_PCAL6524) ? &gpio_pca_series_api_funcs_extended : \
 	(part_no == PCA_PART_NO_PCAL6534) ? &gpio_pca_series_api_funcs_extended : \
-	NULL \
+	&gpio_pca_series_api_funcs_standard \
 )
 #define GPIO_PCA_GET_PORT_NO_CFG_BY_PART_NO(part_no) (GPIO_PCA_PORT_NO_##part_no)
 #define GPIO_PCA_GET_PART_FLAG_BY_PART_NO(part_no) (GPIO_PCA_FLAG_##part_no)
@@ -1539,6 +1827,175 @@ out_bus:
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 
+/**
+ * @brief implement pca953x driver
+ *
+ * @note flags = 0U;
+ *
+ *       api set    :   standard
+ *       ngpios     :   8, 16
+ *       part_no    :   pca9534 pca9538 pca9535 pca9539
+ */
+#define GPIO_PCA_SERIES_FLAG_TYPE_0 (0U)
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+/**
+ * cache map for flag = 0U
+ */
+static const uint8_t gpio_pca_series_cache_map_pca953x[] = {
+	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x00, /** output_port */
+/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x01, /** configuration */
+	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK,
+			   * non-cacheable if not PCA_HAS_INT_EXTEND
+			   */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK, non-cacheable */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	0x02, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	0x03, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	0x04, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+static const uint8_t gpio_pca_series_reg_pca9538[] = {
+	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x01, /** output_port */
+/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x03, /** configuration */
+	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK,
+			   * non-cacheable if not PCA_HAS_INT_EXTEND
+			   */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9538 (1U)
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA9538 GPIO_PCA_SERIES_FLAG_TYPE_0
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9538 (&gpio_pca_series_part_cfg_pca9538)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9538 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9538,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9538,
+	.regs = gpio_pca_series_reg_pca9538,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9538),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pca9555 share the same register layout with pca9539, with
+ * RESET pin repurposed to another address strapping pin.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9554 GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9538
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA9554 GPIO_PCA_FLAG_PCA_PART_NO_PCA9538
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9554 (&gpio_pca_series_part_cfg_pca9554)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9554 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9554,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9554,
+	.regs = gpio_pca_series_reg_pca9538,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9554),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+static const uint8_t gpio_pca_series_reg_pca9539[] = {
+	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x02, /** output_port */
+/*	0x04,     polarity_inversion  (unused, omitted) */
+	0x06, /** configuration */
+	PCA_REG_INVALID, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** input_latch if PCA_HAS_LATCH*/
+	PCA_REG_INVALID, /** pull_enable if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK,
+			   * non-cacheable if not PCA_HAS_INT_EXTEND
+			   */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9539 (2U)
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA9539 GPIO_PCA_SERIES_FLAG_TYPE_0
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9539 (&gpio_pca_series_part_cfg_pca9539)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9539 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9539,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9539,
+	.regs = gpio_pca_series_reg_pca9539,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9539),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pca9555 share the same register layout with pca9539, with
+ * RESET pin repurposed to another address strapping pin.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9555 GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9539
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCA9555 GPIO_PCA_FLAG_PCA_PART_NO_PCA9539
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCA9555 (&gpio_pca_series_part_cfg_pca9555)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9555 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCA9555,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCA9555,
+	.regs = gpio_pca_series_reg_pca9539,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCA9555),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pca953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
 
 /**
  * @brief implement pcal65xx driver
@@ -1706,6 +2163,22 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		CONFIG_GPIO_PCA_SERIES_INIT_PRIORITY, \
 		GPIO_PCA_GET_API_BY_PART_NO(part_no));
 
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9538
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9538)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9539
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9539)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9554
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9554)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pca9555
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9555)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pcal6524
