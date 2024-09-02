@@ -31,14 +31,15 @@ on the simulated nRF54L15 SOC.
 
 .. warning::
 
-   This target is experimental, and even though it includes models of the RADIO, it does not yet
-   include models of the AAR, CCM or ECB peripherals, so the BLE and 802.15.4 stacks can only be
-   run without encryption or privacy features so far.
+   This target is experimental.
 
 This boards include models of some of the nRF54L15 SOC peripherals:
 
+* AAR (Accelerated Address Resolver)
+* CCM (AES CCM mode encryption)
 * CLOCK (Clock control)
 * DPPI (Distributed Programmable Peripheral Interconnect)
+* ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
 * GRTC (Global Real-time Counter)
