@@ -605,6 +605,31 @@ int vgs_handle(struct at_client *hf_at)
 }
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
 
+int bsir_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	struct bt_conn *conn = hf->acl;
+	uint32_t inband;
+	int err;
+
+	err = at_get_number(hf_at, &inband);
+	if (err) {
+		LOG_ERR("could not get bsir value");
+		return err;
+	}
+
+	if (inband > 1) {
+		LOG_ERR("Invalid %d bsir value", inband);
+		return -EINVAL;
+	}
+
+	if (bt_hf->inband_ring) {
+		bt_hf->inband_ring(conn, (bool)inband);
+	}
+
+	return 0;
+}
+
 static const struct unsolicited {
 	const char *cmd;
 	enum at_cmd_type type;
@@ -619,6 +644,7 @@ static const struct unsolicited {
 	{ "VGM", AT_CMD_TYPE_UNSOLICITED, vgm_handle },
 	{ "VGS", AT_CMD_TYPE_UNSOLICITED, vgs_handle },
 #endif /* CONFIG_BT_HFP_HF_VOLUME */
+	{ "BSIR", AT_CMD_TYPE_UNSOLICITED, bsir_handle },
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
