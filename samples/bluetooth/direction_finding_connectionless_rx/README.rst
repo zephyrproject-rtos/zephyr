@@ -2,12 +2,12 @@
    :name: Direction Finding Periodic Advertising Locator
    :relevant-api: bt_gap bluetooth
 
-   Implement BLE Direction Finding CTE Locator functionality.
+   Implement Bluetooth LE Direction Finding CTE Locator functionality.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Direction Finding CTE Locator
+A simple application demonstrating the Bluetooth LE Direction Finding CTE Locator
 functionality by receiving and sampling sending Constant Tone Extension with
 periodic advertising PDUs.
 

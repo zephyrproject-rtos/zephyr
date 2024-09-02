@@ -2,7 +2,7 @@
    :name: Encrypted Advertising
    :relevant-api: bluetooth
 
-   Use the BLE encrypted advertising feature.
+   Use the Bluetooth LE encrypted advertising feature.
 
 Overview
 ********

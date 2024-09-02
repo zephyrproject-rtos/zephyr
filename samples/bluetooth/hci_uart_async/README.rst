@@ -16,7 +16,7 @@ of the HCI UART sample may be different.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Default UART settings
 *********************

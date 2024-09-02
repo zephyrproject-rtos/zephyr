@@ -12,7 +12,7 @@ This code sample provides a template for implementing a `BTHome <https://bthome.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A BTHome compatible listener, for example `Home Assistant <https://www.home-assistant.io/>`_ with the BTHome integration running.
 
 Building and Running

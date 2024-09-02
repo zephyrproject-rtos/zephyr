@@ -2,7 +2,7 @@
    :name: ISO (Peripheral)
    :relevant-api: bt_bas bluetooth
 
-   Implement a BLE Peripheral that uses isochronous channels.
+   Implement a Bluetooth LE Peripheral that uses isochronous channels.
 
 Overview
 ********

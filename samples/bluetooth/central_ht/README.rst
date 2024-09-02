@@ -2,7 +2,7 @@
    :name: Health Thermometer (Central)
    :relevant-api: bluetooth
 
-   Connect to a BLE health thermometer sensor and read temperature measurements.
+   Connect to a Bluetooth LE health thermometer sensor and read temperature measurements.
 
 Overview
 ********
@@ -15,7 +15,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

@@ -2,7 +2,7 @@
    :name: Central OTC
    :relevant-api: bluetooth
 
-   Connect to a BLE peripheral that supports the Object Transfer Service (OTS)
+   Connect to a Bluetooth LE peripheral that supports the Object Transfer Service (OTS)
 
 Overview
 ********
@@ -15,7 +15,7 @@ to read data, and to calculate checksum of selected objects.
 Requirements
 ************
 
-* A board with BLE support and 4 buttons.
+* A board with Bluetooth LE support and 4 buttons.
 
 Building and Running
 ********************
