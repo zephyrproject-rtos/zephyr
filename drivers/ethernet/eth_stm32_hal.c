@@ -1331,7 +1331,9 @@ static void eth_iface_init(struct net_if *iface)
 		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
 				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
 				rx_thread, (void *) dev, NULL, NULL,
-				K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
+				IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+					? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
+					: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 				0, K_NO_WAIT);
 
 		k_thread_name_set(&dev_data->rx_thread, "stm_eth");
