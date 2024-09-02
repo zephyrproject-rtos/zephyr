@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NRF_LPCOMP
+	bool "Nordic LPCOMP comparator driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_LPCOMP_ENABLED
+	select NRFX_LPCOMP
