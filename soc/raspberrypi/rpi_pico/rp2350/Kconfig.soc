@@ -20,5 +20,16 @@ config SOC_RP2350A_M33
 	help
 	  Use the RP2350A with a Cortex-M33 core in both 'sockets'.
 
+config SOC_RP2350B
+	bool
+	select SOC_SERIES_RP2350
+
+config SOC_RP2350B_M33
+	bool
+	select SOC_RP2350B
+	help
+	  Use the RP2350B with a Cortex-M33 core in both 'sockets'.
+
 config SOC
 	default "rp2350a" if SOC_RP2350A
+	default "rp2350b" if SOC_RP2350B
