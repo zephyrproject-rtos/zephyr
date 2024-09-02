@@ -48,6 +48,7 @@ config SDMMC_STM32
 	select DMA if ($(DT_STM32_SDMMC_HAS_DMA) && SOC_SERIES_STM32F4X)
 	select PINCTRL
 	select RESET
+	select GPIO
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
 

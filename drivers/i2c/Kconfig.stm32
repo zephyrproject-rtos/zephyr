@@ -6,6 +6,7 @@ menuconfig I2C_STM32
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
 	select PINCTRL
+	select GPIO
 	help
 	  Enable I2C support on the STM32 SoCs
 

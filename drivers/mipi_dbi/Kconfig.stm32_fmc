@@ -6,6 +6,7 @@ config MIPI_DBI_STM32_FMC
 	default y
 	depends on DT_HAS_ST_STM32_FMC_MIPI_DBI_ENABLED
 	select MEMC
+	select GPIO
 	help
 	  Enable support for MIPI DBI driver for controller based on the stm32 FMC.
 

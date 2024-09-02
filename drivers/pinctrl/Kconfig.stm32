@@ -5,6 +5,7 @@ config PINCTRL_STM32
 	bool
 	default y
 	depends on DT_HAS_ST_STM32_PINCTRL_ENABLED || DT_HAS_ST_STM32F1_PINCTRL_ENABLED
+	select GPIO
 	help
 	  Enable pin controller driver for STM32 MCUs
 

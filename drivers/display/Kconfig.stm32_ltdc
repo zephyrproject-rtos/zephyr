@@ -10,6 +10,7 @@ menuconfig STM32_LTDC
 	select USE_STM32_HAL_LTDC
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select PINCTRL
+	select GPIO
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
 
