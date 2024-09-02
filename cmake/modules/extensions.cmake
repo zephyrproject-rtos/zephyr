@@ -2393,18 +2393,20 @@ function(check_set_linker_property)
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)
   list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
-  set(option ${LINKER_PROPERTY_PROPERTY})
 
-  string(MAKE_C_IDENTIFIER check${option} check)
+  foreach(option ${LINKER_PROPERTY_PROPERTY})
+    string(MAKE_C_IDENTIFIER check${option} check)
 
-  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  zephyr_check_compiler_flag(C "" ${check})
-  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    zephyr_check_compiler_flag(C "" ${check})
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  if(${${check}})
-    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
-  endif()
+    if(${${check}})
+      set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
 endfunction()
 
 # 'set_compiler_property' is a function that sets the property for the C and
