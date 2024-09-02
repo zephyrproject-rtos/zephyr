@@ -292,7 +292,7 @@ int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
 	if (enable) {
 		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
 	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
@@ -368,8 +368,7 @@ int flash_stm32_control_register_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, H7, WB, WL   \
-			    */
+#if defined(FLASH_CR_LOCK) /* F0, F1, F2, F3, F4, F7, L4, G0, G4, WB, WL */
 	/*
 	 * Access to control register can be disabled by writing wrong key to
 	 * the key register. Option register will remain disabled until reset.
@@ -398,7 +397,7 @@ int flash_stm32_option_bytes_disable(const struct device *dev)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 
-#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 and H7 */
+#if defined(FLASH_OPTCR_OPTLOCK) /* F2, F4, F7 */
 	/*
 	 * Access to option register can be disabled by writing wrong key to
 	 * the key register. Option register will remain disabled until reset.
@@ -462,7 +461,7 @@ static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
 	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4, L5, U5 & WB55 series.
-	 * For F2, F4, F7 & H7 series, this is not applicable.
+	 * For F2, F4, F7 series, this is not applicable.
 	 */
 #if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);

@@ -62,6 +62,67 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+uint8_t flash_stm32_get_rdp_level(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return (regs->OPTSR_CUR & FLASH_OPTSR_RDP_Msk) >> FLASH_OPTSR_RDP_Pos;
+}
+
+void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	uint32_t value = (uint32_t)level << FLASH_OPTSR_RDP_Pos;
+
+	if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		LOG_ERR("Option bytes locked");
+		return;
+	}
+
+	if ((regs->OPTCR & FLASH_OPTSR_RDP_Msk) == value) {
+		/* Done already */
+		return;
+	}
+
+	if (flash_stm32_wait_flash_idle(dev) != 0) {
+		LOG_ERR("Err flash no idle");
+		return;
+	}
+
+	regs->OPTCR = (regs->OPTCR & ~FLASH_OPTSR_RDP_Msk) | value;
+	regs->OPTCR |= FLASH_OPTCR_OPTSTART;
+
+	/* Make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	if (flash_stm32_wait_flash_idle(dev) != 0) {
+		LOG_ERR("Err flash no idle");
+		return;
+	}
+}
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+
+int flash_stm32_option_bytes_lock(const struct device *dev, bool enable)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	if (enable) {
+		regs->OPTCR |= FLASH_OPTCR_OPTLOCK;
+	} else if (regs->OPTCR & FLASH_OPTCR_OPTLOCK) {
+		regs->OPTKEYR = FLASH_OPT_KEY1;
+		regs->OPTKEYR = FLASH_OPT_KEY2;
+	}
+
+	if (enable) {
+		LOG_DBG("Option bytes locked");
+	} else {
+		LOG_DBG("Option bytes unlocked");
+	}
+
+	return 0;
+}
+
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)
@@ -648,6 +709,9 @@ static const struct flash_driver_api flash_stm32h7_api = {
 	.get_parameters = flash_stm32h7_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
+#endif
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+	.ex_op = flash_stm32_ex_op,
 #endif
 };
 
