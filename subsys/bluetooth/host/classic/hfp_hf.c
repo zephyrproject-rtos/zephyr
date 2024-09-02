@@ -763,6 +763,38 @@ static int at_clip_finish(struct at_client *hf_at, enum at_result result,
 }
 #endif /* CONFIG_BT_HFP_HF_CLI */
 
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+static int send_at_vgm(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+VGM=%d", hf->vgm);
+}
+
+static int at_vgm_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("VGM set (result %d) on %p", result, hf);
+
+	return 0;
+}
+
+static int send_at_vgs(struct bt_hfp_hf *hf, at_finish_cb_t cb)
+{
+	return hfp_hf_send_cmd(hf, NULL, cb, "AT+VGS=%d", hf->vgs);
+}
+
+static int at_vgs_finish(struct at_client *hf_at, enum at_result result,
+		   enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("VGS set (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
+
 typedef int (*at_send_t)(struct bt_hfp_hf *hf, at_finish_cb_t cb);
 
 static struct at_cmd_init
@@ -771,6 +803,10 @@ static struct at_cmd_init
 	at_finish_cb_t finish;
 	bool disconnect; /* Disconnect if command failed. */
 } cmd_init_list[] = {
+#if defined(CONFIG_BT_HFP_HF_VOLUME)
+	{send_at_vgm, at_vgm_finish, false},
+	{send_at_vgs, at_vgs_finish, false},
+#endif /* CONFIG_BT_HFP_HF_VOLUME */
 	{send_at_cmee, at_cmee_finish, false},
 	{send_at_cops, at_cops_finish, false},
 #if defined(CONFIG_BT_HFP_HF_CLI)

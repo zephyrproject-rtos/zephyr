@@ -242,9 +242,9 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd);
  */
 int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
 
-/** @brief Handsfree HF set Gain of Microphone (VGM)
+/** @brief Handsfree HF report Gain of Microphone (VGM)
  *
- *  set Gain of Microphone (VGM).
+ *  Report Gain of Microphone (VGM).
  *  The AT command `AT+VGM=<gain>` will be sent to the AG to report its
  *  current microphone gain level setting to the AG.
  *  `<gain>` is a decimal numeric constant, relating to a particular
@@ -253,6 +253,10 @@ int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
  *  indicates the current value of the microphone gain in the HF.
  *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the error `-ENOTSUP`
  *  will be returned if the function called.
+ *  For "Volume Level Synchronization", the HF application could call
+ *  the function to set VGM gain value in HF connection callback
+ *  function. Then after the HF connection callback returned, VGM gain
+ *  will be sent to HFP AG.
  *
  *  @param conn Connection object.
  *  @param gain Gain of microphone.
@@ -261,9 +265,9 @@ int bt_hfp_hf_cli(struct bt_conn *conn, bool enable);
  */
 int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
 
-/** @brief Handsfree HF set Gain of Speaker (VGS)
+/** @brief Handsfree HF report Gain of Speaker (VGS)
  *
- *  set Gain of Speaker (VGS).
+ *  Report Gain of Speaker (VGS).
  *  The AT command `AT+VGS=<gain>` will be sent to the AG to report its
  *  current speaker gain level setting to the AG.
  *  `<gain>` is a decimal numeric constant, relating to a particular
@@ -272,6 +276,10 @@ int bt_hfp_hf_vgm(struct bt_conn *conn, uint8_t gain);
  *  indicates the current value of the speaker gain in the HF.
  *  If @kconfig{CONFIG_BT_HFP_HF_VOLUME} is not enabled, the error `-ENOTSUP`
  *  will be returned if the function called.
+ *  For "Volume Level Synchronization", the HF application could call
+ *  the function to set VGS gain value in HF connection callback
+ *  function. Then after the HF connection callback returned, VGS gain
+ *  will be sent to HFP AG.
  *
  *  @param conn Connection object.
  *  @param gain Gain of speaker.
