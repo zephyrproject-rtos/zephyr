@@ -254,7 +254,7 @@ elseif(QEMU_NET_STACK)
     # NET_TOOLS has been set to the net-tools repo path
     # net-tools/monitor_15_4 has been built beforehand
 
-    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
+    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../tools/net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
       COMMAND

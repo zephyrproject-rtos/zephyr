@@ -376,8 +376,7 @@ The following peripherals are currently provided with this board:
 
   Note that this device can only be used with Linux hosts.
 
-.. _net-tools:
-   https://github.com/zephyrproject-rtos/net-tools
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 .. _nsim_per_offloaded_sockets:
 
