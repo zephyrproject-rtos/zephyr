@@ -55,6 +55,10 @@ enum stm32_gpio_irq_trigger {
 	STM32_GPIO_IRQ_TRIG_FALLING = 0x2,
 	/* Trigger on both rising and falling edge */
 	STM32_GPIO_IRQ_TRIG_BOTH = 0x3,
+	/* Trigger on high level */
+	STM32_GPIO_IRQ_TRIG_HIGH_LEVEL = 0x4,
+	/* Trigger on low level */
+	STM32_GPIO_IRQ_TRIG_LOW_LEVEL = 0x5
 };
 
 /**
