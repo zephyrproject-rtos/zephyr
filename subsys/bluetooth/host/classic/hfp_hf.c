@@ -727,6 +727,94 @@ static int clcc_handle(struct at_client *hf_at)
 }
 #endif /* CONFIG_BT_HFP_HF_ECS */
 
+#if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
+static int bvra_handle(struct at_client *hf_at)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+	uint32_t activate;
+	uint32_t state;
+	char *id;
+	char text_id[BT_HFP_BVRA_TEXT_ID_MAX_LEN + 1];
+	size_t id_len;
+	uint32_t type;
+	uint32_t operation;
+	char *text;
+
+	err = at_get_number(hf_at, &activate);
+	if (err < 0) {
+		LOG_ERR("Error getting activate");
+		return err;
+	}
+
+	if (activate) {
+		if (!atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
+			if (bt_hf->voice_recognition) {
+				bt_hf->voice_recognition(hf, true);
+			}
+		}
+	} else {
+		if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
+			if (bt_hf->voice_recognition) {
+				bt_hf->voice_recognition(hf, false);
+			}
+		}
+	}
+
+#if defined(CONFIG_BT_HFP_HF_ENH_VOICE_RECG)
+	err = at_get_number(hf_at, &state);
+	if (err < 0) {
+		LOG_INF("Error getting VRE state");
+		return 0;
+	}
+
+	if (bt_hf->vre_state) {
+		bt_hf->vre_state(hf, (uint8_t)state);
+	}
+#endif /* CONFIG_BT_HFP_HF_ENH_VOICE_RECG */
+
+#if defined(CONFIG_BT_HFP_HF_VOICE_RECG_TEXT)
+	id = at_get_raw_string(hf_at, &id_len);
+	if (!id) {
+		LOG_INF("Error getting text ID");
+		return 0;
+	}
+
+	if (id_len > BT_HFP_BVRA_TEXT_ID_MAX_LEN) {
+		LOG_ERR("Invalid text ID length %d", id_len);
+		return -ENOTSUP;
+	}
+
+	strncpy(text_id, id, MIN(id_len, BT_HFP_BVRA_TEXT_ID_MAX_LEN));
+	text_id[MIN(id_len, BT_HFP_BVRA_TEXT_ID_MAX_LEN)] = '\0';
+
+	err = at_get_number(hf_at, &type);
+	if (err < 0) {
+		LOG_INF("Error getting text type");
+		return 0;
+	}
+
+	err = at_get_number(hf_at, &operation);
+	if (err < 0) {
+		LOG_INF("Error getting text operation");
+		return 0;
+	}
+
+	text = at_get_string(hf_at);
+	if (!text) {
+		LOG_INF("Error getting text string");
+		return 0;
+	}
+
+	if (bt_hf->textual_representation) {
+		bt_hf->textual_representation(hf, text_id, (uint8_t)type,
+			(uint8_t)operation, text);
+	}
+#endif /* CONFIG_BT_HFP_HF_VOICE_RECG_TEXT */
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
+
 static struct bt_hfp_hf_call *get_dialing_call(struct bt_hfp_hf *hf)
 {
 	struct bt_hfp_hf_call *call;
@@ -1541,6 +1629,9 @@ static const struct unsolicited {
 #if defined(CONFIG_BT_HFP_HF_ECS)
 	{ "CLCC", AT_CMD_TYPE_UNSOLICITED, clcc_handle },
 #endif /* CONFIG_BT_HFP_HF_ECS */
+#if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
+	{ "BVRA", AT_CMD_TYPE_UNSOLICITED, bvra_handle },
+#endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
 };
 
 static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
@@ -3226,6 +3317,115 @@ int bt_hfp_hf_private_consultation_mode(struct bt_hfp_hf_call *call)
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_BT_HFP_HF_ECC */
+}
+
+#if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
+static int bvra_1_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BVRA=1 (result %d) on %p", result, hf);
+
+	if (result == AT_RESULT_OK) {
+		if (!atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
+			if (bt_hf->voice_recognition) {
+				bt_hf->voice_recognition(hf, true);
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int bvra_0_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BVRA=0 (result %d) on %p", result, hf);
+
+	if (atomic_test_and_clear_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
+		if (bt_hf->voice_recognition) {
+			bt_hf->voice_recognition(hf, false);
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
+
+int bt_hfp_hf_voice_recognition(struct bt_hfp_hf *hf, bool activate)
+{
+#if defined(CONFIG_BT_HFP_HF_VOICE_RECG)
+	at_finish_cb_t finish;
+
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG)) {
+		LOG_ERR("Voice recognition is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (activate) {
+		finish = bvra_1_finish;
+	} else {
+		finish = bvra_0_finish;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, finish, "AT+BVRA=%d",
+		activate ? 1 : 0);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_VOICE_RECG */
+}
+
+#if defined(CONFIG_BT_HFP_HF_ENH_VOICE_RECG)
+static int bvra_2_finish(struct at_client *hf_at,
+		   enum at_result result, enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+
+	LOG_DBG("AT+BVRA=2 (result %d) on %p", result, hf);
+
+	return 0;
+}
+#endif /* CONFIG_BT_HFP_HF_ENH_VOICE_RECG */
+
+int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf)
+{
+#if defined(CONFIG_BT_HFP_HF_ENH_VOICE_RECG)
+	LOG_DBG("");
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!(hf->ag_features & BT_HFP_AG_FEATURE_VOICE_RECG)) {
+		LOG_ERR("Voice recognition is unsupported by AG");
+		return -ENOTSUP;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_VRE_ACTIVATE)) {
+		LOG_ERR("Voice recognition is not activated");
+		return -EINVAL;
+	}
+
+	if (!hf->chan.sco) {
+		LOG_ERR("SCO channel is not ready");
+		return -ENOTCONN;
+	}
+
+	return hfp_hf_send_cmd(hf, NULL, bvra_2_finish, "AT+BVRA=2");
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_BT_HFP_HF_ENH_VOICE_RECG */
 }
 
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
