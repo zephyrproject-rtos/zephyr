@@ -107,7 +107,7 @@ void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
  * by upper logic (access, transport commands) and for receiving the segmented messages.
  * If a NULL match is given the RPL is immediately updated (used for proxy configuration).
  */
-bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
+bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match, bool bridge)
 {
 	struct bt_mesh_rpl *rpl;
 	int i;
@@ -117,8 +117,8 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx, struct bt_mesh_rpl **match)
 		return false;
 	}
 
-	/* The RPL is used only for the local node */
-	if (!rx->local_match) {
+	/* The RPL is used only for the local node or Subnet Bridge. */
+	if (!rx->local_match && !bridge) {
 		return false;
 	}
 
