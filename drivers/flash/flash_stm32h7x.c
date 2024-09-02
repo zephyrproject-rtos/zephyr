@@ -62,33 +62,6 @@ struct flash_stm32_sector_t {
 	volatile uint32_t *sr;
 };
 
-#if defined(CONFIG_MULTITHREADING) || defined(CONFIG_STM32H7_DUAL_CORE)
-/*
- * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
- * similarly for flash_stm32_sem_give) to avoid confusion with locking
- * actual flash sectors.
- */
-static inline void _flash_stm32_sem_take(const struct device *dev)
-{
-	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
-	z_stm32_hsem_lock(CFG_HW_FLASH_SEMID, HSEM_LOCK_WAIT_FOREVER);
-}
-
-static inline void _flash_stm32_sem_give(const struct device *dev)
-{
-	z_stm32_hsem_unlock(CFG_HW_FLASH_SEMID);
-	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
-}
-
-#define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
-#define flash_stm32_sem_take(dev) _flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev) _flash_stm32_sem_give(dev)
-#else
-#define flash_stm32_sem_init(dev)
-#define flash_stm32_sem_take(dev)
-#define flash_stm32_sem_give(dev)
-#endif
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
 #if defined(DUAL_BANK)
