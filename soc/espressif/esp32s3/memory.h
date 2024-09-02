@@ -33,10 +33,14 @@
  */
 #define IRAM_DRAM_OFFSET         0x6f0000
 #define DRAM_BUFFERS_START       0x3fcd7e00
+#define DRAM_BUFFERS_END         0x3fce9704
 #define DRAM_PROCPU_STACK_START  0x3fce9710
 #define DRAM_STACK_START DRAM_PROCPU_STACK_START
 #define DRAM_APPCPU_STACK_START  0x3fceb710
 #define DRAM_ROM_BSS_DATA_START  0x3fcf0000
+
+/* Set the limit for the application runtime dynamic allocations */
+#define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
