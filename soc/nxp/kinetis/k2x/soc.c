@@ -3,6 +3,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2018 Prevas A/S
  * Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,7 +103,7 @@ __weak void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS || CONFIG_UHC_NXP_KHCI
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 #endif

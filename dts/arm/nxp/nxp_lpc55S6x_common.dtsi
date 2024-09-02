@@ -390,6 +390,21 @@
 		status = "disabled";
 	};
 
+	usbhfs: usbhfs@A2000 {
+		compatible = "nxp,uhc-ohci";
+		reg = <0xa2000 0x1000>;
+		interrupts = <28 1>;
+		maximum-speed = "full-speed";
+		status = "disabled";
+	};
+
+	usbhhs: usbhhs@A3000 {
+		compatible = "nxp,uhc-ip3516hs";
+		reg = <0xa3000 0x1000>;
+		interrupts = <47 1>;
+		status = "disabled";
+	};
+
 	usbphy1: usbphy@38000 {
 		compatible = "nxp,usbphy";
 		reg = <0x38000 0x1000>;
