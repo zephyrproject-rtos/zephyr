@@ -164,6 +164,38 @@ class ConvertCodeSampleNode(SphinxTransform):
             node.document += json_ld
 
 
+def create_code_sample_list(code_samples):
+    """
+    Creates a bullet list (`nodes.bullet_list`) of code samples from a list of code samples.
+
+    The list is alphabetically sorted (case-insensitive) by the code sample name.
+    """
+
+    ul = nodes.bullet_list(classes=["code-sample-list"])
+
+    for code_sample in sorted(code_samples, key=lambda x: x["name"].casefold()):
+        li = nodes.list_item()
+
+        sample_xref = addnodes.pending_xref(
+            "",
+            refdomain="zephyr",
+            reftype="code-sample",
+            reftarget=code_sample["id"],
+            refwarn=True,
+        )
+        sample_xref += nodes.Text(code_sample["name"])
+        li += nodes.inline("", "", sample_xref, classes=["code-sample-name"])
+
+        li += nodes.inline(
+            text=code_sample["description"].astext(),
+            classes=["code-sample-description"],
+        )
+
+        ul += li
+
+    return ul
+
+
 class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
     default_priority = 5  # before ReferencesResolver
 
@@ -186,27 +218,8 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
                 admonition["classes"].append("dropdown") # used by sphinx-togglebutton extension
                 admonition["classes"].append("toggle-shown") # show the content by default
 
-                sample_dl = nodes.definition_list()
-
-                for code_sample in sorted(code_samples, key=lambda x: x["name"]):
-                    term = nodes.term()
-
-                    sample_xref = addnodes.pending_xref(
-                        "",
-                        refdomain="zephyr",
-                        reftype="code-sample",
-                        reftarget=code_sample["id"],
-                        refwarn=True,
-                    )
-                    sample_xref += nodes.inline(text=code_sample["name"])
-                    term += sample_xref
-                    definition = nodes.definition()
-                    definition += nodes.paragraph(text=code_sample["description"].astext())
-                    sample_dli = nodes.definition_list_item()
-                    sample_dli += term
-                    sample_dli += definition
-                    sample_dl += sample_dli
-                admonition += sample_dl
+                sample_list = create_code_sample_list(code_samples)
+                admonition += sample_list
 
                 # replace node with the newly created admonition
                 node.replace_self(admonition)
