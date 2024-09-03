@@ -476,7 +476,7 @@ static int scan_update(void)
 	return err;
 }
 
-static uint32_t scan_check_if_state_allowed(enum bt_le_scan_user flag)
+static int scan_check_if_state_allowed(enum bt_le_scan_user flag)
 {
 	/* check if state is already set */
 	if (atomic_test_bit(scan_state.scan_flags, flag)) {
@@ -499,16 +499,22 @@ int bt_le_scan_user_add(enum bt_le_scan_user flag)
 		/* Only check if the scanner parameters should be updated / the scanner should be
 		 * started. This is mainly triggered once connections are established.
 		 */
-	} else {
-		/* Check if it can be enabled */
-		err = scan_check_if_state_allowed(flag);
-		if (err) {
-			return err;
-		}
-		atomic_set_bit(scan_state.scan_flags, flag);
+		return scan_update();
 	}
 
-	return scan_update();
+	err = scan_check_if_state_allowed(flag);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(scan_state.scan_flags, flag);
+
+	err = scan_update();
+	if (err) {
+		atomic_clear_bit(scan_state.scan_flags, flag);
+	}
+
+	return err;
 }
 
 int bt_le_scan_user_remove(enum bt_le_scan_user flag)
