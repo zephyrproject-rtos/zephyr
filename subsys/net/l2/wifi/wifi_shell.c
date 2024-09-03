@@ -1125,6 +1125,9 @@ static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 			PR("PS timeout: disabled\n");
 		}
 
+		shell_fprintf(sh, SHELL_NORMAL, "PS exit strategy: %s\n",
+				wifi_ps_exit_strategy_txt(config.ps_params.exit_strategy));
+
 		if (config.num_twt_flows == 0) {
 			PR("No TWT flows\n");
 		} else {
@@ -1890,6 +1893,40 @@ static int cmd_wifi_set_rts_threshold(const struct shell *sh, size_t argc, char 
 			shell_fprintf(sh, SHELL_NORMAL, "RTS threshold is off\n");
 		}
 	}
+
+	return 0;
+}
+
+static int cmd_wifi_ps_exit_strategy(const struct shell *sh, size_t argc,
+			    char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_ps_params params = { 0 };
+
+	context.sh = sh;
+
+	if (!strncmp(argv[1], "tim", 3)) {
+		params.exit_strategy = WIFI_PS_EXIT_EVERY_TIM;
+	} else if (!strncmp(argv[1], "custom", 6)) {
+		params.exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+	} else {
+		shell_fprintf(sh, SHELL_WARNING, "Invalid argument\n");
+		shell_fprintf(sh, SHELL_INFO, "Valid argument : <tim> / <custom>\n");
+		return -ENOEXEC;
+	}
+
+	params.type = WIFI_PS_PARAM_EXIT_STRATEGY;
+
+	if (net_mgmt(NET_REQUEST_WIFI_PS, iface, &params, sizeof(params))) {
+		shell_fprintf(sh, SHELL_WARNING,
+			      "Setting PS exit strategy to %s failed..Reason :%s\n",
+			      wifi_ps_exit_strategy_txt(params.exit_strategy),
+			      wifi_ps_get_config_err_code_str(params.fail_reason));
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(sh, SHELL_NORMAL, "%s\n",
+		      wifi_ps_exit_strategy_txt(params.exit_strategy));
 
 	return 0;
 }
@@ -3113,6 +3150,12 @@ SHELL_SUBCMD_ADD((wifi), wps_pin, &wifi_commands,
 		 "[pin] Only applicable for set.\n",
 		 cmd_wifi_wps_pin,
 		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), ps_exit_strategy, &wifi_commands,
+		 "<tim> : Set PS exit strategy to Every TIM\n"
+		 "<custom> : Set PS exit strategy to Custom",
+		 cmd_wifi_ps_exit_strategy,
+		 2, 0);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
