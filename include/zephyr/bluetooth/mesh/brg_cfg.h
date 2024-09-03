@@ -28,6 +28,11 @@ enum bt_mesh_subnet_bridge_state {
 	BT_MESH_SUBNET_BRIDGE_ENABLED,
 };
 
+/* Briding from Addr1 to Addr2. */
+#define BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY 1
+/* Bidirectional briging between Addr1 and Addr2. */
+#define BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY 2
+
 /** Bridging Table state entry corresponding to a entry in the Bridging Table. */
 struct bt_mesh_bridging_table_entry {
 	/** Allowed directions for the bridged traffic (or bridged traffic not allowed) */
