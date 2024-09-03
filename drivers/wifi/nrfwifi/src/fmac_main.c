@@ -815,7 +815,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	k_work_init_delayable(&vif_ctx_zep->scan_timeout_work,
 			      nrf_wifi_scan_timeout_work);
 #endif /* CONFIG_NRF70_RADIO_TEST */
-
+	LOG_INF("Hello world");
 	return 0;
 #ifdef CONFIG_NRF70_RADIO_TEST
 fmac_deinit:
