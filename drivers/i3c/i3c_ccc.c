@@ -454,6 +454,24 @@ int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 	return ret;
 }
 
+int i3c_ccc_do_enttm(const struct device *controller,
+			  enum i3c_ccc_enttm_defbyte defbyte)
+{
+	struct i3c_ccc_payload ccc_payload;
+	uint8_t def_byte;
+
+	__ASSERT_NO_MSG(controller != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_ENTTM;
+
+	def_byte = (uint8_t)defbyte;
+	ccc_payload.ccc.data = &def_byte;
+	ccc_payload.ccc.data_len = 1U;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
 int i3c_ccc_do_getstatus(const struct i3c_device_desc *target,
 			 union i3c_ccc_getstatus *status,
 			 enum i3c_ccc_getstatus_fmt fmt,
