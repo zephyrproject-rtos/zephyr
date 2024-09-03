@@ -239,6 +239,40 @@ int i3c_ccc_do_events_set(struct i3c_device_desc *target,
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
 
+int i3c_ccc_do_entas(const struct i3c_device_desc *target, uint8_t as)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+	__ASSERT_NO_MSG(as <= 3);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 0;
+
+	ccc_payload.ccc.id = I3C_CCC_ENTAS(as, false);
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	return i3c_do_ccc(target->bus, &ccc_payload);
+}
+
+int i3c_ccc_do_entas_all(const struct device *controller, uint8_t as)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+	__ASSERT_NO_MSG(as <= 3);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_ENTAS(as, true);
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
 int i3c_ccc_do_setmwl_all(const struct device *controller,
 			  const struct i3c_ccc_mwl *mwl)
 {

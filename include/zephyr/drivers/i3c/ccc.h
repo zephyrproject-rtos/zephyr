@@ -1357,6 +1357,147 @@ int i3c_ccc_do_events_set(struct i3c_device_desc *target,
 			  bool enable, struct i3c_ccc_events *events);
 
 /**
+ * @brief Direct ENTAS to set the Activity State.
+ *
+ * Helper function to broadcast Activity State Command on a single
+ * target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] as Activity State level
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_entas(const struct i3c_device_desc *target, uint8_t as);
+
+/**
+ * @brief Direct ENTAS0
+ *
+ * Helper function to do ENTAS0 setting the minimum bus activity level to 1us
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas0(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 0);
+}
+
+/**
+ * @brief Direct ENTAS1
+ *
+ * Helper function to do ENTAS1 setting the minimum bus activity level to 100us
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas1(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 1);
+}
+
+/**
+ * @brief Direct ENTAS2
+ *
+ * Helper function to do ENTAS2 setting the minimum bus activity level to 2ms
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas2(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 2);
+}
+
+/**
+ * @brief Direct ENTAS3
+ *
+ * Helper function to do ENTAS3 setting the minimum bus activity level to 50ms
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas3(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 3);
+}
+
+/**
+ * @brief Broadcast ENTAS to set the Activity State.
+ *
+ * Helper function to broadcast Activity State Command.
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] as Activity State level
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_entas_all(const struct device *controller, uint8_t as);
+
+/**
+ * @brief Broadcast ENTAS0
+ *
+ * Helper function to do ENTAS0 setting the minimum bus activity level to 1us
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas0_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 0);
+}
+
+/**
+ * @brief Broadcast ENTAS1
+ *
+ * Helper function to do ENTAS1 setting the minimum bus activity level to 100us
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas1_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 1);
+}
+
+/**
+ * @brief Broadcast ENTAS2
+ *
+ * Helper function to do ENTAS2 setting the minimum bus activity level to 2ms
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas2_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 2);
+}
+
+/**
+ * @brief Broadcast ENTAS3
+ *
+ * Helper function to do ENTAS3 setting the minimum bus activity level to 50ms
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas3_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 3);
+}
+
+/**
  * @brief Broadcast SETMWL to Set Maximum Write Length.
  *
  * Helper function to do SETMWL (Set Maximum Write Length) to
