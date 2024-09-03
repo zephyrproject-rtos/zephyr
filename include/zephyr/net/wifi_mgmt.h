@@ -610,6 +610,8 @@ struct wifi_ps_params {
 	enum wifi_ps_param_type type;
 	/** Wi-Fi power save fail reason */
 	enum wifi_config_ps_param_fail_reason fail_reason;
+	/** Wi-Fi power save exit strategy */
+	enum wifi_ps_exit_strategy exit_strategy;
 };
 
 /** @brief Wi-Fi TWT parameters */
