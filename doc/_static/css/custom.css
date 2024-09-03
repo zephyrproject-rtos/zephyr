@@ -969,3 +969,21 @@ dark-mode-toggle::part(toggleLabel){
     font-size: 0.875em;
     font-weight: bold;
 }
+
+.code-sample-list li {
+    margin-bottom: 0.25em;
+}
+.code-sample-name {
+    font-weight: bold;
+    padding-right: 0.5em;
+}
+
+.code-sample-description {
+    font-weight: 300;
+}
+
+.code-sample-description::before {
+    content: '\F0A9'; /* arrow-circle-right */
+    font-family: 'FontAwesome';
+    padding-right: 0.5em;
+}
