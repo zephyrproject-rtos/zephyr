@@ -19,9 +19,6 @@ if MBEDTLS_TLS_VERSION_1_2
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
 
-config MBEDTLS_SSL_EXPORT_KEYS
-	bool "Support for exporting SSL key block and master secret"
-
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 

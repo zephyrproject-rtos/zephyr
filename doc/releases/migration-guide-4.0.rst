@@ -51,6 +51,10 @@ Mbed TLS
   * ``CONFIG_MBEDTLS_ENTROPY_ENABLED`` is now :kconfig:option:``CONFIG_MBEDTLS_ENTROPY_C``,
   * ``CONFIG_MBEDTLS_ZEPHYR_ENTROPY`` is now :kconfig:option:``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR``.
 
+* The Kconfig option ``CONFIG_MBEDTLS_SSL_EXPORT_KEYS`` was removed because the
+  corresponding build symbol was removed in Mbed TLS 3.1.0 and is now assumed to
+  be enabled. (:github:`77657`)
+
 Trusted Firmware-M
 ==================
 
