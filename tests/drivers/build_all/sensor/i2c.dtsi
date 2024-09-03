@@ -1090,6 +1090,17 @@ test_i2c_tmp1075: tmp1075@98 {
 	interrupt-mode;
 };
 
+test_i2c_bmp390: bmp390@99 {
+	compatible = "bosch,bmp390";
+	reg = <0x99>;
+	int-gpios = <&test_gpio 0 0>;
+	osr-press = <0x01>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
+
 apds_9306: apds9306@92 {
 	compatible = "avago,apds9306";
 	reg = <0x92>;

@@ -379,3 +379,15 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_bmp390: bmp390@2f {
+	compatible = "bosch,bmp390";
+	reg = <0x2f>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+	osr-press = <0x01>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
