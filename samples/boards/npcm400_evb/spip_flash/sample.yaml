@@ -1,0 +1,11 @@
+sample:
+  description: npcm400_evb SPIP flash testing
+  name: npcm400_evb spip flash test
+tests:
+  sample.board.npcm400_evb.spip_flash:
+    harness: spi
+    platform_allow: npcm400_evb
+    tags: spi
+    depends_on:
+      - spi
+      - gpio
