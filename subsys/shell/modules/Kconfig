@@ -45,3 +45,9 @@ config DEVMEM_SHELL
 	select POSIX_C_LIB_EXT
 	help
 	  This shell command provides read/write access to physical memory.
+
+config IRQ_SHELL
+	bool "IRQ shell"
+	default y if !SHELL_MINIMAL
+	help
+	  This shell provides access to IRQs.

@@ -16,3 +16,6 @@ zephyr_sources_ifdef(
   CONFIG_DEVMEM_SHELL
   devmem_service.c
   )
+zephyr_sources_ifdef(CONFIG_IRQ_SHELL
+  irq_service.c
+)
