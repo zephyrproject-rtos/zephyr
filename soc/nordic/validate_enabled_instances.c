@@ -14,13 +14,14 @@
 
 #define UART_ENABLED(idx) (IS_ENABLED(CONFIG_SERIAL) && \
 			   (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || \
+			    IS_ENABLED(CONFIG_SOC_SERIES_NRF54LX) || \
 			    IS_ENABLED(CONFIG_SOC_SERIES_NRF91X)) && \
 			   DT_NODE_HAS_STATUS(DT_NODELABEL(uart##idx), okay))
 
 /*
  * In most Nordic SoCs, SPI and TWI peripherals with the same instance number
  * share certain resources and therefore cannot be used at the same time (in
- * nRF53 and nRF91 Series this limitation concerns UART peripherals as well).
+ * nRF53, nRF54L and nRF91 Series this limitation concerns UART peripherals as well).
  *
  * In some SoCs, like nRF52810, there are only single instances of
  * these peripherals and they are arranged in a different way, so this
@@ -39,6 +40,7 @@
 	"Only one of the following peripherals can be enabled: " \
 	"SPI"#idx", SPIM"#idx", SPIS"#idx", TWI"#idx", TWIM"#idx", TWIS"#idx \
 	IF_ENABLED(CONFIG_SOC_SERIES_NRF53X, (", UARTE"#idx)) \
+	IF_ENABLED(CONFIG_SOC_SERIES_NRF54LX, (", UARTE"#idx)) \
 	IF_ENABLED(CONFIG_SOC_SERIES_NRF91X, (", UARTE"#idx)) \
 	". Check nodes with status \"okay\" in zephyr.dts."
 
@@ -50,6 +52,11 @@ BUILD_ASSERT(CHECK(0), MSG(0));
 BUILD_ASSERT(CHECK(1), MSG(1));
 BUILD_ASSERT(CHECK(2), MSG(2));
 BUILD_ASSERT(CHECK(3), MSG(3));
+BUILD_ASSERT(CHECK(00), MSG(00));
+BUILD_ASSERT(CHECK(20), MSG(20));
+BUILD_ASSERT(CHECK(21), MSG(21));
+BUILD_ASSERT(CHECK(22), MSG(22));
+BUILD_ASSERT(CHECK(30), MSG(30));
 
 #if defined(CONFIG_SOC_NRF52811)
 BUILD_ASSERT(!(SPI_ENABLED(1) && I2C_ENABLED(0)),
