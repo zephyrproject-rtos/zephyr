@@ -168,7 +168,7 @@ static int mspi_xfer_config(const struct device *controller,
 
 /*
  * Gives a XSPI_RegularCmdTypeDef with all parameters set
- * except Instruction, Address, DummyCycles, NbData
+ * except Instruction, Address, NbData
  */
 static XSPI_RegularCmdTypeDef mspi_stm32_prepare_cmd(uint8_t cfg_mode, uint8_t cfg_rate)
 {
@@ -182,9 +182,17 @@ static XSPI_RegularCmdTypeDef mspi_stm32_prepare_cmd(uint8_t cfg_mode, uint8_t c
 				? HAL_XSPI_INSTRUCTION_DTR_ENABLE
 				: HAL_XSPI_INSTRUCTION_DTR_DISABLE);
 	cmd_tmp.AlternateBytesMode = HAL_XSPI_ALT_BYTES_NONE;
+	cmd_tmp.AddressDTRMode = ((cfg_rate == MSPI_DATA_RATE_DUAL)
+				? HAL_XSPI_ADDRESS_DTR_ENABLE
+				: HAL_XSPI_ADDRESS_DTR_DISABLE);
 	cmd_tmp.DataDTRMode = ((cfg_rate == MSPI_DATA_RATE_DUAL)
 			? HAL_XSPI_DATA_DTR_ENABLE
 			: HAL_XSPI_DATA_DTR_DISABLE);
+	/* AddressWidth must be set to 32bits for init and mem config phase */
+	cmd_tmp.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
+	cmd_tmp.DataDTRMode = ((cfg_rate == MSPI_DATA_RATE_DUAL)
+				? HAL_XSPI_DATA_DTR_ENABLE
+				: HAL_XSPI_DATA_DTR_DISABLE);
 	cmd_tmp.DQSMode = ((cfg_rate == MSPI_DATA_RATE_DUAL)
 			? HAL_XSPI_DQS_ENABLE
 			: HAL_XSPI_DQS_DISABLE);
@@ -220,25 +228,7 @@ static XSPI_RegularCmdTypeDef mspi_stm32_prepare_cmd(uint8_t cfg_mode, uint8_t c
 	return cmd_tmp;
 }
 
-static int mspi_stm32_send_cmd(const struct device *dev, XSPI_RegularCmdTypeDef *cmd)
-{
-	struct mspi_stm32_data *dev_data = dev->data;
-	HAL_StatusTypeDef hal_ret;
-
-	LOG_DBG("Instruction 0x%x", cmd->Instruction);
-
-	dev_data->cmd_status = 0;
-
-	hal_ret = HAL_XSPI_Command(&dev_data->hmspi, cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("%d: Failed to send XSPI instruction", hal_ret);
-		return -EIO;
-	}
-	LOG_DBG("CCR 0x%x", dev_data->hmspi.Instance->CCR);
-
-	return dev_data->cmd_status;
-}
-
+/* Send a Command to the NOR and Receive data if relevant */
 static int mspi_stm32_read_access(const struct device *dev,
 				  const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
@@ -247,6 +237,10 @@ static int mspi_stm32_read_access(const struct device *dev,
 	HAL_StatusTypeDef hal_ret;
 	XSPI_RegularCmdTypeDef cmd = mspi_stm32_prepare_cmd(dev_data->dev_cfg.io_mode,
 							    dev_data->dev_cfg.data_rate);
+
+	cmd.DataLength = packet->num_bytes;
+	cmd.Instruction = packet->cmd;
+	cmd.DummyCycles = dev_data->ctx.xfer.tx_dummy;
 
 	LOG_DBG("Instruction 0x%x", cmd.Instruction);
 
@@ -316,18 +310,27 @@ static int mspi_stm32_read_access(const struct device *dev,
 		LOG_ERR("%d: Failed to send XSPI instruction", hal_ret);
 		return -EIO;
 	}
+
+	if (packet->num_bytes == 0) {
+		/* no data to receive : done */
+		goto end_rd_access;
+	}
+
 	switch (access_mode) {
-	case MSPI_ACCESS_ASYNC:
+	case MSPI_ACCESS_SYNC:
 		hal_ret = HAL_XSPI_Receive(&dev_data->hmspi,
 					packet->data_buf,
 					HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+		goto end_rd_access;
 		break;
-	case MSPI_ACCESS_SYNC:
+	case MSPI_ACCESS_ASYNC:
 		hal_ret = HAL_XSPI_Receive_IT(&dev_data->hmspi, packet->data_buf);
 		break;
+#if MSPI_STM32_USE_DMA
 	case MSPI_ACCESS_DMA:
 		hal_ret = HAL_XSPI_Receive_DMA(&dev_data->hmspi, packet->data_buf);
 		break;
+#endif /* MSPI_STM32_USE_DMA */
 	default:
 		/* Not correct */
 		hal_ret = HAL_BUSY;
@@ -339,12 +342,18 @@ static int mspi_stm32_read_access(const struct device *dev,
 		return -EIO;
 	}
 
-	/* sem taken by the calling function
-	k_sem_take(&dev_data->sync, K_FOREVER); */
+	LOG_DBG("Read %zu data at 0x%lx",
+		packet->num_bytes,
+		(long)(packet->address));
 
+	/* sem taken by the calling function */
+	k_sem_take(&dev_data->sync, K_FOREVER);
+
+end_rd_access:
 	return dev_data->cmd_status;
 }
 
+/* Send a Command to the NOR and Transmit data if relevant */
 static int mspi_stm32_write_access(const struct device *dev,
 				  const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
@@ -354,9 +363,11 @@ static int mspi_stm32_write_access(const struct device *dev,
 	XSPI_RegularCmdTypeDef cmd = mspi_stm32_prepare_cmd(dev_data->dev_cfg.io_mode,
 							    dev_data->dev_cfg.data_rate);
 
-	LOG_DBG("Instruction 0x%x", cmd.Instruction);
-
 	cmd.DataLength = packet->num_bytes;
+	cmd.Instruction = packet->cmd;
+	cmd.DummyCycles = dev_data->ctx.xfer.tx_dummy;
+
+	LOG_DBG("Instruction 0x%x", cmd.Instruction);
 
 	dev_data->cmd_status = 0;
 
@@ -373,18 +384,26 @@ static int mspi_stm32_write_access(const struct device *dev,
 		return -EIO;
 	}
 
+	if (packet->num_bytes == 0) {
+		/* Only command to send, no data : done */
+		goto end_wr_access;
+	}
+
 	switch (access_mode) {
-	case MSPI_ACCESS_ASYNC:
+	case MSPI_ACCESS_SYNC:
 		hal_ret = HAL_XSPI_Transmit(&dev_data->hmspi,
 					packet->data_buf,
 					HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+		goto end_wr_access;
 		break;
-	case MSPI_ACCESS_SYNC:
+	case MSPI_ACCESS_ASYNC:
 		hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hmspi, packet->data_buf);
 		break;
+#if MSPI_STM32_USE_DMA
 	case MSPI_ACCESS_DMA:
 		hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hmspi, packet->data_buf);
 		break;
+#endif /* MSPI_STM32_USE_DMA */
 	default:
 		/* Not correct */
 		hal_ret = HAL_BUSY;
@@ -396,9 +415,10 @@ static int mspi_stm32_write_access(const struct device *dev,
 		return -EIO;
 	}
 
-	/* sem taken by the calling function
-	k_sem_take(&dev_data->sync, K_FOREVER);*/
+	/* sem taken by the calling function */
+	k_sem_take(&dev_data->sync, K_FOREVER);
 
+end_wr_access:
 	return dev_data->cmd_status;
 }
 
@@ -1771,7 +1791,7 @@ static int mspi_stm32_dev_config(const struct device *controller,
 
 	if (data->dev_id != dev_id) {
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
-			LOG_ERR("%u, fail to access controller.", __LINE__);
+			LOG_ERR("MSPI config failed to access controller.");
 			return -EBUSY;
 		}
 
@@ -1795,7 +1815,7 @@ static int mspi_stm32_dev_config(const struct device *controller,
 	} else if (param_mask != MSPI_DEVICE_CONFIG_ALL) {
 		if (data->dev_id != dev_id) {
 			/* MSPI_DEVICE_CONFIG_ALL should be used */
-			LOG_ERR("%u, config failed, must be the same device.", __LINE__);
+			LOG_ERR("MSPI config failed : must be the same device.");
 			ret = -ENOTSUP;
 			goto e_return;
 		}
@@ -1812,36 +1832,12 @@ static int mspi_stm32_dev_config(const struct device *controller,
 			/* Conduct device switching */
 		}
 	} else {
-		LOG_ERR("%u, Invalid param_mask.", __LINE__);
+		LOG_ERR("MSPI config failed :  Invalid param_mask.");
 		ret = -EINVAL;
 		goto e_return;
 	}
 
 	data->dev_id = dev_id;
-	return ret;
-
-	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
-	if (mspi_stm32_mem_reset(controller) != 0) {
-		LOG_ERR("MSPI reset failed");
-		return -EIO;
-	}
-
-	LOG_DBG("Reset Mem (SPI/STR)");
-
-	/* Check if memory is ready in the SPI/STR mode */
-	if (mspi_stm32_mem_ready(controller,
-		MSPI_IO_MODE_SINGLE, MSPI_DATA_RATE_SINGLE) != 0) {
-		LOG_ERR("MSPI memory not ready");
-		return -EIO;
-	}
-
-	LOG_DBG("Controller Ready (SPI/STR)");
-
-	if (mspi_stm32_config_mem(controller) != 0) {
-		LOG_ERR("MSPI mode not config'd (%u rate %u)",
-			data->dev_cfg.io_mode, data->dev_cfg.data_rate);
-		return -EIO;
-	}
 
 e_return:
 	k_mutex_unlock(&data->lock);
@@ -2157,6 +2153,7 @@ static int mspi_stm32_pio_transceive(const struct device *controller,
 		return -EFAULT;
 	}
 
+	/* DummyCycle to give to the mspi_stm32_read_access/mspi_stm32_write_access */
 	cfg_flag = mspi_context_lock(ctx, dev_data->dev_id, xfer, cb, cb_ctx, true);
 	/** For async, user must make sure when cfg_flag = 0 the dummy and instr addr length
 	 * in mspi_xfer of the two calls are the same if the first one has not finished yet.
@@ -2168,12 +2165,13 @@ static int mspi_stm32_pio_transceive(const struct device *controller,
 		}
 	}
 
+	/* PIO mode : Synchronous transfer is for command mode with Timeout */
 	if (!ctx->xfer.async) {
 		/* Synchronous transfer */
 		while (ctx->packets_left > 0) {
 			packet_idx = ctx->xfer.num_packet - ctx->packets_left;
 			packet = &ctx->xfer.packets[packet_idx];
-
+			/* Always starts with a command, then payload is given by the xfer->num_packet */
 			if (packet->dir == MSPI_RX) {
 				ret = mspi_stm32_read_access(controller,
 					packet,
@@ -2278,11 +2276,24 @@ static int mspi_stm32_dma_transceive(const struct device *controller,
 		uint32_t packet_idx = ctx->xfer.num_packet - ctx->packets_left;
 		const struct mspi_xfer_packet *packet;
 
-		packet                     = &ctx->xfer.packets[packet_idx];
-		/* TODO: give the dma stream priority transf.ui8Priority          = ctx->xfer.priority; */
+		packet = &ctx->xfer.packets[packet_idx];
 
-		if (ctx->xfer.async) {
-			/* TODO what is the async DMA */
+		if (!ctx->xfer.async) {
+			/* Synchronous transfer */
+			if (packet->dir == MSPI_RX) {
+				ret = mspi_stm32_read_access(controller,
+					packet,
+					MSPI_ACCESS_DMA);
+			} else {
+				ret = mspi_stm32_write_access(controller,
+					packet,
+					MSPI_ACCESS_DMA);
+			}
+		} else {
+			/* Asynchronous transfer DMA irq  with cb */
+			/* TODO what is the async DMA : NOT SUPPORTED */
+			goto dma_err;
+
 			if (ctx->callback && packet->cb_mask == MSPI_BUS_XFER_COMPLETE_CB) {
 				ctx->callback_ctx->mspi_evt.evt_type = MSPI_BUS_XFER_COMPLETE;
 				ctx->callback_ctx->mspi_evt.evt_data.controller = controller;
@@ -2307,17 +2318,7 @@ static int mspi_stm32_dma_transceive(const struct device *controller,
 					packet,
 					MSPI_ACCESS_DMA);
 			}
-
-		} else {
-			if (packet->dir == MSPI_RX) {
-				ret = mspi_stm32_read_access(controller,
-					packet,
-					MSPI_ACCESS_DMA);
-			} else {
-				ret = mspi_stm32_write_access(controller,
-					packet,
-					MSPI_ACCESS_DMA);
-			}		}
+		}
 		ctx->packets_left--;
 		if (ret) {
 			goto dma_err;
@@ -2360,15 +2361,21 @@ static int mspi_stm32_transceive(const struct device *controller,
 		return -ESTALE;
 	}
 
-	if (xfer->async) {
-		cb = dev_data->cbs[MSPI_BUS_XFER_COMPLETE];
-		cb_ctx = dev_data->cb_ctxs[MSPI_BUS_XFER_COMPLETE];
-	}
-
+	/*
+	 * async + MSPI_PIO : Use callback on Irq if PIO
+	 * sync + MSPI_PIO use timeout (mainly for NOR command and param
+	 * MSPI_DMA : async/sync is meaningless with DMA (no DMA IT function)t
+	 */
 	if (xfer->xfer_mode == MSPI_PIO) {
+		if (xfer->async) {
+			cb = dev_data->cbs[MSPI_BUS_XFER_COMPLETE];
+			cb_ctx = dev_data->cb_ctxs[MSPI_BUS_XFER_COMPLETE];
+		}
 		return mspi_stm32_pio_transceive(controller, xfer, cb, cb_ctx);
 	} else if (xfer->xfer_mode == MSPI_DMA) {
+		/*  Do not care about xfer->async */
 		return mspi_stm32_dma_transceive(controller, xfer, cb, cb_ctx);
+
 	} else {
 		return -EIO;
 	}
@@ -2410,14 +2417,6 @@ static int mspi_stm32_config(const struct mspi_dt_spec *spec)
 
 	if (config->num_periph > MSPI_MAX_DEVICE) {
 		LOG_ERR("Invalid MSPI peripheral number.");
-		return -ENOTSUP;
-	}
-
-	/* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
-	if ((dev_data->dev_cfg.io_mode != MSPI_IO_MODE_OCTAL)
-		&& (dev_data->dev_cfg.data_rate == MSPI_DATA_RATE_DUAL)) {
-		/* already the right config, continue */
-		LOG_ERR("MSPI mode SPI|DUAL|QUAD/DTR is not valid");
 		return -ENOTSUP;
 	}
 

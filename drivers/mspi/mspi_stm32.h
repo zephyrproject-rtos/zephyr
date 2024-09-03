@@ -76,9 +76,9 @@ struct stream {
 typedef void (*irq_config_func_t)(void);
 
 enum mspi_access_mode {
-	MSPI_ACCESS_ASYNC = 0,
-	MSPI_ACCESS_SYNC = 1,
-	MSPI_ACCESS_DMA = 2
+	MSPI_ACCESS_ASYNC = 1,
+	MSPI_ACCESS_SYNC = 2,
+	MSPI_ACCESS_DMA = 3
 };
 
 struct mspi_context {
