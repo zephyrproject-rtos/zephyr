@@ -52,6 +52,42 @@ uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 	return sp;
 }
 
+static char *cause_str(unsigned long cause)
+{
+	switch (cause) {
+	case 0:
+		return "Instruction address misaligned";
+	case 1:
+		return "Instruction Access fault";
+	case 2:
+		return "Illegal instruction";
+	case 3:
+		return "Breakpoint";
+	case 4:
+		return "Load address misaligned";
+	case 5:
+		return "Load access fault";
+	case 6:
+		return "Store/AMO address misaligned";
+	case 7:
+		return "Store/AMO access fault";
+	case 8:
+		return "Environment call from U-mode";
+	case 9:
+		return "Environment call from S-mode";
+	case 11:
+		return "Environment call from M-mode";
+	case 12:
+		return "Instruction page fault";
+	case 13:
+		return "Load page fault";
+	case 15:
+		return "Store/AMO page fault";
+	default:
+		return "unknown";
+	}
+}
+
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const struct arch_esf *esf)
 {
@@ -61,6 +97,21 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arch_esf *esf,
 					   const _callee_saved_t *csf)
 {
+	unsigned long mcause;
+
+	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
+
+	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
+	LOG_ERR("");
+	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
+
+#ifndef CONFIG_SOC_OPENISA_RV32M1
+	unsigned long mtval;
+
+	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
+	LOG_ERR("  mtval: %lx", mtval);
+#endif /* CONFIG_SOC_OPENISA_RV32M1 */
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		LOG_ERR("     a0: " PR_REG "    t0: " PR_REG, esf->a0, esf->t0);
@@ -106,42 +157,6 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
-}
-
-static char *cause_str(unsigned long cause)
-{
-	switch (cause) {
-	case 0:
-		return "Instruction address misaligned";
-	case 1:
-		return "Instruction Access fault";
-	case 2:
-		return "Illegal instruction";
-	case 3:
-		return "Breakpoint";
-	case 4:
-		return "Load address misaligned";
-	case 5:
-		return "Load access fault";
-	case 6:
-		return "Store/AMO address misaligned";
-	case 7:
-		return "Store/AMO access fault";
-	case 8:
-		return "Environment call from U-mode";
-	case 9:
-		return "Environment call from S-mode";
-	case 11:
-		return "Environment call from M-mode";
-	case 12:
-		return "Instruction page fault";
-	case 13:
-		return "Load page fault";
-	case 15:
-		return "Store/AMO page fault";
-	default:
-		return "unknown";
-	}
 }
 
 static bool bad_stack_pointer(struct arch_esf *esf)
@@ -206,22 +221,6 @@ void _Fault(struct arch_esf *esf)
 		}
 	}
 #endif /* CONFIG_USERSPACE */
-
-	unsigned long mcause;
-
-	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
-
-#ifndef CONFIG_SOC_OPENISA_RV32M1
-	unsigned long mtval;
-	__asm__ volatile("csrr %0, mtval" : "=r" (mtval));
-#endif
-
-	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
-	LOG_ERR("");
-	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
-#ifndef CONFIG_SOC_OPENISA_RV32M1
-	LOG_ERR("  mtval: %lx", mtval);
-#endif
 
 	unsigned int reason = K_ERR_CPU_EXCEPTION;
 
