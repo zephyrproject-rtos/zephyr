@@ -220,6 +220,18 @@ Networking
   all the network shell activities can be found under ``net`` shell command.
   After this change the bridge shell is used by ``net bridge`` command.
 
+* The Ethernet bridging code is changed to allow similar configuration experience
+  as in Linux. The bridged Ethernet interface can be used normally even if bridging
+  is enabled. The actual bridging is done by a separate virtual network interface that
+  directs network packets to bridged Ethernet interfaces.
+  The :c:func:`eth_bridge_iface_allow_tx` is removed as it is not needed because the
+  bridged Ethernet interface can send and receive data normally.
+  The :c:func:`eth_bridge_listener_add` and :c:func:`eth_bridge_listener_remove` are
+  removed as same functionality can be achieved using promiscuous API.
+  Because the bridge interface is a normal network interface,
+  the :c:func:`eth_bridge_iface_add` and :c:func:`eth_bridge_iface_remove`
+  will take network interface pointer as a first parameter.
+
 Other Subsystems
 ****************
 
