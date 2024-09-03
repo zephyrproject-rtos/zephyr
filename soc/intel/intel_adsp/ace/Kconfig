@@ -23,3 +23,11 @@ config SOC_INTEL_COMM_WIDGET
 	help
 	  Select this to enable Intel Communication Widget driver.
 	  DSP Communication Widget is a device for generic sideband message transmit/receive.
+
+config SRAM_RETENTION_MODE
+	bool "SRAM retention mode during initialization"
+	default y
+	help
+	  When this option is enabled, the SRAM retention mode will be
+	  activated during the firmware boot-up process. If disabled,
+	  the retention mode will not be activated.
