@@ -1062,6 +1062,226 @@ static int cmd_i3c_ccc_disec(const struct shell *shell_ctx, size_t argc, char **
 	return ret;
 }
 
+/* i3c ccc entas0_bc <device> */
+static int cmd_i3c_ccc_entas0_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas0_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS0 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas1_bc <device> */
+static int cmd_i3c_ccc_entas1_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas1_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS1 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas2_bc <device> */
+static int cmd_i3c_ccc_entas2_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas2_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS2 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas3_bc <device> */
+static int cmd_i3c_ccc_entas3_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas3_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS3 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas0 <device> <target> */
+static int cmd_i3c_ccc_entas0(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas0(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS0.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas1 <device> <target> */
+static int cmd_i3c_ccc_entas1(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas1(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS1.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas2 <device> <target> */
+static int cmd_i3c_ccc_entas2(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas2(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS2.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas3 <device> <target> */
+static int cmd_i3c_ccc_entas3(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas3(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS3.");
+		return ret;
+	}
+
+	return ret;
+}
+
 /* i3c ccc getstatus <device> <target> [<defining byte>] */
 static int cmd_i3c_ccc_getstatus(const struct shell *shell_ctx, size_t argc, char **argv)
 {
@@ -1560,6 +1780,38 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC DISEC\n"
 		      "Usage: ccc disec <device> <target> <defining byte>",
 		      cmd_i3c_ccc_disec, 4, 0),
+	SHELL_CMD_ARG(entas0_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS0 BC\n"
+		      "Usage: ccc entas0 <device>",
+		      cmd_i3c_ccc_entas0_bc, 2, 0),
+	SHELL_CMD_ARG(entas1_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS1 BC\n"
+		      "Usage: ccc entas1 <device>",
+		      cmd_i3c_ccc_entas1_bc, 2, 0),
+	SHELL_CMD_ARG(entas2_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS2 BC\n"
+		      "Usage: ccc entas2 <device>",
+		      cmd_i3c_ccc_entas2_bc, 2, 0),
+	SHELL_CMD_ARG(entas3_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS3 BC\n"
+		      "Usage: ccc entas3 <device>",
+		      cmd_i3c_ccc_entas3_bc, 2, 0),
+	SHELL_CMD_ARG(entas0, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS0\n"
+		      "Usage: ccc entas0 <device> <target>",
+		      cmd_i3c_ccc_entas0, 3, 0),
+	SHELL_CMD_ARG(entas1, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS1\n"
+		      "Usage: ccc entas1 <device> <target>",
+		      cmd_i3c_ccc_entas1, 3, 0),
+	SHELL_CMD_ARG(entas2, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS2\n"
+		      "Usage: ccc entas2 <device> <target>",
+		      cmd_i3c_ccc_entas2, 3, 0),
+	SHELL_CMD_ARG(entas3, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS3\n"
+		      "Usage: ccc entas3 <device> <target>",
+		      cmd_i3c_ccc_entas3, 3, 0),
 	SHELL_CMD_ARG(getstatus, &dsub_i3c_device_attached_name,
 		      "Send CCC GETSTATUS\n"
 		      "Usage: ccc getstatus <device> <target> [<defining byte>]",
