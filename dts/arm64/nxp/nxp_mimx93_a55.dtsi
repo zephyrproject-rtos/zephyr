@@ -48,6 +48,11 @@
 		interrupt-parent = <&gic>;
 	};
 
+	psci: psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+
 	gic: interrupt-controller@48000000 {
 		compatible = "arm,gic-v3", "arm,gic";
 		reg = <0x48000000 0x10000>, /* GIC Dist */
