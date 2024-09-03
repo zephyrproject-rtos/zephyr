@@ -379,3 +379,9 @@ test_spi_tle9104: tle9104@2e {
 		#sensor-cells = <0>;
 	};
 };
+
+test_spi_icm42686: icm42686@2f {
+	compatible = "invensense,icm42686";
+	reg = <0x2f>;
+	spi-max-frequency = <24000000>;
+};
