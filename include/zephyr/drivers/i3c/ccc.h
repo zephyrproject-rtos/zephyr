@@ -459,6 +459,19 @@ struct i3c_ccc_deftgts {
 } __packed;
 
 /**
+ * @brief Defining byte values for ENTTM.
+ */
+enum i3c_ccc_enttm_defbyte {
+	/** Remove all I3C Devices from Test Mode */
+	ENTTM_EXIT_TEST_MODE = 0x00U,
+
+	/** Indicates that I3C Devices shall return a random 32-bit value
+	 * in the PID during the Dynamic Address Assignment procedure
+	 */
+	ENTTM_VENDOR_TEST_MODE = 0x01U,
+};
+
+/**
  * @brief Payload for a single device address.
  *
  * This is used for:
@@ -1589,6 +1602,19 @@ int i3c_ccc_do_setmrl(const struct i3c_device_desc *target,
  */
 int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 		      struct i3c_ccc_mrl *mrl);
+
+/**
+ * @brief Broadcast ENTTM
+ *
+ * Helper function to do ENTTM (Enter Test Mode) to all devices
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] defbyte Defining Byte for ENTTM.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_enttm(const struct device *controller,
+			 enum i3c_ccc_enttm_defbyte defbyte);
 
 /**
  * @brief Single target GETSTATUS to Get Target Status.
