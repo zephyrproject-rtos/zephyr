@@ -1599,6 +1599,156 @@ static int mspi_stm32_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma_strea
 #endif /* MSPI_STM32_USE_DMA */
 
 /**
+ * Check and save dev_cfg to controller data->dev_cfg.
+ *
+ * @param controller Pointer to the device structure for the driver instance.
+ * @param param_mask Macro definition of what to be configured in cfg.
+ * @param dev_cfg The device runtime configuration for the MSPI controller.
+ * @return 0 MSPI device configuration successful.
+ * @return -Error MSPI device configuration fail.
+ */
+static inline int mspi_dev_cfg_check_save(const struct device *controller,
+					  const enum mspi_dev_cfg_mask param_mask,
+					  const struct mspi_dev_cfg *dev_cfg)
+{
+	const struct mspi_stm32_conf *cfg = controller->config;
+	struct mspi_stm32_data *data = controller->data;
+
+	if (param_mask & MSPI_DEVICE_CONFIG_CE_NUM) {
+		data->dev_cfg.ce_num = dev_cfg->ce_num;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) {
+		if (dev_cfg->freq > MSPI_MAX_FREQ) {
+			LOG_ERR("%u, freq is too large.", __LINE__);
+			return -ENOTSUP;
+		}
+		data->dev_cfg.freq = dev_cfg->freq;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
+		if (dev_cfg->io_mode >= MSPI_IO_MODE_MAX) {
+			LOG_ERR("%u, Invalid io_mode.", __LINE__);
+			return -EINVAL;
+		}
+		data->dev_cfg.io_mode = dev_cfg->io_mode;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_DATA_RATE) {
+		if (dev_cfg->data_rate >= MSPI_DATA_RATE_MAX) {
+			LOG_ERR("%u, Invalid data_rate.", __LINE__);
+			return -EINVAL;
+		}
+		data->dev_cfg.data_rate = dev_cfg->data_rate;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_CPP) {
+		if (dev_cfg->cpp > MSPI_CPP_MODE_3) {
+			LOG_ERR("%u, Invalid cpp.", __LINE__);
+			return -EINVAL;
+		}
+		data->dev_cfg.cpp = dev_cfg->cpp;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_ENDIAN) {
+		if (dev_cfg->endian > MSPI_XFER_BIG_ENDIAN) {
+			LOG_ERR("%u, Invalid endian.", __LINE__);
+			return -EINVAL;
+		}
+		data->dev_cfg.endian = dev_cfg->endian;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
+		if (dev_cfg->ce_polarity > MSPI_CE_ACTIVE_HIGH) {
+			LOG_ERR("%u, Invalid ce_polarity.", __LINE__);
+			return -EINVAL;
+		}
+		data->dev_cfg.ce_polarity = dev_cfg->ce_polarity;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_DQS) {
+		if (dev_cfg->dqs_enable && !cfg->mspicfg.dqs_support) {
+			LOG_ERR("%u, DQS mode not supported.", __LINE__);
+			return -ENOTSUP;
+		}
+		data->dev_cfg.dqs_enable = dev_cfg->dqs_enable;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_RX_DUMMY) {
+		data->dev_cfg.rx_dummy = dev_cfg->rx_dummy;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_TX_DUMMY) {
+		data->dev_cfg.tx_dummy = dev_cfg->tx_dummy;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_READ_CMD) {
+		data->dev_cfg.read_cmd = dev_cfg->read_cmd;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_WRITE_CMD) {
+		data->dev_cfg.write_cmd = dev_cfg->write_cmd;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_CMD_LEN) {
+		data->dev_cfg.cmd_length = dev_cfg->cmd_length;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_ADDR_LEN) {
+		data->dev_cfg.addr_length = dev_cfg->addr_length;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_MEM_BOUND) {
+		data->dev_cfg.mem_boundary = dev_cfg->mem_boundary;
+	}
+
+	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
+		data->dev_cfg.time_to_break = dev_cfg->time_to_break;
+	}
+
+	return 0;
+}
+
+/**
+ * Verify if the device with dev_id is on this MSPI bus.
+ *
+ * @param controller Pointer to the device structure for the driver instance.
+ * @param dev_id Pointer to the device ID structure from a device.
+ * @return 0 The device is on this MSPI bus.
+ * @return -ENODEV The device is not on this MSPI bus.
+ */
+static inline int mspi_verify_device(const struct device *controller,
+				     const struct mspi_dev_id *dev_id)
+{
+	const struct mspi_stm32_conf *cfg = controller->config;
+	int device_index = cfg->mspicfg.num_periph;
+	int ret = 0;
+
+	if (cfg->mspicfg.num_ce_gpios != 0) {
+		for (int i = 0; i < cfg->mspicfg.num_periph; i++) {
+			if (dev_id->ce.port == cfg->mspicfg.ce_group[i].port &&
+			    dev_id->ce.pin == cfg->mspicfg.ce_group[i].pin &&
+			    dev_id->ce.dt_flags == cfg->mspicfg.ce_group[i].dt_flags) {
+				device_index = i;
+			}
+		}
+
+		if (device_index >= cfg->mspicfg.num_periph ||
+		    device_index != dev_id->dev_idx) {
+			LOG_ERR("%u, invalid device ID.", __LINE__);
+			return -ENODEV;
+		}
+	} else {
+		if (dev_id->dev_idx >= cfg->mspicfg.num_periph) {
+			LOG_ERR("%u, invalid device ID.", __LINE__);
+			return -ENODEV;
+		}
+	}
+
+	return ret;
+}
+
+/**
  * API implementation of mspi_dev_config : controller device specific configuration
  *
  * @param controller Pointer to the device structure for the driver instance.
@@ -1615,9 +1765,60 @@ static int mspi_stm32_dev_config(const struct device *controller,
 				const enum mspi_dev_cfg_mask param_mask,
 				const struct mspi_dev_cfg *dev_cfg)
 {
-	struct mspi_stm32_data *dev_data = controller->data;
+	const struct mspi_stm32_conf *cfg = controller->config;
+	struct mspi_stm32_data *data = controller->data;
 	int ret = 0;
 
+	if (data->dev_id != dev_id) {
+		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
+			LOG_ERR("%u, fail to access controller.", __LINE__);
+			return -EBUSY;
+		}
+
+		ret = mspi_verify_device(controller, dev_id);
+		if (ret) {
+			goto e_return;
+		}
+	}
+
+	if (mspi_is_inp(controller)) {
+		ret = -EBUSY;
+		goto e_return;
+	}
+
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE &&
+	    !cfg->mspicfg.sw_multi_periph) {
+		/* Do nothing except obtaining the controller lock */
+		data->dev_id = (struct mspi_dev_id *)dev_id;
+		return ret;
+
+	} else if (param_mask != MSPI_DEVICE_CONFIG_ALL) {
+		if (data->dev_id != dev_id) {
+			/* MSPI_DEVICE_CONFIG_ALL should be used */
+			LOG_ERR("%u, config failed, must be the same device.", __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+		ret = mspi_dev_cfg_check_save(controller, param_mask, dev_cfg);
+		if (ret) {
+			goto e_return;
+		}
+	} else if (param_mask == MSPI_DEVICE_CONFIG_ALL) {
+		ret = mspi_dev_cfg_check_save(controller, param_mask, dev_cfg);
+		if (ret) {
+			goto e_return;
+		}
+		if (data->dev_id != dev_id) {
+			/* Conduct device switching */
+		}
+	} else {
+		LOG_ERR("%u, Invalid param_mask.", __LINE__);
+		ret = -EINVAL;
+		goto e_return;
+	}
+
+	data->dev_id = dev_id;
+	return ret;
 
 	/* Reset NOR flash memory : still with the SPI/STR config for the NOR */
 	if (mspi_stm32_mem_reset(controller) != 0) {
@@ -1635,129 +1836,17 @@ static int mspi_stm32_dev_config(const struct device *controller,
 	}
 
 	LOG_DBG("Controller Ready (SPI/STR)");
-#if 0
-#if defined(CONFIG_FLASH_JESD216_API)
-	/* Process with the RDID (jedec read ID) instruction at init and fill jedec_id Table */
-	ret = mspi_stm32_read_jedec_id(controller);
-	if (ret != 0) {
-		LOG_ERR("Read ID failed: %d", ret);
-		return ret;
-	}
-#endif /* CONFIG_FLASH_JESD216_API */
-#endif
+
 	if (mspi_stm32_config_mem(controller) != 0) {
 		LOG_ERR("MSPI mode not config'd (%u rate %u)",
-			dev_data->dev_cfg.io_mode, dev_data->dev_cfg.data_rate);
+			data->dev_cfg.io_mode, data->dev_cfg.data_rate);
 		return -EIO;
 	}
-#if 0
-	/* Send the instruction to read the SFDP  */
-	const uint8_t decl_nph = 2;
-	union {
-		/* We only process BFP so use one parameter block */
-		uint8_t raw[JESD216_SFDP_SIZE(decl_nph)];
-		struct jesd216_sfdp_header sfdp;
-	} u;
-	const struct jesd216_sfdp_header *hp = &u.sfdp;
 
-	ret = mspi_read_sfdp(controller, 0, u.raw, sizeof(u.raw));
-	if (ret != 0) {
-		LOG_ERR("SFDP read failed: %d", ret);
-		return ret;
-	}
+e_return:
+	k_mutex_unlock(&data->lock);
 
-	uint32_t magic = jesd216_sfdp_magic(hp);
-
-	if (magic != JESD216_SFDP_MAGIC) {
-		LOG_ERR("SFDP magic %08x invalid", magic);
-		return -EINVAL;
-	}
-
-	LOG_DBG("%s: SFDP v %u.%u AP %x with %u PH", controller->name,
-		hp->rev_major, hp->rev_minor, hp->access, 1 + hp->nph);
-
-	const struct jesd216_param_header *php = hp->phdr;
-	const struct jesd216_param_header *phpe = php +
-						     MIN(decl_nph, 1 + hp->nph);
-
-	while (php != phpe) {
-		uint16_t id = jesd216_param_id(php);
-
-		LOG_DBG("PH%u: %04x rev %u.%u: %u DW @ %x",
-			(php - hp->phdr), id, php->rev_major, php->rev_minor,
-			php->len_dw, jesd216_param_addr(php));
-
-		if (id == JESD216_SFDP_PARAM_ID_BFP) {
-			union {
-				uint32_t dw[20];
-				struct jesd216_bfp bfp;
-			} u2;
-			const struct jesd216_bfp *bfp = &u2.bfp;
-
-			ret = mspi_read_sfdp(controller, jesd216_param_addr(php),
-					     (uint8_t *)u2.dw,
-					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
-			if (ret == 0) {
-				ret = spi_nor_process_bfp(controller, php, bfp);
-			}
-
-			if (ret != 0) {
-				LOG_ERR("SFDP BFP failed: %d", ret);
-				break;
-			}
-		}
-		if (id == JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR) {
-
-			if (dev_data->cfg.addr_length == 4U) {
-				/*
-				 * Check table 4 byte address instruction table to get supported
-				 * erase opcodes when running in 4 byte address mode
-				 */
-				union {
-					uint32_t dw[2];
-					struct {
-						uint32_t dummy;
-						uint8_t type[4];
-					} types;
-				} u2;
-				ret = mspi_read_sfdp(controller, jesd216_param_addr(php),
-					     (uint8_t *)u2.dw,
-					     MIN(sizeof(uint32_t) * php->len_dw, sizeof(u2.dw)));
-				if (ret != 0) {
-					break;
-				}
-				for (uint8_t ei = 0; ei < JESD216_NUM_ERASE_TYPES; ++ei) {
-					struct jesd216_erase_type *etp = &dev_data->erase_types[ei];
-					const uint8_t cmd = u2.types.type[ei];
-					/* 0xff means not supported */
-					if (cmd == 0xff) {
-						etp->exp = 0;
-						etp->cmd = 0;
-					} else {
-						etp->cmd = cmd;
-					};
-				}
-			}
-		}
-		++php;
-	}
-
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	ret = setup_pages_layout(controller);
-	if (ret != 0) {
-		LOG_ERR("layout setup failed: %d", ret);
-		return -ENODEV;
-	}
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
-
-#endif
-/*
-	LOG_INF("NOR external-flash at 0x%lx (0x%x bytes)",
-		(long)(MSPI_STM32_BASE_ADDRESS),
-		dev_cfg->size);
-*/
-
-	return 0;
+	return ret;
 }
 
 /* Set the device back in command mode */
@@ -1939,7 +2028,7 @@ static int mspi_stm32_timing_config(const struct device *controller,
 	}
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("dev_id don't match");
+		LOG_ERR("timing config : dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -2000,11 +2089,12 @@ static int mspi_stm32_register_callback(const struct device *controller,
 {
 	struct mspi_stm32_data *data = controller->data;
 
-	while (mspi_is_inp(controller)) {
+	if (mspi_is_inp(controller)) {
+		return -EBUSY;
 	}
 
 	if (dev_id != data->dev_id) {
-		LOG_ERR("dev_id don't match");
+		LOG_ERR("reg cb : dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -2036,11 +2126,11 @@ static int mspi_stm32_scramble_config(const struct device *controller,
 	struct mspi_stm32_data *data = controller->data;
 	int ret = 0;
 
-	while (mspi_is_inp(controller)) {
+	if (mspi_is_inp(controller)) {
+		return -EBUSY;
 	}
-
 	if (dev_id != data->dev_id) {
-		LOG_ERR("dev_id don't match");
+		LOG_ERR("scramble config: dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -2266,7 +2356,7 @@ static int mspi_stm32_transceive(const struct device *controller,
 	struct mspi_callback_context *cb_ctx = NULL;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("dev_id don't match");
+		LOG_ERR("transceive : dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -2500,6 +2590,15 @@ static int mspi_stm32_config(const struct mspi_dt_spec *spec)
 	/* Run IRQ init */
 	dev_cfg->irq_config();
 
+	if (!k_sem_count_get(&dev_data->ctx.lock)) {
+		dev_data->ctx.owner = NULL;
+		k_sem_give(&dev_data->ctx.lock);
+	}
+
+	if (config->re_init) {
+		k_mutex_unlock(&dev_data->lock);
+	}
+
 	return 0;
 }
 
@@ -2632,6 +2731,7 @@ static struct mspi_stm32_data mspi_stm32_dev_data = {
 #endif /* OCTOSPI_DCR4_REFRESH */
 		},
 	},
+	.dev_id = 0, /* Value matching the <reg> of the ospi-nor-flash device */
 	.lock = Z_MUTEX_INITIALIZER(mspi_stm32_dev_data.lock),
 	.dev_cfg = {0},
 	.xip_cfg = {0},

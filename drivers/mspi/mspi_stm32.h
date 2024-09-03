@@ -25,6 +25,11 @@
 
 #define MSPI_STM32_FIFO_THRESHOLD       4U
 
+#define MSPI_MAX_FREQ        250000000
+#define MSPI_MAX_DEVICE      2
+#define MSPI_TIMEOUT_US      1000000
+#define STM32_MSPI_INST_ID    0
+
 /* Valid range is [0, 255] */
 #define MSPI_STM32_CLOCK_PRESCALER_MIN  0U
 #define MSPI_STM32_CLOCK_PRESCALER_MAX  255U
