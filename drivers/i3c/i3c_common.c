@@ -591,11 +591,12 @@ out:
  */
 static int i3c_bus_setdasa(const struct device *dev,
 			   const struct i3c_dev_list *dev_list,
-			   bool *need_daa)
+			   bool *need_daa, bool *need_aasa)
 {
 	int i, ret;
 
 	*need_daa = false;
+	*need_aasa = false;
 
 	/* Loop through the registered I3C devices */
 	for (i = 0; i < dev_list->num_i3c; i++) {
@@ -607,6 +608,17 @@ static int i3c_bus_setdasa(const struct device *dev,
 		 */
 		if (desc->static_addr == 0U) {
 			*need_daa = true;
+			continue;
+		}
+
+		/*
+		 * A device that supports SETAASA and will use the same dynamic
+		 * address as its static address if a different dynamic address
+		 * is not requested
+		 */
+		if ((desc->supports_setaasa) && ((desc->init_dynamic_addr == 0) ||
+					       desc->init_dynamic_addr == desc->static_addr)) {
+			*need_aasa = true;
 			continue;
 		}
 
@@ -639,6 +651,7 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 {
 	int i, ret = 0;
 	bool need_daa = true;
+	bool need_aasa = true;
 	struct i3c_ccc_events i3c_events;
 
 #ifdef CONFIG_I3C_INIT_RSTACT
@@ -684,9 +697,30 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/*
 	 * Set static addresses as dynamic addresses.
 	 */
-	ret = i3c_bus_setdasa(dev, dev_list, &need_daa);
+	ret = i3c_bus_setdasa(dev, dev_list, &need_daa, &need_aasa);
 	if (ret != 0) {
 		goto err_out;
+	}
+
+	/*
+	 * Perform Set All Addresses to Static Address if possible.
+	 */
+	if (need_aasa) {
+		ret = i3c_ccc_do_setaasa_all(dev);
+		if (ret != 0) {
+			for (i = 0; i < dev_list->num_i3c; i++) {
+				struct i3c_device_desc *desc = &dev_list->i3c[i];
+				/*
+				 * Only set for devices that support SETAASA and do not
+				 * request a different dynamic address than its SA
+				 */
+				if ((desc->supports_setaasa) && (desc->static_addr != 0) &&
+				    ((desc->init_dynamic_addr == 0) ||
+				     desc->init_dynamic_addr == desc->static_addr)) {
+					desc->dynamic_addr = desc->static_addr;
+				}
+			}
+		}
 	}
 
 	/*
