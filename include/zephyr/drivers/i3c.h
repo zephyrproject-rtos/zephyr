@@ -950,6 +950,14 @@ struct i3c_device_desc {
 	const uint8_t init_dynamic_addr;
 
 	/**
+	 * Device support for SETAASA
+	 *
+	 * This will be used as an optimization for bus initializtion if the
+	 * device supports SETAASA.
+	 */
+	const bool supports_setaasa;
+
+	/**
 	 * Dynamic Address for this target device used for communication.
 	 *
 	 * This is to be set by the controller driver in one of
