@@ -324,10 +324,6 @@
 #define MBEDTLS_ENTROPY_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_SSL_EXPORT_KEYS)
-#define MBEDTLS_SSL_EXPORT_KEYS
-#endif
-
 #if defined(CONFIG_MBEDTLS_SSL_ALPN)
 #define MBEDTLS_SSL_ALPN
 #endif
