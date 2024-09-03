@@ -602,8 +602,8 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 		char str[sizeof("RX iface xx (tag xxxx)")];
 
 		snprintk(str, sizeof(str), "RX iface %d (tag %d)",
-			 net_pkt_vlan_tag(pkt),
-			 net_if_get_by_iface(iface));
+			 net_if_get_by_iface(iface),
+			 net_pkt_vlan_tag(pkt));
 
 		net_pkt_hexdump(pkt, str);
 	}
