@@ -51,7 +51,16 @@ struct llext_test {
 	size_t buf_len;
 
 	bool kernel_only;
-	void (*perm_setup)(struct k_thread *llext_thread);
+
+	/*
+	 * Optional callbacks
+	 */
+
+	/* Called in kernel context before each test starts */
+	void (*test_setup)(struct llext *ext, struct k_thread *llext_thread);
+
+	/* Called in kernel context after each test completes */
+	void (*test_cleanup)(struct llext *ext);
 };
 
 
@@ -99,8 +108,12 @@ K_THREAD_STACK_DEFINE(my_thread_stack, MY_THREAD_STACK_SIZE);
 EXPORT_SYMBOL(my_thread_stack);
 
 #ifdef CONFIG_USERSPACE
-/* Allow the user space test thread to access global objects */
-static void threads_objects_perm_setup(struct k_thread *llext_thread)
+/* Allow the test threads to access global objects.
+ * Note: Permissions on objects used in the test by this thread are initialized
+ * even in supervisor mode, so that user mode descendant threads can inherit
+ * these permissions.
+ */
+static void threads_objects_test_setup(struct llext *, struct k_thread *llext_thread)
 {
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
@@ -108,7 +121,7 @@ static void threads_objects_perm_setup(struct k_thread *llext_thread)
 }
 #else
 /* No need to set up permissions for supervisor mode */
-#define threads_objects_perm_setup NULL
+#define threads_objects_test_setup NULL
 #endif /* CONFIG_USERSPACE */
 
 void load_call_unload(const struct llext_test *test_case)
@@ -161,16 +174,16 @@ void load_call_unload(const struct llext_test *test_case)
 
 	k_mem_domain_add_thread(&domain, &llext_thread);
 
-	/* Even in supervisor mode, initialize permissions on objects used in
-	 * the test by this thread, so that user mode descendant threads can
-	 * inherit these permissions.
-	 */
-	if (test_case->perm_setup) {
-		test_case->perm_setup(&llext_thread);
+	if (test_case->test_setup) {
+		test_case->test_setup(ext, &llext_thread);
 	}
 
 	k_thread_start(&llext_thread);
 	k_thread_join(&llext_thread, K_FOREVER);
+
+	if (test_case->test_cleanup) {
+		test_case->test_cleanup(ext);
+	}
 
 	/* Some extensions may wish to be tried from the context
 	 * of a userspace thread along with the usual supervisor context
@@ -184,17 +197,29 @@ void load_call_unload(const struct llext_test *test_case)
 
 		k_mem_domain_add_thread(&domain, &llext_thread);
 
-		if (test_case->perm_setup) {
-			test_case->perm_setup(&llext_thread);
+		if (test_case->test_setup) {
+			test_case->test_setup(ext, &llext_thread);
 		}
 
 		k_thread_start(&llext_thread);
 		k_thread_join(&llext_thread, K_FOREVER);
+
+		if (test_case->test_cleanup) {
+			test_case->test_cleanup(ext);
+		}
 	}
 
 #else /* CONFIG_USERSPACE */
+	if (test_case->test_setup) {
+		test_case->test_setup(ext, NULL);
+	}
+
 	zassert_ok(llext_call_fn(ext, "test_entry"),
 		   "test_entry call should succeed");
+
+	if (test_case->test_cleanup) {
+		test_case->test_cleanup(ext);
+	}
 #endif /* CONFIG_USERSPACE */
 
 	llext_unload(&ext);
@@ -257,7 +282,7 @@ static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 	#include "threads_kernel_objects.inc"
 };
 LLEXT_LOAD_UNLOAD(threads_kernel_objects,
-	.perm_setup = threads_objects_perm_setup,
+	.test_setup = threads_objects_test_setup,
 )
 #endif
 
