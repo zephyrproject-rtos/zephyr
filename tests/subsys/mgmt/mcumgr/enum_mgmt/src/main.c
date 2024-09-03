@@ -324,7 +324,7 @@ ZTEST(enum_mgmt, test_single)
 	while (received_end == false) {
 		struct zcbor_map_decode_key_val output_decode[] = {
 			ZCBOR_MAP_DECODE_KEY_DECODER("group", zcbor_uint32_decode, &received_group),
-			ZCBOR_MAP_DECODE_KEY_DECODER("end", zcbor_simple_decode, &received_end),
+			ZCBOR_MAP_DECODE_KEY_DECODER("end", zcbor_bool_decode, &received_end),
 		};
 
 		memset(buffer, 0, sizeof(buffer));
