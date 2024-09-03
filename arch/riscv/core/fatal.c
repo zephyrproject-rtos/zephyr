@@ -52,7 +52,7 @@ uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 	return sp;
 }
 
-static char *cause_str(unsigned long cause)
+const char *z_riscv_mcause_str(unsigned long cause)
 {
 	switch (cause) {
 	case 0:
@@ -103,7 +103,7 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 
 	mcause &= CONFIG_RISCV_MCAUSE_EXCEPTION_MASK;
 	LOG_ERR("");
-	LOG_ERR(" mcause: %ld, %s", mcause, cause_str(mcause));
+	LOG_ERR(" mcause: %ld, %s", mcause, z_riscv_mcause_str(mcause));
 
 #ifndef CONFIG_SOC_OPENISA_RV32M1
 	unsigned long mtval;
