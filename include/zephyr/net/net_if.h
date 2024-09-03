@@ -860,7 +860,8 @@ static inline enum net_if_oper_state net_if_oper_state_set(
 	NET_ASSERT(iface);
 	NET_ASSERT(iface->if_dev);
 
-	if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
+	BUILD_ASSERT((enum net_if_oper_state)(-1) > 0 && NET_IF_OPER_UNKNOWN == 0);
+	if (oper_state <= NET_IF_OPER_UP) {
 		iface->if_dev->oper_state = oper_state;
 	}
 
