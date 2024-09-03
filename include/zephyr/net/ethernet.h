@@ -653,7 +653,7 @@ struct ethernet_context {
 	atomic_t flags;
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
-	struct eth_bridge_iface_context bridge;
+	struct net_if *bridge;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create
