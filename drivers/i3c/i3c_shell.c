@@ -550,7 +550,8 @@ static int cmd_i3c_ccc_setaasa(const struct shell *shell_ctx, size_t argc, char 
 		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
 			struct i3c_device_desc *desc =
 				CONTAINER_OF(node, struct i3c_device_desc, node);
-			if ((desc->dynamic_addr == 0) && (desc->static_addr != 0)) {
+			if ((desc->supports_setaasa) && (desc->dynamic_addr == 0) &&
+			    (desc->static_addr != 0)) {
 				desc->dynamic_addr = desc->static_addr;
 			}
 		}
