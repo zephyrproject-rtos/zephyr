@@ -75,10 +75,14 @@ static int memc_smc_init(const struct device *dev)
 	SMC_CYCLE_NWE_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 0))		\
 	| SMC_CYCLE_NRD_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 1))
 
+#define BUS_WIDTH(node_id) COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_bus_width), \
+			   (SMC_MODE_DBW_16_BIT), (0))
+
 #define BANK_CONFIG(node_id)								\
 	{										\
 		.cs = DT_REG_ADDR(node_id),						\
-		.mode = COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_write_mode),		\
+		.mode = BUS_WIDTH(node_id)                                              \
+			| COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_write_mode),	\
 				    (SMC_MODE_WRITE_MODE), (0))				\
 			| COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_read_mode),	\
 				      (SMC_MODE_READ_MODE), (0)),			\
