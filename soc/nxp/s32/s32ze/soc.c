@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 NXP
+ * Copyright 2022,2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/init.h>
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/cache.h>
 
 #include <OsIf.h>
 
@@ -27,21 +28,8 @@ void soc_reset_hook(void)
 	 */
 	__set_SCTLR(__get_SCTLR() & ~SCTLR_TE_Msk);
 
-	if (IS_ENABLED(CONFIG_ICACHE)) {
-		if (!(__get_SCTLR() & SCTLR_I_Msk)) {
-			L1C_InvalidateICacheAll();
-			__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk);
-			barrier_isync_fence_full();
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_DCACHE)) {
-		if (!(__get_SCTLR() & SCTLR_C_Msk)) {
-			L1C_InvalidateDCacheAll();
-			__set_SCTLR(__get_SCTLR() | SCTLR_C_Msk);
-			barrier_dsync_fence_full();
-		}
-	}
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 }
 
 void soc_early_init_hook(void)
