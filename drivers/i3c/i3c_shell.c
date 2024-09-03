@@ -920,6 +920,30 @@ static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, cha
 	return ret;
 }
 
+/* i3c ccc enttm <device> <defining byte> */
+static int cmd_i3c_ccc_enttm(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum i3c_ccc_enttm_defbyte defbyte;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	defbyte = strtol(argv[2], NULL, 16);
+
+	ret = i3c_ccc_do_enttm(dev, defbyte);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTTM.");
+		return ret;
+	}
+
+	return ret;
+}
+
 /* i3c ccc rstact_bc <device> <defining byte> */
 static int cmd_i3c_ccc_rstact_bc(const struct shell *shell_ctx, size_t argc, char **argv)
 {
@@ -1760,6 +1784,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC SETMWL BC\n"
 		      "Usage: ccc setmwl_bc <device> <max write length>",
 		      cmd_i3c_ccc_setmwl_bc, 3, 0),
+	SHELL_CMD_ARG(enttm, &dsub_i3c_device_name,
+		      "Send CCC ENTTM\n"
+		      "Usage: ccc enttm <device> <defining byte>",
+		      cmd_i3c_ccc_enttm, 3, 0),
 	SHELL_CMD_ARG(rstact_bc, &dsub_i3c_device_name,
 		      "Send CCC RSTACT BC\n"
 		      "Usage: ccc rstact_bc <device> <defining byte>",
