@@ -232,6 +232,10 @@ Networking
   the :c:func:`eth_bridge_iface_add` and :c:func:`eth_bridge_iface_remove`
   will take network interface pointer as a first parameter.
 
+* To facilitate use outside of the networking subsystem, the network buffer header file was renamed
+  from :zephyr_file:`include/zephyr/net/buf.h` to :zephyr_file:`include/zephyr/net_buf.h` and the
+  implementation moved to :zephyr_file:`lib/net_buf/`. (:github:`78009`)
+
 Other Subsystems
 ****************
 
