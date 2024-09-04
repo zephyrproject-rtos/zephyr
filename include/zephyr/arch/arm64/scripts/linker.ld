@@ -218,25 +218,6 @@ SECTIONS
     z_mapped_start = .;
 #endif
 
-    __data_region_start = .;
-
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
-    {
-        MMU_ALIGN;
-	__data_start = .;
-        *(.data)
-        *(".data.*")
-        *(".kernel.*")
-
-#include <snippets-rwdata.ld>
-
-        __data_end = .;
-    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-    __data_size = __data_end - __data_start;
-    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
-
-#include <snippets-ram-sections.ld>
-
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
 #define SMEM_PARTITION_ALIGN(size) MMU_ALIGN
@@ -256,6 +237,25 @@ SECTIONS
     _app_smem_size = _app_smem_end - _app_smem_start;
     _app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_USERSPACE */
+
+    __data_region_start = .;
+
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+    {
+        MMU_ALIGN;
+	__data_start = .;
+        *(.data)
+        *(".data.*")
+        *(".kernel.*")
+
+#include <snippets-rwdata.ld>
+
+        __data_end = .;
+    } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+    __data_size = __data_end - __data_start;
+    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
+
+#include <snippets-ram-sections.ld>
 
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/linker/kobject-data.ld>
