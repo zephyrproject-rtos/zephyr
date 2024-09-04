@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "ots_l2cap_internal.h"
 

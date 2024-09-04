@@ -16,7 +16,7 @@
 
 #include <stdint.h>
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/sys/iterable_sections.h>

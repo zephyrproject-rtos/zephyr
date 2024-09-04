@@ -7,7 +7,7 @@
 #define H_OS_GR_STUB_
 
 #include <inttypes.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
 #ifdef __cplusplus

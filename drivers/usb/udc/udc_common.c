@@ -6,7 +6,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/usb/usb_ch9.h>

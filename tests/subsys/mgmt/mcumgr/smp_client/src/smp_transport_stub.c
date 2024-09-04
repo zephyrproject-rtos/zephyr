@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <string.h>
 #include <zephyr/mgmt/mcumgr/smp/smp_client.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>

@@ -41,7 +41,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 

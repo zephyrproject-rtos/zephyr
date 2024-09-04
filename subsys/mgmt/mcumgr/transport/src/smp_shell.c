@@ -10,7 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
