@@ -108,14 +108,14 @@ int http_server_init(struct http_server_ctx *ctx)
 		memset(&addr_storage, 0, sizeof(struct sockaddr_storage));
 
 		/* Set up the server address struct according to address family */
-		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6) && svc->host != NULL &&
 		    zsock_inet_pton(AF_INET6, svc->host, &addr.addr6->sin6_addr) == 1) {
 			af = AF_INET6;
 			len = sizeof(*addr.addr6);
 
 			addr.addr6->sin6_family = AF_INET6;
 			addr.addr6->sin6_port = htons(*svc->port);
-		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && svc->host != NULL &&
 			   zsock_inet_pton(AF_INET, svc->host, &addr.addr4->sin_addr) == 1) {
 			af = AF_INET;
 			len = sizeof(*addr.addr4);
@@ -209,7 +209,8 @@ int http_server_init(struct http_server_ctx *ctx)
 			continue;
 		}
 
-		LOG_DBG("Initialized HTTP Service %s:%u", svc->host, *svc->port);
+		LOG_DBG("Initialized HTTP Service %s:%u",
+			svc->host ? svc->host : "<any>", *svc->port);
 
 		ctx->fds[count].fd = fd;
 		ctx->fds[count].events = ZSOCK_POLLIN;
