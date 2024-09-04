@@ -214,13 +214,11 @@ message in the monitor:
 Debugging
 *********
 
-ESP32-S3 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32-S3 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 ESP32-S3 has a built-in JTAG circuitry and can be debugged without any additional chip. Only an USB cable connected to the D+/D- pins is necessary.
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32-S3`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S3`_.
 
 Here is an example for building the :ref:`hello_world` application.
 
@@ -235,12 +233,10 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :zephyr-app: samples/hello_world
    :board: xiao_esp32s3/esp32/procpu
    :goals: debug
-.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
 
 References
 **********
 
-.. target-notes::
-
 .. _`Seeed Studio XIAO ESP32S3`: https://wiki.seeedstudio.com/xiao_esp32s3_getting_started/
+.. _`JTAG debugging for ESP32-S3`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-guides/jtag-debugging/
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

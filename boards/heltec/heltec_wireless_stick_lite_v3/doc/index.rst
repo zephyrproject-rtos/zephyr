@@ -277,7 +277,7 @@ Debugging
 
 As with much custom hardware, the ESP32S3 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
