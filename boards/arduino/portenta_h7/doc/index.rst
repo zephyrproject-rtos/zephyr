@@ -65,6 +65,8 @@ The current Zephyr arduino_portenta_h7 board configuration supports the followin
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-board   | eth                                 |
 +-----------+------------+-------------------------------------+
+| RADIO     | Murata 1DX | WiFi and Bluetooth module           |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -73,6 +75,22 @@ boards with hardware revision 4.10 or greater. By default the internal source
 is used; to enable the use of the external oscillator, manually specify the
 hardware revision at build time (see :ref:`application_board_version` for
 information on how to build for specific revisions of the board).
+
+Applications that intend to use BLE must specify hardware revision at build time.
+
+Currently only BLE is supported on this board, WiFi is not supported.
+
+Fetch Binary Blobs
+******************
+
+The board Bluetooth/WiFi module requires fetching some binary blob files, to do
+that run the command:
+
+.. code-block:: console
+
+   west blobs fetch hal_infineon
+
+.. note:: Only Bluetooth functionality is currently supported.
 
 Resources sharing
 =================

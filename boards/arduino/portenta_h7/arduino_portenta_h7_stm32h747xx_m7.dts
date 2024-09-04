@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_uart;
 	};
 
 	oscen: oscen {
@@ -128,6 +129,27 @@
 		slot1_partition: partition@A0000 {
 			label = "image-1";
 			reg = <0x000A0000 0x00060000>;
+		};
+	};
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pa15 &uart7_rx_pf6
+		     &uart7_cts_pf9 &uart7_rts_pf8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	hw-flow-control;
+	status = "okay";
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+		status = "okay";
+
+		murata-1dx {
+			compatible = "infineon,cyw43xxx-bt-hci";
+			bt-reg-on-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
+			bt-host-wake-gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
+			bt-dev-wake-gpios = <&gpioj 14 GPIO_ACTIVE_HIGH>;
 		};
 	};
 };
