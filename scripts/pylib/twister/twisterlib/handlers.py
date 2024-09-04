@@ -444,7 +444,7 @@ class DeviceHandler(Handler):
             # is available yet.
             if serial_line:
                 # can be more lines in serial_line so split them before handling
-                for sl in serial_line.decode('utf-8', 'ignore').splitlines():
+                for sl in serial_line.decode('utf-8', 'ignore').splitlines(keepends=True):
                     log_out_fp.write(strip_ansi_sequences(sl).encode('utf-8'))
                     log_out_fp.flush()
                     if sl := sl.strip():
