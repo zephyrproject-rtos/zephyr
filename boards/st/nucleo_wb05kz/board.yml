@@ -1,0 +1,5 @@
+board:
+  name: nucleo_wb05kz
+  vendor: st
+  socs:
+    - name: stm32wb05
