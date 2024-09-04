@@ -138,3 +138,6 @@ uint8_t tester_unregister_tmap(void);
 
 uint8_t tester_init_ots(void);
 uint8_t tester_unregister_ots(void);
+
+uint8_t tester_init_sdp(void);
+uint8_t tester_unregister_sdp(void);
