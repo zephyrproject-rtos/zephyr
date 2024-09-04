@@ -683,7 +683,7 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 }
 
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
-			      struct bt_mesh_net_rx *rx, bool update_nid)
+			      struct bt_mesh_net_rx *rx, bool bridge)
 {
 	const struct bt_mesh_net_cred *cred;
 	struct bt_mesh_adv *adv;
@@ -695,6 +695,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
 	if (rx->net_if == BT_MESH_NET_IF_ADV &&
 	    !rx->friend_cred &&
+	    !bridge &&
 	    bt_mesh_relay_get() != BT_MESH_RELAY_ENABLED &&
 	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED &&
 	    bt_mesh_priv_gatt_proxy_get() != BT_MESH_PRIV_GATT_PROXY_ENABLED) {
@@ -731,7 +732,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	LOG_DBG("Relaying packet. TTL is now %u", TTL(adv->b.data));
 
 	/* Update NID if RX, RX was with friend credentials or when bridging the message */
-	if (rx->friend_cred || update_nid) {
+	if (rx->friend_cred || bridge) {
 		adv->b.data[0] &= 0x80; /* Clear everything except IVI */
 		adv->b.data[0] |= cred->nid;
 	}
@@ -756,7 +757,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		bt_mesh_proxy_relay(adv, rx->ctx.recv_dst);
 	}
 
-	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
+	if (relay_to_adv(rx->net_if) || rx->friend_cred || bridge) {
 		bt_mesh_adv_send(adv, NULL, NULL);
 	}
 
