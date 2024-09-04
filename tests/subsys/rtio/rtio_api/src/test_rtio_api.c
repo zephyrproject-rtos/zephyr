@@ -294,11 +294,12 @@ static void test_rtio_simple_mempool_(struct rtio *r, int run_count)
 	zassert_ok(res);
 
 	TC_PRINT("submit with wait\n");
-	res = rtio_submit(r, 0);
-	zassert_ok(res, "Should return ok from rtio_execute");
+	res = rtio_submit(r, 1);
+	zassert_ok(res, "Should return ok from rtio_submit");
 
 	TC_PRINT("Calling rtio_cqe_copy_out\n");
-	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	res = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+	zassert_equal(1, res);
 	TC_PRINT("cqe result %d, userdata %p\n", cqe.result, cqe.userdata);
 	zassert_ok(cqe.result, "Result should be ok");
 	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
