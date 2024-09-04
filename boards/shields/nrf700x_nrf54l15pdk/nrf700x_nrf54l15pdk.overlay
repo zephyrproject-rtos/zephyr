@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	/* Wi-Fi doesn't needs this and it frees up 68K SRAM */
+	/delete-node/ cpuflpr_sram;
+
+	chosen {
+		zephyr,wifi = &wlan0;
+	};
+};
+
+/* Adjust the cpuapp_sram to include the freed up cpuflpr_sram */
+&cpuapp_sram {
+	reg = <0x20000000 DT_SIZE_K(256)>;
+	ranges = <0x0 0x20000000 0x20040000>;
+};
+
+&pinctrl {
+	spi22_default: spi22_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 11)>,
+				<NRF_PSEL(SPIM_MISO, 1, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 10)>;
+		};
+	};
+
+	spi22_sleep: spi22_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 11)>,
+				<NRF_PSEL(SPIM_MISO, 1, 9)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 10)>;
+			low-power-enable;
+		};
+	};
+};
+
+/* With P1 only SPI20/21/22 are allowed and SPI20 uses same IRQ as UART20 */
+&spi22 {
+	status = "okay";
+	cs-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	nrf70: nrf7002@0 {
+		compatible = "nordic,nrf7002-spi";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+
+		bucken-gpios = <&gpio1 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		iovdd-ctrl-gpios = <&gpio1 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		host-irq-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+
+		wlan0: wlan0 {
+			compatible = "nordic,wlan";
+		};
+
+		wifi-max-tx-pwr-2g-dsss = <21>;
+		wifi-max-tx-pwr-2g-mcs0 = <16>;
+		wifi-max-tx-pwr-2g-mcs7 = <16>;
+		wifi-max-tx-pwr-5g-low-mcs0 = <13>;
+		wifi-max-tx-pwr-5g-low-mcs7 = <13>;
+		wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
+		wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
+		wifi-max-tx-pwr-5g-high-mcs0 = <12>;
+		wifi-max-tx-pwr-5g-high-mcs7 = <12>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NRF700X_NRF54L15PDK
+	select NRF_WIFI_COMBINED_BUCKEN_IOVDD_GPIO
+	def_bool $(shields_list_contains,nrf700x_nrf54l15pdk)
