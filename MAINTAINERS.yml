@@ -2844,6 +2844,7 @@ Networking:
     - tbursztyka
     - jukkar
   files:
+    - doc/services/net_buf/
     - include/zephyr/net/buf.h
     - include/zephyr/net_buf.h
     - lib/net_buf/
