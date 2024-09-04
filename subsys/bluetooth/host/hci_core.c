@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>

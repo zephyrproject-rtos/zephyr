@@ -17,7 +17,7 @@
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/types.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6

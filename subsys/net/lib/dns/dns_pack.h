@@ -8,7 +8,7 @@
 #define _DNS_PACK_H_
 
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>

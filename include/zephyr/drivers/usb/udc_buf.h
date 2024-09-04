@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_UDC_BUF_H
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #if defined(CONFIG_DCACHE) && !defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
 /*

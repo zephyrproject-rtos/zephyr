@@ -6,7 +6,7 @@
  */
 
 #include "isotp_internal.h"
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
