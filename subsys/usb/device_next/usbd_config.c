@@ -266,6 +266,12 @@ int usbd_add_configuration(struct usbd_context *const uds_ctx,
 		goto add_configuration_exit;
 	}
 
+	if (speed == USBD_SPEED_HS && !USBD_SUPPORTS_HIGH_SPEED) {
+		LOG_ERR("Stack was compiled without High-Speed support");
+		ret = -ENOTSUP;
+		goto add_configuration_exit;
+	}
+
 	if (speed == USBD_SPEED_HS &&
 	    usbd_caps_speed(uds_ctx) == USBD_SPEED_FS) {
 		LOG_ERR("Controller doesn't support HS");
