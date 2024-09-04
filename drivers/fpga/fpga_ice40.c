@@ -99,9 +99,6 @@ struct fpga_ice40_config {
 	uint8_t leading_clocks;
 	uint8_t trailing_clocks;
 	fpga_api_load load;
-#ifdef CONFIG_PINCTRL
-	const struct pinctrl_dev_config *pincfg;
-#endif
 };
 
 static void fpga_ice40_crc_to_str(uint32_t crc, char *s)
@@ -299,9 +296,7 @@ unlock:
 	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->clk, GPIO_DISCONNECTED);
 	(void)gpio_pin_configure_dt(&config->pico, GPIO_DISCONNECTED);
-#ifdef CONFIG_PINCTRL
-	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-#endif
+	spi_apply_default_pin_state_dt(&config->bus);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -438,9 +433,7 @@ static int fpga_ice40_load_spi(const struct device *dev, uint32_t *image_ptr, ui
 unlock:
 	(void)gpio_pin_configure_dt(&config->creset, GPIO_OUTPUT_HIGH);
 	(void)gpio_pin_configure_dt(&config->bus.config.cs.gpio, GPIO_OUTPUT_HIGH);
-#ifdef CONFIG_PINCTRL
-	(void)pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-#endif
+	spi_apply_default_pin_state_dt(&config->bus);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -553,14 +546,6 @@ static int fpga_ice40_init(const struct device *dev)
 		 : (FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO ? fpga_ice40_load_gpio \
 									    : NULL))
 
-#ifdef CONFIG_PINCTRL
-#define FPGA_ICE40_PINCTRL_CONFIG(inst) .pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(inst)),
-#define FPGA_ICE40_PINCTRL_DEFINE(inst) PINCTRL_DT_DEFINE(DT_INST_PARENT(inst))
-#else
-#define FPGA_ICE40_PINCTRL_CONFIG(inst)
-#define FPGA_ICE40_PINCTRL_DEFINE(inst)
-#endif
-
 #define FPGA_ICE40_DEFINE(inst)                                                                    \
 	BUILD_ASSERT(FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_SPI ||                     \
 		     FPGA_ICE40_LOAD_MODE(inst) == FPGA_ICE40_LOAD_MODE_GPIO);                     \
@@ -576,7 +561,6 @@ static int fpga_ice40_init(const struct device *dev)
 	BUILD_ASSERT(FPGA_ICE40_TRAILING_CLOCKS(inst) <= UINT8_MAX);                               \
 	BUILD_ASSERT(FPGA_ICE40_MHZ_DELAY_COUNT(inst) >= 0);                                       \
                                                                                                    \
-	FPGA_ICE40_PINCTRL_DEFINE(inst);                                                           \
 	static struct fpga_ice40_data fpga_ice40_data_##inst;                                      \
                                                                                                    \
 	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
@@ -593,7 +577,7 @@ static int fpga_ice40_init(const struct device *dev)
 		.leading_clocks = FPGA_ICE40_LEADING_CLOCKS(inst),                                 \
 		.trailing_clocks = FPGA_ICE40_TRAILING_CLOCKS(inst),                               \
 		.load = FPGA_ICE40_LOAD_FUNC(inst),                                                \
-		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                  \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
 			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
