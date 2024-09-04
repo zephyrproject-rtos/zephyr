@@ -295,6 +295,8 @@ Libraries / Subsystems
 
     * Added support for :ref:`mcumgr_smp_group_10`, which allows for listing information on
       supported groups.
+    * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
+      leading zeros.
 
 * Logging
 
