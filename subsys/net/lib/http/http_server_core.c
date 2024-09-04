@@ -157,6 +157,16 @@ int http_server_init(struct http_server_ctx *ctx)
 			continue;
 		}
 
+		/* If IPv4-to-IPv6 mapping is enabled, then turn off V6ONLY option
+		 * so that IPv6 socket can serve IPv4 connections.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+			int optval = 0;
+
+			(void)setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+					 &optval, sizeof(optval));
+		}
+
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 		if (svc->sec_tag_list != NULL) {
 			if (zsock_setsockopt(fd, SOL_TLS, TLS_SEC_TAG_LIST,
