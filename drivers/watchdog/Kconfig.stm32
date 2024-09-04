@@ -5,7 +5,7 @@
 # Copyright (c) 2019 Centaur Analytics, Inc
 # SPDX-License-Identifier: Apache-2.0
 
-config IWDG_STM32
+menuconfig IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
 	default y
 	depends on DT_HAS_ST_STM32_WATCHDOG_ENABLED
