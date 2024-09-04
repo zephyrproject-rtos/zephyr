@@ -4,17 +4,19 @@
  */
 #pragma once
 
-/* SRAM0 (64k), SRAM1 (416k), SRAM2 (64k) memories
+/* SRAM0 (32k), SRAM1 (416k), SRAM2 (64k) memories
  * Ibus and Dbus address space
  */
-#define SRAM0_IRAM_START    0x40370000
-#define SRAM0_SIZE          0x8000
-#define SRAM1_DRAM_START    0x3fc88000
+#define SRAM0_IRAM_START     0x40370000
+#define SRAM0_SIZE           0x8000
+#define SRAM1_DRAM_START     0x3fc88000
+#define SRAM1_IRAM_START     0x40378000
+#define SRAM_USER_IRAM_START (SRAM0_IRAM_START + CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE)
 
-/* IRAM equivalent address where DRAM actually start */
-#define SRAM1_IRAM_START    (SRAM0_IRAM_START + SRAM0_SIZE)
-#define SRAM2_DRAM_START    0x3fcf0000
-#define SRAM2_SIZE          0x10000
+#define SRAM2_DRAM_START      0x3fcf0000
+#define SRAM2_SIZE            0x10000
+#define SRAM2_USER_DRAM_START (SRAM2_DRAM_START + CONFIG_ESP32S3_DATA_CACHE_SIZE)
+#define SRAM2_USER_DRAM_SIZE  (SRAM2_SIZE - CONFIG_ESP32S3_DATA_CACHE_SIZE)
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -43,23 +45,50 @@
 /* Set the limit for the application runtime dynamic allocations */
 #define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
-/* Base address used for calculating memory layout
- * counted from Dbus backwards and back to the Ibus
- */
-#define BOOTLOADER_USER_DRAM_END DRAM_BUFFERS_START
-
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
 #define BOOTLOADER_DRAM_SEG_LEN        0x15000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
 #define BOOTLOADER_IRAM_SEG_LEN        0xc000
 
+/* Base address used for calculating memory layout
+ * counted from Dbus backwards and back to the Ibus
+ */
+#define BOOTLOADER_USER_DRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
+
 /* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_DRAM_END - BOOTLOADER_STACK_OVERHEAD + \
-					IRAM_DRAM_OFFSET - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_IRAM_LOADER_SEG_START                                                           \
+	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
 #define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_END   (BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET)
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_DRAM_SEG_END - BOOTLOADER_DRAM_SEG_LEN)
+
+/* The "USER_IRAM_END" represents the end of staticaly allocated memory.
+ * This address is where 2nd stage bootloader starts allocating memory,
+ * and it should not be overlapped by the user image.
+ * When there is no 2nd stage bootloader the bootstrapping is done
+ * by the so-called SIMPLE_BOOT.
+ */
+#ifdef CONFIG_ESP_SIMPLE_BOOT
+#define USER_DRAM_END BOOTLOADER_USER_DRAM_END
+#else
+#define USER_DRAM_END (BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET)
+#endif
+#define USER_IRAM_END (USER_DRAM_END + IRAM_DRAM_OFFSET)
+
+/* AMP */
+#if defined(CONFIG_SOC_ENABLE_APPCPU) || defined(CONFIG_SOC_ESP32S3_APPCPU)
+#define APPCPU_IRAM_SIZE CONFIG_ESP32S3_APPCPU_IRAM_SIZE
+#define APPCPU_DRAM_SIZE CONFIG_ESP32S3_APPCPU_DRAM_SIZE
+#define AMP_COMM_SIZE    (0x4000 + 0x400)
+#else
+#define APPCPU_IRAM_SIZE 0
+#define APPCPU_DRAM_SIZE 0
+#define AMP_COMM_SIZE    0
+#endif
+
+#define APPCPU_SRAM_SIZE       (APPCPU_IRAM_SIZE + APPCPU_DRAM_SIZE)
+#define APPCPU_SRAM_TOTAL_SIZE (APPCPU_SRAM_SIZE + AMP_COMM_SIZE)
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE
@@ -74,12 +103,3 @@
 #define IROM_SEG_LEN       FLASH_SIZE
 #define DROM_SEG_ORG       0x3c000000
 #define DROM_SEG_LEN       FLASH_SIZE
-
-/* AMP */
-#ifdef CONFIG_SOC_ENABLE_APPCPU
-#define APPCPU_IRAM_SIZE  CONFIG_ESP32S3_APPCPU_IRAM
-#define APPCPU_DRAM_SIZE  CONFIG_ESP32S3_APPCPU_DRAM
-#else
-#define APPCPU_IRAM_SIZE  0
-#define APPCPU_DRAM_SIZE  0
-#endif

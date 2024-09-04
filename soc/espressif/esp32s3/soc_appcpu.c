@@ -33,6 +33,11 @@
 #include <esp_app_format.h>
 #include <esp_clk_internal.h>
 
+#define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
+
+void __appcpu_start(void);
+static HDR_ATTR void (*_entry_point)(void) = &__appcpu_start;
+
 extern void z_prep_c(void);
 
 static void core_intr_matrix_clear(void)
@@ -44,7 +49,7 @@ static void core_intr_matrix_clear(void)
 	}
 }
 
-void IRAM_ATTR __app_cpu_start(void)
+void IRAM_ATTR __appcpu_start(void)
 {
 	extern uint32_t _init_start;
 
