@@ -16,7 +16,7 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
   ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
   ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
-  ${ZEPHYR_BASE}/subsys/net/buf_simple.c
+  ${ZEPHYR_BASE}/lib/net_buf/buf_simple.c
   bap_unicast_client.c
   cap_initiator.c
   csip.c
