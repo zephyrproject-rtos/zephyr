@@ -91,14 +91,39 @@
 			reg = <0x3fc88000 0x77FFF>;
 		};
 
-		ipmmem0: memory@3fcbd000 {
+		ipmmem0: memory@3fcb2000 {
 			compatible = "mmio-sram";
-			reg = <0x3fcbd000 0x400>;
+			reg = <0x3fcb2000 0x400>;
 		};
 
-		shm0: memory@3fcbd400 {
+		shm0: memory@3fcb2400 {
 			compatible = "mmio-sram";
-			reg = <0x3fcbd400 0x4000>;
+			reg = <0x3fcb2400 0x3c00>;
+		};
+
+		ipm0: ipm@3fcb6000 {
+			compatible = "espressif,esp32-ipm";
+			reg = <0x3fcb6000 0x8>;
+			status = "disabled";
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
+			interrupts =
+				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+		};
+
+		mbox0: mbox@3fcb6008 {
+			compatible = "espressif,mbox-esp32";
+			reg = <0x3fcb6008 0x8>;
+			status = "disabled";
+			shared-memory = <&ipmmem0>;
+			shared-memory-size = <0x400>;
+			interrupts =
+				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			#mbox-cells = <1>;
 		};
 
 		intc: interrupt-controller@600c2000 {
@@ -157,31 +182,6 @@
 			/* PSRAM size is specified in SOC/SIP dtsi */
 			reg = <0x3c000000 DT_SIZE_M(2)>;
 			status = "disabled";
-		};
-
-		ipm0: ipm@3fcc1400 {
-			compatible = "espressif,esp32-ipm";
-			reg = <0x3fcc1400 0x8>;
-			status = "disabled";
-			shared-memory = <&ipmmem0>;
-			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-		};
-
-		mbox0: mbox@3fcc1408 {
-			compatible = "espressif,mbox-esp32";
-			reg = <0x3fcc1408 0x8>;
-			status = "disabled";
-			shared-memory = <&ipmmem0>;
-			shared-memory-size = <0x400>;
-			interrupts =
-				<FROM_CPU_INTR0_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				<FROM_CPU_INTR1_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-			#mbox-cells = <1>;
 		};
 
 		uart0: uart@60000000 {
