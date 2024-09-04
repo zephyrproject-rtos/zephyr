@@ -818,6 +818,9 @@ __subsystem struct gpio_driver_api {
 	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
 				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
 #endif /* CONFIG_GPIO_GET_DIRECTION */
+#ifdef CONFIG_GPIO_GET_WAKEUP_SOURCE
+	int (*get_wakeup_source)(const struct device *dev, uint32_t *wakeup_source);
+#endif /* CONFIG_GPIO_GET_WAKEUP_SOURCE */
 };
 
 /**
@@ -1068,6 +1071,33 @@ static inline int z_impl_gpio_port_get_direction(const struct device *port, gpio
 	return api->port_get_direction(port, map, inputs, outputs);
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
+
+/**
+ * @brief Get wakeup source.
+ *
+ * Retrieve the wakeup source if occurred via GPIO.
+ *
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param wakeup_source Pointer to a variable where wakeup source will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS if the underlying driver does not support this call.
+ */
+__syscall int gpio_get_wakeup_source(const struct device *dev, uint32_t *wakeup_source);
+
+#ifdef CONFIG_GPIO_GET_WAKEUP_SOURCE
+static inline int z_impl_gpio_get_wakeup_source(const struct device *dev, uint32_t *wakeup_source)
+{
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)dev->api;
+
+	if (api->get_wakeup_source == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_wakeup_source(dev, wakeup_source);
+}
+#endif /* CONFIG_GPIO_GET_WAKEUP_SOURCE */
 
 /**
  * @brief Check if @p pin is configured for input
