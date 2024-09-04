@@ -29,7 +29,7 @@ check_set_linker_property(TARGET linker PROPERTY orphan_error
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
 check_set_linker_property(TARGET linker PROPERTY no_relax ${LINKERFLAGPREFIX},--no-relax)
-)
+
 check_set_linker_property(TARGET linker PROPERTY sort_alignment
                           ${LINKERFLAGPREFIX},--sort-common=descending
                           ${LINKERFLAGPREFIX},--sort-section=alignment
