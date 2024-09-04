@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/usb/usbd.h>
 #include <usbd_uac2_macros.h>
 
 static const uint8_t reference_ac_interface_descriptor[] = {
@@ -162,12 +163,16 @@ VALIDATE_INSTANCE(DT_NODELABEL(uac2_headset))
 
 UAC2_DESCRIPTOR_ARRAYS(DT_NODELABEL(uac2_headset))
 
-const static struct usb_desc_header *generated_uac2_descriptor_set[] =
+const static struct usb_desc_header *uac2_fs_descriptor_set[] =
 	UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_NODELABEL(uac2_headset));
 
-ZTEST(uac2_desc, test_uac2_descriptors)
+const static struct usb_desc_header *uac2_hs_descriptor_set[] =
+	UAC2_HS_DESCRIPTOR_PTRS_ARRAY(DT_NODELABEL(uac2_headset));
+
+static void test_uac2_descriptors(const struct usb_desc_header **descriptors,
+				  enum usbd_speed speed)
 {
-	const struct usb_desc_header **ptr = generated_uac2_descriptor_set;
+	const struct usb_desc_header **ptr = descriptors;
 
 	const struct usb_association_descriptor *iad;
 	const struct usb_if_descriptor *iface;
@@ -175,6 +180,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* Headset has 3 interfaces: 1 AudioControl and 2 AudioStreaming */
 	iad = (const struct usb_association_descriptor *)*ptr;
+	zassert_not_null(iad);
 	zassert_equal(iad->bLength, sizeof(struct usb_association_descriptor));
 	zassert_equal(iad->bDescriptorType, USB_DESC_INTERFACE_ASSOC);
 	zassert_equal(iad->bFirstInterface, FIRST_INTERFACE_NUMBER);
@@ -187,6 +193,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* AudioControl interface goes first */
 	iface = (const struct usb_if_descriptor *)*ptr;
+	zassert_not_null(iface);
 	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
 	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER);
@@ -220,6 +227,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* AudioStreaming OUT interface Alt 0 without endpoints */
 	iface = (const struct usb_if_descriptor *)*ptr;
+	zassert_not_null(iface);
 	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
 	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 1);
@@ -233,6 +241,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* AudioStreaming OUT interface Alt 1 with endpoint */
 	iface = (const struct usb_if_descriptor *)*ptr;
+	zassert_not_null(iface);
 	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
 	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 1);
@@ -254,15 +263,21 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* Isochronous OUT endpoint descriptor */
 	ep = (const struct usb_ep_descriptor *)*ptr;
+	zassert_not_null(ep);
 	zassert_equal(ep->bLength, sizeof(struct usb_ep_descriptor));
 	zassert_equal(ep->bDescriptorType, USB_DESC_ENDPOINT);
 	zassert_equal(ep->bEndpointAddress, FIRST_OUT_EP_ADDR);
-	zassert_equal(ptr - generated_uac2_descriptor_set,
+	zassert_equal(ptr - descriptors,
 		UAC2_DESCRIPTOR_AS_DATA_EP_INDEX(DT_NODELABEL(as_iso_out)));
 	zassert_equal(ep->Attributes.transfer, USB_EP_TYPE_ISO);
 	zassert_equal(ep->Attributes.synch, 1 /* Asynchronous */);
 	zassert_equal(ep->Attributes.usage, 0 /* Data Endpoint */);
-	zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 196);
+	if (speed == USBD_SPEED_FS) {
+		zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 196);
+	} else {
+		zassert_equal(speed, USBD_SPEED_HS);
+		zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 28);
+	}
 	zassert_equal(ep->bInterval, 1);
 	ptr++;
 
@@ -273,6 +288,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* AudioStreaming IN interface Alt 0 without endpoints */
 	iface = (const struct usb_if_descriptor *)*ptr;
+	zassert_not_null(iface);
 	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
 	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 2);
@@ -286,6 +302,7 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* AudioStreaming IN interface Alt 1 with endpoint */
 	iface = (const struct usb_if_descriptor *)*ptr;
+	zassert_not_null(iface);
 	zassert_equal(iface->bLength, sizeof(struct usb_if_descriptor));
 	zassert_equal(iface->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(iface->bInterfaceNumber, FIRST_INTERFACE_NUMBER + 2);
@@ -307,15 +324,21 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* Isochronous IN endpoint descriptor */
 	ep = (const struct usb_ep_descriptor *)*ptr;
+	zassert_not_null(ep);
 	zassert_equal(ep->bLength, sizeof(struct usb_ep_descriptor));
 	zassert_equal(ep->bDescriptorType, USB_DESC_ENDPOINT);
 	zassert_equal(ep->bEndpointAddress, FIRST_IN_EP_ADDR);
-	zassert_equal(ptr - generated_uac2_descriptor_set,
+	zassert_equal(ptr - descriptors,
 		UAC2_DESCRIPTOR_AS_DATA_EP_INDEX(DT_NODELABEL(as_iso_in)));
 	zassert_equal(ep->Attributes.transfer, USB_EP_TYPE_ISO);
 	zassert_equal(ep->Attributes.synch, 1 /* Asynchronous */);
 	zassert_equal(ep->Attributes.usage, 2 /* Implicit Feedback Data */);
-	zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 98);
+	if (speed == USBD_SPEED_FS) {
+		zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 98);
+	} else {
+		zassert_equal(speed, USBD_SPEED_HS);
+		zassert_equal(sys_le16_to_cpu(ep->wMaxPacketSize), 14);
+	}
 	zassert_equal(ep->bInterval, 1);
 	ptr++;
 
@@ -326,6 +349,47 @@ ZTEST(uac2_desc, test_uac2_descriptors)
 
 	/* Confirm there is no trailing data */
 	zassert_equal(*ptr, NULL);
+}
+
+ZTEST(uac2_desc, test_fs_uac2_descriptors)
+{
+	test_uac2_descriptors(uac2_fs_descriptor_set, USBD_SPEED_FS);
+}
+
+ZTEST(uac2_desc, test_hs_uac2_descriptors)
+{
+	test_uac2_descriptors(uac2_hs_descriptor_set, USBD_SPEED_HS);
+}
+
+ZTEST(uac2_desc, test_fs_hs_iface_and_ep_descriptors_not_shared)
+{
+	const struct usb_desc_header **fs_ptr = uac2_fs_descriptor_set;
+	const struct usb_desc_header **hs_ptr = uac2_hs_descriptor_set;
+
+	while (*fs_ptr && *hs_ptr) {
+		const struct usb_desc_header *fs = *fs_ptr;
+		const struct usb_desc_header *hs = *hs_ptr;
+
+		zassert_equal(fs->bDescriptorType, hs->bDescriptorType);
+
+		/* IAD, Interface and Endpoint descriptors must not be shared
+		 * because there can be different number of interfaces between
+		 * the speeds and thus descriptor fixup can assign different
+		 * interface numbers and/or endpoint numbers at runtime.
+		 */
+		if (fs->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
+			zassert_not_equal(fs, hs, "Shared IAD descriptor");
+		} else if (fs->bDescriptorType == USB_DESC_INTERFACE) {
+			zassert_not_equal(fs, hs, "Shared interface descriptor");
+		} else if (fs->bDescriptorType == USB_DESC_ENDPOINT) {
+			zassert_not_equal(fs, hs, "Shared endpoint descriptor");
+		} else {
+			zassert_equal(fs, hs);
+		}
+
+		fs_ptr++;
+		hs_ptr++;
+	}
 }
 
 ZTEST_SUITE(uac2_desc, NULL, NULL, NULL, NULL, NULL);
