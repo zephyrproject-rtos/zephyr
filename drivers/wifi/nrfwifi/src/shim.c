@@ -116,7 +116,7 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 
 static void *zep_shim_spinlock_alloc(void)
 {
-	struct k_sem *lock = NULL;
+	struct k_mutex *lock = NULL;
 
 	lock = k_malloc(sizeof(*lock));
 
@@ -134,27 +134,29 @@ static void zep_shim_spinlock_free(void *lock)
 
 static void zep_shim_spinlock_init(void *lock)
 {
-	k_sem_init(lock, 1, 1);
+	k_mutex_init(lock);
 }
 
 static void zep_shim_spinlock_take(void *lock)
 {
-	k_sem_take(lock, K_FOREVER);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_rel(void *lock)
 {
-	k_sem_give(lock);
+	k_mutex_unlock(lock);
 }
 
 static void zep_shim_spinlock_irq_take(void *lock, unsigned long *flags)
 {
-	k_sem_take(lock, K_FOREVER);
+	ARG_UNUSED(flags);
+	k_mutex_lock(lock, K_FOREVER);
 }
 
 static void zep_shim_spinlock_irq_rel(void *lock, unsigned long *flags)
 {
-	k_sem_give(lock);
+	ARG_UNUSED(flags);
+	k_mutex_unlock(lock);
 }
 
 static int zep_shim_pr_dbg(const char *fmt, va_list args)
