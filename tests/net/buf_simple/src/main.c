@@ -7,7 +7,7 @@
 
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 DEFINE_FFF_GLOBALS;
 

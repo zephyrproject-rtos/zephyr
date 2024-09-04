@@ -15,7 +15,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_CONTEXT_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/drivers/gpio.h>

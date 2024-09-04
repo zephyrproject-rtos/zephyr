@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_buf_simple, CONFIG_NET_BUF_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #if defined(CONFIG_NET_BUF_SIMPLE_LOG)
 #define NET_BUF_SIMPLE_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \

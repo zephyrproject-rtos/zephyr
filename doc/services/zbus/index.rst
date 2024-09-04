@@ -397,7 +397,7 @@ rate by following design tips:
 * Consider using message queues or pipes for intensive byte transfers.
 
 .. warning::
-   ZBus uses :zephyr_file:`include/zephyr/net/buf.h` (network buffers) to exchange data with message
+   ZBus uses :zephyr_file:`include/zephyr/net_buf.h` (network buffers) to exchange data with message
    subscribers. Thus, choose carefully the configurations
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
    :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution

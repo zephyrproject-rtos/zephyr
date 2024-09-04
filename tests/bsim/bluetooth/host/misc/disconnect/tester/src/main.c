@@ -8,7 +8,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
