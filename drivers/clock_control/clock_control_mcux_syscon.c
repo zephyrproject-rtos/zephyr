@@ -45,6 +45,23 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if defined(CONFIG_PINCTRL_NXP_KINETIS)
 	switch ((uint32_t)sub_system) {
+#if defined(CONFIG_SOC_SERIES_MCXA)
+	case MCUX_PORT0_CLK:
+		CLOCK_EnableClock(kCLOCK_GatePORT0);
+		break;
+	case MCUX_PORT1_CLK:
+		CLOCK_EnableClock(kCLOCK_GatePORT1);
+		break;
+	case MCUX_PORT2_CLK:
+		CLOCK_EnableClock(kCLOCK_GatePORT2);
+		break;
+	case MCUX_PORT3_CLK:
+		CLOCK_EnableClock(kCLOCK_GatePORT3);
+		break;
+	case MCUX_PORT4_CLK:
+		CLOCK_EnableClock(kCLOCK_GatePORT4);
+		break;
+#else
 	case MCUX_PORT0_CLK:
 		CLOCK_EnableClock(kCLOCK_Port0);
 		break;
@@ -60,6 +77,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	case MCUX_PORT4_CLK:
 		CLOCK_EnableClock(kCLOCK_Port4);
 		break;
+#endif /* defined(CONFIG_SOC_SERIES_MCXA) */
 	default:
 		break;
 	}
@@ -360,6 +378,24 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetMclkClkFreq();
 		break;
 #endif /* defined(CONFIG_I2S_MCUX_FLEXCOMM) */
+
+#if (defined(CONFIG_UART_MCUX_LPUART) && CONFIG_SOC_SERIES_MCXA)
+	case MCUX_LPUART0_CLK:
+		*rate = CLOCK_GetLpuartClkFreq(0);
+		break;
+	case MCUX_LPUART1_CLK:
+		*rate = CLOCK_GetLpuartClkFreq(1);
+		break;
+	case MCUX_LPUART2_CLK:
+		*rate = CLOCK_GetLpuartClkFreq(2);
+		break;
+	case MCUX_LPUART3_CLK:
+		*rate = CLOCK_GetLpuartClkFreq(3);
+		break;
+	case MCUX_LPUART4_CLK:
+		*rate = CLOCK_GetLpuartClkFreq(4);
+		break;
+#endif /* defined(CONFIG_UART_MCUX_LPUART) */
 	}
 
 	return 0;
