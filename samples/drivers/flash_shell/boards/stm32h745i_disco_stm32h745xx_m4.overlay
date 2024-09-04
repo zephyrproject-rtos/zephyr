@@ -1,9 +1,0 @@
-/ {
-	chosen {
-		zephyr,flash-controller = &flash;
-	};
-};
-
-&flash1 {
-	bank2-flash-size = <1024>;
-};
