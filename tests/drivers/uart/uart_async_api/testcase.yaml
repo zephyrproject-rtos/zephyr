@@ -58,9 +58,17 @@ tests:
     integration_platforms:
       - qemu_cortex_m0
   drivers.uart.async_api.lpuart:
-    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and not CONFIG_CPU_HAS_DCACHE
     harness: ztest
     depends_on: dma
+  drivers.uart.async_api.lpuart.rt_nocache:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_UART_MCUX_LPUART and CONFIG_CPU_HAS_DCACHE
+    harness: ztest
+    depends_on: dma
+    extra_configs:
+      - CONFIG_DCACHE=y
+      - CONFIG_NOCACHE_MEMORY=y
+      - CONFIG_USERSPACE=n
   drivers.uart.async_api.sam0:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and CONFIG_SOC_FAMILY_ATMEL_SAM0
     platform_allow:
