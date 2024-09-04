@@ -79,6 +79,64 @@ static const struct fs_file_system_t *fs_type_get(int type)
 	return (ep != NULL) ? ep->fstp : NULL;
 }
 
+/*
+ * Use count related functions.
+ *
+ * Used when CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT is enabled
+ */
+static void fs_mnt_use_count_clear(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p != NULL) {
+		mnt_p->use_count = 0;
+	}
+#endif
+}
+
+static void fs_mnt_point_use_count_increment(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p != NULL) {
+		mnt_p->use_count++;
+	}
+#endif
+}
+
+static void fs_mnt_point_use_count_decrement(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p != NULL) {
+		if (mnt_p->use_count > 0) {
+			/* Decrease use counter when we have >0 users */
+			mnt_p->use_count--;
+		} else {
+			LOG_ERR("Failed to decrement use count, already 0. Check usage.");
+		}
+	}
+#endif
+}
+
+static bool fs_mnt_point_is_busy(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p != NULL && mnt_p->use_count > 0) {
+		return true;
+	}
+#endif
+	return false;
+}
+
+static void fs_mnt_point_reset(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p != NULL) {
+		/* Update mount point data */
+		mp->mountp_len = 0;
+		mp->fs = NULL;
+	}
+#endif
+}
+
 static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 			    const char *name, size_t *match_len)
 {
@@ -115,6 +173,10 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 			longest_match = len;
 		}
 	}
+
+	/* Increase the use counter before we hand back the mount point */
+	fs_mnt_point_use_count_increment(mnt_p);
+
 	k_mutex_unlock(&mutex);
 
 	if (mnt_p == NULL) {
@@ -122,11 +184,25 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
+
 	if (match_len) {
 		*match_len = mnt_p->mountp_len;
 	}
 
 	return 0;
+}
+
+static void fs_mnt_point_release(struct fs_mount_t *mnt_p)
+{
+#ifdef CONFIG_FILE_SYSTEM_MOUNT_USE_COUNT
+	if (mnt_p == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+	fs_mnt_point_use_count_decrement(mnt_p);
+	k_mutex_unlock(&mutex);
+#endif
 }
 
 /* File operations */
@@ -154,22 +230,26 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 
 	if (((mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0) &&
 	    (flags & FS_O_CREATE || flags & FS_O_WRITE)) {
-		return -EROFS;
+		rc = -EROFS;
+		goto release_mp;
 	}
 
 	CHECKIF(mp->fs->open == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	if ((flags & FS_O_TRUNC) != 0) {
 		if ((flags & FS_O_WRITE) == 0) {
 			/** Truncate not allowed when file is not opened for write */
 			LOG_ERR("file should be opened for write to truncate!!");
-			return -EACCES;
+			rc = -EACCES;
+			goto release_mp;
 		}
 		CHECKIF(mp->fs->truncate == NULL) {
 			LOG_ERR("file truncation not supported!!");
-			return -ENOTSUP;
+			rc = -ENOTSUP;
+			goto release_mp;
 		}
 		truncate_file = true;
 	}
@@ -179,7 +259,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 	if (rc < 0) {
 		LOG_ERR("file open error (%d)", rc);
 		zfp->mp = NULL;
-		return rc;
+		goto release_mp;
 	}
 
 	/* Copy flags to zfp for use with other fs_ API calls */
@@ -191,9 +271,14 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		if (rc < 0) {
 			LOG_ERR("file truncation failed (%d)", rc);
 			zfp->mp = NULL;
-			return rc;
+			goto release_mp;
 		}
 	}
+
+	return rc;
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -205,6 +290,8 @@ int fs_close(struct fs_file_t *zfp)
 	if (zfp->mp == NULL) {
 		return 0;
 	}
+
+	fs_mnt_point_release((struct fs_mount_t *)zfp->mp);
 
 	CHECKIF(zfp->mp->fs->close == NULL) {
 		return -ENOTSUP;
@@ -377,7 +464,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 	}
 
 	CHECKIF(mp->fs->opendir == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	zdp->mp = mp;
@@ -386,7 +474,13 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		zdp->mp = NULL;
 		zdp->dirp = NULL;
 		LOG_ERR("directory open error (%d)", rc);
+		goto release_mp;
 	}
+
+	return rc;
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -398,7 +492,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		int rc = -EINVAL;
 
 		CHECKIF(zdp->mp->fs->readdir == NULL) {
-			return  -ENOTSUP;
+			return -ENOTSUP;
 		}
 
 		/* Loop until error or not special directory */
@@ -482,6 +576,8 @@ int fs_closedir(struct fs_dir_t *zdp)
 		return 0;
 	}
 
+	fs_mnt_point_release((struct fs_mount_t *)zdp->mp);
+
 	CHECKIF(zdp->mp->fs->closedir == NULL) {
 		return -ENOTSUP;
 	}
@@ -516,17 +612,22 @@ int fs_mkdir(const char *abs_path)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto release_mp;
 	}
 
 	CHECKIF(mp->fs->mkdir == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	rc = mp->fs->mkdir(mp, abs_path);
 	if (rc < 0) {
 		LOG_ERR("failed to create directory (%d)", rc);
 	}
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -549,17 +650,22 @@ int fs_unlink(const char *abs_path)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto release_mp;
 	}
 
 	CHECKIF(mp->fs->unlink == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	rc = mp->fs->unlink(mp, abs_path);
 	if (rc < 0) {
 		LOG_ERR("failed to unlink path (%d)", rc);
 	}
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -583,23 +689,29 @@ int fs_rename(const char *from, const char *to)
 	}
 
 	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
-		return -EROFS;
+		rc = -EROFS;
+		goto release_mp;
 	}
 
 	/* Make sure both files are mounted on the same path */
 	if (strncmp(from, to, match_len) != 0) {
 		LOG_ERR("mount point not same!!");
-		return -EINVAL;
+		rc = -EINVAL;
+		goto release_mp;
 	}
 
 	CHECKIF(mp->fs->rename == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	rc = mp->fs->rename(mp, from, to);
 	if (rc < 0) {
 		LOG_ERR("failed to rename file or dir (%d)", rc);
 	}
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -622,7 +734,8 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	}
 
 	CHECKIF(mp->fs->stat == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	rc = mp->fs->stat(mp, abs_path, entry);
@@ -631,6 +744,10 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	} else if (rc < 0) {
 		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
+
+release_mp:
+	fs_mnt_point_release(mp);
+
 	return rc;
 }
 
@@ -652,13 +769,17 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	}
 
 	CHECKIF(mp->fs->statvfs == NULL) {
-		return -ENOTSUP;
+		rc = -ENOTSUP;
+		goto release_mp;
 	}
 
 	rc = mp->fs->statvfs(mp, abs_path, stat);
 	if (rc < 0) {
 		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
+
+release_mp:
+	fs_mnt_point_release(mp);
 
 	return rc;
 }
@@ -743,6 +864,7 @@ int fs_mount(struct fs_mount_t *mp)
 	mp->mountp_len = len;
 	mp->fs = fs;
 
+	fs_mnt_use_count_clear(mp);
 	sys_dlist_append(&fs_mnt_list, &mp->node);
 	LOG_DBG("fs mounted at %s", mp->mnt_point);
 
@@ -803,6 +925,12 @@ int fs_unmount(struct fs_mount_t *mp)
 		goto unmount_err;
 	}
 
+	if (fs_mnt_point_is_busy(mp)) {
+		LOG_ERR("fs unmount failed, mount point busy");
+		rc = -EBUSY;
+		goto unmount_err;
+	}
+
 	CHECKIF(mp->fs->unmount == NULL) {
 		LOG_ERR("fs unmount not supported!!");
 		rc = -ENOTSUP;
@@ -821,6 +949,9 @@ int fs_unmount(struct fs_mount_t *mp)
 	/* remove mount node from the list */
 	sys_dlist_remove(&mp->node);
 	LOG_DBG("fs unmounted from %s", mp->mnt_point);
+
+	/* As there are no more users, reset the mount point data */
+	fs_mnt_point_reset(mp);
 
 unmount_err:
 	k_mutex_unlock(&mutex);
