@@ -317,12 +317,14 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 /** @brief Bitmask that defines DPPI channels that are reserved for use outside of the nrfx library. */
 #define NRFX_DPPI_CHANNELS_USED   (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
 				   NRFX_PPI_CHANNELS_USED_BY_802154_DRV | \
-				   NRFX_PPI_CHANNELS_USED_BY_MPSL)
+				   NRFX_PPI_CHANNELS_USED_BY_MPSL |       \
+				   NRFX_PPI_CHANNELS_USED_BY_NRFE)
 
 /** @brief Bitmask that defines DPPI groups that are reserved for use outside of the nrfx library. */
 #define NRFX_DPPI_GROUPS_USED     (NRFX_PPI_GROUPS_USED_BY_BT_CTLR |    \
 				   NRFX_PPI_GROUPS_USED_BY_802154_DRV | \
-				   NRFX_PPI_GROUPS_USED_BY_MPSL)
+				   NRFX_PPI_GROUPS_USED_BY_MPSL |       \
+				   NRFX_PPI_GROUPS_USED_BY_NRFE)
 
 /** @brief Bitmask that defines PPI channels that are reserved for use outside of the nrfx library. */
 #define NRFX_PPI_CHANNELS_USED    (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR |    \
@@ -385,6 +387,15 @@ void nrfx_busy_wait(uint32_t usec_to_wait);
 #else
 #define NRFX_PPI_CHANNELS_USED_BY_MPSL   0
 #define NRFX_PPI_GROUPS_USED_BY_MPSL     0
+#endif
+
+#if defined(CONFIG_NRFE)
+#include <nrfe_config.h>
+#define NRFX_PPI_CHANNELS_USED_BY_NRFE   NRFE_RESERVED_PPI_CHANNELS
+#define NRFX_PPI_GROUPS_USED_BY_NRFE     0
+#else
+#define NRFX_PPI_CHANNELS_USED_BY_NRFE   0
+#define NRFX_PPI_GROUPS_USED_BY_NRFE     0
 #endif
 
 #if defined(NRF_802154_VERIFY_PERIPHS_ALLOC_AGAINST_MPSL)
