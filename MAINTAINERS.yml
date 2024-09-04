@@ -2835,7 +2835,7 @@ Networking:
   tests:
     - net.socket
 
-"Networking: Buffers":
+"Networking Buffers":
   status: maintained
   maintainers:
     - jhedberg
@@ -2848,11 +2848,11 @@ Networking:
     - include/zephyr/net/buf.h
     - include/zephyr/net_buf.h
     - lib/net_buf/
-    - tests/net/buf/
+    - tests/lib/net_buf/
   labels:
     - "area: Networking Buffers"
   tests:
-    - net.buf
+    - libraries.net_buf
 
 "Networking: Connection Manager":
   status: maintained

@@ -1,6 +1,0 @@
-tests:
-  net.buf:
-    min_ram: 16
-    tags:
-      - net
-      - buf
