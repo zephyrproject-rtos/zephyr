@@ -19,18 +19,11 @@ If present, the Bridge Configuration Server model must be instantiated on the pr
 
 The Bridge Configuration Server model provides access to the following three states:
 
-* **Subnet Bridge state**: This state enables or disables the Subnet Bridge feature on a node. When
-  the Subnet Bridge feature is enabled on a node, the node can transfer received messages from one
-  subnet to another as specified by the Bridging Table state.
+* Subnet Bridge
+* Bridging Table
+* Bridging Table Size
 
-* **Bridging Table state**: This state holds the bridging table. This table is used to check if
-  incoming messages can be bridged from one subnet to another. The maximum number of rows supported
-  by the Bridging Table state can be configured using the
-  :kconfig:option:`CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX` configuration option.
-
-* **Bridging Table Size state**: This state reports the maximum number of rows supported by the
-  Bridging Table state. This is a read-only state.
-
+For more information about the states, see :ref:`bluetooth_mesh_brg_cfg_states`.
 
 API reference
 *************
