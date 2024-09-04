@@ -23,7 +23,7 @@ if(CONFIG_ARM)
   endif()
 endif()
 
-if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM)
     list(APPEND ext_names pre_located)
 endif()
 
@@ -58,7 +58,7 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
   )
 endif()
 
-if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+if (CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
   get_target_property(pre_located_file pre_located_ext pkg_input)
