@@ -121,17 +121,12 @@ bool z_x86_check_guard_page(uintptr_t addr)
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
 #if defined(CONFIG_ARCH_STACKWALK)
-typedef bool (*x86_stacktrace_cb)(void *cookie, unsigned long addr, unsigned long arg);
-
 struct stack_frame {
 	uintptr_t next;
 	uintptr_t ret_addr;
-#ifndef CONFIG_X86_64
-	uintptr_t args;
-#endif
 };
 
-__pinned_func static void walk_stackframe(x86_stacktrace_cb cb, void *cookie,
+__pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 					  const struct arch_esf *esf, int max_frames)
 {
 	uintptr_t base_ptr;
@@ -181,8 +176,7 @@ __pinned_func static void walk_stackframe(x86_stacktrace_cb cb, void *cookie,
 			break;
 		}
 
-		if (!cb(cookie, frame->ret_addr,
-			COND_CODE_1(CONFIG_X86_64, (0), (frame->args)))) {
+		if (!cb(cookie, frame->ret_addr)) {
 			break;
 		}
 
@@ -195,27 +189,26 @@ void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 {
 	ARG_UNUSED(thread);
 
-	walk_stackframe((x86_stacktrace_cb)callback_fn, cookie, esf,
+	walk_stackframe(callback_fn, cookie, esf,
 			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
 }
 #endif /* CONFIG_ARCH_STACKWALK */
 
 #if defined(CONFIG_EXCEPTION_STACK_TRACE)
-static bool print_trace_address(void *arg, unsigned long addr, unsigned long args)
+static bool print_trace_address(void *arg, unsigned long addr)
 {
 	int *i = arg;
 
 #ifdef CONFIG_X86_64
 	LOG_ERR("     %d: 0x%016lx", (*i)++, addr);
 #else
-	LOG_ERR("     %d: 0x%08lx (0x%lx)", (*i)++, addr, args);
+	LOG_ERR("     %d: 0x%08lx", (*i)++, addr);
 #endif
 
 	return true;
 }
 
-__pinned_func
-static void unwind_stack(const struct arch_esf *esf)
+static ALWAYS_INLINE void unwind_stack(const struct arch_esf *esf)
 {
 	int i = 0;
 
