@@ -37,6 +37,12 @@ extern "C" {
  * @{
  */
 
+/* 1 if USB device stack is compiled with High-Speed support */
+#define USBD_SUPPORTS_HIGH_SPEED IS_EQ(CONFIG_USBD_MAX_SPEED, 1)
+
+/* Maximum bulk max packet size the stack supports */
+#define USBD_MAX_BULK_MPS COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED, (512), (64))
+
 /*
  * The USB Unicode bString is encoded in UTF16LE, which means it takes up
  * twice the amount of bytes than the same string encoded in ASCII7.

@@ -68,13 +68,13 @@ static K_FIFO_DEFINE(bt_hci_tx_queue);
 
 /*
  * Transfers through three endpoints proceed in a synchronous manner,
- * with maximum packet size of high speed bulk endpoint.
+ * with maximum packet size of max supported speed bulk endpoint.
  *
  * REVISE: global (bulk, interrupt, iso) specific pools would be more
  * RAM usage efficient.
  */
 UDC_BUF_POOL_DEFINE(bt_hci_ep_pool,
-		    3, 512,
+		    3, USBD_MAX_BULK_MPS,
 		    sizeof(struct udc_buf_info), NULL);
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -138,7 +138,8 @@ static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
 	}
 
@@ -151,7 +152,8 @@ static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_out_ep.bEndpointAddress;
 	}
 
@@ -449,7 +451,7 @@ static void *bt_hci_get_desc(struct usbd_class_data *const c_data,
 {
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 
-	if (speed == USBD_SPEED_HS) {
+	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
 		return data->hs_desc;
 	}
 
