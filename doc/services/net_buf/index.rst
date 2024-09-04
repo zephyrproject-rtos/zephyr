@@ -1,7 +1,7 @@
 .. _net_buf_interface:
 
-Network Buffer
-##############
+Network Buffers
+###############
 
 .. contents::
     :local:
