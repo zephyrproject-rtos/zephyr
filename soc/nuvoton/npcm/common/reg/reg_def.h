@@ -560,23 +560,23 @@ struct twd_reg {
  */
 struct spip_reg {
 	/* 0x00: SPI Control Register */
-	volatile uint32_t CTL;
+	volatile uint32_t SPIP_CTL;
 	/* 0x04: SPI Clock Divider Register */
-	volatile uint32_t CLKDIV;
+	volatile uint32_t SPIP_CLKDIV;
 	/* 0x08: SPI Slave Select Control Register */
-	volatile uint32_t SSCTL;
+	volatile uint32_t SPIP_SSCTL;
 	/* 0x0C: SPI PDMA Control Register */
-	volatile uint32_t PDMACTL;
+	volatile uint32_t SPIP_PDMACTL;
 	/* 0x10: SPI FIFO Control Register */
-	volatile uint32_t FIFOCTL;
+	volatile uint32_t SPIP_FIFOCTL;
 	/* 0x14: SPI Status Register */
-	volatile uint32_t STATUS;
+	volatile uint32_t SPIP_STATUS;
 	volatile uint32_t RESERVE0[2];
 	/* 0x20: SPI Data Transmit Register */
-	volatile uint32_t TX;
+	volatile uint32_t SPIP_TX;
 	volatile uint32_t RESERVE1[3];
 	/* 0x30: SPI Data Receive Register */
-	volatile uint32_t RX;
+	volatile uint32_t SPIP_RX;
 };
 
 /* SPIP register fields */
@@ -589,15 +589,15 @@ struct spip_reg {
 #define NPCM_CTL_UNITIEN		(17)
 #define NPCM_CTL_TWOBIT			(16)
 #define NPCM_CTL_LSB			(13)
-#define NPCM_CTL_DWIDTH			(8)
-#define NPCM_CTL_SUSPITV		(4)
+#define NPCM_CTL_DWIDTH			FIELD(8, 5)
+#define NPCM_CTL_SUSPITV		FIELD(4, 4)
 #define NPCM_CTL_CLKPOL			(3)
 #define NPCM_CTL_TXNEG			(2)
 #define NPCM_CTL_RXNEG			(1)
 #define NPCM_CTL_SPIEN			(0)
 
 /* 0x04: SPI_CLKDIV fields */
-#define NPCM_CLKDIV_DIVIDER		(0)
+#define NPCM_CLKDIV_DIVIDER		FIELD(0, 10)
 
 /* 0x08: SPI_SSCTL fields */
 #define NPCM_SSCTL_SLVTOCNT		(16)

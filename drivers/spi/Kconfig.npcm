@@ -1,0 +1,11 @@
+# Nuvoton NPCM SPI Driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NPCM_SPIP
+	bool "Nuvoton NPCM Enhanced Super I/O (eSIO) SPI driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_SPIP_ENABLED
+	help
+	  Enable the SPI peripherals on NPCM MCU.

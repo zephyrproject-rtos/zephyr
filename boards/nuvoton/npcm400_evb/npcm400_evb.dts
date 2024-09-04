@@ -187,6 +187,12 @@
 	pinctrl-names = "default";
 };
 
+&spip0 {
+	pinctrl-0 = <&pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &qspi_fiu0 {
 	ext_flash: w25q256jv@0 {
 		compatible ="nuvoton,npcm-nor";

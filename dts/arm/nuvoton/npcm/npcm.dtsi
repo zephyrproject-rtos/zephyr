@@ -123,6 +123,13 @@
 			reg = <0x40020000 0x2000>;
 		};
 
+		spip0: spi@40016000 {
+			compatible = "nuvoton,npcm-spip";
+			reg = <0x40016000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		gpio0: gpio@40081000 {
 			compatible = "nuvoton,npcm-gpio";
 			reg = <0x40081000 0x2000>;

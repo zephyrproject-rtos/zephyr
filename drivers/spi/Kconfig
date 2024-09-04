@@ -152,6 +152,8 @@ source "drivers/spi/Kconfig.sedi"
 
 source "drivers/spi/Kconfig.npcx"
 
+source "drivers/spi/Kconfig.npcm"
+
 source "drivers/spi/Kconfig.mchp_mss"
 
 source "drivers/spi/Kconfig.grlib_spimctrl"
