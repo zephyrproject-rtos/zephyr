@@ -6,10 +6,16 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/fs/fs.h>
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#include <zephyr/fs/littlefs.h>
+#endif
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
+#include <zephyr/llext/fs_loader.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/libc-hooks.h>
 #include "syscalls_ext.h"
 #include "threads_kernel_objects_ext.h"
@@ -320,6 +326,57 @@ ZTEST(llext, test_find_section)
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
 		      symbol_ptr, section_ptr, section_ofs);
+}
+#endif
+
+#if defined(CONFIG_FILE_SYSTEM)
+#define LLEXT_FILE "hello_world.llext"
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
+static struct fs_mount_t mp = {
+	.type = FS_LITTLEFS,
+	.fs_data = &storage,
+	.storage_dev = (void *)FIXED_PARTITION_ID(storage_partition),
+	.mnt_point = "/lfs",
+};
+
+ZTEST(llext, test_fs_loader)
+{
+	int res;
+	char path[UINT8_MAX];
+	struct fs_file_t fd;
+
+	/* File system should be mounted before the testcase. If not mount it now. */
+	if (!(mp.flags & FS_MOUNT_FLAG_AUTOMOUNT)) {
+		zassert_ok(fs_mount(&mp), "Filesystem should be mounted");
+	}
+
+	snprintf(path, sizeof(path), "%s/%s", mp.mnt_point, LLEXT_FILE);
+	fs_file_t_init(&fd);
+
+	zassert_ok(fs_open(&fd, path, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE),
+		   "Failed opening file");
+
+	zassert_equal(fs_write(&fd, hello_world_ext, ARRAY_SIZE(hello_world_ext)),
+		      ARRAY_SIZE(hello_world_ext),
+		      "Full content of the buffer holding ext should be written");
+
+	zassert_ok(fs_close(&fd), "Failed closing file");
+
+	struct llext_fs_loader fs_loader = LLEXT_FS_LOADER(path);
+	struct llext_loader *loader = &fs_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+
+	res = llext_load(loader, "hello_world", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	void (*test_entry_fn)() = llext_find_sym(&ext->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+
+	llext_unload(&ext);
+	fs_unmount(&mp);
 }
 #endif
 
