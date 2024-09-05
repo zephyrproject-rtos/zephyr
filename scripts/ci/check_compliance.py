@@ -935,6 +935,7 @@ flagged.
         "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
+        "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BINDESC_", # Used in documentation as a prefix
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.
