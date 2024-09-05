@@ -6,23 +6,35 @@ common:
 tests:
   bluetooth.controller.ctrl_tx_buffer_alloc.test_0_per_conn:
     type: unit
+    extra_args:
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_tx_buffer_alloc.test_1_per_conn:
     type: unit
-    extra_args: CONF_FILE=prj_1.conf
+    extra_args:
+      - CONF_FILE=prj_1.conf
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_tx_buffer_alloc.test_2_per_conn:
     type: unit
-    extra_args: CONF_FILE=prj_2.conf
+    extra_args:
+      - CONF_FILE=prj_2.conf
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_tx_buffer_alloc.test_3_per_conn:
     type: unit
-    extra_args: CONF_FILE=prj_3.conf
+    extra_args:
+      - CONF_FILE=prj_3.conf
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_tx_buffer_alloc.test_max_per_conn_alloc:
     type: unit
-    extra_args: CONF_FILE=prj_max.conf
+    extra_args:
+      - CONF_FILE=prj_max.conf
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_tx_buffer_alloc.test_max_common_alloc:
     type: unit
-    extra_args: CONF_FILE=prj_max_common.conf
+    extra_args:
+      - CONF_FILE=prj_max_common.conf
+       - SNIPPET="bt-ll-sw-split"
