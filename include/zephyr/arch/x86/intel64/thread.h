@@ -96,13 +96,13 @@ struct x86_tss64 {
 typedef struct x86_tss64 x86_tss64_t;
 
 /*
- * The _callee_saved registers are unconditionally saved/restored across
+ * The arch_csf registers are unconditionally saved/restored across
  * context switches; the _thread_arch registers are only preserved when
  * the thread is interrupted. _arch_thread.flags tells __resume when to
  * cheat and only restore the first set. For more details see locore.S.
  */
 
-struct _callee_saved {
+struct arch_csf {
 	uint64_t rsp;
 	uint64_t rbx;
 	uint64_t rbp;
@@ -114,7 +114,7 @@ struct _callee_saved {
 	uint64_t rflags;
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 	uint8_t flags;

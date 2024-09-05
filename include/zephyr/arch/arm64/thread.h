@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -23,7 +23,7 @@
 #include <zephyr/types.h>
 #include <zephyr/arch/arm64/mm.h>
 
-struct _callee_saved {
+struct arch_csf {
 	uint64_t x19;
 	uint64_t x20;
 	uint64_t x21;
@@ -40,7 +40,7 @@ struct _callee_saved {
 	uint64_t lr;
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct z_arm64_fp_context {
 	__int128 q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7;

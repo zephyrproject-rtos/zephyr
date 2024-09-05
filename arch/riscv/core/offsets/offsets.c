@@ -27,7 +27,7 @@
 
 #include <kernel_offsets.h>
 
-/* struct _callee_saved member offsets */
+/* struct arch_csf member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
 GEN_OFFSET_SYM(_callee_saved_t, ra);
 GEN_OFFSET_SYM(_callee_saved_t, s0);

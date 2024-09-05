@@ -261,7 +261,7 @@ struct k_thread {
 	struct _thread_base base;
 
 	/** defined by the architecture, but all archs need these */
-	struct _callee_saved callee_saved;
+	struct arch_csf callee_saved;
 
 	/** static thread init data */
 	void *init_data;

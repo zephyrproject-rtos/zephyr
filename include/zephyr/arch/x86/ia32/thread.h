@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -58,7 +58,7 @@
  * switch occurs.
  */
 
-struct _callee_saved {
+struct arch_csf {
 	unsigned long esp;
 
 	/*
@@ -76,7 +76,7 @@ struct _callee_saved {
 
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 /*
  * The macros CONFIG_{LAZY|EAGER}_FPU_SHARING shall be set to indicate that the

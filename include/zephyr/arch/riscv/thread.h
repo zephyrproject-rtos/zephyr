@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -26,7 +26,7 @@
  * The following structure defines the list of registers that need to be
  * saved/restored when a context switch occurs.
  */
-struct _callee_saved {
+struct arch_csf {
 	unsigned long sp;	/* Stack pointer, (x2 register) */
 	unsigned long ra;	/* return address */
 
@@ -45,7 +45,7 @@ struct _callee_saved {
 	unsigned long s11;	/* saved register */
 #endif
 };
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 #if !defined(RV_FP_TYPE)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION

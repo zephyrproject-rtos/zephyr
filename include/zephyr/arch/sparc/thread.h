@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -26,7 +26,7 @@
  * The following structure defines the list of registers that need to be
  * saved/restored when a cooperative context switch occurs.
  */
-struct _callee_saved {
+struct arch_csf {
 	/* y register used by mul/div */
 	uint32_t y;
 
@@ -63,7 +63,7 @@ struct _callee_saved {
 	uint32_t o7;
 
 };
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 	/* empty */

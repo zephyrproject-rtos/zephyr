@@ -19,11 +19,11 @@
  * field exists for sizeof compatibility with C++.
  */
 
-struct _callee_saved {
+struct arch_csf {
 	char dummy;
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 	uint32_t last_cpu;

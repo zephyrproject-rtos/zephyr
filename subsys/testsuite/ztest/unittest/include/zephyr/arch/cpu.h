@@ -13,14 +13,14 @@ extern "C" {
 #endif
 
 /* Architecture thread structure */
-struct _callee_saved {
+struct arch_csf {
 #ifdef CONFIG_CPP
 	/* C++ does not allow empty structs, add an extra 1 byte */
 	uint8_t c;
 #endif
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 #ifdef CONFIG_CPP

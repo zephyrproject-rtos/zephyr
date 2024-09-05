@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
   *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -22,7 +22,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
-struct _callee_saved {
+struct arch_csf {
 	uint32_t v1;  /* r4 */
 	uint32_t v2;  /* r5 */
 	uint32_t v3;  /* r6 */
@@ -37,7 +37,7 @@ struct _callee_saved {
 #endif
 };
 
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 struct _preempt_float {

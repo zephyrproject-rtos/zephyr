@@ -40,7 +40,7 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 	}
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	const struct _callee_saved *callee_regs = pEsf->extra_info.callee;
+	const struct arch_csf *callee_regs = pEsf->extra_info.callee;
 	const bool callee_regs_match_expected =
 		(callee_regs->v1 /* r4 */ == 4) &&
 		(callee_regs->v2 /* r5 */ == 5) &&

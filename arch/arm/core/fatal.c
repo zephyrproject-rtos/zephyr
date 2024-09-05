@@ -47,7 +47,7 @@ static void esf_dump(const struct arch_esf *esf)
 	LOG_ERR("fpscr:  0x%08x", esf->fpu.fpscr);
 #endif
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	const struct _callee_saved *callee = esf->extra_info.callee;
+	const struct arch_csf *callee = esf->extra_info.callee;
 
 	if (callee != NULL) {
 		LOG_ERR("r4/v1:  0x%08x  r5/v2:  0x%08x  r6/v3:  0x%08x",

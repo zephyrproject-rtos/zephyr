@@ -11,7 +11,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -34,10 +34,10 @@
 extern "C" {
 #endif
 
-struct _callee_saved {
+struct arch_csf {
 	uintptr_t sp; /* r28 */
 };
-typedef struct _callee_saved _callee_saved_t;
+typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 

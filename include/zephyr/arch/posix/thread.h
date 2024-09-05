@@ -12,7 +12,7 @@
  * This file contains definitions for
  *
  *  struct _thread_arch
- *  struct _callee_saved
+ *  struct arch_csf
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-struct _callee_saved {
+struct arch_csf {
 	/* IRQ status before irq_lock() and call to z_swap() */
 	uint32_t key;
 
