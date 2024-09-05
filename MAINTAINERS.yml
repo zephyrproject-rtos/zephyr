@@ -2302,18 +2302,6 @@ Filesystems:
   tests:
     - filesystem
 
-"Filesystems: FatFs reentrant support":
-  status: maintained
-  maintainers:
-    - ox11
-  files:
-    - modules/fatfs/zfs_ffsystem.c
-    - tests/subsys/fs/fat_fs_api/src/test_fat_file_reentrant.c
-  labels:
-    - "area: File System"
-  tests:
-    - filesystem.fat
-
 Formatted Output:
   status: maintained
   maintainers:
