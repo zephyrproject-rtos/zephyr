@@ -2,3 +2,5 @@ tests:
   bluetooth.df.conection_cte_tx_params:
     platform_allow: nrf52_bsim
     tags: bluetooth
+    extra_args:
+      - SNIPPET="bt-ll-sw-split"
