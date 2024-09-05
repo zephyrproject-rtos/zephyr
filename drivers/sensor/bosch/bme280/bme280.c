@@ -118,17 +118,20 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 
 static int bme280_wait_until_ready(const struct device *dev)
 {
-	uint8_t status = 0;
+	uint8_t status;
 	int ret;
 
-	/* Wait for NVM to copy and measurement to be completed */
-	do {
-		k_sleep(K_MSEC(3));
+	/* Wait for relevant flags to clear */
+	while (1) {
 		ret = bme280_reg_read(dev, BME280_REG_STATUS, &status, 1);
 		if (ret < 0) {
 			return ret;
 		}
-	} while (status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE));
+		if (!(status & (BME280_STATUS_MEASURING | BME280_STATUS_IM_UPDATE))) {
+			break;
+		}
+		k_sleep(K_MSEC(3));
+	}
 
 	return 0;
 }
