@@ -18,7 +18,7 @@ any board where the devicetree has an I2C device node with compatible
 controller node also being enabled.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led/issi_is31fl3194
+   :zephyr-app: samples/drivers/led/is31fl3194
    :board: arduino_nicla_sense_me
    :goals: build flash
    :compact:

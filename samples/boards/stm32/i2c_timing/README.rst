@@ -45,7 +45,7 @@ In order to run this sample, make sure to
 - alias the **i2c-0** to your ``i2c`` node of the board **overlay** file
 
  .. zephyr-app-commands::
-   :zephyr-app: samples/boards/stm32/i2c_config
+   :zephyr-app: samples/boards/stm32/i2c_timing
    :board: b_u585i_iot02a
    :goals: build
    :compact:
