@@ -27,6 +27,7 @@
 		zephyr,bt-hci = &bt_hci_ipc0;
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,canbus = &can120;
+		zephyr,entropy = &psa_rng;
 	};
 
 	aliases {
@@ -110,6 +111,11 @@
 		pwm_led2: pwm_led_2 {
 			pwms = <&pwm130 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
 	};
 };
 
