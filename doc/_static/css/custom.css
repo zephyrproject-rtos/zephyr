@@ -171,6 +171,8 @@ a.icon-home:visited {
 
 .wy-nav-content {
     background-color: var(--content-background-color);
+    min-height: 100vh;
+    display: flex;
 }
 
 .wy-body-for-nav {
@@ -757,6 +759,9 @@ kbd, .kbd,
         overflow-y: initial;
         max-height: initial;
     }
+    .wy-nav-content {
+        min-height: calc(100dvh - 64px);
+    }
 }
 
 /* Scrollbar styling */
@@ -886,6 +891,19 @@ dark-mode-toggle::part(toggleLabel){
 .lastupdated {
     font-weight: 200;
     font-size: 0.9rem;
+}
+
+/* Make actual document take all vertical space available so that footer is always at the bottom */
+
+.rst-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.document {
+    flex-grow: 1;
 }
 
 /* Custom search box, including search engine selection */
