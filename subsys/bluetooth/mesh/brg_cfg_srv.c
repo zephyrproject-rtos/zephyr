@@ -168,6 +168,10 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 		net_idx1 = brg_tbl[i].net_idx1;
 		net_idx2 = brg_tbl[i].net_idx2;
 
+		if (net_buf_simple_tailroom(&msg) < 3 + BT_MESH_MIC_SHORT) {
+			break;
+		}
+
 		switch (filter_net_idx.filter) {
 		/* Report pair of NetKeys from the table, starting from start_id. */
 		case 0:
@@ -254,6 +258,11 @@ static int bridging_table_get(const struct bt_mesh_model *model, struct bt_mesh_
 	for (int i = 0; i < rows; i++) {
 		if (brg_tbl[i].net_idx1 == net_idx1 && brg_tbl[i].net_idx2 == net_idx2) {
 			if (cnt >= start_id) {
+				if (net_buf_simple_tailroom(&msg) < 5 + BT_MESH_MIC_SHORT) {
+					LOG_WRN("Bridging Table List message too large");
+					break;
+				}
+
 				net_buf_simple_add_le16(&msg, brg_tbl[i].addr1);
 				net_buf_simple_add_le16(&msg, brg_tbl[i].addr2);
 				net_buf_simple_add_u8(&msg, brg_tbl[i].direction);
