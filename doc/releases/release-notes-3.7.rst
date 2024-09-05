@@ -2,6 +2,30 @@
 
 .. _zephyr_3.7:
 
+.. _zephyr_3.7.1:
+
+Zephyr 3.7.1
+############
+
+This is an LTS maintenance release with fixes.
+
+Issues fixed
+************
+
+These GitHub issues were addressed since the previous 3.7.0 tagged release:
+
+
+Mbed TLS
+********
+
+Mbed TLS was updated to version 3.6.1. The release notes can be found at:
+https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+
+Mbed TLS 3.6 is an LTS release that will be supported
+with bug and security fixes until at least March 2027.
+
+.. _zephyr_3.7.0:
+
 Zephyr 3.7.0
 ############
 
