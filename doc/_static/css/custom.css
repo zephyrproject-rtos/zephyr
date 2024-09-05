@@ -883,6 +883,11 @@ dark-mode-toggle::part(toggleLabel){
    color: white;
 }
 
+.lastupdated {
+    font-weight: 200;
+    font-size: 0.9rem;
+}
+
 /* Custom search box, including search engine selection */
 
 .search-container {
