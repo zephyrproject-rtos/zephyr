@@ -24,7 +24,7 @@ wdt011: &cpurad_wdt011 {};
 
 / {
 	chosen {
-		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,bt-hci = &bt_hci_sdc;
 	};
 
 	soc {
@@ -104,6 +104,6 @@ wdt011: &cpurad_wdt011 {};
 	status = "okay";
 };
 
-&bt_hci_controller {
+&bt_hci_sdc {
 	status = "okay";
 };

@@ -15,7 +15,7 @@ nvic: &cpuapp_nvic {};
 
 / {
 	chosen {
-		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,bt-hci = &bt_hci_sdc;
 		zephyr,entropy = &psa_rng;
 	};
 
@@ -36,7 +36,7 @@ nvic: &cpuapp_nvic {};
 	};
 };
 
-&bt_hci_controller {
+&bt_hci_sdc {
 	status = "okay";
 };
 

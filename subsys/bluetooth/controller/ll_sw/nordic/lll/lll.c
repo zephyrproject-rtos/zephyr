@@ -62,7 +62,7 @@ static struct {
 /* FIXME: This could probably use a chosen entropy device instead on relying on
  * the nodelabel being the same as for the old nrf rng.
  */
-static const struct device *const dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
+static const struct device *const dev_entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
 #endif /* CONFIG_ENTROPY_HAS_DRIVER */
 
 static int init_reset(void);
