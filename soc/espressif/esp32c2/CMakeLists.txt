@@ -45,9 +45,13 @@ dt_reg_addr(img_0_off PATH ${dts_partition_path})
 dt_nodelabel(dts_partition_path NODELABEL "boot_partition")
 dt_reg_addr(boot_off PATH ${dts_partition_path})
 
+# get UART baudrate from DT
+dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
+dt_prop(monitor_baud PATH ${dts_shell_uart} PROPERTY "current-speed")
+
 # C2 uses specific values for flash frequency and UART baudrate
 board_runner_args(esp32 "--esp-flash-freq=60m")
-board_runner_args(esp32 "--esp-monitor-baud=74880")
+board_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
 if(CONFIG_ESP_SIMPLE_BOOT)
   board_finalize_runner_args(esp32 "--esp-app-address=${boot_off}")
