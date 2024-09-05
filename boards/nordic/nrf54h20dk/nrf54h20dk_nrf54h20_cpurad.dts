@@ -38,6 +38,10 @@
 	status = "okay";
 };
 
+&cpurad_ram0x_region {
+	status = "okay";
+};
+
 &cpurad_bellboard {
 	status = "okay";
 	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -55,9 +59,14 @@
 };
 
 &cpusec_cpurad_ipc {
+	status = "okay";
 	mbox-names = "tx", "rx";
 	tx-region = <&cpurad_cpusec_ipc_shm>;
 	rx-region = <&cpusec_cpurad_ipc_shm>;
+};
+
+&cpusec_bellboard {
+	status = "okay";
 };
 
 ipc0: &cpuapp_cpurad_ipc {
