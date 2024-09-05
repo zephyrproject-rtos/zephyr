@@ -6,6 +6,10 @@
 
 #include "esp32c2_common.dtsi"
 
+&cpu0 {
+	xtal-freq = <DT_FREQ_M(26)>;
+};
+
 /* 4MB flash */
 &flash0 {
 	reg = <0x0 DT_SIZE_M(4)>;
