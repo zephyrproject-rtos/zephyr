@@ -6,7 +6,11 @@ common:
 tests:
   bluetooth.controller.ctrl_unsupported.default.test:
     type: unit
+    extra_args:
+      - SNIPPET="bt-ll-sw-split"
 
   bluetooth.controller.ctrl_unsupported.test:
     type: unit
-    extra_args: CONF_FILE=prj_unsupported.conf
+    extra_args:
+      - CONF_FILE=prj_unsupported.conf
+      - SNIPPET="bt-ll-sw-split"

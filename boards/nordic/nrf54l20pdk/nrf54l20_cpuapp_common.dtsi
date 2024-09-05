@@ -18,7 +18,7 @@
 		zephyr,bt-c2h-uart = &uart20;
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &cpuapp_rram;
-		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,bt-hci = &bt_hci_sdc;
 		zephyr,ieee802154 = &ieee802154;
 	};
 };
@@ -112,7 +112,7 @@
 	status = "okay";
 };
 
-&bt_hci_controller {
+&bt_hci_sdc {
 	status = "okay";
 };
 
