@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
-#define PKT_WAIT_TIME K_SECONDS(1)
+#define PKT_WAIT_TIME K_MSEC(100)
 
 static K_MUTEX_DEFINE(lock);
 
@@ -285,7 +285,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 #endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, size, AF_INET,
-					IPPROTO_UDP, K_FOREVER);
+					IPPROTO_UDP, PKT_WAIT_TIME);
 	if (!pkt) {
 		return NULL;
 	}
