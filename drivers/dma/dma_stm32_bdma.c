@@ -328,9 +328,6 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	callback_arg = id;
 #endif /* CONFIG_DMAMUX_STM32 */
 
-	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-		channel->busy = false;
-	}
 
 	/* the dma channel id is in range from 0..<dma-requests> */
 	if (stm32_bdma_is_ht_irq_active(dma, id)) {
@@ -340,9 +337,10 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
 	} else if (stm32_bdma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
-		channel->busy = false;
-#endif
+		/* Circular buffer never stops receiving as long as peripheral is enabled */
+		if (!channel->cyclic) {
+			channel->busy = false;
+		}
 		/* Let HAL DMA handle flags on its own */
 		if (!channel->hal_override) {
 			bdma_stm32_clear_tc(dma, id);
@@ -350,6 +348,7 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
 	} else {
 		LOG_ERR("Transfer Error.");
+		channel->busy = false;
 		bdma_stm32_dump_channel_irq(dev, id);
 		bdma_stm32_clear_channel_irq(dev, id);
 		channel->bdma_callback(dev, channel->user_data,
@@ -553,6 +552,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	channel->user_data	= config->user_data;
 	channel->src_size	= config->source_data_size;
 	channel->dst_size	= config->dest_data_size;
+	channel->cyclic		= config->head_block->source_reload_en;
 
 	/* check dest or source memory address, warn if 0 */
 	if (config->head_block->source_address == 0) {
@@ -633,7 +633,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 		return ret;
 	}
 
-	if (config->head_block->source_reload_en) {
+	if (channel->cyclic) {
 		BDMA_InitStruct.Mode = LL_BDMA_MODE_CIRCULAR;
 	} else {
 		BDMA_InitStruct.Mode = LL_BDMA_MODE_NORMAL;
@@ -667,7 +667,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	LL_BDMA_EnableIT_TC(bdma, bdma_stm32_id_to_channel(id));
 
 	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (config->head_block->source_reload_en) {
+	if (channel->cyclic) {
 		LL_BDMA_EnableIT_HT(bdma, bdma_stm32_id_to_channel(id));
 	}
 
