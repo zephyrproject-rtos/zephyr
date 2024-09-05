@@ -167,7 +167,7 @@ ${config_paths}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   )
 
-  # Be sure we don't try building this until al of the generated headers have been generated.
+  # Be sure we don't try building this until all of the generated headers have been generated.
   add_custom_target(librustapp ALL
     DEPENDS ${DUMMY_FILE}
         # The variables, defined at the top level, don't seem to be accessible here.
