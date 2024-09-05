@@ -200,7 +200,7 @@ Arm FVP
 
 This sample application running on Arm FVP board can negotiate IP
 address from DHCPv4 server running on Arm FVP, so there is no extra
-configuration that needed to do. It can be build and run directly.
+configuration that needed to do. It can be built and run directly.
 
 Build Zephyr samples/net/dhcpv4_client application:
 
