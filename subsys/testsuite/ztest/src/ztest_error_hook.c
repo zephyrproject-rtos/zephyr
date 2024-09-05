@@ -42,8 +42,11 @@ static inline void z_vrfy_ztest_set_fault_valid(bool valid)
 #endif
 
 __weak void ztest_post_fatal_error_hook(unsigned int reason,
-		const struct arch_esf *pEsf)
+		const struct arch_esf *pEsf, const struct arch_csf *pCsf)
 {
+	ARG_UNUSED(reason);
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
 }
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
@@ -61,7 +64,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
 		reset_stored_fault_status();
 
 		/* do some action after expected fatal error happened */
-		ztest_post_fatal_error_hook(reason, pEsf);
+		ztest_post_fatal_error_hook(reason, pEsf, pCsf);
 	} else {
 		printk("Fatal error was unexpected, aborting...\n");
 		k_fatal_halt(reason);

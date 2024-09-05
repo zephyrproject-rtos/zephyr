@@ -154,8 +154,11 @@ static void release_offload_sem(void)
  * default one.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const struct arch_esf *pEsf)
+		const struct arch_esf *pEsf, const struct arch_csf *pCsf)
 {
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
+
 	switch (case_type) {
 	case ZTEST_CATCH_FATAL_ACCESS:
 	case ZTEST_CATCH_FATAL_ILLEAGAL_INSTRUCTION:

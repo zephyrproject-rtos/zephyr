@@ -38,9 +38,12 @@ extern struct k_sem offload_sem;
 
 /* A call back function which is hooked in default assert handler. */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const struct arch_esf *pEsf)
+		const struct arch_esf *pEsf, const struct arch_csf *pCsf)
 
 {
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
+
 	/* check if expected error */
 	zassert_equal(reason, K_ERR_KERNEL_OOPS);
 }

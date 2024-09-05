@@ -251,6 +251,11 @@ Modem
 Shell
 =====
 
+Ztest
+=====
+
+* ``ztest_post_fatal_error_hook`` now accepts an additional ``struct arch_csf *pCsf``.
+
 * ``kernel threads`` and ``kernel stacks`` shell command have been renamed to
   ``kernel thread list`` & ``kernel thread stacks``
 
