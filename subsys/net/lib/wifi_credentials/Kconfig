@@ -59,6 +59,20 @@ config WIFI_CREDENTIALS_SHELL
 	depends on SHELL
 	depends on !WIFI_CREDENTIALS_BACKEND_NONE
 
+config WIFI_CREDENTIALS_CONNECT_STORED
+	bool "Add command to connect to stored networks directly."
+	default y
+
+if WIFI_CREDENTIALS_CONNECT_STORED
+
+config WIFI_CREDENTIALS_CONNECT_STORED_CONNECTION_TIMEOUT
+	int "Connection timeout"
+	default 30
+	help
+	   Wait period before falling back to the next entry in the list of stored SSIDs.
+
+endif # WIFI_CREDENTIALS_CONNECT_STORED
+
 endif # WIFI_CREDENTIALS
 
 if WIFI_CREDENTIALS_BACKEND_PSA
