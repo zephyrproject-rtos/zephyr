@@ -1,0 +1,8 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+include: riscv,cpus.yaml
+
+description: Sensry Ganymed SY1xx Core CPU
+
+compatible: "sensry,sy1xx"
