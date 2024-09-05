@@ -66,3 +66,25 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
+  drivers.build_all.comparator.mcux_acmp.mimxrt1176_mux_dac:
+    extra_args:
+      - DTC_OVERLAY_FILE="mcux_acmp/mimxrt1176_mux_dac.dts"
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm4
+      - mimxrt1170_evk/mimxrt1176/cm7
+  drivers.build_all.comparator.mcux_acmp.mimxrt1176_mux_mux:
+    extra_args:
+      - DTC_OVERLAY_FILE="mcux_acmp/mimxrt1176_mux_mux.dts"
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm4
+      - mimxrt1170_evk/mimxrt1176/cm7
+  drivers.build_all.comparator.mcux_acmp.mke15z7_mux_dac:
+    extra_args:
+      - DTC_OVERLAY_FILE="mcux_acmp/mke15z7_mux_dac.dts"
+    platform_allow:
+      - frdm_ke15z
+  drivers.build_all.comparator.mcux_acmp.mke15z7_mux_mux:
+    extra_args:
+      - DTC_OVERLAY_FILE="mcux_acmp/mke15z7_mux_mux.dts"
+    platform_allow:
+      - frdm_ke15z
