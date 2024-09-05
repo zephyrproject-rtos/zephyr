@@ -80,6 +80,22 @@
 				0 1  0 1  &{/interrupt-map-test/controller-1}  0 0    0 4
 				0 1  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
 		};
+		nexus-0 {
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-map = <
+				0 0  &{/interrupt-map-test/controller-0}  0      0
+				0 1  &{/interrupt-map-test/controller-1}  0 0    0 1
+				1 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 2>;
+		};
+		nexus-1 {
+			#address-cells = <1>;
+			#interrupt-cells = <1>;
+			interrupt-map = <
+				4 0  &{/interrupt-map-test/controller-0}  0      3
+				4 1  &{/interrupt-map-test/controller-1}  0 0    0 4
+				4 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
+		};
 		node@0 {
 			reg = <0 0>;
 			interrupts = <0 0 0 1 0 2>;
@@ -91,6 +107,30 @@
 			    &{/interrupt-map-test/nexus} 0 0
 			    &{/interrupt-map-test/nexus} 0 1
 			    &{/interrupt-map-test/nexus} 0 2>;
+		};
+		node@2 {
+			reg = <0 2>;
+			interrupts = <0 0 0 1 1 2>;
+			interrupt-parent = <&{/interrupt-map-test/nexus-0}>;
+		};
+		node@3 { /* Test the precedence of interrupts/interrupts-extended too */
+			reg = <0 3>;
+			interrupts = <1 2 0 0 0 1>;
+			interrupt-parent = <&{/interrupt-map-test/nexus-0}>;
+			interrupts-extended = <
+			    &{/interrupt-map-test/nexus-0} 0 0
+			    &{/interrupt-map-test/nexus-0} 0 1
+			    &{/interrupt-map-test/nexus-0} 1 2>;
+		};
+		node@4 {
+			reg = <0 4>;
+			interrupts = <0 1 2>;
+			interrupt-parent = <&{/interrupt-map-test/nexus-1}>;
+		};
+		node@100000004 {
+			reg = <1 4>;
+			interrupts = <0 1 2>;
+			interrupt-parent = <&{/interrupt-map-test/nexus-1}>;
 		};
 	};
 	interrupt-map-bitops-test {
