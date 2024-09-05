@@ -71,7 +71,7 @@ Activate the presence of the shield for the project build by adding the
 ``west build`` based on UART or SPI interface:
 
  .. zephyr-app-commands::
-    :zephyr-app: your_app
+    :app: your_app
     :board: your_board_name
     :shield: x_nucleo_wb05kn1_uart
     :goals: build
@@ -79,7 +79,7 @@ Activate the presence of the shield for the project build by adding the
 or
 
  .. zephyr-app-commands::
-    :zephyr-app: your_app
+    :app: your_app
     :board: your_board_name
     :shield: x_nucleo_wb05kn1_spi
     :goals: build
