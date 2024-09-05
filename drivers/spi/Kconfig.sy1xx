@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+config SPI_SY1XX
+	bool "Sensry SY1xx SPI driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_SPI_ENABLED
+	help
+	  Driver for Sensry SY1xx series spi.
