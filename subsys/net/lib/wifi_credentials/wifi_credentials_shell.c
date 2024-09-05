@@ -66,8 +66,7 @@ static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 	}
 
 	if (creds.header.channel) {
-		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, ", channel: %d",
-			      creds.header.channel);
+		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, ", channel: %d", creds.header.channel);
 	}
 
 	if (creds.header.flags & WIFI_CREDENTIALS_FLAG_FAVORITE) {
@@ -83,8 +82,7 @@ static void print_network_info(void *cb_arg, const char *ssid, size_t ssid_len)
 	}
 
 	if (creds.header.timeout) {
-		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, ", timeout: %d",
-			      creds.header.timeout);
+		shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, ", timeout: %d", creds.header.timeout);
 	}
 
 	shell_fprintf(sh, SHELL_VT100_COLOR_DEFAULT, "\n");
@@ -258,14 +256,14 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	return wifi_credentials_set_personal_struct(&creds);
 help:
 	shell_print(sh, "Usage: wifi_cred add \"network name\""
-			   " {OPEN, WPA2-PSK, WPA2-PSK-SHA256, WPA3-SAE, WPA-PSK}"
-			   " [psk/password]"
-			   " [bssid]"
-			   " [{2.4GHz, 5GHz}]"
-			   " [channel]"
-			   " [favorite]"
-			   " [mfp_disabled|mfp_required]"
-			   " [timeout]");
+			" {OPEN, WPA2-PSK, WPA2-PSK-SHA256, WPA3-SAE, WPA-PSK}"
+			" [psk/password]"
+			" [bssid]"
+			" [{2.4GHz, 5GHz}]"
+			" [channel]"
+			" [favorite]"
+			" [mfp_disabled|mfp_required]"
+			" [timeout]");
 	return -EINVAL;
 }
 
@@ -281,8 +279,7 @@ static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	shell_print(sh, "\tDeleting network ssid: \"%s\", ssid_len: %d", argv[1],
-		    strlen(argv[1]));
+	shell_print(sh, "\tDeleting network ssid: \"%s\", ssid_len: %d", argv[1], strlen(argv[1]));
 	return wifi_credentials_delete_by_ssid(argv[1], strlen(argv[1]));
 }
 
@@ -291,6 +288,24 @@ static int cmd_list_networks(const struct shell *sh, size_t argc, char *argv[])
 	wifi_credentials_for_each_ssid(print_network_info, (void *)sh);
 	return 0;
 }
+
+#if CONFIG_WIFI_CREDENTIALS_CONNECT_STORED
+
+static int cmd_auto_connect(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT_STORED, iface, NULL, 0);
+
+	if (rc) {
+		shell_error(sh,
+			    "An error occurred when trying to auto-connect to a network. err: %d",
+			    rc);
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_WIFI_CREDENTIALS_CONNECT_STORED */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_wifi_cred,
 	SHELL_CMD_ARG(add, NULL,
@@ -304,6 +319,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_wifi_cred,
 		      "List stored networks.\n",
 		      cmd_list_networks,
 		      0, 0),
+
+#if CONFIG_WIFI_CREDENTIALS_CONNECT_STORED
+	SHELL_CMD_ARG(auto_connect, NULL,
+		      "Connect to any stored network.\n",
+		      cmd_auto_connect,
+		      0, 0),
+#endif /* CONFIG_WIFI_CREDENTIALS_CONNECT_STORED */
+
 	SHELL_SUBCMD_SET_END
 );
 
