@@ -9,4 +9,6 @@ tests:
       - nrf52dk/nrf52832
     extra_configs:
       - CONFIG_BT_LL_SW_SPLIT=y
+    extra_args:
+      - SNIPPET="bt-ll-sw-split"
     tags: bluetooth

@@ -12,14 +12,22 @@ tests:
       - nrf52833dk/nrf52833
       - nrf52833dk/nrf52820
       - nrf5340dk/nrf5340/cpuapp
-  sample.bluetooth.direction_finding_connectionless.aoa:
+  sample.bluetooth.direction_finding_connectionless.aoa_with_controller:
     harness: bluetooth
-    extra_args: OVERLAY_CONFIG="overlay-aoa.conf"
+    extra_args:
+      - OVERLAY_CONFIG="overlay-aoa.conf"
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52833dk/nrf52833
       - nrf52833dk/nrf52820
-      - nrf5340dk/nrf5340/cpuapp
     integration_platforms:
       - nrf52833dk/nrf52833
       - nrf52833dk/nrf52820
+  sample.bluetooth.direction_finding_connectionless.aoa_host_only:
+    harness: bluetooth
+    extra_args:
+      - OVERLAY_CONFIG="overlay-aoa.conf"
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
       - nrf5340dk/nrf5340/cpuapp

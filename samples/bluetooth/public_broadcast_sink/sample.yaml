@@ -23,5 +23,7 @@ tests:
     integration_platforms:
       - nrf52_bsim
       - nrf52833dk/nrf52833
-    extra_args: OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+    extra_args:
+      - OVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
+      - SNIPPET="bt-ll-sw-split"
     tags: bluetooth

@@ -74,7 +74,9 @@ tests:
     extra_args: CONF_FILE=prj_9.conf
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_ctlr:
-    extra_args: CONF_FILE=prj_ctlr.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -86,7 +88,9 @@ tests:
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_4_0:
-    extra_args: CONF_FILE=prj_ctlr_4_0.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_4_0.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -95,7 +99,9 @@ tests:
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_4_0_dbg:
-    extra_args: CONF_FILE=prj_ctlr_4_0_dbg.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_4_0_dbg.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -104,7 +110,9 @@ tests:
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_tiny:
-    extra_args: CONF_FILE=prj_ctlr_tiny.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_tiny.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -116,6 +124,7 @@ tests:
     extra_args:
       - CONF_FILE=prj_ctlr_dbg.conf
       - DTC_OVERLAY_FILE=pa_lna.overlay
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -126,6 +135,7 @@ tests:
     extra_args:
       - CONF_FILE=prj_ctlr_5_x_dbg.conf
       - DTC_OVERLAY_FILE=pa_lna.overlay
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -137,6 +147,7 @@ tests:
       - CONF_FILE=prj_ctlr.conf
       - CONFIG_BT_CTLR_ADVANCED_FEATURES=y
       - CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER=y
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf52840dk/nrf52840
@@ -148,6 +159,7 @@ tests:
   bluetooth.init.test_ctlr_ticker:
     extra_args:
       - CONF_FILE=prj_ctlr_ticker.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -155,28 +167,36 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
   bluetooth.init.test_ctlr_broadcaster:
-    extra_args: CONF_FILE=prj_ctlr_broadcaster.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_broadcaster.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_peripheral:
-    extra_args: CONF_FILE=prj_ctlr_peripheral.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_peripheral.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_peripheral_priv:
-    extra_args: CONF_FILE=prj_ctlr_peripheral_priv.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_peripheral_priv.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_observer:
-    extra_args: CONF_FILE=prj_ctlr_observer.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_observer.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -187,7 +207,9 @@ tests:
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_central:
-    extra_args: CONF_FILE=prj_ctlr_central.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_central.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -198,7 +220,9 @@ tests:
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_central_priv:
-    extra_args: CONF_FILE=prj_ctlr_central_priv.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_central_priv.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -209,7 +233,9 @@ tests:
       - nrf51dk/nrf51822
       - rv32m1_vega/openisa_rv32m1/ri5cy
   bluetooth.init.test_ctlr_broadcaster_ext:
-    extra_args: CONF_FILE=prj_ctlr_broadcaster_ext.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_broadcaster_ext.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -218,7 +244,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_peripheral_ext:
-    extra_args: CONF_FILE=prj_ctlr_peripheral_ext.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_peripheral_ext.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -227,7 +255,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_peripheral_ext_priv:
-    extra_args: CONF_FILE=prj_ctlr_peripheral_ext_priv.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_peripheral_ext_priv.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -236,7 +266,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_oberver_ext:
-    extra_args: CONF_FILE=prj_ctlr_observer_ext.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_observer_ext.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -245,7 +277,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_central_ext:
-    extra_args: CONF_FILE=prj_ctlr_central_ext.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_central_ext.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -254,7 +288,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_central_ext_priv:
-    extra_args: CONF_FILE=prj_ctlr_central_ext_priv.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_central_ext_priv.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -263,7 +299,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_per_adv:
-    extra_args: CONF_FILE=prj_ctlr_per_adv.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_per_adv.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -272,7 +310,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_per_adv_no_adi:
-    extra_args: CONF_FILE=prj_ctlr_per_adv_no_adi.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_per_adv_no_adi.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -281,7 +321,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_per_sync:
-    extra_args: CONF_FILE=prj_ctlr_per_sync.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_per_sync.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -290,7 +332,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_per_sync_no_adi:
-    extra_args: CONF_FILE=prj_ctlr_per_sync_no_adi.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_per_sync_no_adi.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -299,7 +343,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_per_sync_no_filter:
-    extra_args: CONF_FILE=prj_ctlr_per_sync_no_filter.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_per_sync_no_filter.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -308,7 +354,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_peripheral_iso:
-    extra_args: CONF_FILE=prj_ctlr_peripheral_iso.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_peripheral_iso.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -317,7 +365,9 @@ tests:
       - nrf52840dk/nrf52840
       - nrf51dk/nrf51822
   bluetooth.init.test_ctlr_central_iso:
-    extra_args: CONF_FILE=prj_ctlr_central_iso.conf
+    extra_args:
+      - CONF_FILE=prj_ctlr_central_iso.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -336,7 +386,9 @@ tests:
       - DTC_OVERLAY_FILE=h5.overlay
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_llcp:
-    extra_args: CONF_FILE=prj_llcp.conf
+    extra_args:
+      - CONF_FILE=prj_llcp.conf
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
@@ -349,5 +401,6 @@ tests:
     extra_args:
       - CONF_FILE=prj_ctlr.conf
       - CONFIG_BT_RECV_WORKQ_BT=y
+      - SNIPPET="bt-ll-sw-split"
     platform_allow:
       - nrf52840dk/nrf52840

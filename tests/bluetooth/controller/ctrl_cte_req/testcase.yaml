@@ -6,3 +6,5 @@ common:
 tests:
   bluetooth.controller.ctrl_cte_req.test:
     type: unit
+    extra_args:
+      - SNIPPET="bt-ll-sw-split"

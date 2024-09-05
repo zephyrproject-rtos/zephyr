@@ -12,7 +12,9 @@ tests:
       - qemu_cortex_m3
 
   sample.bluetooth.beacon-coex:
-    extra_args: CONF_FILE="prj-coex.conf"
+    extra_args:
+      - CONF_FILE="prj-coex.conf"
+      - SNIPPET="bt-ll-sw-split"
     harness: bluetooth
     platform_allow: nrf52840dk/nrf52840
     tags: bluetooth
