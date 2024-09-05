@@ -66,7 +66,6 @@ function(rust_cargo_application)
 
   get_include_dirs(zephyr_interface include_dirs)
 
-  get_target_property(include_dirs, zephyr_interface INTERFACE_INCLUDE_DIRECTORIES)
   get_property(include_defines TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
   message(STATUS "Includes: ${include_dirs}")
   message(STATUS "Defines: ${include_defines}")
