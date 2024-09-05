@@ -7,7 +7,10 @@
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives
+from pathlib import Path
 
+
+ZEPHYR_BASE = Path(__file__).parents[3]
 
 # TODO: extend and modify this for Windows.
 #
@@ -186,6 +189,16 @@ class ZephyrAppCommandsDirective(Directive):
         if compact and skip_config:
             raise self.error('Both compact and maybe-skip-config options were given.')
 
+        if zephyr_app:
+            # as folks might use "<...>" notation to indicate a variable portion of the path, we
+            # deliberately don't check for the validity of such paths.
+            if not any([x in zephyr_app for x in ["<", ">"]]):
+                app_path = ZEPHYR_BASE / zephyr_app
+                if not app_path.is_dir():
+                    raise self.error(
+                        f"zephyr-app: {zephyr_app} is not a valid folder in the zephyr tree."
+                    )
+
         app = app or zephyr_app
         in_tree = self.IN_TREE_STR if zephyr_app else None
         # Allow build directories which are nested.
@@ -261,7 +274,6 @@ class ZephyrAppCommandsDirective(Directive):
         self.add_name(literal)
         literal['language'] = 'shell'
         return literal
-
 
     def _generate_west(self, **kwargs):
         content = []
