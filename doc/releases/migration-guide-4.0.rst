@@ -21,6 +21,11 @@ Build System
 Kernel
 ******
 
+* All architectures are now required to define the new ``struct arch_csf``, which describes the
+  callee-saved-registers frame. This new struct replaces the named struct ``_callee_saved_t``. (:github:`78029`)
+
+* The named struct ``_callee_saved_t`` is now deprecated. Use ``struct arch_csf`` instead. (:github:`78029`)
+
 Boards
 ******
 
