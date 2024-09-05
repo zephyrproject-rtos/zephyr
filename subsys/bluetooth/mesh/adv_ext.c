@@ -360,8 +360,9 @@ void bt_mesh_adv_relay_ready(void)
 		}
 	}
 
-	/* Attempt to use the main adv set for the sending of relay messages. */
-	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET)) {
+	/* Use the main adv set for the sending of relay messages. */
+	if (IS_ENABLED(CONFIG_BT_MESH_ADV_EXT_RELAY_USING_MAIN_ADV_SET) ||
+	    CONFIG_BT_MESH_RELAY_ADV_SETS == 0) {
 		(void)schedule_send(advs);
 	}
 }
