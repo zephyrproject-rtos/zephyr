@@ -9,6 +9,8 @@ tests:
     extra_configs:
       - CONFIG_NET_IPV4=n
       - CONFIG_NET_IPV6=n
+      - CONFIG_NET_CONFIG_NEED_IPV4=n
+      - CONFIG_NET_CONFIG_NEED_IPV6=n
     platform_exclude:
       - mg100
       - pinnacle_100_dvk
