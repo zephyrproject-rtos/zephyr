@@ -136,8 +136,12 @@ static int cmd_bridged_subnets_get(const struct shell *sh, size_t argc, char *ar
 {
 	struct bt_mesh_filter_netkey filter_net_idx;
 	uint8_t start_idx;
-	struct bt_mesh_bridged_subnets_list rsp;
+	struct bt_mesh_bridged_subnets_list rsp = {
+		.list = NET_BUF_SIMPLE(CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX * 3),
+	};
 	int err = 0;
+
+	net_buf_simple_init(rsp.list, 0);
 
 	filter_net_idx.filter = shell_strtoul(argv[1], 0, &err);
 	filter_net_idx.net_idx = shell_strtoul(argv[2], 0, &err);
@@ -176,8 +180,12 @@ static int cmd_bridged_subnets_get(const struct shell *sh, size_t argc, char *ar
 static int cmd_bridging_table_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t net_idx1, net_idx2, start_idx;
-	struct bt_mesh_bridging_table_list rsp;
+	struct bt_mesh_bridging_table_list rsp = {
+		.list = NET_BUF_SIMPLE(CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX * 5),
+	};
 	int err = 0;
+
+	net_buf_simple_init(rsp.list, 0);
 
 	net_idx1 = shell_strtoul(argv[1], 0, &err);
 	net_idx2 = shell_strtoul(argv[2], 0, &err);
