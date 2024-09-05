@@ -2182,6 +2182,11 @@ static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
+	/* Initialize list ptr to NULL to prevent the client copying response to whatever was
+	 * on the stack where `rp` was allocated.
+	 */
+	rp.list = NULL;
+
 	filter_net_idx.filter = cp->filter;
 	filter_net_idx.net_idx = sys_le16_to_cpu(cp->net_idx);
 
@@ -2203,6 +2208,11 @@ static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len,
 	int err;
 
 	LOG_DBG("");
+
+	/* Initialize list ptr to NULL to prevent the client copying response to whatever was
+	 * on the stack where `rp` was allocated.
+	 */
+	rp.list = NULL;
 
 	err = bt_mesh_brg_cfg_cli_bridging_table_get(net_key_idx, sys_le16_to_cpu(cp->addr),
 						     sys_le16_to_cpu(cp->net_idx1),
