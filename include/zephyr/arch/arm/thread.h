@@ -37,8 +37,6 @@ struct arch_csf {
 #endif
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 struct _preempt_float {
 	float  s16;

@@ -76,8 +76,6 @@ struct arch_csf {
 
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 /*
  * The macros CONFIG_{LAZY|EAGER}_FPU_SHARING shall be set to indicate that the
  * saving/restoring of the traditional x87 floating point (and MMX) registers

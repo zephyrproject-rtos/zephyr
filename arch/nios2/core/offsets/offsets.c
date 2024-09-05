@@ -30,19 +30,19 @@
 #include <kernel_offsets.h>
 
 /* struct coop member offsets */
-GEN_OFFSET_SYM(_callee_saved_t, r16);
-GEN_OFFSET_SYM(_callee_saved_t, r17);
-GEN_OFFSET_SYM(_callee_saved_t, r18);
-GEN_OFFSET_SYM(_callee_saved_t, r19);
-GEN_OFFSET_SYM(_callee_saved_t, r20);
-GEN_OFFSET_SYM(_callee_saved_t, r21);
-GEN_OFFSET_SYM(_callee_saved_t, r22);
-GEN_OFFSET_SYM(_callee_saved_t, r23);
-GEN_OFFSET_SYM(_callee_saved_t, r28);
-GEN_OFFSET_SYM(_callee_saved_t, ra);
-GEN_OFFSET_SYM(_callee_saved_t, sp);
-GEN_OFFSET_SYM(_callee_saved_t, key);
-GEN_OFFSET_SYM(_callee_saved_t, retval);
+GEN_OFFSET_STRUCT(arch_csf, r16);
+GEN_OFFSET_STRUCT(arch_csf, r17);
+GEN_OFFSET_STRUCT(arch_csf, r18);
+GEN_OFFSET_STRUCT(arch_csf, r19);
+GEN_OFFSET_STRUCT(arch_csf, r20);
+GEN_OFFSET_STRUCT(arch_csf, r21);
+GEN_OFFSET_STRUCT(arch_csf, r22);
+GEN_OFFSET_STRUCT(arch_csf, r23);
+GEN_OFFSET_STRUCT(arch_csf, r28);
+GEN_OFFSET_STRUCT(arch_csf, ra);
+GEN_OFFSET_STRUCT(arch_csf, sp);
+GEN_OFFSET_STRUCT(arch_csf, key);
+GEN_OFFSET_STRUCT(arch_csf, retval);
 
 GEN_OFFSET_STRUCT(arch_esf, ra);
 GEN_OFFSET_STRUCT(arch_esf, r1);

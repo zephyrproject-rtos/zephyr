@@ -13,19 +13,19 @@
 	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
 
 #define _thread_offset_to_callee_saved_x19_x20 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x19_x20_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x19_x20_OFFSET)
 #define _thread_offset_to_callee_saved_x21_x22 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x21_x22_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x21_x22_OFFSET)
 #define _thread_offset_to_callee_saved_x23_x24 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x23_x24_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x23_x24_OFFSET)
 #define _thread_offset_to_callee_saved_x25_x26 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x25_x26_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x25_x26_OFFSET)
 #define _thread_offset_to_callee_saved_x27_x28 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x27_x28_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x27_x28_OFFSET)
 #define _thread_offset_to_callee_saved_x29_sp_el0 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_x29_sp_el0_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_x29_sp_el0_OFFSET)
 #define _thread_offset_to_callee_saved_sp_elx_lr \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_elx_lr_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_sp_elx_lr_OFFSET)
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 #define _cpu_offset_to_safe_exception_stack \

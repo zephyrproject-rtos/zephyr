@@ -51,18 +51,18 @@ bool volatile switch_flag;
 
 struct k_thread *p_ztest_thread;
 
-_callee_saved_t ztest_thread_callee_saved_regs_container;
+struct arch_csf ztest_thread_callee_saved_regs_container;
 int ztest_swap_return_val;
 
 /* Arbitrary values for the callee-saved registers,
  * enforced in the beginning of the test.
  */
-const _callee_saved_t ztest_thread_callee_saved_regs_init = {
+const struct arch_csf ztest_thread_callee_saved_regs_init = {
 	.v1 = 0x12345678, .v2 = 0x23456789, .v3 = 0x3456789a, .v4 = 0x456789ab,
 	.v5 = 0x56789abc, .v6 = 0x6789abcd, .v7 = 0x789abcde, .v8 = 0x89abcdef
 };
 
-static void load_callee_saved_regs(const _callee_saved_t *regs)
+static void load_callee_saved_regs(const struct arch_csf *regs)
 {
 	/* Load the callee-saved registers with given values */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -95,8 +95,8 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 	barrier_dsync_fence_full();
 }
 
-static void verify_callee_saved(const _callee_saved_t *src,
-		const _callee_saved_t *dst)
+static void verify_callee_saved(const struct arch_csf *src,
+		const struct arch_csf *dst)
 {
 	/* Verify callee-saved registers are as expected */
 	zassert_true((src->v1 == dst->v1)
@@ -259,14 +259,14 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	 * registers properly in its corresponding callee-saved container.
 	 */
 	verify_callee_saved(
-		(const _callee_saved_t *)&p_ztest_thread->callee_saved,
+		(const struct arch_csf *)&p_ztest_thread->callee_saved,
 		&ztest_thread_callee_saved_regs_container);
 
 	/* Zero the container of the callee-saved registers, to validate,
 	 * later, that it is populated properly.
 	 */
 	memset(&ztest_thread_callee_saved_regs_container,
-		0, sizeof(_callee_saved_t));
+		0, sizeof(struct arch_csf));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
@@ -558,7 +558,7 @@ ZTEST(arm_thread_swap, test_arm_thread_swap)
 	 * The container will, later, be populated by the swap
 	 * mechanism.
 	 */
-	memset(&_current->callee_saved, 0, sizeof(_callee_saved_t));
+	memset(&_current->callee_saved, 0, sizeof(struct arch_csf));
 
 	/* Verify context-switch has not occurred yet. */
 	test_flag = switch_flag;

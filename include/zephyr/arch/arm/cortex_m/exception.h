@@ -92,7 +92,7 @@ struct __fpu_sf {
  */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 struct __extra_esf_info {
-	_callee_saved_t *callee;
+	struct arch_csf *callee;
 	uint32_t msp;
 	uint32_t exc_return;
 };

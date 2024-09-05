@@ -114,8 +114,6 @@ struct arch_csf {
 	uint64_t rflags;
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 struct _thread_arch {
 	uint8_t flags;
 

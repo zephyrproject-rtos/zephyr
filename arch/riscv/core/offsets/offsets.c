@@ -28,21 +28,21 @@
 #include <kernel_offsets.h>
 
 /* struct arch_csf member offsets */
-GEN_OFFSET_SYM(_callee_saved_t, sp);
-GEN_OFFSET_SYM(_callee_saved_t, ra);
-GEN_OFFSET_SYM(_callee_saved_t, s0);
-GEN_OFFSET_SYM(_callee_saved_t, s1);
+GEN_OFFSET_STRUCT(arch_csf, sp);
+GEN_OFFSET_STRUCT(arch_csf, ra);
+GEN_OFFSET_STRUCT(arch_csf, s0);
+GEN_OFFSET_STRUCT(arch_csf, s1);
 #if !defined(CONFIG_RISCV_ISA_RV32E)
-GEN_OFFSET_SYM(_callee_saved_t, s2);
-GEN_OFFSET_SYM(_callee_saved_t, s3);
-GEN_OFFSET_SYM(_callee_saved_t, s4);
-GEN_OFFSET_SYM(_callee_saved_t, s5);
-GEN_OFFSET_SYM(_callee_saved_t, s6);
-GEN_OFFSET_SYM(_callee_saved_t, s7);
-GEN_OFFSET_SYM(_callee_saved_t, s8);
-GEN_OFFSET_SYM(_callee_saved_t, s9);
-GEN_OFFSET_SYM(_callee_saved_t, s10);
-GEN_OFFSET_SYM(_callee_saved_t, s11);
+GEN_OFFSET_STRUCT(arch_csf, s2);
+GEN_OFFSET_STRUCT(arch_csf, s3);
+GEN_OFFSET_STRUCT(arch_csf, s4);
+GEN_OFFSET_STRUCT(arch_csf, s5);
+GEN_OFFSET_STRUCT(arch_csf, s6);
+GEN_OFFSET_STRUCT(arch_csf, s7);
+GEN_OFFSET_STRUCT(arch_csf, s8);
+GEN_OFFSET_STRUCT(arch_csf, s9);
+GEN_OFFSET_STRUCT(arch_csf, s10);
+GEN_OFFSET_STRUCT(arch_csf, s11);
 #endif /* !CONFIG_RISCV_ISA_RV32E */
 
 #if defined(CONFIG_FPU_SHARING)
@@ -128,7 +128,7 @@ GEN_SOC_OFFSET_SYMS();
 GEN_ABSOLUTE_SYM(__struct_arch_esf_SIZEOF, sizeof(struct arch_esf));
 
 #ifdef CONFIG_EXCEPTION_DEBUG
-GEN_ABSOLUTE_SYM(__callee_saved_t_SIZEOF, ROUND_UP(sizeof(_callee_saved_t), ARCH_STACK_PTR_ALIGN));
+GEN_ABSOLUTE_SYM(_struct_arch_csf_SIZEOF, ROUND_UP(sizeof(struct arch_csf), ARCH_STACK_PTR_ALIGN));
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_USERSPACE

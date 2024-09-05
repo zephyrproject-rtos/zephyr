@@ -50,7 +50,7 @@ GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
 		 sizeof(struct k_thread) - sizeof(tPreempFloatReg));
 
-GEN_OFFSET_SYM(_callee_saved_t, esp);
+GEN_OFFSET_STRUCT(arch_csf, esp);
 
 /* struct arch_esf structure member offsets */
 GEN_OFFSET_STRUCT(arch_esf, eflags);

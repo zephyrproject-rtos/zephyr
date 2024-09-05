@@ -9,31 +9,31 @@
 #include <zephyr/offsets.h>
 
 #define _thread_offset_to_rsp \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rsp_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_rsp_OFFSET)
 
 #define _thread_offset_to_rbx \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rbx_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_rbx_OFFSET)
 
 #define _thread_offset_to_rbp \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rbp_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_rbp_OFFSET)
 
 #define _thread_offset_to_r12 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r12_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r12_OFFSET)
 
 #define _thread_offset_to_r13 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r13_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r13_OFFSET)
 
 #define _thread_offset_to_r14 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r14_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r14_OFFSET)
 
 #define _thread_offset_to_r15 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r15_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r15_OFFSET)
 
 #define _thread_offset_to_rip \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rip_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_rip_OFFSET)
 
 #define _thread_offset_to_rflags \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_rflags_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_rflags_OFFSET)
 
 #define _thread_offset_to_rax \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_rax_OFFSET)

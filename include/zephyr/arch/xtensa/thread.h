@@ -23,8 +23,6 @@ struct arch_csf {
 	char dummy;
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 struct _thread_arch {
 	uint32_t last_cpu;
 #ifdef CONFIG_USERSPACE

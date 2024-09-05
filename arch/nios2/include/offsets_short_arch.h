@@ -18,43 +18,43 @@
 /* threads */
 
 #define _thread_offset_to_r16 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r16_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r16_OFFSET)
 
 #define _thread_offset_to_r17 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r17_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r17_OFFSET)
 
 #define _thread_offset_to_r18 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r18_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r18_OFFSET)
 
 #define _thread_offset_to_r19 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r19_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r19_OFFSET)
 
 #define _thread_offset_to_r20 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r20_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r20_OFFSET)
 
 #define _thread_offset_to_r21 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r21_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r21_OFFSET)
 
 #define _thread_offset_to_r22 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r22_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r22_OFFSET)
 
 #define _thread_offset_to_r23 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r23_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r23_OFFSET)
 
 #define _thread_offset_to_r28 \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_r28_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_r28_OFFSET)
 
 #define _thread_offset_to_ra \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_ra_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_ra_OFFSET)
 
 #define _thread_offset_to_sp \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_sp_OFFSET)
 
 #define _thread_offset_to_key \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_key_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_key_OFFSET)
 
 #define _thread_offset_to_retval \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_retval_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_retval_OFFSET)
 
 /* end - threads */
 

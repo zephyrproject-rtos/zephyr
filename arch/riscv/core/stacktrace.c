@@ -98,7 +98,7 @@ static inline bool in_text_region(uintptr_t addr)
 #ifdef CONFIG_FRAME_POINTER
 static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
-			    const _callee_saved_t *csf)
+			    const struct arch_csf *csf)
 {
 	uintptr_t fp, last_fp = 0;
 	uintptr_t ra;
@@ -171,7 +171,7 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 register uintptr_t current_stack_pointer __asm__("sp");
 static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
-			    const _callee_saved_t *csf)
+			    const struct arch_csf *csf)
 {
 	uintptr_t sp;
 	uintptr_t ra;
@@ -275,7 +275,7 @@ static bool print_trace_address(void *arg, unsigned long ra, unsigned long sfp)
 	return true;
 }
 
-void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf)
+void z_riscv_unwind_stack(const struct arch_esf *esf, const struct arch_csf *csf)
 {
 	int i = 0;
 

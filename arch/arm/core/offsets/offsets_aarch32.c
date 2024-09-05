@@ -68,7 +68,7 @@ GEN_ABSOLUTE_SYM(___esf_t_SIZEOF, sizeof(_esf_t));
 
 /* size of the entire preempt registers structure */
 
-GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct arch_csf));
+GEN_ABSOLUTE_SYM(__struct_arch_csf_SIZEOF, sizeof(struct arch_csf));
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 GEN_ABSOLUTE_SYM(___extra_esf_info_t_SIZEOF, sizeof(struct __extra_esf_info));

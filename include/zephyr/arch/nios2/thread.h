@@ -51,8 +51,6 @@ struct arch_csf {
 	uint32_t retval;
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 struct _thread_arch {
 	/* nothing for now */
 };

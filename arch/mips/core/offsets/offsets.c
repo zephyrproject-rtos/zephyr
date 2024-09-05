@@ -12,16 +12,16 @@
 
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
-GEN_OFFSET_SYM(_callee_saved_t, sp);
-GEN_OFFSET_SYM(_callee_saved_t, s0);
-GEN_OFFSET_SYM(_callee_saved_t, s1);
-GEN_OFFSET_SYM(_callee_saved_t, s2);
-GEN_OFFSET_SYM(_callee_saved_t, s3);
-GEN_OFFSET_SYM(_callee_saved_t, s4);
-GEN_OFFSET_SYM(_callee_saved_t, s5);
-GEN_OFFSET_SYM(_callee_saved_t, s6);
-GEN_OFFSET_SYM(_callee_saved_t, s7);
-GEN_OFFSET_SYM(_callee_saved_t, s8);
+GEN_OFFSET_STRUCT(arch_csf, sp);
+GEN_OFFSET_STRUCT(arch_csf, s0);
+GEN_OFFSET_STRUCT(arch_csf, s1);
+GEN_OFFSET_STRUCT(arch_csf, s2);
+GEN_OFFSET_STRUCT(arch_csf, s3);
+GEN_OFFSET_STRUCT(arch_csf, s4);
+GEN_OFFSET_STRUCT(arch_csf, s5);
+GEN_OFFSET_STRUCT(arch_csf, s6);
+GEN_OFFSET_STRUCT(arch_csf, s7);
+GEN_OFFSET_STRUCT(arch_csf, s8);
 
 GEN_OFFSET_STRUCT(arch_esf, ra);
 GEN_OFFSET_STRUCT(arch_esf, gp);

@@ -51,7 +51,7 @@ static int check_esf_matches_expectations(const struct arch_esf *pEsf)
 		(callee_regs->v7 /* r10 */ == 10) &&
 		(callee_regs->v8 /* r11 */ == 11);
 	if (!callee_regs_match_expected) {
-		printk("_callee_saved_t member of ESF is incorrect\n");
+		printk("struct arch_csf member of ESF is incorrect\n");
 		return -1;
 	}
 

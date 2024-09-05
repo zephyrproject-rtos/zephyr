@@ -20,8 +20,6 @@ struct arch_csf {
 #endif
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 struct _thread_arch {
 #ifdef CONFIG_CPP
 	/* C++ does not allow empty structs, add an extra 1 byte */

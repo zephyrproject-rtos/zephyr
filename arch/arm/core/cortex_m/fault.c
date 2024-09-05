@@ -1089,8 +1089,7 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
  * @param callee_regs Callee-saved registers (R4-R11, PSP)
  *
  */
-void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
-	_callee_saved_t *callee_regs)
+void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, struct arch_csf *callee_regs)
 {
 	uint32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;

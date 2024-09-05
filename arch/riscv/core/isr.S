@@ -44,18 +44,18 @@
 #ifdef CONFIG_EXCEPTION_DEBUG
 /* Convenience macro for storing callee saved register [s0 - s11] states. */
 #define STORE_CALLEE_SAVED() \
-	RV_E(	sr s0, ___callee_saved_t_s0_OFFSET(sp)		);\
-	RV_E(	sr s1, ___callee_saved_t_s1_OFFSET(sp)		);\
-	RV_I(	sr s2, ___callee_saved_t_s2_OFFSET(sp)		);\
-	RV_I(	sr s3, ___callee_saved_t_s3_OFFSET(sp)		);\
-	RV_I(	sr s4, ___callee_saved_t_s4_OFFSET(sp)		);\
-	RV_I(	sr s5, ___callee_saved_t_s5_OFFSET(sp)		);\
-	RV_I(	sr s6, ___callee_saved_t_s6_OFFSET(sp)		);\
-	RV_I(	sr s7, ___callee_saved_t_s7_OFFSET(sp)		);\
-	RV_I(	sr s8, ___callee_saved_t_s8_OFFSET(sp)		);\
-	RV_I(	sr s9, ___callee_saved_t_s9_OFFSET(sp)		);\
-	RV_I(	sr s10, ___callee_saved_t_s10_OFFSET(sp)	);\
-	RV_I(	sr s11, ___callee_saved_t_s11_OFFSET(sp)	)
+	RV_E(	sr s0, __struct_arch_csf_s0_OFFSET(sp)		);\
+	RV_E(	sr s1, __struct_arch_csf_s1_OFFSET(sp)		);\
+	RV_I(	sr s2, __struct_arch_csf_s2_OFFSET(sp)		);\
+	RV_I(	sr s3, __struct_arch_csf_s3_OFFSET(sp)		);\
+	RV_I(	sr s4, __struct_arch_csf_s4_OFFSET(sp)		);\
+	RV_I(	sr s5, __struct_arch_csf_s5_OFFSET(sp)		);\
+	RV_I(	sr s6, __struct_arch_csf_s6_OFFSET(sp)		);\
+	RV_I(	sr s7, __struct_arch_csf_s7_OFFSET(sp)		);\
+	RV_I(	sr s8, __struct_arch_csf_s8_OFFSET(sp)		);\
+	RV_I(	sr s9, __struct_arch_csf_s9_OFFSET(sp)		);\
+	RV_I(	sr s10, __struct_arch_csf_s10_OFFSET(sp)	);\
+	RV_I(	sr s11, __struct_arch_csf_s11_OFFSET(sp)	)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	.macro get_current_cpu dst
@@ -444,7 +444,7 @@ do_fault:
 
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* Allocate space for caller-saved registers on current thread stack */
-	addi sp, sp, -__callee_saved_t_SIZEOF
+	addi sp, sp, -_struct_arch_csf_SIZEOF
 
 	/* Save callee-saved registers to be passed as 3rd arg */
 	STORE_CALLEE_SAVED()		;

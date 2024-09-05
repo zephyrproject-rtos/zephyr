@@ -41,7 +41,6 @@ struct arch_csf {
 	unsigned long s7;	/* saved register */
 	unsigned long s8;	/* saved register AKA fp */
 };
-typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 	uint32_t swap_return_value; /* Return value of z_swap() */

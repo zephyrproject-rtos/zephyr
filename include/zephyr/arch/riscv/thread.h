@@ -45,7 +45,6 @@ struct arch_csf {
 	unsigned long s11;	/* saved register */
 #endif
 };
-typedef struct arch_csf _callee_saved_t;
 
 #if !defined(RV_FP_TYPE)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION

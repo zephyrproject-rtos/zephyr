@@ -40,8 +40,6 @@ struct arch_csf {
 	uint64_t lr;
 };
 
-typedef struct arch_csf _callee_saved_t;
-
 struct z_arm64_fp_context {
 	__int128 q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7;
 	__int128 q8,  q9,  q10, q11, q12, q13, q14, q15;

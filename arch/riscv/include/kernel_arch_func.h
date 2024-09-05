@@ -74,7 +74,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 				       const struct arch_esf *esf);
 
 FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arch_esf *esf,
-					   const _callee_saved_t *csf);
+					   const struct arch_csf *csf);
 
 static inline bool arch_is_in_isr(void)
 {

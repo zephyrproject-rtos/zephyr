@@ -36,7 +36,7 @@
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
 
 #define _thread_offset_to_sp \
-	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_sp_OFFSET)
+	(___thread_t_callee_saved_OFFSET + __struct_arch_csf_sp_OFFSET)
 
 /* end - threads */
 

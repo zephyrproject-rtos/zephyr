@@ -76,7 +76,7 @@ GTEXT(z_arm_data_abort)
 	str r0, [sp, #4]
 	str r0, [sp, #8]
 
-	sub r1, sp, #___callee_saved_t_SIZEOF
+	sub r1, sp, #__struct_arch_csf_SIZEOF
 	str r1, [sp]
 	cps #MODE_SYS
 	stm r1, {r4-r11, sp}
@@ -99,7 +99,7 @@ GTEXT(z_arm_data_abort)
 	/* Exit exception */
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	add sp, #___extra_esf_info_t_SIZEOF
-	add sp, #___callee_saved_t_SIZEOF
+	add sp, #__struct_arch_csf_SIZEOF
 #endif
 .endm
 
@@ -163,7 +163,7 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	str r0, [sp, #4]
 	str r0, [sp, #8]
 
-	sub r1, sp, #___callee_saved_t_SIZEOF
+	sub r1, sp, #__struct_arch_csf_SIZEOF
 	str r1, [sp]
 	cps #MODE_SYS
 	stm r1, {r4-r11, sp}

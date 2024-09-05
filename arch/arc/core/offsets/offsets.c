@@ -78,7 +78,7 @@ GEN_OFFSET_SYM(_isf_t, sec_stat);
 GEN_OFFSET_SYM(_isf_t, status32);
 GEN_ABSOLUTE_SYM(___isf_t_SIZEOF, sizeof(_isf_t));
 
-GEN_OFFSET_SYM(_callee_saved_t, sp);
+GEN_OFFSET_STRUCT(arch_csf, sp);
 
 GEN_OFFSET_SYM(_callee_saved_stack_t, r13);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r14);

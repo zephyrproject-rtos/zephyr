@@ -306,13 +306,13 @@ _oops:
     push {r0, lr}
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    /* Build _callee_saved_t. To match the struct
+    /* Build struct arch_csf. To match the struct
      * definition we push the psp & then r11-r4
      */
     mrs r1, PSP
     push {r1, r2}
     push {r4-r11}
-    mov  r1, sp /* pointer to _callee_saved_t */
+    mov  r1, sp /* pointer to struct arch_csf */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
     bl z_do_kernel_oops

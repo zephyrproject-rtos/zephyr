@@ -81,7 +81,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 	mrs r1, PSP
 	push {r0, lr}
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
-	/* Build _callee_saved_t. To match the struct
+	/* Build struct arch_csf. To match the struct
 	 * definition we push the psp & then r11-r4
 	 */
 	push { r1, r2 }
@@ -96,7 +96,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	push {r4-r11}
 #endif
-	mov  r3, sp /* pointer to _callee_saved_t */
+	mov  r3, sp /* pointer to struct arch_csf */
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	mov r2, lr /* EXC_RETURN */
 	bl z_arm_fault

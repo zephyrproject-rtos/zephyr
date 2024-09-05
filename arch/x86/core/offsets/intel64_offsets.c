@@ -6,15 +6,15 @@
 #ifndef _X86_OFFSETS_INC_
 #define _X86_OFFSETS_INC_
 
-GEN_OFFSET_SYM(_callee_saved_t, rsp);
-GEN_OFFSET_SYM(_callee_saved_t, rbp);
-GEN_OFFSET_SYM(_callee_saved_t, rbx);
-GEN_OFFSET_SYM(_callee_saved_t, r12);
-GEN_OFFSET_SYM(_callee_saved_t, r13);
-GEN_OFFSET_SYM(_callee_saved_t, r14);
-GEN_OFFSET_SYM(_callee_saved_t, r15);
-GEN_OFFSET_SYM(_callee_saved_t, rip);
-GEN_OFFSET_SYM(_callee_saved_t, rflags);
+GEN_OFFSET_STRUCT(arch_csf, rsp);
+GEN_OFFSET_STRUCT(arch_csf, rbp);
+GEN_OFFSET_STRUCT(arch_csf, rbx);
+GEN_OFFSET_STRUCT(arch_csf, r12);
+GEN_OFFSET_STRUCT(arch_csf, r13);
+GEN_OFFSET_STRUCT(arch_csf, r14);
+GEN_OFFSET_STRUCT(arch_csf, r15);
+GEN_OFFSET_STRUCT(arch_csf, rip);
+GEN_OFFSET_STRUCT(arch_csf, rflags);
 
 GEN_OFFSET_SYM(_thread_arch_t, rax);
 GEN_OFFSET_SYM(_thread_arch_t, rcx);

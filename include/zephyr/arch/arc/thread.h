@@ -37,7 +37,6 @@ extern "C" {
 struct arch_csf {
 	uintptr_t sp; /* r28 */
 };
-typedef struct arch_csf _callee_saved_t;
 
 struct _thread_arch {
 

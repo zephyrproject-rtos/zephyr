@@ -17,18 +17,18 @@
 #include <gen_offset.h>
 #include <kernel_offsets.h>
 
-GEN_OFFSET_SYM(_callee_saved_t, y);
-GEN_OFFSET_SYM(_callee_saved_t, psr);
+GEN_OFFSET_STRUCT(arch_csf, y);
+GEN_OFFSET_STRUCT(arch_csf, psr);
 
-GEN_OFFSET_SYM(_callee_saved_t, l0_and_l1);
-GEN_OFFSET_SYM(_callee_saved_t, l2);
-GEN_OFFSET_SYM(_callee_saved_t, l4);
-GEN_OFFSET_SYM(_callee_saved_t, l6);
-GEN_OFFSET_SYM(_callee_saved_t, i0);
-GEN_OFFSET_SYM(_callee_saved_t, i2);
-GEN_OFFSET_SYM(_callee_saved_t, i4);
-GEN_OFFSET_SYM(_callee_saved_t, i6);
-GEN_OFFSET_SYM(_callee_saved_t, o6);
+GEN_OFFSET_STRUCT(arch_csf, l0_and_l1);
+GEN_OFFSET_STRUCT(arch_csf, l2);
+GEN_OFFSET_STRUCT(arch_csf, l4);
+GEN_OFFSET_STRUCT(arch_csf, l6);
+GEN_OFFSET_STRUCT(arch_csf, i0);
+GEN_OFFSET_STRUCT(arch_csf, i2);
+GEN_OFFSET_STRUCT(arch_csf, i4);
+GEN_OFFSET_STRUCT(arch_csf, i6);
+GEN_OFFSET_STRUCT(arch_csf, o6);
 
 /* esf member offsets */
 GEN_OFFSET_STRUCT(arch_esf, out);

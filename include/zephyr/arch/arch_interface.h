@@ -39,6 +39,7 @@ extern "C" {
 #endif
 
 /* NOTE: We cannot pull in kernel.h here, need some forward declarations  */
+struct arch_csf;
 struct arch_esf;
 struct k_thread;
 struct k_mem_domain;
@@ -47,6 +48,7 @@ typedef struct z_thread_stack_element k_thread_stack_t;
 
 typedef void (*k_thread_entry_t)(void *p1, void *p2, void *p3);
 
+__deprecated typedef struct arch_csf _callee_saved_t;
 __deprecated typedef struct arch_esf z_arch_esf_t;
 
 /**

@@ -29,7 +29,7 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 /* Stack trace function */
-void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf);
+void z_riscv_unwind_stack(const struct arch_esf *esf, const struct arch_csf *csf);
 
 uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 {
@@ -59,7 +59,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 }
 
 FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arch_esf *esf,
-					   const _callee_saved_t *csf)
+					   const struct arch_csf *csf)
 {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
