@@ -17,7 +17,7 @@ menuconfig BME280
 
 if BME280
 
-choice
+choice BME280_MODE
 	prompt "BME280 sampling mode"
 	default BME280_MODE_NORMAL
 	help
