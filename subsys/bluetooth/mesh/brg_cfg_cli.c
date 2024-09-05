@@ -89,7 +89,16 @@ static int bridged_subnets_list(const struct bt_mesh_model *model, struct bt_mes
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_BRIDGED_SUBNETS_LIST, ctx->addr,
 				      (void **)&rsp)) {
-		*rsp = subnets_list;
+		rsp->net_idx_filter = subnets_list.net_idx_filter;
+		rsp->start_idx = subnets_list.start_idx;
+
+		if (rsp->list) {
+			size_t to_copy;
+
+			to_copy = MIN(net_buf_simple_tailroom(rsp->list), buf->len);
+			net_buf_simple_add_mem(rsp->list, buf->data, to_copy);
+		}
+
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
@@ -117,7 +126,18 @@ static int bridging_table_list(const struct bt_mesh_model *model, struct bt_mesh
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_BRIDGING_TABLE_LIST, ctx->addr,
 				      (void **)&rsp)) {
-		*rsp = table_list;
+		rsp->status = table_list.status;
+		rsp->net_idx1 = table_list.net_idx1;
+		rsp->net_idx2 = table_list.net_idx2;
+		rsp->start_idx = table_list.start_idx;
+
+		if (rsp->list) {
+			size_t to_copy;
+
+			to_copy = MIN(net_buf_simple_tailroom(rsp->list), (buf->len / 5) * 5);
+			net_buf_simple_add_mem(rsp->list, buf->data, to_copy);
+		}
+
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
