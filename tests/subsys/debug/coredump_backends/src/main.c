@@ -19,10 +19,12 @@
 static struct k_thread dump_thread;
 static K_THREAD_STACK_DEFINE(dump_stack, STACK_SIZE);
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
 	ARG_UNUSED(reason);
 	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
 }
 
 void dump_entry(void *p1, void *p2, void *p3)

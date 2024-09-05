@@ -104,7 +104,7 @@ FUNC_NORETURN void z_riscv_fatal_error_csf(unsigned int reason, const struct arc
 	z_riscv_unwind_stack(esf, csf);
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, csf);
 	CODE_UNREACHABLE;
 }
 

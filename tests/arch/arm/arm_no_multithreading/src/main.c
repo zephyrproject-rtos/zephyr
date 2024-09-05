@@ -36,8 +36,12 @@ void arm_isr_handler(const void *args)
 	test_flag++;
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
+
 	printk("Caught system error -- reason %d\n", reason);
 
 	if (expected_reason == -1) {

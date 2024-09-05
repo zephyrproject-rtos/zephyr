@@ -6045,7 +6045,7 @@ static inline void k_cpu_atomic_idle(unsigned int key)
  */
 #define z_except_reason(reason) do { \
 		__EXCEPT_LOC();              \
-		z_fatal_error(reason, NULL); \
+		z_fatal_error(reason, NULL, NULL); \
 	} while (false)
 
 #endif /* _ARCH__EXCEPT */

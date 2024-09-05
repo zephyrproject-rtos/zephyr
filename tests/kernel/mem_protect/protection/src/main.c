@@ -28,8 +28,12 @@
 
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
+
 	INFO("Caught system error -- reason %d\n", reason);
 	ztest_test_pass();
 }

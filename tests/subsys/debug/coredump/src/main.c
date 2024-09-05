@@ -12,10 +12,11 @@
 #include <zephyr/debug/gcov.h>
 #endif
 
-
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
 	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
 
 	printk("%s is expected; reason = %u; halting ...\n", __func__, reason);
 

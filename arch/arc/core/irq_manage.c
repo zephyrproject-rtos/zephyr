@@ -242,7 +242,7 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
-	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL, NULL);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

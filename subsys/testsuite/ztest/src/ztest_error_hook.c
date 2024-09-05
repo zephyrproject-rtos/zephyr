@@ -46,7 +46,8 @@ __weak void ztest_post_fatal_error_hook(unsigned int reason,
 {
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
 	k_tid_t curr_tid = k_current_get();
 	bool valid_fault = (curr_tid == valid_fault_tid) || fault_in_isr;

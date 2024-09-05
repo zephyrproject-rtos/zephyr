@@ -403,7 +403,7 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 
 	CODE_UNREACHABLE;
 }

@@ -50,7 +50,7 @@ void z_arc_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 }
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)

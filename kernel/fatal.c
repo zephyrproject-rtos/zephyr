@@ -35,9 +35,10 @@ FUNC_NORETURN __weak void arch_system_halt(unsigned int reason)
 
 /* LCOV_EXCL_START */
 __weak void k_sys_fatal_error_handler(unsigned int reason,
-				      const struct arch_esf *esf)
+				      const struct arch_esf *esf, const struct arch_csf *csf)
 {
 	ARG_UNUSED(esf);
+	ARG_UNUSED(csf);
 
 	LOG_PANIC();
 	LOG_ERR("Halting system");
@@ -82,7 +83,7 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 }
 /* LCOV_EXCL_STOP */
 
-void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
+void z_fatal_error(unsigned int reason, const struct arch_esf *esf, const struct arch_csf *csf)
 {
 	/* We can't allow this code to be preempted, but don't need to
 	 * synchronize between CPUs, so an arch-layer lock is
@@ -116,7 +117,7 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 
 	coredump(reason, esf, thread);
 
-	k_sys_fatal_error_handler(reason, esf);
+	k_sys_fatal_error_handler(reason, esf, csf);
 
 	/* If the system fatal error handler returns, then kill the faulting
 	 * thread; a policy decision was made not to hang the system.

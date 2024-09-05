@@ -106,7 +106,7 @@ void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 }
 
 #if defined(CONFIG_SIMULATOR_XTENSA) || defined(XT_SIMULATOR)

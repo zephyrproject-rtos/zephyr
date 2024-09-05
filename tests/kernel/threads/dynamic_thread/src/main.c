@@ -16,8 +16,12 @@ static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
 static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf,
+			       const struct arch_csf *csf)
 {
+	ARG_UNUSED(esf);
+	ARG_UNUSED(csf);
+
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
 		TC_END_REPORT(TC_FAIL);

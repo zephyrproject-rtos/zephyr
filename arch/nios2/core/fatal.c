@@ -36,7 +36,7 @@ FUNC_NORETURN void z_nios2_fatal_error(unsigned int reason,
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 	CODE_UNREACHABLE;
 }
 

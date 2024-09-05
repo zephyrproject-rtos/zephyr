@@ -26,6 +26,9 @@ Kernel
 
 * The named struct ``_callee_saved_t`` is now deprecated. Use ``struct arch_csf`` instead. (:github:`78029`)
 
+* The fatal handling APIs - ``k_sys_fatal_error_handler`` & ``z_fatal_error`` have been updated to accept
+  an additional ``struct arch_csf`` argument. (:github:`78029`)
+
 Boards
 ******
 

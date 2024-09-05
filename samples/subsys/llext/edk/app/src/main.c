@@ -100,8 +100,11 @@ static void user_function(void *p1, void *p2, void *p3)
 	printk("[app]Thread %p done\n", k_current_get());
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf,
+			       const struct arch_csf *csf)
 {
+	ARG_UNUSED(csf);
+
 	int i;
 
 	printk("[app]Fatal handler! Thread: %p\n", k_current_get());

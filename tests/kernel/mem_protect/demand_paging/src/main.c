@@ -63,9 +63,12 @@ char *arena;
 __pinned_bss
 static bool expect_fault;
 
-__pinned_func
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+__pinned_func void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+					     const struct arch_csf *pCsf)
 {
+	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
+
 	printk("Caught system error -- reason %d\n", reason);
 
 	if (expect_fault && reason == 0) {

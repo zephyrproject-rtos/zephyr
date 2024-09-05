@@ -34,7 +34,7 @@ FUNC_NORETURN void z_mips_fatal_error(unsigned int reason,
 		LOG_ERR("BadVA : %08lx\n", esf->badvaddr);
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 	CODE_UNREACHABLE;
 }
 

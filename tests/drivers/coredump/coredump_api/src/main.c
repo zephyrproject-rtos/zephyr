@@ -32,9 +32,11 @@ static struct coredump_mem_region_node dump_region0 = {
 	.size = sizeof(values_to_dump)
 };
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf,
+			       const struct arch_csf *pCsf)
 {
 	ARG_UNUSED(pEsf);
+	ARG_UNUSED(pCsf);
 
 	printk("%s as expected; reason = %u; halting ...\n", __func__, reason);
 

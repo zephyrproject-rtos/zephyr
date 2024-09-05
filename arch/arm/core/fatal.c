@@ -83,7 +83,7 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif
 
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 }
 
 /**

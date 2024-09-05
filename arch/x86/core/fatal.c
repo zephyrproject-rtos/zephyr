@@ -416,7 +416,7 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 		}
 #endif
 	}
-	z_fatal_error(reason, esf);
+	z_fatal_error(reason, esf, NULL);
 	CODE_UNREACHABLE;
 }
 

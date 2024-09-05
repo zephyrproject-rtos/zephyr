@@ -35,7 +35,7 @@ static const struct device *const vtd = DEVICE_DT_GET_ONE(intel_vt_d);
 static void irq_spurious(const void *arg)
 {
 	LOG_ERR("Spurious interrupt, vector %d\n", (uint32_t)(uint64_t)arg);
-	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	z_fatal_error(K_ERR_SPURIOUS_IRQ, NULL, NULL);
 }
 
 void x86_64_irq_init(void)

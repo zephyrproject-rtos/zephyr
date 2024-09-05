@@ -47,8 +47,12 @@ static volatile int int_handler_executed;
 /* Assume the spurious interrupt handler will execute and abort the task */
 static volatile int spur_handler_aborted_thread = 1;
 
-void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf,
+			       const struct arch_csf *csf)
 {
+	ARG_UNUSED(esf);
+	ARG_UNUSED(csf);
+
 	if (reason != K_ERR_SPURIOUS_IRQ) {
 		printk("wrong error reason\n");
 		k_fatal_halt(reason);

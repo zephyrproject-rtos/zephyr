@@ -60,10 +60,11 @@ ZTEST(threads_lifecycle, test_essential_thread_operation)
 	k_thread_abort(tid);
 }
 
-void k_sys_fatal_error_handler(unsigned int reason,
-				      const struct arch_esf *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf,
+			       const struct arch_csf *csf)
 {
 	ARG_UNUSED(esf);
+	ARG_UNUSED(csf);
 	ARG_UNUSED(reason);
 
 	fatal_error_signaled = true;
