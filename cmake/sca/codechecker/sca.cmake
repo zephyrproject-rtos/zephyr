@@ -64,7 +64,6 @@ add_custom_target(codechecker ALL
     ${CMAKE_BINARY_DIR}/compile_commands.json
     || ${CMAKE_COMMAND} -E true # allow to continue processing results
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json ${output_dir}/codechecker.ready
-  BYPRODUCTS ${output_dir}/codechecker.plist
   VERBATIM
   USES_TERMINAL
   COMMAND_EXPAND_LISTS
@@ -89,8 +88,7 @@ if(DEFINED CODECHECKER_EXPORT)
   foreach(export_item IN LISTS export_list)
     message(STATUS "CodeChecker export: ${CMAKE_BINARY_DIR}/codechecker.${export_item}")
 
-    add_custom_command(
-      TARGET codechecker POST_BUILD
+    add_custom_target(codechecker-report-${export_item} ALL
       COMMAND ${CODECHECKER_EXE} parse
         ${output_dir}/codechecker.plist
         --export ${export_item}
@@ -103,11 +101,11 @@ if(DEFINED CODECHECKER_EXPORT)
       USES_TERMINAL
       COMMAND_EXPAND_LISTS
     )
+    add_dependencies(codechecker-report-${export_item} codechecker)
   endforeach()
 elseif(NOT CODECHECKER_PARSE_SKIP)
   # Output parse results
-  add_custom_command(
-    TARGET codechecker POST_BUILD
+    add_custom_target(codechecker-parse ALL
     COMMAND ${CODECHECKER_EXE} parse
       ${output_dir}/codechecker.plist
       ${CODECHECKER_CONFIG_FILE}
@@ -117,11 +115,11 @@ elseif(NOT CODECHECKER_PARSE_SKIP)
     USES_TERMINAL
     COMMAND_EXPAND_LISTS
   )
+  add_dependencies(codechecker-parse codechecker)
 endif()
 
 if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
-  add_custom_command(
-    TARGET codechecker POST_BUILD
+  add_custom_target(codechecker-store ALL
     COMMAND ${CODECHECKER_EXE} store
       ${CODECHECKER_CONFIG_FILE}
       ${CODECHECKER_STORE_TAG}
@@ -132,4 +130,5 @@ if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
     USES_TERMINAL
     COMMAND_EXPAND_LISTS
   )
+  add_dependencies(codechecker-store codechecker)
 endif()
