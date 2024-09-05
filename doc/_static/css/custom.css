@@ -780,23 +780,6 @@ kbd, .kbd,
     background-color: var(--navbar-scrollbar-active-color);
 }
 
-/* Breathe tweaks */
-
-.rst-content .section > dl > dd {
-    margin-left: 0;
-}
-
-.rst-content p.breathe-sectiondef-title {
-    font-size: 115%;
-    color: var(--link-color);
-}
-
-.rst-content dl:not(.docutils) dl:not(.rst-other-versions) dt {
-    background: var(--admonition-note-background-color) !important;
-    border-top: none !important;
-    border-left: none !important;
-}
-
 /* Misc tweaks */
 
 .rst-columns {
