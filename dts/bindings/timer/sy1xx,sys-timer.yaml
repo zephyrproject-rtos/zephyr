@@ -1,0 +1,19 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry ganymed timer peripheral
+
+compatible: "sensry,sy1xx-sys-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ticks_us:
+    type: int
+    required: true
