@@ -15,7 +15,7 @@ Building and Running
 Build and flash Twinkie as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/google_pda
+   :zephyr-app: samples/boards/google_twinkie_v2_pda
    :board: google_twinkie_v2
    :goals: build flash
    :compact:

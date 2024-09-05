@@ -184,7 +184,7 @@ Here are some examples present in Zephyr:
 #. Bosch BMI160 sensor driver connected via both I2C and SPI to an emulator:
 
    .. zephyr-app-commands::
-      :zephyr-app: tests/drivers/sensor/accel/
+      :zephyr-app: tests/drivers/sensor/bmi160
       :board: native_sim
       :goals: build
 

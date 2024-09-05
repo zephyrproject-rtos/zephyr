@@ -137,7 +137,7 @@ Debugging
 The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the `debug` build target:
 
 .. zephyr-app-commands::
-   :zephyr-app: <my_app>
+   :app: <my_app>
    :board: phyboard_lyra/am6234/m4
    :maybe-skip-config:
    :goals: debug
