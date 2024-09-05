@@ -382,20 +382,21 @@ static int bme280_pm_action(const struct device *dev,
 	int ret = 0;
 
 	switch (action) {
+#ifdef CONFIG_BME280_MODE_NORMAL
 	case PM_DEVICE_ACTION_RESUME:
-		/* Re-initialize the chip */
-		ret = bme280_chip_init(dev);
+		/* Re-enable periodic measurement */
+		ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* Put the chip into sleep mode */
-		ret = bme280_reg_write(dev,
-			BME280_REG_CTRL_MEAS,
-			BME280_CTRL_MEAS_OFF_VAL);
-
-		if (ret < 0) {
-			LOG_DBG("CTRL_MEAS write failed: %d", ret);
-		}
+		ret = bme280_reg_write(dev, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_OFF_VAL);
 		break;
+#else
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Nothing to do in forced mode */
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
