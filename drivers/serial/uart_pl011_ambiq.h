@@ -69,7 +69,7 @@ typedef struct {
 	uint32_t regIFLS;
 	uint32_t regIER;
 } uart_register_state_t;
-static uart_register_state_t sRegState[2];
+static uart_register_state_t sRegState[AM_REG_UART_NUM_MODULES];
 
 static int uart_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
 {
