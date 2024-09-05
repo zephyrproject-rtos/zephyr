@@ -51,4 +51,6 @@ source "subsys/net/lib/zperf/Kconfig"
 
 source "subsys/net/lib/prometheus/Kconfig"
 
+source "subsys/net/lib/wifi_credentials/Kconfig"
+
 endmenu
