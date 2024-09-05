@@ -91,6 +91,12 @@ static const struct bt_uuid *cp_uuid = BT_UUID_ASCS_ASE_CP;
 
 static struct bt_bap_unicast_group unicast_groups[UNICAST_GROUP_CNT];
 
+enum unicast_client_flag {
+	UNICAST_CLIENT_FLAG_BUSY,
+
+	UNICAST_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
+};
+
 static struct unicast_client {
 #if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
 	struct bt_bap_unicast_client_ep snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
@@ -115,7 +121,6 @@ static struct unicast_client {
 
 	/* Discovery parameters */
 	enum bt_audio_dir dir;
-	bool busy;
 	union {
 		struct bt_gatt_read_params read_params;
 		struct bt_gatt_discover_params disc_params;
@@ -127,6 +132,8 @@ static struct unicast_client {
 	 */
 	uint8_t att_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
 	struct net_buf_simple net_buf;
+
+	ATOMIC_DEFINE(flags, UNICAST_CLIENT_FLAG_NUM_FLAGS);
 } uni_cli_insts[CONFIG_BT_MAX_CONN];
 
 static const struct bt_bap_unicast_client_cb *unicast_client_cbs;
@@ -1466,8 +1473,8 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 		if (net_buf_simple_tailroom(buf) < length) {
 			LOG_DBG("Buffer full, invalid server response of size %u",
 				length + client->net_buf.len);
-			client->busy = false;
 			reset_att_buf(client);
+			atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
 			return BT_GATT_ITER_STOP;
 		}
@@ -1483,7 +1490,7 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 	if (buf->len < sizeof(struct bt_ascs_ase_status)) {
 		LOG_DBG("Read response too small (%u)", buf->len);
 		reset_att_buf(client);
-		client->busy = false;
+		atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1493,7 +1500,7 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 	 */
 	net_buf_simple_clone(buf, &buf_clone);
 	reset_att_buf(client);
-	client->busy = false;
+	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
 	ep = unicast_client_ep_get(conn, client->dir, handle);
 	if (!ep) {
@@ -1518,10 +1525,9 @@ static void long_ase_read(struct bt_bap_unicast_client_ep *client_ep)
 	struct net_buf_simple *long_read_buf = &client->net_buf;
 	int err;
 
-	LOG_DBG("conn %p ep %p 0x%04X busy %u", conn, &client_ep->ep, client_ep->handle,
-		client->busy);
+	LOG_DBG("conn %p ep %p 0x%04X", conn, &client_ep->ep, client_ep->handle);
 
-	if (client->busy) {
+	if (atomic_test_and_set_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 		/* If the client is busy reading or writing something else, reschedule the
 		 * long read.
 		 */
@@ -1552,8 +1558,7 @@ static void long_ase_read(struct bt_bap_unicast_client_ep *client_ep)
 	err = bt_gatt_read(conn, &client->read_params);
 	if (err != 0) {
 		LOG_DBG("Failed to read ASE: %d", err);
-	} else {
-		client->busy = true;
+		atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 	}
 }
 
@@ -1598,7 +1603,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 	if (length == max_ntf_size) {
 		struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 
-		if (!client->busy) {
+		if (!atomic_test_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 			struct net_buf_simple *long_read_buf = &client->net_buf;
 
 			/* store data*/
@@ -1688,7 +1693,7 @@ static void discover_cb(struct bt_conn *conn, int err)
 	/* Discover complete - Reset discovery values */
 	client->dir = 0U;
 	reset_att_buf(client);
-	client->busy = false;
+	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
 	if (unicast_client_cbs != NULL && unicast_client_cbs->discover != NULL) {
 		unicast_client_cbs->discover(conn, err, dir);
@@ -1760,7 +1765,7 @@ struct net_buf_simple *bt_bap_unicast_client_ep_create_pdu(struct bt_conn *conn,
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 	struct bt_ascs_ase_cp *hdr;
 
-	if (client->busy) {
+	if (atomic_test_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 		return NULL;
 	}
 
@@ -2025,7 +2030,7 @@ static void gatt_write_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_writ
 
 	memset(params, 0, sizeof(*params));
 	reset_att_buf(client);
-	client->busy = false;
+	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 
 	/* TBD: Should we do anything in case of error here? */
 }
@@ -2043,7 +2048,7 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 	LOG_DBG("conn %p ep %p buf %p len %u", conn, ep, buf, buf->len);
 
 	if (buf->len > max_write_size) {
-		if (client->busy) {
+		if (atomic_test_and_set_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 			LOG_DBG("Client connection is busy");
 			return -EBUSY;
 		}
@@ -2060,9 +2065,8 @@ int bt_bap_unicast_client_ep_send(struct bt_conn *conn, struct bt_bap_ep *ep,
 		err = bt_gatt_write(conn, &client->write_params);
 		if (err != 0) {
 			LOG_DBG("bt_gatt_write failed: %d", err);
+			atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 		}
-
-		client->busy = true;
 	} else {
 		err = bt_gatt_write_without_response(conn, client_ep->cp_handle, buf->data,
 						     buf->len, false);
@@ -2134,7 +2138,7 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
 
 	client = &uni_cli_insts[index];
-	client->busy = false;
+	atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 	client->dir = 0U;
 	reset_att_buf(client);
 }
@@ -4303,7 +4307,7 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 	}
 
 	client = &uni_cli_insts[bt_conn_index(conn)];
-	if (client->busy) {
+	if (atomic_test_and_set_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY)) {
 		LOG_DBG("Client connection is busy");
 		return -EBUSY;
 	}
@@ -4328,11 +4332,11 @@ int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
 
 	err = bt_gatt_discover(conn, &client->disc_params);
 	if (err != 0) {
+		atomic_clear_bit(client->flags, UNICAST_CLIENT_FLAG_BUSY);
 		return err;
 	}
 
 	client->dir = dir;
-	client->busy = true;
 
 	return 0;
 }
