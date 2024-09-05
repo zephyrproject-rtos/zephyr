@@ -158,10 +158,10 @@ def main(options, default_options):
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
     if not os.path.exists(plan_file):
-        report.json_report(plan_file)
+        report.json_report(plan_file, env.version)
 
     if options.save_tests:
-        report.json_report(options.save_tests)
+        report.json_report(options.save_tests, env.version)
         return 0
 
     if options.report_summary is not None:
