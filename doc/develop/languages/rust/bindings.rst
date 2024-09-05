@@ -3,7 +3,7 @@
 Bindings to Zephyr for Rust
 ###########################
 
-Zephyr is written in C, and it's primary API is also made available to C.  It is written as a
+Zephyr is written in C, and its primary API is also made available to C.  It is written as a
 mixture of types, function prototypes, inline functions, and macros.
 
 Although Rust interfaces fairly easily with C at an ABI level, the compiler does not have any
@@ -22,7 +22,7 @@ generate the Rust code needed to call this code.
 
 Because the Zephyr headers use numerous conditional compilation macros, the bindings needed will be
 very specialized to a given board, and even a given configuration.  To do this, the file
-:file:`lib/rust/zephyr-sys/build.rs`, which ``cargo`` knows to run at build time will
+:file:`lib/rust/zephyr-sys/build.rs`, which ``cargo`` knows to run at build time, will
 generate the bindings for the particular build of Zephyr being used by the current Rust application.
 
 These bindings will be made available in the ``zephyr-sys`` crate, as well as under ``zephyr::raw``.
@@ -30,13 +30,13 @@ These bindings will be made available in the ``zephyr-sys`` crate, as well as un
 Using the Bindings
 ******************
 
-In general, using direct bindings to C function from Rust is a bit more difficult than calling them
+In general, using direct bindings to C functions from Rust is a bit more difficult than calling them
 from C.  Although all of these calls are considered "unsafe", and must be placed in an ``unsafe``
-block, the rust language has stricter constraints on what is allowed, even by unsafe code.  Although
-the intent of the Rust on Zephyr project is to allow full use of Zephyr, without needing to resort
-to unsafe code, it is understandable that this implementation will be incomplete, and some
-applications may require resorting to, what is sometimes referred to as "The Dark Arts".  The
-`Rustinomicon`_ is a good resource for those wishing to delve into this area.
+block, the Rust language has stricter constraints on what is allowed, even by unsafe code.  The
+intent of supporting the Rust Language on Zephyr project is to allow full use of Zephyr, without
+needing to resort to unsafe code, it is understandable that this implementation will be incomplete,
+and some applications may require resorting to, what is sometimes referred to as "The Dark Arts".
+The `Rustinomicon`_ is a good resource for those wishing to delve into this area.
 
 .. _Rustinomicon: https://doc.rust-lang.org/nomicon/
 
