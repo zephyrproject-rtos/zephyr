@@ -1,0 +1,21 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1xx UART
+
+compatible: "sensry,sy1xx-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the uart controller.
+
+  current-speed:
+    required: true
+    description: Default baudrate of the uart controller.
+
+  instance:
+    type: int
+    required: true
