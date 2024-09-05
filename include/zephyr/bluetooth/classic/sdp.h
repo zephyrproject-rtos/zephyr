@@ -481,8 +481,6 @@ struct bt_sdp_client_result {
 	struct net_buf        *resp_buf;
 	/** flag pointing that there are more result chunks for given UUID */
 	bool                   next_record_hint;
-	/** Reference to UUID object on behalf one discovery was started */
-	const struct bt_uuid  *uuid;
 };
 
 /** @brief Helper enum to be used as return value of bt_sdp_discover_func_t.
@@ -492,6 +490,8 @@ enum {
 	BT_SDP_DISCOVER_UUID_STOP = 0,
 	BT_SDP_DISCOVER_UUID_CONTINUE,
 };
+
+struct bt_sdp_discover_params;
 
 /** @typedef bt_sdp_discover_func_t
  *
@@ -514,24 +514,41 @@ enum {
  *
  *  @param conn Connection object identifying connection to queried remote.
  *  @param result Object pointing to logical unparsed SDP record collected on
- *  base of response driven by given UUID.
+ *  base of response driven by given discover params.
+ *  @param params Discover parameters.
  *
  *  @return BT_SDP_DISCOVER_UUID_STOP in case of no more need to read next
  *  record data and continue discovery for given UUID. By returning
- *  BT_SDP_DISCOVER_UUID_CONTINUE user allows this discovery continuation.
+ *  @return BT_SDP_DISCOVER_UUID_CONTINUE user allows this discovery continuation.
  */
-typedef uint8_t (*bt_sdp_discover_func_t)
-		(struct bt_conn *conn, struct bt_sdp_client_result *result);
+typedef uint8_t (*bt_sdp_discover_func_t)(struct bt_conn *conn, struct bt_sdp_client_result *result,
+					  const struct bt_sdp_discover_params *params);
+
+/** SDP Discover types */
+enum {
+	/** Discover Service Search. */
+	BT_SDP_DISCOVER_SERVICE_SEARCH,
+	/** Discover Service Attribute. */
+	BT_SDP_DISCOVER_SERVICE_ATTR,
+	/** Discover Service Search Attribute. */
+	BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
+};
 
 /** @brief Main user structure used in SDP discovery of remote. */
 struct bt_sdp_discover_params {
-	sys_snode_t		_node;
-	/** UUID (service) to be discovered on remote SDP entity */
-	const struct bt_uuid   *uuid;
+	sys_snode_t _node;
+	union {
+		/** UUID (service) to be discovered on remote SDP entity */
+		const struct bt_uuid *uuid;
+		/** Service record handle */
+		uint32_t handle;
+	};
 	/** Discover callback to be called on resolved SDP record */
-	bt_sdp_discover_func_t  func;
+	bt_sdp_discover_func_t func;
 	/** Memory buffer enabled by user for SDP query results  */
-	struct net_buf_pool    *pool;
+	struct net_buf_pool *pool;
+	/** Discover type */
+	uint8_t type;
 };
 
 /** @brief Allows user to start SDP discovery session.
@@ -542,6 +559,21 @@ struct bt_sdp_discover_params {
  *  is queued to be processed at discovery completion of previous one.
  *  On the service discovery completion the callback function will be
  *  called to get feedback to user about findings.
+ *
+ *  Service Search:                The SDP Client generates an
+ *                                 SDP_SERVICE_SEARCH_REQ to locate service
+ *                                 records that match the service search
+ *                                 pattern (`params->uuid`) given as the first
+ *                                 parameter of the PDU.
+ *  Service Attribute:             The SDP Client generates an
+ *                                 SDP_SERVICE_ATTR_REQ to retrieve specified
+ *                                 attribute values from a specific service
+ *                                 record (`params->handle`).
+ *  Service Search Attribute:      The SDP Client generates an
+ *                                 SDP_SERVICE_SEARCH_ATTR_REQ to retrieve
+ *                                 specified attribute values that match the
+ *                                 service search pattern (`params->uuid`)
+ *                                 given as the first parameter of the PDU.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
