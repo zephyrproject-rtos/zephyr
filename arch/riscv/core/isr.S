@@ -450,10 +450,15 @@ do_fault:
 	STORE_CALLEE_SAVED()		;
 	mv a2, sp
 
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/* Store csf's addr into esf (a1 still holds the pointer to the esf at this point) */
+	sr a2 __struct_arch_esf_csf_OFFSET(a1)
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 	tail z_riscv_fatal_error_csf
 #else
 	tail z_riscv_fatal_error
-#endif
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:
