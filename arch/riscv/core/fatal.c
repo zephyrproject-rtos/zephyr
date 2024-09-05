@@ -54,38 +54,27 @@ uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 
 const char *z_riscv_mcause_str(unsigned long cause)
 {
-	switch (cause) {
-	case 0:
-		return "Instruction address misaligned";
-	case 1:
-		return "Instruction Access fault";
-	case 2:
-		return "Illegal instruction";
-	case 3:
-		return "Breakpoint";
-	case 4:
-		return "Load address misaligned";
-	case 5:
-		return "Load access fault";
-	case 6:
-		return "Store/AMO address misaligned";
-	case 7:
-		return "Store/AMO access fault";
-	case 8:
-		return "Environment call from U-mode";
-	case 9:
-		return "Environment call from S-mode";
-	case 11:
-		return "Environment call from M-mode";
-	case 12:
-		return "Instruction page fault";
-	case 13:
-		return "Load page fault";
-	case 15:
-		return "Store/AMO page fault";
-	default:
-		return "unknown";
-	}
+	static const char *const mcause_str[17] = {
+		[0] = "Instruction address misaligned",
+		[1] = "Instruction Access fault",
+		[2] = "Illegal instruction",
+		[3] = "Breakpoint",
+		[4] = "Load address misaligned",
+		[5] = "Load access fault",
+		[6] = "Store/AMO address misaligned",
+		[7] = "Store/AMO access fault",
+		[8] = "Environment call from U-mode",
+		[9] = "Environment call from S-mode",
+		[10] = "unknown",
+		[11] = "Environment call from M-mode",
+		[12] = "Instruction page fault",
+		[13] = "Load page fault",
+		[14] = "unknown",
+		[15] = "Store/AMO page fault",
+		[16] = "unknown",
+	};
+
+	return mcause_str[MIN(cause, ARRAY_SIZE(mcause_str) - 1)];
 }
 
 FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
