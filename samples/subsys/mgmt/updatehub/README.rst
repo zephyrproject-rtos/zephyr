@@ -68,7 +68,7 @@ directory.  This allows to construct and run everything from a common place.
 Step 1: Build/Flash MCUboot
 ===========================
 
-The MCUboot can be build following the instructions in the :ref:`mcuboot`
+The MCUboot can be built following the instructions in the :ref:`mcuboot`
 documentation page.  Flash the resulting image file using west on
 ``terminal 1``.
 
