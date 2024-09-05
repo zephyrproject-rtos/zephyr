@@ -69,6 +69,7 @@ static void phy_setup(void *data)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 	/* Emulate different remote numbers to trigger update of eff */
 	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;
 	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN * 3;

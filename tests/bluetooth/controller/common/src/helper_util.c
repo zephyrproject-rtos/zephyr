@@ -308,6 +308,12 @@ void test_set_role(struct ll_conn *conn, uint8_t role)
 	conn->lll.role = role;
 }
 
+void test_flush_procedures(struct ll_conn *conn)
+{
+	llcp_lr_flush_procedures(conn);
+	llcp_rr_flush_procedures(conn);
+}
+
 void event_prepare(struct ll_conn *conn)
 {
 	struct lll_conn *lll;

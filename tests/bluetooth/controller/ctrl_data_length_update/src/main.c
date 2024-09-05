@@ -96,6 +96,7 @@ ZTEST(dle_central, test_data_length_update_central_loc)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -161,6 +162,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_unknown_rsp)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Confirm DLE is indicated as supported */
 	zassert_equal(feature_dle(&conn), true, "DLE Feature masked out");
@@ -254,6 +256,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_unsupported)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Confirm DLE is indicated as supported */
 	zassert_equal(feature_dle(&conn), true, "DLE Feature masked out");
@@ -345,6 +348,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_invalid_rsp)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -383,6 +387,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_invalid_rsp)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate another Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -448,6 +453,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_no_eff_change)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -524,6 +530,7 @@ ZTEST(dle_central, test_data_length_update_central_loc_no_eff_change2)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -590,6 +597,7 @@ ZTEST(dle_periph, test_data_length_update_periph_loc)
 	ull_conn_default_tx_octets_set(251);
 	ull_conn_default_tx_time_set(2120);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Initiate a Data Length Update Procedure */
 	err = ull_cp_data_length_update(&conn, 211, 1800);
@@ -650,6 +658,7 @@ ZTEST(dle_central, test_data_length_update_central_rem)
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	event_prepare(&conn);
 
@@ -708,6 +717,7 @@ ZTEST(dle_periph, test_data_length_update_periph_rem)
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	event_prepare(&conn);
 
@@ -771,6 +781,7 @@ ZTEST(dle_periph, test_data_length_update_periph_rem_and_loc)
 	ull_conn_default_tx_octets_set(211);
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 
 	/* Allocate dummy procedure used to steal all buffers */
 	ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);

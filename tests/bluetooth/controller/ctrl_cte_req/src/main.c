@@ -823,6 +823,7 @@ static void phy_update_setup(void)
 	ull_conn_default_tx_time_set(PDU_DC_PAYLOAD_TIME_MAX_CODED);
 	/* Initialize with defauly PHY1M */
 	ull_dle_init(&conn, PHY_1M);
+	test_flush_procedures(&conn);
 	/* Emulate different remote numbers to trigger update of effective max TX octets and time.
 	 * Numbers are taken arbitrary.
 	 */
