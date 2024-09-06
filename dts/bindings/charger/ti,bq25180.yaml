@@ -30,7 +30,11 @@ properties:
       driver initialization.
 
   constant-charge-voltage-max-microvolt:
-    required: true
+    type: int
+    default: 4200000
+    description: |
+      The maximum voltage that the battery will be charged at, defaults to
+      4.2V, matching the device default reset configuration.
 
   precharge-voltage-threshold-microvolt:
     type: int
