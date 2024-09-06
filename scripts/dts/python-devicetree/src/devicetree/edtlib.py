@@ -994,13 +994,26 @@ class Node:
       True if the node is a PCI device.
     """
 
-    def __init__(self,
-                 dt_node: dtlib_Node,
-                 edt: 'EDT',
-                 compats: List[str]):
+    def __init__(
+        self,
+        dt_node: dtlib_Node,
+        edt: "EDT",
+        support_fixed_partitions_on_any_bus: bool = True,
+    ):
         '''
         For internal use only; not meant to be used outside edtlib itself.
         '''
+
+        compats = (
+            dt_node.props["compatible"].to_strings()
+            if "compatible" in dt_node.props
+            else []
+        )
+
+        # Private, don't touch outside the class:
+        self._node: dtlib_Node = dt_node
+        self._binding: Optional[Binding] = None
+
         # Public, some of which are initialized properly later:
         self.edt: 'EDT' = edt
         self.dep_ordinal: int = -1
@@ -1012,11 +1025,11 @@ class Node:
         self.props: Dict[str, Property] = {}
         self.interrupts: List[ControllerAndData] = []
         self.pinctrls: List[PinCtrl] = []
-        self.bus_node: Optional['Node'] = None
+        self.bus_node = self._bus_node(support_fixed_partitions_on_any_bus)
 
-        # Private, don't touch outside the class:
-        self._node: dtlib_Node = dt_node
-        self._binding: Optional[Binding] = None
+        self._init_binding()
+        self._init_regs()
+        self._init_ranges()
 
     @property
     def name(self) -> str:
@@ -1223,6 +1236,14 @@ class Node:
         return res
 
     @property
+    def has_child_binding(self) -> bool:
+        """
+        True if the node's binding contains a child-binding definition, False
+        otherwise
+        """
+        return bool(self._binding and self._binding.child_binding)
+
+    @property
     def is_pci_device(self) -> bool:
         "See the class docstring"
         return 'pcie' in self.on_buses
@@ -1375,6 +1396,18 @@ class Node:
 
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
+
+    def _init_crossrefs(
+        self, default_prop_types: bool = False, err_on_deprecated: bool = False
+    ) -> None:
+        # Initializes all properties that require cross-references to other
+        # nodes, like 'phandle' and 'phandles'. This is done after all nodes
+        # have been initialized.
+        self._init_props(
+            default_prop_types=default_prop_types, err_on_deprecated=err_on_deprecated
+        )
+        self._init_interrupts()
+        self._init_pinctrls()
 
     def _init_props(self, default_prop_types: bool = False,
                     err_on_deprecated: bool = False) -> None:
@@ -2100,7 +2133,7 @@ class EDT:
 
         # If the binding defines child bindings, link the child properties to
         # the root_node as well.
-        if props_node._binding and props_node._binding.child_binding:
+        if props_node.has_child_binding:
             for child in props_node.children.values():
                 if "compatible" in child.props:
                     # Not a child node, normal node on a different binding.
@@ -2239,27 +2272,19 @@ class EDT:
         for dt_node in self._dt.node_iter():
             # Warning: We depend on parent Nodes being created before their
             # children. This is guaranteed by node_iter().
-            if "compatible" in dt_node.props:
-                compats = dt_node.props["compatible"].to_strings()
-            else:
-                compats = []
-            node = Node(dt_node, self, compats)
-            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
-            node._init_binding()
-            node._init_regs()
-            node._init_ranges()
-
+            node = Node(dt_node, self, self._fixed_partitions_no_bus)
             self.nodes.append(node)
             self._node2enode[dt_node] = node
 
         for node in self.nodes:
-            # These depend on all Node objects having been created, because
-            # they (either always or sometimes) reference other nodes, so we
-            # run them separately
-            node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=self._werror)
-            node._init_interrupts()
-            node._init_pinctrls()
+            # Initialize properties that may depend on other Node objects having
+            # been created, because they (either always or sometimes) reference
+            # other nodes. Must be called separately after all nodes have been
+            # created.
+            node._init_crossrefs(
+                default_prop_types=self._default_prop_types,
+                err_on_deprecated=self._werror,
+            )
 
         if self._warn_reg_unit_address_mismatch:
             # This warning matches the simple_bus_reg warning in dtc
