@@ -4,8 +4,11 @@
 config ADC_TLA202X
 	bool "Texas Instruments TLA202x Low-Power ADC"
 	default y
-	depends on DT_HAS_TI_TLA2021_ENABLED
+	depends on DT_HAS_TI_TLA2021_ENABLED \
+		|| DT_HAS_TI_TLA2022_ENABLED \
+		|| DT_HAS_TI_TLA2024_ENABLED
 	select I2C
+	select ADC_CONFIGURABLE_INPUTS if DT_HAS_TI_TLA2024_ENABLED
 	help
 	  TLA202x Cost-Optimized, Ultra-Small, 12-Bit, System-Monitoring ADCs
 
