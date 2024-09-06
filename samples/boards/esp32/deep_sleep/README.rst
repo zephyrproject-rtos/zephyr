@@ -1,7 +1,7 @@
-.. _esp32-deep-sleep-sample:
+.. zephyr:code-sample:: esp32-deep-sleep
+   :name: Deep Sleep
 
-ESP32 Deep Sleep demo
-#####################
+   Use deep sleep with wake on timer, GPIO, and EXT1 sources on ESP32.
 
 Overview
 ********

@@ -1,7 +1,7 @@
-.. _flash_encryption_test:
+.. zephyr:code-sample:: esp32-flash-encryption
+   :name: Flash Encryption
 
-Espressif ESP32 Flash Encryption Test
-#####################################
+   Encrypt/decrypt data stored in flash memory using ESP32 flash encryption feature.
 
 Overview
 ********
