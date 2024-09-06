@@ -345,6 +345,8 @@ Libraries / Subsystems
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
       can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
+    * Added support for img mgmt slot info command, which allows for listing information on
+      images and slots on the device.
 
 * Logging
 
