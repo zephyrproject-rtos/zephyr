@@ -27,7 +27,7 @@ Make sure you have your board connected over USB port.
 
 .. code-block:: console
 
-   west build -b esp32s3_devkitm samples/boards/esp32/flash_memory_mapped
+   west build -b esp32s3_devkitm samples/boards/espressif/flash_memory_mapped
    west flash
 
 Sample Output

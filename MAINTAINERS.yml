@@ -3949,7 +3949,7 @@ Espressif Platforms:
     - dts/xtensa/espressif/
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
-    - samples/boards/esp32*/
+    - samples/boards/espressif/
     - tests/boards/espressif_esp32/
     - drivers/*/*esp32*/
   labels:
