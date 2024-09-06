@@ -369,7 +369,7 @@ TESTDATA_2_2 = [
      True, True, False,
      TwisterStatus.NONE, None,
      [os.path.join('dummy', 'cmake'),
-      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
+      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=y',
       '-DEXTRA_GEN_DEFINES_ARGS=--edtlib-Werror', '-Gdummy_generator',
       '-S' + os.path.join('source', 'dir'),
@@ -383,7 +383,7 @@ TESTDATA_2_2 = [
      True, False, True,
      TwisterStatus.ERROR, 'Cmake build failure',
      [os.path.join('dummy', 'cmake'),
-      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
+      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=n',
       '-DEXTRA_GEN_DEFINES_ARGS=', '-Gdummy_generator',
       '-Szephyr_base/share/sysbuild',
@@ -442,6 +442,7 @@ def test_cmake_run_cmake(
     instance_mock.status = TwisterStatus.NONE
     instance_mock.reason = None
     instance_mock.testsuite = mock.Mock()
+    instance_mock.testsuite.name = 'testcase'
     instance_mock.testsuite.required_snippets = ['dummy snippet 1', 'ds2']
     instance_mock.testcases = [mock.Mock(), mock.Mock()]
     instance_mock.testcases[0].status = TwisterStatus.NONE
