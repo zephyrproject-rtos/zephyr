@@ -2,6 +2,11 @@
 #
 # Copyright (c) 2023, Basalte bv
 
+include(boards)
+include(git)
+include(extensions)
+include(west)
+
 find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
 message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
@@ -17,14 +22,24 @@ zephyr_get(CODECHECKER_PARSE_SKIP)
 zephyr_get(CODECHECKER_STORE)
 zephyr_get(CODECHECKER_STORE_OPTS)
 zephyr_get(CODECHECKER_STORE_TAG)
-zephyr_get(CODECHECKER_TRIM_PATH_PREFIX)
+zephyr_get(CODECHECKER_TRIM_PATH_PREFIX MERGE VAR CODECHECKER_TRIM_PATH_PREFIX WEST_TOPDIR)
+
+# Get twister runner specific variables
+zephyr_get(TC_RUNID)
+zephyr_get(TC_NAME)
 
 if(NOT CODECHECKER_NAME)
-  set(CODECHECKER_NAME zephyr)
+  if(TC_NAME)
+    set(CODECHECKER_NAME "${BOARD}${BOARD_QUALIFIERS}:${TC_NAME}")
+  else()
+    set(CODECHECKER_NAME zephyr)
+  endif()
 endif()
 
 if(CODECHECKER_ANALYZE_JOBS)
   set(CODECHECKER_ANALYZE_JOBS "--jobs;${CODECHECKER_ANALYZE_JOBS}")
+elseif(TC_RUNID)
+  set(CODECHECKER_ANALYZE_JOBS "--jobs;1")
 endif()
 
 if(CODECHECKER_CONFIG_FILE)
@@ -33,6 +48,11 @@ endif()
 
 if(CODECHECKER_STORE_TAG)
   set(CODECHECKER_STORE_TAG "--tag;${CODECHECKER_STORE_TAG}")
+else()
+  git_describe(${APPLICATION_SOURCE_DIR} app_version)
+  if(app_version)
+    set(CODECHECKER_STORE_TAG "--tag;${app_version}")
+  endif()
 endif()
 
 if(CODECHECKER_TRIM_PATH_PREFIX)
