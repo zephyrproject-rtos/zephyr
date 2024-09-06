@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_FAKE_COMP
+	bool "Fake comparator driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_COMP_ENABLED
+	depends on ZTEST
