@@ -69,10 +69,10 @@ devicetree configuration as noted above.
 Building and Running
 ********************
 
-The code can be found in :zephyr_file:`samples/boards/nrf/battery`.
+The code can be found in :zephyr_file:`samples/boards/nordic/battery`.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/battery
+   :zephyr-app: samples/boards/nordic/battery
    :board: thingy52/nrf52832
    :goals: build flash
    :compact:

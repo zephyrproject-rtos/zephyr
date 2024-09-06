@@ -35,7 +35,7 @@ nRF52840 DK
 The diagram below shows the pins assigned to the default and alternative
 configurations.
 
-.. figure:: images/nrf52840dk-dynamic-pinctrl.png
+.. figure:: images/nrf52840dk-dynamic-pinctrl.webp
 
     Configuration for nRF52840 DK
 
@@ -52,7 +52,7 @@ Building and Running
 You can build this application for the nRF52840 DK as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/dynamic_pinctrl
+   :zephyr-app: samples/boards/nordic/dynamic_pinctrl
    :board: nrf52840dk/nrf52840
    :goals: build
    :compact:

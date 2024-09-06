@@ -27,7 +27,7 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/clock_skew
+   :zephyr-app: samples/boards/nordic/clock_skew
    :board: nrf52dk/nrf52832
    :goals: build flash
    :compact:
