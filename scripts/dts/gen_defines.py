@@ -26,6 +26,7 @@ import pathlib
 import pickle
 import re
 import sys
+from typing import Iterable, NoReturn, Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
                                 'src'))
@@ -153,7 +154,7 @@ def main():
         write_pickled_edt(edt, args.edt_pickle_out)
 
 
-def setup_edtlib_logging():
+def setup_edtlib_logging() -> None:
     # The edtlib module emits logs using the standard 'logging' module.
     # Configure it so that warnings and above are printed to stderr,
     # using the LogFormatter class defined above to format each message.
@@ -165,7 +166,8 @@ def setup_edtlib_logging():
     logger.setLevel(logging.WARNING)
     logger.addHandler(handler)
 
-def node_z_path_id(node):
+
+def node_z_path_id(node: edtlib.Node) -> str:
     # Return the node specific bit of the node's path identifier:
     #
     # - the root node's path "/" has path identifier "N"
@@ -183,7 +185,8 @@ def node_z_path_id(node):
 
     return "_".join(components)
 
-def parse_args():
+
+def parse_args() -> argparse.Namespace:
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -212,7 +215,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def write_top_comment(edt):
+def write_top_comment(edt: edtlib.EDT) -> None:
     # Writes an overview comment with misc. info at the top of the header and
     # configuration file
 
@@ -242,14 +245,14 @@ followed by /chosen nodes.
     out_comment(s, blank_before=False)
 
 
-def write_utils():
+def write_utils() -> None:
     # Writes utility macros
 
     out_comment("Used to remove brackets from around a single argument")
     out_define("DT_DEBRACKET_INTERNAL(...)", "__VA_ARGS__")
 
 
-def write_node_comment(node):
+def write_node_comment(node: edtlib.Node) -> None:
     # Writes a comment describing 'node' to the header and configuration file
 
     s = f"""\
@@ -288,7 +291,7 @@ Binding (compatible = {node.matching_compat}):
     out_comment(s)
 
 
-def relativize(path):
+def relativize(path) -> Optional[str]:
     # If 'path' is within $ZEPHYR_BASE, returns it relative to $ZEPHYR_BASE,
     # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise,
     # returns 'path' unchanged.
@@ -304,7 +307,7 @@ def relativize(path):
         return path
 
 
-def write_idents_and_existence(node):
+def write_idents_and_existence(node: edtlib.Node) -> None:
     # Writes macros related to the node's aliases, labels, etc.,
     # as well as existence flags.
 
@@ -327,7 +330,7 @@ def write_idents_and_existence(node):
         out_dt_define(ident, "DT_" + node.z_path_id, width=maxlen)
 
 
-def write_bus(node):
+def write_bus(node: edtlib.Node) -> None:
     # Macros about the node's bus controller, if there is one
 
     bus = node.bus_node
@@ -342,7 +345,7 @@ def write_bus(node):
     out_dt_define(f"{node.z_path_id}_BUS", f"DT_{bus.z_path_id}")
 
 
-def write_special_props(node):
+def write_special_props(node: edtlib.Node) -> None:
     # Writes required macros for special case properties, when the
     # data cannot otherwise be obtained from write_vanilla_props()
     # results
@@ -361,7 +364,8 @@ def write_special_props(node):
     write_fixed_partitions(node)
     write_gpio_hogs(node)
 
-def write_ranges(node):
+
+def write_ranges(node: edtlib.Node) -> None:
     # ranges property: edtlib knows the right #address-cells and
     # #size-cells of parent and child, and can therefore pack the
     # child & parent addresses and sizes correctly
@@ -404,7 +408,8 @@ def write_ranges(node):
     out_dt_define(f"{path_id}_FOREACH_RANGE(fn)",
             " ".join(f"fn(DT_{path_id}, {i})" for i,range in enumerate(node.ranges)))
 
-def write_regs(node):
+
+def write_regs(node: edtlib.Node) -> None:
     # reg property: edtlib knows the right #address-cells and
     # #size-cells, and can therefore pack the register base addresses
     # and sizes correctly
@@ -440,7 +445,8 @@ def write_regs(node):
     for macro, val in name_vals:
         out_dt_define(macro, val)
 
-def write_interrupts(node):
+
+def write_interrupts(node: edtlib.Node) -> None:
     # interrupts property: we have some hard-coded logic for interrupt
     # mapping here.
     #
@@ -508,7 +514,7 @@ def write_interrupts(node):
         out_dt_define(macro, val)
 
 
-def write_compatibles(node):
+def write_compatibles(node: edtlib.Node) -> None:
     # Writes a macro for each of the node's compatibles. We don't care
     # about whether edtlib / Zephyr's binding language recognizes
     # them. The compatibles the node provides are what is important.
@@ -527,7 +533,8 @@ def write_compatibles(node):
             out_dt_define(f"{node.z_path_id}_COMPAT_MODEL_IDX_{i}",
                           quote_str(node.edt.compat2model[compat]))
 
-def write_children(node):
+
+def write_children(node: edtlib.Node) -> None:
     # Writes helper macros for dealing with node's children.
 
     out_comment("Helper macros for child nodes of this node.")
@@ -574,11 +581,11 @@ def write_children(node):
             for child in node.children.values() if child.status == "okay"))
 
 
-def write_status(node):
+def write_status(node: edtlib.Node) -> None:
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
 
 
-def write_pinctrls(node):
+def write_pinctrls(node: edtlib.Node) -> None:
     # Write special macros for pinctrl-<index> and pinctrl-names properties.
 
     out_comment("Pin control (pinctrl-<i>, pinctrl-names) properties:")
@@ -608,7 +615,7 @@ def write_pinctrls(node):
                           f"DT_{ph.z_path_id}")
 
 
-def write_fixed_partitions(node):
+def write_fixed_partitions(node: edtlib.Node) -> None:
     # Macros for child nodes of each fixed-partitions node.
 
     if not (node.parent and "fixed-partitions" in node.parent.compats):
@@ -620,7 +627,7 @@ def write_fixed_partitions(node):
     flash_area_num += 1
 
 
-def write_gpio_hogs(node):
+def write_gpio_hogs(node: edtlib.Node) -> None:
     # Write special macros for gpio-hog node properties.
 
     macro = f"{node.z_path_id}_GPIO_HOGS"
@@ -635,7 +642,8 @@ def write_gpio_hogs(node):
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
 
-def write_vanilla_props(node):
+
+def write_vanilla_props(node: edtlib.Node) -> None:
     # Writes macros for any and all properties defined in the
     # "properties" section of the binding for the node.
     #
@@ -749,7 +757,7 @@ def write_vanilla_props(node):
         out_comment("(No generic property macros)")
 
 
-def write_dep_info(node):
+def write_dep_info(node: edtlib.Node) -> None:
     # Write dependency-related information about the node.
 
     def fmt_dep_list(dep_list):
@@ -775,7 +783,7 @@ def write_dep_info(node):
                   fmt_dep_list(node.required_by))
 
 
-def prop2value(prop):
+def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:
     # Gets the macro value for property 'prop', if there is
     # a single well-defined C rvalue that it can be represented as.
     # Returns None if there isn't one.
@@ -799,7 +807,7 @@ def prop2value(prop):
     return None
 
 
-def prop_len(prop):
+def prop_len(prop: edtlib.Property) -> Optional[int]:
     # Returns the property's length if and only if we should generate
     # a _LEN macro for the property. Otherwise, returns None.
     #
@@ -834,7 +842,7 @@ def prop_len(prop):
     return None
 
 
-def phandle_macros(prop, macro):
+def phandle_macros(prop: edtlib.Property, macro: str) -> dict:
     # Returns a dict of macros for phandle or phandles property 'prop'.
     #
     # The 'macro' argument is the N_<node-id>_P_<prop-id> bit.
@@ -874,7 +882,7 @@ def phandle_macros(prop, macro):
     return ret
 
 
-def controller_and_data_macros(entry, i, macro):
+def controller_and_data_macros(entry: edtlib.ControllerAndData, i: int, macro: str):
     # Helper procedure used by phandle_macros().
     #
     # Its purpose is to write the "controller" (i.e. label property of
@@ -915,7 +923,7 @@ def controller_and_data_macros(entry, i, macro):
     return ret
 
 
-def write_chosen(edt):
+def write_chosen(edt: edtlib.EDT):
     # Tree-wide information such as chosen nodes is printed here.
 
     out_comment("Chosen nodes\n")
@@ -928,7 +936,7 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_global_macros(edt):
+def write_global_macros(edt: edtlib.EDT):
     # Global or tree-wide information, such as number of instances
     # with status "okay" for each compatible, is printed here.
 
@@ -1008,19 +1016,25 @@ def write_global_macros(edt):
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
 
-def str2ident(s):
+
+def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
 
     return re.sub('[-,.@/+]', '_', s.lower())
 
 
-def list2init(l):
+def list2init(l: Iterable[str]) -> str:
     # Converts 'l', a Python list (or iterable), to a C array initializer
 
     return "{" + ", ".join(l) + "}"
 
 
-def out_dt_define(macro, val, width=None, deprecation_msg=None):
+def out_dt_define(
+    macro: str,
+    val: str,
+    width: Optional[int] = None,
+    deprecation_msg: Optional[str] = None,
+) -> str:
     # Writes "#define DT_<macro> <val>" to the header file
     #
     # The macro will be left-justified to 'width' characters if that
@@ -1037,7 +1051,12 @@ def out_dt_define(macro, val, width=None, deprecation_msg=None):
     return ret
 
 
-def out_define(macro, val, width=None, deprecation_msg=None):
+def out_define(
+    macro: str,
+    val: str,
+    width: Optional[int] = None,
+    deprecation_msg: Optional[str] = None,
+) -> None:
     # Helper for out_dt_define(). Outputs "#define <macro> <val>",
     # adds a deprecation message if given, and allocates whitespace
     # unless told not to.
@@ -1052,7 +1071,7 @@ def out_define(macro, val, width=None, deprecation_msg=None):
     print(s, file=header_file)
 
 
-def out_comment(s, blank_before=True):
+def out_comment(s: str, blank_before=True) -> None:
     # Writes 's' as a comment to the header and configuration file. 's' is
     # allowed to have multiple lines. blank_before=True adds a blank line
     # before the comment.
@@ -1083,21 +1102,21 @@ def out_comment(s, blank_before=True):
         print("/* " + s + " */", file=header_file)
 
 
-def escape(s):
+def escape(s: str) -> str:
     # Backslash-escapes any double quotes and backslashes in 's'
 
     # \ must be escaped before " to avoid double escaping
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def quote_str(s):
+def quote_str(s: str) -> str:
     # Puts quotes around 's' and escapes any double quotes and
     # backslashes within it
 
     return f'"{escape(s)}"'
 
 
-def write_pickled_edt(edt, out_file):
+def write_pickled_edt(edt: edtlib.EDT, out_file: str) -> None:
     # Writes the edt object in pickle format to out_file.
 
     with open(out_file, 'wb') as f:
@@ -1112,7 +1131,7 @@ def write_pickled_edt(edt, out_file):
         pickle.dump(edt, f, protocol=4)
 
 
-def err(s):
+def err(s: str) -> NoReturn:
     raise Exception(s)
 
 
