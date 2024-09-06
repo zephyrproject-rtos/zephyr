@@ -13,6 +13,7 @@ message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 # Get CodeChecker specific variables
 zephyr_get(CODECHECKER_ANALYZE_JOBS)
 zephyr_get(CODECHECKER_ANALYZE_OPTS)
+zephyr_get(CODECHECKER_CLEANUP)
 zephyr_get(CODECHECKER_CONFIG_FILE)
 zephyr_get(CODECHECKER_EXPORT)
 zephyr_get(CODECHECKER_NAME)
@@ -95,6 +96,16 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E rm ${output_dir}/codechecker.ready
 )
 
+if(CODECHECKER_CLEANUP)
+  add_custom_target(codechecker-cleanup ALL
+    COMMAND ${CMAKE_COMMAND} -E rm -r ${output_dir}/codechecker.plist
+  )
+else()
+  add_custom_target(codechecker-cleanup)
+endif()
+
+add_dependencies(codechecker-cleanup codechecker)
+
 # If 'codechecker parse' returns an exit status of '2', it means more than 0
 # issues were detected. Suppress the exit status by default, but permit opting
 # in to the failure.
@@ -122,6 +133,7 @@ if(DEFINED CODECHECKER_EXPORT)
       COMMAND_EXPAND_LISTS
     )
     add_dependencies(codechecker-report-${export_item} codechecker)
+    add_dependencies(codechecker-cleanup codechecker-report-${export_item})
   endforeach()
 elseif(NOT CODECHECKER_PARSE_SKIP)
   # Output parse results
@@ -136,6 +148,7 @@ elseif(NOT CODECHECKER_PARSE_SKIP)
     COMMAND_EXPAND_LISTS
   )
   add_dependencies(codechecker-parse codechecker)
+  add_dependencies(codechecker-cleanup codechecker-parse)
 endif()
 
 if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
@@ -151,4 +164,5 @@ if(DEFINED CODECHECKER_STORE OR DEFINED CODECHECKER_STORE_OPTS)
     COMMAND_EXPAND_LISTS
   )
   add_dependencies(codechecker-store codechecker)
+  add_dependencies(codechecker-cleanup codechecker-store)
 endif()
