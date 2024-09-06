@@ -28,4 +28,5 @@ supported:
   - spi
   - watchdog
   - usb_device
+  - sdhc
 vendor: nxp
