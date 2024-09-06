@@ -30,6 +30,12 @@ config CHECK_BEFORE_READING
 	  This feature prevents erroneous/forbidden reading. Some ECC enabled
 	  devices will crash when reading an erased or wrongly programmed area.
 
+config MCUX_FLASH_K4_API
+	bool
+	help
+	  Set from SOC level configuration if the platform is meant to use the
+	  flash_k4 SDK IAP API.
+
 endif # SOC_FLASH_MCUX
 
 if DT_HAS_NXP_IMX_FLEXSPI_ENABLED
