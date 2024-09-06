@@ -4075,7 +4075,7 @@ LiteX Platforms:
     - dts/bindings/*/litex*
     - dts/riscv/riscv32-litex-vexriscv.dtsi
     - include/zephyr/drivers/*/*litex*
-    - samples/boards/litex/
+    - samples/boards/enjoydigital/litex/
     - samples/drivers/*litex/
     - soc/litex/
   labels:
