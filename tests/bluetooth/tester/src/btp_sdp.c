@@ -6,11 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/byteorder.h>
-#include <stdint.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/types.h>
+#include <string.h>
 
+#include <zephyr/toolchain.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #include <zephyr/logging/log.h>
 #define LOG_MODULE_NAME bttester_sdp
@@ -215,6 +221,238 @@ static uint8_t hfp_hf[TEST_INSTANCES_MAX];
 
 BT_SDP_INSTANCE_DEFINE(hfp_hf_record_list, hfp_hf, TEST_INSTANCES_MAX, BT_SDP_TEST_RECORD_DEFINE);
 
+static struct bt_sdp_discover_params sdp_discover;
+
+NET_BUF_POOL_DEFINE(sdp_discover_pool, TEST_INSTANCES_MAX,
+		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
+				  void *rsp, uint16_t *rsp_len)
+{
+	struct btp_sdp_read_supported_commands_rp *rp = rsp;
+
+	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_SDP, rp->data);
+	*rsp_len += sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+
+uint8_t search_attr_req_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+			   const struct bt_sdp_discover_params *params)
+{
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+#define SERVICE_RECORD_COUNT 5
+#define RECV_CB_BUF_SIZE (sizeof(uint32_t) * SERVICE_RECORD_COUNT)
+static uint8_t recv_cb_buf[RECV_CB_BUF_SIZE + sizeof(struct btp_sdp_service_record_handle_ev)];
+
+uint8_t search_req_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+		      const struct bt_sdp_discover_params *params)
+{
+	struct btp_sdp_service_record_handle_ev *ev;
+	uint32_t record_handle;
+	uint8_t count;
+
+	if (!result || !result->resp_buf) {
+		return BT_SDP_DISCOVER_UUID_CONTINUE;
+	}
+
+	while (result->resp_buf->len >= sizeof(record_handle)) {
+		ev = (void *)recv_cb_buf;
+
+		bt_addr_copy(&ev->address.a, bt_conn_get_dst_br(conn));
+		ev->address.type = BTP_BR_ADDRESS_TYPE;
+		count = 0;
+		while (result->resp_buf->len >= sizeof(record_handle)) {
+			record_handle = net_buf_pull_be32(result->resp_buf);
+			ev->service_record_handle[count] = sys_cpu_to_le32(record_handle);
+			count++;
+			if (count >= SERVICE_RECORD_COUNT) {
+				break;
+			}
+		}
+		ev->service_record_handle_count = count;
+
+		tester_event(BTP_SERVICE_ID_SDP, BTP_SDP_EV_SERVICE_RECORD_HANDLE, ev,
+			     sizeof(*ev) + sizeof(record_handle) * count);
+	}
+
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+uint8_t attr_req_cb(struct bt_conn *conn, struct bt_sdp_client_result *result,
+		    const struct bt_sdp_discover_params *params)
+{
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
+}
+
+union sdp_uuid {
+	struct bt_uuid uuid;
+	struct bt_uuid_16 u16;
+	struct bt_uuid_32 u32;
+	struct bt_uuid_128 u128;
+};
+
+/* Convert UUID from BTP command to bt_uuid */
+static uint8_t btp2bt_uuid(const uint8_t *uuid, uint8_t len, struct bt_uuid *u)
+{
+	uint16_t le16;
+	uint32_t le32;
+
+	switch (len) {
+	case 0x02: /* UUID 16 */
+		u->type = BT_UUID_TYPE_16;
+		memcpy(&le16, uuid, sizeof(le16));
+		BT_UUID_16(u)->val = sys_le16_to_cpu(le16);
+		break;
+	case 0x04: /* UUID 32 */
+		u->type = BT_UUID_TYPE_32;
+		memcpy(&le32, uuid, sizeof(le32));
+		BT_UUID_32(u)->val = sys_le32_to_cpu(le32);
+		break;
+	case 0x10: /* UUID 128*/
+		u->type = BT_UUID_TYPE_128;
+		memcpy(BT_UUID_128(u)->val, uuid, 16);
+		break;
+	default:
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t search_req(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	struct bt_conn *conn;
+	const struct btp_sdp_search_req_cmd *req;
+	static union sdp_uuid u;
+
+	req = (const struct btp_sdp_search_req_cmd *)cmd;
+	if (req->address.type != BTP_BR_ADDRESS_TYPE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (btp2bt_uuid(req->uuid, req->uuid_length, &u.uuid) != BTP_STATUS_SUCCESS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	conn = bt_conn_lookup_addr_br(&req->address.a);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sdp_discover.type = BT_SDP_DISCOVER_SERVICE_SEARCH;
+	sdp_discover.pool = &sdp_discover_pool;
+	sdp_discover.func = search_req_cb;
+	sdp_discover.uuid = &u.uuid;
+
+	if (bt_sdp_discover(conn, &sdp_discover)) {
+		goto failed;
+	}
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+
+failed:
+	bt_conn_unref(conn);
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t attr_req(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	struct bt_conn *conn;
+	const struct btp_sdp_attr_req_cmd *req;
+
+	req = (const struct btp_sdp_attr_req_cmd *)cmd;
+	if (req->address.type != BTP_BR_ADDRESS_TYPE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	conn = bt_conn_lookup_addr_br(&req->address.a);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sdp_discover.type = BT_SDP_DISCOVER_SERVICE_ATTR;
+	sdp_discover.pool = &sdp_discover_pool;
+	sdp_discover.func = attr_req_cb;
+	sdp_discover.handle = sys_le32_to_cpu(req->service_record_handle);
+
+	if (bt_sdp_discover(conn, &sdp_discover)) {
+		goto failed;
+	}
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+
+failed:
+	bt_conn_unref(conn);
+	return BTP_STATUS_FAILED;
+}
+
+static uint8_t search_attr_req(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	struct bt_conn *conn;
+	const struct btp_sdp_search_attr_req_cmd *req;
+	static union sdp_uuid u;
+
+	req = (const struct btp_sdp_search_attr_req_cmd *)cmd;
+	if (req->address.type != BTP_BR_ADDRESS_TYPE) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (btp2bt_uuid(req->uuid, req->uuid_length, &u.uuid) != BTP_STATUS_SUCCESS) {
+		return BTP_STATUS_FAILED;
+	}
+
+	conn = bt_conn_lookup_addr_br(&req->address.a);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
+	sdp_discover.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR;
+	sdp_discover.pool = &sdp_discover_pool;
+	sdp_discover.func = search_attr_req_cb;
+	sdp_discover.uuid = &u.uuid;
+
+	if (bt_sdp_discover(conn, &sdp_discover)) {
+		goto failed;
+	}
+
+	bt_conn_unref(conn);
+	return BTP_STATUS_SUCCESS;
+
+failed:
+	bt_conn_unref(conn);
+	return BTP_STATUS_FAILED;
+}
+
+static const struct btp_handler handlers[] = {
+	{
+		.opcode = BTP_SDP_READ_SUPPORTED_COMMANDS,
+		.index = BTP_INDEX_NONE,
+		.expect_len = 0,
+		.func = supported_commands,
+	},
+	{
+		.opcode = BTP_SDP_SEARCH_REQ,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = search_req,
+	},
+	{
+		.opcode = BTP_SDP_ATTR_REQ,
+		.expect_len = sizeof(struct btp_sdp_attr_req_cmd),
+		.func = attr_req,
+	},
+	{
+		.opcode = BTP_SDP_SEARCH_ATTR_REQ,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = search_attr_req,
+	},
+};
+
 uint8_t tester_init_sdp(void)
 {
 	static bool initialized;
@@ -229,6 +467,8 @@ uint8_t tester_init_sdp(void)
 		}
 		initialized = true;
 	}
+
+	tester_register_command_handlers(BTP_SERVICE_ID_SDP, handlers, ARRAY_SIZE(handlers));
 
 	return BTP_STATUS_SUCCESS;
 }
