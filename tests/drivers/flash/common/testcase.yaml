@@ -112,3 +112,9 @@ tests:
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
+  drivers.flash.common.ra8_ospi_nor:
+    platform_allow:
+      - ek_ra8m1
+      - ek_ra8d1
+    extra_args:
+      - DTC_OVERLAY_FILE=socs/ra8_ospi_nor.overlay
