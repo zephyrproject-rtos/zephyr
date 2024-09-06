@@ -1,17 +1,30 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  * Copyright 2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/sys/byteorder.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/tmap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #define SEM_TIMEOUT K_SECONDS(10)
 #define PA_SYNC_SKIP         5

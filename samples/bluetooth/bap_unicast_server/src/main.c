@@ -1,22 +1,36 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/types.h>
 
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \

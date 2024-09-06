@@ -1,14 +1,14 @@
 .. zephyr:code-sample:: bluetooth_bap_broadcast_sink
-   :name: Broadcast Audio Sink
-   :relevant-api: bluetooth
+   :name: Basic Audio Profile (BAP) Broadcast Audio Sink
+   :relevant-api: bluetooth bt_audio bt_bap bt_conn bt_pacs
 
-   Use LE Audio Broadcast Sink functionality.
+   Use BAP Broadcast Sink functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio broadcast sink functionality.
-Starts by scanning for LE Audio broadcast sources and then synchronizes to
+Application demonstrating the BAP Broadcast Sink functionality.
+Starts by scanning for BAP Broadcast Sources and then synchronizes to
 the first found and listens to it until the source is (potentially) stopped.
 
 This sample can be found under
