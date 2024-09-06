@@ -138,10 +138,15 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_ERR("WLAN: initialization failed");
 		break;
 	case WLAN_REASON_AUTH_SUCCESS:
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
+		net_if_dormant_off(g_mlan.netif);
+#endif
 		LOG_DBG("WLAN: authenticated to nxp_wlan_network");
 		break;
 	case WLAN_REASON_ASSOC_SUCCESS:
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 		net_if_dormant_off(g_mlan.netif);
+#endif
 		LOG_DBG("WLAN: associated to nxp_wlan_network");
 		break;
 	case WLAN_REASON_SUCCESS:
@@ -186,15 +191,14 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		wifi_mgmt_raise_connect_result_event(g_mlan.netif, 0);
 		break;
 	case WLAN_REASON_CONNECT_FAILED:
-		net_eth_carrier_off(g_mlan.netif);
+		net_if_dormant_on(g_mlan.netif);
 		LOG_WRN("WLAN: connect failed");
 		break;
 	case WLAN_REASON_NETWORK_NOT_FOUND:
-		net_eth_carrier_off(g_mlan.netif);
+		net_if_dormant_on(g_mlan.netif);
 		LOG_WRN("WLAN: nxp_wlan_network not found");
 		break;
 	case WLAN_REASON_NETWORK_AUTH_FAILED:
-		net_eth_carrier_off(g_mlan.netif);
 		LOG_WRN("WLAN: nxp_wlan_network authentication failed");
 		auth_fail++;
 		if (auth_fail >= 3) {
@@ -202,6 +206,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			wlan_disconnect();
 			auth_fail = 0;
 		}
+		net_if_dormant_on(g_mlan.netif);
 		break;
 	case WLAN_REASON_ADDRESS_SUCCESS:
 		LOG_DBG("wlan_network mgr: DHCP new lease");
@@ -210,7 +215,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_WRN("failed to obtain an IP address");
 		break;
 	case WLAN_REASON_USER_DISCONNECT:
-		net_eth_carrier_off(g_mlan.netif);
+		net_if_dormant_on(g_mlan.netif);
 		LOG_DBG("disconnected");
 		auth_fail = 0;
 		s_nxp_wifi_StaConnected = false;
@@ -438,6 +443,7 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	int status = NXP_WIFI_RET_SUCCESS;
 	int ret;
 	struct interface *if_handle = (struct interface *)&g_uap;
+	struct ipv4_config *ap_addr4 = &nxp_wlan_network.ip.ipv4;
 
 	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
 		LOG_ERR("Wi-Fi not in uAP mode");
@@ -506,6 +512,17 @@ static int nxp_wifi_start_ap(const struct device *dev, struct wifi_connect_req_p
 	if (status != NXP_WIFI_RET_SUCCESS) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
+	}
+
+	if (net_addr_pton(AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS, &ap_addr4->address) < 0) {
+		LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
+		return -ENOENT;
+	}
+	ap_addr4->gw = ap_addr4->address;
+
+	if (net_addr_pton(AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_MASK, &ap_addr4->netmask) < 0) {
+		LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
+		return -ENOENT;
 	}
 
 	ret = wlan_add_network(&nxp_wlan_network);
@@ -965,7 +982,7 @@ static inline enum wifi_security_type nxp_wifi_security_type(enum wlan_security_
 	}
 }
 
-#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	enum wlan_connection_state connection_state = WLAN_DISCONNECTED;
@@ -993,11 +1010,9 @@ static int nxp_wifi_uap_status(const struct device *dev, struct wifi_iface_statu
 			if (if_handle->state.interface == WLAN_BSS_TYPE_STA) {
 				status->iface_mode = WIFI_MODE_INFRA;
 			}
-#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 			else if (if_handle->state.interface == WLAN_BSS_TYPE_UAP) {
 				status->iface_mode = WIFI_MODE_AP;
 			}
-#endif
 
 #ifdef CONFIG_NXP_WIFI_11AX
 			if (nxp_wlan_network.dot11ax) {
@@ -1879,7 +1894,7 @@ NET_DEVICE_INIT_INSTANCE(wifi_nxp_sta, "ml", 0, nxp_wifi_dev_init, PM_DEVICE_DT_
 static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 	.ap_enable = nxp_wifi_start_ap,
 	.ap_disable = nxp_wifi_stop_ap,
-	.iface_status = nxp_wifi_status,
+	.iface_status = nxp_wifi_uap_status,
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = nxp_wifi_stats,
 #endif
