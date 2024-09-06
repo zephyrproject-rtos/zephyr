@@ -121,7 +121,8 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
  * On USBHS, we cannot access the DWC2 register until VBUS is detected and
  * valid. If the user tries to force usbd_enable() and the corresponding
  * udc_enable() without a "VBUS ready" notification, the event wait will block
- * until a valid VBUS signal is detected.
+ * until a valid VBUS signal is detected or until the
+ * CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT timeout expires.
  */
 static K_EVENT_DEFINE(usbhs_events);
 #define USBHS_VBUS_READY	BIT(0)
@@ -182,10 +183,19 @@ static inline int usbhs_enable_nrfs_service(const struct device *dev)
 static inline int usbhs_enable_core(const struct device *dev)
 {
 	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+	k_timeout_t timeout = K_FOREVER;
+
+	#if CONFIG_NRFS_HAS_VBUS_DETECTOR_SERVICE
+	if (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT) {
+		timeout = K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT);
+	}
+	#endif
 
 	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
 		LOG_WRN("VBUS is not ready, block udc_enable()");
-		k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_FOREVER);
+		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, timeout)) {
+			return -ETIMEDOUT;
+		}
 	}
 
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;
