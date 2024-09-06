@@ -529,6 +529,12 @@ static int dma_stm32_configure(const struct device *dev,
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
+#ifdef CONFIG_ARM_SECURE_FIRMWARE
+	LL_DMA_ConfigChannelSecure(dma, dma_stm32_id_to_stream(id),
+		LL_DMA_CHANNEL_SEC | LL_DMA_CHANNEL_SRC_SEC | LL_DMA_CHANNEL_DEST_SEC);
+	LL_DMA_EnableChannelPrivilege(dma, dma_stm32_id_to_stream(id));
+#endif
+
 	LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
 	LL_DMA_EnableIT_USE(dma, dma_stm32_id_to_stream(id));
 	LL_DMA_EnableIT_ULE(dma, dma_stm32_id_to_stream(id));
