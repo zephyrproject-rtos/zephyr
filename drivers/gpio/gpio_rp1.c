@@ -218,6 +218,8 @@ int gpio_rp1_init(const struct device *port)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_rp1_init, NULL, &gpio_rp1_data_##n, &gpio_rp1_cfg_##n,       \
-			      POST_KERNEL, 99, &gpio_rp1_api);  // TODO: POST_KERNEL is set to use printk, revert this after the development is done
+			      POST_KERNEL, 99,                                                     \
+			      &gpio_rp1_api); // TODO: POST_KERNEL is set to use printk, revert this
+					      // after the development is done
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RP1_INIT)

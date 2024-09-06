@@ -127,10 +127,10 @@ static int mfd_rp1_init(const struct device *port)
 #define MFD_RP1_INIT(n)                                                                            \
 	static struct mfd_rp1_data mfd_rp1_data_##n;                                               \
                                                                                                    \
-	static const struct mfd_rp1_config mfd_rp1_cfg_##n = {                                     \
-	};                                                                                         \
+	static const struct mfd_rp1_config mfd_rp1_cfg_##n = {};                                   \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mfd_rp1_init, NULL, &mfd_rp1_data_##n, &mfd_rp1_cfg_##n,          \
-			      POST_KERNEL, 98, NULL);  // TODO: POST_KERNEL is set to use printk, revert this after the development is done
+			      POST_KERNEL, 98, NULL); // TODO: POST_KERNEL is set to use printk,
+						      // revert this after the development is done
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_RP1_INIT)

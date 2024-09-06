@@ -120,7 +120,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_RC_DL_MDIO_ADDR                0x1100
 #define PCIE_RC_DL_MDIO_WR_DATA             0x1104
-#define PCIE_RC_PL_PHY_CTL_15_PM_CLK_PERIOD 0x12 // 18.52ns as ticks
+#define PCIE_RC_PL_PHY_CTL_15_PM_CLK_PERIOD 0x12 /* 18.52ns as ticks */
 
 #define SET_ADDR_OFFSET 0x1f
 
@@ -157,6 +157,7 @@ static uint32_t encode_ibar_size(uint64_t size)
 {
 	uint32_t tmp;
 	uint32_t size_upper = (uint32_t)(size >> 32);
+
 	if (size_upper > 0) {
 		tmp = ilog2(size_upper) + 32;
 	} else {
@@ -260,6 +261,7 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	uint64_t rc_bar2_offset = config->ranges[DMA_RANGES_IDX].host_map_addr -
 				  config->ranges[DMA_RANGES_IDX].pcie_bus_addr;
 	uint64_t rc_bar2_size = config->ranges[DMA_RANGES_IDX].map_length;
+
 	tmp = lower_32_bits(rc_bar2_offset);
 	tmp &= ~PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_MASK;
 	tmp |= encode_ibar_size(rc_bar2_size) << PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_LSB;
@@ -380,7 +382,6 @@ static int pcie_brcmstb_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, pcie_brcmstb_init, NULL, &pcie_brcmstb_data_##n,                  \
-			      &pcie_brcmstb_cfg_##n, POST_KERNEL, 97,                              \
-			      &pcie_brcmstb_api);
+			      &pcie_brcmstb_cfg_##n, POST_KERNEL, 97, &pcie_brcmstb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_BRCMSTB_INIT)
