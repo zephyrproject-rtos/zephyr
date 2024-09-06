@@ -1,0 +1,22 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: s32k148_evb
+name: NXP S32K148EVB-Q176
+vendor: nxp
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+supported:
+  - mpu
+  - gpio
+  - uart
+  - pinctrl
+  - pwm
+  - can
+  - watchdog
+  - counter
+  - adc
