@@ -25,7 +25,7 @@ Building and running
 Build and flash this sample project using these commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/bbc_microbit/line_follower_robot
+   :zephyr-app: samples/boards/bbc/microbit/line_follower_robot
    :board: bbc_microbit
    :goals: build flash
    :compact:

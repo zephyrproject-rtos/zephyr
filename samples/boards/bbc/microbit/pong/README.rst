@@ -26,7 +26,7 @@ Building and running
 ********************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/bbc_microbit/pong
+   :zephyr-app: samples/boards/bbc/microbit/pong
    :board: bbc_microbit
    :goals: build flash
    :compact:
