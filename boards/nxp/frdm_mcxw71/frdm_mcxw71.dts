@@ -17,6 +17,7 @@
 
 	chosen {
 		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &code_partition;
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
@@ -59,4 +60,8 @@
 			label = "storage";
 		};
 	};
+};
+
+&fmu {
+	status = "okay";
 };
