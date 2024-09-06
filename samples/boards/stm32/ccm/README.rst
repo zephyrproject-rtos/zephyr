@@ -1,7 +1,7 @@
-.. _samples_boards_stm32_ccm:
+.. zephyr:code-sample:: stm32_ccm
+   :name: Core Coupled Memory (CCM)
 
-STM32 CCM example
-#################
+   Place and use variables in the Core Coupled Memory (CCM).
 
 Overview
 ********

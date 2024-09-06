@@ -1,7 +1,7 @@
-.. _sensortile_box sensors:
+.. zephyr:code-sample:: sensortile_box_sensors
+   :name: SensorTile.box sensors
 
-ST SensorTile.box
-#################
+   Read sensor data from the various SensorTile.box sensors.
 
 Overview
 ********

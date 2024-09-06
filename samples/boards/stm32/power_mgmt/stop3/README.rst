@@ -1,7 +1,7 @@
-.. _stm32-pm-stop3:
+.. zephyr:code-sample:: stm32_pm_stop3
+   :name: STOP3 mode
 
-STM32 PM STOP3 mode
-###################
+   Use STOP3 low power mode on STM32U5.
 
 Overview
 ********

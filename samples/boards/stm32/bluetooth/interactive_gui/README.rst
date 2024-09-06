@@ -3,7 +3,7 @@
    :name: Bluetooth: ST Interactive GUI
    :relevant-api: bluenrg_hci_driver bluetooth
 
-Expose ST BlueNRG Bluetooth network coprocessor over UART
+   Expose ST BlueNRG Bluetooth network coprocessor over UART.
 
 Overview
 *********
