@@ -34,12 +34,12 @@ This sample has been tested on the NordicSemiconductor nRF9160 DK
 Building and Running
 ********************
 
-The code can be found in :zephyr_file:`samples/boards/nrf/nrfx`.
+The code can be found in :zephyr_file:`samples/boards/nordic/nrfx`.
 
 To build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/nrfx
+   :zephyr-app: samples/boards/nordic/nrfx
    :board: nrf9160dk/nrf9160
    :goals: build flash
    :compact:
