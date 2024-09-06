@@ -1,7 +1,7 @@
-.. _spiram_test:
+.. zephyr:code-sample:: esp32-spiram
+   :name: SPIRAM
 
-Espressif ESP32 SPIRAM test
-###########################
+   Allocate memory from SPIRAM.
 
 Overview
 ********
