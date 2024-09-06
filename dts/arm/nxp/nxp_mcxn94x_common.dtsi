@@ -931,6 +931,31 @@
 		resolution = <32>;
 	};
 
+	i3c0: i3c@21000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x21000 0x1000>;
+		interrupts = <95 0>;
+		clocks = <&syscon MCUX_I3C_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
+
+	i3c1: i3c@22000 {
+		compatible = "nxp,mcux-i3c";
+		reg = <0x22000 0x1000>;
+		interrupts = <96 0>;
+		clocks = <&syscon MCUX_I3C2_CLK>;
+		clk-divider = <6>;
+		clk-divider-slow = <1>;
+		clk-divider-tc = <1>;
+		status = "disabled";
+		#address-cells = <3>;
+		#size-cells = <0>;
+	};
 
 	flexio0: flexio@105000 {
 		compatible = "nxp,flexio";
