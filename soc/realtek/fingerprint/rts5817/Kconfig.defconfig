@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RTS5817
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_RTS5817
