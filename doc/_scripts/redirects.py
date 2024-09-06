@@ -243,6 +243,7 @@ REDIRECTS = [
     ('samples/boards/nrf/nrfx_prs/README', 'samples/boards/nordic/nrfx_prs/README'),
     ('samples/boards/nrf/system_off/README', 'samples/boards/nordic/system_off/README'),
     ('samples/boards/nxp_s32/netc/README', 'samples/boards/nxp/s32/netc/README'),
+    ('samples/boards/qomu/README', 'samples/boards/quicklogic/qomu/README'),
     ('samples/boards/stm32/backup_sram/README', 'samples/boards/st/backup_sram/README'),
     ('samples/boards/stm32/bluetooth/interactive_gui/README', 'samples/boards/st/bluetooth/interactive_gui/README'),
     ('samples/boards/stm32/ccm/README', 'samples/boards/st/ccm/README'),
