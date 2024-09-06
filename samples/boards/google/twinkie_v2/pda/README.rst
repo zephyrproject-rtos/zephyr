@@ -1,7 +1,8 @@
-.. _google_twinkie_v2_pda:
+.. zephyr:code-sample:: twinkie_v2_pda
+   :name: Power Delivery Analyzer
+   :relevant-api: adc_interface
 
-Twinkie Power Delivery
-######################
+   Implement a basic Power Delivery Analyzer to determine if a USB device is currently charging.
 
 Overview
 ********
@@ -15,7 +16,7 @@ Building and Running
 Build and flash Twinkie as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/google_twinkie_v2_pda
+   :zephyr-app: samples/boards/google/twinkie_v2/pda
    :board: google_twinkie_v2
    :goals: build flash
    :compact:
