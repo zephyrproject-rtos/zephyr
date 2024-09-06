@@ -99,14 +99,16 @@ def main():
 
         write_utils()
 
+        sorted_nodes = sorted(edt.nodes, key=lambda node: node.dep_ordinal)
+
         # populate all z_path_id first so any children references will
         # work correctly.
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             node.z_path_id = node_z_path_id(node)
 
         # Check to see if we have duplicate "zephyr,memory-region" property values.
         regions = dict()
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             if 'zephyr,memory-region' in node.props:
                 region = node.props['zephyr,memory-region'].val
                 if region in regions:
@@ -114,7 +116,7 @@ def main():
                              f"between {regions[region].path} and {node.path}")
                 regions[region] = node
 
-        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
+        for node in sorted_nodes:
             write_node_comment(node)
 
             out_comment("Node's full path:")
