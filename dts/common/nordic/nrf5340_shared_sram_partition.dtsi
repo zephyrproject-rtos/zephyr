@@ -14,9 +14,7 @@
  * the memory range allocated to the non-secure image (sram0_ns).
  *
  * By default the last 64 kB of application core SRAM is allocated as shared
- * memory (sram0_shared) which is divided in:
- * - 32 kB CPUAPP to CPUNET communication (cpuapp_cpunet_ipc_shm)
- * - 32 kB CPUNET to CPUAPP communication (cpunet_cpuapp_ipc_shm)
+ * memory (sram0_shared).
  */
 
 / {
@@ -30,18 +28,8 @@
 		ranges;
 
 		sram0_shared: memory@20070000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			/* Last 64 kB of sram0 */
 			reg = <0x20070000 0x10000>;
-
-			cpuapp_cpunet_ipc_shm: memory@20070000 {
-				reg = <0x20070000 DT_SIZE_K(32)>;
-			};
-
-			cpunet_cpuapp_ipc_shm: memory@20078000 {
-				reg = <0x20078000 DT_SIZE_K(32)>;
-			};
 		};
 	};
 };
