@@ -1,7 +1,8 @@
-.. _microbit_sound:
+.. zephyr:code-sample:: bbc_microbit_sound
+   :name: Sound
+   :relevant-api: pwm_interface
 
-BBC micro:bit sound
-###################
+   Use the piezo buzzer on the BBC micro:bit board.
 
 Overview
 ********

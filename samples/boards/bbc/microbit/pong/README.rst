@@ -1,12 +1,12 @@
-.. _microbit_pong:
+.. zephyr:code-sample:: bbc_microbit_pong
+   :name: Pong game
 
-BBC micro:bit pong game
-#######################
+   Play pong as single player or over Bluetooth between two micro:bit devices.
 
 Overview
 ********
 
-Play pong over as single player or Bluetooth between two micro:bit
+Play pong as single player or over Bluetooth between two micro:bit
 devices.
 
 The game works by controlling a paddle with the two buttons of the
