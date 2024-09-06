@@ -1,4 +1,4 @@
-.. mec15xxevb_assy6853-samples:
+.. _mec15xxevb_assy6853-samples:
 
 MEC15xxEVB Reference Board Samples
 ##################################
