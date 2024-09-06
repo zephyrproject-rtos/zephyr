@@ -31,7 +31,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/boards/96b_argonkey/microphone
+    :zephyr-app: samples/boards/96boards/argonkey/microphone
     :host-os: unix
     :board: 96b_argonkey
     :goals: run

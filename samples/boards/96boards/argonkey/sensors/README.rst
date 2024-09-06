@@ -46,7 +46,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/boards/96b_argonkey/sensors
+    :zephyr-app: samples/boards/96boards/argonkey/sensors
     :host-os: unix
     :board: 96b_argonkey
     :goals: run
