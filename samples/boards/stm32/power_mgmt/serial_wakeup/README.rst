@@ -1,7 +1,7 @@
-.. _stm32-pm-serial-wakeup-sample:
+.. zephyr:code-sample:: stm32_pm_serial_wakeup
+   :name: Serial wakeup
 
-STM32 PM Serial wakeup
-######################
+   Wake up on serial activity on STM32.
 
 Overview
 ********

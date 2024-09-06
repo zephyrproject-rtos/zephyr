@@ -1,6 +1,8 @@
 .. zephyr:code-sample:: stm32_i2c_v2_timings
-   :name: STM32 I2C V2 timings
+   :name: I2C V2 timings
    :relevant-api: i2c_interface
+
+   Retrieve I2C V2 timings at runtime.
 
 Overview
 ********

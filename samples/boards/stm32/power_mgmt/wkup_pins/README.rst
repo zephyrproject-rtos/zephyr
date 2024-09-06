@@ -1,7 +1,8 @@
-.. _gpio-as-a-wkup-pin-src-sample:
+.. zephyr:code-sample:: stm32_pm_gpio_wkup_src
+   :name: GPIO as a wake-up pin source
+   :relevant-api: adc_interface
 
-GPIO As A Wake-up Pin Source
-############################
+   Use a GPIO as a wake-up pin source.
 
 Overview
 ********

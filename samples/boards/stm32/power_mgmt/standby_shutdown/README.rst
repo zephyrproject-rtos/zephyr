@@ -1,7 +1,7 @@
-.. _stm32-pm-standby_shutdown-sample:
+.. zephyr:code-sample:: stm32_pm_shutdown
+   :name: Standby/Shutdown mode
 
-STM32 PM Standby shutdown
-#########################
+   Enter and exit Standby/Shutdown mode on STM32.
 
 Overview
 ********
