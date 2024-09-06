@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CHANNEL_msk BIT(0)
 #define ADC_RESOLUTION  12
 
+#define WAKEUP_TIME_US     25
+#define CONVERSION_TIME_US 625 /* DR is 1600 SPS */
+
 /*
  * Conversion Data Register (RP = 00h) [reset = 0000h]
  */
@@ -197,7 +200,9 @@ static void tla2021_perform_read(const struct device *dev)
 	/*
 	 * Wait until sampling is done
 	 */
+	k_usleep(WAKEUP_TIME_US + CONVERSION_TIME_US);
 	do {
+		k_yield();
 		ret = tla2021_read_register(dev, REG_CONFIG, &reg);
 		if (ret < 0) {
 			adc_context_complete(&data->ctx, ret);
