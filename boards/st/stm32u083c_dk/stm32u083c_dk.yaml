@@ -11,6 +11,7 @@ supported:
   - dac
   - gpio
   - i2c
+  - pwm
   - usart
 ram: 40
 flash: 256
