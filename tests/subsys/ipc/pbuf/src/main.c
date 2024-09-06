@@ -48,7 +48,7 @@ ZTEST(test_pbuf, test_rw)
 	 * order to avoid clang complains about memory_area not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
 
 	static struct pbuf pb = {
 		.cfg = &cfg,
@@ -115,9 +115,9 @@ ZTEST(test_pbuf, test_retcodes)
 	 * order to avoid clang complains about memory_area not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg0 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 32);
-	static const struct pbuf_cfg cfg1 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
-	static const struct pbuf_cfg cfg2 = PBUF_CFG_INIT(memory_area, 20, 4);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg0 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 32);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg1 = PBUF_CFG_INIT(memory_area, MEM_AREA_SZ, 0);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg2 = PBUF_CFG_INIT(memory_area, 20, 4);
 
 	static struct pbuf pb0 = {
 		.cfg = &cfg0,
@@ -268,7 +268,7 @@ ZTEST(test_pbuf, test_stress)
 	 * order to avoid clang complains about buffer not being constant
 	 * expression.
 	 */
-	static const struct pbuf_cfg cfg = PBUF_CFG_INIT(buffer, MEM_AREA_SZ, 4);
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg = PBUF_CFG_INIT(buffer, MEM_AREA_SZ, 4);
 
 	static struct pbuf pb = {
 		.cfg = &cfg,

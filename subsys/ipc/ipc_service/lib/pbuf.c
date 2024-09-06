@@ -11,6 +11,10 @@
 #include <zephyr/ipc/pbuf.h>
 #include <zephyr/sys/byteorder.h>
 
+#if defined(CONFIG_ARCH_POSIX)
+#include <soc.h>
+#endif
+
 /* Helper funciton for getting numer of bytes being written to the bufer. */
 static uint32_t idx_occupied(uint32_t len, uint32_t wr_idx, uint32_t rd_idx)
 {
@@ -54,11 +58,23 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 	return 0;
 }
 
+#if defined(CONFIG_ARCH_POSIX)
+void pbuf_native_addr_remap(struct pbuf *pb)
+{
+	native_emb_addr_remap((void **)&pb->cfg->rd_idx_loc);
+	native_emb_addr_remap((void **)&pb->cfg->wr_idx_loc);
+	native_emb_addr_remap((void **)&pb->cfg->data_loc);
+}
+#endif
+
 int pbuf_tx_init(struct pbuf *pb)
 {
 	if (validate_cfg(pb->cfg) != 0) {
 		return -EINVAL;
 	}
+#if defined(CONFIG_ARCH_POSIX)
+	pbuf_native_addr_remap(pb);
+#endif
 
 	/* Initialize local copy of indexes. */
 	pb->data.wr_idx = 0;
@@ -82,6 +98,10 @@ int pbuf_rx_init(struct pbuf *pb)
 	if (validate_cfg(pb->cfg) != 0) {
 		return -EINVAL;
 	}
+#if defined(CONFIG_ARCH_POSIX)
+	pbuf_native_addr_remap(pb);
+#endif
+
 	/* Initialize local copy of indexes. */
 	pb->data.wr_idx = 0;
 	pb->data.rd_idx = 0;
