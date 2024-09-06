@@ -25,4 +25,5 @@ supported:
   - i3c
   - dma
   - spi
+  - sdhc
 vendor: nxp
