@@ -227,6 +227,7 @@ REDIRECTS = [
     ('samples/boards/esp32/spiram_test/README', 'samples/boards/espressif/spiram_test/README'),
     ('samples/boards/esp32/wifi_apsta_mode/README', 'samples/boards/espressif/wifi_apsta_mode/README'),
     ('samples/boards/esp32/xt_wdt/README', 'samples/boards/espressif/xt_wdt/README'),
+    ('samples/boards/google_twinkie_v2_pda/README', 'samples/boards/google/twinkie_v2/pda/README'),
     ('samples/boards/intel_adsp/code_relocation/README', 'samples/boards/intel/adsp/code_relocation/README'),
     ('samples/boards/mec15xxevb_assy6853/power_management/README', 'samples/boards/microchip/mec15xxevb_assy6853/power_management/README'),
     ('samples/boards/mimxrt1060_evk/system_off/README', 'samples/boards/nxp/mimxrt1060_evk/system_off/README'),
