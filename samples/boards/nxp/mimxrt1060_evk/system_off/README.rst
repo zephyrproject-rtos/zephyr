@@ -1,7 +1,8 @@
-.. _mimxrt1060_evk-system-off-sample:
+.. zephyr:code-sample:: mimxrt1060_evk_system_off
+   :name: RT1060 System Off
+   :relevant-api: sys_poweroff
 
-RT1060 System Off demo
-######################
+   Use soft-off on MIMXRT1060-EVK.
 
 Overview
 ********

@@ -132,7 +132,7 @@ Ethernet
 
 NETC driver supports to manage the Physical Station Interface (PSI0) and/or a
 single Virtual SI (VSI). The rest of the VSI's shall be assigned to different
-cores of the system. Refer to :ref:`nxp_s32_netc-samples` to learn how to
+cores of the system. Refer to :zephyr:code-sample:`nxp_s32_netc` to learn how to
 configure the Ethernet network controller.
 
 Controller Area Network

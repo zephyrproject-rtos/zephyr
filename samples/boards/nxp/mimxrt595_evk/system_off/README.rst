@@ -1,7 +1,8 @@
-.. _mimxrt595_evk-system-off-sample:
+.. zephyr:code-sample:: mimxrt595_evk_system_off
+   :name: RT595 System Off
+   :relevant-api: sys_poweroff
 
-RT595 System Off demo
-#####################
+   Use soft-off on MIMXRT595-EVK.
 
 Overview
 ********
