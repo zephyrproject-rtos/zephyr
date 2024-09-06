@@ -1,14 +1,14 @@
 .. zephyr:code-sample:: bluetooth_bap_unicast_client
-   :name: Unicast Audio Client
-   :relevant-api: bt_bap bt_audio
+   :name: Basic Audio Profile (BAP) Unicast Audio Client
+   :relevant-api: bluetooth bt_audio bt_bap bt_conn
 
-   Use LE Audio Unicast Client functionality.
+   Use BAP Unicast Client functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio unicast client functionality. Scans for and
-connects to a LE Audio unicast server and establishes an audio stream.
+Application demonstrating the BAP Unicast Client functionality. Scans for and
+connects to a BAP Unicast Server and establishes an audio stream.
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_unicast_client` in the Zephyr tree.
