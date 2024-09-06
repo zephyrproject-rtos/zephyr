@@ -24,6 +24,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_wb55rg
       - rpi_pico
       - sltb010a@0

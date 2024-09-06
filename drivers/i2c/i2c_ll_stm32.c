@@ -115,7 +115,10 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #endif
 
 	LL_I2C_Disable(i2c);
+
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u0_i2c)
 	i2c_stm32_set_smbus_mode(dev, data->mode);
+#endif
 	ret = stm32_i2c_configure_timing(dev, i2c_clock);
 
 	if (data->smbalert_active) {
@@ -478,6 +481,7 @@ void i2c_stm32_smbalert_set_callback(const struct device *dev, i2c_stm32_smbaler
 }
 #endif /* CONFIG_SMBUS_STM32_SMBALERT */
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32u0_i2c)
 void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -506,6 +510,7 @@ void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode
 		return;
 	}
 }
+#endif
 
 #ifdef CONFIG_SMBUS_STM32
 void i2c_stm32_smbalert_enable(const struct device *dev)

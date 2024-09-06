@@ -1,0 +1,20 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32U0 I2C Controller
+        This compatibility applies to all I2C hardware blocks corresponding
+        to the version available in STM32U0 SoCs.
+        This version of the STM32 I2C hardware block can be identified by the
+        absence of the SMBHEN and SMBDEN bits in the I2C_CR1 register.
+        For example, but not limited to: STM32U0
+
+compatible: "st,stm32u0-i2c"
+
+include: "st,stm32-i2c-v2.yaml"
+
+
+
+
+
+
