@@ -451,6 +451,9 @@ struct i3c_ccc_deftgts_target {
  * this CCC.
  */
 struct i3c_ccc_deftgts {
+	/** Number of Targets (and Groups) present on the I3C Bus */
+	uint8_t count;
+
 	/** Data describing the active controller */
 	struct i3c_ccc_deftgts_active_controller active_controller;
 
@@ -1826,6 +1829,17 @@ int i3c_ccc_do_setvendor_all(const struct device *controller,
  * @return @see i3c_do_ccc
  */
 int i3c_ccc_do_setaasa_all(const struct device *controller);
+
+/**
+ * @brief Broadcast DEFTGTS
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] deftgts Pointer to the deftgts payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_deftgts_all(const struct device *controller,
+			   struct i3c_ccc_deftgts *deftgts);
 
 #ifdef __cplusplus
 }

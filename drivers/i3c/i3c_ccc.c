@@ -472,6 +472,25 @@ int i3c_ccc_do_enttm(const struct device *controller,
 	return i3c_do_ccc(controller, &ccc_payload);
 }
 
+int i3c_ccc_do_deftgts_all(const struct device *controller,
+			   struct i3c_ccc_deftgts *deftgts)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+	__ASSERT_NO_MSG(deftgts != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_DEFTGTS;
+
+	ccc_payload.ccc.data = (uint8_t *)deftgts;
+	ccc_payload.ccc.data_len = sizeof(uint8_t) +
+				   sizeof(struct i3c_ccc_deftgts_active_controller) +
+				   (deftgts->count * sizeof(struct i3c_ccc_deftgts_target));
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
 int i3c_ccc_do_getstatus(const struct i3c_device_desc *target,
 			 union i3c_ccc_getstatus *status,
 			 enum i3c_ccc_getstatus_fmt fmt,
