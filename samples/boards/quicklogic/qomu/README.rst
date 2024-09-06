@@ -15,7 +15,7 @@ Building
 ********
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/qomu
+   :zephyr-app: samples/boards/quicklogic/qomu
    :host-os: unix
    :board: qomu
    :goals: build
