@@ -229,6 +229,7 @@ REDIRECTS = [
     ('samples/boards/esp32/xt_wdt/README', 'samples/boards/espressif/xt_wdt/README'),
     ('samples/boards/google_twinkie_v2_pda/README', 'samples/boards/google/twinkie_v2/pda/README'),
     ('samples/boards/intel_adsp/code_relocation/README', 'samples/boards/intel/adsp/code_relocation/README'),
+    ('samples/boards/litex/i2s/README', 'samples/boards/enjoydigital/litex/i2s/README'),
     ('samples/boards/mec15xxevb_assy6853/power_management/README', 'samples/boards/microchip/mec15xxevb_assy6853/power_management/README'),
     ('samples/boards/mimxrt1060_evk/system_off/README', 'samples/boards/nxp/mimxrt1060_evk/system_off/README'),
     ('samples/boards/mimxrt1170_evk_cm7/magic_addr/README', 'samples/boards/nxp/mimxrt1170_evk_cm7/magic_addr/README'),
