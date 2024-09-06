@@ -1,13 +1,13 @@
 .. zephyr:code-sample:: bluetooth_public_broadcast_source
-   :name: Public Broadcast Source
-   :relevant-api: bluetooth
+   :name: Public Broadcast Profile (PBP) Public Broadcast Source
+   :relevant-api: bluetooth bt_audio bt_bap bt_pbp
 
-   Bluetooth: Public Broadcast Source
+   Use PBP Public Broadcast Source functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Public Broadcast Profile source functionality.
+Application demonstrating the PBP Public Broadcast Source functionality.
 Will start advertising extended advertising and includes a Broadcast Audio Announcement.
 The advertised broadcast audio stream quality will cycle between high and standard quality
 every 15 seconds.

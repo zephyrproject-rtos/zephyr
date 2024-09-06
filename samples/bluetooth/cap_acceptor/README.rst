@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: bluetooth_cap_acceptor
-   :name: Common Audio Profile Acceptor
-   :relevant-api: bt_cap bt_bap bluetooth
+   :name: Common Audio Profile (CAP) Acceptor
+   :relevant-api: bluetooth bt_audio bt_bap bt_cap bt_pacs
 
    Advertise audio availability to CAP Initiators using the CAP Acceptor role.
 

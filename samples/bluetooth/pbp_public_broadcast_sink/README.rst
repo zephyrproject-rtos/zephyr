@@ -1,14 +1,14 @@
 .. zephyr:code-sample:: bluetooth_public_broadcast_sink
-   :name: Public Broadcast Sink
-   :relevant-api: bluetooth
+   :name: Public Broadcast Profile (PBP) Public Broadcast Sink
+   :relevant-api: bluetooth bt_audio bt_bap bt_pacs bt_pbp
 
-   Bluetooth: Public Broadcast Sink
+   Use PBP Public Broadcast Sink functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Public Broadcast Profile sink functionality.
-Starts by scanning for LE Audio broadcast sources and then synchronizes to
+Application demonstrating the PBP Public Broadcast Sink functionality.
+Starts by scanning for PBP Public Broadcast Sources and then synchronizes to
 the first found source which defines a Public Broadcast Announcement including
 a High Quality Public Broadcast Audio Stream configuration.
 

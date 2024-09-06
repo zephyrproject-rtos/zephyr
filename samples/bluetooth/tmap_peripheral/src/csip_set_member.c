@@ -3,15 +3,21 @@
  *
  *  Copyright (c) 2022 Codecoup
  *  Copyright 2023 NXP
+ *  Copyright (c) 2024 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 static struct bt_csip_set_member_svc_inst *svc_inst;
 

@@ -2,17 +2,19 @@
  *  @brief Bluetooth Call Control Profile (CCP) Server role.
  *
  *  Copyright 2023 NXP
+ *  Copyright (c) 2024 Nordic Semiconductor ASA
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
 
 #define URI_LIST_LEN	2
 

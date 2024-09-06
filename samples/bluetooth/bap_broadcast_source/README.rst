@@ -1,18 +1,18 @@
 .. zephyr:code-sample:: bluetooth_bap_broadcast_source
-   :name: Broadcast Audio Source
-   :relevant-api: bluetooth
+   :name: Basic Audio Profile (BAP) Broadcast Audio Source
+   :relevant-api: bluetooth bt_audio bt_bap
 
-   Use LE Audio Broadcast Source functionality.
+   Use BAP Broadcast Source functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio broadcast audio source functionality.
+Application demonstrating the BAP Broadcast Source functionality.
 Will start advertising extended advertising with audio flags, periodic advertising with the
-broadcast audio source endpoint (BASE) and finally the BIGinfo together with
+Broadcast Audio Source Endpoint (BASE) and finally the BIGinfo together with
 (mock) Audio (ISO) data.
 
-The broadcast source will reset every 30 seconds to show the full API.
+The BAP Broadcast Source will reset every 30 seconds to show the full API.
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_source` in the Zephyr tree.
