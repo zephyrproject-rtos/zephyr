@@ -1,7 +1,7 @@
-.. _intel_adsp_code_relocation:
+.. zephyr:code-sample:: intel_adsp_code_relocation
+   :name: Code relocation
 
-Intel ADSP CAVS Code relocation
-###############################
+   Relocate code using custom linker script.
 
 Overview
 ********
@@ -19,7 +19,7 @@ Building and Running
 This application can be built and executed as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/boards/intel/adsp/code_relocation
    :board: intel_adsp/cavs25
    :goals: build
    :compact:
