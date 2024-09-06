@@ -1,7 +1,7 @@
-.. _microbit_line_follower_robot:
+.. zephyr:code-sample:: bbc_microbit_line_follower_robot
+   :name: Line following robot
 
-BBC micro:bit line-follower robot
-#################################
+   Implement a line following robot using a BBC micro:bit board and robot chassis.
 
 Overview
 ********

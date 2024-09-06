@@ -1,7 +1,7 @@
-.. _microbit_display:
+.. zephyr:code-sample:: bbc_microbit_display
+   :name: LED matrix display
 
-BBC micro:bit display
-#####################
+   Use the 5x5 LED matrix display on the BBC micro:bit board.
 
 Overview
 ********
