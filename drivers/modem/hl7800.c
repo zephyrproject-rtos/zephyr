@@ -427,6 +427,7 @@ struct hl7800_iface_ctx {
 	bool wait_for_KSUP;
 	uint32_t wait_for_KSUP_tries;
 	bool reconfig_IP_connection;
+	bool reset_sockets;
 	char dns_v4_string[NET_IPV4_ADDR_LEN];
 	char no_id_resp_cmd[NO_ID_RESP_CMD_MAX_LENGTH];
 	bool search_no_id_resp;
@@ -4065,7 +4066,8 @@ static bool on_cmd_sockcreate(enum net_sock_type type, struct net_buf **buf, uin
 	if (!sock) {
 		LOG_DBG("look up new socket by creation id");
 		sock = socket_from_id(MDM_CREATE_SOCKET_ID);
-		if (!sock || sock->type != type) {
+		if (iface_ctx.reset_sockets || !sock || sock->type != type) {
+			iface_ctx.reset_sockets = false;
 			if (queue_stale_socket(type, iface_ctx.last_socket_id) == 0) {
 				/* delay some time before socket cleanup in case there
 				 * are multiple sockets to cleanup
@@ -5598,11 +5600,8 @@ reboot:
 		config_apn = true;
 	}
 
-	/* Query PDP authentication context to get APN username/password.
-	 * Temporary Workaround - Ignore error
-	 * On some modules this is returning an error and the response data.
-	 */
-	SEND_AT_CMD_IGNORE_ERROR("AT+WPPP?");
+	/* Disable PDP authentication, the driver does not support it */
+	SEND_AT_CMD_EXPECT_OK("AT+WPPP=0");
 
 #if CONFIG_MODEM_HL7800_SET_APN_NAME_ON_STARTUP
 	if (iface_ctx.state == HL7800_STATE_NOT_READY) {
@@ -5633,12 +5632,6 @@ reboot:
 
 	/* Turn on EPS network registration status reporting */
 	SEND_AT_CMD_EXPECT_OK("AT+CEREG=5");
-
-	/* query all socket configs to cleanup any sockets that are not
-	 * tracked by the driver
-	 */
-	SEND_AT_CMD_EXPECT_OK("AT+KTCPCFG?");
-	SEND_AT_CMD_EXPECT_OK("AT+KUDPCFG?");
 
 	/* Enabled the LTE radio */
 #if !defined(CONFIG_MODEM_HL7800_BOOT_IN_AIRPLANE_MODE)
@@ -6402,6 +6395,7 @@ static int hl7800_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	LOG_DBG("HL7800 Init");
+	iface_ctx.reset_sockets = true;
 
 	/* The UART starts in the on state and CTS is set low by the HL7800 */
 	iface_ctx.cts_state = iface_ctx.last_cts_state = 0;
