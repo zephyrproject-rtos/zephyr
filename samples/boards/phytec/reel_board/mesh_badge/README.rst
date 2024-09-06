@@ -1,7 +1,8 @@
-.. _mesh_badge:
+.. zephyr:code-sample:: mesh_badge
+   :name: Bluetooth Mesh badge
+   :relevant-api: monochrome_character_framebuffer bt_mesh bt_gatt bluetooth
 
-Mesh Badge
-##########
+   Implement a smart badge using the reel board and Bluetooth Mesh.
 
 Overview
 ********
