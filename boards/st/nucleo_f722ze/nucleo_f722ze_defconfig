@@ -15,6 +15,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# Enable clocks
-CONFIG_CLOCK_CONTROL=y
