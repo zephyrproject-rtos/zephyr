@@ -1,7 +1,7 @@
-.. _nrf-clock-skew-sample:
+.. zephyr:code-sample:: nrf_clock_skew
+   :name: nRF5x Clock Skew
 
-nRF5x Clock Skew Demo
-#####################
+   Measure the skew between the high-frequency and low-frequency clocks.
 
 Overview
 ********

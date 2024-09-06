@@ -1,7 +1,9 @@
-.. _bluetooth-mesh-onoff-level-lighting-vnd-sample:
+.. zephyr:code-sample:: nrf_bluetooth_mesh_onoff_level_lighting_vnd_app
+   :name: Mesh Models
+   :relevant-api: bt_mesh
 
-Bluetooth: Mesh Generic OnOff, Generic Level, Lighting & Vendor Models
-######################################################################
+   Setup a Bluetooth Mesh node with various models (generic OnOff, generic Level, ...).
+
 Overview
 ********
 This is a application demonstrating a Bluetooth Mesh node in
