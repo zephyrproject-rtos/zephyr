@@ -4,7 +4,7 @@ set_property(TARGET linker PROPERTY devices_start_symbol "_device_list_start")
 find_program(CMAKE_LINKER ${CROSS_COMPILE}lldac PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 # the prefix to transfer linker options from compiler
-set_ifndef(LINKERFLAGPREFIX -Wl,)
+set_ifndef(LINKERFLAGPREFIX -Wl)
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
@@ -63,7 +63,7 @@ endmacro()
 # Force symbols to be entered in the output file as undefined symbols
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(${LINKERFLAGPREFIX}-u${symbol})
+    zephyr_link_libraries(${LINKERFLAGPREFIX},-u${symbol})
   endforeach()
 endfunction()
 
@@ -90,14 +90,14 @@ function(toolchain_ld_link_elf)
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
-    ${LINKERFLAGPREFIX}-T${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
+    ${LINKERFLAGPREFIX},-T${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
-    ${LINKERFLAGPREFIX}--gc-sections
-    ${LINKERFLAGPREFIX}--entry=__start
-    ${LINKERFLAGPREFIX}--Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
-    ${LINKERFLAGPREFIX}--whole-archive
+    ${LINKERFLAGPREFIX},--gc-sections
+    ${LINKERFLAGPREFIX},--entry=__start
+    ${LINKERFLAGPREFIX},--Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+    ${LINKERFLAGPREFIX},--whole-archive
     ${WHOLE_ARCHIVE_LIBS}
-    ${LINKERFLAGPREFIX}--no-whole-archive
+    ${LINKERFLAGPREFIX},--no-whole-archive
     ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
