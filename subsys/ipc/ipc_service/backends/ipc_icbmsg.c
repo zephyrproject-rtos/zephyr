@@ -1213,12 +1213,31 @@ const static struct ipc_service_backend backend_ops = {
 	((total_size) - GET_BLOCK_SIZE(i, (total_size), (local_blocks),			\
 				       (remote_blocks)) * (local_blocks))
 
+
+
 /**
  * Return shared memory start address aligned to block alignment and cache line.
  */
+#if !defined(CONFIG_ARCH_POSIX)
+#define ICBMSG_BACKEND_PRE(...)
 #define GET_MEM_ADDR_INST(i, direction) \
 	ROUND_UP(DT_REG_ADDR(DT_INST_PHANDLE(i, direction##_region)),			\
 		 GET_CACHE_ALIGNMENT(i))
+
+#else
+#if (CONFIG_NATIVE_SIMULATOR_MCU_N == 1)
+#define _IPC0_tx_shm_buffer IPC0_rx_shm_buffer
+#define _IPC0_rx_shm_buffer IPC0_tx_shm_buffer
+#else
+#define _IPC0_tx_shm_buffer IPC0_tx_shm_buffer
+#define _IPC0_rx_shm_buffer IPC0_rx_shm_buffer
+#endif
+
+#define ICBMSG_BACKEND_PRE(i, direction) \
+	extern char _IPC##i##_##direction##_shm_buffer[];
+#define GET_MEM_ADDR_INST(i, direction) \
+	(const uintptr_t)_IPC##i##_##direction##_shm_buffer
+#endif
 
 /**
  * Return shared memory end address aligned to block alignment and cache line.
@@ -1231,8 +1250,13 @@ const static struct ipc_service_backend backend_ops = {
 /**
  * Return shared memory size aligned to block alignment and cache line.
  */
-#define GET_MEM_SIZE_INST(i, direction) \
+#if !defined(CONFIG_ARCH_POSIX)
+#define GET_MEM_SIZE_INST(i, direction)						\
 	(GET_MEM_END_INST(i, direction) - GET_MEM_ADDR_INST(i, direction))
+#else
+#define GET_MEM_SIZE_INST(i, direction)						\
+	DT_REG_SIZE(DT_INST_PHANDLE(i, direction##_region))
+#endif
 
 /**
  * Returns GET_ICMSG_SIZE, but for specific instance and direction.
@@ -1272,6 +1296,8 @@ const static struct ipc_service_backend backend_ops = {
 		DT_INST_PROP(i, rem##_blocks))
 
 #define DEFINE_BACKEND_DEVICE(i)							\
+	ICBMSG_BACKEND_PRE(i, tx);							\
+	ICBMSG_BACKEND_PRE(i, rx);							\
 	SYS_BITARRAY_DEFINE_STATIC(tx_usage_bitmap_##i, DT_INST_PROP(i, tx_blocks));	\
 	SYS_BITARRAY_DEFINE_STATIC(rx_hold_bitmap_##i, DT_INST_PROP(i, rx_blocks));	\
 	PBUF_DEFINE(tx_icbmsg_pb_##i,							\

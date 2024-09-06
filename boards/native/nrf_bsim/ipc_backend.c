@@ -18,6 +18,8 @@
 #include "nsi_cpu_if.h"
 #include <zephyr/device.h>
 
+#if defined(CONFIG_IPC_SERVICE_STATIC_VRINGS)
+
 #define DT_DRV_COMPAT zephyr_ipc_openamp_static_vrings
 
 #define DEFINE_BACKEND_BUFFER(i) \
@@ -25,3 +27,22 @@
 	char IPC##i##_shm_buffer[DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region))];
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_BUFFER)
+
+#endif
+
+#if defined(CONFIG_IPC_SERVICE_BACKEND_ICBMSG)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT zephyr_ipc_icbmsg
+
+#define DEFINE_BACKEND_BUFFER_DIR(i, dir)	\
+	NATIVE_SIMULATOR_IF			\
+	char IPC##i##_##dir##_shm_buffer[DT_REG_SIZE(DT_INST_PHANDLE(i, dir##_region))] = {0};
+
+#define DEFINE_BACKEND_BUFFER(i)		\
+	DEFINE_BACKEND_BUFFER_DIR(i, tx)	\
+	DEFINE_BACKEND_BUFFER_DIR(i, rx)
+
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_BUFFER)
+
+#endif

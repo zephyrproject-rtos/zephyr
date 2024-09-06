@@ -127,6 +127,20 @@ struct pbuf {
 #define PBUF_HEADER_OVERHEAD(dcache_align) \
 	(MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE)
 
+#if !defined(CONFIG_ARCH_POSIX)
+#define PBUF_CHECKS(name, mem_addr, size, dcache_align)				\
+BUILD_ASSERT(dcache_align >= 0,							\
+		"Cache line size must be non negative.");			\
+BUILD_ASSERT((size) > 0 && IS_PTR_ALIGNED_BYTES(size, _PBUF_IDX_SIZE),		\
+		"Incorrect size.");						\
+BUILD_ASSERT(IS_PTR_ALIGNED_BYTES(mem_addr, MAX(dcache_align, _PBUF_IDX_SIZE)),	\
+		"Misaligned memory.");						\
+BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
+		_PBUF_MIN_DATA_LEN), "Insufficient size.");
+#else
+#define PBUF_CHECKS(name, mem_addr, size, dcache_align)
+#endif
+
 /**
  * @brief Statically define and initialize pbuf.
  *
@@ -136,15 +150,7 @@ struct pbuf {
  * @param dcache_align	Data cache line size.
  */
 #define PBUF_DEFINE(name, mem_addr, size, dcache_align)					\
-	BUILD_ASSERT(dcache_align >= 0,							\
-			"Cache line size must be non negative.");			\
-	BUILD_ASSERT((size) > 0 && IS_PTR_ALIGNED_BYTES(size, _PBUF_IDX_SIZE),		\
-			"Incorrect size.");						\
-	BUILD_ASSERT(IS_PTR_ALIGNED_BYTES(mem_addr, MAX(dcache_align, _PBUF_IDX_SIZE)),	\
-			"Misaligned memory.");						\
-	BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
-			_PBUF_MIN_DATA_LEN), "Insufficient size.");			\
-											\
+	PBUF_CHECKS(name, mem_addr, size, dcache_align)					\
 	static const struct pbuf_cfg cfg_##name =					\
 			PBUF_CFG_INIT(mem_addr, size, dcache_align);			\
 	static struct pbuf name = {							\
