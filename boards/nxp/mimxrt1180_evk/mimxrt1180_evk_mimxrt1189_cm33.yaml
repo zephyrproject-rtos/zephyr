@@ -23,4 +23,5 @@ supported:
   - netif:eth
   - can
   - pwm
+  - sdhc
 vendor: nxp

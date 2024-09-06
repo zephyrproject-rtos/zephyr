@@ -22,4 +22,5 @@ supported:
   - adc
   - can
   - pwm
+  - sdhc
 vendor: nxp
