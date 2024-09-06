@@ -144,6 +144,8 @@ The Zephyr _nucleo_u031r8_ board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
