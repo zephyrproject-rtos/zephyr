@@ -1,7 +1,8 @@
-.. _stm32-pm-standby_shutdown-sample:
+.. zephyr:code-sample:: stm32_pm_shutdown
+   :name: Standby/Shutdown mode
+   :relevant-api: sys_poweroff subsys_pm_sys
 
-STM32 PM Standby shutdown
-#########################
+   Enter and exit Standby/Shutdown mode on STM32.
 
 Overview
 ********

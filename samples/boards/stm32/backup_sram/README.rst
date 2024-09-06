@@ -1,7 +1,7 @@
-.. _stm32_backup_sram:
+.. zephyr:code-sample:: stm32_backup_sram
+   :name: Backup SRAM
 
-STM32 Backup SRAM
-#################
+   Use Backup SRAM to store a variable that persists across power cycles.
 
 Overview
 ********

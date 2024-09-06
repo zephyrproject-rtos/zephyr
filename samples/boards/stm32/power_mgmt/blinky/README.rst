@@ -1,7 +1,7 @@
-.. _stm32-pm-blinky-sample:
+.. zephyr:code-sample:: stm32_pm_blinky
+   :name: Blinky with power management
 
-STM32 PM Blinky
-###############
+   Blink an LED using the GPIO API in a low-power context on STM32
 
 Overview
 ********

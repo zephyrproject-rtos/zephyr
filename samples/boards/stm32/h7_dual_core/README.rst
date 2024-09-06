@@ -1,7 +1,8 @@
-.. _stm32_h7_dual_core:
+.. zephyr:code-sample:: stm32_h7_dual_core
+   :name: Hardware Semaphore (HSEM) Inter-Processor Communication on STM32 H7
+   :relevant-api: ipm_interface
 
-STM32 HSEM IPM driver sample
-############################
+   Use the Hardware Semaphore (HSEM) to trigger LED blinking from one core to another.
 
 Overview
 ********

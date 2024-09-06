@@ -1,7 +1,8 @@
-.. _stm32-pm-adc-sample:
+.. zephyr:code-sample:: stm32_pm_adc
+   :name: ADC power management
+   :relevant-api: adc_interface
 
-STM32 PM ADC
-############
+   Use ADC in a low-power context on STM32.
 
 Overview
 ********
