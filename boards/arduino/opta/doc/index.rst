@@ -65,6 +65,8 @@ supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | USB       | on-board   | usb-fs                              |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-board   | eth                                 |
++-----------+------------+-------------------------------------+
 
 The ``arduino_opta/stm32h747xx/m4`` board target
 supports the following hardware features:
@@ -110,6 +112,14 @@ Default Zephyr Peripheral Mapping
 - Red "reset" LED: PH11
 - Blue LED: PE5
 - User button: PE4
+- Input 1 : PA0
+- Input 2 : PC2
+- Input 3 : PF12
+- Input 4 : PB0
+- Input 5 : PF10
+- Input 6 : PF8
+- Input 7 : PF6
+- Input 8 : PF4
 - Relay 1: PI6
 - Relay 2: PI5
 - Relay 3: PI7
@@ -163,8 +173,8 @@ Zephyr flash configuration has been set to be compatible with the
 partitioned as follows:
 
   - 0x08000000-0x0803FFFF (256k) Arduino MCUboot-derived bootloader
-  - 0x08040000-0x0817FFFF (768k) M7 application
-  - 0x08040000-0x0817FFFF (512k) M4 application
+  - 0x08040000-0x080FFFFF (768k) M7 application
+  - 0x08180000-0x081FFFFF (512k) M4 application
 
 
 Flashing an application to ARDUINO OPTA M7

@@ -17,9 +17,27 @@
 
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,cdc-acm-uart0 = &cdc_acm_uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+	};
+
+	ethernet_phy_en: ethernet_phy_en {
+		compatible = "regulator-fixed";
+		regulator-name = "ethernet-phy-reset-release";
+		enable-gpios = <&gpioj 15 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
 	};
 };
 
@@ -91,12 +109,14 @@ zephyr_udc0: &usbotg_fs {
 	status = "disabled";
 };
 
+&cdc_acm_uart0 {
+	status = "okay";
+};
+
 &mac {
 	pinctrl-0 = <
 		&eth_ref_clk_pa1
-		&eth_mdio_pa2
 		&eth_crs_dv_pa7
-		&eth_mdc_pc1
 		&eth_rxd0_pc4
 		&eth_rxd1_pc5
 		&eth_tx_en_pg11
@@ -104,4 +124,21 @@ zephyr_udc0: &usbotg_fs {
 		&eth_txd0_pg13
 	>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
+};
+
+&rng {
+	status = "okay";
 };
