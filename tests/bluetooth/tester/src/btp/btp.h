@@ -38,6 +38,7 @@
 #include "btp_tbs.h"
 #include "btp_tmap.h"
 #include "btp_ots.h"
+#include "btp_sdp.h"
 
 #define BTP_MTU 1024
 #define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
