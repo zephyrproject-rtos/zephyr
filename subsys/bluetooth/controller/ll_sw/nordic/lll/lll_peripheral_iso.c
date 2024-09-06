@@ -1359,12 +1359,10 @@ static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t laz
 			u = cis_lll->nse - ((cis_lll->nse / cis_lll->tx.bn) *
 					    (cis_lll->tx.bn - 1U -
 					     (payload_count % cis_lll->tx.bn)));
-			while (((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
-				 (cis_lll->event_count + 1U)) ||
-				((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) ==
-				 (cis_lll->event_count + 1U)) && (u < (cis_lll->nse + 1U)))) &&
-			       ((cis_lll->tx.payload_count / cis_lll->tx.bn) <
-				cis_lll->event_count)) {
+			while ((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) <
+				 cis_lll->event_count) ||
+			       ((((cis_lll->tx.payload_count / cis_lll->tx.bn) + cis_lll->tx.ft) ==
+				 cis_lll->event_count) && (u < cis_lll->nse))) {
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->sn++;
 				cis_lll->tx.bn_curr++;
@@ -1391,12 +1389,10 @@ static void payload_count_lazy(struct lll_conn_iso_stream *cis_lll, uint16_t laz
 			u = cis_lll->nse - ((cis_lll->nse / cis_lll->rx.bn) *
 					    (cis_lll->rx.bn - 1U -
 					     (payload_count % cis_lll->rx.bn)));
-			while (((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
-				 (cis_lll->event_count + 1U)) ||
-				((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
-				 (cis_lll->event_count + 1U)) && (u <= (cis_lll->nse + 1U)))) &&
-			       ((cis_lll->rx.payload_count / cis_lll->rx.bn) <
-				cis_lll->event_count)) {
+			while ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) <
+				cis_lll->event_count) ||
+			       ((((cis_lll->rx.payload_count / cis_lll->rx.bn) + cis_lll->rx.ft) ==
+				 cis_lll->event_count) && (u <= cis_lll->nse))) {
 				/* sn and nesn are 1-bit, only Least Significant bit is needed */
 				cis_lll->nesn++;
 				cis_lll->rx.bn_curr++;
