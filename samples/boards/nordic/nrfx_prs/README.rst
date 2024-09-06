@@ -31,7 +31,7 @@ board (between the MOSI and MISO pins for SPIMs and between the TX and RX pins
 for the UARTE), it can be checked that what is sent by a given peripheral
 is also received back. Without such wiring, no data is received by UARTE and
 all zeros are received by SPIMs. Refer to the overlay files provided in the
-:zephyr_file:`samples/boards/nrf/nrfx_prs/boards` directory to check which pins
+:zephyr_file:`samples/boards/nordic/nrfx_prs/boards` directory to check which pins
 on the boards supported by the sample are assigned as MOSI/MISO and TX/RX pins.
 
 Requirements
@@ -43,12 +43,12 @@ This sample has been tested on the Nordic Semiconductor nRF9160 DK
 Building and Running
 ********************
 
-The code can be found in :zephyr_file:`samples/boards/nrf/nrfx_prs`.
+The code can be found in :zephyr_file:`samples/boards/nordic/nrfx_prs`.
 
 To build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/nrfx_prs
+   :zephyr-app: samples/boards/nordic/nrfx_prs
    :board: nrf9160dk/nrf9160
    :goals: build flash
    :compact:

@@ -22,12 +22,12 @@ node.
 Building and Running
 ********************
 
-The code can be found in :zephyr_file:`samples/boards/nrf/nrf_led_matrix`.
+The code can be found in :zephyr_file:`samples/boards/nordic/nrf_led_matrix`.
 
 To build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/nrf_led_matrix
+   :zephyr-app: samples/boards/nordic/nrf_led_matrix
    :board: bbc_microbit_v2
    :goals: build flash
    :compact:

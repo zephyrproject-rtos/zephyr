@@ -26,7 +26,7 @@ Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
+   :zephyr-app: samples/boards/nordic/nrf53_sync_rtc
    :board: nrf5340dk/nrf5340/cpuapp
    :goals: flash
    :flash-args: --hex-file build/nrf53_sync_rtc/zephyr/zephyr.hex
@@ -82,7 +82,7 @@ Building the application for the simulated nrf5340bsim
 ******************************************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/nrf/nrf53_sync_rtc
+   :zephyr-app: samples/boards/nordic/nrf53_sync_rtc
    :host-os: unix
    :board: nrf5340bsim/nrf5340/cpuapp
    :goals: build

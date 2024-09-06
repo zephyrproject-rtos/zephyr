@@ -18,7 +18,7 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/boards/nrf/ieee802154/802154_rpmsg`
+This sample can be found under :zephyr_file:`samples/boards/nordic/ieee802154/802154_rpmsg`
 in the Zephyr tree.
 
 To use this application, you need a board with nRF53 SoC.
