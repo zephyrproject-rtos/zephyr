@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_REALTEK_FINGERPRINT
+	bool
+
+config SOC_FAMILY
+	default "realtek_fingerprint" if SOC_FAMILY_REALTEK_FINGERPRINT
+
+rsource "*/Kconfig.soc"
