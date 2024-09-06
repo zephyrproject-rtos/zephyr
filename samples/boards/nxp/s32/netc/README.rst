@@ -1,7 +1,7 @@
-.. _nxp_s32_netc-samples:
+.. zephyr:code-sample:: nxp_s32_netc
+   :name: S32 Network Controller (NETC)
 
-NXP S32 NETC Sample Application
-###############################
+   Configure NXP S32 Network Controller (NETC)
 
 Overview
 ********

@@ -1,7 +1,7 @@
-.. _flexram_magic_addr:
+.. zephyr:code-sample:: flexram_magic_addr
+   :name: FLEXRAM magic address
 
-FLEXRAM Magic Addr
-##################
+   Configure an interrupt that triggers on arbitrary RAM/TCM address access.
 
 Overview
 ********

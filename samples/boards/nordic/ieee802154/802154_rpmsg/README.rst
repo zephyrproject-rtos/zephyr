@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: nrf_ieee802154_rpmsg
-   :name: IEEE 802.15.4: over RPMsg
+   :name: IEEE 802.15.4 over RPMsg
 
    Expose nRF IEEE 802.15.4 radio driver to another device or CPU using RPMsg transport.
 
