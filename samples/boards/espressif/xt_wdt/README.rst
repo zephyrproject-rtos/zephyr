@@ -32,7 +32,7 @@ to pins XTAL_32K_P and XTAL_32K_N.
 
 .. code-block:: console
 
-   west build -p -b esp32s3_devkitm/esp32s3/procpu samples/boards/esp32/xt_wdt
+   west build -p -b esp32s3_devkitm/esp32s3/procpu samples/boards/espressif/xt_wdt
    west flash
 
 If using another supported Espressif board, replace the argument in the above

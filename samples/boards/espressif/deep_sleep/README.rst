@@ -50,7 +50,7 @@ Building, Flashing and Running
 ******************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/esp32/deep_sleep
+   :zephyr-app: samples/boards/espressif/deep_sleep
    :board: esp32_devkitc_wroom/esp32/procpu
    :goals: build flash
    :compact:
