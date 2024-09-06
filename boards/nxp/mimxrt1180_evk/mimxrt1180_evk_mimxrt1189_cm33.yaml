@@ -26,4 +26,5 @@ supported:
   - uart
   - dma
   - spi
+  - sdhc
 vendor: nxp
