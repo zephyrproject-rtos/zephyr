@@ -1,7 +1,7 @@
-.. _nrfx_prs_sample:
+.. zephyr:code-sample:: nrf_nrfx_prs
+   :name: nrfx peripheral resource sharing
 
-nrfx peripheral resource sharing example
-########################################
+   Use nRF peripherals that share the same ID and base address.
 
 Overview
 ********

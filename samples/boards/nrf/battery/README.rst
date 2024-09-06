@@ -1,7 +1,7 @@
-.. _boards_nrf_battery:
+.. zephyr:code-sample:: nrf_battery
+   :name: Battery Voltage Measurement
 
-Battery Voltage Measurement
-###########################
+   Measure the voltage of the device power supply.
 
 Overview
 ********
