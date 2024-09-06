@@ -1019,6 +1019,30 @@
 		#size-cells = <0>;
 	};
 
+	usdhc1: usdhc@2850000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x2850000 0x4000>;
+		status = "disabled";
+		interrupts = <86 0>;
+		clocks = <&ccm IMX_CCM_USDHC1_CLK 0 0>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
+	usdhc2: usdhc@2860000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x2860000 0x4000>;
+		status = "disabled";
+		interrupts = <87 0>;
+		clocks = <&ccm IMX_CCM_USDHC2_CLK 0 0>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+	};
+
 	edma3: dma-controller@4000000 {
 		#dma-cells = <2>;
 		compatible = "nxp,mcux-edma";
