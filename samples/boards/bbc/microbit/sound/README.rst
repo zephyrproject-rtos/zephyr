@@ -30,7 +30,7 @@ Building for a BBC micro:bit v1
 -------------------------------
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/bbc_microbit/sound
+   :zephyr-app: samples/boards/bbc/microbit/sound
    :board: bbc_microbit
    :goals: build flash
    :compact:
@@ -39,7 +39,7 @@ Building for a BBC micro:bit v2
 -------------------------------
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/bbc_microbit/sound
+   :zephyr-app: samples/boards/bbc/microbit/sound
    :board: bbc_microbit_v2
    :goals: build flash
    :compact:
