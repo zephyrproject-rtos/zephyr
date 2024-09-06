@@ -86,7 +86,8 @@ struct uac2_ctx {
 /* UAC2 device constant data */
 struct uac2_cfg {
 	struct usbd_class_data *const c_data;
-	const struct usb_desc_header **descriptors;
+	const struct usb_desc_header **fs_descriptors;
+	const struct usb_desc_header **hs_descriptors;
 	/* Entity 1 type is at entity_types[0] */
 	const entity_type_t *entity_types;
 	/* Array of indexes to data endpoint descriptor in descriptors set.
@@ -122,10 +123,17 @@ get_as_data_ep(struct usbd_class_data *const c_data, int as_idx)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
+	const struct usb_desc_header **descriptors;
+
+	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
+		descriptors = cfg->fs_descriptors;
+	} else {
+		descriptors = cfg->hs_descriptors;
+	}
 
 	if ((as_idx >= 0) && (as_idx < cfg->num_ifaces) &&
-	    cfg->ep_indexes[as_idx]) {
-		desc = cfg->descriptors[cfg->ep_indexes[as_idx]];
+	    cfg->ep_indexes[as_idx] && descriptors) {
+		desc = descriptors[cfg->ep_indexes[as_idx]];
 	}
 
 	return (const struct usb_ep_descriptor *)desc;
@@ -137,9 +145,17 @@ get_as_feedback_ep(struct usbd_class_data *const c_data, int as_idx)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
+	const struct usb_desc_header **descriptors;
 
-	if ((as_idx < cfg->num_ifaces) && cfg->fb_indexes[as_idx]) {
-		desc = cfg->descriptors[cfg->fb_indexes[as_idx]];
+	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
+		descriptors = cfg->fs_descriptors;
+	} else {
+		descriptors = cfg->hs_descriptors;
+	}
+
+	if ((as_idx < cfg->num_ifaces) && cfg->fb_indexes[as_idx] &&
+	    descriptors) {
+		desc = descriptors[cfg->fb_indexes[as_idx]];
 	}
 
 	return (const struct usb_ep_descriptor *)desc;
@@ -361,10 +377,6 @@ static void write_explicit_feedback(struct usbd_class_data *const c_data,
 
 	fb_value = ctx->ops->feedback_cb(dev, terminal, ctx->user_data);
 
-	/* REVISE: How to determine operating speed? Should we have separate
-	 * class instances for high-speed and full-speed (because high-speed
-	 * allows more sampling rates and/or bit depths)?
-	 */
 	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
 		net_buf_add_le24(buf, fb_value);
 	} else {
@@ -387,6 +399,7 @@ void uac2_update(struct usbd_class_data *const c_data,
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
+	const struct usb_desc_header **descriptors;
 	const struct usb_association_descriptor *iad;
 	const struct usb_ep_descriptor *data_ep, *fb_ep;
 	uint8_t as_idx;
@@ -394,7 +407,22 @@ void uac2_update(struct usbd_class_data *const c_data,
 
 	LOG_DBG("iface %d alt %d", iface, alternate);
 
-	iad = (const struct usb_association_descriptor *)cfg->descriptors[0];
+	/* Audio class is forbidden on Low-Speed, therefore the only possibility
+	 * for not using microframes is when device operates at Full-Speed.
+	 */
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
+		microframes = false;
+		descriptors = cfg->fs_descriptors;
+	} else {
+		microframes = true;
+		descriptors = cfg->hs_descriptors;
+	}
+
+	if (!descriptors) {
+		return;
+	}
+
+	iad = (const struct usb_association_descriptor *)descriptors[0];
 
 	/* AudioControl interface (bFirstInterface) doesn't have alternate
 	 * configurations, therefore the iface must be AudioStreaming.
@@ -402,15 +430,6 @@ void uac2_update(struct usbd_class_data *const c_data,
 	__ASSERT_NO_MSG((iface > iad->bFirstInterface) &&
 			(iface < iad->bFirstInterface + iad->bInterfaceCount));
 	as_idx = iface - iad->bFirstInterface - 1;
-
-	/* Audio class is forbidden on Low-Speed, therefore the only possibility
-	 * for not using microframes is when device operates at Full-Speed.
-	 */
-	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_FS) {
-		microframes = false;
-	} else {
-		microframes = true;
-	}
 
 	/* Notify application about terminal state change */
 	ctx->ops->terminal_update_cb(dev, cfg->as_terminals[as_idx], alternate,
@@ -677,11 +696,11 @@ static void *uac2_get_desc(struct usbd_class_data *const c_data,
 	struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 
-	if (speed == USBD_SPEED_FS) {
-		return cfg->descriptors;
+	if (speed == USBD_SPEED_HS) {
+		return cfg->hs_descriptors;
 	}
 
-	return NULL;
+	return cfg->fs_descriptors;
 }
 
 static int uac2_init(struct usbd_class_data *const c_data)
@@ -762,14 +781,27 @@ struct usbd_class_api uac2_api = {
 	VALIDATE_INSTANCE(DT_DRV_INST(inst))					\
 	static struct uac2_ctx uac2_ctx_##inst;					\
 	UAC2_DESCRIPTOR_ARRAYS(DT_DRV_INST(inst))				\
-	static const struct usb_desc_header *uac2_descriptors_##inst[] =	\
-		UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));		\
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_DRV_INST(inst)), (		\
+		static const struct usb_desc_header *uac2_fs_desc_##inst[] =	\
+			UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_DRV_INST(inst)), (		\
+		static const struct usb_desc_header *uac2_hs_desc_##inst[] =	\
+			UAC2_HS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
+	))									\
 	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api,				\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
 	DEFINE_LOOKUP_TABLES(inst)						\
 	static const struct uac2_cfg uac2_cfg_##inst = {			\
 		.c_data = &uac2_##inst,						\
-		.descriptors = uac2_descriptors_##inst,				\
+		COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_DRV_INST(inst)),	\
+			(.fs_descriptors = uac2_fs_desc_##inst,),		\
+			(.fs_descriptors = NULL,)				\
+		)								\
+		COND_CODE_1(UAC2_ALLOWED_AT_HIGH_SPEED(DT_DRV_INST(inst)),	\
+			(.hs_descriptors = uac2_hs_desc_##inst,),		\
+			(.hs_descriptors = NULL,)				\
+		)								\
 		.entity_types = entity_types_##inst,				\
 		.ep_indexes = ep_indexes_##inst,				\
 		.fb_indexes = fb_indexes_##inst,				\
