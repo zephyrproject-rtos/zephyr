@@ -31,3 +31,12 @@ config UDC_DWC2_MAX_QMESSAGES
 	default 8
 	help
 	  DWC2 maximum number of ISR event messages.
+
+config UDC_DWC2_USBHS_VBUS_READY_TIMEOUT_MS
+	int "UDC DWC2 USBHS VBUS ready event timeout in ms"
+	depends on UDC_DWC2
+	default -1
+	help
+	  UDC DWC2 USBHS VBUS ready event timeout. If the VBUS is not ready,
+	  the udc_enable() is blocked for this amount of time. Set it to
+	  negative value to wait forever.

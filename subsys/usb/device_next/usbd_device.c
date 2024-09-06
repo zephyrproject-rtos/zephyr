@@ -239,9 +239,17 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 		goto enable_exit;
 	}
 
+	uds_ctx->status.enable_suspended = false;
 	ret = udc_enable(uds_ctx->dev);
 	if (ret != 0) {
-		LOG_ERR("Failed to enable controller");
+		if (ret == -EWOULDBLOCK) {
+			/* The enable operation will be retried on VBUS detected event. */
+			uds_ctx->status.enable_suspended = true;
+			ret = 0;
+		} else {
+			LOG_ERR("Failed to enable controller");
+		}
+
 		goto enable_exit;
 	}
 

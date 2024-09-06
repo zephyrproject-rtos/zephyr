@@ -365,6 +365,7 @@ int udc_init(const struct device *dev, udc_event_cb_t event_cb);
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
  * @retval -EALREADY already enabled
+ * @retval -EWOULDBLOCK enable operation would block
  */
 int udc_enable(const struct device *dev);
 

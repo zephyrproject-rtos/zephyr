@@ -185,7 +185,12 @@ static inline int usbhs_enable_core(const struct device *dev)
 
 	if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_NO_WAIT)) {
 		LOG_WRN("VBUS is not ready, block udc_enable()");
-		k_event_wait(&usbhs_events, USBHS_VBUS_READY, false, K_FOREVER);
+		if (!k_event_wait(&usbhs_events, USBHS_VBUS_READY, false,
+				  (CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT_MS < 0) ? K_FOREVER :
+				  K_MSEC(CONFIG_UDC_DWC2_USBHS_VBUS_READY_TIMEOUT_MS))) {
+			LOG_WRN("Waiting for VBUS ready timed out");
+			return -EWOULDBLOCK;
+		}
 	}
 
 	wrapper->ENABLE = USBHS_ENABLE_PHY_Msk | USBHS_ENABLE_CORE_Msk;

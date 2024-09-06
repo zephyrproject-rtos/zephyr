@@ -197,6 +197,8 @@ struct usbd_status {
 	unsigned int rwup : 1;
 	/** USB device speed */
 	enum usbd_speed speed : 2;
+	/** USB device support enable operation is suspended */
+	unsigned int enable_suspended : 1;
 };
 
 struct usbd_context;

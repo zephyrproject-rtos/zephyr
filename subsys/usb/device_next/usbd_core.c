@@ -143,6 +143,10 @@ static ALWAYS_INLINE void usbd_event_handler(struct usbd_context *const uds_ctx,
 		break;
 	case UDC_EVT_VBUS_READY:
 		LOG_DBG("VBUS detected event");
+		if (uds_ctx->status.enable_suspended) {
+			/* Retry the suspended enable operation. */
+			err = usbd_enable(uds_ctx);
+		};
 		usbd_msg_pub_simple(uds_ctx, USBD_MSG_VBUS_READY, 0);
 		break;
 	case UDC_EVT_SUSPEND:
