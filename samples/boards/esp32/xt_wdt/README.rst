@@ -1,7 +1,7 @@
-.. _xt_wdt_sample:
+.. zephyr:code-sample:: esp32-xt-wdt
+   :name: XTAL32K Watchdog Timer (WDT)
 
-Espressif XT WDT Sample
-#######################
+   Trigger watchdog interrupt on external 32K crystal failure.
 
 Overview
 ********

@@ -1,16 +1,17 @@
-.. _esp32-light-sleep-sample:
+.. zephyr:code-sample:: esp32-light-sleep
+   :name: Light Sleep
 
-ESP32 Light Sleep demo
-######################
+   Use light sleep mode on ESP32 to save power while preserving the state of the memory, CPU, and
+   peripherals.
 
 Overview
 ********
 
 This example illustrates usage of light sleep mode. Unlike deep sleep mode,
 light sleep preserves the state of the memory, CPU, and peripherals. Execution
-of code on both CPUs is stopped when esp_light_sleep_start() function is called.
+of code on both CPUs is stopped when :c:func:`esp_light_sleep_start()` function is called.
 When the chip exits light sleep mode, execution continues at the point where it
-was stopped, and esp_light_sleep_start() function returns.
+was stopped, and :c:func:`esp_light_sleep_start()` function returns.
 
 The example enables the following wakeup sources:
 
