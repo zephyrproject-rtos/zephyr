@@ -1,0 +1,6 @@
+tests:
+  net.wifi_credentials:
+    tags:
+      - net
+    integration_platforms:
+      - native_sim
