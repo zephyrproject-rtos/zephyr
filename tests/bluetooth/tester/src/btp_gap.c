@@ -204,6 +204,7 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 	const bt_addr_le_t *addr = bt_conn_get_peer_addr(conn);
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
+	struct btp_gap_encryption_failed_ev enc_failed_ev;
 	struct bt_conn_info info;
 
 	switch (err) {
@@ -234,6 +235,11 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 		}
 		break;
 	default:
+		bt_addr_le_copy(&enc_failed_ev.address, addr);
+		enc_failed_ev.error = (uint8_t)err;
+
+		tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_ENCRYPTION_FAILED,
+			     &enc_failed_ev, sizeof(enc_failed_ev));
 		break;
 	}
 }
