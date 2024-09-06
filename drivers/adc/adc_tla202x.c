@@ -20,15 +20,13 @@
  */
 #include "adc_context.h"
 
-#define DT_DRV_COMPAT ti_tla2021
-
-LOG_MODULE_REGISTER(tla202x, CONFIG_ADC_LOG_LEVEL);
+LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
 
 #define ACQ_THREAD_PRIORITY   CONFIG_ADC_TLA202X_ACQUISITION_THREAD_PRIORITY
 #define ACQ_THREAD_STACK_SIZE CONFIG_ADC_TLA202X_ACQUISITION_THREAD_STACK_SIZE
 
-#define ADC_CHANNEL_msk BIT(0)
-#define ADC_RESOLUTION  12
+#define MAX_CHANNELS   4
+#define ADC_RESOLUTION 12
 
 #define WAKEUP_TIME_US     25
 #define CONVERSION_TIME_US 625 /* DR is 1600 SPS */
@@ -46,16 +44,46 @@ LOG_MODULE_REGISTER(tla202x, CONFIG_ADC_LOG_LEVEL);
 #define REG_CONFIG_DEFAULT  0x8583
 #define REG_CONFIG_DR_pos   5
 #define REG_CONFIG_MODE_pos 8
-#define REG_CONFIG_PGA_pos  9  /* TLA2022 and TLA2024 Only */
-#define REG_CONFIG_MUX_pos  12 /* TLA2024 Only */
+#define REG_CONFIG_PGA_pos  9               /* TLA2024 Only */
+#define REG_CONFIG_PGA_msk  GENMASK(11, 9)  /* TLA2022 and TLA2024 Only */
+#define REG_CONFIG_MUX_pos  12              /* TLA2024 Only */
+#define REG_CONFIG_MUX_msk  GENMASK(14, 12) /* TLA2024 Only */
 #define REG_CONFIG_OS_pos   15
 #define REG_CONFIG_OS_msk   (BIT_MASK(1) << REG_CONFIG_OS_pos)
+
+enum {
+	MUX_DIFF_0_1 = 0,
+	MUX_DIFF_0_3 = 1,
+	MUX_DIFF_1_3 = 2,
+	MUX_DIFF_2_3 = 3,
+	MUX_SINGLE_0 = 4,
+	MUX_SINGLE_1 = 5,
+	MUX_SINGLE_2 = 6,
+	MUX_SINGLE_3 = 7,
+};
+
+enum {
+	/* Gain 1/3 */
+	PGA_6144 = 0,
+	/* Gain 1/2 */
+	PGA_4096 = 1,
+	/* Gain 1 (Default) */
+	PGA_2048 = 2,
+	/* Gain 2 */
+	PGA_1024 = 3,
+	/* Gain 4 */
+	PGA_512 = 4,
+	/* Gain 8 */
+	PGA_256 = 5
+};
 
 typedef int16_t tla202x_reg_data_t;
 typedef uint16_t tla202x_reg_config_t;
 
 struct tla202x_config {
 	const struct i2c_dt_spec bus;
+	bool has_pga;
+	uint8_t channel_count;
 };
 
 struct tla202x_data {
@@ -66,11 +94,12 @@ struct tla202x_data {
 #endif
 	tla202x_reg_data_t *buffer;
 	tla202x_reg_data_t *repeat_buffer;
+	uint8_t channels;
 
 	/*
 	 * Shadow register
 	 */
-	tla202x_reg_config_t reg_config;
+	tla202x_reg_config_t reg_config[MAX_CHANNELS];
 };
 
 static int tla202x_read_register(const struct device *dev, uint8_t reg, uint16_t *value)
@@ -109,10 +138,83 @@ static int tla202x_write_register(const struct device *dev, uint8_t reg, uint16_
 
 static int tla202x_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
-	if (cfg->gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid gain");
+	const struct tla202x_config *config = dev->config;
+	struct tla202x_data *data = dev->data;
+
+	if (cfg->channel_id >= config->channel_count) {
+		LOG_ERR("invalid channel selection %u", cfg->channel_id);
 		return -EINVAL;
 	}
+	tla202x_reg_config_t *reg_config = &data->reg_config[cfg->channel_id];
+
+	if (config->has_pga) {
+		*reg_config &= ~REG_CONFIG_PGA_msk;
+		switch (cfg->gain) {
+		case ADC_GAIN_1_3:
+			*reg_config |= PGA_6144 << REG_CONFIG_PGA_pos;
+			break;
+		case ADC_GAIN_1_2:
+			*reg_config |= PGA_4096 << REG_CONFIG_PGA_pos;
+			break;
+		case ADC_GAIN_1:
+			*reg_config |= PGA_2048 << REG_CONFIG_PGA_pos;
+			break;
+		case ADC_GAIN_2:
+			*reg_config |= PGA_1024 << REG_CONFIG_PGA_pos;
+			break;
+		case ADC_GAIN_4:
+			*reg_config |= PGA_512 << REG_CONFIG_PGA_pos;
+			break;
+		case ADC_GAIN_8:
+			*reg_config |= PGA_256 << REG_CONFIG_PGA_pos;
+			break;
+		default:
+			LOG_ERR("Invalid gain");
+			return -EINVAL;
+		}
+	} else {
+		if (cfg->gain != ADC_GAIN_1) {
+			LOG_ERR("Invalid gain");
+			return -EINVAL;
+		}
+	}
+
+	/*
+	 * Only adc with more than one channels has a mux
+	 */
+#if defined(CONFIG_ADC_CONFIGURABLE_INPUTS)
+	if (config->channel_count > 1) {
+		*reg_config &= ~REG_CONFIG_MUX_msk;
+
+		if (cfg->differential) {
+			if (cfg->input_positive == 0 && cfg->input_negative == 1) {
+				*reg_config |= MUX_DIFF_0_1 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 0 && cfg->input_negative == 3) {
+				*reg_config |= MUX_DIFF_0_3 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 1 && cfg->input_negative == 3) {
+				*reg_config |= MUX_DIFF_1_3 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 2 && cfg->input_negative == 3) {
+				*reg_config |= MUX_DIFF_2_3 << REG_CONFIG_MUX_pos;
+			} else {
+				LOG_ERR("Invalid channel config");
+				return -EINVAL;
+			}
+		} else {
+			if (cfg->input_positive == 0) {
+				*reg_config |= MUX_SINGLE_0 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 1) {
+				*reg_config |= MUX_SINGLE_1 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 2) {
+				*reg_config |= MUX_SINGLE_2 << REG_CONFIG_MUX_pos;
+			} else if (cfg->input_positive == 3) {
+				*reg_config |= MUX_SINGLE_3 << REG_CONFIG_MUX_pos;
+			} else {
+				LOG_ERR("Invalid channel config");
+				return -EINVAL;
+			}
+		}
+	}
+#endif
 
 	if (cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Invalid reference");
@@ -130,11 +232,12 @@ static int tla202x_channel_setup(const struct device *dev, const struct adc_chan
 static int tla202x_start_read(const struct device *dev, const struct adc_sequence *seq)
 {
 	struct tla202x_data *data = dev->data;
+	const struct tla202x_config *config = dev->config;
 
 	const size_t num_extra_samples = seq->options ? seq->options->extra_samplings : 0;
 	const size_t num_samples = (1 + num_extra_samples) * POPCOUNT(seq->channels);
 
-	if (!(seq->channels & ADC_CHANNEL_msk)) {
+	if (find_msb_set(seq->channels) > config->channel_count) {
 		LOG_ERR("Selected channel(s) not supported: %x", seq->channels);
 		return -EINVAL;
 	}
@@ -195,56 +298,66 @@ static void tla202x_perform_read(const struct device *dev)
 	struct tla202x_data *data = dev->data;
 	tla202x_reg_config_t reg;
 	tla202x_reg_data_t res;
+	uint8_t ch;
 	int ret;
 
-	/*
-	 * Wait until sampling is done
-	 */
-	k_usleep(WAKEUP_TIME_US + CONVERSION_TIME_US);
-	do {
-		k_yield();
-		ret = tla202x_read_register(dev, REG_CONFIG, &reg);
-		if (ret < 0) {
+	while (data->channels) {
+		/*
+		 * Select correct channel
+		 */
+		ch = find_lsb_set(data->channels) - 1;
+		reg = data->reg_config[ch];
+		LOG_DBG("reg: %x", reg);
+
+		/*
+		 * Start single-shot conversion
+		 */
+		WRITE_BIT(reg, REG_CONFIG_MODE_pos, 1);
+		WRITE_BIT(reg, REG_CONFIG_OS_pos, 1);
+		ret = tla202x_write_register(dev, REG_CONFIG, reg);
+		if (ret) {
+			LOG_WRN("Failed to start conversion");
+		}
+
+		/*
+		 * Wait until sampling is done
+		 */
+		k_usleep(WAKEUP_TIME_US + CONVERSION_TIME_US);
+		do {
+			k_yield();
+			ret = tla202x_read_register(dev, REG_CONFIG, &reg);
+			if (ret < 0) {
+				adc_context_complete(&data->ctx, ret);
+			}
+		} while (!(reg & REG_CONFIG_OS_msk));
+
+		/*
+		 * Read result
+		 */
+		ret = tla202x_read_register(dev, REG_DATA, &res);
+		if (ret) {
 			adc_context_complete(&data->ctx, ret);
 		}
-	} while (!(reg & REG_CONFIG_OS_msk));
 
-	/*
-	 * Read result
-	 */
-	ret = tla202x_read_register(dev, REG_DATA, &res);
-	if (ret) {
-		adc_context_complete(&data->ctx, ret);
+		/*
+		 * ADC data is stored in the upper 12 bits
+		 */
+		res >>= REG_DATA_pos;
+		*data->buffer++ = res;
+
+		LOG_DBG("read channel %d, result = %d", ch, res);
+		WRITE_BIT(data->channels, ch, 0);
 	}
-
-	/*
-	 * ADC data is stored in the upper 12 bits
-	 */
-	res >>= REG_DATA_pos;
-	*data->buffer++ = res;
 
 	adc_context_on_sampling_done(&data->ctx, data->dev);
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	int ret;
-
 	struct tla202x_data *data = CONTAINER_OF(ctx, struct tla202x_data, ctx);
 	const struct device *dev = data->dev;
 
-	tla202x_reg_config_t reg = data->reg_config;
-
-	/*
-	 * Start single-shot conversion
-	 */
-	WRITE_BIT(reg, REG_CONFIG_MODE_pos, 1);
-	WRITE_BIT(reg, REG_CONFIG_OS_pos, 1);
-	ret = tla202x_write_register(dev, REG_CONFIG, reg);
-	if (ret) {
-		LOG_WRN("Failed to start conversion");
-	}
-
+	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
 
 #ifdef CONFIG_ADC_ASYNC
@@ -289,7 +402,11 @@ static int tla202x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = tla202x_write_register(dev, REG_CONFIG, data->reg_config);
+	for (uint8_t ch = 0; ch < MAX_CHANNELS; ch++) {
+		data->reg_config[ch] = REG_CONFIG_DEFAULT;
+	}
+
+	ret = tla202x_write_register(dev, REG_CONFIG, data->reg_config[0]);
 	if (ret) {
 		LOG_ERR("Device reset failed: %d", ret);
 		return ret;
@@ -309,29 +426,43 @@ static DEVICE_API(adc, tla202x_driver_api) = {
 #endif
 };
 
-#define TLA202X_THREAD_INIT(n)                                                                     \
-	K_THREAD_DEFINE(adc_tla202x_##n##_thread, ACQ_THREAD_STACK_SIZE, tla202x_acq_thread_fn,    \
+#define TLA202X_THREAD_INIT(t, n)                                                                  \
+	K_THREAD_DEFINE(adc_##t##_##n##_thread, ACQ_THREAD_STACK_SIZE, tla202x_acq_thread_fn,      \
 			DEVICE_DT_INST_GET(n), NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);
 
-#define TLA202X_INIT(n)                                                                            \
-	static const struct tla202x_config inst_##n##_config;                                      \
-	static struct tla202x_data inst_##n##_data;                                                \
-	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA202X_THREAD_INIT(n)))                                     \
-	static const struct tla202x_config inst_##n##_config = {                                   \
+#define TLA202X_INIT(n, t, pga, channels)                                                          \
+	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA202X_THREAD_INIT(t, n)))                                  \
+	static const struct tla202x_config inst_##t##_##n##_config = {                             \
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.has_pga = pga,                                                                    \
+		.channel_count = channels,                                                         \
 	};                                                                                         \
-	static struct tla202x_data inst_##n##_data = {                                             \
+	static struct tla202x_data inst_##t##_##n##_data = {                                       \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
-		ADC_CONTEXT_INIT_LOCK(inst_##n##_data, ctx),                                       \
-		ADC_CONTEXT_INIT_TIMER(inst_##n##_data, ctx),                                      \
-		ADC_CONTEXT_INIT_SYNC(inst_##n##_data, ctx),                                       \
-		.reg_config = REG_CONFIG_DEFAULT,                                                  \
+		ADC_CONTEXT_INIT_LOCK(inst_##t##_##n##_data, ctx),                                 \
+		ADC_CONTEXT_INIT_TIMER(inst_##t##_##n##_data, ctx),                                \
+		ADC_CONTEXT_INIT_SYNC(inst_##t##_##n##_data, ctx),                                 \
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
-			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),))       \
+			   (.acq_lock = Z_SEM_INITIALIZER(inst_##t##_##n##_data.acq_lock, 0, 1),)) \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &tla202x_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
-			      POST_KERNEL, CONFIG_ADC_TLA202X_INIT_PRIORITY, &tla202x_driver_api);
+	DEVICE_DT_INST_DEFINE(n, &tla202x_init, NULL, &inst_##t##_##n##_data,                      \
+			      &inst_##t##_##n##_config, POST_KERNEL,                               \
+			      CONFIG_ADC_TLA202X_INIT_PRIORITY, &tla202x_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TLA202X_INIT)
+#define DT_DRV_COMPAT        ti_tla2021
+#define ADC_TLA2021_CHANNELS 1
+#define ADC_TLA2021_PGA      false
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLA202X_INIT, tla2021, ADC_TLA2021_PGA, ADC_TLA2021_CHANNELS)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT        ti_tla2022
+#define ADC_TLA2022_CHANNELS 1
+#define ADC_TLA2022_PGA      true
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLA202X_INIT, tla2022, ADC_TLA2022_PGA, ADC_TLA2022_CHANNELS)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT        ti_tla2024
+#define ADC_TLA2024_CHANNELS 4
+#define ADC_TLA2024_PGA      true
+DT_INST_FOREACH_STATUS_OKAY_VARGS(TLA202X_INIT, tla2024, ADC_TLA2024_PGA, ADC_TLA2024_CHANNELS)
+#undef DT_DRV_COMPAT
 
 BUILD_ASSERT(CONFIG_I2C_INIT_PRIORITY < CONFIG_ADC_TLA202X_INIT_PRIORITY);
