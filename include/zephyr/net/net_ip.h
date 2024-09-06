@@ -745,6 +745,38 @@ static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
 	return (addr1[bytes] & mask) == (addr2[bytes] & mask);
 }
 
+
+/**
+ * @brief Get the IPv6 network address via the unicast address and the prefix mask.
+ *
+ * @param inaddr Unicast IPv6 address.
+ * @param outaddr Prefix masked IPv6 address (network address).
+ * @param prefix_len Prefix length (max length is 128).
+ */
+static inline void net_ipv6_addr_prefix_mask(const uint8_t *inaddr,
+					     uint8_t *outaddr,
+					     uint8_t prefix_len)
+{
+	uint8_t bits = 128 - prefix_len;
+	uint8_t bytes = prefix_len / 8U;
+	uint8_t remain = bits % 8;
+	uint8_t mask;
+
+	memset(outaddr, 0, 16U);
+	memcpy(outaddr, inaddr, bytes);
+
+	if (!remain) {
+		/* No remaining bits, the prefixes are the same as first
+		 * bytes are the same.
+		 */
+		return;
+	}
+
+	/* Create a mask that has remaining most significant bits set */
+	mask = (uint8_t)((0xff << (8 - remain)) ^ 0xff) << remain;
+	outaddr[bytes] = inaddr[bytes] & mask;
+}
+
 /**
  * @brief Check if the IPv4 address is a loopback address (127.0.0.0/8).
  *
