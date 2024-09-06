@@ -1,7 +1,7 @@
-.. _sensortile_box_pro_sample_sensors:
+.. zephyr:code-sample:: sensortile_box_pro_sensors
+   :name: SensorTile.box Pro sensors
 
-ST SensorTile.box Pro on-board sensors test
-###########################################
+   Read sensor data from the various SensorTile.box Pro sensors.
 
 Overview
 ********

@@ -1,7 +1,8 @@
-.. _stm32-pm-suspend-to-ram-sample:
+.. zephyr:code-sample:: stm32_pm_suspend_to_ram
+   :name: Suspend to RAM
+   :relevant-api: subsys_pm_device_runtime
 
-STM32 PM Suspend to RAM
-#######################
+   Use suspend to RAM low power mode on STM32.
 
 Overview
 ********

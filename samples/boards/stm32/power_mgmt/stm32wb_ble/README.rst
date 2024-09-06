@@ -1,7 +1,8 @@
-.. _boards-stm32-power_mgmt-stm32wb_ble-sample:
+.. zephyr:code-sample:: stm32_pm_stm32wb_ble
+   :name: Bluetooth Low Energy Power Management on STM32WB
+   :relevant-api: sys_poweroff bt_gap bluetooth
 
-STM32: PM BLE Power Management (STM32WB)
-########################################
+   Perform Bluetooth LE operations with Zephyr power management enabled on STM32WB.
 
 Overview
 ********

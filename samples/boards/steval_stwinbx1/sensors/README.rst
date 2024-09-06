@@ -1,7 +1,7 @@
-.. _steval_stwinbx1_sample_sensors:
+.. zephyr:code-sample:: stwinbx1_sensors
+   :name: STWIN.box sensors
 
-STWIN.box on-board sensors test
-###############################
+   Read sensor data from the various STWIN SensorTile wireless industrial node sensors.
 
 Overview
 ********

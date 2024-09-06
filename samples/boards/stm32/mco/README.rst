@@ -1,7 +1,8 @@
-.. _samples_boards_stm32_mco:
+.. zephyr:code-sample:: stm32_mco
+   :name: Master Clock Output (MCO)
+   :relevant-api: pinctrl_interface
 
-STM32 MCO example
-#################
+   Output an internal clock for external use by the application.
 
 Overview
 ********
