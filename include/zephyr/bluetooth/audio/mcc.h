@@ -17,7 +17,7 @@
  *
  * Updated to the Media Control Profile specification revision 1.0
  *
- * @defgroup bt_gatt_mcc Media Control Client (MCC)
+ * @defgroup bt_mcc Media Control Client (MCC)
  *
  * @since 3.0
  * @version 0.8.0
