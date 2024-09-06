@@ -1306,7 +1306,7 @@ static void rxto_isr(const struct device *dev)
 
 		data->async->discard_rx_fifo = false;
 		flushed = rx_flush(dev, NULL, 0);
-		if (HW_RX_COUNTING_ENABLED(data)) {
+		if (HW_RX_COUNTING_ENABLED(config)) {
 			/* It need to be included because TIMER+PPI got RXDRDY events
 			 * and counted those flushed bytes.
 			 */
