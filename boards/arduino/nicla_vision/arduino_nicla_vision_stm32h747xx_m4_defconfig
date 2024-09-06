@@ -4,9 +4,6 @@
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Clock configuration
-CONFIG_CLOCK_CONTROL=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
