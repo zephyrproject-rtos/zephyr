@@ -67,13 +67,15 @@
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			fmu: flash-module@20000 {
+			fmu: memory-controller@20000 {
 				ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				compatible = "nxp,fmu-k4";
+				compatible = "nxp,iap-msf1";
 				reg = <0x20000 0x1000>;
+				interrupts = <27 0>;
+				status = "disabled";
 
 				flash: flash@0 {
 					reg = <0x0 DT_SIZE_M(1)>;

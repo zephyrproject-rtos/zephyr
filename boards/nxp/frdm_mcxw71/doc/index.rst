@@ -55,6 +55,8 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 | LPUART    | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| FMU       | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 Programming and Debugging
 *************************
