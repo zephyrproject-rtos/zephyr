@@ -1,7 +1,7 @@
-.. _samples_boards_nrf_dynamic_pinctrl:
+.. zephyr:code-sample:: nrf_dynamic_pinctrl
+   :name: Dynamic Pin Control
 
-Dynamic Pin Control (nRF)
-#########################
+    Dynamically change pin configuration at boot time.
 
 The Dynamic Pin Control (nRF) sample demonstrates how to change ``uart0`` at
 early boot stages, depending on the input level on a pin connected to a

@@ -1,7 +1,7 @@
-.. _nrfx_sample:
+.. zephyr:code-sample:: nrf_nrfx
+   :name: nrfx
 
-nrfx use example
-################
+   Use nrfx library to interact with nRF peripherals.
 
 Overview
 ********

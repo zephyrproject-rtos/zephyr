@@ -1,7 +1,8 @@
-.. _nrf-system-off-sample:
+.. zephyr:code-sample:: nrf_system_off
+   :name: System Off
+   :relevant-api: sys_poweroff subsys_pm_device
 
-nRF5x System Off demo
-#####################
+   Use deep sleep on Nordic platforms.
 
 Overview
 ********

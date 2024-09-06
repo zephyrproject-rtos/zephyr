@@ -1,7 +1,7 @@
-.. _nrf_led_matrix_sample:
+.. zephyr:code-sample:: nrf_led_matrix
+   :name: LED matrix
 
-nRF LED matrix sample
-#####################
+   Use the nRF LED matrix display driver to drive an LED matrix.
 
 Overview
 ********
@@ -15,7 +15,7 @@ Requirements
 
 The sample has been tested on the bbc_microbit_v2 and bbc_microbit boards,
 but it could be ported to any board with an nRF SoC and the proper number
-of GPIOs available for driving a LED matrix. To do it, one needs to add an
+of GPIOs available for driving an LED matrix. To do it, one needs to add an
 overlay file with the corresponding ``"nordic,nrf-led-matrix"`` compatible
 node.
 

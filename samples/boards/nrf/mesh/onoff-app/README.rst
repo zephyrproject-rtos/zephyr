@@ -1,7 +1,8 @@
-.. _bluetooth-mesh-onoff-sample:
+.. zephyr:code-sample:: nrf_bluetooth_mesh_onoff
+   :name: Mesh OnOff Model
+   :relevant-api: bt_mesh
 
-Bluetooth: Mesh OnOff Model
-###########################
+   Control LEDs on a mesh network using the Bluetooth Mesh OnOff model.
 
 Overview
 ********

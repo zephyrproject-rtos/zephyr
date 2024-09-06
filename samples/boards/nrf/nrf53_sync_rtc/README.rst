@@ -1,7 +1,7 @@
-.. _nrf53_sync_rtc_sample:
+.. zephyr:code-sample:: nrf_sync_rtc
+   :name: Synchronized RTC
 
-Synchronized RTC
-################
+   Synchronize system and network core RTC clocks.
 
 Overview
 ********
