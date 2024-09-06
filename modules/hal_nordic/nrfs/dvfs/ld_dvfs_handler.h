@@ -17,7 +17,6 @@ extern "C" {
  * @brief Function to request LD frequency change.
  *
  * @param frequency requested frequency setting from enum dvfs_frequency_setting.
- * @return EBUSY                  Frequency change request pending.
  * @return EAGAIN                 DVFS init in progress.
  * @return ENXIO                  Not supported frequency settings.
  * @return NRFS_SUCCESS           Request sent successfully.
