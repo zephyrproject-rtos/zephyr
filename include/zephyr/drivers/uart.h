@@ -179,11 +179,12 @@ typedef void (*uart_irq_config_func_t)(const struct device *dev);
  *    no longer used by the driver. It will immediately follow #UART_RX_RDY event.
  *    Depending on the implementation buffer may be released when it is completely
  *    or partially filled.
- * 5. If there was second buffer provided, it will become current buffer and
+ * 5. If there was a second buffer provided, it will become current buffer and
  *    we start again at point 2.
- *    If no second buffer was specified receiving is stopped and
- *    #UART_RX_DISABLED event is generated. After that whole process can be
- *    repeated.
+ *    If no second buffer was specified and flow control is not enabled receiving
+ *    is stopped and #UART_RX_DISABLED event is generated. Receiver is in the
+ *    initial state. In case of flow control receiver is kept enabled and
+ *    reception is suspended until next buffer is provided.
  *
  * Any time during reception #UART_RX_STOPPED event can occur. if there is any
  * data received, #UART_RX_RDY event will be generated. It will be followed by
