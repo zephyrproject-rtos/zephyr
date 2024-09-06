@@ -35,6 +35,13 @@ extern "C" {
  */
 #define _PBUF_MIN_DATA_LEN ROUND_UP(PBUF_PACKET_LEN_SZ + 1 + _PBUF_IDX_SIZE, _PBUF_IDX_SIZE)
 
+#if defined(CONFIG_ARCH_POSIX)
+/* For the native simulated boards we need to modify some pointers at init */
+#define PBUF_MAYBE_CONST
+#else
+#define PBUF_MAYBE_CONST const
+#endif
+
 /** @brief Control block of packet buffer.
  *
  * The structure contains configuration data.
@@ -87,9 +94,9 @@ struct pbuf_data {
  * written in a way to protect the data from being corrupted.
  */
 struct pbuf {
-	const struct pbuf_cfg *const cfg;	/* Configuration of the
-						 * buffer.
-						 */
+	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg; /* Configuration of the
+						      * buffer.
+						      */
 	struct pbuf_data data;			/* Data used to read and write
 						 * to the buffer
 						 */
@@ -144,8 +151,7 @@ struct pbuf {
 			"Misaligned memory.");						\
 	BUILD_ASSERT(size >= (MAX(dcache_align, _PBUF_IDX_SIZE) + _PBUF_IDX_SIZE +	\
 			_PBUF_MIN_DATA_LEN), "Insufficient size.");			\
-											\
-	static const struct pbuf_cfg cfg_##name =					\
+	static PBUF_MAYBE_CONST struct pbuf_cfg cfg_##name =				\
 			PBUF_CFG_INIT(mem_addr, size, dcache_align);			\
 	static struct pbuf name = {							\
 		.cfg = &cfg_##name,							\
