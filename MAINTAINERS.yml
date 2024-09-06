@@ -3925,7 +3925,7 @@ STM32 Platforms:
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/st/stm32/
-    - samples/boards/stm32/
+    - samples/boards/st/
   labels:
     - "platform: STM32"
   description: >-
