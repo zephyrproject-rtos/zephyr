@@ -2093,7 +2093,7 @@ class EDT:
         except Exception as e:
             raise EDTError(e)
 
-    def _process_properties_r(self, root_node, props_node):
+    def _process_properties_r(self, root_node: Node, props_node: Node) -> None:
         """
         Process props_node properties for dependencies, and add those as
         dependencies of root_node. Then walk through all the props_node
@@ -2136,7 +2136,7 @@ class EDT:
                     continue
                 self._process_properties_r(root_node, child)
 
-    def _process_properties(self, node):
+    def _process_properties(self, node: Node) -> None:
         """
         Add node dependencies based on own as well as child node properties,
         start from the node itself.
