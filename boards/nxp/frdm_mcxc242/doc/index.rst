@@ -64,6 +64,8 @@ The ``frdm_mcxc242`` board target supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | soc flash                           |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 
 Targets available
