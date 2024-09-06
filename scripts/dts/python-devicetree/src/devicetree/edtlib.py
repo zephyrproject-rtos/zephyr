@@ -2400,6 +2400,25 @@ class EDT:
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
+        # The raw index into edt.compat2nodes[compat] is used for node
+        # instance numbering within a compatible.
+        #
+        # As a way to satisfy people's intuitions about instance numbers,
+        # we sort this list so enabled instances come first.
+        #
+        # This might look like a hack, but it keeps drivers and
+        # applications which don't use instance numbers carefully working
+        # as expected, since e.g. instance number 0 is always the
+        # singleton instance if there's just one enabled node of a
+        # particular compatible.
+        #
+        # This doesn't violate any devicetree.h API guarantees about
+        # instance ordering, since we make no promises that instance
+        # numbers are stable across builds.
+        for compat, nodes in self.compat2nodes.items():
+            self.compat2nodes[compat] = sorted(
+                nodes, key=lambda node: 0 if node.status == "okay" else 1
+            )
 
         for nodeset in self.scc_order:
             node = nodeset[0]
