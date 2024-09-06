@@ -24,7 +24,7 @@
 #include <zephyr/logging/log.h>
 
 /* Time to wait for NET_MGMT events to finish firing */
-#define EVENT_WAIT_TIME K_MSEC(1)
+#define EVENT_WAIT_TIME K_MSEC(10)
 
 
 /* Time to wait for IPv6 DAD-gated events to finish.
