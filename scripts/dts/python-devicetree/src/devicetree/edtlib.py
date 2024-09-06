@@ -1416,7 +1416,6 @@ class Node:
 
         self.props = {}
 
-        node = self._node
         if self._binding:
             prop2specs = self._binding.prop2specs
         else:
@@ -1428,12 +1427,11 @@ class Node:
                 self._init_prop(prop_spec, err_on_deprecated)
             self._check_undeclared_props()
         elif default_prop_types:
-            for name in node.props:
+            for name in self._node.props:
                 if name not in _DEFAULT_PROP_SPECS:
                     continue
                 prop_spec = _DEFAULT_PROP_SPECS[name]
-                val = self._prop_val(name, prop_spec.type, False, False, None,
-                                     None, err_on_deprecated)
+                val = self._prop_val(name, prop_spec, err_on_deprecated)
                 self.props[name] = Property(prop_spec, val, self)
 
     def _init_prop(self, prop_spec: PropertySpec,
@@ -1446,9 +1444,7 @@ class Node:
         if not prop_type:
             _err(f"'{name}' in {self.binding_path} lacks 'type'")
 
-        val = self._prop_val(name, prop_type, prop_spec.deprecated,
-                             prop_spec.required, prop_spec.default,
-                             prop_spec.specifier_space, err_on_deprecated)
+        val = self._prop_val(name, prop_spec, err_on_deprecated)
 
         if val is None:
             # 'required: false' property that wasn't there, or a property type
@@ -1476,41 +1472,37 @@ class Node:
 
         self.props[name] = Property(prop_spec, val, self)
 
-    def _prop_val(self, name: str, prop_type: str,
-                  deprecated: bool, required: bool,
-                  default: PropertyValType,
-                  specifier_space: Optional[str],
-                  err_on_deprecated: bool) -> PropertyValType:
+    def _prop_val(
+        self,
+        name: str,
+        prop_spec: PropertySpec,
+        err_on_deprecated: bool,
+    ) -> PropertyValType:
         # _init_prop() helper for getting the property's value
         #
         # name:
         #   Property name from binding
         #
-        # prop_type:
-        #   Property type from binding (a string like "int")
-        #
-        # deprecated:
-        #   True if the property is deprecated
-        #
-        # required:
-        #   True if the property is required to exist
-        #
-        # default:
-        #   Default value to use when the property doesn't exist, or None if
-        #   the binding doesn't give a default value
-        #
-        # specifier_space:
-        #   Property specifier-space from binding (if prop_type is "phandle-array")
+        # prop_spec:
+        #   PropertySpec from binding
         #
         # err_on_deprecated:
         #   If True, a deprecated property is an error instead of warning.
 
         node = self._node
         prop = node.props.get(name)
+        binding_path = prop_spec.binding.path
+        prop_type = prop_spec.type
+        deprecated = prop_spec.deprecated
+        required = prop_spec.required
+        default = prop_spec.default
+        specifier_space = prop_spec.specifier_space
 
         if prop and deprecated:
-            msg = (f"'{name}' is marked as deprecated in 'properties:' "
-                   f"in {self.binding_path} for node {node.path}.")
+            msg = (
+                f"'{name}' is marked as deprecated in 'properties:' "
+                f"in {binding_path} for node {node.path}."
+            )
             if err_on_deprecated:
                 _err(msg)
             else:
@@ -1518,8 +1510,10 @@ class Node:
 
         if not prop:
             if required and self.status == "okay":
-                _err(f"'{name}' is marked as required in 'properties:' in "
-                     f"{self.binding_path}, but does not appear in {node!r}")
+                _err(
+                    f"'{name}' is marked as required in 'properties:' in "
+                    f"{binding_path}, but does not appear in {node!r}"
+                )
 
             if default is not None:
                 # YAML doesn't have a native format for byte arrays. We need to
@@ -1534,9 +1528,11 @@ class Node:
 
         if prop_type == "boolean":
             if prop.type != Type.EMPTY:
-                _err("'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
-                     "but is assigned a value ('{3}') instead of being empty "
-                     "('{0};')".format(name, node, self.binding_path, prop))
+                _err(
+                    "'{0}' in {1!r} is defined with 'type: boolean' in {2}, "
+                    "but is assigned a value ('{3}') instead of being empty "
+                    "('{0};')".format(name, node, binding_path, prop)
+                )
             return True
 
         if prop_type == "int":
