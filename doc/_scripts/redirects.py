@@ -218,6 +218,8 @@ REDIRECTS = [
     ('samples/bluetooth/public_broadcast_source/README', 'samples/bluetooth/pbp_public_broadcast_source/README'),
     ('samples/bluetooth/unicast_audio_client/README', 'samples/bluetooth/bap_unicast_client/README'),
     ('samples/bluetooth/unicast_audio_server/README', 'samples/bluetooth/bap_unicast_server/README'),
+    ('samples/boards/96b_argonkey/microphone/README', 'samples/boards/96boards/argonkey/microphone/README'),
+    ('samples/boards/96b_argonkey/sensors/README', 'samples/boards/96boards/argonkey/sensors/README'),
     ('samples/boards/esp32/deep_sleep/README', 'samples/boards/espressif/deep_sleep/README'),
     ('samples/boards/esp32/flash_encryption/README', 'samples/boards/espressif/flash_encryption/README'),
     ('samples/boards/esp32/flash_memory_mapped/README', 'samples/boards/espressif/flash_memory_mapped/README'),
