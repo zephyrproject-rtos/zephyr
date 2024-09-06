@@ -630,6 +630,39 @@
 		clk-source = <0>;
 		status = "disabled";
 	};
+
+	lptmr1: lptmr@4300000 {
+		compatible = "nxp,lptmr";
+		reg = <0x4300000 0x1000>;
+		interrupts = <18 0>;
+		clock-frequency = <80000000>;
+		prescaler = <1>;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	lptmr2: lptmr@24d0000 {
+		compatible = "nxp,lptmr";
+		reg = <0x24d0000 0x1000>;
+		interrupts = <67 0>;
+		clock-frequency = <80000000>;
+		prescaler = <1>;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	lptmr3: lptmr@2cd0000 {
+		compatible = "nxp,lptmr";
+		reg = <0x2cd0000 0x1000>;
+		interrupts = <150 0>;
+		clock-frequency = <80000000>;
+		prescaler = <1>;
+		clk-source = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
 };
 
 &flexspi1 {

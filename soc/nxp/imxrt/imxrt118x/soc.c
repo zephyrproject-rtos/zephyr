@@ -366,6 +366,31 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_CAN_MCUX_FLEXCAN */
 
+#if defined(CONFIG_MCUX_LPTMR_TIMER) || defined(CONFIG_COUNTER_MCUX_LPTMR)
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr1), okay)
+	/* Configure LPTIMER1 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPTIMER1_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Lptimer1, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr2), okay)
+	/* Configure LPTIMER2 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPTIMER2_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Lptimer2, &rootCfg);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr3), okay)
+	/* Configure LPTIMER3 using SYS_PLL3_DIV2_CLK */
+	rootCfg.mux = kCLOCK_LPTIMER3_ClockRoot_MuxSysPll3Div2;
+	rootCfg.div = 3;
+	CLOCK_SetRootClock(kCLOCK_Root_Lptimer3, &rootCfg);
+#endif
+
+#endif /* CONFIG_MCUX_LPTMR_TIMER || CONFIG_COUNTER_MCUX_LPTMR */
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;
