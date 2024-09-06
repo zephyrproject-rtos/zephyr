@@ -1,20 +1,33 @@
 /*
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <strings.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #define NAME_LEN 30
 #define PA_SYNC_SKIP         5

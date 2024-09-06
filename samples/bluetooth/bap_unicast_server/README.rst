@@ -1,14 +1,14 @@
 .. zephyr:code-sample:: bluetooth_bap_unicast_server
-   :name: Unicast Audio Server
-   :relevant-api: bt_bap bt_audio
+   :name: Basic Audio Profile (BAP) Unicast Audio Server
+   :relevant-api: bluetooth bt_audio bt_bap bt_pacs
 
-   Use LE Audio Unicast Server functionality.
+   Use BAP Unicast Server functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio unicast server functionality.
-Starts advertising and awaits connection from a LE Audio unicast client.
+Application demonstrating the BAP Unicast Server functionality.
+Starts advertising and awaits connection from a BAP Unicast Client.
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_unicast_server` in the Zephyr tree.
