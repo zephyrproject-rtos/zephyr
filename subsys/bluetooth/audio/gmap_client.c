@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 
 #include "audio_internal.h"
@@ -34,6 +35,12 @@ static const struct bt_uuid *gmap_bgr_feat_uuid = BT_UUID_GMAP_BGR_FEAT;
 
 static const struct bt_gmap_cb *gmap_cb;
 
+enum gmap_client_flag {
+	GMAP_CLIENT_FLAG_BUSY,
+
+	GMAP_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
+};
+
 static struct bt_gmap_client {
 	/** Profile connection reference */
 	struct bt_conn *conn;
@@ -45,13 +52,13 @@ static struct bt_gmap_client {
 	uint16_t svc_start_handle;
 	uint16_t svc_end_handle;
 
-	bool busy;
-
 	/* GATT procedure parameters */
 	union {
 		struct bt_gatt_read_params read;
 		struct bt_gatt_discover_params discover;
 	} params;
+
+	ATOMIC_DEFINE(flags, GMAP_CLIENT_FLAG_NUM_FLAGS);
 } gmap_insts[CONFIG_BT_MAX_CONN];
 
 static void gmap_reset(struct bt_gmap_client *gmap_cli)
@@ -92,7 +99,7 @@ static void discover_complete(struct bt_gmap_client *gmap_cli)
 {
 	LOG_DBG("conn %p", (void *)gmap_cli->conn);
 
-	gmap_cli->busy = false;
+	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
 
 	if (gmap_cb->discover != NULL) {
 		gmap_cb->discover(gmap_cli->conn, 0, gmap_cli->role, gmap_cli->feat);
@@ -648,7 +655,7 @@ int bt_gmap_discover(struct bt_conn *conn)
 
 	gmap_cli = &gmap_insts[bt_conn_index(conn)];
 
-	if (gmap_cli->busy) {
+	if (atomic_test_and_set_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY)) {
 		LOG_DBG("Busy");
 
 		return -EBUSY;
@@ -665,6 +672,8 @@ int bt_gmap_discover(struct bt_conn *conn)
 	err = bt_gatt_discover(conn, &gmap_cli->params.discover);
 	if (err != 0) {
 		LOG_DBG("Failed to initiate discovery: %d", err);
+
+		atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
 
 		return -ENOEXEC;
 	}
