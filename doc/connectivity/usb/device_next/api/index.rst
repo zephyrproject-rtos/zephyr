@@ -12,3 +12,4 @@ New USB device support APIs
    uac2_device.rst
    usbd_msc_device.rst
    usb_midi.rst
+   usbd_dfu.rst
