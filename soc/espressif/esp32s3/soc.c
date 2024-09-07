@@ -151,9 +151,11 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_mspi_pin_init();
 
-	spi_flash_init_chip_state();
+	esp_flash_app_init();
 
 	mspi_timing_flash_tuning();
+
+	esp_mmu_map_init();
 
 	esp_mmu_map_init();
 
