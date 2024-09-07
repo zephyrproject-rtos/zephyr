@@ -82,4 +82,14 @@ zephyr_library_sources_ifdef(
 	class/usbd_hid_api.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_DFU
+  class/usbd_dfu.c
+)
+
+zephyr_linker_sources_ifdef(
+  CONFIG_USBD_DFU
+  SECTIONS class/usbd_dfu.ld
+)
+
 zephyr_linker_sources(DATA_SECTIONS usbd_data.ld)
