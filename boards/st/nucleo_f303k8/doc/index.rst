@@ -140,7 +140,21 @@ Programming and Debugging
 *************************
 
 The Nucleo F303K8 board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 
 .. _Nucleo F303K8 website:
@@ -157,3 +171,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F303K8 datasheet:
    https://www.st.com/resource/en/datasheet/stm32f303k8.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
