@@ -198,6 +198,8 @@ low power mode.
 Programming and Debugging
 *************************
 
+Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
+
 Applications for the ``nucleo_g474re`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -205,7 +207,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G474RE board includes an ST-LINK/V3E embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
 
 Flashing an application to Nucleo G474RE
 ----------------------------------------
@@ -255,3 +266,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32G4 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00355726.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

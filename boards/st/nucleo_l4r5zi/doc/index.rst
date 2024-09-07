@@ -223,16 +223,22 @@ Programming and Debugging
 
 The NUCLEO-L4R5ZI board includes a ST-LINK/V2 embedded debug tool interface.
 
-The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its installation is required to be able to flash the board.
+Flashing
+========
 
-Alternatively, openocd (provided in Zephyr SDK) or JLink can also be used to
-flash the board using the ``--runner`` (or ``-r``) option:
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
    $ west flash --runner openocd
    $ west flash --runner jlink
+
+Flashing an application to Nucleo L4R4ZI
+----------------------------------------
 
 Connect the Nucleo L4R5ZI to your host computer using the USB port.
 Then build and flash an application.
