@@ -163,6 +163,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+Nucleo H755ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``nucleo_h755zi_q`` board should be built per core target,
 using either ``nucleo_h755zi_q/stm32h755xx/m7`` or ``nucleo_h755zi_q/stm32h755xx/m4``
 as the target (see :ref:`build_an_application` and :ref:`application_run` for more
@@ -170,16 +172,14 @@ details).
 
 .. note::
 
-   Check if the board's ST-LINK V3 has the newest firmware version. It can be
-   updated with `STM32CubeIDE`_
+   Check if the board's ST-LINK/V3 has the newest firmware version. It can be
+   updated with `STM32CubeProgrammer`_
 
 Flashing
 ========
 
-Nucleo H755ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
-
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner
-for both cores, so its installation is required to be able to flash the board.
+for both cores, so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 The target core is detected automatically.
 
 It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
@@ -196,7 +196,7 @@ board is powered (Option bytes BCM7 and BCM4 are checked).
 In that configuration, Kconfig boot option ``STM32H7_BOOT_CM4_CM7`` should be selected.
 Zephyr flash configuration has been set to meet these default settings.
 
-Alternatively, openocd or JLink can also be used to flash the board using
+Alternatively, OpenOCD or JLink can also be used to flash the board using
 the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console

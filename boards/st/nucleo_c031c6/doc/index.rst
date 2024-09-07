@@ -117,6 +117,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+Nucleo C031C6 board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_c031c6`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -124,7 +126,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo C031C6 board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 Flashing an application to Nucleo C031C6
 ----------------------------------------
@@ -151,3 +154,6 @@ References
 
 .. _STM32 Nucleo-64 board User Manual:
    https://www.st.com/resource/en/user_manual/um2953-stm32c0-nucleo64-board-mb1717-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
