@@ -1,0 +1,51 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBD_DFU
+	bool "USB DFU Class support"
+	help
+	  USB DFU Class support
+
+if USBD_DFU
+
+config USBD_DFU_NUMOF_IMAGES
+	int "Number of possible DFU images"
+	range 1 256
+	default 4
+	help
+	  Number of possible DFU images.
+
+config USBD_DFU_ENABLE_UPLOAD
+	bool "Allow images to be uploaded to the host"
+	default y
+	help
+	  This option sets the bitCanUpload flag in the DFU attributes and
+	  allows images to be uploaded to the host.
+
+config USBD_DFU_MANIFESTATION_TOLERANT
+	bool "Device is manifestation tolerant"
+	default y
+	help
+	  This option sets the bitManifestationTolerant flag in the DFU
+	  attributes and means that the device can communicate over USB after the
+	  manifestation phase.
+
+config USBD_DFU_TRANSFER_SIZE
+	int "Maximum number of bytes the device can accept per transfer"
+	default 512
+	range 64 1024
+	help
+	  This option sets the wTransferSize in the DFU functional descriptor.
+
+config USBD_DFU_POLLTIMEOUT
+	int "bwPollTimeout value (in ms)"
+	default 10
+	range 0 1000
+	help
+	  This option sets the bwPollTimeout field in DFU_GETSTATUS response.
+
+module = USBD_DFU
+module-str = usbd dfu
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
