@@ -1715,7 +1715,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 		int ret;
 
 		if (!ipv6->mcast[i].is_used ||
-		    net_if_ipv4_maddr_is_joined(&ipv6->mcast[i])) {
+		    net_if_ipv6_maddr_is_joined(&ipv6->mcast[i])) {
 			continue;
 		}
 
@@ -1724,6 +1724,10 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
 				net_if_get_by_iface(iface), ret);
+		} else {
+			NET_DBG("Rejoined mcast address %s for %d",
+				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
+				net_if_get_by_iface(iface));
 		}
 	}
 
