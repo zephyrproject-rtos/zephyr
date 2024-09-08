@@ -91,6 +91,7 @@ config SHELL_PRINTF_BUFF_SIZE
 
 config SHELL_DEFAULT_TERMINAL_WIDTH
 	int "Default terminal width"
+	range 1 $(UINT16_MAX)
 	default 80
 	help
 	  Default terminal width is used to break lines.
