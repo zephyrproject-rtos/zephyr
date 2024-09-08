@@ -1,7 +1,7 @@
-.. _ArgonKey_Sensors:
+.. zephyr:code-sample:: argonkey_sensors
+   :name: Sensors
 
-ArgonKey Board Sensors
-######################
+   Read sensor data from the ArgonKey board's onboard sensors.
 
 Overview
 ********
