@@ -61,6 +61,11 @@ Mbed TLS
 Trusted Firmware-M
 ==================
 
+* The security counter used for the hardware rollback protection now comes explicitly from
+  :kconfig:option:`CONFIG_TFM_IMAGE_SECURITY_COUNTER`, instead of being automatically determined from
+  the image version. This has been changed as the implicit counter calculation is incompatible with
+  versions larger than ``0.0.1024`` (:github:`78128`).
+
 LVGL
 ====
 
