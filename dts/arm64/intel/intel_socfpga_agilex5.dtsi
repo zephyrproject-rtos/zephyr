@@ -1,13 +1,14 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2024, Intel Corporation
+ * Copyright (C) 2023, Intel Corporation
  *
  */
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
+#include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <mem.h>
 
 / {
@@ -108,7 +109,7 @@
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
 		resets = <&reset RSTMGR_UART0_RSTLINE>;
 		status = "disabled";
 	};
@@ -140,7 +141,7 @@
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03000 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
 		status = "disabled";
 	};
@@ -151,7 +152,7 @@
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10c03100 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
 		status = "disabled";
 	};
@@ -162,7 +163,7 @@
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00000 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
 		status = "disabled";
 	};
@@ -173,7 +174,7 @@
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
 				IRQ_DEFAULT_PRIORITY>;
 		reg = <0x10D00100 0x100>;
-		clock-frequency = <100000000>;
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
 	};
 
