@@ -1,7 +1,8 @@
-.. _ArgonKey_Microphone:
+.. zephyr:code-sample:: argonkey_microphone
+   :name: Microphone
+   :relevant-api: audio_interface
 
-ArgonKey Board Microphone
-#########################
+   Acquire audio through the ArgonKey's on-board MP34DT05 microphone.
 
 Overview
 ********
