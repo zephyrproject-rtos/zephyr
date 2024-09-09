@@ -6,9 +6,8 @@
 #include "bme280.h"
 #include <math.h>
 
-static int bme280_decoder_get_frame_count(const uint8_t *buffer,
-					     struct sensor_chan_spec chan_spec,
-					     uint16_t *frame_count)
+static int bme280_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+					  uint16_t *frame_count)
 {
 	const struct bme280_encoded_data *edata = (const struct bme280_encoded_data *)buffer;
 	int32_t ret = -ENOTSUP;
@@ -40,7 +39,7 @@ static int bme280_decoder_get_frame_count(const uint8_t *buffer,
 }
 
 static int bme280_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
-					   size_t *frame_size)
+					size_t *frame_size)
 {
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
