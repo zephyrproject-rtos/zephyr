@@ -178,10 +178,9 @@ static void dvfs_service_handler_set_initial_hsfll_config(void)
 
 static void dvfs_service_handler_scaling_finish_delay_timeout(struct k_timer *timer)
 {
-	if (timer) {
-		dvfs_service_handler_scaling_finish(
-			*(enum dvfs_frequency_setting *)timer->user_data);
-	}
+
+	dvfs_service_handler_scaling_finish(
+		*(enum dvfs_frequency_setting *)k_timer_user_data_get(timer));
 }
 
 K_TIMER_DEFINE(dvfs_service_scaling_finish_delay_timer,
@@ -237,7 +236,8 @@ static void nrfs_dvfs_evt_handler(nrfs_dvfs_evt_t const *p_evt, void *context)
 			static enum dvfs_frequency_setting freq;
 
 			freq = p_evt->freq;
-			dvfs_service_scaling_finish_delay_timer.user_data = (void *)&freq;
+			k_timer_user_data_set(&dvfs_service_scaling_finish_delay_timer,
+					      (void *)&freq);
 			k_timer_start(&dvfs_service_scaling_finish_delay_timer,
 				      SCALING_FINISH_DELAY_TIMEOUT_US, K_NO_WAIT);
 		} else {
