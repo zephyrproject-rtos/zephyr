@@ -678,6 +678,13 @@ static int register_dispatcher(struct mdns_responder_context *ctx,
 	ctx->dispatcher.mdns_ctx = ctx;
 	ctx->dispatcher.pair = NULL;
 
+	/* Mark the fd so that "net sockets" can show it. This is needed if there
+	 * is already a socket bound to same port and the dispatcher will mux
+	 * the connections. Without this, the FD in "net sockets" services list will
+	 * show the socket descriptor value as -1.
+	 */
+	svc->pev[0].event.fd = ctx->sock;
+
 	if (IS_ENABLED(CONFIG_NET_IPV6) && local->sa_family == AF_INET6) {
 		memcpy(&ctx->dispatcher.local_addr, local,
 		       sizeof(struct sockaddr_in6));
