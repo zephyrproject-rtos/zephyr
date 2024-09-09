@@ -41,6 +41,11 @@ static int mcux_lpdac_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	DAC_GetDefaultConfig(&dac_config);
 	dac_config.referenceVoltageSource = config->ref_voltage;
 #if defined(FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL) && FSL_FEATURE_LPDAC_HAS_GCR_BUF_SPD_CTRL

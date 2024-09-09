@@ -43,6 +43,11 @@ static int dac_ad559x_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	data->dac_conf |= BIT(channel_cfg->channel_id);
 
 	return mfd_ad559x_write_reg(config->mfd_dev, AD559X_REG_LDAC_EN, data->dac_conf);
