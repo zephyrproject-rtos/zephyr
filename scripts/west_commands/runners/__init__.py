@@ -28,7 +28,6 @@ _names = [
     # zephyr-keep-sorted-start
     'bflb_mcu_tool',
     'blackmagicprobe',
-    'blflash',
     'bossac',
     'canopen_program',
     'dediprog',
