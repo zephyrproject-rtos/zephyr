@@ -30,7 +30,7 @@ zephyr_include_directories_ifdef(CONFIG_NRF70_RADIO_TEST
 )
 
 zephyr_include_directories_ifndef(CONFIG_NRF70_RADIO_TEST
-  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/default
+  {OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/default
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_SR_COEX
@@ -57,10 +57,13 @@ zephyr_library_sources(
   src/shim.c
   src/work.c
   src/timer.c
-  src/fmac_main.c
   src/qspi/src/device.c
   src/qspi/src/rpu_hw_if.c
   src/qspi/src/ficr_prog.c
+)
+
+zephyr_library_sources_ifndef(CONFIG_NRF70_OFFLOADED_RAW_TX
+  src/fmac_main.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF_WIFI_PATCHES_BUILTIN
@@ -229,6 +232,10 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_UTIL
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF70_RADIO_TEST
   -DNRF70_RADIO_TEST
+)
+
+zephyr_compile_definitions_ifdef(CONFIG_NRF70_OFFLOADED_RAW_TX
+  -DNRF70_OFFLOADED_RAW_TX
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_NRF70_TCP_IP_CHECKSUM_OFFLOAD
