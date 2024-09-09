@@ -294,6 +294,8 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		DSPCS.bootctl[cpu].bctl &= ~DSPBR_BCTL_WAITIPCG;
 		if (cpu == 0) {
 			soc_cpus_active[cpu] = false;
+			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
+			__ASSERT_NO_MSG(ret == 0);
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 			/* save storage and restore information to imr */
 			__ASSERT_NO_MSG(global_imr_ram_storage != NULL);
@@ -351,8 +353,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 #else
 #define HPSRAM_MASK_ADDR NULL
 #endif /* CONFIG_ADSP_POWER_DOWN_HPSRAM */
-			ret = pm_device_runtime_put(INTEL_ADSP_HST_DOMAIN_DEV);
-			__ASSERT_NO_MSG(ret == 0);
 			/* do power down - this function won't return */
 			power_down(true, HPSRAM_MASK_ADDR, true);
 		} else {
