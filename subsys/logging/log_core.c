@@ -572,18 +572,21 @@ bool z_impl_log_process(void)
 		bool dropped_pend = z_log_dropped_pending();
 		bool unordered_pend = z_log_unordered_pending();
 
-		if ((dropped_pend || unordered_pend) &&
-		   (k_uptime_get() - last_failure_report) > CONFIG_LOG_FAILURE_REPORT_PERIOD) {
-			if (dropped_pend) {
-				dropped_notify();
-			}
+		if (dropped_pend || unordered_pend) {
+			uint64_t now = (uint64_t)k_uptime_get();
 
-			if (unordered_pend) {
-				unordered_notify();
+			if (now > last_failure_report + CONFIG_LOG_FAILURE_REPORT_PERIOD) {
+				if (dropped_pend) {
+					dropped_notify();
+				}
+
+				if (unordered_pend) {
+					unordered_notify();
+				}
+
+				last_failure_report = now;
 			}
 		}
-
-		last_failure_report += CONFIG_LOG_FAILURE_REPORT_PERIOD;
 	}
 
 	return z_log_msg_pending();
