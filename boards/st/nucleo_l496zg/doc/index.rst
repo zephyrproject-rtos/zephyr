@@ -127,6 +127,8 @@ The Zephyr nucleo_l496zg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| OTG FS    | on-chip    | USB OTG Full-speed                  |
++-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | System Window Watchdog              |
 +-----------+------------+-------------------------------------+
 
