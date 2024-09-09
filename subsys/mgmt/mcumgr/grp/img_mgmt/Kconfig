@@ -216,6 +216,14 @@ config MCUMGR_GRP_IMG_SLOT_INFO_HOOKS
 	  This will enable the slot info function hooks which can be used to add additional
 	  information to responses.
 
+config MCUMGR_GRP_IMG_QSPI_XIP_SPLIT_IMAGE
+	bool "QSPI XIP Split image mode"
+	depends on MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	help
+	  This option should not be selected by users and should automatically be selected by
+	  sysbuild if needed. This enables selecting the correct slot when running a QSPI XIP
+	  split image application in DirectXIP mode.
+
 module = MCUMGR_GRP_IMG
 module-str = mcumgr_grp_img
 source "subsys/logging/Kconfig.template.log_config"
