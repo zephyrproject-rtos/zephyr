@@ -508,6 +508,22 @@ static int cdc_acm_init(const struct device *dev)
 }
 
 /**
+ * @brief Check if cdc_acm_fifo_fill() will succeed
+ *
+ * @param dev_data data of CDC ACM device struct
+ */
+static inline bool _fifo_fill_ready(struct cdc_acm_dev_data_t *const dev_data)
+{
+	if (!dev_data->configured || dev_data->suspended) {
+		return false;
+	}
+	if (0 == ring_buf_space_get(dev_data->tx_ringbuf)) {
+		return false;
+	}
+	return true;
+}
+
+/**
  * @brief Fill FIFO with data
  *
  * @param dev     CDC ACM device struct.
@@ -523,13 +539,14 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	unsigned int lock;
 	size_t wrote;
 
-	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
-		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
-
-	if (!dev_data->configured || dev_data->suspended) {
-		LOG_INF("Device suspended or not configured");
+	if (!_fifo_fill_ready(dev_data)) {
+		/* This should never happen as cdc_acm_irq_rx_ready() should be checked before*/
+		LOG_WRN("Device not ready to take data");
 		return 0;
 	}
+
+	LOG_DBG("dev_data %p len %d tx_ringbuf space %u", dev_data, len,
+		ring_buf_space_get(dev_data->tx_ringbuf));
 
 	dev_data->tx_ready = false;
 
@@ -619,12 +636,11 @@ static void cdc_acm_irq_tx_disable(const struct device *dev)
  */
 static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+	struct cdc_acm_dev_data_t *const dev_data = dev->data;
 
-	if (dev_data->tx_irq_ena && dev_data->tx_ready) {
+	if (dev_data->tx_irq_ena && dev_data->tx_ready && _fifo_fill_ready(dev_data)) {
 		return 1;
 	}
-
 	return 0;
 }
 
@@ -685,7 +701,7 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
-	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
+	if (cdc_acm_irq_tx_ready(dev)) {
 		return 1;
 	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
 		return 1;
