@@ -87,6 +87,10 @@ enum sensor_channel {
 	SENSOR_CHAN_DIE_TEMP,
 	/** Ambient temperature in degrees Celsius. */
 	SENSOR_CHAN_AMBIENT_TEMP,
+	/** Thermocouple junction temperature in degrees Celsius */
+	SENSOR_CHAN_THRMCP_TEMP,
+	/** Thermocouple cold junction temperature in degrees Celsius */
+	SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP,
 	/** Pressure in kilopascal. */
 	SENSOR_CHAN_PRESS,
 	/**
