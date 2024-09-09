@@ -140,6 +140,8 @@ The Zephyr _nucleo_u031r8_ board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
@@ -160,6 +162,7 @@ For more details please refer to `STM32U031 User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- DAC1_OUT1 : PA4
 - LD1 : PA5
 - UART_1_TX : PA9
 - UART_1_RX : PA10
