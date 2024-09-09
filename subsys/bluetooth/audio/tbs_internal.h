@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6
@@ -312,6 +313,12 @@ struct bt_tbs_in_uri {
 			* sizeof(struct bt_tbs_client_call_state)))
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
 
+enum bt_tbs_client_flag {
+	BT_TBS_CLIENT_FLAG_BUSY,
+
+	BT_TBS_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
+};
+
 struct bt_tbs_instance {
 	struct bt_tbs_client_call_state calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 
@@ -336,7 +343,6 @@ struct bt_tbs_instance {
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 	uint16_t termination_reason_handle;
 
-	bool busy;
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
 	uint8_t ccid;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
@@ -384,5 +390,7 @@ struct bt_tbs_instance {
 	struct bt_gatt_read_params read_params;
 	uint8_t read_buf[BT_TBS_CLIENT_INST_READ_BUF_SIZE];
 	struct net_buf_simple net_buf;
+
+	ATOMIC_DEFINE(flags, BT_TBS_CLIENT_FLAG_NUM_FLAGS);
 };
 #endif /* CONFIG_BT_TBS_CLIENT */
