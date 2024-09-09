@@ -39,7 +39,12 @@ struct dac_channel_cfg {
 	 * This is relevant for instance if the output is directly connected to the load,
 	 * without an amplifierin between. The actual details on this are hardware dependent.
 	 */
-	bool buffered;
+	bool buffered: 1;
+	/** Enable internal output path for this channel. This is relevant for channels that
+	 * support directly connecting to on-chip peripherals via internal paths. The actual
+	 * details on this are hardware dependent.
+	 */
+	bool internal: 1;
 };
 
 /**
