@@ -2,16 +2,11 @@
 
 # Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
 # SPDX-License-Identifier: BSD-3-Clause
 
-# This script uses edtlib to generate a header file from a devicetree
-# (.dts) file. Information from binding files in YAML format is used
-# as well.
-#
-# Bindings are files that describe devicetree nodes. Devicetree nodes are
-# usually mapped to bindings via their 'compatible = "..."' property.
-#
-# See Zephyr's Devicetree user guide for details.
+# This script uses edtlib to generate a header file from a pickled
+# edt file.
 #
 # Note: Do not access private (_-prefixed) identifiers from edtlib here (and
 # also note that edtlib is not meant to expose the dtlib API directly).
@@ -20,7 +15,6 @@
 
 import argparse
 from collections import defaultdict
-import logging
 import os
 import pathlib
 import pickle
@@ -31,18 +25,9 @@ from typing import Iterable, NoReturn, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
                                 'src'))
 
+import edtlib_logger
 from devicetree import edtlib
 
-class LogFormatter(logging.Formatter):
-    '''A log formatter that prints the level name in lower case,
-    for compatibility with earlier versions of edtlib.'''
-
-    def __init__(self):
-        super().__init__(fmt='%(levelnamelower)s: %(message)s')
-
-    def format(self, record):
-        record.levelnamelower = record.levelname.lower()
-        return super().format(record)
 
 def main():
     global header_file
@@ -50,29 +35,12 @@ def main():
 
     args = parse_args()
 
-    setup_edtlib_logging()
+    edtlib_logger.setup_edtlib_logging()
 
-    vendor_prefixes = {}
-    for prefixes_file in args.vendor_prefixes:
-        vendor_prefixes.update(edtlib.load_vendor_prefixes_txt(prefixes_file))
-
-    try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs,
-                         # Suppress this warning if it's suppressed in dtc
-                         warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user"],
-                         werror=args.edtlib_Werror,
-                         vendor_prefixes=vendor_prefixes)
-    except edtlib.EDTError as e:
-        sys.exit(f"devicetree error: {e}")
+    with open(args.edt_pickle, 'rb') as f:
+        edt = pickle.load(f)
 
     flash_area_num = 0
-
-    # Save merged DTS source, as a debugging aid
-    with open(args.dts_out, "w", encoding="utf-8") as f:
-        print(edt.dts_source, file=f)
 
     # Create the generated header.
     with open(args.header_out, "w", encoding="utf-8") as header_file:
@@ -133,22 +101,6 @@ def main():
         write_chosen(edt)
         write_global_macros(edt)
 
-    if args.edt_pickle_out:
-        write_pickled_edt(edt, args.edt_pickle_out)
-
-
-def setup_edtlib_logging() -> None:
-    # The edtlib module emits logs using the standard 'logging' module.
-    # Configure it so that warnings and above are printed to stderr,
-    # using the LogFormatter class defined above to format each message.
-
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(LogFormatter())
-
-    logger = logging.getLogger('edtlib')
-    logger.setLevel(logging.WARNING)
-    logger.addHandler(handler)
-
 
 def node_z_path_id(node: edtlib.Node) -> str:
     # Return the node specific bit of the node's path identifier:
@@ -173,27 +125,10 @@ def parse_args() -> argparse.Namespace:
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags",
-                        help="'dtc' devicetree compiler flags, some of which "
-                             "might be respected here")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
-                        help="directory with bindings in YAML format, "
-                        "we allow multiple")
     parser.add_argument("--header-out", required=True,
                         help="path to write header to")
-    parser.add_argument("--dts-out", required=True,
-                        help="path to write merged DTS source code to (e.g. "
-                             "as a debugging aid)")
-    parser.add_argument("--edt-pickle-out",
-                        help="path to write pickled edtlib.EDT object to")
-    parser.add_argument("--vendor-prefixes", action='append', default=[],
-                        help="vendor-prefixes.txt path; used for validation; "
-                             "may be given multiple times")
-    parser.add_argument("--edtlib-Werror", action="store_true",
-                        help="if set, edtlib-specific warnings become errors. "
-                             "(this does not apply to warnings shared "
-                             "with dtc.)")
+    parser.add_argument("--edt-pickle",
+                        help="path to read pickled edtlib.EDT object from")
 
     return parser.parse_args()
 
@@ -1097,21 +1032,6 @@ def quote_str(s: str) -> str:
     # backslashes within it
 
     return f'"{escape(s)}"'
-
-
-def write_pickled_edt(edt: edtlib.EDT, out_file: str) -> None:
-    # Writes the edt object in pickle format to out_file.
-
-    with open(out_file, 'wb') as f:
-        # Pickle protocol version 4 is the default as of Python 3.8
-        # and was introduced in 3.4, so it is both available and
-        # recommended on all versions of Python that Zephyr supports
-        # (at time of writing, Python 3.6 was Zephyr's minimum
-        # version, and 3.8 the most recent CPython release).
-        #
-        # Using a common protocol version here will hopefully avoid
-        # reproducibility issues in different Python installations.
-        pickle.dump(edt, f, protocol=4)
 
 
 def err(s: str) -> NoReturn:
