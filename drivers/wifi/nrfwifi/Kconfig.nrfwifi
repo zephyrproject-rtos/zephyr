@@ -69,6 +69,9 @@ config NRF70_SCAN_ONLY
 config NRF70_RADIO_TEST
 	bool "Radio test mode of the nRF70 driver"
 
+config NRF70_OFFLOADED_RAW_TX
+	bool "Offloaded raw Tx mode of the nRF70 driver"
+
 config NRF70_SYSTEM_WITH_RAW_MODES
 	bool "nRF70 system mode with raw modes"
 	depends on WIFI_NRF7002 || WIFI_NRF7001
@@ -83,7 +86,7 @@ config NRF70_SYSTEM_MODE_COMMON
 	default y if NRF70_SYSTEM_MODE || NRF70_SYSTEM_WITH_RAW_MODES
 
 config NET_L2_ETHERNET
-	default y if !NRF70_RADIO_TEST
+	default y if (!NRF70_RADIO_TEST && !NRF70_OFFLOADED_RAW_TX)
 
 config HEAP_MEM_POOL_ADD_SIZE_NRF70
 	# Use a maximum that works for typical usecases and boards, each sample/app can override
