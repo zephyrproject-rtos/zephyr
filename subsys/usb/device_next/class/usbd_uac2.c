@@ -634,6 +634,8 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	/* Reschedule the read or explicit feedback write */
 	if (USB_EP_DIR_IS_OUT(ep)) {
 		schedule_iso_out_read(c_data, ep, mps, terminal);
+	} else if (is_feedback) {
+		write_explicit_feedback(c_data, ep, cfg->as_terminals[as_idx]);
 	}
 
 	return 0;
