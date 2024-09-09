@@ -11,14 +11,14 @@
 			riscv,ndev = <0x35>;
 			reg = <0x08000000 0x04000000>;
 			interrupts-extended = <
-				&hlic0 0x03
-				&hlic1 0x03
-				&hlic2 0x03
-				&hlic3 0x03
-				&hlic4 0x03
-				&hlic5 0x03
-				&hlic6 0x03
-				&hlic7 0x03
+				&hlic0 0x08
+				&hlic1 0x08
+				&hlic2 0x08
+				&hlic3 0x08
+				&hlic4 0x08
+				&hlic5 0x08
+				&hlic6 0x08
+				&hlic7 0x08
 			>;
 			interrupt-controller;
 			compatible = "sifive,plic-1.0.0";
