@@ -252,10 +252,7 @@ static int timestamp_print(const struct log_output *output,
 		ms = (remainder * 1000U) / freq;
 		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
-		if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
-			length = log_custom_timestamp_print(output, timestamp, print_formatted);
-		} else if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-			   flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_REQUIRES_FULL_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
 			struct tm *tm;
@@ -278,6 +275,8 @@ static int timestamp_print(const struct log_output *output,
 					date.year, date.month, date.day,
 					hours, mins, seconds, ms * 1000U + us);
 #endif
+		} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+			length = log_custom_timestamp_print(output, timestamp, print_formatted);
 		} else {
 			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
 				length = print_formatted(output,
