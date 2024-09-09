@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, STMICROELECTRONICS
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,6 +64,10 @@ struct rpmsg_rcv_msg {
 	size_t len;
 };
 
+struct ipm_channel {
+	uint8_t channel_id;
+};
+
 static struct metal_io_region *shm_io = &shm_io_data;
 
 static struct metal_io_region *rsc_io = &rsc_io_data;
@@ -78,6 +83,8 @@ static struct rpmsg_rcv_msg sc_msg = {.data = rx_sc_msg};
 static struct rpmsg_endpoint tty_ept;
 static struct rpmsg_rcv_msg tty_msg;
 
+static struct ipm_channel app_ipm_channel;
+
 static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_sc_sem, 0, 1);
 static K_SEM_DEFINE(data_tty_sem, 0, 1);
@@ -85,7 +92,10 @@ static K_SEM_DEFINE(data_tty_sem, 0, 1);
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)
 {
+	struct ipm_channel *ipm_ch = (struct ipm_channel *)context;
+
 	LOG_DBG("%s: msg received from mb %d", __func__, id);
+	ipm_ch->channel_id = id;
 	k_sem_give(&data_sem);
 }
 
@@ -130,10 +140,10 @@ static void new_service_cb(struct rpmsg_device *rdev, const char *name,
 
 int mailbox_notify(void *priv, uint32_t id)
 {
-	ARG_UNUSED(priv);
+	struct ipm_channel *ipm_ch = (struct ipm_channel *)priv;
 
 	LOG_DBG("%s: msg received", __func__);
-	ipm_send(ipm_handle, 0, id, NULL, 0);
+	ipm_send(ipm_handle, 0, ipm_ch->channel_id, NULL, 0);
 
 	return 0;
 }
@@ -167,7 +177,7 @@ int platform_init(void)
 		return -1;
 	}
 
-	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
+	ipm_register_callback(ipm_handle, platform_ipm_callback, (void *)&app_ipm_channel);
 
 	status = ipm_set_enabled(ipm_handle, 1);
 	if (status) {
@@ -197,7 +207,7 @@ platform_create_rpmsg_vdev(unsigned int vdev_index,
 
 	vdev = rproc_virtio_create_vdev(VIRTIO_DEV_DEVICE, VDEV_ID,
 					rsc_table_to_vdev(rsc_table),
-					rsc_io, NULL, mailbox_notify, NULL);
+					rsc_io, (void *)&app_ipm_channel, mailbox_notify, NULL);
 
 	if (!vdev) {
 		LOG_ERR("failed to create vdev");
