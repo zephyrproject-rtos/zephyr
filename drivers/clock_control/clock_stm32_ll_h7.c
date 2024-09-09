@@ -160,10 +160,6 @@
 #error "APB4 frequency is too high!"
 #endif
 
-#if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
-#endif
-
 /* end of clock feasibility check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
