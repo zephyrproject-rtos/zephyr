@@ -345,6 +345,9 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 			return true;
 		}
 
+		/* compute the register quantity in terms of 16-bit registers */
+		reg_qty = reg_qty / 2;
+
 		if (reg_qty == 0 || reg_qty > (regs_limit / 2)) {
 			LOG_ERR("Number of registers limit exceeded");
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_VAL);
@@ -454,6 +457,9 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
 			return true;
 		}
+
+		/* compute the register quantity in terms of 16-bit registers */
+		reg_qty = reg_qty / 2;
 
 		if (reg_qty == 0 || reg_qty > (regs_limit / 2)) {
 			LOG_ERR("Number of registers limit exceeded");
