@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -515,3 +516,13 @@ SECTION_PROLOGUE(.last_section,,)
 _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 
     }
+
+/*Add resource table section for openamp_rsc example*/
+#if defined(CONFIG_OPENAMP_RSC_TABLE)
+	SECTIONS{
+		SECTION_PROLOGUE(.resource_table,, SUBALIGN(8))
+       	 {
+        		KEEP(*(.resource_table*))
+        	} GROUP_LINK_IN(ROMABLE_REGION)
+		}
+#endif
