@@ -34,6 +34,7 @@
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
 
+#ifndef CONFIG_NRF70_OFFLOADED_RAW_TX
 #ifndef CONFIG_NRF70_RADIO_TEST
 struct nrf_wifi_vif_ctx_zep {
 	const struct device *zep_dev_ctx;
@@ -119,6 +120,7 @@ struct nrf_wifi_drv_priv_zep {
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 
 void nrf_wifi_scan_timeout_work(struct k_work *work);
+
 void configure_tx_pwr_settings(struct nrf_wifi_tx_pwr_ctrl_params *tx_pwr_ctrl_params,
 				struct nrf_wifi_tx_pwr_ceil_params *tx_pwr_ceil_params);
 void configure_board_dep_params(struct nrf_wifi_board_params *board_params);
@@ -126,6 +128,7 @@ void set_tx_pwr_ceil_default(struct nrf_wifi_tx_pwr_ceil_params *pwr_ceil_params
 const char *nrf_wifi_get_drv_version(void);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
+#endif /* !CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
 #ifdef CONFIG_NRF_WIFI_BUILD_ONLY_MODE
 inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 {
@@ -136,9 +139,10 @@ inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 #else
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx);
 #endif /* CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
+#ifndef CONFIG_NRF70_OFFLOADED_RAW_TX
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
 void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		void *event_data,
 		unsigned int event_len);
-
+#endif /* !CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
 #endif /* __ZEPHYR_FMAC_MAIN_H__ */
