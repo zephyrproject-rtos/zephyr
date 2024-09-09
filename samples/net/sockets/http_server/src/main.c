@@ -375,8 +375,19 @@ static void setup_tls(void)
 #endif /* defined(CONFIG_NET_SAMPLE_HTTPS_SERVICE) */
 }
 
+#if defined(CONFIG_USB_DEVICE_STACK)
+int init_usb(void);
+#else
+static inline int init_usb(void)
+{
+	return 0;
+}
+#endif /* CONFIG_USB_DEVICE_STACK */
+
 int main(void)
 {
+	init_usb();
+
 	setup_tls();
 	http_server_start();
 	return 0;
