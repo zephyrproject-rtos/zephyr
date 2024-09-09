@@ -596,6 +596,9 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
+	/* Shrink the buffer size if operating on a full speed bus */
+	buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
+
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
