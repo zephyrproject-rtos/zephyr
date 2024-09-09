@@ -86,3 +86,11 @@
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
 };
+
+&flexcan3 {
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
