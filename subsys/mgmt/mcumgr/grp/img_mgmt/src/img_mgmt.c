@@ -235,6 +235,14 @@ int img_mgmt_active_slot(int image)
 	/* Multi image does not support DirectXIP or RAM load currently */
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
 	slot = (image << 1);
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_QSPI_XIP_SPLIT_IMAGE) ||                                         \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||                                      \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
+		slot += 1;
+	}
+#endif
 #elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 	/* RAM load requires querying bootloader */
 	int rc;
