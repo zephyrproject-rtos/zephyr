@@ -317,7 +317,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay) && CONFIG_INIT_AUDIO_PLL
 	/* Using the Audio PLL as input clock leads to better clock dividers
 	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
 	 */
