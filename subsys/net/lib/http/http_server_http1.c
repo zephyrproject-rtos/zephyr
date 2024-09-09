@@ -117,7 +117,8 @@ static int handle_http1_static_resource(
 	"Transfer-Encoding: chunked\r\n"
 
 static int http1_send_headers(struct http_client_ctx *client, enum http_status status,
-			      const struct http_header *headers, size_t header_count)
+			      const struct http_header *headers, size_t header_count,
+			      struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	bool content_type_sent = false;
@@ -183,8 +184,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 	if (!content_type_sent) {
 		const char *content_type = NULL;
 
-		if (client->current_detail != NULL) {
-			content_type = client->current_detail->content_type;
+		if (dynamic_detail != NULL) {
+			content_type = dynamic_detail->common.content_type;
 		}
 
 		snprintk(http_response, sizeof(http_response), "Content-Type: %s\r\n",
@@ -208,7 +209,8 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 	return ret;
 }
 
-static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp)
+static int http1_dynamic_response(struct http_client_ctx *client, struct http_response_ctx *rsp,
+				  struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	char tmp[TEMP_BUF_LEN];
@@ -224,7 +226,8 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			rsp->status = 200;
 		}
 
-		ret = http1_send_headers(client, rsp->status, rsp->headers, rsp->header_count);
+		ret = http1_send_headers(client, rsp->status, rsp->headers, rsp->header_count,
+					 dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
@@ -285,7 +288,7 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 			return ret;
 		}
 
-		ret = http1_dynamic_response(client, &response_ctx);
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
@@ -324,7 +327,7 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 	}
 
 	copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-	while (copy_len > 0) {
+	while (1) {
 		enum http_data_status status;
 
 		ptr = &start[offset];
@@ -347,14 +350,14 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 		}
 
 		if (http_response_is_provided(&response_ctx)) {
-			ret = http1_dynamic_response(client, &response_ctx);
+			ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
 			if (ret < 0) {
 				return ret;
 			}
+		}
 
-			if (http_response_is_final(&response_ctx, status)) {
-				break;
-			}
+		if (http_response_is_final(&response_ctx, status)) {
+			break;
 		}
 
 		offset += copy_len;
@@ -366,7 +369,7 @@ static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 	if (!client->http1_headers_sent) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 		response_ctx.final_chunk = true;
-		ret = http1_dynamic_response(client, &response_ctx);
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
