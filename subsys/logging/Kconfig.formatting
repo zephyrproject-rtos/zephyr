@@ -189,6 +189,6 @@ config LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP
 	bool "Custom timestamp format support"
 	help
 	  Enable support for custom formatter for the timestamp.
-	  It will be applied to all backends.
+	  It will be applied to all backends except the syslog net backend.
 
 endmenu
