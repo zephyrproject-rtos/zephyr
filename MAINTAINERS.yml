@@ -994,10 +994,10 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - gmarull
+    - kartben
   collaborators:
     - carlescufi
     - nashif
-    - kartben
   files:
     - doc/_*/
     - doc/CMakeLists.txt
