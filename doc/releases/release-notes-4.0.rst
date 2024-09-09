@@ -133,6 +133,17 @@ Build system and Infrastructure
 
 * Added support for .elf files to the west flash command for jlink, pyocd and linkserver runners.
 
+* Extracted pickled EDT generation from gen_defines.py into gen_edt.py. This moved the following
+  parameters from the cmake variable ``EXTRA_GEN_DEFINES_ARGS`` to ``EXTRA_GEN_EDT_ARGS``:
+
+   * ``--dts``
+   * ``--dtc-flags``
+   * ``--bindings-dirs``
+   * ``--dts-out``
+   * ``--edt-pickle-out``
+   * ``--vendor-prefixes``
+   * ``--edtlib-Werror``
+
 Documentation
 *************
 
