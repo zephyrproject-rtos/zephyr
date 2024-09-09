@@ -178,7 +178,7 @@ static int send_headers_frame(struct http_client_ctx *client, enum http_status s
 
 	if (!content_encoding_sent && detail_common && detail_common->content_encoding != NULL) {
 		ret = add_header_field(client, &buf, &buflen, "content-encoding",
-				       "gzip");
+				       detail_common->content_encoding);
 		if (ret < 0) {
 			return ret;
 		}
@@ -488,7 +488,8 @@ out:
 }
 
 static int http2_dynamic_response(struct http_client_ctx *client, struct http2_frame *frame,
-				  struct http_response_ctx *rsp, enum http_data_status data_status)
+				  struct http_response_ctx *rsp, enum http_data_status data_status,
+				  struct http_resource_detail_dynamic *dynamic_detail)
 {
 	int ret;
 	uint8_t flags = 0;
@@ -522,8 +523,8 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 		}
 
 		ret = send_headers_frame(client, rsp->status, frame->stream_identifier,
-					 client->current_detail, flags, rsp->headers,
-					 rsp->header_count);
+					 (struct http_resource_detail *)dynamic_detail, flags,
+					 rsp->headers, rsp->header_count);
 		if (ret < 0) {
 			return ret;
 		}
@@ -588,7 +589,7 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 			return ret;
 		}
 
-		ret = http2_dynamic_response(client, frame, &response_ctx, status);
+		ret = http2_dynamic_response(client, frame, &response_ctx, status, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
@@ -660,7 +661,8 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 		}
 
 		if (http_response_is_provided(&response_ctx)) {
-			ret = http2_dynamic_response(client, frame, &response_ctx, status);
+			ret = http2_dynamic_response(client, frame, &response_ctx, status,
+						     dynamic_detail);
 			if (ret < 0) {
 				return ret;
 			}
@@ -683,7 +685,7 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 			memset(&response_ctx, 0, sizeof(response_ctx));
 			response_ctx.final_chunk = true;
 			ret = http2_dynamic_response(client, frame, &response_ctx,
-						     HTTP_SERVER_DATA_FINAL);
+						     HTTP_SERVER_DATA_FINAL, dynamic_detail);
 		}
 
 		if (ret < 0) {
