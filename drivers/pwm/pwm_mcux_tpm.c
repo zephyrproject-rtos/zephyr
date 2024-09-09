@@ -162,7 +162,9 @@ static int mcux_tpm_init(const struct device *dev)
 		channel->chnlNumber = i;
 		channel->level = kTPM_NoPwmSignal;
 		channel->dutyCyclePercent = 0;
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
 		channel->firstEdgeDelayPercent = 0;
+#endif
 		channel++;
 	}
 
