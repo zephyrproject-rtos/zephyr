@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_SOC_ARM_RPI_PICO_RP2_PINCTRL_SOC_H_
 #define ZEPHYR_SOC_ARM_RPI_PICO_RP2_PINCTRL_SOC_H_
 
-#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-pinctrl-common.h>
 
 /**
  * @brief Type to hold a pin's pinctrl configuration.
