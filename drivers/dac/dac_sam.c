@@ -85,6 +85,10 @@ static int dac_sam_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		return -ENOTSUP;
+	}
+
 	/* Enable Channel */
 	dac->DACC_CHER = DACC_CHER_CH0 << channel_cfg->channel_id;
 

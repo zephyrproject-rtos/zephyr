@@ -44,6 +44,11 @@ static int dac_esp32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	dac_output_enable(channel_cfg->channel_id);
 
 	return 0;
