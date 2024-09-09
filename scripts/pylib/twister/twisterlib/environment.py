@@ -976,7 +976,7 @@ class TwisterEnv:
             if soc_root:
                 self.soc_roots.append(os.path.join(module.project, soc_root))
             dts_root = module.meta.get("build", {}).get("settings", {}).get("dts_root")
-            if soc_root:
+            if dts_root:
                 self.dts_roots.append(os.path.join(module.project, dts_root))
             arch_root = module.meta.get("build", {}).get("settings", {}).get("arch_root")
             if arch_root:
