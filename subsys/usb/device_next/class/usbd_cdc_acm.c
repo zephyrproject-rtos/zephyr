@@ -109,7 +109,7 @@ struct cdc_acm_uart_data {
 	 */
 	bool flow_ctrl;
 	/* USBD CDC ACM TX fifo work */
-	struct k_work tx_fifo_work;
+	struct k_work_delayable tx_fifo_work;
 	/* USBD CDC ACM RX fifo work */
 	struct k_work rx_fifo_work;
 	atomic_t state;
@@ -138,6 +138,12 @@ struct net_buf *cdc_acm_buf_alloc(const uint8_t ep)
 static ALWAYS_INLINE int cdc_acm_work_submit(struct k_work *work)
 {
 	return k_work_submit_to_queue(&cdc_acm_work_q, work);
+}
+
+static ALWAYS_INLINE int cdc_acm_work_schedule(struct k_work_delayable *work,
+					       k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&cdc_acm_work_q, work, delay);
 }
 
 static ALWAYS_INLINE bool check_wq_ctx(const struct device *dev)
@@ -277,7 +283,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 			cdc_acm_work_submit(&data->irq_cb_work);
 		} else {
 			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_submit(&data->tx_fifo_work);
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 }
@@ -520,13 +526,14 @@ static int cdc_acm_send_notification(const struct device *dev,
  */
 static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct cdc_acm_uart_data *data;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
 	size_t len;
 	int ret;
 
-	data = CONTAINER_OF(work, struct cdc_acm_uart_data, tx_fifo_work);
+	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
 	c_data = data->c_data;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
@@ -541,7 +548,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 
 	buf = cdc_acm_buf_alloc(cdc_acm_get_bulk_in(c_data));
 	if (buf == NULL) {
-		cdc_acm_work_submit(&data->tx_fifo_work);
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 		return;
 	}
 
@@ -819,7 +826,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 
 	if (data->tx_fifo.altered) {
 		LOG_DBG("tx fifo altered, submit work");
-		cdc_acm_work_submit(&data->tx_fifo_work);
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -887,7 +894,11 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 		k_msleep(1);
 	}
 
-	cdc_acm_work_submit(&data->tx_fifo_work);
+	/* Schedule with minimal timeout to make it possible to send more than
+	 * one byte per USB transfer. The latency increase is negligible while
+	 * the increased throughput and reduced CPU usage is easily observable.
+	 */
+	cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 }
 
 #ifdef CONFIG_UART_LINE_CTRL
@@ -1006,7 +1017,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 
 	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
 
-	k_work_init(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
+	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
