@@ -19,6 +19,7 @@
 		zephyr,flash = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan3;
 	};
 };
 
@@ -36,5 +37,9 @@
 };
 
 &gpt2 {
+	status = "okay";
+};
+
+&flexcan3 {
 	status = "okay";
 };
