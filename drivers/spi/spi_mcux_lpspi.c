@@ -370,8 +370,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 		blk_cfg->source_address = (uint32_t)buf;
 		stream->dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	}
-	/* Enable scatter/gather */
-	blk_cfg->source_gather_en = 1;
 	/* Dest is LPSPI tx fifo */
 	blk_cfg->dest_address = LPSPI_GetTxRegisterAddress(base);
 	blk_cfg->block_size = len;
@@ -414,8 +412,6 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf,
 		stream->dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	}
 	blk_cfg->block_size = len;
-	/* Enable scatter/gather */
-	blk_cfg->dest_scatter_en = 1;
 	/* Source is LPSPI rx fifo */
 	blk_cfg->source_address = LPSPI_GetRxRegisterAddress(base);
 	stream->dma_cfg.source_burst_length = 1;
