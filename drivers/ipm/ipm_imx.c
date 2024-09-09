@@ -1,5 +1,5 @@
 /*
- * Copyright 2018,2023 NXP
+ * Copyright 2018,2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,7 +108,16 @@ static void imx_mu_isr(const struct device *dev)
 	int32_t i;
 	bool all_registers_full;
 
+#if defined(CONFIG_SOC_MIMX9352)
+	status_reg = base->RSR;
+	status_reg = (status_reg >> MU_RSR_RF0_SHIFT)&0x00000007;
+	status_reg = (((status_reg>>MU_RSR_RF3_SHIFT)<<MU_RSR_RF0_SHIFT) |
+		      ((status_reg>>MU_RSR_RF2_SHIFT)<<MU_RSR_RF1_SHIFT) |
+		      ((status_reg>>MU_RSR_RF1_SHIFT)<<MU_RSR_RF2_SHIFT) |
+		      ((status_reg>>MU_RSR_RF0_SHIFT)<<MU_RSR_RF3_SHIFT));
+#else
 	status_reg = base->SR >>= MU_SR_RFn_SHIFT;
+#endif
 
 	for (id = CONFIG_IPM_IMX_MAX_ID_VAL; id >= 0; id--) {
 		if (status_reg & 0x1U) {
