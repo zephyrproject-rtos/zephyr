@@ -72,6 +72,12 @@
 	apb1-prescaler = <1>;
 };
 
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+};
+
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
 	pinctrl-names = "default";
