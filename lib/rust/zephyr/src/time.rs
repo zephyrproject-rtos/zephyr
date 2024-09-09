@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Linaro LTD
+// SPDX-License-Identifier: Apache-2.0
+
 //! Time types similar to `std::time` types.
 //!
 //! However, the rust-embedded world tends to use `fugit` for time.  This has a Duration and
