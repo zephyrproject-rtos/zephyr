@@ -44,9 +44,9 @@ const struct time_entry time_entries[] = {
 		.name = "Duration " #unit " " #n, \
 		.units = UNIT_DUR_ ## unit, \
 		.uvalue = n, \
-		.value = K_ ## unit(n) , \
+		.value = K_ ## unit(n), \
 	}
-	// Test various values near typical clock boundaries.
+	/* Test various values near typical clock boundaries. */
 	DUR_TEST(MSEC, 1),
 	DUR_TEST(MSEC, 2),
 	DUR_TEST(MSEC, 99),
@@ -83,12 +83,14 @@ const struct time_entry time_entries[] = {
 /* Return the indexed time entry.  It is up to the Rust code to detect the null name, and handle it
  * properly.
  */
-const struct time_entry *get_time_entry(uintptr_t index) {
+const struct time_entry *get_time_entry(uintptr_t index)
+{
 	return &time_entries[index];
 }
 
 /* The abs timeout is not constant, so provide this wrapper function.
  */
-const k_timeout_t ms_to_abs_timeout(int64_t ms) {
+const k_timeout_t ms_to_abs_timeout(int64_t ms)
+{
 	return K_TIMEOUT_ABS_MS(ms);
 }
