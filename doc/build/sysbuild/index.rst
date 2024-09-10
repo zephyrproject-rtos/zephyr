@@ -658,7 +658,7 @@ with ``application``.
 Sysbuild file suffix support
 ----------------------------
 
-File suffix support through the makevar:`FILE_SUFFIX` is supported in sysbuild
+File suffix support through the :makevar:`FILE_SUFFIX` is supported in sysbuild
 (see :ref:`application-file-suffixes` for details on this feature in applications). For sysbuild,
 a globally provided option will be passed down to all images. In addition, the image configuration
 file will have this value applied and used (instead of the build type) if the file exists.
