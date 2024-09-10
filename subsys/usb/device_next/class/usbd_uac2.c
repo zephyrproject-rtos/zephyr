@@ -464,6 +464,49 @@ void uac2_update(struct usbd_class_data *const c_data,
 	}
 }
 
+/* 5.2.2 Control Request Layout: "As a general rule, when an attribute value
+ * is set, a Control will automatically adjust the passed value to the closest
+ * available valid value."
+ *
+ * The values array must be sorted ascending with at least 1 element.
+ */
+static uint32_t find_closest(const uint32_t input, const uint32_t *values,
+			     const size_t values_count)
+{
+	size_t i;
+
+	__ASSERT_NO_MSG(values_count);
+
+	for (i = 0; i < values_count; i++) {
+		if (input == values[i]) {
+			/* Exact match */
+			return input;
+		} else if (input < values[i]) {
+			break;
+		}
+	}
+
+	if (i == values_count) {
+		/* All values are smaller than input, return largest value */
+		return values[i - 1];
+	}
+
+	if (i == 0) {
+		/* All values are larger than input, return smallest value */
+		return values[i];
+	}
+
+	/* At this point values[i] is larger than input and values[i - 1] is
+	 * smaller than input, find and return the one that is closer, favoring
+	 * bigger value if input is exactly in the middle between the two.
+	 */
+	if ((values[i] - input) > (input - values[i - 1])) {
+		return values[i - 1];
+	} else {
+		return values[i];
+	}
+}
+
 /* Table 5-6: 4-byte Control CUR Parameter Block */
 static void layout3_cur_response(struct net_buf *const buf, uint16_t length,
 				 const uint32_t value)
@@ -473,6 +516,19 @@ static void layout3_cur_response(struct net_buf *const buf, uint16_t length,
 	/* dCUR */
 	sys_put_le32(value, tmp);
 	net_buf_add_mem(buf, tmp, MIN(length, 4));
+}
+
+static int layout3_cur_request(const struct net_buf *const buf, uint32_t *out)
+{
+	uint8_t tmp[4];
+
+	if (buf->len != 4) {
+		return -EINVAL;
+	}
+
+	memcpy(tmp, buf->data, sizeof(tmp));
+	*out = sys_get_le32(tmp);
+	return 0;
 }
 
 /* Table 5-7: 4-byte Control RANGE Parameter Block */
@@ -522,7 +578,10 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 				    const struct usb_setup_packet *const setup,
 				    struct net_buf *const buf)
 {
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct uac2_ctx *ctx = dev->data;
 	const uint32_t *frequencies;
+	const uint32_t clock_id = CONTROL_ENTITY_ID(setup);
 	size_t count;
 
 	/* Channel Number must be zero */
@@ -533,7 +592,7 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 		return 0;
 	}
 
-	count = clock_frequencies(c_data, CONTROL_ENTITY_ID(setup), &frequencies);
+	count = clock_frequencies(c_data, clock_id, &frequencies);
 
 	if (CONTROL_SELECTOR(setup) == CS_SAM_FREQ_CONTROL) {
 		if (CONTROL_ATTRIBUTE(setup) == CUR) {
@@ -542,10 +601,15 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 						     frequencies[0]);
 				return 0;
 			}
-			/* TODO: If there is more than one frequency supported,
-			 * call registered application API to determine active
-			 * sample rate.
-			 */
+
+			if (ctx->ops->get_sample_rate) {
+				uint32_t hz;
+
+				hz = ctx->ops->get_sample_rate(dev, clock_id,
+							       ctx->user_data);
+				layout3_cur_response(buf, setup->wLength, hz);
+				return 0;
+			}
 		} else if (CONTROL_ATTRIBUTE(setup) == RANGE) {
 			layout3_range_response(buf, setup->wLength, frequencies,
 					       frequencies, NULL, count);
@@ -554,6 +618,88 @@ static int get_clock_source_request(struct usbd_class_data *const c_data,
 	} else {
 		LOG_DBG("Unhandled clock control selector 0x%02x",
 			CONTROL_SELECTOR(setup));
+	}
+
+	errno = -ENOTSUP;
+	return 0;
+}
+
+static int set_clock_source_request(struct usbd_class_data *const c_data,
+				    const struct usb_setup_packet *const setup,
+				    const struct net_buf *const buf)
+{
+	const struct device *dev = usbd_class_get_private(c_data);
+	struct uac2_ctx *ctx = dev->data;
+	const uint32_t *frequencies;
+	const uint32_t clock_id = CONTROL_ENTITY_ID(setup);
+	size_t count;
+
+	/* Channel Number must be zero */
+	if (CONTROL_CHANNEL_NUMBER(setup) != 0) {
+		LOG_DBG("Clock source control with channel %d",
+			CONTROL_CHANNEL_NUMBER(setup));
+		errno = -EINVAL;
+		return 0;
+	}
+
+	count = clock_frequencies(c_data, clock_id, &frequencies);
+
+	if (CONTROL_SELECTOR(setup) == CS_SAM_FREQ_CONTROL) {
+		if (CONTROL_ATTRIBUTE(setup) == CUR) {
+			uint32_t requested, hz;
+			int err;
+
+			err = layout3_cur_request(buf, &requested);
+			if (err) {
+				errno = err;
+				return 0;
+			}
+
+			hz = find_closest(requested, frequencies, count);
+
+			if (ctx->ops->set_sample_rate == NULL) {
+				/* The set_sample_rate() callback is optional
+				 * if there is only one supported sample rate.
+				 */
+				if (count > 1) {
+					errno = -ENOTSUP;
+				}
+				return 0;
+			}
+
+			err = ctx->ops->set_sample_rate(dev, clock_id, hz,
+							ctx->user_data);
+			if (err) {
+				errno = err;
+			}
+
+			return 0;
+		}
+	} else {
+		LOG_DBG("Unhandled clock control selector 0x%02x",
+			CONTROL_SELECTOR(setup));
+	}
+
+	errno = -ENOTSUP;
+	return 0;
+}
+
+static int uac2_control_to_dev(struct usbd_class_data *const c_data,
+			       const struct usb_setup_packet *const setup,
+			       const struct net_buf *const buf)
+{
+	entity_type_t entity_type;
+
+	if (CONTROL_ATTRIBUTE(setup) != CUR) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
+	if (setup->bmRequestType == SET_CLASS_REQUEST_TYPE) {
+		entity_type = id_type(c_data, CONTROL_ENTITY_ID(setup));
+		if (entity_type == ENTITY_TYPE_CLOCK_SOURCE) {
+			return set_clock_source_request(c_data, setup, buf);
+		}
 	}
 
 	errno = -ENOTSUP;
@@ -720,6 +866,7 @@ static int uac2_init(struct usbd_class_data *const c_data)
 
 struct usbd_class_api uac2_api = {
 	.update = uac2_update,
+	.control_to_dev = uac2_control_to_dev,
 	.control_to_host = uac2_control_to_host,
 	.request = uac2_request,
 	.sof = uac2_sof,
