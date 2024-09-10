@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample shows how to allocate memory from SPIRAM by using
-:c:func:`shared_multi_heap_aligned_alloc` with `SMH_REG_ATTR_EXTERNAL` attribute. Checks if the
+:c:func:`shared_multi_heap_aligned_alloc` with ``SMH_REG_ATTR_EXTERNAL`` attribute. Checks if the
 memory was correctly allocated then frees it by calling :c:func:`shared_multi_heap_free`.
 It also allocates memory from internal memory and checks if the address range is correct.
 
@@ -31,7 +31,7 @@ Make sure you have your board connected over USB port.
    west flash
 
 If using another supported Espressif board, replace the argument in the above
-command with a proper board name (e.g., `esp32s2_saola`).
+command with a proper board name (e.g., ``esp32s2_saola``).
 
 Sample Output
 =============

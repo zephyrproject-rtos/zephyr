@@ -157,7 +157,7 @@ Using the controller with the Zephyr host
 This describes how to hook up a board running this sample to a board running
 an application that uses the Zephyr host.
 
-On the controller side, the `zephyr,bt-c2h-uart` DTS property (in the `chosen`
+On the controller side, the ``zephyr,bt-c2h-uart`` DTS property (in the ``chosen``
 block) is used to select which uart device to use. For example if we want to
 keep the console logs, we can keep console on uart0 and the HCI on uart1 like
 so:
@@ -180,7 +180,7 @@ driver instead of the built-in controller:
    CONFIG_BT_HCI=y
    CONFIG_BT_CTLR=n
 
-Similarly, the `zephyr,bt-hci` DTS property selects which HCI instance to use.
+Similarly, the ``zephyr,bt-hci`` DTS property selects which HCI instance to use.
 The UART needs to have as its child node a HCI UART node:
 
 .. code-block:: dts

@@ -118,7 +118,7 @@ Serial Port
 ===========
 
 The SoC has 12 LINFlexD instances that can be used in UART mode. The console can
-be accessed by default on the USB micro-B connector `J119`.
+be accessed by default on the USB micro-B connector J119.
 
 Watchdog
 ========

@@ -116,7 +116,7 @@ for all images, for example:
    west build -b <board> <application> -DSIGNING_SCRIPT=<file>
 
 The zephyr property method is achieved by adjusting the ``SIGNING_SCRIPT`` property
-on the `zephyr_property_target`, ideally from by a module by using:
+on the ``zephyr_property_target``, ideally from by a module by using:
 
 .. code-block:: cmake
 

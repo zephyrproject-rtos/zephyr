@@ -365,7 +365,7 @@ To enable tracing support with `SEGGER SystemView`_ add the configuration option
 it to *y*. For example, this can be added to the
 :zephyr:code-sample:`synchronization` sample to visualize fast switching between threads.
 SystemView can also be used for post-mortem tracing, which can be enabled with
-`CONFIG_SEGGER_SYSVIEW_POST_MORTEM_MODE`. In this mode, a debugger can
+:kconfig:option:`CONFIG_SEGGER_SYSVIEW_POST_MORTEM_MODE`. In this mode, a debugger can
 be attached after the system has crashed using ``west attach`` after which the
 latest data from the internal RAM buffer can be loaded into SystemView::
 

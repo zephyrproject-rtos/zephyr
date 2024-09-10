@@ -100,7 +100,7 @@ or Nordic based examples.
    Trusted Firmware-M (TF-M) and building the ``ns`` target is not supported for this board.
 
 Some of the examples do not use secure mode, so they do not require the
-``ns`` suffix. A great example of this is the `hello_world` below.
+``ns`` suffix. A great example of this is the ``hello_world`` below.
 
 Flashing
 ========

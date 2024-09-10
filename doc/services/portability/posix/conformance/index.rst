@@ -3,7 +3,9 @@
 POSIX Conformance
 #################
 
-As per `IEEE 1003.1-2017`, this section details Zephyr's POSIX conformance.
+As per `IEEE 1003.1-2017`_, this section details Zephyr's POSIX conformance.
+
+.. _IEEE 1003.1-2017: https://standards.ieee.org/ieee/1003.1/7101/
 
 .. _posix_system_interfaces:
 

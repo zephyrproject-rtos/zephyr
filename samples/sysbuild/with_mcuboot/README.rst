@@ -19,7 +19,7 @@ sysbuild.
 This is achieved with a sysbuild specific Kconfig configuration,
 :file:`sysbuild.conf`.
 
-The `SB_CONFIG_BOOTLOADER_MCUBOOT=y` setting in the sysbuild Kconfig file
+The ``SB_CONFIG_BOOTLOADER_MCUBOOT=y`` setting in the sysbuild Kconfig file
 enables the bootloader when building with sysbuild.
 
 The :file:`sysbuild/mcuboot.conf` file will be used as an extra fragment that

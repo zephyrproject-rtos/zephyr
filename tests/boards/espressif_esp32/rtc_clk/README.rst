@@ -34,7 +34,7 @@ To run the test with twister, use the following command:
 
    west twister -p <board> --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif_esp32/rtc_clk
 
-If the external 32K crystal is connect to pins 32K_XP and 32K_XN, the test can be run with `external_xtal` fixture enabled:
+If the external 32K crystal is connect to pins 32K_XP and 32K_XN, the test can be run with ``external_xtal`` fixture enabled:
 
 .. code-block:: console
 

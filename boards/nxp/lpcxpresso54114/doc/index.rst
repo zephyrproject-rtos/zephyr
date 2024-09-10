@@ -74,8 +74,8 @@ features:
 
 The default configuration for each core can be found in the defconfig files:
 
-	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m4_defconfig`
-	`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m0_defconfig`
+- :zephyr_file:`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m4_defconfig`
+- :zephyr_file:`boards/nxp/lpcxpresso54114/lpcxpresso54114_lpc54114_m0_defconfig`
 
 Other hardware features are not currently supported by the port.
 

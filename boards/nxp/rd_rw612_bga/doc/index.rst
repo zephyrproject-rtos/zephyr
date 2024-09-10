@@ -196,7 +196,7 @@ Remove resistors:
 - R508
 - R505
 
-Then, build for the board target `rd_rw612_bga//ethernet`.
+Then, build for the board target ``rd_rw612_bga//ethernet``.
 
 Resources
 *********

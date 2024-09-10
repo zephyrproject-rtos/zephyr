@@ -88,8 +88,8 @@ Setting up Host
 
 To be able to reach the board from the host, it's needed to configure the host
 network interface IP's and default routes. This guide assumes the host IPv4 and
-IPv6 addresses are `192.0.2.3` and `2001:db8::3`, respectively. For example,
-using a network interface named `enp1s0` in a GNU/Linux host or `Ethernet` in
+IPv6 addresses are ``192.0.2.3`` and ``2001:db8::3``, respectively. For example,
+using a network interface named ``enp1s0`` in a GNU/Linux host or ``Ethernet`` in
 a Windows host, this can be done with the following commands:
 
 .. tabs::
@@ -121,4 +121,4 @@ the following commands from the Zephyr shell:
    net ping -I<iface> 192.0.2.3
    net ping -I<iface> 2001:db8::3
 
-Where `<iface>` is the interface number starting from 1.
+Where ``<iface>`` is the interface number starting from 1.

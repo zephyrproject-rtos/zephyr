@@ -30,14 +30,14 @@ Boards
   to define default flash and ram partitioning based on TF-M.
 
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
-  `west blobs fetch hal_stm32` instead of `west blobs fetch stm32`.
+  ``west blobs fetch hal_stm32`` instead of ``west blobs fetch stm32``.
 
 STM32
 =====
 
-* On all official STM32 boards, `west flash` selects STM32CubeProgrammer as the default west runner.
+* On all official STM32 boards, ``west flash`` selects STM32CubeProgrammer as the default west runner.
   If you want to enforce the selection of another runner like OpenOCD or pyOCD for flashing, you should
-  specify it using the west `--runner` or `-r` option. (:github:`75284`)
+  specify it using the west ``--runner`` or ``-r`` option. (:github:`75284`)
 
 Modules
 *******
@@ -69,10 +69,10 @@ zcbor
   Migration guide at https://github.com/NordicSemiconductor/zcbor/blob/0.9.0/MIGRATION_GUIDE.md
   Migration guide copied here:
 
-  * `zcbor_simple_*()` functions have been removed to avoid confusion about their use.
+  * ``zcbor_simple_*()`` functions have been removed to avoid confusion about their use.
     They are still in the C file because they are used by other functions.
     Instead, use the specific functions for the currently supported simple values, i.e.
-    `zcbor_bool_*()`, `zcbor_nil_*()`, and `zcbor_undefined_*()`.
+    ``zcbor_bool_*()``, ``zcbor_nil_*()``, and ``zcbor_undefined_*()``.
     If a removed variant is strictly needed, add your own forward declaration in your code.
 
   * Code generation naming:

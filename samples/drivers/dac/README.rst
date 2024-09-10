@@ -201,8 +201,7 @@ The sample can be built and executed for the
    :goals: build flash
    :compact:
 
-also can run for the
-:ref: `longan_nano_lite` as follows:
+also can run for the Longan Nano Lite as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/dac

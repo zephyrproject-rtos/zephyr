@@ -32,7 +32,7 @@ in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_pu
 calls on the child device.
 
 For the previous to automatically control the power domain state, device runtime PM must be enabled
-on the power domain device (either through the `zephyr,pm-device-runtime-auto` devicetree property
+on the power domain device (either through the ``zephyr,pm-device-runtime-auto`` devicetree property
 or :c:func:`pm_device_runtime_enable`).
 
 .. graphviz::
