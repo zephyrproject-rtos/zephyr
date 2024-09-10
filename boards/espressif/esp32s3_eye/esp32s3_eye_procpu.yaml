@@ -1,5 +1,5 @@
-identifier: esp32s3_devkitm/esp32s3/procpu
-name: ESP32-S3 DevKitM PROCPU
+identifier: esp32s3_eye/esp32s3/procpu
+name: ESP32-S3 EYE PROCPU
 type: mcu
 arch: xtensa
 toolchain:
@@ -8,7 +8,6 @@ supported:
   - gpio
   - uart
   - i2c
-  - i2s
   - spi
   - can
   - counter
@@ -17,7 +16,6 @@ supported:
   - pwm
   - dma
   - input
-  - video
 testing:
   ignore_tags:
     - net
