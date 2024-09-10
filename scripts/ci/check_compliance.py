@@ -1495,6 +1495,49 @@ class YAMLLint(ComplianceTest):
                                       p.line, col=p.column, desc=p.desc)
 
 
+class SphinxLint(ComplianceTest):
+    """
+    SphinxLint
+    """
+
+    name = "SphinxLint"
+    doc = "Check Sphinx/reStructuredText files with sphinx-lint."
+    path_hint = "<git-top>"
+
+    # Checkers added/removed to sphinx-lint's default set
+    DISABLE_CHECKERS = ["horizontal-tab", "missing-space-before-default-role"]
+    ENABLE_CHECKERS = ["default-role"]
+
+    def run(self):
+        for file in get_files():
+            if not file.endswith(".rst"):
+                continue
+
+            try:
+                # sphinx-lint does not expose a public API so interaction is done via CLI
+                subprocess.run(
+                    f"sphinx-lint -d {','.join(self.DISABLE_CHECKERS)} -e {','.join(self.ENABLE_CHECKERS)} {file}",
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+
+            except subprocess.CalledProcessError as ex:
+                for line in ex.output.decode("utf-8").splitlines():
+                    match = re.match(r"^(.*):(\d+): (.*)$", line)
+
+                    if match:
+                        self.fmtd_failure(
+                            "error",
+                            "SphinxLint",
+                            match.group(1),
+                            int(match.group(2)),
+                            desc=match.group(3),
+                        )
+
+
 class KeepSorted(ComplianceTest):
     """
     Check for blocks of code or config that should be kept sorted.
