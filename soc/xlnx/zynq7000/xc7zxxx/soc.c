@@ -52,14 +52,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
 #endif
 
-/* GPIO controller */
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psgpio))
-	MMU_REGION_FLAT_ENTRY("psgpio",
-			      DT_REG_ADDR(DT_NODELABEL(psgpio)),
-			      DT_REG_SIZE(DT_NODELABEL(psgpio)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-
 DT_FOREACH_STATUS_OKAY(xlnx_xps_gpio_1_00_a, AXI_GPIO_MMU_ENTRY)
 
 };
