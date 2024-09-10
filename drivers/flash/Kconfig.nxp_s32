@@ -16,7 +16,7 @@ config FLASH_NXP_S32_QSPI_NOR
 
 if FLASH_NXP_S32_QSPI_NOR
 
-config FLASH_NXP_S32_QSPI_NOR_SFDP_RUNTIME
+config FLASH_NXP_S32_QSPI_SFDP_RUNTIME
 	bool "Read flash parameters at runtime"
 	help
 	  Read flash device characteristics from the device at runtime.
