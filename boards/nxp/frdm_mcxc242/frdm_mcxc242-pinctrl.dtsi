@@ -41,4 +41,12 @@
 			slew-rate = "slow";
 		};
 	};
+	pinmux_adc0: pinmux_adc0 {
+		group0 {
+			pinmux = <ADC0_SE0_PTE20>,
+				<ADC0_SE1_PTE16>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };
