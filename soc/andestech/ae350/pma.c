@@ -201,7 +201,7 @@ void pma_init_per_core(void)
 #endif /* CONFIG_NOCACHE_MEMORY */
 }
 
-static int pma_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned long mmsc_cfg;
 
@@ -220,8 +220,4 @@ static int pma_init(void)
 	}
 
 	pma_init_per_core();
-
-	return 0;
 }
-
-SYS_INIT(pma_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
