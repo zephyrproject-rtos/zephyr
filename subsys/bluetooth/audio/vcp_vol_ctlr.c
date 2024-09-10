@@ -42,7 +42,8 @@ LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
 static sys_slist_t vcp_vol_ctlr_cbs = SYS_SLIST_STATIC_INIT(&vcp_vol_ctlr_cbs);
 
 static struct bt_vcp_vol_ctlr vol_ctlr_insts[CONFIG_BT_MAX_CONN];
-static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t opcode);
+static int write_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr);
+static int write_set_vol_cp(struct bt_vcp_vol_ctlr *vol_ctlr);
 
 static struct bt_vcp_vol_ctlr *vol_ctlr_get_by_conn(const struct bt_conn *conn)
 {
@@ -75,6 +76,8 @@ static void vcp_vol_ctlr_vol_flags_changed(struct bt_vcp_vol_ctlr *vol_ctlr, int
 static void vcp_vol_ctlr_discover_complete(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	struct bt_vcp_vol_ctlr_cb *listener, *next;
+
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&vcp_vol_ctlr_cbs, listener, next, _node) {
 		if (listener->discover) {
@@ -133,7 +136,7 @@ static uint8_t vcp_vol_ctlr_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 	int cb_err = err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
-	vol_ctlr->busy = false;
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 
 	if (cb_err) {
 		LOG_DBG("err: %d", cb_err);
@@ -163,7 +166,7 @@ static uint8_t vcp_vol_ctlr_read_vol_flag_cb(struct bt_conn *conn, uint8_t err,
 	int cb_err = err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
-	vol_ctlr->busy = false;
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 
 	if (cb_err) {
 		LOG_DBG("err: %d", cb_err);
@@ -258,13 +261,10 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 				vol_ctlr->state.change_counter);
 
 			/* clear busy flag to reuse function */
-			vol_ctlr->busy = false;
 			if (opcode == BT_VCP_OPCODE_SET_ABS_VOL) {
-				write_err = bt_vcp_vol_ctlr_set_vol(vol_ctlr,
-								     vol_ctlr->cp_val.volume);
+				write_err = write_set_vol_cp(vol_ctlr);
 			} else {
-				write_err = vcp_vol_ctlr_common_vcs_cp(vol_ctlr,
-								     opcode);
+				write_err = write_common_vcs_cp(vol_ctlr);
 			}
 			if (write_err) {
 				cb_err = BT_ATT_ERR_UNLIKELY;
@@ -277,7 +277,8 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (cb_err) {
-		vol_ctlr->busy = false;
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_CP_RETRIED);
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 		vcs_cp_notify_app(vol_ctlr, opcode, cb_err);
 	}
 
@@ -300,10 +301,10 @@ static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 	 * restart the applications write request. If it fails
 	 * the second time, we return an error to the application.
 	 */
-	if (cb_err == BT_VCP_ERR_INVALID_COUNTER && vol_ctlr->cp_retried) {
+	if (cb_err == BT_VCP_ERR_INVALID_COUNTER &&
+	    atomic_test_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_CP_RETRIED)) {
 		cb_err = BT_ATT_ERR_UNLIKELY;
-	} else if (err == BT_VCP_ERR_INVALID_COUNTER &&
-		   vol_ctlr->state_handle) {
+	} else if (err == BT_VCP_ERR_INVALID_COUNTER && vol_ctlr->state_handle) {
 		vol_ctlr->read_params.func = internal_read_vol_state_cb;
 		vol_ctlr->read_params.handle_count = 1;
 		vol_ctlr->read_params.single.handle = vol_ctlr->state_handle;
@@ -313,14 +314,14 @@ static void vcp_vol_ctlr_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 		if (cb_err) {
 			LOG_WRN("Could not read Volume state: %d", cb_err);
 		} else {
-			vol_ctlr->cp_retried = true;
+			atomic_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_CP_RETRIED);
 			/* Wait for read callback */
 			return;
 		}
 	}
 
-	vol_ctlr->busy = false;
-	vol_ctlr->cp_retried = false;
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_CP_RETRIED);
 
 	vcs_cp_notify_app(vol_ctlr, opcode, err);
 }
@@ -550,10 +551,26 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t opcode)
+static int write_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
+	vol_ctlr->write_params.offset = 0;
+	vol_ctlr->write_params.data = &vol_ctlr->cp_val.cp;
+	vol_ctlr->write_params.length = sizeof(vol_ctlr->cp_val.cp);
+	vol_ctlr->write_params.handle = vol_ctlr->control_handle;
+	vol_ctlr->write_params.func = vcp_vol_ctlr_write_vcs_cp_cb;
+
+	err = bt_gatt_write(vol_ctlr->conn, &vol_ctlr->write_params);
+	if (err != 0) {
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
+	}
+
+	return err;
+}
+
+static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t opcode)
+{
 	CHECKIF(vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
@@ -567,24 +584,14 @@ static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t 
 	if (vol_ctlr->control_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (vol_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY)) {
 		return -EBUSY;
 	}
 
-	vol_ctlr->busy = true;
 	vol_ctlr->cp_val.cp.opcode = opcode;
 	vol_ctlr->cp_val.cp.counter = vol_ctlr->state.change_counter;
-	vol_ctlr->write_params.offset = 0;
-	vol_ctlr->write_params.data = &vol_ctlr->cp_val.cp;
-	vol_ctlr->write_params.length = sizeof(vol_ctlr->cp_val.cp);
-	vol_ctlr->write_params.handle = vol_ctlr->control_handle;
-	vol_ctlr->write_params.func = vcp_vol_ctlr_write_vcs_cp_cb;
 
-	err = bt_gatt_write(vol_ctlr->conn, &vol_ctlr->write_params);
-	if (err == 0) {
-		vol_ctlr->busy = true;
-	}
-	return err;
+	return write_common_vcs_cp(vol_ctlr);
 }
 
 #if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
@@ -953,7 +960,8 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 
 	vol_ctlr = vol_ctlr_get_by_conn(conn);
 
-	if (vol_ctlr->busy) {
+	if (atomic_test_and_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Volume controller busy");
 		return -EBUSY;
 	}
 
@@ -976,7 +984,10 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 	err = bt_gatt_discover(conn, &vol_ctlr->discover_params);
 	if (err == 0) {
 		*out_vol_ctlr = vol_ctlr;
+	} else {
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 	}
+
 	return err;
 }
 
@@ -1095,7 +1106,8 @@ int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr)
 	if (vol_ctlr->state_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (vol_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Volume controller busy");
 		return -EBUSY;
 	}
 
@@ -1105,8 +1117,8 @@ int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr)
 	vol_ctlr->read_params.single.offset = 0U;
 
 	err = bt_gatt_read(vol_ctlr->conn, &vol_ctlr->read_params);
-	if (err == 0) {
-		vol_ctlr->busy = true;
+	if (err != 0) {
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 	}
 
 	return err;
@@ -1129,7 +1141,8 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr)
 	if (vol_ctlr->vol_flag_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (vol_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Volume controller busy");
 		return -EBUSY;
 	}
 
@@ -1139,8 +1152,8 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr)
 	vol_ctlr->read_params.single.offset = 0U;
 
 	err = bt_gatt_read(vol_ctlr->conn, &vol_ctlr->read_params);
-	if (err == 0) {
-		vol_ctlr->busy = true;
+	if (err != 0) {
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 	}
 
 	return err;
@@ -1166,10 +1179,26 @@ int bt_vcp_vol_ctlr_unmute_vol_up(struct bt_vcp_vol_ctlr *vol_ctlr)
 	return vcp_vol_ctlr_common_vcs_cp(vol_ctlr, BT_VCP_OPCODE_UNMUTE_REL_VOL_UP);
 }
 
-int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
+static int write_set_vol_cp(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
+	vol_ctlr->write_params.offset = 0;
+	vol_ctlr->write_params.data = &vol_ctlr->cp_val;
+	vol_ctlr->write_params.length = sizeof(vol_ctlr->cp_val);
+	vol_ctlr->write_params.handle = vol_ctlr->control_handle;
+	vol_ctlr->write_params.func = vcp_vol_ctlr_write_vcs_cp_cb;
+
+	err = bt_gatt_write(vol_ctlr->conn, &vol_ctlr->write_params);
+	if (err != 0) {
+		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
+	}
+
+	return err;
+}
+
+int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
+{
 	CHECKIF(vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
@@ -1183,7 +1212,8 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 	if (vol_ctlr->control_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
-	} else if (vol_ctlr->busy) {
+	} else if (atomic_test_and_set_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY)) {
+		LOG_DBG("Volume controller busy");
 		return -EBUSY;
 	}
 
@@ -1191,18 +1221,7 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 	vol_ctlr->cp_val.cp.counter = vol_ctlr->state.change_counter;
 	vol_ctlr->cp_val.volume = volume;
 
-	vol_ctlr->write_params.offset = 0;
-	vol_ctlr->write_params.data = &vol_ctlr->cp_val;
-	vol_ctlr->write_params.length = sizeof(vol_ctlr->cp_val);
-	vol_ctlr->write_params.handle = vol_ctlr->control_handle;
-	vol_ctlr->write_params.func = vcp_vol_ctlr_write_vcs_cp_cb;
-
-	err = bt_gatt_write(vol_ctlr->conn, &vol_ctlr->write_params);
-	if (err == 0) {
-		vol_ctlr->busy = true;
-	}
-
-	return err;
+	return write_set_vol_cp(vol_ctlr);
 }
 
 int bt_vcp_vol_ctlr_unmute(struct bt_vcp_vol_ctlr *vol_ctlr)
