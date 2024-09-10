@@ -85,9 +85,10 @@ tests:
 
   sample.drivers.mbox.nrf54l15:
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
     sysbuild: true
@@ -101,9 +102,10 @@ tests:
 
   sample.drivers.mbox.nrf54l15_no_multithreading:
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
       mbox_CONFIG_MULTITHREADING=n
@@ -119,9 +121,10 @@ tests:
 
   sample.drivers.mbox.nrf54l15_remote_no_multithreading:
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
       remote_CONFIG_MULTITHREADING=n

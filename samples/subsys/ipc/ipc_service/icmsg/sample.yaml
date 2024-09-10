@@ -20,9 +20,9 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr
@@ -40,9 +40,9 @@ tests:
         - "host: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15_no_multithreading:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr
@@ -64,9 +64,9 @@ tests:
         - "I: IPC-service HOST demo ended"
 
   sample.ipc.icmsg.nrf54l15_remote_no_multithreading:
-    platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: ipc
     extra_args:
       icmsg_SNIPPET=nordic-flpr

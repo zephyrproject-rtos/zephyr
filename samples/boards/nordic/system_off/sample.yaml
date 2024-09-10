@@ -8,7 +8,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
@@ -22,10 +22,10 @@ tests:
     extra_configs:
       - CONFIG_APP_USE_NRF_RETENTION=y
   sample.boards.nrf.system_off.retained_mem:
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15pdk_nrf54l15_cpuapp_retained_mem.overlay"
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_retained_mem.overlay"
     build_only: true
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_APP_USE_RETAINED_MEM=y
       - CONFIG_RETAINED_MEM=y
