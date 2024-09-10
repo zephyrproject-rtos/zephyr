@@ -218,7 +218,7 @@ static void rv32m1_setup_peripheral_clocks(void)
  *
  * @return 0
  */
-static int soc_rv32m1_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned int key;
 
@@ -239,8 +239,4 @@ static int soc_rv32m1_init(void)
 	rv32m1_setup_peripheral_clocks();
 
 	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(soc_rv32m1_init, PRE_KERNEL_1, 0);
