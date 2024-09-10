@@ -14,6 +14,7 @@
 #include "net.h"
 #include "settings.h"
 #include "brg_cfg.h"
+#include "foundation.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_BRG_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -219,24 +220,36 @@ int bt_mesh_brg_cfg_tbl_get(const struct bt_mesh_brg_cfg_row **rows)
 	return bt_mesh_brg_cfg_row_cnt;
 }
 
+static bool netkey_check(uint16_t net_idx1, uint16_t net_idx2)
+{
+	return bt_mesh_subnet_get(net_idx1) && bt_mesh_subnet_get(net_idx2);
+}
+
 int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx1,
-			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2)
+			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2, uint8_t *status)
 {
 	/* Sanity checks */
-	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 || addr1 == addr2 ||
-	    net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX || net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
+	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 ||
+	    addr1 == addr2 || net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX ||
+	    net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
 		return -EINVAL;
 	}
 
-	if (direction != BT_MESH_BRG_CFG_DIR_ONEWAY && direction != BT_MESH_BRG_CFG_DIR_TWOWAY) {
+	if (direction != BT_MESH_BRG_CFG_DIR_ONEWAY &&
+	    direction != BT_MESH_BRG_CFG_DIR_TWOWAY) {
 		return -EINVAL;
 	}
 
 	if ((direction == BT_MESH_BRG_CFG_DIR_ONEWAY &&
-		(addr2 == BT_MESH_ADDR_UNASSIGNED || addr2 == BT_MESH_ADDR_ALL_NODES)) ||
+	     (addr2 == BT_MESH_ADDR_UNASSIGNED || addr2 == BT_MESH_ADDR_ALL_NODES)) ||
 	    (direction == BT_MESH_BRG_CFG_DIR_TWOWAY &&
-		!BT_MESH_ADDR_IS_UNICAST(addr2))) {
+	     !BT_MESH_ADDR_IS_UNICAST(addr2))) {
 		return -EINVAL;
+	}
+
+	if (!netkey_check(net_idx1, net_idx2)) {
+		*status = STATUS_INVALID_NETKEY;
+		return 0;
 	}
 
 	/* Check if entry already exists, if yes, then, update the direction field and it is a
@@ -256,7 +269,8 @@ int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx
 
 	/* Empty element, is the current table row counter */
 	if (bt_mesh_brg_cfg_row_cnt == CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
-		return -ENOMEM;
+		*status = STATUS_INSUFF_RESOURCES;
+		return 0;
 	}
 
 	/* Update the row */
@@ -273,6 +287,7 @@ store:
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
 	}
 
+	*status = STATUS_SUCCESS;
 	return 0;
 }
 
@@ -294,12 +309,13 @@ void bt_mesh_brg_cfg_tbl_foreach_subnet(uint16_t src, uint16_t dst, uint16_t net
 }
 
 int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
-				uint16_t addr2)
+			       uint16_t addr2, uint8_t *status)
 {
 	bool store = false;
 
 	/* Sanity checks */
 	if ((!BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 != BT_MESH_ADDR_UNASSIGNED) ||
+	    (BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 == addr2) ||
 	    addr2 == BT_MESH_ADDR_ALL_NODES) {
 		return -EINVAL;
 	}
@@ -309,11 +325,16 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 		return -EINVAL;
 	}
 
+	if (!netkey_check(net_idx1, net_idx2)) {
+		*status = STATUS_INVALID_NETKEY;
+		return 0;
+	}
 
 	/* Iterate over items and set matching row to 0, if nothing exist, or nothing matches, then
 	 * it is success (similar to add)
 	 */
 	if (bt_mesh_brg_cfg_row_cnt == 0) {
+		*status = STATUS_SUCCESS;
 		return 0;
 	}
 
@@ -341,5 +362,6 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
 	}
 
+	*status = STATUS_SUCCESS;
 	return 0;
 }

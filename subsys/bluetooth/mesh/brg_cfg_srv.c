@@ -78,27 +78,18 @@ static int bridging_table_add(const struct bt_mesh_model *model, struct bt_mesh_
 {
 	struct bt_mesh_bridging_table_entry entry;
 	uint8_t status = STATUS_SUCCESS;
+	int err;
 
 	entry.directions = net_buf_simple_pull_u8(buf);
 	key_idx_unpack_pair(buf, &entry.net_idx1, &entry.net_idx2);
 	entry.addr1 = net_buf_simple_pull_le16(buf);
 	entry.addr2 = net_buf_simple_pull_le16(buf);
 
-	if (!netkey_check(entry.net_idx1, entry.net_idx2)) {
-		status = STATUS_INVALID_NETKEY;
-		goto add_respond;
-	}
-
-	int err = bt_mesh_brg_cfg_tbl_add(entry.directions, entry.net_idx1, entry.net_idx2,
-					  entry.addr1, entry.addr2);
-	if (err == -ENOMEM) {
-		status = STATUS_INSUFF_RESOURCES;
-	} else if (err) {
-		/* Per spec, do not respond if parameters values are invalid. */
+	err = bt_mesh_brg_cfg_tbl_add(entry.directions, entry.net_idx1, entry.net_idx2, entry.addr1,
+				      entry.addr2, &status);
+	if (err) {
 		return err;
 	}
-
-add_respond:
 
 	bridging_table_status_send(model, ctx, status, &entry);
 
@@ -110,26 +101,18 @@ static int bridging_table_remove(const struct bt_mesh_model *model, struct bt_me
 {
 	struct bt_mesh_bridging_table_entry entry;
 	uint8_t status = STATUS_SUCCESS;
+	int err;
 
 	entry.directions = 0;
 	key_idx_unpack_pair(buf, &entry.net_idx1, &entry.net_idx2);
 	entry.addr1 = net_buf_simple_pull_le16(buf);
 	entry.addr2 = net_buf_simple_pull_le16(buf);
 
-	if (!netkey_check(entry.net_idx1, entry.net_idx2)) {
-		status = STATUS_INVALID_NETKEY;
-		goto rmv_respond;
-	}
-
-	int err = bt_mesh_brg_cfg_tbl_remove(entry.net_idx1, entry.net_idx2, entry.addr1,
-						entry.addr2);
-
-	/* Per spec, do not respond if parameters values are invalid. */
+	err = bt_mesh_brg_cfg_tbl_remove(entry.net_idx1, entry.net_idx2, entry.addr1, entry.addr2,
+					 &status);
 	if (err) {
 		return err;
 	}
-
-rmv_respond:
 
 	bridging_table_status_send(model, ctx, status, &entry);
 
