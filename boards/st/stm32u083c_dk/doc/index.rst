@@ -242,7 +242,7 @@ This can be done by executing the following commands.
 
 
 Flashing an application to STM32U083C_DK
-------------------------------------------
+----------------------------------------
 
 Connect the STM32U083C_DK to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
