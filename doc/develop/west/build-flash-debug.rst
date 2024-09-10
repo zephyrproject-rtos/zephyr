@@ -771,7 +771,7 @@ Runner-Specific Overrides
 =========================
 
 To view all of the available options supported by the runners, as well
-as their usage information, use ``--context`` (or``-H``)::
+as their usage information, use ``--context`` (or ``-H``)::
 
   west simulate --runner=renode --context
 
