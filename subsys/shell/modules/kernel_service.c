@@ -498,6 +498,31 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_thread_mask,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
+static void pin_thread_work(struct k_work *work);
+static struct thread_pin_data {
+	struct k_mutex lock;
+	struct k_sem sem;
+	struct k_work work;
+	struct k_thread *thread;
+	int cpu;
+	int err;
+} pin_thread_data = {
+	.lock = Z_MUTEX_INITIALIZER(pin_thread_data.lock),
+	.sem = Z_SEM_INITIALIZER(pin_thread_data.sem, 0, 1),
+	.work = Z_WORK_INITIALIZER(pin_thread_work),
+};
+
+static void pin_thread_work(struct k_work *work)
+{
+	struct thread_pin_data *data = CONTAINER_OF(work, struct thread_pin_data, work);
+
+	k_thread_suspend(data->thread);
+	data->err = k_thread_cpu_pin(data->thread, data->cpu);
+	k_thread_resume(data->thread);
+
+	k_sem_give(&data->sem);
+}
+
 static int cmd_kernel_thread_pin(const struct shell *sh,
 				  size_t argc, char **argv)
 {
@@ -524,9 +549,25 @@ static int cmd_kernel_thread_pin(const struct shell *sh,
 	}
 
 	shell_print(sh, "Pinning %p %s to CPU %d", (void *)thread, thread->name, cpu);
-	err = k_thread_cpu_pin(thread, cpu);
+
+	err = k_mutex_lock(&pin_thread_data.lock, K_NO_WAIT);
+	if (err == 0) {
+		pin_thread_data.thread = thread;
+		pin_thread_data.cpu = cpu;
+		if (k_current_get() == thread) {
+			/* A thread can't configure itself, so we offload to work thread */
+			k_sem_reset(&pin_thread_data.sem);
+			k_work_submit(&pin_thread_data.work);
+			(void)k_sem_take(&pin_thread_data.sem, K_FOREVER);
+		} else {
+			pin_thread_work(&pin_thread_data.work);
+		}
+		err = pin_thread_data.err;
+		k_mutex_unlock(&pin_thread_data.lock);
+	}
+
 	if (err != 0) {
-		shell_error(sh, "Failed - %d", err);
+		shell_error(sh, "Failed: %d", err);
 	} else {
 		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
 			    thread->base.cpu_mask);
