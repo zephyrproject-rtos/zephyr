@@ -245,7 +245,7 @@ struct http_request {
 	 * calling application wants to know the parsing status or the HTTP
 	 * fields. This is optional and normally not needed.
 	 */
-	const struct http_parser_settings *http_cb;
+	struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where received data is stored */
 	uint8_t *recv_buf;
@@ -254,10 +254,10 @@ struct http_request {
 	size_t recv_buf_len;
 
 	/** The URL for this request, for example: /index.html */
-	const char *url;
+	char *url;
 
 	/** The HTTP protocol, for example "HTTP/1.1" */
-	const char *protocol;
+	char *protocol;
 
 	/** The HTTP header fields (application specific)
 	 * The Content-Type may be specified here or in the next field.
@@ -265,16 +265,16 @@ struct http_request {
 	 * some header fields may remain constant through the application's
 	 * life cycle. This is a NULL terminated list of header fields.
 	 */
-	const char **header_fields;
+	char **header_fields;
 
 	/** The value of the Content-Type header field, may be NULL */
-	const char *content_type_value;
+	char *content_type_value;
 
 	/** Hostname to be used in the request */
-	const char *host;
+	char *host;
 
 	/** Port number to be used in the request */
-	const char *port;
+	char *port;
 
 	/** User supplied callback function to call when payload
 	 * needs to be sent. This can be NULL in which case the payload field
@@ -285,7 +285,7 @@ struct http_request {
 	http_payload_cb_t payload_cb;
 
 	/** Payload, may be NULL */
-	const char *payload;
+	char *payload;
 
 	/** Payload length is used to calculate Content-Length. Set to 0
 	 * for chunked transfers.
@@ -309,7 +309,7 @@ struct http_request {
 	 * header_fields variable and any optional application specific
 	 * headers will be placed into this field.
 	 */
-	const char **optional_headers;
+	char **optional_headers;
 };
 
 /**
