@@ -14,8 +14,8 @@ Requirements
 
 This sample supports multiple hardware configurations:
 
-The simplest configuration would be to connect `SWDIO` to `dio`, `SWDCLK` to `clk`
-and optionally `nRESET` to `reset`.  The optional `noe` pin is used to enable the port,
+The simplest configuration would be to connect ``SWDIO`` to ``dio``, ``SWDCLK`` to ``clk``
+and optionally ``nRESET`` to ``reset``.  The optional ``noe`` pin is used to enable the port,
 e.g. if the SWD connections are multiplexed.
 
 Building and Running

@@ -172,7 +172,7 @@ As an example we'll use the :zephyr:code-sample:`usb-cdc-acm-console` sample.
 
 .. note::
 
-   In all examples it is assumed to use default `root-rsa-2048.pem` file from ``mcuboot/boot``
+   In all examples it is assumed to use default :file:`root-rsa-2048.pem` file from ``mcuboot/boot``
    directory. Providing certificate in build args produces signed binary automatically.
    Do not use this certificate in your production firmware!
 
@@ -180,7 +180,7 @@ As an example we'll use the :zephyr:code-sample:`usb-cdc-acm-console` sample.
    and plug such adapter to USB port.
 
    You should see ``NordicSemiconductor MCUBOOT`` or ``NordicSemiconductor Zephyr DFU sample``
-   (if you flashed `dfu` sample to slot0) device once plugging it into host
+   (if you flashed ``dfu`` sample to slot0) device once plugging it into host
    USB port. You can check that on Linux system by entering ``lsusb`` command.
 
    To check if DFU device is visible you can enter ``sudo dfu-util -l`` command. Once the

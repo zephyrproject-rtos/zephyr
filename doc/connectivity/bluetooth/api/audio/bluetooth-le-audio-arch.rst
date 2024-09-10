@@ -22,14 +22,14 @@ The overall design of the LE Audio stack is that the implementation follows the 
 as closely as possible,
 both in terms of structure but also naming.
 Most API functions are prefixed by the specification acronym
-(e.g. `bt_bap` for the Basic Audio Profile (BAP) and `bt_vcp` for the Volume Control Profile (VCP)).
-The functions are then further prefixed with the specific role from each profile where applicable
-(e.g. :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_vcp_vol_rend_set_vol`).
+(e.g. ``bt_bap`` for the Basic Audio Profile (BAP) and ``bt_vcp`` for the Volume Control Profile
+(VCP)). The functions are then further prefixed with the specific role from each profile where
+applicable (e.g. :c:func:`bt_bap_unicast_client_discover` and :c:func:`bt_vcp_vol_rend_set_vol`).
 There are usually a function per procedure defined by the profile or service specifications,
 and additional helper or meta functions that do not correspond to procedures.
 
 The structure of the files generally also follow this,
-where BAP related files are prefixed with `bap` and VCP related files are prefixed with `vcp`.
+where BAP related files are prefixed with ``bap`` and VCP related files are prefixed with ``vcp``.
 If the file is specific for a profile role, the role is also embedded in the file name.
 
 Generic Audio Framework (GAF)
@@ -1065,8 +1065,8 @@ but the GTBS instance will report 2 calls,
 making it possible for a simple Call Control Client to control all calls from a single bearer.
 Similarly the supported URIs for each bearer are also made into a union in GTBS, and when placing
 a call using the GTBS the server will pick the most suited bearer depending on the URI.
-For example calls with URI `tel` would go to the regular phone application,
-and calls with the URI `skype` would go to the Teams application.
+For example calls with URI ``tel`` would go to the regular phone application,
+and calls with the URI ``skype`` would go to the Teams application.
 
 In conclusion the GTBS implementation in Zephyr is a union of the non-generic telephone bearers.
 
@@ -1175,8 +1175,8 @@ the data is kept in and controlled by the application.
 
 As a rule of thumb, the return types of the callbacks for each profile implementation indicate
 whether the data is controlled by the stack or the application.
-For example all the callbacks for the VCP Volume Renderer have the return type of `void`,
-but the return type of the BAP Unicast Server callbacks are `int`,
+For example all the callbacks for the VCP Volume Renderer have the return type of ``void``,
+but the return type of the BAP Unicast Server callbacks are ``int``,
 indicating that the application not only controls a lot of the Unicast Server data,
 but can also reject the requests.
 The choice of what the return type of the callbacks often depend on the specifications,
@@ -1202,7 +1202,7 @@ In Zephyr we do not force the device to always use these, as a device that uses 
 use other profiles and services that do not require such security.
 We guard all access to services using a custom security check implemented in
 :zephyr_file:`subsys/bluetooth/audio/audio.c`, where all LE Audio services must use the
-internal `BT_AUDIO_CHRC` macro for proper security verification.
+internal :c:macro:`BT_AUDIO_CHRC` macro for proper security verification.
 
 Access to the LTK for encrypted SIRKs in CSIS
 ---------------------------------------------
@@ -1235,10 +1235,10 @@ The LE audio channel on Discord
 
 Zephyr has a specific Discord channel for LE Audio development, which is open to all.
 Find it here at https://discordapp.com/channels/720317445772017664/1207326649591271434 or simply
-search for `ble-audio` from within Discord.
-Since the `ble-audio` channel is open for all,
+search for "ble-audio" from within Discord.
+Since the ``#ble-audio`` channel is open for all,
 we cannot discuss any specifications that are in development in that channel.
-For discussions that require a Bluetooth SIG membership we refer to the `bluetooth-sig`
+For discussions that require a Bluetooth SIG membership we refer to the ``#bluetooth-sig``
 Discord channel found at https://discordapp.com/channels/720317445772017664/869172014018097162.
 
 Zephyr weekly meetings

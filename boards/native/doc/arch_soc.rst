@@ -183,7 +183,7 @@ Currently, these are the most significant features which are not supported in th
 * Stack checks: :kconfig:option:`CONFIG_HW_STACK_PROTECTION`,
   :kconfig:option:`CONFIG_STACK_CANARIES`, and
   :kconfig:option:`CONFIG_THREAD_ANALYZER`.
-  This is due to how Zephyr allocated threads' stacks are not `actually` being used like they are
+  This is due to how Zephyr allocated threads' stacks are not *actually* being used like they are
   in other architectures. Check
   :ref:`the architecture section's architecture layer paragraph <posix_arch_design_archl>`
   for more information.
@@ -355,7 +355,7 @@ while this newly created thread will be the first "SW" thread and start
 executing the boot of the embedded code (including the POSIX arch code).
 
 During this MCU boot process, the Zephyr kernel will be initialized and
-eventually this will call into the embedded application `main()`,
+eventually this will call into the embedded application ``main()``,
 just like in the embedded target.
 As the embedded SW execution progresses, more Zephyr threads may be spawned,
 and for each the POSIX architecture will create a dedicated pthread.
@@ -413,7 +413,7 @@ Busy waits
 Busy waits work thanks to provided board functionality.
 This does not need to be the same for all boards, but both native_sim and the
 nrf52_bsim board work similarly thru the combination of a board specific
-`arch_busy_wait()` and a special fake HW timer (provided by the board).
+:c:func:`arch_busy_wait()` and a special fake HW timer (provided by the board).
 
 When a SW thread wants to busy wait, this fake timer will be programmed in
 the future time corresponding to the end of the busy wait and the CPU will
@@ -422,7 +422,7 @@ When this fake HW timer expires the CPU will be waken with a special
 non-maskable phony interrupt which does not have a corresponding interrupt
 handler but will resume the busy_wait SW execution.
 Note that other interrupts may arrive while the busy wait is in progress,
-which may delay the `k_busy_wait()` return just like in real life.
+which may delay the :c:func:`k_busy_wait()` return just like in real life.
 
 Interrupts may be locked out or masked during this time, but the special
 fake-timer non-maskable interrupt will wake the CPU nonetheless.

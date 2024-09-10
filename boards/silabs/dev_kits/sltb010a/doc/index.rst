@@ -149,7 +149,7 @@ BRD4184B:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ to be installed on you host
+   ``west flash`` requires `SEGGER J-Link software`_ to be installed on you host
    computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

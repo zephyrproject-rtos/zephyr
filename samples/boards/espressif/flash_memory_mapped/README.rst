@@ -13,7 +13,7 @@ contents of flash memory by writing to a mapped memory region.
 
 Mapping happens in 64 KB pages. Memory mapping hardware can map flash into the data address space
 and the instruction address space. See the technical reference manual for more details and
-limitations about memory mapping hardware. For more information, check `_ESP32 Flash Memory-Mapping`.
+limitations about memory mapping hardware. For more information, check `ESP32 Flash Memory-Mapping`_.
 
 Supported SoCs
 **************

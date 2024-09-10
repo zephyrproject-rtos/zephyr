@@ -77,7 +77,7 @@ Build the Zephyr kernel and application, then flash it to the device:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ and `pylink`_ Python module
+   ``west flash`` requires `SEGGER J-Link software`_ and `pylink`_ Python module
    to be installed on you host computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

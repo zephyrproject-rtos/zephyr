@@ -600,7 +600,7 @@ By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
 tests.  For native simulator builds you can provide the seed as an argument to
-twister with `--seed`
+twister with ``--seed``.
 
 Static configuration of ZTEST_SHUFFLE contains:
 

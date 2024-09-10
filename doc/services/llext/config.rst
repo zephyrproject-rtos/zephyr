@@ -104,7 +104,7 @@ significant as the number of exported symbols increases.
 
         Perform an extra processing step on the Zephyr binary and on all
         extensions being built, converting every string in the symbol tables to
-        a pointer-sized hash called `Symbol Link Identifier` (SLID), which is
+        a pointer-sized hash called Symbol Link Identifier (SLID), which is
         stored in the binary.
 
         This speeds up the symbol lookup process by allowing usage of

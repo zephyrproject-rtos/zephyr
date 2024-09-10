@@ -172,7 +172,7 @@ For the :code:`Hello, world!` application, follow the instructions below.
    :board: xiao_esp32c3
    :goals: build flash
 
-Since the Zephyr console is by default on the `usb_serial` device, we use
+Since the Zephyr console is by default on the ``usb_serial`` device, we use
 the espressif monitor to view.
 
 .. code-block:: console

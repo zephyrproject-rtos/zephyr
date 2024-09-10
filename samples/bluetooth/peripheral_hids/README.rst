@@ -15,7 +15,7 @@ In the default configuration the sample uses passkey authentication (displays a
 code on the peripheral and requires that to be entered on the host during
 pairing) and requires an authenticated link to access the GATT characteristics.
 To disable authentication and just use encrypted channels instead, build the
-sample with `CONFIG_SAMPLE_BT_USE_AUTHENTICATION=n`.
+sample with ``CONFIG_SAMPLE_BT_USE_AUTHENTICATION=n``.
 
 Requirements
 ************

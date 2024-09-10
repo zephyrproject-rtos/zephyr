@@ -21,7 +21,8 @@ To run this sample, build it for the desired board and scenario and flash it.
 
 The Flash scenario is supported on the nrf52dk/nrf52832 board.
 The RAM disk scenario is supported on the mimxrt1064_evk board.
-To build the RAM disk sample, the configuration `prj_ram.conf` needs to be used by setting `CONF_FILE=prj_ram.conf`.
+To build the RAM disk sample, the configuration :file:`prj_ram.conf` needs to be used by setting
+``CONF_FILE=prj_ram.conf``.
 
 The Flash sample for the nrf 52DK board can be built as follow:
 

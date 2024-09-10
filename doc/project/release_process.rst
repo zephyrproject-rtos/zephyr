@@ -127,7 +127,7 @@ feature freeze milestone. An issue labeled as a blocker practically blocks a
 release from happening. All blocker bugs shall be resolved before a release is
 created.
 
-A fix for a bug that is granted `blocker` status can be merged to 'main' and included in
+A fix for a bug that is granted ``blocker`` status can be merged to 'main' and included in
 the release all the way until the final release date.
 
 Bugs of moderate severity and higher that have impact on all users are typically

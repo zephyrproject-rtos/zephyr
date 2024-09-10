@@ -12,7 +12,7 @@ functionality of STM32. Without adaptions this example runs on STM32F3 discovery
 board. You need to establish a physical connection between pins PA2 (USART2_TX) and
 PC10 (UART4_TX).
 
-Add a `single_wire_uart_loopback` fixture to your board in the hardware map to allow
+Add a ``single_wire_uart_loopback`` fixture to your board in the hardware map to allow
 twister to verify this sample's output automatically.
 
 Building and Running

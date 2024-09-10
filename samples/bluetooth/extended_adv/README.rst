@@ -21,7 +21,7 @@ while the scanner cools-down for 5 seconds to restart its process.
 This sample handles all actions in a separate thread, to promote good design
 practices. Even though it is not strictly required, scheduling from another context is
 strongly recommended (e.g. using a work item), as re-starting an advertiser or
-scanner from within the `recycled` callback exposes the application to deadlocking.
+scanner from within the ``recycled`` callback exposes the application to deadlocking.
 
 Requirements
 ************

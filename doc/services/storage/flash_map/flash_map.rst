@@ -32,7 +32,7 @@ Most ``<zephyr/storage/flash_map.h>`` API functions require a :c:struct:`flash_a
 characterizing the flash area they will be working on. There are two possible
 methods to obtain such a pointer:
 
- * obtain it using `flash_area_open`;
+ * obtain it using :c:func:`flash_area_open`;
 
  * defining a :c:struct:`flash_area` type object, which requires providing
    a valid :c:struct:`device` object pointer with offset and size of the area

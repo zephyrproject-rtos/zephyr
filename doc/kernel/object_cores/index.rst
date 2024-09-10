@@ -13,7 +13,7 @@ perform operations on registered objects.
 Object Core Concepts
 ********************
 
-Each instance of an object embeds an object core field named `obj_core`.
+Each instance of an object embeds an object core field named ``obj_core``.
 Objects of the same type are linked together via their respective object
 cores to form a singly linked list. Each object core also links to the their
 respective object type. Each object type contains a singly linked list
