@@ -206,7 +206,7 @@ static void swo_init(void)
  *
  * @return 0
  */
-static int silabs_init(void)
+void soc_early_init_hook(void)
 {
 	/* handle chip errata */
 	CHIP_Init();
@@ -240,8 +240,4 @@ static int silabs_init(void)
 	swo_init();
 #endif
 #endif /* !CONFIG_SOC_GECKO_DEV_INIT */
-
-	return 0;
 }
-
-SYS_INIT(silabs_init, PRE_KERNEL_1, 0);
