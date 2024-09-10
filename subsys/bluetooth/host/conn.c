@@ -1750,11 +1750,9 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
 	    !uses_symmetric_2mbit_phy(conn)) {
-		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_PREFER_2M,
+		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M, BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_CODED_ANY);
 		if (err) {
 			LOG_ERR("Failed LE Set PHY (%d)", err);
@@ -1767,8 +1765,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	/* Data length should be automatically updated to the maximum by the
 	 * controller. Not updating it is a quirk and this is the workaround.
 	 */
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) && BT_FEAT_LE_DLE(bt_dev.le.features) &&
 	    bt_drv_quirk_no_auto_dle()) {
 		uint16_t tx_octets, tx_time;
 
