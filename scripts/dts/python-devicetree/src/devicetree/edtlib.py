@@ -2267,7 +2267,6 @@ class EDT:
                 _err(
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
-                continue
 
             # Convert the raw data to a Binding object, erroring out
             # if necessary.
