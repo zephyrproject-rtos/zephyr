@@ -238,4 +238,15 @@ config NET_CONFIG_SNTP_INIT_TIMEOUT
 	int "SNTP timeout to init system clock (ms)"
 	default 3000
 
+config NET_CONFIG_SNTP_INIT_RESYNC
+	bool "Resync system clock using SNTP periodically"
+	help
+	  Perform an SNTP request over networking periodically to get and
+	  absolute wall clock time, and resync system time from it.
+
+config NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL
+	int "SNTP resync interval (sec)"
+	depends on NET_CONFIG_SNTP_INIT_RESYNC
+	default 3600
+
 endif # NET_CONFIG_CLOCK_SNTP_INIT
