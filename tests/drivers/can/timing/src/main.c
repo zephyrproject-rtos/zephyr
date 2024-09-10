@@ -24,6 +24,8 @@ struct can_timing_test {
 	uint32_t bitrate;
 	/** Desired sample point in permille */
 	uint16_t sp;
+	/** Historically safe bitrate test */
+	bool historical;
 };
 
 /**
@@ -31,16 +33,14 @@ struct can_timing_test {
  */
 static const struct can_timing_test can_timing_tests[] = {
 	/* CiA 301 recommended bitrates */
-#ifdef CONFIG_TEST_ALL_BITRATES
-	{   10000, 875 },
-#endif /* CONFIG_TEST_ALL_BITRATES */
-	{   20000, 875 },
-	{   50000, 875 },
-	{  125000, 875 },
-	{  250000, 875 },
-	{  500000, 875 },
-	{  800000, 800 },
-	{ 1000000, 750 },
+	{   10000, 875, false },
+	{   20000, 875, true },
+	{   50000, 875, true },
+	{  125000, 875, true },
+	{  250000, 875, true },
+	{  500000, 875, true },
+	{  800000, 800, true },
+	{ 1000000, 750, true },
 };
 
 /**
@@ -48,13 +48,11 @@ static const struct can_timing_test can_timing_tests[] = {
  */
 static const struct can_timing_test can_timing_data_tests[] = {
 	/* CiA 601-2 recommended data phase bitrates */
-	{ 1000000, 750 },
-#ifdef CONFIG_TEST_ALL_BITRATES
-	{ 2000000, 750 },
-	{ 4000000, 750 },
-	{ 5000000, 750 },
-	{ 8000000, 750 },
-#endif /* CONFIG_TEST_ALL_BITRATES */
+	{ 1000000, 750, true },
+	{ 2000000, 750, false },
+	{ 4000000, 750, false },
+	{ 5000000, 750, false },
+	{ 8000000, 750, false },
 };
 
 /**
@@ -131,6 +129,38 @@ static void assert_sp_within_margin(struct can_timing *timing, uint16_t sp, uint
 }
 
 /**
+ * @brief Determine if a given bitrate test should be skipped.
+ *
+ * @param dev pointer to the device structure for the driver instance
+ * @param test pointer to the set of CAN timing values
+ */
+bool skip_timing_value_test(const struct device *dev, const struct can_timing_test *test)
+{
+	uint32_t core_clock;
+	int err;
+
+	err = can_get_core_clock(dev, &core_clock);
+	zassert_equal(err, 0, "failed to get core CAN clock");
+
+	if (test->historical) {
+		/* Historically safe test, never skip */
+		return false;
+	}
+
+	if (core_clock == MHZ(80)) {
+		/* No bitrates skipped when the CAN core clock is 80 MHz */
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_TEST_ALL_BITRATES)) {
+		/* No bitrates skipped when all tests explicitly enabled */
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * @brief Test a set of CAN timing values
  *
  * Test a set of CAN timing values on a specified CAN controller device
@@ -151,6 +181,11 @@ static bool test_timing_values(const struct device *dev, const struct can_timing
 
 	printk("testing bitrate %u, sample point %u.%u%%: ",
 	       test->bitrate, test->sp / 10, test->sp % 10);
+
+	if (skip_timing_value_test(dev, test)) {
+		printk("skipped\n");
+		return false;
+	}
 
 	if (data_phase) {
 		if (IS_ENABLED(CONFIG_CAN_FD_MODE)) {
@@ -277,9 +312,9 @@ void *can_timing_setup(void)
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_TEST_ALL_BITRATES)) {
-		TC_PRINT("Warning: Testing limited selection of bitrates "
-			 "(CONFIG_TEST_ALL_BITRATES=n)\n");
+	if (IS_ENABLED(CONFIG_TEST_ALL_BITRATES) && core_clock != MHZ(80)) {
+		TC_PRINT("Warning: Testing all bitrates with CAN core clock of %u Hz "
+			 "(CONFIG_TEST_ALL_BITRATES=y)\n", core_clock);
 	}
 
 	return NULL;
