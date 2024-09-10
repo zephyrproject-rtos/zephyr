@@ -15,7 +15,7 @@ This sample demonstrates the use of the encrypted advertising feature, such as:
  - the decryption of those advertising payloads,
  - and the update of the Randomizer field whenever the RPA is changed.
 
-To use the `bt_ead_encrypt` and `bt_ead_decrypt` functions, you must enable
+To use the :c:func:`bt_ead_encrypt` and :c:func:`bt_ead_decrypt` functions, you must enable
 the Kconfig symbol :kconfig:option:`CONFIG_BT_EAD`.
 
 While this sample uses extended advertising, it is **not** mandatory when using

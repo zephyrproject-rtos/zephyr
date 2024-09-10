@@ -18,7 +18,7 @@ Building and Running
 The application will build only for a target that has a :ref:`devicetree <dt-guide>`
 ``flash0`` alias that refers to an entry with the following bindings as a compatible:
 
-* :dtcompatible:`ambiq,mspi-device`, `mspi-atxp032`
+* :dtcompatible:`ambiq,mspi-device`, :dtcompatible:`mspi-atxp032`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mspi/mspi_flash

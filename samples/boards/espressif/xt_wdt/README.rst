@@ -36,7 +36,7 @@ to pins XTAL_32K_P and XTAL_32K_N.
    west flash
 
 If using another supported Espressif board, replace the argument in the above
-command with a proper board name (e.g., `esp32s2_saola`).
+command with a proper board name (e.g., ``esp32s2_saola``).
 
 Sample Output
 =============

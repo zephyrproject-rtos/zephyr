@@ -14,7 +14,7 @@ Building and Running
 ********************
 
 Note that this sample requires a board with an auxiliary display setup. A
-sample overlay is provided for the `nucleo_f746zg` board fly-wired to a Hitachi
+sample overlay is provided for the ``nucleo_f746zg`` board fly-wired to a Hitachi
 HD44780-compatible 20 character by 4 line display. See the overlay file
 :zephyr_file:`samples/drivers/auxdisplay/boards/nucleo_f746zg.overlay` for
 wiring configuration.
@@ -26,4 +26,4 @@ wiring configuration.
    :goals: build flash
    :compact:
 
-If successful, the display will show `Hello World from <board>`.
+If successful, the display will show "Hello World from <board>".

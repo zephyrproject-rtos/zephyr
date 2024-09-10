@@ -18,7 +18,7 @@ Building and Running
 The application will build only for a target that has a :ref:`devicetree <dt-guide>`
 ``dev0`` alias that refers to an entry with the following bindings as a compatible:
 
-* :dtcompatible:`ambiq,mspi-device`, `mspi-aps6404l`
+* :dtcompatible:`ambiq,mspi-device`, :dtcompatible:`mspi-aps6404l`
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/mspi/mspi_async

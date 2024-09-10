@@ -52,7 +52,7 @@ In summary:
 
 Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
 the Zephyr build system can pull in the source code from the repository.
-:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+:ref:`West projects <west-manifests-projects>` are entries in the ``projects:``
 section in the :file:`west.yml` manifest file.
 West projects are often also modules, but not always. There are west projects
 that are not included in the final firmware image (eg. tools) and thus do not
@@ -545,7 +545,7 @@ The ``sysbuild-cmake: <cmake-directory>`` part specifies that
 use.
 
 Here is an example :file:`module.yml` file referring to
-:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the ``sysbuild`` directory of
 the module:
 
 .. code-block:: yaml
@@ -592,7 +592,7 @@ be monitored for your module. The supported formats are:
        - <an-other-module-related-cpe>
        - <module-related-purl>
 
-A real life example for `mbedTLS` module could look like this:
+A real life example for ``mbedTLS`` module could look like this:
 
 .. code-block:: yaml
 
