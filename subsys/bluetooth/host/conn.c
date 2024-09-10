@@ -1764,23 +1764,20 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
+	/* Data length should be automatically updated to the maximum by the
+	 * controller. Not updating it is a quirk and this is the workaround.
+	 */
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (bt_drv_quirk_no_auto_dle()) {
-			uint16_t tx_octets, tx_time;
+	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	    bt_drv_quirk_no_auto_dle()) {
+		uint16_t tx_octets, tx_time;
 
-			err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
-			if (!err) {
-				err = bt_le_set_data_len(conn,
-						tx_octets, tx_time);
-				if (err) {
-					LOG_ERR("Failed to set data len (%d)", err);
-				}
+		err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
+		if (!err) {
+			err = bt_le_set_data_len(conn, tx_octets, tx_time);
+			if (err) {
+				LOG_ERR("Failed to set data len (%d)", err);
 			}
-		} else {
-			/* No need to auto-initiate DLE procedure.
-			 * It is done by the controller.
-			 */
 		}
 	}
 
