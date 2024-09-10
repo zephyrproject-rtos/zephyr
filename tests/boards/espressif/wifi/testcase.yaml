@@ -1,0 +1,36 @@
+tests:
+  esp.wifi.sec.none:
+    tags: wifi
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp8684_devkitm
+  esp.wifi.sec.wpa2:
+    tags: wifi
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
+      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp8684_devkitm
+  esp.wifi.sec.wpa3:
+    tags: wifi
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA3=y
+      - CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4=y
+    platform_allow:
+      - esp32_devkitc_wrover/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitm/esp32s3/procpu
+      - esp32c3_devkitm
+      - esp8684_devkitm

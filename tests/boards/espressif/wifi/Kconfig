@@ -1,0 +1,74 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Wi-Fi Test"
+
+source "Kconfig.zephyr"
+
+config WIFI_TEST_ENABLE
+	bool "Enable Wi-Fi test"
+	default y
+	select WIFI
+	select WIFI_USE_NATIVE_NETWORKING
+
+config WIFI_TEST_SSID
+	string "Wi-Fi Test SSID"
+	default "TestSSID"
+	help
+	  This option sets the SSID of the Wi-Fi network for testing.
+	  It allows you to specify the Wi-Fi SSID that the device will
+	  use during test scenarios.
+
+config WIFI_TEST_PSK
+	string "Wi-Fi Test PSK"
+	default "TestPSK"
+	help
+	  This option sets the Pre-Shared Key (PSK) for the Wi-Fi network
+	  during test scenarios. The device will use this password to authenticate
+	  with the specified test SSID.
+
+config WIFI_TEST_AUTH_MODE_WPA2
+	bool "WPA2 Security"
+	help
+	  Option to use WPA2 Security for Wi-Fi connections.
+
+config WIFI_TEST_AUTH_MODE_WPA3
+	bool "WPA3 Security"
+	select ESP_WIFI_ENABLE_WPA3_SAE
+	help
+	  Option to use WPA3 Security for Wi-Fi connections.
+
+config WIFI_CONNECT_ATTEMPTS
+	int "Wi-Fi Connect Attempts"
+	default 5
+	help
+	  Number of attempts when connecting to a Wi-Fi network.
+	  If connection is not successful after all attempts, test will fail.
+
+config WIFI_SCAN_TIMEOUT
+	int "Wi-Fi Scan Timeout (in seconds)"
+	default 30
+	help
+	  Timeout duration for Wi-Fi scanning.
+	  If scan doesn't complete within this time, test will fail.
+
+config WIFI_CONNECT_TIMEOUT
+	int "Wi-Fi Connect Timeout (in seconds)"
+	default 60
+	help
+	  Timeout duration for connecting to Wi-Fi network.
+	  If connection is not established within this time, test will fail.
+
+config WIFI_DISCONNECT_TIMEOUT
+	int "Wi-Fi Disconnect Timeout (in seconds)"
+	default 5
+	help
+	  Timeout duration for disconnecting from Wi-Fi network.
+	  If disconnect doesn't complete within this time, test will fail.
+
+config WIFI_PING_TIMEOUT
+	int "Gateway Ping Timeout (in seconds)"
+	default 10
+	help
+	  Timeout duration for pinging the network gateway.
+	  If no reply is received within this time, test will fail.
