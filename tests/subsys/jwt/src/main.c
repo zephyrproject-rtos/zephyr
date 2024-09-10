@@ -23,10 +23,6 @@
 #include <zephyr/data/json.h>
 #include <zephyr/data/jwt.h>
 
-#include <mbedtls/pk.h>
-#include <mbedtls/rsa.h>
-#include <mbedtls/sha256.h>
-
 extern unsigned char jwt_test_private_der[];
 extern unsigned int jwt_test_private_der_len;
 
