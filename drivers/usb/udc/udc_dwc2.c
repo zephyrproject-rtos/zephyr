@@ -473,10 +473,13 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 	}
 
 	if (is_iso) {
+		/* Queue transfer on next SOF. TODO: allow stack to explicitly
+		 * specify on which (micro-)frame the data should be sent.
+		 */
 		if (priv->sof_num & 1) {
-			diepctl |= USB_DWC2_DEPCTL_SETODDFR;
-		} else {
 			diepctl |= USB_DWC2_DEPCTL_SETEVENFR;
+		} else {
+			diepctl |= USB_DWC2_DEPCTL_SETODDFR;
 		}
 	}
 
