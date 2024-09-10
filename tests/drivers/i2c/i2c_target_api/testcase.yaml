@@ -17,6 +17,7 @@ tests:
       - stm32f072b_disco
       - stm32f3_disco
       - stm32h573i_dk
+      - stm32u083c_dk
       - nucleo_g071rb
       - nucleo_f207zg
       - nucleo_f401re
@@ -24,6 +25,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_u083rc
       - nucleo_wb55rg
       - rpi_pico
       - sltb010a@0
