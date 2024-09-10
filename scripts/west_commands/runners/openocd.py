@@ -7,11 +7,8 @@
 '''Runner for openocd.'''
 
 import re
-import selectors
-import shutil
 import socket
 import subprocess
-import sys
 import time
 
 from os import path
@@ -454,37 +451,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             # the port is open now.
             self.logger.info("Opening RTT")
             time.sleep(0.1) # Give the server a moment to output log messages first
-            self._run_rtt_client()
+            self.run_telnet_client('localhost', self.rtt_port)
         except Exception as e:
             self.logger.error(e)
         finally:
             server_proc.terminate()
             server_proc.wait()
-
-    def _run_rtt_client(self):
-        # If a `nc` command is available, run it, as it will provide the best support for
-        # CONFIG_SHELL_VT100_COMMANDS etc.
-        if shutil.which('nc') is not None:
-            client_cmd = ['nc', 'localhost', str(self.rtt_port)]
-            self.run_client(client_cmd)
-            return
-
-        # Otherwise, use a pure python implementation. This will work well for logging,
-        # but input is line based only.
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(('localhost', self.rtt_port))
-        sel = selectors.DefaultSelector()
-        sel.register(sys.stdin, selectors.EVENT_READ)
-        sel.register(sock, selectors.EVENT_READ)
-        while True:
-            events = sel.select()
-            for key, _ in events:
-                if key.fileobj == sys.stdin:
-                    text = sys.stdin.readline()
-                    if text:
-                        sock.send(text.encode())
-
-                elif key.fileobj == sock:
-                    resp = sock.recv(2048)
-                    if resp:
-                        print(resp.decode())
