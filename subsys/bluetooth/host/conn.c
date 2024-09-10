@@ -1660,16 +1660,17 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
 /* We don't want the application to get a PHY update callback upon connection
  * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
  * in this scenario.
+ *
+ * It is ifdef'd because the struct fields don't exist in some configs.
  */
-static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
+static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
 		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
 			return true;
@@ -1677,7 +1678,7 @@ static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
 	}
 #else
 	ARG_UNUSED(conn);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif
 
 	return false;
 }
@@ -1728,7 +1729,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    !skip_auto_phy_update_on_conn_establishment(conn)) {
+	    !uses_symmetric_2mbit_phy(conn)) {
 		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_CODED_ANY);
