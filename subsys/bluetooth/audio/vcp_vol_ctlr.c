@@ -61,13 +61,13 @@ static void vcp_vol_ctlr_state_changed(struct bt_vcp_vol_ctlr *vol_ctlr, int err
 	}
 }
 
-static void vcp_vol_ctlr_flags_changed(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
+static void vcp_vol_ctlr_vol_flags_changed(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
 	struct bt_vcp_vol_ctlr_cb *listener, *next;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&vcp_vol_ctlr_cbs, listener, next, _node) {
 		if (listener->flags) {
-			listener->flags(vol_ctlr, err, err == 0 ? vol_ctlr->flags : 0);
+			listener->flags(vol_ctlr, err, err == 0 ? vol_ctlr->vol_flags : 0);
 		}
 	}
 }
@@ -117,11 +117,10 @@ static uint8_t vcp_vol_ctlr_notify_handler(struct bt_conn *conn,
 			vol_ctlr->state.volume, vol_ctlr->state.mute,
 			vol_ctlr->state.change_counter);
 		vcp_vol_ctlr_state_changed(vol_ctlr, 0);
-	} else if (handle == vol_ctlr->flag_handle &&
-		   length == sizeof(vol_ctlr->flags)) {
-		memcpy(&vol_ctlr->flags, data, length);
-		LOG_DBG("Flags %u", vol_ctlr->flags);
-		vcp_vol_ctlr_flags_changed(vol_ctlr, 0);
+	} else if (handle == vol_ctlr->vol_flag_handle && length == sizeof(vol_ctlr->vol_flags)) {
+		memcpy(&vol_ctlr->vol_flags, data, length);
+		LOG_DBG("Volume Flags %u", vol_ctlr->vol_flags);
+		vcp_vol_ctlr_vol_flags_changed(vol_ctlr, 0);
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -157,9 +156,9 @@ static uint8_t vcp_vol_ctlr_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 	return BT_GATT_ITER_STOP;
 }
 
-static uint8_t vcp_vol_ctlr_read_flag_cb(struct bt_conn *conn, uint8_t err,
-				       struct bt_gatt_read_params *params,
-				       const void *data, uint16_t length)
+static uint8_t vcp_vol_ctlr_read_vol_flag_cb(struct bt_conn *conn, uint8_t err,
+					     struct bt_gatt_read_params *params, const void *data,
+					     uint16_t length)
 {
 	int cb_err = err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
@@ -169,17 +168,17 @@ static uint8_t vcp_vol_ctlr_read_flag_cb(struct bt_conn *conn, uint8_t err,
 	if (cb_err) {
 		LOG_DBG("err: %d", cb_err);
 	} else if (data != NULL) {
-		if (length == sizeof(vol_ctlr->flags)) {
-			memcpy(&vol_ctlr->flags, data, length);
-			LOG_DBG("Flags %u", vol_ctlr->flags);
+		if (length == sizeof(vol_ctlr->vol_flags)) {
+			memcpy(&vol_ctlr->vol_flags, data, length);
+			LOG_DBG("Volume Flags %u", vol_ctlr->vol_flags);
 		} else {
-			LOG_DBG("Invalid length %u (expected %zu)",
-				length, sizeof(vol_ctlr->flags));
+			LOG_DBG("Invalid length %u (expected %zu)", length,
+				sizeof(vol_ctlr->vol_flags));
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
-	vcp_vol_ctlr_flags_changed(vol_ctlr, cb_err);
+	vcp_vol_ctlr_vol_flags_changed(vol_ctlr, cb_err);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -471,10 +470,10 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 			LOG_DBG("Control Point");
 			vol_ctlr->control_handle = chrc->value_handle;
 		} else if (bt_uuid_cmp(chrc->uuid, BT_UUID_VCS_FLAGS) == 0) {
-			LOG_DBG("Flags");
-			vol_ctlr->flag_handle = chrc->value_handle;
-			sub_params = &vol_ctlr->flag_sub_params;
-			sub_params->disc_params = &vol_ctlr->flag_sub_disc_params;
+			LOG_DBG("Volume Flags");
+			vol_ctlr->vol_flag_handle = chrc->value_handle;
+			sub_params = &vol_ctlr->vol_flag_sub_params;
+			sub_params->disc_params = &vol_ctlr->vol_flag_sub_disc_params;
 		}
 
 		if (sub_params != NULL) {
@@ -839,12 +838,12 @@ static void vcp_vol_ctlr_vocs_set_offset_cb(struct bt_vocs *inst, int err)
 static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	memset(&vol_ctlr->state, 0, sizeof(vol_ctlr->state));
-	vol_ctlr->flags = 0;
+	vol_ctlr->vol_flags = 0;
 	vol_ctlr->start_handle = 0;
 	vol_ctlr->end_handle = 0;
 	vol_ctlr->state_handle = 0;
 	vol_ctlr->control_handle = 0;
-	vol_ctlr->flag_handle = 0;
+	vol_ctlr->vol_flag_handle = 0;
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	vol_ctlr->vocs_inst_cnt = 0;
 #endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
@@ -1127,16 +1126,16 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr)
 		return -EINVAL;
 	}
 
-	if (vol_ctlr->flag_handle == 0) {
+	if (vol_ctlr->vol_flag_handle == 0) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	} else if (vol_ctlr->busy) {
 		return -EBUSY;
 	}
 
-	vol_ctlr->read_params.func = vcp_vol_ctlr_read_flag_cb;
+	vol_ctlr->read_params.func = vcp_vol_ctlr_read_vol_flag_cb;
 	vol_ctlr->read_params.handle_count = 1;
-	vol_ctlr->read_params.single.handle = vol_ctlr->flag_handle;
+	vol_ctlr->read_params.single.handle = vol_ctlr->vol_flag_handle;
 	vol_ctlr->read_params.single.offset = 0U;
 
 	err = bt_gatt_read(vol_ctlr->conn, &vol_ctlr->read_params);
