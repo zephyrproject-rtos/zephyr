@@ -11,6 +11,7 @@
 
 #include "settings.h"
 #include "brg_cfg.h"
+#include "foundation.h"
 
 #define TEST_VECT_SZ (CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX + 1)
 
@@ -36,7 +37,6 @@ static void setup(void *f)
 		test_vector[i].net_idx2 = (i/8) + 16;
 		test_vector[i].addr2 = ADDR2_BASE + i;
 	}
-
 }
 
 /**** Mocked functions ****/
@@ -60,10 +60,17 @@ int settings_delete(const char *name)
 	return 0;
 }
 
+struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx)
+{
+	/* Return anything non-zero. */
+	return (struct bt_mesh_subnet *) 1;
+}
+
 /**** Mocked functions - end ****/
 
 static void check_fill_all_bt_entries(void)
 {
+	uint8_t status;
 	int err;
 
 	for (int i = 0; i < TEST_VECT_SZ; i++) {
@@ -74,18 +81,23 @@ static void check_fill_all_bt_entries(void)
 		}
 
 		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[i].net_idx1,
-			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2);
+			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2,
+			&status);
+
+		zassert_equal(err, 0);
 
 		if (i != CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
-			zassert_equal(err, 0);
+			zassert_equal(status, STATUS_SUCCESS);
 		} else {
-			zassert_equal(err, -ENOMEM);
+			zassert_equal(status, STATUS_INSUFF_RESOURCES);
 		}
 	}
 }
 
 static void check_delete_all_bt_entries(void)
 {
+	uint8_t status;
+
 	for (int i = 0; i < TEST_VECT_SZ; i++) {
 
 		if (i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
@@ -95,9 +107,10 @@ static void check_delete_all_bt_entries(void)
 
 		int err = bt_mesh_brg_cfg_tbl_remove(test_vector[i].net_idx1,
 				test_vector[i].net_idx2, test_vector[i].addr1,
-				test_vector[i].addr2);
+				test_vector[i].addr2, &status);
 
 		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
 	}
 }
 
@@ -132,6 +145,7 @@ ZTEST(bt_mesh_brg_cfg, test_basic_functionality_storage)
 	check_bt_mesh_brg_cfg_tbl_reset();
 	check_fill_all_bt_entries();
 
+	uint8_t status;
 	int err;
 	uint16_t net_idx1 = test_vector[TEST_VECT_SZ - 1].net_idx1;
 	uint16_t net_idx2 = test_vector[TEST_VECT_SZ - 1].net_idx2;
@@ -140,27 +154,27 @@ ZTEST(bt_mesh_brg_cfg, test_basic_functionality_storage)
 	/* Try removing entries with invalid params */
 	uint16_t addr2 = BT_MESH_ADDR_ALL_NODES;
 
-	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2, &status);
 	zassert_equal(err, -EINVAL);
 
 	addr2 = BT_MESH_ADDR_UNASSIGNED;
 	addr1 = BT_MESH_ADDR_RELAYS;
-	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2, &status);
 	zassert_equal(err, -EINVAL);
 
 	addr1 = BT_MESH_ADDR_UNASSIGNED;
 	net_idx1 = 4096;
-	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2, &status);
 	zassert_equal(err, -EINVAL);
 
 	net_idx1 = test_vector[TEST_VECT_SZ - 1].net_idx1;
 	net_idx2 = 4096;
-	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2, &status);
 	zassert_equal(err, -EINVAL);
 
 	/* Test remove entries matching netkey1, and netkey2 */
 	net_idx2 = test_vector[TEST_VECT_SZ - 1].net_idx2;
-	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2);
+	err = bt_mesh_brg_cfg_tbl_remove(net_idx1, net_idx2, addr1, addr2, &status);
 	zassert_equal(err, 0);
 
 	const struct bt_mesh_brg_cfg_row *brg_tbl;
@@ -255,6 +269,7 @@ ZTEST(bt_mesh_brg_cfg, test_brg_cfg_en)
 /* Test if pending store works correctly by adding one entry to the table. */
 ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 {
+	uint8_t status;
 	int n, err;
 	struct bt_mesh_brg_cfg_row test_vec = {
 		.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
@@ -268,8 +283,9 @@ ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 				BT_MESH_SETTINGS_BRG_PENDING);
 	err = bt_mesh_brg_cfg_tbl_add(test_vec.direction, test_vec.net_idx1,
-		test_vec.net_idx2, test_vec.addr1, test_vec.addr2);
+		test_vec.net_idx2, test_vec.addr1, test_vec.addr2, &status);
 	zassert_equal(err, 0);
+	zassert_equal(status, STATUS_SUCCESS);
 
 	const struct bt_mesh_brg_cfg_row *tbl;
 
@@ -285,6 +301,7 @@ ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 /* Test if invalid entries are not added to the table. */
 ZTEST(bt_mesh_brg_cfg, test_tbl_add_invalid_ip)
 {
+	uint8_t status;
 	int err;
 	/* Create test vector array of test_brg_cfg_row iteams with invalid values.
 	 * Each vector has only one invalid field value, rest all are valid values.
@@ -337,7 +354,8 @@ ZTEST(bt_mesh_brg_cfg, test_tbl_add_invalid_ip)
 	for (int i = 0; i < ARRAY_SIZE(inv_test_vector); i++) {
 		err = bt_mesh_brg_cfg_tbl_add(inv_test_vector[i].direction,
 					inv_test_vector[i].net_idx1, inv_test_vector[i].net_idx2,
-					inv_test_vector[i].addr1, inv_test_vector[i].addr2);
+					inv_test_vector[i].addr1, inv_test_vector[i].addr2,
+					&status);
 		zassert_equal(err, -EINVAL, "Test vector index: %zu", i);
 	}
 }
@@ -362,27 +380,32 @@ static void print_brg_tbl(void)
 
 static void check_fill_all_bt_entries_reversed(void)
 {
+	uint8_t status;
 	int err;
 
 	for (int i = TEST_VECT_SZ - 2; i >= 0 ; i--) {
 		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 				BT_MESH_SETTINGS_BRG_PENDING);
 		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[i].net_idx1,
-			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2);
+			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2,
+			&status);
 		zassert_equal(err, 0);
 	}
 
 	int last = TEST_VECT_SZ - 1;
 
 	err = bt_mesh_brg_cfg_tbl_add(test_vector[last].direction, test_vector[last].net_idx1,
-	test_vector[last].net_idx2, test_vector[last].addr1, test_vector[last].addr2);
-	zassert_equal(err, -ENOMEM);
+				      test_vector[last].net_idx2, test_vector[last].addr1,
+				      test_vector[last].addr2, &status);
+	zassert_equal(err, 0);
+	zassert_equal(status, STATUS_INSUFF_RESOURCES);
 }
 
 static struct test_brg_cfg_row test_vector_copy[TEST_VECT_SZ - 1];
 
 static void check_fill_all_bt_entries_randomly(void)
 {
+	uint8_t status;
 	int err;
 	int copy_cnt = ARRAY_SIZE(test_vector_copy);
 
@@ -401,15 +424,18 @@ static void check_fill_all_bt_entries_randomly(void)
 				BT_MESH_SETTINGS_BRG_PENDING);
 		err = bt_mesh_brg_cfg_tbl_add(test_vector_copy[i].direction,
 			test_vector_copy[i].net_idx1, test_vector_copy[i].net_idx2,
-			test_vector_copy[i].addr1, test_vector_copy[i].addr2);
+			test_vector_copy[i].addr1, test_vector_copy[i].addr2, &status);
 		zassert_equal(err, 0);
+		zassert_equal(status, STATUS_SUCCESS);
 	}
 
 	int last = TEST_VECT_SZ - 1;
 
 	err = bt_mesh_brg_cfg_tbl_add(test_vector[last].direction, test_vector[last].net_idx1,
-		test_vector[last].net_idx2, test_vector[last].addr1, test_vector[last].addr2);
-	zassert_equal(err, -ENOMEM);
+		test_vector[last].net_idx2, test_vector[last].addr1, test_vector[last].addr2,
+		&status);
+	zassert_equal(err, 0);
+	zassert_equal(status, STATUS_INSUFF_RESOURCES);
 }
 
 static void subnet_relay_cb_check(uint16_t new_net_idx, void *user_data)
