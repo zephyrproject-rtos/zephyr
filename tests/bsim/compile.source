@@ -42,6 +42,10 @@ function _compile(){
   local map_file_name=${exe_name}.Tsymbols
 
   local this_dir=${WORK_DIR}/${app}/${exe_basename}
+  local app_absolute=$(realpath "${app_root}/${app}")
+  if [[ "${app_absolute}" != "${app_root}"* ]]; then
+    this_dir=${WORK_DIR}/${app_absolute}/${exe_basename}
+  fi
 
   local modules_arg="${ZEPHYR_MODULES:+-DZEPHYR_MODULES=${ZEPHYR_MODULES}}"
 
