@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
 
-#define BUF_ALLOC_TIMEOUT (10) /* milliseconds */
+#define BUF_ALLOC_TIMEOUT (20) /* milliseconds */
 #define BIG_TERMINATE_TIMEOUT_US (60 * USEC_PER_SEC) /* microseconds */
 #define BIG_SDU_INTERVAL_US (10000)
 
