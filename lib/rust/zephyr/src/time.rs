@@ -1,23 +1,28 @@
 // Copyright (c) 2024 Linaro LTD
 // SPDX-License-Identifier: Apache-2.0
 
-//! Time types similar to `std::time` types.
+//! Time types designed for Zephyr, inspired by `std::time`.
 //!
-//! However, the rust-embedded world tends to use `fugit` for time.  This has a Duration and
-//! Instant type, but they are parameterized by the slice used, and try hard to do the conversion
-//! at compile time.
+//! In `std`, there are two primary time types: `Duration`, representing a span of time, and
+//! `Instant`, representing a specific point in time. Both have nanosecond precision, which is
+//! well-suited to more powerful machines. However, on embedded systems like Zephyr, this precision
+//! can lead to performance issues, often requiring divisions whenever timeouts are used.
 //!
-//! std has two time types, a Duration which represents an elapsed amount of time, and Instant,
-//! which represents a specific instance in time.
+//! In the Rust embedded ecosystem, the `fugit` crate is commonly used for handling time. It
+//! provides both `Duration` and `Instant` types, but with parameters that allow the representation
+//! to match the time slice used, enabling compile-time conversion and storing time directly as
+//! tick counts.
 //!
-//! Zephyr typically coordinates time in terms of a system tick interval, which comes from
-//! `sys_clock_hw_cycles_per_sec()`.
+//! Zephyr manages time in terms of system tick intervals, derived from
+//! `sys_clock_hw_cycles_per_sec()`.  This model aligns well with `fugit`, especially when the
+//! types are properly parameterized.
 //!
-//! The Rust/std semantics require Instant to be monotonically increasing.
+//! It's important to note that Rust’s `std::Instant` requires time to be monotonically increasing.
 //!
-//! Zephyr's `sys/time_units.h` header contains numerous optimized macros for manipulating time in
-//! these units, specifically for converting between human time units and ticks, trying to avoid
-//! division, especially division by non-constants.
+//! Zephyr’s `sys/time_units.h` provides a variety of optimized macros for manipulating time
+//! values, converting between human-readable units and ticks, and minimizing divisions (especially
+//! by non-constant values).  Similarly, the `fugit` crate offers constructors that aim to result
+//! in constants when possible, avoiding costly division operations.
 
 use zephyr_sys::k_timeout_t;
 
