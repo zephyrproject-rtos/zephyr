@@ -91,7 +91,12 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
+	uint16_t token;
 	int ret;
+
+	token = scmi_transport_channel_get_token(proto->transport, proto->tx);
+	msg->hdr |= FIELD_PREP(SCMI_MSG_TOKEN_ID_MASK, token);
+	reply->hdr = msg->hdr;
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
@@ -120,6 +125,7 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 					 struct scmi_message *msg,
 					 struct scmi_message *reply)
 {
+	uint16_t token;
 	int ret = 0;
 
 	if (!proto->tx) {
@@ -132,6 +138,10 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 		LOG_ERR("failed to acquire chan lock");
 		return ret;
 	}
+
+	token = scmi_transport_channel_get_token(proto->transport, proto->tx);
+	msg->hdr |= FIELD_PREP(SCMI_MSG_TOKEN_ID_MASK, token);
+	reply->hdr = msg->hdr;
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {

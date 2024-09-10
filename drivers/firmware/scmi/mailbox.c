@@ -64,6 +64,12 @@ static bool scmi_mbox_channel_is_free(const struct device *transport,
 		SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
 }
 
+static uint16_t scmi_mbox_channel_get_token(const struct device *transport,
+					    struct scmi_channel *chan)
+{
+	return 0;
+}
+
 static int scmi_mbox_setup_chan(const struct device *transport,
 				struct scmi_channel *chan,
 				bool tx)
@@ -108,6 +114,7 @@ static struct scmi_transport_api scmi_mbox_api = {
 	.send_message = scmi_mbox_send_message,
 	.read_message = scmi_mbox_read_message,
 	.channel_is_free = scmi_mbox_channel_is_free,
+	.channel_get_token = scmi_mbox_channel_get_token,
 };
 
 DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,
