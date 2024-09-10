@@ -25,4 +25,20 @@
 			slew-rate = "fast";
 		};
 	};
+	pinmux_tpm1: pinmux_tpm1 {
+		group0 {
+			pinmux = <TPM1_CH0_PTA12>,
+				<TPM1_CH1_PTA13>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+	pinmux_tpm2: pinmux_tpm2 {
+		group0 {
+			pinmux = <TPM2_CH0_PTB18>,
+				<TPM2_CH1_PTB19>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };
