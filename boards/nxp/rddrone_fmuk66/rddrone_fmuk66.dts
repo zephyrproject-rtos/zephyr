@@ -307,13 +307,8 @@ zephyr_udc0: &usbotg {
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
-	/*
-	 * This board does not have a BME280, it has a BMP280.
-	 * The two parts are incredibly similar, so the BME280 driver works for
-	 * BMP280 as well.
-	 */
-	bme280@76 {
-		compatible = "bosch,bme280";
+	bmp280@76 {
+		compatible = "bosch,bme280", "bosch,bmp280";
 		status = "okay";
 		reg = <0x76>;
 	};
