@@ -68,6 +68,8 @@ The ``frdm_mcxc242`` board target supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 
 Targets available
