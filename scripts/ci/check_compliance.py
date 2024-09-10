@@ -1495,6 +1495,50 @@ class YAMLLint(ComplianceTest):
                                       p.line, col=p.column, desc=p.desc)
 
 
+class SphinxLint(ComplianceTest):
+    """
+    SphinxLint
+    """
+
+    name = "SphinxLint"
+    doc = "Check documentation with SphinxLint."
+    path_hint = "<git-top>"
+
+    def run(self):
+        for file in get_files():
+            print(f"SphinxLint: {file}")
+            if not file.endswith(".rst"):
+                continue
+
+            try:
+                subprocess.run(
+                    f"sphinx-lint --disable horizontal-tab --enable line-too-long --max-line-length 100 {file}",
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    shell=True,
+                    cwd=GIT_TOP,
+                )
+
+            except subprocess.CalledProcessError as ex:
+                for line in ex.output.decode("utf-8").splitlines():
+                    match = re.match(r"^(.*):(\d+): (.*)$", line)
+
+                    print(match.groups())
+
+                    if match:
+                        self.fmtd_failure(
+                            "error",
+                            "SphinxLint",
+                            match.group(1),
+                            int(match.group(2)),
+                            desc=match.group(3),
+                        )
+                    else:
+                        print("no match", line)
+                        self.failure(line)
+
+
 class KeepSorted(ComplianceTest):
     """
     Check for blocks of code or config that should be kept sorted.
