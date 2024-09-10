@@ -24,7 +24,9 @@
 //! by non-constant values).  Similarly, the `fugit` crate offers constructors that aim to result
 //! in constants when possible, avoiding costly division operations.
 
-use zephyr_sys::k_timeout_t;
+use zephyr_sys::{k_timeout_t, k_ticks_t};
+
+use core::fmt::Debug;
 
 // The system ticks, is mostly a constant, but there are some boards that use a dynamic tick
 // frequency, and thus need to read this at runtime.
@@ -70,14 +72,20 @@ pub struct Timeout(pub k_timeout_t);
 // From allows methods to take a time of various types and convert it into a Zephyr timeout.
 impl From<Duration> for Timeout {
     fn from(value: Duration) -> Timeout {
-        Timeout(k_timeout_t { ticks: value.ticks() as i64 })
+        let ticks: k_ticks_t = checked_cast(value.ticks());
+        debug_assert_ne!(ticks, crate::sys::K_FOREVER.ticks);
+        debug_assert_ne!(ticks, crate::sys::K_NO_WAIT.ticks);
+        Timeout(k_timeout_t { ticks })
     }
 }
 
 #[cfg(CONFIG_TIMEOUT_64BIT)]
 impl From<Instant> for Timeout {
     fn from(value: Instant) -> Timeout {
-        Timeout(k_timeout_t { ticks: -1 - 1 - (value.ticks() as i64) })
+        let ticks: k_ticks_t = checked_cast(value.ticks());
+        debug_assert_ne!(ticks, crate::sys::K_FOREVER.ticks);
+        debug_assert_ne!(ticks, crate::sys::K_NO_WAIT.ticks);
+        Timeout(k_timeout_t { ticks: -1 - 1 - ticks })
     }
 }
 
@@ -109,4 +117,19 @@ pub fn sleep<T>(timeout: T) -> Duration
     let timeout: Timeout = timeout.into();
     let rest = unsafe { crate::raw::k_sleep(timeout.0) };
     Duration::millis(rest as Tick)
+}
+
+/// Convert from the Tick time type, which is unsigned, to the `k_ticks_t` type. When debug
+/// assertions are enabled, it will panic on overflow.
+fn checked_cast<I, O>(tick: I) -> O
+where
+    I: TryInto<O>,
+    I::Error: Debug,
+    O: Default,
+{
+    if cfg!(debug_assertions) {
+        tick.try_into().expect("Overflow in time conversion")
+    } else {
+        tick.try_into().unwrap_or(O::default())
+    }
 }
