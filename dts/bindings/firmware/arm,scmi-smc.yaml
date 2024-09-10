@@ -1,0 +1,30 @@
+# Copyright (c) 2024 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: SMC based System Control and Management Interface (SCMI)
+
+compatible: "arm,scmi-smc"
+
+include: base.yaml
+
+bus: scmi
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  arm,smc-id:
+    required: true
+    type: int
+    description:
+      SMC id required when using smc or hvc transports
+
+  shmem:
+    required: true
+    description: phandles to the shared memory region used for data transmission
+    type: phandles
