@@ -25,4 +25,9 @@ config FLASH_RA_WRITE_PROTECT
 	  Enables flash extended operation to enable/disable flash write
 	  protection from external devices
 
+config DUAL_BANK_MODE
+	bool "Dual bank mode"
+	help
+	  Enable dual bank mode
+
 endif # RA_FLASH_HP

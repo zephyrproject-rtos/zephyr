@@ -19,9 +19,3 @@ config SOC_SERIES
 
 config SOC
 	default "r7fa8m1ahecbd" if SOC_R7FA8M1AHECBD
-
-config DUAL_BANK_MODE
-	bool "Dual bank mode"
-	default n
-	help
-	  Enable dual bank mode
