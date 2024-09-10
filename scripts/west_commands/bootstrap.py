@@ -39,26 +39,28 @@ class color:
 
 
 _ARCH_MAPPING = {
-    'x86_64': 'amd64',
-    'aarch64': 'arm64',
+    "x86_64": "amd64",
+    "aarch64": "arm64",
 }
+
 
 def _get_global_defitions() -> Dict[str, str]:
     defs = {}
     current_os = platform.system()
-    if current_os == 'Windows':
-        defs['os'] = 'windows'
-    elif current_os == 'Darwin':
-        defs['os'] = 'mac'
-    elif current_os == 'Linux':
-        defs['os'] = 'linux'
+    if current_os == "Windows":
+        defs["os"] = "windows"
+    elif current_os == "Darwin":
+        defs["os"] = "mac"
+    elif current_os == "Linux":
+        defs["os"] = "linux"
     else:
         raise RuntimeError("Unknown OS: " + current_os)
-    
+
     arch = platform.machine()
-    defs['arch'] = _ARCH_MAPPING.get(arch, arch)
-    defs['platform'] = f"{defs['os']}-{defs['arch']}"
+    defs["arch"] = _ARCH_MAPPING.get(arch, arch)
+    defs["platform"] = f"{defs['os']}-{defs['arch']}"
     return defs
+
 
 _GLOBAL_DEFINITIONS: Dict[str, str] = _get_global_defitions()
 
@@ -158,25 +160,28 @@ def _check_packages_installed(bin_requirements: List[str]) -> None:
 
     if system == "Linux":
         command = ["apt-get", "install", "--dry-run"] + bin_requirements
+
         def verifier(process: subprocess.CompletedProcess) -> bool | None:
             for line in process.stdout.splitlines():
                 matches = re.match(
-                    pattern=r'(\d+) upgraded, (\d+) newly installed, .*',
+                    pattern=r"(\d+) upgraded, (\d+) newly installed, .*",
                     string=line.strip(),
                 )
                 if not matches:
                     continue
                 return matches.group(1) == "0" and matches.group(2) == "0"
             return None
+
     elif system == "Darwin":
         command = ["brew", "list"]
+
         def verifier(process: subprocess.CompletedProcess) -> bool | None:
             installed_packages: Set[str] = set(process.stdout.splitlines())
             return all(package in installed_packages for package in bin_requirements)
-            
+
     else:
         command = []
-    
+
     if command:
         process = subprocess.run(
             command,
@@ -193,7 +198,7 @@ def _check_packages_installed(bin_requirements: List[str]) -> None:
     elif status is True:
         log.inf("  * OK")
         return
-    
+
     log.wrn("Binary dependencies are missing.")
     log.wrn("Install them with the following command:")
     if system == "Linux":
@@ -368,32 +373,33 @@ class Bootstrap(WestCommand):
             print(f"  $ {str(self.venv_path / 'Scripts' / 'activate.bat')}")
 
     def _check_bin_requirement(
-            self,
-            url: str,
-            local_defs: Dict[str, str],
+        self,
+        url: str,
+        local_defs: Dict[str, str],
     ) -> None:
-        url = self._replace_variables(input_str=url, defs=local_defs)
+        url = Bootstrap._replace_variables(input_str=url, defs=local_defs)
         print("URL: " + url)
 
     @staticmethod
     def _replace_variables(input_str: str, defs: Dict[str, str]) -> str:
-        placeholders = re.findall(r"\$\{(.*?)\}", input_str)
-        missing_keys = [key for key in placeholders if key not in defs]
-        if missing_keys:
-            raise KeyError(f"Missing keys in '{input_str}': {', '.join(missing_keys)}")
-        
-        for key in placeholders:
+        while True:
+            placeholders = re.findall(r"\$\{(.*?)\}", input_str)
+            if not placeholders:
+                return input_str
+
+            missing_keys = [key for key in placeholders if key not in defs]
+            if missing_keys:
+                raise KeyError(
+                    f"Missing keys in '{input_str}': {', '.join(missing_keys)}"
+                )
+
+            key = placeholders[0]
             input_str = re.sub(r"\$\{" + key + r"\}", defs[key], input_str)
 
-        return input_str.format(**defs)
-
-    def _check_bin_requirements(
-            self,
-            global_defs: Dict[str, str]
-    ) -> None:
+    def _check_bin_requirements(self, global_defs: Dict[str, str]) -> None:
         for name, value in self.manifest.venv.bin_requirements.items():
             local_defs = global_defs.copy()
-            local_defs.update(value.get('definitions', {}))
+            local_defs.update(value.get("definitions", {}))
             local_defs.update(_GLOBAL_DEFINITIONS)
             url_map: Dict[str, str] = value["urls"]
 
@@ -406,24 +412,26 @@ class Bootstrap(WestCommand):
 
             matching_url_keys: List[str] = []
             for key in url_map.keys():
-                pattern = self._replace_variables(
-                    input_str=key,
-                    defs=local_defs
-                ).replace('*', '.*')
-                
+                pattern = Bootstrap._replace_variables(
+                    input_str=key, defs=local_defs
+                ).replace("*", ".*")
+
                 print("Search pattern: " + pattern)
-                match = re.match(pattern=pattern, string=_GLOBAL_DEFINITIONS["platform"])
+                match = re.match(
+                    pattern=pattern, string=_GLOBAL_DEFINITIONS["platform"]
+                )
                 if match:
                     matching_url_keys.append(key)
-            
+
             if len(matching_url_keys) == 0:
                 raise RuntimeError("Failed to find platform URL")
             if len(matching_url_keys) > 1:
-                raise RuntimeError("Multiple url keys matched: " + str(matching_url_keys))
-            
+                raise RuntimeError(
+                    "Multiple url keys matched: " + str(matching_url_keys)
+                )
+
             self._check_bin_requirement(
-                url=url_map[matching_url_keys[0]],
-                local_defs=local_defs
+                url=url_map[matching_url_keys[0]], local_defs=local_defs
             )
 
     def _install_python_deps(
