@@ -14,3 +14,27 @@ config ARM_SCMI_PINCTRL_HELPERS
 	depends on DT_HAS_ARM_SCMI_PINCTRL_ENABLED
 	help
 	  Enable support for SCMI pinctrl protocol helper functions.
+
+config ARM_SCMI_BASE_HELPERS
+	bool "Helper functions for SCMI base protocol"
+	default y
+	help
+	  Enable support for SCMI base protocol helper functions.
+
+config ARM_SCMI_BASE_EXT_REV
+	bool "Select to report ARM SCMI base protocol extended revision"
+	depends on ARM_SCMI_BASE_HELPERS
+	default n
+	help
+	  Enable report of ARM SCMI base extended revision information at boot time.
+
+config ARM_SCMI_BASE_AGENT_HELPERS
+	bool "Helper functions for SCMI base protocol agents management"
+	depends on ARM_SCMI_BASE_EXT_REV
+	default n
+	help
+	  Enable support for SCMI base protocol agents management helper functions.
+	  It enables support for SCMI base protocol messages:
+	  - BASE_DISCOVER_AGENT
+	  - BASE_SET_DEVICE_PERMISSIONS
+	  - BASE_RESET_AGENT_CONFIGURATION

@@ -222,3 +222,54 @@ int scmi_core_transport_init(const struct device *transport)
 
 	return scmi_core_protocol_setup(transport);
 }
+
+#define SCMI_MSG_PROTOCOL_VERSION 0x0
+
+/**
+ * @brief Response for a message SCMI_PROTOCOL_VERSION
+ *
+ * Protocol versioning uses a 32-bit unsigned integer, where
+ * - the upper 16 bits are the major revision;
+ * - the lower 16 bits are the minor revision.
+ *
+ */
+struct scmi_msg_prot_version_p2a {
+	union {
+		uint32_t version;
+		struct {
+			uint16_t minor;
+			uint16_t major;
+		} ver;
+	};
+} __packed;
+
+int scmi_core_get_version(struct scmi_protocol *proto, struct scmi_protocol_version *ver)
+{
+	struct scmi_msg_prot_version_p2a rx;
+	struct scmi_message msg, reply;
+	int ret;
+
+	if (!proto || !ver) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_PROTOCOL_VERSION,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = 0;
+	msg.content = NULL;
+
+	reply.len = sizeof(rx);
+	reply.content = &rx;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		LOG_ERR("proto:%u get version failed (%d)", proto->id, ret);
+		return ret;
+	}
+
+	LOG_DBG("proto:%u version 0x%08x", proto->id, rx.version);
+	ver->major = rx.ver.major;
+	ver->minor = rx.ver.minor;
+
+	return 0;
+}
