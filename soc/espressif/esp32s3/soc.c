@@ -145,18 +145,6 @@ void IRAM_ATTR __esp_platform_start(void)
 	 */
 	esp_config_data_cache_mode();
 
-	esp_mspi_pin_init();
-
-	spi_flash_init_chip_state();
-
-	mspi_timing_flash_tuning();
-
-	esp_mmu_map_init();
-
-#if CONFIG_ESP_SPIRAM
-	esp_init_psram();
-#endif /* CONFIG_ESP_SPIRAM */
-
 	/* Apply SoC patches */
 	esp_errata();
 
@@ -174,14 +162,23 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_timer_early_init();
 
+	esp_mspi_pin_init();
+
+	esp_flash_app_init();
+
+	mspi_timing_flash_tuning();
+
+	esp_mmu_map_init();
+
+#if CONFIG_ESP_SPIRAM
+	esp_init_psram();
+#endif /* CONFIG_ESP_SPIRAM */
+
 #if CONFIG_SOC_ENABLE_APPCPU
 	/* start the ESP32S3 APP CPU */
 	esp_start_appcpu();
 #endif
 
-#if CONFIG_SOC_FLASH_ESP32
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
 #endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
