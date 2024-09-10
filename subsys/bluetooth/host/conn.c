@@ -439,9 +439,9 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags
 	bt_l2cap_recv(conn, buf, true);
 }
 
+#if defined(CONFIG_BT_CONN_TX)
 static void wait_for_tx_work(struct bt_conn *conn)
 {
-#if defined(CONFIG_BT_CONN_TX)
 	LOG_DBG("conn %p", conn);
 
 	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS) ||
@@ -457,21 +457,11 @@ static void wait_for_tx_work(struct bt_conn *conn)
 		k_work_flush(&conn->tx_complete_work, &sync);
 	}
 	LOG_DBG("done");
-#else
-	ARG_UNUSED(conn);
-#endif	/* CONFIG_BT_CONN_TX */
 }
+#endif	/* CONFIG_BT_CONN_TX */
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
-	/* Make sure we notify any pending TX callbacks before processing
-	 * new data for this connection.
-	 *
-	 * Always do so from the same context for sanity. In this case that will
-	 * be the system workqueue.
-	 */
-	wait_for_tx_work(conn);
-
 	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
 	if (IS_ENABLED(CONFIG_BT_ISO_RX) && conn->type == BT_CONN_TYPE_ISO) {
