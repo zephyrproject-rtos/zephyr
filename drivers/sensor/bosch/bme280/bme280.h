@@ -193,8 +193,6 @@ struct bme280_data {
 	/* Carryover between temperature and pressure/humidity compensation. */
 	int32_t t_fine;
 
-	uint8_t chip_id;
-
 	struct bme280_reading reading;
 };
 

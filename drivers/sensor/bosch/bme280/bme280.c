@@ -33,6 +33,13 @@ LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define BME280_MEASUREMENT_TIMEOUT_MS 150
 
+#ifdef CONFIG_BME280_BMP280
+#define EXPECTED_CHIP_ID BMP280_CHIP_ID_MP
+#else
+#define EXPECTED_CHIP_ID BME280_CHIP_ID
+#define BME280_ONLY
+#endif
+
 struct bme280_config {
 	union bme280_bus bus;
 	const struct bme280_bus_io *bus_io;
@@ -105,6 +112,7 @@ static uint32_t bme280_compensate_press(struct bme280_data *data, int32_t adc_pr
 	return (uint32_t)p;
 }
 
+#ifdef BME280_ONLY
 static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 				       int32_t adc_humidity)
 {
@@ -122,6 +130,7 @@ static uint32_t bme280_compensate_humidity(struct bme280_data *data,
 
 	return (uint32_t)(h >> 12);
 }
+#endif
 
 static int bme280_wait_until_ready(const struct device *dev, k_timeout_t timeout)
 {
@@ -152,9 +161,8 @@ int bme280_sample_fetch_helper(const struct device *dev,
 			       enum sensor_channel chan, struct bme280_reading *reading)
 {
 	struct bme280_data *dev_data = dev->data;
+	int32_t adc_press, adc_temp;
 	uint8_t buf[8];
-	int32_t adc_press, adc_temp, adc_humidity;
-	int size = 6;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -180,10 +188,11 @@ int bme280_sample_fetch_helper(const struct device *dev,
 		return ret;
 	}
 
-	if (dev_data->chip_id == BME280_CHIP_ID) {
-		size = 8;
-	}
-	ret = bme280_reg_read(dev, BME280_REG_PRESS_MSB, buf, size);
+#ifdef BME280_ONLY
+	ret = bme280_reg_read(dev, BME280_REG_PRESS_MSB, buf, sizeof(buf));
+#else
+	ret = bme280_reg_read(dev, BME280_REG_PRESS_MSB, buf, 6);
+#endif
 	if (ret < 0) {
 		return ret;
 	}
@@ -194,10 +203,12 @@ int bme280_sample_fetch_helper(const struct device *dev,
 	reading->comp_temp = bme280_compensate_temp(dev_data, adc_temp);
 	reading->comp_press = bme280_compensate_press(dev_data, adc_press);
 
-	if (dev_data->chip_id == BME280_CHIP_ID) {
-		adc_humidity = (buf[6] << 8) | buf[7];
-		reading->comp_humidity = bme280_compensate_humidity(dev_data, adc_humidity);
-	}
+#ifdef BME280_ONLY
+	int32_t adc_humidity;
+
+	adc_humidity = (buf[6] << 8) | buf[7];
+	reading->comp_humidity = bme280_compensate_humidity(dev_data, adc_humidity);
+#endif
 
 	return 0;
 }
@@ -234,11 +245,8 @@ static int bme280_channel_get(const struct device *dev,
 		val->val2 = (data->reading.comp_press >> 8) % 1000 * 1000U +
 			(((data->reading.comp_press & 0xff) * 1000U) >> 8);
 		break;
+#ifdef BME280_ONLY
 	case SENSOR_CHAN_HUMIDITY:
-		/* The BMP280 doesn't have a humidity sensor */
-		if (data->chip_id != BME280_CHIP_ID) {
-			return -ENOTSUP;
-		}
 		/*
 		 * comp_humidity has 22 integer bits and 10
 		 * fractional.  Output value of 47445 represents
@@ -247,6 +255,7 @@ static int bme280_channel_get(const struct device *dev,
 		val->val1 = (data->reading.comp_humidity >> 10);
 		val->val2 = (((data->reading.comp_humidity & 0x3ff) * 1000U * 1000U) >> 10);
 		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -267,7 +276,6 @@ static int bme280_read_compensation(const struct device *dev)
 {
 	struct bme280_data *data = dev->data;
 	uint16_t buf[12];
-	uint8_t hbuf[7];
 	int err = 0;
 
 	err = bme280_reg_read(dev, BME280_REG_COMP_START,
@@ -292,33 +300,35 @@ static int bme280_read_compensation(const struct device *dev)
 	data->dig_p8 = sys_le16_to_cpu(buf[10]);
 	data->dig_p9 = sys_le16_to_cpu(buf[11]);
 
-	if (data->chip_id == BME280_CHIP_ID) {
-		err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART1,
-				      &data->dig_h1, 1);
-		if (err < 0) {
-			LOG_DBG("HUM_COMP_PART1 read failed: %d", err);
-			return err;
-		}
+#ifdef BME280_ONLY
+	uint8_t hbuf[7];
 
-		err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART2, hbuf, 7);
-		if (err < 0) {
-			LOG_DBG("HUM_COMP_PART2 read failed: %d", err);
-			return err;
-		}
-
-		data->dig_h2 = (hbuf[1] << 8) | hbuf[0];
-		data->dig_h3 = hbuf[2];
-		data->dig_h4 = (hbuf[3] << 4) | (hbuf[4] & 0x0F);
-		data->dig_h5 = ((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4);
-		data->dig_h6 = hbuf[6];
+	err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART1,
+				&data->dig_h1, 1);
+	if (err < 0) {
+		LOG_DBG("HUM_COMP_PART1 read failed: %d", err);
+		return err;
 	}
+
+	err = bme280_reg_read(dev, BME280_REG_HUM_COMP_PART2, hbuf, 7);
+	if (err < 0) {
+		LOG_DBG("HUM_COMP_PART2 read failed: %d", err);
+		return err;
+	}
+
+	data->dig_h2 = (hbuf[1] << 8) | hbuf[0];
+	data->dig_h3 = hbuf[2];
+	data->dig_h4 = (hbuf[3] << 4) | (hbuf[4] & 0x0F);
+	data->dig_h5 = ((hbuf[4] >> 4) & 0x0F) | (hbuf[5] << 4);
+	data->dig_h6 = hbuf[6];
+#endif
 
 	return 0;
 }
 
 static int bme280_chip_init(const struct device *dev)
 {
-	struct bme280_data *data = dev->data;
+	uint8_t chip_id;
 	int err;
 
 	err = bme280_bus_check(dev);
@@ -327,19 +337,13 @@ static int bme280_chip_init(const struct device *dev)
 		return err;
 	}
 
-	err = bme280_reg_read(dev, BME280_REG_ID, &data->chip_id, 1);
+	err = bme280_reg_read(dev, BME280_REG_ID, &chip_id, 1);
 	if (err < 0) {
 		LOG_DBG("ID read failed: %d", err);
 		return err;
 	}
-
-	if (data->chip_id == BME280_CHIP_ID) {
-		LOG_DBG("ID OK");
-	} else if (data->chip_id == BMP280_CHIP_ID_MP ||
-		   data->chip_id == BMP280_CHIP_ID_SAMPLE_1) {
-		LOG_DBG("ID OK (BMP280)");
-	} else {
-		LOG_DBG("bad chip id 0x%x", data->chip_id);
+	if (chip_id != EXPECTED_CHIP_ID) {
+		LOG_DBG("bad chip id 0x%x", chip_id);
 		return -ENOTSUP;
 	}
 
@@ -359,14 +363,14 @@ static int bme280_chip_init(const struct device *dev)
 		return err;
 	}
 
-	if (data->chip_id == BME280_CHIP_ID) {
-		err = bme280_reg_write(dev, BME280_REG_CTRL_HUM,
-				       BME280_HUMIDITY_OVER);
-		if (err < 0) {
-			LOG_DBG("CTRL_HUM write failed: %d", err);
-			return err;
-		}
+#ifdef BME280_ONLY
+	err = bme280_reg_write(dev, BME280_REG_CTRL_HUM,
+				BME280_HUMIDITY_OVER);
+	if (err < 0) {
+		LOG_DBG("CTRL_HUM write failed: %d", err);
+		return err;
 	}
+#endif
 
 	err = bme280_reg_write(dev, BME280_REG_CTRL_MEAS,
 			       BME280_CTRL_MEAS_VAL);

@@ -1,0 +1,8 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: BMP280 pressure sensor
+
+compatible: "bosch,bmp280"
+
+include: [sensor-device.yaml]
