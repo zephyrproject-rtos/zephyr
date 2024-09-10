@@ -8,7 +8,8 @@
 
 #include <am_mcu_apollo.h>
 
-static int arm_apollo4_init(void)
+extern void ambiq_power_init(void);
+void soc_early_init_hook(void)
 {
 
 	/* Initialize for low power in the power control block */
@@ -19,8 +20,7 @@ static int arm_apollo4_init(void)
 
 	/* Disable the RTC. */
 	am_hal_rtc_osc_disable();
-
-	return 0;
+#ifdef CONFIG_PM
+	ambiq_power_init();
+#endif
 }
-
-SYS_INIT(arm_apollo4_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
