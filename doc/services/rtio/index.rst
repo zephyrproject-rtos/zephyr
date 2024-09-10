@@ -224,7 +224,7 @@ I2C buses have a default implementation which allows apps to leverage the RTIO w
 vendors implement the submit function. With this queue, any I2C bus driver that does not implement
 the ``iodev_submit`` function will defer to a work item which will perform a blocking I2C
 transaction. To change the pool size, set a different value to
-:kconfig:option`CONFIG_RTIO_WORKQ_POOL_ITEMS`.
+:kconfig:option:`CONFIG_RTIO_WORKQ_POOL_ITEMS`.
 
 API Reference
 *************
