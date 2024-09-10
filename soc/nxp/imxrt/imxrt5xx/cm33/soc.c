@@ -511,16 +511,16 @@ void __weak imxrt_deinit_display_interface(void)
 
 #endif
 
+extern void rt5xx_power_init(void);
+
 /**
  *
  * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
-static int nxp_rt500_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize clocks with tool generated code */
 	rt5xx_clock_init();
@@ -536,8 +536,8 @@ static int nxp_rt500_init(void)
 	IOPCTL->PIO[1][15] = 0;
 	IOPCTL->PIO[3][28] = 0;
 	IOPCTL->PIO[3][29] = 0;
+#ifdef CONFIG_PM
+	rt5xx_power_init();
+#endif
 
-	return 0;
 }
-
-SYS_INIT(nxp_rt500_init, PRE_KERNEL_1, 0);

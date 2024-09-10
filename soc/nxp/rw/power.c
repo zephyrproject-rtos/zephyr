@@ -109,7 +109,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	__enable_irq();
 }
 
-static int nxp_rw6xx_power_init(void)
+void nxp_rw6xx_power_init(void)
 {
 	uint32_t suspend_sleepconfig[5] = DT_PROP_OR(NODE_ID, deep_sleep_config, {});
 
@@ -142,8 +142,4 @@ static int nxp_rw6xx_power_init(void)
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(pin1)), DT_IRQ(DT_NODELABEL(pin1), priority), pin1_isr,
 		    NULL, 0);
 #endif
-
-	return 0;
 }
-
-SYS_INIT(nxp_rw6xx_power_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -203,7 +203,7 @@ static void gpio_init(void)
 #endif
 }
 
-static int nxp_mimx8ml8_init(void)
+void soc_early_init_hook(void)
 {
 
 	/* SoC specific RDC settings */
@@ -213,8 +213,4 @@ static int nxp_mimx8ml8_init(void)
 	SOC_ClockInit();
 
 	gpio_init();
-
-	return 0;
 }
-
-SYS_INIT(nxp_mimx8ml8_init, PRE_KERNEL_1, 0);
