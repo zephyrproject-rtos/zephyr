@@ -745,8 +745,8 @@ privilege elevation stack must be allocated elsewhere.
 :c:macro:`Z_POW2_CEIL()`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
 
 For the privilege stacks, the :kconfig:option:`CONFIG_GEN_PRIV_STACKS` must be,
-enabled. For every thread stack found in the system, a corresponding fixed-
-size kernel stack used for handling system calls is generated. The address
+enabled. For every thread stack found in the system, a corresponding fixed-size
+kernel stack used for handling system calls is generated. The address
 of the privilege stacks can be looked up quickly at runtime based on the
 thread stack address using :c:func:`z_priv_stack_find()`. These stacks are
 laid out the same way as other kernel-only stacks.
