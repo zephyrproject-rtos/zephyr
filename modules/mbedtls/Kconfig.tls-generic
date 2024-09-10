@@ -590,17 +590,21 @@ config MBEDTLS_DHM_C
 	  DHE-RSA, DHE-PSK
 
 config MBEDTLS_X509_CRL_PARSE_C
-	bool "X509 CRL parsing"
+	bool "X.509 CRL parsing"
 	help
-	  Used by X509 CRL parsing
+	  Used by X.509 CRL parsing
 
 config MBEDTLS_X509_CSR_WRITE_C
-	bool "X509 Certificate Signing Requests writing"
+	bool "X.509 Certificate Signing Requests writing"
 	help
 	  For X.509 certificate request writing.
 
 config MBEDTLS_X509_CSR_PARSE_C
-	bool "X509 Certificate Signing Request parsing"
+	bool "X.509 Certificate Signing Request parsing"
 	help
 	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_WRITE_C
+	bool "X.509 certificate creation"
+
 endmenu
