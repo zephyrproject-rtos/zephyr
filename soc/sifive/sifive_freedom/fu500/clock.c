@@ -18,7 +18,7 @@ BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 2,
  * Switch the clock source to 1GHz PLL from 33.333MHz oscillator on the HiFive
  * Unleashed board.
  */
-static int fu540_clock_init(void)
+void soc_early_init_hook(void)
 {
 
 	PRCI_REG(PRCI_COREPLLCFG0) =
@@ -34,8 +34,4 @@ static int fu540_clock_init(void)
 
 	/* Switch clock to COREPLL */
 	PRCI_REG(PRCI_CORECLKSEL) = CORECLKSEL_CORECLKSEL(CORECLKSEL_CORE_PLL);
-
-	return 0;
 }
-
-SYS_INIT(fu540_clock_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
