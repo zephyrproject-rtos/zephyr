@@ -78,7 +78,7 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetSimConfig(&sim_config);
 }
 
-static int kv5x_init(void)
+void soc_early_init_hook(void)
 {
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
@@ -93,8 +93,6 @@ static int kv5x_init(void)
 
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -105,5 +103,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(kv5x_init, PRE_KERNEL_1, 0);

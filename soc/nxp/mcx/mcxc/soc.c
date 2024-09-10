@@ -107,10 +107,9 @@ static void clock_init(void)
 #endif
 }
 
-static int mcxc_init(void)
+void soc_early_init_hook(void)
 {
 	clock_init();
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -121,5 +120,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(mcxc_init, PRE_KERNEL_1, 0);

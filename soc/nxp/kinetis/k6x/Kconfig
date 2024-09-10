@@ -11,6 +11,7 @@ config SOC_SERIES_KINETIS_K6X
 	select HAS_MCUX_PIT
 	select CLOCK_CONTROL
 	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_MK64F12
 	select HAS_MCUX

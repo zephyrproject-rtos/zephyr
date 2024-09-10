@@ -13,3 +13,4 @@ config SOC_SERIES_KE1XZ
 	select HAS_MCUX
 	select HAS_PM
 	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
