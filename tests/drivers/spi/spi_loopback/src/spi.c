@@ -59,6 +59,9 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
 #define BUF3_SIZE 8192
+#define TX_BUF_SIZE 8
+BUILD_ASSERT(TX_BUF_SIZE < BUF_SIZE,
+	"Transmit buffer is expected to be smaller than the receive buffer");
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -449,10 +452,7 @@ static int spi_rx_every_4(struct spi_dt_spec *spec)
 
 static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 {
-	const uint32_t tx_buf_size = 8;
-
-	BUILD_ASSERT(tx_buf_size < BUF_SIZE,
-		"Transmit buffer is expected to be smaller than the receive buffer");
+	const uint32_t tx_buf_size = TX_BUF_SIZE;
 
 	const struct spi_buf tx_bufs[] = {
 		{
