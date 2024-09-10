@@ -7,6 +7,7 @@ toolchain:
 supported:
   - arduino_gpio
   - gpio
+  - i2c
   - usart
 ram: 12
 flash: 64

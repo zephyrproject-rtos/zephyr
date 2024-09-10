@@ -8,5 +8,6 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - i2c
 ram: 40
 flash: 256
