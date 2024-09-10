@@ -12,3 +12,4 @@ config SOC_SERIES_RA6M3
 	select FPU
 	select HAS_SWO
 	select XIP
+	select SOC_EARLY_INIT_HOOK
