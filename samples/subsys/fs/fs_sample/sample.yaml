@@ -58,6 +58,9 @@ tests:
   sample.filesystem.fat_fs.nrf54l15pdk:
     build_only: true
     platform_allow: nrf54l15pdk/nrf54l15/cpuapp
+  sample.filesystem.fat_fs.nrf54l15dk:
+    build_only: true
+    platform_allow: nrf54l15dk/nrf54l15/cpuapp
   sample.filesystem.fat_fs.nrf52840dk_nrf52840.qspi:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
