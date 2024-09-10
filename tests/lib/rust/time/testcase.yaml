@@ -1,0 +1,9 @@
+common:
+  filter: CONFIG_RUST_SUPPORTED
+tests:
+  test.rust.time:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "All tests passed"
