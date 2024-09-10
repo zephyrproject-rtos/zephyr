@@ -92,3 +92,56 @@ Base protocol
 
 	uart:~$ arm_scmi base device_permission 2 1 1
 	agent:2 device:1 permission set to allow
+
+Reset domain management protocol
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+	*** Booting Zephyr OS build v3.6.0-131-g07152a092eaa ***
+	ARM SCMI shell sample
+
+	uart:~$ arm_scmi reset
+	reset - SCMI Reset proto commands.
+	Subcommands:
+	  revision   : SCMI Reset proto show revision information
+	              Usage: arm_scmi reset revision
+
+	  list       : SCMI Reset domains list
+	              Usage: arm_scmi reset list
+
+	  info       : SCMI Reset domain show info
+	              Usage: arm_scmi reset info <domain_id>
+
+	  assert     : SCMI Reset domain assert
+	              Usage: arm_scmi reset assert <domain_id>
+
+	  deassert   : SCMI Reset domain de-assert
+	              Usage: arm_scmi reset deassert <domain_id>
+
+	  autoreset  : SCMI Reset domain Autonomous reset
+	              Usage: arm_scmi reset autoreset <domain_id>
+
+	ARM SCMI Reset protocol version 0x0001.0000 num_domains:4
+	uart:~$ arm_scmi reset list
+	domain_id,name,latency,attributes
+	0,swinit_pcie1,0x00000000,async=no,notify=no,latency=invalid
+	1,bridge_pcie1,0x00000000,async=no,notify=no,latency=invalid
+	2,swinit_pcie2,0x00000000,async=no,notify=no,latency=invalid
+	3,bridge_pcie2,0x00000000,async=no,notify=no,latency=invalid
+	uart:~$ arm_scmi reset info 1
+	ARM SCMI reset domain: 1
+	 name           : bridge_pcie1
+	 latency        : invalid
+	 async          : not supported
+	 notifications          : not supported
+	uart:~$ arm_scmi reset a
+	  assert     autoreset
+	uart:~$ arm_scmi reset assert 1
+	reset domain:1 assert done
+	uart:~$ arm_scmi reset deassert 1
+	reset domain:1 deassert done
+	uart:~$ arm_scmi reset autoreset 1
+	reset domain:1 toggle done
+	uart:~$ arm_scmi reset autoreset 4
+	reset domain:4 toggle failed (-22)

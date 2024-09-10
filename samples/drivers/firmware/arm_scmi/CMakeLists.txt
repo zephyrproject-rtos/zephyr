@@ -10,3 +10,7 @@ target_sources(app PRIVATE
 	src/main.c
 	src/shell.c
 )
+
+target_sources_ifdef(CONFIG_ARM_SCMI_RESET_HELPERS app PRIVATE
+	src/shell_reset.c
+)
