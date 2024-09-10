@@ -244,21 +244,6 @@
 	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR(node_id), data)
 
 /**
- * @brief Create an SCMI message field
- *
- * Data might not necessarily be encoded in the first
- * x bits of an SCMI message parameter/return value.
- * This comes in handy when building said parameters/
- * return values.
- *
- * @param x value to encode
- * @param mask value to perform bitwise-and with `x`
- * @param shift value to left-shift masked `x`
- */
-#define SCMI_FIELD_MAKE(x, mask, shift)\
-	(((uint32_t)(x) & (mask)) << (shift))
-
-/**
  * @brief SCMI protocol IDs
  *
  * Each SCMI protocol is identified by an ID. Each
