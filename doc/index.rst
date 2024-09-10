@@ -6,6 +6,11 @@
 Zephyr Project Documentation
 ############################
 
+:c:func`test`
+
+an unbalanced ``backtick`.
+
+a very long line  a very long line a very long line a very long line a very long line a very long line a very long line
 .. only:: release
 
    Welcome to the Zephyr Project's documentation for version |version|.
