@@ -149,11 +149,17 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 		goto out_release_mutex;
 	}
 
-	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to wait for msg reply");
-		goto out_release_mutex;
+	if (!scmi_transport_channel_is_polling(proto->transport, proto->tx)) {
+		/* only one protocol instance can wait for a message reply at a time */
+		ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to wait for msg reply");
+			goto out_release_mutex;
+		}
+	} else {
+		while (!scmi_transport_channel_is_free(proto->transport, proto->tx)) {
+			k_cpu_idle();
+		}
 	}
 
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);

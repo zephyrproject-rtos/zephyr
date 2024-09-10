@@ -30,7 +30,7 @@
 
 #ifdef CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
 
-#ifdef CONFIG_ARM_SCMI_MAILBOX_TRANSPORT
+#if defined(CONFIG_ARM_SCMI_MAILBOX_TRANSPORT) || defined(CONFIG_ARM_SCMI_SMC_TRANSPORT)
 /** @brief Check if a protocol node has an associated channel
  *
  * This macro, when applied to a protocol node, checks if
@@ -46,7 +46,7 @@
  */
 #define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx)\
 	DT_PROP_HAS_IDX(node_id, shmem, idx)
-#else /* CONFIG_ARM_SCMI_MAILBOX_TRANSPORT */
+#else /* CONFIG_ARM_SCMI_MAILBOX_TRANSPORT || CONFIG_ARM_SCMI_SMC_TRANSPORT */
 #error "Transport with static channels needs to define HAS_CHAN macro"
 #endif /* CONFIG_ARM_SCMI_MAILBOX_TRANSPORT */
 
