@@ -109,18 +109,6 @@ static uint8_t next_id;
 static struct smp_transport smp_bt_transport;
 static struct conn_param_data conn_data[CONFIG_BT_MAX_CONN];
 
-/* SMP service.
- * {8D53DC1D-1DB7-4CD3-868B-8A527460AA84}
- */
-static const struct bt_uuid_128 smp_bt_svc_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0x8d53dc1d, 0x1db7, 0x4cd3, 0x868b, 0x8a527460aa84));
-
-/* SMP characteristic; used for both requests and responses.
- * {DA2E7828-FBCE-4E01-AE9E-261174997C48}
- */
-static const struct bt_uuid_128 smp_bt_chr_uuid = BT_UUID_INIT_128(
-	BT_UUID_128_ENCODE(0xda2e7828, 0xfbce, 0x4e01, 0xae9e, 0x261174997c48));
-
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
 
@@ -375,8 +363,8 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 
 #define SMP_BT_ATTRS									\
-	BT_GATT_PRIMARY_SERVICE(&smp_bt_svc_uuid),					\
-	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,					\
+	BT_GATT_PRIMARY_SERVICE(SMP_BT_SVC_UUID),					\
+	BT_GATT_CHARACTERISTIC(SMP_BT_CHR_UUID,						\
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |			\
 			       BT_GATT_CHRC_NOTIFY,					\
 			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
