@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	firmware {
+		scmi {
+			compatible = "arm,scmi-smc";
+			arm,smc-id = <0x82000002>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			shmem = <&scmi_buf>;
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <1>;
+		ranges;
+
+		scmi_buf: scmi@3ff00000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x3ff00000 4096>;
+		};
+	};
+};
