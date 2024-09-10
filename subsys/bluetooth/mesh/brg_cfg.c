@@ -30,9 +30,7 @@ enum {
 	TABLE_UPDATED,
 	BRG_CFG_FLAGS_COUNT,
 };
-#if defined(CONFIG_BT_SETTINGS)
 static ATOMIC_DEFINE(brg_cfg_flags, BRG_CFG_FLAGS_COUNT);
-#endif
 
 static void brg_tbl_compact(void)
 {
@@ -48,7 +46,6 @@ static void brg_tbl_compact(void)
 	bt_mesh_brg_cfg_row_cnt--;
 }
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
 /* Set function for initializing bridging enable state from value stored in settings. */
 static int brg_en_set(const char *name, size_t len_rd, settings_read_cb read_cb, void *cb_arg)
 {
@@ -110,7 +107,6 @@ static int brg_tbl_set(const char *name, size_t len_rd, settings_read_cb read_cb
 
 /* Define a setting for storing briging table rows */
 BT_MESH_SETTINGS_DEFINE(brg_tbl, "brg_tbl", brg_tbl_set);
-#endif
 
 bool bt_mesh_brg_cfg_enable_get(void)
 {
@@ -124,16 +120,17 @@ int bt_mesh_brg_cfg_enable_set(bool enable)
 	}
 
 	brg_enabled = enable;
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
-	atomic_set_bit(brg_cfg_flags, STATE_UPDATED);
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
-#endif
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		atomic_set_bit(brg_cfg_flags, STATE_UPDATED);
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+	}
+
 	return 0;
 }
 
 void bt_mesh_brg_cfg_pending_store(void)
 {
-#if CONFIG_BT_SETTINGS
 	char *path_en = "bt/mesh/brg_en";
 	char *path_tbl = "bt/mesh/brg_tbl";
 	int err;
@@ -162,7 +159,6 @@ void bt_mesh_brg_cfg_pending_store(void)
 			LOG_ERR("Failed to store %s value", path_tbl);
 		}
 	}
-#endif
 }
 
 /* Remove the entry from the bridging table that corresponds with the NetKey Index of the removed
@@ -183,10 +179,10 @@ static void brg_tbl_netkey_removed_evt(struct bt_mesh_subnet *sub, enum bt_mesh_
 		}
 	}
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
-	atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
-#endif
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+	}
 }
 
 /* Add event hook for key deletion event */
@@ -203,7 +199,10 @@ int bt_mesh_brg_cfg_tbl_reset(void)
 	memset(brg_tbl, 0, sizeof(brg_tbl));
 	atomic_clear(brg_cfg_flags);
 
-#if CONFIG_BT_SETTINGS
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return 0;
+	}
+
 	err = settings_delete("bt/mesh/brg_en");
 
 	if (err) {
@@ -211,7 +210,6 @@ int bt_mesh_brg_cfg_tbl_reset(void)
 	}
 
 	err = settings_delete("bt/mesh/brg_tbl");
-#endif
 	return err;
 }
 
@@ -270,10 +268,10 @@ int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx
 	bt_mesh_brg_cfg_row_cnt++;
 
 store:
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
-	atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
-#endif
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
+	}
 
 	return 0;
 }
@@ -298,9 +296,8 @@ void bt_mesh_brg_cfg_tbl_foreach_subnet(uint16_t src, uint16_t dst, uint16_t net
 int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
 				uint16_t addr2)
 {
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
 	bool store = false;
-#endif
+
 	/* Sanity checks */
 	if ((!BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 != BT_MESH_ADDR_UNASSIGNED) ||
 	    addr2 == BT_MESH_ADDR_ALL_NODES) {
@@ -331,9 +328,7 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 			    (addr2 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr1 == addr1) ||
 			    (addr1 == BT_MESH_ADDR_UNASSIGNED && brg_tbl[i].addr2 == addr2)) {
 				memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
 				store = true;
-#endif
 			}
 		}
 	}
@@ -341,12 +336,10 @@ int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t ad
 	/* Compact when all rows have been deleted. */
 	brg_tbl_compact();
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS)
-	if (store) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
 		atomic_set_bit(brg_cfg_flags, TABLE_UPDATED);
 		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_BRG_PENDING);
 	}
-#endif
 
 	return 0;
 }
