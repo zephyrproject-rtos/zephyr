@@ -96,10 +96,11 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_config_data_cache_mode();
 	esp_rom_Cache_Enable_DCache(0);
 
-#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_timer_early_init();
+
 	esp_mspi_pin_init();
-	spi_flash_init_chip_state();
-#endif /* CONFIG_SOC_FLASH_ESP32 */
+
+	esp_flash_app_init();
 
 	esp_mmu_map_init();
 
@@ -107,16 +108,6 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_init_psram();
 #endif /* CONFIG_ESP_SPIRAM */
 
-	esp_timer_early_init();
-
-	/* Scheduler is not started at this point. Hence, guard functions
-	 * must be initialized after esp_spiram_init_cache which internally
-	 * uses guard functions. Setting guard functions before SPIRAM
-	 * cache initialization will result in a crash.
-	 */
-#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
 #endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();

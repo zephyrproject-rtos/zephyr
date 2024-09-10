@@ -13,6 +13,7 @@
 #include <xtensa/corebits.h>
 #include <esp_private/spi_flash_os.h>
 #include <esp_private/esp_mmu_map_private.h>
+#include <esp_flash_internal.h>
 #if CONFIG_ESP_SPIRAM
 #include "psram.h"
 #endif
@@ -141,25 +142,15 @@ void IRAM_ATTR __esp_platform_start(void)
 	esp_start_appcpu();
 #endif
 
-	esp_mmu_map_init();
-
-#ifdef CONFIG_SOC_FLASH_ESP32
 	esp_mspi_pin_init();
-	spi_flash_init_chip_state();
-#endif
+
+	esp_flash_app_init();
+
+	esp_mmu_map_init();
 
 #if CONFIG_ESP_SPIRAM
 	esp_init_psram();
 #endif /* CONFIG_ESP_SPIRAM */
-
-/* Scheduler is not started at this point. Hence, guard functions
- * must be initialized after esp_spiram_init_cache which internally
- * uses guard functions. Setting guard functions before SPIRAM
- * cache initialization will result in a crash.
- */
-#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
 
 #endif /* !CONFIG_MCUBOOT */
 
