@@ -81,6 +81,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_RC_CFG_VENDOR_SPECIFIC_REG1_LITTLE_ENDIAN                0x0
 
 #define PCIE_EXT_CFG_DATA 0x8000
+#define PCIE_EXT_CFG_INDEX 0x9000
 
 #define PCI_BASE_ADDRESS_0 0x10
 
@@ -125,6 +126,8 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define SET_ADDR_OFFSET 0x1f
 
 #define DMA_RANGES_IDX 3
+
+#define PCIE_ECAM_BDF_SHIFT 12
 
 struct pcie_brcmstb_config {
 	struct pcie_ctrl_config common;
@@ -173,14 +176,33 @@ static uint32_t encode_ibar_size(uint64_t size)
 	return 0;
 }
 
+static mm_reg_t pcie_brcmstb_map_bus(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
+{
+	struct pcie_brcmstb_data *data = dev->data;
+
+	sys_write32(bdf << PCIE_ECAM_BDF_SHIFT, data->cfg_addr + PCIE_EXT_CFG_INDEX);
+	return data->cfg_addr + PCIE_EXT_CFG_DATA + reg;
+}
+
 static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
-	return 0;
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
+	if (!conf_addr) {
+		return 0xffffffff;
+	}
+
+	return sys_read32(conf_addr);
 }
 
 void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
 			     uint32_t data)
 {
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
+	if (!conf_addr) {
+		return;
+	}
+
+	sys_write32(data, conf_addr);
 }
 
 bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bdf, bool mem, bool mem64,
