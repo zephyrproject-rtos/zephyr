@@ -9,7 +9,7 @@
 
 #include <gd32vf103.h>
 
-static int gigadevice_gd32v_soc_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t key;
 
@@ -19,8 +19,4 @@ static int gigadevice_gd32v_soc_init(void)
 	SystemInit();
 
 	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(gigadevice_gd32v_soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
