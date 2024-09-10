@@ -46,6 +46,14 @@ enum {
 	 * initial connection data length parameters are not equal to the
 	 * default data length parameters. Therefore the host should initiate
 	 * the DLE procedure after connection establishment.
+	 *
+	 * That requirement is stated in Core Spec v5.4 Vol 6 Part B. 4.5.10
+	 * Data PDU length management:
+	 *
+	 * > For a new connection:
+	 * > - ... If either value is not 27, then the Controller should
+	 * >   initiate the Data Length Update procedure at the earliest
+	 * >   practical opportunity.
 	 */
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
 };
