@@ -189,6 +189,13 @@ config BT_SUBRATING
 	  Enable support for LE Connection Subrating feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
 
+config BT_CHANNEL_SOUNDING
+	bool "Channel Sounding support"
+	select EXPERIMENTAL
+	depends on !BT_CTLR || BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	help
+	  Enable support for Bluetooth 6.0 Channel Sounding feature.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
