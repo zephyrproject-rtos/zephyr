@@ -62,12 +62,9 @@ static void am6x_mmr_unlock(void)
 	sys_write32(KICK1_UNLOCK_VAL, kickAddr);   /* KICK 1 */
 }
 
-static int am6x_m4_init(void)
+void soc_prep_hook(void)
 {
 	sys_mm_drv_ti_rat_init(am6x_region_config, ADDR_TRANSLATE_RAT_BASE_ADDR,
 		ARRAY_SIZE(am6x_region_config));
 	am6x_mmr_unlock();
-	return 0;
 }
-
-SYS_INIT(am6x_m4_init, EARLY, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
