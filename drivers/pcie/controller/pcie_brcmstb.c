@@ -125,25 +125,38 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define SET_ADDR_OFFSET 0x1f
 
-#define DMA_RANGES_IDX 3
+#define DMA_RANGES_IDX 2
 
 #define PCIE_ECAM_BDF_SHIFT 12
 
-struct pcie_brcmstb_config {
-	struct pcie_ctrl_config common;
-	size_t dma_ranges_count;
-	struct {
-		uint32_t flags;
-		uintptr_t child_addr;
-		uintptr_t parent_addr;
-		size_t size;
-	} dma_ranges[];
+// struct pcie_brcmstb_config {
+// 	struct pcie_ctrl_config common;
+// 	size_t dma_ranges_count;
+// 	struct {
+// 		uint32_t flags;
+// 		uintptr_t child_addr;
+// 		uintptr_t parent_addr;
+// 		size_t size;
+// 	} dma_ranges[];
+// };
+
+enum pcie_region_type {
+	PCIE_REGION_IO = 0,
+	PCIE_REGION_MEM,
+	PCIE_REGION_MEM64,
+	PCIE_REGION_MAX,
 };
 
 struct pcie_brcmstb_data {
 	uintptr_t cfg_phys_addr;
 	mm_reg_t cfg_addr;
 	size_t cfg_size;
+	struct {
+		uintptr_t phys_start;
+		uintptr_t bus_start;
+		size_t size;
+		size_t allocation_offset;
+	} regions[PCIE_REGION_MAX];
 };
 
 static inline uint32_t lower_32_bits(uint64_t val)
@@ -230,6 +243,54 @@ static struct pcie_ctrl_driver_api pcie_brcmstb_api = {
 	.region_get_allocate_base = pcie_brcmstb_region_get_allocate_base,
 	.region_translate = pcie_brcmstb_region_translate,
 };
+
+static int pcie_brcmstb_parse_regions(const struct device *dev)
+{
+	const struct pcie_ctrl_config *config = dev->config;
+	struct pcie_brcmstb_data *data = dev->data;
+	int i;
+
+	for (i = 0 ; i < config->ranges_count ; ++i) {
+		switch ((config->ranges[i].flags >> 24) & 0x03) {
+		case 0x01:
+			data->regions[PCIE_REGION_IO].bus_start = config->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_IO].phys_start = config->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_IO].size = config->ranges[i].map_length;
+			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
+			if (data->regions[PCIE_REGION_IO].bus_start < 0x1000) {
+				data->regions[PCIE_REGION_IO].allocation_offset = 0x1000;
+			}
+			break;
+		case 0x02:
+			data->regions[PCIE_REGION_MEM].bus_start = config->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_MEM].phys_start = config->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_MEM].size = config->ranges[i].map_length;
+			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
+			if (data->regions[PCIE_REGION_MEM].bus_start < 0x1000) {
+				data->regions[PCIE_REGION_MEM].allocation_offset = 0x1000;
+			}
+			break;
+		case 0x03:
+			data->regions[PCIE_REGION_MEM64].bus_start = config->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_MEM64].phys_start = config->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_MEM64].size = config->ranges[i].map_length;
+			/* Linux & U-Boot avoids allocating PCI resources from address 0 */
+			if (data->regions[PCIE_REGION_MEM64].bus_start < 0x1000) {
+				data->regions[PCIE_REGION_MEM64].allocation_offset = 0x1000;
+			}
+			break;
+		}
+	}
+
+	if (!data->regions[PCIE_REGION_IO].size &&
+	    !data->regions[PCIE_REGION_MEM].size &&
+	    !data->regions[PCIE_REGION_MEM64].size) {
+		LOG_ERR("No regions defined");
+		return -EINVAL;
+	}
+
+	return 0;
+}
 
 static mm_reg_t pcie_brcmstb_mdio_from_pkt(int port, int regad, int cmd)
 {
@@ -349,10 +410,15 @@ static int pcie_brcmstb_init(const struct device *dev)
 	const struct pcie_ctrl_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
 	uint32_t tmp;
+	int ret;
 
 	if (config->ranges_count < DMA_RANGES_IDX) {
 		/* Workaround since macros for `dma-ranges` property is not available */
 		return -EINVAL;
+	}
+
+	if ((ret = pcie_brcmstb_parse_regions(dev))) {
+		return ret;
 	}
 
 	data->cfg_phys_addr = config->cfg_addr;
@@ -379,6 +445,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 	/* Wait until the registers become accessible */
 	k_busy_wait(500000);
 
+	// TODO: allocate BARs dynamically
 	for (int i = 0; i < DMA_RANGES_IDX; i++) {
 		sys_write32(config->ranges[i].pcie_bus_addr,
 			    data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_BASE_ADDRESS_0 + 0x4 * i);
