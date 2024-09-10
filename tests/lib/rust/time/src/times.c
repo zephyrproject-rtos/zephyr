@@ -27,16 +27,15 @@ struct time_entry {
 };
 
 const struct time_entry time_entries[] = {
+	/* For the constants, only the `.value` gets used by the test. */
 	{
 		.name = "K_FOREVER",
 		.units = UNIT_FOREVER,
-		.uvalue = 0,
 		.value = K_FOREVER,
 	},
 	{
 		.name = "K_NO_WAIT",
 		.units = UNIT_NO_WAIT,
-		.uvalue = 0,
 		.value = K_NO_WAIT,
 	},
 #define DUR_TEST(unit, n) \
@@ -58,6 +57,9 @@ const struct time_entry time_entries[] = {
 	DUR_TEST(MSEC, 32767),
 	DUR_TEST(MSEC, 32768),
 	DUR_TEST(MSEC, 32769),
+	/* The Instance tests don't set the `.value` because it isn't constant, and the test code
+	 * will calculate the value at runtime, using the conversion functions below.
+	 */
 #define INST_TEST(unit, n) \
 	{ \
 		.name = "Instant " #unit " " #n, \
