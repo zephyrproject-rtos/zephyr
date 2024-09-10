@@ -118,6 +118,9 @@ config BT_CTLR_LE_PATH_LOSS_MONITORING_SUPPORT
 config BT_CTLR_SUBRATING_SUPPORT
 	bool
 
+config BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	bool
+
 config BT_CTLR
 	bool "Bluetooth Controller"
 	help
@@ -1068,6 +1071,15 @@ config BT_CTLR_SUBRATING
 	help
 	  Enable support for Bluetooth v5.3 LE Connection Subrating
 	  in the Controller.
+
+config BT_CTLR_CHANNEL_SOUNDING
+	bool "Channel Sounding support"
+	depends on BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	select BT_CTLR_SET_HOST_FEATURE
+	default y if BT_CHANNEL_SOUNDING
+	help
+	  Enable support for Bluetooth 6.0 Channel Sounding in the
+	  Controller.
 
 rsource "Kconfig.df"
 rsource "Kconfig.ll_sw_split"
