@@ -24,11 +24,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32g4_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I/D-cache and prefetch */
 	LL_FLASH_EnableInstCache();
@@ -51,7 +48,7 @@ static int stm32g4_init(void)
 	}
 
 #endif /* PWR_CR3_UCPD_DBDIS */
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(stm32g4_init, PRE_KERNEL_1, 0);
