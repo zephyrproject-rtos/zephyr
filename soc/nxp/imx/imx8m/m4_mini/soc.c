@@ -148,7 +148,7 @@ static void SOC_ClockInit(void)
 	CLOCK_EnableClock(kCLOCK_Sec_Debug);
 }
 
-static int nxp_mimx8mm6_init(void)
+void soc_early_init_hook(void)
 {
 
 	/* SoC specific RDC settings */
@@ -156,8 +156,4 @@ static int nxp_mimx8mm6_init(void)
 
 	/* SoC specific Clock settings */
 	SOC_ClockInit();
-
-	return 0;
 }
-
-SYS_INIT(nxp_mimx8mm6_init, PRE_KERNEL_1, 0);
