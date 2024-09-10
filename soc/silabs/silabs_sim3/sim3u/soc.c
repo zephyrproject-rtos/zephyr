@@ -108,7 +108,7 @@ __no_optimization static void busy_delay(uint32_t cycles)
 	}
 }
 
-static int silabs_sim3u_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t key;
 
@@ -130,8 +130,4 @@ static int silabs_sim3u_init(void)
 	vmon_init();
 
 	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(silabs_sim3u_init, PRE_KERNEL_1, 0);
