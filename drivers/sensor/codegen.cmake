@@ -8,7 +8,7 @@ list(TRANSFORM sensor_yaml_files PREPEND "${sensor_yaml_search_path}/")
 
 pw_sensor_library(zephyr_sensor.constants
   OUT_HEADER
-    zephyr/generated/sensor_constants.h
+    ${CMAKE_BINARY_DIR}/zephyr/generated/sensor_constants.h
   GENERATOR
     "${ZEPHYR_BASE}/scripts/sensors/gen_defines.py"
   GENERATOR_INCLUDES

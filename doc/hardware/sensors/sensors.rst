@@ -13,4 +13,3 @@ Sensor Database
 
 .. sensor-driver-list::
    :show-drivers:
-

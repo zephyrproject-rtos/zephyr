@@ -5,7 +5,9 @@ import os
 import subprocess
 from pathlib import Path
 from docutils import nodes
+from docutils.statemachine import ViewList
 from docutils.parsers.rst import directives
+from docutils.parsers.rst import roles
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 from sphinx.util import logging
@@ -55,8 +57,9 @@ def _get_filter_container_string(spec: pw_sensor.InputSpec) -> str:
   <h2>Filters</h2>
 """
     if channels:
-        html += '<h3>Supported Channels:</h3>\n'
+        html += "<h3>Supported Channels:</h3>\n"
         html += '  <div id="sensor-filter-channel-container">\n'
+        # TODO sort these and others
         for channel_id in channels:
             html += (
                 '  <button class="sensor-filter-button"'
@@ -72,7 +75,7 @@ def _get_filter_container_string(spec: pw_sensor.InputSpec) -> str:
             html += (
                 '  <button class="sensor-filter-button"'
                 + f' filter="{_sensor_attribute_filter_name(attribute_id)}">'
-                + f'{attribute_id.upper()}</button>\n'
+                + f"{attribute_id.upper()}</button>\n"
             )
         html += "  </div>\n"
 
@@ -83,7 +86,7 @@ def _get_filter_container_string(spec: pw_sensor.InputSpec) -> str:
             html += (
                 '  <button class="sensor-filter-button"'
                 + f' filter="{_sensor_trigger_filter_name(trigger_id)}">'
-                + f'{trigger_id.upper()}</button>\n'
+                + f"{trigger_id.upper()}</button>\n"
             )
         html += "  </div>\n"
 
@@ -94,7 +97,7 @@ def _get_filter_container_string(spec: pw_sensor.InputSpec) -> str:
             html += (
                 '  <button class="sensor-filter-button"'
                 + f' filter="{_sensor_bus_filter_name(bus_name)}">'
-                + f'{bus_name.upper()}</button>\n'
+                + f"{bus_name.upper()}</button>\n"
             )
         html += "  </div>\n"
 
@@ -123,9 +126,6 @@ function filterSensorDrivers() {
     const filterSpan = section.querySelector('.sensor-filter-data');
     const sectionFilters = filterSpan.textContent.trim().split(' ');
     const isVisible = activeFilters.every(filter => sectionFilters.includes(filter));
-    console.log("sectionFilters=" + sectionFilters);
-    console.log("activeFilters =" + activeFilters);
-    console.log("isVisible     =" + isVisible);
 
     section.style.display = isVisible ? 'block' : 'none';
   });
@@ -263,7 +263,14 @@ class SensorDriverListDirective(SphinxDirective):
                     _sensor_attribute_filter_name(attribute_spec.attribute)
                     for attribute_spec in sensor.attributes
                 ]
-                + [_sensor_bus_filter_name(bus_id) for bus_id in sensor.supported_buses]
+                + [
+                    _sensor_bus_filter_name(bus_id)
+                    for bus_id in sensor.supported_buses
+                ]
+                + [
+                    _sensor_trigger_filter_name(trigger_id)
+                    for trigger_id in sensor.triggers
+                ]
             )
             print("Filters: " + str(filters))
             filter_span = nodes.inline(
@@ -272,7 +279,30 @@ class SensorDriverListDirective(SphinxDirective):
             filter_span += nodes.Text(" ".join(filters))
             sensor_section += filter_span
             sensor_section.attributes["classes"].append("sensor-driver")
-            print("sensor_section: " + str(sensor_section))
+            
+            # Add list of supported channels, triggers, and attributes
+            channel_list = nodes.bullet_list()
+            sensor_section += channel_list
+
+            for channel_id in sensor.channels.keys():
+                list_item = nodes.list_item()
+                channel_list += list_item
+
+                anchor = nodes.make_id(f'sensor_chan_{channel_id}')
+                link = nodes.raw(
+                    '',
+                    f'<a href="channels.html#{anchor}">{channel_id.upper()}</a>',
+                    format='html',
+                )
+                list_item += link
+                # reference = nodes.reference(
+                #     internal=False,
+                #     refuri='channels.html#sensor_chan_' + channel_id
+                # )
+                # reference += nodes.paragraph(text=channel_id.upper())
+                # list_item += reference
+
+            # print("sensor_section: " + str(sensor_section))
             current_org_section += sensor_section
         return section
 
@@ -322,7 +352,7 @@ class SensorDriverListDirective(SphinxDirective):
             channel_section = self._create_section(
                 title=channel.name,
                 content=channel.description,
-                id_string_override=key,
+                id_string_override='sensor_chan_' + key,
             )
             section += channel_section
 

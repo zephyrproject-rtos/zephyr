@@ -11,6 +11,8 @@ supported-buses:
 channels:
   magn_xyz: []
   magn_x: []
+  magn_y: []
+  magn_z: []
 attributes:
   - attribute: "sampling_frequency"
     channel: "magn_xyz"

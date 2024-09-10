@@ -5,26 +5,42 @@ deps:
   - "drivers/sensor/units.yaml"
 compatible:
   org: "bosch"
-  part: "bma4xx"
+  part: "bmi160"
 supported-buses:
   - i2c
   - spi
 description: |
-  Sensor driver implementation for https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/bma422/
-  and bma423 (no product landing page).
+  Sensor driver implementation for https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi160/.
 channels:
   accel_x: []
   accel_y: []
   accel_z: []
   accel_xyz: []
+  gyro_x: []
+  gyro_y: []
+  gyro_z: []
+  gyro_xyz: []
   die_temp: []
 attributes:
   - attribute: "sampling_frequency"
     channel: "accel_xyz"
     units: "frequency"
+  - attribute: "sampling_frequency"
+    channel: "gyro_xyz"
+    units: "frequency"
   - attribute: "full_scale"
     channel: "accel_xyz"
     units: "acceleration"
+  - attribute: "full_scale"
+    channel: "gyro_xyz"
+    units: "angular_velocity"
   - attribute: "offset"
     channel: "accel_xyz"
     units: "acceleration"
+  - attribute: "offset"
+    channel: "gyro_xyz"
+    units: "angular_velocity"
+triggers:
+  - data_ready
+  - delta
+

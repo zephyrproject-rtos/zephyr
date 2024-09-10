@@ -28,6 +28,55 @@ manifest:
 
   group-filter: [-babblesim, -optional]
 
+  venv:
+    name: ".venv"
+    definitions:
+      cipd_url: "https://chrome-infra-packages.appspot.com/dl"
+    bin-requirements:
+      cmake:
+        definitions:
+          package: "infra/3pp/tools/cmake/${platform}"
+          version: "version:3@3.30.3.chromium.8"
+        urls:
+          "*": "${cipd_url}/${package}/+/${version}"
+
+
+      # Linux:
+      #   - cmake
+      #   - ninja-build
+      #   - gperf
+      #   - ccache
+      #   - dfu-util
+      #   - device-tree-compiler
+      #   - wget
+      #   - python3-dev
+      #   - python3-pip
+      #   - python3-setuptools
+      #   - python3-tk
+      #   - python3-wheel
+      #   - xz-utils
+      #   - file
+      #   - make
+      #   - gcc
+      #   - gcc-multilib
+      #   - g++-multilib
+      #   - libsdl2-dev
+      #   - libmagic1
+      # Darwin:
+      #   - cmake
+      #   - ninja
+      #   - gperf
+      #   - python3
+      #   - python-tk
+      #   - ccache
+      #   - qemu
+      #   - dtc
+      #   - libmagic
+      #   - wget openocd
+    py-requirements:
+      - pattern: "scripts/requirements.txt"
+        type: "requirements"
+
   #
   # Please add items below based on alphabetical order
   projects:

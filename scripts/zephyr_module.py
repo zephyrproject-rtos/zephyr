@@ -161,6 +161,23 @@ mapping:
          type: seq
          sequence:
             - type: str
+  venv:
+    required: false
+    type: map
+    mapping:
+      py-requirements:
+        required: false
+        type: seq
+        sequence:
+          - type: map
+            mapping:
+              pattern:
+                required: true
+                type: str
+              type:
+                required: true
+                type: str
+                enum: ['directory', 'constraint', 'module', 'requirements']
 '''
 
 MODULE_YML_PATH = PurePath('zephyr/module.yml')

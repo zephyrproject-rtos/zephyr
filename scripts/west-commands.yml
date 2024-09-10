@@ -10,6 +10,11 @@ west-commands:
       - name: boards
         class: Boards
         help: display information about supported boards
+  - file: scripts/west_commands/bootstrap.py
+    commands:
+      - name: bootstrap
+        class: Bootstrap
+        help: Bootstrap Zephyr environment
   - file: scripts/west_commands/shields.py
     commands:
       - name: shields

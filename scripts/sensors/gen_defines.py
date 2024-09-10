@@ -22,7 +22,7 @@ def main() -> None:
         )
 
     for sensor_id, sensor in definition["sensors"].items():
-        sensors.append(Sensor(item_id=sensor_id, spec=sensor))
+        sensors.append(Sensor(item_id=sensor_id, spec=sensor, trigger_map=definition["triggers"]))
 
     print(
         ZephyrHeader(
@@ -113,12 +113,13 @@ class Trigger(pw_gen.Trigger):
 
 
 class Sensor(pw_gen.Sensor):
-    def __init__(self, item_id: str, spec: dict) -> None:
+    def __init__(self, item_id: str, spec: dict, trigger_map: dict) -> None:
         super().__init__(
             item_id=item_id,
             definition=pw_gen.create_dataclass_from_dict(pw_gen.SensorSpec, spec),
         )
         self._spec = spec
+        self._trigger_map = trigger_map
 
     @property
     def compatible_str(self) -> str:
@@ -137,11 +138,12 @@ class Sensor(pw_gen.Sensor):
             prefix = f"{self.def_prefix}_CH_{str(chan_id).lower()}"
             writer.write(f"\n#define {prefix}_COUNT {len(chans)}")
             for i, chan in enumerate(chans):
+                description = chan['description'].strip().replace('\n', '\\n')
                 writer.write(
                     f"""
 #define {prefix}_{i}_EXISTS 1
 #define {prefix}_{i}_NAME "{chan['name']}"
-#define {prefix}_{i}_DESC "{chan['description']}"
+#define {prefix}_{i}_DESC "{description}"
 #define {prefix}_{i}_SPEC {{ \\
     .chan_type = SENSOR_CHAN_{str(chan_id).upper()}, \\
     .chan_idx = {i}, \\
@@ -155,12 +157,13 @@ class Sensor(pw_gen.Sensor):
 
     def _print_trigger_spec(self, writer: io.TextIOWrapper) -> None:
         for trig in self._spec["triggers"]:
-            prefix = f"{self.def_prefix}_TR{str(trig['name']).lower()}"
+            prefix = f"{self.def_prefix}_TR{str(trig).lower()}"
+            description = self._trigger_map[trig]['description'].strip().replace('\n', '\\n')
             writer.write(
                 f"""
 #define {prefix}_EXISTS 1
-#define {prefix}_NAME "{trig['name']}"
-#define {prefix}_DESC "{trig['description']}"""
+#define {prefix}_NAME "{self._trigger_map[trig]['name']}"
+#define {prefix}_DESC "{description}"""
                 + '"'
             )
 
