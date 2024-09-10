@@ -56,6 +56,15 @@ tests:
       SB_CONF_FILE=sysbuild/nrf54l15pdk_nrf54l15_cpuflpr.conf
       hello_world_SNIPPET=nordic-flpr
 
+  sample.sysbuild.hello_world.nrf54l15dk_nrf54l15_cpuflpr:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      SB_CONF_FILE=sysbuild/nrf54l15dk_nrf54l15_cpuflpr.conf
+      hello_world_SNIPPET=nordic-flpr
+
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp

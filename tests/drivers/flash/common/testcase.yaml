@@ -38,7 +38,7 @@ tests:
       - mimxrt1060_evk
   drivers.flash.common.no_explicit_erase:
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.flash.common.tfm_ns:
     build_only: true

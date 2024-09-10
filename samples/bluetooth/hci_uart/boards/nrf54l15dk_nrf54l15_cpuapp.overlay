@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&wdt31 {
+&uart20 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <1000000>;
 	status = "okay";
+	hw-flow-control;
 };
