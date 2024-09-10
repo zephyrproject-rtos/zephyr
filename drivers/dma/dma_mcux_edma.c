@@ -532,6 +532,17 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		ret = -EFAULT;
 	}
 
+	if (data->edma_handle.tcdPool == NULL) {
+		/* Not using scatter/gather mode:
+		 * The fsl_edma driver uses the eDMA DREQ bit to automatically
+		 * disable the hardware DMA request at the end of the major loop.
+		 * After submitting a new transer, re-enable the hardware
+		 * request
+		 */
+		EDMA_EnableChannelRequest(DEV_EDMA_HANDLE(dev, channel)->base,
+			channel);
+	}
+
 cleanup:
 	irq_unlock(key);
 	return ret;
