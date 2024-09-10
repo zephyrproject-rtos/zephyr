@@ -303,9 +303,16 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM4);
 #endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay)
-	/* Attach main clock to I3C, divider will be set in i3c_mcux.c */
+	/* Attach main clock to I3C */
 	CLOCK_AttachClk(kMAIN_CLK_to_I3C_CLK);
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+
+	CLOCK_SetClkDiv(kCLOCK_DivI3cClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_slow));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_tc));
 #endif
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(hs_spi1), nxp_lpc_spi, okay)
 	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM16);
