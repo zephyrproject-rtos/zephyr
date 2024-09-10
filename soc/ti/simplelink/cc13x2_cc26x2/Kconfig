@@ -14,6 +14,7 @@ config SOC_SERIES_CC13X2_CC26X2
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM
 	select HAS_POWEROFF
+	select SOC_EARLY_INIT_HOOK
 
 menu "Customer Configuration (CCFG)"
 depends on SOC_SERIES_CC13X2_CC26X2
