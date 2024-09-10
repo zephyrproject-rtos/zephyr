@@ -35,6 +35,9 @@ struct scmi_shmem_layout {
 	volatile uint32_t msg_hdr;
 };
 
+#define SCMI_SHMEM_RX_DATA_LEN(layout) ((layout)->len - sizeof((layout)->msg_hdr) - sizeof(int32_t))
+#define SCMI_SHMEM_RX_DATA_OFS(layout) (sizeof(*(layout)) + sizeof(int32_t))
+
 int scmi_shmem_get_channel_status(const struct device *dev, uint32_t *status)
 {
 	struct scmi_shmem_data *data;
@@ -84,7 +87,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
-	if (msg->len && msg->len < (layout->len - sizeof(layout->msg_hdr))) {
+	if (msg->len && msg->len < SCMI_SHMEM_RX_DATA_LEN(layout)) {
 		LOG_ERR("bad message len. max 0x%x, got 0x%x",
 			msg->len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
@@ -99,13 +102,13 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	}
 
 	msg->status = SCMI_SUCCESS;
-	len = layout->len - sizeof(layout->msg_hdr);
+	len = SCMI_SHMEM_RX_DATA_LEN(layout);
 	msg->len = MIN(msg->len, len);
 	msg->status = *(uint32_t *)((uint8_t *)data->regmap + sizeof(*layout));
 
 	if (msg->content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+				  data->regmap + SCMI_SHMEM_RX_DATA_OFS(layout), msg->len);
 	}
 
 	return 0;

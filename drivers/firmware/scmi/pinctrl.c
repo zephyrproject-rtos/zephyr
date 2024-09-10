@@ -13,7 +13,6 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 	struct scmi_protocol *proto;
 	struct scmi_message msg, reply;
 	uint32_t config_num;
-	int32_t status;
 
 	proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_PINCTRL);
 
@@ -47,8 +46,8 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 	msg.content = settings;
 
 	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	reply.len = 0;
+	reply.content = NULL;
 
 	return scmi_send_message(proto, &msg, &reply);
 }
