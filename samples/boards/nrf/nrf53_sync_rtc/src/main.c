@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(main);
 /* For simulation, we can define shared memory variables linkable from
  * other MCUs just by using NATIVE_SIMULATOR_IF
  */
-NATIVE_SIMULATOR_IF uint32_t shared_cell_buffer;
+NATIVE_SIMULATOR_IF_DATA uint32_t shared_cell_buffer;
 static uint32_t shared_cell = (uintptr_t)&shared_cell_buffer;
 #else
 static uint32_t shared_cell = 0x20070000;
