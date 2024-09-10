@@ -8,6 +8,8 @@ on:
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bsim/**"
+      - "boards/nordic/nrf5*/*dt*"
+      - "dts/*/nordic/**"
       - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
       - "boards/posix/**"
@@ -98,6 +100,8 @@ jobs:
             include/zephyr/arch/posix/
             scripts/native_simulator/
             tests/bsim/*
+            boards/nordic/nrf5*/*dt*
+            dts/*/nordic/
 
       - name: Check if Bluethooth files changed
         uses: tj-actions/changed-files@v45
