@@ -123,6 +123,39 @@ struct uac2_ops {
 	 */
 	uint32_t (*feedback_cb)(const struct device *dev, uint8_t terminal,
 				void *user_data);
+	/**
+	 * @brief Get active sample rate
+	 *
+	 * USB stack calls this function when the host asks for active sample
+	 * rate if the Clock Source entity supports more than one sample rate.
+	 * This function won't ever be called (should be NULL) if all Clock
+	 * Source entities support only one sample rate.
+	 *
+	 * @param dev USB Audio 2 device
+	 * @param clock_id Clock Source ID whose sample rate should be returned
+	 * @param user_data Opaque user data pointer
+	 *
+	 * @return Active sample rate in Hz
+	 */
+	uint32_t (*get_sample_rate)(const struct device *dev, uint8_t clock_id,
+				    void *user_data);
+	/**
+	 * @brief Set active sample rate
+	 *
+	 * USB stack calls this function when the host sets active sample rate.
+	 * This callback may be NULL if all Clock Source entities have only one
+	 * sample rate. USB stack sanitizes the sample rate to closest valid
+	 * rate for given Clock Source entity.
+	 *
+	 * @param dev USB Audio 2 device
+	 * @param clock_id Clock Source ID whose sample rate should be set
+	 * @param rate Sample rate in Hz
+	 * @param user_data Opaque user data pointer
+	 *
+	 * @return 0 on success, negative value on error
+	 */
+	int (*set_sample_rate)(const struct device *dev, uint8_t clock_id,
+			       uint32_t rate, void *user_data);
 };
 
 /**
