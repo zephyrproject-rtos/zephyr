@@ -9,3 +9,4 @@ junitparser>=2
 pylint>=3
 unidiff
 yamllint
+sphinx-lint
