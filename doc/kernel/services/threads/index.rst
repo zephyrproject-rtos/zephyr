@@ -175,8 +175,8 @@ met:
 
 - There may need to be additional memory reserved for memory management
   structures
-- If guard-based stack overflow detection is enabled, a small write-
-  protected memory management region must immediately precede the stack buffer
+- If guard-based stack overflow detection is enabled, a small write-protected
+  memory management region must immediately precede the stack buffer
   to catch overflows.
 - If userspace is enabled, a separate fixed-size privilege elevation stack must
   be reserved to serve as a private kernel stack for handling system calls.
