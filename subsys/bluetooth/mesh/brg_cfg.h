@@ -51,10 +51,10 @@ int bt_mesh_brg_cfg_tbl_reset(void);
 int bt_mesh_brg_cfg_tbl_get(const struct bt_mesh_brg_cfg_row **rows);
 
 int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx1,
-			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2);
+			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2, uint8_t *status);
 
 int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
-				uint16_t addr2);
+			       uint16_t addr2, uint8_t *status);
 
 typedef void (*bt_mesh_brg_cfg_cb_t)(uint16_t new_netidx, void *user_data);
 
