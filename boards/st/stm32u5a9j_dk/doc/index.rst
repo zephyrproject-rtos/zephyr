@@ -142,8 +142,18 @@ This probe allows to flash and debug the board using various tools.
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.,
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+
+Flashing an application to STM32U5A9J_DK
+----------------------------------------
 
 Connect the STM32U5A9J Discovery board to your host computer using the USB
 port, then run a serial host program to connect with your Discovery
