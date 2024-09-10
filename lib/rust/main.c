@@ -16,4 +16,12 @@ int main(void)
 	return 0;
 }
 
+/* On most arches, panic is entirely macros resulting in some kind of inline assembly.  Create this
+ * wrapper so the Rust panic handler can call the same kind of panic.
+ */
+void rust_panic_wrap(void)
+{
+	k_panic();
+}
+
 #endif

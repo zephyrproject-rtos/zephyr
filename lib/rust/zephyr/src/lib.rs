@@ -33,7 +33,13 @@ fn panic(info :&PanicInfo) -> ! {
         printkln!("panic: {}", info);
     }
     let _ = info;
-    loop {
+
+    // Call into the wrapper for the system panic function.
+    unsafe {
+        extern "C" {
+            fn rust_panic_wrap() -> !;
+        }
+        rust_panic_wrap();
     }
 }
 
