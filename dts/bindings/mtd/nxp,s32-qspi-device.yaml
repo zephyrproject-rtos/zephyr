@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -14,9 +14,15 @@ properties:
   reg:
     required: true
 
-  memory-alignment:
+  max-program-buffer-size:
     type: int
+    required: true
     description: |
-      Memory alignment in bytes, used to calculate padding when performing
-      unaligned accesses.
-      If not provided, 1 byte alignment will be selected.
+      The maximum of programming page buffer size of the flash memory device,
+      as specified in the flash memory device datasheet.
+
+  write-block-size:
+    type: int
+    required: true
+    description: |
+      The number of bytes used in write operations.
