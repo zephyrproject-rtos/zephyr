@@ -84,7 +84,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
-	if (msg->len < (layout->len - sizeof(layout->msg_hdr))) {
+	if (msg->len && msg->len < (layout->len - sizeof(layout->msg_hdr))) {
 		LOG_ERR("bad message len. max 0x%x, got 0x%x",
 			msg->len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
@@ -98,8 +98,10 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
+	msg->status = SCMI_SUCCESS;
 	len = layout->len - sizeof(layout->msg_hdr);
 	msg->len = MIN(msg->len, len);
+	msg->status = *(uint32_t *)((uint8_t *)data->regmap + sizeof(*layout));
 
 	if (msg->content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
@@ -136,6 +138,7 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 		return -EBUSY;
 	}
 
+	msg->status = SCMI_SUCCESS;
 	layout->len = sizeof(layout->msg_hdr) + msg->len;
 	layout->msg_hdr = msg->hdr;
 

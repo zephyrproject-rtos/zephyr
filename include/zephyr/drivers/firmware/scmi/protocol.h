@@ -104,6 +104,7 @@ struct scmi_protocol {
 struct scmi_message {
 	uint32_t hdr;
 	uint32_t len;
+	int32_t status;
 	void *content;
 };
 
