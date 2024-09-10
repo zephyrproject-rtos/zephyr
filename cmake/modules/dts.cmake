@@ -66,6 +66,12 @@ find_package(Dtc 1.4.6)
 #
 # Required variables:
 # - BINARY_DIR_INCLUDE_GENERATED: where to put generated include files
+# - DTS_ROOT: a deduplicated list of places where devicetree
+#   implementation files (like bindings, vendor prefixes, etc.) are
+#   found
+# - DTS_ROOT_SYSTEM_INCLUDE_DIRS: set to "PATH1 PATH2 ...",
+#   with one path per potential location where C preprocessor #includes
+#   may be found for devicetree files
 # - KCONFIG_BINARY_DIR: where to put generated Kconfig files
 #
 # Optional variables:
@@ -73,6 +79,8 @@ find_package(Dtc 1.4.6)
 # - BOARD_DIR: board directory to use when looking for DTS_SOURCE
 # - BOARD_REVISION_STRING: used when looking for a board revision's
 #   devicetree overlay file in BOARD_DIR
+# - CMAKE_DTS_PREPROCESSOR: the path to the preprocessor to use
+#   for devicetree files
 # - DTC_OVERLAY_FILE: list of devicetree overlay files which will be
 #   used to modify or extend the base devicetree.
 # - EXTRA_DTC_OVERLAY_FILE: list of extra devicetree overlay files.
