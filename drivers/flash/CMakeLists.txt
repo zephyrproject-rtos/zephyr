@@ -149,6 +149,7 @@ zephyr_library_include_directories_ifdef(
 )
 
 zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_NXP_S32_QSPI_NOR flash_nxp_s32_qspi.c)
 zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_NXP_S32_QSPI_NOR
   ${ZEPHYR_BASE}/drivers/memc
