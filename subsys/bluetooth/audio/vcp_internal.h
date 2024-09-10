@@ -46,17 +46,17 @@ struct vcs_control_vol {
 
 struct bt_vcp_vol_ctlr {
 	struct vcs_state state;
-	uint8_t flags;
+	uint8_t vol_flags;
 
 	uint16_t start_handle;
 	uint16_t end_handle;
 	uint16_t state_handle;
 	uint16_t control_handle;
-	uint16_t flag_handle;
+	uint16_t vol_flag_handle;
 	struct bt_gatt_subscribe_params state_sub_params;
 	struct bt_gatt_discover_params state_sub_disc_params;
-	struct bt_gatt_subscribe_params flag_sub_params;
-	struct bt_gatt_discover_params flag_sub_disc_params;
+	struct bt_gatt_subscribe_params vol_flag_sub_params;
+	struct bt_gatt_discover_params vol_flag_sub_disc_params;
 	bool cp_retried;
 
 	bool busy;
