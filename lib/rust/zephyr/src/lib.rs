@@ -27,7 +27,12 @@ use core::panic::PanicInfo;
 
 /// Override rust's panic.  This simplistic initial version just hangs in a loop.
 #[panic_handler]
-fn panic(_ :&PanicInfo) -> ! {
+fn panic(info :&PanicInfo) -> ! {
+    #[cfg(CONFIG_PRINTK)]
+    {
+        printkln!("panic: {}", info);
+    }
+    let _ = info;
     loop {
     }
 }
