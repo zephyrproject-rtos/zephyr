@@ -24,11 +24,8 @@ LOG_MODULE_REGISTER(soc);
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32u0_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator prefetch */
 	LL_FLASH_EnablePrefetch();
@@ -38,8 +35,4 @@ static int stm32u0_init(void)
 	SystemCoreClock = 16000000;
 
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-	return 0;
 }
-
-SYS_INIT(stm32u0_init, PRE_KERNEL_1, 0);
