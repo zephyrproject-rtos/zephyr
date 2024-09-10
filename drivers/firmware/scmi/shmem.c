@@ -76,6 +76,8 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
+	LOG_HEXDUMP_DBG((void *)layout, 64, "shmem before read");
+
 	if (cfg->size < (sizeof(*layout) + msg->len)) {
 		LOG_ERR("message doesn't fit in shmem area");
 		return -EINVAL;
@@ -142,6 +144,8 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	/* done, mark channel as busy and proceed */
 	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
 
+	LOG_HEXDUMP_DBG((void *)layout, 64, "shmem after write");
+
 	return 0;
 }
 
@@ -180,6 +184,7 @@ static int scmi_shmem_init(const struct device *dev)
 	}
 
 	device_map(&data->regmap, cfg->phys_addr, cfg->size, K_MEM_CACHE_NONE);
+	LOG_DBG("shmem phys:%lx dev:%lx", cfg->phys_addr, data->regmap);
 
 	return 0;
 }
