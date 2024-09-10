@@ -1870,7 +1870,7 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = prev->rx_addr;
-	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
+	memmove(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
 	memcpy(&pdu->adv_ind.data[0], data, len);
 	pdu->len = BDADDR_SIZE + len;
 
@@ -1926,7 +1926,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
+	memmove(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
 	memcpy(&pdu->scan_rsp.data[0], data, len);
 
 	/* Update time reservation */

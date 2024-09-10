@@ -2020,7 +2020,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		sec_dptr -= BDADDR_SIZE;
 
-		(void)memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+		(void)memmove(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
 	/* Set the common extended header format flags in the current primary
