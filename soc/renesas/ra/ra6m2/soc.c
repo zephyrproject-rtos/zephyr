@@ -29,11 +29,8 @@ volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int renesas_ra6m2_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t key;
 
@@ -43,8 +40,4 @@ static int renesas_ra6m2_init(void)
 	g_protect_pfswe_counter = 0;
 
 	irq_unlock(key);
-
-	return 0;
 }
-
-SYS_INIT(renesas_ra6m2_init, PRE_KERNEL_1, 0);
