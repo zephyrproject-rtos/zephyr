@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define DT_DRV_COMPAT xlnx_ps_gpio
 
+#define DEV_CFG(_dev) ((const struct gpio_xlnx_ps_dev_cfg *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct gpio_xlnx_ps_dev_data *const)(_dev)->data)
+
 /*
  * An API is required for this driver, but as no pin access is provided at
  * this level, use the default API contents provided by the driver subsystem.
@@ -41,7 +44,22 @@ static DEVICE_API(gpio, gpio_xlnx_ps_default_apis);
  */
 static int gpio_xlnx_ps_init(const struct device *dev)
 {
-	const struct gpio_xlnx_ps_dev_cfg *dev_conf = dev->config;
+	const struct gpio_xlnx_ps_dev_cfg *dev_conf = DEV_CFG(dev);
+	struct gpio_xlnx_ps_dev_data *dev_data = DEV_DATA(dev);
+	uint32_t bank;
+
+	/* Perform the actual memory map operation in the parent device */
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
+	dev_data->base = DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	__ASSERT(dev_data->base != 0, "%s map register space failed", dev->name);
+
+	/* Propagate the virtual base address to the bank devices */
+	for (bank = 0; bank < dev_conf->num_banks; bank++) {
+		struct gpio_xlnx_ps_bank_dev_data *bank_data =
+			dev_conf->bank_devices[bank]->data;
+		__ASSERT(bank_data != NULL, "%s bank %u data unresolved", dev->name, bank);
+		bank_data->base = dev_data->base;
+	}
 
 	/* Initialize the device's interrupt */
 	dev_conf->config_func(dev);
@@ -63,7 +81,7 @@ static int gpio_xlnx_ps_init(const struct device *dev)
  */
 static void gpio_xlnx_ps_isr(const struct device *dev)
 {
-	const struct gpio_xlnx_ps_dev_cfg *dev_conf = dev->config;
+	const struct gpio_xlnx_ps_dev_cfg *dev_conf = DEV_CFG(dev);
 
 	const struct gpio_driver_api *api;
 	struct gpio_xlnx_ps_bank_dev_data *bank_data;
@@ -102,11 +120,13 @@ static const struct device *const gpio_xlnx_ps##idx##_banks[] = {\
 
 /* Device config & run-time data struct creation macros */
 #define GPIO_XLNX_PS_DEV_DATA(idx)\
-static struct gpio_xlnx_ps_dev_data gpio_xlnx_ps##idx##_data;
+static struct gpio_xlnx_ps_dev_data gpio_xlnx_ps##idx##_data = {\
+	.base = 0x0,\
+};
 
 #define GPIO_XLNX_PS_DEV_CONFIG(idx)\
 static const struct gpio_xlnx_ps_dev_cfg gpio_xlnx_ps##idx##_cfg = {\
-	.base_addr = DT_INST_REG_ADDR(idx),\
+	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(idx)),\
 	.bank_devices = gpio_xlnx_ps##idx##_banks,\
 	.num_banks = ARRAY_SIZE(gpio_xlnx_ps##idx##_banks),\
 	.config_func = gpio_xlnx_ps##idx##_irq_config\
