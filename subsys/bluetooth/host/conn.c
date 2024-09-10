@@ -1683,6 +1683,30 @@ static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
 	return false;
 }
 
+static bool can_initiate_feature_exchange(struct bt_conn *conn)
+{
+	/* Spec says both central and peripheral can send the command. However,
+	 * peripheral-initiated feature exchange is an optional feature.
+	 *
+	 * We provide an optimization if we are in the same image as the
+	 * controller, as we know at compile time whether it supports or not
+	 * peripheral feature exchange.
+	 */
+	bool onboard_controller = IS_ENABLED(CONFIG_BT_CTLR);
+	bool supports_peripheral_feature_exchange = IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG);
+	bool is_central = IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL;
+
+	if (is_central) {
+		return true;
+	}
+
+	if (onboard_controller && supports_peripheral_feature_exchange) {
+		return true;
+	}
+
+	return BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features);
+}
+
 static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused)
 {
 	int err;
@@ -1705,8 +1729,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) &&
-	    ((conn->role == BT_HCI_ROLE_CENTRAL) ||
-	     BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features))) {
+	    can_initiate_feature_exchange(conn)) {
 		err = bt_hci_le_read_remote_features(conn);
 		if (err) {
 			LOG_ERR("Failed read remote features (%d)", err);
