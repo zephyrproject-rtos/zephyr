@@ -69,10 +69,10 @@ typedef int (*websocket_connect_cb_t)(int ws_sock, struct http_request *req,
  */
 struct websocket_request {
 	/** Host of the Websocket server when doing HTTP handshakes. */
-	const char *host;
+	char *host;
 
 	/** URL of the Websocket. */
-	const char *url;
+	char *url;
 
 	/** User supplied callback function to call when optional headers need
 	 * to be sent. This can be NULL, in which case the optional_headers
@@ -86,7 +86,7 @@ struct websocket_request {
 	 * should be added to the HTTP request. May be NULL.
 	 * If the optional_headers_cb is specified, then this field is ignored.
 	 */
-	const char **optional_headers;
+	char **optional_headers;
 
 	/** User supplied callback function to call when a connection is
 	 * established.
@@ -99,7 +99,7 @@ struct websocket_request {
 	 * is useful if the caller wants to know something about
 	 * the fields that the server is sending.
 	 */
-	const struct http_parser_settings *http_cb;
+	struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where HTTP connection data is stored */
 	uint8_t *tmp_buf;

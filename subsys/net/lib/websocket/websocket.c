@@ -312,7 +312,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	req.url = wreq->url;
 	req.host = wreq->host;
 	req.protocol = "HTTP/1.1";
-	req.header_fields = (const char **)headers;
+	req.header_fields = headers;
 	req.optional_headers_cb = wreq->optional_headers_cb;
 	req.optional_headers = wreq->optional_headers;
 	req.response = response_cb;
