@@ -40,5 +40,6 @@ run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/privacy/legacy/compil
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/id/settings/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/scan/start_stop/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/scan/slow/compile.sh
 
 wait_for_background_jobs
