@@ -216,7 +216,7 @@ In the following examples a ST-Link V2 USB dongle is used.
 Flashing an application to the Olimex-STM32-P405
 ================================================
 
-The sample application :ref:`hello_world` is being used in this tutorial.
+The sample application :zephyr:code-sample:`hello_world` is being used in this tutorial.
 
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
 the OLIMEX-STM32-P405 board.
@@ -245,7 +245,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

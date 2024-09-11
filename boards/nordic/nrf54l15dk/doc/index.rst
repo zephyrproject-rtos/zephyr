@@ -103,7 +103,7 @@ Enter the following command to compile ``hello_world`` for the FLPR core::
 Flashing
 ========
 
-As an example, this section shows how to build and flash the :ref:`hello_world`
+As an example, this section shows how to build and flash the :zephyr:code-sample:`hello_world`
 application.
 
 .. warning::

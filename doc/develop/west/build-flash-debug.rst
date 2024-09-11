@@ -145,7 +145,7 @@ Setting the Build System Target
 To specify the build system target to run, use ``--target`` (or ``-t``).
 
 For example, on host platforms with QEMU, you can use the ``run`` target to
-build and run the :ref:`hello_world` sample for the emulated :ref:`qemu_x86
+build and run the :zephyr:code-sample:`hello_world` sample for the emulated :ref:`qemu_x86
 <qemu_x86>` board in one command::
 
   west build -b qemu_x86 -t run samples/hello_world
@@ -349,7 +349,7 @@ The ``-o`` option is described further in the previous section.
 Build a single domain
 ---------------------
 
-In a multi-domain build with :ref:`hello_world` and `MCUboot`_, you can use
+In a multi-domain build with :zephyr:code-sample:`hello_world` and `MCUboot`_, you can use
 ``--domain hello_world`` to only build this domain::
 
   west build --sysbuild --domain hello_world
@@ -543,7 +543,7 @@ will flash all domains in the order defined by sysbuild.
 It is possible to flash the image from a single domain in a multi-domain project
 by using ``--domain``.
 
-For example, in a multi-domain build with :ref:`hello_world` and
+For example, in a multi-domain build with :zephyr:code-sample:`hello_world` and
 `MCUboot`_, you can use the ``--domain hello_world`` domain to only flash
 only the image from this domain::
 

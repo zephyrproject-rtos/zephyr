@@ -299,7 +299,7 @@ You should see following confirmation on your Linux host:
    usb 1-2.1: SerialNumber: 3574364C3034
 
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

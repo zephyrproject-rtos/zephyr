@@ -243,7 +243,7 @@ Flashing an application to Nucleo L4R4ZI
 Connect the Nucleo L4R5ZI to your host computer using the USB port.
 Then build and flash an application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

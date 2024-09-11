@@ -225,7 +225,7 @@ applications as usual (see :ref:`build_an_application` and
    If you are flashing with :ref:`west <west-build-flash-debug>`, run
    this command for more details on the related ``--recover`` option:
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Use a USB to TTL converter to connect the computer and raytac_mdbt53_db_40_nrf5340
 J10 connector. Then run your favorite terminal program to listen for output.

@@ -577,7 +577,7 @@ toolchain and OpenOCD::
    The above only sets these variables for your current shell session.
    You need to make sure this happens every time you use this board.
 
-Now let's compile the :ref:`hello_world` application. (You can try
+Now let's compile the :zephyr:code-sample:`hello_world` application. (You can try
 others as well; see :ref:`samples-and-demos` for more.)
 
 .. We can't use zephyr-app-commands to provide build instructions

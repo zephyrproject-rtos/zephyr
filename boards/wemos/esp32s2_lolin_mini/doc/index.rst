@@ -66,7 +66,7 @@ The usual ``flash`` target will work with the ``esp32s2_lolin_mini`` board
 configuration after putting the board into bootloader mode by holding the '0'
 button then pressing 'RST' and releasing the 'RST' button.
 
-Here is an example for the :ref:`hello_world`
+Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

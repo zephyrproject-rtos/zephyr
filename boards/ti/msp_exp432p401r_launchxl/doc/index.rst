@@ -100,7 +100,7 @@ Flashing
 Follow the :ref:`getting_started` instructions for Zephyr application
 development.
 
-For example, to build and flash the :ref:`hello_world` application for the
+For example, to build and flash the :zephyr:code-sample:`hello_world` application for the
 MSP-EXP432P401R LaunchXL:
 
 .. zephyr-app-commands::

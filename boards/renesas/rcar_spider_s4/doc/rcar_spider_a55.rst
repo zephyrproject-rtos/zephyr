@@ -63,7 +63,7 @@ One of the ways to load Zephyr is shown below.
    tftp 0x48000000 <tftp_server_path/zephyr.bin>
    booti 0x48000000
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

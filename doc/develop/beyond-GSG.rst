@@ -286,7 +286,7 @@ To enable QEMU in Test Runner (Twister) on Windows,
 :ref:`set the environment variable <env_vars>`
 ``QEMU_BIN_PATH`` to the path of QEMU installation folder.
 
-For example, you can build and run the :ref:`hello_world` sample using
+For example, you can build and run the :zephyr:code-sample:`hello_world` sample using
 the x86 emulation board configuration (``qemu_x86``), with:
 
 .. zephyr-app-commands::

@@ -46,7 +46,7 @@ Build and flash MCUboot bootloader for Zephyr project as it is described in
 the `Using MCUboot with Zephyr`_ documentation. Then build, sign and flash
 the USB DFU sample at the offset of SLOT-0.
 
-Build and sign a second application image e.g. :ref:`hello_world`,
+Build and sign a second application image e.g. :zephyr:code-sample:`hello_world`,
 which will be used as an image for the update.
 Do not forget to enable the required :kconfig:option:`CONFIG_BOOTLOADER_MCUBOOT` option (as described
 in :ref:`mcuboot`). For example:
