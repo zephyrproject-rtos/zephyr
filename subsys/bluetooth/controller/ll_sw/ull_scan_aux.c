@@ -361,13 +361,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	h = (void *)p->ext_hdr_adv_data;
 
-	/* Regard PDU as invalid if a RFU field is set, we do not know the
-	 * size of this future field, hence will cause incorrect calculation of
-	 * offset to ACAD field.
+	/* Note: The extended header contains a RFU flag that could potentially cause incorrect
+	 * calculation of offset to ACAD field if it gets used to add a new header field; However,
+	 * from discussion in BT errata ES-8080 it seems clear that BT SIG is aware that the RFU
+	 * bit can not be used to add a new field since existing implementations will not be able
+	 * to calculate the start of ACAD in that case
 	 */
-	if (h->rfu) {
-		goto ull_scan_aux_rx_flush;
-	}
 
 	ptr = h->data;
 
