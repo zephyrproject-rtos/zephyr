@@ -1007,9 +1007,34 @@ int nrf_wifi_set_rts_threshold(const struct device *dev,
 		goto out;
 	}
 
+	vif_ctx_zep->rts_threshold_value = (int)rts_threshold;
+
 	ret = 0;
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+
+	return ret;
+}
+
+int nrf_wifi_get_rts_threshold(const struct device *dev,
+			       unsigned int *rts_threshold)
+{
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	int ret = -1;
+
+	if (!dev) {
+		LOG_ERR("%s: dev is NULL", __func__);
+		return ret;
+	}
+
+	vif_ctx_zep = dev->data;
+	if (!vif_ctx_zep) {
+		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
+		return ret;
+	}
+
+	*rts_threshold = vif_ctx_zep->rts_threshold_value;
+	ret = 0;
 
 	return ret;
 }
