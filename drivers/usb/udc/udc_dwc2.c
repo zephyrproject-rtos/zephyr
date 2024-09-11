@@ -1763,6 +1763,11 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			return -ENOMEM;
 		}
 
+		/* Do not allocate TxFIFO outside the SPRAM */
+		if (txfaddr + txfdep > priv->dfifodepth) {
+			return -ENOMEM;
+		}
+
 		/* Set FIFO depth (32-bit words) and address */
 		dwc2_set_txf(dev, ep_idx - 1, txfdep, txfaddr);
 	} else {
