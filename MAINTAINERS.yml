@@ -2084,6 +2084,7 @@ Release Notes:
   status: odd fixes
   collaborators:
     - loicpoulain
+    - josuah
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
@@ -2091,6 +2092,7 @@ Release Notes:
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
+    - samples/drivers/video/
   labels:
     - "area: Video"
   tests:
