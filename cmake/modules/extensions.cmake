@@ -108,16 +108,37 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_options.html
 function(zephyr_compile_options)
-  target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    set(property $<TARGET_PROPERTY:compiler,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_compile_options(PROPERTY <prop> [<var>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_compile_options(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_compile_options(zephyr_interface INTERFACE ${property})
+    endif()
+  else()
+    target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
   if(ARGV0 STREQUAL "PROPERTY")
-    if(ARGC GREATER 2)
-      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    set(property $<TARGET_PROPERTY:linker,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_link_options(PROPERTY <prop> [<val>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_link_libraries(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_link_libraries(zephyr_interface INTERFACE ${property})
     endif()
-    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
   else()
     target_link_libraries(zephyr_interface INTERFACE ${ARGV})
   endif()
