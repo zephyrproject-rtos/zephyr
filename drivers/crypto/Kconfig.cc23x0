@@ -13,3 +13,12 @@ config CRYPTO_CC23X0
 	  - ECB (Electronic Code Book) encryption only (decryption not supported by the hardware)
 	  - CTR (Counter)
 	  - CCM (CTR with CBC-MAC)
+
+config CRYPTO_CC23X0_DMA
+	bool "DMA support for TI CC23X0 AES accelerator devices"
+	depends on CRYPTO_CC23X0
+	select DMA
+	help
+	  DMA driven transactions for the AES peripheral.
+	  DMA driven mode offloads data transfer tasks from the CPU
+	  and requires fewer interrupts to handle the AES operations.
