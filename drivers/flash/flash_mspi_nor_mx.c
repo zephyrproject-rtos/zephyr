@@ -64,7 +64,7 @@ struct flash_mspi_nor_mx_data {
 	struct mspi_xfer_packet             packet;
 
 	struct k_sem                        lock;
-	uint32_t                            jedec_id;
+	uint8_t jedec_id[JESD216_READ_ID_LEN];
 };
 
 static bool flash_mspi_nor_mx_address_is_valid(const struct device *dev, off_t addr,
@@ -142,6 +142,37 @@ static int flash_mspi_nor_mx_command_write(const struct device *flash, uint8_t c
 	return ret;
 }
 
+/* Command to the flash for reading status register  */
+static int flash_mspi_nor_mx_status_read(const struct device *flash, uint8_t cmd, uint8_t *status)
+{
+	const struct flash_mspi_nor_mx_config *cfg = flash->config;
+	struct flash_mspi_nor_mx_data *data = flash->data;
+	int ret;
+
+	data->packet.dir              = MSPI_RX;
+	data->packet.cmd              = cmd;
+	data->packet.address          = 0;
+	data->packet.data_buf         = status;
+	data->packet.num_bytes        = 1;
+
+	data->trans.async             = false; /* meaning : timeout mode */
+	data->trans.xfer_mode         = MSPI_REG;  /* command_read is always in PIO mode */
+	data->trans.rx_dummy          = 0;
+	data->trans.cmd_length        = 1;
+	data->trans.addr_length       = 0;
+	data->trans.hold_ce           = false;
+	data->trans.packets           = &data->packet;
+	data->trans.num_packet        = 1;
+	data->trans.timeout           = 10;
+
+	ret = mspi_transceive(cfg->bus, &cfg->dev_id, (const struct mspi_xfer *)&data->trans);
+	if (ret) {
+		LOG_ERR("MSPI read transaction failed with code: %d", ret);
+		return -EIO;
+	}
+	return ret;
+}
+
 /* Command to the flash for reading parameters */
 static int flash_mspi_nor_mx_command_read(const struct device *flash, uint8_t cmd, uint32_t addr,
 					   uint16_t addr_len, uint32_t rx_dummy, uint8_t *rdata,
@@ -212,10 +243,7 @@ static int flash_mspi_nor_mx_write_enable(const struct device *flash)
 	LOG_DBG("Enabling write");
 
 	/* Initialize the write enable command */
-	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_WREN, 0, 0, 0, NULL, 0);
-
-	/* New command to Configure automatic polling mode to wait for write enabling */
-	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_RDSR, 0, 0, 0, NULL, 0);
+	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_WREN, 0, 4, 0, NULL, 0);
 
 	/* Wait for auto-polling bit */
 
@@ -227,9 +255,9 @@ static int flash_mspi_nor_mx_write_disable(const struct device *flash)
 	int ret;
 
 	LOG_DBG("Disabling write");
-	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_WRDI, 0, 0, 0, NULL, 0);
+	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_WRDI, 0, 4, 0, NULL, 0);
 
-	return ret;
+// 	return ret;
 }
 
 static int flash_mspi_nor_mx_reset(const struct device *flash)
@@ -237,8 +265,8 @@ static int flash_mspi_nor_mx_reset(const struct device *flash)
 	int ret;
 
 	/* TODO : reset by gpio pin :set pi, wait duration, release pin */
-
-	/* Send Reset enable then reset Mem */
+	LOG_DBG("Resetting ");
+	/* Send Reset enable then reset Mem  use the SPI/STR command */
 	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_RESET_EN, 0, 0, 0, NULL, 0);
 	if (ret) {
 		return ret;
@@ -254,7 +282,7 @@ static int flash_mspi_nor_mx_reset(const struct device *flash)
 static int flash_mspi_nor_mx_get_vendor_id(const struct device *flash, uint8_t *vendor_id)
 {
 	struct flash_mspi_nor_mx_data *data = flash->data;
-	uint8_t buffer[11];
+	uint8_t buffer[JESD216_READ_ID_LEN];
 	int ret;
 
 	if (vendor_id == NULL) {
@@ -262,11 +290,21 @@ static int flash_mspi_nor_mx_get_vendor_id(const struct device *flash, uint8_t *
 	}
 
 	LOG_DBG("Reading id");
-	/* Read 11 bytes from flash  */
-	ret = flash_mspi_nor_mx_command_read(flash, SPI_NOR_CMD_RDID, 0, 0, 0, buffer, 11);
-	*vendor_id = buffer[7];
 
-	data->jedec_id = (buffer[7] << 16) | (buffer[8] << 8) | buffer[9];
+	/* Read bytes from flash : use the SPI/STR command */
+	ret = flash_mspi_nor_mx_command_read(flash, SPI_NOR_CMD_RDID, 0, 4,
+				data->dev_cfg.rx_dummy,
+				buffer,
+				JESD216_READ_ID_LEN);
+	if (ret) {
+		return ret;
+	}
+
+	memcpy(data->jedec_id, buffer, JESD216_READ_ID_LEN);
+	*vendor_id = data->jedec_id[0];
+
+	LOG_DBG("Jedec ID = [%02x %02x %02x]",
+		data->jedec_id[0], data->jedec_id[1], data->jedec_id[2]);
 
 	return ret;
 }
@@ -287,8 +325,8 @@ static int flash_mspi_nor_mx_erase_sector(const struct device *flash, off_t addr
 	int ret;
 
 	LOG_DBG("Erasing sector at 0x%08zx", (ssize_t)addr);
-
-	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_SE, addr, 4, 0, NULL, 0);
+	/* Instruction SPI_NOR_CMD_SE is also accepted */
+	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_SE_4B, addr, 4, 0, NULL, 0);
 
 	return ret;
 }
@@ -310,7 +348,7 @@ static int flash_mspi_nor_mx_erase_chip(const struct device *flash)
 
 	LOG_DBG("Erasing chip");
 
-	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_CE, 0, 0, 0, NULL, 0);
+	ret = flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_CE, 0, 4, 0, NULL, 0);
 
 	return ret;
 }
@@ -329,7 +367,7 @@ static int flash_mspi_nor_mx_page_program(const struct device *flash, off_t offs
 	data->packet.num_bytes        = len;
 
 	data->trans.async             = true; /* use callback on Irq if PIO, meaningless with DMA */
-	data->trans.xfer_mode         = MSPI_DMA;
+	data->trans.xfer_mode         = MSPI_PIO; /* TODO : transfer with DMA */
 	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
 	data->trans.addr_length       = data->dev_cfg.addr_length;
@@ -379,15 +417,15 @@ static int flash_mspi_nor_mx_mem_ready(const struct device *flash)
 		}
 	}
 
-	do {
+//	do {
 		LOG_DBG("Reading status register");
-		ret = flash_mspi_nor_mx_command_read(flash, instruction, 0, 0, rx_dummy,
-						      (uint8_t *)&status, 1);
+		ret = flash_mspi_nor_mx_status_read(flash, instruction,	(uint8_t *)&status);
 		if (ret) {
 			LOG_ERR("Could not read status");
 			return ret;
 		}
-	} while (status & SPI_NOR_WIP_BIT);
+//	} while (status & SPI_NOR_WIP_BIT);
+
 
 	if (data->dev_cfg.io_mode != MSPI_IO_MODE_SINGLE) {
 		data->timing_cfg = bkp;
@@ -420,6 +458,7 @@ static int flash_mspi_nor_mx_read(const struct device *flash, off_t offset, void
 		return -EINVAL;
 	}
 
+	LOG_DBG("Flash : read %d Bytes at x%08zx", size, offset);
 	acquire(flash);
 
 	/* During the MemoryMapped, read with a memcopy */
@@ -441,8 +480,9 @@ static int flash_mspi_nor_mx_read(const struct device *flash, off_t offset, void
 	data->packet.num_bytes        = size;
 
 	data->trans.async             = true; /* use callback on Irq if PIO, meaningless with DMA */
-	data->trans.xfer_mode         = MSPI_DMA;
-	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
+	data->trans.xfer_mode         = MSPI_PIO; /* TODO : transfer with DMA */
+	data->trans.rx_dummy          = 0; /* TODO set data->dev_cfg.rx_dummy; depending on the command */
+
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
 	data->trans.addr_length       = data->dev_cfg.addr_length;
 	data->trans.hold_ce           = false;
@@ -465,7 +505,7 @@ read_end:
 	return ret;
 }
 
-/* Function to write the flash (page program) : with possible PIO IT or DMA */
+/* Function to write the flash (page program) : with possible PIO IT (ASYNC) or DMA */
 static int flash_mspi_nor_mx_write(const struct device *flash, off_t offset, const void *wdata,
 				    size_t size)
 {
@@ -485,6 +525,8 @@ static int flash_mspi_nor_mx_write(const struct device *flash, off_t offset, con
 			"addr 0x%lx, size %zu", (long)offset, size);
 		return -EINVAL;
 	}
+
+	LOG_DBG("Flash : write %d Bytes at x%08zx", size, offset);
 
 	acquire(flash);
 
@@ -615,9 +657,8 @@ static int flash_mspi_nor_mx_erase(const struct device *flash, off_t offset, siz
 			}
 
 			ret = flash_mspi_nor_mx_unprotect_sector(flash, offset);
-			if (ret) {
-				goto erase_end;
-			}
+
+			LOG_DBG("Flash : erase block %d", 1 + (offset % SPI_NOR_BLOCK_SIZE));
 
 			ret = flash_mspi_nor_mx_write_enable(flash);
 			if (ret) {
@@ -625,6 +666,7 @@ static int flash_mspi_nor_mx_erase(const struct device *flash, off_t offset, siz
 			}
 
 			ret = flash_mspi_nor_mx_erase_block(flash, offset);
+
 			if (ret) {
 				goto erase_end;
 			}
@@ -638,20 +680,21 @@ static int flash_mspi_nor_mx_erase(const struct device *flash, off_t offset, siz
 		}
 	} else {
 		for (i = 0; i < num_sectors; i++) {
+/*			ret = flash_mspi_nor_mx_unprotect_sector(flash, offset);
+			if (ret) {
+				goto erase_end;
+			}*/
 			ret = flash_mspi_nor_mx_write_enable(flash);
 			if (ret) {
 				goto erase_end;
 			}
 
-			ret = flash_mspi_nor_mx_unprotect_sector(flash, offset);
+			ret = flash_mspi_nor_mx_mem_ready(flash);
 			if (ret) {
 				goto erase_end;
 			}
 
-			ret = flash_mspi_nor_mx_write_enable(flash);
-			if (ret) {
-				goto erase_end;
-			}
+			LOG_DBG("Flash : erase sector %d", 1 + (offset % SPI_NOR_SECTOR_SIZE));
 
 			ret = flash_mspi_nor_mx_erase_sector(flash, offset);
 			if (ret) {
@@ -714,6 +757,15 @@ static int flash_mspi_nor_mx_init(const struct device *flash)
 		return -EIO;
 	}
 
+	switch (cfg->tar_dev_cfg.data_rate) {
+	case MSPI_DATA_RATE_SINGLE:
+	case MSPI_DATA_RATE_DUAL:
+		break;
+	default:
+		LOG_ERR("MSPI bus data rate %d not supported", cfg->tar_dev_cfg.data_rate);
+		return -EIO;
+	}
+
 	/* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
 	if ((cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_SINGLE)
 		&& (cfg->tar_dev_cfg.data_rate == MSPI_DATA_RATE_DUAL)) {
@@ -721,8 +773,11 @@ static int flash_mspi_nor_mx_init(const struct device *flash)
 		return -EIO;
 	}
 
-	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->serial_cfg)) {
-		LOG_ERR("Failed to config mspi controller");;
+	/* At this time only set the io_mode and data rate */
+	if (mspi_dev_config(cfg->bus, &cfg->dev_id,
+		(MSPI_DEVICE_CONFIG_IO_MODE|MSPI_DEVICE_CONFIG_DATA_RATE),
+		&cfg->serial_cfg)) {
+		LOG_ERR("Failed to config mspi controller");
 		return -EIO;
 	}
 	data->dev_cfg = cfg->serial_cfg;
@@ -740,22 +795,22 @@ static int flash_mspi_nor_mx_init(const struct device *flash)
 	}
 	LOG_DBG("Vendor id: 0x%0x", vendor_id);
 
+	/*
+	 * We should check here that the mem is ready,
+	 * configure it according to the io-mode/data-rate
+	 */
+	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &cfg->tar_dev_cfg)) {
+		LOG_ERR("Failed to config mspi controller");;
+		return -EIO;
+	}
+	LOG_DBG("Flash config'd");
+#if 0
 	if (flash_mspi_nor_mx_write_enable(flash)) {
 		return -EIO;
 	}
 
 	if (flash_mspi_nor_mx_command_write(flash, SPI_NOR_CMD_RD_CFGREG2, 0x3, 1, 0, (uint8_t *)&CRB3, 1)) {
 		return -EIO;
-	}
-
-	uint8_t cmd;
-
-	if (cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_QUAD) {
-		cmd = 0x38;
-	} else if (cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_OCTAL) {
-		cmd = 0xe8;
-	} else {
-		cmd = 0xff;
 	}
 
 	if (flash_mspi_nor_mx_write_enable(flash)) {
@@ -777,6 +832,15 @@ static int flash_mspi_nor_mx_init(const struct device *flash)
 		return -EIO;
 	}
 	data->timing_cfg = cfg->tar_timing_cfg;
+#endif
+
+/*	if (flash_mspi_nor_mx_mem_ready(flash)) {
+		LOG_ERR("Flash : not ready");;
+		return -EIO;
+	}*/
+	LOG_DBG("Flash ready");
+
+	/* XIP will need the base address for MemoryMapped mode */
 
 	if (cfg->tar_xip_cfg.enable) {
 		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
@@ -890,17 +954,17 @@ static const struct flash_driver_api flash_mspi_nor_mx_api = {
 #define MSPI_DEVICE_CONFIG_SERIAL(n)                                                              \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
-		.freq               = 12000000,                                                   \
-		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
-		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
+		.freq               = DT_INST_PROP(n, mspi_max_frequency),                        \
+		.io_mode            = DT_INST_STRING_UNQUOTED_OR(n, mspi_io_mode, 0),             \
+		.data_rate          = DT_INST_STRING_UNQUOTED_OR(n, mspi_data_rate, 0),           \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
 		.ce_polarity        = MSPI_CE_ACTIVE_LOW,                                         \
 		.dqs_enable         = false,                                                      \
-		.tx_dummy           = DT_INST_PROP_OR(n, rx_dummy, 8),                            \
+		.rx_dummy           = DT_INST_PROP_OR(n, rx_dummy, 0),                            \
 		.tx_dummy           = DT_INST_PROP_OR(n, tx_dummy, 0),                            \
-		.read_cmd           = DT_INST_PROP_OR(n, read_cmd, SPI_NOR_CMD_READ_FAST),        \
-		.write_cmd          = DT_INST_PROP_OR(n, write_cmd, SPI_NOR_CMD_PP),              \
+		.read_cmd           = DT_INST_PROP_OR(n, read_command, SPI_NOR_CMD_READ_FAST),    \
+		.write_cmd          = DT_INST_PROP_OR(n, write_command, SPI_NOR_CMD_PP),          \
 		.cmd_length         = 1,                                                          \
 		.addr_length        = 4,                                                          \
 		.mem_boundary       = 0,                                                          \
