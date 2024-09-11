@@ -72,4 +72,7 @@ int nrf_wifi_filter(const struct device *dev,
 
 int nrf_wifi_set_rts_threshold(const struct device *dev,
 			       unsigned int rts_threshold);
+
+int nrf_wifi_get_rts_threshold(const struct device *dev,
+			       unsigned int *rts_threshold);
 #endif /*  __ZEPHYR_WIFI_MGMT_H__ */
