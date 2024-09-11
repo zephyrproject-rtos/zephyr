@@ -49,7 +49,7 @@ mgmt_find_handler(uint16_t group_id, uint16_t command_id)
 			CONTAINER_OF(snp, struct mgmt_group, node);
 		if (loop_group->mg_group_id == group_id) {
 			if (command_id >= loop_group->mg_handlers_count) {
-				break;
+				continue;
 			}
 
 			if (!loop_group->mg_handlers[command_id].mh_read &&

@@ -158,7 +158,6 @@ static int smp_build_err_rsp(struct smp_streamer *streamer, const struct smp_hdr
  */
 static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp_hdr *req_hdr)
 {
-	const struct mgmt_group *group;
 	const struct mgmt_handler *handler;
 	mgmt_handler_fn handler_fn;
 	int rc;
@@ -169,12 +168,7 @@ static int smp_handle_single_payload(struct smp_streamer *cbuf, const struct smp
 	uint16_t err_group;
 #endif
 
-	group = mgmt_find_group(req_hdr->nh_group);
-	if (group == NULL) {
-		return MGMT_ERR_ENOTSUP;
-	}
-
-	handler = mgmt_get_handler(group, req_hdr->nh_id);
+	handler = mgmt_find_handler(req_hdr->nh_group, req_hdr->nh_id);
 	if (handler == NULL) {
 		return MGMT_ERR_ENOTSUP;
 	}
