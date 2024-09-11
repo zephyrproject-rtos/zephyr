@@ -75,4 +75,4 @@ properties:
       is moved to another block.  Set to a non-positive value to disable
       leveling.
 
-      This corresponds to CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE.
+      This corresponds to CONFIG_FS_LITTLEFS_BLOCK_CYCLES.
