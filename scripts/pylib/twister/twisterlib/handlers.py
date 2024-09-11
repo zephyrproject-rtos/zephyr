@@ -689,9 +689,13 @@ class DeviceHandler(Handler):
         pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
+        script_param = hardware.script_param
 
         if pre_script:
-            self.run_custom_script(pre_script, 30)
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("pre_script_timeout", timeout)
+            self.run_custom_script(pre_script, timeout)
 
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
@@ -756,7 +760,10 @@ class DeviceHandler(Handler):
             flash_error = True
 
         if post_flash_script:
-            self.run_custom_script(post_flash_script, 30)
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("post_flash_timeout", timeout)
+            self.run_custom_script(post_flash_script, timeout)
 
         # Connect to device after flashing it
         if hardware.flash_before:
@@ -795,7 +802,10 @@ class DeviceHandler(Handler):
         self._final_handle_actions(harness, handler_time)
 
         if post_script:
-            self.run_custom_script(post_script, 30)
+            timeout = 30
+            if script_param:
+                timeout = script_param.get("post_script_timeout", timeout)
+            self.run_custom_script(post_script, timeout)
 
         self.make_dut_available(hardware)
 
