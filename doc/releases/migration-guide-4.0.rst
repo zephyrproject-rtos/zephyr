@@ -248,7 +248,7 @@ Networking
 
 * The Ethernet bridge shell is moved under network shell. This is done so that
   all the network shell activities can be found under ``net`` shell command.
-  After this change the bridge shell is used by ``net bridge`` command.
+  After this change the bridge shell is used by ``net bridge`` command. (:github:`77235`)
 
 * The Ethernet bridging code is changed to allow similar configuration experience
   as in Linux. The bridged Ethernet interface can be used normally even if bridging
@@ -260,7 +260,7 @@ Networking
   removed as same functionality can be achieved using promiscuous API.
   Because the bridge interface is a normal network interface,
   the :c:func:`eth_bridge_iface_add` and :c:func:`eth_bridge_iface_remove`
-  will take network interface pointer as a first parameter.
+  will take network interface pointer as a first parameter. (:github:`77987`)
 
 * To facilitate use outside of the networking subsystem, the network buffer header file was renamed
   from :zephyr_file:`include/zephyr/net/buf.h` to :zephyr_file:`include/zephyr/net_buf.h` and the
