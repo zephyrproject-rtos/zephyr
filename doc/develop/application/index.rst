@@ -131,7 +131,7 @@ Zephyr repository application
 
 An application located within the ``zephyr`` source code repository in a Zephyr
 :ref:`west workspace <west-workspaces>` is referred to as a Zephyr repository
-application. In the following example, the :ref:`hello_world sample
+application. In the following example, the :zephyr:code-sample:`hello_world sample
 <hello_world>` is a Zephyr repository application:
 
 .. code-block:: none

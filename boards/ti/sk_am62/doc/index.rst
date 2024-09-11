@@ -94,7 +94,7 @@ The board can using remoteproc, and uses the OpenAMP resource table to accomplis
 
 The testing requires the binary to be copied to the SD card to allow the A53 cores to load it while booting using remoteproc.
 
-To test the M4F core, we build the :ref:`hello_world` sample with the following command.
+To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. code-block:: console
 

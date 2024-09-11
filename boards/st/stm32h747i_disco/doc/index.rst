@@ -260,7 +260,7 @@ Flashing an application to STM32H747I M7 Core
 First, connect the STM32H747I Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -297,7 +297,7 @@ Debugging
 =========
 
 You can debug an application on Cortex M7 side in the usual way.  Here is an example
-for the :ref:`hello_world` application.
+for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

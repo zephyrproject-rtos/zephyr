@@ -104,7 +104,7 @@ The Linux running on the A53 uses the remoteproc framework to manage the M4F co-
 Therefore, the testing requires the binary to be copied to the SD card to allow the A53 cores to
 load it while booting using remoteproc.
 
-To test the M4F core, we build the :ref:`hello_world` sample with the following command.
+To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
    :board: phyboard_electra/am6442/m4

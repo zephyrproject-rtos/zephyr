@@ -111,7 +111,7 @@ The GD32E103V-EVAL includes an onboard programmer/debugger (GD-Link) which
 allow flash programming and debug over USB. There are also program and debug
 headers J1 and J100 that can be used with any ARM compatible tools.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -160,7 +160,7 @@ The GD32E103 MCU have a ROM bootloader which allow flash programming.  User
 should install `GD32 ISP Console`_ software at some Linux path.  The recommended
 is :code:`$HOME/.local/bin`.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

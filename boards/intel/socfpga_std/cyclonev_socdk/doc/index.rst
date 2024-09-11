@@ -163,7 +163,7 @@ Flashing Kernel into the board
 ------------------------------
 
 The usual ``flash`` target will work with the ``cyclonev_socdk`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 ``Important!!!`` : Before flashing the board a ``preloader`` is required,

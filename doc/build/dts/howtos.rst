@@ -23,10 +23,10 @@ application and open the :file:`zephyr.dts` file in the build directory.
 
 .. tip::
 
-   You can build :ref:`hello_world` to see the "base" devicetree for your board
+   You can build :zephyr:code-sample:`hello_world` to see the "base" devicetree for your board
    without any additional changes from :ref:`overlay files <dt-input-files>`.
 
-For example, using the :ref:`qemu_cortex_m3` board to build :ref:`hello_world`:
+For example, using the :ref:`qemu_cortex_m3` board to build :zephyr:code-sample:`hello_world`:
 
 .. code-block:: sh
 

@@ -215,7 +215,7 @@ the M7 core has to be switched on:
 
    u-boot=> bootaux 0x7e0000
 
-Here is an example for the :ref:`hello_world` application:
+Here is an example for the :zephyr:code-sample:`hello_world` application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

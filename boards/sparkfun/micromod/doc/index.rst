@@ -142,7 +142,7 @@ The flashing tool will depend on the carrier used along with the board.
 In the case of `Sparkfun asset tracking carrier`_, it is possible to use
 the SWD interface along with a J-Link.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
