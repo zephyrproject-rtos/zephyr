@@ -47,6 +47,9 @@ Mbed TLS
 
 * The Kconfig options ``CONFIG_MBEDTLS_TLS_VERSION_1_0`` and ``CONFIG_MBEDTLS_TLS_VERSION_1_1``
   have been removed because Mbed TLS doesn't support TLS 1.0 and 1.1 anymore since v3.0. (:github:`76833`)
+* The following Kconfig symbols were renamed (:github:`76408`):
+  * ``CONFIG_MBEDTLS_ENTROPY_ENABLED`` is now :kconfig:option:``CONFIG_MBEDTLS_ENTROPY_C``,
+  * ``CONFIG_MBEDTLS_ZEPHYR_ENTROPY`` is now :kconfig:option:``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR``.
 
 Trusted Firmware-M
 ==================
