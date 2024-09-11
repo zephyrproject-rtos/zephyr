@@ -132,15 +132,6 @@
 				int-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pca953x: pca953x@6 {
-				compatible = "ti,tca9538";
-				reg = <0x06>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <8>;
-				nint-gpios = <&test_gpio 0 0>;
-			};
-
 			test_i2c_mcp23017: mcp23017@7 {
 				compatible = "microchip,mcp23017";
 				reg = <0x07>;

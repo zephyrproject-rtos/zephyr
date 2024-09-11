@@ -187,12 +187,12 @@
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
 	gpio_exp0: tca9538@70 {
-		compatible = "ti,tca9538";
+		compatible = "nxp,pca9538";
 		reg = <0x70>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
-		nint-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		int-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
 	};
 };
 
