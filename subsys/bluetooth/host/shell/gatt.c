@@ -26,7 +26,7 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 #if defined(CONFIG_BT_GATT_CLIENT) || defined(CONFIG_BT_GATT_DYNAMIC_DB)
 extern uint8_t selected_id;

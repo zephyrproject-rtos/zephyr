@@ -24,7 +24,7 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 struct bt_a2dp *default_a2dp;
 static uint8_t a2dp_sink_sdp_registered;

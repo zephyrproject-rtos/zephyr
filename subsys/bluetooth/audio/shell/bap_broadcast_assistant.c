@@ -32,7 +32,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "../../host/hci_core.h"
 #include "audio.h"
 

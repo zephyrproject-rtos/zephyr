@@ -29,7 +29,7 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 #if defined(CONFIG_BT_CONN)
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */

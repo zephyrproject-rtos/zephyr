@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bt.h"
 #include <stdlib.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/conn.h>
@@ -17,6 +16,8 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ias.h>
+
+#include "host/shell/bt.h"
 
 extern const struct shell *ctx_shell;
 
