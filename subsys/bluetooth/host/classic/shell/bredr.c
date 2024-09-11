@@ -370,7 +370,8 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 }
 
 static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
-			       struct bt_sdp_client_result *result)
+			       struct bt_sdp_client_result *result,
+			       const struct bt_sdp_discover_params *params)
 {
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
@@ -429,7 +430,8 @@ done:
 }
 
 static uint8_t sdp_a2src_user(struct bt_conn *conn,
-			   struct bt_sdp_client_result *result)
+			      struct bt_sdp_client_result *result,
+			      const struct bt_sdp_discover_params *params)
 {
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
@@ -494,12 +496,14 @@ done:
 }
 
 static struct bt_sdp_discover_params discov_hfpag = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 	.uuid = BT_UUID_DECLARE_16(BT_SDP_HANDSFREE_AGW_SVCLASS),
 	.func = sdp_hfp_ag_user,
 	.pool = &sdp_client_pool,
 };
 
 static struct bt_sdp_discover_params discov_a2src = {
+	.type = BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR,
 	.uuid = BT_UUID_DECLARE_16(BT_SDP_AUDIO_SOURCE_SVCLASS),
 	.func = sdp_a2src_user,
 	.pool = &sdp_client_pool,
