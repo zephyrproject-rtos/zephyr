@@ -526,19 +526,18 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	LOG_DBG("dev_data %p len %d tx_ringbuf space %u",
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
-	if (!dev_data->configured || dev_data->suspended) {
-		LOG_INF("Device suspended or not configured");
-		return 0;
-	}
-
-	dev_data->tx_ready = false;
-
 	lock = irq_lock();
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
 	irq_unlock(lock);
 	LOG_DBG("Wrote %zu of %d bytes to TX ringbuffer", wrote, len);
 
-	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
+	if (!ring_buf_space_get(dev_data->tx_ringbuf)) {
+		dev_data->tx_ready = false;
+	}
+
+	if (wrote) {
+		k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
+	}
 
 	/* Return written to ringbuf data len */
 	return wrote;
