@@ -177,6 +177,15 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
  */
 int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold);
 
+/**
+ * @brief Get Wi-Fi RTS threshold
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param rts_threshold Pointer to the RTS threshold value.
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Send bss transition query
  *
