@@ -140,12 +140,15 @@ The Zephyr _nucleo_u031r8_ board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+
 
 Other hardware features are not yet supported on this Zephyr port.
 
