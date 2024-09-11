@@ -531,10 +531,6 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	irq_unlock(lock);
 	LOG_DBG("Wrote %zu of %d bytes to TX ringbuffer", wrote, len);
 
-	if (!ring_buf_space_get(dev_data->tx_ringbuf)) {
-		dev_data->tx_ready = false;
-	}
-
 	if (wrote) {
 		k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
 	}
@@ -562,10 +558,6 @@ static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
 		dev, size, ring_buf_space_get(dev_data->rx_ringbuf));
 
 	len = ring_buf_get(dev_data->rx_ringbuf, rx_data, size);
-
-	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
-		dev_data->rx_ready = false;
-	}
 
 	if (dev_data->rx_paused == true) {
 		if (ring_buf_space_get(dev_data->rx_ringbuf) >= CDC_ACM_BUFFER_SIZE) {
@@ -698,7 +690,15 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
  */
 static int cdc_acm_irq_update(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct cdc_acm_dev_data_t * const dev_data = dev->data;
+
+	if (!ring_buf_space_get(dev_data->tx_ringbuf)) {
+		dev_data->tx_ready = false;
+	}
+
+	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
+		dev_data->rx_ready = false;
+	}
 
 	return 1;
 }
