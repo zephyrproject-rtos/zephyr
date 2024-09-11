@@ -273,6 +273,7 @@ static int nrf_wifi_util_tx_stats(const struct shell *sh,
 	void *queue = NULL;
 	unsigned int tx_pending_pkts = 0;
 	struct nrf_wifi_fmac_dev_ctx_def *def_dev_ctx = NULL;
+	int ret;
 
 	vif_index = atoi(argv[1]);
 	if ((vif_index < 0) || (vif_index >= max_vif_index)) {
@@ -282,6 +283,15 @@ static int nrf_wifi_util_tx_stats(const struct shell *sh,
 			      vif_index);
 		shell_help(sh);
 		return -ENOEXEC;
+	}
+
+	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
+	if (!ctx->rpu_ctx) {
+		shell_fprintf(shell,
+			      SHELL_ERROR,
+			      "RPU context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
 	}
 
 	fmac_dev_ctx = ctx->rpu_ctx;
@@ -306,7 +316,11 @@ static int nrf_wifi_util_tx_stats(const struct shell *sh,
 			tx_pending_pkts);
 	}
 
-	return 0;
+	ret = 0;
+
+unlock:
+	k_mutex_unlock(&ctx->rpu_lock);
+	return ret;
 }
 #endif /* CONFIG_NRF70_STA_MODE */
 
@@ -444,6 +458,7 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct rpu_op_stats stats;
 	enum rpu_stats_type stats_type = RPU_STATS_TYPE_ALL;
+	int ret;
 
 	if (argc == 2) {
 		const char *type  = argv[1];
@@ -465,6 +480,14 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 		}
 	}
 
+	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
+	if (!ctx->rpu_ctx) {
+		shell_fprintf(shell,
+			      SHELL_ERROR,
+			      "RPU context not initialized\n");
+		ret = -ENOEXEC;
+		goto unlock;
+	}
 	fmac_dev_ctx = ctx->rpu_ctx;
 
 	memset(&stats, 0, sizeof(struct rpu_op_stats));
@@ -474,7 +497,8 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "Failed to get stats\n");
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto unlock;
 	}
 
 	if (stats_type == RPU_STATS_TYPE_UMAC || stats_type == RPU_STATS_TYPE_ALL) {
@@ -847,7 +871,9 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 				  phy->dsss_crc32_fail_cnt);
 	}
 
-	return 0;
+	ret = 0;
+unlock:
+	return ret;
 }
 #endif /* !CONFIG_NRF70_RADIO_TEST && !CONFIG_NRF70_OFFLOADED_RAW_TX */
 
@@ -858,12 +884,15 @@ static int nrf_wifi_util_trigger_rpu_recovery(const struct shell *sh,
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
+	int ret;
 
+	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
 	if (!ctx || !ctx->rpu_ctx) {
 		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "RPU context not initialized\n");
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto unlock;
 	}
 
 	fmac_dev_ctx = ctx->rpu_ctx;
@@ -880,7 +909,10 @@ static int nrf_wifi_util_trigger_rpu_recovery(const struct shell *sh,
 		      SHELL_INFO,
 		      "RPU recovery triggered\n");
 
-	return 0;
+	ret = 0;
+unlock:
+	k_mutex_unlock(&ctx->rpu_lock);
+	return ret;
 }
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 
