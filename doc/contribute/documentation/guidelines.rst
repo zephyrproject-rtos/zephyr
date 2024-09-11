@@ -349,22 +349,6 @@ you can reference it with::
    Read the `Zephyr Wikipedia Page`_ for more information about the
    project.
 
-
-\`any\` links
-*************
-
-Within the Zephyr project, we've defined the default role to be "any",
-meaning if you just write a phrase in back-ticks, e.g.,
-```doc_guidelines```, Sphinx will search through all domains looking for
-something called doc_guidelines to link to. In this case it will find
-the label at the top of this document, and link to `doc_guidelines`.
-This can be useful for linking to doxygen-generated links for function
-names and such, but will cause a warning such as::
-
-   WARNING: 'any' reference target not found: doc_giudelines
-
-if you misspelled ```doc_guidelines``` as ```doc_giudelines```.
-
 Non-ASCII Characters
 ********************
 
