@@ -139,6 +139,17 @@ struct shi_npcx_data {
 	uint8_t *const out_msg;
 	uint8_t in_msg[CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST] __aligned(4);
 	ATOMIC_DEFINE(pm_policy_state_flag, SHI_NPCX_PM_POLICY_FLAG_COUNT);
+#ifdef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+	struct miwu_callback shi_cs_wui_cb;
+	/*
+	 * With the workaround,  CS assertion/de-assertion INT and SHI module's INT come from
+	 * different sources. CS failing IRQ and IBHF2 IRQ may happen at the same time.
+	 * In this case, IBHF2 ISR is called first because it has lower INT number.
+	 * (with the same priority). This flag is used to guarantee CS assertion ISR is executed
+	 * first.
+	 */
+	bool is_entered_cs_asserted_wui_isr;
+#endif
 };
 
 struct ec_host_cmd_shi_npcx_ctx {
@@ -605,7 +616,7 @@ static void shi_npcx_handle_cs_deassert(const struct device *dev)
 
 	/* Error state for checking*/
 	if (data->state != SHI_STATE_SENDING) {
-		shi_npcx_log_unexpected_state(dev, "CSNRE");
+		shi_npcx_log_unexpected_state(dev, "CS DE-AST");
 	}
 
 	/* reset SHI and prepare to next transaction again */
@@ -670,11 +681,20 @@ static void shi_npcx_isr(const struct device *dev)
 	uint8_t stat;
 	uint8_t stat2;
 
+#ifdef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+	struct shi_npcx_data *data = dev->data;
+
+	if (data->is_entered_cs_asserted_wui_isr != true) {
+		return;
+	}
+#endif
+
 	/* Read status register and clear interrupt status early */
 	stat = inst->EVSTAT;
 	inst->EVSTAT = stat;
 	stat2 = inst->EVSTAT2;
 
+#ifndef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
 	/* SHI CS pin is asserted in EVSTAT2 */
 	if (IS_BIT_SET(stat2, NPCX_EVSTAT2_CSNFE)) {
 		/* Clear pending bit of CSNFE */
@@ -692,7 +712,6 @@ static void shi_npcx_isr(const struct device *dev)
 
 		shi_npcx_handle_cs_assert(dev);
 	}
-
 	/*
 	 * End of data for read/write transaction. i.e. SHI_CS is deasserted.
 	 * Host completed or aborted transaction
@@ -712,6 +731,7 @@ static void shi_npcx_isr(const struct device *dev)
 		LOG_DBG("CSH-");
 		return shi_npcx_handle_cs_deassert(dev);
 	}
+#endif
 
 	/*
 	 * The number of bytes received reaches the size of
@@ -821,6 +841,11 @@ static int shi_npcx_enable(const struct device *dev)
 	}
 
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	/*
+	 * Clear the pending bit because switching the pinmux (pinctrl) might casue a faking WUI
+	 * pending bit set.
+	 */
+	npcx_miwu_irq_get_and_clear_pending(&config->shi_cs_wui);
 	npcx_miwu_irq_enable(&config->shi_cs_wui);
 	irq_enable(DT_INST_IRQN(0));
 
@@ -860,6 +885,23 @@ static int shi_npcx_disable(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+static void shi_npcx_cs_wui_isr(const struct device *dev, struct npcx_wui *wui)
+{
+
+	struct shi_reg *const inst = HAL_INSTANCE(dev);
+	struct shi_npcx_data *data = dev->data;
+
+	if (IS_BIT_SET(inst->SHICFG2, NPCX_SHICFG2_BUSY)) {
+		data->is_entered_cs_asserted_wui_isr = true;
+		shi_npcx_handle_cs_assert(dev);
+	} else {
+		shi_npcx_handle_cs_deassert(dev);
+		data->is_entered_cs_asserted_wui_isr = false;
+	}
+}
+#endif
 
 static int shi_npcx_init_registers(const struct device *dev)
 {
@@ -912,7 +954,7 @@ static int shi_npcx_init_registers(const struct device *dev)
 	 * [1] - OBHEEN = 0: Output Buffer Half Empty Interrupt Enable
 	 * [0] - OBEEN  = 0: Output Buffer Empty Interrupt Enable
 	 */
-	inst->EVENABLE = BIT(NPCX_EVENABLE_EOREN) | IBF_IBHF_EN_MASK;
+	inst->EVENABLE = IBF_IBHF_EN_MASK;
 
 	/*
 	 * EVENABLE2 (Event Enable 2) setting
@@ -920,7 +962,9 @@ static int shi_npcx_init_registers(const struct device *dev)
 	 * [1] - CSNREEN = 1: SHI_CS Rising Edge Interrupt Enable
 	 * [0] - IBHF2EN = 0: Input Buffer Half Full 2 Interrupt Enable
 	 */
+#ifndef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
 	inst->EVENABLE2 = BIT(NPCX_EVENABLE2_CSNREEN) | BIT(NPCX_EVENABLE2_CSNFEEN);
+#endif
 
 	/* Clear SHI events status register */
 	inst->EVSTAT = 0xff;
@@ -929,7 +973,18 @@ static int shi_npcx_init_registers(const struct device *dev)
 		inst->SHICFG6 |= BIT(NPCX_SHICFG6_EBUFMD);
 	}
 
+#ifdef CONFIG_EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+	struct shi_npcx_data *data = dev->data;
+
+	npcx_miwu_interrupt_configure(&config->shi_cs_wui, NPCX_MIWU_MODE_EDGE,
+				      NPCX_MIWU_TRIG_BOTH);
+
+	npcx_miwu_init_dev_callback(&data->shi_cs_wui_cb, &config->shi_cs_wui, shi_npcx_cs_wui_isr,
+				    dev);
+	npcx_miwu_manage_callback(&data->shi_cs_wui_cb, true);
+#else
 	npcx_miwu_interrupt_configure(&config->shi_cs_wui, NPCX_MIWU_MODE_EDGE, NPCX_MIWU_TRIG_LOW);
+#endif
 
 	/* SHI interrupt installation */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), shi_npcx_isr, DEVICE_DT_INST_GET(0),
