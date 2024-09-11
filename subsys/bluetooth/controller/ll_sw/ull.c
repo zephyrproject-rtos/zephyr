@@ -1053,6 +1053,7 @@ void ll_rx_dequeue(void)
 	{
 		struct node_rx_pdu *rx_curr;
 		struct pdu_adv *adv;
+		uint8_t loop = PDU_RX_POOL_SIZE / PDU_RX_NODE_POOL_ELEMENT_SIZE;
 
 		adv = (struct pdu_adv *)rx->pdu;
 		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
@@ -1062,6 +1063,9 @@ void ll_rx_dequeue(void)
 		rx_curr = rx->rx_ftr.extra;
 		while (rx_curr) {
 			memq_link_t *link_free;
+
+			LL_ASSERT(loop);
+			loop--;
 
 			link_free = rx_curr->hdr.link;
 			rx_curr = rx_curr->rx_ftr.extra;
