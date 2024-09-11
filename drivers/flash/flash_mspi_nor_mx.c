@@ -109,6 +109,7 @@ static int nor_mx_get_dummy_clk(uint8_t rxdummy, uint32_t *dummy_clk)
 	return 0;
 }
 
+/* Command to the flash for writing parameters */
 static int flash_mspi_nor_mx_command_write(const struct device *flash, uint8_t cmd, uint32_t addr,
 					    uint16_t addr_len, uint32_t tx_dummy, uint8_t *wdata,
 					    uint32_t length)
@@ -123,8 +124,8 @@ static int flash_mspi_nor_mx_command_write(const struct device *flash, uint8_t c
 	data->packet.data_buf         = wdata;
 	data->packet.num_bytes        = length;
 
-	data->trans.async             = false;
-	data->trans.xfer_mode         = MSPI_PIO;
+	data->trans.async             = false; /* meaning : timeout mode */
+	data->trans.xfer_mode         = MSPI_PIO; /* command_write is always in PIO mode */
 	data->trans.tx_dummy          = tx_dummy;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = addr_len;
@@ -141,6 +142,7 @@ static int flash_mspi_nor_mx_command_write(const struct device *flash, uint8_t c
 	return ret;
 }
 
+/* Command to the flash for reading parameters */
 static int flash_mspi_nor_mx_command_read(const struct device *flash, uint8_t cmd, uint32_t addr,
 					   uint16_t addr_len, uint32_t rx_dummy, uint8_t *rdata,
 					   uint32_t length)
@@ -155,8 +157,8 @@ static int flash_mspi_nor_mx_command_read(const struct device *flash, uint8_t cm
 	data->packet.data_buf         = rdata;
 	data->packet.num_bytes        = length;
 
-	data->trans.async             = false;
-	data->trans.xfer_mode         = MSPI_PIO;
+	data->trans.async             = false; /* meaning : timeout mode */
+	data->trans.xfer_mode         = MSPI_PIO;  /* command_read is always in PIO mode */
 	data->trans.rx_dummy          = rx_dummy;
 	data->trans.cmd_length        = 1;
 	data->trans.addr_length       = addr_len;
@@ -326,7 +328,7 @@ static int flash_mspi_nor_mx_page_program(const struct device *flash, off_t offs
 	data->packet.data_buf         = wdata;
 	data->packet.num_bytes        = len;
 
-	data->trans.async             = false;
+	data->trans.async             = true; /* use callback on Irq if PIO, meaningless with DMA */
 	data->trans.xfer_mode         = MSPI_DMA;
 	data->trans.tx_dummy          = data->dev_cfg.tx_dummy;
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
@@ -399,7 +401,7 @@ static int flash_mspi_nor_mx_mem_ready(const struct device *flash)
 	return ret;
 }
 
-/* Function to read the flash with possible OCTO/SPI and STR/DTR */
+/* Function to read the flash with possible PIO IT or DMA */
 static int flash_mspi_nor_mx_read(const struct device *flash, off_t offset, void *rdata,
 				   size_t size)
 {
@@ -438,7 +440,7 @@ static int flash_mspi_nor_mx_read(const struct device *flash, off_t offset, void
 	data->packet.data_buf         = rdata;
 	data->packet.num_bytes        = size;
 
-	data->trans.async             = false;
+	data->trans.async             = true; /* use callback on Irq if PIO, meaningless with DMA */
 	data->trans.xfer_mode         = MSPI_DMA;
 	data->trans.rx_dummy          = data->dev_cfg.rx_dummy;
 	data->trans.cmd_length        = data->dev_cfg.cmd_length;
@@ -463,7 +465,7 @@ read_end:
 	return ret;
 }
 
-/* Function to write the flash (page program) : with possible OCTO/SPI and STR/DTR */
+/* Function to write the flash (page program) : with possible PIO IT or DMA */
 static int flash_mspi_nor_mx_write(const struct device *flash, off_t offset, const void *wdata,
 				    size_t size)
 {
@@ -730,6 +732,8 @@ static int flash_mspi_nor_mx_init(const struct device *flash)
 		return -EIO;
 	}
 
+	LOG_DBG("Flash reset");
+
 	if (flash_mspi_nor_mx_get_vendor_id(flash, &vendor_id)) {
 		LOG_ERR("Could not read vendor id");;
 		return -EIO;
@@ -904,9 +908,8 @@ static const struct flash_driver_api flash_mspi_nor_mx_api = {
 	}
 
 static const struct flash_mspi_nor_mx_config flash_mspi_nor_mx_cfg = {
-		.port = (DT_REG_ADDR(DT_INST_BUS(0)) - REG_MSPI_BASEADDR) /
-			(DT_REG_SIZE(DT_INST_BUS(0)) * 4),
-		.mem_size = DT_INST_PROP(0, size) / 8,
+		.port = DT_INST_REG_ADDR(0), /* Not used */
+		.mem_size = DT_INST_PROP(0, size), /* in Bytes */
 		.flash_param =
 			{
 				.write_block_size = NOR_WRITE_SIZE,
@@ -914,7 +917,7 @@ static const struct flash_mspi_nor_mx_config flash_mspi_nor_mx_cfg = {
 			},
 		.page_layout =
 			{
-				.pages_count = DT_INST_PROP(0, size) / 8 / SPI_NOR_PAGE_SIZE,
+				.pages_count = DT_INST_PROP(0, size) / SPI_NOR_PAGE_SIZE,
 				.pages_size = SPI_NOR_PAGE_SIZE,
 			},
 		.bus                = DEVICE_DT_GET(DT_INST_BUS(0)),
