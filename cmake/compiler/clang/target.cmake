@@ -64,6 +64,42 @@ if(NOT "${ARCH}" STREQUAL "posix")
     endif()
   endif()
 
+  # LLVM will use a default sysroot for selection of the C library. The default
+  # C library sysroot was defined at built time of clang/LLVM.
+  #
+  # For example, LLVM for Arm comes pre-built with Picolibc, and thus no flags
+  # are required for selecting Picolibc.
+  #
+  # Other clang/LLVM distributions may come with other pre-built C libraries.
+  # clang/LLVM supports using an alternative C library, either by direct linking,
+  # or by specifying '--sysroot <path>'.
+  #
+  # LLVM for Arm provides a 'newlib.cfg' file for newlib C selection.
+  # Let us support this principle by looking for a dedicated 'newlib.cfg' or
+  # 'picolibc.cfg' and specify '--config <spec>.cfg' if such a file is found.
+  # If no cfg-file matching the chosen C implementation, then we assume that the
+  # chosen C implementation is identical to the default C library used be the
+  # toolchain.
+  if(CONFIG_NEWLIB_LIBC)
+    file(GLOB_RECURSE newlib_cfg ${LLVM_TOOLCHAIN_PATH}/newlib.cfg)
+    if(newlib_cfg)
+      list(GET newlib_cfg 0 newlib_cfg)
+      set_linker_property(PROPERTY c_library "--config=${newlib_cfg};-lc")
+      list(APPEND CMAKE_REQUIRED_FLAGS --config=${newlib_cfg})
+      list(APPEND TOOLCHAIN_C_FLAGS --config=${newlib_cfg})
+    endif()
+  endif()
+
+  if(CONFIG_PICOLIBC)
+    file(GLOB_RECURSE picolibc_cfg ${LLVM_TOOLCHAIN_PATH}/picolibc.cfg)
+    if(picolibc_cfg)
+      list(GET picolibc_cfg 0 picolibc_cfg)
+      set_linker_property(PROPERTY c_library "--config=${picolibc_cfg};-lc")
+      list(APPEND CMAKE_REQUIRED_FLAGS --config=${picolibc_cfg})
+      list(APPEND TOOLCHAIN_C_FLAGS --config=${picolibc_cfg})
+    endif()
+  endif()
+
   # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} ${clang_target_flag} ${TOOLCHAIN_C_FLAGS}
