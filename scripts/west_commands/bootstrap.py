@@ -6,6 +6,13 @@ import os
 import subprocess
 from zephyr_ext_common import ZEPHYR_BASE
 from pathlib import Path
+import requests
+import tempfile
+import tarfile
+import zipfile
+import gzip
+import magic
+import lzma
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
 
@@ -356,9 +363,12 @@ class Bootstrap(WestCommand):
             is_requirements=True,
         )
 
+        self.extra_paths: List[pathlib.Path] = []
         if self.manifest.venv.bin_requirements:
             log.inf("- Checking binary dependencies...")
             self._check_bin_requirements(global_defs=definitions)
+
+        self.modify_activate_script(hermetic=False)
 
         print("")
         print(
@@ -371,14 +381,6 @@ class Bootstrap(WestCommand):
             print(f"  $ source {str(self.venv_path / 'bin' / 'activate')}")
         else:
             print(f"  $ {str(self.venv_path / 'Scripts' / 'activate.bat')}")
-
-    def _check_bin_requirement(
-        self,
-        url: str,
-        local_defs: Dict[str, str],
-    ) -> None:
-        url = Bootstrap._replace_variables(input_str=url, defs=local_defs)
-        print("URL: " + url)
 
     @staticmethod
     def _replace_variables(input_str: str, defs: Dict[str, str]) -> str:
@@ -396,19 +398,97 @@ class Bootstrap(WestCommand):
             key = placeholders[0]
             input_str = re.sub(r"\$\{" + key + r"\}", defs[key], input_str)
 
+    def _install_bin_requirement(
+        self,
+        name: str,
+        install_path: pathlib.Path,
+        url: str,
+        local_defs: Dict[str, str],
+    ) -> None:
+        url = Bootstrap._replace_variables(input_str=url, defs=local_defs)
+        message_format = "  * [bin] %s... %s"
+        bootstrap_version_file = install_path / ".west_bootstrap_version"
+
+        # Check if .west_bootstrap_version exists and matches the URL
+        if bootstrap_version_file.exists():
+            existing_url = bootstrap_version_file.read_text().strip()
+            if existing_url == url:
+                log.inf(message_format % (name, "OK"))
+                return
+
+        # Create a temporary directory
+        log.inf(message_format % (name, "installing"))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = pathlib.Path(temp_dir)
+            # Download the file to the temporary directory
+            response = requests.get(url, stream=True, timeout=600)
+            response.raise_for_status()  # Raise an exception for bad status codes
+
+            # Get the filename from the Content-Disposition header, if available
+            filename: None | str = None
+            if "Content-Disposition" in response.headers:
+                disposition = response.headers["Content-Disposition"]
+                filenames = re.findall('filename="?([^"]+)"?', disposition)
+                if filenames:
+                    filename = filenames[0]
+
+            # If filename is still None, use the last part of the URL as a fallback
+            if filename is None:
+                filename = url.split("/")[-1]
+
+            temp_file_path = temp_dir_path / filename
+            with open(temp_file_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            # Extract the file based on its type
+            if temp_file_path.suffix == ".gz":
+                if temp_file_path.name[:-3].endswith(".tar"):  # Check for .tar.gz or .tar.xz
+                    with tarfile.open(temp_file_path, "r:gz") as tar:
+                        tar.extractall(install_path)
+                else:
+                    with gzip.open(temp_file_path, "rb") as f_in:
+                        with open(temp_file_path.with_suffix(""), "wb") as f_out:
+                            f_out.write(f_in.read())
+            elif temp_file_path.suffix == ".tar":
+                with tarfile.open(temp_file_path, "r:") as tar:
+                    tar.extractall(install_path)
+            elif temp_file_path.suffix == ".zip":
+                with zipfile.ZipFile(temp_file_path, "r") as zip_ref:
+                    zip_ref.extractall(install_path)
+            elif temp_file_path.suffix == '.xz':
+                if temp_file_path.name[:-3].endswith('.tar'):  # Check for .tar.xz
+                    with lzma.open(temp_file_path, 'rb') as f_xz:
+                        with tarfile.open(fileobj=f_xz, mode='r|') as tar:
+                            tar.extractall(install_path)
+                else:
+                    raise ValueError("Unsupported .xz file format (only .tar.xz is supported)")
+            else:
+                raise ValueError("Unsupported file format: " + str(temp_file_path))
+
+        # Create .west_bootstrap_version with the URL
+        bootstrap_version_file.write_text(url)
+        log.inf("          DONE")
+
     def _check_bin_requirements(self, global_defs: Dict[str, str]) -> None:
         for name, value in self.manifest.venv.bin_requirements.items():
             local_defs = global_defs.copy()
             local_defs.update(value.get("definitions", {}))
             local_defs.update(_GLOBAL_DEFINITIONS)
+            install_path = self.venv_path / "bin_requirements" / name
+            install_path.mkdir(parents=True, exist_ok=True)
+            self.extra_paths += [install_path / path for path in value["paths"]]
             url_map: Dict[str, str] = value["urls"]
 
             # first look for exact match to the current platform
             if _GLOBAL_DEFINITIONS["platform"] in url_map:
-                self._check_bin_requirement(
+                self._install_bin_requirement(
+                    name=name,
+                    install_path=install_path,
                     url=url_map[_GLOBAL_DEFINITIONS["platform"]],
                     local_defs=local_defs,
                 )
+                continue
 
             matching_url_keys: List[str] = []
             for key in url_map.keys():
@@ -416,7 +496,6 @@ class Bootstrap(WestCommand):
                     input_str=key, defs=local_defs
                 ).replace("*", ".*")
 
-                print("Search pattern: " + pattern)
                 match = re.match(
                     pattern=pattern, string=_GLOBAL_DEFINITIONS["platform"]
                 )
@@ -430,8 +509,11 @@ class Bootstrap(WestCommand):
                     "Multiple url keys matched: " + str(matching_url_keys)
                 )
 
-            self._check_bin_requirement(
-                url=url_map[matching_url_keys[0]], local_defs=local_defs
+            self._install_bin_requirement(
+                name=name,
+                install_path=install_path,
+                url=url_map[matching_url_keys[0]],
+                local_defs=local_defs,
             )
 
     def _install_python_deps(
@@ -448,18 +530,13 @@ class Bootstrap(WestCommand):
             else self.venv_path / "Scripts" / "python.exe"
         )
 
-        pattern_installing = r"Collecting (\S+)"
-        pattern_satisfied = r"Requirement already satisfied: (\S+) in \S+"
+        pattern_installing = r"Collecting (\S+).*"
+        pattern_satisfied = r"Requirement already satisfied: (\S+).*"
         command = [str(python_executable), "-m", "pip", "install"]
         message_format = "  * [Py] %s... %s"
         deps_array = [str(v) for v in deps]
         if is_requirements:
             command.append("-r")
-            deps_or_string = "|".join(deps_array)
-            pattern_installing += r" \(from -r (" + deps_or_string + r").*\)"
-            pattern_satisfied += r" \(from -r (" + deps_or_string + r").*\)"
-        pattern_installing += "$"
-        pattern_satisfied += "$"
         command += deps_array
         for c in constraints:
             command += ["-c" + str(c)]
@@ -485,3 +562,87 @@ class Bootstrap(WestCommand):
                 print(message_format % (satisfied_match.group(1), "OK"))
 
         process.wait()
+
+    def modify_activate_script(self, hermetic: bool):
+        """
+        Modifies the activate script to add/prepend extra paths to PATH,
+        replacing existing PATH setting if found. Also moves 'hash -r'
+        to the end if it exists.
+
+        Args:
+            hermetic: If True, override PATH with extra_paths; otherwise, prepend them.
+        """
+
+        current_os = platform.system()
+        if current_os == "Windows":
+            activate_script_path = self.venv_path / "Scripts" / "activate.bat"
+            path_separator = ";"
+            path_variable = "%PATH%"
+            set_command = "set"
+            path_pattern = rf"{set_command} PATH=(.*)"
+        else:
+            activate_script_path = self.venv_path / "bin" / "activate"
+            path_separator = ":"
+            path_variable = "$PATH"
+            set_command = "export"
+            path_pattern = rf"{set_command} PATH=(.*)"
+
+        with open(activate_script_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        path_line_found = False
+        clear_hash_command_found = False
+        hash_r_line_index = None  # To store the index of 'hash -r' if found
+
+        extra_paths = [str(path) for path in self.extra_paths]
+
+        for i, line in enumerate(lines):
+            if re.match(path_pattern, line):
+                path_line_found = True
+                if hermetic:
+                    new_path = path_separator.join(extra_paths)
+                else:
+                    new_path = path_separator.join(extra_paths + [path_variable])
+                lines[i] = f"{set_command} PATH={new_path}\n"
+            elif re.match(r"hash -r", line):
+                clear_hash_command_found = True
+                hash_r_line_index = i
+
+            if clear_hash_command_found and path_line_found:
+                break
+
+        if not path_line_found:
+            if hermetic:
+                new_path = path_separator.join(extra_paths)
+            else:
+                new_path = path_separator.join(extra_paths + [path_variable])
+            lines.append(f"\n{set_command} PATH={new_path}\n")
+
+        if clear_hash_command_found:
+            if hash_r_line_index is not None:
+                # Remove the 'hash -r' line from its original position
+                del lines[hash_r_line_index]
+            # Add 'hash -r' to the end
+            lines.append("\nhash -r 2> /dev/null\n")
+
+        with open(activate_script_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+
+        self.add_execute_permissions()
+
+    def add_execute_permissions(self):
+        """Adds execute permissions to all files in the directories specified in self.extra_paths."""
+
+        for path in self.extra_paths:
+            if not path.is_dir():
+                continue  # Skip if it's not a directory
+
+            for file in path.iterdir():
+                if not file.is_file():
+                    continue
+
+                if magic.from_file(file, mime=True).startswith("text/"):
+                    continue
+                
+                # Make the file executable for the owner
+                file.chmod(file.stat().st_mode | 0o111)  # Add execute permissions

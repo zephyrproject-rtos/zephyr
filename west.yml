@@ -37,8 +37,31 @@ manifest:
         definitions:
           package: "infra/3pp/tools/cmake/${platform}"
           version: "version:3@3.30.3.chromium.8"
+        paths: ["bin"]
         urls:
           "*": "${cipd_url}/${package}/+/${version}"
+      ninja:
+        definitions:
+          package: "infra/3pp/tools/ninja/${platform}"
+          version: "version:3@1.12.1.chromium.4"
+        paths: ["."]
+        urls:
+          "*": "${cipd_url}/${package}/+/${version}"
+      gperf:
+        definitions:
+          version: "version:3@3.2"
+        paths: ["bin"]
+        urls:
+          "linux-amd64": "${cipd_url}/infra/3pp/tools/gperf/${platform}/+/${version}"
+      ccache:
+        definitions:
+          version: "4.10.2"
+          root_url: "https://github.com/ccache/ccache/releases/download/v${version}/ccache-${version}"
+        paths: []
+        urls:
+          "linux-amd64": "${root_url}-linux-x86_64.tar.xz"
+          "mac-*": "${root_url}-darwin.tar.gz"
+          "windows-amd64": "${root_url}-windows-x86_64.zip"
 
 
       # Linux:
