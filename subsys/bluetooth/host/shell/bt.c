@@ -36,10 +36,10 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "bt.h"
-#include "ll.h"
-#include "hci.h"
-#include "../audio/shell/audio.h"
+#include "audio/shell/audio.h"
+#include "controller/ll_sw/shell/ll.h"
+#include "host/shell/bt.h"
+#include "mesh/shell/hci.h"
 
 static bool no_settings_load;
 

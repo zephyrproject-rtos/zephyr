@@ -16,10 +16,10 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "../controller/util/memq.h"
-#include "../controller/util/mayfly.h"
-#include "../controller/hal/ticker.h"
-#include "../controller/ticker/ticker.h"
+#include "controller/util/memq.h"
+#include "controller/util/mayfly.h"
+#include "controller/hal/ticker.h"
+#include "controller/ticker/ticker.h"
 
 #if defined(CONFIG_BT_MAX_CONN)
 #define TICKERS_MAX (CONFIG_BT_MAX_CONN + 2)
@@ -27,7 +27,7 @@
 #define TICKERS_MAX 2
 #endif
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 static void ticker_op_done(uint32_t err, void *context)
 {

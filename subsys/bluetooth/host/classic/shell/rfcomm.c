@@ -29,7 +29,7 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 #define DATA_MTU 48
 

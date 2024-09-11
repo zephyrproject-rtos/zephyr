@@ -19,7 +19,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static int cmd_tmap_init(const struct shell *sh, size_t argc, char **argv)
 {

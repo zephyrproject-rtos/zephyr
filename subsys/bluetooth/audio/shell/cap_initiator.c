@@ -33,7 +33,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)

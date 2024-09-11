@@ -23,7 +23,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static struct bt_conn *tbs_authorized_conn;
 static bool cbs_registered;
