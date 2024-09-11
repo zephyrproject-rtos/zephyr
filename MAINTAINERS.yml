@@ -4824,6 +4824,14 @@ West:
   labels:
     - "platform: Intel"
 
+"West project: zephyr-lang-rust":
+  status: maintained
+  maintainers:
+    - d3zd3z
+  files: []
+  labels:
+    - "area: Rust"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
