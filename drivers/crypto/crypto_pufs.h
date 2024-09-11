@@ -114,45 +114,20 @@
 /**
  * @brief SHA lengths
  */
-#define RS_SHA_MAX_LEN 64
-#define RS_SHA256_LEN 32
+#define PUFS_SHA_MAX_LEN 64
+#define PUFS_SHA256_LEN 32
 
 /**
  * @brief ECDSA256 quadrant and key lengths
  */
-#define RS_EC256_QLEN 32
-#define RS_EC256_KEY_LEN (32 * 2)
+#define PUFS_EC256_QLEN 32
+#define PUFS_EC256_KEY_LEN (32 * 2)
 
 /**
  * @brief RSA 2048 public key modulus length
  *
  */
-#define RS_RSA_2048_LEN 256
-
-/**
- * @brief RSA 2048 public key exponent length
- */
-#define RS_RSA_E_LEN 4
-
-/**
- * @brief RSA 2048 public key length
- */
-#define RS_RSA_2048_KEY_LEN (RS_RSA_2048_LEN + RS_RSA_E_LEN)
-
-/**
- * @brief IV length for AES-CTR128
- */
-#define RS_AES_CTR128_IV_EN 16
-
-/**
- * @brief Key length for AES128
- */
-#define RS_AES16_KEY_LEN 16
-
-/**
- * @brief Key length for AES256
- */
-#define RS_AES32_KEY_LEN 32
+#define PUFS_RSA_2048_LEN 256
 
 /*****************************************************************************
  * Enumerations
@@ -250,6 +225,15 @@ enum pufcc_sp38a_mode {
   PUFCC_CTR128
 };
 
+/**
+ * @enum  pufs_crypto_tfr_type
+ * @brief Types of secure transfer type in case of peripherals
+ */
+enum pufs_crypto_tfr_type {
+  PUFS_SECURE_TX,  // Write to peripheral
+  PUFS_SECURE_RX   // Read from peripheral
+};
+
 // Scatter gather DMA descriptor struct
 struct pufcc_sg_dma_desc {
   uint32_t read_addr;
@@ -260,151 +244,6 @@ struct pufcc_sg_dma_desc {
   uint32_t key_cfg;
   uint32_t cypt_cfg[2];
 };
-
-/**
- * @enum  rs_crypto_status
- * @brief Enum for crypto specific status values
- *
- */
-enum rs_crypto_status {
-  CRYPTO_SUCCESS = 0,
-  NULL_POINTER = 1,
-  MEM_UNAVAILABLE = 2,
-  CRYPTO_INIT_ERROR = 3,
-  RSA_VERIFY_ERROR = 4,
-  ECDSA_VERIFY_ERROR = 5,
-  DECRYPTION_ERROR = 6,
-  HASH_CALC_ERROR = 7,
-  ECP_CONFIG_ERROR = 8,
-  INVALID_RSA_TYPE = 9,
-  INVALID_HASH_ALGO = 10,
-  INVALID_ENCRYPTION_ALGO = 11,
-  INVALID_SIGNING_ALGO = 12,
-  INVALID_CIPHER_TYPE = 13,
-  BOP_IMAGE_NOT_FOUND = 14,
-  INVALID_IMAGE_TYPE = 15,
-  KEY_WRITE_ERROR = 16,
-  KEY_READ_ERROR = 17,
-  KEY_LOCK_ERROR = 18,
-  INVALID_PUBLIC_KEY = 19,
-  INVALID_ENC_KEY = 20,
-  NON_SECURE_IMAGE = 21,
-  CRC_CHECK_FAILED = 22,
-  INVALID_KEY_SLOT = 23,
-  INVALID_KEY_SRC = 24,
-  NO_ENC_KEY = 25,
-  NO_ACCESS = 26,
-  DATA_TRANSFER_ERROR = 27,
-  KEY_NOT_IN_MANIFEST = 28,
-  CRYPTO_xCB_ERROR = 29,
-  INVALID_KEYS = 30,
-  NO_ACTIONS = 31,
-  INTEGRITY_CHECK_FAILED = 32,
-  CBUFFER_READ_ERROR = 33,
-  INVALID_TARGET_DEVICE = 34,
-  DECOMPRESSION_ERROR = 35,
-  INVALID_ACTION_CMD = 36,
-  INVALID_CMPR_ALGO = 37,
-  CBUFFER_DATA_CONSUMPTION_MISMATCH = 38,
-  ALL_ACTIONS_NOT_CONSUMED = 39,
-  MALFORMED_ACTION = 40,
-  LIFECYCLE_PROGRAMMING_ERROR = 41,
-  FLASH_PROGRAM_ERROR = 42,
-  FLASH_ERASE_ERROR = 43
-};
-
-/**
- * @enum  rs_sign_algo
- * @brief Enum for signing algorithms
- *
- */
-enum rs_crypto_sign_algo {
-  SIGN_ALGO_NULL = 0,
-  SIGN_ALGO_ECDSA256 = 0x10,
-  SIGN_ALGO_ECDSA384 = 0x11,
-  SIGN_ALGO_RSA2048 = 0x20,
-  SIGN_ALGO_BRAINPOOL256 = 0x30,
-  SIGN_ALGO_BRAINPOOL384 = 0x31,
-  SIGN_ALGO_SM2 = 0x40
-};
-
-/**
- * @enum  rs_enc_algo
- * @brief Enum for encryption algorithms
- */
-enum rs_crypto_enc_algo {
-  ENC_ALGO_NULL = 0,
-  ENC_ALGO_AES128_CTR = 0x10,
-  ENC_ALGO_AES192_CTR = 0x11,
-  ENC_ALGO_AES256_CTR = 0x12,
-  ENC_ALGO_AES128_GCM = 0x20,
-  ENC_ALGO_AES192_GCM = 0x21,
-  ENC_ALGO_AES256_GCM = 0x22
-};
-
-/**
- * @enum  rs_crypto_cipher
- * @brief Symmetric cipher types
- */
-enum rs_crypto_cipher { AES_CIPHER, SM4_CIPHER, CHACHA_CIPHER };
-
-/**
- * @enum  rs_crypto_rsa_type
- * @brief RSA types
- */
-enum rs_crypto_rsa_type { RSA_1024, RSA_2048, RSA_3072, RSA_4096 };
-
-/**
- * @enum  rs_crypto_key_src
- * @brief Key source i.e. software or hardware
- */
-enum rs_crypto_key_src {
-  RS_SW_KEY,  // Software key in a buffer
-  RS_HW_KEY   // Hardware/OTP based key
-};
-
-/**
- * @enum  rs_crypto_key_slots
- * @brief RS defined key slots
- */
-enum rs_crypto_key_slot {
-  RS_FSBL_RSA2048_PUBK_HASH_SLOT,
-  RS_FSBL_ECDSA256_PUBK_HASH_SLOT,
-  RS_FSBL_AES16_ENC_KEY_SLOT,
-  RS_FSBL_AES32_ENC_KEY_SLOT,
-  RS_ACPU_RSA2048_PUBK_HASH_SLOT,
-  RS_ACPU_ECDSA256_PUBK_HASH_SLOT,
-  RS_ACPU_AES16_ENC_KEY_SLOT,
-  RS_ACPU_AES32_ENC_KEY_SLOT,
-  RS_XCB_RSA2048_PUBK_HASH_SLOT,
-  RS_XCB_ECDSA256_PUBK_HASH_SLOT,
-  RS_XCB_AES16_ENC_KEY_SLOT,
-  RS_XCB_AES32_ENC_KEY_SLOT,
-  RS_LIFECYCLE_BITS_SLOT,
-  RS_CHIP_ID_SLOT,
-  RS_INVALID_KEY_SLOT,
-  RS_ALL_KEY_SLOTS  // Used to indicate an operation on all valid key slots
-                    // above
-};
-
-/**
- * @enum  rs_crypto_hash_type
- * @brief Types of cryptographic hash algorithms
- */
-enum rs_crypto_hash_type { SHA256 = 0x10, SHA384 = 0x11, SHA512 = 0x12 };
-
-/**
- * @enum  rs_crypto_tfr_type
- * @brief Types of secure transfer type in case of peripherals
- */
-enum rs_crypto_tfr_type {
-  RS_SECURE_TX,  // Write to peripheral
-  RS_SECURE_RX   // Read from peripheral
-};
-
-enum rs_status { OK = 0, WOULD_BLOCK = 1, ERROR = 2 } __attribute__((packed));
-
-typedef void (*rs_dma_callback_t)(void* app_data, int ch, int status);
 
 /*****************************************************************************
  * Register structures
@@ -625,52 +464,26 @@ struct pufcc_pkc_regs {
   volatile uint32_t ecp_data[512];
 };
 
-struct pufcc_dma_dev {
-  struct pufcc_dma_regs *regs;
-  bool is_dev_free;
-  struct pufcc_sg_dma_desc *dma_descs;
-  uint32_t num_descriptors;
-  void *callback_args;
-  rs_dma_callback_t callback;
-};
-
 /**
- * @struct rs_crypto_addr
+ * @struct pufs_crypto_addr
  * @brief  Address info for cryptographic operations
  */
-struct rs_crypto_addr {
+struct pufs_crypto_addr {
   uint32_t read_addr;
   uint32_t write_addr;
   uint32_t len;
-  enum rs_crypto_tfr_type tfr_type;  // Transfer type (read or write) in case of
+  enum pufs_crypto_tfr_type tfr_type;  // Transfer type (read or write) in case of
                                      // peripherals, otherwise don't care
   bool periph_rw;  // Indicates if data transfer involves a peripheral
-  struct rs_crypto_addr *next;  // In case data lies at multiple locations
+  struct pufs_crypto_addr *next;  // In case data lies at multiple locations
 };
 
 /**
- * @struct rs_crypto_key
- * @brief  Generic cryptographic key structure
- */
-struct rs_crypto_key {
-  enum rs_crypto_key_src key_src;
-  uint8_t *key_addr;                 // For software key in a buffer
-  enum rs_crypto_key_slot key_slot;  // For HW/OTP/eFuse based key
-  uint32_t key_len;
-  uint8_t *iv;
-  uint32_t iv_len;
-  bool readback_iv;  // If true, read back updated IV value corresponding to
-                     // number of processed data blocks during decryption into
-                     // the iv buffer above. In this case iv buffer must be
-                     // writable.
-};
-
-/**
- * @struct rs_crypto_rsa2048_puk
+ * @struct pufs_crypto_rsa2048_puk
  * @brief  RSA 2048 public key structure
  */
-struct rs_crypto_rsa2048_puk {
-  uint8_t n[RS_RSA_2048_LEN];  // Modulus
+struct pufs_crypto_rsa2048_puk {
+  uint8_t n[PUFS_RSA_2048_LEN];  // Modulus
   uint32_t e;                  // Exponent
 };
 
@@ -679,95 +492,34 @@ struct rs_crypto_rsa2048_puk {
  * @brief  ECDSA256 public key
  */
 struct rs_crypto_ec256_puk {
-  uint8_t x[RS_EC256_QLEN];
-  uint8_t y[RS_EC256_QLEN];
+  uint8_t x[PUFS_EC256_QLEN];
+  uint8_t y[PUFS_EC256_QLEN];
 };
 
 /**
- * @struct rs_crypto_ec256_sig
+ * @struct pufs_crypto_ec256_sig
  * @brief  ECDSA256 signature
  */
-struct rs_crypto_ec256_sig {
-  uint8_t r[RS_EC256_QLEN];
-  uint8_t s[RS_EC256_QLEN];
+struct pufs_crypto_ec256_sig {
+  uint8_t r[PUFS_EC256_QLEN];
+  uint8_t s[PUFS_EC256_QLEN];
 };
 
 /**
- * @struct rs_crypto_hash
+ * @struct pufs_crypto_hash
  * @brief  Hash structure
  */
-struct rs_crypto_hash {
-  uint8_t val[RS_SHA_MAX_LEN];
+struct pufs_crypto_hash {
+  uint8_t val[PUFS_SHA_MAX_LEN];
   uint32_t len;
 };
 
-/**
- * @enum  rs_crypto_key_manifest
- * @brief Key manifest structure
- */
-struct rs_crypto_key_manifest {
-  uint32_t key_mask;  // Key availability bitmask according to
-                      // 'rs_crypto_key_slot' enum above
-  uint8_t fsbl_rsa2048_pubk_hash[32];
-  uint8_t fsbl_ecdsa256_pubk_hash[32];
-  uint8_t fsbl_aes128_enc_key[16];
-  uint8_t fsbl_aes256_enc_key[32];
-  uint8_t acpu_rsa2048_pubk_hash[32];
-  uint8_t acpu_ecdsa256_pubk_hash[32];
-  uint8_t acpu_aes128_enc_key[16];
-  uint8_t acpu_aes256_enc_key[32];
-  uint8_t xcb_rsa2048_pubk_hash[32];
-  uint8_t xcb_ecdsa256_pubk_hash[32];
-  uint8_t xcb_aes128_enc_key[16];
-  uint8_t xcb_aes256_enc_key[32];
+/* Device constant configuration parameters */
+struct pufcc_config {
+	void (*irq_init)(void);
+	uint32_t base;
+	uint32_t irq_num;
 };
-
-enum rs_dma_addr_adjust {
-  RS_DMA_ADDR_ADJUST_INCREMENT = 0x0,
-  RS_DMA_ADDR_ADJUST_DECREMENT = 0x1,
-  RS_DMA_ADDR_ADJUST_FIXED = 0x2,
-};
-
-struct rs_dma_block_config {
-  uintptr_t src_addr;
-  uintptr_t dst_addr;
-  uint32_t block_size;
-  struct rs_dma_block_config* next_block;
-  enum rs_dma_addr_adjust src_addr_adjust;
-  enum rs_dma_addr_adjust dst_addr_adjust;
-};
-
-struct rs_dma_config {
-  // peripheral combination. Platform dependent
-  uint8_t dma_slot __attribute__((aligned(4)));
-  // What type of DMA transfer this is
-  uint8_t xfer_dir __attribute__((aligned(4)));
-  // enable callback on transfer complete
-  uint8_t complete_callback_en __attribute__((aligned(4)));
-  // enable callback on transfer error
-  uint8_t err_callback_en __attribute__((aligned(4)));
-  // select software or hardware handshaking on the source
-  uint8_t src_handshake_mode __attribute__((aligned(4)));
-  // select software or hardware handshaking on the dest
-  uint8_t dst_handshake_mode __attribute__((aligned(4)));
-  // priority of the transfer
-  uint8_t xfer_priority __attribute__((aligned(4)));
-  // width of src data in bytes
-  uint16_t src_data_size __attribute__((aligned(4)));
-  // width of dst data in bytes
-  uint16_t dst_data_size __attribute__((aligned(4)));
-  // length of data to be retrieved in each src transfer step
-  uint16_t src_burst_len __attribute__((aligned(4)));
-  // length of data to be written in each dest transfer step
-  uint16_t dst_burst_len __attribute__((aligned(4)));
-  // total amount of transfer blocks to be used
-  uint32_t block_count __attribute__((aligned(4)));
-  // first transfer descriptor
-  struct rs_dma_block_config* head_block __attribute__((aligned(4)));
-  // arguments to be passed as app_data to the dma callback
-  void* callback_args __attribute__((aligned(4)));
-  rs_dma_callback_t callback __attribute__((aligned(4)));
-} __attribute__((aligned(4)));
 
 /*
 The following macro can be used to write register values.

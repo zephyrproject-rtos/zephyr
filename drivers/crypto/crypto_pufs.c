@@ -97,7 +97,7 @@ static struct pufcc_pkc_regs *pkc_regs;
  * Local function declarations
  ****************************************************************************/
 static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
-                                          struct rs_crypto_addr *msg_addr);
+                                          struct pufs_crypto_addr *msg_addr);
 static enum pufcc_status otp_range_check(uint32_t addr, uint32_t len);
 static int rwlck_index_get(uint32_t idx);
 static void reverse(uint8_t *dst, const uint8_t *src, size_t len);
@@ -118,8 +118,8 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
  * @param[in]  hash       Pointer to hash strcut to return hash value in
  * @return                PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_calc_sha256_hash(struct rs_crypto_addr *data_addr,
-                                         struct rs_crypto_hash *hash) {
+enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
+                                         struct pufs_crypto_hash *hash) {
   enum pufcc_status status;
   struct pufcc_intrpt_reg intrpt_reg = {0};
   struct pufcc_dma_cfg_0_reg dma_cfg_0_reg = {0};
@@ -204,7 +204,7 @@ enum pufcc_status pufcc_calc_sha256_hash(struct rs_crypto_addr *data_addr,
  * @fn    pufcc_calc_sha256_hash_sg
  * @brief Calculates SHA256 hash of non-contiguous data.
  *        All non contiguous data addresses can be passed in as a single linked
- *        list in the form of 'rs_crypto_addr' struct as 'data_addr' parameter
+ *        list in the form of 'pufs_crypto_addr' struct as 'data_addr' parameter
  *        or this function can be invoked multiple times with partial data
  *        address info in the linked list by setting the 'first' and 'last'
  *        params accordingly as detailed below against each param. In case of
@@ -234,15 +234,15 @@ enum pufcc_status pufcc_calc_sha256_hash(struct rs_crypto_addr *data_addr,
  * @param[out] hash_out   Pointer to hash strcut to return hash value in
  * @return                PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_calc_sha256_hash_sg(struct rs_crypto_addr *data_addr,
+enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data_addr,
                                             bool first, bool last,
                                             uint32_t *prev_len,
-                                            struct rs_crypto_hash *hash_in,
-                                            struct rs_crypto_hash *hash_out) {
+                                            struct pufs_crypto_hash *hash_in,
+                                            struct pufs_crypto_hash *hash_out) {
   enum pufcc_status status;
   uint32_t plen = 0;
   uint8_t desc_count = 0;
-  struct rs_crypto_addr *curr_addr = data_addr;
+  struct pufs_crypto_addr *curr_addr = data_addr;
   struct pufcc_dma_cfg_0_reg dma_cfg_0_reg = {0};
   struct pufcc_dma_dsc_cfg_4_reg dma_dsc_cfg_4_reg = {0};
   struct pufcc_dma_key_cfg0_reg dma_key_cfg0_reg = {0};
@@ -497,8 +497,8 @@ enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
 enum pufcc_status pufcc_rsa2048_sign_verify(
-    uint8_t *sig, struct rs_crypto_addr *msg_addr,
-    struct rs_crypto_rsa2048_puk *pub_key) {
+    uint8_t *sig, struct pufs_crypto_addr *msg_addr,
+    struct pufs_crypto_rsa2048_puk *pub_key) {
   enum pufcc_status status = PUFCC_SUCCESS;
   uint32_t temp32;
   uint8_t dec_msg[PUFCC_RSA_2048_LEN];
@@ -569,11 +569,11 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
 enum pufcc_status pufcc_ecdsa256_sign_verify(
-    struct rs_crypto_ec256_sig *sig, struct rs_crypto_addr *msg_addr,
+    struct pufs_crypto_ec256_sig *sig, struct pufs_crypto_addr *msg_addr,
     struct rs_crypto_ec256_puk *pub_key) {
   uint32_t temp32, prev_len = 0;
   enum pufcc_status status;
-  struct rs_crypto_hash hash;
+  struct pufs_crypto_hash hash;
 
   // Calculate hash of the message
   if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
@@ -657,68 +657,6 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
 }
 
 /**
- * @fn    pufcc_dma_transfer
- * @brief Transfer data using PUFcc DMA
- *
- * @param[in]  src_addr    Source data address
- * @param[in]  dest_addr   Destination data address
- * @param[in]  len         Length of the data to be transferred
- * @param[in]  fixed_read  Read data from a fixed address
- * @param[in]  fixed_write Write data to a fixed address
- * @return                 PUFCC_SUCCESS on success, otherwise an error code
- */
-enum pufcc_status pufcc_dma_transfer(uint32_t src_addr, uint32_t dest_addr,
-                                     uint32_t len, bool fixed_read,
-                                     bool fixed_write) {
-  enum pufcc_status status;
-  uint32_t temp32 = 0;
-
-  // Configure DMA intrpt register
-  struct pufcc_intrpt_reg *intrpt_reg = (struct pufcc_intrpt_reg *)&temp32;
-  intrpt_reg->intrpt_st = 1;  // Write 1 to clear interrupt
-  REG_WRITE_32(&dma_regs->interrupt, intrpt_reg);
-
-  // Set dma_cfg_0 register
-  temp32 = 0;  // rng_en = 0, sg_en = 0
-  REG_WRITE_32(&dma_regs->cfg_0, &temp32);
-
-  struct pufcc_dma_cfg_1_reg *cfg_1_reg = (struct pufcc_dma_cfg_1_reg *)&temp32;
-  cfg_1_reg->rbst_max = 0xF;
-  cfg_1_reg->rbst_min = 0xF;
-  cfg_1_reg->wbst_max = 0xF;
-  cfg_1_reg->wbst_min = 0xF;
-  REG_WRITE_32(&dma_regs->cfg_1, cfg_1_reg);
-
-  // Set data source address in dsc_cfg_0 register
-  REG_WRITE_32(&dma_regs->dsc_cfg_0, &src_addr);
-
-  // Set decrypted data destination address in dsc_cfg_1 register
-  REG_WRITE_32(&dma_regs->dsc_cfg_1, &dest_addr);
-
-  // Set data length in dsc_cfg_2 register
-  REG_WRITE_32(&dma_regs->dsc_cfg_2, &len);
-
-  // Configure dma_dsc_cfg_4 register
-  temp32 = 0;
-  struct pufcc_dma_dsc_cfg_4_reg *dsc_cfg_4_reg =
-      (struct pufcc_dma_dsc_cfg_4_reg *)&temp32;
-  dsc_cfg_4_reg->fw = fixed_write;
-  dsc_cfg_4_reg->fr = fixed_read;
-  dsc_cfg_4_reg->no_cypt = true;  // Bypass crypto modules
-  REG_WRITE_32(&dma_regs->dsc_cfg_4, dsc_cfg_4_reg);
-
-  // Start DMA operation
-  struct pufcc_start_reg *start_reg = (struct pufcc_start_reg *)&temp32;
-  start_reg->start_p = 1;
-  REG_WRITE_32(&dma_regs->start, start_reg);
-
-  // Poll on busy status
-  status = busy_wait(&dma_regs->status_0, PUFCC_DMA_ERROR_MASK);
-
-  return status;
-}
-
-/**
  * @fn    pufcc_otp_setup_wait
  * @brief Wait for the PUFrt module setup during power on
  *
@@ -746,7 +684,7 @@ enum pufcc_status pufcc_program_otp(const uint8_t *in_buf, uint32_t len,
   enum pufcc_status check;
   uint16_t addr = otp_slot * PUFCC_OTP_KEY_LEN;
   uint32_t start_index = addr / PUFCC_WORD_SIZE;
-  enum pufcc_otp_lock lock;
+  enum pufcc_otp_lock lock = PUFCC_OTP_NA;
 
   if ((check = otp_range_check(addr, len)) != PUFCC_SUCCESS) return check;
 
@@ -950,196 +888,17 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
   return PUFCC_SUCCESS;
 }
 
-int pufcc_dma_request_channel(struct pufcc_dma_dev *dev) {
-  if (dev->is_dev_free) {
-    dev->is_dev_free = false;
-    return 0;
-  }
+// static void pufs_irq_handler(const struct device *dev) {
+//   int status = (dev->regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
+//   struct pufcc_intrpt_reg *intrpt_reg_ptr =
+//       (struct pufcc_intrpt_reg *)&dev->regs->interrupt;
 
-  return -1;
-}
+//   // Clear and disable interrupt
+//   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
+//   intrpt_reg_ptr->intrpt_en = 0;
 
-void pufcc_dma_release_channel(struct pufcc_dma_dev *dev, int channel) {
-  (void)channel;
-  dev->is_dev_free = true;
-}
-
-enum rs_status pufcc_dma_config_descriptor_memory(struct pufcc_dma_dev *dev,
-                                                  int channel, uintptr_t addr,
-                                                  size_t max_descriptors) {
-  // Check that channel is valid and is in use
-  if ((channel != 0) || (dev->is_dev_free)) {
-    return ERROR;
-  }
-
-  dev->dma_descs = (struct pufcc_sg_dma_desc *)addr;
-  dev->num_descriptors = max_descriptors;
-  return OK;
-}
-
-enum rs_status pufcc_dma_config_xfer(struct pufcc_dma_dev *dev, int channel,
-                                     struct rs_dma_config *config) {
-  uint8_t desc_count = 0;
-  struct rs_dma_block_config *current_block = config->head_block;
-  struct pufcc_dma_cfg_0_reg dma_cfg_0_reg = {0};
-  struct pufcc_dma_cfg_1_reg cfg_1_reg = {0};
-  struct pufcc_dma_dsc_cfg_4_reg dma_dsc_cfg_4_reg = {0};
-  struct pufcc_intrpt_reg intrpt_reg = {0};
-
-  // Check that channel is valid and is in use and required descriptors for this
-  // transactions are available
-  if ((channel != 0) || (dev->is_dev_free) ||
-      (config->block_count > dev->num_descriptors)) {
-    return ERROR;
-  }
-
-  // Write 1 to clear interrupt
-  intrpt_reg.intrpt_st = 1;
-
-  // Setup interrupt
-  if (config->complete_callback_en) {
-    intrpt_reg.intrpt_en = 1;
-  } else {
-    intrpt_reg.intrpt_en = 0;
-  }
-
-  // Set SGDMA descriptors
-  do {
-    dev->dma_descs[desc_count].read_addr =
-        be2le((uint32_t)current_block->src_addr);
-    dev->dma_descs[desc_count].write_addr =
-        be2le((uint32_t)current_block->dst_addr);
-    dev->dma_descs[desc_count].length = be2le(current_block->block_size);
-    dev->dma_descs[desc_count].next =
-        be2le((uint32_t)&dev->dma_descs[desc_count + 1]);
-
-    dev->dma_descs[desc_count].key_cfg = 0;
-    dev->dma_descs[desc_count].cypt_cfg[0] = 0;
-    dev->dma_descs[desc_count].cypt_cfg[1] = 0;
-
-    *(uint32_t *)&dma_dsc_cfg_4_reg = 0;
-    if (current_block->src_addr_adjust == RS_DMA_ADDR_ADJUST_FIXED) {
-      dma_dsc_cfg_4_reg.fr = 1;
-    } else if (current_block->src_addr_adjust != RS_DMA_ADDR_ADJUST_INCREMENT) {
-      return ERROR;
-    }
-
-    if (current_block->dst_addr_adjust == RS_DMA_ADDR_ADJUST_FIXED) {
-      dma_dsc_cfg_4_reg.fw = 1;
-    } else if (current_block->dst_addr_adjust != RS_DMA_ADDR_ADJUST_INCREMENT) {
-      return ERROR;
-    }
-
-    // Bypass crypto modules
-    dma_dsc_cfg_4_reg.no_cypt = true;
-
-    if (!desc_count) {
-      dma_dsc_cfg_4_reg.head = true;
-    }
-
-    current_block = current_block->next_block;
-
-    // Mark this descriptor as last if there is no more data
-    if (!current_block) {
-      dma_dsc_cfg_4_reg.dn_pause = true;
-      dma_dsc_cfg_4_reg.tail = true;
-
-      if (config->complete_callback_en) {
-        dma_dsc_cfg_4_reg.dn_intrpt = true;
-      }
-    }
-
-    dev->dma_descs[desc_count].dsc_cfg_4 =
-        be2le(*(uint32_t *)&dma_dsc_cfg_4_reg);
-
-    desc_count++;
-  } while (current_block && (desc_count < dev->num_descriptors));
-
-  if (current_block) {
-    // No enough descriptors available
-    return ERROR;
-  }
-
-  /*** Configure DMA registers ***/
-  // Enable SGDMA in dma_cfg_0 register
-  dma_cfg_0_reg.sg_en = 1;
-  REG_WRITE_32(&dev->regs->cfg_0, &dma_cfg_0_reg);
-
-  cfg_1_reg.rbst_max = 0xF;
-  cfg_1_reg.rbst_min = 0xF;
-  cfg_1_reg.wbst_max = 0xF;
-  cfg_1_reg.wbst_min = 0xF;
-  REG_WRITE_32(&dev->regs->cfg_1, &cfg_1_reg);
-
-  // Set dsc_cfg_2 register to indicate it's an SGDMA operation
-  dev->regs->dsc_cfg_2 = PUFCC_DMA_DSC_CFG2_SGDMA_VAL;
-
-  // Set starting address of SGDMA descriptors in dma_dsc_cfg3 register
-  dev->regs->dsc_cfg_3 = (uint32_t)dev->dma_descs;
-
-  // Write interrupt register with values populated above
-  REG_WRITE_32(&dev->regs->interrupt, &intrpt_reg);
-
-  // Set up call backs
-  dev->callback = config->callback;
-  dev->callback_args = config->callback_args;
-
-  return OK;
-}
-
-enum rs_status pufcc_dma_start_xfer(struct pufcc_dma_dev *dev, int channel) {
-  struct pufcc_start_reg start_reg = {0};
-
-  // Check that channel number is valid and the channel has been requested
-  if ((channel != 0) || (dev->is_dev_free)) {
-    return ERROR;
-  }
-
-  // Start the DMA operation by writing to its start register
-  start_reg.start_p = 1;
-  REG_WRITE_32(&dev->regs->start, &start_reg);
-
-  return OK;
-}
-
-enum rs_status pufcc_dma_stop_xfer(struct pufcc_dma_dev *dev, int channel) {
-  struct pufcc_sg_dma_desc *next_desc_ptr;
-  struct pufcc_dma_dsc_cfg_4_reg dma_dsc_cfg_4_reg = {0};
-
-  // check the channel number is valid and the channel has been requested
-  if ((channel != 0) || dev->is_dev_free) {
-    return ERROR;
-  }
-
-  // Get pointer to next descriptor in queue
-  next_desc_ptr = (struct pufcc_sg_dma_desc *)dev->regs->dsc_cur_3;
-
-  // Make sure that this descriptor lies within descriptor memory; it will lie
-  // outside the memory if last descriptor is already being processed
-  if (((uint32_t)next_desc_ptr > (uint32_t)dev->dma_descs) &&
-      ((uint32_t)next_desc_ptr <
-       ((uint32_t)dev->dma_descs +
-        (dev->num_descriptors * sizeof(struct pufcc_sg_dma_desc))))) {
-    // Set up descriptor to stop DMA operation
-    *(uint32_t *)&dma_dsc_cfg_4_reg = next_desc_ptr->dsc_cfg_4;
-    dma_dsc_cfg_4_reg.dn_pause = true;
-    dma_dsc_cfg_4_reg.tail = true;
-  }
-
-  return OK;
-}
-
-void pufcc_dma_irq_handler(struct pufcc_dma_dev *dev) {
-  int status = (dev->regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
-  struct pufcc_intrpt_reg *intrpt_reg_ptr =
-      (struct pufcc_intrpt_reg *)&dev->regs->interrupt;
-
-  // Clear and disable interrupt
-  intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
-  intrpt_reg_ptr->intrpt_en = 0;
-
-  dev->callback(dev->callback_args, 0, status);
-}
+//   dev->callback(dev->callback_args, 0, status);
+// }
 
 /**
  * @fn    rsa_p1v15_verify
@@ -1150,9 +909,9 @@ void pufcc_dma_irq_handler(struct pufcc_dma_dev *dev) {
  * @return              PUFCC_SUCCESS on success, otherwise an error code.
  */
 static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
-                                          struct rs_crypto_addr *msg_addr) {
+                                          struct pufs_crypto_addr *msg_addr) {
   uint32_t i, prev_len = 0;
-  struct rs_crypto_hash hash;
+  struct pufs_crypto_hash hash;
   uint8_t pret[19] = {0x30, 0,    0x30, 0x0d, 0x06, 0x09, 0x60,
                       0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02,
                       0,    0x05, 0x00, 0x04, 0};
@@ -1289,26 +1048,26 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
   return PUFCC_SUCCESS;
 }
 
-enum pufcc_status crypto_pufs_init(uint32_t base_addr) {
-  enum pufcc_status status;
+// static int crypto_pufs_init(const struct device *dev) {
+//   enum pufcc_status status;
 
-  // Initialize base addresses of different PUFcc modules
-  dma_regs = (struct pufcc_dma_regs *)base_addr;
-  rt_regs = (struct pufcc_rt_regs *)(base_addr + PUFCC_RT_OFFSET);
-  otp_mem = (struct pufcc_otp_mem *)(base_addr + PUFCC_RT_OFFSET +
-                                     PUFCC_RT_OTP_OFFSET);
-  hmac_regs = (struct pufcc_hmac_regs *)(base_addr + PUFCC_HMAC_OFFSET);
-  crypto_regs = (struct pufcc_crypto_regs *)(base_addr + PUFCC_CRYPTO_OFFSET);
-  sp38a_regs = (struct pufcc_sp38a_regs *)(base_addr + PUFCC_SP38A_OFFSET);
-  pkc_regs = (struct pufcc_pkc_regs *)(base_addr + PUFCC_PKC_OFFSET);
+//   // Initialize base addresses of different PUFcc modules
+//   dma_regs = (struct pufcc_dma_regs *)dev->config;
+//   rt_regs = (struct pufcc_rt_regs *)(base_addr + PUFCC_RT_OFFSET);
+//   otp_mem = (struct pufcc_otp_mem *)(base_addr + PUFCC_RT_OFFSET +
+//                                      PUFCC_RT_OTP_OFFSET);
+//   hmac_regs = (struct pufcc_hmac_regs *)(base_addr + PUFCC_HMAC_OFFSET);
+//   crypto_regs = (struct pufcc_crypto_regs *)(base_addr + PUFCC_CRYPTO_OFFSET);
+//   sp38a_regs = (struct pufcc_sp38a_regs *)(base_addr + PUFCC_SP38A_OFFSET);
+//   pkc_regs = (struct pufcc_pkc_regs *)(base_addr + PUFCC_PKC_OFFSET);
 
-  // Wait for OTP setup
-  status = pufcc_otp_setup_wait();
+//   // Wait for OTP setup
+//   status = pufcc_otp_setup_wait();
 
-  return status;
-}
+//   return status;
+// }
 
-DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
-		    &crypto_stm32_dev_data,
-		    &crypto_stm32_dev_config, POST_KERNEL,
-		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
+// DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
+// 		    &crypto_stm32_dev_data,
+// 		    &crypto_stm32_dev_config, POST_KERNEL,
+// 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
