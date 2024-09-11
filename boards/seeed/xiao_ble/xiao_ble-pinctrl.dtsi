@@ -132,9 +132,13 @@
 				<NRF_PSEL(QSPI_IO0, 0, 20)>,
 				<NRF_PSEL(QSPI_IO1, 0, 24)>,
 				<NRF_PSEL(QSPI_IO2, 0, 22)>,
-				<NRF_PSEL(QSPI_IO3, 0, 23)>,
-				<NRF_PSEL(QSPI_CSN, 0, 25)>;
+				<NRF_PSEL(QSPI_IO3, 0, 23)>;
 			low-power-enable;
+		};
+		group2 {
+			psels = <NRF_PSEL(QSPI_CSN, 0, 25)>;
+			low-power-enable;
+			bias-pull-up;
 		};
 	};
 };

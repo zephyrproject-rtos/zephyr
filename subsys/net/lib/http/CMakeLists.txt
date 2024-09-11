@@ -22,5 +22,9 @@ if(CONFIG_HTTP_SERVER AND CONFIG_WEBSOCKET)
 endif()
 
 if(CONFIG_HTTP_SERVER AND CONFIG_FILE_SYSTEM)
-  zephyr_linker_sources(SECTIONS iterables.ld)
+  zephyr_linker_sources(SECTIONS iterables_content_type.ld)
+endif()
+
+if(CONFIG_HTTP_SERVER AND CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+  zephyr_linker_sources(SECTIONS iterables_header_capture.ld)
 endif()

@@ -6,10 +6,16 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/fs/fs.h>
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+#include <zephyr/fs/littlefs.h>
+#endif
 #include <zephyr/llext/llext.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
+#include <zephyr/llext/fs_loader.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/libc-hooks.h>
 #include "syscalls_ext.h"
 #include "threads_kernel_objects_ext.h"
@@ -40,27 +46,26 @@ LOG_MODULE_REGISTER(test_llext_simple);
 
 struct llext_test {
 	const char *name;
-	bool try_userspace;
-	size_t buf_len;
 
 	LLEXT_CONST uint8_t *buf;
+	size_t buf_len;
 
-	void (*perm_setup)(struct k_thread *llext_thread);
+	bool kernel_only;
+
+	/*
+	 * Optional callbacks
+	 */
+
+	/* Called in kernel context before each test starts */
+	void (*test_setup)(struct llext *ext, struct k_thread *llext_thread);
+
+	/* Called in kernel context after each test completes */
+	void (*test_cleanup)(struct llext *ext);
 };
 
 
 K_THREAD_STACK_DEFINE(llext_stack, 1024);
 struct k_thread llext_thread;
-
-#ifdef CONFIG_USERSPACE
-void llext_entry(void *arg0, void *arg1, void *arg2)
-{
-	void (*fn)(void) = arg0;
-
-	LOG_INF("calling fn %p from thread %p", fn, k_current_get());
-	fn();
-}
-#endif /* CONFIG_USERSPACE */
 
 
 /* syscalls test */
@@ -93,8 +98,12 @@ K_THREAD_STACK_DEFINE(my_thread_stack, MY_THREAD_STACK_SIZE);
 EXPORT_SYMBOL(my_thread_stack);
 
 #ifdef CONFIG_USERSPACE
-/* Allow the user space test thread to access global objects */
-static void threads_objects_perm_setup(struct k_thread *llext_thread)
+/* Allow the test threads to access global objects.
+ * Note: Permissions on objects used in the test by this thread are initialized
+ * even in supervisor mode, so that user mode descendant threads can inherit
+ * these permissions.
+ */
+static void threads_objects_test_setup(struct llext *, struct k_thread *llext_thread)
 {
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
@@ -102,10 +111,10 @@ static void threads_objects_perm_setup(struct k_thread *llext_thread)
 }
 #else
 /* No need to set up permissions for supervisor mode */
-#define threads_objects_perm_setup NULL
+#define threads_objects_test_setup NULL
 #endif /* CONFIG_USERSPACE */
 
-void load_call_unload(struct llext_test *test_case)
+void load_call_unload(const struct llext_test *test_case)
 {
 	struct llext_buf_loader buf_loader =
 		LLEXT_BUF_LOADER(test_case->buf, test_case->buf_len);
@@ -150,45 +159,71 @@ void load_call_unload(struct llext_test *test_case)
 	/* Should be runnable from newly created thread */
 	k_thread_create(&llext_thread, llext_stack,
 			K_THREAD_STACK_SIZEOF(llext_stack),
-			&llext_entry, test_entry_fn, NULL, NULL,
+			(k_thread_entry_t) &llext_bootstrap,
+			ext, test_entry_fn, NULL,
 			1, 0, K_FOREVER);
 
 	k_mem_domain_add_thread(&domain, &llext_thread);
 
-	/* Even in supervisor mode, initialize permissions on objects used in
-	 * the test by this thread, so that user mode descendant threads can
-	 * inherit these permissions.
-	 */
-	if (test_case->perm_setup) {
-		test_case->perm_setup(&llext_thread);
+	if (test_case->test_setup) {
+		test_case->test_setup(ext, &llext_thread);
 	}
 
 	k_thread_start(&llext_thread);
 	k_thread_join(&llext_thread, K_FOREVER);
 
+	if (test_case->test_cleanup) {
+		test_case->test_cleanup(ext);
+	}
+
 	/* Some extensions may wish to be tried from the context
 	 * of a userspace thread along with the usual supervisor context
 	 * tried above.
 	 */
-	if (test_case->try_userspace) {
+	if (!test_case->kernel_only) {
 		k_thread_create(&llext_thread, llext_stack,
 				K_THREAD_STACK_SIZEOF(llext_stack),
-				&llext_entry, test_entry_fn, NULL, NULL,
+				(k_thread_entry_t) &llext_bootstrap,
+				ext, test_entry_fn, NULL,
 				1, K_USER, K_FOREVER);
 
 		k_mem_domain_add_thread(&domain, &llext_thread);
 
-		if (test_case->perm_setup) {
-			test_case->perm_setup(&llext_thread);
+		if (test_case->test_setup) {
+			test_case->test_setup(ext, &llext_thread);
 		}
 
 		k_thread_start(&llext_thread);
 		k_thread_join(&llext_thread, K_FOREVER);
+
+		if (test_case->test_cleanup) {
+			test_case->test_cleanup(ext);
+		}
 	}
 
 #else /* CONFIG_USERSPACE */
+	/* No userspace support: run the test only in supervisor mode, without
+	 * creating a new thread.
+	 */
+	if (test_case->test_setup) {
+		test_case->test_setup(ext, NULL);
+	}
+
+#ifdef CONFIG_LLEXT_TYPE_ELF_SHAREDLIB
+	/* The ELF specification forbids shared libraries from defining init
+	 * entries, so calling llext_bootstrap here would be redundant. Use
+	 * this opportunity to test llext_call_fn, even though llext_bootstrap
+	 * would have behaved simlarly.
+	 */
 	zassert_ok(llext_call_fn(ext, "test_entry"),
 		   "test_entry call should succeed");
+#else /* !USERSPACE && !SHAREDLIB */
+	llext_bootstrap(ext, test_entry_fn, NULL);
+#endif
+
+	if (test_case->test_cleanup) {
+		test_case->test_cleanup(ext);
+	}
 #endif /* CONFIG_USERSPACE */
 
 	llext_unload(&ext);
@@ -200,17 +235,16 @@ void load_call_unload(struct llext_test *test_case)
  * unloading each extension which may itself excercise various APIs provided by
  * Zephyr.
  */
-#define LLEXT_LOAD_UNLOAD(_name, _userspace, _perm_setup)			\
-	ZTEST(llext, test_load_unload_##_name)					\
-	{									\
-		struct llext_test test_case = {					\
-			.name = STRINGIFY(_name),				\
-			.try_userspace = _userspace,				\
-			.buf_len = ARRAY_SIZE(_name ## _ext),			\
-			.buf = _name ## _ext,					\
-			.perm_setup = _perm_setup,				\
-		};								\
-		load_call_unload(&test_case);					\
+#define LLEXT_LOAD_UNLOAD(_name, extra_args...)			\
+	ZTEST(llext, test_load_unload_##_name)			\
+	{							\
+		const struct llext_test test_case = {		\
+			.name = STRINGIFY(_name),		\
+			.buf = _name ## _ext,			\
+			.buf_len = ARRAY_SIZE(_name ## _ext),	\
+			extra_args                              \
+		};						\
+		load_call_unload(&test_case);			\
 	}
 
 /*
@@ -223,40 +257,67 @@ void load_call_unload(struct llext_test *test_case)
 static LLEXT_CONST uint8_t hello_world_ext[] ELF_ALIGN = {
 	#include "hello_world.inc"
 };
-LLEXT_LOAD_UNLOAD(hello_world, false, NULL)
+LLEXT_LOAD_UNLOAD(hello_world,
+	.kernel_only = true
+)
+
+#ifndef CONFIG_LLEXT_TYPE_ELF_SHAREDLIB
+static LLEXT_CONST uint8_t init_fini_ext[] ELF_ALIGN = {
+	#include "init_fini.inc"
+};
+
+static void init_fini_test_cleanup(struct llext *ext)
+{
+	/* Make sure fini_fn() was called during teardown.
+	 * (see init_fini_ext.c for more details).
+	 */
+	const int *number = llext_find_sym(&ext->exp_tab, "number");
+	const int expected = (((((1 << 4) | 2) << 4) | 3) << 4) | 4; /* 0x1234 */
+
+	zassert_not_null(number, "number should be an exported symbol");
+	zassert_equal(*number, expected, "got 0x%x instead of 0x%x during cleanup",
+		      *number, expected);
+}
+
+LLEXT_LOAD_UNLOAD(init_fini,
+	.test_cleanup = init_fini_test_cleanup
+)
+#endif
 
 static LLEXT_CONST uint8_t logging_ext[] ELF_ALIGN = {
 	#include "logging.inc"
 };
-LLEXT_LOAD_UNLOAD(logging, true, NULL)
+LLEXT_LOAD_UNLOAD(logging)
 
 static LLEXT_CONST uint8_t relative_jump_ext[] ELF_ALIGN = {
 	#include "relative_jump.inc"
 };
-LLEXT_LOAD_UNLOAD(relative_jump, true, NULL)
+LLEXT_LOAD_UNLOAD(relative_jump)
 
 static LLEXT_CONST uint8_t object_ext[] ELF_ALIGN = {
 	#include "object.inc"
 };
-LLEXT_LOAD_UNLOAD(object, true, NULL)
+LLEXT_LOAD_UNLOAD(object)
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_RELOCATABLE
 static LLEXT_CONST uint8_t syscalls_ext[] ELF_ALIGN = {
 	#include "syscalls.inc"
 };
-LLEXT_LOAD_UNLOAD(syscalls, true, NULL)
+LLEXT_LOAD_UNLOAD(syscalls)
 
 static LLEXT_CONST uint8_t threads_kernel_objects_ext[] ELF_ALIGN = {
 	#include "threads_kernel_objects.inc"
 };
-LLEXT_LOAD_UNLOAD(threads_kernel_objects, true, threads_objects_perm_setup)
+LLEXT_LOAD_UNLOAD(threads_kernel_objects,
+	.test_setup = threads_objects_test_setup,
+)
 #endif
 
 #ifndef CONFIG_LLEXT_TYPE_ELF_OBJECT
 static LLEXT_CONST uint8_t multi_file_ext[] ELF_ALIGN = {
 	#include "multi_file.inc"
 };
-LLEXT_LOAD_UNLOAD(multi_file, true, NULL)
+LLEXT_LOAD_UNLOAD(multi_file)
 #endif
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
@@ -320,6 +381,57 @@ ZTEST(llext, test_find_section)
 	zassert_equal(symbol_ptr, section_ptr,
 		      "symbol at %p != .data section at %p (%zd bytes in the ELF)",
 		      symbol_ptr, section_ptr, section_ofs);
+}
+#endif
+
+#if defined(CONFIG_FILE_SYSTEM)
+#define LLEXT_FILE "hello_world.llext"
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
+static struct fs_mount_t mp = {
+	.type = FS_LITTLEFS,
+	.fs_data = &storage,
+	.storage_dev = (void *)FIXED_PARTITION_ID(storage_partition),
+	.mnt_point = "/lfs",
+};
+
+ZTEST(llext, test_fs_loader)
+{
+	int res;
+	char path[UINT8_MAX];
+	struct fs_file_t fd;
+
+	/* File system should be mounted before the testcase. If not mount it now. */
+	if (!(mp.flags & FS_MOUNT_FLAG_AUTOMOUNT)) {
+		zassert_ok(fs_mount(&mp), "Filesystem should be mounted");
+	}
+
+	snprintf(path, sizeof(path), "%s/%s", mp.mnt_point, LLEXT_FILE);
+	fs_file_t_init(&fd);
+
+	zassert_ok(fs_open(&fd, path, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE),
+		   "Failed opening file");
+
+	zassert_equal(fs_write(&fd, hello_world_ext, ARRAY_SIZE(hello_world_ext)),
+		      ARRAY_SIZE(hello_world_ext),
+		      "Full content of the buffer holding ext should be written");
+
+	zassert_ok(fs_close(&fd), "Failed closing file");
+
+	struct llext_fs_loader fs_loader = LLEXT_FS_LOADER(path);
+	struct llext_loader *loader = &fs_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+
+	res = llext_load(loader, "hello_world", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	void (*test_entry_fn)() = llext_find_sym(&ext->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+
+	llext_unload(&ext);
+	fs_unmount(&mp);
 }
 #endif
 

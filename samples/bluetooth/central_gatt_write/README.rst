@@ -1,19 +1,20 @@
-.. _bluetooth_central_gatt_write:
+.. zephyr:code-sample:: ble_central_gatt_write
+   :name: Central / GATT Write
+   :relevant-api: bluetooth
 
-Bluetooth: Central / GATT Write
-###############################
+   Scan for a Bluetooth LE device, connect to it and write a value to a characteristic.
 
 Overview
 ********
 
-Similar to the :ref:`Central <bluetooth_central>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_central` sample, except that this
 application use GATT Write Without Response.
 
 Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

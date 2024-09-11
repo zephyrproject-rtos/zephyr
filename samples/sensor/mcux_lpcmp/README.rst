@@ -1,12 +1,13 @@
-.. _mcux_lpcmp:
+.. zephyr:code-sample:: mcux_lpcmp
+   :name: NXP MCUX Low-power Analog Comparator (LPCMP)
+   :relevant-api: sensor_interface
 
-NXP MCUX Low-power Analog Comparator (LPCMP)
-############################################
+   Get analog comparator data from an NXP MCUX Low-power Analog Comparator (LPCMP).
 
 Overview
 ********
 
-This sample show how to use the NXP MCUX Analog Comparator (LPCMP) driver.
+This sample show how to use the NXP MCUX Low-power Analog Comparator (LPCMP) driver.
 
 In this application, the negative input port of the LPCMP is set to 7 which
 means the input voltage comes from the LPCMP internal DAC, the reference

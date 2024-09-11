@@ -58,10 +58,13 @@ zephyr_library_sources(
   src/work.c
   src/timer.c
   src/fmac_main.c
-  src/fw_load.c
   src/qspi/src/device.c
   src/qspi/src/rpu_hw_if.c
   src/qspi/src/ficr_prog.c
+)
+
+zephyr_library_sources_ifndef(CONFIG_NRF_WIFI_BUILD_ONLY_MODE
+  src/fw_load.c
 )
 
 zephyr_library_sources_ifndef(CONFIG_NRF70_RADIO_TEST
@@ -132,6 +135,14 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
   -DNRF53_ERRATA_159_ENABLE_WORKAROUND=0
 )
 
+if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
+message(WARNING "
+------------------------------------------------------------------------
+Building only the nRF70 driver, skipping firmware patch.
+This is only for building (CI) purposes and will not work on a real device.
+------------------------------------------------------------------------
+")
+else()
 # RPU FW patch binaries based on the selected configuration
 if(CONFIG_NRF70_SYSTEM_MODE)
   set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
@@ -158,6 +169,9 @@ endif()
 zephyr_compile_definitions(
   -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
 )
+endif()
+
+
 
 # Translate the configuration to the OS agnostic code
 zephyr_compile_definitions_ifdef(CONFIG_NRF_WIFI_LOW_POWER

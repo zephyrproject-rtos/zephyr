@@ -113,7 +113,14 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    if(ARGC GREATER 2)
+      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    endif()
+    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
+  else()
+    target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 function(zephyr_libc_link_libraries)
@@ -2393,18 +2400,20 @@ function(check_set_linker_property)
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)
   list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
-  set(option ${LINKER_PROPERTY_PROPERTY})
 
-  string(MAKE_C_IDENTIFIER check${option} check)
+  foreach(option ${LINKER_PROPERTY_PROPERTY})
+    string(MAKE_C_IDENTIFIER check${option} check)
 
-  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  zephyr_check_compiler_flag(C "" ${check})
-  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    zephyr_check_compiler_flag(C "" ${check})
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  if(${${check}})
-    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
-  endif()
+    if(${${check}})
+      set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
 endfunction()
 
 # 'set_compiler_property' is a function that sets the property for the C and

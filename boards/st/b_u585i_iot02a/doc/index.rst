@@ -297,12 +297,16 @@ This probe allows to flash the board using various tools.
 Flashing
 ========
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd (provided in Zephyr SDK), JLink and pyocd can also be
-used to flash and debug the board if west is told to use it as runner,
-using ``-r openocd``.
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Connect the B_U585I_IOT02A Discovery kit to your host computer using the USB
 port, then run a serial host program to connect with your Discovery
@@ -329,7 +333,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default flasher for this board is openocd. It could be used in the usual way.
+Default flasher for this board is OpenOCD. It could be used in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::

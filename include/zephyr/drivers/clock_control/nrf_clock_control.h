@@ -8,13 +8,17 @@
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
+#ifdef NRF_CLOCK
 #include <hal/nrf_clock.h>
+#endif
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 
 /** @brief Clocks handled by the CLOCK peripheral.
  *
@@ -150,6 +154,145 @@ void z_nrf_clock_bt_ctlr_hf_request(void);
  * See z_nrf_clock_bt_ctlr_hf_request for details.
  */
 void z_nrf_clock_bt_ctlr_hf_release(void);
+
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
+
+
+#if defined(CONFIG_CLOCK_CONTROL_NRF2)
+
+/* Specifies to use the maximum available frequency for a given clock. */
+#define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
+
+/* Specifies to use the maximum available accuracy for a given clock. */
+#define NRF_CLOCK_CONTROL_ACCURACY_MAX      1
+/* Specifies the required clock accuracy in parts-per-million. */
+#define NRF_CLOCK_CONTROL_ACCURACY_PPM(ppm) (ppm)
+
+/* Specifies that high precision of the clock is required. */
+#define NRF_CLOCK_CONTROL_PRECISION_HIGH    1
+/* Specifies that default precision of the clock is sufficient. */
+#define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
+
+struct nrf_clock_spec {
+	uint32_t frequency;
+	uint16_t accuracy : 15;
+	uint16_t precision : 1;
+};
+
+__subsystem struct nrf_clock_control_driver_api {
+	struct clock_control_driver_api std_api;
+
+	int (*request)(const struct device *dev,
+		       const struct nrf_clock_spec *spec,
+		       struct onoff_client *cli);
+	int (*release)(const struct device *dev,
+		       const struct nrf_clock_spec *spec);
+	int (*cancel_or_release)(const struct device *dev,
+				 const struct nrf_clock_spec *spec,
+				 struct onoff_client *cli);
+};
+
+/**
+ * @brief Request a reservation to use a given clock with specified attributes.
+ *
+ * The return value indicates the success or failure of an attempt to initiate
+ * an operation to request the clock be made available. If initiation of the
+ * operation succeeds, the result of the request operation is provided through
+ * the configured client notification method, possibly before this call returns.
+ *
+ * Note that the call to this function may succeed in a case where the actual
+ * request fails. Always check the operation completion result.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec specification of minimal acceptable attributes, like frequency,
+ *             accuracy, and precision, required for the clock.
+ *             Value of 0 has the meaning of "default" and can be passed
+ *             instead of a given attribute if there is no strict requirement
+ *             in this regard. If there is no specific requirement for any of
+ *             the attributes, this parameter can be NULL.
+ * @param cli pointer to client state providing instructions on synchronous
+ *            expectations and how to notify the client when the request
+ *            completes. Behavior is undefined if client passes a pointer
+ *            object associated with an incomplete service operation.
+ *
+ * @retval non-negative the observed state of the on-off service associated
+ *                      with the clock machine at the time the request was
+ *                      processed (see onoff_request()), if successful.
+ * @retval -EIO if service has recorded an error.
+ * @retval -EINVAL if the function parameters are invalid or the clock
+ *                 attributes cannot be provided (e.g. the requested accuracy
+ *                 is unavailable).
+ * @retval -EAGAIN if the reference count would overflow.
+ */
+static inline
+int nrf_clock_control_request(const struct device *dev,
+			      const struct nrf_clock_spec *spec,
+			      struct onoff_client *cli)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->request(dev, spec, cli);
+}
+
+/**
+ * @brief Release a reserved use of a clock.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec the same specification of the clock attributes that was used
+ *             in the reservation request (so that the clock control module
+ *             can keep track of what attributes are still requested).
+ *
+ * @retval non-negative the observed state of the on-off service associated
+ *                      with the clock machine at the time the request was
+ *                      processed (see onoff_release()), if successful.
+ * @retval -EIO if service has recorded an error.
+ * @retval -ENOTSUP if the service is not in a state that permits release.
+ */
+static inline
+int nrf_clock_control_release(const struct device *dev,
+			      const struct nrf_clock_spec *spec)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->release(dev, spec);
+}
+
+/**
+ * @brief Safely cancel a reservation request.
+ *
+ * It may be that a client has issued a reservation request but needs to
+ * shut down before the request has completed. This function attempts to
+ * cancel the request and issues a release if cancellation fails because
+ * the request was completed. This synchronously ensures that ownership
+ * data reverts to the client so is available for a future request.
+ *
+ * @param dev pointer to the clock device structure.
+ * @param spec the same specification of the clock attributes that was used
+ *             in the reservation request.
+ * @param cli a pointer to the same client state that was provided
+ *            when the operation to be cancelled was issued.
+ *
+ * @retval ONOFF_STATE_TO_ON if the cancellation occurred before the transition
+ *                           completed.
+ * @retval ONOFF_STATE_ON if the cancellation occurred after the transition
+ *                        completed.
+ * @retval -EINVAL if the parameters are invalid.
+ * @retval negative other errors produced by onoff_release().
+ */
+static inline
+int nrf_clock_control_cancel_or_release(const struct device *dev,
+					const struct nrf_clock_spec *spec,
+					struct onoff_client *cli)
+{
+	const struct nrf_clock_control_driver_api *api =
+		(const struct nrf_clock_control_driver_api *)dev->api;
+
+	return api->cancel_or_release(dev, spec, cli);
+}
+
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF2) */
 
 #ifdef __cplusplus
 }

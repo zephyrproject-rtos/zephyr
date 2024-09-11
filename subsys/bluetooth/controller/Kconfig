@@ -6,7 +6,11 @@
 # The following symbols are enabled depending if the controller actually
 # supports the respective features.
 
+config BT_CTLR_ENTROPY_SUPPORT
+	bool
+
 config BT_CTLR_CRYPTO_SUPPORT
+	depends on BT_CTLR_ENTROPY_SUPPORT
 	bool
 
 config BT_CTLR_LE_ENC_SUPPORT
@@ -147,14 +151,41 @@ config BT_CTLR_HCI
 
 comment "BLE Controller configuration"
 
+config BT_CTLR_ENTROPY
+	bool "Random number generation in Controller"
+	depends on BT_CTLR_ENTROPY_SUPPORT
+	select ENTROPY_GENERATOR
+	default y
+	help
+	  Use random number generation provided by the Controller.
+
+	  Bluetooth Core Specification mandates a use of random number generator
+	  compliant with FIPS PUB 140-2.
+
+	  This option allows for Controller implementation that do not use true
+	  random number generation and hence making the implementation as
+	  experimental.
+
+	  Controller implementations can provide custom bare-metal random number
+	  implementation without any support in Zephyr driver, i.e. there is no
+	  ENTROPY_HAS_DRIVER enabled.
+
 config BT_CTLR_CRYPTO
 	bool "Crypto functions in Controller"
 	depends on BT_CTLR_CRYPTO_SUPPORT
-	select ENTROPY_GENERATOR
 	default y
 	help
 	  Use random number generation and AES encryption support functions
 	  provided by the controller.
+
+	  Support for HCI LE Rand and HCI LE Encrypt commands are mandatory
+	  by Bluetooth Core Specification.
+
+	  In an Application/Host and Controller split (using a HCI transport) or
+	  combined builds for single CPU SoCs, applications can use its own
+	  FIPS-197 compliant cryptographic implementations. In this case the
+	  Controller cryptographic implementations can be disabled to save flash
+	  and RAM usage.
 
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"

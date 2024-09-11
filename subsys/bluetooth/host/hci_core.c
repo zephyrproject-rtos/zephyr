@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
@@ -130,7 +130,7 @@ static bool drv_quirk_no_reset(void)
 	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_RESET) != 0);
 }
 
-__maybe_unused static bool drv_quirk_no_auto_dle(void)
+bool bt_drv_quirk_no_auto_dle(void)
 {
 	return  ((BT_DT_HCI_QUIRKS_GET(DT_CHOSEN(zephyr_bt_hci)) & BT_HCI_QUIRK_NO_AUTO_DLE) != 0);
 }
@@ -140,7 +140,7 @@ static bool drv_quirk_no_reset(void)
 	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_RESET) != 0);
 }
 
-__maybe_unused static bool drv_quirk_no_auto_dle(void)
+bool bt_drv_quirk_no_auto_dle(void)
 {
 	return  ((bt_dev.drv->quirks & BT_QUIRK_NO_AUTO_DLE) != 0);
 }
@@ -493,7 +493,7 @@ int bt_hci_le_rand(void *buffer, size_t len)
 	return 0;
 }
 
-static int hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
+int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time)
 {
 	struct bt_hci_rp_le_read_max_data_len *rp;
 	struct net_buf *rsp;
@@ -1022,7 +1022,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static int hci_le_read_remote_features(struct bt_conn *conn)
+int bt_hci_le_read_remote_features(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_read_remote_features *cp;
 	struct net_buf *buf;
@@ -1035,10 +1035,11 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
+	/* Results in BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE */
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf, NULL);
 }
 
-static int hci_read_remote_version(struct bt_conn *conn)
+int bt_hci_read_remote_version(struct bt_conn *conn)
 {
 	struct bt_hci_cp_read_remote_version_info *cp;
 	struct net_buf *buf;
@@ -1170,89 +1171,6 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	}
 
 	return NULL;
-}
-
-/* We don't want the application to get a PHY update callback upon connection
- * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
- * in this scenario.
- */
-static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
-		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
-			return true;
-		}
-	}
-#else
-	ARG_UNUSED(conn);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
-
-	return false;
-}
-
-static void conn_auto_initiate(struct bt_conn *conn)
-{
-	int err;
-
-	if (conn->state != BT_CONN_CONNECTED) {
-		/* It is possible that connection was disconnected directly from
-		 * connected callback so we must check state before doing
-		 * connection parameters update.
-		 */
-		return;
-	}
-
-	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) &&
-	    ((conn->role == BT_HCI_ROLE_CENTRAL) ||
-	     BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features))) {
-		err = hci_le_read_remote_features(conn);
-		if (err) {
-			LOG_ERR("Failed read remote features (%d)", err);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
-	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO)) {
-		err = hci_read_remote_version(conn);
-		if (err) {
-			LOG_ERR("Failed read remote version (%d)", err);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    !skip_auto_phy_update_on_conn_establishment(conn)) {
-		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_CODED_ANY);
-		if (err) {
-			LOG_ERR("Failed LE Set PHY (%d)", err);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (drv_quirk_no_auto_dle()) {
-			uint16_t tx_octets, tx_time;
-
-			err = hci_le_read_max_data_len(&tx_octets, &tx_time);
-			if (!err) {
-				err = bt_le_set_data_len(conn,
-						tx_octets, tx_time);
-				if (err) {
-					LOG_ERR("Failed to set data len (%d)", err);
-				}
-			}
-		} else {
-			/* No need to auto-initiate DLE procedure.
-			 * It is done by the controller.
-			 */
-		}
-	}
 }
 
 static void le_conn_complete_cancel(uint8_t err)
@@ -1560,10 +1478,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	bt_conn_connected(conn);
-
-	/* Start auto-initiated procedures */
-	conn_auto_initiate(conn);
-
 	bt_conn_unref(conn);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL) {
@@ -1656,9 +1570,6 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 	 * for peripheral connections, we need to release this reference here.
 	 */
 	bt_conn_unref(conn);
-
-	/* Start auto-initiated procedures */
-	conn_auto_initiate(conn);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
@@ -1801,7 +1712,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		       sizeof(conn->le.features));
 	}
 
-	atomic_set_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH);
+	atomic_set_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED);
 
 	if (IS_ENABLED(CONFIG_BT_REMOTE_INFO) &&
 	    !IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
@@ -3629,7 +3540,7 @@ static int le_init(void)
 		struct bt_hci_cp_le_write_default_data_len *cp;
 		uint16_t tx_octets, tx_time;
 
-		err = hci_le_read_max_data_len(&tx_octets, &tx_time);
+		err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
 		if (err) {
 			return err;
 		}
@@ -3791,7 +3702,7 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 {
 	const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0"
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {

@@ -1,7 +1,9 @@
-.. _lps22hh_i3c:
+.. zephyr:code-sample:: lps22hh_i3c
+   :name: LPSS22HH Temperature and Pressure Sensor (I3C)
+   :relevant-api: sensor_interface
 
-LPS22HH: Temperature and Pressure Monitor (I3C)
-###############################################
+   Get pressure and temperature data from an LPS22HH sensor over I3C (polling &
+   trigger mode).
 
 Overview
 ********

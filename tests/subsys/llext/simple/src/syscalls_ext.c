@@ -23,4 +23,4 @@ void test_entry(void)
 	       input, input + 1, output);
 	zassert_equal(output, input + 1);
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

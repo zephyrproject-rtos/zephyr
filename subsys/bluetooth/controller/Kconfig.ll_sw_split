@@ -11,8 +11,11 @@ config BT_LLL_VENDOR_NORDIC
 	depends on !$(dt_nodelabel_enabled,timer0)
 	depends on !$(dt_nodelabel_enabled,rtc0)
 
-	select ENTROPY_NRF5_RNG if BT_CTLR_CRYPTO
+	select BT_CTLR_ENTROPY_SUPPORT if !SOC_COMPATIBLE_NRF54LX || BOARD_NRF54L15BSIM
+	select FAKE_ENTROPY_NATIVE_POSIX if BT_CTLR_ENTROPY && BOARD_NRF54L15BSIM
+	select ENTROPY_NRF5_RNG if BT_CTLR_ENTROPY && !SOC_COMPATIBLE_NRF54LX
 	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
+	select EXPERIMENTAL if !ENTROPY_HAS_DRIVER || FAKE_ENTROPY_NATIVE_POSIX
 
 	select BT_HAS_HCI_VS
 	select BT_CTLR_CRYPTO_SUPPORT if !SOC_COMPATIBLE_NRF54LX
@@ -69,7 +72,9 @@ config BT_LLL_VENDOR_NORDIC
 config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on SOC_OPENISA_RV32M1
+
 	select BT_HAS_HCI_VS
+	select BT_CTLR_ENTROPY_SUPPORT
 	select BT_CTLR_CRYPTO_SUPPORT
 	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
 					 !BT_CTLR_DATA_LENGTH_CLEAR
@@ -831,9 +836,42 @@ config BT_CTLR_RX_PDU_META
 	prompt "RX pdu meta data"
 	bool
 
+config BT_CTLR_NRF_GRTC
+	bool "Use nRF GRTC peripheral"
+	depends on SOC_COMPATIBLE_NRF54LX
+	select BT_TICKER_CNTR_FREE_RUNNING
+	default y
+	help
+	  Enable use of nRF54Lx NRF_GRTC peripheral.
+
+config BT_CTLR_NRF_GRTC_START
+	bool "Start nRF GRTC peripheral"
+	depends on BT_CTLR_NRF_GRTC
+	help
+	  Enable explicit start of nRF54Lx NRF_GRTC peripheral.
+
+config BT_CTLR_NRF_GRTC_KEEPRUNNING
+	bool "Keep running nRF GRTC peripheral"
+	depends on BT_CTLR_NRF_GRTC_START
+	help
+	  Keep running nRF GRTC peripheral.
+
+config BT_CTLR_NRF_GRTC_AUTOEN_CPUACTIVE
+	bool "Auto enable nRF GRTC on CPU active"
+	depends on BT_CTLR_NRF_GRTC_START
+	help
+	  Auto enable nRF GRTC on CPU active.
+
+config BT_CTLR_NRF_GRTC_AUTOEN_DEFAULT
+	bool "Auto enable nRF GRTC by default"
+	depends on BT_CTLR_NRF_GRTC_START
+	help
+	  Auto enable nRF GRTC by default.
+
 config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
-	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X
+	depends on SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || SOC_COMPATIBLE_NRF54LX
+	select BT_CTLR_SW_SWITCH_SINGLE_TIMER if SOC_COMPATIBLE_NRF54LX
 	default y
 	help
 	  Enable use of fast radio ramp-up mode.
@@ -847,7 +885,8 @@ config BT_CTLR_TIFS_HW
 
 config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	bool "Single TIMER tIFS Trx SW switching"
-	depends on (!BT_CTLR_TIFS_HW) && (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X)
+	depends on (!BT_CTLR_TIFS_HW) && (SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF53X || \
+					  SOC_COMPATIBLE_NRF54LX)
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
 	  instance, as the one used for BLE event timing. Requires
@@ -1046,6 +1085,7 @@ config BT_CTLR_SCAN_UNRESERVED
 
 config BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE
 	bool "Early abort previous prepare"
+	depends on !BT_CTLR_LOW_LAT
 	default y
 	help
 	  Early abort previous prepare present before a short prepare is
@@ -1058,6 +1098,10 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  Only process one mayfly callback per invocation (legacy behavior).
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
+
+config BT_TICKER_CNTR_FREE_RUNNING
+	# Hidden options to use free running counter in ticker implementation
+	bool
 
 config BT_TICKER_LOW_LAT
 	bool "Ticker low latency mode"

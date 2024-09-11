@@ -769,15 +769,27 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	enum lp5562_led_sources engine;
 	uint8_t command_index = 0U;
 
-	ret = lp5562_get_available_engine(dev, &engine);
+	/*
+	 * Read current "led" source setting. This is to check
+	 * whether the "led" is in PWM mode or using an Engine.
+	 */
+	ret = lp5562_get_led_source(dev, led, &engine);
 	if (ret) {
 		return ret;
 	}
 
-	ret = lp5562_set_led_source(dev, led, engine);
-	if (ret) {
-		LOG_ERR("Failed to set LED source.");
-		return ret;
+	/* Find and assign new engine only if the "led" is not using any. */
+	if (engine == LP5562_SOURCE_PWM) {
+		ret = lp5562_get_available_engine(dev, &engine);
+		if (ret) {
+			return ret;
+		}
+
+		ret = lp5562_set_led_source(dev, led, engine);
+		if (ret) {
+			LOG_ERR("Failed to set LED source.");
+			return ret;
+		}
 	}
 
 	ret = lp5562_set_engine_op_mode(dev, engine, LP5562_OP_MODE_LOAD);

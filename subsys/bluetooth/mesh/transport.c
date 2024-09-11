@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/mesh.h>
@@ -1219,7 +1219,7 @@ static void seg_ack(struct k_work *work)
 	rx->last_ack = k_uptime_get_32();
 
 	if (rx->attempts_left == 0) {
-		LOG_DBG("Ran out of retransmit attempts");
+		LOG_DBG("Ran out of ack retransmit attempts");
 		return;
 	}
 
@@ -1666,6 +1666,14 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		err = trans_seg(buf, rx, &pdu_type, &seq_auth, &seg_count);
 	} else {
 		seg_count = 1;
+
+		/* Avoid further processing of unsegmented messages that are not a
+		 * local match nor a Friend match, with the exception of ctl messages.
+		 */
+		if (!rx->ctl && !rx->local_match && !rx->friend_match) {
+			return 0;
+		}
+
 		err = trans_unseg(buf, rx, &seq_auth);
 	}
 

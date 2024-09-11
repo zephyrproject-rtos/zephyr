@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_MODULES_LVGL_LV_CONF_H_
 #define ZEPHYR_MODULES_LVGL_LV_CONF_H_
 
+#include <zephyr/toolchain.h>
+
 /* Memory manager settings */
 
 #define LV_MEMCPY_MEMSET_STD 1
@@ -41,6 +43,9 @@
 #define LV_SPRINTF_INCLUDE "stdio.h"
 #define lv_snprintf        snprintf
 #define lv_vsnprintf       vsnprintf
+
+/* Provide definition to align LVGL buffers */
+#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
 
 /*
  * Needed because of a workaround for a GCC bug,

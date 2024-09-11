@@ -62,6 +62,7 @@ enum {
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
 	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
@@ -71,7 +72,7 @@ enum {
 	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-	BT_CONN_AUTO_FEATURE_EXCH,            /* Auto-initiated LE Feat done */
+	BT_CONN_LE_FEATURES_EXCHANGED,        /* bt_conn.le.features is valid */
 	BT_CONN_AUTO_VERSION_INFO,            /* Auto-initiated LE version done */
 
 	BT_CONN_CTE_RX_ENABLED,               /* CTE receive and sampling is enabled */
@@ -103,6 +104,11 @@ struct bt_conn_le {
 	uint8_t  conn_param_retry_countdown;
 #endif
 
+	/** @brief Remote LE features
+	 *
+	 * Available after `atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED)`.
+	 * Signaled by bt_conn_cb.remote_info_available().
+	 */
 	uint8_t features[8];
 
 	struct bt_keys *keys;

@@ -32,7 +32,7 @@ To build both the sample and MCUboot with ``west`` for the ``reel_board``, run:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/application_development/sysbuild/with_mcuboot
+   :zephyr-app: samples/sysbuild/with_mcuboot
    :board: reel_board
    :goals: build
    :west-args: --sysbuild

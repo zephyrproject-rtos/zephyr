@@ -1,0 +1,134 @@
+/*
+ * Copyright(c) 2024 John Sanpe <sanpeqf@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h750Xb.dtsi>
+#include <st/h7/stm32h750vbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "VCC-GND Studio STM32H750VB";
+	compatible = "st,stm32h750vb";
+
+	aliases {
+		led0 = &yellow_led;
+		led1 = &blue_led;
+		sw0 = &user_button;
+		spi-flash0 = &w25q128jv;
+	};
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &w25q128jv;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpioa 13 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+			status = "disabled";
+		};
+		green_led: led_2 {
+			gpios = <&gpioa 14 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+			status = "disabled";
+		};
+		yellow_led: led_3 {
+			gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+		blue_led: led_4 {
+			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			label = "LED4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			gpios = <&gpiob 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+			label = "USR";
+		};
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&sdmmc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb10
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	status = "okay";
+
+	w25q128jv: qspi-nor-flash@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(16)>;
+		qspi-max-frequency = <80000000>;
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(16)>;
+			};
+		};
+	};
+};

@@ -1,0 +1,33 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RA_FLASH_HP
+	bool "RA flash driver"
+	depends on DT_HAS_RENESAS_RA_FLASH_HP_CONTROLLER_ENABLED
+	default y
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_EX_OP if(SOC_SERIES_RA8M1 || SOC_SERIES_RA8D1 || SOC_SERIES_RA8T1)
+	select USE_RA_FSP_FLASH_HP
+	help
+	  Enable flash driver for RA series
+
+if RA_FLASH_HP
+
+config FLASH_RA_WRITE_PROTECT
+	bool "Extended operation for flash write protection control"
+	default n
+	help
+	  Enables flash extended operation to enable/disable flash write
+	  protection from external devices
+
+config DUAL_BANK_MODE
+	bool "Dual bank mode"
+	help
+	  Enable dual bank mode
+
+endif # RA_FLASH_HP

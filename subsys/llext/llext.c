@@ -82,14 +82,13 @@ struct llext *llext_by_name(const char *name)
 int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 {
 	sys_snode_t *node;
-	unsigned int i;
 	int ret = 0;
 
 	k_mutex_lock(&llext_lock, K_FOREVER);
 
-	for (node = sys_slist_peek_head(&_llext_list), i = 0;
+	for (node = sys_slist_peek_head(&_llext_list);
 	     node;
-	     node = sys_slist_peek_next(node), i++) {
+	     node = sys_slist_peek_next(node)) {
 		struct llext *ext = CONTAINER_OF(node, struct llext, _llext_list);
 
 		ret = fn(ext, arg);
@@ -249,6 +248,8 @@ int llext_unload(struct llext **ext)
 	/* FIXME: protect the global list */
 	sys_slist_find_and_remove(&_llext_list, &tmp->_llext_list);
 
+	llext_dependency_remove_all(tmp);
+
 	*ext = NULL;
 	k_mutex_unlock(&llext_lock);
 
@@ -271,4 +272,67 @@ int llext_call_fn(struct llext *ext, const char *sym_name)
 	fn();
 
 	return 0;
+}
+
+static int call_fn_table(struct llext *ext, bool is_init)
+{
+	ssize_t ret;
+
+	ret = llext_get_fn_table(ext, is_init, NULL, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to get table size: %d", (int)ret);
+		return ret;
+	}
+
+	typedef void (*elf_void_fn_t)(void);
+
+	int fn_count = ret / sizeof(elf_void_fn_t);
+	elf_void_fn_t fn_table[fn_count];
+
+	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
+	if (ret < 0) {
+		LOG_ERR("Failed to get function table: %d", (int)ret);
+		return ret;
+	}
+
+	for (int i = 0; i < fn_count; i++) {
+		LOG_DBG("calling %s function %p()",
+			is_init ? "bringup" : "teardown", fn_table[i]);
+		fn_table[i]();
+	}
+
+	return 0;
+}
+
+inline int llext_bringup(struct llext *ext)
+{
+	return call_fn_table(ext, true);
+}
+
+inline int llext_teardown(struct llext *ext)
+{
+	return call_fn_table(ext, false);
+}
+
+void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_data)
+{
+	int ret;
+
+	/* Call initialization functions */
+	ret = llext_bringup(ext);
+	if (ret < 0) {
+		LOG_ERR("Failed to call init functions: %d", ret);
+		return;
+	}
+
+	/* Start extension main function */
+	LOG_DBG("calling entry function %p(%p)", entry_fn, user_data);
+	entry_fn(user_data);
+
+	/* Call de-initialization functions */
+	ret = llext_teardown(ext);
+	if (ret < 0) {
+		LOG_ERR("Failed to call de-init functions: %d", ret);
+		return;
+	}
 }

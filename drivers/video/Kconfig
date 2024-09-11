@@ -13,6 +13,10 @@ menuconfig VIDEO
 
 if VIDEO
 
+module = VIDEO
+module-str = video
+source "subsys/logging/Kconfig.template.log_config"
+
 config VIDEO_INIT_PRIORITY
 	int "Video initialization priority"
 	default 60
@@ -30,6 +34,8 @@ config VIDEO_BUFFER_POOL_NUM_MAX
 config VIDEO_BUFFER_POOL_ALIGN
 	int "Alignment of the video pool’s buffer"
 	default 64
+
+source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
 

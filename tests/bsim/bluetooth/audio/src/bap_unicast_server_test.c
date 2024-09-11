@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -555,8 +555,10 @@ static void restart_adv_cb(struct k_work *work)
 
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
-		FAIL("Failed to start advertising set (err %d)\n", err);
-		return;
+		if (err != -EALREADY) {
+			FAIL("Failed to start advertising set (err %d)\n", err);
+			return;
+		}
 	}
 }
 

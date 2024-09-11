@@ -15,7 +15,7 @@ from typing import List
 
 from twisterlib.mixins import DisablePyTestCollectionMixin
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import TwisterException, TwisterRuntimeError
+from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
@@ -377,9 +377,7 @@ class TestCase(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.error(f'TestCase assigned status "{value}"'
-                           f' without an equivalent in TwisterStatus.'
-                           f' Assignment was ignored.')
+            raise StatusAttributeError(self.__class__, value)
 
     def __lt__(self, other):
         return self.name < other.name
@@ -445,9 +443,7 @@ class TestSuite(DisablePyTestCollectionMixin):
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.error(f'TestSuite assigned status "{value}"'
-                           f' without an equivalent in TwisterStatus.'
-                           f' Assignment was ignored.')
+            raise StatusAttributeError(self.__class__, value)
 
     def load(self, data):
         for k, v in data.items():

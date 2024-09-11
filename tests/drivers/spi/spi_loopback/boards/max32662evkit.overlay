@@ -10,6 +10,9 @@
 };
 
 &spi0 {
+	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI0_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI0_RX>;
+	dma-names = "tx", "rx";
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;

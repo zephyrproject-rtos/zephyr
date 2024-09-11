@@ -759,12 +759,11 @@ struct usbd_class_api uac2_api = {
 	DT_INST_FOREACH_CHILD_STATUS_OKAY_VARGS(i, DEFINE_CLOCK_SOURCES, i)
 
 #define DEFINE_UAC2_CLASS_DATA(inst)						\
-	DT_INST_FOREACH_CHILD(inst, VALIDATE_NODE)				\
+	VALIDATE_INSTANCE(DT_DRV_INST(inst))					\
 	static struct uac2_ctx uac2_ctx_##inst;					\
 	UAC2_DESCRIPTOR_ARRAYS(DT_DRV_INST(inst))				\
-	static const struct usb_desc_header *uac2_descriptors_##inst[] = {	\
-		UAC2_DESCRIPTOR_PTRS(DT_DRV_INST(inst))				\
-	};									\
+	static const struct usb_desc_header *uac2_descriptors_##inst[] =	\
+		UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));		\
 	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api,				\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(inst)), NULL);	\
 	DEFINE_LOOKUP_TABLES(inst)						\

@@ -71,6 +71,16 @@
 #define FF_FS_TIMEOUT		K_FOREVER
 #endif /* defined(CONFIG_FS_FATFS_REENTRANT) */
 
+#if defined(CONFIG_FS_FATFS_LBA64)
+#undef FF_LBA64
+#define FF_LBA64		CONFIG_FS_FATFS_LBA64
+#endif /* defined(CONFIG_FS_FATFS_LBA64) */
+
+#if defined(CONFIG_FS_FATFS_MULTI_PARTITION)
+#undef FF_MULTI_PARTITION
+#define FF_MULTI_PARTITION	CONFIG_FS_FATFS_MULTI_PARTITION
+#endif /* defined(CONFIG_FS_FATFS_MULTI_PARTITION) */
+
 /*
  * These options are override from default values, but have no Kconfig
  * options.

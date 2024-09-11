@@ -36,7 +36,8 @@ If you've followed the :ref:`getting_started`, your local
    ├── modules/
    │   └── lib/
    │       └── zcbor/             # .git/ project
-   ├── net-tools/                 # .git/ project
+   ├── tools/
+   │   └── net-tools/             # .git/ project
    └── [ ... other projects ...]
 
 .. _west-workspace:

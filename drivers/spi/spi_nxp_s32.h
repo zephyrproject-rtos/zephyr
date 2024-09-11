@@ -7,6 +7,7 @@
 #define ZEPHYR_DRIVERS_SPI_SPI_NXP_S32_H_
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/logging/log.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL

@@ -15,5 +15,6 @@ supported:
   - trng
   - watchdog
   - spi
+  - adc
 ram: 80
 flash: 256

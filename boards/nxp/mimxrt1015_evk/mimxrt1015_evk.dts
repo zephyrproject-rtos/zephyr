@@ -28,6 +28,7 @@
 		zephyr,flash = &at25sf128a;
 		zephyr,flash-controller = &at25sf128a;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	leds {

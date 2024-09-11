@@ -1,7 +1,8 @@
-.. _dht_polling:
+.. zephyr:code-sample:: dht_polling
+   :name: Generic digital humidity temperature sensor polling
+   :relevant-api: sensor_interface
 
-Generic Digital Humidity Temperature sensor polling sample
-##########################################################
+   Get temperature and humidity data from a DHT sensor (polling mode).
 
 Overview
 ********

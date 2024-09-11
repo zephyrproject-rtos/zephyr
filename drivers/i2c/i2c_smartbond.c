@@ -557,6 +557,9 @@ static const struct i2c_driver_api i2c_smartbond_driver_api = {
 #ifdef CONFIG_I2C_CALLBACK
 	.transfer_cb = i2c_smartbond_transfer_cb,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 static int i2c_smartbond_resume(const struct device *dev)

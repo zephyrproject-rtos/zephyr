@@ -12,7 +12,7 @@
 #include <zephyr/drivers/serial/uart_async_rx.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #define LOG_MODULE_NAME shell_uart
 LOG_MODULE_REGISTER(shell_uart);

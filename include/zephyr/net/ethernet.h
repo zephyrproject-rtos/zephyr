@@ -653,7 +653,7 @@ struct ethernet_context {
 	atomic_t flags;
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
-	struct eth_bridge_iface_context bridge;
+	struct net_if *bridge;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create
@@ -933,14 +933,14 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
-	const struct ethernet_api *eth =
-		(struct ethernet_api *)net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
 
-	if (!eth->get_capabilities) {
+	if (!api || !api->get_capabilities) {
 		return (enum ethernet_hw_caps)0;
 	}
 
-	return eth->get_capabilities(net_if_get_device(iface));
+	return api->get_capabilities(dev);
 }
 
 /**

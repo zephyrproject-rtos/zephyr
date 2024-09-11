@@ -1,7 +1,8 @@
-.. _bt_handsfree:
+.. zephyr:code-sample:: bluetooth_handsfree
+   :name: Hands-free
+   :relevant-api: bt_hfp bluetooth
 
-Bluetooth: Handsfree
-####################
+   Use the Hands-Free Profile (HFP) APIs.
 
 Overview
 ********

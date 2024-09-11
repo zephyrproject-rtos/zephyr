@@ -10,6 +10,13 @@ set -ue
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/audio compile
+if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
+    app=tests/bsim/bluetooth/audio exe_name=bs_${BOARD_TS}_${app}_prj_conf \
+      sysbuild=1 compile
+else
+    app=tests/bsim/bluetooth/audio conf_overlay=overlay-bt_ll_sw_split.conf \
+      exe_name=bs_${BOARD_TS}_${app}_prj_conf \
+      sysbuild=1 compile
+fi
 
 wait_for_background_jobs

@@ -1,7 +1,7 @@
-.. _tensorflow_hello_world:
+.. zephyr:code-sample:: tflite-hello-world
+   :name: Hello World
 
-TensorFlow Lite Micro Hello World sample
-########################################
+   Replicate a sine wave using TensorFlow Lite for Microcontrollers.
 
 Overview
 ********

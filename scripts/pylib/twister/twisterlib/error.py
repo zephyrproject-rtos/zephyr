@@ -22,3 +22,9 @@ class BuildError(TwisterException):
 
 class ExecutionError(TwisterException):
     pass
+
+
+class StatusAttributeError(TwisterException):
+    def __init__(self, cls : type, value):
+        msg = f'{cls.__name__} assigned status {value}, which could not be cast to a TwisterStatus.'
+        super().__init__(msg)

@@ -22,6 +22,7 @@ OS Services
    tracing/index.rst
    resource_management/index.rst
    mem_mgmt/index.rst
+   net_buf/index.rst
    modbus/index.rst
    modem/index.rst
    notify.rst

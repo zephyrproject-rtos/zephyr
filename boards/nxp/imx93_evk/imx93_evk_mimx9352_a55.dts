@@ -145,6 +145,16 @@
 			 */
 		};
 	};
+
+	gpio_exp1: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW|GPIO_PULL_UP)>;
+		status = "okay";
+	};
 };
 
 &lpspi3 {

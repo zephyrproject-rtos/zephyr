@@ -155,7 +155,5 @@ struct bt_tbs_client_cb tbs_client_cb = {
 
 int ccp_call_ctrl_init(void)
 {
-	bt_tbs_client_register_cb(&tbs_client_cb);
-
-	return 0;
+	return bt_tbs_client_register_cb(&tbs_client_cb);
 }

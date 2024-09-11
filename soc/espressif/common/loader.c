@@ -47,14 +47,17 @@ extern esp_image_header_t bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
 
+#ifndef CONFIG_MCUBOOT
 static uint32_t _app_irom_start = (FIXED_PARTITION_OFFSET(slot0_partition) +
 						(uint32_t)&_image_irom_start);
 static uint32_t _app_irom_size = (uint32_t)&_image_irom_size;
-static uint32_t _app_irom_vaddr = ((uint32_t)&_image_irom_vaddr);
 
 static uint32_t _app_drom_start = (FIXED_PARTITION_OFFSET(slot0_partition) +
 						(uint32_t)&_image_drom_start);
 static uint32_t _app_drom_size = (uint32_t)&_image_drom_size;
+#endif
+
+static uint32_t _app_irom_vaddr = ((uint32_t)&_image_irom_vaddr);
 static uint32_t _app_drom_vaddr = ((uint32_t)&_image_drom_vaddr);
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
@@ -73,7 +76,6 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 
 	uint32_t app_drom_start_aligned = app_drom_start & MMU_FLASH_MASK;
 	uint32_t app_drom_vaddr_aligned = app_drom_vaddr & MMU_FLASH_MASK;
-	uint32_t actual_mapped_len = 0;
 
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
 	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
@@ -171,6 +173,8 @@ void map_rom_segments(uint32_t app_drom_start, uint32_t app_drom_vaddr,
 		abort();
 	}
 #else
+	uint32_t actual_mapped_len = 0;
+
 	mmu_hal_map_region(0, MMU_TARGET_FLASH0,
 				app_drom_vaddr_aligned, app_drom_start_aligned,
 				app_drom_size, &actual_mapped_len);

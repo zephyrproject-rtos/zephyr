@@ -404,7 +404,6 @@ Bluetooth Host:
     - samples/bluetooth/hci_*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
-    - samples/bluetooth/*_iso/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
     - subsys/bluetooth/shell/bredr.c
@@ -522,7 +521,6 @@ Bluetooth ISO:
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
-    - samples/bluetooth/*_iso/
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
@@ -765,8 +763,8 @@ Coding Guidelines:
     - "area: Coding Guidelines"
 
 Common Architecture Interface:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - dcpleung
     - nashif
   files:
@@ -996,10 +994,10 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - gmarull
+    - kartben
   collaborators:
     - carlescufi
     - nashif
-    - kartben
   files:
     - doc/_*/
     - doc/CMakeLists.txt
@@ -1048,7 +1046,6 @@ Release Notes:
   collaborators:
     - lyakh
     - lgirdwood
-    - marc-hb
     - kv2019i
   files:
     - drivers/audio/
@@ -1742,7 +1739,7 @@ Release Notes:
     - drivers/led/
     - include/zephyr/drivers/led/
     - include/zephyr/drivers/led.h
-    - samples/drivers/led_*/
+    - samples/drivers/led/
     - tests/drivers/led/
     - doc/hardware/peripherals/led.rst
     - tests/drivers/build_all/led/
@@ -2721,8 +2718,6 @@ hawkBit:
   status: maintained
   maintainers:
     - maass-hamburg
-  collaborators:
-    - ycsin
   files:
     - subsys/mgmt/hawkbit/
     - include/zephyr/mgmt/hawkbit.h
@@ -2808,7 +2803,6 @@ Networking:
     - samples/net/lwm2m_client/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
-    - subsys/net/buf*.c
     - subsys/net/l2/ethernet/gptp/
     - subsys/net/l2/ieee802154/
     - subsys/net/l2/wifi/
@@ -2841,7 +2835,7 @@ Networking:
   tests:
     - net.socket
 
-"Networking: Buffers":
+"Networking Buffers":
   status: maintained
   maintainers:
     - jhedberg
@@ -2850,13 +2844,15 @@ Networking:
     - tbursztyka
     - jukkar
   files:
+    - doc/services/net_buf/
     - include/zephyr/net/buf.h
-    - subsys/net/buf*.c
-    - tests/net/buf/
+    - include/zephyr/net_buf.h
+    - lib/net_buf/
+    - tests/lib/net_buf/
   labels:
     - "area: Networking Buffers"
   tests:
-    - net.buf
+    - libraries.net_buf
 
 "Networking: Connection Manager":
   status: maintained
@@ -3561,7 +3557,6 @@ Intel Platforms (Xtensa):
     - andyross
     - lyakh
     - lgirdwood
-    - marc-hb
     - kv2019i
     - ceolin
     - tmleman
@@ -5035,7 +5030,6 @@ West:
     - nashif
     - lyakh
     - lgirdwood
-    - marc-hb
   files:
     - modules/Kconfig.sof
   labels:

@@ -88,7 +88,7 @@ static void nvs_lookup_cache_invalidate(struct nvs_fs *fs, uint32_t sector)
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 {
-	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+	size_t write_block_size = fs->flash_parameters->write_block_size;
 
 	if (write_block_size <= 1U) {
 		return len;

@@ -39,6 +39,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT litex_liteeth_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_mdio)
 #define DT_DRV_COMPAT st_stm32_mdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(snps_dwcxgmac_mdio)
+#define DT_DRV_COMPAT snps_dwcxgmac_mdio
 #else
 #error "No known devicetree compatible match for MDIO shell"
 #endif

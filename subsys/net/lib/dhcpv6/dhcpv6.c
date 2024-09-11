@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 #include "net_private.h"
 #include "udp_internal.h"
 
+#define PKT_WAIT_TIME K_MSEC(100)
+
 /* Maximum number of options client can request. */
 #define DHCPV6_MAX_OPTION_REQUEST 2
 
@@ -582,7 +584,7 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 	msg_size = dhcpv6_calculate_message_size(options);
 
 	pkt = net_pkt_alloc_with_buffer(iface, msg_size, AF_INET6,
-					IPPROTO_UDP, K_FOREVER);
+					IPPROTO_UDP, PKT_WAIT_TIME);
 	if (pkt == NULL) {
 		return NULL;
 	}

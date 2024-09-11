@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-
 # Kernel Options due to Low Memory (4k)
 CONFIG_MAIN_STACK_SIZE=512
 CONFIG_IDLE_STACK_SIZE=150
@@ -18,9 +17,3 @@ CONFIG_UART_CONSOLE=y
 
 # GPIO Controller
 CONFIG_GPIO=y
-
-# Enable Clocks
-CONFIG_CLOCK_CONTROL=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

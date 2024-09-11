@@ -1,8 +1,6 @@
-# Copyright 2022,2024 NXP
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX9
-
-rsource "Kconfig.defconfig.*"
-
-endif # SOC_SERIES_IMX9
+rsource "*/Kconfig.defconfig"
+endif

@@ -1,13 +1,14 @@
-.. _bluetooth-hci-usb-h4-sample:
+.. zephyr:code-sample:: bluetooth_hci_usb_h4
+   :name: HCI H4 over USB
+   :relevant-api: hci_raw bluetooth _usb_device_core_api usbd_api
 
-Bluetooth: HCI H4 over USB
-##########################
+   Turn a Zephyr board into a USB H4 Bluetooth dongle (Linux/BlueZ only).
 
 Overview
 ********
 
 Make a USB H4 Bluetooth dongle out of Zephyr. Requires USB device support from
-the board it runs on (e.g. :ref:`nrf52840dk_nrf52840` supports both BLE and
+the board it runs on (e.g. :ref:`nrf52840dk_nrf52840` supports both Bluetooth LE and
 USB).
 
 Requirements

@@ -1,7 +1,9 @@
-.. _lsm6dso_i2c_on_i3c:
+.. zephyr:code-sample:: lsmd6dso_i2c_on_i3c
+   :name: LSM6DSO IMU sensor (I2C on I3C bus)
+   :relevant-api: sensor_interface
 
-LSM6DSO: IMU Sensor Monitor (I2C on I3C bus)
-############################################
+   Get accelerometer and gyroscope data from an LSM6DSO sensor using I2C on I3C
+   bus (polling & trigger mode).
 
 Overview
 ********

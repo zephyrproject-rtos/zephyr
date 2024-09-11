@@ -1,7 +1,7 @@
-.. _lz4:
+.. zephyr:code-sample:: lz4
+   :name: LZ4
 
-LZ4
-###
+   Compress and decompress data using the LZ4 module.
 
 Overview
 ********
@@ -22,7 +22,7 @@ Add the lz4 module to your West manifest and pull it:
 The sample can be built and executed on nrf52840dk/nrf52840 as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/compression/lz4
+   :zephyr-app: samples/modules/compression/lz4
    :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:

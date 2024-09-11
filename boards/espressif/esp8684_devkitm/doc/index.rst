@@ -1,9 +1,16 @@
 .. _esp8684_devkitm:
 
-ESP32-C2
-########
+ESP8684-DevKitM
+###############
 
 Overview
+********
+
+The ESP8684-DevKitM is an entry-level development board based on ESP8684-MINI-1, a general-purpose
+module with 1 MB/2 MB/4 MB SPI flash. This board integrates complete Wi-Fi and Bluetooth LE functions.
+For more information, check `ESP8684-DevKitM User Guide`_
+
+Hardware
 ********
 
 ESP32-C2 (ESP8684 core) is a low-cost, Wi-Fi 4 & Bluetooth 5 (LE) chip. Its unique design
@@ -12,9 +19,9 @@ makes the chip smaller and yet more powerful than ESP8266. ESP32-C2 is built aro
 ESP32-C2 has been designed to target simple, high-volume, and low-data-rate IoT applications,
 such as smart plugs and smart light bulbs. ESP32-C2 offers easy and robust wireless connectivity,
 which makes it the go-to solution for developing simple, user-friendly and reliable
-smart-home devices [1]_.
+smart-home devices. For more information, check `ESP8684 Datasheet`_.
 
-Features include the following (`ESP8684 Datasheet`_):
+Features include the following:
 
 - 32-bit core RISC-V microcontroller with a maximum clock speed of 120 MHz
 - 2 MB or 4 MB in chip (ESP8684) or in package (ESP32-C2) flash
@@ -42,7 +49,7 @@ For detailed information check `ESP8684 Technical Reference Manual`_.
 Supported Features
 ==================
 
-Current Zephyr's ESP8684-Devkitm board supports the following features:
+Current Zephyr's ESP8684-DevKitM board supports the following features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -64,7 +71,7 @@ Current Zephyr's ESP8684-Devkitm board supports the following features:
 | LEDC       | on-chip    | pwm                                 |
 +------------+------------+-------------------------------------+
 
-For a getting started user guide, please check `ESP8684 Devkitm User Guide`_.
+For a getting started user guide, please check `ESP8684-DevKitM User Guide`_.
 
 System requirements
 *******************
@@ -100,7 +107,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -126,7 +133,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp8684_devkitm
    :goals: build
    :west-args: --sysbuild
@@ -162,7 +169,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -207,7 +214,7 @@ Debugging
 
 As with much custom hardware, the ESP8684 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
@@ -228,12 +235,10 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp8684_devkitm
    :goals: debug
 
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
-
 References
 **********
 
-.. [1] https://www.espressif.com/en/products/socs/esp8684
-.. _ESP8684 Devkitm User Guide: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/user_guide.html
-.. _ESP8684 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp8684_technical_reference_manual_en.pdf
-.. _ESP8684 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf
+.. _`ESP8684-DevKitM User Guide`: https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp8684/esp8684-devkitm-1/user_guide.html
+.. _`ESP8684 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf
+.. _`ESP8684 Technical Reference Manual`: https://www.espressif.com/sites/default/files/documentation/esp8684_technical_reference_manual_en.pdf
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

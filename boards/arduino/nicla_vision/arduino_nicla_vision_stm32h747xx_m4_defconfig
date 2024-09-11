@@ -4,9 +4,6 @@
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Clock configuration
-CONFIG_CLOCK_CONTROL=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
@@ -19,6 +16,3 @@ CONFIG_SERIAL=y
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# Enable pin controller
-CONFIG_PINCTRL=y

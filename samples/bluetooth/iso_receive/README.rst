@@ -1,7 +1,8 @@
-.. _bluetooth-iso-receive-sample:
+.. zephyr:code-sample:: bluetooth_isochronous_receiver
+   :name: Synchronized Receiver
+   :relevant-api: bt_iso bluetooth
 
-Bluetooth: Synchronized Receiver
-###############################################
+   Use Bluetooth LE Synchronized Receiver functionality.
 
 Overview
 ********

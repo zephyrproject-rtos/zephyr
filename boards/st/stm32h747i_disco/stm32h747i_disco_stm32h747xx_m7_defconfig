@@ -7,9 +7,6 @@ CONFIG_POWER_SUPPLY_DIRECT_SMPS=y
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Enable clocks
-CONFIG_CLOCK_CONTROL=y
-
 # Enable MPU
 CONFIG_ARM_MPU=y
 
@@ -23,6 +20,3 @@ CONFIG_SERIAL=y
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# Enable pin controller
-CONFIG_PINCTRL=y

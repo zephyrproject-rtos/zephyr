@@ -23,7 +23,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
@@ -262,19 +262,23 @@ static bool uri_scheme_in_list(const char *uri_scheme,
 	return false;
 }
 
-static struct tbs_service_inst *lookup_inst_by_uri_scheme(const char *uri,
-							  uint8_t uri_len)
+static struct tbs_service_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t uri_len)
 {
 	char uri_scheme[CONFIG_BT_TBS_MAX_URI_LENGTH] = { 0 };
 
+	if (uri_len == 0) {
+		return NULL;
+	}
+
 	/* Look for ':' between the first and last char */
-	for (int i = 1; i < uri_len - 1; i++) {
+	for (uint8_t i = 1U; i < uri_len - 1U; i++) {
 		if (uri[i] == ':') {
 			(void)memcpy(uri_scheme, uri, i);
+			break;
 		}
 	}
 
-	if (strlen(uri_scheme) == 0) {
+	if (uri_scheme[0] == '\0') {
 		/* No URI scheme found */
 		return NULL;
 	}
@@ -345,8 +349,8 @@ static uint8_t next_free_call_index(void)
 	return BT_TBS_FREE_CALL_INDEX;
 }
 
-static struct bt_tbs_call *call_alloc(struct tbs_service_inst *inst, uint8_t state, const char *uri,
-				      uint16_t uri_len)
+static struct bt_tbs_call *call_alloc(struct tbs_service_inst *inst, uint8_t state,
+				      const uint8_t *uri, uint16_t uri_len)
 {
 	struct bt_tbs_call *free_call = NULL;
 
@@ -1741,7 +1745,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *remote_uri,
 
 	if (tbs == NULL || inst_is_gtbs(tbs)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(remote_uri, strlen(remote_uri))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)remote_uri, strlen(remote_uri))) {
 		LOG_DBG("Invalid URI %s", remote_uri);
 		return -EINVAL;
 	}
@@ -1937,17 +1941,17 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 
 	if (inst == NULL || inst_is_gtbs(inst)) {
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(to, strlen(to))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)to, strlen(to))) {
 		LOG_DBG("Invalid \"to\" URI: %s", to);
 		return -EINVAL;
-	} else if (!bt_tbs_valid_uri(from, strlen(from))) {
+	} else if (!bt_tbs_valid_uri((uint8_t *)from, strlen(from))) {
 		LOG_DBG("Invalid \"from\" URI: %s", from);
 		return -EINVAL;
 	}
 
 	service_inst = CONTAINER_OF(inst, struct tbs_service_inst, inst);
 
-	call = call_alloc(service_inst, BT_TBS_CALL_STATE_INCOMING, from, strlen(from));
+	call = call_alloc(service_inst, BT_TBS_CALL_STATE_INCOMING, (uint8_t *)from, strlen(from));
 	if (call == NULL) {
 		return -ENOMEM;
 	}

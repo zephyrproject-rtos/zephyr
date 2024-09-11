@@ -1,20 +1,14 @@
 # Copyright (c) 2023 Felipe Neves
 # SPDX-License-Identifier: Apache-2.0
 
-# enable GPIO
+# Enable GPIO
 CONFIG_GPIO=y
-
-# clock configuration
-CONFIG_CLOCK_CONTROL=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
 
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
-
-# enable pin controller
-CONFIG_PINCTRL=y
 
 # Use zephyr,code-partition as flash offset
 CONFIG_USE_DT_CODE_PARTITION=y

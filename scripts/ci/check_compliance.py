@@ -264,8 +264,12 @@ class BoardYmlCheck(ComplianceTest):
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                vendor, _ = line.split("\t", 2)
-                vendor_prefixes.append(vendor)
+                try:
+                    vendor, _ = line.split("\t", 2)
+                    vendor_prefixes.append(vendor)
+                except ValueError:
+                    self.error(f"Invalid line in vendor-prefixes.txt:\"{line}\".")
+                    self.error("Did you forget the tab character?")
 
         path = Path(ZEPHYR_BASE)
         for file in path.glob("**/board.yml"):
@@ -931,6 +935,7 @@ flagged.
         "BOOT_SWAP_USING_SCRATCH", # Used in sysbuild for MCUboot configuration
         "BOOT_ENCRYPTION_KEY_FILE", # Used in sysbuild
         "BOOT_ENCRYPT_IMAGE", # Used in sysbuild
+        "BOOT_MAX_IMG_SECTORS_AUTO", # Used in sysbuild
         "BINDESC_", # Used in documentation as a prefix
         "BOOT_UPGRADE_ONLY", # Used in example adjusting MCUboot config, but
                              # symbol is defined in MCUboot itself.

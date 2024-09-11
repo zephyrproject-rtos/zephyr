@@ -506,7 +506,6 @@ static void uart_esp32_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = dev->data;
 	uint32_t uart_intr_status = uart_hal_get_intsts_mask(&data->hal);
-	const struct uart_esp32_config *config = dev->config;
 
 	if (uart_intr_status == 0) {
 		return;
@@ -538,7 +537,6 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
 	struct uart_event evt = {0};
-	struct dma_status dma_status = {0};
 	unsigned int key = irq_lock();
 
 	/* If the receive buffer is not complete we reload the DMA at current buffer position and
@@ -605,7 +603,6 @@ static void IRAM_ATTR uart_esp32_dma_tx_done(const struct device *dma_dev, void 
 					     uint32_t channel, int status)
 {
 	const struct device *uart_dev = user_data;
-	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
 	struct uart_event evt = {0};
 	unsigned int key = irq_lock();
@@ -670,9 +667,7 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	struct uart_esp32_async_data *async =
 		CONTAINER_OF(dwork, struct uart_esp32_async_data, rx_timeout_work);
 	struct uart_esp32_data *data = CONTAINER_OF(async, struct uart_esp32_data, async);
-	const struct uart_esp32_config *config = data->uart_dev->config;
 	struct uart_event evt = {0};
-	int err = 0;
 	unsigned int key = irq_lock();
 
 	evt.type = UART_RX_RDY;
@@ -846,7 +841,6 @@ unlock:
 
 static int uart_esp32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t len)
 {
-	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
 
 	data->async.rx_next_buf = buf;
@@ -927,7 +921,6 @@ unlock:
 
 static int uart_esp32_init(const struct device *dev)
 {
-	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
 	int ret = uart_esp32_configure(dev, &data->uart_config);
 
@@ -937,6 +930,8 @@ static int uart_esp32_init(const struct device *dev)
 	}
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
+	const struct uart_esp32_config *config = dev->config;
+
 	ret = esp_intr_alloc(config->irq_source,
 			ESP_PRIO_TO_FLAGS(config->irq_priority) |
 			ESP_INT_FLAGS_CHECK(config->irq_flags),

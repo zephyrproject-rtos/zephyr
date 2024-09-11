@@ -36,6 +36,13 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AMBIQ               clock_cont
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_PWM                 clock_control_pwm.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_RPI_PICO            clock_control_rpi_pico.c)
 
+if(CONFIG_CLOCK_CONTROL_NRF2)
+  zephyr_library_sources(clock_control_nrf2_common.c)
+  zephyr_library_sources(clock_control_nrf2_fll16m.c)
+  zephyr_library_sources(clock_control_nrf2_hfxo.c)
+  zephyr_library_sources(clock_control_nrf2_hsfll.c)
+  zephyr_library_sources(clock_control_nrf2_lfclk.c)
+endif()
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_library_sources_ifdef(CONFIG_CLOCK_STM32_MUX clock_stm32_mux.c)

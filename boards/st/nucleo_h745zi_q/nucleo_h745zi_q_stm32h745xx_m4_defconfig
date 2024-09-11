@@ -4,9 +4,6 @@
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Enable clock
-CONFIG_CLOCK_CONTROL=y
-
 # By default SERIAL peripherals are assigned to m7
 
 # Enable uart driver
@@ -15,6 +12,3 @@ CONFIG_CLOCK_CONTROL=y
 # Console
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

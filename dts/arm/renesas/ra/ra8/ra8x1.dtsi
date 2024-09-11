@@ -271,10 +271,13 @@
 			};
 		};
 
-		flash-controller@407fe000 {
-			reg = <0x407fe000 0x1000>;
+		flash: flash-controller@40100000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <38 2>, <39 2>;
+			interrupt-names = "frdyi", "fiferr";
 		};
 
 		adc0: adc@40332000 {
@@ -301,6 +304,32 @@
 
 		trng: trng {
 			compatible = "renesas,ra-rsip-e51a-trng";
+		};
+
+		spi0: spi@4035c000 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 19>;
+			clock-names = "spiclk";
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@4035c100 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			clocks = <&pclka MSTPB 18>;
+			clock-names = "spiclk";
+			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c100 0x100>;
+			status = "disabled";
 		};
 
 		option_setting_ofs: option_setting_ofs@300a100 {

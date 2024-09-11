@@ -22,6 +22,7 @@ struct llext_elf_sect_map {
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext);
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext);
 void llext_free_regions(struct llext *ext);
+void llext_adjust_mmu_permissions(struct llext *ext);
 
 static inline void *llext_alloc(size_t bytes)
 {
@@ -74,5 +75,6 @@ static inline const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct
  */
 
 int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local);
+void llext_dependency_remove_all(struct llext *ext);
 
 #endif /* ZEPHYR_SUBSYS_LLEXT_PRIV_H_ */

@@ -109,11 +109,11 @@ config WIFI_NM_WPA_SUPPLICANT_WEP
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
-	default WIFI_NM_WPA_SUPPLICANT_CRYPTO
+	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	help
 	  Select the crypto implementation to use for WPA supplicant.
-	  WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT support enterprise
-	  and DPP. And use Mbedtls PSA apis for HW acceleration.
+	  WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT supports enterprise mode
+	  and DPP.
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO
 	bool "Crypto support for WiFi"
@@ -143,6 +143,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_CIPHER_DES_ENABLED
+	select MBEDTLS_MD5
 	select MBEDTLS_SHA1
 	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_CIPHER
@@ -160,6 +161,7 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	select MBEDTLS_HKDF_C
 	select MBEDTLS_SERVER_NAME_INDICATION
 	select MBEDTLS_X509_CRL_PARSE_C
+	select MBEDTLS_TLS_VERSION_1_2
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	bool "No Crypto support for WiFi"
@@ -168,7 +170,6 @@ endchoice
 
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
-	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	help
 	  Support Mbedtls 3.x to use PSA apis instead of legacy apis.
 

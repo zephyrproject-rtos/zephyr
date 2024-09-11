@@ -205,6 +205,43 @@ see the following message in the terminal:
    *** Booting Zephyr OS build v3.6.0-479-g91faa20c6741 ***
    Hello World! frdm_mcxn947/mcxn947/cpu0
 
+Flashing to QSPI
+================
+
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :app: zephyr/samples/hello_world
+   :board: frdm_mcxn947/mcxn947/cpu0/qspi
+   :gen-args: -DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE=\"bootloader/mcuboot/root-rsa-2048.pem\" -DCONFIG_BOOTLOADER_MCUBOOT=y
+   :goals: flash
+
+
+In order to load Zephyr application from QSPI you should program a bootloader like
+MCUboot bootloader to internal flash. Here are the steps.
+
+.. zephyr-app-commands::
+   :app: bootloader/mcuboot/boot/zephyr
+   :board: frdm_mcxn947/mcxn947/cpu0/qspi
+   :goals: flash
+
+Open a serial terminal, reset the board (press the RESET button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+  *** Booting MCUboot v2.1.0-rc1-2-g9f034729d99a ***
+  *** Using Zephyr OS build v3.6.0-4046-gf279a03af8ab ***
+  I: Starting bootloader
+  I: Primary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+  I: Secondary image: magic=unset, swap_type=0x1, copy_done=0x3, image_ok=0x3
+  I: Boot source: none
+  I: Image index: 0, Swap type: none
+  I: Bootloader chainload address offset: 0x0
+  I: Jumping to the first image slot
+  *** Booting Zephyr OS build v3.6.0-4046-gf279a03af8ab ***
+  Hello World! frdm_mcxn947/mcxn947/cpu0/qspi
+
 Debugging
 =========
 
