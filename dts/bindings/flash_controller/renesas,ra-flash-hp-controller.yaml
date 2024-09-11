@@ -6,3 +6,21 @@ description: Renesas RA family flash high-performance controller
 compatible: "renesas,ra-flash-hp-controller"
 
 include: flash-controller.yaml
+
+properties:
+  block-32kb-linear-end:
+    type: int
+    required: true
+    description: The final 32kb block index of the code-flash in the linear mode.
+
+  block-32kb-dual-low-end:
+    type: int
+    description: The final 32kb block index of the code-flash's lower Bank in the dual mode
+
+  block-32kb-dual-high-end:
+    type: int
+    description: The final 32kb block index of the code-flash's higher Bank in the dual mode
+
+  reserved-area-num:
+    type: int
+    description: The number of the code-flash's reserved blocks in the dual mode
