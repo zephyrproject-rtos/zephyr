@@ -9,5 +9,6 @@
 #define TI_SIMPLELINK_CC23X0_SOC_H_
 
 #include "cmsis/cc23x0r5.h"
+#include "ti_cc23x0_dt.h"
 
 #endif /* TI_SIMPLELINK_CC23X0_SOC_H_ */
