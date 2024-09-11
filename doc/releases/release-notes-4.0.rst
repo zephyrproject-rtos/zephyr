@@ -324,6 +324,11 @@ Libraries / Subsystems
 
   * Mbed TLS was updated to version 3.6.1. The release notes can be found at:
     https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG`
+    was added to allow ``psa_get_random()`` to make use of non-cryptographically
+    secure random sources when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
+    is also enabled. This is only meant to be used for test purposes, not in production.
+    (:github:`76408`)
 
 * CMSIS-NN
 
