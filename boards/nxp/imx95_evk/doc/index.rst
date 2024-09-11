@@ -76,7 +76,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr imx95_evk_m7 board configuration supports the following hardware features:
+The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -92,7 +92,8 @@ The Zephyr imx95_evk_m7 board configuration supports the following hardware feat
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 
-The Zephyr imx95_evk_a55 board configuration supports the following hardware features:
+The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
+the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -133,7 +134,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: imx95_evk/mimx9596/a55
-   :goals: run
+   :goals: build
 
 This will build an image (zephyr.bin) with the synchronization sample app.
 
@@ -172,7 +173,7 @@ It will display the following console output:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: imx95_evk/mimx9596/a55/smp
-   :goals: run
+   :goals: build
 
 This will build an image (zephyr.bin) with the synchronization sample app.
 
