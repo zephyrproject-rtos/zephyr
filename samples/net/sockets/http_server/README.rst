@@ -20,6 +20,20 @@ Requirement
 Building and running the server
 -------------------------------
 
+There are configuration files for various setups in the
+:zephyr_file:`samples/net/sockets/http_server` directory:
+
+.. list-table::
+
+    * - :zephyr_file:`prj.conf <samples/net/sockets/http_server/prj.conf>`
+      - This is the standard default config.
+
+    * - :zephyr_file:`ieee802154-overlay.conf <samples/net/sockets/http_server/ieee802154-overlay.conf>`
+      - This overlay config can be added for IEEE 802.15.4 support.
+
+    * - :zephyr_file:`overlay-netusb.conf <samples/net/sockets/http_server/overlay-netusb.conf>`
+      - This overlay config can be added for connecting via network USB.
+
 To build and run the application:
 
 .. code-block:: bash
