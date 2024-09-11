@@ -229,7 +229,7 @@ MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_.
 See ``4.2 Run an example application``, just rename ``zephyr.bin`` to ``m7_image.bin``
 to make flash.bin and program to SD/eMMC.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -62,7 +62,7 @@ Building and Flashing
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 On board debugger Nu-link2 can emulate UART0 as a virtual COM port over usb,
 To enable this, set ISW1 DIP switch 1-3 (TXD RXD VOM) to ON.
@@ -81,7 +81,7 @@ run a serial host program to connect with your board. For example:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

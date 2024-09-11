@@ -159,7 +159,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for building and flashing the :ref:`hello_world` application
+Here is an example for building and flashing the :zephyr:code-sample:`hello_world` application
 for the Cortex-M1 reference design:
 
 .. zephyr-app-commands::
@@ -191,7 +191,7 @@ dump :file:`zephyr.mem` file suitable for initialising the block RAM using
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -211,7 +211,7 @@ Flashing an application to Nucleo U031R8
 
 Connect the Nucleo U031R8 to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
