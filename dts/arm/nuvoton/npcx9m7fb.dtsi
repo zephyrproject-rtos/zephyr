@@ -40,3 +40,11 @@
 		pinctrl-names = "default";
 	};
 };
+
+/*
+ * Raising the interrupt priority of the MIWU group, which owns SHI CS, to the same as
+ * SHI's priority.
+ */
+&group_f1 {
+	irq-prio = <1>;
+};
