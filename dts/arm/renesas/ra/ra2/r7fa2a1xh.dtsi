@@ -25,7 +25,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		xtal: clock-xtal {
+		xtal: clock-main-osc {
 			compatible = "renesas,ra-cgc-external-clock";
 			clock-frequency = <DT_FREQ_M(12)>;
 			#clock-cells = <0>;
