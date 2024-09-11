@@ -69,6 +69,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.filter = supplicant_filter,
 	.channel = supplicant_channel,
 	.set_rts_threshold = supplicant_set_rts_threshold,
+	.get_rts_threshold = supplicant_get_rts_threshold,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 	.btm_query = supplicant_btm_query,
 #endif

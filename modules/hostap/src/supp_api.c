@@ -1182,6 +1182,18 @@ int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_thre
 	return wifi_mgmt_api->set_rts_threshold(dev, rts_threshold);
 }
 
+int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->get_rts_threshold) {
+		wpa_printf(MSG_ERROR, "Get RTS not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
+}
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 int supplicant_btm_query(const struct device *dev, uint8_t reason)
 {
