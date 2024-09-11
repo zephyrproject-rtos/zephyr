@@ -124,8 +124,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	struct pdu_cte_info *cte_info;
 	struct node_rx_pdu *node_rx;
 	uint32_t window_widening_us;
-	uint32_t window_size_us;
 	struct node_rx_ftr *ftr;
+	uint16_t window_size_us;
 	uint32_t aux_offset_us;
 	uint32_t overhead_us;
 	uint8_t *pri_dptr;
@@ -186,7 +186,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Skip reception if invalid aux offset */
 	pdu_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
-	if (aux_offset_us < pdu_us) {
+	if (unlikely((aux_offset_us + window_size_us) < (pdu_us + EVENT_MAFS_US))) {
 		return 0U;
 	}
 
