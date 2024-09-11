@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Wait Queue Benchmark"
+
+source "Kconfig.zephyr"
+
+config BENCHMARK_NUM_ITERATIONS
+	int "Number of iterations to gather data"
+	default 1000
+	help
+	  This option specifies the number of times each test will be executed
+	  before calculating the average times for reporting.
+
+config BENCHMARK_NUM_THREADS
+	int "Number of threads"
+	default 100
+	help
+	  This option specifies the maximum number of threads that the test
+	  will add to a wait queue. Increasing this value will places greater
+	  stress on the wait queues and better highlight the performance
+	  differences as the number of threads in the wait queue changes.
+
+config BENCHMARK_VERBOSE
+	bool "Display detailed results"
+	default y
+	help
+	  This option displays the average time of all the iterations done for
+	  each thread in the tests. This generates large amounts of output. To
+	  analyze it, it is recommended redirect or copy the data to a file.
