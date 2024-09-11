@@ -80,7 +80,32 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_RC_CFG_VENDOR_VENDOR_SPECIFIC_REG1_ENDIAN_MODE_BAR2_LSB  2
 #define PCIE_RC_CFG_VENDOR_SPECIFIC_REG1_LITTLE_ENDIAN                0x0
 
-#define PCIE_EXT_CFG_DATA 0x8000
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO 0x400c
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI 0x4010
+#define PCIE_MEM_WIN0_LO(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO + (win) * 8)
+#define PCIE_MEM_WIN0_HI(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI + (win) * 8)
+
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT            0x4070
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK 0xfff00000
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB  20
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK  0xfff0
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB   4
+#define PCIE_MEM_WIN0_BASE_LIMIT(win)                       (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT + (win) * 4)
+
+/* Hamming weight of PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK */
+#define HIGH_ADDR_SHIFT 12
+
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI           0x4080
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_MASK 0xff
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_LSB  0
+#define PCIE_MEM_WIN0_BASE_HI(win)                      (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI + (win) * 8)
+
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI            0x4084
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_MASK 0xff
+#define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_LSB  0
+#define PCIE_MEM_WIN0_LIMIT_HI(win)                       (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + (win) * 8)
+
+#define PCIE_EXT_CFG_DATA  0x8000
 #define PCIE_EXT_CFG_INDEX 0x9000
 
 #define PCI_BASE_ADDRESS_0 0x10
@@ -130,6 +155,8 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_ECAM_BDF_SHIFT 12
 
 #define BAR_MAX 8
+
+#define SZ_1M 0x100000
 
 // struct pcie_brcmstb_config {
 // 	struct pcie_ctrl_config common;
@@ -221,14 +248,16 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 	sys_write32(data, conf_addr);
 }
 
+/* Region operations are almost the same as the ones of pcie_ecam */
 static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pcie_bdf_t bdf,
-					   size_t bar_size, uintptr_t *bar_bus_addr,
-					   enum pcie_region_type type)
+					      size_t bar_size, uintptr_t *bar_bus_addr,
+					      enum pcie_region_type type)
 {
 	uintptr_t addr;
 
 	addr = (((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
-		((bar_size) - 1)) + 1;
+		((bar_size)-1)) +
+	       1;
 
 	if (addr - data->regions[type].bus_start + bar_size > data->regions[type].size) {
 		return false;
@@ -238,38 +267,29 @@ static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pc
 	data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
 
 	// TODO: Replace this with pcie_brcmstb_conf_write
-	sys_write32(addr, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_BASE_ADDRESS_0 + 0x4 * data->bar_cnt++);
+	sys_write32(addr, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_BASE_ADDRESS_0 +
+				  0x4 * data->bar_cnt++);
 
 	return true;
 }
 
-static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bdf,
-				      bool mem, bool mem64, size_t bar_size,
-				      uintptr_t *bar_bus_addr)
+static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bdf, bool mem,
+					 bool mem64, size_t bar_size, uintptr_t *bar_bus_addr)
 {
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
-	    !data->regions[PCIE_REGION_MEM].size) {
-		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
+	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
 		return false;
 	}
 
 	if (!mem && !data->regions[PCIE_REGION_IO].size) {
-		LOG_DBG("bdf %x no io region defined for allocation", bdf);
 		return false;
 	}
 
-	/*
-	 * Allocate into mem64 region if available or is the only available
-	 *
-	 * TOFIX:
-	 * - handle allocation from/to mem/mem64 when a region is full
-	 */
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -281,32 +301,23 @@ static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bd
 }
 
 static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
-					       bool mem, bool mem64, size_t align,
-					       uintptr_t *bar_base_addr)
+						  bool mem, bool mem64, size_t align,
+						  uintptr_t *bar_base_addr)
 {
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size &&
-	    !data->regions[PCIE_REGION_MEM].size) {
-		LOG_DBG("bdf %x no mem region defined for allocation", bdf);
+	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
 		return false;
 	}
 
 	if (!mem && !data->regions[PCIE_REGION_IO].size) {
-		LOG_DBG("bdf %x no io region defined for allocation", bdf);
 		return false;
 	}
 
-	/*
-	 * Allocate into mem64 region if available or is the only available
-	 *
-	 * TOFIX:
-	 * - handle allocation from/to mem/mem64 when a region is full
-	 */
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -314,27 +325,27 @@ static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie
 		type = PCIE_REGION_IO;
 	}
 
-	*bar_base_addr = (((data->regions[type].bus_start +
-			    data->regions[type].allocation_offset) - 1) | ((align) - 1)) + 1;
+	*bar_base_addr =
+		(((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
+		 ((align)-1)) +
+		1;
 
 	return true;
 }
 
-static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t bdf,
-				       bool mem, bool mem64, uintptr_t bar_bus_addr,
-				       uintptr_t *bar_addr)
+static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t bdf, bool mem,
+					  bool mem64, uintptr_t bar_bus_addr, uintptr_t *bar_addr)
 {
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	/* Means it hasn't been allocated */
 	if (!bar_bus_addr) {
 		return false;
 	}
 
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
 		type = PCIE_REGION_MEM64;
 	} else if (mem) {
 		type = PCIE_REGION_MEM;
@@ -361,7 +372,7 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 	struct pcie_brcmstb_data *data = dev->data;
 	int i;
 
-	for (i = 0 ; i < config->ranges_count ; ++i) {
+	for (i = 0; i < config->ranges_count; ++i) {
 		switch ((config->ranges[i].flags >> 24) & 0x03) {
 		case 0x01:
 			data->regions[PCIE_REGION_IO].bus_start = config->ranges[i].pcie_bus_addr;
@@ -374,17 +385,17 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 			data->regions[PCIE_REGION_MEM].size = config->ranges[i].map_length;
 			break;
 		case 0x03:
-			data->regions[PCIE_REGION_MEM64].bus_start = config->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_MEM64].phys_start = config->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_MEM64].bus_start =
+				config->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_MEM64].phys_start =
+				config->ranges[i].host_map_addr;
 			data->regions[PCIE_REGION_MEM64].size = config->ranges[i].map_length;
 			break;
 		}
 	}
 
-	if (!data->regions[PCIE_REGION_IO].size &&
-	    !data->regions[PCIE_REGION_MEM].size &&
+	if (!data->regions[PCIE_REGION_IO].size && !data->regions[PCIE_REGION_MEM].size &&
 	    !data->regions[PCIE_REGION_MEM64].size) {
-		LOG_ERR("No regions defined");
 		return -EINVAL;
 	}
 
@@ -400,9 +411,7 @@ static void pcie_brcmstb_mdio_write(mm_reg_t base, uint8_t port, uint8_t regad, 
 {
 	sys_write32(pcie_brcmstb_mdio_from_pkt(port, regad, MDIO_CMD_WRITE),
 		    base + PCIE_RC_DL_MDIO_ADDR);
-	sys_read32(base + PCIE_RC_DL_MDIO_ADDR);
 	sys_write32(MDIO_DATA_DONE_MASK | wrdata, base + PCIE_RC_DL_MDIO_WR_DATA);
-	sys_read32(base + PCIE_RC_DL_MDIO_WR_DATA);
 }
 
 static void pcie_brcmstb_munge_pll(const struct device *dev)
@@ -415,8 +424,43 @@ static void pcie_brcmstb_munge_pll(const struct device *dev)
 
 	pcie_brcmstb_mdio_write(data->cfg_addr, MDIO_PORT0, SET_ADDR_OFFSET, 0x1600);
 	for (i = 0; i < 7; i++) {
+		k_busy_wait(300);
 		pcie_brcmstb_mdio_write(data->cfg_addr, MDIO_PORT0, regs[i], vals[i]);
 	}
+}
+
+static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win, uintptr_t cpu_addr,
+					  uintptr_t pcie_addr, size_t size)
+{
+	struct pcie_brcmstb_data *data = dev->data;
+	uint32_t cpu_addr_mb_high, limit_addr_mb_high;
+	uintptr_t cpu_addr_mb, limit_addr_mb;
+	uint32_t tmp;
+
+	sys_write32(lower_32_bits(pcie_addr), data->cfg_addr + PCIE_MEM_WIN0_LO(win));
+	sys_write32(upper_32_bits(pcie_addr), data->cfg_addr + PCIE_MEM_WIN0_HI(win));
+
+	cpu_addr_mb = cpu_addr / SZ_1M;
+	limit_addr_mb = (cpu_addr + size - 1) / SZ_1M;
+
+	tmp = sys_read32(data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
+	tmp &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK;
+	tmp |= (cpu_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB);
+	tmp &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
+	tmp |= (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
+	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
+
+	cpu_addr_mb_high = cpu_addr_mb >> HIGH_ADDR_SHIFT;
+	tmp = sys_read32(data->cfg_addr + PCIE_MEM_WIN0_BASE_HI(win));
+	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_MASK;
+	tmp |= (cpu_addr_mb_high << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_LSB);
+	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_BASE_HI(win));
+
+	limit_addr_mb_high = limit_addr_mb >> HIGH_ADDR_SHIFT;
+	tmp = sys_read32(data->cfg_addr + PCIE_MEM_WIN0_LIMIT_HI(win));
+	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_MASK;
+	tmp |= (cpu_addr_mb_high << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_LSB);
+	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_LIMIT_HI(win));
 }
 
 static int pcie_brcmstb_setup(const struct device *dev)
@@ -540,20 +584,17 @@ static int pcie_brcmstb_init(const struct device *dev)
 	tmp |= (PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER);
 	sys_write32(tmp, data->cfg_addr + PCI_COMMAND);
 
-	/* Assign resources to BARs */
-	/* Wait until the registers become accessible */
-	k_busy_wait(500000);
-
-	// TODO: allocate BARs dynamically
-	// for (int i = 0; i < DMA_RANGES_IDX; i++) {
-	// 	sys_write32(config->ranges[i].pcie_bus_addr,
-	// 		    data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_BASE_ADDRESS_0 + 0x4 * i);
-	// }
+	for (int i = 0; i < DMA_RANGES_IDX; i++) {
+		pcie_brcmstb_set_outbound_win(dev, i, config->ranges[i].host_map_addr,
+					      config->ranges[i].pcie_bus_addr,
+					      config->ranges[i].map_length);
+	}
 
 	/* Enable resources */
 	tmp = sys_read32(data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
 	tmp |= PCI_COMMAND_MEMORY;
 	sys_write32(tmp, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
+	k_busy_wait(500000);
 
 	return 0;
 }
