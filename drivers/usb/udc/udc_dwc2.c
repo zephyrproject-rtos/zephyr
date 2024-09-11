@@ -29,31 +29,13 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_XFER,
 	/* Setup packet received */
 	DWC2_DRV_EVT_SETUP,
-	/* OUT transaction for specific endpoint is finished */
-	DWC2_DRV_EVT_DOUT,
-	/* IN transaction for specific endpoint is finished */
-	DWC2_DRV_EVT_DIN,
-	/* Core should exit hibernation */
-	DWC2_DRV_EVT_HIBERNATION_EXIT,
+	/* Transaction on endpoint is finished */
+	DWC2_DRV_EVT_EP_FINISHED,
+	/* Core should exit hibernation due to bus reset */
+	DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET,
+	/* Core should exit hibernation due to host resume */
+	DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME,
 };
-
-enum dwc2_hibernation_exit_reason {
-	DWC2_HIBERNATION_EXIT_BUS_RESET,
-	DWC2_HIBERNATION_EXIT_HOST_WAKEUP,
-};
-
-struct dwc2_drv_event {
-	const struct device *dev;
-	enum dwc2_drv_event_type type;
-	union {
-		uint8_t ep;
-		enum dwc2_hibernation_exit_reason exit_reason;
-	};
-};
-
-K_MSGQ_DEFINE(drv_msgq, sizeof(struct dwc2_drv_event),
-	      CONFIG_UDC_DWC2_MAX_QMESSAGES, sizeof(void *));
-
 
 /* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
  * of 512 bytes. The value must be adjusted according to the number of OUT
@@ -111,6 +93,12 @@ struct dwc2_reg_backup {
 /* Driver private data per instance */
 struct udc_dwc2_data {
 	struct k_thread thread_data;
+	/* Main events the driver thread waits for */
+	struct k_event drv_evt;
+	/* Transfer triggers (OUT on bits 0-15, IN on bits 16-31) */
+	struct k_event xfer_new;
+	/* Finished transactions (OUT on bits 0-15, IN on bits 16-31) */
+	struct k_event xfer_finished;
 	struct dwc2_reg_backup backup;
 	uint32_t ghwcfg1;
 	uint32_t txf_set;
@@ -1502,12 +1490,9 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 static int udc_dwc2_ep_clear_halt(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t dxepctl_reg = dwc2_get_dxepctl_reg(dev, cfg->addr);
 	uint32_t dxepctl;
-	struct dwc2_drv_event evt = {
-		.ep = cfg->addr,
-		.type = DWC2_DRV_EVT_XFER,
-	};
 
 	dxepctl = sys_read32(dxepctl_reg);
 	dxepctl &= ~USB_DWC2_DEPCTL_STALL;
@@ -1519,7 +1504,16 @@ static int udc_dwc2_ep_clear_halt(const struct device *dev,
 
 	/* Resume queued transfers if any */
 	if (udc_buf_peek(dev, cfg->addr)) {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		uint32_t ep_bit;
+
+		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+		} else {
+			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+		}
+
+		k_event_post(&priv->xfer_new, ep_bit);
+		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
 	return 0;
@@ -1529,16 +1523,22 @@ static int udc_dwc2_ep_enqueue(const struct device *dev,
 			       struct udc_ep_config *const cfg,
 			       struct net_buf *const buf)
 {
-	struct dwc2_drv_event evt = {
-		.ep = cfg->addr,
-		.type = DWC2_DRV_EVT_XFER,
-	};
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
 	LOG_DBG("%p enqueue %x %p", dev, cfg->addr, buf);
 	udc_buf_put(cfg, buf);
 
 	if (!cfg->stat.halted) {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		uint32_t ep_bit;
+
+		if (USB_EP_DIR_IS_IN(cfg->addr)) {
+			ep_bit = BIT(16 + USB_EP_GET_IDX(cfg->addr));
+		} else {
+			ep_bit = BIT(USB_EP_GET_IDX(cfg->addr));
+		}
+
+		k_event_post(&priv->xfer_new, ep_bit);
+		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 	}
 
 	return 0;
@@ -2016,6 +2016,7 @@ static int udc_dwc2_shutdown(const struct device *dev)
 static int dwc2_driver_preinit(const struct device *dev)
 {
 	const struct udc_dwc2_config *config = dev->config;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
 	uint32_t numdeveps;
@@ -2023,6 +2024,10 @@ static int dwc2_driver_preinit(const struct device *dev)
 	int err;
 
 	k_mutex_init(&data->mutex);
+
+	k_event_init(&priv->drv_evt);
+	k_event_init(&priv->xfer_new);
+	k_event_init(&priv->xfer_finished);
 
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
@@ -2264,7 +2269,6 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 {
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg;
-	struct dwc2_drv_event evt;
 	struct net_buf *buf;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep_idx | USB_EP_DIR_IN);
@@ -2279,10 +2283,8 @@ static inline void dwc2_handle_in_xfercompl(const struct device *dev,
 		return;
 	}
 
-	evt.dev = dev;
-	evt.ep = ep_cfg->addr;
-	evt.type = DWC2_DRV_EVT_DIN;
-	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+	k_event_post(&priv->xfer_finished, BIT(16 + ep_idx));
+	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 }
 
 static inline void dwc2_handle_iepint(const struct device *dev)
@@ -2326,7 +2328,6 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep_idx);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
-	struct dwc2_drv_event evt;
 	uint32_t bcnt;
 	struct net_buf *buf;
 	uint32_t doeptsiz;
@@ -2340,9 +2341,6 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
 		return;
 	}
-
-	evt.type = DWC2_DRV_EVT_DOUT;
-	evt.ep = ep_cfg->addr;
 
 	/* The original transfer size value is necessary here because controller
 	 * decreases the value for every byte stored.
@@ -2391,7 +2389,8 @@ static inline void dwc2_handle_out_xfercompl(const struct device *dev,
 	    net_buf_tailroom(buf)) {
 		dwc2_prep_rx(dev, buf, ep_cfg);
 	} else {
-		k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		k_event_post(&priv->xfer_finished, BIT(ep_idx));
+		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 	}
 }
 
@@ -2443,12 +2442,7 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		}
 
 		if (status & USB_DWC2_DOEPINT_SETUP) {
-			struct dwc2_drv_event evt = {
-				.type = DWC2_DRV_EVT_SETUP,
-				.ep = USB_CONTROL_EP_OUT,
-			};
-
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_SETUP));
 		}
 
 		if (status & USB_DWC2_DOEPINT_STSPHSERCVD) {
@@ -2583,7 +2577,6 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 	if (priv->hibernated) {
 		uint32_t gpwrdn = sys_read32((mem_addr_t)&base->gpwrdn);
 		bool reset, resume = false;
-		enum dwc2_hibernation_exit_reason exit_reason;
 
 		/* Clear interrupts */
 		sys_write32(gpwrdn, (mem_addr_t)&base->gpwrdn);
@@ -2591,22 +2584,17 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		if (gpwrdn & USB_DWC2_GPWRDN_LNSTSCHNG) {
 			resume = usb_dwc2_get_gpwrdn_linestate(gpwrdn) ==
 				 USB_DWC2_GPWRDN_LINESTATE_DM1DP0;
-			exit_reason = DWC2_HIBERNATION_EXIT_HOST_WAKEUP;
 		}
 
 		reset = gpwrdn & USB_DWC2_GPWRDN_RESETDETECTED;
-		if (reset) {
-			exit_reason = DWC2_HIBERNATION_EXIT_BUS_RESET;
+
+		if (resume) {
+			k_event_post(&priv->drv_evt,
+				     BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME));
 		}
 
-		if (reset || resume) {
-			struct dwc2_drv_event evt = {
-				.dev = dev,
-				.type = DWC2_DRV_EVT_HIBERNATION_EXIT,
-				.exit_reason = exit_reason,
-			};
-
-			k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
+		if (reset) {
+			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET));
 		}
 
 		(void)dwc2_quirk_irq_clear(dev);
@@ -2700,39 +2688,97 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 	(void)dwc2_quirk_irq_clear(dev);
 }
 
+static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
+{
+	unsigned int bit;
+
+	__ASSERT_NO_MSG(bitmap && *bitmap);
+
+	bit = find_lsb_set(*bitmap) - 1;
+	*bitmap &= ~BIT(bit);
+
+	if (bit >= 16) {
+		return USB_EP_DIR_IN | (bit - 16);
+	} else {
+		return USB_EP_DIR_OUT | bit;
+	}
+}
+
 static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_ep_config *ep_cfg;
-	struct dwc2_drv_event evt;
+	const uint32_t hibernation_exit_events = (BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET) |
+						  BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME));
+	uint32_t prev;
+	uint32_t evt;
+	uint32_t eps;
+	uint8_t ep;
 
 	/* This is the bottom-half of the ISR handler and the place where
 	 * a new transfer can be fed.
 	 */
-	k_msgq_get(&drv_msgq, &evt, K_FOREVER);
-	ep_cfg = udc_get_ep_cfg(dev, evt.ep);
+	evt = k_event_wait(&priv->drv_evt, UINT32_MAX, false, K_FOREVER);
 
-	switch (evt.type) {
-	case DWC2_DRV_EVT_XFER:
-		LOG_DBG("New transfer in the queue");
-		break;
-	case DWC2_DRV_EVT_SETUP:
+	if (evt & BIT(DWC2_DRV_EVT_XFER)) {
+		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
+
+		LOG_DBG("New transfer(s) in the queue");
+		eps = k_event_test(&priv->xfer_new, UINT32_MAX);
+		k_event_clear(&priv->xfer_new, eps);
+
+		while (eps) {
+			ep = pull_next_ep_from_bitmap(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+
+			if (!udc_ep_is_busy(dev, ep_cfg->addr)) {
+				dwc2_handle_xfer_next(dev, ep_cfg);
+			} else {
+				LOG_DBG("ep 0x%02x busy", ep_cfg->addr);
+			}
+		}
+	}
+
+	if (evt & BIT(DWC2_DRV_EVT_EP_FINISHED)) {
+		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
+
+		eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
+		k_event_clear(&priv->xfer_finished, eps);
+
+		while (eps) {
+			ep = pull_next_ep_from_bitmap(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+
+			if (USB_EP_DIR_IS_IN(ep)) {
+				LOG_DBG("DIN event ep 0x%02x", ep);
+				dwc2_handle_evt_din(dev, ep_cfg);
+			} else {
+				LOG_DBG("DOUT event ep 0x%02x", ep_cfg->addr);
+				dwc2_handle_evt_dout(dev, ep_cfg);
+			}
+
+			if (!udc_ep_is_busy(dev, ep_cfg->addr)) {
+				dwc2_handle_xfer_next(dev, ep_cfg);
+			} else {
+				LOG_DBG("ep 0x%02x busy", ep_cfg->addr);
+			}
+		}
+	}
+
+	if (evt & BIT(DWC2_DRV_EVT_SETUP)) {
+		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_SETUP));
+
 		LOG_DBG("SETUP event");
 		dwc2_handle_evt_setup(dev);
-		break;
-	case DWC2_DRV_EVT_DOUT:
-		LOG_DBG("DOUT event ep 0x%02x", ep_cfg->addr);
-		dwc2_handle_evt_dout(dev, ep_cfg);
-		break;
-	case DWC2_DRV_EVT_DIN:
-		LOG_DBG("DIN event");
-		dwc2_handle_evt_din(dev, ep_cfg);
-		break;
-	case DWC2_DRV_EVT_HIBERNATION_EXIT:
+	}
+
+	if (evt & hibernation_exit_events) {
 		LOG_DBG("Hibernation exit event");
 		config->irq_disable_func(dev);
+
+		prev = k_event_clear(&priv->drv_evt, hibernation_exit_events);
 
 		if (priv->hibernated) {
 			dwc2_exit_hibernation(dev);
@@ -2741,19 +2787,12 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 			udc_set_suspended(dev, false);
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
 
-			if (evt.exit_reason == DWC2_HIBERNATION_EXIT_BUS_RESET) {
+			if (prev & BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET)) {
 				dwc2_on_bus_reset(dev);
 			}
 		}
 
 		config->irq_enable_func(dev);
-		break;
-	}
-
-	if (ep_cfg->addr != USB_CONTROL_EP_OUT && !udc_ep_is_busy(dev, ep_cfg->addr)) {
-		dwc2_handle_xfer_next(dev, ep_cfg);
-	} else {
-		LOG_DBG("ep 0x%02x busy", ep_cfg->addr);
 	}
 }
 
