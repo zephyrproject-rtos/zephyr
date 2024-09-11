@@ -214,14 +214,6 @@ struct http_resource_detail_dynamic {
 	 */
 	http_resource_dynamic_cb_t cb;
 
-	/** Data buffer used to exchanged data between server and the,
-	 *  application.
-	 */
-	uint8_t *data_buffer;
-
-	/** Length of the data in the data buffer. */
-	size_t data_buffer_len;
-
 	/** A pointer to the client currently processing resource, used to
 	 *  prevent concurrent access to the resource from multiple clients.
 	 */

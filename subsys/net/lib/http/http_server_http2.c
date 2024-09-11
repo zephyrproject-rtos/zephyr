@@ -552,39 +552,26 @@ static int http2_dynamic_response(struct http_client_ctx *client, struct http2_f
 static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
 			      struct http_client_ctx *client)
 {
-	struct http2_frame *frame = &client->current_frame;
-	int ret, remaining, offset = dynamic_detail->common.path_len;
+	int ret, len;
 	char *ptr;
+	struct http2_frame *frame = &client->current_frame;
+	enum http_data_status status;
+	struct http_response_ctx response_ctx;
 
 	if (client->current_stream == NULL) {
 		return -ENOENT;
 	}
 
-	remaining = strlen(&client->url_buffer[dynamic_detail->common.path_len]);
+	/* Start of GET params */
+	ptr = &client->url_buffer[dynamic_detail->common.path_len];
+	len = strlen(ptr);
+	status = HTTP_SERVER_DATA_FINAL;
 
-	/* Pass URL to the client */
-	while (1) {
-		int copy_len;
-		enum http_data_status status;
-		struct http_response_ctx response_ctx;
-
-		ptr = &client->url_buffer[offset];
-		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-
-		if (copy_len > 0) {
-			memcpy(dynamic_detail->data_buffer, ptr, copy_len);
-		}
-
-		if (copy_len == remaining) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
-		}
-
+	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 
-		ret = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
-					 &response_ctx, dynamic_detail->user_data);
+		ret = dynamic_detail->cb(client, status, ptr, len, &response_ctx,
+					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -594,20 +581,18 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 			return ret;
 		}
 
-		if (http_response_is_final(&response_ctx, status)) {
-			break;
+		/* URL params are passed in the first cb only */
+		len = 0;
+	} while (!http_response_is_final(&response_ctx, status));
+
+	if (!client->current_stream->end_stream_sent) {
+		client->current_stream->end_stream_sent = true;
+		ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
+				      HTTP2_FLAG_END_STREAM);
+		if (ret < 0) {
+			LOG_DBG("Cannot send last frame (%d)", ret);
 		}
-
-		offset += copy_len;
-		remaining -= copy_len;
 	}
-
-	ret = send_data_frame(client, NULL, 0, frame->stream_identifier, HTTP2_FLAG_END_STREAM);
-	if (ret < 0) {
-		LOG_DBG("Cannot send last frame (%d)", ret);
-	}
-
-	client->current_stream->end_stream_sent = true;
 
 	dynamic_detail->holder = NULL;
 
@@ -617,11 +602,12 @@ static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detai
 static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
 			       struct http_client_ctx *client)
 {
+	int ret = 0;
+	char *ptr = client->cursor;
+	size_t data_len;
+	enum http_data_status status;
 	struct http2_frame *frame = &client->current_frame;
 	struct http_response_ctx response_ctx;
-	size_t data_len;
-	int copy_len;
-	int ret = 0;
 
 	if (dynamic_detail == NULL) {
 		return -ENOENT;
@@ -632,52 +618,53 @@ static int dynamic_post_req_v2(struct http_resource_detail_dynamic *dynamic_deta
 	}
 
 	data_len = MIN(frame->length, client->data_len);
-	copy_len = MIN(data_len, dynamic_detail->data_buffer_len);
+	frame->length -= data_len;
+	client->cursor += data_len;
+	client->data_len -= data_len;
 
-	while (copy_len > 0) {
-		enum http_data_status status;
-		int send_len;
+	if (frame->length == 0 && is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
+		status = HTTP_SERVER_DATA_FINAL;
+	} else {
+		status = HTTP_SERVER_DATA_MORE;
+	}
 
-		/* Read all the user data and pass it to application. */
-		memcpy(dynamic_detail->data_buffer, client->cursor, copy_len);
-		data_len -= copy_len;
-		client->cursor += copy_len;
-		client->data_len -= copy_len;
-		frame->length -= copy_len;
+	memset(&response_ctx, 0, sizeof(response_ctx));
 
-		if (frame->length == 0 &&
-		    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
+	ret = dynamic_detail->cb(client, status, ptr, data_len, &response_ctx,
+				 dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* For POST the application might not send a response until all data has been received.
+	 * Don't send a default response until the application has had a chance to respond.
+	 */
+	if (http_response_is_provided(&response_ctx)) {
+		ret = http2_dynamic_response(client, frame, &response_ctx, status, dynamic_detail);
+		if (ret < 0) {
+			return ret;
 		}
+	}
 
+	/* Once all data is transferred to application, repeat cb until response is complete */
+	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 
-		send_len = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
-					      &response_ctx, dynamic_detail->user_data);
+		ret = dynamic_detail->cb(client, status, ptr, 0, &response_ctx,
+					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
 		}
 
-		if (http_response_is_provided(&response_ctx)) {
-			ret = http2_dynamic_response(client, frame, &response_ctx, status,
-						     dynamic_detail);
-			if (ret < 0) {
-				return ret;
-			}
-
-			if (http_response_is_final(&response_ctx, status)) {
-				break;
-			}
+		ret = http2_dynamic_response(client, frame, &response_ctx, status, dynamic_detail);
+		if (ret < 0) {
+			return ret;
 		}
+	}
 
-		copy_len = MIN(data_len, dynamic_detail->data_buffer_len);
-	};
-
+	/* At end of stream, ensure response is sent and terminated */
 	if (frame->length == 0 && !client->current_stream->end_stream_sent &&
 	    is_header_flag_set(frame->flags, HTTP2_FLAG_END_STREAM)) {
-		/* End the stream, ensuring that headers are sent if not done already */
 		if (client->current_stream->headers_sent) {
 			ret = send_data_frame(client, NULL, 0, frame->stream_identifier,
 					      HTTP2_FLAG_END_STREAM);
@@ -1364,39 +1351,26 @@ static int handle_http_frame_headers_end_stream(struct http_client_ctx *client)
 	if (client->current_detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 		struct http_resource_detail_dynamic *dynamic_detail =
 			(struct http_resource_detail_dynamic *)client->current_detail;
-		int send_len;
 
 		memset(&response_ctx, 0, sizeof(response_ctx));
 
-		send_len = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL,
-					      dynamic_detail->data_buffer, 0, &response_ctx,
-					      dynamic_detail->user_data);
-		if (send_len > 0) {
-			if (!client->current_stream->headers_sent) {
-				ret = send_headers_frame(client, HTTP_200_OK,
-							 frame->stream_identifier,
-							 client->current_detail, 0, NULL, 0);
-				if (ret < 0) {
-					LOG_DBG("Cannot write to socket (%d)", ret);
-					goto out;
-				}
-
-				client->current_stream->headers_sent = true;
-			}
-
-			ret = send_data_frame(client,
-					      dynamic_detail->data_buffer,
-					      send_len, frame->stream_identifier,
-					      HTTP2_FLAG_END_STREAM);
-			if (ret < 0) {
-				LOG_DBG("Cannot send data frame (%d)", ret);
-				goto out;
-			}
-
-			client->current_stream->end_stream_sent = true;
+		ret = dynamic_detail->cb(client, HTTP_SERVER_DATA_FINAL, NULL, 0, &response_ctx,
+					 dynamic_detail->user_data);
+		if (ret < 0) {
+			dynamic_detail->holder = NULL;
+			goto out;
 		}
 
+		/* Force end stream */
+		response_ctx.final_chunk = true;
+
+		ret = http2_dynamic_response(client, frame, &response_ctx, HTTP_SERVER_DATA_FINAL,
+					     dynamic_detail);
 		dynamic_detail->holder = NULL;
+
+		if (ret < 0) {
+			goto out;
+		}
 	}
 
 	if (!client->current_stream->headers_sent) {

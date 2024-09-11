@@ -173,13 +173,11 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/",
 
 static uint8_t dynamic_payload[32];
 static size_t dynamic_payload_len = sizeof(dynamic_payload);
-static uint8_t dynamic_buffer[32];
 
 static int dynamic_cb(struct http_client_ctx *client, enum http_data_status status, uint8_t *buffer,
 		      size_t len, struct http_response_ctx *response_ctx, void *user_data)
 {
 	static size_t offset;
-	size_t copy_len = 0;
 
 	if (status == HTTP_SERVER_DATA_ABORTED) {
 		offset = 0;
@@ -188,17 +186,9 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 
 	switch (client->method) {
 	case HTTP_GET:
-		copy_len = MIN(sizeof(dynamic_buffer),
-			       dynamic_payload_len - offset);
-
-		if (copy_len > 0) {
-			memcpy(buffer, dynamic_payload + offset, copy_len);
-			offset += copy_len;
-		} else {
-			/* All resource returned, reset progress. */
-			offset = 0;
-		}
-
+		response_ctx->body = dynamic_payload;
+		response_ctx->body_len = dynamic_payload_len;
+		response_ctx->final_chunk = true;
 		break;
 	case HTTP_POST:
 		if (len + offset > sizeof(dynamic_payload)) {
@@ -221,9 +211,6 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_data_status stat
 		return -ENOTSUP;
 	}
 
-	response_ctx->body = buffer;
-	response_ctx->body_len = copy_len;
-
 	return 0;
 }
 
@@ -235,15 +222,12 @@ struct http_resource_detail_dynamic dynamic_detail = {
 		.content_type = "text/plain",
 	},
 	.cb = dynamic_cb,
-	.data_buffer = dynamic_buffer,
-	.data_buffer_len = sizeof(dynamic_buffer),
 	.user_data = NULL,
 };
 
 HTTP_RESOURCE_DEFINE(dynamic_resource, test_http_service, "/dynamic",
 		     &dynamic_detail);
 
-static uint8_t dynamic_request_headers_buffer[32];
 static struct http_header_capture_ctx header_capture_ctx_clone;
 
 static int dynamic_request_headers_cb(struct http_client_ctx *client, enum http_data_status status,
@@ -289,8 +273,6 @@ struct http_resource_detail_dynamic dynamic_request_headers_detail = {
 			.content_type = "text/plain",
 		},
 	.cb = dynamic_request_headers_cb,
-	.data_buffer = dynamic_request_headers_buffer,
-	.data_buffer_len = sizeof(dynamic_request_headers_buffer),
 	.user_data = NULL
 };
 
@@ -322,7 +304,6 @@ enum dynamic_response_headers_variant {
 };
 
 static uint8_t dynamic_response_headers_variant;
-static uint8_t dynamic_response_headers_buffer[32];
 
 static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http_data_status status,
 				       uint8_t *buffer, size_t len,
@@ -393,8 +374,6 @@ struct http_resource_detail_dynamic dynamic_response_headers_detail = {
 		.content_type = "text/plain",
 	},
 	.cb = dynamic_response_headers_cb,
-	.data_buffer = dynamic_response_headers_buffer,
-	.data_buffer_len = sizeof(dynamic_response_headers_buffer),
 	.user_data = NULL
 };
 
@@ -808,9 +787,7 @@ static void common_verify_http2_dynamic_get_request(const uint8_t *request,
 	expect_http2_settings_frame(&offset, true);
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_DYNAMIC_GET_PAYLOAD,
-				strlen(TEST_DYNAMIC_GET_PAYLOAD), 0);
-	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0,
-				HTTP2_FLAG_END_STREAM);
+				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get)
@@ -857,9 +834,7 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_get)
 	expect_http2_settings_frame(&offset, false);
 	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_DYNAMIC_GET_PAYLOAD,
-				strlen(TEST_DYNAMIC_GET_PAYLOAD), 0);
-	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, NULL, 0,
-				HTTP2_FLAG_END_STREAM);
+				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get)
