@@ -45,7 +45,7 @@ pub type Tick = u64;
 #[cfg(not(CONFIG_TIMEOUT_64BIT))]
 pub type Tick = u32;
 
-/// Duration appropraite for Zephyr calls that expect `k_timeout_t`.  The result will be a time
+/// Duration appropriate for Zephyr calls that expect `k_timeout_t`.  The result will be a time
 /// interval from "now" (when the call is made).
 pub type Duration = fugit::Duration<Tick, 1, SYS_FREQUENCY>;
 
@@ -54,7 +54,7 @@ pub type Duration = fugit::Duration<Tick, 1, SYS_FREQUENCY>;
 #[cfg(CONFIG_TIMEOUT_64BIT)]
 pub type Instant = fugit::Instant<Tick, 1, SYS_FREQUENCY>;
 
-// The zephry k_timeout_t represents several different types of intervals, based on the range of
+// The Zephyr `k_timeout_t` represents several different types of intervals, based on the range of
 // the value.  It is a signed number of the same size as the Tick here, which effectively means it
 // is one bit less.
 //
@@ -63,13 +63,13 @@ pub type Instant = fugit::Instant<Tick, 1, SYS_FREQUENCY>;
 // -1: K_FOREVER: a time that never expires.
 // MIN .. -2: A wait for an absolute amount of ticks from the start of the system.
 //
-// The absolute time offset is only implemented when time is a 64 bit value.  This also means that
+// The absolute time offset is only implemented when time is a 64-bit value.  This also means that
 // "Instant" isn't available when time is defined as a 32-bit value.
 
 // Wrapper around the timeout type, so we can implement From/Info.
 pub struct Timeout(pub k_timeout_t);
 
-// From allows methods to take a time of various types and convert it into a Zephyr timeout.
+// `From` allows methods to take a time of various types and convert it into a Zephyr timeout.
 impl From<Duration> for Timeout {
     fn from(value: Duration) -> Timeout {
         let ticks: k_ticks_t = checked_cast(value.ticks());
