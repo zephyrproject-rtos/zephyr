@@ -201,7 +201,7 @@
 	};
 
 	gpio_exp0: tca9538@70 {
-		compatible = "ti,tca9538";
+		compatible = "nxp,pca9538";
 		reg = <0x70>;
 		gpio-controller;
 		#gpio-cells = <2>;
