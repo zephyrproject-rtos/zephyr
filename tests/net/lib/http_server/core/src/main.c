@@ -15,7 +15,7 @@
 #include <zephyr/posix/sys/eventfd.h>
 #include <zephyr/ztest.h>
 
-#define BUFFER_SIZE                    512
+#define BUFFER_SIZE                    1024
 #define SERVER_IPV4_ADDR               "127.0.0.1"
 #define SERVER_PORT                    8080
 #define TIMEOUT_S                      1
@@ -27,6 +27,22 @@
 #define TEST_DYNAMIC_POST_PAYLOAD "Test dynamic POST"
 #define TEST_DYNAMIC_GET_PAYLOAD "Test dynamic GET"
 #define TEST_STATIC_PAYLOAD "Hello, World!"
+
+/* Random base64 encoded data */
+#define TEST_LONG_PAYLOAD_CHUNK_1                                                                  \
+	"Z3479c2x8gXgzvDpvt4YuQePsvmsur1J1U+lLKzkyGCQgtWEysRjnO63iZvN/Zaag5YlliAkcaWi"             \
+	"Alb8zI4SxK+JB3kfpkcAA6c8m2PfkP6D5+Vrcy9O6ituR8gb0tm8o9CwTeUhf8H6q2kB5BO1ZZxm"             \
+	"G9c3VO9BLLTC8LMG8isyzB1wT+EB8YTv4YaNc9mXJmXNt3pycZ4Thg20rPfhZsvleIeUYZZQJArx"             \
+	"ufSBYR4v6mAEm/qdFqIwe9k6dtJEfR5guFoAWbR4jMrJreshyvByrZSy+aP1S93Fvob9hNn6ouSc"
+#define TEST_LONG_PAYLOAD_CHUNK_2                                                                  \
+	"a0UIx0JKhFKvnM23kcavlMzwD+MerSiPUDYKSjtnjhhZmW3GonTpUWMEuDGZNkbrAZ3fbuWRbHi0"             \
+	"1GufXYWGw/Jk6H6GV5WWWF9a71dng6gsH21zD1dqYIo46hofi4mfJ8Spo9a4Ch04ARNFSMhuLwYv"             \
+	"eOprXUybMUiBVlTansXL2mdH2BgCPu4u65kIyAxcQpiXNGSJ3EjEIGIa"
+
+static const char long_payload[] = TEST_LONG_PAYLOAD_CHUNK_1 TEST_LONG_PAYLOAD_CHUNK_2;
+BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
+	     "long_payload should be longer than client buffer to test payload being sent to "
+	     "application across multiple calls to dynamic resource callback");
 
 /* Individual HTTP2 frames, used to compose requests. */
 #define TEST_HTTP2_MAGIC \
@@ -301,15 +317,20 @@ enum dynamic_response_headers_variant {
 
 	/* Send body data in a separate callback to header data */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_SEPARATE,
+
+	/* Long body data split across multiple callbacks */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG,
 };
 
 static uint8_t dynamic_response_headers_variant;
+static uint8_t dynamic_response_headers_buffer[sizeof(long_payload)];
 
 static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http_data_status status,
 				       uint8_t *buffer, size_t len,
 				       struct http_response_ctx *response_ctx, void *user_data)
 {
 	static bool request_continuation;
+	static size_t offset;
 
 	static const struct http_header extra_headers[] = {
 		{.name = "Test-Header", .value = "test_data"},
@@ -361,6 +382,35 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client, enum http
 		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
 		response_ctx->body_len = strlen(response_ctx->body);
 		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG:
+		if (client->method == HTTP_GET) {
+			/* Send GET payload split across multiple callbacks */
+			size_t send_len = (offset == 0) ? strlen(TEST_LONG_PAYLOAD_CHUNK_1)
+							: strlen(TEST_LONG_PAYLOAD_CHUNK_2);
+
+			response_ctx->body = long_payload + offset;
+			response_ctx->body_len = send_len;
+			offset += send_len;
+
+			if (offset == strlen(long_payload)) {
+				offset = 0;
+				response_ctx->final_chunk = true;
+			}
+		} else if (client->method == HTTP_POST) {
+			/* Copy POST payload into buffer for later comparison */
+			zassert(offset + len <= sizeof(dynamic_response_headers_buffer),
+				"POST data too long for buffer");
+			memcpy(dynamic_response_headers_buffer + offset, buffer, len);
+			offset += len;
+
+			if (status == HTTP_SERVER_DATA_FINAL) {
+				offset = 0;
+			}
+		} else {
+			zassert(false, "unexpected HTTP method");
+		}
 		break;
 	}
 
@@ -1328,10 +1378,20 @@ ZTEST(server_function_tests, test_http2_header_too_many)
 	zassert_equal(0, ret, "Header strings did not match");
 }
 
-static void test_http1_dynamic_response_headers(const char *expected_response, bool post)
+static void test_http1_dynamic_response_headers(const char *request, const char *expected_response)
 {
 	int ret;
 	size_t offset = 0;
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(expected_response));
+	zassert_mem_equal(buf, expected_response, strlen(expected_response));
+}
+
+static void test_http1_dynamic_response_headers_default(const char *expected_response, bool post)
+{
 	static const char http1_get_response_headers_request[] =
 		"GET /response_headers HTTP/1.1\r\n"
 		"Accept: */*\r\n"
@@ -1344,19 +1404,31 @@ static void test_http1_dynamic_response_headers(const char *expected_response, b
 	const char *request =
 		post ? http1_post_response_headers_request : http1_get_response_headers_request;
 
-	ret = zsock_send(client_fd, request, strlen(request), 0);
-	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
-
-	test_read_data(&offset, strlen(expected_response));
-	zassert_mem_equal(buf, expected_response, strlen(expected_response));
+	test_http1_dynamic_response_headers(request, expected_response);
 }
 
-static void test_http2_dynamic_response_headers(const struct http_header *expected_headers,
-						size_t expected_headers_count, bool post,
-						bool end_stream)
+static void test_http2_dynamic_response_headers(const uint8_t *request, size_t request_len,
+						const struct http_header *expected_headers,
+						size_t expected_headers_count, bool end_stream,
+						size_t *offset)
 {
 	int ret;
-	size_t offset = 0;
+	const uint8_t expected_flags = end_stream ? HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM
+						  : HTTP2_FLAG_END_HEADERS;
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(offset, false);
+	expect_http2_settings_frame(offset, true);
+	expect_http2_headers_frame(offset, TEST_STREAM_ID_1, expected_flags, expected_headers,
+				   expected_headers_count);
+}
+
+static void test_http2_dynamic_response_headers_default(const struct http_header *expected_headers,
+							size_t expected_headers_count, bool post,
+							bool end_stream, size_t *offset)
+{
 	const uint8_t http2_get_response_headers_request[] = {
 		TEST_HTTP2_MAGIC,
 		TEST_HTTP2_SETTINGS,
@@ -1376,16 +1448,9 @@ static void test_http2_dynamic_response_headers(const struct http_header *expect
 		post ? http2_post_response_headers_request : http2_get_response_headers_request;
 	size_t request_len = post ? sizeof(http2_post_response_headers_request)
 				  : sizeof(http2_get_response_headers_request);
-	const uint8_t expected_flags = end_stream ? HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM
-						  : HTTP2_FLAG_END_HEADERS;
 
-	ret = zsock_send(client_fd, request, request_len, 0);
-	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
-
-	expect_http2_settings_frame(&offset, false);
-	expect_http2_settings_frame(&offset, true);
-	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, expected_flags, expected_headers,
-				   expected_headers_count);
+	test_http2_dynamic_response_headers(request, request_len, expected_headers,
+					    expected_headers_count, end_stream, offset);
 }
 
 static void test_http1_dynamic_response_header_none(bool post)
@@ -1398,7 +1463,7 @@ static void test_http1_dynamic_response_header_none(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_NONE;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_none)
@@ -1413,6 +1478,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_none)
 
 static void test_http2_dynamic_response_header_none(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "200"},
 		{.name = "content-type", .value = "text/plain"},
@@ -1420,8 +1486,8 @@ static void test_http2_dynamic_response_header_none(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_NONE;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    true);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, true, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_none)
@@ -1444,7 +1510,7 @@ static void test_http1_dynamic_response_header_422(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_422;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_422)
@@ -1459,6 +1525,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_422)
 
 static void test_http2_dynamic_response_header_422(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "422"},
 		{.name = "content-type", .value = "text/plain"},
@@ -1466,8 +1533,8 @@ static void test_http2_dynamic_response_header_422(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_422;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    true);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, true, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_422)
@@ -1491,7 +1558,7 @@ static void test_http1_dynamic_response_header_extra(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_EXTRA_HEADER;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_extra)
@@ -1506,6 +1573,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_extra)
 
 static void test_http2_dynamic_response_header_extra(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "200"},
 		{.name = "content-type", .value = "text/plain"},
@@ -1514,8 +1582,8 @@ static void test_http2_dynamic_response_header_extra(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_EXTRA_HEADER;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    true);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, true, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_extra)
@@ -1538,7 +1606,7 @@ static void test_http1_dynamic_response_header_override(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_OVERRIDE_HEADER;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_override)
@@ -1553,6 +1621,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_override)
 
 static void test_http2_dynamic_response_header_override(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "200"},
 		{.name = "content-type", .value = "application/json"},
@@ -1560,8 +1629,8 @@ static void test_http2_dynamic_response_header_override(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_OVERRIDE_HEADER;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    true);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, true, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_override)
@@ -1586,7 +1655,7 @@ static void test_http1_dynamic_response_header_separate(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_SEPARATE;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_separate)
@@ -1601,6 +1670,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_separate)
 
 static void test_http2_dynamic_response_header_separate(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "200"},
 		{.name = "test-header", .value = "test_data"},
@@ -1609,8 +1679,8 @@ static void test_http2_dynamic_response_header_separate(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_SEPARATE;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    false);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, false, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_separate)
@@ -1635,7 +1705,7 @@ static void test_http1_dynamic_response_header_combined(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_COMBINED;
 
-	test_http1_dynamic_response_headers(response, post);
+	test_http1_dynamic_response_headers_default(response, post);
 }
 
 ZTEST(server_function_tests, test_http1_dynamic_get_response_header_combined)
@@ -1650,6 +1720,7 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_header_combined)
 
 static void test_http2_dynamic_response_header_combined(bool post)
 {
+	size_t offset = 0;
 	const struct http_header expected_headers[] = {
 		{.name = ":status", .value = "200"},
 		{.name = "test-header", .value = "test_data"},
@@ -1658,8 +1729,8 @@ static void test_http2_dynamic_response_header_combined(bool post)
 
 	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_COMBINED;
 
-	test_http2_dynamic_response_headers(expected_headers, ARRAY_SIZE(expected_headers), post,
-					    false);
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    post, false, &offset);
 }
 
 ZTEST(server_function_tests, test_http2_dynamic_get_response_header_combined)
@@ -1670,6 +1741,100 @@ ZTEST(server_function_tests, test_http2_dynamic_get_response_header_combined)
 ZTEST(server_function_tests, test_http2_dynamic_post_response_header_combined)
 {
 	test_http2_dynamic_response_header_combined(true);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_long)
+{
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "130\r\n" TEST_LONG_PAYLOAD_CHUNK_1 "\r\n"
+				       "d0\r\n" TEST_LONG_PAYLOAD_CHUNK_2 "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG;
+
+	test_http1_dynamic_response_headers_default(response, false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_long)
+{
+	static const char request[] = "POST /response_headers HTTP/1.1\r\n"
+				      "Accept: */*\r\n"
+				      "Content-Length: 512\r\n"
+				      "\r\n" TEST_LONG_PAYLOAD_CHUNK_1 TEST_LONG_PAYLOAD_CHUNK_2;
+	static const char response[] = "HTTP/1.1 200\r\n"
+				       "Transfer-Encoding: chunked\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n"
+				       "0\r\n\r\n";
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG;
+
+	test_http1_dynamic_response_headers(request, response);
+	zassert_mem_equal(dynamic_response_headers_buffer, long_payload, strlen(long_payload));
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_get_response_header_long)
+{
+	size_t offset = 0;
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "200"},
+		{.name = "content-type", .value = "text/plain"},
+	};
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG;
+
+	test_http2_dynamic_response_headers_default(expected_headers, ARRAY_SIZE(expected_headers),
+						    false, false, &offset);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_LONG_PAYLOAD_CHUNK_1,
+				strlen(TEST_LONG_PAYLOAD_CHUNK_1), 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_LONG_PAYLOAD_CHUNK_2,
+				strlen(TEST_LONG_PAYLOAD_CHUNK_2), HTTP2_FLAG_END_STREAM);
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_post_response_header_long)
+{
+	size_t offset = 0;
+	size_t req_offset = 0;
+
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "200"},
+		{.name = "content-type", .value = "text/plain"},
+	};
+
+	const uint8_t request_part1[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_RESPONSE_HEADERS_STREAM_1,
+		/* Data frame header */
+		0x00, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, TEST_STREAM_ID_1,
+	};
+
+	const uint8_t request_part3[] = {
+		TEST_HTTP2_GOAWAY,
+	};
+
+	static uint8_t
+		request[sizeof(request_part1) + (sizeof(long_payload) - 1) + sizeof(request_part3)];
+
+	BUILD_ASSERT(sizeof(long_payload) - 1 == 0x200, "Length field in data frame header must "
+							"match length of long_payload");
+
+	memcpy(request + req_offset, request_part1, sizeof(request_part1));
+	req_offset += sizeof(request_part1);
+	memcpy(request + req_offset, long_payload, sizeof(long_payload) - 1);
+	req_offset += sizeof(long_payload) - 1;
+	memcpy(request + req_offset, request_part3, sizeof(request_part3));
+	req_offset += sizeof(request_part3);
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG;
+
+	test_http2_dynamic_response_headers(request, req_offset, expected_headers,
+					    ARRAY_SIZE(expected_headers), true, &offset);
+	zassert_mem_equal(dynamic_response_headers_buffer, long_payload, strlen(long_payload));
 }
 
 ZTEST(server_function_tests_no_init, test_http_server_start_stop)
@@ -1816,6 +1981,7 @@ static void http_server_tests_before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	memset(dynamic_payload, 0, sizeof(dynamic_payload));
+	memset(dynamic_response_headers_buffer, 0, sizeof(dynamic_response_headers_buffer));
 	dynamic_payload_len = 0;
 
 	ret = http_server_start();
