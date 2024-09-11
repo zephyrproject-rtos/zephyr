@@ -64,3 +64,16 @@ sequence:
       "flash_before":
         type: bool
         required: false
+      "script_param":
+        type: map
+        required: false
+        mapping:
+          "pre_script_timeout":
+            type: int
+            required: false
+          "post_script_timeout":
+            type: int
+            required: false
+          "post_flash_timeout":
+            type: int
+            required: false

@@ -47,6 +47,7 @@ class DUT(object):
                  pre_script=None,
                  post_script=None,
                  post_flash_script=None,
+                 script_param=None,
                  runner=None,
                  flash_timeout=60,
                  flash_with_test=False,
@@ -70,6 +71,7 @@ class DUT(object):
         self.post_flash_script = post_flash_script
         self.post_script = post_script
         self.pre_script = pre_script
+        self.script_param = script_param
         self.probe_id = None
         self.notes = None
         self.lock = Lock()
@@ -248,6 +250,7 @@ class HardwareMap:
         duts = scl.yaml_load_verify(map_file, hwm_schema)
         for dut in duts:
             pre_script = dut.get('pre_script')
+            script_param = dut.get('script_param')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
@@ -282,6 +285,7 @@ class HardwareMap:
                           flash_before=flash_before,
                           post_script=post_script,
                           post_flash_script=post_flash_script,
+                          script_param=script_param,
                           flash_timeout=flash_timeout,
                           flash_with_test=flash_with_test)
             new_dut.fixtures = fixtures
