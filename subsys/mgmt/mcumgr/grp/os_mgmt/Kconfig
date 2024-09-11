@@ -202,6 +202,13 @@ config MCUMGR_GRP_OS_BOOTLOADER_INFO
 	  Allows to query MCUmgr about bootloader used by device and various bootloader
 	  parameters.
 
+config MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK
+	bool "Bootloader info hooks"
+	depends on MCUMGR_MGMT_NOTIFICATION_HOOKS
+	help
+	  Supports adding custom responses to the bootloader info command by using registered
+	  callbacks. Data can be appended to the struct provided in the callback.
+
 endif # BOOTLOADER_MCUBOOT
 
 module = MCUMGR_GRP_OS
