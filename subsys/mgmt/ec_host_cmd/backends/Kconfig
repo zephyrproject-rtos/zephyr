@@ -75,6 +75,13 @@ config EC_HOST_CMD_BACKEND_SHI_NPCX_ENHANCED_BUF_MODE
 	  single-byte output buffer can be selected/switched to generate a
 	  response to simultaneous Read/Write transactions.
 
+config EC_HOST_CMD_BACKEND_SHI_NPCX_CS_DETECT_WORKAROUND
+	bool
+	default y if SOC_NPCX9M7FB
+	help
+	  Workaround the issue "CSnFE and CSnRE bits of EVSTATS2 Register (SHI)"
+	  in the npcx9m7fb SoC errata.
+
 config EC_HOST_CMD_BACKEND_SHI_MAX_REQUEST
 	int "Max data size for the version 3 request packet"
 	default 544 if EC_HOST_CMD_BACKEND_SHI_NPCX
