@@ -345,9 +345,6 @@ Bluetooth controller:
     - subsys/bluetooth/common/
     - subsys/bluetooth/controller/
     - subsys/bluetooth/crypto/
-    - subsys/bluetooth/shell/ll.c
-    - subsys/bluetooth/shell/ll.h
-    - subsys/bluetooth/shell/ticker.c
     - tests/bluetooth/controller/
     - tests/bsim/bluetooth/ll/
   labels:
@@ -376,7 +373,6 @@ Bluetooth Host:
     - subsys/bluetooth/host/
     - subsys/bluetooth/lib/
     - subsys/bluetooth/services/
-    - subsys/bluetooth/shell/
     - subsys/bluetooth/CMakeLists.txt
     - subsys/bluetooth/Kconfig*
     - tests/bluetooth/
@@ -404,14 +400,10 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/shell/bredr.c
-    - subsys/bluetooth/shell/iso.c
-    - subsys/bluetooth/shell/ll.c
-    - subsys/bluetooth/shell/ll.h
-    - subsys/bluetooth/shell/ticker.c
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
+    - subsys/bluetooth/host/shell/iso.c
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
@@ -503,7 +495,6 @@ Bluetooth Classic:
   files:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
-    - subsys/bluetooth/shell/bredr.c
     - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
@@ -521,10 +512,10 @@ Bluetooth ISO:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
+    - subsys/bluetooth/host/shell/iso.c
   labels:
     - "area: Bluetooth ISO"
     - "area: Bluetooth"

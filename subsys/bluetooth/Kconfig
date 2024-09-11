@@ -202,10 +202,17 @@ rsource "Kconfig.iso"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
-rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
+
+config BT_SHELL
+	bool "Bluetooth shell"
+	select SHELL
+	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
+	help
+	  Activate shell module that provides Bluetooth commands to the
+	  console.
 
 config BT_USE_PSA_API
 	bool "Use PSA APIs instead of TinyCrypt for crypto operations"

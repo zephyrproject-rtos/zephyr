@@ -29,7 +29,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)

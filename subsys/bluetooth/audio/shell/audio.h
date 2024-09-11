@@ -32,7 +32,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U

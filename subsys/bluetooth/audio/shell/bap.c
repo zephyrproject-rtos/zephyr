@@ -47,7 +47,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 /* Determines if we can initiate streaming */

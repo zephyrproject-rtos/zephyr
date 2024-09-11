@@ -15,7 +15,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ias.h>
 
-#include "bt.h"
+#include "host/shell/bt.h"
 
 extern const struct shell *ctx_shell;
 
