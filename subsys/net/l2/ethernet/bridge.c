@@ -136,10 +136,16 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 
 	ret = net_eth_promisc_mode(iface, true);
 	if (ret != 0 && ret != -EALREADY) {
-		NET_DBG("iface %d promiscuous mode failed: %d",
-			net_if_get_by_iface(iface), ret);
-		eth_bridge_iface_remove(br, iface);
-		return ret;
+		/* Ignore any errors when using native-sim driver,
+		 * we do not need host promiscuous working when testing
+		 * bridging using native-sim.
+		 */
+		if (!IS_ENABLED(CONFIG_ETH_NATIVE_POSIX)) {
+			NET_DBG("iface %d promiscuous mode failed: %d",
+				net_if_get_by_iface(iface), ret);
+			eth_bridge_iface_remove(br, iface);
+			return ret;
+		}
 	}
 
 	NET_DBG("iface %d added to bridge %d", net_if_get_by_iface(iface),
