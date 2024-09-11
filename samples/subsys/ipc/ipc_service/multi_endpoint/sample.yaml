@@ -14,15 +14,21 @@ common:
       - "IPC-service HOST \\[INST 1\\] demo ended\\."
 tests:
   sample.ipc.multi_endpoint:
-    platform_allow: nrf5340dk/nrf5340/cpuapp
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     tags: ipc
     sysbuild: true
   sample.ipc.multi_endpoint.icbmsg:
-    platform_allow: nrf5340dk/nrf5340/cpuapp
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
     tags: ipc
     sysbuild: true
     extra_args:
