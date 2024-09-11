@@ -45,10 +45,6 @@ static uint8_t main_js_gz[] = {
 #include "main.js.gz.inc"
 };
 
-static uint8_t uptime_buf[256];
-static uint8_t led_buf[256];
-static uint8_t echo_buf[1024];
-
 static struct http_resource_detail_static index_html_gz_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
@@ -113,8 +109,6 @@ static struct http_resource_detail_dynamic echo_resource_detail = {
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET) | BIT(HTTP_POST),
 		},
 	.cb = echo_handler,
-	.data_buffer = echo_buf,
-	.data_buffer_len = sizeof(echo_buf),
 	.user_data = NULL,
 };
 
@@ -151,8 +145,6 @@ static struct http_resource_detail_dynamic uptime_resource_detail = {
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
 		},
 	.cb = uptime_handler,
-	.data_buffer = uptime_buf,
-	.data_buffer_len = sizeof(uptime_buf),
 	.user_data = NULL,
 };
 
@@ -219,8 +211,6 @@ static struct http_resource_detail_dynamic led_resource_detail = {
 			.bitmask_of_supported_http_methods = BIT(HTTP_POST),
 		},
 	.cb = led_handler,
-	.data_buffer = led_buf,
-	.data_buffer_len = sizeof(led_buf),
 	.user_data = NULL,
 };
 

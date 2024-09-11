@@ -257,33 +257,21 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 			   struct http_client_ctx *client)
 {
-	/* offset tells from where the GET params start */
-	int ret, remaining, offset = dynamic_detail->common.path_len;
+	int ret, len;
 	char *ptr;
+	enum http_data_status status;
+	struct http_response_ctx response_ctx;
 
-	remaining = strlen(&client->url_buffer[dynamic_detail->common.path_len]);
+	/* Start of GET params */
+	ptr = &client->url_buffer[dynamic_detail->common.path_len];
+	len = strlen(ptr);
+	status = HTTP_SERVER_DATA_FINAL;
 
-	/* Pass URL to the client */
-	while (1) {
-		int copy_len;
-		enum http_data_status status;
-		struct http_response_ctx response_ctx;
-
-		ptr = &client->url_buffer[offset];
-		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-
-		memcpy(dynamic_detail->data_buffer, ptr, copy_len);
-
-		if (copy_len == remaining) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
-		}
-
+	do {
 		memset(&response_ctx, 0, sizeof(response_ctx));
 
-		ret = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
-					 &response_ctx, dynamic_detail->user_data);
+		ret = dynamic_detail->cb(client, status, ptr, len, &response_ctx,
+					 dynamic_detail->user_data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -293,13 +281,9 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 			return ret;
 		}
 
-		if (http_response_is_final(&response_ctx, status)) {
-			break;
-		}
-
-		offset += copy_len;
-		remaining -= copy_len;
-	}
+		/* URL params are passed in the first cb only */
+		len = 0;
+	} while (!http_response_is_final(&response_ctx, status));
 
 	dynamic_detail->holder = NULL;
 
@@ -315,67 +299,66 @@ static int dynamic_get_req(struct http_resource_detail_dynamic *dynamic_detail,
 static int dynamic_post_req(struct http_resource_detail_dynamic *dynamic_detail,
 			    struct http_client_ctx *client)
 {
-	/* offset tells from where the POST params start */
+	int ret;
+	char *ptr = client->cursor;
+	enum http_data_status status;
 	struct http_response_ctx response_ctx;
-	char *start = client->cursor;
-	int ret, remaining = client->data_len, offset = 0;
-	int copy_len;
-	char *ptr;
 
-	if (start == NULL) {
+	if (ptr == NULL) {
 		return -ENOENT;
 	}
 
-	copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
-	while (1) {
-		enum http_data_status status;
-
-		ptr = &start[offset];
-
-		memcpy(dynamic_detail->data_buffer, ptr, copy_len);
-
-		if (copy_len == remaining &&
-		    client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
-			status = HTTP_SERVER_DATA_FINAL;
-		} else {
-			status = HTTP_SERVER_DATA_MORE;
-		}
-
-		memset(&response_ctx, 0, sizeof(response_ctx));
-
-		ret = dynamic_detail->cb(client, status, dynamic_detail->data_buffer, copy_len,
-					 &response_ctx, dynamic_detail->user_data);
-		if (ret < 0) {
-			return ret;
-		}
-
-		if (http_response_is_provided(&response_ctx)) {
-			ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
-			if (ret < 0) {
-				return ret;
-			}
-		}
-
-		if (http_response_is_final(&response_ctx, status)) {
-			break;
-		}
-
-		offset += copy_len;
-		remaining -= copy_len;
-		copy_len = MIN(remaining, dynamic_detail->data_buffer_len);
+	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
+		status = HTTP_SERVER_DATA_FINAL;
+	} else {
+		status = HTTP_SERVER_DATA_MORE;
 	}
 
-	/* Ensure headers are sent if not done already */
-	if (!client->http1_headers_sent) {
-		memset(&response_ctx, 0, sizeof(response_ctx));
-		response_ctx.final_chunk = true;
+	memset(&response_ctx, 0, sizeof(response_ctx));
+
+	ret = dynamic_detail->cb(client, status, ptr, client->data_len, &response_ctx,
+				 dynamic_detail->user_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* For POST the application might not send a response until all data has been received.
+	 * Don't send a default response until the application has had a chance to respond.
+	 */
+	if (http_response_is_provided(&response_ctx)) {
 		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
+	/* Once all data is transferred to application, repeat cb until response is complete */
+	while (!http_response_is_final(&response_ctx, status) && status == HTTP_SERVER_DATA_FINAL) {
+		memset(&response_ctx, 0, sizeof(response_ctx));
+
+		ret = dynamic_detail->cb(client, status, ptr, 0, &response_ctx,
+					 dynamic_detail->user_data);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* At end of message, ensure response is sent and terminated */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
+		if (!client->http1_headers_sent) {
+			memset(&response_ctx, 0, sizeof(response_ctx));
+			response_ctx.final_chunk = true;
+			ret = http1_dynamic_response(client, &response_ctx, dynamic_detail);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
 		ret = http_server_sendall(client, final_chunk,
 					sizeof(final_chunk) - 1);
 		if (ret < 0) {
