@@ -13,3 +13,30 @@ properties:
 
   interrupts:
     required: true
+
+  dmas:
+    description: |
+      Optional CHA & CHB DMA specifiers. Each specifier will have a phandle
+      reference to the DMA controller, the channel number, and the peripheral
+      trigger source.
+
+      Example for channels 4/5 with aestrga/aestrgb trigger sources:
+        dmas = <&dma 4 3>, <&dma 5 4>;
+
+      For ECB mode:
+        - CHA moves plaintext data into buffer registers when AES operation starts,
+        - CHB moves ciphertext to memory when AES completes.
+      For CTR (also used by CCM):
+        - CHA moves plaintext data into text XOR registers when AES operation starts,
+        - CHB moves ciphertext to memory after CHA has written the last text XOR register.
+      For CBC-MAC (also used by CCM):
+        - CHA moves plaintext data into buffer when AES operation starts,
+        - CHB is not used.
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. These must be "cha" and "chb"
+      to match the dmas property.
+
+      Example:
+        dma-names = "cha", "chb";
