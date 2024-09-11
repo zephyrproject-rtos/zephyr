@@ -29,18 +29,18 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	default 1
 
 config 2ND_LVL_ISR_TBL_OFFSET
-	default 16
+	default 12
 
 config 2ND_LVL_INTR_00_OFFSET
-	default 16
+	default 11
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 16
+	default 52
 
 config 2ND_LEVEL_INTERRUPT_BITS
 	default 8
 
 config NUM_IRQS
-	default 32
+	default 50
 
 endif # SOC_SERIES_VIRGO

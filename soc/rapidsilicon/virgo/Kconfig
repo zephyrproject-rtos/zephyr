@@ -28,7 +28,7 @@ if GEN_IRQ_VECTOR_TABLE
 	endchoice
 
 	config RISCV_MCAUSE_EXCEPTION_MASK
-		default 0x1F
+		default 0x32
 
 endif
 

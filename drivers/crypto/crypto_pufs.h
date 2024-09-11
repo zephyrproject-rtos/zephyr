@@ -515,7 +515,7 @@ struct pufs_crypto_hash {
 };
 
 /* Device constant configuration parameters */
-struct pufcc_config {
+struct pufs_config {
 	void (*irq_init)(void);
 	uint32_t base;
 	uint32_t irq_num;

@@ -2,9 +2,9 @@
 
 #include <string.h>
 
-#include <zephyr/crypto/crypto.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
+#include <zephyr/crypto/crypto.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -888,18 +888,6 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
   return PUFCC_SUCCESS;
 }
 
-// static void pufs_irq_handler(const struct device *dev) {
-//   int status = (dev->regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
-//   struct pufcc_intrpt_reg *intrpt_reg_ptr =
-//       (struct pufcc_intrpt_reg *)&dev->regs->interrupt;
-
-//   // Clear and disable interrupt
-//   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
-//   intrpt_reg_ptr->intrpt_en = 0;
-
-//   dev->callback(dev->callback_args, 0, status);
-// }
-
 /**
  * @fn    rsa_p1v15_verify
  * @brief Verify input RSA2048 decrypted message according to PKCS#1 v1.5 RSA
@@ -1048,26 +1036,68 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
   return PUFCC_SUCCESS;
 }
 
-// static int crypto_pufs_init(const struct device *dev) {
-//   enum pufcc_status status;
+static int crypto_pufs_init(const struct device *dev) {
+  enum pufcc_status status;
 
-//   // Initialize base addresses of different PUFcc modules
-//   dma_regs = (struct pufcc_dma_regs *)dev->config;
-//   rt_regs = (struct pufcc_rt_regs *)(base_addr + PUFCC_RT_OFFSET);
-//   otp_mem = (struct pufcc_otp_mem *)(base_addr + PUFCC_RT_OFFSET +
-//                                      PUFCC_RT_OTP_OFFSET);
-//   hmac_regs = (struct pufcc_hmac_regs *)(base_addr + PUFCC_HMAC_OFFSET);
-//   crypto_regs = (struct pufcc_crypto_regs *)(base_addr + PUFCC_CRYPTO_OFFSET);
-//   sp38a_regs = (struct pufcc_sp38a_regs *)(base_addr + PUFCC_SP38A_OFFSET);
-//   pkc_regs = (struct pufcc_pkc_regs *)(base_addr + PUFCC_PKC_OFFSET);
+  // Initialize base addresses of different PUFcc modules
+  dma_regs = (struct pufcc_dma_regs *)((struct pufs_config*)dev->config)->base;
+  rt_regs = (struct pufcc_rt_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_RT_OFFSET);
+  otp_mem = (struct pufcc_otp_mem *)(((struct pufs_config*)dev->config)->base + PUFCC_RT_OFFSET +
+                                     PUFCC_RT_OTP_OFFSET);
+  hmac_regs = (struct pufcc_hmac_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_HMAC_OFFSET);
+  crypto_regs = (struct pufcc_crypto_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_CRYPTO_OFFSET);
+  sp38a_regs = (struct pufcc_sp38a_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_SP38A_OFFSET);
+  pkc_regs = (struct pufcc_pkc_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_PKC_OFFSET);
 
-//   // Wait for OTP setup
-//   status = pufcc_otp_setup_wait();
+  // Wait for OTP setup
+  status = pufcc_otp_setup_wait();
 
-//   return status;
-// }
+  return status;
+}
 
-// DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
-// 		    &crypto_stm32_dev_data,
-// 		    &crypto_stm32_dev_config, POST_KERNEL,
-// 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);
+static void pufs_irq_handler(void) { // TODO 
+  // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
+  struct pufcc_intrpt_reg *intrpt_reg_ptr =
+      (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
+
+  // Clear and disable interrupt
+  intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
+  intrpt_reg_ptr->intrpt_en = 0;
+
+  // dev->callback(dev->callback_args, 0, status);
+}
+
+void pufs_irq_Init(void) {
+    IRQ_CONNECT(
+                  DT_INST_IRQN(0),
+                  DT_INST_IRQ(0, priority),
+                  pufs_irq_handler,
+                  0, // TODO pass here hash, sign and dec callback struct
+                  0
+                );	
+      
+    // enable PUFs IRQ
+    irq_enable(DT_INST_IRQN(0));
+}
+
+static struct crypto_driver_api crypto_dec_funcs = {
+	.cipher_begin_session = NULL, /* TBD */
+  .cipher_free_session = NULL, /* TBD */
+  .cipher_async_callback_set = NULL, /* TBD */
+  .hash_begin_session = NULL, /* TBD */
+  .hash_free_session =  NULL, /* TBD */
+  .hash_async_callback_set =  NULL, /* TBD */
+  .query_hw_caps =  NULL /* TBD */
+};
+
+static const struct pufs_config pufs_configuration = {
+  .base = DT_INST_REG_ADDR(0),
+  .irq_num = DT_INST_IRQN(0),
+  .irq_init = pufs_irq_Init
+};
+
+
+DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
+		    NULL,
+		    &pufs_configuration, POST_KERNEL,
+		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_dec_funcs);
