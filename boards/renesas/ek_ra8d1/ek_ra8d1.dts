@@ -57,20 +57,20 @@
 
 &pll {
 	clocks = <&xtal>;
-	div = <RA_PLL_DIV_2>;
+	div = <2>;
 	mul = <96 0>;
-	divp = <RA_PLL_DIV_2>;
+	divp = <2>;
 	freqp = <DT_FREQ_M(480)>;
-	divq = <RA_PLL_DIV_2>;
+	divq = <2>;
 	freqq = <DT_FREQ_M(480)>;
-	divr = <RA_PLL_DIV_2>;
+	divr = <2>;
 	freqr = <DT_FREQ_M(480)>;
 	status = "okay";
 };
 
 &sciclk {
 	clocks = <&pll>;
-	clk-div = <RA_SCI_CLOCK_DIV_4>;
+	div = <4>;
 	status = "okay";
 };
 

@@ -77,7 +77,7 @@
 
 &pll {
 	clocks = <&hoco>;
-	div = <RA_PLL_DIV_1>;
+	div = <1>;
 	mul = <10 0>;
 	status = "okay";
 };
