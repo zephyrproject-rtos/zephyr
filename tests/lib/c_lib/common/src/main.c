@@ -1166,6 +1166,9 @@ ZTEST(libc_common, test_time_ctime)
 	char buf[26] = {0};
 	time_t test1 = 1718260000;
 
+#ifdef CONFIG_NATIVE_LIBC
+	setenv("TZ", "UTC", 1);
+#endif
 	zassert_not_null(ctime_r(&test1, buf));
 	zassert_equal(strncmp("Thu Jun 13 06:26:40 2024\n", buf, sizeof(buf)), 0);
 
