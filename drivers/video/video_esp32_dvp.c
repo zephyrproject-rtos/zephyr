@@ -20,7 +20,7 @@
 #include <hal/cam_ll.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_esp32_lcd_cam, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
 
