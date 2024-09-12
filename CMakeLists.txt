@@ -89,6 +89,8 @@ set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 
+include(${ZEPHYR_BASE}/cmake/modules/init_priorities.cmake)
+
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
@@ -975,6 +977,9 @@ else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
+
+# Generating priorities
+zephyr_generate_init_priorities()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
