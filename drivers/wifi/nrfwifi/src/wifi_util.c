@@ -873,6 +873,7 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 
 	ret = 0;
 unlock:
+	k_mutex_unlock(&ctx->rpu_lock);
 	return ret;
 }
 #endif /* !CONFIG_NRF70_RADIO_TEST && !CONFIG_NRF70_OFFLOADED_RAW_TX */
