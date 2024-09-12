@@ -40,6 +40,13 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_DM8806
+	bool "DM8806 PHY driver"
+	default y
+	depends on DT_HAS_DAVICOM_DM8806_PHY_ENABLED
+	help
+	  Enable DM8806 PHY driver.
+
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
 	default y
