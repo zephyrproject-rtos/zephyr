@@ -160,6 +160,10 @@ zephyr_library_sources_ifdef(CONFIG_WPA_CLI
 	src/wpa_cli.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_IEEE80211R
+	${HOSTAP_SRC_BASE}/rsn_supp/wpa_ft.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	${WIFI_NM_WPA_SUPPLICANT_BASE}/ap.c
 	${HOSTAP_SRC_BASE}/ap/ap_config.c
@@ -217,6 +221,10 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
 	CONFIG_IEEE80211AX
 	CONFIG_EAP_SERVER
 	CONFIG_EAP_SERVER_IDENTITY
+)
+
+zephyr_library_sources_ifdef(CONFIG_IEEE80211R
+	${HOSTAP_SRC_BASE}/ap/wpa_auth_ft.c
 )
 
 zephyr_include_directories_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP

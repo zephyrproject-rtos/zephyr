@@ -574,7 +574,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE", resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE%s", resp.network_id,
+					   params->ft_used ? " FT-SAE" : "")) {
 				goto out;
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
@@ -594,8 +595,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK",
-					   resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK%s",
+					   resp.network_id, params->ft_used ? " FT-PSK" : "")) {
 				goto out;
 			}
 

@@ -501,6 +501,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"timeout", required_argument, 0, 't'},
 		{"anon-id", required_argument, 0, 'a'},
 		{"key-passwd", required_argument, 0, 'K'},
+		{"ieee-80211r", no_argument, 0, 'R'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -523,7 +524,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:Rh",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -643,6 +644,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					    WIFI_ENT_PSWD_MAX_LEN);
 				return -EINVAL;
 			}
+			break;
+		case 'R':
+			params->ft_used = 1;
 			break;
 		case 'h':
 			return -ENOEXEC;
