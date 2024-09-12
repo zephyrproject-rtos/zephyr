@@ -194,8 +194,11 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		break;
 
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
-		/* TODO: Add support for controller role request */
-		__fallthrough;
+		ret = i3c_device_controller_handoff(ibi_node->target, true);
+		if (ret != 0) {
+			LOG_ERR("i3c_device_controller_handoff returns %d", ret);
+		}
+		break;
 
 	default:
 		/* Unknown IBI type: do nothing */
