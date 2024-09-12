@@ -90,7 +90,8 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB  20
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK  0xfff0
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB   4
-#define PCIE_MEM_WIN0_BASE_LIMIT(win)                       (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT + (win) * 4)
+
+#define PCIE_MEM_WIN0_BASE_LIMIT(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT + (win) * 4)
 
 /* Hamming weight of PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK */
 #define HIGH_ADDR_SHIFT 12
@@ -98,12 +99,14 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI           0x4080
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_MASK 0xff
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_LSB  0
-#define PCIE_MEM_WIN0_BASE_HI(win)                      (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI + (win) * 8)
+
+#define PCIE_MEM_WIN0_BASE_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI + (win) * 8)
 
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI            0x4084
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_MASK 0xff
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_LSB  0
-#define PCIE_MEM_WIN0_LIMIT_HI(win)                       (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + (win) * 8)
+
+#define PCIE_MEM_WIN0_LIMIT_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + (win) * 8)
 
 #define PCIE_EXT_CFG_DATA  0x8000
 #define PCIE_EXT_CFG_INDEX 0x9000
@@ -228,6 +231,7 @@ static mm_reg_t pcie_brcmstb_map_bus(const struct device *dev, pcie_bdf_t bdf, u
 static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
 	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
+
 	if (!conf_addr) {
 		return 0xffffffff;
 	}
@@ -239,6 +243,7 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 			     uint32_t data)
 {
 	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
+
 	if (!conf_addr) {
 		return;
 	}
@@ -568,7 +573,8 @@ static int pcie_brcmstb_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if ((ret = pcie_brcmstb_parse_regions(dev))) {
+	ret = pcie_brcmstb_parse_regions(dev);
+	if (ret != 0) {
 		return ret;
 	}
 
@@ -598,7 +604,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 					      config->common->ranges[i].map_length);
 	}
 
-	// TODO: It might be possible to do this without extra <regs> property
+	/* TODO: It might be possible to do this without extra <regs> property */
 	for (int i = 1; i < config->regs_count; i++) {
 		sys_write32(config->regs[i].addr, data->cfg_addr + PCIE_EXT_CFG_DATA +
 							  PCI_BASE_ADDRESS_0 + 0x4 * (i - 1));
