@@ -1172,6 +1172,84 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_11k(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_11k_params params = { 0 };
+
+	context.sh = sh;
+
+	if (argc > 2) {
+		PR_WARNING("Invalid number of arguments\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 1) {
+		params.oper = WIFI_MGMT_GET;
+	} else {
+		params.oper = WIFI_MGMT_SET;
+		if (!strncasecmp(argv[1], "enable", 2)) {
+			params.enable_11k = true;
+		} else if (!strncasecmp(argv[1], "disable", 3)) {
+			params.enable_11k = false;
+		} else {
+			PR_WARNING("Invalid argument\n");
+			return -ENOEXEC;
+		}
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_11K_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("11k enable/disable failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_MGMT_GET) {
+		PR("11k is %s\n", params.enable_11k ? "disabled" : "enabled");
+	} else {
+		PR("%s %s requested\n", argv[0], argv[1]);
+	}
+
+	return 0;
+}
+
+
+static int cmd_wifi_11k_neighbor_request(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_11k_params params = { 0 };
+
+	context.sh = sh;
+
+	if ((argc != 1 && argc != 3) || (argc == 3 && !strncasecmp("ssid", argv[1], 4))) {
+		PR_WARNING("Invalid input arguments\n");
+		PR_WARNING("Usage: %s\n", argv[0]);
+		PR_WARNING("or	 %s ssid <ssid>\n", argv[0]);
+		return -ENOEXEC;
+	}
+
+	if (argc == 3) {
+		if (strlen(argv[2]) > (sizeof(params.ssid) - 1)) {
+			PR_WARNING("Error: ssid too long\n");
+			return -ENOEXEC;
+		}
+		(void)memcpy((void *)params.ssid, (const void *)argv[2],
+			     (size_t)strlen(argv[2]));
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST, iface, &params, sizeof(params))) {
+		PR_WARNING("11k neighbor request failed\n");
+		return -ENOEXEC;
+	}
+
+	if (argc == 3) {
+		PR("%s %s %s requested\n", argv[0], argv[1], argv[2]);
+	} else {
+		PR("%s requested\n", argv[0]);
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -3056,6 +3134,18 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
+
+SHELL_SUBCMD_ADD((wifi), 11k, &wifi_commands,
+		 "Configure 11k or get 11k status.\n"
+		 "[enable/disable]\n",
+		 cmd_wifi_11k,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), 11k_neighbor_request, &wifi_commands,
+		 "Send Neighbor Report Request frame.\n"
+		 "[ssid <ssid>]\n",
+		 cmd_wifi_11k_neighbor_request,
+		 1, 2);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 SHELL_SUBCMD_ADD((wifi), 11v_btm_query, &wifi_commands,
