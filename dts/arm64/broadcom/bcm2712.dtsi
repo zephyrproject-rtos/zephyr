@@ -119,11 +119,10 @@
 				 <0x02000000 0x0 0x0 0x1f 0x0 0x00 0x00400000>;
 			status = "okay";
 
-			rp1: rp1@0 {
+			rp1 {
 				compatible = "raspberrypi,rp1";
 				#address-cells = <2>;
 				#size-cells = <1>;
-				reg = <0x0 0x0 0x0 0x0 0x400000>;
 				status = "okay";
 
 				gpio0: gpio@1f000d0000 {
