@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdint.h>
+#include <zephyr/crypto/crypto.h>
 
 /*** Generic PUFcc defines ***/
 #define PUFCC_WORD_SIZE 4
@@ -232,6 +233,13 @@ enum pufcc_sp38a_mode {
 enum pufs_crypto_tfr_type {
   PUFS_SECURE_TX,  // Write to peripheral
   PUFS_SECURE_RX   // Read from peripheral
+};
+
+enum pufs_session_type {
+  PUFS_SESSION_SIGN_VERIFICATION = 0,
+  PUFS_SESSION_HASH_CALCULATION,
+  PUFS_SESSION_DECRYPTION,
+  PUFS_SESSION_UNDEFINED
 };
 
 // Scatter gather DMA descriptor struct
@@ -514,11 +522,22 @@ struct pufs_crypto_hash {
   uint32_t len;
 };
 
+/* Generic Callback Signature for different Sessions */
+typedef void (*session_completion_cb)(void *completed, int status);
+
+/* Device constant configuration parameters */
+struct pufs_data {
+	enum pufs_session_type pufs_session_type;
+  session_completion_cb session_callback;
+};
+
 /* Device constant configuration parameters */
 struct pufs_config {
-	void (*irq_init)(void);
+	void (*irq_init)(const struct pufs_config*);
 	uint32_t base;
 	uint32_t irq_num;
+  uint32_t irq_priority;
+  const struct device *dev;
 };
 
 /*

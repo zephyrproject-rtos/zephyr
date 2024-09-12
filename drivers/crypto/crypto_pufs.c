@@ -4,7 +4,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <zephyr/crypto/crypto.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1052,10 +1051,13 @@ static int crypto_pufs_init(const struct device *dev) {
   // Wait for OTP setup
   status = pufcc_otp_setup_wait();
 
+  // Connect the IRQ
+  ((struct pufs_config*)dev->config)->irq_init((struct pufs_config*)dev->config);
+
   return status;
 }
 
-static void pufs_irq_handler(void) { // TODO 
+static void pufs_irq_handler(const struct device *dev) { // TODO 
   // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
   struct pufcc_intrpt_reg *intrpt_reg_ptr =
       (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
@@ -1064,40 +1066,53 @@ static void pufs_irq_handler(void) { // TODO
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
   intrpt_reg_ptr->intrpt_en = 0;
 
-  // dev->callback(dev->callback_args, 0, status);
+  // Disable IRQ as the next asynch callback registeration shall enable it again.
+  irq_disable(((struct pufs_config*)dev->config)->irq_num);
 }
 
-void pufs_irq_Init(void) {
+static void pufs_irq_Init(const struct pufs_config *inConfig) {
     IRQ_CONNECT(
                   DT_INST_IRQN(0),
                   DT_INST_IRQ(0, priority),
                   pufs_irq_handler,
-                  0, // TODO pass here hash, sign and dec callback struct
+                  DEVICE_DT_INST_GET(0),
                   0
                 );	
-      
-    // enable PUFs IRQ
-    irq_enable(DT_INST_IRQN(0));
+    /*
+     * The IRQs will only be enabled in
+     * xyz_async_callback_set interfaces
+     * Inside the IRQ Handler we will disable
+     * the IRQ since we support only single
+     * session at any moment.
+     */
 }
 
-static struct crypto_driver_api crypto_dec_funcs = {
-	.cipher_begin_session = NULL, /* TBD */
-  .cipher_free_session = NULL, /* TBD */
-  .cipher_async_callback_set = NULL, /* TBD */
-  .hash_begin_session = NULL, /* TBD */
-  .hash_free_session =  NULL, /* TBD */
-  .hash_async_callback_set =  NULL, /* TBD */
-  .query_hw_caps =  NULL /* TBD */
+static struct crypto_driver_api s_crypto_funcs = {
+	.cipher_begin_session = NULL, /* TODO */
+  .cipher_free_session = NULL, /* TODO */
+  .cipher_async_callback_set = NULL, /* TODO */
+  .hash_begin_session = NULL, /* TODO */
+  .hash_free_session =  NULL, /* TODO */
+  .hash_async_callback_set =  NULL, /* TODO */
+  .query_hw_caps =  NULL /* TODO */
 };
 
-static const struct pufs_config pufs_configuration = {
+static struct pufs_data s_pufs_session_data = {
+  .pufs_session_type = PUFS_SESSION_UNDEFINED,
+  .session_callback = NULL
+};
+
+static const struct pufs_config s_pufs_configuration = {
   .base = DT_INST_REG_ADDR(0),
   .irq_num = DT_INST_IRQN(0),
-  .irq_init = pufs_irq_Init
+  .irq_init = pufs_irq_Init,
+  .irq_priority = DT_INST_IRQ(0, priority),
+  .dev = DEVICE_DT_INST_GET(0)
 };
 
 
 DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
-		    NULL,
-		    &pufs_configuration, POST_KERNEL,
-		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_dec_funcs);
+		    &s_pufs_session_data,
+		    &s_pufs_configuration, POST_KERNEL,
+		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&s_crypto_funcs);
+        
