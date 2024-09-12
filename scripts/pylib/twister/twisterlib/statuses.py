@@ -5,7 +5,9 @@
 """
 Status classes to be used instead of str statuses.
 """
+from __future__ import annotations
 
+from colorama import Fore
 from enum import Enum
 
 
@@ -18,6 +20,21 @@ class TwisterStatus(str, Enum):
         super()._missing_(value)
         if value is None:
             return TwisterStatus.NONE
+
+    @staticmethod
+    def get_color(status: TwisterStatus) -> str:
+        match(status):
+            case TwisterStatus.PASS:
+                color = Fore.GREEN
+            case TwisterStatus.SKIP | TwisterStatus.FILTER | TwisterStatus.BLOCK:
+                color = Fore.YELLOW
+            case TwisterStatus.FAIL | TwisterStatus.ERROR:
+                color = Fore.RED
+            case TwisterStatus.STARTED | TwisterStatus.NONE:
+                color = Fore.MAGENTA
+            case _:
+                color = Fore.RESET
+        return color
 
     # All statuses below this comment can be used for TestCase
     BLOCK = 'blocked'
