@@ -450,6 +450,124 @@ err:
 	return ret;
 }
 
+uint8_t i3c_odd_parity(uint8_t p)
+{
+	p ^= p >> 4;
+	p &= 0xf;
+	return (0x9669 >> p) & 1;
+}
+
+int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested)
+{
+	int ret;
+	union i3c_ccc_getstatus status = {0};
+	struct i3c_ccc_events i3c_events;
+	struct i3c_ccc_address handoff_address;
+
+	/*
+	 * If the Active Controller intends to pass the Controller Role to a selected Secondary
+	 * Controller that did not send a Controller Role Request, then the Active Controller should
+	 * verify that the selected Secondary Controller is active and ready to respond to
+	 * additional commands
+	 */
+	if (!requested) {
+		ret = i3c_ccc_do_getstatus_fmt1(target, &status);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if (I3C_CCC_GETSTATUS_ACTIVITY_MODE(status.fmt1.status) ==
+		    I3C_CCC_GETSTATUS_ACTIVITY_MODE_NCH) {
+			return -EBUSY;
+		}
+	}
+
+	/*
+	 * The Active Controller needs to disable Hot-Joins, Target Interrupt Requests, and other
+	 * Bus events that could interfere with the Handoff, then it sends the appropriate
+	 * Broadcast to disable those events before the Handoff. Once the Handoff is complete, the
+	 * new Active Controller should re-enable events that are disabled in this step.
+	 */
+	i3c_events.events = I3C_CCC_EVT_ALL;
+	ret = i3c_ccc_do_events_all_set(target->bus, false, &i3c_events);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/** TODO: reconfigure MLANE if needed */
+
+	/*
+	 * If the Active Controller knows that the selected Secondary Controller must be put into a
+	 * different Activity State before Handoff, then the Active Controller shall send the
+	 * appropriate Broadcast or Direct CCCs to put the Bus (or selected Devices) into a
+	 * different Activity State
+	 */
+	if (target->crhdly1 & I3C_CCC_GETMXDS_CRDHLY1_SET_BUS_ACT_STATE) {
+		ret = i3c_ccc_do_entas(
+			target, I3C_CCC_GETMXDS_CRDHLY1_CTRL_HANDOFF_ACT_STATE(target->crhdly1));
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if ((target->getcaps.getcap3 & I3C_CCC_GETCAPS3_GETSTATUS_DEFINING_BYTE_SUPPORT) &&
+	    (target->crcaps.crcaps2 & I3C_CCC_GETCAPS_CRCAPS2_DEEP_SLEEP_CAPABLE)) {
+		ret = i3c_ccc_do_getstatus_fmt2(target, &status, GETSTATUS_FORMAT_2_PRECR);
+		if (ret != 0) {
+			return ret;
+		}
+
+		/*
+		 * If the Active Controller determines that the indicated Secondary Controller has
+		 * been in a “deep sleep” state and may need to be re-synchronized with the most
+		 * current list of I3C Targets and Group Addresses, then the Active Controller
+		 * should send CCC DEFTGTS and DEFGRPA
+		 */
+		if (status.fmt2.precr & I3C_CCC_GETSTATUS_PRECR_DEEP_SLEEP_DETECTED) {
+			ret = i3c_bus_deftgts(target->bus);
+			if (ret != 0) {
+				return ret;
+			}
+			/* TODO: broadcast DEFGRPA when group address support comes */
+
+			/* Check CRCAPS if the device needs additional time to process */
+			if (target->crcaps.crcaps2 &
+			    I3C_CCC_GETCAPS_CRCAPS2_DELAYED_CONTROLLER_HANDOFF) {
+				/*
+				 * Afterwards, the Active Controller should poll the Secondary
+				 * Controller to ensure that it has successfully processed this data
+				 * and indicates that it is ready to accept the Controller Role
+				 */
+				do {
+					ret = i3c_ccc_do_getstatus_fmt2(target, &status,
+									GETSTATUS_FORMAT_2_PRECR);
+					if (ret != 0) {
+						return ret;
+					}
+				} while (!(status.fmt2.precr &
+					   I3C_CCC_GETSTATUS_PRECR_HANDOFF_DELAY_NACK));
+			}
+		}
+	}
+
+	/*
+	 * After the Active Controller has prepared for Handoff, the Active Controller shall
+	 * then issue a GETACCCR CCC
+	 */
+	ret = i3c_ccc_do_getacccr(target, &handoff_address);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Verify Odd Parity and Correct Dynamic Address Reply */
+	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
+	    (handoff_address.addr >> 1 != target->dynamic_addr)) {
+		return -EIO;
+	}
+
+	return ret;
+}
+
 int i3c_device_basic_info_get(struct i3c_device_desc *target)
 {
 	int ret;
