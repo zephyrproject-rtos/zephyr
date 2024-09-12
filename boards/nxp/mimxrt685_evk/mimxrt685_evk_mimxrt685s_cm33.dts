@@ -393,7 +393,7 @@ zephyr_udc0: &usbhs {
 
 	status = "okay";
 
-	audio_codec: wm8904@1a {
+	audio_codec: wm8904@1a0000000000000000 {
 		compatible = "wolfson,wm8904";
 		reg = <0x1a 0 0>;
 
