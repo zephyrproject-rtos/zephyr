@@ -210,3 +210,9 @@ tests:
     platform_allow:
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
+  drivers.spi.max32_spi_rtio.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-max32-spi-rtio.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+    platform_allow:
+      - apard32690/max32690/m4
