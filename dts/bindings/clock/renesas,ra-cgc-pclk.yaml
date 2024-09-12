@@ -8,9 +8,6 @@ compatible: "renesas,ra-cgc-pclk"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-  clk-src:
-    type: int
-
   clk-div:
     type: int
     required: true
