@@ -3,6 +3,12 @@
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_STM32_MODULE
+	bool
+
+config ZEPHYR_HAL_STM32_MODULE_BLOBS
+	bool
+
 config HAS_STM32LIB
 	bool
 
