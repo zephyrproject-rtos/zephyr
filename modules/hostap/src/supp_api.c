@@ -1384,6 +1384,48 @@ out:
 	return ret;
 }
 
+int supplicant_11k_cfg(const struct device *dev, struct wifi_11k_params *params)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->cfg_11k) {
+		wpa_printf(MSG_ERROR, "cfg 11k not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->cfg_11k(dev, params);
+}
+
+int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params)
+{
+	int ssid_len = strlen(params->ssid);
+
+	if (params != NULL && ssid_len > 0) {
+		if (ssid_len > WIFI_SSID_MAX_LEN) {
+			wpa_printf(MSG_ERROR, "%s: ssid too long %u",
+				   __func__, ssid_len);
+			return -1;
+		}
+
+		if (!wpa_cli_cmd_v("neighbor_rep_request ssid %s",
+				   params->ssid)) {
+			wpa_printf(MSG_ERROR,
+				   "%s: cli cmd <neighbor_rep_request ssid %s> fail",
+				   __func__, params->ssid);
+			return -1;
+		}
+	} else {
+		if (!wpa_cli_cmd_v("neighbor_rep_request")) {
+			wpa_printf(MSG_ERROR,
+				   "%s: cli cmd <neighbor_rep_request> fail",
+				   __func__);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *params)
 {
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);

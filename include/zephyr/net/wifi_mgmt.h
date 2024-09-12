@@ -71,6 +71,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
+	/** Set or get 11k status */
+	NET_REQUEST_WIFI_CMD_11K_CONFIG,
+	/** Send 11k neighbor request */
+	NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
 	/** Setup or teardown TWT flow */
@@ -153,6 +157,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
+
+#define NET_REQUEST_WIFI_11K_CONFIG				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_CONFIG)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG);
+
+#define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST);
 
 /** Request a Wi-Fi power save */
 #define NET_REQUEST_WIFI_PS					\
@@ -769,6 +783,16 @@ enum wifi_mgmt_op {
 	WIFI_MGMT_SET = 1,
 };
 
+/** Wi-Fi 11k parameters */
+struct wifi_11k_params {
+	/** 11k command operation */
+	enum wifi_mgmt_op oper;
+	/** 11k enable/disable */
+	bool enable_11k;
+	/** SSID */
+	uint8_t ssid[WIFI_SSID_MAX_LEN + 1];
+};
+
 /** Max regulatory channel number */
 #define MAX_REG_CHAN_NUM  42
 
@@ -1227,6 +1251,22 @@ struct wifi_mgmt_ops {
 	 */
 	int (*reset_stats)(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
+	/** Set or get 11K status
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params 11k parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*cfg_11k)(const struct device *dev, struct wifi_11k_params *params);
+	/** Send 11k neighbor request
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params 11k parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*send_11k_neighbor_request)(const struct device *dev, struct wifi_11k_params *params);
 	/** Set power save status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
