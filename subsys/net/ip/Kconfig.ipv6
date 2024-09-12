@@ -156,6 +156,15 @@ config NET_IPV6_DAD
 	  The value depends on your network needs. DAD should normally
 	  be active.
 
+config NET_IPV6_RS_TIMEOUT
+	int "Timeout of Router Solicitation messaging"
+	depends on NET_IPV6_ND
+	range 1 30
+	default 1
+	help
+	  The timeout in seconds between attempts to send a Router
+	  Solicitation message at startup.
+
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
