@@ -1782,7 +1782,7 @@ static inline int i3c_ccc_do_getcaps_fmt2(const struct i3c_device_desc *target,
  *
  * @return @see i3c_do_ccc
  */
-int i3c_ccc_do_setvendor(struct i3c_device_desc *target,
+int i3c_ccc_do_setvendor(const struct i3c_device_desc *target,
 			uint8_t id,
 			uint8_t *payload,
 			size_t len);
@@ -1801,7 +1801,7 @@ int i3c_ccc_do_setvendor(struct i3c_device_desc *target,
  *
  * @return @see i3c_do_ccc
  */
-int i3c_ccc_do_getvendor(struct i3c_device_desc *target,
+int i3c_ccc_do_getvendor(const struct i3c_device_desc *target,
 			uint8_t id,
 			uint8_t *payload,
 			size_t len,
@@ -1823,7 +1823,7 @@ int i3c_ccc_do_getvendor(struct i3c_device_desc *target,
  *
  * @return @see i3c_do_ccc
  */
-int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target,
+int i3c_ccc_do_getvendor_defbyte(const struct i3c_device_desc *target,
 			uint8_t id,
 			uint8_t defbyte,
 			uint8_t *payload,
