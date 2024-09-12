@@ -12,9 +12,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/sys/device_mmio.h>
-#include <zephyr/kernel.h>
-#include <zephyr/drivers/pcie/pcie.h>
-#include <zephyr/drivers/pcie/controller.h>
 
 struct mfd_rp1_config {
 	const struct device *pci_dev;
@@ -22,18 +19,9 @@ struct mfd_rp1_config {
 	size_t cfg_size;
 };
 
-struct mfd_rp1_data {
-	mm_reg_t base;
-};
-
 static int mfd_rp1_init(const struct device *dev)
 {
-	const struct mfd_rp1_config *config = dev->config;
-	struct mfd_rp1_data *data = dev->data;
-
-	if (!pcie_ctrl_region_allocate(dev, 0, true, false, config->cfg_size, &data->base)) {
-		return -EINVAL;
-	}
+	ARG_UNUSED(dev);
 
 	return 0;
 }
