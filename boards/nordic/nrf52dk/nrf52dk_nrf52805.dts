@@ -144,9 +144,9 @@
 			label = "image-0";
 			reg = <0x0000C000 0xe000>;
 		};
-		slot1_partition: partition@19000 {
+		slot1_partition: partition@1a000 {
 			label = "image-1";
-			reg = <0x00020000 0xe000>;
+			reg = <0x0001a000 0xe000>;
 		};
 		storage_partition: partition@28000 {
 			label = "storage";
