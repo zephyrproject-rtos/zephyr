@@ -2008,9 +2008,13 @@ def test_projectbuilder_report_out(
     instance_mock.status = status
     instance_mock.reason = 'dummy reason'
     instance_mock.testsuite.name = 'dummy.testsuite.name'
-    instance_mock.testsuite.testcases = [mock.Mock() for _ in range(25)]
-    instance_mock.testcases = [mock.Mock() for _ in range(24)] + \
-                              [mock.Mock(status=TwisterStatus.SKIP)]
+    skip_mock_tc = mock.Mock(status=TwisterStatus.SKIP, reason='?')
+    skip_mock_tc.name = '?'
+    unknown_mock_tc = mock.Mock(status=mock.Mock(value='?'), reason='?')
+    unknown_mock_tc.name = '?'
+    instance_mock.testsuite.testcases = [unknown_mock_tc for _ in range(25)]
+    instance_mock.testcases = [unknown_mock_tc for _ in range(24)] + \
+                              [skip_mock_tc]
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
