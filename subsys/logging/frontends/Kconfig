@@ -95,6 +95,12 @@ config LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE
 config LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION
 	bool "Track maximum utilization"
 
+config LOG_FRONTEND_STMESP_DEMUX_GC_TIMEOUT
+	int "Message timeout (in milliseconds)"
+	default 100
+	help
+	  If log message is not completed within that time frame it is discarded.
+
 endif # LOG_FRONTEND_STMESP_DEMUX
 
 config LOG_FRONTEND_STMESP_FLUSH_PORT_ID
