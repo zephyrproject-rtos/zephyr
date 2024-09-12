@@ -670,8 +670,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
 		struct i3c_device_desc *i3c_desc = CONTAINER_OF(node, struct i3c_device_desc, node);
 
-		if (I3C_BCR_DEVICE_ROLE(i3c_desc->bcr) ==
-		    I3C_BCR_DEVICE_ROLE_I3C_CONTROLLER_CAPABLE) {
+		if (i3c_device_is_controller_capable(i3c_desc)) {
 			return true;
 		}
 	}
