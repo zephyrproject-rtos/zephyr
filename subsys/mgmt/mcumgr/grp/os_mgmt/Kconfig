@@ -194,8 +194,6 @@ config MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
 
 endif
 
-if BOOTLOADER_MCUBOOT
-
 config MCUMGR_GRP_OS_BOOTLOADER_INFO
 	bool "Bootloader information"
 	help
@@ -208,8 +206,6 @@ config MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK
 	help
 	  Supports adding custom responses to the bootloader info command by using registered
 	  callbacks. Data can be appended to the struct provided in the callback.
-
-endif # BOOTLOADER_MCUBOOT
 
 module = MCUMGR_GRP_OS
 module-str = mcumgr_grp_os
