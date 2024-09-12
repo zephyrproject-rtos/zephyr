@@ -239,11 +239,8 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 		break;
 
 	case GPIO_INT_TRIG_BOTH:
-		/* Trigger detection on pin rising or falling edge (GPIO_INT_TRIG_BOTH)
-		 * is not supported. Refer to SWINTEGRATION-696
-		 */
-		/* event = CYHAL_GPIO_IRQ_BOTH; */
-		return -ENOTSUP;
+		event = CYHAL_GPIO_IRQ_BOTH;
+		break;
 
 	default:
 		return -ENOTSUP;
