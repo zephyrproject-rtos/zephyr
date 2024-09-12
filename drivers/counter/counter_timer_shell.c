@@ -22,14 +22,14 @@
 
 static struct k_sem timer_sem;
 
-void timer_top_handler(const struct device *counter_dev, void *user_data)
+static void timer_top_handler(const struct device *counter_dev, void *user_data)
 {
 	ARG_UNUSED(counter_dev);
 
 	k_sem_give(&timer_sem);
 }
 
-void timer_alarm_handler(const struct device *counter_dev, uint8_t chan_id,
+static void timer_alarm_handler(const struct device *counter_dev, uint8_t chan_id,
 				uint32_t ticks, void *user_data)
 {
 	ARG_UNUSED(counter_dev);
