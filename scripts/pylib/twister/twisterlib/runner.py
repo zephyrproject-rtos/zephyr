@@ -615,6 +615,9 @@ class ProjectBuilder(FilterBuilder):
 
 
     def process(self, pipeline, done, message, lock, results):
+        next_op = None
+        additionals = {}
+
         op = message.get('op')
 
         self.instance.setup_handler(self.env)
@@ -772,8 +775,6 @@ class ProjectBuilder(FilterBuilder):
                     done.put(self.instance)
                     self.report_out(results)
 
-                next_op = None
-                additionals = {}
                 if not self.options.coverage:
                     if self.options.prep_artifacts_for_testing:
                         next_op = 'cleanup'
