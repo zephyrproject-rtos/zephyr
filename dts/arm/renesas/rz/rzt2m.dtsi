@@ -89,7 +89,7 @@
 			reg-io-width = <4>;
 		};
 
-		sckcr: sckcr@81280004 {
+		sckcr: sckcr@80280000 {
 			/* System Clock Control Register*/
 			compatible = "syscon";
 			reg = <0x80280000 0x20>;
