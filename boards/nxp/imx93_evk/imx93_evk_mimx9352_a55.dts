@@ -102,7 +102,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy: phy@0 {
+	phy: phy@2 {
 		compatible = "realtek,rtl8211f";
 		reg = <2>;
 		status = "okay";
