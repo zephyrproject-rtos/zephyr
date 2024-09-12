@@ -23,4 +23,28 @@ config SPI_MAX32_DMA
 	help
 	  Enable DMA support for MAX32 MCU SPI driver.
 
+config SPI_MAX32_RTIO
+	bool "MAX32 SPI RTIO Support"
+	default y if SPI_RTIO
+	depends on !SPI_ASYNC
+	select SPI_MAX32_INTERRUPT
+
+if SPI_MAX32_RTIO
+config SPI_MAX32_RTIO_SQ_SIZE
+	int "Number of available submission queue entries"
+	default 8 # Sensible default that covers most common spi transactions
+	help
+	  When RTIO is used with SPI, each driver holds a context with which blocking
+	  API calls use to perform SPI transactions. This queue needs to be as deep
+	  as the longest set of spi_buf_sets used, where normal SPI operations are
+	  used (equal length buffers). It may need to be slightly deeper where the
+	  spi buffer sets for transmit/receive are not always matched equally in
+	  length as these are transformed into normal transceives.
+
+config SPI_MAX32_RTIO_CQ_SIZE
+	int "Number of available completion queue entries"
+	default 8 # Sensible default that covers most common spi transactions
+
+endif # SPI_MAX32_RTIO
+
 endif # SPI_MAX32
