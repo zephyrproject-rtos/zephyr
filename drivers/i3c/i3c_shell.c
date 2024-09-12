@@ -2037,6 +2037,89 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+#ifdef I3C_USE_IBI
+/* i3c ibi hj <device> */
+static void cmd_i3c_ibi_hj(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_ibi request;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	request.ibi_type = I3C_IBI_HOTJOIN;
+	ret = i3c_ibi_raise(dev, &request);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to issue IBI HJ");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Issued IBI HJ");
+}
+
+/* i3c ibi cr <device> */
+static void cmd_i3c_ibi_cr(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_ibi request;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	request.ibi_type = I3C_IBI_CONTROLLER_ROLE_REQUEST;
+	ret = i3c_ibi_raise(dev, &request);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to issue IBI CR");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Issued IBI CR");
+}
+
+/* i3c ibi tir <device> [<bytes>]*/
+static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_ibi request;
+	uint16_t data_length;
+	char **data;
+	uint8_t buf[MAX_I3C_BYTES];
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data = argv[3];
+	data_length = argc - 3;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(data[i], NULL, 16);
+	}
+
+	request.ibi_type = I3C_IBI_TARGET_INTR;
+	request.payload = buf;
+	request.payload_len = data_length;
+
+	ret = i3c_ibi_raise(dev, &request);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to issue IBI TIR");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Issued IBI TIR");
+}
+#endif
+
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
@@ -2078,6 +2161,26 @@ static void i3c_device_name_get(size_t idx, struct shell_static_entry *entry)
 }
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_name, i3c_device_name_get);
+
+#ifdef I3C_USE_IBI
+/* L2 I3C IBI Shell Commands*/
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i3c_ibi_cmds,
+	SHELL_CMD_ARG(hj, &dsub_i3c_device_name,
+		      "Send IBI HJ\n"
+		      "Usage: ibi hj <device>",
+		      cmd_i3c_ibi_hj, 2, 0),
+	SHELL_CMD_ARG(tir, &dsub_i3c_device_name,
+		      "Send IBI TIR\n"
+		      "Usage: ibi tir <device> [<byte1>, ...]",
+		      cmd_i3c_ibi_tir, 2, MAX_I3C_BYTES),
+	SHELL_CMD_ARG(cr, &dsub_i3c_device_name,
+		      "Send IBI CR\n"
+		      "Usage: ibi cr <device>",
+		      cmd_i3c_ibi_cr, 2, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+#endif
 
 /* L2 I3C CCC Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -2284,6 +2387,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send I3C CCC\n"
 		      "Usage: ccc <sub cmd>",
 		      NULL, 3, 0),
+#ifdef I3C_USE_IBI
+	SHELL_CMD_ARG(ibi, &sub_i3c_ibi_cmds,
+		      "Send I3C IBI\n"
+		      "Usage: ibi <sub cmd>",
+		      NULL, 3, 0),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
