@@ -1032,6 +1032,43 @@ static int cmd_i3c_ccc_enttm(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+/* i3c ccc getacccr <device> <target> */
+static int cmd_i3c_ccc_getacccr(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	struct i3c_ccc_address handoff_address;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (!i3c_device_is_controller_capable(desc)) {
+		shell_error(sh, "I3C: Not a Controller Capable Device");
+		return -EINVAL;
+	}
+
+	ret = i3c_ccc_do_getacccr(desc, &handoff_address);
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC GETACCCR.");
+		return ret;
+	}
+
+	/* Verify Odd Parity and Correct Dynamic Address Reply */
+	if ((i3c_odd_parity(handoff_address.addr >> 1) != (handoff_address.addr & BIT(0))) ||
+	    (handoff_address.addr >> 1 != desc->dynamic_addr)) {
+		shell_error(sh, "I3C: invalid returned address 0x%02x; expected 0x%02x",
+			    handoff_address.addr, desc->dynamic_addr);
+		return -EIO;
+	}
+
+	shell_print(sh, "I3C: Controller Handoff successful");
+
+	return ret;
+}
+
 /* i3c ccc rstact_bc <device> <defining byte> */
 static int cmd_i3c_ccc_rstact_bc(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2264,6 +2301,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC RSTACT\n"
 		      "Usage: ccc rstact <device> <target> <\"set\"/\"get\"> <defining byte>",
 		      cmd_i3c_ccc_rstact, 5, 0),
+	SHELL_CMD_ARG(getacccr, &dsub_i3c_device_attached_name,
+		      "Send CCC GETACCCR\n"
+		      "Usage: ccc getacccr <device> <target>",
+		      cmd_i3c_ccc_getacccr, 3, 0),
 	SHELL_CMD_ARG(rstact_bc, &dsub_i3c_device_name,
 		      "Send CCC RSTACT BC\n"
 		      "Usage: ccc rstact_bc <device> <defining byte>",
