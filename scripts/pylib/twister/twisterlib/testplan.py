@@ -767,8 +767,7 @@ class TestPlan:
             # If there isn't any overlap between the platform_allow list and the platform_scope
             # we set the scope to the platform_allow list
             if ts.platform_allow and not platform_filter and not integration and platform_config.get('increased_platform_scope', True):
-                self.verify_platforms_existence(
-                    ts.platform_allow, f"{ts_name} - platform_allow")
+                self.verify_platforms_existence(ts.platform_allow, f"{ts_name} - platform_allow")
                 a = set(platform_scope)
                 b = set(filter(lambda item: item.name in ts.platform_allow, self.platforms))
                 c = a.intersection(b)
@@ -846,6 +845,9 @@ class TestPlan:
                         instance.add_filter("In test case arch exclude", Filters.TESTSUITE)
 
                     if ts.platform_exclude and plat.name in ts.platform_exclude:
+                        # works only when we have all platforms parsed, -p limits parsing...
+                        if not platform_filter:
+                            self.verify_platforms_existence(ts.platform_exclude, f"{ts_name} - platform_exclude")
                         instance.add_filter("In test case platform exclude", Filters.TESTSUITE)
 
                 if ts.toolchain_exclude and toolchain in ts.toolchain_exclude:
