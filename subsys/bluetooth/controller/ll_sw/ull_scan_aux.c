@@ -524,7 +524,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Skip reception if invalid aux offset */
 	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
-	if (unlikely((aux_offset_us + window_size_us) < (pdu_us + EVENT_MAFS_US))) {
+	if (unlikely(!AUX_OFFSET_IS_VALID(aux_offset_us, window_size_us, pdu_us))) {
 		goto ull_scan_aux_rx_flush;
 	}
 
