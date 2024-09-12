@@ -1928,9 +1928,14 @@ class EDT:
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
+      The collection is sorted so that enabled nodes appear first in the
+      collection.
 
     compat2okay:
       Like compat2nodes, but just for nodes with status 'okay'.
+
+    compat2notokay:
+      Like compat2nodes, but just for nodes with status not 'okay'.
 
     compat2vendor:
       A collections.defaultdict that maps each 'compatible' string that appears
@@ -2036,6 +2041,7 @@ class EDT:
         self.nodes: List[Node] = []
         self.compat2nodes: Dict[str, List[Node]] = defaultdict(list)
         self.compat2okay: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2notokay: Dict[str, List[Node]] = defaultdict(list)
         self.compat2vendor: Dict[str, str] = defaultdict(str)
         self.compat2model: Dict[str, str]  = defaultdict(str)
         self.label2node: Dict[str, Node] = {}
@@ -2368,10 +2374,10 @@ class EDT:
                 self.label2node[label] = node
 
             for compat in node.compats:
-                self.compat2nodes[compat].append(node)
-
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+                else:
+                    self.compat2notokay[compat].append(node)
 
                 if compat in self.compat2vendor:
                     continue
@@ -2400,25 +2406,11 @@ class EDT:
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
-        # The raw index into edt.compat2nodes[compat] is used for node
-        # instance numbering within a compatible.
-        #
-        # As a way to satisfy people's intuitions about instance numbers,
-        # we sort this list so enabled instances come first.
-        #
-        # This might look like a hack, but it keeps drivers and
-        # applications which don't use instance numbers carefully working
-        # as expected, since e.g. instance number 0 is always the
-        # singleton instance if there's just one enabled node of a
-        # particular compatible.
-        #
-        # This doesn't violate any devicetree.h API guarantees about
-        # instance ordering, since we make no promises that instance
-        # numbers are stable across builds.
-        for compat, nodes in self.compat2nodes.items():
-            self.compat2nodes[compat] = sorted(
-                nodes, key=lambda node: 0 if node.status == "okay" else 1
-            )
+        for compat, nodes in self.compat2okay.items():
+            self.compat2nodes[compat].extend(nodes)
+
+        for compat, nodes in self.compat2notokay.items():
+            self.compat2nodes[compat].extend(nodes)
 
         for nodeset in self.scc_order:
             node = nodeset[0]
