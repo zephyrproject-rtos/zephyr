@@ -37,39 +37,63 @@ manifest:
         definitions:
           package: "infra/3pp/tools/cmake/${platform}"
           version: "version:3@3.30.3.chromium.8"
-        paths: ["bin"]
         urls:
-          "*": "${cipd_url}/${package}/+/${version}"
+          "*":
+            url: "${cipd_url}/${package}/+/${version}"
+            paths: ["bin"]
       ninja:
         definitions:
           package: "infra/3pp/tools/ninja/${platform}"
           version: "version:3@1.12.1.chromium.4"
-        paths: ["."]
         urls:
-          "*": "${cipd_url}/${package}/+/${version}"
+          "*":
+            url: "${cipd_url}/${package}/+/${version}"
       gperf:
         definitions:
           version: "version:3@3.2"
-        paths: ["bin"]
         urls:
-          "linux-amd64": "${cipd_url}/infra/3pp/tools/gperf/${platform}/+/${version}"
+          "linux-amd64":
+            url: "${cipd_url}/infra/3pp/tools/gperf/${platform}/+/${version}"
+            paths: ["bin"]
       ccache:
         definitions:
           version: "4.10.2"
           root_url: "https://github.com/ccache/ccache/releases/download/v${version}/ccache-${version}"
-        paths: []
         urls:
-          "linux-amd64": "${root_url}-linux-x86_64.tar.xz"
-          "mac-*": "${root_url}-darwin.tar.gz"
-          "windows-amd64": "${root_url}-windows-x86_64.zip"
+          "linux-amd64":
+            url: "${root_url}-linux-x86_64.tar.xz"
+            paths: ["ccache-${version}-linux-x86_64"]
+          "mac-*":
+            url: "${root_url}-darwin.tar.gz"
+            paths: ["ccache-${version}-darwin"]
+          "windows-amd64":
+            url: "${root_url}-windows-x86_64.zip"
+            paths: ["ccache-${version}-windows-x86_64"]
+      dfu-util:
+        definitions:
+          version: "0.11"
+        urls:
+          "linux-amd64":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/linux-amd64"]
+          "mac-*":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/darwin-x86_64"]
+          "windows-amd64":
+            url: "https://dfu-util.sourceforge.net/releases/dfu-util-${version}-binaries.tar.xz"
+            paths: ["dfu-util-${version}-binaries/win64"]
+      # device-tree-compiler:
+      #   definitions:
+      #     version: "1.7.0-2+b1"
+      wget:
+        definitions:
+          version: "1.24.5"         
+        urls:
+          "linux-amd64":
+            url: "https://ftp.gnu.org/gnu/wget/wget-${version}.tar.gz"
 
 
       # Linux:
-      #   - cmake
-      #   - ninja-build
-      #   - gperf
-      #   - ccache
-      #   - dfu-util
       #   - device-tree-compiler
       #   - wget
       #   - python3-dev

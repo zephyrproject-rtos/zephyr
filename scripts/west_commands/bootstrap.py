@@ -214,6 +214,11 @@ def _check_packages_installed(bin_requirements: List[str]) -> None:
         log.wrn("  $ brew install " + " ".join(bin_requirements))
 
 
+class UrlEntry(NamedTuple):
+    url: str
+    paths: List[str]
+
+
 def _print_banner():
     print(
         """
@@ -443,7 +448,9 @@ class Bootstrap(WestCommand):
 
             # Extract the file based on its type
             if temp_file_path.suffix == ".gz":
-                if temp_file_path.name[:-3].endswith(".tar"):  # Check for .tar.gz or .tar.xz
+                if temp_file_path.name[:-3].endswith(
+                    ".tar"
+                ):  # Check for .tar.gz or .tar.xz
                     with tarfile.open(temp_file_path, "r:gz") as tar:
                         tar.extractall(install_path)
                 else:
@@ -456,13 +463,15 @@ class Bootstrap(WestCommand):
             elif temp_file_path.suffix == ".zip":
                 with zipfile.ZipFile(temp_file_path, "r") as zip_ref:
                     zip_ref.extractall(install_path)
-            elif temp_file_path.suffix == '.xz':
-                if temp_file_path.name[:-3].endswith('.tar'):  # Check for .tar.xz
-                    with lzma.open(temp_file_path, 'rb') as f_xz:
-                        with tarfile.open(fileobj=f_xz, mode='r|') as tar:
+            elif temp_file_path.suffix == ".xz":
+                if temp_file_path.name[:-3].endswith(".tar"):  # Check for .tar.xz
+                    with lzma.open(temp_file_path, "rb") as f_xz:
+                        with tarfile.open(fileobj=f_xz, mode="r|") as tar:
                             tar.extractall(install_path)
                 else:
-                    raise ValueError("Unsupported .xz file format (only .tar.xz is supported)")
+                    raise ValueError(
+                        "Unsupported .xz file format (only .tar.xz is supported)"
+                    )
             else:
                 raise ValueError("Unsupported file format: " + str(temp_file_path))
 
@@ -477,42 +486,45 @@ class Bootstrap(WestCommand):
             local_defs.update(_GLOBAL_DEFINITIONS)
             install_path = self.venv_path / "bin_requirements" / name
             install_path.mkdir(parents=True, exist_ok=True)
-            self.extra_paths += [install_path / path for path in value["paths"]]
-            url_map: Dict[str, str] = value["urls"]
+            url_map: Dict[str, Dict][str, Union[str, List[str]]] = value["urls"]
 
             # first look for exact match to the current platform
             if _GLOBAL_DEFINITIONS["platform"] in url_map:
-                self._install_bin_requirement(
-                    name=name,
-                    install_path=install_path,
-                    url=url_map[_GLOBAL_DEFINITIONS["platform"]],
-                    local_defs=local_defs,
-                )
-                continue
+                url_key = _GLOBAL_DEFINITIONS["platform"]
+            else:
+                matching_url_keys: List[str] = []
+                for key in url_map.keys():
+                    pattern = Bootstrap._replace_variables(
+                        input_str=key, defs=local_defs
+                    ).replace("*", ".*")
 
-            matching_url_keys: List[str] = []
-            for key in url_map.keys():
-                pattern = Bootstrap._replace_variables(
-                    input_str=key, defs=local_defs
-                ).replace("*", ".*")
+                    match = re.match(
+                        pattern=pattern, string=_GLOBAL_DEFINITIONS["platform"]
+                    )
+                    if match:
+                        matching_url_keys.append(key)
 
-                match = re.match(
-                    pattern=pattern, string=_GLOBAL_DEFINITIONS["platform"]
-                )
-                if match:
-                    matching_url_keys.append(key)
+                if len(matching_url_keys) == 0:
+                    raise RuntimeError("Failed to find platform URL")
+                if len(matching_url_keys) > 1:
+                    raise RuntimeError(
+                        "Multiple url keys matched: " + str(matching_url_keys)
+                    )
+                url_key = matching_url_keys[0]
 
-            if len(matching_url_keys) == 0:
-                raise RuntimeError("Failed to find platform URL")
-            if len(matching_url_keys) > 1:
-                raise RuntimeError(
-                    "Multiple url keys matched: " + str(matching_url_keys)
-                )
-
+            url_entry: UrlEntry = UrlEntry(
+                url=url_map[url_key]["url"],
+                paths=url_map[url_key].get("paths", ["."]),
+            )
+            self.extra_paths += [
+                install_path
+                / Bootstrap._replace_variables(input_str=path, defs=local_defs)
+                for path in url_entry.paths
+            ]
             self._install_bin_requirement(
                 name=name,
                 install_path=install_path,
-                url=url_map[matching_url_keys[0]],
+                url=url_entry.url,
                 local_defs=local_defs,
             )
 
@@ -643,6 +655,6 @@ class Bootstrap(WestCommand):
 
                 if magic.from_file(file, mime=True).startswith("text/"):
                     continue
-                
+
                 # Make the file executable for the owner
                 file.chmod(file.stat().st_mode | 0o111)  # Add execute permissions
