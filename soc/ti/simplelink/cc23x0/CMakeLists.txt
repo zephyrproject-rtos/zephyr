@@ -36,4 +36,5 @@ set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
 	  --elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
 	  --symbol-prefix CRC_CCFG
 	  --output ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf
+  COMMAND ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin/arm-zephyr-eabi-objcopy -O ihex ${CMAKE_BINARY_DIR}/zephyr/zephyr.elf ${CMAKE_BINARY_DIR}/zephyr/zephyr.hex
   )
