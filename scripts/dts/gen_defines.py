@@ -74,6 +74,12 @@ def main():
             out_comment("Node's name with unit-address:")
             out_dt_define(f"{node.z_path_id}_FULL_NAME",
                           f'"{escape(node.name)}"')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UNQUOTED",
+                          f'{escape(node.name)}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name))}')
+            out_dt_define(f"{node.z_path_id}_FULL_NAME_UPPER_TOKEN",
+                          f'{edtlib.str_as_token(escape(node.name)).upper()}')
 
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")

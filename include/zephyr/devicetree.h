@@ -524,6 +524,92 @@
 #define DT_NODE_FULL_NAME(node_id) DT_CAT(node_id, _FULL_NAME)
 
 /**
+ * @brief Get the node's full name, including the unit-address, as an unquoted
+ *        sequence of tokens
+ *
+ * This macro returns removed "the quotes" from the node's full name.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    DT_NODE_FULL_NAME_UNQUOTED(DT_NODELABEL(node)) // my-node@12345678
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the node's full name with unit-address as a sequence of tokens,
+ *         with no quotes
+ */
+#define DT_NODE_FULL_NAME_UNQUOTED(node_id) DT_CAT(node_id, _FULL_NAME_UNQUOTED)
+
+/**
+ * @brief Get the node's full name, including the unit-address, as a token.
+ *
+ * This macro returns removed "the quotes" from the node's full name and
+ * converting any non-alphanumeric characters to underscores.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    DT_NODE_FULL_NAME_TOKEN(DT_NODELABEL(node)) // my_node_12345678
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the node's full name with unit-address as a token, i.e. without any quotes
+ *         and with special characters converted to underscores
+ */
+#define DT_NODE_FULL_NAME_TOKEN(node_id) DT_CAT(node_id, _FULL_NAME_TOKEN)
+
+/**
+ * @brief Like DT_NODE_FULL_NAME_TOKEN(), but uppercased.
+ *
+ * This macro returns removed "the quotes" from the node's full name,
+ * converting any non-alphanumeric characters to underscores, and
+ * capitalizing the result.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     node: my-node@12345678 { ... };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    DT_NODE_FULL_NAME_UPPER_TOKEN(DT_NODELABEL(node)) // MY_NODE_12345678
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the node's full name with unit-address as an uppercased token,
+ *         i.e. without any quotes and with special characters converted
+ *         to underscores
+ */
+#define DT_NODE_FULL_NAME_UPPER_TOKEN(node_id) DT_CAT(node_id, _FULL_NAME_UPPER_TOKEN)
+
+/**
  * @brief Get a devicetree node's index into its parent's list of children
  *
  * Indexes are zero-based.
