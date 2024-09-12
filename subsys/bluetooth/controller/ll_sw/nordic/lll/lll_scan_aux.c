@@ -186,7 +186,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Skip reception if invalid aux offset */
 	pdu_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
-	if (unlikely((aux_offset_us + window_size_us) < (pdu_us + EVENT_MAFS_US))) {
+	if (unlikely(!AUX_OFFSET_IS_VALID(aux_offset_us, window_size_us, pdu_us))) {
 		return 0U;
 	}
 
