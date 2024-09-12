@@ -204,3 +204,9 @@ tests:
   drivers.spi.max32_dma.loopback:
     extra_args: OVERLAY_CONFIG="overlay-max32-spi-dma.conf"
     filter: CONFIG_SOC_FAMILY_MAX32
+  drivers.spi.max32_spi_rtio.loopback:
+    extra_args:
+      - OVERLAY_CONFIG="overlay-max32-spi-rtio.conf"
+    filter: CONFIG_SOC_FAMILY_MAX32
+    platform_allow:
+      - apard32690/max32690/m4
