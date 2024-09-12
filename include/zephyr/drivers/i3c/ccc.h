@@ -2135,6 +2135,24 @@ int i3c_ccc_do_deftgts_all(const struct device *controller,
 int i3c_ccc_do_setbuscon(const struct device *controller,
 				uint8_t *context, uint16_t length);
 
+/**
+ * @brief Direct GETACCCR for Controller Handoff
+ *
+ * Helper function to allow for the Active Controller to pass the
+ * Controller Role to a Secondary Controller. The returned address
+ * should match it's dynamic address along with odd parity.
+ *
+ * Note it is up to the caller to verify the correct returned address
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] handoff_address Pointer to the address returned by the secondary
+ * controller.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getacccr(const struct i3c_device_desc *target,
+			   struct i3c_ccc_address *handoff_address);
+
 #ifdef __cplusplus
 }
 #endif
