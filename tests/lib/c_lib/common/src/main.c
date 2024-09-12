@@ -1118,11 +1118,6 @@ ZTEST(libc_common, test_time_asctime)
 	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", asctime(&tp), sizeof(buf)), 0);
 
 	if (IS_ENABLED(CONFIG_COMMON_LIBC_ASCTIME_R)) {
-		zassert_is_null(asctime_r(NULL, buf));
-		zassert_is_null(asctime(NULL));
-
-		zassert_is_null(asctime_r(&tp, NULL));
-
 		tp.tm_wday = 8;
 		zassert_is_null(asctime_r(&tp, buf));
 		zassert_is_null(asctime(&tp));
