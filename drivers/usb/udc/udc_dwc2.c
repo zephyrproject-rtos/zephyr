@@ -2722,6 +2722,8 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	 */
 	evt = k_event_wait(&priv->drv_evt, UINT32_MAX, false, K_FOREVER);
 
+	udc_lock_internal(dev, K_FOREVER);
+
 	if (evt & BIT(DWC2_DRV_EVT_XFER)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 
@@ -2794,6 +2796,8 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 		config->irq_enable_func(dev);
 	}
+
+	udc_unlock_internal(dev);
 }
 
 static const struct udc_api udc_dwc2_api = {
