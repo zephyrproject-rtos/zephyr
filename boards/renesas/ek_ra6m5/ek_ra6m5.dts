@@ -69,7 +69,7 @@
 
 &pll {
 	clocks = <&xtal>;
-	div = <RA_PLL_DIV_3>;
+	div = <3>;
 	mul = <25 0>;
 	status = "okay";
 };
