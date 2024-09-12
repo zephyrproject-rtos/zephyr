@@ -91,10 +91,8 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_NAME_GET(dev_id) _CONCAT(__device_, dev_id)
 
-/* Node paths can exceed the maximum size supported by
- * device_get_binding() in user mode; this macro synthesizes a unique
- * dev_id from a devicetree node while staying within this maximum
- * size.
+/* This macro synthesizes a unique dev_id from a devicetree node by using
+ * the node's dependency ordinal.
  *
  * The ordinal used in this name can be mapped to the path by
  * examining zephyr/include/generated/zephyr/devicetree_generated.h.
