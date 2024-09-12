@@ -31,6 +31,8 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_SETUP,
 	/* Transaction on endpoint is finished */
 	DWC2_DRV_EVT_EP_FINISHED,
+	/* Remote Wakeup should be initiated */
+	DWC2_DRV_EVT_REMOTE_WAKEUP,
 	/* Core should enter hibernation */
 	DWC2_DRV_EVT_ENTER_HIBERNATION,
 	/* Core should exit hibernation due to bus reset */
@@ -115,6 +117,7 @@ struct udc_dwc2_data {
 	/* Configuration flags */
 	unsigned int dynfifosizing : 1;
 	unsigned int bufferdma : 1;
+	unsigned int syncrst : 1;
 	/* Runtime state flags */
 	unsigned int hibernated : 1;
 	unsigned int enumdone : 1;
@@ -900,7 +903,8 @@ static void dwc2_backup_registers(const struct device *dev)
 	backup->pcgcctl = sys_read32((mem_addr_t)&base->pcgcctl);
 }
 
-static void dwc2_restore_essential_registers(const struct device *dev)
+static void dwc2_restore_essential_registers(const struct device *dev,
+					     bool rwup)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = config->base;
@@ -921,7 +925,9 @@ static void dwc2_restore_essential_registers(const struct device *dev)
 	sys_write32(backup->gusbcfg, (mem_addr_t)&base->gusbcfg);
 	sys_write32(backup->dcfg, (mem_addr_t)&base->dcfg);
 
-	pcgcctl |= USB_DWC2_PCGCCTL_RESTOREMODE | USB_DWC2_PCGCCTL_RSTPDWNMODULE;
+	if (!rwup) {
+		pcgcctl |= USB_DWC2_PCGCCTL_RESTOREMODE | USB_DWC2_PCGCCTL_RSTPDWNMODULE;
+	}
 	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
 	k_busy_wait(1);
 
@@ -929,7 +935,7 @@ static void dwc2_restore_essential_registers(const struct device *dev)
 	sys_write32(pcgcctl, (mem_addr_t)&base->pcgcctl);
 }
 
-static void dwc2_restore_device_registers(const struct device *dev)
+static void dwc2_restore_device_registers(const struct device *dev, bool rwup)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = config->base;
@@ -948,7 +954,10 @@ static void dwc2_restore_device_registers(const struct device *dev)
 		sys_write32(backup->dieptxf[i - 1], (mem_addr_t)&base->dieptxf[i - 1]);
 	}
 
-	sys_write32(backup->dctl, (mem_addr_t)&base->dctl);
+	if (!rwup) {
+		sys_write32(backup->dctl, (mem_addr_t)&base->dctl);
+	}
+
 	sys_write32(backup->diepmsk, (mem_addr_t)&base->diepmsk);
 	sys_write32(backup->doepmsk, (mem_addr_t)&base->doepmsk);
 	sys_write32(backup->daintmsk, (mem_addr_t)&base->daintmsk);
@@ -1015,7 +1024,7 @@ static void dwc2_enter_hibernation(const struct device *dev)
 	LOG_DBG("Hibernated");
 }
 
-static void dwc2_exit_hibernation(const struct device *dev)
+static void dwc2_exit_hibernation(const struct device *dev, bool rwup)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct usb_dwc2_reg *const base = config->base;
@@ -1038,6 +1047,14 @@ static void dwc2_exit_hibernation(const struct device *dev)
 	/* Disable power clamps */
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNCLMP);
 
+	if (rwup) {
+		if (priv->syncrst) {
+			k_busy_wait(1);
+		} else {
+			k_busy_wait(50);
+		}
+	}
+
 	/* Remove reset to the controller */
 	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNRST_N);
 	k_busy_wait(1);
@@ -1045,7 +1062,9 @@ static void dwc2_exit_hibernation(const struct device *dev)
 	/* Disable PMU interrupt */
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUINTSEL);
 
-	dwc2_restore_essential_registers(dev);
+	dwc2_restore_essential_registers(dev, rwup);
+
+	/* Note: in Remote Wakeup case 15 ms max signaling time starts now */
 
 	/* Wait for Restore Done Interrupt */
 	dwc2_wait_for_bit(dev, (mem_addr_t)&base->gintsts, USB_DWC2_GINTSTS_RSTRDONEINT);
@@ -1055,8 +1074,10 @@ static void dwc2_exit_hibernation(const struct device *dev)
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_RESTORE);
 	k_busy_wait(1);
 
-	/* Clear reset to power down module */
-	sys_clear_bits(pcgcctl_reg, USB_DWC2_PCGCCTL_RSTPDWNMODULE);
+	if (!rwup) {
+		/* Clear reset to power down module */
+		sys_clear_bits(pcgcctl_reg, USB_DWC2_PCGCCTL_RSTPDWNMODULE);
+	}
 
 	/* Restore GUSBCFG, DCFG and DCTL */
 	sys_write32(priv->backup.gusbcfg, (mem_addr_t)&base->gusbcfg);
@@ -1065,9 +1086,15 @@ static void dwc2_exit_hibernation(const struct device *dev)
 
 	/* Disable PMU */
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PMUACTV);
-	k_busy_wait(5);
+	if (!rwup) {
+		k_busy_wait(5);
+		sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_PWRONPRGDONE);
+	} else {
+		k_busy_wait(1);
+		sys_write32(USB_DWC2_DCTL_RMTWKUPSIG | priv->backup.dctl,
+			    (mem_addr_t)&base->dctl);
+	}
 
-	sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_PWRONPRGDONE);
 	k_msleep(1);
 	sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
 }
@@ -1621,9 +1648,13 @@ static int udc_dwc2_test_mode(const struct device *dev,
 
 static int udc_dwc2_host_wakeup(const struct device *dev)
 {
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
 	LOG_DBG("Remote wakeup from %p", dev);
 
-	return -ENOTSUP;
+	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_REMOTE_WAKEUP));
+
+	return 0;
 }
 
 /* Return actual USB device speed */
@@ -1784,6 +1815,10 @@ static int udc_dwc2_init_controller(const struct device *dev)
 
 	LOG_DBG("LPM mode is %s",
 		(ghwcfg3 & USB_DWC2_GHWCFG3_LPMMODE) ? "enabled" : "disabled");
+
+	if (ghwcfg3 & USB_DWC2_GHWCFG3_RSTTYPE) {
+		priv->syncrst = 1;
+	}
 
 	/* Configure AHB, select Completer or DMA mode */
 	gahbcfg = sys_read32(gahbcfg_reg);
@@ -1988,7 +2023,7 @@ static int udc_dwc2_disable(const struct device *dev)
 	config->irq_disable_func(dev);
 
 	if (priv->hibernated) {
-		dwc2_exit_hibernation(dev);
+		dwc2_exit_hibernation(dev, false);
 		priv->hibernated = 0;
 	}
 
@@ -2045,6 +2080,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 	k_event_init(&priv->xfer_new);
 	k_event_init(&priv->xfer_finished);
 
+	data->caps.rwup = true;
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 
@@ -2704,19 +2740,35 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 }
 
 static void dwc2_handle_hibernation_exit(const struct device *dev,
-					 bool bus_reset)
+					 bool rwup, bool bus_reset)
 {
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
-	dwc2_exit_hibernation(dev);
-	dwc2_restore_device_registers(dev);
+	dwc2_exit_hibernation(dev, rwup);
+	dwc2_restore_device_registers(dev, rwup);
 
 	priv->hibernated = 0;
-	LOG_DBG("Hibernation exit complete");
+	if (!rwup) {
+		LOG_DBG("Hibernation exit complete");
+	}
 
 	/* Let stack know we are no longer suspended */
 	udc_set_suspended(dev, false);
 	udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
+	if (rwup) {
+		/* Resume has been driven for at least 1 ms now, do 1 ms more to
+		 * have sufficient margin.
+		 */
+		k_msleep(1);
+
+		sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_RMTWKUPSIG);
+	}
+
+	if (rwup) {
+		LOG_DBG("Hibernation exit on Remote Wakeup complete");
+	}
 
 	if (bus_reset) {
 		/* Clear all pending transfers */
@@ -2754,6 +2806,7 @@ static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
 static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 {
 	const struct device *dev = (const struct device *)arg;
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_ep_config *ep_cfg;
@@ -2833,6 +2886,29 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		dwc2_handle_evt_setup(dev);
 	}
 
+	if (evt & BIT(DWC2_DRV_EVT_REMOTE_WAKEUP)) {
+		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_REMOTE_WAKEUP) |
+			      BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
+
+		if (priv->hibernated) {
+			config->irq_disable_func(dev);
+
+			dwc2_handle_hibernation_exit(dev, true, false);
+
+			config->irq_enable_func(dev);
+		} else {
+			sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_RMTWKUPSIG);
+
+			udc_set_suspended(dev, false);
+			udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
+			/* Drive resume for 2 ms to have sufficient margin */
+			k_msleep(2);
+
+			sys_clear_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_RMTWKUPSIG);
+		}
+	}
+
 	if (evt & BIT(DWC2_DRV_EVT_ENTER_HIBERNATION)) {
 		config->irq_disable_func(dev);
 
@@ -2856,7 +2932,7 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		bus_reset = prev & BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET);
 
 		if (priv->hibernated) {
-			dwc2_handle_hibernation_exit(dev, bus_reset);
+			dwc2_handle_hibernation_exit(dev, false, bus_reset);
 		}
 
 		config->irq_enable_func(dev);
