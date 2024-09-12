@@ -194,6 +194,10 @@ static int video_esp32_stream_start(const struct device *dev)
 
 	cam_hal_start_streaming(&data->hal);
 
+	if (video_stream_start(cfg->source_dev)) {
+		return -EIO;
+	}
+
 	data->is_streaming = true;
 
 	return 0;
@@ -206,6 +210,10 @@ static int video_esp32_stream_stop(const struct device *dev)
 	int ret = 0;
 
 	LOG_DBG("Stop streaming");
+
+	if (video_stream_stop(cfg->source_dev)) {
+		return -EIO;
+	}
 
 	data->is_streaming = false;
 	ret = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
