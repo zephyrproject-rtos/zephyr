@@ -1081,10 +1081,9 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 			      struct sdhc_data *data)
 {
 	const struct sdhc_esp32_config *cfg = dev->config;
-	const sdmmc_dev_t *sdio_hw = cfg->sdio_hw;
 	int retries = (int)(cmd->retries + 1); /* first try plus retries */
-	uint32_t timeout_cfg;
-	int ret_esp;
+	uint32_t timeout_cfg = 0;
+	int ret_esp = 0;
 	int ret = 0;
 
 	/* convert command structures Zephyr vs ESP */
