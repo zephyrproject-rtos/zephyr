@@ -69,6 +69,61 @@ extern "C" {
 #define I2C_MODE_CONTROLLER		BIT(4)
 
 /**
+ * I2C driver common data
+ */
+struct i2c_common_data {
+	struct k_sem transfer_lock;
+};
+
+/**
+ * TODO: doc
+ */
+static inline int i2c_common_init(const struct device *dev)
+{
+	struct i2c_common_data *data = (struct i2c_common_data *)dev->data;
+
+	k_sem_init(&data->transfer_lock, 1, 1);
+
+	return 0;
+}
+
+/**
+ * TODO: doc
+ */
+__syscall int i2c_bus_lock(const struct device *dev, k_timeout_t timeout);
+
+static inline int z_impl_i2c_bus_lock(const struct device *dev, k_timeout_t timeout)
+{
+	struct i2c_common_data *data = (struct i2c_common_data *)dev->data;
+
+	return k_sem_take(&data->transfer_lock, timeout);
+}
+
+/**
+ * TODO: doc
+ */
+__syscall void i2c_bus_unlock(const struct device *dev);
+
+static inline void z_impl_i2c_bus_unlock(const struct device *dev)
+{
+	struct i2c_common_data *data = (struct i2c_common_data *)dev->data;
+
+	return k_sem_give(&data->transfer_lock);
+}
+
+/**
+ * TODO: doc
+ */
+__syscall bool i2c_bus_is_locked(const struct device *dev);
+
+static inline bool z_impl_i2c_bus_is_locked(const struct device *dev)
+{
+	struct i2c_common_data *data = (struct i2c_common_data *)dev->data;
+
+	return k_sem_count_get(&data->transfer_lock) == 0;
+}
+
+/**
  * @brief Complete I2C DT information
  *
  * @param bus is the I2C bus
@@ -756,6 +811,34 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
 }
 
 /**
+ * TODO: doc
+ */
+__syscall int i2c_transfer_unlocked(const struct device *dev,
+				    struct i2c_msg *msgs, uint8_t num_msgs,
+				    uint16_t addr);
+
+static inline int z_impl_i2c_transfer_unlocked(const struct device *dev,
+					struct i2c_msg *msgs, uint8_t num_msgs,
+					uint16_t addr)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->api;
+	int res;
+
+	__ASSERT(i2c_bus_is_locked(dev), "unlocked transfer while not holding the lock");
+
+	res = api->transfer(dev, msgs, num_msgs, addr);
+
+	i2c_xfer_stats(dev, msgs, num_msgs);
+
+	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
+		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
+	}
+
+	return res;
+}
+
+/**
  * @brief Perform data transfer to another I2C device in controller mode.
  *
  * This routine provides a generic interface to perform data transfer
@@ -794,8 +877,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 				      struct i2c_msg *msgs, uint8_t num_msgs,
 				      uint16_t addr)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+	int res;
 
 	if (!num_msgs) {
 		return 0;
@@ -805,18 +887,29 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 		msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
 	}
 
-	int res =  api->transfer(dev, msgs, num_msgs, addr);
-
-	i2c_xfer_stats(dev, msgs, num_msgs);
-
-	if (IS_ENABLED(CONFIG_I2C_DUMP_MESSAGES)) {
-		i2c_dump_msgs_rw(dev, msgs, num_msgs, addr, true);
-	}
+	i2c_bus_lock(dev, K_FOREVER);
+	res = i2c_transfer_unlocked(dev, msgs, num_msgs, addr);
+	i2c_bus_unlock(dev);
 
 	return res;
 }
 
 #if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
+
+static inline int i2c_transfer_cb_unlocked(const struct device *dev,
+					   struct i2c_msg *msgs,
+					   uint8_t num_msgs,
+					   uint16_t addr,
+					   i2c_callback_t cb,
+					   void *userdata)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->api;
+
+	__ASSERT(i2c_bus_is_locked(dev), "unlocked transfer while not holding the lock");
+
+	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+}
 
 /**
  * @brief Perform data transfer to another I2C device in controller mode.
@@ -849,6 +942,7 @@ static inline int i2c_transfer_cb(const struct device *dev,
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->api;
+	int res;
 
 	if (api->transfer_cb == NULL) {
 		return -ENOSYS;
@@ -863,7 +957,11 @@ static inline int i2c_transfer_cb(const struct device *dev,
 		msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
 	}
 
-	return api->transfer_cb(dev, msgs, num_msgs, addr, cb, userdata);
+	i2c_bus_lock(dev, K_FOREVER);
+	res = i2c_transfer_cb_unlocked(dev, msgs, num_msgs, addr, cb, userdata);
+	i2c_bus_unlock(dev);
+
+	return res;
 }
 
 /**

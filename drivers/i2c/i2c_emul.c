@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(i2c_emul_ctlr);
 
 /** Working data for the device */
 struct i2c_emul_data {
+	struct i2c_common_data common;
 	/* List of struct i2c_emul associated with the device */
 	sys_slist_t emuls;
 	/* I2C host configuration */
@@ -249,11 +250,14 @@ static int i2c_emul_init(const struct device *dev)
 	sys_slist_init(&data->emuls);
 
 	rc = emul_init_for_bus(dev);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Set config to an uninitialized state */
 	data->config = (I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(data->bitrate));
 
-	return rc;
+	return i2c_common_init(dev);
 }
 
 int i2c_emul_register(const struct device *dev, struct i2c_emul *emul)

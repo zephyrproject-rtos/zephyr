@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 #endif
 
 struct i2c_nrfx_twim_data {
+	struct i2c_common_data common;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
@@ -197,11 +198,17 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 static int i2c_nrfx_twim_init(const struct device *dev)
 {
 	struct i2c_nrfx_twim_data *data = dev->data;
+	int ret;
 
 	k_sem_init(&data->transfer_sync, 1, 1);
 	k_sem_init(&data->completion_sync, 0, 1);
 
-	return i2c_nrfx_twim_common_init(dev);
+	ret = i2c_nrfx_twim_common_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return i2c_common_init(dev);
 }
 
 static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
