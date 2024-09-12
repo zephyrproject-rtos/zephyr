@@ -67,9 +67,11 @@ __used RAM_VR_TypeDef RAM_VR;
 					(LL_PWR_SMPS_LPOPEN),		\
 					(LL_PWR_NO_SMPS_LPOPEN))
 
+#if defined(PWR_CR5_SMPS_PRECH_CUR_SEL)
 	#define SMPS_CURRENT_LIMIT					\
 		_CONCAT(LL_PWR_SMPS_PRECH_LIMIT_CUR_,			\
 			DT_STRING_UNQUOTED(PWRC, smps_current_limit))
+#endif /* PWR_CR5_SMPS_PRECH_CUR_SEL */
 
 	#define SMPS_OUTPUT_VOLTAGE					\
 			_CONCAT(LL_PWR_SMPS_OUTPUT_VOLTAGE_,		\
@@ -112,11 +114,15 @@ static void configure_smps(void)
 	}
 
 	if (SMPS_MODE == STM32WB0_SMPS_MODE_PRECHARGE) {
+#if defined(PWR_CR5_SMPS_PRECH_CUR_SEL)
 		/**
-		 * SMPS should remain in PRECHARGE mode, but
-		 * we still have to configure the current limit.
+		 * SMPS should remain in PRECHARGE mode.
+		 * We still have to configure the output current
+		 * limit specified in Device Tree, though this
+		 * can only be done if this SoC supports it.
 		 */
 		LL_PWR_SetSMPSPrechargeLimitCurrent(SMPS_CURRENT_LIMIT);
+#endif /* PWR_CR5_SMPS_PRECH_CUR_SEL */
 	} else {
 		/**
 		 * SMPS mode requested is RUN mode. Configure the output
