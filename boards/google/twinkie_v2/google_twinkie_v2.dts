@@ -123,7 +123,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@15 {
+	channel@f {
 		reg = <15>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -132,7 +132,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@17 {
+	channel@11 {
 		reg = <17>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
@@ -141,7 +141,7 @@
 		zephyr,resolution = <12>;
 	};
 
-	channel@18 {
+	channel@12 {
 		reg = <18>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
