@@ -24,6 +24,7 @@ zephyr_library_sources(
 	cpu_wait.c
 	argparse.c
 	nsi_if.c
+	native_remap.c
 	soc/nrfx_coredep.c
 	common/bstests_entry.c
 	common/cmsis/cmsis.c
