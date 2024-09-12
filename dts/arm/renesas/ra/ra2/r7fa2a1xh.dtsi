@@ -64,7 +64,7 @@
 			reg-names = "MSTPA", "MSTPB","MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
-			sysclock-src = <RA_CLOCK_SOURCE_HOCO>;
+			clocks = <&hoco>;
 			status = "okay";
 
 			iclk: iclk {

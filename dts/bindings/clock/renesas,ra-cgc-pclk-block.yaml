@@ -8,6 +8,5 @@ compatible: "renesas,ra-cgc-pclk-block"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-  sysclock-src:
+  clocks:
     required: true
-    type: int
