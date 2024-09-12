@@ -7,6 +7,7 @@
 zephyr_sources(soc.c)
 
 if(CONFIG_SOC_MIMXRT1189_CM33)
+  zephyr_sources(m33/mpu_regions.c)
   zephyr_linker_sources(DTCM_SECTION m33/dtcm.ld)
 endif()
 
