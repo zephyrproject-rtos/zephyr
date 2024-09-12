@@ -228,7 +228,7 @@
 			#clock-cells = <0>;
 
 			/* PLL */
-			source = <RA_PLL_SOURCE_MAIN_OSC>;
+			clocks = <&xtal>;
 			div = <RA_PLL_DIV_3>;
 			mul = <25 0>;
 			status = "disabled";
@@ -239,7 +239,6 @@
 			#clock-cells = <0>;
 
 			/* PLL2 */
-			source = <RA_PLL_SOURCE_DISABLE>;
 			div = <RA_PLL_DIV_2>;
 			mul = <20 0>;
 			status = "disabled";
@@ -252,7 +251,7 @@
 			reg-names = "MSTPA", "MSTPB","MSTPC",
 				    "MSTPD", "MSTPE";
 			#clock-cells = <0>;
-			sysclock-src = <RA_CLOCK_SOURCE_PLL>;
+			clocks = <&pll>;
 			status = "okay";
 
 			iclk: iclk {

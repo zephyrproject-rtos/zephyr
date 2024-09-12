@@ -79,7 +79,7 @@
 };
 
 &pll {
-	source = <RA_PLL_SOURCE_MAIN_OSC>;
+	clocks = <&xtal>;
 	div = <RA_PLL_DIV_2>;
 	mul = <96 0>;
 	divp = <RA_PLL_DIV_2>;
@@ -92,7 +92,7 @@
 };
 
 &sciclk {
-	clk-src = <RA_CLOCK_SOURCE_PLL1P>;
+	clocks = <&pll>;
 	clk-div = <RA_SCI_CLOCK_DIV_4>;
 	status = "okay";
 };
