@@ -663,7 +663,10 @@ out:
 	return ret;
 }
 
-int i3c_ccc_do_setvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *payload, size_t len)
+int i3c_ccc_do_setvendor(const struct i3c_device_desc *target,
+			 uint8_t id,
+			 uint8_t *payload,
+			 size_t len)
 {
 	struct i3c_ccc_payload ccc_payload;
 
@@ -682,7 +685,10 @@ int i3c_ccc_do_setvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *pa
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
 
-int i3c_ccc_do_getvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *payload, size_t len,
+int i3c_ccc_do_getvendor(const struct i3c_device_desc *target,
+			 uint8_t id,
+			 uint8_t *payload,
+			 size_t len,
 			 size_t *num_xfer)
 {
 	struct i3c_ccc_payload ccc_payload;
@@ -715,8 +721,12 @@ int i3c_ccc_do_getvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *pa
 	return ret;
 }
 
-int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target, uint8_t id, uint8_t defbyte,
-				 uint8_t *payload, size_t len, size_t *num_xfer)
+int i3c_ccc_do_getvendor_defbyte(const struct i3c_device_desc *target,
+				 uint8_t id,
+				 uint8_t defbyte,
+				 uint8_t *payload,
+				 size_t len,
+				 size_t *num_xfer)
 {
 	struct i3c_ccc_payload ccc_payload;
 	struct i3c_ccc_target_payload ccc_tgt_payload;
@@ -750,8 +760,10 @@ int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target, uint8_t id, uin
 	return ret;
 }
 
-int i3c_ccc_do_setvendor_all(const struct device *controller, uint8_t id, uint8_t *payload,
-			     size_t len)
+int i3c_ccc_do_setvendor_all(const struct device *controller,
+				 uint8_t id,
+				 uint8_t *payload,
+				 size_t len)
 {
 	struct i3c_ccc_payload ccc_payload;
 
