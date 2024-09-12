@@ -975,6 +975,9 @@ struct i3c_device_desc {
 		uint8_t max_ibi;
 	} data_length;
 
+	/** Controller Handoff Delay Parameters */
+	uint8_t crhdly1;
+
 	/** Describes advanced (Target) capabilities and features */
 	struct {
 		union {
@@ -1026,6 +1029,28 @@ struct i3c_device_desc {
 		 */
 		uint8_t getcap4;
 	} getcaps;
+
+	/* Describes Controller Feature Capabilities */
+	struct {
+		/**
+		 * CRCAPS1
+		 * - Bit[0]: Hot-Join Support
+		 * - Bit[1]: Group Management Support
+		 * - Bit[2]: Multi-Lane Support
+		 * - Bit[7:3]: Reserved
+		 */
+		uint8_t crcaps1;
+
+		/**
+		 * CRCAPS2
+		 * - Bit[0]: In-Band Interrupt Support
+		 * - Bit[1]: Controller Pass-Back
+		 * - Bit[2]: Deep Sleep Capable
+		 * - Bit[3]: Delayed Controller Handoff
+		 * - Bit[7:4]: Reserved
+		 */
+		uint8_t crcaps2;
+	} crcaps;
 
 	/** @cond INTERNAL_HIDDEN */
 	/**

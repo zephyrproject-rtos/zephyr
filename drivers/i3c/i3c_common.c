@@ -509,20 +509,33 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target)
 		ret = 0;
 	}
 
+	/* CRCAPS */
+	if ((target->getcaps.getcap3 & I3C_CCC_GETCAPS3_GETCAPS_DEFINING_BYTE_SUPPORT) &&
+		    (i3c_device_is_controller_capable(target))) {
+		ret = i3c_ccc_do_getcaps_fmt2(target, &caps, GETCAPS_FORMAT_2_CRCAPS);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	/* GETMXDS */
 	if (target->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT) {
 		ret = i3c_ccc_do_getmxds_fmt2(target, &mxds);
 		if (ret != 0) {
 			return ret;
 		}
+
+		/* Get CRHDLY if supported */
+		if ((target->data_speed.maxwr & I3C_CCC_GETMXDS_MAXWR_DEFINING_BYTE_SUPPORT) &&
+		    (i3c_device_is_controller_capable(target))) {
+			ret = i3c_ccc_do_getmxds_fmt3(target, &mxds, GETMXDS_FORMAT_3_CRHDLY);
+			if (ret != 0) {
+				return ret;
+			}
+
+			target->crhdly1 = mxds.fmt3.crhdly1;
+		}
 	}
-
-	/* Some values may not have been read, but set them back to 0 */
-	memcpy(&target->getcaps, &caps, sizeof(target->getcaps));
-
-	target->data_speed.maxrd = mxds.fmt2.maxrd;
-	target->data_speed.maxwr = mxds.fmt2.maxwr;
-	target->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
 
 	target->data_length.mrl = mrl.len;
 	target->data_length.mwl = mwl.len;
