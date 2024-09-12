@@ -146,6 +146,24 @@ typedef int16_t device_handle_t;
 			&Z_DEVICE_STATE_NAME(dev_id))
 
 /**
+ * @brief Return the device id whether it's a devicetree based device or not
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ */
+#define Z_DEVICE_ID(ident)                                      \
+	COND_CODE_1(DT_NODE_EXISTS(ident),                      \
+		    (Z_DEVICE_DT_DEV_ID(ident)), (ident))
+
+/**
+ * @brief Return the device name whether it's a devicetree based device or not
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ */
+#define Z_DEVICE_NAME(ident)                                            \
+	COND_CODE_1(DT_NODE_EXISTS(ident),                              \
+		    (DEVICE_DT_NAME(ident)), (STRINGIFY(ident)))
+
+/**
  * @brief Return a string name for a devicetree node.
  *
  * This macro returns a string literal usable as a device's name from a
@@ -211,6 +229,64 @@ typedef int16_t device_handle_t;
 	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES, (Z_DEVICE_EXPORT(node_id);))
 
 /**
+ * @brief Create a device object and set it up for boot time initialization.
+ *
+ * @note This macro supports both devicetree based device as well as
+ * non-devicetree based device (legacy support).
+ *
+ * This macro defines a @ref device that is automatically configured by the
+ * kernel during system initialization. If the given identifier is a plain
+ * unique token, it will be used in the name of the global device structure
+ * as a C identifier as well as its @ref device.name.
+ * If the given identifier is a devicetree node itentifier, the global device
+ * object's name as a C will be derived from the node's dependency ordinal
+ * (DT based) and @ref device.name will be set to `DEVICE_DT_NAME(node_id)`.
+ *
+ * The device is declared with extern visibility, so a pointer to a global
+ * device object can be obtained either with `DEVICE_DT_GET(node_id)` in case
+ * the device is devicetree based, or with `DEVICE_GET(dev_id)` for
+ * non-devicetree legacy devices. And this from any source file that includes
+ * `<zephyr/device.h>`. Before using the pointer, the referenced object should
+ * be checked using device_is_ready().
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param init_fn Pointer to the device's initialization function, which will be
+ * run by the kernel during system initialization. Can be `NULL`.
+ * @param pm Pointer to the device's power management resources, a
+ * @ref pm_device, which will be stored in @ref device.pm. Use `NULL` if the
+ * device does not use PM.
+ * @param data Pointer to the device's private mutable data, which will be
+ * stored in @ref device.data.
+ * @param config Pointer to the device's private constant data, which will be
+ * stored in @ref device.config field.
+ * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
+ * POST_KERNEL).
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ */
+#define DEVICE_INSTANCE(ident, init_fn, pm, data, config, level, api)    \
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_ID(ident));                       \
+	Z_DEVICE_DEFINE(ident, Z_DEVICE_ID(ident),                       \
+			Z_DEVICE_NAME(ident), init_fn, pm, data, config, \
+			ZINIT_GET_LEVEL(Z_DEVICE_ID(ident), level),      \
+			ZINIT_GET_PRIORITY(ident, Z_DEVICE_ID(ident)),   \
+			api, &Z_DEVICE_STATE_NAME(Z_DEVICE_ID(ident)))
+
+/**
+ * @brief Like DEVICE_INSTANCE(), but with an extra parameter in order to
+ * provide an externaly defined device state object.
+ *
+ * First parameters are as expected by DEVICE_INSTANCE().
+ * @param state A pointer on the externally defined device state object
+ */
+#define DEVICE_INSTANCE_EXTERNAL_STATE(ident, init_fn, pm, data,         \
+				       config, level, api, state)	 \
+	Z_DEVICE_DEFINE(ident, Z_DEVICE_ID(ident),                       \
+			Z_DEVICE_NAME(ident), init_fn, pm, data, config, \
+			ZINIT_GET_LEVEL(Z_DEVICE_ID(ident), level),      \
+			ZINIT_GET_PRIORITY(ident, Z_DEVICE_ID(ident)),   \
+			api, state)
+
+/**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
  * compatible instead of a node identifier.
  *
@@ -220,6 +296,17 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_INST_DEFINE(inst, ...)                                       \
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_INSTANCE, but uses an instance of a `DT_DRV_COMPAT`
+ * compatible instead of a node identifier.
+
+ * @param inst Instance number. The `ident` argument to DEVICE_INSTANCE() is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_INSTANCE().
+ */
+#define DEVICE_INSTANCE_FROM_DT_INST(inst, init_fn, pm, data, config, level, api) \
+	DEVICE_INSTANCE(DT_DRV_INST(inst), init_fn, pm, data, config, level, api)
 
 /**
  * @brief The name of the global device object for @p node_id
@@ -334,6 +421,15 @@ typedef int16_t device_handle_t;
 #define DEVICE_GET(dev_id) (&DEVICE_NAME_GET(dev_id))
 
 /**
+ * @brief Obtain a pointer to a device object
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ */
+#define DEVICE_INSTANCE_GET(ident)                                      \
+	COND_CODE_1(DT_NODE_EXISTS(ident),                              \
+		    (&DEVICE_DT_NAME_GET(ident)), (&DEVICE_NAME_GET(ident)))
+
+/**
  * @brief Declare a static device object
  *
  * This macro can be used at the top-level to declare a device, such
@@ -368,6 +464,16 @@ typedef int16_t device_handle_t;
  * @return A pointer to the init_entry object created for that device
  */
 #define DEVICE_INIT_GET(dev_id) (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)))
+
+/**
+ * @brief Get a @ref init_entry reference from a device
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ */
+#define DEVICE_INIT_ENTRY_GET(ident)                                    \
+	COND_CODE_1(DT_NODE_EXISTS(ident),                              \
+		    (&Z_INIT_ENTRY_NAME(DEVICE_DT_NAME_GET(ident))),    \
+		    (&Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(ident))))
 
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
