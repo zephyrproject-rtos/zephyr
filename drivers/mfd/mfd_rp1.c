@@ -19,6 +19,10 @@ struct mfd_rp1_config {
 	size_t cfg_size;
 };
 
+struct mfd_rp1_data {
+};
+
+
 static int mfd_rp1_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);

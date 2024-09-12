@@ -158,16 +158,14 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define SZ_1M 0x100000
 
-// struct pcie_brcmstb_config {
-// 	struct pcie_ctrl_config common;
-// 	size_t dma_ranges_count;
-// 	struct {
-// 		uint32_t flags;
-// 		uintptr_t child_addr;
-// 		uintptr_t parent_addr;
-// 		size_t size;
-// 	} dma_ranges[];
-// };
+struct pcie_brcmstb_config {
+	const struct pcie_ctrl_config *common;
+	size_t regs_count;
+	struct {
+		uintptr_t addr;
+		size_t size;
+	} regs[BAR_MAX];
+};
 
 enum pcie_region_type {
 	PCIE_REGION_IO = 0,
@@ -229,7 +227,7 @@ static mm_reg_t pcie_brcmstb_map_bus(const struct device *dev, pcie_bdf_t bdf, u
 
 static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
-	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
 	if (!conf_addr) {
 		return 0xffffffff;
 	}
@@ -240,7 +238,7 @@ static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf,
 void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
 			     uint32_t data)
 {
-	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
 	if (!conf_addr) {
 		return;
 	}
@@ -265,10 +263,6 @@ static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pc
 
 	*bar_bus_addr = addr;
 	data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
-
-	// TODO: Replace this with pcie_brcmstb_conf_write
-	sys_write32(addr, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_BASE_ADDRESS_0 +
-				  0x4 * data->bar_cnt++);
 
 	return true;
 }
@@ -368,34 +362,39 @@ static struct pcie_ctrl_driver_api pcie_brcmstb_api = {
 
 static int pcie_brcmstb_parse_regions(const struct device *dev)
 {
-	const struct pcie_ctrl_config *config = dev->config;
+	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
 	int i;
 
 	for (i = 0; i < DMA_RANGES_IDX; i++) {
-		switch ((config->ranges[i].flags >> 24) & 0x03) {
+		switch ((config->common->ranges[i].flags >> 24) & 0x03) {
 		case 0x01:
-			data->regions[PCIE_REGION_IO].bus_start = config->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_IO].phys_start = config->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_IO].size = config->ranges[i].map_length;
+			data->regions[PCIE_REGION_IO].bus_start =
+				config->common->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_IO].phys_start =
+				config->common->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_IO].size = config->common->ranges[i].map_length;
 			if (data->regions[PCIE_REGION_IO].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_IO].allocation_offset = 0x1000;
 			}
 			break;
 		case 0x02:
-			data->regions[PCIE_REGION_MEM].bus_start = config->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_MEM].phys_start = config->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_MEM].size = config->ranges[i].map_length;
+			data->regions[PCIE_REGION_MEM].bus_start =
+				config->common->ranges[i].pcie_bus_addr;
+			data->regions[PCIE_REGION_MEM].phys_start =
+				config->common->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_MEM].size = config->common->ranges[i].map_length;
 			if (data->regions[PCIE_REGION_MEM].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_MEM].allocation_offset = 0x1000;
 			}
 			break;
 		case 0x03:
 			data->regions[PCIE_REGION_MEM64].bus_start =
-				config->ranges[i].pcie_bus_addr;
+				config->common->ranges[i].pcie_bus_addr;
 			data->regions[PCIE_REGION_MEM64].phys_start =
-				config->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_MEM64].size = config->ranges[i].map_length;
+				config->common->ranges[i].host_map_addr;
+			data->regions[PCIE_REGION_MEM64].size =
+				config->common->ranges[i].map_length;
 			if (data->regions[PCIE_REGION_MEM64].bus_start < 0x1000) {
 				data->regions[PCIE_REGION_MEM64].allocation_offset = 0x1000;
 			}
@@ -474,7 +473,7 @@ static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win,
 
 static int pcie_brcmstb_setup(const struct device *dev)
 {
-	const struct pcie_ctrl_config *config = dev->config;
+	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
 	uint32_t tmp;
 	uint16_t tmp16;
@@ -493,9 +492,9 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	tmp |= (BCM2712_BURST_SIZE << PCIE_MISC_MISC_CTRL_MAX_BURST_SIZE_LSB);
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_MISC_CTRL);
 
-	uint64_t rc_bar2_offset = config->ranges[DMA_RANGES_IDX].host_map_addr -
-				  config->ranges[DMA_RANGES_IDX].pcie_bus_addr;
-	uint64_t rc_bar2_size = config->ranges[DMA_RANGES_IDX].map_length;
+	uint64_t rc_bar2_offset = config->common->ranges[DMA_RANGES_IDX].host_map_addr -
+				  config->common->ranges[DMA_RANGES_IDX].pcie_bus_addr;
+	uint64_t rc_bar2_size = config->common->ranges[DMA_RANGES_IDX].map_length;
 
 	tmp = lower_32_bits(rc_bar2_offset);
 	tmp &= ~PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_MASK;
@@ -510,7 +509,7 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	/* Set SCB Size */
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_MISC_CTRL);
 	tmp &= ~PCIE_MISC_MISC_CTRL_SCB0_SIZE_MASK;
-	tmp |= (ilog2(config->ranges[DMA_RANGES_IDX].map_length) - 15)
+	tmp |= (ilog2(config->common->ranges[DMA_RANGES_IDX].map_length) - 15)
 	       << PCIE_MISC_MISC_CTRL_SCB0_SIZE_LSB;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_MISC_CTRL);
 
@@ -559,12 +558,12 @@ static int pcie_brcmstb_setup(const struct device *dev)
 
 static int pcie_brcmstb_init(const struct device *dev)
 {
-	const struct pcie_ctrl_config *config = dev->config;
+	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
 	uint32_t tmp;
 	int ret;
 
-	if (config->ranges_count < DMA_RANGES_IDX) {
+	if (config->common->ranges_count < DMA_RANGES_IDX) {
 		/* Workaround since macros for `dma-ranges` property is not available */
 		return -EINVAL;
 	}
@@ -573,8 +572,8 @@ static int pcie_brcmstb_init(const struct device *dev)
 		return ret;
 	}
 
-	data->cfg_phys_addr = config->cfg_addr;
-	data->cfg_size = config->cfg_size;
+	data->cfg_phys_addr = config->common->cfg_addr;
+	data->cfg_size = config->common->cfg_size;
 
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
 
@@ -594,9 +593,15 @@ static int pcie_brcmstb_init(const struct device *dev)
 	sys_write32(tmp, data->cfg_addr + PCI_COMMAND);
 
 	for (int i = 0; i < DMA_RANGES_IDX; i++) {
-		pcie_brcmstb_set_outbound_win(dev, i, config->ranges[i].host_map_addr,
-					      config->ranges[i].pcie_bus_addr,
-					      config->ranges[i].map_length);
+		pcie_brcmstb_set_outbound_win(dev, i, config->common->ranges[i].host_map_addr,
+					      config->common->ranges[i].pcie_bus_addr,
+					      config->common->ranges[i].map_length);
+	}
+
+	// TODO: It might be possible to do this without extra <regs> property
+	for (int i = 1; i < config->regs_count; i++) {
+		sys_write32(config->regs[i].addr, data->cfg_addr + PCIE_EXT_CFG_DATA +
+							  PCI_BASE_ADDRESS_0 + 0x4 * (i - 1));
 	}
 
 	/* Enable resources */
@@ -610,13 +615,27 @@ static int pcie_brcmstb_init(const struct device *dev)
 
 /* TODO: POST_KERNEL is set to use printk, revert this after the development is done */
 #define PCIE_BRCMSTB_INIT(n)                                                                       \
-	static struct pcie_brcmstb_data pcie_brcmstb_data_##n;                                     \
+	static struct pcie_brcmstb_data pcie_brcmstb_data_##n = {};                                \
                                                                                                    \
-	static const struct pcie_ctrl_config pcie_brcmstb_cfg_##n = {                              \
+	static const struct pcie_ctrl_config pcie_ctrl_cfg_##n = {                                 \
 		.cfg_addr = DT_INST_REG_ADDR(n),                                                   \
 		.cfg_size = DT_INST_REG_SIZE(n),                                                   \
 		.ranges_count = DT_NUM_RANGES(DT_DRV_INST(n)),                                     \
 		.ranges = {DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)},                   \
+	};                                                                                         \
+                                                                                                   \
+	static const struct pcie_brcmstb_config pcie_brcmstb_cfg_##n = {                           \
+		.common = &pcie_ctrl_cfg_##n,                                                      \
+		.regs_count = DT_NUM_REGS(DT_DRV_INST(n)),                                         \
+		.regs =                                                                            \
+			{                                                                          \
+				{DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 0),                            \
+				 DT_REG_SIZE_BY_IDX(DT_DRV_INST(n), 0)},                           \
+				{DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                            \
+				 DT_REG_SIZE_BY_IDX(DT_DRV_INST(n), 1)},                           \
+				{DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 2),                            \
+				 DT_REG_SIZE_BY_IDX(DT_DRV_INST(n), 2)},                           \
+			},                                                                         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, pcie_brcmstb_init, NULL, &pcie_brcmstb_data_##n,                  \
