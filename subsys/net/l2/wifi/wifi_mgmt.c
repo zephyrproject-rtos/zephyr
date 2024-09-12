@@ -555,6 +555,39 @@ static int wifi_iface_stats_reset(uint32_t mgmt_request, struct net_if *iface,
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI, wifi_iface_stats_reset);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
+static int wifi_11k_cfg(uint32_t mgmt_request, struct net_if *iface,
+			void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_11k_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->cfg_11k == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->cfg_11k(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG, wifi_11k_cfg);
+
+static int wifi_11k_neighbor_request(uint32_t mgmt_request, struct net_if *iface,
+				     void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_11k_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->send_11k_neighbor_request == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->send_11k_neighbor_request(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST,
+				  wifi_11k_neighbor_request);
+
 static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {
