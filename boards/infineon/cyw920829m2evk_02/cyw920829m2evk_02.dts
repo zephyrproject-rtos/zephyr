@@ -120,7 +120,7 @@ uart2: &scb2 {
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				storage_partition: storage_partition@70000 {
+				storage_partition: storage_partition@60000 {
 					compatible = "soc-nv-flash";
 					reg = <0x60000 DT_SIZE_K(64)>;
 				};
