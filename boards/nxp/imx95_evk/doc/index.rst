@@ -224,25 +224,45 @@ multiple elements required, like ELE+V2X firmware, System Manager, TCM OEI, Cort
 image and so on.
 
 The steps making flash.bin and programming should refer to ``Getting Started with
-MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_.
+MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_. Note that
+for the DDR variant, one should use the Makefile targets containing the ``ddr`` keyword.
 
 See ``4.2 Run an example application``, just rename ``zephyr.bin`` to ``m7_image.bin``
 to make flash.bin and program to SD/eMMC.
 
-Here is an example for the :zephyr:code-sample:`hello_world` application.
+Zephyr supports two M7-based i.MX95 boards: ``imx95_evk/mimx9596/m7`` and
+``imx95_evk/mimx9596/m7/ddr``. The main difference between them is the memory
+used. ``imx95_evk/mimx9596/m7`` uses TCM (ITCM for code and, generally, read-only
+data and DTCM for R/W data), while ``imx95_evk/mimx9596/m7/ddr`` uses DDR.
+
+1. Building the :zephyr:code-sample:`hello_world` application for the TCM-based board
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: imx95_evk/mimx9596/m7
    :goals: build
 
-After making flash.bin and program to SD/eMMC, open a serial terminal, reset the board,
-and you should see the following message in the terminal:
+2. Building the :zephyr:code-sample:`hello_world` application for the DDR-based board
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx95_evk/mimx9596/m7/ddr
+   :goals: build
+
+After making flash.bin and program to SD/eMMC, open a serial terminal, and reset the
+board. For the ``imx95_evk/mimx9596/m7`` board you should see something like:
 
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4569-g483c01ca11a7 ***
    Hello World! imx95_evk/mimx9596/m7
+
+while, for the ``imx95_evk/mimx9596/m7/ddr`` board, you should get the following output:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v3.6.0-4569-g483c01ca11a7 ***
+   Hello World! imx95_evk/mimx9596/m7/ddr
 
 .. _System Control and Management Interface (SCMI):
    https://developer.arm.com/documentation/den0056/latest/
