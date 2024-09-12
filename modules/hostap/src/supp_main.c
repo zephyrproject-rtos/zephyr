@@ -729,6 +729,8 @@ static int hostapd_disable_iface_cb(struct hostapd_iface *hapd_iface)
 		hapd->driver = hapd_iface->conf->driver;
 	}
 
+	hostapd_config_free(hapd_iface->conf);
+	hapd_iface->conf = hapd_iface->interfaces->config_read_cb(hapd_iface->config_fname);
 	return 0;
 }
 
