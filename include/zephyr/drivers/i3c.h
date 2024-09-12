@@ -1762,6 +1762,23 @@ static inline int i3c_device_is_ibi_capable(struct i3c_device_desc *target)
 		== I3C_BCR_IBI_REQUEST_CAPABLE;
 }
 
+/**
+ * @brief Check if the target is controller capable
+ *
+ * This reads the BCR from the device descriptor struct to determine
+ * whether the target is controller capable
+ *
+ * Note that BCR must have been obtained from device and
+ * i3c_device_desc::bcr must be set.
+ *
+ * @return True if target is controller capable, false otherwise.
+ */
+static inline int i3c_device_is_controller_capable(struct i3c_device_desc *target)
+{
+	return I3C_BCR_DEVICE_ROLE(target->bcr)
+		== I3C_BCR_DEVICE_ROLE_I3C_CONTROLLER_CAPABLE;
+}
+
 /** @} */
 
 /**
@@ -2088,6 +2105,8 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target);
  *
  * This reads the BCR from the device descriptor struct of all targets
  * to determine whether a device is a secondary controller.
+ *
+ * @param dev Pointer to controller device driver instance.
  *
  * @return True if the bus has a secondary controller, false otherwise.
  */
