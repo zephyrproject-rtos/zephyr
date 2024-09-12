@@ -19,6 +19,7 @@ from lxml import etree
 
 # pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan
 
 
@@ -414,7 +415,7 @@ class TestReport:
 
         testsuites = j.get('testsuites')
         assert testsuites, 'No testsuites found.'
-        statuses = [testsuite.get('status') for testsuite in testsuites]
+        statuses = [TwisterStatus(testsuite.get('status')) for testsuite in testsuites]
         filtered_status_count = statuses.count("filtered")
         assert filtered_status_count == expected_filtered_count, \
             f'Expected {expected_filtered_count} filtered statuses, got {filtered_status_count}.'

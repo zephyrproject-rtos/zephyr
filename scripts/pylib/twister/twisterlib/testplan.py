@@ -624,8 +624,7 @@ class TestPlan:
                     instance.metrics['available_ram'] = ts.get('available_ram', 0)
                     instance.metrics['available_rom'] = ts.get('available_rom', 0)
 
-                    status = ts.get('status')
-                    status = TwisterStatus(status) if status else TwisterStatus.NONE
+                    status = TwisterStatus(ts.get('status'))
                     reason = ts.get("reason", "Unknown")
                     if status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                         if self.options.report_summary is not None:
@@ -649,8 +648,7 @@ class TestPlan:
 
                     for tc in ts.get('testcases', []):
                         identifier = tc['identifier']
-                        tc_status = tc.get('status')
-                        tc_status = TwisterStatus(tc_status) if tc_status else TwisterStatus.NONE
+                        tc_status = TwisterStatus(tc.get('status'))
                         tc_reason = None
                         # we set reason only if status is valid, it might have been
                         # reset above...

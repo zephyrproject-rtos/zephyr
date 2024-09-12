@@ -13,6 +13,12 @@ class TwisterStatus(str, Enum):
     def __str__(self):
         return str(self.value)
 
+    @classmethod
+    def _missing_(cls, value):
+        super()._missing_(value)
+        if value is None:
+            return TwisterStatus.NONE
+
     # All statuses below this comment can be used for TestCase
     BLOCK = 'blocked'
     STARTED = 'started'
