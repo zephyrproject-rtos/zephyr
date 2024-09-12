@@ -17,6 +17,8 @@
 #define EBB_SEGMENT_SIZE		32
 #define PLATFORM_HPSRAM_EBB_COUNT	22
 
+#include <zephyr/devicetree.h>
+
 #ifdef _ASMLANGUAGE
 
 .macro m_ace_hpsram_power_change segment_index, mask, ax, ay, az, au, aw
@@ -78,6 +80,28 @@
 	addi \az, \az, 8
 	addi \au, \au, -1
 	bnez \au, 2b
+.endm
+
+.macro m_ace_hpsram_power_down_entire ax, ay, az, au
+	/* Read the HPSRAM bank count from ACE_L2MCAP register */
+	movi \au, DT_REG_ADDR(DT_NODELABEL(hsbcap))
+	l32i \au, \au, 0
+	extui \au, \au, 0, 8 /* Bank count is in the lower 8 bits */
+
+	movi \ay, 1             /* Power down command */
+
+	/* Calculate the address of the HSxPGCTL register */
+	movi \az, DT_REG_ADDR(DT_NODELABEL(hsbpm))
+2 :
+	s8i \ay, \az, 0         /* HSxPGCTL.l2lmpge = 1 (power down) */
+	memw
+1 :
+	l8ui \ax, \az, 4        /* ax = HSxPGISTS.l2lmpgis */
+	bne \ax, \ay, 1b        /* wait till status == request */
+
+	addi \az, \az, DT_REG_SIZE(DT_NODELABEL(hsbpm)) /* Move to next bank control register */
+	addi \au, \au, -1       /* Decrement bank count */
+	bnez \au, 2b            /* If banks are left, continue loop */
 .endm
 #endif /* _ASMLANGUAGE */
 #endif /* __Z_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__ */
