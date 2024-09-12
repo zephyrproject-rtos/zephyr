@@ -222,7 +222,8 @@ static void handle_vs_event(uint8_t event, struct net_buf *buf,
 
 	err = handle_event_common(event, buf, handlers, num_handlers);
 	if (err == -EOPNOTSUPP) {
-		LOG_WRN("Unhandled vendor-specific event: %s", bt_hex(buf->data, buf->len));
+		LOG_WRN("Unhandled vendor-specific event 0x%02x len %u: %s", event, buf->len,
+			bt_hex(buf->data, buf->len));
 	}
 
 	/* Other possible errors are handled by handle_event_common function */
