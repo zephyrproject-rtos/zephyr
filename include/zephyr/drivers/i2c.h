@@ -883,8 +883,8 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 		return 0;
 	}
 
-	if (!IS_ENABLED(CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS)) {
-		msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
+	if (!i2c_is_stop_op(&msgs[num_msgs - 1])) {
+		return -EINVAL;
 	}
 
 	i2c_bus_lock(dev, K_FOREVER);
@@ -953,8 +953,8 @@ static inline int i2c_transfer_cb(const struct device *dev,
 		return 0;
 	}
 
-	if (!IS_ENABLED(CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS)) {
-		msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
+	if (!i2c_is_stop_op(&msgs[num_msgs - 1])) {
+		return -EINVAL;
 	}
 
 	i2c_bus_lock(dev, K_FOREVER);
