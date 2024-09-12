@@ -18,6 +18,7 @@ source "drivers/sdhc/Kconfig.intel"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
 source "drivers/sdhc/Kconfig.esp32"
 source "drivers/sdhc/Kconfig.renesas_ra"
+source "drivers/sdhc/Kconfig.max32"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
