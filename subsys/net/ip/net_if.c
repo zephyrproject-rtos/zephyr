@@ -1425,7 +1425,7 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
-#define RS_TIMEOUT (1U * MSEC_PER_SEC)
+#define RS_TIMEOUT (CONFIG_NET_IPV6_RS_TIMEOUT * MSEC_PER_SEC)
 #define RS_COUNT 3
 
 static void rs_timeout(struct k_work *work)
