@@ -1,0 +1,61 @@
+# Copyright 2024 Robert Slawinski <robert.slawinski1@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Davicom DM8806 Ethernet MAC and PHY with RMII interface
+
+compatible: "davicom,dm8806-phy"
+
+include: [ethernet-phy.yaml]
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+    description: |
+      5-bit PHY address for Internal PHY Registers group of Davicom DM8806 MAC
+      PHY Ethernet Switch Controller, separate for each MAC PHY, build in DM8806
+      and correlate with Ethenet port. DM8806 has five MAC PHY inside, but it is
+      not mandatory to define all of them in device tree if there is no need to
+      communicate with all of them. Each MAC PHY has its own PHY address, which
+      together with Register address creates the absolute address of the
+      concrete register in conrete MAC PHY acoring to Clause 22 MDIO
+      communication standard. Below example shows how the PHY address and
+      Register address are glued together in Internal PHY Registers group:
+
+                        Internal PHY Registers
+      Port0: (5-bit PHY Address) + (5-bit Register address) = Absolute address
+
+      Absolute address is the address of the concrete register in MAC PHY0
+      which is responsible for Ethernet Port0 in Davicom DM8806
+  reg-switch:
+    required: true
+    description: |
+      5-bit PHY address for Switch Per-Port Registers group of Davicom DM8806
+      MAC PHY Ethernet Switch Controller, separate for each MAC PHY, build in
+      DM8806 and correlate with Ethenet port. DM8806 has five MAC PHY inside,
+      but it is not mandatory to define all of them in device tree if there is
+      no need to communicate with all of them. Each MAC PHY has its own PHY
+      address, which together with Register address creates the absolute address
+      of the concrete register in conrete MAC PHY acoring to Clause 22 MDIO
+      communication standard. Below example shows how the PHY address and
+      Register address are glued together in Switch Per-Port Registers group:
+
+                        Switch Per-Port Registers
+      Port0: (5bit PHY Address) + (5bit Register address) = Absolute address
+
+      Absolute address is the address of the concrete register in MAC PHY0
+      which is responsible for Ethernet Port0 in Davicom DM8806
+  reset-gpios:
+    type: phandle-array
+    description: GPIO connected to MAC PHY reset signal pin. Reset is active low.
+  int-gpios:
+    type: phandle-array
+    description: GPIO for   upt signal indicating MAC PHY state change.
+  davicom,interface-type:
+    type: string
+    required: true
+    description: Which type of phy connection the mac phy is set up for
+    enum:
+      - "mii"
+      - "rmii"
