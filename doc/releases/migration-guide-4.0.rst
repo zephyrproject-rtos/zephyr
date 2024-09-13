@@ -479,5 +479,14 @@ Shell
 * ``kernel threads`` and ``kernel stacks`` shell command have been renamed to
   ``kernel thread list`` & ``kernel thread stacks``
 
+JWT (JSON Web Token)
+====================
+
+* By default, the signature is now computed through PSA Crypto API for both RSA and ECDSA.
+  The newly-added :kconfig:option:`CONFIG_JWT_USE_LEGACY` can be used to switch
+  back to previous libraries (TinyCrypt for ECDSA and Mbed TLS for RSA).
+  The conversion to the PSA Crypto API is being done in preparation for the
+  deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
+
 Architectures
 *************
