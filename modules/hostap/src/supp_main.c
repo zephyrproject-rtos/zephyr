@@ -60,6 +60,7 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.iface_status = supplicant_status,
 #ifdef CONFIG_NET_STATISTICS_WIFI
 	.get_stats = supplicant_get_stats,
+	.reset_stats = supplicant_reset_stats,
 #endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
