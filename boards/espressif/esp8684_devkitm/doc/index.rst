@@ -70,6 +70,10 @@ Current Zephyr's ESP8684-DevKitM board supports the following features:
 +------------+------------+-------------------------------------+
 | LEDC       | on-chip    | pwm                                 |
 +------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
 
 For a getting started user guide, please check `ESP8684-DevKitM User Guide`_.
 
