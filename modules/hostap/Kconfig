@@ -303,6 +303,23 @@ if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 		default 16384
 endif
 
+config WIFI_NM_WPA_SUPPLICANT_ROAMING
+	bool "Roaming support"
+	imply IEEE80211R
+	help
+	  Enable roaming support with wpa_supplicant. When current BSS RSSI drops,
+	  STA will try to find an AP with better RSSI. If found, STA will reassociate
+	  to the new AP automatically without losing connection.
+
+config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
+	bool "Skip DHCP after roaming to new AP"
+	help
+	  For L2 roaming, the original AP and new AP are in the same subnet, client
+	  can use same IP address and skip DHCP. Enable this to skip DHCP.
+	  For L3 roaming, the original AP and new AP are in different subnet, client
+	  needs to get new IP address after roaming to new AP. Disable this to keep
+	  DHCP after roaming.
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
