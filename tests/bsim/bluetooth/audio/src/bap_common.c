@@ -15,7 +15,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 
-#include "common.h"
 #include "bap_common.h"
 
 void print_hex(const uint8_t *ptr, size_t len)
