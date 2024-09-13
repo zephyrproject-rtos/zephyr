@@ -574,6 +574,10 @@ struct wifi_connect_req_params {
 	const uint8_t *identities[WIFI_ENT_IDENTITY_MAX_USERS];
 	/** User Passwords */
 	const uint8_t *passwords[WIFI_ENT_IDENTITY_MAX_USERS];
+	/** Constraint for server domain name */
+	const uint8_t *domain_match;
+	/** Server domain length */
+	uint8_t domain_match_length; /* Max 64 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
