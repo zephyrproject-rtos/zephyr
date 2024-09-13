@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config PSI5_NXP_S32
+	bool "NXP S32 PSI5 driver"
+	default y
+	depends on DT_HAS_NXP_S32_PSI5_ENABLED
+	help
+	  Enable support for NXP S32 PSI5 driver.
