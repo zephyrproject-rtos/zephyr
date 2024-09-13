@@ -1,0 +1,123 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for Peripheral Sensor Interface (PSI5)
+
+compatible: "nxp,s32-psi5"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+child-binding:
+  description: Properties for Peripheral Sensor Interface (PSI5) channel
+
+  compatible: "nxp,s32-psi5-channel"
+
+  include: base.yaml
+
+  properties:
+    async-mode:
+      type: boolean
+      description: |
+        Determines the channel operation mode. When set to true, the channel operates in
+        asynchronous mode with only the receive function active. When set to false,
+        the channel operates in synchronous mode with both transmit and receive functions active.
+
+    # Channel TX configuration
+    target-pulse-us:
+      type: int
+      required: true
+      description: |
+        Specifies the duration of the internally generated synchronization pulses, measured in
+        microseconds (us). This value determines the length of each synchronization pulse used
+        in the system.
+
+    decoder-offset-us:
+      type: int
+      required: true
+      description: |
+        Specifies the duration for which the Manchester decoder remains inactive after the
+        falling edge of a synchronization pulse, measured in microseconds (us). This value
+        determines the delay before the decoder starts processing incoming signals again.
+
+    low-pulse-width-us:
+      required: true
+      type: int
+      description: |
+        Specifies the duration of the pulse width for a data value of '0', measured in
+        microseconds (us). This value determines how long the pulse lasts when representing
+        a binary '0'.
+
+    high-pulse-width-us:
+      required: true
+      type: int
+      description: |
+        Specifies the duration of the pulse width for a data value of '1', measured in
+        microseconds (us). This value determines how long the pulse lasts when representing
+        a binary '1'.
+
+    tx-mode:
+      type: string
+      required: true
+      enum:
+        - short-frame-31
+        - short-frame-5
+        - long-frame-31
+        - long-frame-5
+        - x-long-frame-31
+        - x-long-frame-5
+        - xx-long-frame
+        - non-standard-frame
+      description: |
+        Specifies the transmitter mode. Each mode defines the frame length and
+        the start condition for data transmission:
+          - short-frame-31: Short Frame (V1.3) with 31 "1s" as the start condition
+          - short-frame-5: Short Frame (V1.3) with 5 "0s" as the start condition
+          - long-frame-31: Long Frame (V1.3) with 31 "1s" as the start condition
+          - long-frame-5: Long Frame (V1.3) with 5 "0s" as the start condition
+          - x-long-fram-31: X-Long Frame (V1.3) with 31 "1s" as the start condition
+          - x-long-frame-5: X-Long Frame (V1.3) with 5 "0s" as the start condition
+          - xx-long-frame: XX-Long (V2.0)
+          - non-standard-frame: Non Standard Length
+
+    # Channel RX configuration
+    rx-buf-size:
+      type: int
+      required: true
+      description: |
+        Specifies the maximum number of receive buffers used for storing PSI5 messages.
+        The value can range from 1 to 32, determining how many messages can be stored in
+        the buffer at any given time.
+
+    bitrate-kbps:
+      type: int
+      required: true
+      enum:
+        - 125
+        - 189
+      description: |
+        Selects the receive message bitrate in kbps. This setting determines the speed at
+        which data is received.
+
+    array-slot-duration-us:
+      type: array
+      required: true
+      description: |
+        Contains the slot durations in microseconds (us). Each value in the array represents
+        the duration of a slot, starting from the rising edge of the timing synchronization pulse
+        and ending at the final slot.
+
+    array-slot-start-offset-us:
+      type: array
+      required: true
+      description: |
+        Contains the start offsets for each slot in microseconds (us). Each value in the array
+        represents the time offset at which the slot should start, measured from the rising edge
+        of the timing synchronization pulse.
+
+    array-slot-data-length:
+      type: array
+      required: true
+      description: |
+        Contains the data length in bits for each slot. Each value in the array specifies the number
+        of bits in a slot, with valid lengths ranging from 8 to 28 bits.
