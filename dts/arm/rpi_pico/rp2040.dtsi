@@ -157,8 +157,9 @@
 		};
 
 		xosc: xosc {
-			compatible = "raspberrypi,pico-clock";
+			compatible = "raspberrypi,pico-xosc";
 			clock-frequency = <12000000>;
+			startup-delay-multiplier = <64>;
 			#clock-cells = <0>;
 		};
 
