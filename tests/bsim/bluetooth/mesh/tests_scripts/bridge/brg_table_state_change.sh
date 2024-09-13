@@ -28,5 +28,5 @@ RunTest mesh_brg_table_state_change \
 	brg_tester_table_state_change brg_bridge_simple brg_device_simple brg_device_simple
 
 overlay=overlay_psa_conf
-RunTest mesh_brg_table_state_change \
+RunTest mesh_brg_table_state_change_psa \
 	brg_tester_table_state_change brg_bridge_simple brg_device_simple brg_device_simple

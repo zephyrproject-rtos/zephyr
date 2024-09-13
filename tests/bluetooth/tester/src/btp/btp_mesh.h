@@ -904,18 +904,18 @@ struct btp_rpr_reprov_remote_cmd {
 	bool comp_change;
 } __packed;
 
-#define BTP_MESH_SUBNET_BRIDGE_GET		0x62
+#define BTP_MESH_SUBNET_BRIDGE_GET 0x62
 struct btp_mesh_subnet_bridge_get_cmd {
 	uint16_t addr;
 } __packed;
 
-#define BTP_MESH_SUBNET_BRIDGE_SET		0x63
+#define BTP_MESH_SUBNET_BRIDGE_SET 0x63
 struct btp_mesh_subnet_bridge_set_cmd {
 	uint16_t addr;
 	uint8_t val;
 } __packed;
 
-#define BTP_MESH_BRIDGING_TABLE_ADD		0x64
+#define BTP_MESH_BRIDGING_TABLE_ADD 0x64
 struct btp_mesh_bridging_table_add_cmd {
 	uint16_t addr;
 	uint8_t directions;
@@ -925,7 +925,7 @@ struct btp_mesh_bridging_table_add_cmd {
 	uint16_t addr2;
 } __packed;
 
-#define BTP_MESH_BRIDGING_TABLE_REMOVE		0x65
+#define BTP_MESH_BRIDGING_TABLE_REMOVE 0x65
 struct btp_mesh_bridging_table_remove_cmd {
 	uint16_t addr;
 	uint16_t net_idx1;
@@ -934,7 +934,7 @@ struct btp_mesh_bridging_table_remove_cmd {
 	uint16_t addr2;
 } __packed;
 
-#define BTP_MESH_BRIDGED_SUBNETS_GET		0x66
+#define BTP_MESH_BRIDGED_SUBNETS_GET 0x66
 struct btp_mesh_bridged_subnets_get_cmd {
 	uint16_t addr;
 	uint8_t filter;
@@ -942,7 +942,7 @@ struct btp_mesh_bridged_subnets_get_cmd {
 	uint8_t start_idx;
 } __packed;
 
-#define BTP_MESH_BRIDGING_TABLE_GET		0x67
+#define BTP_MESH_BRIDGING_TABLE_GET 0x67
 struct btp_mesh_bridging_table_get_cmd {
 	uint16_t addr;
 	uint16_t net_idx1;
@@ -950,7 +950,7 @@ struct btp_mesh_bridging_table_get_cmd {
 	uint16_t start_idx;
 } __packed;
 
-#define BTP_MESH_BRIDGING_TABLE_SIZE_GET	0x68
+#define BTP_MESH_BRIDGING_TABLE_SIZE_GET 0x68
 struct btp_mesh_bridging_table_size_get_cmd {
 	uint16_t addr;
 } __packed;

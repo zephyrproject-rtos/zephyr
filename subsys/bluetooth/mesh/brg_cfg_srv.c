@@ -51,8 +51,8 @@ static int subnet_bridge_set(const struct bt_mesh_model *model, struct bt_mesh_m
 }
 
 static void bridging_table_status_send(const struct bt_mesh_model *model,
-					struct bt_mesh_msg_ctx *ctx, uint8_t status,
-					struct bt_mesh_bridging_table_entry *entry)
+				       struct bt_mesh_msg_ctx *ctx, uint8_t status,
+				       struct bt_mesh_bridging_table_entry *entry)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_STATUS, 9);
 
@@ -123,7 +123,8 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 			       struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGED_SUBNETS_LIST,
-		BT_MESH_TX_SDU_MAX - BT_MESH_MODEL_OP_LEN(OP_BRIDGED_SUBNETS_LIST));
+				 BT_MESH_TX_SDU_MAX -
+					 BT_MESH_MODEL_OP_LEN(OP_BRIDGED_SUBNETS_LIST));
 	bt_mesh_model_msg_init(&msg, OP_BRIDGED_SUBNETS_LIST);
 
 	const struct bt_mesh_brg_cfg_row *brg_tbl;
@@ -209,10 +210,10 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 }
 
 static int bridging_table_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			       struct net_buf_simple *buf)
+			      struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_LIST,
-		BT_MESH_TX_SDU_MAX - BT_MESH_MODEL_OP_LEN(OP_BRIDGING_TABLE_LIST));
+				 BT_MESH_TX_SDU_MAX - BT_MESH_MODEL_OP_LEN(OP_BRIDGING_TABLE_LIST));
 	uint8_t status = STATUS_SUCCESS;
 	uint16_t net_idx1, net_idx2;
 
@@ -252,7 +253,6 @@ static int bridging_table_get(const struct bt_mesh_model *model, struct bt_mesh_
 			}
 			cnt++;
 		}
-
 	}
 
 tbl_get_respond:
@@ -264,7 +264,7 @@ tbl_get_respond:
 }
 
 static int bridging_table_size_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-				    struct net_buf_simple *buf)
+				   struct net_buf_simple *buf)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_SIZE_STATUS, 2);
 	bt_mesh_model_msg_init(&msg, OP_BRIDGING_TABLE_SIZE_STATUS);
@@ -278,15 +278,14 @@ static int bridging_table_size_get(const struct bt_mesh_model *model, struct bt_
 	return 0;
 }
 
-
 const struct bt_mesh_model_op _bt_mesh_brg_cfg_srv_op[] = {
-	{ OP_SUBNET_BRIDGE_GET, BT_MESH_LEN_EXACT(0), subnet_bridge_get },
-	{ OP_SUBNET_BRIDGE_SET, BT_MESH_LEN_EXACT(1), subnet_bridge_set },
-	{ OP_BRIDGING_TABLE_ADD, BT_MESH_LEN_EXACT(8), bridging_table_add },
-	{ OP_BRIDGING_TABLE_REMOVE, BT_MESH_LEN_EXACT(7), bridging_table_remove },
-	{ OP_BRIDGED_SUBNETS_GET, BT_MESH_LEN_EXACT(3), bridged_subnets_get },
-	{ OP_BRIDGING_TABLE_GET, BT_MESH_LEN_EXACT(5), bridging_table_get },
-	{ OP_BRIDGING_TABLE_SIZE_GET, BT_MESH_LEN_EXACT(0), bridging_table_size_get },
+	{OP_SUBNET_BRIDGE_GET, BT_MESH_LEN_EXACT(0), subnet_bridge_get},
+	{OP_SUBNET_BRIDGE_SET, BT_MESH_LEN_EXACT(1), subnet_bridge_set},
+	{OP_BRIDGING_TABLE_ADD, BT_MESH_LEN_EXACT(8), bridging_table_add},
+	{OP_BRIDGING_TABLE_REMOVE, BT_MESH_LEN_EXACT(7), bridging_table_remove},
+	{OP_BRIDGED_SUBNETS_GET, BT_MESH_LEN_EXACT(3), bridged_subnets_get},
+	{OP_BRIDGING_TABLE_GET, BT_MESH_LEN_EXACT(5), bridging_table_get},
+	{OP_BRIDGING_TABLE_SIZE_GET, BT_MESH_LEN_EXACT(0), bridging_table_size_get},
 	BT_MESH_MODEL_OP_END,
 };
 

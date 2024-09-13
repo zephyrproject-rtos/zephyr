@@ -682,8 +682,7 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 	}
 }
 
-static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
-			      struct bt_mesh_net_rx *rx, bool bridge)
+static void bt_mesh_net_relay(struct net_buf_simple *sbuf, struct bt_mesh_net_rx *rx, bool bridge)
 {
 	const struct bt_mesh_net_cred *cred;
 	struct bt_mesh_adv *adv;
@@ -693,9 +692,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		return;
 	}
 
-	if (rx->net_if == BT_MESH_NET_IF_ADV &&
-	    !rx->friend_cred &&
-	    !bridge &&
+	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred && !bridge &&
 	    bt_mesh_relay_get() != BT_MESH_RELAY_ENABLED &&
 	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED &&
 	    bt_mesh_priv_gatt_proxy_get() != BT_MESH_PRIV_GATT_PROXY_ENABLED) {
@@ -949,7 +946,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	}
 
 	bt_mesh_brg_cfg_tbl_foreach_subnet(rx.ctx.addr, rx.ctx.recv_dst, rx.ctx.net_idx,
-					    bt_mesh_sbr_check_cb, &tx_ctx);
+					   bt_mesh_sbr_check_cb, &tx_ctx);
 #endif
 }
 

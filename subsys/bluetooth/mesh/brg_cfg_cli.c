@@ -37,7 +37,7 @@ static int subnet_bridge_status(const struct bt_mesh_model *model, struct bt_mes
 }
 
 static int bridging_table_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+				 struct net_buf_simple *buf)
 {
 	struct bt_mesh_bridging_table_status table_status;
 	struct bt_mesh_bridging_table_status *rsp;
@@ -49,7 +49,7 @@ static int bridging_table_status(const struct bt_mesh_model *model, struct bt_me
 	table_status.entry.addr2 = net_buf_simple_pull_le16(buf);
 
 	if (!(table_status.entry.addr1 == BT_MESH_ADDR_UNASSIGNED ||
-	     BT_MESH_ADDR_IS_UNICAST(table_status.entry.addr1))) {
+	      BT_MESH_ADDR_IS_UNICAST(table_status.entry.addr1))) {
 		LOG_ERR("addr1 shall be a unicast address or unassigned.");
 		return -EINVAL;
 	} else if (table_status.entry.addr2 == BT_MESH_ADDR_ALL_NODES) {
@@ -109,7 +109,7 @@ static int bridged_subnets_list(const struct bt_mesh_model *model, struct bt_mes
 }
 
 static int bridging_table_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			      struct net_buf_simple *buf)
+			       struct net_buf_simple *buf)
 {
 	struct bt_mesh_bridging_table_list table_list;
 	struct bt_mesh_bridging_table_list *rsp;
@@ -166,11 +166,11 @@ static int bridging_table_size_status(const struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op _bt_mesh_brg_cfg_cli_op[] = {
-	{ OP_SUBNET_BRIDGE_STATUS,        BT_MESH_LEN_EXACT(1),  subnet_bridge_status },
-	{ OP_BRIDGING_TABLE_STATUS,       BT_MESH_LEN_EXACT(9),  bridging_table_status },
-	{ OP_BRIDGED_SUBNETS_LIST,        BT_MESH_LEN_MIN(3),    bridged_subnets_list },
-	{ OP_BRIDGING_TABLE_LIST,         BT_MESH_LEN_MIN(6),    bridging_table_list },
-	{ OP_BRIDGING_TABLE_SIZE_STATUS,  BT_MESH_LEN_EXACT(2),  bridging_table_size_status },
+	{OP_SUBNET_BRIDGE_STATUS, BT_MESH_LEN_EXACT(1), subnet_bridge_status},
+	{OP_BRIDGING_TABLE_STATUS, BT_MESH_LEN_EXACT(9), bridging_table_status},
+	{OP_BRIDGED_SUBNETS_LIST, BT_MESH_LEN_MIN(3), bridged_subnets_list},
+	{OP_BRIDGING_TABLE_LIST, BT_MESH_LEN_MIN(6), bridging_table_list},
+	{OP_BRIDGING_TABLE_SIZE_STATUS, BT_MESH_LEN_EXACT(2), bridging_table_size_status},
 	BT_MESH_MODEL_OP_END,
 };
 
