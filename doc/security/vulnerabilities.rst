@@ -1800,7 +1800,15 @@ This has been fixed in main for v3.7.0
 CVE-2024-6137
 -------------
 
-Under embargo until 2024-09-11
+BT: Classic: SDP OOB access in get_att_search_list
+
+- `Zephyr project bug tracker GHSA-pm38-7g85-cf4f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pm38-7g85-cf4f>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 75575 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/75575>`_
 
 CVE-2024-6258
 -------------
