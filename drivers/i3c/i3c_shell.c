@@ -1548,6 +1548,7 @@ static int cmd_i3c_ccc_getvendor(const struct shell *shell_ctx, size_t argc, cha
 	uint8_t defbyte;
 	size_t num_xfer;
 	uint8_t id;
+	int err = 0;
 	int ret;
 
 	dev = device_get_binding(argv[ARGV_DEV]);
@@ -1555,6 +1556,7 @@ static int cmd_i3c_ccc_getvendor(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+
 	tdev = device_get_binding(argv[ARGV_TDEV]);
 	if (!tdev) {
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
@@ -1566,8 +1568,14 @@ static int cmd_i3c_ccc_getvendor(const struct shell *shell_ctx, size_t argc, cha
 		return -ENODEV;
 	}
 
-	if (argc > 3) {
-		defbyte = strtol(argv[3], NULL, 16);
+	id = (uint8_t)shell_strtoul(argv[3], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "I3C: Invalid ID.");
+		return -EINVAL;
+	}
+
+	if (argc > 4) {
+		defbyte = strtol(argv[4], NULL, 16);
 		ret = i3c_ccc_do_getvendor_defbyte(desc, id, defbyte, buf, MAX_I3C_BYTES,
 						   &num_xfer);
 	} else {
@@ -1593,6 +1601,7 @@ static int cmd_i3c_ccc_setvendor(const struct shell *shell_ctx, size_t argc, cha
 	uint8_t buf[MAX_I3C_BYTES] = {0};
 	uint8_t data_length;
 	uint8_t id;
+	int err = 0;
 	int ret;
 	int i;
 
@@ -1601,6 +1610,7 @@ static int cmd_i3c_ccc_setvendor(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+
 	tdev = device_get_binding(argv[ARGV_TDEV]);
 	if (!tdev) {
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
@@ -1612,6 +1622,12 @@ static int cmd_i3c_ccc_setvendor(const struct shell *shell_ctx, size_t argc, cha
 		return -ENODEV;
 	}
 	data = (struct i3c_driver_data *)dev->data;
+
+	id = (uint8_t)shell_strtoul(argv[3], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "I3C: Invalid ID.");
+		return -EINVAL;
+	}
 
 	data_length = argc - 4;
 	for (i = 0; i < data_length; i++) {
@@ -1634,6 +1650,7 @@ static int cmd_i3c_ccc_setvendor_bc(const struct shell *shell_ctx, size_t argc, 
 	uint8_t buf[MAX_I3C_BYTES] = {0};
 	uint8_t data_length;
 	uint8_t id;
+	int err = 0;
 	int ret;
 	int i;
 
@@ -1641,6 +1658,12 @@ static int cmd_i3c_ccc_setvendor_bc(const struct shell *shell_ctx, size_t argc, 
 	if (!dev) {
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
+	}
+
+	id = (uint8_t)shell_strtoul(argv[2], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "I3C: Invalid ID.");
+		return -EINVAL;
 	}
 
 	data_length = argc - 3;
