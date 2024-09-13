@@ -1782,7 +1782,15 @@ Under embargo until 2024-09-11
 CVE-2024-6258
 -------------
 
-Under embargo until 2024-09-05
+BT: Missing length checks of net_buf in rfcomm_handle_data
+
+- `Zephyr project bug tracker GHSA-7833-fcpm-3ggm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7833-fcpm-3ggm>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74640 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74640>`_
 
 CVE-2024-6259
 -------------
