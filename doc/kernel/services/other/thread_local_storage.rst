@@ -29,25 +29,25 @@ making a system call.
 Declaring and Using Thread Local Variables
 ******************************************
 
-The keyword ``__thread`` can be used to declare thread local variables.
+The C11 keyword ``_Thread_local`` can be used to declare thread local variables.
 
 For example, to declare a thread local variable in header files:
 
 .. code-block:: c
 
-   extern __thread int i;
+   extern _Thread_local int i;
 
 And to declare the actual variable in source files:
 
 .. code-block:: c
 
-   __thread int i;
+   _Thread_local int i;
 
 Keyword ``static`` can also be used to limit the variable within a source file:
 
 .. code-block:: c
 
-   static __thread int j;
+   static _Thread_local int j;
 
 Using the thread local variable is the same as using other variable, for example:
 

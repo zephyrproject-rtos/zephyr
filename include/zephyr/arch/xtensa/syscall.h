@@ -211,7 +211,7 @@ static inline bool arch_is_user_context(void)
 		: "=a" (thread)
 	);
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	extern __thread uint32_t is_user_mode;
+	extern _Thread_local uint32_t is_user_mode;
 
 	if (!thread) {
 		return false;

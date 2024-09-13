@@ -15,7 +15,7 @@
 /*
  * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-__thread uint8_t is_user_mode;
+_Thread_local uint8_t is_user_mode;
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,

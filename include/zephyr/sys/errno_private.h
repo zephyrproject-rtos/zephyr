@@ -26,7 +26,7 @@ static inline int *z_errno(void)
 }
 
 #elif defined(CONFIG_ERRNO_IN_TLS)
-extern __thread int z_errno_var;
+extern _Thread_local int z_errno_var;
 
 static inline int *z_errno(void)
 {
