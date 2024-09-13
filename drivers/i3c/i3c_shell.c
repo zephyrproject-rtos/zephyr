@@ -1714,9 +1714,9 @@ static int cmd_i3c_ccc_getmxds(const struct shell *shell_ctx, size_t argc, char 
 				    mxds.fmt3.wrrdturn[0], mxds.fmt3.wrrdturn[1],
 				    sys_get_le24(&mxds.fmt3.wrrdturn[2]));
 			/* Update values in descriptor */
-			desc->maxwr = mxds.fmt3.wrrdturn[0];
-			desc->maxrd = mxds.fmt3.wrrdturn[1];
-			desc->max_read_turnaround = sys_get_le24(&mxds.fmt3.wrrdturn[2]);
+			desc->data_speed.maxwr = mxds.fmt3.wrrdturn[0];
+			desc->data_speed.maxrd = mxds.fmt3.wrrdturn[1];
+			desc->data_speed.max_read_turnaround = sys_get_le24(&mxds.fmt3.wrrdturn[2]);
 		} else if (defbyte == GETMXDS_FORMAT_3_CRHDLY) {
 			shell_print(shell_ctx, "CRHDLY1: 0x%02x", mxds.fmt3.crhdly1);
 		}
@@ -1724,9 +1724,9 @@ static int cmd_i3c_ccc_getmxds(const struct shell *shell_ctx, size_t argc, char 
 		shell_print(shell_ctx, "GETMXDS: maxwr 0x%02x; maxrd 0x%02x; maxrdturn 0x%06x",
 			    mxds.fmt2.maxwr, mxds.fmt2.maxrd, sys_get_le24(mxds.fmt2.maxrdturn));
 		/* Update values in descriptor */
-		desc->maxwr = mxds.fmt2.maxwr;
-		desc->maxrd = mxds.fmt2.maxrd;
-		desc->max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
+		desc->data_speed.maxwr = mxds.fmt2.maxwr;
+		desc->data_speed.maxrd = mxds.fmt2.maxrd;
+		desc->data_speed.max_read_turnaround = sys_get_le24(mxds.fmt2.maxrdturn);
 	}
 
 	return ret;
