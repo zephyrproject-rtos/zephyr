@@ -47,6 +47,7 @@ Peripherals
    pcie.rst
    peci.rst
    ps2.rst
+   psi5.rst
    pwm.rst
    rtc.rst
    regulators.rst
