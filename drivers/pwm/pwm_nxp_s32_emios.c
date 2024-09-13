@@ -23,6 +23,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_PWM_LOG_LEVEL);
 
 #define DT_DRV_COMPAT	nxp_s32_emios_pwm
 
+#if !defined(EMIOS_PWM_IP_NUM_OF_CHANNELS_USED)
+#define EMIOS_PWM_IP_NUM_OF_CHANNELS_USED EMIOS_PWM_IP_NUM_OF_CHANNELS_USED_U8
+#endif
+
 /*
  * Need to fill to this array at runtime, cannot do at build time like
  * the HAL over configuration tool due to limitation of the integration
