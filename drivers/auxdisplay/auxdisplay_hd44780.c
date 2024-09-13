@@ -77,6 +77,7 @@ struct auxdisplay_hd44780_config {
 
 static void auxdisplay_hd44780_set_entry_mode(const struct device *dev);
 static void auxdisplay_hd44780_set_display_mode(const struct device *dev, bool enabled);
+static int auxdisplay_hd44780_clear(const struct device *dev);
 
 static void hd44780_pulse_enable_line(const struct device *dev)
 {
@@ -109,13 +110,53 @@ static void auxdisplay_hd44780_command(const struct device *dev, bool rs, uint8_
 	}
 }
 
+static void hd44780_ic_initialize(const struct device *dev)
+{
+	const struct auxdisplay_hd44780_config *config = dev->config;
+	uint8_t cmd;
+
+	/*
+	 * If proper power supply is used to power the HD44780, it initializes correctly
+	 * on a reset condition all by itself. However, if the power supply is below
+	 * its expectations (e.g. supplying it with some 3.3V Nucleo board),
+	 * it won't initialize properly on its own, and the MCU has to carry out
+	 * the initialization as listed in the reference manual.
+	 * Since we cannot determine it properly in the runtime,
+	 * always carry out the initialization procedure.
+	 */
+	cmd = AUXDISPLAY_HD44780_CMD_SETUP | AUXDISPLAY_HD44780_8_BIT_CONFIG;
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(4100));
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(100));
+	auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	k_sleep(K_USEC(100));
+
+	if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
+		/* Put display into 4-bit mode */
+		cmd = AUXDISPLAY_HD44780_CMD_SETUP;
+		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
+	}
+
+	/* Configure display */
+	if (config->capabilities.rows > 1) {
+		cmd |= AUXDISPLAY_HD44780_2_LINE_CONFIG;
+	}
+	auxdisplay_hd44780_command(dev, false, cmd, config->capabilities.mode);
+
+	auxdisplay_hd44780_set_display_mode(dev, false);
+	auxdisplay_hd44780_clear(dev);
+	auxdisplay_hd44780_set_entry_mode(dev);
+
+	auxdisplay_hd44780_set_display_mode(dev, true);
+}
+
 static int auxdisplay_hd44780_init(const struct device *dev)
 {
 	const struct auxdisplay_hd44780_config *config = dev->config;
 	struct auxdisplay_hd44780_data *data = dev->data;
 	int rc;
 	uint8_t i = 0;
-	uint8_t cmd = AUXDISPLAY_HD44780_CMD_SETUP | AUXDISPLAY_HD44780_8_BIT_CONFIG;
 
 	if (config->capabilities.mode > AUXDISPLAY_HD44780_MODE_8_BIT) {
 		/* This index is reserved for internal driver usage */
@@ -199,28 +240,7 @@ static int auxdisplay_hd44780_init(const struct device *dev)
 		k_sleep(K_MSEC(config->boot_delay));
 	}
 
-	if (config->capabilities.mode == AUXDISPLAY_HD44780_MODE_4_BIT) {
-		/* Reset display to known state in 8-bit mode */
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-
-		/* Put display into 4-bit mode */
-		cmd = AUXDISPLAY_HD44780_CMD_SETUP;
-		auxdisplay_hd44780_command(dev, false, cmd, AUXDISPLAY_HD44780_MODE_4_BIT_ONCE);
-	}
-
-	if (config->capabilities.rows > 1) {
-		cmd |= AUXDISPLAY_HD44780_2_LINE_CONFIG;
-	}
-
-	/* Configure display */
-	auxdisplay_hd44780_command(dev, false, cmd, config->capabilities.mode);
-	auxdisplay_hd44780_set_display_mode(dev, true);
-	auxdisplay_hd44780_set_entry_mode(dev);
-	auxdisplay_hd44780_command(dev, false, AUXDISPLAY_HD44780_CMD_CLEAR,
-				   config->capabilities.mode);
-
-	k_sleep(K_USEC(config->clear_delay));
+	hd44780_ic_initialize(dev);
 
 	return 0;
 }
