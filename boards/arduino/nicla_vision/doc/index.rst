@@ -61,6 +61,8 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| DCMI      | on-chip    | Parallel Camera interface           |
++-----------+------------+-------------------------------------+
 | IPM       | on-chip    | virtual mailbox based on HSEM       |
 +-----------+------------+-------------------------------------+
 | RADIO     | Murata 1DX | WiFi and Bluetooth module           |

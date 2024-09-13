@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,camera = &dcmi;
 	};
 
 	sdram1: sdram@c0000000 {
@@ -122,13 +123,6 @@
 	};
 };
 
-&i2c3 {
-	status = "okay";
-	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_FAST>;
-};
-
 &spi4 {
 	status = "okay";
 	pinctrl-0 = <&spi4_nss_pe11 &spi4_sck_pe12
@@ -190,5 +184,83 @@ zephyr_udc0: &usbotg_hs {
 	pinctrl-names = "default";
 	maximum-speed = "high-speed";
 	phys = <&otghs_ulpi_phy>;
+	status = "okay";
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	gc2145: gc2145@3c {
+		compatible = "galaxycore,gc2145";
+		reg = <0x3c>;
+		status = "okay";
+
+		port {
+			gc2145_ep_out: endpoint {
+				remote-endpoint = <&dcmi_ep_in>;
+			};
+		};
+
+	};
+};
+
+&dcmi {
+	pinctrl-0 = <&dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+		     &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6
+		     &dcmi_pixclk_pa6 &dcmi_hsync_pa4 &dcmi_vsync_pg9>;
+
+	pinctrl-names = "default";
+	status = "okay";
+
+	sensor = <&gc2145>;
+	bus-width = <8>;
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pixelclk-active = <0>;
+	capture-rate = <1>;
+	dmas = <&dma1 0 38 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+		STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
+		STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+
+	port {
+		dcmi_ep_in: endpoint {
+			remote-endpoint = <&gc2145_ep_out>;
+		};
+	};
+};
+
+/* The Arduino nicla uses a PWM output to generate the clock for the
+ * GC2145 sensor, so we need to configure the PWM generator...
+ */
+&timers3 {
+	status = "okay";
+	st,prescaler = <0>;
+
+	cam_clock_pwm: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pa7>;
+		pinctrl-names = "default";
+	};
+};
+
+&cam_clock_pwm {
+	/* ...then use the pwmclock node to start the clock generation */
+	pwmclock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		clock-frequency = <0>;
+		#clock-cells = <1>;
+		pwms = <&cam_clock_pwm 2 PWM_HZ(10000000) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
 	status = "okay";
 };
