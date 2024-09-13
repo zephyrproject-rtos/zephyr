@@ -3343,6 +3343,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
 		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
 		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
+		  "16: FT_PSK, 17: FT_SAE, 18: FT_EAP, 19: FT_EAP_SHA384\n"
+		  "20: WPA-Auto-Personal-H2E, 21: WPA-Auto-Personal-AUTO\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
