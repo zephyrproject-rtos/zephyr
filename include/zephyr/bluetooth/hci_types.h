@@ -2395,6 +2395,28 @@ struct bt_hci_cp_le_tx_test_v4_tx_power {
 	int8_t tx_power;
 } __packed;
 
+#define BT_HCI_OP_LE_CS_SET_DEFAULT_SETTINGS BT_OP(BT_OGF_LE, 0x008D) /* 0x208D */
+
+#define BT_HCI_OP_LE_CS_INITIATOR_ROLE_MASK BIT(0)
+#define BT_HCI_OP_LE_CS_REFLECTOR_ROLE_MASK BIT(1)
+
+#define BT_HCI_OP_LE_CS_MIN_MAX_TX_POWER -127
+#define BT_HCI_OP_LE_CS_MAX_MAX_TX_POWER 20
+
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_ONE   0x01
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_TWO   0x02
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_THREE 0x03
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_FOUR  0x04
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_REP   0xFE
+#define BT_HCI_OP_LE_CS_ANTENNA_SEL_NONE  0xFF
+
+struct bt_hci_cp_le_cs_set_default_settings {
+	uint16_t handle;
+	uint8_t role_enable;
+	uint8_t cs_sync_antenna_selection;
+	int8_t max_tx_power;
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_UNKNOWN                      0x00
