@@ -36,13 +36,13 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP      NRF5340_XXAA_APP
 zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP NRF5340_XXAA_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUNET      NRF5340_XXAA_NETWORK)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET NRF5340_XXAA_NETWORK)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUAPP     NRF54H20_XXAA
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUAPP     NRF54H20_ENGB_XXAA
                                                                 NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPURAD     NRF54H20_XXAA
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPURAD     NRF54H20_ENGB_XXAA
                                                                 NRF_RADIOCORE)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_ENGB_XXAA
                                                                 NRF_PPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR    NRF54H20_XXAA
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR    NRF54H20_ENGB_XXAA
                                                                 NRF_FLPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA       NRF54L15_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION)
