@@ -19,3 +19,4 @@ tests:
     platform_allow:
       - frdm_kl25z
       - ek_ra8m1
+      - frdm_mcxc242
