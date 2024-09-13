@@ -66,6 +66,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
+        self.mot_name = cfg.mot_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
         self.dev_id = dev_id
@@ -384,7 +385,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
             if self.file_type == FileType.HEX:
                 flash_cmd = f'loadfile "{self.file}"'
-            elif self.file_type == FileType.BIN:
+            elif self.file_type == (FileType.BIN or FileType.MOT):
                 if self.dt_flash:
                     flash_addr = self.flash_address_from_build_conf(self.build_conf)
                 else:
@@ -396,10 +397,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         else:
             # Use hex, bin or elf file provided by the buildsystem.
-            # Preferring .hex over .bin and .elf
+            # Preferring .hex over .mot, .bin and .elf
             if self.hex_name is not None and os.path.isfile(self.hex_name):
                 flash_file = self.hex_name
                 flash_cmd = f'loadfile "{self.hex_name}"'
+            # Preferring .mot over .bin and .elf
+            elif self.mot_name is not None and os.path.isfile(self.mot_name):
+                flash_file = self.mot_name
+                flash_cmd = f'loadfile {self.mot_name}'
             # Preferring .bin over .elf
             elif self.bin_name is not None and os.path.isfile(self.bin_name):
                 if self.dt_flash:
@@ -411,9 +416,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             elif self.elf_name is not None and os.path.isfile(self.elf_name):
                 flash_file = self.elf_name
                 flash_cmd = f'loadfile "{self.elf_name}"'
+            elif self.mot_name is not None and os.path.isfile(self.mot_name):
+                flash_file = self.mot_name
+                flash_cmd = f'loadfile {self.mot_name}'
             else:
-                err = 'Cannot flash; no hex ({}), bin ({}) or elf ({}) files found.'
-                raise ValueError(err.format(self.hex_name, self.bin_name, self.elf_name))
+                err = 'Cannot flash; no hex ({}), bin ({}) or mot ({})  files found.'
+                raise ValueError(err.format(self.hex_name, self.bin_name))
 
         # Flash the selected build artifact
         lines.append(flash_cmd)
