@@ -1,0 +1,26 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Devicetree binding for Peripheral Sensor Interface (PSI5)
+
+compatible: "nxp,s32-psi5"
+
+include: [psi5-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+
+  include: base.yaml
+
+  compatible: "nxp,s32-psi5-channel"
+
+  properties:
+    interrupts:
+      required: true
