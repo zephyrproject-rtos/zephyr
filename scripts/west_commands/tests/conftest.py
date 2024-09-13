@@ -14,6 +14,7 @@ RC_KERNEL_ELF = 'test-zephyr.elf'
 RC_KERNEL_EXE = 'test-zephyr.exe'
 RC_KERNEL_HEX = 'test-zephyr.hex'
 RC_KERNEL_BIN = 'test-zephyr.bin'
+RC_KERNEL_MOT = 'test-zephyr.mot'
 RC_GDB = 'test-none-gdb'
 RC_OPENOCD = 'test-openocd'
 RC_OPENOCD_SEARCH = ['/test/openocd/search']
@@ -23,6 +24,6 @@ RC_OPENOCD_SEARCH = ['/test/openocd/search']
 def runner_config():
     '''Fixture which provides a runners.core.RunnerConfig.'''
     return RunnerConfig(RC_BUILD_DIR, RC_BOARD_DIR, RC_KERNEL_ELF, RC_KERNEL_EXE,
-                        RC_KERNEL_HEX, RC_KERNEL_BIN, None, FileType.OTHER,
+                        RC_KERNEL_HEX, RC_KERNEL_BIN, RC_KERNEL_MOT, None, FileType.OTHER,
                         gdb=RC_GDB, openocd=RC_OPENOCD,
                         openocd_search=RC_OPENOCD_SEARCH)
