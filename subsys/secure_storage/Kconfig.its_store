@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
+	prompt "ITS store module implementation"
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+	bool "ITS store module implementation using the settings subsystem for storage"
+	DT_STORAGE_PARTITION := $(dt_nodelabel_path,storage_partition)
+	depends on FLASH_HAS_DRIVER_ENABLED \
+		&& $(dt_path_enabled,$(DT_STORAGE_PARTITION)) \
+		&& $(dt_node_has_compat,$(dt_node_parent,$(DT_STORAGE_PARTITION)),fixed-partitions)
+	imply FLASH_MAP
+	imply NVS
+	select SETTINGS
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+	bool "No ITS store module implementation"
+
+config SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
+	bool "Custom ITS store module implementation"
+	help
+	  Implement the functions declared in <zephyr/secure_storage/its/store.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION
+
+if SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS
+
+config SECURE_STORAGE_ITS_STORE_SETTINGS_PREFIX
+	string "Subtree in which to store the settings, with a trailing slash. Can be empty."
+	default "its/"
+
+endif # SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS

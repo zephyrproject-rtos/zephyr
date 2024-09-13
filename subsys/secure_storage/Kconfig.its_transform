@@ -1,0 +1,134 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION
+	prompt "ITS transform module implementation"
+
+config SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
+	bool "ITS transform module implementation using AEAD to protect the data"
+	imply HWINFO # for HWINFO_HAS_DRIVER
+
+config SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_CUSTOM
+	bool "Custom ITS transform module implementation"
+	help
+	  Implement the functions declared in <zephyr/secure_storage/its/transform.h>
+	  and set CONFIG_SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD appropriately.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION
+
+config SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD
+	int "Overhead, in bytes, associated with the transformation of an entry's data for storage"
+	range 0 1000
+	# authentication tag (16) + nonce (12)
+	default 28 if SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD \
+		   && SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE = 12
+	default -1
+	help
+	  This indicates how many more bytes an ITS entry's data will be once it
+	  has been processed by the secure_storage_its_transform_to_store() function.
+
+if SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
+
+choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME
+	prompt "AEAD ITS transform module scheme"
+	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM
+	help
+	  The AEAD scheme used to encrypt and authenticate the data.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM
+	bool "AES-GCM AEAD scheme"
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_GCM
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CHACHA20_POLY1305
+	bool "ChaCha20-Poly1305 AEAD scheme"
+	depends on SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE = 12
+	select PSA_WANT_KEY_TYPE_CHACHA20
+	select PSA_WANT_ALG_CHACHA20_POLY1305
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CUSTOM
+	bool "Custom AEAD scheme"
+	help
+	  Implement the secure_storage_its_transform_aead_get_scheme() function
+	  declared in <zephyr/secure_storage/its/transform/aead_get.h>
+	  and set CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE appropriately.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME
+
+choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
+	prompt "AEAD ITS transform module encryption key provider"
+	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH if HWINFO_HAS_DRIVER
+	default SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH if !HWINFO_HAS_DRIVER
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH
+	bool "Hash of the device ID returned by the HW info API (not necessarily secure)"
+	depends on HWINFO_HAS_DRIVER
+	select PSA_WANT_ALG_SHA_256
+	help
+	  This key provider generates keys by hashing the following:
+	  - the device EUI64 as returned by hwinfo_get_device_eui64() as first choice;
+	  - the device ID as returned by hwinfo_get_device_uuid() as second choice.
+	  In addition to the device ID, it adds the UID of the ITS entry
+	  for which it is generating a key to the data hashed as a salt.
+	  This is not necessarily secure as the device ID may be easily readable
+	  by an attacker, not unique, and/or guessable, depending on the device.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH
+	bool "Hash of the ITS entry UID (not secure)"
+	select PSA_WANT_ALG_SHA_256
+	help
+	  This key provider generates keys by hashing the UID of the ITS entry for which it is
+	  generating a key. This is not secure, and only intended for functional support,
+	  because the UIDs are easily guessable and even stored in clear by the store module.
+	  Use a secure key provider if possible.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM
+	bool "Custom key provider"
+	help
+	  Implement the secure_storage_its_transform_aead_get_key() function
+	  declared in <zephyr/secure_storage/its/transform/aead_get.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_SIZE
+	int "AEAD ITS transform module encryption key size in bytes"
+	default 32
+
+if !SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING
+	bool "Silence the insecure ITS encryption key warnings"
+
+endif
+
+choice SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER
+	prompt "AEAD ITS transform module nonce provider"
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT
+	bool "Default nonce provider"
+	help
+	  The default nonce provider generates a random number for the first nonce with
+	  psa_generate_random(), then increments it for every subsequent nonce. A random
+	  source that doesn't repeat values between reboots is required for this to be secure.
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_CUSTOM
+	bool "Custom nonce provider"
+	help
+	  Implement the secure_storage_its_transform_aead_get_nonce() function
+	  declared in <zephyr/secure_storage/its/transform/aead_get.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER
+
+config SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE
+	int "AEAD ITS transform module nonce size in bytes"
+	range 4 24
+	default 12
+	help
+	  Make sure to update CONFIG_SECURE_STORAGE_ITS_TRANSFORM_OUTPUT_OVERHEAD
+	  appropriately when changing the value of this option.
+
+endif # SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD
