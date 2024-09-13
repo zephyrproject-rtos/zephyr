@@ -905,7 +905,7 @@ static inline void set_current(struct k_thread *new_thread)
  * function.
  *
  * @warning
- * The @ref _current value may have changed after this call and not refer
+ * The _current value may have changed after this call and not refer
  * to the interrupted thread anymore. It might be necessary to make a local
  * copy before calling this function.
  *
