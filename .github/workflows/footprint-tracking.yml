@@ -93,3 +93,32 @@ jobs:
           . .venv/bin/activate
           pip3 install awscli
           aws s3 sync  --quiet footprint_data/ s3://testing.zephyrproject.org/footprint_data/
+
+      - name: Transform Footprint data to Twister JSON reports
+        run: |
+          shopt -s globstar
+          export ZEPHYR_BASE=${PWD}
+          python3 ./scripts/footprint/pack_as_twister.py -vvv \
+            --plan ./scripts/footprint/plan.txt \
+            --test-name='name.feature' \
+            ./footprint_data/*/footprints/*/*/
+
+      - name: Upload to ElasticSearch
+        env:
+          ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
+          ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
+          ELASTICSEARCH_INDEX: ${{ vars.FOOTPRINT_TRACKING_INDEX }}
+        run: |
+          pip3 install -U elasticsearch
+          run_date=`date --iso-8601=minutes`
+          python3 ./scripts/ci/upload_test_results_es.py -r ${run_date} \
+            --flatten footprint \
+            --flatten-list-names "{'children':'name'}" \
+            --transform "{ 'footprint_name': '^(?P<footprint_area>([^\/]+\/){0,2})(?P<footprint_path>([^\/]*\/)*)(?P<footprint_symbol>[^\/]*)$' }" \
+            --run-id "${{ github.run_id }}" \
+            --run-attempt "${{ github.run_attempt }}" \
+            --run-workflow "footprint-tracking:${{ github.event_name }}" \
+            --run-branch "${{ github.ref_name }}" \
+            -i ${ELASTICSEARCH_INDEX} \
+            ./footprint_data/**/twister_footprint.json
+        #
