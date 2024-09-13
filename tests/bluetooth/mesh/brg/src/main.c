@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <stdlib.h>
 
@@ -32,9 +32,9 @@ static void setup(void *f)
 	/* create test vector */
 	for (int i = 0; i < TEST_VECT_SZ; i++) {
 		test_vector[i].direction = i < (TEST_VECT_SZ / 2) ? 1 : 2;
-		test_vector[i].net_idx1 = (i/8);
+		test_vector[i].net_idx1 = (i / 8);
 		test_vector[i].addr1 = ADDR1_BASE + i;
-		test_vector[i].net_idx2 = (i/8) + 16;
+		test_vector[i].net_idx2 = (i / 8) + 16;
 		test_vector[i].addr2 = ADDR2_BASE + i;
 	}
 }
@@ -63,7 +63,7 @@ int settings_delete(const char *name)
 struct bt_mesh_subnet *bt_mesh_subnet_get(uint16_t net_idx)
 {
 	/* Return anything non-zero. */
-	return (struct bt_mesh_subnet *) 1;
+	return (struct bt_mesh_subnet *)1;
 }
 
 /**** Mocked functions - end ****/
@@ -77,12 +77,12 @@ static void check_fill_all_bt_entries(void)
 
 		if (i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
 			ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
+					   BT_MESH_SETTINGS_BRG_PENDING);
 		}
 
 		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[i].net_idx1,
-			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2,
-			&status);
+					      test_vector[i].net_idx2, test_vector[i].addr1,
+					      test_vector[i].addr2, &status);
 
 		zassert_equal(err, 0);
 
@@ -102,18 +102,17 @@ static void check_delete_all_bt_entries(void)
 
 		if (i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX) {
 			ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
+					   BT_MESH_SETTINGS_BRG_PENDING);
 		}
 
 		int err = bt_mesh_brg_cfg_tbl_remove(test_vector[i].net_idx1,
-				test_vector[i].net_idx2, test_vector[i].addr1,
-				test_vector[i].addr2, &status);
+						     test_vector[i].net_idx2, test_vector[i].addr1,
+						     test_vector[i].addr2, &status);
 
 		zassert_equal(err, 0);
 		zassert_equal(status, STATUS_SUCCESS);
 	}
 }
-
 
 static void check_bt_mesh_brg_cfg_tbl_reset(void)
 {
@@ -230,13 +229,12 @@ static void pending_store_enable_create_expectations(bool *enable_val)
 	}
 }
 
-static void pending_store_tbl_create_expectations(int n,
-						  const struct bt_mesh_brg_cfg_row *tbl_val)
+static void pending_store_tbl_create_expectations(int n, const struct bt_mesh_brg_cfg_row *tbl_val)
 {
 	if (n > 0) {
 		ztest_expect_data(settings_save_one, name, "bt/mesh/brg_tbl");
 		ztest_expect_value(settings_save_one, val_len,
-					n * sizeof(struct bt_mesh_brg_cfg_row));
+				   n * sizeof(struct bt_mesh_brg_cfg_row));
 		ztest_expect_data(settings_save_one, value, tbl_val);
 	} else {
 		ztest_expect_data(settings_delete, name, "bt/mesh/brg_tbl");
@@ -254,9 +252,7 @@ ZTEST(bt_mesh_brg_cfg, test_brg_cfg_en)
 	zassert_equal(val, false, NULL);
 	/* No changed to the states, nothing to check. */
 
-
-	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
+	ztest_expect_value(bt_mesh_settings_store_schedule, flag, BT_MESH_SETTINGS_BRG_PENDING);
 	err = bt_mesh_brg_cfg_enable_set(true);
 	zassert_equal(err, 0, NULL);
 	val = bt_mesh_brg_cfg_enable_get();
@@ -280,10 +276,9 @@ ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 	};
 
 	check_bt_mesh_brg_cfg_tbl_reset();
-	ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
-	err = bt_mesh_brg_cfg_tbl_add(test_vec.direction, test_vec.net_idx1,
-		test_vec.net_idx2, test_vec.addr1, test_vec.addr2, &status);
+	ztest_expect_value(bt_mesh_settings_store_schedule, flag, BT_MESH_SETTINGS_BRG_PENDING);
+	err = bt_mesh_brg_cfg_tbl_add(test_vec.direction, test_vec.net_idx1, test_vec.net_idx2,
+				      test_vec.addr1, test_vec.addr2, &status);
 	zassert_equal(err, 0);
 	zassert_equal(status, STATUS_SUCCESS);
 
@@ -307,59 +302,109 @@ ZTEST(bt_mesh_brg_cfg, test_tbl_add_invalid_ip)
 	 * Each vector has only one invalid field value, rest all are valid values.
 	 */
 	const struct test_brg_cfg_row inv_test_vector[] = {
-	/* Direction has invalid values */
-	{.direction = BT_MESH_BRG_CFG_DIR_PROHIBITED,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 2},
-	{.direction = BT_MESH_BRG_CFG_DIR_MAX,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 2},
-	/* Out of range netidx values */
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 4096, .net_idx2 = 1, .addr1 = 1, .addr2 = 2},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 4096, .addr1 = 1, .addr2 = 2},
-	/* Same netidx values */
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 0, .addr1 = 1, .addr2 = 2},
-	/* Same addr values */
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 1},
-	/* Invalid address1 value */
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 0, .addr2 = 1},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 0x8000, .addr2 = 1},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 0xC000, .addr2 = 1},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 0xFFFE, .addr2 = 1},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 0xFFFF, .addr2 = 1},
-	/* Invalid address2 values */
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0},
-	{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0xFFFF},
-	{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0x8000},
-	{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0xC000},
-	{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0xFFFE},
-	{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
-		.net_idx1 = 0, .net_idx2 = 1, .addr1 = 1, .addr2 = 0xFFFF},
+		/* Direction has invalid values */
+		{.direction = BT_MESH_BRG_CFG_DIR_PROHIBITED,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 2},
+		{.direction = BT_MESH_BRG_CFG_DIR_MAX,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 2},
+		/* Out of range netidx values */
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 4096,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 2},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 4096,
+		 .addr1 = 1,
+		 .addr2 = 2},
+		/* Same netidx values */
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 0,
+		 .addr1 = 1,
+		 .addr2 = 2},
+		/* Same addr values */
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 1},
+		/* Invalid address1 value */
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 0,
+		 .addr2 = 1},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 0x8000,
+		 .addr2 = 1},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 0xC000,
+		 .addr2 = 1},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 0xFFFE,
+		 .addr2 = 1},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 0xFFFF,
+		 .addr2 = 1},
+		/* Invalid address2 values */
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0},
+		{.direction = BT_MESH_BRG_CFG_DIR_ONEWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0xFFFF},
+		{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0x8000},
+		{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0xC000},
+		{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0xFFFE},
+		{.direction = BT_MESH_BRG_CFG_DIR_TWOWAY,
+		 .net_idx1 = 0,
+		 .net_idx2 = 1,
+		 .addr1 = 1,
+		 .addr2 = 0xFFFF},
 	};
 
 	check_bt_mesh_brg_cfg_tbl_reset();
 
 	for (int i = 0; i < ARRAY_SIZE(inv_test_vector); i++) {
 		err = bt_mesh_brg_cfg_tbl_add(inv_test_vector[i].direction,
-					inv_test_vector[i].net_idx1, inv_test_vector[i].net_idx2,
-					inv_test_vector[i].addr1, inv_test_vector[i].addr2,
-					&status);
+					      inv_test_vector[i].net_idx1,
+					      inv_test_vector[i].net_idx2, inv_test_vector[i].addr1,
+					      inv_test_vector[i].addr2, &status);
 		zassert_equal(err, -EINVAL, "Test vector index: %zu", i);
 	}
 }
-
 
 /* Following are helper functions for the test that checks the iteration logic */
 #define NUM_MSGS (10000)
@@ -372,9 +417,10 @@ static void print_brg_tbl(void)
 	zassert_true(n <= CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX);
 
 	for (int i = 0; i < n; i++) {
-		printk("entry: %3d # dir: %d, net_idx1: %3d, addr1: %3d, net_idx2: %3d, addr2: %3d\n",
-			i, tbl[i].direction, tbl[i].net_idx1, tbl[i].addr1, tbl[i].net_idx2,
-			tbl[i].addr2);
+		printk("entry: %3d # dir: %d, net_idx1: %3d, addr1: %3d, net_idx2: %3d, addr2: "
+		       "%3d\n",
+		       i, tbl[i].direction, tbl[i].net_idx1, tbl[i].addr1, tbl[i].net_idx2,
+		       tbl[i].addr2);
 	}
 }
 
@@ -383,12 +429,12 @@ static void check_fill_all_bt_entries_reversed(void)
 	uint8_t status;
 	int err;
 
-	for (int i = TEST_VECT_SZ - 2; i >= 0 ; i--) {
+	for (int i = TEST_VECT_SZ - 2; i >= 0; i--) {
 		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
+				   BT_MESH_SETTINGS_BRG_PENDING);
 		err = bt_mesh_brg_cfg_tbl_add(test_vector[i].direction, test_vector[i].net_idx1,
-			test_vector[i].net_idx2, test_vector[i].addr1, test_vector[i].addr2,
-			&status);
+					      test_vector[i].net_idx2, test_vector[i].addr1,
+					      test_vector[i].addr2, &status);
 		zassert_equal(err, 0);
 	}
 
@@ -421,10 +467,11 @@ static void check_fill_all_bt_entries_randomly(void)
 
 	for (int i = 0; i < copy_cnt; i++) {
 		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
-				BT_MESH_SETTINGS_BRG_PENDING);
-		err = bt_mesh_brg_cfg_tbl_add(test_vector_copy[i].direction,
-			test_vector_copy[i].net_idx1, test_vector_copy[i].net_idx2,
-			test_vector_copy[i].addr1, test_vector_copy[i].addr2, &status);
+				   BT_MESH_SETTINGS_BRG_PENDING);
+		err = bt_mesh_brg_cfg_tbl_add(
+			test_vector_copy[i].direction, test_vector_copy[i].net_idx1,
+			test_vector_copy[i].net_idx2, test_vector_copy[i].addr1,
+			test_vector_copy[i].addr2, &status);
 		zassert_equal(err, 0);
 		zassert_equal(status, STATUS_SUCCESS);
 	}
@@ -432,8 +479,8 @@ static void check_fill_all_bt_entries_randomly(void)
 	int last = TEST_VECT_SZ - 1;
 
 	err = bt_mesh_brg_cfg_tbl_add(test_vector[last].direction, test_vector[last].net_idx1,
-		test_vector[last].net_idx2, test_vector[last].addr1, test_vector[last].addr2,
-		&status);
+				      test_vector[last].net_idx2, test_vector[last].addr1,
+				      test_vector[last].addr2, &status);
 	zassert_equal(err, 0);
 	zassert_equal(status, STATUS_INSUFF_RESOURCES);
 }
@@ -472,7 +519,8 @@ static void test_bridging_performance(bool test_one_way)
 
 		tick1 = k_uptime_ticks();
 		bt_mesh_brg_cfg_tbl_foreach_subnet(test_vector[idx].addr1, test_vector[idx].addr2,
-			test_vector[idx].net_idx1, subnet_relay_cb_check, &idx);
+						   test_vector[idx].net_idx1, subnet_relay_cb_check,
+						   &idx);
 		ticks += k_uptime_ticks() - tick1;
 
 		if (test_one_way) {
@@ -485,7 +533,8 @@ static void test_bridging_performance(bool test_one_way)
 		tbl_row = NULL;
 		tick1 = k_uptime_ticks();
 		bt_mesh_brg_cfg_tbl_foreach_subnet(test_vector[idx].addr2, test_vector[idx].addr1,
-			test_vector[idx].net_idx2, subnet_relay_cb_check_rev, &idx);
+						   test_vector[idx].net_idx2,
+						   subnet_relay_cb_check_rev, &idx);
 		ticks += k_uptime_ticks() - tick1;
 	}
 	printk("ticks: %8u  us: %u\n", ticks, k_ticks_to_us_floor32(ticks));

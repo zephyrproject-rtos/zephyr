@@ -41,5 +41,5 @@ RunTest mesh_brg_simple \
 	brg_tester_simple brg_bridge_simple brg_device_simple brg_device_simple
 
 overlay=overlay_psa_conf
-RunTest mesh_brg_simple \
+RunTest mesh_brg_simple_psa \
 	brg_tester_simple brg_bridge_simple brg_device_simple brg_device_simple

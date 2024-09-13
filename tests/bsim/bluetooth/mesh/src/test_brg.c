@@ -16,30 +16,29 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(test_brg, LOG_LEVEL_INF);
 
-#define WAIT_TIME 32 /*seconds*/
+#define WAIT_TIME          32  /*seconds*/
 #define WAIT_TIME_IVU_TEST 240 /* seconds */
-#define BEACON_INTERVAL 10 /*seconds */
+#define BEACON_INTERVAL    10  /*seconds */
 
-#define PROV_ADDR 0x0001
+#define PROV_ADDR         0x0001
 /* Bridge address must be less than DEVICE_ADDR_START */
-#define BRIDGE_ADDR 0x0002
+#define BRIDGE_ADDR       0x0002
 #define DEVICE_ADDR_START 0x0003
 
 #define REMOTE_NODES 2
 
-static const uint8_t prov_dev_key[16] = { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab,
-					  0xcd, 0xef, 0x01, 0x23, 0x45, 0x67,
-					  0x89, 0xab, 0xcd, 0xef };
+static const uint8_t prov_dev_key[16] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+					 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 
 static const uint8_t subnet_keys[][16] = {
-	{ 0xaa, 0xbb, 0xcc },
-	{ 0xdd, 0xee, 0xff },
-	{ 0x11, 0x22, 0x33 },
+	{0xaa, 0xbb, 0xcc},
+	{0xdd, 0xee, 0xff},
+	{0x11, 0x22, 0x33},
 };
 
-static uint8_t prov_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa };
-static uint8_t bridge_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xbb };
-static uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0xcc };
+static uint8_t prov_uuid[16] = {0x6c, 0x69, 0x6e, 0x67, 0x61, 0xaa};
+static uint8_t bridge_uuid[16] = {0x6c, 0x69, 0x6e, 0x67, 0x61, 0xbb};
+static uint8_t dev_uuid[16] = {0x6c, 0x69, 0x6e, 0x67, 0x61, 0xcc};
 
 static int test_ividx = 0x123456;
 
@@ -79,7 +78,7 @@ static void test_bridge_init(void)
 static void test_device_init(void)
 {
 	ASSERT_TRUE_MSG(get_device_nbr() >= 2, "Regular devices must be initialized after "
-			"tester and Bridge devices.");
+					       "tester and Bridge devices.");
 
 	/* Regular devices addresses starts from address 0x0003.*/
 	dev_uuid[6] = get_device_nbr() + 1;
@@ -129,11 +128,9 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr, u
 	k_sem_give(&prov_sem);
 }
 
-static struct bt_mesh_prov tester_prov = {
-	.uuid = prov_uuid,
-	.unprovisioned_beacon = unprovisioned_beacon,
-	.node_added = prov_node_added
-};
+static struct bt_mesh_prov tester_prov = {.uuid = prov_uuid,
+					  .unprovisioned_beacon = unprovisioned_beacon,
+					  .node_added = prov_node_added};
 
 static void prov_complete(uint16_t net_idx, uint16_t addr)
 {
@@ -174,8 +171,8 @@ static void tester_setup(void)
 	for (int i = 0; i < REMOTE_NODES; i++) {
 		LOG_INF("Creating subnet idx %d", i);
 
-		ASSERT_OK(bt_mesh_cfg_cli_net_key_add(0, PROV_ADDR, i + 1, subnet_keys[i],
-						      &status));
+		ASSERT_OK(
+			bt_mesh_cfg_cli_net_key_add(0, PROV_ADDR, i + 1, subnet_keys[i], &status));
 		if (status) {
 			FAIL("NetKey add failed (status %u)", status);
 			return;
@@ -216,10 +213,8 @@ static void bridge_entry_add(uint16_t src, uint16_t dst, uint16_t net_idx1, uint
 	entry.addr2 = dst;
 
 	err = bt_mesh_brg_cfg_cli_bridging_table_add(0, BRIDGE_ADDR, &entry, &rsp);
-	if (err || rsp.status ||
-	    rsp.entry.directions != dir ||
-	    rsp.entry.net_idx1 != net_idx1 || rsp.entry.net_idx2 != net_idx2 ||
-	    rsp.entry.addr1 != src || rsp.entry.addr2 != dst) {
+	if (err || rsp.status || rsp.entry.directions != dir || rsp.entry.net_idx1 != net_idx1 ||
+	    rsp.entry.net_idx2 != net_idx2 || rsp.entry.addr1 != src || rsp.entry.addr2 != dst) {
 		FAIL("Bridging table add failed (err %d) (status %u)", err, rsp.status);
 		return;
 	}
@@ -229,8 +224,8 @@ static void bridge_entry_remove(uint16_t src, uint16_t dst, uint16_t net_idx1, u
 {
 	struct bt_mesh_bridging_table_status rsp;
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_remove(0, BRIDGE_ADDR, net_idx1, net_idx2,
-							    src, dst, &rsp));
+	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_remove(0, BRIDGE_ADDR, net_idx1, net_idx2, src,
+							    dst, &rsp));
 	if (rsp.status) {
 		FAIL("Bridging table remove failed (status %u)", rsp.status);
 		return;
@@ -344,9 +339,8 @@ static void bridge_table_verify(uint16_t net_idx1, uint16_t net_idx2, uint16_t s
 
 	net_buf_simple_init(rsp.list, 0);
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_get(0, BRIDGE_ADDR, net_idx1,
-							 net_idx2, start_idx,
-							 &rsp));
+	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_get(0, BRIDGE_ADDR, net_idx1, net_idx2,
+							 start_idx, &rsp));
 	ASSERT_EQUAL(rsp.status, 0);
 	ASSERT_EQUAL(rsp.net_idx1, net_idx1);
 	ASSERT_EQUAL(rsp.net_idx2, net_idx2);
@@ -388,9 +382,7 @@ static void device_ra_cb(uint8_t *data, size_t length)
 
 	case MSG_TYPE_GET: {
 		uint8_t test_data[1 /*type */ + 1 /* msgs cnt */ + sizeof(recvd_msgs)] = {
-			MSG_TYPE_STATUS,
-			recvd_msgs_cnt
-		};
+			MSG_TYPE_STATUS, recvd_msgs_cnt};
 
 		memcpy(&test_data[2], recvd_msgs, recvd_msgs_cnt * sizeof(recvd_msgs[0]));
 
@@ -578,12 +570,18 @@ static void test_tester_table_state_change(void)
 	 * the addresses and net keys indexs are provided in the opposite order.
 	 */
 	bridge_entry_add(DEVICE_ADDR_START, PROV_ADDR, 1, 0, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY);
-	bridge_table_verify(0, 1, 0, (struct bridged_addresses_entry[]) {
-		{ PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY },
-	}, 1);
-	bridge_table_verify(1, 0, 0, (struct bridged_addresses_entry[]) {
-		{ DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY },
-	}, 1);
+	bridge_table_verify(
+		0, 1, 0,
+		(struct bridged_addresses_entry[]){
+			{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
+		},
+		1);
+	bridge_table_verify(
+		1, 0, 0,
+		(struct bridged_addresses_entry[]){
+			{DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
+		},
+		1);
 
 	k_sleep(K_SECONDS(1));
 
@@ -599,9 +597,12 @@ static void test_tester_table_state_change(void)
 	 */
 	bridge_entry_remove(DEVICE_ADDR_START, PROV_ADDR, 1, 0);
 	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
-	bridge_table_verify(0, 1, 0, (struct bridged_addresses_entry[]) {
-		{ PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY },
-	}, 1);
+	bridge_table_verify(
+		0, 1, 0,
+		(struct bridged_addresses_entry[]){
+			{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
+		},
+		1);
 	bridge_table_verify(1, 0, 0, NULL, 0);
 
 	ASSERT_OK(send_get(DEVICE_ADDR_START));
@@ -666,9 +667,12 @@ static void test_tester_net_key_remove(void)
 	err = k_sem_take(&status_msg_recvd_sem, K_SECONDS(5));
 	ASSERT_EQUAL(err, -EAGAIN);
 
-	bridge_table_verify(0, 2, 0, (struct bridged_addresses_entry[]) {
-		{ PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY },
-	}, 1);
+	bridge_table_verify(
+		0, 2, 0,
+		(struct bridged_addresses_entry[]){
+			{PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
+		},
+		1);
 
 	/* Bridging Table Get message will return Invalid NetKey Index error because Subnet 1 is
 	 * removed.
@@ -701,21 +705,33 @@ static void test_tester_persistence(void)
 			return;
 		}
 
-		bridge_table_verify(0, 1, 0, (struct bridged_addresses_entry[]) {
-			{ PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY },
-		}, 1);
+		bridge_table_verify(
+			0, 1, 0,
+			(struct bridged_addresses_entry[]){
+				{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
+			},
+			1);
 
-		bridge_table_verify(0, 2, 0, (struct bridged_addresses_entry[]) {
-			{ PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY },
-		}, 1);
+		bridge_table_verify(0, 2, 0,
+				    (struct bridged_addresses_entry[]){
+					    {PROV_ADDR, DEVICE_ADDR_START + 1,
+					     BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
+				    },
+				    1);
 
-		bridge_table_verify(1, 0, 0, (struct bridged_addresses_entry[]) {
-			{ DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY },
-		}, 1);
+		bridge_table_verify(
+			1, 0, 0,
+			(struct bridged_addresses_entry[]){
+				{DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
+			},
+			1);
 
-		bridge_table_verify(2, 0, 0, (struct bridged_addresses_entry[]) {
-			{ DEVICE_ADDR_START + 1, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY },
-		}, 1);
+		bridge_table_verify(2, 0, 0,
+				    (struct bridged_addresses_entry[]){
+					    {DEVICE_ADDR_START + 1, PROV_ADDR,
+					     BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
+				    },
+				    1);
 	} else {
 		tester_setup();
 
@@ -758,7 +774,7 @@ static void msg_cache_workaround(void)
 			 * of the semaphor is not important as we just need to bump sequence number
 			 * enough to bypass message cache.
 			 */
-			(void) k_sem_take(&status_msg_recvd_sem, K_SECONDS(1));
+			(void)k_sem_take(&status_msg_recvd_sem, K_SECONDS(1));
 		}
 	}
 
@@ -942,21 +958,24 @@ static void test_device_simple_iv_test_mode(void)
 	PASS();
 }
 
-#define TEST_CASE(role, name, description)                 \
-	{                                                  \
-		.test_id = "brg_" #role "_" #name,         \
-		.test_post_init_f = test_##role##_init,    \
-		.test_descr = description,                 \
-		.test_tick_f = bt_mesh_test_timeout,       \
-		.test_main_f = test_##role##_##name,       \
+#define TEST_CASE(role, name, description)                                                         \
+	{                                                                                          \
+		.test_id = "brg_" #role "_" #name,                                                 \
+		.test_post_init_f = test_##role##_init,                                            \
+		.test_descr = description,                                                         \
+		.test_tick_f = bt_mesh_test_timeout,                                               \
+		.test_main_f = test_##role##_##name,                                               \
 	}
 
 static const struct bst_test_instance test_brg[] = {
-	TEST_CASE(tester, simple, "Tester node: provisions network, exchanges messages with "
+	TEST_CASE(tester, simple,
+		  "Tester node: provisions network, exchanges messages with "
 		  "mesh nodes"),
-	TEST_CASE(tester, table_state_change, "Tester node: tests changing bridging table "
+	TEST_CASE(tester, table_state_change,
+		  "Tester node: tests changing bridging table "
 		  "state"),
-	TEST_CASE(tester, net_key_remove, "Tester node: tests removing net key from Subnet "
+	TEST_CASE(tester, net_key_remove,
+		  "Tester node: tests removing net key from Subnet "
 		  "Bridge"),
 #if CONFIG_BT_SETTINGS
 	TEST_CASE(tester, persistence, "Tester node: test persistence of subnet bridge states"),
@@ -968,8 +987,7 @@ static const struct bst_test_instance test_brg[] = {
 	TEST_CASE(bridge, simple_iv_test_mode, "Subnet Bridge node with IV test mode enabled"),
 	TEST_CASE(device, simple_iv_test_mode, "A mesh node with IV test mode enabled"),
 
-	BSTEST_END_MARKER
-};
+	BSTEST_END_MARKER};
 
 struct bst_test_list *test_brg_install(struct bst_test_list *tests)
 {

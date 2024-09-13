@@ -172,9 +172,8 @@ static void brg_tbl_netkey_removed_evt(struct bt_mesh_subnet *sub, enum bt_mesh_
 	}
 
 	for (int i = 0; i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX; i++) {
-		if (brg_tbl[i].direction && (
-		    brg_tbl[i].net_idx1 == sub->net_idx ||
-		    brg_tbl[i].net_idx2 == sub->net_idx)) {
+		if (brg_tbl[i].direction &&
+		    (brg_tbl[i].net_idx1 == sub->net_idx || brg_tbl[i].net_idx2 == sub->net_idx)) {
 			memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
 			brg_tbl_compact();
 		}
@@ -229,21 +228,18 @@ int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx
 			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2, uint8_t *status)
 {
 	/* Sanity checks */
-	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 ||
-	    addr1 == addr2 || net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX ||
-	    net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
+	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 || addr1 == addr2 ||
+	    net_idx1 > BT_MESH_BRG_CFG_KEY_INDEX_MAX || net_idx2 > BT_MESH_BRG_CFG_KEY_INDEX_MAX) {
 		return -EINVAL;
 	}
 
-	if (direction != BT_MESH_BRG_CFG_DIR_ONEWAY &&
-	    direction != BT_MESH_BRG_CFG_DIR_TWOWAY) {
+	if (direction != BT_MESH_BRG_CFG_DIR_ONEWAY && direction != BT_MESH_BRG_CFG_DIR_TWOWAY) {
 		return -EINVAL;
 	}
 
 	if ((direction == BT_MESH_BRG_CFG_DIR_ONEWAY &&
 	     (addr2 == BT_MESH_ADDR_UNASSIGNED || addr2 == BT_MESH_ADDR_ALL_NODES)) ||
-	    (direction == BT_MESH_BRG_CFG_DIR_TWOWAY &&
-	     !BT_MESH_ADDR_IS_UNICAST(addr2))) {
+	    (direction == BT_MESH_BRG_CFG_DIR_TWOWAY && !BT_MESH_ADDR_IS_UNICAST(addr2))) {
 		return -EINVAL;
 	}
 
@@ -259,9 +255,8 @@ int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx
 	 * in the received message."
 	 */
 	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
-		if (brg_tbl[i].net_idx1 == net_idx1 &&
-		    brg_tbl[i].net_idx2 == net_idx2 && brg_tbl[i].addr1 == addr1 &&
-		    brg_tbl[i].addr2 == addr2) {
+		if (brg_tbl[i].net_idx1 == net_idx1 && brg_tbl[i].net_idx2 == net_idx2 &&
+		    brg_tbl[i].addr1 == addr1 && brg_tbl[i].addr2 == addr2) {
 			brg_tbl[i].direction = direction;
 			goto store;
 		}
@@ -295,28 +290,27 @@ void bt_mesh_brg_cfg_tbl_foreach_subnet(uint16_t src, uint16_t dst, uint16_t net
 					bt_mesh_brg_cfg_cb_t cb, void *user_data)
 {
 	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
-		if ((brg_tbl[i].direction ==  BT_MESH_BRG_CFG_DIR_ONEWAY ||
+		if ((brg_tbl[i].direction == BT_MESH_BRG_CFG_DIR_ONEWAY ||
 		     brg_tbl[i].direction == BT_MESH_BRG_CFG_DIR_TWOWAY) &&
-		     brg_tbl[i].net_idx1 == net_idx && brg_tbl[i].addr1 == src &&
-		     brg_tbl[i].addr2 == dst) {
+		    brg_tbl[i].net_idx1 == net_idx && brg_tbl[i].addr1 == src &&
+		    brg_tbl[i].addr2 == dst) {
 			cb(brg_tbl[i].net_idx2, user_data);
 		} else if ((brg_tbl[i].direction == BT_MESH_BRG_CFG_DIR_TWOWAY &&
-		     brg_tbl[i].net_idx2 == net_idx && brg_tbl[i].addr2 == src &&
-		     brg_tbl[i].addr1 == dst)) {
+			    brg_tbl[i].net_idx2 == net_idx && brg_tbl[i].addr2 == src &&
+			    brg_tbl[i].addr1 == dst)) {
 			cb(brg_tbl[i].net_idx1, user_data);
 		}
 	}
 }
 
-int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
-			       uint16_t addr2, uint8_t *status)
+int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1, uint16_t addr2,
+			       uint8_t *status)
 {
 	bool store = false;
 
 	/* Sanity checks */
 	if ((!BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 != BT_MESH_ADDR_UNASSIGNED) ||
-	    (BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 == addr2) ||
-	    addr2 == BT_MESH_ADDR_ALL_NODES) {
+	    (BT_MESH_ADDR_IS_UNICAST(addr1) && addr1 == addr2) || addr2 == BT_MESH_ADDR_ALL_NODES) {
 		return -EINVAL;
 	}
 
