@@ -1475,6 +1475,18 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 	return conn;
 }
 
+static K_SEM_DEFINE(pending_recycled_events, 0, K_SEM_MAX_LIMIT);
+
+static void recycled_work_handler(struct k_work *work)
+{
+	if (k_sem_take(&pending_recycled_events, K_NO_WAIT) == 0) {
+		notify_recycled_conn_slot();
+		k_work_submit(work);
+	}
+}
+
+static K_WORK_DEFINE(recycled_work, recycled_work_handler);
+
 void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_val_t old;
@@ -1505,7 +1517,8 @@ void bt_conn_unref(struct bt_conn *conn)
 	 * to claim connection object as only the first claim will be served.
 	 */
 	if (deallocated) {
-		notify_recycled_conn_slot();
+		k_sem_give(&pending_recycled_events);
+		k_work_submit(&recycled_work);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
