@@ -206,7 +206,7 @@
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
-		write-block-size = <16>;
+		write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -216,12 +216,12 @@
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			/* The MCUBoot swap-move algorithm uses the last 3 sectors
 			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(3 * 4))>;
 			};
 			slot1_partition: partition@32E000 {
 				label = "image-1";
@@ -229,7 +229,7 @@
 			};
 			storage_partition: partition@62E000 {
 				label = "storage";
-				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
+				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(140))>;
 			};
 		};
 	};
