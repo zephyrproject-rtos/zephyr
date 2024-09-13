@@ -1826,7 +1826,18 @@ This has been fixed in main for v3.7.0
 CVE-2024-6259
 -------------
 
-Under embargo until 2024-09-12
+BT: HCI: adv_ext_report Improper discarding in adv_ext_report
+
+- `Zephyr project bug tracker GHSA-p5j7-v26w-wmcp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p5j7-v26w-wmcp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74639 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74639>`_
+
+- `PR 77960 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77960>`_
 
 CVE-2024-6442
 -------------
