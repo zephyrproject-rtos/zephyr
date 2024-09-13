@@ -220,7 +220,7 @@ The BOARD options are summarized below:
 +-------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
-using :ref:`tfm_ipc` sample:
+using :zephyr:code-sample:`tfm_ipc` sample:
 
    .. code-block:: bash
 
