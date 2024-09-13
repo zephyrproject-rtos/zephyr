@@ -513,6 +513,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (wifi_nm_iface_is_sap(iface)) {
+		return;
+	}
+#endif
+
 	if (!net_if_is_admin_up(iface)) {
 		return;
 	}
