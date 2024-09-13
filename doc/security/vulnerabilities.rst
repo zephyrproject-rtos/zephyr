@@ -1745,7 +1745,24 @@ This has been fixed in main for v3.7.0
 CVE-2024-5754
 -------------
 
-Under embargo until 2024-09-04
+BT: Encryption procedure host vulnerability
+
+- `Zephyr project bug tracker GHSA-gvv5-66hw-5qrc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gvv5-66hw-5qrc>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 7395 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/7395>`_
+
+- `PR 74124 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74124>`_
+
+- `PR 74123 fix for 3.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74123>`_
+
+- `PR 74122 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74122>`_
 
 CVE-2024-5931
 -------------
