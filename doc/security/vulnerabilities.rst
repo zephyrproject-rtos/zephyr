@@ -1767,7 +1767,19 @@ This has been fixed in main for v3.7.0
 CVE-2024-5931
 -------------
 
-Under embargo until 2024-09-10
+BT: Unchecked user input in bap_broadcast_assistant
+
+- `Zephyr project bug tracker GHSA-r8h3-64gp-wv7f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r8h3-64gp-wv7f>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74062 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74062>`_
+
+- `PR 77966 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77966>`_
+
 
 CVE-2024-6135
 -------------
