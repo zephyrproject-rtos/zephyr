@@ -314,7 +314,6 @@
 			reg = <0x40013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 
 		egu0: swi0: egu@40014000 {
