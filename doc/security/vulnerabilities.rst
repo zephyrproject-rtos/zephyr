@@ -1784,7 +1784,18 @@ This has been fixed in main for v3.7.0
 CVE-2024-6135
 -------------
 
-Under embargo until 2024-09-11
+BT:Classic: Multiple missing buf length checks
+
+- `Zephyr project bug tracker GHSA-2mp4-4g6f-cqcx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2mp4-4g6f-cqcx>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74283 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74283>`_
+
+- `PR 77964 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77964>`_
 
 CVE-2024-6137
 -------------
