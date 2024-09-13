@@ -1096,6 +1096,76 @@ enum wifi_dpp_bootstrap_type {
 	WIFI_DPP_BOOTSTRAP_TYPE_NFC_URI
 };
 
+/** Params to add DPP configurator */
+struct wifi_dpp_configurator_add_params {
+	/** ECP curves for private key */
+	int curve;
+	/** ECP curves for net access key */
+	int net_access_key_curve;
+};
+
+/** Params to initiate a DPP auth procedure */
+struct wifi_dpp_auth_init_params {
+	/** Peer bootstrap id */
+	int peer;
+	/** Configuration parameter id */
+	int configurator;
+	/** Role configurator or enrollee */
+	int role;
+	/** Security type */
+	int conf;
+	/** SSID in string */
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+};
+
+/** Params to do DPP chirp */
+struct wifi_dpp_chirp_params {
+	/** Own bootstrap id */
+	int id;
+	/** Chirp on frequency */
+	int freq;
+};
+
+/** Params to do DPP listen */
+struct wifi_dpp_listen_params {
+	/** Listen on frequency */
+	int freq;
+	/** Role configurator or enrollee */
+	int role;
+};
+
+/** Params to generate a DPP bootstrap */
+struct wifi_dpp_bootstrap_gen_params {
+	/** Bootstrap type */
+	int type;
+	/** Own operating class */
+	int op_class;
+	/** Own working channel */
+	int chan;
+	/** ECP curves */
+	int curve;
+	/** Own mac address */
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+};
+
+/** Params to set specific DPP configurator */
+struct wifi_dpp_configurator_set_params {
+	/** Peer bootstrap id */
+	int peer;
+	/** Configuration parameter id */
+	int configurator;
+	/** Role configurator or enrollee */
+	int role;
+	/** Security type */
+	int conf;
+	/** ECP curves for private key */
+	int curve;
+	/** ECP curves for net access key */
+	int net_access_key_curve;
+	/** Own mac address */
+	char ssid[WIFI_SSID_MAX_LEN + 1];
+};
+
 /** Wi-Fi DPP params for various operations
  */
 struct wifi_dpp_params {
@@ -1103,69 +1173,17 @@ struct wifi_dpp_params {
 	int action;
 	union {
 		/** Params to add DPP configurator */
-		struct wifi_dpp_configurator_add_params {
-			/** ECP curves for private key */
-			int curve;
-			/** ECP curves for net access key */
-			int net_access_key_curve;
-		} configurator_add;
+		struct wifi_dpp_configurator_add_params configurator_add;
 		/** Params to initiate a DPP auth procedure */
-		struct wifi_dpp_auth_init_params {
-			/** Peer bootstrap id */
-			int peer;
-			/** Configuration parameter id */
-			int configurator;
-			/** Role configurator or enrollee */
-			int role;
-			/** Security type */
-			int conf;
-			/** SSID in string */
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} auth_init;
+		struct wifi_dpp_auth_init_params auth_init;
 		/** Params to do DPP chirp */
-		struct wifi_dpp_chirp_params {
-			/** Own bootstrap id */
-			int id;
-			/** Chirp on frequency */
-			int freq;
-		} chirp;
+		struct wifi_dpp_chirp_params chirp;
 		/** Params to do DPP listen */
-		struct wifi_dpp_listen_params {
-			/** Listen on frequency */
-			int freq;
-			/** Role configurator or enrollee */
-			int role;
-		} listen;
+		struct wifi_dpp_listen_params listen;
 		/** Params to generate a DPP bootstrap */
-		struct wifi_dpp_bootstrap_gen_params {
-			/** Bootstrap type */
-			int type;
-			/** Own operating class */
-			int op_class;
-			/** Own working channel */
-			int chan;
-			/** ECP curves */
-			int curve;
-			/** Own mac address */
-			uint8_t mac[WIFI_MAC_ADDR_LEN];
-		} bootstrap_gen;
+		struct wifi_dpp_bootstrap_gen_params bootstrap_gen;
 		/** Params to set specific DPP configurator */
-		struct wifi_dpp_configurator_set_params {
-			/** Peer bootstrap id */
-			int peer;
-			/** Configuration parameter id */
-			int configurator;
-			/** Role configurator or enrollee */
-			int role;
-			/** Security type */
-			int conf;
-			/** ECP curves for private key */
-			int curve;
-			/** ECP curves for net access key */
-			int net_access_key_curve;
-			/** Own mac address */
-			char ssid[WIFI_SSID_MAX_LEN + 1];
-		} configurator_set;
+		struct wifi_dpp_configurator_set_params configurator_set;
 		/** Bootstrap get uri id */
 		int id;
 		/** Timeout for DPP frame response rx */
