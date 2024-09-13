@@ -29,6 +29,9 @@ manifest:
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: reqmgmt
+      revision: 1f96a9f17559547900c697e86adb9cc04e16af74
+      path: tools/reqmgmt
     - name: acpica
       revision: 8d24867bc9c9d81c81eeac59391cda59333affd4
       path: modules/lib/acpica

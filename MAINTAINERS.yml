@@ -4359,6 +4359,15 @@ West:
   labels:
     - "area: West"
 
+"West project: reqmgmt":
+  status: maintained
+  maintainers:
+    - nashif
+    - simhein
+  files: []
+  labels:
+    - "area: Requirements"
+
 "West project: acpica":
   status: maintained
   maintainers:
