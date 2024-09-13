@@ -1964,27 +1964,34 @@ out:
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
 	struct net_if_ipv6 *ipv6;
+	bool result = true;
 	int ret;
 
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
+
 	ipv6 = iface->config.ip.ipv6;
 	if (!ipv6) {
-		return false;
+		result = false;
+		goto out;
 	}
 
 	ret = net_if_addr_unref(iface, AF_INET6, addr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv6_addr(addr), ret);
-		return false;
-
+		result = false;
+		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
 			net_sprint_ipv6_addr(addr), ret);
 	}
 
-	return true;
+out:
+	net_if_unlock(iface);
+
+	return result;
 }
 
 bool z_impl_net_if_ipv6_addr_add_by_index(int index,
@@ -4325,27 +4332,34 @@ out:
 bool net_if_ipv4_addr_rm(struct net_if *iface, const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4;
+	bool result = true;
 	int ret;
 
 	NET_ASSERT(addr);
 
+	net_if_lock(iface);
+
 	ipv4 = iface->config.ip.ipv4;
 	if (!ipv4) {
-		return false;
+		result = false;
+		goto out;
 	}
 
 	ret = net_if_addr_unref(iface, AF_INET, addr);
 	if (ret > 0) {
 		NET_DBG("Address %s still in use (ref %d)",
 			net_sprint_ipv4_addr(addr), ret);
-		return false;
-
+		result = false;
+		goto out;
 	} else if (ret < 0) {
 		NET_DBG("Address %s not found (%d)",
 			net_sprint_ipv4_addr(addr), ret);
 	}
 
-	return true;
+out:
+	net_if_unlock(iface);
+
+	return result;
 }
 
 bool z_impl_net_if_ipv4_addr_add_by_index(int index,
