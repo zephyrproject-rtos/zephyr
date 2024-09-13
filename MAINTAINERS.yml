@@ -4111,6 +4111,7 @@ Secure storage:
     - tomi-font
   files:
     - subsys/secure_storage/
+    - samples/psa/
     - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
