@@ -110,10 +110,21 @@ jobs:
         pip3 install west==${WEST_VERSION}
         pip3 install cmake==${CMAKE_VERSION}
         pip3 install coverxygen
+        pip3 install mlx.traceability strictdoc
 
     - name: west setup
       run: |
         west init -l .
+
+    - name: prcoess requirements
+      run: |
+        west update reqmgmt
+        pushd ../tools/reqmgmt
+        strictdoc export . --formats json
+        popd
+        cp ../tools/reqmgmt/output/json/index.json doc/requirements/requirements.json
+        python3 doc/requirements/create_req.py --json doc/requirements/requirements.json  --output doc/requirements/requirements.dox
+
 
     - name: build-docs
       shell: bash
@@ -135,29 +146,16 @@ jobs:
         SPHINXOPTS_EXTRA="-q -t publish" \
         make -C doc ${DOC_TARGET}
 
-        # API documentation coverage
-        python3 -m coverxygen --xml-dir  doc/_build/html/doxygen/xml/ --src-dir include/ --output doc-coverage.info
-        # deprecated page causing issues
-        lcov --remove doc-coverage.info \*/deprecated > new.info
-        genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
-
     - name: compress-docs
       run: |
         tar --use-compress-program="xz -T0" -cf html-output.tar.xz --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
-        tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
 
     - name: upload-build
       uses: actions/upload-artifact@v4
       with:
         name: html-output
         path: html-output.tar.xz
-
-    - name: upload-api-coverage
-      uses: actions/upload-artifact@v4
-      with:
-        name: api-coverage
-        path: api-coverage.tar.xz
 
     - name: process-pr
       if: github.event_name == 'pull_request'
