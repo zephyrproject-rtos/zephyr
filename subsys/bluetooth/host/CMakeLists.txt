@@ -68,6 +68,11 @@ if(CONFIG_BT_HCI_HOST)
     conn.c
     )
 
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CHANNEL_SOUNDING
+    cs.c
+    )
+
   if(CONFIG_BT_DF)
     zephyr_library_sources(
       direction.c
