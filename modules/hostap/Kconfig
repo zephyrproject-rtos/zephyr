@@ -249,6 +249,11 @@ if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 		default 16384
 endif
 
+config WIFI_NM_WPA_SUPPLICANT_ROAMING
+	bool "Roaming support"
+	help
+	  Enable roaming support with wpa_supplicant. Once enabled, STA will try to find and roam to better AP when current BSS RSSI drops.
+
 # Create hidden config options that are used in hostap. This way we do not need
 # to mark them as allowed for CI checks, and also someone else cannot use the
 # same name options.
