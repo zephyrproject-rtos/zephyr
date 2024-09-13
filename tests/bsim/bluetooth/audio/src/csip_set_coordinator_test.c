@@ -32,7 +32,6 @@ static bool expect_lockable = true;
 
 extern enum bst_result_t bst_result;
 static volatile bool discovered;
-static volatile bool members_discovered;
 static volatile bool discover_timed_out;
 static volatile bool set_locked;
 static volatile bool set_unlocked;

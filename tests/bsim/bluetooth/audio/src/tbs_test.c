@@ -22,7 +22,6 @@
 #ifdef CONFIG_BT_TBS
 extern enum bst_result_t bst_result;
 static uint8_t g_call_index;
-static volatile uint8_t call_state;
 
 CREATE_FLAG(is_connected);
 CREATE_FLAG(call_placed);

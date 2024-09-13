@@ -1045,7 +1045,7 @@ static void test_cap_acceptor_broadcast_reception(void)
 	sink_wait_for_data();
 
 	/* Since we are re-using the BAP broadcast source test
-	 * we get a metadata udate, and we need to send an extra
+	 * we get a metadata update, and we need to send an extra
 	 * backchannel sync
 	 */
 	base_wait_for_metadata_update();
