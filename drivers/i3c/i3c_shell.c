@@ -1944,10 +1944,10 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
 	for (uint8_t i = 0; i <= last; i += 16) {
-		shell_fprintf(sh, SHELL_NORMAL, "%02x: ", i);
+		shell_fprintf_normal(sh, "%02x: ", i);
 		for (uint8_t j = 0; j < 16; j++) {
 			if (i + j < first || i + j > last) {
-				shell_fprintf(sh, SHELL_NORMAL, "   ");
+				shell_fprintf_normal(sh, "   ");
 				continue;
 			}
 
@@ -1974,10 +1974,10 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 				msgs[0].len = 0U;
 				msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 				if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
-					shell_fprintf(sh, SHELL_NORMAL, "%02x ", i + j);
+					shell_fprintf_normal(sh, "%02x ", i + j);
 					++cnt;
 				} else {
-					shell_fprintf(sh, SHELL_NORMAL, "-- ");
+					shell_fprintf_normal(sh, "-- ");
 				}
 
 				ret = i3c_detach_i2c_device(&desc);
@@ -1987,13 +1987,13 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 						    desc.addr);
 				}
 			} else if (slot == I3C_ADDR_SLOT_STATUS_I3C_DEV) {
-				shell_fprintf(sh, SHELL_NORMAL, "I3 ");
+				shell_fprintf_normal(sh, "I3 ");
 			} else if (slot == I3C_ADDR_SLOT_STATUS_I2C_DEV) {
-				shell_fprintf(sh, SHELL_NORMAL, "I2 ");
+				shell_fprintf_normal(sh, "I2 ");
 			} else if (slot == I3C_ADDR_SLOT_STATUS_RSVD) {
-				shell_fprintf(sh, SHELL_NORMAL, "RS ");
+				shell_fprintf_normal(sh, "RS ");
 			} else {
-				shell_fprintf(sh, SHELL_NORMAL, "-- ");
+				shell_fprintf_normal(sh, "-- ");
 			}
 		}
 		shell_print(sh, "");
