@@ -4113,8 +4113,12 @@ Secure storage:
     - tomi-font
   files:
     - subsys/secure_storage/
+    - tests/subsys/secure_storage/
   labels:
     - "area: Secure storage"
+  tests:
+    - psa.secure_storage
+
 Storage:
   status: odd fixes
   files:
@@ -4924,6 +4928,7 @@ West:
   tests:
     - benchmark.crypto.mbedtls
     - crypto.mbedtls
+    - psa.secure_storage
 
 "West project: mcuboot":
   status: maintained
@@ -5096,6 +5101,7 @@ West:
     - "area: TF-M"
   tests:
     - trusted-firmware-m
+    - psa.secure_storage
 
 "West project: tf-m-tests":
   status: maintained
