@@ -64,6 +64,7 @@ void thread2_set_prio_test(void *p1, void *p2, void *p3)
  * @brief Test the k_thread_priority_set() API
  *
  * @see k_thread_priority_set(), k_thread_priority_get()
+ * @verify{@req{SRS-1-2}}
  */
 ZTEST(threads_lifecycle, test_threads_priority_set)
 {
