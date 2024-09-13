@@ -17,6 +17,6 @@ RunTest mesh_brg_ivu \
 	brg_device_simple_iv_test_mode
 
 overlay=overlay_psa_conf
-RunTest mesh_brg_ivu \
+RunTest mesh_brg_ivu_psa \
 	brg_tester_ivu brg_bridge_simple_iv_test_mode brg_device_simple_iv_test_mode \
 	brg_device_simple_iv_test_mode

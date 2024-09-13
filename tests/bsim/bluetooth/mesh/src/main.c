@@ -60,14 +60,9 @@ bst_test_install_t test_installers[] = {
 	test_proxy_sol_install,
 #endif
 #elif defined(CONFIG_BT_MESH_GATT_PROXY)
-	test_adv_install,
-	test_suspend_install,
-	test_beacon_install,
+	test_adv_install, test_suspend_install, test_beacon_install,
 #elif defined(CONFIG_BT_CTLR_LOW_LAT)
-	test_transport_install,
-	test_friendship_install,
-	test_suspend_install,
-	test_adv_install,
+	test_transport_install, test_friendship_install, test_suspend_install, test_adv_install,
 #else
 	test_transport_install,
 	test_friendship_install,
@@ -85,8 +80,7 @@ bst_test_install_t test_installers[] = {
 	test_cdp1_install,
 	test_brg_install,
 #endif
-	NULL
-};
+	NULL};
 
 static struct k_thread bsim_mesh_thread;
 static K_KERNEL_STACK_DEFINE(bsim_mesh_thread_stack, 4096);

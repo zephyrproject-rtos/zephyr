@@ -34,8 +34,8 @@ static int cmd_subnet_bridge_set(const struct shell *sh, size_t argc, char *argv
 	enum bt_mesh_subnet_bridge_state set, rsp;
 	int err = 0;
 
-	set = shell_strtobool(argv[1], 0, &err) ? BT_MESH_SUBNET_BRIDGE_ENABLED :
-						     BT_MESH_SUBNET_BRIDGE_DISABLED;
+	set = shell_strtobool(argv[1], 0, &err) ? BT_MESH_SUBNET_BRIDGE_ENABLED
+						: BT_MESH_SUBNET_BRIDGE_DISABLED;
 
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
@@ -231,17 +231,16 @@ static int cmd_bridging_table_get(const struct shell *sh, size_t argc, char *arg
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	brg_cfg_cmds,
-	SHELL_CMD_ARG(bridge-get, NULL, NULL, cmd_subnet_bridge_get, 1, 0),
-	SHELL_CMD_ARG(bridge-set, NULL, "<State(disable, enable)>", cmd_subnet_bridge_set, 2, 0),
-	SHELL_CMD_ARG(table-size-get, NULL, NULL, cmd_bridging_table_size_get, 1, 0),
-	SHELL_CMD_ARG(table-add, NULL, "<Directions> <NetIdx1> <NetIdx2> <Addr1> <Addr2>",
+	brg_cfg_cmds, SHELL_CMD_ARG(bridge - get, NULL, NULL, cmd_subnet_bridge_get, 1, 0),
+	SHELL_CMD_ARG(bridge - set, NULL, "<State(disable, enable)>", cmd_subnet_bridge_set, 2, 0),
+	SHELL_CMD_ARG(table - size - get, NULL, NULL, cmd_bridging_table_size_get, 1, 0),
+	SHELL_CMD_ARG(table - add, NULL, "<Directions> <NetIdx1> <NetIdx2> <Addr1> <Addr2>",
 		      cmd_bridging_table_add, 6, 0),
-	SHELL_CMD_ARG(table-remove, NULL, "<NetIdx1> <NetIdx2> <Addr1> <Addr2>",
+	SHELL_CMD_ARG(table - remove, NULL, "<NetIdx1> <NetIdx2> <Addr1> <Addr2>",
 		      cmd_bridging_table_remove, 5, 0),
-	SHELL_CMD_ARG(subnets-get, NULL, "<Filter> <NetIdx> <StartIdx>", cmd_bridged_subnets_get,
+	SHELL_CMD_ARG(subnets - get, NULL, "<Filter> <NetIdx> <StartIdx>", cmd_bridged_subnets_get,
 		      4, 0),
-	SHELL_CMD_ARG(table-get, NULL, "<NetIdx1> <NetIdx2> <StartIdx>", cmd_bridging_table_get,
+	SHELL_CMD_ARG(table - get, NULL, "<NetIdx1> <NetIdx2> <StartIdx>", cmd_bridging_table_get,
 		      4, 0),
 	SHELL_SUBCMD_SET_END);
 
