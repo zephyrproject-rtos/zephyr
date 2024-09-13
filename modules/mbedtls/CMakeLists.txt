@@ -136,7 +136,7 @@ zephyr_interface_library_named(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C AND NOT CONFIG_BUILD_WITH_TFM)
+    if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
@@ -175,6 +175,9 @@ zephyr_interface_library_named(mbedTLS)
     )
 
     zephyr_library_sources(${crypto_source})
+
+    # Custom macro to tell that an mbedTLSCrypto source file is being compiled.
+    zephyr_library_compile_definitions(BUILDING_MBEDTLS_CRYPTO)
 
     zephyr_library_link_libraries(mbedTLS)
 
