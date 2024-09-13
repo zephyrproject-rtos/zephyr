@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PSI5
+	bool "Peripheral Sensor Interface (PSI5) driver"
+	help
+	  Enable PSI5 Driver Configuration
+
+if PSI5
+
+module = PSI5
+module-str = psi5
+source "subsys/logging/Kconfig.template.log_config"
+
+config PSI5_INIT_PRIORITY
+	int "PSI5 driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  PSI5 driver device initialization priority.
+
+source "drivers/psi5/Kconfig.nxp_s32"
+
+endif # PSI5
