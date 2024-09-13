@@ -1434,7 +1434,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc,
 
 static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_uap();
+	struct net_if *iface = net_if_get_wifi_sap();
 	struct wifi_twt_params params = {0};
 	int idx = 1;
 	long value;
@@ -3216,6 +3216,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "<rts_threshold: rts threshold/off>.\n",
 		  cmd_wifi_ap_set_rts_threshold,
 		  2,
+		  0),
 	SHELL_CMD_ARG(status,
 		  NULL,
 		  "Status of Wi-Fi SAP.\n",

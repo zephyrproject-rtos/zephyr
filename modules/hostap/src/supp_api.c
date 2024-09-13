@@ -712,7 +712,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL ||
 		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO ||) {
+		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
 					   params->psk)) {
 				goto out;
@@ -1545,18 +1545,6 @@ int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params
 	}
 
 	return wifi_mgmt_api->set_btwt(dev, params);
-}
-
-int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
-{
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
-
-	if (!wifi_mgmt_api || !wifi_mgmt_api->set_rts_threshold) {
-		wpa_printf(MSG_ERROR, "Set rts threshold not supported");
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->set_rts_threshold(dev, rts_threshold);
 }
 
 int supplicant_get_power_save_config(const struct device *dev,
