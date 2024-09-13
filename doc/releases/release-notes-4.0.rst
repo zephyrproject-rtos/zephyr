@@ -416,6 +416,15 @@ Libraries / Subsystems
 
 * ZBus
 
+* JWT (JSON Web Token)
+
+  * The following new Kconfigs were added to specify which library to use for the
+    signature:
+
+    * :kconfig:option:`CONFIG_JWT_USE_PSA` (default) use the PSA Crypto API;
+    * :kconfig:option:`CONFIG_JWT_USE_LEGACY` use legacy libraries, i.e. TinyCrypt
+      for ECDSA and Mbed TLS for RSA.
+
 HALs
 ****
 
