@@ -26,10 +26,9 @@ support the target mode.  Zephyr has API for both roles.
 I2C Controller API
 ==================
 
-Zephyr's I2C controller API is used when an I2C peripheral controls the bus,
-in particularly the start and stop conditions and the clock.  This is
-the most common mode, used to interact with I2C devices like sensors and
-serial memory.
+Zephyr's I2C controller API is used when an I2C peripheral controls the bus, 
+particularly the start and stop conditions and the clock. This is the most 
+common mode, used to interact with I2C devices like sensors and serial memory.
 
 This API is supported in all in-tree I2C peripheral drivers and is
 considered stable.
