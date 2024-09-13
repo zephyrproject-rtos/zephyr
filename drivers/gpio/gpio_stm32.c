@@ -179,7 +179,7 @@ static inline void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint3
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 }
 
-static inline uint32_t ll_gpio_get_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin)
+__maybe_unused static inline uint32_t ll_gpio_get_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
 	/* On STM32WB0, the PWRC PU/PD control registers should be used instead
