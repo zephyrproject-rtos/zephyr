@@ -2008,6 +2008,23 @@ Release Notes:
   tests:
     - sample.drivers.espi.ps2
 
+"Drivers: PSI5":
+  status: maintained
+  maintainers:
+    - manuargue
+    - Dat-NguyenDuy
+  collaborators:
+    - congnguyenhuu
+  files:
+    - drivers/psi5/
+    - include/zephyr/drivers/psi5/
+    - dts/bindings/psi5/
+    - doc/hardware/peripherals/psi5.rst
+  labels:
+    - "area: PSI5"
+  tests:
+    - drivers.psi5
+
 "Drivers: PTP Clock":
   status: maintained
   maintainers:
