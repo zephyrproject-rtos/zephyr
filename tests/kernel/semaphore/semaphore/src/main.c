@@ -8,6 +8,14 @@
 #include <zephyr/irq_offload.h>
 #include <zephyr/ztest_error_hook.h>
 
+
+/**
+ * @defgroup kernel_semaphore_tests Semaphores
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 /* Macro declarations */
 #define SEM_INIT_VAL (0U)
 #define SEM_MAX_VAL  (10U)
@@ -271,7 +279,7 @@ ZTEST(semaphore, test_sem_thread2isr)
 }
 
 /**
- * @brief Test semaphore initialization at running time
+ * @brief Test semaphore initialization at runtime
  * @details
  * - Initialize a semaphore with valid count and max limit.
  * - Initialize a semaphore with invalid max limit.
