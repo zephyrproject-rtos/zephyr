@@ -325,16 +325,13 @@
 
 		comp: comparator@40013000 {
 			/*
-			 * This comparator node can be COMP or LPCOMP,
-			 * for the user to pick:
-			 * compatible = "nordic,nrf-comp" or
-			 *              "nordic,nrf-lpcomp".
+			 * Use compatible "nordic,nrf-comp" to configure as COMP
+			 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
 			 */
 			compatible = "nordic,nrf-comp";
 			reg = <0x40013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "disabled";
-			#io-channel-cells = <1>;
 		};
 
 		egu0: swi0: egu@40014000 {

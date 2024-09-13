@@ -565,6 +565,17 @@
 				frame-timeout-supported;
 			};
 
+			comp: comparator@106000 {
+				/*
+				 * Use compatible "nordic,nrf-comp" to configure as COMP
+				 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
+				 */
+				compatible = "nordic,nrf-comp";
+				reg = <0x106000 0x1000>;
+				status = "disabled";
+				interrupts = <262 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 			/* intentionally empty because WDT30 is hardware fixed to Secure */
 #else
