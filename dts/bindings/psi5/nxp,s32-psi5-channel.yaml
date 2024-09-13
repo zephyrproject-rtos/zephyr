@@ -1,0 +1,102 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for Peripheral Sensor Interface (PSI5) channel
+
+compatible: "nxp,s32-psi5-channel"
+
+include: base.yaml
+
+properties:
+  async-mode:
+    type: boolean
+    description: |
+      This setting enables the channel operation asynchronous mode with only RX active.
+      Otherwise enables the channel operation synchronous mode with both TX and RX active.
+
+  # Channel TX configuration
+  target-pulse-us:
+    type: int
+    required: true
+    description: |
+       The duration of the internally generated synchronization pulses,
+       measured in microseconds (us).
+
+  decoder-offset-us:
+    type: int
+    required: true
+    description: |
+        The duration for which the Manchester decoder remains inactive after the falling edge
+        of a sync pulse, measured in microseconds (us).
+
+  low-pulse-width-us:
+    required: true
+    type: int
+    description: |
+      The duration of the pulse width for a data value of '0', measured in microseconds (us).
+
+  high-pulse-width-us:
+    required: true
+    type: int
+    description: |
+      The duration of the pulse width for a data value of '1', measured in microseconds (us).
+
+  tx-mode:
+    type: string
+    required: true
+    enum:
+      - short-frame-31
+      - short-frame-5
+      - long-frame-31
+      - long-frame-5
+      - x-long-frame-31
+      - x-long-frame-5
+      - xx-long-frame
+      - non-standard-frame
+    description: |
+      Transmitter mode:
+        - short-frame-31: Short Frame (V1.3) with 31 "1s" as the start condition
+        - short-frame-5: Short Frame (V1.3) with 5 "0s" as the start condition
+        - long-frame-31: Long Frame (V1.3) with 31 "1s" as the start condition
+        - long-frame-5: Long Frame (V1.3) with 5 "0s" as the start condition
+        - x-long-fram-31: X-Long Frame (V1.3) with 31 "1s" as the start condition
+        - x-long-frame-5: X-Long Frame (V1.3) with 5 "0s" as the start condition
+        - xx-long-frame: XX-Long (V2.0)
+        - non-standard-frame: Non Standard Length
+
+  # Channel RX configuration
+  rx-buf-size:
+    type: int
+    required: true
+    description: |
+      The maximum number of RX buffers used for storing PSI5 messages, range from 1 to 32.
+
+  bitrate-kbps:
+    type: int
+    required: true
+    enum:
+      - 125
+      - 189
+    description: |
+      Selects the receive message bitrate in kbps
+
+  array-slot-duration-us:
+    type: array
+    required: true
+    description: |
+      The array contains the slot duration in microseconds (us), beginning from the rising edge
+      of the timing sync pulse and ending at the final slot.
+
+  array-slot-start-offset-us:
+    type: array
+    required: true
+    description: |
+      The array contains the start offset of the slot should start in microseconds (us),
+      at which the rising edge of the timing sync pulse occurs.
+
+  array-slot-data-length:
+    type: array
+    required: true
+    description: |
+      The array contains the number of slot bits data length (ranges from 8 to 28)

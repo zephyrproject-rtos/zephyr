@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for Peripheral Sensor Interface (PSI5)
+
+compatible: "nxp,s32-psi5-controller"
+
+include: [base.yaml, pinctrl-device.yaml]
