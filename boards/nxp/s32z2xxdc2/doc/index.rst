@@ -60,6 +60,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | DSPI      | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| eMIOS     | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 

@@ -1,0 +1,51 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&emios0_pwm 24 0 PWM_POLARITY_NORMAL>,
+			<&emios0_pwm 25 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	emios0_default: emios0_default {
+		group0 {
+			pinmux = <PK0_EMIOS_0_CH24_O>;
+			output-enable;
+		};
+		group1 {
+			pinmux = <PJ15_EMIOS_0_CH25_I>;
+			input-enable;
+		};
+	};
+};
+
+&emios0 {
+	clock-divider = <200>;
+	status = "okay";
+
+	emios0_pwm: pwm {
+		pinctrl-0 = <&emios0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm_24 {
+			channel = <24>;
+			prescaler = <16>;
+			pwm-mode = "OPWFMB";
+		};
+
+		pwm_25 {
+			channel = <25>;
+			pwm-mode = "SAIC";
+			prescaler = <16>;
+		};
+	};
+};
