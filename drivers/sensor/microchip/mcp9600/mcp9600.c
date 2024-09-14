@@ -31,10 +31,10 @@ LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 #define MCP9600_REG_A3_CONFIG 0x0A
 #define MCP9600_REG_A4_CONFIG 0x0B
 
-#define MCP9600_A1_HYST	 0x0C
-#define MCP9600_A2_HYST	 0x0D
-#define MCP9600_A3_HYST	 0x0E
-#define MCP9600_A4_HYST	 0x0F
+#define MCP9600_A1_HYST 0x0C
+#define MCP9600_A2_HYST 0x0D
+#define MCP9600_A3_HYST 0x0E
+#define MCP9600_A4_HYST 0x0F
 
 #define MCP9600_A1_LIMIT 0x10
 #define MCP9600_A2_LIMIT 0x11
@@ -44,7 +44,9 @@ LOG_MODULE_REGISTER(MCP9600, CONFIG_SENSOR_LOG_LEVEL);
 #define MCP9600_REG_ID_REVISION 0x20
 
 struct mcp9600_data {
-	int32_t temp;
+	int32_t thermocouple_temp;
+	int32_t cold_junction_temp;
+	uint16_t cold_junction_temp_res;
 };
 
 struct mcp9600_config {
@@ -64,23 +66,40 @@ static int mcp9600_sample_fetch(const struct device *dev, enum sensor_channel ch
 	uint8_t buf[2];
 	int ret;
 
-	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_THRMCP_TEMP &&
+	    chan != SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP) {
 		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
-	/* read signed 16 bit double-buffered register value */
-	ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, sizeof(buf));
-	if (ret < 0) {
-		data->temp = 1;
-		return ret;
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_THRMCP_TEMP) {
+		/* read signed 16 bit double-buffered register value */
+		ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_HOT, buf, sizeof(buf));
+		if (ret < 0) {
+			data->thermocouple_temp = 1;
+			return ret;
+		}
+
+		/* device's hot junction register is a signed int */
+		data->thermocouple_temp = (int32_t)(int16_t)(buf[0] << 8) | buf[1];
+
+		/* 0.0625C resolution per LSB */
+		data->thermocouple_temp *= 62500;
 	}
 
-	/* device's hot junction register is a signed int */
-	data->temp = (int32_t)(int16_t)(buf[0] << 8) | buf[1];
+	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP) {
+		/* read signed 16 bit double-buffered register value */
+		ret = mcp9600_reg_read(dev, MCP9600_REG_TEMP_COLD, buf, sizeof(buf));
+		if (ret < 0) {
+			data->cold_junction_temp = 1;
+			return ret;
+		}
 
-	/* 0.0625C resolution per LSB */
-	data->temp *= 62500;
+		/* device's cold junction register is a signed int */
+		data->cold_junction_temp = (int32_t)(int16_t)(buf[0] << 8) | buf[1];
+
+		data->cold_junction_temp *= data->cold_junction_temp_res;
+	}
 
 	return 0;
 }
@@ -90,16 +109,33 @@ static int mcp9600_channel_get(const struct device *dev, enum sensor_channel cha
 {
 	struct mcp9600_data *data = dev->data;
 
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan != SENSOR_CHAN_THRMCP_TEMP && chan != SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP) {
 		return -ENOTSUP;
 	}
 
-	if (data->temp == 1) {
-		return -EINVAL;
-	}
+	switch (chan) {
 
-	val->val1 = data->temp / 1000000;
-	val->val2 = data->temp % 1000000;
+	case SENSOR_CHAN_THRMCP_TEMP:
+		if (data->thermocouple_temp == 1) {
+			return -EINVAL;
+		}
+
+		val->val1 = data->thermocouple_temp / 1000000;
+		val->val2 = data->thermocouple_temp % 1000000;
+		break;
+
+	case SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP:
+		if (data->cold_junction_temp == 1) {
+			return -EINVAL;
+		}
+
+		val->val1 = data->cold_junction_temp / 1000000;
+		val->val2 = data->cold_junction_temp % 1000000;
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
@@ -112,6 +148,7 @@ static const struct sensor_driver_api mcp9600_api = {
 static int mcp9600_init(const struct device *dev)
 {
 	const struct mcp9600_config *cfg = dev->config;
+	struct mcp9600_data *data = dev->data;
 	uint8_t buf[2];
 	int ret;
 
@@ -122,6 +159,9 @@ static int mcp9600_init(const struct device *dev)
 
 	ret = mcp9600_reg_read(dev, MCP9600_REG_ID_REVISION, buf, sizeof(buf));
 	LOG_DBG("id: 0x%02x version: 0x%02x", buf[0], buf[1]);
+
+	/* default values at reset */
+	data->cold_junction_temp_res = 62500;
 
 	return ret;
 }
