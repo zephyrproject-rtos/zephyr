@@ -17,11 +17,9 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
-
-void z_arm_platform_init(void)
+#ifdef CONFIG_SOC_RESET_HOOK
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
-
 #endif
