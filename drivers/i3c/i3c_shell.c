@@ -1500,6 +1500,7 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 		} else if (defbyte == GETCAPS_FORMAT_2_CRCAPS) {
 			shell_print(sh, "CRCAPS: 0x%02x; 0x%02x", caps.fmt2.crcaps[0],
 				    caps.fmt2.crcaps[1]);
+			memcpy(&desc->crcaps, &caps, sizeof(desc->crcaps));
 		} else if (defbyte == GETCAPS_FORMAT_2_VTCAPS) {
 			shell_print(sh, "VTCAPS: 0x%02x; 0x%02x", caps.fmt2.vtcaps[0],
 				    caps.fmt2.vtcaps[1]);
@@ -1733,6 +1734,7 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 			desc->data_speed.max_read_turnaround = sys_get_le24(&mxds.fmt3.wrrdturn[2]);
 		} else if (defbyte == GETMXDS_FORMAT_3_CRHDLY) {
 			shell_print(sh, "CRHDLY1: 0x%02x", mxds.fmt3.crhdly1);
+			desc->crhdly1 = mxds.fmt3.crhdly1;
 		}
 	} else {
 		shell_print(sh, "GETMXDS: maxwr 0x%02x; maxrd 0x%02x; maxrdturn 0x%06x",
