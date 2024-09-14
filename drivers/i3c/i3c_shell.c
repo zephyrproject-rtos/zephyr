@@ -508,6 +508,101 @@ static int cmd_i3c_read(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+/* i3c hdr ddr read <device> <target> <7b cmd> [<byte1>, ...] */
+static int cmd_i3c_hdr_ddr_write(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	uint8_t buf[MAX_I3C_BYTES];
+	uint8_t cmd;
+	uint8_t data_length;
+	uint8_t i;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	cmd = strtol(argv[3], NULL, 16);
+
+	data_length = argc - 4;
+	if (data_length > MAX_I3C_BYTES) {
+		shell_info(sh, "Too many bytes provided, limit is %d", MAX_I3C_BYTES);
+	}
+
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[4 + i], NULL, 16);
+	}
+
+	ret = i3c_hdr_ddr_write(desc, cmd, buf, data_length);
+	if (ret != 0) {
+		shell_error(sh, "I3C: unable to perform HDR DDR write.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c hdr ddr read <device> <target> <7b cmd> [<numbytes>] */
+static int cmd_i3c_hdr_ddr_read(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	uint8_t buf[MAX_I3C_BYTES];
+	int num_bytes;
+	uint8_t cmd;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	cmd = strtol(argv[3], NULL, 16);
+
+	if (argc > 4) {
+		num_bytes = strtol(argv[4], NULL, 16);
+		if (num_bytes > MAX_I3C_BYTES) {
+			num_bytes = MAX_I3C_BYTES;
+		}
+	} else {
+		num_bytes = MAX_I3C_BYTES;
+	}
+
+	ret = i3c_hdr_ddr_read(desc, cmd, buf, num_bytes);
+	if (ret != 0) {
+		shell_error(sh, "I3C: unable to perform HDR DDR read.");
+		return ret;
+	}
+
+	shell_hexdump(sh, buf, num_bytes);
+
+	return ret;
+}
+
 /* i3c ccc rstdaa <device> */
 static int cmd_i3c_ccc_rstdaa(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2182,6 +2277,30 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 );
 #endif
 
+/* L3 I3C HDR DDR Shell Commands*/
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i3c_hdr_ddr_cmds,
+	SHELL_CMD_ARG(write, &dsub_i3c_device_attached_name,
+		      "Send HDR DDR Write\n"
+		      "Usage: hdr ddr write <device> <target> <7b cmd> [<byte1>, ...]",
+		      cmd_i3c_hdr_ddr_write, 4, MAX_I3C_BYTES),
+	SHELL_CMD_ARG(read, &dsub_i3c_device_attached_name,
+		      "Send HDR DDR Read\n"
+		      "Usage: hdr ddr read <device> <target> <7b cmd> <bytes>",
+		      cmd_i3c_hdr_ddr_read, 5, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
+/* L2 I3C HDR Shell Commands*/
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_i3c_hdr_cmds,
+	SHELL_CMD_ARG(ddr, &sub_i3c_hdr_ddr_cmds,
+		      "Send HDR DDR\n"
+		      "Usage: hdr ddr <sub cmd>",
+		      NULL, 2, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
 /* L2 I3C CCC Shell Commands*/
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_i3c_ccc_cmds,
@@ -2386,6 +2505,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(ccc, &sub_i3c_ccc_cmds,
 		      "Send I3C CCC\n"
 		      "Usage: ccc <sub cmd>",
+		      NULL, 3, 0),
+	SHELL_CMD_ARG(hdr, &sub_i3c_hdr_cmds,
+		      "Send I3C HDR\n"
+		      "Usage: hdr <sub cmd>",
 		      NULL, 3, 0),
 #ifdef I3C_USE_IBI
 	SHELL_CMD_ARG(ibi, &sub_i3c_ibi_cmds,
