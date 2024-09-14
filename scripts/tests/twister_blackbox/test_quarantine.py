@@ -89,9 +89,9 @@ class TestQuarantine:
         sys.stdout.write(out)
         sys.stderr.write(err)
 
-        frdm_match = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
+        board1_match1 = re.search('agnostic/group2/dummy.agnostic.group2 SKIPPED: Quarantine: test '
                                'intel_adl_crb', err)
-        frdm_match2 = re.search(
+        board1_match2 = re.search(
             'agnostic/group1/subgroup2/dummy.agnostic.group1.subgroup2 SKIPPED: Quarantine: test '
             'intel_adl_crb',
             err)
@@ -112,8 +112,8 @@ class TestQuarantine:
             'all platforms',
             err)
 
-        assert frdm_match and frdm_match2, 'platform quarantine not work properly'
-        assert qemu_64_match, 'platform quarantine on scenario not work properly'
+        assert board1_match1 and board1_match2, 'platform quarantine not working properly'
+        assert qemu_64_match, 'platform quarantine on scenario not working properly'
         assert all_platforms_match and all_platforms_match2 and all_platforms_match3, 'scenario ' \
                                                                                       'quarantine' \
                                                                                       ' not work ' \
