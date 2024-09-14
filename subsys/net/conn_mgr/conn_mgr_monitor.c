@@ -286,22 +286,28 @@ void conn_mgr_mon_resend_status(void)
 {
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
 
-	if (last_ready_count == 0) {
-		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_blame);
-	} else {
-		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_blame);
+	if (last_blame != NULL) {
+		if (last_ready_count == 0) {
+			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, last_blame);
+		} else {
+			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, last_blame);
+		}
 	}
 
-	if (last_ready_count_ipv6 == 0) {
-		net_mgmt_event_notify(NET_EVENT_L4_IPV6_DISCONNECTED, last_blame_ipv6);
-	} else {
-		net_mgmt_event_notify(NET_EVENT_L4_IPV6_CONNECTED, last_blame_ipv6);
+	if (last_blame_ipv6 != NULL) {
+		if (last_ready_count_ipv6 == 0) {
+			net_mgmt_event_notify(NET_EVENT_L4_IPV6_DISCONNECTED, last_blame_ipv6);
+		} else {
+			net_mgmt_event_notify(NET_EVENT_L4_IPV6_CONNECTED, last_blame_ipv6);
+		}
 	}
 
-	if (last_ready_count_ipv4 == 0) {
-		net_mgmt_event_notify(NET_EVENT_L4_IPV4_DISCONNECTED, last_blame_ipv4);
-	} else {
-		net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
+	if (last_blame_ipv4 != NULL) {
+		if (last_ready_count_ipv4 == 0) {
+			net_mgmt_event_notify(NET_EVENT_L4_IPV4_DISCONNECTED, last_blame_ipv4);
+		} else {
+			net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, last_blame_ipv4);
+		}
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
