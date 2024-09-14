@@ -1662,6 +1662,7 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "GETCAPS: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
 			    caps.fmt1.getcaps[0], caps.fmt1.getcaps[1], caps.fmt1.getcaps[2],
 			    caps.fmt1.getcaps[3]);
+		memcpy(&desc->getcaps, &caps, sizeof(desc->getcaps));
 	}
 
 	return ret;
