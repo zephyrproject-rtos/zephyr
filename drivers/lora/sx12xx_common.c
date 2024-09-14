@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Manivannan Sadhasivam
  * Copyright (c) 2020 Grinn
+ * Copyright (c) 2024 Chiho Sin
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,11 @@
 
 #include "sx12xx_common.h"
 
+#if defined(CONFIG_LORA_SX126X) || defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO) ||                    \
+	defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO)
+#include <sx126x-board.h>
+#endif
+
 #define STATE_FREE      0
 #define STATE_BUSY      1
 #define STATE_CLEANUP   2
@@ -29,14 +35,20 @@ struct sx12xx_rx_params {
 	int8_t *snr;
 };
 
+struct sx12xx_cad_params {
+	bool *detected;
+};
+
 static struct sx12xx_data {
 	const struct device *dev;
 	struct k_poll_signal *operation_done;
 	lora_recv_cb async_rx_cb;
+	lora_cad_cb async_cad_cb;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
+	struct sx12xx_cad_params cad_params;
 } dev_data;
 
 int __sx12xx_configure_pin(const struct gpio_dt_spec *gpio, gpio_flags_t flags)
@@ -190,6 +202,39 @@ static void sx12xx_ev_rx_error(void)
 	}
 }
 
+static void sx12xx_ev_cad_done(bool detected)
+{
+	struct k_poll_signal *sig = dev_data.operation_done;
+
+	/* Receiving in asynchronous mode */
+	if (dev_data.async_cad_cb) {
+		if (dev_data.async_rx_cb) {
+			/* Start receiving again */
+			Radio.Rx(0);
+		}
+		/* Run the callback */
+		dev_data.async_cad_cb(dev_data.dev, detected);
+		/* Don't run the synchronous code */
+		return;
+	}
+	if (dev_data.async_rx_cb) {
+		*dev_data.cad_params.detected = detected;
+		k_poll_signal_raise(sig, 0);
+		/* Start receiving again */
+		Radio.Rx(0);
+		/* Don't run the synchronous code */
+		return;
+	}
+
+	if (!atomic_cas(&dev_data.modem_usage, STATE_BUSY, STATE_CLEANUP)) {
+		return;
+	}
+	*dev_data.cad_params.detected = detected;
+	dev_data.operation_done = NULL;
+	atomic_clear(&dev_data.modem_usage);
+	k_poll_signal_raise(sig, 0);
+}
+
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
@@ -331,6 +376,98 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
 	return 0;
 }
 
+int sx12xx_lora_cad(const struct device *dev, k_timeout_t timeout)
+{
+	/* Validate that we have a CAD configuration */
+	if (!dev_data.tx_cfg.datarate) {
+		return -EINVAL;
+	}
+
+	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
+	struct k_poll_event evt =
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
+	int ret;
+	bool detected = false;
+
+	/* Ensure available, decremented by sx12xx_ev_cad_done or on timeout */
+	if (dev_data.async_rx_cb) {
+		/* Increment atomic so both acquire and release will fail */
+		if (!atomic_cas(&dev_data.modem_usage, STATE_BUSY, STATE_CLEANUP)) {
+			return -EBUSY;
+		}
+		/* Put radio back into sleep mode */
+		Radio.Sleep();
+		/* Completely release modem */
+		dev_data.operation_done = NULL;
+		atomic_clear(&dev_data.modem_usage);
+	} else if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+	dev_data.operation_done = &done;
+	dev_data.cad_params.detected = &detected;
+
+#if defined(CONFIG_LORA_SX126X) || defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO) ||                    \
+	defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO)
+	SX126xSetCadParams(LORA_CAD_08_SYMBOL, dev_data.tx_cfg.datarate + 13, 10, LORA_CAD_ONLY, 0);
+#endif
+	Radio.StartCad();
+
+	ret = k_poll(&evt, 1, timeout);
+	if (ret < 0) {
+		if (!modem_release(&dev_data)) {
+			k_poll(&evt, 1, K_FOREVER);
+			return detected;
+		}
+		LOG_INF("CAD timeout");
+		return ret;
+	}
+	return detected;
+}
+
+int sx12xx_lora_cad_async(const struct device *dev, lora_cad_cb cb)
+{
+	/* Validate that we have a CAD configuration */
+	if (!dev_data.tx_cfg.datarate) {
+		return -EINVAL;
+	}
+
+	/* Cancel ongoing reception */
+	if (cb == NULL) {
+		if (!modem_release(&dev_data)) {
+			/* Not receiving or already being stopped */
+			return -EINVAL;
+		}
+		return 0;
+	}
+
+	/* Ensure available, decremented by sx12xx_ev_cad_done or on timeout */
+	if (dev_data.async_rx_cb) {
+		/* Increment atomic so both acquire and release will fail */
+		if (!atomic_cas(&dev_data.modem_usage, STATE_BUSY, STATE_CLEANUP)) {
+			return -EBUSY;
+		}
+		/* Put radio back into sleep mode */
+		Radio.Sleep();
+		/* Completely release modem */
+		dev_data.operation_done = NULL;
+		atomic_clear(&dev_data.modem_usage);
+	} else if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+
+	/* Store parameters */
+	dev_data.async_cad_cb = cb;
+
+	/* Start channel activity detection */
+#if defined(CONFIG_LORA_SX126X) || defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO) ||                    \
+	defined(CONFIG_LORA_STM32WL_SUBGHZ_RADIO)
+	SX126xSetCadParams(LORA_CAD_08_SYMBOL, dev_data.tx_cfg.datarate + 13, 10, LORA_CAD_ONLY, 0);
+#endif
+	Radio.StartCad();
+
+	return 0;
+}
+
 int sx12xx_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
@@ -386,6 +523,7 @@ int sx12xx_init(const struct device *dev)
 	dev_data.events.RxError = sx12xx_ev_rx_error;
 	/* TX timeout event raises at the end of the test CW transmission */
 	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
+	dev_data.events.CadDone = sx12xx_ev_cad_done;
 	Radio.Init(&dev_data.events);
 
 	/*

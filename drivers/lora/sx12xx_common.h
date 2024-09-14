@@ -31,6 +31,10 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 
 int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb);
 
+int sx12xx_lora_cad(const struct device *dev, k_timeout_t timeout);
+
+int sx12xx_lora_cad_async(const struct device *dev, lora_cad_cb cb);
+
 int sx12xx_lora_config(const struct device *dev,
 		       struct lora_modem_config *config);
 
