@@ -218,7 +218,6 @@ config WIFI_NM_WPA_SUPPLICANT_INF_MON
 
 config WIFI_NM_HOSTAPD_AP
 	bool "FullAP mode support based on Hostapd"
-	depends on !WIFI_NM_WPA_SUPPLICANT_INF_MON
 
 config WIFI_NM_WPA_SUPPLICANT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"
