@@ -209,7 +209,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    "\tmrl: 0x%04x\n"
 						    "\tmwl: 0x%04x\n"
 						    "\tmax_ibi: 0x%02x\n"
-						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+						    "\tcrhdly1: 0x%02x\n"
+						    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
+						    "\tcrcaps: 0x%02x; 0x%02x",
 						    desc->dev->name, (uint64_t)desc->pid,
 						    desc->static_addr, desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -219,9 +221,10 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 						    desc->data_speed.maxwr,
 						    desc->data_speed.max_read_turnaround,
 						    desc->data_length.mrl, desc->data_length.mwl,
-						    desc->data_length.max_ibi,
+						    desc->data_length.max_ibi, desc->crhdly1,
 						    desc->getcaps.getcap1, desc->getcaps.getcap2,
-						    desc->getcaps.getcap3, desc->getcaps.getcap4);
+						    desc->getcaps.getcap3, desc->getcaps.getcap4,
+						    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
 					found = true;
 					break;
 				}
@@ -255,7 +258,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    "\tmrl: 0x%04x\n"
 					    "\tmwl: 0x%04x\n"
 					    "\tmax_ibi: 0x%02x\n"
-					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
+					    "\tcrhdly1: 0x%02x\n"
+					    "\tgetcaps: 0x%02x; 0x%02x; 0x%02x; 0x%02x\n"
+					    "\tcrcaps: 0x%02x; 0x%02x",
 					    desc->dev->name, (uint64_t)desc->pid, desc->static_addr,
 					    desc->dynamic_addr,
 #if defined(CONFIG_I3C_USE_GROUP_ADDR)
@@ -265,9 +270,10 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 					    desc->data_speed.maxwr,
 					    desc->data_speed.max_read_turnaround,
 					    desc->data_length.mrl, desc->data_length.mwl,
-					    desc->data_length.max_ibi, desc->getcaps.getcap1,
-					    desc->getcaps.getcap2, desc->getcaps.getcap3,
-					    desc->getcaps.getcap4);
+					    desc->data_length.max_ibi, desc->crhdly1,
+					    desc->getcaps.getcap1, desc->getcaps.getcap2,
+					    desc->getcaps.getcap3, desc->getcaps.getcap4,
+					    desc->crcaps.crcaps1, desc->crcaps.crcaps2);
 			}
 		} else {
 			shell_print(sh, "I3C: No devices found.");
