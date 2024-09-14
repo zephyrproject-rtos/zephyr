@@ -297,6 +297,16 @@ config BT_CTLR_ADVANCED_FEATURES
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
+config BT_CTLR_RNG_FAKE
+	bool "Fake Random Number Generation"
+	depends on !ENTROPY_HAS_DRIVER
+	default y
+	help
+	  A fake random number generator provided by the Controller to meet the
+	  requirement of advertising random delay and cryptography needs. This
+	  option makes the Controller experimental. This random number generator
+	  definitely does not meet the FIPS PUB 140-2 compliance.
+
 config BT_CTLR_SW_DEFERRED_PRIVACY
 	bool "LE Controller-based Software Privacy"
 	depends on BT_CTLR_PRIVACY

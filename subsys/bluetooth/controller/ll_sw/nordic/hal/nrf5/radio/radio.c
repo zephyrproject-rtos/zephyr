@@ -1179,6 +1179,50 @@ uint32_t radio_bc_has_match(void)
 	return (NRF_RADIO->EVENTS_BCMATCH != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_RNG_FAKE)
+static uint8_t rng_fake;
+
+static uint8_t rng_fake_xor(uint32_t value)
+{
+	uint8_t ms;
+
+	/* This is something that came of the guy writing it and who saw that
+	 * the sequence of returned value in the broadcaster sample seemed
+	 * random enough for him!
+	 */
+	ms = rng_fake >> 4;
+	rng_fake <<= 1;
+	rng_fake ^= (uint8_t)(value & 0xFF);
+	rng_fake ^= (uint8_t)((value >> 8) & 0xFF);
+	rng_fake ^= (uint8_t)((value >> 16) & 0xFF);
+	rng_fake ^= (uint8_t)((value >> 24) & 0xFF);
+	rng_fake ^= ~ms;
+
+	return rng_fake;
+}
+
+void radio_rng_fake_seed_set(uint32_t seed)
+{
+	rng_fake_xor(seed);
+}
+
+int radio_rng_fake_get(void *buf, uint16_t len)
+{
+	static uint32_t count;
+
+	while (len--) {
+		((uint8_t *)buf)[len] = rng_fake_xor(count++);
+	}
+
+	return 0;
+}
+
+int radio_rng_fake_isr_get(void *buf, uint16_t len)
+{
+	return radio_rng_fake_get(buf, len);
+}
+#endif /* CONFIG_BT_CTLR_RNG_FAKE */
+
 void radio_tmr_status_reset(void)
 {
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
@@ -1717,6 +1761,10 @@ void radio_tmr_hcto_configure(uint32_t hcto)
 	hal_radio_nrf_ppi_channels_enable(
 		BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) |
 		BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI));
+
+#if defined(CONFIG_BT_CTLR_RNG_FAKE)
+	(void)rng_fake_xor(hcto);
+#endif /* CONFIG_BT_CTLR_RNG_FAKE */
 }
 
 void radio_tmr_aa_capture(void)
@@ -1730,7 +1778,15 @@ void radio_tmr_aa_capture(void)
 
 uint32_t radio_tmr_aa_get(void)
 {
-	return EVENT_TIMER->CC[1];
+	uint32_t aa_us;
+
+	aa_us = EVENT_TIMER->CC[1];
+
+#if defined(CONFIG_BT_CTLR_RNG_FAKE)
+	(void)rng_fake_xor(aa_us);
+#endif /* CONFIG_BT_CTLR_RNG_FAKE */
+
+	return aa_us;
 }
 
 static uint32_t radio_tmr_aa;

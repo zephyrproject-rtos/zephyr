@@ -1,9 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_BT_CTLR_ADVANCED_FEATURES)
+if (CONFIG_BT_CTLR_ADVANCED_FEATURES)
   message(WARNING "\nCONFIG_BT_CTLR_ADVANCED_FEATURES=y, Advanced Features' "
                   "default value change could change Zephyr Bluetooth "
                   "Controller's functional behavior.")
+endif()
+
+if (CONFIG_BT_CTLR_RNG_FAKE)
+  message(WARNING "\nCONFIG_BT_CTLR_RNG_FAKE is not a truly random generator. "
+                  "This capability is not secure and it is provided "
+                  "for testing purposes only. Use it carefully.")
 endif()
 
 zephyr_library()

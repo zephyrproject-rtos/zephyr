@@ -14,6 +14,7 @@ export BOARD="${BOARD:-nrf54l15bsim/nrf54l15/cpuapp}"
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/multiple_id compile
+app=tests/bsim/bluetooth/ll/multiple_id conf_overlay=overlay-rng_fake.conf compile
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
 
