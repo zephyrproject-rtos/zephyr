@@ -3,7 +3,7 @@
 
 description: Galaxy Core GC2145 CMOS video sensor
 
-compatible: "gc,gc2145"
+compatible: "galaxycore,gc2145"
 
 include: i2c-device.yaml
 
