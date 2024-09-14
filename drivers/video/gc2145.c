@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT gc_gc2145
+#define DT_DRV_COMPAT galaxycore_gc2145
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
