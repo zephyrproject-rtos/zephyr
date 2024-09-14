@@ -272,8 +272,8 @@ Legend:
 
    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to
    the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the
-   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-
-   soldering them to positions R12 / R24.
+   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering
+   them to positions R12 / R24.
 
 SPI Flash / JP2
 ***************
