@@ -79,9 +79,10 @@ class TestConfig:
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
                 pytest.raises(SystemExit) as sys_exit:
             self.loader.exec_module(self.twister_module)
-
+        import pprint
         with open(os.path.join(out_path, 'testplan.json')) as f:
             j = json.load(f)
+            pprint.pprint(j)
         filtered_j = [
             (ts['platform'], ts['name'], tc['identifier']) \
                 for ts in j['testsuites'] \

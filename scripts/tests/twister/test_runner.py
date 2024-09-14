@@ -2051,6 +2051,7 @@ def test_projectbuilder_report_out(
 
     assert all([log in trim_actual_log for log in expected_logs])
 
+    print(trim_actual_log)
     if expected_out:
         out, err = capfd.readouterr()
         sys.stdout.write(out)
