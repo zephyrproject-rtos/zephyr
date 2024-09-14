@@ -303,6 +303,39 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+/* i3c speed <device> <speed> */
+static int cmd_i3c_speed(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_config_controller config;
+	uint32_t speed;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[1]);
+		return -ENODEV;
+	}
+
+	speed = strtol(argv[ARGV_DEV + 1], NULL, 10);
+
+	ret = i3c_config_get(dev, I3C_CONFIG_CONTROLLER, &config);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Failed to retrieve configuration");
+		return ret;
+	}
+
+	config.scl.i3c = speed;
+
+	ret = i3c_configure(dev, I3C_CONFIG_CONTROLLER, &config);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Failed to configure device");
+		return ret;
+	}
+
+	return ret;
+}
+
 /* i3c recover <device> */
 static int cmd_i3c_recover(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2199,6 +2232,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get I3C device info\n"
 		      "Usage: info <device> [<target>]",
 		      cmd_i3c_info, 2, 1),
+	SHELL_CMD_ARG(speed, &dsub_i3c_device_attached_name,
+		      "Set I3C device speed\n"
+		      "Usage: speed <device> <speed>",
+		      cmd_i3c_speed, 3, 0),
 	SHELL_CMD_ARG(recover, &dsub_i3c_device_name,
 		      "Recover I3C bus\n"
 		      "Usage: recover <device>",
