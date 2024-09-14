@@ -2098,6 +2098,8 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  *
  * This builds the payload required for DEFTGTS and transmits it out
  *
+ * @param dev Pointer to controller device driver instance.
+ *
  * @retval 0 if successful.
  * @retval -ENOMEM No memory to build the payload.
  * @retval -EIO General Input/Output error.
