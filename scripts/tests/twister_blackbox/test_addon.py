@@ -106,7 +106,7 @@ class TestAddon:
     def test_enable_asan(self, capfd, out_path, asan_flags, expected_exit_value, expect_asan):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'asan')
-        args = ['-i', '--outdir', out_path, '-T', test_path] + \
+        args = ['-i', '-W', '--outdir', out_path, '-T', test_path] + \
                asan_flags + \
                [] + \
                [val for pair in zip(
