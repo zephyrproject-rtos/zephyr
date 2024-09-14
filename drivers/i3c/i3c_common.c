@@ -612,6 +612,8 @@ static int i3c_bus_setdasa(const struct device *dev,
 	/* Loop through the registered I3C devices */
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
+		struct i3c_driver_data *bus_data = (struct i3c_driver_data *)dev->data;
+		struct i3c_ccc_address dyn_addr;
 
 		/*
 		 * A device without static address => need to do
@@ -635,10 +637,31 @@ static int i3c_bus_setdasa(const struct device *dev,
 
 		LOG_DBG("SETDASA for 0x%x", desc->static_addr);
 
-		ret = i3c_ccc_do_setdasa(desc);
+		/*
+		 * check that initial dynamic address is free before setting it
+		 * if configured
+		 */
+		if ((desc->init_dynamic_addr != 0) &&
+			(desc->init_dynamic_addr != desc->static_addr)) {
+			if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots,
+				desc->init_dynamic_addr)) {
+				if (i3c_detach_i3c_device(desc) != 0) {
+					LOG_ERR("Failed to detach %s", desc->dev->name);
+				}
+				continue;
+			}
+		}
+
+		/*
+		 * Note that the 7-bit address needs to start at bit 1
+		 * (aka left-justified). So shift left by 1;
+		 */
+		dyn_addr.addr = (desc->init_dynamic_addr ?
+					desc->init_dynamic_addr : desc->static_addr) << 1;
+
+		ret = i3c_ccc_do_setdasa(desc, dyn_addr);
 		if (ret == 0) {
-			desc->dynamic_addr = (desc->init_dynamic_addr ? desc->init_dynamic_addr
-								      : desc->static_addr);
+			desc->dynamic_addr = dyn_addr.addr >> 1;
 			if (desc->dynamic_addr != desc->static_addr) {
 				if (i3c_reattach_i3c_device(desc, desc->static_addr) != 0) {
 					LOG_ERR("Failed to reattach %s (%d)", desc->dev->name, ret);
@@ -651,7 +674,6 @@ static int i3c_bus_setdasa(const struct device *dev,
 			}
 			LOG_ERR("SETDASA error on address 0x%x (%d)",
 				desc->static_addr, ret);
-			continue;
 		}
 	}
 

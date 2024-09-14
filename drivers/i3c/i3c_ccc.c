@@ -149,12 +149,10 @@ int i3c_ccc_do_rstdaa_all(const struct device *controller)
 	return i3c_do_ccc(controller, &ccc_payload);
 }
 
-int i3c_ccc_do_setdasa(const struct i3c_device_desc *target)
+int i3c_ccc_do_setdasa(const struct i3c_device_desc *target, struct i3c_ccc_address da)
 {
-	struct i3c_driver_data *bus_data = (struct i3c_driver_data *)target->bus->data;
 	struct i3c_ccc_payload ccc_payload;
 	struct i3c_ccc_target_payload ccc_tgt_payload;
-	uint8_t dyn_addr;
 
 	__ASSERT_NO_MSG(target != NULL);
 	__ASSERT_NO_MSG(target->bus != NULL);
@@ -163,24 +161,9 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target)
 		return -EINVAL;
 	}
 
-	/*
-	 * Note that the 7-bit address needs to start at bit 1
-	 * (aka left-justified). So shift left by 1;
-	 */
-	dyn_addr = (target->init_dynamic_addr ?
-				target->init_dynamic_addr : target->static_addr) << 1;
-
-	/* check that initial dynamic address is free before setting it */
-	if ((target->init_dynamic_addr != 0) &&
-		(target->init_dynamic_addr != target->static_addr)) {
-		if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots, dyn_addr >> 1)) {
-			return -EINVAL;
-		}
-	}
-
 	ccc_tgt_payload.addr = target->static_addr;
 	ccc_tgt_payload.rnw = 0;
-	ccc_tgt_payload.data = &dyn_addr;
+	ccc_tgt_payload.data = (uint8_t *)&da.addr;
 	ccc_tgt_payload.data_len = 1;
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
@@ -193,10 +176,8 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target)
 
 int i3c_ccc_do_setnewda(const struct i3c_device_desc *target, struct i3c_ccc_address new_da)
 {
-	struct i3c_driver_data *bus_data = (struct i3c_driver_data *)target->bus->data;
 	struct i3c_ccc_payload ccc_payload;
 	struct i3c_ccc_target_payload ccc_tgt_payload;
-	uint8_t new_dyn_addr;
 
 	__ASSERT_NO_MSG(target != NULL);
 	__ASSERT_NO_MSG(target->bus != NULL);
@@ -205,22 +186,9 @@ int i3c_ccc_do_setnewda(const struct i3c_device_desc *target, struct i3c_ccc_add
 		return -EINVAL;
 	}
 
-	/*
-	 * Note that the 7-bit address needs to start at bit 1
-	 * (aka left-justified). So shift left by 1;
-	 */
-	new_dyn_addr = new_da.addr << 1;
-
-	/* check that initial dynamic address is free before setting it */
-	if (target->dynamic_addr != new_da.addr) {
-		if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots, new_da.addr)) {
-			return -EINVAL;
-		}
-	}
-
 	ccc_tgt_payload.addr = target->dynamic_addr;
 	ccc_tgt_payload.rnw = 0;
-	ccc_tgt_payload.data = &new_dyn_addr;
+	ccc_tgt_payload.data = (uint8_t *)&new_da.addr;
 	ccc_tgt_payload.data_len = 1;
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
