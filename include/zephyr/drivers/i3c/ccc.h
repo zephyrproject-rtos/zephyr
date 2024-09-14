@@ -496,7 +496,7 @@ struct i3c_ccc_address {
 	 * - For GETACCCR, the correct address of Secondary
 	 *   Controller.
 	 *
-	 * @note For SETDATA, SETNEWDA and SETGRAP,
+	 * @note For SETDATA, SETNEWDA and SETGRPA,
 	 * the address is left-shift by 1, and bit[0] is always 0.
 	 *
 	 * @note Fpr SET GETACCCR, the address is left-shift by 1,
@@ -1417,10 +1417,12 @@ int i3c_ccc_do_rstdaa_all(const struct device *controller);
  *
  * @param[in] target Pointer to the target device descriptor where
  *                   the device is configured with a static address.
+ * @param[in] da Struct of the Dynamic address
  *
  * @return @see i3c_do_ccc
  */
-int i3c_ccc_do_setdasa(const struct i3c_device_desc *target);
+int i3c_ccc_do_setdasa(const struct i3c_device_desc *target,
+			  struct i3c_ccc_address da);
 
 /**
  * @brief Set New Dynamic Address for a target
@@ -1431,7 +1433,7 @@ int i3c_ccc_do_setdasa(const struct i3c_device_desc *target);
  *
  * @param[in] target Pointer to the target device descriptor where
  *                   the device is configured with a static address.
- * @param[in] new_da Pointer to the new_da struct.
+ * @param[in] new_da Struct of the Dynamic address
  *
  * @return @see i3c_do_ccc
  */
