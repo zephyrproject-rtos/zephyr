@@ -1,4 +1,4 @@
 name: dummy_board
 vendor: others
 arch: unit
-identifier: dummy_board/dummy_soc
+identifier: dummy/unit_testing
