@@ -852,7 +852,9 @@ ignore_frag_error:
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->addr &&
 	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
-	      net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->dst)) ||
+	      (net_ipv6_is_ll_addr((struct in6_addr *)ip_hdr->dst) ||
+	       net_if_ipv6_addr_onlink(NULL, (struct in6_addr *)ip_hdr->dst) ||
+	       net_pkt_forwarding(pkt))) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
 	    net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst) ||
 	    /* Workaround Linux bug, see:
