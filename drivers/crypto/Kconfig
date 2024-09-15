@@ -82,6 +82,7 @@ source "drivers/crypto/Kconfig.npcx"
 source "drivers/crypto/Kconfig.xec"
 source "drivers/crypto/Kconfig.it8xxx2"
 source "drivers/crypto/Kconfig.mcux_dcp"
+source "drivers/crypto/Kconfig.si32"
 source "drivers/crypto/Kconfig.smartbond"
 
 endif # CRYPTO

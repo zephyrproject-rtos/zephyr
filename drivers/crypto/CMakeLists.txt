@@ -13,4 +13,5 @@ zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCHP_XEC_SYMCR	crypto_mchp_xec_symcr.
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT8XXX2_SHA		crypto_it8xxx2_sha.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_IT8XXX2_SHA_V2	crypto_it8xxx2_sha_v2.c)
 zephyr_library_sources_ifdef(CONFIG_CRYPTO_MCUX_DCP		crypto_mcux_dcp.c)
+zephyr_library_sources_ifdef(CONFIG_CRYPTO_SI32 		crypto_si32.c)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
