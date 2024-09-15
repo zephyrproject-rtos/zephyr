@@ -21,7 +21,7 @@ I3C Controller API
 ******************
 
 Zephyr's I3C controller API is used when an I3C controller controls
-the bus, in particularly the start and stop conditions and the clock.
+the bus, particularly the start and stop conditions and the clock.
 This is the most common mode, used to interact with I3C target
 devices such as sensors.
 
