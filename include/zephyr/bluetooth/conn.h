@@ -262,6 +262,134 @@ enum __packed bt_conn_type {
 			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO,
 };
 
+/** Remote channel sounding capabilities for LE connections supporting CS */
+struct bt_conn_le_cs_capabilities {
+	/** Number of CS configurations */
+	uint8_t num_config_supported;
+	/** Maximum number of consecutive CS procedures.
+	 *
+	 * When set to zero, indicates support for both fixed and indefinite
+	 * numbers of CS procedures before termination. */
+	uint16_t max_consecutive_procedures_supported;
+	/** Number of antennas. */
+	uint8_t num_antennas_supported;
+	/** Maximum number of antenna paths. */
+	uint8_t max_antenna_paths_supported;
+	/** Initiator role. */
+	bool initiator_supported;
+	/** Reflector role. */
+	bool reflector_supported;
+	/** Mode-3 */
+	bool mode_3_supported;
+	/** RTT AA Only */
+	bool rtt_aa_only_supported;
+	/** RTT Sounding */
+	bool rtt_sounding_supported;
+	/** RTT Random Payload */
+	bool rtt_random_payload_supported;
+	/** RTT AA Only accuracy.
+	 *
+	 * - True: 10ns time-of-flight precision
+	 * - False: 150ns time-of-flight precision (or not supported)
+	 */
+	bool rtt_aa_only_10ns_accurate;
+	/** RTT Sounding accuracy.
+	 *
+	 * - True: 10ns time-of-flight precision
+	 * - False: 150ns time-of-flight precision (or not supported)
+	 */
+	bool rtt_sounding_10ns_accurate;
+	/** RTT Random Payload accuracy
+	 *
+	 * - True: 10ns time-of-flight precision
+	 * - False: 150ns time-of-flight precision (or not supported)
+	 */
+	bool rtt_random_payload_10ns_accurate;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT AA Only.
+	 *
+	 * Set to 0 if RTT AA Only isn't supported. */
+	uint8_t rtt_aa_only_n;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT Sounding.
+	 *
+	 * Set to 0 if RTT Sounding isn't supported. */
+	uint8_t rtt_sounding_n;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT Random Payload.
+	 *
+	 * Set to 0 if RTT Random Payload isn't supported.  */
+	uint8_t rtt_random_payload_n;
+	/** Phase-based normalized attack detector metric
+	 * when a CS_SYNC with sounding sequence is received. */
+	bool phase_based_nadm_sounding_supported;
+	/** Phase-based normalized attack detector metric
+	 * when a CS_SYNC with random sequence is received. */
+	bool phase_based_nadm_random_supported;
+	/** CS_SYNC LE 2M PHY. */
+	bool cs_sync_2m_phy_supported;
+	/** CS_SYNC LE 2M 2BT PHY. */
+	bool cs_sync_2m_2bt_phy_supported;
+	uint8_t cs_sync_phys_supported;
+	/** CS Subfeatures.
+	 *
+	 * - Bit 0: CS with no Frequency Actuation Error.
+	 * - Bit 1: CS Channel Selection Algorithm #3c
+	 * - Bit 2: CS phase-based ranging from RTT sounding sequence.
+	 */
+	uint16_t subfeatures_supported;
+	/** Optional T_IP1 time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 */
+	uint16_t t_ip1_times_supported;
+	/** Optional T_IP2 time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 */
+	uint16_t t_ip2_times_supported;
+	/** Optional T_FCS time durations during CS steps.
+	 *
+	 *  - Bit 0: 15 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 *  - Bit 7: 100 us
+	 *  - Bit 8: 120 us
+	 */
+	uint16_t t_fcs_times_supported;
+	/** Optional T_PM time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 */
+	uint16_t t_pm_times_supported;
+	/** Time in microseconds for the antenna switch period of the CS tones. */
+	uint8_t t_sw_time;
+	/** SNR levels used in RTT packets. */
+	uint8_t tx_snr_capability;
+};
+
+/** Remote FAE Table for LE connections supporting CS */
+struct bt_conn_le_cs_fae_table {
+	uint8_t *remote_fae_table;
+};
+
 /** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
@@ -1348,6 +1476,30 @@ struct bt_conn_cb {
 	void (*subrate_changed)(struct bt_conn *conn,
 				const struct bt_conn_le_subrate_changed *params);
 #endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+	/** @brief LE CS Read Remote Supported Capabilities Complete event.
+	 *
+	 *  This callback notifies the application that the remote channel
+	 *  sounding capabilities have been received from the peer.
+	 *
+	 *  @param conn Connection object.
+	 *  @param remote_cs_capabilities Remote Channel Sounding Capabilities.
+	 */
+	void (*remote_cs_capabilities_available)(struct bt_conn *conn,
+	      struct bt_conn_le_cs_capabilities *params);
+
+	/** @brief LE CS Read Remote FAE Table Complete event.
+	 *
+	 *  This callback notifies the application that the remote mode-0
+	 *  FAE Table has been received from the peer.
+	 *
+	 *  @param conn Connection object.
+	 *  @param params FAE Table.
+	 */
+	void (*remote_cs_fae_table_available)(struct bt_conn *conn,
+	      struct bt_conn_le_cs_fae_table *params);
+#endif
 
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;
