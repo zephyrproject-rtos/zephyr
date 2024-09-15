@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 
 #include "hal/cpu.h"
+#include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/cntr.h"
 #include "hal/ticker.h"
@@ -760,7 +761,19 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 #if defined(CONFIG_BT_CTLR_TEST)
+	err = mem_ut();
+	if (err) {
+		return err;
+	}
+
+	err = ecb_ut();
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 	lll_chan_sel_2_ut();
+#endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 #endif /* CONFIG_BT_CTLR_TEST */
 
 	return  0;
