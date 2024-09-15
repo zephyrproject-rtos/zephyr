@@ -2436,6 +2436,152 @@ struct bt_hci_cp_le_read_remote_fae_table {
 	uint16_t handle;
 } __packed;
 
+
+#define BT_HCI_OP_LE_CS_TEST BT_OP(BT_OGF_LE, 0x0095) /* 0x2095 */
+
+#define BT_HCI_OP_LE_CS_MAIN_MODE_1 0x1
+#define BT_HCI_OP_LE_CS_MAIN_MODE_2 0x2
+#define BT_HCI_OP_LE_CS_MAIN_MODE_3 0x3
+
+#define BT_HCI_OP_LE_CS_SUB_MODE_1 0x1
+#define BT_HCI_OP_LE_CS_SUB_MODE_2 0x2
+#define BT_HCI_OP_LE_CS_SUB_MODE_3 0x3
+#define BT_HCI_OP_LE_CS_SUB_MODE_UNUSED 0xFF
+
+#define BT_HCI_OP_LE_CS_INITIATOR_ROLE 0x0
+#define BT_HCI_OP_LE_CS_REFLECTOR_ROLE 0x1
+
+#define BT_HCI_OP_LE_CS_RTT_TYPE_AA_ONLY     0x0
+#define BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_SOUND 0x1
+#define BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_SOUND 0x2
+#define BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_RAND  0x3
+#define BT_HCI_OP_LE_CS_RTT_TYPE_64BIT_RAND  0x4
+#define BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_RAND  0x5
+#define BT_HCI_OP_LE_CS_RTT_TYPE_128BIT_RAND 0x6
+
+#define BT_HCI_OP_LE_CS_CS_SYNC_1M     0x1
+#define BT_HCI_OP_LE_CS_CS_SYNC_2M     0x2
+#define BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT 0x3
+
+#define BT_HCI_OP_LE_CS_TEST_MAXIMIZE_TX_POWER 0x7E
+#define BT_HCI_OP_LE_CS_TEST_MINIMIZE_TX_POWER 0x7F
+
+#define BT_HCI_OP_LE_CS_TEST_ACI_0 0x0
+#define BT_HCI_OP_LE_CS_TEST_ACI_1 0x1
+#define BT_HCI_OP_LE_CS_TEST_ACI_2 0x2
+#define BT_HCI_OP_LE_CS_TEST_ACI_3 0x3
+#define BT_HCI_OP_LE_CS_TEST_ACI_4 0x4
+#define BT_HCI_OP_LE_CS_TEST_ACI_5 0x5
+#define BT_HCI_OP_LE_CS_TEST_ACI_6 0x6
+#define BT_HCI_OP_LE_CS_TEST_ACI_7 0x7
+
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_18 0x0
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_21 0x1
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_24 0x2
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_27 0x3
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_30 0x4
+#define BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_NOT_USED 0xFF
+
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_18 0x0
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_21 0x1
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_24 0x2
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_27 0x3
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_30 0x4
+#define BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_NOT_USED 0xFF
+
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_0_MASK BIT(0)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_2_MASK BIT(2)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_3_MASK BIT(3)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_4_MASK BIT(4)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_5_MASK BIT(5)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_6_MASK BIT(6)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_7_MASK BIT(7)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_8_MASK BIT(8)
+#define BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_10_MASK BIT(10)
+
+#define BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3B 0x0
+#define BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3C 0x1
+
+#define BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_HAT 0x0
+#define BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_X   0x1
+
+#define BT_HCI_OP_LE_CS_TEST_TONE_EXT_NONE 0x0
+#define BT_HCI_OP_LE_CS_TEST_TONE_EXT_INIT 0x1
+#define BT_HCI_OP_LE_CS_TEST_TONE_EXT_REFL 0x2
+#define BT_HCI_OP_LE_CS_TEST_TONE_EXT_BOTH 0x3
+#define BT_HCI_OP_LE_CS_TEST_TONE_EXT_REPEAT 0x4
+
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_00 0x0
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_01 0x1
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_02 0x2
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_03 0x3
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_04 0x4
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_05 0x5
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_06 0x6
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_07 0x7
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_08 0x8
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_09 0x9
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_10 0xA
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_11 0xB
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_12 0xC
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_13 0xD
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_14 0xE
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_15 0xF
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_16 0x10
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_17 0x11
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_18 0x12
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_19 0x13
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_20 0x14
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_21 0x15
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_22 0x16
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_23 0x17
+#define BT_HCI_OP_LE_CS_TEST_AP_INDEX_LOOP 0xFF
+
+#define BT_HCI_OP_LE_CS_TEST_SS_MARKER_2_POSITION_NOT_PRESENT 0xFF
+
+#define BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_0011 0x0
+#define BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_1100 0x1
+#define BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_LOOP 0x2
+
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_PRBS9    0x00
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_11110000 0x01
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_10101010 0x02
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_PRBS15   0x03
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_11111111 0x04
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_00000000 0x05
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_00001111 0x06
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_01010101 0x07
+#define BT_HCI_OP_LE_CS_TEST_PAYLOAD_USER     0x80
+
+struct bt_hci_op_le_cs_test {
+	uint8_t main_mode_type;
+	uint8_t sub_mode_type;
+	uint8_t main_mode_repetition;
+	uint8_t mode_0_steps;
+	uint8_t role;
+	uint8_t rtt_type;
+	uint8_t cs_sync_phy;
+	uint8_t cs_sync_antenna_selection;
+	uint8_t subevent_len[3];
+	uint16_t subevent_interval;
+	uint8_t max_num_subevents;
+	uint8_t transmit_power_level;
+	uint8_t t_ip1_time;
+	uint8_t t_ip2_time;
+	uint8_t t_fcs_time;
+	uint8_t t_pm_time;
+	uint8_t t_sw_time;
+	uint8_t tone_antenna_config_selection;
+	uint8_t reserved;
+	uint8_t snr_control_initiator;
+	uint8_t snr_control_reflector;
+	uint16_t drbg_nonce;
+	uint8_t channel_map_repetition;
+	uint16_t override_config;
+	uint8_t override_parameters_length;
+	uint8_t override_parameters_data[];
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_UNKNOWN                      0x00

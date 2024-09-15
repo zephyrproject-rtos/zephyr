@@ -60,6 +60,451 @@ struct bt_cs_set_default_settings_param {
 	int8_t max_tx_power;
 };
 
+/** CS Test Main Mode */
+enum bt_cs_test_main_mode {
+	/** CS Test Mode-1 */
+	BT_CS_TEST_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** CS Test Mode-2 */
+	BT_CS_TEST_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** CS Test Mode-3 */
+	BT_CS_TEST_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+};
+
+/** CS Test Sub-Mode */
+enum bt_cs_test_sub_mode {
+	/** CS Test sub-mode-1 */
+	BT_CS_TEST_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
+	/** CS Test sub-mode-2 */
+	BT_CS_TEST_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
+	/** CS Test sub-mode-3 */
+	BT_CS_TEST_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+	/** No CS Test sub-mode. */
+	BT_CS_TEST_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
+};
+
+/** CS Test Role */
+enum bt_cs_test_role {
+	BT_CS_TEST_ROLE_INITIATOR = BT_HCI_OP_LE_CS_INITIATOR_ROLE,
+	BT_CS_TEST_ROLE_REFLECTOR = BT_HCI_OP_LE_CS_REFLECTOR_ROLE,
+};
+
+/** CS Test RTT type */
+enum bt_cs_test_rtt_type {
+	/** RTT AA Only */
+	BT_CS_TEST_RTT_AA_ONLY = BT_HCI_OP_LE_CS_RTT_TYPE_AA_ONLY,
+	/** RTT with 32-bit sounding sequence */
+	BT_CS_TEST_RTT_32_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_SOUND,
+	/** RTT with 96-bit sounding sequence */
+	BT_CS_TEST_RTT_96_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_SOUND,
+	/** RTT with 32-bit random sequence */
+	BT_CS_TEST_RTT_32_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_RAND,
+	/** RTT with 64-bit random sequence */
+	BT_CS_TEST_RTT_64_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_64BIT_RAND,
+	/** RTT with 96-bit random sequence */
+	BT_CS_TEST_RTT_96_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_RAND,
+	/** RTT with 128-bit random sequence */
+	BT_CS_TEST_RTT_128_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_128BIT_RAND,
+};
+
+/** CS Test CS_SYNC PHY */
+enum bt_cs_test_cs_sync_phy {
+	BT_CS_TEST_CS_SYNC_LE_1M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_1M,
+	BT_CS_TEST_CS_SYNC_LE_2M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M,
+	BT_CS_TEST_CS_SYNC_LE_2M_2BT_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT,
+};
+
+/** CS Test CS_SYNC Antenna Identifier */
+enum bt_cs_test_cs_sync_antenna_selection {
+	BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_ONE = BT_HCI_OP_LE_CS_ANTENNA_SEL_ONE,
+	BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_TWO = BT_HCI_OP_LE_CS_ANTENNA_SEL_TWO,
+	BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_THREE = BT_HCI_OP_LE_CS_ANTENNA_SEL_THREE,
+	BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_FOUR = BT_HCI_OP_LE_CS_ANTENNA_SEL_FOUR,
+};
+
+/** CS Test Tone Antennna Config Selection.
+ *
+ *  These enum values are indices in the following table, where N_AP is the maximum
+ *  number of antenna paths (in the range [1, 4]).
+ *
+ * +--------------+-------------+-------------------+-------------------+--------+
+ * | Config Index | Total Paths | Dev A: # Antennas | Dev B: # Antennas | Config |
+ * +--------------+-------------+-------------------+-------------------+--------+
+ * |            0 |           1 |                 1 |                 1 | 1:1    |
+ * |            1 |           2 |                 2 |                 1 | N_AP:1 |
+ * |            2 |           3 |                 3 |                 1 | N_AP:1 |
+ * |            3 |           4 |                 4 |                 1 | N_AP:1 |
+ * |            4 |           2 |                 1 |                 2 | 1:N_AP |
+ * |            5 |           3 |                 1 |                 3 | 1:N_AP |
+ * |            6 |           4 |                 1 |                 4 | 1:N_AP |
+ * |            7 |           4 |                 2 |                 2 | 2:2    |
+ * +--------------+-------------+-------------------+-------------------+--------+
+ *
+ *  There are therefore four groups of possible antenna configurations:
+ *
+ *  - 1:1 configuration, where both A and B support 1 antenna each
+ *  - 1:N_AP configuration, where A supports 1 antenna, B supports N_AP antennas, and
+ *    N_AP is a value in the range [2, 4]
+ *  - N_AP:1 configuration, where A supports N_AP antennas, B supports 1 antenna, and
+ *    N_AP is a value in the range [2, 4]
+ *  - 2:2 configuration, where both A and B support 2 antennas and N_AP = 4
+ */
+enum bt_cs_test_tone_antenna_config_selection {
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_ONE = BT_HCI_OP_LE_CS_TEST_ACI_0,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_TWO = BT_HCI_OP_LE_CS_TEST_ACI_1,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_THREE = BT_HCI_OP_LE_CS_TEST_ACI_2,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_FOUR = BT_HCI_OP_LE_CS_TEST_ACI_3,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_FIVE = BT_HCI_OP_LE_CS_TEST_ACI_4,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_SIX = BT_HCI_OP_LE_CS_TEST_ACI_5,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_SEVEN = BT_HCI_OP_LE_CS_TEST_ACI_6,
+	BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_EIGHT = BT_HCI_OP_LE_CS_TEST_ACI_7,
+};
+
+/** CS Test Initiator SNR control options */
+enum bt_cs_test_initiator_snr_control {
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_18,
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_21,
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_24,
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_27,
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_30,
+	BT_CS_TEST_INITIATOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_TEST_INITIATOR_SNR_NOT_USED,
+};
+
+/** CS Test Reflector SNR control options */
+enum bt_cs_test_reflector_snr_control {
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_18dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_18,
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_21dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_21,
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_24dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_24,
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_27,
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_30,
+	BT_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_NOT_USED,
+};
+
+/** CS Test Override 0 channel selection algorithm selection */
+enum bt_cs_test_override_0_chsel_alg {
+	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3B = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3B,
+	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3C,
+};
+
+/** CS Test Override 0 chsel #3c shape */
+enum bt_cs_test_override_0_ch3c_shape {
+	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C_HAT_SHAPE = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_HAT,
+	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C_X_SHAPE = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_X,
+};
+
+/** CS Test Override 3 T_PM Tone Extension */
+enum bt_cs_test_override_3_pm_tone_ext {
+	/** Initiator and reflector tones sent without tone extension */
+	BT_CS_TEST_OVERRIDE_3_NO_TONE_EXT = BT_HCI_OP_LE_CS_TEST_TONE_EXT_NONE,
+	/** Initiator tone sent with extension, reflector tone sent without tone extension */
+	BT_CS_TEST_OVERRIDE_3_INITIATOR_TONE_EXT_ONLY = BT_HCI_OP_LE_CS_TEST_TONE_EXT_INIT,
+	/** Initiator tone sent without extension, reflector tone sent with tone extension */
+	BT_CS_TEST_OVERRIDE_3_REFLECTOR_TONE_EXT_ONLY = BT_HCI_OP_LE_CS_TEST_TONE_EXT_REFL,
+	/** Initiator and reflector tones sent with tone extension */
+	BT_CS_TEST_OVERRIDE_3_INITIATOR_AND_REFLECTOR_TONE_EXT = BT_HCI_OP_LE_CS_TEST_TONE_EXT_BOTH,
+	/** Applicable for mode-2 and mode-3 only:
+	 *
+	 *  Loop through:
+	 *   - @ref BT_CS_TEST_OVERRIDE_3_NO_TONE_EXT
+	 *   - @ref BT_CS_TEST_OVERRIDE_3_INITIATOR_TONE_EXT_ONLY
+	 *   - @ref BT_CS_TEST_OVERRIDE_3_REFLECTOR_TONE_EXT_ONLY
+	 *   - @ref BT_CS_TEST_OVERRIDE_3_INITIATOR_AND_REFLECTOR_TONE_EXT
+	 */
+	BT_CS_TEST_OVERRIDE_3_REPETITIVE_TONE_EXT = BT_HCI_OP_LE_CS_TEST_TONE_EXT_REPEAT,
+};
+
+/** CS Test Override 4 Tone Antenna Permutation.
+ *
+ *  These values represent indices in an antenna path permutation table.
+ *
+ *  Which table is applicable (and which indices are valid)
+ *  depends on the maximum number of antenna paths (N_AP).
+ *
+ *  If N_AP = 2, the permutation table is:
+ *
+ * +--------------------------------+------------------------------------------+
+ * | Antenna Path Permutation Index | Antenna Path Positions After Permutation |
+ * +--------------------------------+------------------------------------------+
+ * | 0                              | A1 A2                                    |
+ * | 1                              | A2 A1                                    |
+ * +--------------------------------+------------------------------------------+
+ *
+ * If N_AP = 3, the permutation table is:
+ *
+ * +--------------------------------+------------------------------------------+
+ * | Antenna Path Permutation Index | Antenna Path Positions After Permutation |
+ * +--------------------------------+------------------------------------------+
+ * | 0                              | A1 A2 A3                                 |
+ * | 1                              | A2 A1 A3                                 |
+ * | 2                              | A1 A3 A2                                 |
+ * | 3                              | A3 A1 A2                                 |
+ * | 4                              | A3 A2 A1                                 |
+ * | 5                              | A2 A3 A1                                 |
+ * +--------------------------------+------------------------------------------+
+ *
+ * If N_AP = 4, the permutation table is:
+ *
+ * +--------------------------------+------------------------------------------+
+ * | Antenna Path Permutation Index | Antenna Path Positions After Permutation |
+ * +--------------------------------+------------------------------------------+
+ * | 0                              | A1 A2 A3 A4                              |
+ * | 1                              | A2 A1 A3 A4                              |
+ * | 2                              | A1 A3 A2 A4                              |
+ * | 3                              | A3 A1 A2 A4                              |
+ * | 4                              | A3 A2 A1 A4                              |
+ * | 5                              | A2 A3 A1 A4                              |
+ * | 6                              | A1 A2 A4 A3                              |
+ * | 7                              | A2 A1 A4 A3                              |
+ * | 8                              | A1 A4 A2 A3                              |
+ * | 9                              | A4 A1 A2 A3                              |
+ * | 10                             | A4 A2 A1 A3                              |
+ * | 11                             | A2 A4 A1 A3                              |
+ * | 12                             | A1 A4 A3 A2                              |
+ * | 13                             | A4 A1 A3 A2                              |
+ * | 14                             | A1 A3 A4 A2                              |
+ * | 15                             | A3 A1 A4 A2                              |
+ * | 16                             | A3 A4 A1 A2                              |
+ * | 17                             | A4 A3 A1 A2                              |
+ * | 18                             | A4 A2 A3 A1                              |
+ * | 19                             | A2 A4 A3 A1                              |
+ * | 20                             | A4 A3 A2 A1                              |
+ * | 21                             | A3 A4 A2 A1                              |
+ * | 22                             | A3 A2 A4 A1                              |
+ * | 23                             | A2 A3 A4 A1                              |
+ * +--------------------------------+------------------------------------------+
+ */
+enum bt_cs_test_override_4_tone_antenna_permutation {
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_00 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_00,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_01 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_01,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_02 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_02,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_03 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_03,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_04 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_04,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_05 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_05,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_06 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_06,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_07 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_07,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_08 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_08,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_09 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_09,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_10 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_10,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_11 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_11,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_12 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_12,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_13 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_13,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_14 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_14,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_15 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_15,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_16 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_16,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_17 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_17,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_18 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_18,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_19 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_19,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_20 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_20,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_21 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_21,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_22 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_22,
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_23 = BT_HCI_OP_LE_CS_TEST_AP_INDEX_23,
+	/** Loop through all valid Antenna Permuation Indices starting
+	 *  from the lowest index.
+	 */
+	BT_CS_TEST_OVERRIDE_4_ANTENNA_PERMUTATION_INDEX_LOOP = BT_HCI_OP_LE_CS_TEST_AP_INDEX_LOOP,
+};
+
+/** CS Test Override 7 Sounding Sequence Marker Value */
+enum bt_cs_test_override_7_ss_marker_value {
+	BT_CS_TEST_OVERRIDE_7_SS_MARKER_VAL_0011 = BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_0011,
+	BT_CS_TEST_OVERRIDE_7_SS_MARKER_VAL_1100 = BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_1100,
+	/** Loop through pattern '0011' and '1100' (in transmission order) */
+	BT_CS_TEST_OVERRIDE_7_SS_MARKER_VAL_LOOP = BT_HCI_OP_LE_CS_TEST_SS_MARKER_VAL_LOOP,
+};
+
+/** CS Test Override 8 CS_SYNC Payload Pattern */
+enum bt_cs_test_override_8_cs_sync_payload_pattern {
+	/** PRBS9 payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_PRBS9 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_PRBS9,
+	/** Repeated '11110000' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_11110000 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_11110000,
+	/** Repeated '10101010' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_10101010 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_10101010,
+	/** PRBS15 payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_PRBS15 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_PRBS15,
+	/** Repeated '11111111' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_11111111 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_11111111,
+	/** Repeated '00000000' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_00000000 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_00000000,
+	/** Repeated '00001111' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_00001111 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_00001111,
+	/** Repeated '01010101' payload sequence. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_01010101 = BT_HCI_OP_LE_CS_TEST_PAYLOAD_01010101,
+	/** Custom payload provided by the user. */
+	BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_USER = BT_HCI_OP_LE_CS_TEST_PAYLOAD_USER,
+};
+
+/** CS Test parameters */
+struct bt_cs_test_param {
+	/** CS mode to be used during the CS procedure. */
+	enum bt_cs_test_main_mode main_mode;
+	/** CS sub-mode to be used during the CS procedure. */
+	enum bt_cs_test_sub_mode sub_mode;
+	/** Number of main mode steps taken from the end of the last CS subevent
+	 * to be repeated at the beginning of the current CS subevent directly
+	 * after the last mode-0 step of that event.
+	 */
+	uint8_t main_mode_repetition;
+	/** Number of CS mode-0 steps at the beginning of the test CS subevent. */
+	uint8_t mode_0_steps;
+	/** CS Test role */
+	enum bt_cs_test_role role;
+	/** RTT variant */
+	enum bt_cs_test_rtt_type rtt_type;
+	/** CS_SYNC PHY */
+	enum bt_cs_test_cs_sync_phy cs_sync_phy;
+	/** Antenna identifier to be used for CS_SYNC packets. */
+	enum bt_cs_test_cs_sync_antenna_selection cs_sync_antenna_selection;
+	/** CS subevent length in microseconds.
+	 *
+	 *  Range: 1250us to 4s
+	 */
+	uint32_t subevent_len;
+	/** Gap between the start of two consecutive CS subevents (N * 0.625 ms)
+	 *
+	 *  A value of 0 means that there is only one CS subevent.
+	 */
+	uint16_t subevent_interval;
+	/** Maximum allowed number of subevents in the procedure.
+	 *
+	 *  A value of 0 means that this parameter is ignored.
+	 */
+	uint8_t max_num_subevents;
+	/** Desired TX power level for the CS procedure.
+	 *
+	 *  Value range is @ref BT_HCI_OP_LE_CS_MIN_MAX_TX_POWER to
+	 *  @ref BT_HCI_OP_LE_CS_MAX_MAX_TX_POWER.
+	 *
+	 *  Special values:
+	 *    - @ref BT_HCI_OP_LE_CS_TEST_MAXIMIZE_TX_POWER tells the controller
+	 *      it should use as high a transmit power as possible
+	 *    - @ref BT_HCI_OP_LE_CS_TEST_MINIMIZE_TX_POWER tells the controller
+	 *      it should use as low a transmit power as possible
+	 */
+	uint8_t transmit_power_level;
+	/** Interlude time in microseconds between the RTT packets. */
+	uint8_t t_ip1_time;
+	/** Interlude time in microseconds between the CS tones. */
+	uint8_t t_ip2_time;
+	/** Time in microseconds for frequency changes. */
+	uint8_t t_fcs_time;
+	/** Time in microseconds for the phase measurement period of the CS tones. */
+	uint8_t t_pm_time;
+	/** Time in microseconds for the antenna switch period of the CS tones. */
+	uint8_t t_sw_time;
+	/** Antenna Configuration Index used during antenna switching during
+	 *  the tone phases of CS steps.
+	 */
+	enum bt_cs_test_tone_antenna_config_selection tone_antenna_config_selection;
+	/** Initiator SNR control options */
+	enum bt_cs_test_initiator_snr_control initiator_snr_control;
+	/** Reflector SNR control options */
+	enum bt_cs_test_reflector_snr_control reflector_snr_control;
+	/** Determines octets 14 and 15 of the initial value of the DRBG nonce. */
+	uint16_t drbg_nonce;
+
+	/** Override configuration.
+	 *
+	 *  This parameter is used to override CS parameters from the DRBG.
+	 *  Each bit configures a different set of parameters.
+	 *
+	 *  All overrides are optional, except for those configured by bit 0.
+	 *
+	 *  These are:
+	 *    - Bit 0 set: Override using list of channels
+	 *    - Bit 0 not set: Override using channel map
+	 *    - Bit 2 set: Override main mode steps
+	 *    - Bit 3 set: Override T_PM_Tone_Ext
+	 *    - Bit 4 set: Override tone antenna permutation
+	 *    - Bit 5 set: Override CS_SYNC AA
+	 *    - Bit 6 set: Override SS marker positions
+	 *    - Bit 7 set: Override SS marker value
+	 *    - Bit 8 set: Override CS_SYNC payload pattern and user payload
+	 *    - Bit 10 set: Procedure is replaced with a stable phase test
+	 */
+	uint16_t override_config;
+
+	/** override config bit 0. */
+	struct {
+		/** Number of times the channels indicated by the channel map or channel field
+		 *  are cycled through for non-mode-0 steps within a CS procedure.
+		 */
+		uint8_t channel_map_repetition;
+		union {
+			struct {
+				uint8_t num_channels;
+				uint8_t *channels;
+			} set;
+			struct {
+				uint8_t channel_map[10];
+				enum bt_cs_test_override_0_chsel_alg channel_selection_type;
+				enum bt_cs_test_override_0_ch3c_shape ch3c_shape;
+				uint8_t ch3c_jump;
+			} not_set;
+		};
+	} override_config_0;
+
+	/** Override config bit 2. These parameters are ignored if the bit is not set. */
+	struct {
+		uint8_t main_mode_steps;
+	} override_config_2;
+
+	/** Override config bit 3. These parameters are ignored if the bit is not set.  */
+	struct {
+		enum bt_cs_test_override_3_pm_tone_ext t_pm_tone_ext;
+	} override_config_3;
+
+	/** Override config bit 4. These parameters are ignored if the bit is not set. */
+	struct {
+		enum bt_cs_test_override_4_tone_antenna_permutation tone_antenna_permutation;
+	} override_config_4;
+
+	/** Override config bit 5. These parameters are ignored if the bit is not set.  */
+	struct {
+		/** Access Address used in CS_SYNC packets sent by the initiator. */
+		uint32_t cs_sync_aa_initiator;
+		/** Access Address used in CS_SYNC packets sent by the reflector. */
+		uint32_t cs_sync_aa_reflector;
+	} override_config_5;
+
+	/** Override config bit 6. These parameters are ignored if the bit is not set. */
+	struct {
+		/** Bit number where the first marker in the channel sounding sequence starts.
+		 *
+		 *  Must be between 0 and 28 when using @ref BT_CS_TEST_RTT_32_BIT_SOUNDING.
+		 */
+		uint8_t ss_marker1_position;
+		/** Bit number where the second marker in the channel sounding sequence starts.
+		 *
+		 *  Must be between 67 and 92 when using @ref BT_CS_TEST_RTT_96_BIT_SOUNDING.
+		 *
+		 *  A value of @ref BT_HCI_OP_LE_CS_TEST_SS_MARKER_2_POSITION_NOT_PRESENT
+		 *  indicates that this sounding sequence or marker is not present.
+		 */
+		uint8_t ss_marker2_position;
+	} override_config_6;
+
+	/** Override config bit 7. These parameters are ignored if the bit is not set. */
+	struct {
+		/** Value of the Sounding Sequence marker. */
+		enum bt_cs_test_override_7_ss_marker_value ss_marker_value;
+	} override_config_7;
+
+	/** Override config bit 8. These parameters are ignored if the bit is not set.  */
+	struct {
+		/** CS_SYNC payload pattern selection. */
+		enum bt_cs_test_override_8_cs_sync_payload_pattern cs_sync_payload_pattern;
+		/** User payload for CS_SYNC packets.
+		 *
+		 *  This parameter is only used when using
+		 *  @ref BT_CS_TEST_OVERRIDE_8_PAYLOAD_PATTERN_USER
+		 *
+		 *  The least significant bit corresponds to the most significant bit
+		 *  of the CS payload. When the sequence is less than 16 octets,
+		 *  the least significant octets shall be padded with zeros.
+		 */
+		uint8_t cs_sync_user_payload[16];
+	} override_config_8;
+};
 
 /** @brief Read Remote Supported Capabilities
  *
@@ -101,6 +546,28 @@ int bt_cs_set_default_settings(struct bt_conn *conn,
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_cs_read_remote_fae_table(struct bt_conn *conn);
+
+/** @brief Start a CS test
+ *
+ * This command is used to start a CS test where the IUT is placed in the role
+ * of either the initiator or reflector.
+ *
+ * The first mode-0 channel in the list is used as the starting channel for
+ * the test. At the beginning of any test, the IUT in the flector role shall
+ * listen on the first mode-0 channel until it receives the first transmission
+ * from the initiator. Similarly, with the IUT in the initiator role, the tester
+ * will start by listening on the first mode-0 channel and the IUT shall transmit
+ * on that channel for the first half of the first CS step. Thereafter, the
+ * parameters of this command describe the required transmit and receive behavior
+ * for the CS test.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param params CS Test parameters
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_cs_start_test(const struct bt_cs_test_param *params);
 
 #ifdef __cplusplus
 }
