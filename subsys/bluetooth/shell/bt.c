@@ -982,6 +982,78 @@ void subrate_changed(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+void print_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities *params)
+{
+	shell_print(
+		ctx_shell,
+		"Received remote channel sounding capabilities:\n"
+		"- Num CS configurations: %d\n"
+		"- Max consecutive CS procedures: %d\n"
+		"- Num antennas supported: %d\n"
+		"- Max antenna paths supported: %d\n"
+		"- Initiator role supported: %s\n"
+		"- Reflector role supported: %s\n"
+		"- Mode 3 supported: %s\n"
+		"- RTT AA only supported: %s\n"
+		"- RTT AA only is 10ns precise: %s\n"
+		"- RTT AA only N: %d\n"
+		"- RTT sounding supported: %s\n"
+		"- RTT sounding is 10ns precise: %s\n"
+		"- RTT sounding N: %d\n"
+		"- RTT random payload supported: %s\n"
+		"- RTT random payload is 10ns precise: %s\n"
+		"- RTT random payload N: %d\n"
+		"- Phase-based NADM with sounding sequences supported: %s\n"
+		"- Phase-based NADM with random sequences supported: %s\n"
+		"- CS Sync 2M PHY supported: %s\n"
+		"- CS Sync 2M 2BT PHY supported: %s\n"
+		"- CS without transmitter FAE supported: %s\n"
+		"- Channel selection algorithm #3c supported: %s\n"
+		"- Phase-based ranging from RTT sounding sequence supported: %s\n"
+		"- T_IP1 times supported: 0x%04x\n"
+		"- T_IP2 times supported: 0x%04x\n"
+		"- T_FCS times supported: 0x%04x\n"
+		"- T_PM times supported: 0x%04x\n"
+		"- T_SW time supported: %d us\n"
+		"- TX SNR capability: 0x%02x",
+		params->num_config_supported, params->max_consecutive_procedures_supported,
+		params->num_antennas_supported, params->max_antenna_paths_supported,
+		params->initiator_supported ? "Yes" : "No",
+		params->reflector_supported ? "Yes" : "No", params->mode_3_supported ? "Yes" : "No",
+		params->rtt_aa_only_precision == BT_CONN_LE_CS_RTT_AA_ONLY_NOT_SUPP ? "No" : "Yes",
+		params->rtt_aa_only_precision == BT_CONN_LE_CS_RTT_AA_ONLY_10NS ? "Yes" : "No",
+		params->rtt_aa_only_n,
+		params->rtt_sounding_precision == BT_CONN_LE_CS_RTT_SOUNDING_NOT_SUPP ? "No"
+										      : "Yes",
+		params->rtt_sounding_precision == BT_CONN_LE_CS_RTT_SOUNDING_10NS ? "Yes" : "No",
+		params->rtt_sounding_n,
+		params->rtt_random_payload_precision == BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_NOT_SUPP
+			? "No"
+			: "Yes",
+		params->rtt_random_payload_precision == BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS
+			? "Yes"
+			: "No",
+		params->rtt_random_payload_n,
+		params->phase_based_nadm_sounding_supported ? "Yes" : "No",
+		params->phase_based_nadm_random_supported ? "Yes" : "No",
+		params->cs_sync_2m_phy_supported ? "Yes" : "No",
+		params->cs_sync_2m_2bt_phy_supported ? "Yes" : "No",
+		params->cs_without_fae_supported ? "Yes" : "No",
+		params->chsel_alg_3c_supported ? "Yes" : "No",
+		params->pbr_from_rtt_sounding_seq_supported ? "Yes" : "No",
+		params->t_ip1_times_supported, params->t_ip2_times_supported,
+		params->t_fcs_times_supported, params->t_pm_times_supported, params->t_sw_time,
+		params->tx_snr_capability);
+}
+
+void print_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table *params)
+{
+	shell_print(ctx_shell, "Received FAE Table: ");
+	shell_hexdump(ctx_shell, params->remote_fae_table, 72);
+}
+#endif
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -1010,6 +1082,10 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_SUBRATING)
 	.subrate_changed = subrate_changed,
+#endif
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+	.remote_cs_capabilities_available = print_remote_cs_capabilities,
+	.remote_cs_fae_table_available = print_remote_cs_fae_table,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
