@@ -222,4 +222,108 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+
+int bt_cs_start_test(const struct bt_cs_test_param *params)
+{
+	struct bt_hci_op_le_cs_test *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CS_TEST, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	cp->main_mode_type = params->main_mode;
+	cp->sub_mode_type = params->sub_mode;
+	cp->main_mode_repetition = params->main_mode_repetition;
+	cp->mode_0_steps = params->mode_0_steps;
+	cp->role = params->role;
+	cp->rtt_type = params->rtt_type;
+	cp->cs_sync_phy = params->cs_sync_phy;
+	cp->cs_sync_antenna_selection = params->cs_sync_antenna_selection;
+	sys_put_le24(params->subevent_len, cp->subevent_len);
+	cp->subevent_interval = sys_cpu_to_le16(params->subevent_interval);
+	cp->max_num_subevents = params->max_num_subevents;
+	cp->transmit_power_level = params->transmit_power_level;
+	cp->t_ip1_time = params->t_ip1_time;
+	cp->t_ip2_time = params->t_ip2_time;
+	cp->t_fcs_time = params->t_fcs_time;
+	cp->t_pm_time = params->t_pm_time;
+	cp->t_sw_time = params->t_sw_time;
+	cp->tone_antenna_config_selection = params->tone_antenna_config_selection;
+
+	cp->reserved = 0;
+
+	cp->snr_control_initiator = params->initiator_snr_control;
+	cp->snr_control_reflector = params->reflector_snr_control;
+	cp->drbg_nonce = sys_cpu_to_le16(params->drbg_nonce);
+	cp->channel_map_repetition = params->override_config_0.channel_map_repetition;
+	cp->override_config = sys_cpu_to_le16(params->override_config);
+
+	uint8_t override_parameters_length = 0;
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_0_MASK) {
+		const uint8_t num_channels = params->override_config_0.set.num_channels;
+
+		net_buf_add_u8(buf, num_channels);
+		override_parameters_length++;
+		net_buf_add_mem(buf, params->override_config_0.set.channels, num_channels);
+		override_parameters_length += num_channels;
+	} else {
+		net_buf_add_mem(buf, params->override_config_0.not_set.channel_map,
+				sizeof(params->override_config_0.not_set.channel_map));
+		net_buf_add_u8(buf, params->override_config_0.not_set.channel_selection_type);
+		net_buf_add_u8(buf, params->override_config_0.not_set.ch3c_shape);
+		net_buf_add_u8(buf, params->override_config_0.not_set.ch3c_jump);
+
+		override_parameters_length +=
+			(sizeof(params->override_config_0.not_set.channel_map) +
+			 sizeof(params->override_config_0.not_set.channel_selection_type) +
+			 sizeof(params->override_config_0.not_set.ch3c_shape) +
+			 sizeof(params->override_config_0.not_set.ch3c_jump));
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_2_MASK) {
+		net_buf_add_mem(buf, &params->override_config_2, sizeof(params->override_config_2));
+		override_parameters_length += sizeof(params->override_config_2);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_3_MASK) {
+		net_buf_add_mem(buf, &params->override_config_3, sizeof(params->override_config_3));
+		override_parameters_length += sizeof(params->override_config_3);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_4_MASK) {
+		net_buf_add_mem(buf, &params->override_config_4, sizeof(params->override_config_4));
+		override_parameters_length += sizeof(params->override_config_4);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_5_MASK) {
+		net_buf_add_le32(buf, params->override_config_5.cs_sync_aa_initiator);
+		net_buf_add_le32(buf, params->override_config_5.cs_sync_aa_reflector);
+		override_parameters_length += sizeof(params->override_config_5);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_6_MASK) {
+		net_buf_add_mem(buf, &params->override_config_6, sizeof(params->override_config_6));
+		override_parameters_length += sizeof(params->override_config_6);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_7_MASK) {
+		net_buf_add_mem(buf, &params->override_config_7, sizeof(params->override_config_7));
+		override_parameters_length += sizeof(params->override_config_7);
+	}
+
+	if (params->override_config & BT_HCI_OP_LE_CS_TEST_OVERRIDE_CONFIG_8_MASK) {
+		net_buf_add_mem(buf, &params->override_config_8, sizeof(params->override_config_8));
+		override_parameters_length += sizeof(params->override_config_8);
+	}
+
+	cp->override_parameters_length = override_parameters_length;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
+}
+
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
