@@ -60,6 +60,20 @@ struct bt_cs_set_default_settings_param {
 	int8_t max_tx_power;
 };
 
+
+/** @brief Read Remote Supported Capabilities
+ *
+ * This command is used to query the CS capabilities that are supported
+ * by the remote controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_cs_read_remote_supported_capabilities(struct bt_conn *conn);
+
 /** @brief Set Channel Sounding default settings.
  *
  * This command is used to set default Channel Sounding settings for this
@@ -74,6 +88,19 @@ struct bt_cs_set_default_settings_param {
  */
 int bt_cs_set_default_settings(struct bt_conn *conn,
 			       const struct bt_cs_set_default_settings_param *params);
+
+/** @brief Read Remote FAE Table
+ *
+ * This command is used to read the per-channel mode-0 Frequency Actuation Error
+ * table of the remote Controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_cs_read_remote_fae_table(struct bt_conn *conn);
 
 #ifdef __cplusplus
 }

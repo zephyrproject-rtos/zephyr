@@ -492,6 +492,12 @@ void notify_path_loss_threshold_report(struct bt_conn *conn,
 void notify_subrate_change(struct bt_conn *conn,
 			   struct bt_conn_le_subrate_changed params);
 
+void notify_remote_cs_capabilities(struct bt_conn *conn,
+			   struct bt_conn_le_cs_capabilities params);
+
+void notify_remote_cs_fae_table(struct bt_conn *conn,
+			   struct bt_conn_le_cs_fae_table params);
+
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);
