@@ -85,7 +85,7 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 
 test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 	compatible = "tdk,ntcg163jf103ft1";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	pullup-uv = <3300000>;
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
@@ -94,7 +94,7 @@ test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 
 test_lm35: lm35 {
 	compatible = "lm35";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	status = "okay";
 };
 
