@@ -1,11 +1,14 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2024 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <string.h>
+
+#include <zephyr/sys/byteorder.h>
 
 #include <hal/nrf_ecb.h>
 
@@ -16,17 +19,73 @@
 
 #include "hal/debug.h"
 
+#if defined(NRF54L_SERIES)
+#define NRF_ECB                   NRF_ECB00
+#define ECB_IRQn                  ECB00_IRQn
+#define ECB_INTENSET_ERRORECB_Msk ECB_INTENSET_ERROR_Msk
+#define ECB_INTENSET_ENDECB_Msk   ECB_INTENSET_END_Msk
+#define TASKS_STARTECB            TASKS_START
+#define TASKS_STOPECB             TASKS_STOP
+#define EVENTS_ENDECB             EVENTS_END
+#define EVENTS_ERRORECB           EVENTS_ERROR
+#define NRF_ECB_TASK_STARTECB     NRF_ECB_TASK_START
+#define NRF_ECB_TASK_STOPECB      NRF_ECB_TASK_STOP
+#define ECBDATAPTR                IN.PTR
+
+struct ecb_job_ptr {
+	void *ptr;
+	struct {
+		uint32_t length:24;
+		uint32_t attribute:8;
+	} __packed;
+} __packed;
+
+/* Product Specification recommends a value of 11, but prior work had used 7 */
+#define ECB_JOB_PTR_ATTRIBUTE 7U
+#endif /* NRF54L_SERIES */
+
 struct ecb_param {
 	uint8_t key[16];
 	uint8_t clear_text[16];
 	uint8_t cipher_text[16];
+
+#if defined(NRF54L_SERIES)
+	struct ecb_job_ptr in[2];
+	struct ecb_job_ptr out[2];
+#endif /* NRF54L_SERIES */
 } __packed;
 
 static void do_ecb(struct ecb_param *ecb)
 {
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
+
+#if defined(NRF54L_SERIES)
+		NRF_ECB->KEY.VALUE[3] = sys_get_be32(&ecb->key[0]);
+		NRF_ECB->KEY.VALUE[2] = sys_get_be32(&ecb->key[4]);
+		NRF_ECB->KEY.VALUE[1] = sys_get_be32(&ecb->key[8]);
+		NRF_ECB->KEY.VALUE[0] = sys_get_be32(&ecb->key[12]);
+
+		ecb->in[0].ptr = ecb->clear_text;
+		ecb->in[0].length = sizeof(ecb->clear_text);
+		ecb->in[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+		ecb->in[1].ptr = NULL;
+		ecb->in[1].length = 0U;
+		ecb->in[1].attribute = 0U;
+
+		ecb->out[0].ptr = ecb->cipher_text;
+		ecb->out[0].length = sizeof(ecb->cipher_text);
+		ecb->out[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+		ecb->out[1].ptr = NULL;
+		ecb->out[1].length = 0U;
+		ecb->out[1].attribute = 0U;
+
+		NRF_ECB->IN.PTR = (uint32_t)ecb->in;
+		NRF_ECB->OUT.PTR = (uint32_t)ecb->out;
+#else /* !NRF54L_SERIES */
 		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+#endif /* !NRF54L_SERIES */
+
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
@@ -96,7 +155,34 @@ uint32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 	}
 
 	/* setup the encryption h/w */
+#if defined(NRF54L_SERIES)
+	NRF_ECB->KEY.VALUE[3] = sys_get_be32(&ecb->in_key_be[0]);
+	NRF_ECB->KEY.VALUE[2] = sys_get_be32(&ecb->in_key_be[4]);
+	NRF_ECB->KEY.VALUE[1] = sys_get_be32(&ecb->in_key_be[8]);
+	NRF_ECB->KEY.VALUE[0] = sys_get_be32(&ecb->in_key_be[12]);
+
+	struct ecb_job_ptr *in = (void *)((uint8_t *)ecb + sizeof(*ecb));
+	struct ecb_job_ptr *out = (void *)((uint8_t *)in + 16U);
+
+	in[0].ptr = ecb->in_clear_text_be;
+	in[0].length = sizeof(ecb->in_clear_text_be);
+	in[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+	in[1].ptr = NULL;
+	in[1].length = 0U;
+	in[1].attribute = 0U;
+
+	out[0].ptr = ecb->out_cipher_text_be;
+	out[0].length = sizeof(ecb->out_cipher_text_be);
+	out[0].attribute = ECB_JOB_PTR_ATTRIBUTE;
+	out[1].ptr = NULL;
+	out[1].length = 0U;
+	out[1].attribute = 0U;
+
+	NRF_ECB->IN.PTR = (uint32_t)in;
+	NRF_ECB->OUT.PTR = (uint32_t)out;
+#else /* !NRF54L_SERIES */
 	NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+#endif /* !NRF54L_SERIES */
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	nrf_ecb_int_enable(NRF_ECB, ECB_INTENSET_ERRORECB_Msk
