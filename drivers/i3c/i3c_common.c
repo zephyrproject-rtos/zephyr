@@ -719,7 +719,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	deftgts->active_controller.addr = config_target.dynamic_addr << 1;
 	deftgts->active_controller.dcr = config_target.dcr;
 	deftgts->active_controller.bcr = config_target.bcr;
-	deftgts->active_controller.static_addr = config_target.static_addr << 1;
+	deftgts->active_controller.static_addr = I3C_BROADCAST_ADDR << 1;
 
 	/*
 	 * Loop through each attached I3C device and add it to the payload
