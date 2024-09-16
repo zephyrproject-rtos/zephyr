@@ -1599,3 +1599,13 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 
 	return status;
 }
+
+/* This routine exists for benchmarking purposes. It is not used in
+ * general production code.
+ */
+void z_unready_thread(struct k_thread *thread)
+{
+	K_SPINLOCK(&_sched_spinlock) {
+		unready_thread(thread);
+	}
+}
