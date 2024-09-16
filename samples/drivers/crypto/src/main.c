@@ -37,12 +37,15 @@ LOG_MODULE_REGISTER(main);
 #error "You need to enable one crypto device"
 #endif
 
-const static uint8_t key[16] __aligned(4) = {
+/* Some crypto drivers require IO buffers to be aligned, i.e. due to underlying DMA requirements. */
+#define IO_ALIGNMENT_BYTES 4
+
+const static uint8_t key[16] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88,
 	0x09, 0xcf, 0x4f, 0x3c
 };
 
-static uint8_t plaintext[64] = {
+static uint8_t plaintext[64] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11,
 	0x73, 0x93, 0x17, 0x2a, 0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c,
 	0x9e, 0xb7, 0x6f, 0xac, 0x45, 0xaf, 0x8e, 0x51, 0x30, 0xc8, 0x1c, 0x46,
@@ -119,17 +122,17 @@ void ecb_mode(const struct device *dev)
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
 	};
-	uint8_t ecb_plaintext[16] = {
+	uint8_t ecb_plaintext[16] __aligned(IO_ALIGNMENT_BYTES) = {
 		0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
 		0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
 	};
-	uint8_t ecb_ciphertext[16] = {
+	uint8_t ecb_ciphertext[16] __aligned(IO_ALIGNMENT_BYTES) = {
 		0x69, 0xC4, 0xE0, 0xD8, 0x6A, 0x7B, 0x04, 0x30,
 		0xD8, 0xCD, 0xB7, 0x80, 0x70, 0xB4, 0xC5, 0x5A
 	};
 
-	uint8_t encrypted[16] = {0};
-	uint8_t decrypted[16] = {0};
+	uint8_t encrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ecb_key),
 		.key.bit_stream = ecb_key,
@@ -210,8 +213,8 @@ static const uint8_t cbc_ciphertext[80] = {
 
 void cbc_mode(const struct device *dev)
 {
-	uint8_t encrypted[80] = {0};
-	uint8_t decrypted[64] = {0};
+	uint8_t encrypted[80] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
 		.key.bit_stream = key,
@@ -299,8 +302,8 @@ static const uint8_t ctr_ciphertext[64] = {
 
 void ctr_mode(const struct device *dev)
 {
-	uint8_t encrypted[64] = {0};
-	uint8_t decrypted[64] = {0};
+	uint8_t encrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
 		.key.bit_stream = key,
@@ -387,7 +390,7 @@ static uint8_t ccm_nonce[13] = {
 static uint8_t ccm_hdr[8] = {
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
 };
-static uint8_t ccm_data[23] = {
+static uint8_t ccm_data[23] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
 	0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e
 };
@@ -399,8 +402,8 @@ static const uint8_t ccm_expected[31] = {
 
 void ccm_mode(const struct device *dev)
 {
-	uint8_t encrypted[50];
-	uint8_t decrypted[25];
+	uint8_t encrypted[50] __aligned(IO_ALIGNMENT_BYTES);
+	uint8_t decrypted[25] __aligned(IO_ALIGNMENT_BYTES);
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
@@ -499,7 +502,7 @@ static uint8_t gcm_hdr[20] = {
 	0xe2, 0x01, 0x06, 0xd7, 0xcd, 0x0d, 0xf0, 0x76, 0x1e, 0x8d, 0xcd, 0x3d,
 	0x88, 0xe5, 0x4c, 0x2a, 0x76, 0xd4, 0x57, 0xed
 };
-static uint8_t gcm_data[42] = {
+static uint8_t gcm_data[42] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x08, 0x00, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
 	0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24,
 	0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
@@ -516,8 +519,8 @@ static const uint8_t gcm_expected[58] = {
 
 void gcm_mode(const struct device *dev)
 {
-	uint8_t encrypted[60] = {0};
-	uint8_t decrypted[44] = {0};
+	uint8_t encrypted[60] __aligned(IO_ALIGNMENT_BYTES) = {0};
+	uint8_t decrypted[44] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	struct cipher_ctx ini = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
