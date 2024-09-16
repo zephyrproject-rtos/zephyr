@@ -118,7 +118,7 @@ extern "C" {
  * Configuration for MIPI DBI controller write
  */
 struct mipi_dbi_config {
-	/** MIPI DBI mode (SPI 3 wire or 4 wire) */
+	/** MIPI DBI mode */
 	uint8_t mode;
 	/** SPI configuration */
 	struct spi_config config;
