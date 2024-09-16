@@ -175,8 +175,7 @@ static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_c
 	*ctx = NULL;
 
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (memcmp(path, &block1_contexts[i].path,
-			  sizeof(struct lwm2m_obj_path)) == 0) {
+		if (lwm2m_obj_path_equal(path, &block1_contexts[i].path)) {
 			*ctx = &block1_contexts[i];
 			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
