@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/fs/fs.h>
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
@@ -108,6 +109,9 @@ static void threads_objects_test_setup(struct llext *, struct k_thread *llext_th
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
 	k_object_access_grant(&my_thread_stack, llext_thread);
+#if DT_HAS_CHOSEN(zephyr_console)
+	k_object_access_grant(DEVICE_DT_GET(DT_CHOSEN(zephyr_console)), llext_thread);
+#endif
 }
 #else
 /* No need to set up permissions for supervisor mode */
