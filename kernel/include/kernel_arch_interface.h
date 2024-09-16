@@ -634,6 +634,19 @@ void arch_coredump_info_dump(const struct arch_esf *esf);
  */
 uint16_t arch_coredump_tgt_code_get(void);
 
+#if defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
+
+/**
+ * @brief Architecture-specific handling of dumping privileged stack
+ *
+ * This dumps the architecture-specific privileged stack during coredump.
+ *
+ * @param thread Pointer to thread object
+ */
+void arch_coredump_priv_stack_dump(struct k_thread *thread);
+
+#endif /* CONFIG_USERSPACE || __DOXYGEN__ */
+
 /** @} */
 
 /**
