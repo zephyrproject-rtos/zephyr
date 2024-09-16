@@ -70,6 +70,7 @@ struct pma_region {
 	struct pma_region_attr attr;
 };
 
+#ifdef CONFIG_NOCACHE_MEMORY
 /*
  * Write value to CSRs pmaaddr{i}
  */
@@ -165,7 +166,6 @@ static int pma_region_is_valid(const struct pma_region *region)
 	return 0;
 }
 
-#ifdef CONFIG_NOCACHE_MEMORY
 static void configure_nocache_region(void)
 {
 	const struct pma_region nocache_region = {
