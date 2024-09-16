@@ -1425,7 +1425,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
 {
 	const struct can_driver_api *api = (const struct can_driver_api *)dev->api;
 
-	return api->remove_rx_filter(dev, filter_id);
+	api->remove_rx_filter(dev, filter_id);
 }
 
 /**

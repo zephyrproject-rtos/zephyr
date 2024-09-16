@@ -31,7 +31,7 @@ static void spi_pw_reg_write(const struct device *dev,
 			     uint32_t offset,
 			     uint32_t val)
 {
-	return sys_write32(val, DEVICE_MMIO_GET(dev) + offset);
+	sys_write32(val, DEVICE_MMIO_GET(dev) + offset);
 }
 
 static void spi_pw_ssp_reset(const struct device *dev)
