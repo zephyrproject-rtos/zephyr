@@ -192,6 +192,11 @@ config LOG_OUTPUT_FORMAT_DATE_TIMESTAMP
 	help
 	  When enabled timestamp is formatted to YYYY-MM-DD hh:mm:ss.ms,us.
 
+config LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP
+	bool "Format timestamp in ISO 8601 format"
+	help
+	  When enabled timestamp is formatted to YYYY-MM-DDThh:mm:ss,ffffffZ.
+
 config LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
 	bool "Format timestamp in Linux format"
 	help
