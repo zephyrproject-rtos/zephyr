@@ -593,7 +593,7 @@ static void i2c_ctrl_handle_write_int_event(const struct device *dev)
 		}
 	}
 
-	return i2c_ctrl_notify(dev, 0);
+	i2c_ctrl_notify(dev, 0);
 }
 
 static void i2c_ctrl_handle_read_int_event(const struct device *dev)
@@ -667,7 +667,7 @@ static void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		data->oper_state = NPCX_I2C_READ_SUSPEND;
 	}
 
-	return i2c_ctrl_notify(dev, 0);
+	i2c_ctrl_notify(dev, 0);
 }
 
 static int i2c_ctrl_proc_write_msg(const struct device *dev,
@@ -871,7 +871,8 @@ static void i2c_ctrl_isr(const struct device *dev)
 
 #ifdef CONFIG_I2C_TARGET
 	if (atomic_test_bit(&data->flags, NPCX_I2C_FLAG_TARGET)) {
-		return i2c_ctrl_target_isr(dev, status);
+		i2c_ctrl_target_isr(dev, status);
+		return;
 	}
 #endif
 
@@ -906,16 +907,18 @@ static void i2c_ctrl_isr(const struct device *dev)
 		data->oper_state = NPCX_I2C_WAIT_STOP;
 
 		/* No such device or address */
-		return i2c_ctrl_notify(dev, -ENXIO);
+		i2c_ctrl_notify(dev, -ENXIO);
+		return;
 	}
 
 	/* START, tx FIFO empty or rx FIFO full has occurred */
 	if (IS_BIT_SET(status, NPCX_SMBST_SDAST)) {
 		if (data->is_write) {
-			return i2c_ctrl_handle_write_int_event(dev);
+			i2c_ctrl_handle_write_int_event(dev);
 		} else {
-			return i2c_ctrl_handle_read_int_event(dev);
+			i2c_ctrl_handle_read_int_event(dev);
 		}
+		return;
 	}
 
 	/* Clear unexpected status bits */
