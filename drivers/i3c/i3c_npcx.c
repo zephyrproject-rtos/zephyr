@@ -1776,7 +1776,8 @@ static void npcx_i3c_isr(const struct device *dev)
 
 		/* MDMA write */
 		if (get_oper_state(dev) == NPCX_I3C_WR) {
-			return i3c_ctrl_notify(dev);
+			i3c_ctrl_notify(dev);
+			return;
 		}
 	}
 
@@ -1785,7 +1786,8 @@ static void npcx_i3c_isr(const struct device *dev)
 
 		/* MDMA read */
 		if (get_oper_state(dev) == NPCX_I3C_RD) {
-			return i3c_ctrl_notify(dev);
+			i3c_ctrl_notify(dev);
+			return;
 		}
 
 	}
