@@ -140,6 +140,7 @@ enum video_endpoint_id {
  * Identify video event.
  */
 enum video_signal_result {
+	VIDEO_BUF_STARTED,
 	VIDEO_BUF_DONE,
 	VIDEO_BUF_ABORTED,
 	VIDEO_BUF_ERROR,
