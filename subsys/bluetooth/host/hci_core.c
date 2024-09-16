@@ -2927,13 +2927,16 @@ static const struct event_handler normal_events[] = {
  * Helper for the HCI driver to get HCI event flags that describes rules that.
  * must be followed.
  *
- * @param evt HCI event code.
+ * @param evt The first 3 bytes of the HCI event. The first byte
+ * is the event code. The second is the length. The third is the
+ * first byte of the event payload. Assertion: There are no
+ * zero-length event payloads.
  *
  * @return HCI event flags for the specified event.
  */
-static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt[static 3])
 {
-	switch (evt) {
+	switch (evt[0]) {
 	case BT_HCI_EVT_DISCONN_COMPLETE:
 		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
 		/* fallthrough */
@@ -2962,9 +2965,9 @@ static void hci_event(struct net_buf *buf)
 		return;
 	}
 
+	BT_ASSERT(bt_hci_evt_get_flags(buf->data) & BT_HCI_EVT_FLAG_RECV);
 	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	LOG_DBG("event 0x%02x", hdr->evt);
-	BT_ASSERT(bt_hci_evt_get_flags(hdr->evt) & BT_HCI_EVT_FLAG_RECV);
 
 	handle_event(hdr->evt, buf, normal_events, ARRAY_SIZE(normal_events));
 
@@ -4041,9 +4044,9 @@ void hci_event_prio(struct net_buf *buf)
 		return;
 	}
 
-	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-	evt_flags = bt_hci_evt_get_flags(hdr->evt);
+	evt_flags = bt_hci_evt_get_flags(buf->data);
 	BT_ASSERT(evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO);
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 
 	handle_event(hdr->evt, buf, prio_events, ARRAY_SIZE(prio_events));
 
@@ -4082,8 +4085,7 @@ static int bt_recv_unsafe(struct net_buf *buf)
 #endif /* BT_CONN */
 	case BT_BUF_EVT:
 	{
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
-		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
+		uint8_t evt_flags = bt_hci_evt_get_flags(buf->data);
 
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
 			hci_event_prio(buf);
