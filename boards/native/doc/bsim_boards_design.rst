@@ -85,7 +85,7 @@ to these boards.
 - Integration tests on real HW: Allows testing with the real SW
   components that may be too dependent on the exact HW particularities, and
   possibly without any changes compared to the final solution.
-  As such can provide better integration coverage than simulation ins ome cases,
+  As such can provide better integration coverage than simulation in some cases,
   but at the expense of slower execution, needing the real HW setups,
   test in general not being reproducible, and in many cases failures
   not being easy to debug.
@@ -124,6 +124,29 @@ to these boards.
 
 Design
 ******
+
+Relationship between Zephyr, the native simulator, the nRF HW models and BabbleSim
+==================================================================================
+
+As shown in the figure below, when you build your embedded application targeting one of Zephyr's
+nrf_bsim targets, you are using the `native simulator`_, which is being built together with and
+expanded by the nRF HW models for that target.
+Your application is first built and linked with the Zephyr kernel and any subsystems and network
+stacks you may have selected, including mostly the same drivers as for the real target.
+The native simulator runner is built together with the HW models which match your desired target.
+And then both the embedded SW and runner are linked together to produce a Linux executable.
+
+.. figure:: components_bsim.svg
+    :align: center
+    :alt: nrf_bsim boards and the native simulator
+    :figclass: align-center
+
+    Relationship between Zephyr, the native simulator, the nRF HW models and BabbleSim.
+
+When you target a multi MCU SOC like the :ref:`nrf5340bsim<nrf5340bsim_multi_mcu_build>`, you can
+use :ref:`sysbuild<sysbuild>` to build an executable, where, for each MCU, its application, Zephyr
+kernel and subsystems are built and linked first, and finally assembled all together with the native
+simulator runner into a single executable.
 
 Layering: Zephyr's arch, soc and board layers
 =============================================
