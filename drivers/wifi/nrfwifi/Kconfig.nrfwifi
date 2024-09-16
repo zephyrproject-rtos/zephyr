@@ -664,13 +664,6 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	default 16
 endif # NRF_WIFI_RPU_RECOVERY
 
-config NRF_WIFI_COMBINED_BUCKEN_IOVDD_GPIO
-	bool
-	help
-	  Enable this option to use a single GPIO to control both buck enable and IOVDD enable,
-	  there will be a internal hardware switch to add delay between the two operations. This
-	  is typically 4ms delay for nRF70.
-
 config NRF_WIFI_FEAT_WMM
 	bool "WMM/QoS support"
 	default y
