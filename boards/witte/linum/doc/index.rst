@@ -49,6 +49,8 @@ Expansion connector 2 features.
   - 6 PWM Channels
   - 10 ADCs
 
+More information about the board, can be found at the `Witte Linum website`_.
+
 Supported Features
 ==================
 
