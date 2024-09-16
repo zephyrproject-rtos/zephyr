@@ -70,15 +70,15 @@ When the endpoint is registered, the following happens on each domain (or CPU)
 connected through the IPC instance:
 
 1. The domain (or CPU) writes a magic number to its ``tx-region`` of the shared
-memory.
+   memory.
 #. It then sends a signal to the other domain or CPU, informing that the data
-has been written. Sending the signal to the other domain or CPU is repeated
-with timeout specified by
-:kconfig:option:`CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS` option.
+   has been written. Sending the signal to the other domain or CPU is repeated
+   with timeout specified by
+   :kconfig:option:`CONFIG_IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS` option.
 #. When the signal from the other domain or CPU is received, the magic number
-is read from ``rx-region``. If it is correct, the bonding process is finished
-and the backend informs the application by calling
-:c:member:`ipc_service_cb.bound` callback.
+   is read from ``rx-region``. If it is correct, the bonding process is finished
+   and the backend informs the application by calling
+   :c:member:`ipc_service_cb.bound` callback.
 
 Samples
 =======
