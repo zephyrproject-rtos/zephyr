@@ -1,7 +1,8 @@
-.. _dining-philosophers-sample:
+.. zephyr:code-sample:: dining-philosophers
+  :name: Dining Philosophers
+  :relevant-api: semaphore_apis mutex_apis stack_apis thread_apis fifo_apis lifo_apis
 
-Dining Philosophers
-###################
+  Implement a solution to the Dining Philosophers problem using Zephyr kernel services.
 
 Overview
 ********
