@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS3
@@ -10,9 +11,9 @@ config SOC_SERIES_MPS3
 config SOC_SERIES
 	default "mps3" if SOC_SERIES_MPS3
 
-config SOC_MPS3_AN547
+config SOC_MPS3_CORSTONE300
 	bool
 	select SOC_SERIES_MPS3
 
 config SOC
-	default "an547" if SOC_MPS3_AN547
+	default "corstone300" if SOC_MPS3_CORSTONE300

@@ -164,6 +164,11 @@ Boards & SoC Support
     with the old name marked as deprecated.
   * PHYTEC: ``mimx8mm_phyboard_polis`` has been renamed to :ref:`phyboard_polis<phyboard_polis>`,
     with the old name marked as deprecated.
+  * The board qualifier for MPS3/AN547 is changed from:
+
+    * ``mps3/an547`` to ``mps3/corstone300/an547`` for secure and
+    * ``mps3/an547/ns`` to ``mps3/corstone300/an547/ns`` for non-secure.
+
 
 * Added support for the following shields:
 

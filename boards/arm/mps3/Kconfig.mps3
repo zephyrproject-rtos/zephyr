@@ -1,7 +1,13 @@
 # Copyright (c) 2023 Nordic Semiconductor
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MPS3
 	select SOC_SERIES_MPS3
-	select SOC_MPS3_AN547
+	select SOC_MPS3_CORSTONE300 if  BOARD_MPS3_CORSTONE300_AN547    || \
+					BOARD_MPS3_CORSTONE300_AN547_NS || \
+					BOARD_MPS3_CORSTONE300_AN552    || \
+					BOARD_MPS3_CORSTONE300_AN552_NS || \
+					BOARD_MPS3_CORSTONE300_FVP      || \
+					BOARD_MPS3_CORSTONE300_FVP_NS
