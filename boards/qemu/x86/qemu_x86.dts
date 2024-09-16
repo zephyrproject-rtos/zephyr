@@ -166,3 +166,7 @@
 		};
 	};
 };
+
+&cpu {
+	compatible = "intel,x86";
+};
