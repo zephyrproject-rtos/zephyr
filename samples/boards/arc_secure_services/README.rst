@@ -1,3 +1,5 @@
+:orphan:
+
 .. _arc_secure_service:
 
 ARC Secure Service

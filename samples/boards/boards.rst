@@ -1,11 +1,5 @@
-.. _board-specific-samples:
+.. zephyr:code-sample-category:: boards
+   :name: Boards
+   :show-listing:
 
-Board-specific samples
-######################
-
-.. toctree::
-   :titlesonly:
-   :maxdepth: 2
-   :glob:
-
-   */*
+   These samples demonstrate some board-specific features in Zephyr.

@@ -1,10 +1,6 @@
-.. _shields-samples:
+.. zephyr:code-sample-category:: shields
+   :name: Shields
+   :show-listing:
+   :glob: **/*
 
-Shields Samples
-###############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the use of shields in Zephyr.

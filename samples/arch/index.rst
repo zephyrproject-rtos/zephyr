@@ -1,10 +1,5 @@
-.. _arch-samples:
+.. zephyr:code-sample-category:: arch
+   :name: Architecture-dependent Samples
+   :show-listing:
 
-Architecture Dependent Samples
-##############################
-
-.. toctree::
-   :maxdepth: 2
-   :glob:
-
-   */*
+   Samples that demonstrate some architecture-specific features.

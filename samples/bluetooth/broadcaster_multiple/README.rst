@@ -34,4 +34,4 @@ To test this sample use the Observer sample with Extended Scanning enabled,
 found under
 :zephyr_file:`samples/bluetooth/observer` in the Zephyr tree.
 
-See :ref:`Bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`Bluetooth samples section <bluetooth>` for details.

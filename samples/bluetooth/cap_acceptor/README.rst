@@ -13,7 +13,7 @@ It can also be configured to start scanning for broadcast audio streams by itsel
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_acceptor` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample app for the reel board showcases Bluetooth Mesh
+This sample app for the reel board showcases Bluetooth Mesh.
 
 The app starts off as a regular Bluetooth GATT peripheral application.
 Install the "nRF Connect" app on your phone (available both for

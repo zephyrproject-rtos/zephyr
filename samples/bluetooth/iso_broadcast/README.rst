@@ -29,4 +29,4 @@ Use the sample found under :zephyr_file:`samples/bluetooth/iso_receive` in the
 Zephyr tree that will scan, establish a periodic advertising synchronization,
 generate BIGInfo reports and synchronize to BIG events from this sample.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

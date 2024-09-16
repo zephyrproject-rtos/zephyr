@@ -64,4 +64,4 @@ This sample can be found under :zephyr_file:`samples/bluetooth/iso_peripheral` i
       Incoming data channel 0x20000698 len 12
                000102...090a0b
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for more details.
+See :zephyr:code-sample-category:`bluetooth` samples for more details.

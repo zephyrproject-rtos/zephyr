@@ -1,10 +1,6 @@
-.. _nordic_samples:
+.. zephyr:code-sample-category:: nordic
+   :name: Nordic Semiconductor
+   :show-listing:
+   :glob: **/*
 
-Nordic Semiconductor
-====================
-
-.. toctree::
-   :titlesonly:
-   :glob:
-
-   **/*
+   These samples showcase the use of Nordic Semiconductor boards in Zephyr.
