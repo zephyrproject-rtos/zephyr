@@ -3610,8 +3610,8 @@ NXP Drivers:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - decsny
     - manuargue
@@ -3647,8 +3647,8 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - DerekSnell
     - yvanderv
@@ -4686,8 +4686,8 @@ West:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - manuargue
     - PetervdPerk-NXP
