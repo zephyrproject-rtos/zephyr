@@ -27,4 +27,4 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/observer` in the
 Zephyr tree.
 
-See :ref:`Bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`Bluetooth samples section <bluetooth>` for details.

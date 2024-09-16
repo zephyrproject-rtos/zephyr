@@ -13,7 +13,7 @@ connects to a LE Audio unicast server and establishes an audio stream.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_unicast_client` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

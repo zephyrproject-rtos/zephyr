@@ -15,7 +15,7 @@ every 15 seconds.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/pbp_public_broadcast_source` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

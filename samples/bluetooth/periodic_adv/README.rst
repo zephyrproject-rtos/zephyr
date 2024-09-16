@@ -24,4 +24,4 @@ Use the sample found under :zephyr_file:`samples/bluetooth/periodic_sync` in the
 Zephyr tree that will scan and establish a periodic advertising synchronization
 to this sample.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

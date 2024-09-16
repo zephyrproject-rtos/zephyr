@@ -14,7 +14,7 @@ the first found and listens to it until the source is (potentially) stopped.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_sink` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Use :kconfig:option:`CONFIG_TARGET_BROADCAST_NAME` Kconfig to specify the name
 (:kconfig:option:`CONFIG_BT_DEVICE_NAME`) of a broadcast source to listen to. With default value

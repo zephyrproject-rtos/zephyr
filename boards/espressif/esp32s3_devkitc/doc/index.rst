@@ -76,7 +76,7 @@ Asymmetric Multiprocessing (AMP)
 
 ESP32S3-DevKitC allows 2 different applications to be executed in ESP32-S3 SoC. Due to its dual-core
 architecture, each core can be enabled to execute customized tasks in stand-alone mode
-and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
 
 For more information, check the datasheet at `ESP32-S3 Datasheet`_ or the technical reference
 manual at `ESP32-S3 Technical Reference Manual`_.

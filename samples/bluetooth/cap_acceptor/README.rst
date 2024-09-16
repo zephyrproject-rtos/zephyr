@@ -12,7 +12,7 @@ Starts by advertising for a CAP Initiator to connect and set up available stream
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_acceptor` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

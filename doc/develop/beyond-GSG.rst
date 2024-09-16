@@ -213,7 +213,7 @@ format. Other binary formats, disassembly, and map files may be present
 depending on your board.
 
 The other sample applications in the :zephyr_file:`samples` folder are
-documented in :ref:`samples-and-demos`.
+documented in :zephyr:code-sample-category:`samples`.
 
 .. note:: If you want to reuse an
    existing build directory for another board or application, you need to
