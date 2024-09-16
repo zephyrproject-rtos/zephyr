@@ -22,6 +22,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/crypto/hash.h>
+#include <zephyr/crypto/sign.h>
 #include "cipher.h"
 
 /**
@@ -88,6 +89,15 @@ __subsystem struct crypto_driver_api {
 	/* Register async hash op completion callback with the driver */
 	int (*hash_async_callback_set)(const struct device *dev,
 					 hash_completion_cb cb);
+
+	/* Setup a signature session */
+	int (*sign_begin_session)(const struct device *dev, struct sign_ctx *ctx,
+				  enum sign_algo algo);
+	/* Tear down an established signature session */
+	int (*sign_free_session)(const struct device *dev, struct sign_ctx *ctx);
+	/* Register async signature op completion callback with the driver */
+	int (*sign_async_callback_set)(const struct device *dev,
+					 sign_completion_cb cb);					 
 };
 
 /* Following are the public API a user app may call.

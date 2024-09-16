@@ -114,7 +114,7 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
  * @brief Calculates SHA256 hash
  *
  * @param[in]  data_addr  Data address info
- * @param[in]  hash       Pointer to hash strcut to return hash value in
+ * @param[in]  hash       Pointer to hash struct to return hash value in
  * @return                PUFCC_SUCCESS on success, otherwise an error code.
  */
 enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
@@ -1115,4 +1115,3 @@ DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
 		    &s_pufs_session_data,
 		    &s_pufs_configuration, POST_KERNEL,
 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&s_crypto_funcs);
-        
