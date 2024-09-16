@@ -19,7 +19,7 @@ is waiting for the second fork to be available.
 
 Each Philosopher will randomly alternate between the ``EATING`` and ``THINKING`` states.
 
-It is possible to run the demo in `coop-only` or `preempt-only` mode. To achieve this, set these
+It is possible to run the demo in ``coop-only`` or ``preempt-only`` mode. To achieve this, set these
 values for ``CONFIG_NUM_COOP_PRIORITIES`` and ``CONFIG_NUM_PREEMPT_PRIORITIES`` in :file:`prj.conf`:
 
 preempt-only

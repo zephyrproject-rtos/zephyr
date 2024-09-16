@@ -89,6 +89,13 @@
 #define DGLPIBI(base, regblock_size, stream) \
 	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x28))
 
+/* Gateway Linear Link Position registers (ACE2 and onwards */
+#define DGLLLPL(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x20))
+
+#define DGLLLPU(base, regblock_size, stream) \
+	((volatile uint32_t *)(HDA_ADDR(base, regblock_size, stream) + 0x24))
+
 /**
  * @brief Dump all the useful registers of an HDA stream to printk
  *
@@ -266,24 +273,24 @@ static inline bool intel_adsp_hda_is_enabled(uint32_t base, uint32_t regblock_si
  */
 static inline uint32_t intel_adsp_hda_unused(uint32_t base, uint32_t regblock_size, uint32_t sid)
 {
-	uint32_t dgcs = *DGCS(base, regblock_size, sid);
 	uint32_t dgbs = *DGBS(base, regblock_size, sid);
-
-	/* Check if buffer is empty */
-	if ((dgcs & DGCS_BNE) == 0) {
-		return dgbs;
-	}
-
-	/* Check if the buffer is full */
-	if (dgcs & DGCS_BF) {
-		return 0;
-	}
-
 	int32_t rp = *DGBRP(base, regblock_size, sid);
 	int32_t wp = *DGBWP(base, regblock_size, sid);
 	int32_t size = rp - wp;
 
-	if (size <= 0) {
+	if (size == 0) {
+		uint32_t dgcs = *DGCS(base, regblock_size, sid);
+
+		/* Check if buffer is empty */
+		if ((dgcs & DGCS_BNE) == 0) {
+			return dgbs;
+		}
+
+		/*
+		 * Buffer is not empty and pointers equal, it can
+		 * only be full, no need to check the DGCS_BF flag
+		 */
+	} else if (size < 0) {
 		size += dgbs;
 	}
 

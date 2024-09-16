@@ -1,0 +1,13 @@
+identifier: nucleo_u031r8
+name: ST Nucleo U031R8
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - arduino_gpio
+  - gpio
+  - i2c
+  - usart
+ram: 12
+flash: 64

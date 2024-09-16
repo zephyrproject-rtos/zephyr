@@ -116,6 +116,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	struct pdu_adv_adi *adi;
 	struct node_rx_ftr *ftr;
 	uint32_t ready_delay_us;
+	uint16_t window_size_us;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
 	struct lll_scan *lll;
@@ -511,6 +512,22 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		goto ull_scan_aux_rx_flush;
 	}
 
+	/* Determine the window size */
+	if (aux_ptr->offs_units) {
+		window_size_us = OFFS_UNIT_300_US;
+	} else {
+		window_size_us = OFFS_UNIT_30_US;
+	}
+
+	/* Calculate received aux offset we need to have ULL schedule a reception */
+	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * window_size_us;
+
+	/* Skip reception if invalid aux offset */
+	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	if (unlikely(!AUX_OFFSET_IS_VALID(aux_offset_us, window_size_us, pdu_us))) {
+		goto ull_scan_aux_rx_flush;
+	}
+
 	if (!aux) {
 		aux = aux_acquire();
 		if (!aux) {
@@ -697,21 +714,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
-	/* Determine the window size */
-	if (aux_ptr->offs_units) {
-		lll_aux->window_size_us = OFFS_UNIT_300_US;
-	} else {
-		lll_aux->window_size_us = OFFS_UNIT_30_US;
-	}
-
-	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * lll_aux->window_size_us;
-
-	/* Skip reception if invalid aux offset */
-	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
-	if (aux_offset_us < pdu_us) {
-		goto ull_scan_aux_rx_flush;
-	}
-
 	/* CA field contains the clock accuracy of the advertiser;
 	 * 0 - 51 ppm to 500 ppm
 	 * 1 - 0 ppm to 50 ppm
@@ -722,6 +724,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
+	lll_aux->window_size_us = window_size_us;
 	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
 				     window_widening_us) << 1);
 

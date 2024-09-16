@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include "testing.h"
 #include "net.h"
 #include "crypto.h"

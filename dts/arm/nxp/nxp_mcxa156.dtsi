@@ -1,0 +1,158 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	/* Dummy pinctrl node, filled with pin mux options at board level */
+	pinctrl: pinctrl {
+		compatible = "nxp,kinetis-pinctrl";
+		status = "okay";
+	};
+
+	soc {
+		syscon: syscon@40000000 {
+			compatible = "nxp,lpc-syscon";
+			reg = <0x40000000 0x4000>;
+			#clock-cells = <1>;
+			reset: reset {
+				compatible = "nxp,lpc-syscon-reset";
+				#reset-cells = <1>;
+			};
+		};
+
+		sramx: memory@4000000 {
+			compatible = "mmio-sram";
+			reg = <0x4000000 DT_SIZE_K(8)>;
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(120)>;
+		};
+
+		porta: pinmux@400bc000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x400bc000 0x1000>;
+			clocks = <&syscon MCUX_PORT0_CLK>;
+		};
+
+		portb: pinmux@400bd000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x400bd000 0x1000>;
+			clocks = <&syscon MCUX_PORT1_CLK>;
+		};
+
+		portc: pinmux@400be000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x400be000 0x1000>;
+			clocks = <&syscon MCUX_PORT2_CLK>;
+		};
+
+		portd: pinmux@400bf000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x400bf000 0x1000>;
+			clocks = <&syscon MCUX_PORT3_CLK>;
+		};
+
+		porte: pinmux@400c0000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x400c0000 0x1000>;
+			clocks = <&syscon MCUX_PORT4_CLK>;
+		};
+
+		gpio0: gpio@40102000 {
+			compatible = "nxp,kinetis-gpio";
+			reg = <0x40102000 0x1000>;
+			interrupts = <71 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
+		};
+
+		gpio1: gpio@40103000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x40103000 0x1000>;
+			interrupts = <72 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
+		};
+
+		gpio2: gpio@40104000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x40104000 0x1000>;
+			interrupts = <73 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
+		};
+
+		gpio3: gpio@40105000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x40105000 0x1000>;
+			interrupts = <74 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
+		};
+
+		gpio4: gpio@40106000 {
+			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
+			reg = <0x40106000 0x1000>;
+			interrupts = <75 0>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
+		};
+
+		lpuart0: lpuart@4009f000 {
+			compatible = "nxp,kinetis-lpuart";
+			reg = <0x4009f000 0x1000>;
+			interrupts = <31 0>;
+			clocks = <&syscon MCUX_LPUART0_CLK>;
+		};
+
+		fmu: flash-controller@40095000 {
+			compatible = "nxp,iap-msf1";
+			reg = <0x40095000 0x1000>;
+			interrupts = <12 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_M(1)>;
+				erase-block-size = <8192>;
+				write-block-size = <128>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

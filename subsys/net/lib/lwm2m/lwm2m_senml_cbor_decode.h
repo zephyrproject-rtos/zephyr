@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Generated using zcbor version 0.8.1
+ * Generated using zcbor version 0.9.0
  * https://github.com/zephyrproject-rtos/zcbor
  * Generated with a --default-max-qty of 99
  */

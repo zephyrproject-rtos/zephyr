@@ -1,7 +1,8 @@
-.. _bluetooth_extended_advertising_sample:
+.. zephyr:code-sample:: bluetooth_extended_advertising
+   :name: Extended Advertising
+   :relevant-api: bluetooth
 
-Bluetooth: Extended Advertising
-################################
+   Use the Bluetooth LE extended advertising feature.
 
 Overview
 ********
@@ -20,7 +21,7 @@ while the scanner cools-down for 5 seconds to restart its process.
 This sample handles all actions in a separate thread, to promote good design
 practices. Even though it is not strictly required, scheduling from another context is
 strongly recommended (e.g. using a work item), as re-starting an advertiser or
-scanner from within the `recycled` callback exposes the application to deadlocking.
+scanner from within the ``recycled`` callback exposes the application to deadlocking.
 
 Requirements
 ************

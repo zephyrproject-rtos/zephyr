@@ -12,3 +12,12 @@ config FAKE_ENTROPY_NATIVE_POSIX
 	  not generate real entropy.
 	  It actually generates always the same sequence of random numbers if
 	  initialized with the same seed.
+
+config FAKE_ENTROPY_NATIVE_POSIX_SEED_BY_DEFAULT
+	bool "Seed the generator by default"
+	default y
+	depends on FAKE_ENTROPY_NATIVE_POSIX
+	help
+	  Apply a seed by default, even if the user does not request it through the command line.
+	  Disabling this feature allows some other component to seed the host standard library random
+	  generator without this component's default initialization interfering.

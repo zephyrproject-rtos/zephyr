@@ -564,6 +564,12 @@ void bt_hci_le_df_cte_req_failed(struct net_buf *buf);
 void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf);
 void bt_hci_le_per_adv_response_report(struct net_buf *buf);
 
+int bt_hci_read_remote_version(struct bt_conn *conn);
+int bt_hci_le_read_remote_features(struct bt_conn *conn);
+int bt_hci_le_read_max_data_len(uint16_t *tx_octets, uint16_t *tx_time);
+
+bool bt_drv_quirk_no_auto_dle(void);
+
 void bt_tx_irq_raise(void);
 void bt_send_one_host_num_completed_packets(uint16_t handle);
 void bt_acl_set_ncp_sent(struct net_buf *packet, bool value);

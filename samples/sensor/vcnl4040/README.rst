@@ -1,10 +1,12 @@
-.. _vcnl4040_sample:
+.. zephyr:code-sample:: vcml4040
+   :name: VCNL4040 Proximity and Ambient Light Sensor
+   :relevant-api: sensor_interface
 
-VCNL4040: proximity and ambient light sensor
-############################################
+   Get proximity and ambient light data from a VCNL4040 sensor (polling & trigger mode).
 
 Overview
 ********
+
  This sample periodically measures proximity and light for
  5 sec in the interval of 300msec in polling mode. Then threshold trigger mode
  is enabled with the high threshold value of 127 and data is fetched based
@@ -28,7 +30,7 @@ Building and Running
  sensor to be connected to the desired board.
 
  .. zephyr-app-commands::
-    :app: samples/sensor/vcnl4040/
+    :zephyr-app: samples/sensor/vcnl4040/
     :goals: build flash
 
 

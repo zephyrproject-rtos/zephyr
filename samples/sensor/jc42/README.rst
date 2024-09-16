@@ -1,7 +1,9 @@
-.. _jc42-sample:
+.. zephyr:code-sample:: jc42
+   :name: JEDEC JC 42.4 compliant Temperature Sensor
+   :relevant-api: sensor_interface
 
-JEDEC JC 42.4 compliant Temperature Sensor
-##########################################
+   Get ambient temperature from a JEDEC JC 42.4 compliant temperature sensor (polling & trigger
+   mode).
 
 Overview
 ********

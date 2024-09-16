@@ -11,7 +11,7 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114_M4)
+#if defined(CONFIG_SOC_RESET_HOOK) && defined(CONFIG_SOC_LPC54114_M4)
 
     .syntax unified
     .arch armv7-m
@@ -26,8 +26,8 @@ rel_vals:
     .short  0x0FFF
     .short  0x0C24
 
-GTEXT(z_arm_platform_init)
-SECTION_FUNC(TEXT,z_arm_platform_init)
+GTEXT(soc_reset_hook)
+SECTION_FUNC(TEXT,soc_reset_hook)
 
 /* Both the M0+ and M4 core come via this shared startup code,
  * but the M0+ and M4 core have different vector tables.

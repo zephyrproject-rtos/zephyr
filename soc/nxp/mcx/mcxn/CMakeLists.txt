@@ -10,7 +10,7 @@ zephyr_compile_definitions_ifdef(CONFIG_NXP_LP_FLEXCOMM LPFLEXCOMM_INIT_NOT_USED
 
 zephyr_sources(soc.c)
 
-if(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
+if(CONFIG_FLASH_MCUX_FLEXSPI_XIP OR CONFIG_FLASH_MCUX_FLEXSPI_NOR)
   zephyr_sources(flash_clock_setup.c)
   if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
     zephyr_code_relocate(FILES flash_clock_setup.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)

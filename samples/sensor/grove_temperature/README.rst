@@ -1,7 +1,8 @@
-.. _grove_temperature:
+.. zephyr:code-sample:: grove_temperature
+   :name: Grove Temperature Sensor
+   :relevant-api: sensor_interface
 
-Grove Temperature Sensor
-########################
+   Get temperature data from a Grove temperature sensor and display it on an LCD display.
 
 Overview
 ********

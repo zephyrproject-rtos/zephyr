@@ -1,7 +1,8 @@
-.. _lis2dh:
+.. zephyr:code-sample:: lis2dh
+   :name: LIS2DH Motion Sensor
+   :relevant-api: sensor_interface
 
-LIS2DH: Motion Sensor Monitor
-#############################
+   Get accelerometer data from an LIS2DH sensor (polling & trigger mode).
 
 Overview
 ********

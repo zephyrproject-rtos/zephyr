@@ -8,6 +8,8 @@ config HAS_RENESAS_RA_FSP
 	help
 	  Enable Renesas RA FSP support
 
+if HAS_RENESAS_RA_FSP
+
 config USE_RA_FSP_SCI_B_UART
 	bool
 	help
@@ -48,3 +50,15 @@ config HAS_RENESAS_RA_RSIP_E51A
 	  Includes RSIP-E51A implementation for SCE driver
 
 endif
+
+config USE_RA_FSP_SPI_B
+	bool
+	help
+	  Enable RA FSP SPI-B driver
+
+config USE_RA_FSP_FLASH_HP
+	bool
+	help
+	  Enable RA FSP FLASH HP driver
+
+endif # HAS_RENESAS_RA_FSP

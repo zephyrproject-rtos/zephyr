@@ -130,8 +130,9 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 	if (is_deep) {
 		pm_flags |= BIT(NPCX_PMCSR_DHF);
 		/* Add 'Instant Wake-up' flag if sleep time is within 200 ms */
-		if (is_instant)
+		if (is_instant) {
 			pm_flags |= BIT(NPCX_PMCSR_DI_INSTW);
+		}
 	}
 
 	inst_pmc->PMCSR = pm_flags;

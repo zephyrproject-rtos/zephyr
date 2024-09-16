@@ -12,7 +12,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>

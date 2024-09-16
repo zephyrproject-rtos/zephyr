@@ -353,8 +353,8 @@ static int imxrt_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
-void z_arm_platform_init(void)
+#ifdef CONFIG_SOC_RESET_HOOK
+void soc_reset_hook(void)
 {
 	/* Call CMSIS SystemInit */
 	SystemInit();

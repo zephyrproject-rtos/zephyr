@@ -5,6 +5,7 @@
  */
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 
@@ -20,6 +21,9 @@ extern void soc_num_cpus_init(void);
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
 #if CONFIG_SOC_HAS_RUNTIME_NUM_CPUS
 	soc_num_cpus_init();
 #endif

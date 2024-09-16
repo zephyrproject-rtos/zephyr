@@ -18,7 +18,7 @@ import json
 
 from pytest import ExitCode
 from twisterlib.reports import ReportStatus
-from twisterlib.error import ConfigurationError
+from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
 from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.statuses import TwisterStatus
@@ -76,9 +76,7 @@ class Harness:
             key = value.name if isinstance(value, Enum) else value
             self._status = TwisterStatus[key]
         except KeyError:
-            logger.error(f'Harness assigned status "{value}"'
-                           f' without an equivalent in TwisterStatus.'
-                           f' Assignment was ignored.')
+            raise StatusAttributeError(self.__class__, value)
 
     def configure(self, instance):
         self.instance = instance
@@ -443,6 +441,9 @@ class Pytest(Harness):
                 f'--device-serial-baud={hardware.baud}'
             ])
 
+        if hardware.flash_timeout:
+            command.append(f'--flash-timeout={hardware.flash_timeout}')
+
         options = handler.options
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
@@ -561,7 +562,8 @@ class Pytest(Harness):
     def _parse_report_file(self, report):
         tree = ET.parse(report)
         root = tree.getroot()
-        if elem_ts := root.find('testsuite'):
+
+        if (elem_ts := root.find('testsuite')) is not None:
             if elem_ts.get('failures') != '0':
                 self.status = TwisterStatus.FAIL
                 self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"

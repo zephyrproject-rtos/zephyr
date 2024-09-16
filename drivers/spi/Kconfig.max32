@@ -16,4 +16,11 @@ config SPI_MAX32_INTERRUPT
 	help
 	  Enable interrupt support for MAX32 MCU SPI driver.
 
+config SPI_MAX32_DMA
+	bool "MAX32 MCU SPI DMA Support"
+	select DMA
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	help
+	  Enable DMA support for MAX32 MCU SPI driver.
+
 endif # SPI_MAX32

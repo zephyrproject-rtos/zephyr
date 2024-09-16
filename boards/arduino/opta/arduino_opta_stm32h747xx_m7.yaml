@@ -1,0 +1,22 @@
+identifier: arduino_opta/stm32h747xx/m7
+name: ARDUINO OPTA (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 768
+supported:
+  - gpio
+  - netif:eth
+testing:
+  ignore_tags:
+    - mpu
+    - nfc
+    - net
+    - flash
+    - input
+    - mcumgr
+vendor: arduino

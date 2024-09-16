@@ -1,0 +1,11 @@
+# STMicroelectronics STM32U073XX MCU
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32U073XX
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32U073XX

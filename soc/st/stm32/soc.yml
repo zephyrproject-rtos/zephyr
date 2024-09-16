@@ -183,6 +183,8 @@ family:
     - name: stm32mp157cxx
   - name: stm32u0x
     socs:
+    - name: stm32u031xx
+    - name: stm32u073xx
     - name: stm32u083xx
   - name: stm32u5x
     socs:
@@ -195,6 +197,12 @@ family:
   - name: stm32wbx
     socs:
     - name: stm32wb55xx
+  - name: stm32wb0x
+    socs:
+    - name: stm32wb05
+    - name: stm32wb06
+    - name: stm32wb07
+    - name: stm32wb09
   - name: stm32wbax
     socs:
     - name: stm32wba52xx

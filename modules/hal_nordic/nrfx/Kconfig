@@ -534,6 +534,10 @@ config NRFX_SYSTICK
 	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 
+config NRFX_TBM
+	bool "TBM driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TBM))
+
 config NRFX_TEMP
 	bool "TEMP driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TEMP))

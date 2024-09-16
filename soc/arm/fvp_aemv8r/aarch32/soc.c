@@ -8,7 +8,7 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	if (IS_ENABLED(CONFIG_ICACHE)) {
 		if (!(__get_SCTLR() & SCTLR_I_Msk)) {

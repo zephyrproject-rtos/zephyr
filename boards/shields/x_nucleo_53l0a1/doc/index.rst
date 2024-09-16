@@ -58,7 +58,7 @@ External links
 Samples
 *******
 
-The sample :ref:`vl53l0x` demonstrates how to use the ranging sensor VL53L0X
+The sample :zephyr:code-sample:`vl53l0x` demonstrates how to use the ranging sensor VL53L0X
 using the center sensor only.
 
 The sample :zephyr:code-sample:`x-nucleo-53l0a1` sample demonstrates how to use the three

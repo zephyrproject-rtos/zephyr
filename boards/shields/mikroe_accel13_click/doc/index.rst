@@ -38,7 +38,7 @@ Set ``--shield mikro_accel13_click`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::
-   :zephyr-app: test/boards/board_shell
+   :zephyr-app: samples/sensor/sensor_shell
    :board: lpcxpresso55s69
    :shield: mikroe_accel13_click
    :goals: build

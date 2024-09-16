@@ -1,7 +1,7 @@
 .. _g1120b0mipi:
 
-G1120B0MIPI MIPI Display
-##########################
+NXP G1120B0MIPI MIPI Display
+############################
 
 Overview
 ********

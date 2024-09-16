@@ -91,15 +91,25 @@ ST-LINK Virtual COM port interface. Default communication settings are 115200 8N
 Programming and Debugging
 *************************
 
-Flashing
-========
-
 The STM32L4R9I Discovery board includes an ST-LINK/V2-1 debug tool.
 
 Applications for the ``stm32l4r9i_disco`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
+Flashing
+========
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32L4R9I Discovery
 -----------------------------------------------
@@ -148,3 +158,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L4R5xx/R7xx/R9xx datasheet:
     https://www.st.com/resource/en/datasheet/stm32l4r5vi.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

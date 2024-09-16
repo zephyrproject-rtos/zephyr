@@ -4,6 +4,7 @@
 /*
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +28,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -54,8 +55,8 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #define ASE_BUF_SEM_TIMEOUT K_MSEC(CONFIG_BT_ASCS_ASE_BUF_TIMEOUT)
 
 #define MAX_ASES_SESSIONS CONFIG_BT_MAX_CONN * \
-				(CONFIG_BT_ASCS_ASE_SNK_COUNT + \
-				 CONFIG_BT_ASCS_ASE_SRC_COUNT)
+				(CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + \
+				 CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT)
 
 #define NTF_HEADER_SIZE (3) /* opcode (1) + handle (2) */
 
@@ -67,13 +68,13 @@ BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
 
 #define ASE_ID(_ase) ase->ep.status.id
 #define ASE_DIR(_id) \
-	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_AUDIO_DIR_SOURCE : BT_AUDIO_DIR_SINK)
+	(_id > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ? BT_AUDIO_DIR_SOURCE : BT_AUDIO_DIR_SINK)
 #define ASE_UUID(_id) \
-	(_id > CONFIG_BT_ASCS_ASE_SNK_COUNT ? BT_UUID_ASCS_ASE_SRC : BT_UUID_ASCS_ASE_SNK)
-#define ASE_COUNT (CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT)
+	(_id > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ? BT_UUID_ASCS_ASE_SRC : BT_UUID_ASCS_ASE_SNK)
+#define ASE_COUNT (CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT)
 #define BT_BAP_ASCS_RSP_NULL ((struct bt_bap_ascs_rsp[]) { BT_BAP_ASCS_RSP(0, 0) })
 
-static struct bt_ascs_ase {
+struct bt_ascs_ase {
 	struct bt_conn *conn;
 	struct bt_bap_ep ep;
 	const struct bt_gatt_attr *attr;
@@ -81,7 +82,14 @@ static struct bt_ascs_ase {
 	struct k_work_delayable state_transition_work;
 	enum bt_bap_ep_state state_pending;
 	bool unexpected_iso_link_loss;
-} ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
+};
+
+struct bt_ascs {
+	/* Whether the service has been registered or not */
+	bool registered;
+
+	struct bt_ascs_ase ase_pool[CONFIG_BT_ASCS_MAX_ACTIVE_ASES];
+} ascs;
 
 /* Minimum state size when in the codec configured state */
 #define MIN_CONFIG_STATE_SIZE (1 + 1 + 1 + 1 + 1 + 2 + 3 + 3 + 3 + 3 + 5 + 1)
@@ -825,8 +833,8 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_
 {
 	LOG_DBG("conn %p", (void *)info->acl);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 		enum bt_bap_ep_state state;
 		struct bt_iso_chan *chan;
 
@@ -1282,8 +1290,8 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn != conn) {
 			continue;
@@ -1407,9 +1415,9 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 
 	__ASSERT(id > 0 && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		if (ase_pool[i].conn == NULL) {
-			ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		if (ascs.ase_pool[i].conn == NULL) {
+			ase = &ascs.ase_pool[i];
 			break;
 		}
 	}
@@ -1427,8 +1435,8 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 
 static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ase->ep.status.id == id) {
 			return ase;
@@ -1685,8 +1693,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_stream *stream)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ase->ep.stream == stream) {
 			return &ase->ep;
@@ -1896,8 +1904,8 @@ static ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn) {
 			func(&ase->ep, user_data);
@@ -3080,22 +3088,120 @@ respond:
 	BT_AUDIO_CCC(ascs_ase_cfg_changed)
 #define BT_ASCS_ASE_SNK_DEFINE(_n, ...) BT_ASCS_ASE_DEFINE(BT_UUID_ASCS_ASE_SNK, (_n) + 1)
 #define BT_ASCS_ASE_SRC_DEFINE(_n, ...) BT_ASCS_ASE_DEFINE(BT_UUID_ASCS_ASE_SRC, (_n) + 1 + \
-							   CONFIG_BT_ASCS_ASE_SNK_COUNT)
+							   CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT)
 
-BT_GATT_SERVICE_DEFINE(ascs_svc,
-	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS),
-	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP,
-		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY,
-		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE,
-		      NULL, ascs_cp_write, NULL),
-	BT_AUDIO_CCC(ascs_cp_cfg_changed),
-#if CONFIG_BT_ASCS_ASE_SNK_COUNT > 0
-	LISTIFY(CONFIG_BT_ASCS_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
-#endif /* CONFIG_BT_ASCS_ASE_SNK_COUNT > 0 */
-#if CONFIG_BT_ASCS_ASE_SRC_COUNT > 0
-	LISTIFY(CONFIG_BT_ASCS_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
-#endif /* CONFIG_BT_ASCS_ASE_SRC_COUNT > 0 */
-);
+#define BT_ASCS_CHR_ASE_CONTROL_POINT \
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE, \
+		      NULL, ascs_cp_write, NULL), \
+	BT_AUDIO_CCC(ascs_cp_cfg_changed)
+
+#if CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 0
+#define BT_ASCS_ASE_SINKS \
+	LISTIFY(CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT, BT_ASCS_ASE_SNK_DEFINE, (,)),
+#else
+#define BT_ASCS_ASE_SINKS
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0
+#define BT_ASCS_ASE_SOURCES \
+	LISTIFY(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, BT_ASCS_ASE_SRC_DEFINE, (,)),
+#else
+#define BT_ASCS_ASE_SOURCES
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0 */
+
+#define BT_ASCS_SERVICE_DEFINITION() { \
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_ASCS), \
+	BT_AUDIO_CHRC(BT_UUID_ASCS_ASE_CP, \
+		      BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_NOTIFY, \
+		      BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_PREPARE_WRITE, \
+		      NULL, ascs_cp_write, NULL), \
+	BT_AUDIO_CCC(ascs_cp_cfg_changed), \
+	BT_ASCS_ASE_SINKS \
+	BT_ASCS_ASE_SOURCES \
+	}
+
+#define ASCS_ASE_CHAR_ATTR_COUNT 3 /* declaration + value + cccd */
+
+static struct bt_gatt_attr ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+static struct bt_gatt_service ascs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(ascs_attrs);
+
+static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
+{
+	uint8_t snk_ases_to_rem = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT - snk_cnt;
+	uint8_t src_ases_to_rem = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT - src_cnt;
+	size_t attrs_to_rem;
+
+	/* Remove the Source ASEs. The ones to remove will always be at the very tail of the
+	 * attributes, so we just decrease the count withe the amount of sources we want to remove.
+	 */
+	attrs_to_rem = src_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
+	ascs_svc.attr_count -= attrs_to_rem;
+
+	/* Remove the Sink ASEs.
+	 */
+	attrs_to_rem = snk_ases_to_rem * ASCS_ASE_CHAR_ATTR_COUNT;
+	if (CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT == 0 || CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	    == src_ases_to_rem) {
+		/* If there are no Source ASEs present, then we can just decrease the
+		 * attribute count
+		 */
+		ascs_svc.attr_count -= attrs_to_rem;
+	} else {
+		/* As Source ASEs are present, we need to iterate backwards (as this will likely be
+		 * the shortest distance). Find the first Sink to save, and move all Sources
+		 * backwards to it.
+		 */
+		size_t src_start_idx = ascs_svc.attr_count - (src_cnt * ASCS_ASE_CHAR_ATTR_COUNT);
+		size_t new_src_start_idx = src_start_idx - (snk_ases_to_rem *
+							    ASCS_ASE_CHAR_ATTR_COUNT);
+
+		for (size_t i = 0; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
+			ascs_svc.attrs[new_src_start_idx + i] = ascs_svc.attrs[src_start_idx + i];
+		}
+
+		ascs_svc.attr_count -= attrs_to_rem;
+	}
+}
+
+int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
+{
+	int err = 0;
+
+	if (ascs.registered) {
+		LOG_DBG("ASCS already registered");
+
+		return -EALREADY;
+	}
+
+	if (snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ||
+	    src_cnt > CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT) {
+		LOG_DBG("Provided ASE count above maximum");
+
+		return -EINVAL;
+	}
+
+	/* At least one ASE has been registered */
+	if (snk_cnt == 0 && src_cnt == 0) {
+		LOG_DBG("Can't register ASCS with zero ASEs");
+
+		return -EINVAL;
+	}
+
+	configure_ase_char(snk_cnt, src_cnt);
+
+	err = bt_gatt_service_register(&ascs_svc);
+	if (err != 0) {
+		LOG_DBG("Failed to register ASCS in gatt DB");
+
+		return err;
+	}
+
+	ascs.registered = true;
+
+	return err;
+}
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
 {
@@ -3110,6 +3216,10 @@ static struct bt_iso_server iso_server = {
 int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 {
 	int err;
+
+	if (!ascs.registered) {
+		return -ENOTSUP;
+	}
 
 	if (unicast_server_cb != NULL) {
 		return -EALREADY;
@@ -3128,17 +3238,47 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 
 void bt_ascs_cleanup(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ase_pool[i];
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn != NULL) {
 			bt_ascs_release_ase(&ase->ep);
 		}
 	}
-
 	if (unicast_server_cb != NULL) {
 		bt_iso_server_unregister(&iso_server);
 		unicast_server_cb = NULL;
 	}
+}
+
+int bt_ascs_unregister(void)
+{
+	int err;
+	struct bt_gatt_attr _ascs_attrs[] = BT_ASCS_SERVICE_DEFINITION();
+
+	if (!ascs.registered) {
+		LOG_DBG("No ascs instance registered");
+		return -EALREADY;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+		if (ascs.ase_pool[i].ep.status.state != BT_BAP_EP_STATE_IDLE) {
+			return -EBUSY;
+		}
+	}
+
+	err = bt_gatt_service_unregister(&ascs_svc);
+	/* If unregistration was succesfull, make sure to reset ascs_attrs so it can be used for
+	 * new registrations
+	 */
+	if (err != 0) {
+		LOG_DBG("Failed to unregister ASCS");
+		return err;
+	}
+
+	memcpy(&ascs_attrs, &_ascs_attrs, sizeof(struct bt_gatt_attr));
+	ascs.registered = false;
+
+	return err;
 }
 #endif /* BT_BAP_UNICAST_SERVER */

@@ -95,7 +95,7 @@ As mentioned above, you can run sysbuild via ``west build`` or ``cmake``.
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -166,7 +166,7 @@ applying to both images debug optimizations:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -316,7 +316,7 @@ enable MCUboot and build and flash the sample as follows:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -381,7 +381,7 @@ specify this file when building with sysbuild, as follows:
 
       .. zephyr-app-commands::
          :tool: west
-         :app: samples/hello_world
+         :zephyr-app: samples/hello_world
          :board: reel_board
          :goals: build
          :west-args: --sysbuild
@@ -658,7 +658,7 @@ with ``application``.
 Sysbuild file suffix support
 ----------------------------
 
-File suffix support through the makevar:`FILE_SUFFIX` is supported in sysbuild
+File suffix support through the :makevar:`FILE_SUFFIX` is supported in sysbuild
 (see :ref:`application-file-suffixes` for details on this feature in applications). For sysbuild,
 a globally provided option will be passed down to all images. In addition, the image configuration
 file will have this value applied and used (instead of the build type) if the file exists.

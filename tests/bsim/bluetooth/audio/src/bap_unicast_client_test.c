@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
@@ -1233,6 +1233,53 @@ static void test_main_async_group(void)
 	PASS("Unicast client async group parameters passed\n");
 }
 
+static void test_main_reconf_group(void)
+{
+	static struct bt_bap_lc3_preset preset_16_2_2 = BT_BAP_LC3_UNICAST_PRESET_16_2_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_bap_stream rx_stream = {0};
+	struct bt_bap_stream tx_stream = {0};
+	struct bt_bap_unicast_group_stream_param rx_param = {
+		.qos = &preset_16_2_1.qos,
+		.stream = &rx_stream,
+	};
+	struct bt_bap_unicast_group_stream_param tx_param = {
+		.qos = &preset_16_2_1.qos,
+		.stream = &tx_stream,
+	};
+	struct bt_bap_unicast_group_stream_pair_param pair_param = {
+		.rx_param = &rx_param,
+		.tx_param = &tx_param,
+	};
+	struct bt_bap_unicast_group_param param = {
+		.params = &pair_param,
+		.params_count = 1U,
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+	};
+	struct bt_bap_unicast_group *unicast_group;
+	int err;
+
+	init();
+
+	err = bt_bap_unicast_group_create(&param, &unicast_group);
+	if (err != 0) {
+		FAIL("Unable to create unicast group: %d", err);
+
+		return;
+	}
+
+	rx_param.qos = &preset_16_2_2.qos;
+	tx_param.qos = &preset_16_2_2.qos;
+	err = bt_bap_unicast_group_reconfig(unicast_group, &param);
+	if (err != 0) {
+		FAIL("Unable to reconfigure unicast group: %d", err);
+
+		return;
+	}
+
+	PASS("Unicast client async group parameters passed\n");
+}
+
 static const struct bst_test_instance test_unicast_client[] = {
 	{
 		.test_id = "unicast_client",
@@ -1254,6 +1301,13 @@ static const struct bst_test_instance test_unicast_client[] = {
 		.test_descr = "Tests that a unicast group (CIG) can be created with different "
 			      "values in each direction, such as 10000us SDU interval in C to P "
 			      "and 7500us for P to C",
+	},
+	{
+		.test_id = "unicast_client_reconf_group",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_reconf_group,
+		.test_descr = "Tests that a unicast group (CIG) can be reconfigred with new values",
 	},
 	BSTEST_END_MARKER,
 };

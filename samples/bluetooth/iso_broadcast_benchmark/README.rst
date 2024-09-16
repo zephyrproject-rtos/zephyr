@@ -1,7 +1,8 @@
-.. _iso_broadcast_benchmark:
+.. zephyr:code-sample:: bluetooth_isochronous_broadcaster_benchmark
+   :name: Isochronous Broadcaster Benchmark
+   :relevant-api: bt_iso bluetooth
 
-Bluetooth: Throughput
-#####################
+   Measure packet loss and sync loss of an ISO broadcaster against one or more receivers.
 
 The ISO Broadcast Benchmark sample measures and report packet loss and sync loss
 of an ISO broadcaster against one or more ISO broadcast receivers.

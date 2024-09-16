@@ -79,7 +79,7 @@ of the M5Stack Core2 board.
 | MPU6886          | combines a 3-axis gyroscope and a 3-axis accelerometer.                  |           |
 |                  | For details please refer to :ref:`m5stack_core2_ext`                     |           |
 +------------------+--------------------------------------------------------------------------+-----------+
-| Grove port       | Note: Grove port requires 5V to be enabled via `bus_5v` regulator        | supported |
+| Grove port       | Note: Grove port requires 5V to be enabled via ``bus_5v`` regulator      | supported |
 +------------------+--------------------------------------------------------------------------+-----------+
 | Built-in         | The `SPM-1423`_ I2S driven microphone.                                   | todo      |
 | microphone       |                                                                          |           |

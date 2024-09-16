@@ -515,6 +515,7 @@
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				endtx-stoptx-supported;
 			};
 
 			spi121: spi@8e7000 {
@@ -844,6 +845,7 @@
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -881,6 +883,7 @@
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -952,6 +955,7 @@
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -989,6 +993,7 @@
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1060,6 +1065,7 @@
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1097,6 +1103,7 @@
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1168,6 +1175,7 @@
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1205,6 +1213,7 @@
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
 			};
 		};
 	};

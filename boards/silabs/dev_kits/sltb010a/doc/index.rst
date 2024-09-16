@@ -149,7 +149,7 @@ BRD4184B:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ to be installed on you host
+   ``west flash`` requires `SEGGER J-Link software`_ to be installed on you host
    computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -177,7 +177,7 @@ blobs from the SiLabs HAL repository.
    west blobs fetch hal_silabs
 
 Then build the Zephyr kernel and a Bluetooth sample with the following
-command. The :ref:`bluetooth-observer-sample` sample application is used in
+command. The :zephyr:code-sample:`bluetooth_observer` sample application is used in
 this example.
 
 BRD4184A:

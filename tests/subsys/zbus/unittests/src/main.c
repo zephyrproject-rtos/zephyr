@@ -234,7 +234,7 @@ static struct zbus_observer_data _zbus_obs_data_invalid_obs = {
 	))
 };
 
-STRUCT_SECTION_ITERABLE(zbus_observer, invalid_obs) = {
+const STRUCT_SECTION_ITERABLE(zbus_observer, invalid_obs) = {
 	ZBUS_OBSERVER_NAME_INIT(invalid_obs) /* Name field */
 	.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE + 10,
 	.data = &_zbus_obs_data_invalid_obs,
@@ -720,7 +720,7 @@ static struct zbus_observer_data _zbus_obs_data_invalid_sub = {
 	))
 };
 
-STRUCT_SECTION_ITERABLE(zbus_observer, invalid_sub) = {
+const STRUCT_SECTION_ITERABLE(zbus_observer, invalid_sub) = {
 	ZBUS_OBSERVER_NAME_INIT(invalid_sub) /* Name field */
 	.type = ZBUS_OBSERVER_SUBSCRIBER_TYPE,
 	.data = &_zbus_obs_data_invalid_sub,

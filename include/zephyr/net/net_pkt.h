@@ -19,7 +19,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #if defined(CONFIG_IEEE802154)
 #include <zephyr/net/ieee802154_pkt.h>

@@ -41,7 +41,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -346,7 +346,10 @@ int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
  *
  * @param param Parameters to start the audio streams.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 on success
+ * @retval -EBUSY if a CAP procedure is already in progress
+ * @retval -EINVAL if any parameter is invalid
+ * @retval -EALREADY All streams are already in the streaming state
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 

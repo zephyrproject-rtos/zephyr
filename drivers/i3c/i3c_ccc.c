@@ -239,6 +239,40 @@ int i3c_ccc_do_events_set(struct i3c_device_desc *target,
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
 
+int i3c_ccc_do_entas(const struct i3c_device_desc *target, uint8_t as)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+	__ASSERT_NO_MSG(as <= 3);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 0;
+
+	ccc_payload.ccc.id = I3C_CCC_ENTAS(as, false);
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	return i3c_do_ccc(target->bus, &ccc_payload);
+}
+
+int i3c_ccc_do_entas_all(const struct device *controller, uint8_t as)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+	__ASSERT_NO_MSG(as <= 3);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_ENTAS(as, true);
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
 int i3c_ccc_do_setmwl_all(const struct device *controller,
 			  const struct i3c_ccc_mwl *mwl)
 {
@@ -420,6 +454,43 @@ int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 	return ret;
 }
 
+int i3c_ccc_do_enttm(const struct device *controller,
+			  enum i3c_ccc_enttm_defbyte defbyte)
+{
+	struct i3c_ccc_payload ccc_payload;
+	uint8_t def_byte;
+
+	__ASSERT_NO_MSG(controller != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_ENTTM;
+
+	def_byte = (uint8_t)defbyte;
+	ccc_payload.ccc.data = &def_byte;
+	ccc_payload.ccc.data_len = 1U;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
+int i3c_ccc_do_deftgts_all(const struct device *controller,
+			   struct i3c_ccc_deftgts *deftgts)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+	__ASSERT_NO_MSG(deftgts != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_DEFTGTS;
+
+	ccc_payload.ccc.data = (uint8_t *)deftgts;
+	ccc_payload.ccc.data_len = sizeof(uint8_t) +
+				   sizeof(struct i3c_ccc_deftgts_active_controller) +
+				   (deftgts->count * sizeof(struct i3c_ccc_deftgts_target));
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
 int i3c_ccc_do_getstatus(const struct i3c_device_desc *target,
 			 union i3c_ccc_getstatus *status,
 			 enum i3c_ccc_getstatus_fmt fmt,
@@ -581,6 +652,222 @@ int i3c_ccc_do_getcaps(const struct i3c_device_desc *target,
 			case GETCAPS_FORMAT_2_TESTPAT:
 				/* should always be 4 data bytes */
 				caps->fmt2.testpat = sys_get_be32(data);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+out:
+	return ret;
+}
+
+int i3c_ccc_do_setvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *payload, size_t len)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(target != NULL);
+
+	/* CCC must be between 0xE0 and 0xFE, the total range of this is 0x1E */
+	if (id > 0x1E) {
+		return -EINVAL;
+	}
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_VENDOR(false, id);
+	ccc_payload.ccc.data = payload;
+	ccc_payload.ccc.data_len = len;
+
+	return i3c_do_ccc(target->bus, &ccc_payload);
+}
+
+int i3c_ccc_do_getvendor(struct i3c_device_desc *target, uint8_t id, uint8_t *payload, size_t len,
+			 size_t *num_xfer)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+
+	/* CCC must be between 0xE0 and 0xFE, the total range of this is 0x1E */
+	if (id > 0x1E) {
+		return -EINVAL;
+	}
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = payload;
+	ccc_tgt_payload.data_len = len;
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_VENDOR(false, id);
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	if (ret == 0) {
+		*num_xfer = ccc_tgt_payload.num_xfer;
+	}
+
+	return ret;
+}
+
+int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target, uint8_t id, uint8_t defbyte,
+				 uint8_t *payload, size_t len, size_t *num_xfer)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+
+	/* CCC must be between 0xE0 and 0xFE, the total range of this is 0x1E */
+	if (id > 0x1E) {
+		return -EINVAL;
+	}
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = payload;
+	ccc_tgt_payload.data_len = len;
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_VENDOR(false, id);
+	ccc_payload.ccc.data = &defbyte;
+	ccc_payload.ccc.data_len = 1;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	if (ret == 0) {
+		*num_xfer = ccc_tgt_payload.num_xfer;
+	}
+
+	return ret;
+}
+
+int i3c_ccc_do_setvendor_all(const struct device *controller, uint8_t id, uint8_t *payload,
+			     size_t len)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+
+	/* CCC must be between 0x61 and 0x7F, the total range of this is 0x1E */
+	if (id > 0x1E) {
+		return -EINVAL;
+	}
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_VENDOR(true, id);
+	ccc_payload.ccc.data = payload;
+	ccc_payload.ccc.data_len = len;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
+int i3c_ccc_do_setaasa_all(const struct device *controller)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_SETAASA;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
+
+int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
+			 union i3c_ccc_getmxds *mxds,
+			 enum i3c_ccc_getmxds_fmt fmt,
+			 enum i3c_ccc_getmxds_defbyte defbyte)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	uint8_t defining_byte;
+	uint8_t data[5];
+	uint8_t len;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+	__ASSERT_NO_MSG(mxds != NULL);
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = &data[0];
+
+	if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
+		/* Could be 2 or 5 Data Bytes Returned */
+		ccc_tgt_payload.data_len = sizeof(((union i3c_ccc_getmxds *)0)->fmt2);
+	} else if (fmt == GETMXDS_FORMAT_3) {
+		switch (defbyte) {
+		case GETMXDS_FORMAT_3_WRRDTURN:
+			/* Could be 2 or 5 Data Bytes Returned */
+			ccc_tgt_payload.data_len =
+				sizeof(((union i3c_ccc_getmxds *)0)->fmt3.wrrdturn);
+			break;
+		case GETMXDS_FORMAT_3_CRHDLY:
+			/* Only 1 Byte returned */
+			ccc_tgt_payload.data_len =
+				sizeof(((union i3c_ccc_getmxds *)0)->fmt3.crhdly1);
+			break;
+		default:
+			ret = -EINVAL;
+			goto out;
+		}
+	} else {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_GETMXDS;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	if (fmt == GETMXDS_FORMAT_3) {
+		defining_byte = (uint8_t)defbyte;
+
+		ccc_payload.ccc.data = &defining_byte;
+		ccc_payload.ccc.data_len = 1;
+	}
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	if (ret == 0) {
+		/* GETMXDS will return a variable length */
+		len = ccc_tgt_payload.num_xfer;
+
+		if ((fmt == GETMXDS_FORMAT_1) || (fmt == GETMXDS_FORMAT_2)) {
+			if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt1)) {
+				mxds->fmt1.maxwr = data[0];
+				mxds->fmt1.maxrd = data[1];
+				/* It is unknown wither format 1 or format 2 is returned ahead of
+				 * time
+				 */
+				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));
+			} else if (len == sizeof(((union i3c_ccc_getmxds *)0)->fmt2)) {
+				mxds->fmt2.maxwr = data[0];
+				mxds->fmt2.maxrd = data[1];
+				memcpy(&mxds->fmt2.maxrdturn, &data[2],
+				       sizeof(mxds->fmt2.maxrdturn));
+			}
+		} else if (fmt == GETMXDS_FORMAT_3) {
+			switch (defbyte) {
+			case GETMXDS_FORMAT_3_WRRDTURN:
+				memcpy(mxds->fmt3.wrrdturn, data, len);
+				/* for values not received, assume default (1'b0) */
+				memset(&mxds->fmt3.wrrdturn[len], 0,
+				       sizeof(mxds->fmt3.wrrdturn) - len);
+				break;
+			case GETMXDS_FORMAT_3_CRHDLY:
+				mxds->fmt3.crhdly1 = data[0];
 				break;
 			default:
 				break;

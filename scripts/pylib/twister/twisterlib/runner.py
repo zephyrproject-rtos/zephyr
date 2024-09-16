@@ -25,7 +25,7 @@ from colorama import Fore
 from domains import Domains
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.environment import canonical_zephyr_base
-from twisterlib.error import BuildError, ConfigurationError
+from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
 from twisterlib.statuses import TwisterStatus
 
 import elftools
@@ -343,6 +343,7 @@ class CMake:
         cmake_args = [
             f'-B{self.build_dir}',
             f'-DTC_RUNID={self.instance.run_id}',
+            f'-DTC_NAME={self.instance.testsuite.name}',
             f'-D{warning_command}={warnings_as_errors}',
             f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
             f'-G{self.env.generator}'
@@ -601,130 +602,213 @@ class ProjectBuilder(FilterBuilder):
             self.log_info("{}".format(b_log), inline_logs)
 
 
+    def _add_to_pipeline(self, pipeline, op: str, additionals: dict={}):
+        try:
+            if op:
+                task = dict({'op': op, 'test': self.instance}, **additionals)
+                pipeline.put(task)
+        # Only possible RuntimeError source here is a mutation of the pipeline during iteration.
+        # If that happens, we ought to consider the whole pipeline corrupted.
+        except RuntimeError as e:
+            logger.error(f"RuntimeError: {e}")
+            traceback.print_exc()
+
+
     def process(self, pipeline, done, message, lock, results):
+        next_op = None
+        additionals = {}
+
         op = message.get('op')
 
         self.instance.setup_handler(self.env)
 
         if op == "filter":
-            ret = self.cmake(filter_stages=self.instance.filter_stages)
-            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                pipeline.put({"op": "report", "test": self.instance})
-            else:
-                # Here we check the dt/kconfig filter results coming from running cmake
-                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
-                    logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = TwisterStatus.FILTER
-                    self.instance.reason = "runtime filter"
-                    results.skipped_runtime += 1
-                    self.instance.add_missing_case_status(TwisterStatus.SKIP)
-                    pipeline.put({"op": "report", "test": self.instance})
+            try:
+                ret = self.cmake(filter_stages=self.instance.filter_stages)
+                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                    next_op = 'report'
                 else:
-                    pipeline.put({"op": "cmake", "test": self.instance})
+                    # Here we check the dt/kconfig filter results coming from running cmake
+                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                        logger.debug("filtering %s" % self.instance.name)
+                        self.instance.status = TwisterStatus.FILTER
+                        self.instance.reason = "runtime filter"
+                        results.skipped_runtime += 1
+                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        next_op = 'report'
+                    else:
+                        next_op = 'cmake'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_pipeline(pipeline, next_op)
 
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
-            ret = self.cmake()
-            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                pipeline.put({"op": "report", "test": self.instance})
-            elif self.options.cmake_only:
-                if self.instance.status == TwisterStatus.NONE:
-                    self.instance.status = TwisterStatus.PASS
-                pipeline.put({"op": "report", "test": self.instance})
-            else:
-                # Here we check the runtime filter results coming from running cmake
-                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
-                    logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = TwisterStatus.FILTER
-                    self.instance.reason = "runtime filter"
-                    results.skipped_runtime += 1
-                    self.instance.add_missing_case_status(TwisterStatus.SKIP)
-                    pipeline.put({"op": "report", "test": self.instance})
+            try:
+                ret = self.cmake()
+                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                    next_op = 'report'
+                elif self.options.cmake_only:
+                    if self.instance.status == TwisterStatus.NONE:
+                        self.instance.status = TwisterStatus.PASS
+                    next_op = 'report'
                 else:
-                    pipeline.put({"op": "build", "test": self.instance})
+                    # Here we check the runtime filter results coming from running cmake
+                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                        logger.debug("filtering %s" % self.instance.name)
+                        self.instance.status = TwisterStatus.FILTER
+                        self.instance.reason = "runtime filter"
+                        results.skipped_runtime += 1
+                        self.instance.add_missing_case_status(TwisterStatus.SKIP)
+                        next_op = 'report'
+                    else:
+                        next_op = 'build'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_pipeline(pipeline, next_op)
 
         elif op == "build":
-            logger.debug("build test: %s" % self.instance.name)
-            ret = self.build()
-            if not ret:
-                self.instance.status = TwisterStatus.ERROR
-                self.instance.reason = "Build Failure"
-                pipeline.put({"op": "report", "test": self.instance})
-            else:
-                # Count skipped cases during build, for example
-                # due to ram/rom overflow.
-                if  self.instance.status == TwisterStatus.SKIP:
-                    results.skipped_runtime += 1
-                    self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
-
-                if ret.get('returncode', 1) > 0:
-                    self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
-                    pipeline.put({"op": "report", "test": self.instance})
+            try:
+                logger.debug("build test: %s" % self.instance.name)
+                ret = self.build()
+                if not ret:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Build Failure"
+                    next_op = 'report'
                 else:
-                    if self.instance.testsuite.harness in ['ztest', 'test']:
-                        logger.debug(f"Determine test cases for test instance: {self.instance.name}")
-                        try:
-                            self.determine_testcases(results)
-                            pipeline.put({"op": "gather_metrics", "test": self.instance})
-                        except BuildError as e:
-                            logger.error(str(e))
-                            self.instance.status = TwisterStatus.ERROR
-                            self.instance.reason = str(e)
-                            pipeline.put({"op": "report", "test": self.instance})
+                    # Count skipped cases during build, for example
+                    # due to ram/rom overflow.
+                    if  self.instance.status == TwisterStatus.SKIP:
+                        results.skipped_runtime += 1
+                        self.instance.add_missing_case_status(TwisterStatus.SKIP, self.instance.reason)
+
+                    if ret.get('returncode', 1) > 0:
+                        self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+                        next_op = 'report'
                     else:
-                        pipeline.put({"op": "gather_metrics", "test": self.instance})
+                        if self.instance.testsuite.harness in ['ztest', 'test']:
+                            logger.debug(f"Determine test cases for test instance: {self.instance.name}")
+                            try:
+                                self.determine_testcases(results)
+                                next_op = 'gather_metrics'
+                            except BuildError as e:
+                                logger.error(str(e))
+                                self.instance.status = TwisterStatus.ERROR
+                                self.instance.reason = str(e)
+                                next_op = 'report'
+                        else:
+                            next_op = 'gather_metrics'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_pipeline(pipeline, next_op)
 
         elif op == "gather_metrics":
-            ret = self.gather_metrics(self.instance)
-            if not ret or ret.get('returncode', 1) > 0:
+            try:
+                ret = self.gather_metrics(self.instance)
+                if not ret or ret.get('returncode', 1) > 0:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Build Failure at gather_metrics."
+                    next_op = 'report'
+                elif self.instance.run and self.instance.handler.ready:
+                    next_op = 'run'
+                else:
+                    next_op = 'report'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
                 self.instance.status = TwisterStatus.ERROR
-                self.instance.reason = "Build Failure at gather_metrics."
-                pipeline.put({"op": "report", "test": self.instance})
-            elif self.instance.run and self.instance.handler.ready:
-                pipeline.put({"op": "run", "test": self.instance})
-            else:
-                pipeline.put({"op": "report", "test": self.instance})
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_pipeline(pipeline, next_op)
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
-            logger.debug("run test: %s" % self.instance.name)
-            self.run()
-            logger.debug(f"run status: {self.instance.name} {self.instance.status}")
             try:
+                logger.debug("run test: %s" % self.instance.name)
+                self.run()
+                logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+
                 # to make it work with pickle
                 self.instance.handler.thread = None
                 self.instance.handler.duts = None
-                pipeline.put({
-                    "op": "report",
-                    "test": self.instance,
+
+                next_op = 'report'
+                additionals = {
                     "status": self.instance.status,
                     "reason": self.instance.reason
-                    }
-                )
-            except RuntimeError as e:
-                logger.error(f"RuntimeError: {e}")
-                traceback.print_exc()
+                }
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+                additionals = {}
+            finally:
+                self._add_to_pipeline(pipeline, next_op, additionals)
 
         # Report results and output progress to screen
         elif op == "report":
-            with lock:
-                done.put(self.instance)
-                self.report_out(results)
+            try:
+                with lock:
+                    done.put(self.instance)
+                    self.report_out(results)
 
-            if not self.options.coverage:
-                if self.options.prep_artifacts_for_testing:
-                    pipeline.put({"op": "cleanup", "mode": "device", "test": self.instance})
-                elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == TwisterStatus.PASS:
-                    pipeline.put({"op": "cleanup", "mode": "passed", "test": self.instance})
-                elif self.options.runtime_artifact_cleanup == "all":
-                    pipeline.put({"op": "cleanup", "mode": "all", "test": self.instance})
+                if not self.options.coverage:
+                    if self.options.prep_artifacts_for_testing:
+                        next_op = 'cleanup'
+                        additionals = {"mode": "device"}
+                    elif self.options.runtime_artifact_cleanup == "pass" and self.instance.status == TwisterStatus.PASS:
+                        next_op = 'cleanup'
+                        additionals = {"mode": "passed"}
+                    elif self.options.runtime_artifact_cleanup == "all":
+                        next_op = 'cleanup'
+                        additionals = {"mode": "all"}
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = None
+                additionals = {}
+            finally:
+                self._add_to_pipeline(pipeline, next_op, additionals)
 
         elif op == "cleanup":
-            mode = message.get("mode")
-            if mode == "device":
-                self.cleanup_device_testing_artifacts()
-            elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
-                self.cleanup_artifacts()
+            try:
+                mode = message.get("mode")
+                if mode == "device":
+                    self.cleanup_device_testing_artifacts()
+                elif mode == "passed" or (mode == "all" and self.instance.reason != "Cmake build failure"):
+                    self.cleanup_artifacts()
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = 'Incorrect status assignment'
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
 
     def determine_testcases(self, results):
         yaml_testsuite_name = self.instance.testsuite.id

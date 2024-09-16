@@ -187,7 +187,7 @@ static void usb_device_clock_init(void)
 
 #endif
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #ifndef CONFIG_NXP_IMXRT_BOOT_HEADER
 	/*

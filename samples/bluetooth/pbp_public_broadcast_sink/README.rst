@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: bluetooth_public_broadcast_sink
-   :name: Bluetooth: Public Broadcast Sink
+   :name: Public Broadcast Sink
    :relevant-api: bluetooth
 
    Bluetooth: Public Broadcast Sink
@@ -27,7 +27,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use `-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf` to enable the required ISO
+use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
 Building for an nrf5340dk
@@ -50,7 +50,7 @@ If you prefer to only build the application core image, you can do so by doing i
    :goals: build
 
 In that case you can pair this application core image with the
-:ref:`hci_ipc sample <bluetooth-hci-ipc-sample>`
+:zephyr:code-sample:`bluetooth_hci_ipc` sample
 :zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_iso-bt_ll_sw_split.conf` configuration.
 
 Building for a simulated nrf5340bsim
@@ -64,7 +64,7 @@ Similarly to how you would for real HW, you can do:
    :goals: build
    :west-args: --sysbuild
 
-Note this will produce a Linux executable in `./build/zephyr/zephyr.exe`.
+Note this will produce a Linux executable in :file:`./build/zephyr/zephyr.exe`.
 For more information, check :ref:`this board documentation <nrf5340bsim>`.
 
 Building for a simulated nrf52_bsim

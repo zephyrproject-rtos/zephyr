@@ -27,7 +27,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -76,8 +76,8 @@ static uint32_t bis_index_bitfield;
 
 #define UNICAST_CHANNEL_COUNT_1 BIT(0)
 
-static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT +
-					    CONFIG_BT_ASCS_ASE_SRC_COUNT];
+static struct bt_cap_stream unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT +
+					    CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
@@ -560,6 +560,11 @@ static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_as
 	return 0;
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static struct bt_bap_unicast_server_cb unicast_server_cbs = {
 	.config = unicast_server_config,
 	.reconfig = unicast_server_reconfig,
@@ -724,6 +729,13 @@ static void init(void)
 		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &unicast_cap);
 		if (err != 0) {
 			FAIL("Broadcast capability register failed (err %d)\n", err);
+
+			return;
+		}
+
+		err = bt_bap_unicast_server_register(&param);
+		if (err != 0) {
+			FAIL("Failed to register unicast server (err %d)\n", err);
 
 			return;
 		}

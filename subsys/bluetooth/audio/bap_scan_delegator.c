@@ -30,7 +30,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
@@ -1469,6 +1469,12 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 
 	if (state->encrypt_state != param->encrypt_state) {
 		state->encrypt_state = param->encrypt_state;
+
+		if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+			(void)memcpy(state->bad_code, internal_state->broadcast_code,
+				     sizeof(internal_state->state.bad_code));
+		}
+
 		state_changed = true;
 	}
 

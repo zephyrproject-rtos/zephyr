@@ -16,7 +16,7 @@ Bsim boards
 
 This page covers the design, architecture and rationale, of the
 nrf5x_bsim boards and other similar bsim boards.
-These boards are postfixed with `_bsim` as they use BabbleSim_
+These boards are postfixed with ``_bsim`` as they use BabbleSim_
 (shortened bsim), to simulate the radio environment.
 These boards use the `native simulator`_ and the :ref:`POSIX architecture<Posix arch>` to build
 and execute the embedded code natively on Linux.
@@ -135,13 +135,13 @@ The basic architecture layering of these boards is as follows:
   simulation specific ones.
 - The architecture (arch) is the Zephyr :ref:`POSIX architecture<Posix arch>`
   layer.
-  The SOC layer is `inf_clock`. And the board layer is dependent on
+  The SOC layer is ``inf_clock``. And the board layer is dependent on
   the specific device we are simulating.
 - The POSIX architecture provides an adaptation from the Zephyr arch API
   (which handles mostly the thread context switching) to the native simulator
   CPU thread emulation.
   See :ref:`POSIX arch architecture<posix_arch_architecture>`
-- The SOC `inf_clock` layer provides an adaptation to the native simulator CPU "simulation"
+- The SOC ``inf_clock`` layer provides an adaptation to the native simulator CPU "simulation"
   and the handling of control between the "CPU simulation" (Zephyr threads) and the
   HW models thread ( See `Threading`_ ).
 - The board layer provides all SOC/ IC specific content, including
@@ -149,13 +149,13 @@ The basic architecture layering of these boards is as follows:
   busy wait API (see :ref:`posix_busy_wait<posix_busy_wait>`), and Zephyr's printk backend.
   Note that in a normal Zephyr target interrupt handling and a custom busy wait
   would be provided by the SOC layer, but abusing Zephyr's layering, and for the
-  `inf_clock` layer to be generic, these were delegated to the board.
+  ``inf_clock`` layer to be generic, these were delegated to the board.
   The board layer provides other test specific
   functionality like bs_tests hooks, trace control, etc, and
   by means of the native simulator, provides the :c:func:`main` entry point for the Linux
   program, command line argument handling, and the overall time scheduling of
   the simulated device.
-  Note that the POSIX arch and `inf_clock` soc expect a set of APIs being provided by
+  Note that the POSIX arch and ``inf_clock`` soc expect a set of APIs being provided by
   the board. This includes the busy wait API, a basic tracing API, the interrupt
   controller and interrupt handling APIs, :c:func:`posix_exit`,
   and :c:func:`posix_get_hw_cycle` (see :file:`posix_board_if.h` and :file:`posix_soc_if.h`).
@@ -173,7 +173,7 @@ Important limitations and unsupported features
 
 All native and bsim boards share the same set of
 :ref:`important limitations which<posix_arch_limitations>`
-are inherited from the POSIX arch and `inf_clock` design.
+are inherited from the POSIX arch and ``inf_clock`` design.
 
 Similarly, they inherit the POSIX architecture
 :ref:`unsupported features set <posix_arch_unsupported>`.
@@ -261,7 +261,7 @@ posix_print and nsi_print backends
 ==================================
 
 The bsim board provides a backend for the ``posix_print`` API which is expected by the posix
-ARCH and `inf_clock` code, and for the ``nsi_print`` API expected by the native simulator.
+ARCH and ``inf_clock`` code, and for the ``nsi_print`` API expected by the native simulator.
 
 These simply route this API calls into the ``bs_trace`` bsim API.
 Any message printed to these APIs, and by extension by default to Zephyr's ``printk``,
@@ -287,12 +287,12 @@ callbacks are assigned to the respective hooks.
 There is a set of one time hooks at different levels of initialization of the HW
 and Zephyr OS, a hook to process possible command line arguments, and, a hook
 that can be used to sniff or capture interrupts.
-`bs_tests` also provides a hook which will be called from the embedded application
+``bs_tests`` also provides a hook which will be called from the embedded application
 :c:func:`main`, but this will only work if the main application supports it,
 that is, if the main app is a version for simulation which calls
 :c:func:`bst_main` when running in the bsim board.
 
-Apart from these hooks, the `bs_tests` system provides facilities to build a
+Apart from these hooks, the ``bs_tests`` system provides facilities to build a
 dedicated test "task". This will be executed in the HW models thread context,
 but will have access to all SW variables. This task will be driven with a
 special timer which can be configured to produce either periodic or one time
@@ -302,15 +302,15 @@ at specific points in time. This can be combined with Babblesim's tb_defs macros
 to build quite complex test tasks which can wait for a given amount of time,
 for conditions to be fulfilled, etc.
 
-Note when writing the tests with `bs_tests` one needs to be aware that other
+Note when writing the tests with ``bs_tests`` one needs to be aware that other
 bs tests will probably be built with the same application, and that therefore
 the tests should not be registering initialization or callback functions using
 NATIVE_TASKS or Zephyr's PRE/POST kernel driver initialization APIs as this
 will execute even if the test is not selected.
-Instead the equivalent `bs_tests` provided hooks should be used.
+Instead the equivalent ``bs_tests`` provided hooks should be used.
 
 Note also that, for AMP targets like the :ref:`nrf5340bsim <nrf5340bsim>`, each embedded MCU has
-its own separate `bs_tests` built with that MCU. You can select if and what test is used
+its own separate ``bs_tests`` built with that MCU. You can select if and what test is used
 for each MCU separatedly with the command line options.
 
 Command line argument parsing

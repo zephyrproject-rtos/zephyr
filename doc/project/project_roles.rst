@@ -133,7 +133,9 @@ in addition to those listed for Contributors and Collaborators:
 
 Contributors or Collaborators are promoted to the Maintainer role by adding the
 GitHub user name to one or more ``maintainers`` sections of the
-:ref:`maintainers_file` in the Zephyr repository.
+:ref:`maintainers_file` in the Zephyr repository. Candidates who are neither
+Contributors nor Collaborators must be approved by the TSC before they can
+assume the role of Maintainer.
 
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.

@@ -1,7 +1,8 @@
-.. _bluetooth-periodic-advertising-conn-sample:
+.. zephyr:code-sample:: ble_periodic_adv_conn
+   :name: Periodic Advertising Connection Procedure (Initiator)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Periodic Advertising Connection Procedure - Initiator
-################################################################
+   Initiate a connection to a device using the Periodic Advertising Connection Procedure.
 
 Overview
 ********
@@ -17,7 +18,7 @@ wait for disconnect before connecting to another synced device.
 Requirements
 ************
 
-* A board with BLE support
+* A board with Bluetooth LE support
 * A controller that supports the Periodic Advertising with Responses (PAwR) - Advertiser feature
 
 Building and Running

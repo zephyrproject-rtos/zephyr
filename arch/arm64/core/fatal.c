@@ -21,6 +21,8 @@
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
 
+#include "paging.h"
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
@@ -322,8 +324,9 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
-	if (!esf)
+	if (!esf) {
 		return false;
+	}
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -372,6 +375,12 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 		}
 #endif
 
+		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
+		    reason != K_ERR_STACK_CHK_FAIL &&
+		    z_arm64_do_demand_paging(esf, esr, far)) {
+			return;
+		}
+
 		if (GET_EL(el) != MODE_EL0) {
 #ifdef CONFIG_EXCEPTION_DEBUG
 			bool dump_far = false;
@@ -380,8 +389,9 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 
 			dump_esr(esr, &dump_far);
 
-			if (dump_far)
+			if (dump_far) {
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+			}
 
 			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */

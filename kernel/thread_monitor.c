@@ -105,8 +105,9 @@ void k_thread_foreach_filter_by_cpu(unsigned int cpu, k_thread_user_cb_t user_cb
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, foreach);
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		if (thread->base.cpu == cpu)
+		if (thread->base.cpu == cpu) {
 			user_cb(thread, user_data);
+		}
 	}
 
 	SYS_PORT_TRACING_FUNC_EXIT(k_thread, foreach);

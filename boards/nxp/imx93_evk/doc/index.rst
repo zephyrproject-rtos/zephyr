@@ -161,19 +161,39 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: mimx93_evk/mimx9352/a55
-   :goals: run
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
 
 This will build an image with the synchronization sample app, boot it and
 display the following console output:
 
 .. code-block:: console
 
-    *** Booting Zephyr OS build zephyr-v3.2.0-8-g1613870534a0  ***
-    thread_a: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_b: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_a: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_b: Hello World from cpu 0 on mimx93_evk_a55!
+    *** Booting Zephyr OS build Booting Zephyr OS build v3.7.0-2055-g630f27a5a867  ***
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+
+System Reboot (A55)
+===================
+
+Currently i.MX93 only support cold reboot and doesn't support warm reboot.
+Use this configuratiuon to verify cold reboot with :zephyr:code-sample:`shell-module`
+sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/shell/shell_module
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
+
+This will build an image with the shell sample app, boot it and execute
+kernel reboot command in shell command line:
+
+.. code-block:: console
+
+    uart:~$ kernel reboot cold
 
 Programming and Debugging (M33)
 *******************************

@@ -1,0 +1,8 @@
+board:
+  name: imx95_evk
+  vendor: nxp
+  socs:
+  - name: mimx9596
+    variants:
+    - name: smp
+      cpucluster: a55

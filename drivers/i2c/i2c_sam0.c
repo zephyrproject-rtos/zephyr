@@ -761,10 +761,12 @@ static int i2c_sam0_initialize(const struct device *dev)
 	return 0;
 }
 
-
 static const struct i2c_driver_api i2c_sam0_driver_api = {
 	.configure = i2c_sam0_configure,
 	.transfer = i2c_sam0_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN

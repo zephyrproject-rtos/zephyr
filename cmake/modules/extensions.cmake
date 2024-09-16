@@ -113,7 +113,14 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    if(ARGC GREATER 2)
+      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    endif()
+    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
+  else()
+    target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 function(zephyr_libc_link_libraries)
@@ -851,6 +858,39 @@ endfunction()
 function(board_set_rimage_target target)
   set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
   zephyr_check_cache(RIMAGE_TARGET)
+endfunction()
+
+function(board_emu_args emu)
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  # Note the "_EXPLICIT_" here, and see below.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_EXPLICIT_${emu_id} ${ARGN})
+endfunction()
+
+function(board_finalize_emu_args emu)
+  # If the application provided a macro to add additional emu
+  # arguments, handle them.
+  if(COMMAND app_set_emu_args)
+    app_set_emu_args()
+  endif()
+
+  # Retrieve the list of explicitly set arguments.
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  get_property(explicit GLOBAL PROPERTY "BOARD_EMU_ARGS_EXPLICIT_${emu_id}")
+
+  # Note no _EXPLICIT_ here. This property contains the final list.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_${emu_id}
+    # Default arguments from the common emu file come first.
+    ${ARGN}
+    # Arguments explicitly given with board_emu_args() come
+    # next, so they take precedence over the common emu file.
+    ${explicit}
+    # Arguments given via the CMake cache come last of all. Users
+    # can provide variables in this way from the CMake command line.
+    ${BOARD_EMU_ARGS_${emu_id}}
+    )
+
+  # Add the finalized emu to the global property list.
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_EMUS ${emu})
 endfunction()
 
 # Zephyr board revision:
@@ -2393,18 +2433,20 @@ function(check_set_linker_property)
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)
   list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
-  set(option ${LINKER_PROPERTY_PROPERTY})
 
-  string(MAKE_C_IDENTIFIER check${option} check)
+  foreach(option ${LINKER_PROPERTY_PROPERTY})
+    string(MAKE_C_IDENTIFIER check${option} check)
 
-  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  zephyr_check_compiler_flag(C "" ${check})
-  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    zephyr_check_compiler_flag(C "" ${check})
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  if(${${check}})
-    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
-  endif()
+    if(${${check}})
+      set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
 endfunction()
 
 # 'set_compiler_property' is a function that sets the property for the C and

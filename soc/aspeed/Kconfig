@@ -3,7 +3,7 @@
 # Copyright (c) 2021 ASPEED Technology Inc.
 
 config SOC_FAMILY_ASPEED
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 
 if SOC_FAMILY_ASPEED
 

@@ -184,7 +184,7 @@ Use `ecpprog <https://github.com/gregdavill/ecpprog>`_ to upload the bitstream t
 
    ecpprog -S antmicro_sdi_mipi_video_converter.bit
 
-You can boot from a serial port using litex_term (replace `ttyUSBX` with your device) , e.g.:
+You can boot from a serial port using litex_term (replace ``ttyUSBX`` with your device) , e.g.:
 
 .. code-block:: bash
 

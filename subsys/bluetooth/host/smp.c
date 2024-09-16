@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
@@ -5232,11 +5232,13 @@ static int smp_f6_test(void)
 	int err;
 
 	err = bt_crypto_f6(w, n1, n2, r, io_cap, &a1, &a2, res);
-	if (err)
+	if (err) {
 		return err;
+	}
 
-	if (memcmp(res, exp, 16))
+	if (memcmp(res, exp, 16)) {
 		return -EINVAL;
+	}
 
 	return 0;
 }

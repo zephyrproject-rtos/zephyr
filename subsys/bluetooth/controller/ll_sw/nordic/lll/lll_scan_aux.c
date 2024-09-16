@@ -124,8 +124,8 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	struct pdu_cte_info *cte_info;
 	struct node_rx_pdu *node_rx;
 	uint32_t window_widening_us;
-	uint32_t window_size_us;
 	struct node_rx_ftr *ftr;
+	uint16_t window_size_us;
 	uint32_t aux_offset_us;
 	uint32_t overhead_us;
 	uint8_t *pri_dptr;
@@ -136,7 +136,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Get reference to extended header */
 	pri_com_hdr = (void *)&pdu->adv_ext_ind;
-	if (!pdu->len || !pri_com_hdr->ext_hdr_len) {
+	if (unlikely(!pdu->len || !pri_com_hdr->ext_hdr_len)) {
 		return 0U;
 	}
 
@@ -186,7 +186,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 
 	/* Skip reception if invalid aux offset */
 	pdu_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
-	if (aux_offset_us < pdu_us) {
+	if (unlikely(!AUX_OFFSET_IS_VALID(aux_offset_us, window_size_us, pdu_us))) {
 		return 0U;
 	}
 
@@ -385,7 +385,7 @@ bool lll_scan_aux_addr_match_get(const struct lll_scan *lll,
 	const struct pdu_adv_ext_hdr *ext_hdr;
 
 	ext_hdr = &pdu->adv_ext_ind.ext_hdr;
-	if (!ext_hdr->adv_addr) {
+	if (unlikely(!ext_hdr->adv_addr)) {
 		return false;
 	}
 
@@ -786,7 +786,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	lll_isr_rx_status_reset();
 
 	/* No Rx */
-	if (!trx_done || !crc_ok) {
+	if (unlikely(!trx_done || !crc_ok)) {
 		/* TODO: Combine the early exit with above if-then-else block
 		 */
 		err = -EINVAL;
@@ -802,7 +802,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	}
 
 	pdu = (void *)node_rx->pdu;
-	if ((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len) {
+	if (unlikely((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len)) {
 		err = -EINVAL;
 
 		goto isr_rx_do_close;
@@ -1509,7 +1509,7 @@ static void isr_rx_connect_rsp(void *param)
 	}
 
 	/* No Rx or invalid PDU received */
-	if (!trx_done) {
+	if (unlikely(!trx_done)) {
 		struct node_rx_ftr *ftr;
 
 		/* Try again with connection initiation */
@@ -1525,6 +1525,7 @@ static void isr_rx_connect_rsp(void *param)
 
 		rx = ftr->extra;
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
+
 		goto isr_rx_connect_rsp_do_close;
 	}
 
@@ -1600,20 +1601,18 @@ static bool isr_rx_connect_rsp_check(struct lll_scan *lll,
 				     struct pdu_adv *pdu_tx,
 				     struct pdu_adv *pdu_rx, uint8_t rl_idx)
 {
-	if (pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP) {
+	if (unlikely(pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP)) {
 		return false;
 	}
 
-	if (pdu_rx->len != offsetof(struct pdu_adv_com_ext_adv,
-				    ext_hdr_adv_data) +
-			   offsetof(struct pdu_adv_ext_hdr, data) + ADVA_SIZE +
-			   TARGETA_SIZE) {
+	if (unlikely(pdu_rx->len != (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adv_data) +
+				     offsetof(struct pdu_adv_ext_hdr, data) + ADVA_SIZE +
+				     TARGETA_SIZE))) {
 		return false;
 	}
 
-	if (pdu_rx->adv_ext_ind.adv_mode ||
-	    !pdu_rx->adv_ext_ind.ext_hdr.adv_addr ||
-	    !pdu_rx->adv_ext_ind.ext_hdr.tgt_addr) {
+	if (unlikely(pdu_rx->adv_ext_ind.adv_mode || !pdu_rx->adv_ext_ind.ext_hdr.adv_addr ||
+		     !pdu_rx->adv_ext_ind.ext_hdr.tgt_addr)) {
 		return false;
 	}
 

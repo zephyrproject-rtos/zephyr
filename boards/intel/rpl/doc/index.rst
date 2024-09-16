@@ -23,7 +23,7 @@ please refer to `RPL`_.
 
 Raptor Lake Customer Reference Board (RPL CRB) is an example implementation of a
 compact single board computer with high performance for IoT edge devices. The
-supported boards are `intel_rpl_s_crb` and `intel_rpl_p_crb`.
+supported boards are ``intel_rpl_s_crb`` and ``intel_rpl_p_crb``.
 
 These board configurations enable kernel support for the supported Raptor Lake
 boards.

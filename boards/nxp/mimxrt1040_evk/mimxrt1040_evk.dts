@@ -30,6 +30,7 @@
 		zephyr,flash = &w25q64jvssiq;
 		zephyr,flash-controller = &w25q64jvssiq;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,bt-hci = &bt_hci_uart;
 	};
 

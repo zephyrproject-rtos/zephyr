@@ -28,14 +28,20 @@ config FLASH_MCUX_FLEXSPI_XIP
 	  Allows REfor the soc to safely initialize the clocks for the
 	  FlexSpi when planning to execute code in FlexSpi Memory.
 
+if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
 config CODE_DATA_RELOCATION_SRAM
-	default y if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+	default y if !CPU_CORTEX_M7
+
+config CODE_DATA_RELOCATION
+	default y if CPU_CORTEX_M7
 
 config FLASH_MCUX_FLEXSPI_XIP_MEM
 	string
 	prompt "Flexspi drivers memory location"
 	default "RAM"
-	depends on MEMC_MCUX_FLEXSPI && FLASH_MCUX_FLEXSPI_XIP
 	help
 	  Select the location to run the FlexSPI drivers when using
 	  the flash API.
+
+endif

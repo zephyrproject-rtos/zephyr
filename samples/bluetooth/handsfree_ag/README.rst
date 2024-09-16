@@ -1,7 +1,8 @@
-.. _bt_handsfree_ag:
+.. zephyr:code-sample:: bluetooth_handsfree_ag
+   :name: Hands-free Audio Gateway (AG)
+   :relevant-api: bt_hfp bluetooth
 
-Bluetooth: Handsfree Audio Gateway
-##################################
+   Use the Hands-Free Profile Audio Gateway (AG) APIs.
 
 Overview
 ********

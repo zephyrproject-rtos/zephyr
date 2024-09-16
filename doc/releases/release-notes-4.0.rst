@@ -40,6 +40,7 @@ Removed APIs in this release
 
 * Macro ``K_THREAD_STACK_MEMBER``, deprecated since v3.5.0, has been removed.
   Use :c:macro:`K_KERNEL_STACK_MEMBER` instead.
+* ``CBPRINTF_PACKAGE_COPY_*`` macros, deprecated since Zephyr 3.5.0, have been removed.
 
 Deprecated in this release
 ==========================
@@ -63,6 +64,13 @@ Architectures
   * The stack traces upon fatal exception now prints the address of stack pointer (sp) or frame
     pointer (fp) depending on the build configuration.
 
+  * When :kconfig:option:`CONFIG_EXTRA_EXCEPTION_INFO` is enabled, the exception stack frame (arch_esf)
+    has an additional field ``csf`` that points to the callee-saved-registers upon an fatal error,
+    which can be accessed in :c:func:`k_sys_fatal_error_handler` by ``esf->csf``.
+
+    * For SoCs that select ``RISCV_SOC_HAS_ISR_STACKING``, the ``SOC_ISR_STACKING_ESF_DECLARE`` has to
+      include the ``csf`` member, otherwise the build would fail.
+
 * Xtensa
 
 * x86
@@ -76,6 +84,8 @@ Bluetooth
 *********
 
 * Audio
+
+  * :c:func:`bt_tbs_client_register_cb` now supports multiple listeners and may now return an error.
 
 * Host
 
@@ -106,6 +116,8 @@ Boards & SoC Support
 
 Build system and Infrastructure
 *******************************
+
+* Added support for .elf files to the west flash command for jlink, pyocd and linkserver runners.
 
 Documentation
 *************
@@ -157,11 +169,17 @@ Drivers and Sensors
 
 * LED
 
+  * lp5562: added ``enable-gpios`` property to describe the EN/VCC GPIO of the lp5562.
+
   * lp5569: added ``charge-pump-mode`` property to configure the charge pump of the lp5569.
 
   * lp5569: added ``enable-gpios`` property to describe the EN/PWM GPIO of the lp5569.
 
+  * LED code samples have been consolidated under the :zephyr_file:`samples/drivers/led` directory.
+
 * LED Strip
+
+  * Updated ws2812 GPIO driver to support dynamic bus timings
 
 * LoRa
 
@@ -172,6 +190,9 @@ Drivers and Sensors
 * MFD
 
 * Modem
+
+  * Added support for the U-Blox LARA-R6 modem.
+  * Added support for setting the modem's UART baudrate during init.
 
 * MIPI-DBI
 
@@ -242,6 +263,8 @@ Networking
   used optionally as per the location object's specification. Users of these
   resources will now need to provide a read buffer.
 
+  * lwm2m_senml_cbor: Regenerated generated code files using zcbor 0.9.0
+
 * Misc:
 
 * MQTT:
@@ -290,6 +313,8 @@ Libraries / Subsystems
 
     * Added support for :ref:`mcumgr_smp_group_10`, which allows for listing information on
       supported groups.
+    * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
+      leading zeros.
 
 * Logging
 
@@ -298,6 +323,26 @@ Libraries / Subsystems
 * Power management
 
 * Crypto
+
+  * Mbed TLS was updated to version 3.6.1. The release notes can be found at:
+    https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.1
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG`
+    was added to allow ``psa_get_random()`` to make use of non-cryptographically
+    secure random sources when :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG`
+    is also enabled. This is only meant to be used for test purposes, not in production.
+    (:github:`76408`)
+  * The Kconfig symbol :kconfig:option:`CONFIG_MBEDTLS_TLS_VERSION_1_3` was added to
+    enable TLS 1.3 support from Mbed TLS. When this is enabled the following
+    new Kconfig symbols can also be enabled:
+
+    * :kconfig:option:`CONFIG_MBEDTLS_TLS_SESSION_TICKETS` to enable session tickets
+      (RFC 5077);
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED`
+      for TLS 1.3 PSK key exchange mode;
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED`
+      for TLS 1.3 ephemeral key exchange mode;
+    * :kconfig:option:`CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED`
+      for TLS 1.3 PSK ephemeral key exchange mode.
 
 * CMSIS-NN
 
@@ -352,6 +397,20 @@ Trusted Firmware-M
 
 LVGL
 ****
+
+zcbor
+*****
+
+* Updated the zcbor library to version 0.9.0.
+  Full release notes at https://github.com/NordicSemiconductor/zcbor/blob/0.9.0/RELEASE_NOTES.md
+  Migration guide at https://github.com/NordicSemiconductor/zcbor/blob/0.9.0/MIGRATION_GUIDE.md
+  Highlights:
+
+    * Many code generation bugfixes
+
+    * You can now decide at run-time whether the decoder should enforce canonical encoding.
+
+    * Allow --file-header to accept a path to a file with header contents
 
 Tests and Samples
 *****************

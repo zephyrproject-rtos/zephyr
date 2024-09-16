@@ -109,7 +109,7 @@ static void z_renesas_configure_cache(void)
 }
 #endif /* CONFIG_HAS_FLASH_LOAD_OFFSET */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #if defined(CONFIG_PM)
 	uint32_t *ivt;

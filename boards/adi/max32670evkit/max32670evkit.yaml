@@ -15,5 +15,6 @@ supported:
   - dma
   - watchdog
   - spi
+  - counter
 ram: 160
 flash: 384

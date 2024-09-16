@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 
@@ -26,6 +26,10 @@ static sys_slist_t sockets;
 
 NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
+
+static struct socket_dispatch_table {
+	struct dns_socket_dispatcher *ctx;
+} dispatch_table[CONFIG_NET_SOCKETS_POLL_MAX];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct sockaddr *addr, size_t addrlen,
@@ -96,13 +100,16 @@ done:
 
 static int recv_data(struct net_socket_service_event *pev)
 {
-	struct dns_socket_dispatcher *dispatcher = pev->user_data;
+	struct socket_dispatch_table *table = pev->user_data;
+	struct dns_socket_dispatcher *dispatcher;
 	socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
 	struct sockaddr addr;
 	size_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
+
+	dispatcher = table[pev->event.fd].ctx;
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
@@ -227,6 +234,12 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 		entry->pair = ctx;
 
+		for (int i = 0; i < ctx->fds_len; i++) {
+			if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
+				dispatch_table[ctx->fds[i].fd].ctx = ctx;
+			}
+		}
+
 		/* Basically we are now done. If there is incoming data to
 		 * the socket, the dispatcher will then pass it to the correct
 		 * recipient.
@@ -253,7 +266,13 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->pair = NULL;
 
-	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, ctx);
+	for (int i = 0; i < ctx->fds_len; i++) {
+		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
+			dispatch_table[ctx->fds[i].fd].ctx = ctx;
+		}
+	}
+
+	ret = net_socket_service_register(ctx->svc, ctx->fds, ctx->fds_len, &dispatch_table);
 	if (ret < 0) {
 		NET_DBG("Cannot register socket service (%d)", ret);
 		goto out;
@@ -272,6 +291,10 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
+
+	for (int i = 0; i < ctx->fds_len; i++) {
+		dispatch_table[ctx->fds[i].fd].ctx = NULL;
+	}
 
 	k_mutex_unlock(&lock);
 

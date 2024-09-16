@@ -206,11 +206,16 @@ struct elf64_shdr {
 #define SHT_NOBITS 0x8          /**< Program data with no file image */
 #define SHT_REL 0x9             /**< Relocation entries without addends */
 #define SHT_DYNSYM 0xB          /**< Dynamic linking symbol table */
+#define SHT_INIT_ARRAY 0xe      /**< Array of pointers to init functions */
+#define SHT_FINI_ARRAY 0xf      /**< Array of pointers to termination functions */
+#define SHT_PREINIT_ARRAY 0x10  /**< Array of pointers to early init functions */
 
 /** ELF section flags */
 #define SHF_WRITE 0x1           /**< Section is writable */
 #define SHF_ALLOC 0x2           /**< Section is present in memory */
 #define SHF_EXECINSTR 0x4       /**< Section contains executable instructions */
+
+#define SHF_BASIC_TYPE_MASK	(SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR)
 
 /**
  * @brief Symbol table entry(32-bit)
@@ -387,54 +392,6 @@ struct elf64_rela {
  * @param i Value of r_info
  */
 #define ELF64_R_TYPE(i) ((i) & 0xffffffff)
-
-/**
- * Relocation names (should be moved to arch-specific files)
- * @cond ignore
- */
-#define R_386_NONE 0
-#define R_386_32 1
-#define R_386_PC32 2
-#define R_386_GOT32 3
-#define R_386_PLT32 4
-#define R_386_COPY 5
-#define R_386_GLOB_DAT 6
-#define R_386_JMP_SLOT 7
-#define R_386_RELATIVE 8
-#define R_386_GOTOFF 9
-
-#define R_ARM_NONE 0
-#define R_ARM_PC24 1
-#define R_ARM_ABS32 2
-#define R_ARM_REL32 3
-#define R_ARM_COPY 20
-#define R_ARM_GLOB_DAT 21
-#define R_ARM_JUMP_SLOT 22
-#define R_ARM_RELATIVE 23
-#define R_ARM_CALL 28
-#define R_ARM_JUMP24 29
-#define R_ARM_TARGET1 38
-#define R_ARM_V4BX 40
-#define R_ARM_PREL31 42
-#define R_ARM_MOVW_ABS_NC 43
-#define R_ARM_MOVT_ABS 44
-#define R_ARM_MOVW_PREL_NC 45
-#define R_ARM_MOVT_PREL 46
-#define R_ARM_ALU_PC_G0_NC 57
-#define R_ARM_ALU_PC_G1_NC 59
-#define R_ARM_LDR_PC_G2 63
-
-#define R_ARM_THM_CALL 10
-#define R_ARM_THM_JUMP24 30
-#define R_ARM_THM_MOVW_ABS_NC 47
-#define R_ARM_THM_MOVT_ABS 48
-#define R_ARM_THM_MOVW_PREL_NC 49
-#define R_ARM_THM_MOVT_PREL 50
-
-#define R_XTENSA_NONE 0
-#define R_XTENSA_32 1
-#define R_XTENSA_SLOT0_OP 20
-/** @endcond */
 
 /**
  * Dynamic features currently not used by LLEXT

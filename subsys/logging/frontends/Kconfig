@@ -1,0 +1,111 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Frontends"
+
+config LOG_FRONTEND_DICT_UART
+	bool "UART dictionary frontend"
+	select LOG_DICTIONARY_SUPPORT
+	select MPSC_PBUF
+	depends on UART_ASYNC_API || UART_INTERRUPT_DRIVEN
+	imply LOG_FMT_SECTION
+	imply LOG_FMT_SECTION_STRIP if !LOG_ALWAYS_RUNTIME
+	help
+	  Frontend sends data in binary dictionary mode.
+
+if LOG_FRONTEND_DICT_UART
+
+config LOG_FRONTEND_DICT_UART_BUFFER_SIZE
+	int "Buffer size"
+	default 1024
+	help
+	  Number of bytes dedicated for buffering data
+
+config LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD
+	int "Dropped notification period"
+	default 500
+	help
+	  Determines how often a report about dropped messages is printed. Given
+	  in milliseconds.
+
+endif
+
+config LOG_FRONTEND_STMESP
+	bool "Coresight STM frontend"
+	imply ARM_ON_ENTER_CPU_IDLE_HOOK if LOG_FRONTEND_STMESP_FLUSH_COUNT > 0
+
+if LOG_FRONTEND_STMESP
+
+config LOG_FRONTEND_STMESP_DICT
+	bool
+	default y if !LOG_FRONTEND_STMESP_FSC
+	select LOG_FRONTEND_OPT_API
+	select LOG_DICTIONARY_DB
+	imply LOG_FMT_SECTION
+	imply LOG_FMT_SECTION_STRIP
+
+config LOG_FRONTEND_STMESP_FSC
+	bool "Send fully self-contained messages"
+	select LOG_MSG_APPEND_RO_STRING_LOC if !NRF_ETR
+
+config LOG_FRONTEND_STMESP_FLUSH_COUNT
+	int "Number of flushing words"
+	default 4
+	help
+	  Before going to sleep CPU shall write to STM some dummy data to ensure
+	  that any buffered data goes to TPIU/ETR.
+
+config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
+	int "Buffer size to store early messages"
+	default 0
+	help
+	  Frontend cannot write to STM if it is used with ETR buffer unless ETR is
+	  initialized and memory is properly configured (privileges). Data is stored
+	  in the buffer and flushed to the STMESP once the pipeline is ready.
+
+config LOG_FRONTEND_STMESP_DICT_VER
+	def_int 0
+
+config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
+	bool "Use STMESP guaranteed access"
+	help
+	  When enabled, accessing STMESP registers will stall if write cannot be
+	  performed (e.g. ETR buffer is full).
+
+endif # LOG_FRONTEND_STMESP
+
+config LOG_FRONTEND_STMESP_DEMUX
+	bool "Demultiplexer of logging packets from STM stream"
+	select MPSC_PBUF
+	help
+	  Module demultiplexes messages encoded in STPv2 stream. Messages may
+	  be interleaved because they may come from multiple cores (majors).
+	  There are 3 types of messages: logging, tracepoints and HW events.
+
+if LOG_FRONTEND_STMESP_DEMUX
+
+config LOG_FRONTEND_STMESP_DEMUX_ACTIVE_PACKETS
+	int "Active packets"
+	default 12
+
+config LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE
+	int "Buffer size"
+	default 1024
+
+config LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION
+	bool "Track maximum utilization"
+
+endif # LOG_FRONTEND_STMESP_DEMUX
+
+config LOG_FRONTEND_STMESP_FLUSH_PORT_ID
+	def_int 0
+	depends on LOG_FRONTEND_STMESP_DEMUX || LOG_FRONTEND_STMESP
+
+config LOG_FRONTEND_STMESP_TP_CHAN_BASE
+	def_int 255
+	depends on LOG_FRONTEND_STMESP_DEMUX || LOG_FRONTEND_STMESP
+	help
+	  Do not change this value as it is aligned with host decoder (nrfutil trace).
+
+
+endmenu

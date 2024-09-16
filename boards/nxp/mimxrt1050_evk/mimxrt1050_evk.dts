@@ -27,6 +27,7 @@
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 	};

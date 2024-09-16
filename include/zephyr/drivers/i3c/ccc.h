@@ -451,12 +451,28 @@ struct i3c_ccc_deftgts_target {
  * this CCC.
  */
 struct i3c_ccc_deftgts {
+	/** Number of Targets (and Groups) present on the I3C Bus */
+	uint8_t count;
+
 	/** Data describing the active controller */
 	struct i3c_ccc_deftgts_active_controller active_controller;
 
 	/** Data describing the target(s) on the bus */
 	struct i3c_ccc_deftgts_target targets[];
 } __packed;
+
+/**
+ * @brief Defining byte values for ENTTM.
+ */
+enum i3c_ccc_enttm_defbyte {
+	/** Remove all I3C Devices from Test Mode */
+	ENTTM_EXIT_TEST_MODE = 0x00U,
+
+	/** Indicates that I3C Devices shall return a random 32-bit value
+	 * in the PID during the Dynamic Address Assignment procedure
+	 */
+	ENTTM_VENDOR_TEST_MODE = 0x01U,
+};
 
 /**
  * @brief Payload for a single device address.
@@ -666,9 +682,39 @@ struct i3c_ccc_setbrgtgt {
 } __packed;
 
 /**
+ * @brief Indicate which format of getmxds to use.
+ */
+enum i3c_ccc_getmxds_fmt {
+	/** GETMXDS Format 1 */
+	GETMXDS_FORMAT_1,
+
+	/** GETMXDS Format 2 */
+	GETMXDS_FORMAT_2,
+
+	/** GETMXDS Format 3 */
+	GETMXDS_FORMAT_3,
+};
+
+/**
+ * @brief Enum for I3C Get Max Data Speed (GETMXDS) Format 3 Defining Byte Values.
+ */
+enum i3c_ccc_getmxds_defbyte {
+	/** Standard Target Write/Read speed parameters, and optional Maximum Read Turnaround Time
+	 */
+	GETMXDS_FORMAT_3_WRRDTURN = 0x00U,
+
+	/** Delay parameters for a Controller-capable Device, and it's expected Activity State
+	 * during a Controller Handoff
+	 */
+	GETMXDS_FORMAT_3_CRHDLY = 0x91U,
+
+	/** Invalid defining byte. */
+	GETMXDS_FORMAT_3_INVALID = 0x100,
+};
+
+
+/**
  * @brief Payload for GETMXDS CCC (Get Max Data Speed).
- *
- * @note This is only for GETMXDS Format 1 and Format 2.
  */
 union i3c_ccc_getmxds {
 	struct {
@@ -700,7 +746,7 @@ union i3c_ccc_getmxds {
 		 *
 		 * @see i3c_ccc_getmxds::fmt2
 		 */
-		uint8_t wrrdturn;
+		uint8_t wrrdturn[5];
 
 		/**
 		 * Defining Byte 0x91: CRHDLY
@@ -1357,6 +1403,147 @@ int i3c_ccc_do_events_set(struct i3c_device_desc *target,
 			  bool enable, struct i3c_ccc_events *events);
 
 /**
+ * @brief Direct ENTAS to set the Activity State.
+ *
+ * Helper function to broadcast Activity State Command on a single
+ * target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] as Activity State level
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_entas(const struct i3c_device_desc *target, uint8_t as);
+
+/**
+ * @brief Direct ENTAS0
+ *
+ * Helper function to do ENTAS0 setting the minimum bus activity level to 1us
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas0(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 0);
+}
+
+/**
+ * @brief Direct ENTAS1
+ *
+ * Helper function to do ENTAS1 setting the minimum bus activity level to 100us
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas1(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 1);
+}
+
+/**
+ * @brief Direct ENTAS2
+ *
+ * Helper function to do ENTAS2 setting the minimum bus activity level to 2ms
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas2(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 2);
+}
+
+/**
+ * @brief Direct ENTAS3
+ *
+ * Helper function to do ENTAS3 setting the minimum bus activity level to 50ms
+ * on a single target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas3(const struct i3c_device_desc *target)
+{
+	return i3c_ccc_do_entas(target, 3);
+}
+
+/**
+ * @brief Broadcast ENTAS to set the Activity State.
+ *
+ * Helper function to broadcast Activity State Command.
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] as Activity State level
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_entas_all(const struct device *controller, uint8_t as);
+
+/**
+ * @brief Broadcast ENTAS0
+ *
+ * Helper function to do ENTAS0 setting the minimum bus activity level to 1us
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas0_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 0);
+}
+
+/**
+ * @brief Broadcast ENTAS1
+ *
+ * Helper function to do ENTAS1 setting the minimum bus activity level to 100us
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas1_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 1);
+}
+
+/**
+ * @brief Broadcast ENTAS2
+ *
+ * Helper function to do ENTAS2 setting the minimum bus activity level to 2ms
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas2_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 2);
+}
+
+/**
+ * @brief Broadcast ENTAS3
+ *
+ * Helper function to do ENTAS3 setting the minimum bus activity level to 50ms
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_entas3_all(const struct device *controller)
+{
+	return i3c_ccc_do_entas_all(controller, 3);
+}
+
+/**
  * @brief Broadcast SETMWL to Set Maximum Write Length.
  *
  * Helper function to do SETMWL (Set Maximum Write Length) to
@@ -1448,6 +1635,19 @@ int i3c_ccc_do_setmrl(const struct i3c_device_desc *target,
  */
 int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 		      struct i3c_ccc_mrl *mrl);
+
+/**
+ * @brief Broadcast ENTTM
+ *
+ * Helper function to do ENTTM (Enter Test Mode) to all devices
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] defbyte Defining Byte for ENTTM.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_enttm(const struct device *controller,
+			 enum i3c_ccc_enttm_defbyte defbyte);
 
 /**
  * @brief Single target GETSTATUS to Get Target Status.
@@ -1568,6 +1768,187 @@ static inline int i3c_ccc_do_getcaps_fmt2(const struct i3c_device_desc *target,
 	return i3c_ccc_do_getcaps(target, caps,
 				    GETCAPS_FORMAT_2, defbyte);
 }
+
+/**
+ * @brief Single target to Set Vendor / Standard Extension CCC
+ *
+ * Helper function to set Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] payload Pointer to payload.
+ * @param[in] len Length of payload. 0 if no payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setvendor(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len);
+
+/**
+ * @brief Single target to Get Vendor / Standard Extension CCC
+ *
+ * Helper function to get Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[out] payload Pointer to payload.
+ * @param[in] len Maximum Expected Length of the payload
+ * @param[out] num_xfer Length of the received payload
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getvendor(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len,
+			size_t *num_xfer);
+
+/**
+ * @brief Single target to Get Vendor / Standard Extension CCC
+ * with a defining byte
+ *
+ * Helper function to get Vendor / Standard Extension CCC of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] defbyte Defining Byte
+ * @param[out] payload Pointer to payload.
+ * @param[in] len Maximum Expected Length of the payload
+ * @param[out] num_xfer Length of the received payload
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getvendor_defbyte(struct i3c_device_desc *target,
+			uint8_t id,
+			uint8_t defbyte,
+			uint8_t *payload,
+			size_t len,
+			size_t *num_xfer);
+
+/**
+ * @brief Broadcast Set Vendor / Standard Extension CCC
+ *
+ * Helper function to broadcast Vendor / Standard Extension CCC
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] id Vendor CCC ID.
+ * @param[in] payload Pointer to payload.
+ * @param[in] len Length of payload. 0 if no payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setvendor_all(const struct device *controller,
+			uint8_t id,
+			uint8_t *payload,
+			size_t len);
+
+/**
+ * @brief Broadcast SETAASA to set all target's dynamic address to their
+ * static address.
+ *
+ * Helper function to set dynamic addresses of all connected targets to
+ * their static address.
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setaasa_all(const struct device *controller);
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed.
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed) of
+ * one target.
+ *
+ * This should only be supported if Max Data Speed Limit Bit of
+ * the BCR is set
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ * @param[in] fmt Which GETMXDS to use.
+ * @param[in] defbyte Defining Byte if using format 3.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
+			 union i3c_ccc_getmxds *caps,
+			 enum i3c_ccc_getmxds_fmt fmt,
+			 enum i3c_ccc_getmxds_defbyte defbyte);
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 1).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 1) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt1(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_1,
+				    GETMXDS_FORMAT_3_INVALID);
+}
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 2).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 2) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt2(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_2,
+					GETMXDS_FORMAT_3_INVALID);
+}
+
+/**
+ * @brief Single target GETMXDS to Get Max Data Speed (Format 3).
+ *
+ * Helper function to do GETMXDS (Get Max Data Speed, format 3) of
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[out] caps Pointer to GETMXDS payload.
+ * @param[in] defbyte Defining Byte for GETMXDS format 3.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_getmxds_fmt3(const struct i3c_device_desc *target,
+					    union i3c_ccc_getmxds *caps,
+					    enum i3c_ccc_getmxds_defbyte defbyte)
+{
+	return i3c_ccc_do_getmxds(target, caps,
+				    GETMXDS_FORMAT_3, defbyte);
+}
+
+/**
+ * @brief Broadcast DEFTGTS
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] deftgts Pointer to the deftgts payload.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_deftgts_all(const struct device *controller,
+			   struct i3c_ccc_deftgts *deftgts);
 
 #ifdef __cplusplus
 }

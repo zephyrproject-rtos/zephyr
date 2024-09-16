@@ -2450,7 +2450,8 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 	} else {
 		uint32_t int_sl = sys_read32(config->base + SLV_ISR);
 		struct cdns_i3c_data *data = dev->data;
-		const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+		const struct i3c_target_callbacks *target_cb =
+			data->target_config ? data->target_config->callbacks : NULL;
 		/* Clear interrupts */
 		sys_write32(int_sl, config->base + SLV_ICR);
 

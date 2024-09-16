@@ -21,7 +21,7 @@ run applications natively on the development system. This has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
-Just like for the nrf54l15pdk target,
+Just like for the nrf54l15dk target,
 the nrf54l15bsim/nrf54l15/cpuapp build target provides support for the application core,
 on the simulated nRF54L15 SOC.
 
@@ -31,14 +31,15 @@ on the simulated nRF54L15 SOC.
 
 .. warning::
 
-   This target is experimental, and even though it includes models of the RADIO, it does not yet
-   include models of the AAR, CCM or ECB peripherals, so the BLE and 802.15.4 stacks can only be
-   run without encryption or privacy features so far.
+   This target is experimental.
 
 This boards include models of some of the nRF54L15 SOC peripherals:
 
+* AAR (Accelerated Address Resolver)
+* CCM (AES CCM mode encryption)
 * CLOCK (Clock control)
 * DPPI (Distributed Programmable Peripheral Interconnect)
+* ECB (AES electronic codebook mode encryption)
 * EGU (Event Generator Unit)
 * FICR (Factory Information Configuration Registers)
 * GRTC (Global Real-time Counter)
@@ -50,7 +51,7 @@ This boards include models of some of the nRF54L15 SOC peripherals:
 * TIMER
 * UICR (User Information Configuration Registers)
 
-and will use the same drivers as the nrf54l15pdk targets for these.
+and will use the same drivers as the nrf54l15dk targets for these.
 For more information on what is modeled to which level of detail,
 check the `HW models implementation status`_.
 

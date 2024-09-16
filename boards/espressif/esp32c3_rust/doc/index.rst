@@ -1,12 +1,19 @@
 .. _esp32c3_rust:
 
-ESP32-C3-DevKit-RUST-1
-######################
+ESP32-C3-DevKit-RUST
+####################
 
 Overview
 ********
 
-This board is based on the ESP32-C3 [1]_ and includes sensors, LEDs, buttons, a battery charger, and USB type-C connector.
+ESP32-C3-DevKit-RUST is based on the ESP32-C3, a single-core Wi-Fi and Bluetooth 5 (LE) microcontroller SoC,
+based on the open-source RISC-V architecture. This special board also includes the ESP32-C3-MINI-1 module,
+a 6DoF IMU, a temperature and humidity sensor, a Li-Ion battery charger, and a Type-C USB. The board is designed
+to be easily used in training sessions, demonstrating its capabilities with all the board peripherals.
+For more information, check `ESP32-C3-DevKit-RUST`_.
+
+Hardware
+********
 
 SoC Features:
 
@@ -32,10 +39,13 @@ SoC Features:
 - 2 x 12-bit SAR ADCs, up to 6 channels
 - 1 x temperature sensor
 
+For more information, check the datasheet at `ESP32-C3 Datasheet`_ or the technical reference
+manual at `ESP32-C3 Technical Reference Manual`_.
+
 Supported Features
 ==================
 
-Current Zephyr's ESP32-C3-DevKit-RUST-1 board supports the following features:
+Current Zephyr's ESP32-C3-DevKit-RUST board supports the following features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
@@ -150,7 +160,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -176,7 +186,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: esp32c3_rust
    :goals: build
    :west-args: --sysbuild
@@ -212,7 +222,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -257,7 +267,7 @@ Debugging
 
 As with much custom hardware, the ESP32-C3 modules require patches to
 OpenOCD that are not upstreamed yet. Espressif maintains their own fork of
-the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_
+the project. The custom OpenOCD can be obtained at `OpenOCD ESP32`_.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite that behavior by adding the
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
@@ -278,12 +288,10 @@ You can debug an application in the usual way. Here is an example for the :ref:`
    :board: esp32c3_rust
    :goals: debug
 
-.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
-
 References
 **********
 
-.. [1] https://www.espressif.com/en/products/socs/esp32-c3
-.. _ESP32-C3-DevKit-RUST-1: https://github.com/esp-rs/esp-rust-board/tree/v1.2
-.. _ESP32C3 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
-.. _ESP32C3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
+.. _`ESP32-C3-DevKit-RUST`: https://github.com/esp-rs/esp-rust-board/tree/v1.2
+.. _`ESP32-C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
+.. _`ESP32-C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

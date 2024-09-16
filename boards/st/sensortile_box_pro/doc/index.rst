@@ -322,7 +322,7 @@ You should see following confirmation on your Linux host:
    usb 2-2: SerialNumber: 204A325D574D
 
 You can build and flash the provided sample application
-(:ref:`sensortile_box_pro_sample_sensors`) that reads sensors data and outputs
+(:zephyr:code-sample:`sensortile_box_pro_sensors`) that reads sensors data and outputs
 values on the console.
 
 References

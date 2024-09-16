@@ -17,7 +17,8 @@
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 #define BT_TBS_MAX_UCI_SIZE                        6
@@ -177,7 +178,7 @@ static inline const char *bt_tbs_term_reason_str(uint8_t reason)
 }
 
 /**
- * @brief Checks if a string contains a colon (':') followed by a printable
+ * @brief Checks if @p uri contains a colon (':') followed by a printable
  * character. Minimal uri is "a:b".
  *
  * @param uri The uri "scheme:id"
@@ -185,21 +186,20 @@ static inline const char *bt_tbs_term_reason_str(uint8_t reason)
  * @return true If the above is true
  * @return false If the above is not true
  */
-static inline bool bt_tbs_valid_uri(const char *uri, size_t len)
+static inline bool bt_tbs_valid_uri(const uint8_t *uri, size_t uri_len)
 {
 	if (!uri) {
 		return false;
 	}
 
-	if (len > CONFIG_BT_TBS_MAX_URI_LENGTH ||
-	    len < BT_TBS_MIN_URI_LEN) {
+	if (uri_len > CONFIG_BT_TBS_MAX_URI_LENGTH || uri_len < BT_TBS_MIN_URI_LEN) {
 		return false;
 	} else if (uri[0] < FIRST_PRINTABLE_ASCII_CHAR) {
 		/* Invalid first char */
 		return false;
 	}
 
-	for (int i = 1; i < len; i++) {
+	for (size_t i = 1; i < uri_len; i++) {
 		if (uri[i] == ':' && uri[i + 1] >= FIRST_PRINTABLE_ASCII_CHAR) {
 			return true;
 		}
@@ -302,7 +302,7 @@ struct bt_tbs_in_uri {
 	defined(CONFIG_BT_TBS_CLIENT_INCOMING_CALL) || \
 	defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) || \
 	defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS)
-#define BT_TBS_CLIENT_INST_READ_BUF_SIZE (BT_ATT_MAX_ATTRIBUTE_LEN)
+#define BT_TBS_CLIENT_INST_READ_BUF_SIZE (BT_ATT_MAX_ATTRIBUTE_LEN + 1 /* NULL terminator*/)
 #else
 /* Need only be the size of call state reads which is the largest of the
  * remaining characteristic values
@@ -312,6 +312,12 @@ struct bt_tbs_in_uri {
 			(CONFIG_BT_TBS_CLIENT_MAX_CALLS \
 			* sizeof(struct bt_tbs_client_call_state)))
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS) */
+
+enum bt_tbs_client_flag {
+	BT_TBS_CLIENT_FLAG_BUSY,
+
+	BT_TBS_CLIENT_FLAG_NUM_FLAGS, /* keep as last */
+};
 
 struct bt_tbs_instance {
 	struct bt_tbs_client_call_state calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
@@ -337,7 +343,6 @@ struct bt_tbs_instance {
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 	uint16_t termination_reason_handle;
 
-	bool busy;
 #if defined(CONFIG_BT_TBS_CLIENT_CCID)
 	uint8_t ccid;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
@@ -385,5 +390,7 @@ struct bt_tbs_instance {
 	struct bt_gatt_read_params read_params;
 	uint8_t read_buf[BT_TBS_CLIENT_INST_READ_BUF_SIZE];
 	struct net_buf_simple net_buf;
+
+	ATOMIC_DEFINE(flags, BT_TBS_CLIENT_FLAG_NUM_FLAGS);
 };
 #endif /* CONFIG_BT_TBS_CLIENT */

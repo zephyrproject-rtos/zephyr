@@ -33,7 +33,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/iso.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
@@ -635,6 +635,22 @@ struct bt_bap_stream_ops {
 	void (*disconnected)(struct bt_bap_stream *stream, uint8_t reason);
 };
 
+/** Structure for registering Unicast Server */
+struct bt_bap_unicast_server_register_param {
+	/**
+	 * @brief Sink Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}]
+	 */
+	uint8_t snk_cnt;
+
+	/** @brief Source Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}]
+	 */
+	uint8_t src_cnt;
+};
+
 /**
  * @brief Register Audio callbacks for a stream.
  *
@@ -1020,10 +1036,40 @@ struct bt_bap_unicast_server_cb {
 };
 
 /**
+ * @brief Register the Unicast Server.
+ *
+ * Register the Unicast Server. Only a single Unicast Server can be registered at any one time.
+ * This will register ASCS in the GATT database.
+ *
+ * @param param  Registration parameters for ascs.
+ *
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
+
+/**
+ * @brief Unregister the Unicast Server.
+ *
+ * Unregister the Unicast Server.
+ * This will unregister ASCS in the GATT database.
+ * Before calling this function, any callbacks registered through
+ * bt_bap_unicast_server_register_cb() needs to be unregistered with
+ * bt_bap_unicast_server_unregister_cb().
+ *
+ * Calling this function will issue an release operation on any ASE
+ * in a non-idle state.
+ *
+ * @return 0 in case of success, negative error code otherwise.
+ */
+int bt_bap_unicast_server_unregister(void);
+
+/**
  * @brief Register unicast server callbacks.
  *
  * Only one callback structure can be registered, and attempting to
  * registering more than one will result in an error.
+ * Prior to calling this function the Unicast Server needs to be
+ * registered with bt_bap_unicast_server_register().
  *
  * @param cb  Unicast server callback structure.
  *
@@ -1036,6 +1082,9 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
  *
  * May only unregister a callback structure that has previously been
  * registered by bt_bap_unicast_server_register_cb().
+ *
+ * Calling this function will issue an release operation on any ASE
+ * in a non-idle state.
  *
  * @param cb  Unicast server callback structure.
  *
@@ -1156,7 +1205,7 @@ struct bt_bap_unicast_group_param {
 };
 
 /**
- * @brief Create audio unicast group.
+ * @brief Create unicast group.
  *
  * Create a new audio unicast group with one or more audio streams as a unicast client.
  * All streams shall share the same framing.
@@ -1170,6 +1219,24 @@ struct bt_bap_unicast_group_param {
  */
 int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 				struct bt_bap_unicast_group **unicast_group);
+
+/**
+ * @brief Reconfigure unicast group.
+ *
+ * Reconfigure a unicast group with one or more audio streams as a unicast client.
+ * All streams shall share the same framing.
+ * All streams in the same direction shall share the same interval and latency (see
+ * @ref bt_audio_codec_qos).
+ * All streams in @p param shall already belong to @p unicast_group.
+ * Use bt_bap_unicast_group_add_streams() to add additional streams.
+ *
+ * @param unicast_group  Pointer to the unicast group created.
+ * @param param          The unicast group reconfigure parameters.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
+				  const struct bt_bap_unicast_group_param *param);
 
 /**
  * @brief Add streams to a unicast group as a unicast client
@@ -2254,7 +2321,13 @@ struct bt_bap_broadcast_assistant_cb {
  * new connection, will delete all previous data.
  *
  * @param conn  The connection
- * @return int  Error value. 0 on success, GATT error or ERRNO on fail.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected GATT error
  */
 int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
 
@@ -2273,7 +2346,14 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
  *                      Used to let the server know that we are scanning.
  * @param start_scan    Start scanning if true. If false, the application should
  *                      enable scan itself.
- * @return int          Error value. 0 on success, GATT error or ERRNO on fail.
+
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL of if @p conn has not done discovery
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -EAGAIN Bluetooth has not been enabled.
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
 					  bool start_scan);
@@ -2282,7 +2362,14 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
  * @brief Stop remote scanning for BISes for a server.
  *
  * @param conn   Connection to the server.
- * @return int   Error value. 0 on success, GATT error or ERRNO on fail.
+
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL of if @p conn has not done discovery
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -EAGAIN Bluetooth has not been enabled.
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
 
@@ -2343,7 +2430,12 @@ struct bt_bap_broadcast_assistant_add_src_param {
  * @param conn          Connection to the server.
  * @param param         Parameter struct.
  *
- * @return Error value. 0 on success, GATT error or ERRNO on fail.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or if @p param is invalid
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_add_src(
 	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_add_src_param *param);
@@ -2376,7 +2468,12 @@ struct bt_bap_broadcast_assistant_mod_src_param {
  * @param conn          Connection to the server.
  * @param param         Parameter struct.
  *
- * @return Error value. 0 on success, GATT error or ERRNO on fail.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or if @p param is invalid
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_mod_src(
 	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_mod_src_param *param);
@@ -2388,7 +2485,12 @@ int bt_bap_broadcast_assistant_mod_src(
  * @param src_id          Source ID of the receive state.
  * @param broadcast_code  The broadcast code.
  *
- * @return Error value. 0 on success, GATT error or ERRNO on fail.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
@@ -2400,7 +2502,12 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
  * @param conn            Connection to the server.
  * @param src_id          Source ID of the receive state.
  *
- * @return Error value. 0 on success, GATT error or ERRNO on fail.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id);
 
@@ -2411,7 +2518,12 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id);
  * @param idx      The index of the receive start (0 up to the value from
  *                 bt_bap_broadcast_assistant_discover_cb)
  *
- * @return Error value. 0 on success, GATT error or ERRNO on fail.
+ * @retval 0 Success
+ * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
+ * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval -ENOTCONN @p conn is not connected
+ * @retval -ENOMEM Could not allocated memory for the request
+ * @retval -ENOEXEC Unexpected scan or GATT error
  */
 int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn, uint8_t idx);
 

@@ -37,17 +37,18 @@ struct usbd_msc_lun {
  * Up to `CONFIG_USBD_MSC_LUNS_PER_INSTANCE` disks can be registered on single
  * USB MSC instance. Currently only one USB MSC instance is supported.
  *
+ * @param id Identifier by which the linker sorts registered LUNs
  * @param disk_name Disk name as used in @ref disk_access_interface
  * @param t10_vendor T10 Vendor Indetification
  * @param t10_product T10 Product Identification
  * @param t10_revision T10 Product Revision Level
  */
-#define USBD_DEFINE_MSC_LUN(disk_name, t10_vendor, t10_product, t10_revision)	\
-	STRUCT_SECTION_ITERABLE(usbd_msc_lun, usbd_msc_lun_##disk_name) = {	\
-		.disk = STRINGIFY(disk_name),					\
-		.vendor = t10_vendor,						\
-		.product = t10_product,						\
-		.revision = t10_revision,					\
+#define USBD_DEFINE_MSC_LUN(id, disk_name, t10_vendor, t10_product, t10_revision)	\
+	static const STRUCT_SECTION_ITERABLE(usbd_msc_lun, usbd_msc_lun_##id) = {	\
+		.disk = disk_name,							\
+		.vendor = t10_vendor,							\
+		.product = t10_product,							\
+		.revision = t10_revision,						\
 	}
 
 /**

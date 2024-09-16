@@ -299,7 +299,7 @@ board.
 -----------------------------------------
 
         1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
-        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`
+        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`_
 
 :ref:`opensda-daplink-onboard-debug-probe`
 ------------------------------------------

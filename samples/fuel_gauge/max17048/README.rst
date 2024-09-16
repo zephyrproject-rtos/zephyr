@@ -6,7 +6,7 @@ MAX17048 Li-Ion battery fuel gauge
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`fuel_gauge_api` API driver for the `MAX17048` fuel gauge.
+This sample shows how to use the Zephyr :ref:`fuel_gauge_api` API driver for the MAX17048 fuel gauge.
 
 .. _MAX17048: https://www.maximintegrated.com/en/products/power/battery-management/MAX17048.html
 

@@ -13,7 +13,7 @@
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
 #include <zephyr/device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/capture.h>
 #include <zephyr/sys/iterable_sections.h>
 

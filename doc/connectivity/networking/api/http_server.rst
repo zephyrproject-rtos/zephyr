@@ -346,6 +346,38 @@ processing of the Websocket connection is application-specific, hence outside
 of scope of this guide. See :zephyr:code-sample:`sockets-http-server` for an
 example Websocket-based echo service implementation.
 
+Accessing request headers
+=========================
+
+The application can register an interest in any specific HTTP request headers.
+These headers are then stored for each incoming request, and can be accessed
+from within a dynamic resource callback.
+
+This feature must first be enabled with
+:kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` Kconfig option.
+
+Then the application can register headers to be captured, and read the values
+from within the dynamic resource callback:
+
+.. code-block:: c
+
+    HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_user_agent, "User-Agent");
+
+    static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
+                           uint8_t *buffer, size_t len, void *user_data)
+    {
+        size_t header_count = client->header_capture_ctx.count;
+        const struct http_header *headers = client->header_capture_ctx.headers;
+
+        LOG_INF("Captured %d headers with request", header_count);
+
+        for (uint32_t i = 0; i < header_count; i++) {
+            LOG_INF("Header: '%s: %s'", headers[i].name, headers[i].value);
+        }
+
+        return 0;
+    }
+
 API Reference
 *************
 

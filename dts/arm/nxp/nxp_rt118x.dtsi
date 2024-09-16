@@ -293,6 +293,38 @@
 		gptfreq = <240000000>;
 		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
 	};
+
+	acmp1: cmp@2dc0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x2dc0000 0x4000>;
+		interrupts = <200 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
+
+	acmp2: cmp@2dd0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x2dd0000 0x4000>;
+		interrupts = <201 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
+
+	acmp3: cmp@2de0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x2de0000 0x4000>;
+		interrupts = <202 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
+
+	acmp4: cmp@2df0000 {
+		compatible = "nxp,kinetis-acmp";
+		reg = <0x2df0000 0x4000>;
+		interrupts = <203 0>;
+		status = "disabled";
+		#io-channel-cells = <2>;
+	};
 };
 
 &flexspi1 {

@@ -433,6 +433,43 @@ not_supported:
 	return 0;
 }
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void check_user_request_headers(struct http_header_capture_ctx *ctx, const char *buf)
+{
+	size_t header_len;
+	char *dest = &ctx->buffer[ctx->cursor];
+	size_t remaining = sizeof(ctx->buffer) - ctx->cursor;
+
+	ctx->store_next_value = false;
+
+	STRUCT_SECTION_FOREACH(http_header_name, header) {
+		header_len = strlen(header->name);
+
+		if (strcasecmp(buf, header->name) == 0) {
+			if (ctx->count == ARRAY_SIZE(ctx->headers)) {
+				LOG_DBG("Header '%s' dropped: not enough slots", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			if (remaining < header_len + 1) {
+				LOG_DBG("Header '%s' dropped: buffer too small for name",
+					header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			strcpy(dest, header->name);
+
+			ctx->headers[ctx->count].name = dest;
+			ctx->cursor += (header_len + 1);
+			ctx->store_next_value = true;
+			break;
+		}
+	}
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 static int on_header_field(struct http_parser *parser, const char *at,
 			   size_t length)
 {
@@ -454,12 +491,13 @@ static int on_header_field(struct http_parser *parser, const char *at,
 			/* This means that the header field is fully parsed,
 			 * and we can use it directly.
 			 */
-			if (strncasecmp(ctx->header_buffer, "Upgrade",
-					sizeof("Upgrade") - 1) == 0) {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+			check_user_request_headers(&ctx->header_capture_ctx, ctx->header_buffer);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
+			if (strcasecmp(ctx->header_buffer, "Upgrade") == 0) {
 				ctx->has_upgrade_header = true;
-			} else if (strncasecmp(ctx->header_buffer,
-					       "Sec-WebSocket-Key",
-					       sizeof("Sec-WebSocket-Key") - 1) == 0) {
+			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
 			}
 
@@ -471,6 +509,37 @@ static int on_header_field(struct http_parser *parser, const char *at,
 
 	return 0;
 }
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void populate_user_request_header(struct http_header_capture_ctx *ctx, const char *buf)
+{
+	char *dest;
+	size_t value_len;
+	size_t remaining;
+
+	if (ctx->store_next_value == false) {
+		return;
+	}
+
+	ctx->store_next_value = false;
+	value_len = strlen(buf);
+	remaining = sizeof(ctx->buffer) - ctx->cursor;
+
+	if (value_len + 1 >= remaining) {
+		LOG_DBG("Header '%s' dropped: buffer too small for value",
+			ctx->headers[ctx->count].name);
+		ctx->status = HTTP_HEADER_STATUS_DROPPED;
+		return;
+	}
+
+	dest = &ctx->buffer[ctx->cursor];
+	strcpy(dest, buf);
+	ctx->cursor += (value_len + 1);
+
+	ctx->headers[ctx->count].value = dest;
+	ctx->count++;
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 static int on_header_value(struct http_parser *parser,
 			   const char *at, size_t length)
@@ -484,19 +553,26 @@ static int on_header_value(struct http_parser *parser,
 		LOG_DBG("Header %s too long (by %zu bytes)", "value",
 			offset + length - sizeof(ctx->header_buffer) - 1U);
 		ctx->header_buffer[0] = '\0';
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+		if (ctx->header_capture_ctx.store_next_value) {
+			ctx->header_capture_ctx.store_next_value = false;
+			ctx->header_capture_ctx.status = HTTP_HEADER_STATUS_DROPPED;
+		}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 	} else {
 		memcpy(ctx->header_buffer + offset, at, length);
 		offset += length;
 		ctx->header_buffer[offset] = '\0';
 
 		if (parser->state == s_header_almost_done) {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+			populate_user_request_header(&ctx->header_capture_ctx, ctx->header_buffer);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 			if (ctx->has_upgrade_header) {
-				if (strncasecmp(ctx->header_buffer, "h2c",
-						sizeof("h2c") - 1) == 0) {
+				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
-				} else if (strncasecmp(ctx->header_buffer,
-						       "websocket",
-						       sizeof("websocket") - 1) == 0) {
+				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
 				}
 
@@ -589,6 +665,10 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 	client->http1_headers_sent = false;
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	client->header_capture_ctx.store_next_value = false;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 	memset(client->header_buffer, 0, sizeof(client->header_buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));

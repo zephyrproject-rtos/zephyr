@@ -1,7 +1,8 @@
-.. _peripheral_nus:
+.. zephyr:code-sample:: ble_peripheral_nus
+   :name: Peripheral NUS
+   :relevant-api: bluetooth
 
-Bluetooth: Peripheral NUS
-#########################
+   Implement a simple echo server using the Nordic UART Service (NUS).
 
 Overview
 ********
@@ -15,7 +16,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

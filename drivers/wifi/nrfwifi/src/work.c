@@ -41,8 +41,9 @@ int get_free_work_item_index(void)
 	int i;
 
 	for (i = 0; i < CONFIG_NRF70_WORKQ_MAX_ITEMS; i++) {
-		if (zep_work_item[i].in_use)
+		if (zep_work_item[i].in_use) {
 			continue;
+		}
 		return i;
 	}
 
@@ -130,17 +131,20 @@ void work_init(struct zep_work_item *item, void (*callback)(unsigned long),
 
 void work_schedule(struct zep_work_item *item)
 {
-	if (item->type == ZEP_WORK_TYPE_IRQ)
+	if (item->type == ZEP_WORK_TYPE_IRQ) {
 		k_work_submit_to_queue(&zep_wifi_intr_q, &item->work);
-	else if (item->type == ZEP_WORK_TYPE_BH)
+	} else if (item->type == ZEP_WORK_TYPE_BH) {
 		k_work_submit_to_queue(&zep_wifi_bh_q, &item->work);
+	}
 #ifdef CONFIG_NRF70_TX_DONE_WQ_ENABLED
-	else if (item->type == ZEP_WORK_TYPE_TX_DONE)
+	else if (item->type == ZEP_WORK_TYPE_TX_DONE) {
 		k_work_submit_to_queue(&zep_wifi_tx_done_q, &item->work);
+	}
 #endif /* CONFIG_NRF70_TX_DONE_WQ_ENABLED */
 #ifdef CONFIG_NRF70_RX_WQ_ENABLED
-	else if (item->type == ZEP_WORK_TYPE_RX)
+	else if (item->type == ZEP_WORK_TYPE_RX) {
 		k_work_submit_to_queue(&zep_wifi_rx_q, &item->work);
+	}
 #endif /* CONFIG_NRF70_RX_WQ_ENABLED */
 }
 

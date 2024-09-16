@@ -335,7 +335,7 @@ Remove resistors from R497, R498, R456 and R457.
 
 And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
 
-For the debugger fails to connect with the following error, please refer to section `WiFi Module`.
+For the debugger fails to connect with the following error, please refer to the next section.
 
 WiFi Module
 -----------

@@ -514,8 +514,9 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 	}
 
 	if (params->freqs) {
-		for (indx = 0; params->freqs[indx]; indx++)
+		for (indx = 0; params->freqs[indx]; indx++) {
 			num_freqs++;
+		}
 	}
 
 	scan_info = k_calloc(sizeof(*scan_info) + (num_freqs * sizeof(unsigned int)),
@@ -577,8 +578,9 @@ int nrf_wifi_wpa_supp_scan2(void *if_priv, struct wpa_driver_scan_params *params
 
 	ret = 0;
 out:
-	if (scan_info)
+	if (scan_info) {
 		k_free(scan_info);
+	}
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return ret;
 }
@@ -1362,7 +1364,7 @@ void nrf_wifi_wpa_supp_event_proc_unprot_mgmt(void *if_priv,
 
 	if (cmd_evnt == NRF_WIFI_UMAC_EVENT_UNPROT_DEAUTHENTICATE) {
 		event.unprot_deauth.reason_code = le_to_host16(mgmt->u.deauth.reason_code);
-		if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.unprot_deauth)	{
+		if (vif_ctx_zep->supp_drv_if_ctx && vif_ctx_zep->supp_callbk_fns.unprot_deauth) {
 			vif_ctx_zep->supp_callbk_fns.unprot_deauth(vif_ctx_zep->supp_drv_if_ctx,
 									  &event);
 		}
@@ -1415,20 +1417,25 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 		goto out;
 	}
 
-	if (offchanok)
+	if (offchanok) {
 		mgmt_tx_info->nrf_wifi_flags |= NRF_WIFI_CMD_FRAME_OFFCHANNEL_TX_OK;
+	}
 
-	if (noack)
+	if (noack) {
 		mgmt_tx_info->nrf_wifi_flags |= NRF_WIFI_CMD_FRAME_DONT_WAIT_FOR_ACK;
+	}
 
-	if (no_cck)
+	if (no_cck) {
 		mgmt_tx_info->nrf_wifi_flags |= NRF_WIFI_CMD_FRAME_TX_NO_CCK_RATE;
+	}
 
-	if (freq)
+	if (freq) {
 		mgmt_tx_info->frequency = freq;
+	}
 
-	if (wait_time)
+	if (wait_time) {
 		mgmt_tx_info->dur = wait_time;
+	}
 
 	if (data_len) {
 		memcpy(mgmt_tx_info->frame.frame, data, data_len);
@@ -1479,8 +1486,9 @@ int nrf_wifi_nl80211_send_mlme(void *if_priv, const u8 *data,
 	}
 
 out:
-	if (mgmt_tx_info)
+	if (mgmt_tx_info) {
 		k_free(mgmt_tx_info);
+	}
 	k_mutex_unlock(&mgmt_tx_lock);
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 	return status;

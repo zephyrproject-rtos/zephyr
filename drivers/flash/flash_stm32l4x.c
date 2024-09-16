@@ -192,8 +192,9 @@ static int erase_page(const struct device *dev, unsigned int page)
 #ifdef FLASH_CR_BKER
 	regs->CR &= ~FLASH_CR_BKER_Msk;
 	/* Select bank, only for DUALBANK devices */
-	if (page >= pages_per_bank)
+	if (page >= pages_per_bank) {
 		regs->CR |= FLASH_CR_BKER;
+	}
 #endif
 	regs->CR &= ~FLASH_CR_PNB_Msk;
 	regs->CR |= ((page % pages_per_bank) << 3);

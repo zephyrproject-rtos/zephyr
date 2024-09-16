@@ -1661,8 +1661,150 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 
+/* We don't want the application to get a PHY update callback upon connection
+ * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
+ * in this scenario.
+ *
+ * It is ifdef'd because the struct fields don't exist in some configs.
+ */
+static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
+		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
+			return true;
+		}
+	}
+#else
+	ARG_UNUSED(conn);
+#endif
+
+	return false;
+}
+
+static bool can_initiate_feature_exchange(struct bt_conn *conn)
+{
+	/* Spec says both central and peripheral can send the command. However,
+	 * peripheral-initiated feature exchange is an optional feature.
+	 *
+	 * We provide an optimization if we are in the same image as the
+	 * controller, as we know at compile time whether it supports or not
+	 * peripheral feature exchange.
+	 */
+	bool onboard_controller = IS_ENABLED(CONFIG_BT_CTLR);
+	bool supports_peripheral_feature_exchange = IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG);
+	bool is_central = IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL;
+
+	if (is_central) {
+		return true;
+	}
+
+	if (onboard_controller && supports_peripheral_feature_exchange) {
+		return true;
+	}
+
+	return BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features);
+}
+
+static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused)
+{
+	int err;
+
+	ARG_UNUSED(unused);
+
+	LOG_DBG("[%p] Running auto-initiated procedures", conn);
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		/* It is possible that connection was disconnected directly from
+		 * connected callback so we must check state before doing
+		 * connection parameters update.
+		 */
+		return;
+	}
+
+	if (atomic_test_and_set_bit(conn->flags, BT_CONN_AUTO_INIT_PROCEDURES_DONE)) {
+		/* We have already run the auto-initiated procedures */
+		return;
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) &&
+	    can_initiate_feature_exchange(conn)) {
+		err = bt_hci_le_read_remote_features(conn);
+		if (err) {
+			LOG_ERR("Failed read remote features (%d)", err);
+		}
+		if (conn->state != BT_CONN_CONNECTED) {
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO)) {
+		err = bt_hci_read_remote_version(conn);
+		if (err) {
+			LOG_ERR("Failed read remote version (%d)", err);
+		}
+		if (conn->state != BT_CONN_CONNECTED) {
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	    !uses_symmetric_2mbit_phy(conn)) {
+		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M, BT_HCI_LE_PHY_PREFER_2M,
+				    BT_HCI_LE_PHY_CODED_ANY);
+		if (err) {
+			LOG_ERR("Failed LE Set PHY (%d)", err);
+		}
+		if (conn->state != BT_CONN_CONNECTED) {
+			return;
+		}
+	}
+
+	/* Data length should be automatically updated to the maximum by the
+	 * controller. Not updating it is a quirk and this is the workaround.
+	 */
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) && BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	    bt_drv_quirk_no_auto_dle()) {
+		uint16_t tx_octets, tx_time;
+
+		err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
+		if (!err) {
+			err = bt_le_set_data_len(conn, tx_octets, tx_time);
+			if (err) {
+				LOG_ERR("Failed to set data len (%d)", err);
+			}
+		}
+	}
+
+	LOG_DBG("[%p] Successfully ran auto-initiated procedures", conn);
+}
+
+/* Executes procedures after a connection is established:
+ * - read remote features
+ * - read remote version
+ * - update PHY
+ * - update data length
+ */
+static void auto_initiated_procedures(struct k_work *unused)
+{
+	ARG_UNUSED(unused);
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, perform_auto_initiated_procedures, NULL);
+}
+
+static K_WORK_DEFINE(procedures_on_connect, auto_initiated_procedures);
+
+static void schedule_auto_initiated_procedures(struct bt_conn *conn)
+{
+	LOG_DBG("[%p] Scheduling auto-init procedures", conn);
+	k_work_submit(&procedures_on_connect);
+}
+
 void bt_conn_connected(struct bt_conn *conn)
 {
+	schedule_auto_initiated_procedures(conn);
 	bt_l2cap_connected(conn);
 	notify_connected(conn);
 }
@@ -2812,7 +2954,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 int bt_conn_get_remote_info(struct bt_conn *conn,
 			    struct bt_conn_remote_info *remote_info)
 {
-	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) ||
+	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) ||
 	    (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
 	     !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
 		return -EBUSY;

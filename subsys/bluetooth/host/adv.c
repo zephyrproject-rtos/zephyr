@@ -1139,6 +1139,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &cp->own_addr_type);
 	if (err) {
+		net_buf_unref(buf);
 		return err;
 	}
 
@@ -1215,6 +1216,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	}
 
 	cp->sid = param->sid;
+
+	cp->sec_adv_max_skip = param->secondary_max_skip;
 
 	cp->props = sys_cpu_to_le16(props);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);

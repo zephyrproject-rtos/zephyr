@@ -3,5 +3,4 @@ tests:
     tags: test_a
     build_only: true
   test_a.check_2:
-    extra_args: CONF_FILE="test.conf"
     tags: test_a

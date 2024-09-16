@@ -83,6 +83,7 @@ struct nrf_wifi_vif_ctx_zep {
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	struct k_work nrf_wifi_rpu_recovery_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+	int rts_threshold_value;
 };
 
 struct nrf_wifi_vif_ctx_map {
@@ -125,7 +126,16 @@ void set_tx_pwr_ceil_default(struct nrf_wifi_tx_pwr_ceil_params *pwr_ceil_params
 const char *nrf_wifi_get_drv_version(void);
 enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
 enum nrf_wifi_status nrf_wifi_fmac_dev_rem_zep(struct nrf_wifi_drv_priv_zep *drv_priv_zep);
+#ifdef CONFIG_NRF_WIFI_BUILD_ONLY_MODE
+inline enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
+{
+	(void)rpu_ctx;
+
+	return NRF_WIFI_STATUS_SUCCESS;
+}
+#else
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx);
+#endif /* CONFIG_NRF_WIFI_BUILD_ONLY_MODE */
 struct nrf_wifi_vif_ctx_zep *nrf_wifi_get_vif_ctx(struct net_if *iface);
 void nrf_wifi_rpu_recovery_cb(void *vif_ctx,
 		void *event_data,

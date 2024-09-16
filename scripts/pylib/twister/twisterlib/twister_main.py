@@ -3,6 +3,7 @@
 # Copyright (c) 2022 Google
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 import colorama
 import logging
 import os
@@ -63,7 +64,7 @@ def init_color(colorama_strip):
     colorama.init(strip=colorama_strip)
 
 
-def main(options, default_options):
+def main(options: argparse.Namespace, default_options: argparse.Namespace):
     start_time = time.time()
 
     # Configure color output
@@ -158,10 +159,10 @@ def main(options, default_options):
     report = Reporting(tplan, env)
     plan_file = os.path.join(options.outdir, "testplan.json")
     if not os.path.exists(plan_file):
-        report.json_report(plan_file)
+        report.json_report(plan_file, env.version)
 
     if options.save_tests:
-        report.json_report(options.save_tests)
+        report.json_report(options.save_tests, env.version)
         return 0
 
     if options.report_summary is not None:

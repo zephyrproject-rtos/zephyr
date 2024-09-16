@@ -10,7 +10,11 @@ config NUM_IRQS
 	default 70
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 48000000
+	default 96000000
+
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on XIP
+	default "0x60000000 - $(dt_node_reg_addr_hex,$(dt_nodelabel_path,flash0))"
 
 # add additional die specific params
 

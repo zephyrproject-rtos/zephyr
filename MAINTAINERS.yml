@@ -350,8 +350,6 @@ Bluetooth controller:
     - subsys/bluetooth/shell/ticker.c
     - tests/bluetooth/controller/
     - tests/bsim/bluetooth/ll/
-    - tests/bluetooth/ctrl*/
-    - tests/bluetooth/ll_settings/
   labels:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
@@ -404,7 +402,6 @@ Bluetooth Host:
     - samples/bluetooth/hci_*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
-    - samples/bluetooth/*_iso/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
     - subsys/bluetooth/shell/bredr.c
@@ -417,8 +414,6 @@ Bluetooth Host:
     - subsys/bluetooth/host/iso_internal.h
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
-    - tests/bluetooth/ctrl*/
-    - tests/bluetooth/ll_settings/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
     - tests/bluetooth/tester/
@@ -522,7 +517,6 @@ Bluetooth ISO:
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
-    - samples/bluetooth/*_iso/
     - samples/bluetooth/iso_*/
     - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
@@ -996,10 +990,10 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - gmarull
+    - kartben
   collaborators:
     - carlescufi
     - nashif
-    - kartben
   files:
     - doc/_*/
     - doc/CMakeLists.txt
@@ -1741,7 +1735,7 @@ Release Notes:
     - drivers/led/
     - include/zephyr/drivers/led/
     - include/zephyr/drivers/led.h
-    - samples/drivers/led_*/
+    - samples/drivers/led/
     - tests/drivers/led/
     - doc/hardware/peripherals/led.rst
     - tests/drivers/build_all/led/
@@ -2090,6 +2084,7 @@ Release Notes:
   status: odd fixes
   collaborators:
     - loicpoulain
+    - josuah
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
@@ -2097,6 +2092,7 @@ Release Notes:
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
+    - samples/drivers/video/
   labels:
     - "area: Video"
   tests:
@@ -2321,7 +2317,7 @@ Google Platforms:
     - duda-patryk
   files:
     - boards/google/
-    - samples/boards/google_*/
+    - samples/boards/google/
 
 Hash Utilities:
   status: maintained
@@ -2720,8 +2716,6 @@ hawkBit:
   status: maintained
   maintainers:
     - maass-hamburg
-  collaborators:
-    - ycsin
   files:
     - subsys/mgmt/hawkbit/
     - include/zephyr/mgmt/hawkbit.h
@@ -2807,7 +2801,6 @@ Networking:
     - samples/net/lwm2m_client/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
-    - subsys/net/buf*.c
     - subsys/net/l2/ethernet/gptp/
     - subsys/net/l2/ieee802154/
     - subsys/net/l2/wifi/
@@ -2840,7 +2833,7 @@ Networking:
   tests:
     - net.socket
 
-"Networking: Buffers":
+"Networking Buffers":
   status: maintained
   maintainers:
     - jhedberg
@@ -2849,13 +2842,15 @@ Networking:
     - tbursztyka
     - jukkar
   files:
+    - doc/services/net_buf/
     - include/zephyr/net/buf.h
-    - subsys/net/buf*.c
-    - tests/net/buf/
+    - include/zephyr/net_buf.h
+    - lib/net_buf/
+    - tests/lib/net_buf/
   labels:
     - "area: Networking Buffers"
   tests:
-    - net.buf
+    - libraries.net_buf
 
 "Networking: Connection Manager":
   status: maintained
@@ -3572,7 +3567,7 @@ Intel Platforms (Xtensa):
     - soc/intel/intel_adsp/
     - dts/xtensa/intel/
     - tests/boards/intel_adsp/
-    - samples/boards/intel_adsp/
+    - samples/boards/intel/adsp/
     - dts/bindings/*/intel,adsp*
     - scripts/west_commands/runners/intel_adsp.py
   labels:
@@ -3698,7 +3693,7 @@ NXP Platforms (S32):
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
     - dts/arm/nxp/*s32*
-    - samples/boards/nxp_s32/
+    - samples/boards/nxp/s32/
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*
     - include/zephyr/drivers/*/*nxp_s32*
@@ -3805,7 +3800,7 @@ nRF Platforms:
     - drivers/*/*nrf*.c
     - drivers/*/*nordic*/
     - soc/nordic/
-    - samples/boards/nrf/
+    - samples/boards/nordic/
     - dts/*/nordic/
     - dts/bindings/*/nordic,*
     - tests/drivers/*/*nrf*/
@@ -3930,7 +3925,7 @@ STM32 Platforms:
     - dts/arm/st/
     - dts/bindings/*/*stm32*
     - soc/st/stm32/
-    - samples/boards/stm32/
+    - samples/boards/st/
   labels:
     - "platform: STM32"
   description: >-
@@ -3954,7 +3949,7 @@ Espressif Platforms:
     - dts/xtensa/espressif/
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
-    - samples/boards/esp32*/
+    - samples/boards/espressif/
     - tests/boards/espressif_esp32/
     - drivers/*/*esp32*/
   labels:
@@ -4080,7 +4075,7 @@ LiteX Platforms:
     - dts/bindings/*/litex*
     - dts/riscv/riscv32-litex-vexriscv.dtsi
     - include/zephyr/drivers/*/*litex*
-    - samples/boards/litex/
+    - samples/boards/enjoydigital/litex/
     - samples/drivers/*litex/
     - soc/litex/
   labels:

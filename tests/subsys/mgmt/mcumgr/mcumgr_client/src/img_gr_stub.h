@@ -7,7 +7,7 @@
 #define H_IMG_GR_STUB_
 
 #include <inttypes.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 
 #ifdef __cplusplus

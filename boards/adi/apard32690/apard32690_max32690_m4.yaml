@@ -15,5 +15,6 @@ supported:
   - serial
   - spi
   - trng
+  - counter
 ram: 1024
 flash: 3072

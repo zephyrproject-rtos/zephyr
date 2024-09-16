@@ -38,6 +38,8 @@
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
 #include <zephyr/dt-bindings/clock/stm32wb_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+#include <zephyr/dt-bindings/clock/stm32wb0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
 #include <zephyr/dt-bindings/clock/stm32wl_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -498,5 +500,26 @@ struct stm32_pclken {
  */
 void stm32_hse_css_callback(void);
 #endif
+
+#ifdef CONFIG_SOC_SERIES_STM32WB0X
+/**
+ * @internal
+ * @brief Type definition for LSI frequency update callbacks
+ */
+typedef void (*lsi_update_cb_t)(uint32_t new_lsi_frequency);
+
+/**
+ * @internal
+ * @brief Registers a callback to invoke after each runtime measure and
+ * update of the LSI frequency is completed.
+ *
+ * @param cb		Callback to invoke
+ * @return 0		Registration successful
+ * @return ENOMEM	Too many callbacks registered
+ *
+ * @note Callbacks are NEVER invoked if runtime LSI measurement is disabled
+ */
+int stm32wb0_register_lsi_update_callback(lsi_update_cb_t cb);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */

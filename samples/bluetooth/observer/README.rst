@@ -1,7 +1,8 @@
-.. _bluetooth-observer-sample:
+.. zephyr:code-sample:: bluetooth_observer
+   :name: Observer
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Observer
-###################
+   Scan for Bluetooth devices nearby and print their information.
 
 Overview
 ********
@@ -12,7 +13,7 @@ If any found, prints the address of the device, the RSSI value, the Advertising
 type, and the Advertising data length to the console.
 
 If the used Bluetooth Low Energy Controller supports Extended Scanning, you may
-enable `CONFIG_BT_EXT_ADV` in the project configuration file. Refer to the
+enable :kconfig:option:`CONFIG_BT_EXT_ADV` in the project configuration file. Refer to the
 project configuration file for further details.
 
 Requirements

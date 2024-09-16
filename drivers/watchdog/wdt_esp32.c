@@ -216,7 +216,6 @@ static const struct wdt_driver_api wdt_api = {
 static void wdt_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct wdt_esp32_config *config = dev->config;
 	struct wdt_esp32_data *data = dev->data;
 
 	if (data->callback) {

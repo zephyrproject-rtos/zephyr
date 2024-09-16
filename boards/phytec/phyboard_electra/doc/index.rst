@@ -84,7 +84,7 @@ GPIO
 ----
 
 The phyCORE-AM64x has a heartbeat LED connected to gpio6. It's configured
-to build and run the `basic/blinky` sample.
+to build and run the :zephyr:code-sample:`blinky` sample.
 
 SD Card
 *******
@@ -111,9 +111,11 @@ To test the M4F core, we build the :ref:`hello_world` sample with the following 
    :zephyr-app: samples/hello_world
    :goals: build
 
-This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.elf`.
 
-We now copy this binary onto the SD card in the `/lib/firmware` directory and name it as `am64-mcu-m4f0_0-fw`.
+We now copy this binary onto the SD card in the :file:`/lib/firmware` directory and name it as
+:file:`am64-mcu-m4f0_0-fw`.
 
 .. code-block:: console
 

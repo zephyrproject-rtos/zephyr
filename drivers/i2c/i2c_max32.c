@@ -839,6 +839,9 @@ static const struct i2c_driver_api api = {
 	.target_register = api_target_register,
 	.target_unregister = api_target_unregister,
 #endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 	.recover_bus = api_recover_bus,
 };
 

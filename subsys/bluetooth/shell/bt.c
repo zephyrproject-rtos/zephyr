@@ -298,8 +298,9 @@ static bool data_cb(struct bt_data *data, void *user_data)
 
 static void print_data_hex(const uint8_t *data, uint8_t len, enum shell_vt100_color color)
 {
-	if (len == 0)
+	if (len == 0) {
 		return;
+	}
 
 	shell_fprintf(ctx_shell, color, "0x");
 	/* Reverse the byte order when printing as advertising data is LE
@@ -891,20 +892,6 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 #endif
 
 #if defined(CONFIG_BT_REMOTE_INFO)
-static const char *ver_str(uint8_t ver)
-{
-	const char * const str[] = {
-		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4"
-	};
-
-	if (ver < ARRAY_SIZE(str)) {
-		return str[ver];
-	}
-
-	return "unknown";
-}
-
 static void remote_info_available(struct bt_conn *conn,
 				  struct bt_conn_remote_info *remote_info)
 {
@@ -915,7 +902,7 @@ static void remote_info_available(struct bt_conn *conn,
 	if (IS_ENABLED(CONFIG_BT_REMOTE_VERSION)) {
 		shell_print(ctx_shell,
 			    "Remote LMP version %s (0x%02x) subversion 0x%04x "
-			    "manufacturer 0x%04x", ver_str(remote_info->version),
+			    "manufacturer 0x%04x", bt_hci_get_ver_str(remote_info->version),
 			    remote_info->version, remote_info->subversion,
 			    remote_info->manufacturer);
 	}

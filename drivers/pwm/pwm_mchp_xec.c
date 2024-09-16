@@ -327,8 +327,9 @@ static int pwm_xec_set_cycles(const struct device *dev, uint32_t channel,
 		return -EIO;
 	}
 
-	if (flags & PWM_POLARITY_INVERTED)
+	if (flags & PWM_POLARITY_INVERTED) {
 		regs->CONFIG |= MCHP_PWM_CFG_ON_POL_LO;
+	}
 
 	on = pulse_cycles;
 	off = period_cycles - pulse_cycles;
