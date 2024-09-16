@@ -197,9 +197,6 @@ class HDAStream:
         self.debug()
         log.info(f"Reset stream {self.stream_id}")
 
-def adsp_is_cavs():
-    return cavs15 or cavs18 or cavs15
-
 def adsp_is_ace():
     return ace15 or ace20 or ace30
 
@@ -218,10 +215,8 @@ def map_regs():
     pcidir = os.path.dirname(p)
 
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
-    global cavs15, cavs18, cavs25, ace15, ace20, ace30
+    global cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
-    cavs15 = did in [ 0x5a98, 0x1a98, 0x3198 ]
-    cavs18 = did in [ 0x9dc8, 0xa348, 0x02c8, 0x06c8, 0xa3f0 ]
     cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
     ace15 = did in [ 0x7e28 ]
     ace20 = did in [ 0xa828 ]
@@ -293,12 +288,12 @@ def map_regs():
         dsp.SRAM_FW_STATUS = WINDOW_BASE_ACE
     else:
         dsp.ADSPCS         = 0x00004
-        dsp.HIPCTDR        = 0x00040 if cavs15 else 0x000c0
-        dsp.HIPCTDA        =                        0x000c4 # 1.8+ only
-        dsp.HIPCTDD        = 0x00044 if cavs15 else 0x000c8
-        dsp.HIPCIDR        = 0x00048 if cavs15 else 0x000d0
-        dsp.HIPCIDA        =                        0x000d4 # 1.8+ only
-        dsp.HIPCIDD        = 0x0004c if cavs15 else 0x000d8
+        dsp.HIPCTDR        = 0x000c0
+        dsp.HIPCTDA        = 0x000c4 # 1.8+ only
+        dsp.HIPCTDD        = 0x000c8
+        dsp.HIPCIDR        = 0x000d0
+        dsp.HIPCIDA        = 0x000d4 # 1.8+ only
+        dsp.HIPCIDD        = 0x000d8
         dsp.ROM_STATUS     = WINDOW_BASE # Start of first SRAM window
         dsp.SRAM_FW_STATUS = WINDOW_BASE
     dsp.freeze()
@@ -396,10 +391,6 @@ def runx(cmd):
 def mask(bit):
     if cavs25:
         return 0b1 << bit
-    if cavs18:
-        return 0b1111 << bit
-    if cavs15:
-        return 0b11 << bit
 
 def load_firmware(fw_file):
     try:
@@ -480,7 +471,7 @@ def load_firmware(fw_file):
     # index within the array of output streams (and we always use the
     # first one by construction).  But with 1.5 it's the HDA index,
     # and depends on the number of input streams on the device.
-    stream_idx = hda_ostream_id if cavs15 else 0
+    stream_idx = 0
     ipcval = (  (1 << 31)            # BUSY bit
                 | (0x01 << 24)       # type = PURGE_FW
                 | (1 << 14)          # purge_fw = 1
@@ -801,9 +792,8 @@ def ipc_command(data, ext_data):
     if data == 0: # noop, with synchronous DONE
         pass
     elif data == 1: # async command: signal DONE after a delay (on 1.8+)
-        if not cavs15:
-            done = False
-            asyncio.ensure_future(ipc_delay_done())
+        done = False
+        asyncio.ensure_future(ipc_delay_done())
     elif data == 2: # echo back ext_data as a message command
         send_msg = True
     elif data == 3: # set ADSPCS
@@ -905,9 +895,7 @@ def ipc_command(data, ext_data):
             dsp.HFIPCXIDR = (1<<31) | ext_data
     else:
         dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
-        if cavs18:
-            time.sleep(0.01) # Needed on 1.8, or the command below won't send!
-        if done and not cavs15:
+        if done:
             dsp.HIPCTDA = 1<<31 # Signal done
         if send_msg:
             dsp.HIPCIDD = ext_data
@@ -938,7 +926,7 @@ async def main():
         log.error(e)
         sys.exit(1)
 
-    log.info(f"Detected cAVS {'1.5' if cavs15 else '1.8+'} hardware")
+    log.info(f"Detected cAVS 1.8+ hardware")
 
     if args.log_only:
         wait_fw_entered(timeout_s=None)
