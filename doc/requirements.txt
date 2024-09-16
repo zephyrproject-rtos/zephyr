@@ -21,3 +21,6 @@ pyserial
 
 # Doxygen doxmlparser
 doxmlparser
+
+# Used by the Zephyr domain to organize code samples
+anytree
