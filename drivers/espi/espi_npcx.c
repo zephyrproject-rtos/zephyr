@@ -383,11 +383,13 @@ static uint32_t espi_taf_parse(const struct device *dev)
 {
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
 	struct npcx_taf_head taf_head;
-	uint32_t taf_addr;
+	uint32_t taf_addr, head_data;
 	uint8_t i, roundsize;
 
 	/* Get type, length and tag from RX buffer */
-	memcpy(&taf_head, (void *)&inst->FLASHRXBUF[0], sizeof(taf_head));
+	head_data = inst->FLASHRXBUF[0];
+	taf_head = *(struct npcx_taf_head *)&head_data;
+
 	taf_pckt.type = taf_head.type;
 	taf_pckt.len = (((uint16_t)taf_head.tag_hlen & 0xF) << 8) | taf_head.llen;
 	taf_pckt.tag = taf_head.tag_hlen >> 4;
