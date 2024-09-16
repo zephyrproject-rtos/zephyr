@@ -1,0 +1,63 @@
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+
+			cs-gpios = <&test_gpio 0 0>,
+			<&test_gpio 0 0>,
+			<&test_gpio 0 0>;
+
+			test_spi_mcp2515: mcp2515@0 {
+				compatible = "microchip,mcp2515";
+				reg = <0x0>;
+				status = "okay";
+
+				spi-max-frequency = <1000000>;
+				int-gpios = <&test_gpio 0 0>;
+
+				osc-freq = <16000000>;
+			};
+
+			test_spi_mcp2515fd: mcp2515fd@1 {
+				compatible = "microchip,mcp251xfd";
+				reg = <0x1>;
+				status = "okay";
+
+				spi-max-frequency = <18000000>;
+				int-gpios = <&test_gpio 0 0>;
+
+				osc-freq = <40000000>;
+			};
+
+			test_spi_tcan4x5x: tcan4x5x@2 {
+				compatible = "ti,tcan4x5x";
+				reg = <0x2>;
+				status = "okay";
+
+				spi-max-frequency = <2000000>;
+
+				clock-frequency = <40000000>;
+				device-state-gpios = <&test_gpio 0 0>;
+				device-wake-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				int-gpios = <&test_gpio 0 0>;
+				bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
+			};
+		};
+	};
+};

@@ -25,3 +25,12 @@ tests:
       - native_posix/native/64
       - native_sim
       - native_sim/native/64
+  drivers.can.build_all.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
