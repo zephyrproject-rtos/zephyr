@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019-2021 Linaro Limited
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,20 +67,50 @@ i2c_audio_conf: i2c@9201000 {
 	reg = <0x9201000 0x1000>;
 };
 
-i2c_shield0: i2c@9203000 {
-	compatible = "arm,versatile-i2c";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+spi_adc: spi@9202000 {
+	compatible = "arm,pl022";
+	reg = <0x9202000 DT_SIZE_K(4)>;
+	interrupts = <53 3>;
+	interrupt-names = "shield_adc";
+	clocks = <&sysclk>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9203000 0x1000>;
 };
 
-i2c_shield1: i2c@9204000 {
+spi_shield0: spi@9203000 {
+	compatible = "arm,pl022";
+	reg = <0x9203000 DT_SIZE_K(4)>;
+	interrupts = <54 3>;
+	interrupt-names = "shield0_spi";
+	clocks = <&sysclk>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+spi_shield1: spi@9204000 {
+	compatible = "arm,pl022";
+	reg = <0x9204000 DT_SIZE_K(4)>;
+	interrupts = <55 3>;
+	interrupt-names = "shield1_spi";
+	clocks = <&sysclk>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+i2c_shield0: i2c@9205000 {
 	compatible = "arm,versatile-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9204000 0x1000>;
+	reg = <0x9205000 0x1000>;
+};
+
+i2c_shield1: i2c@9206000 {
+	compatible = "arm,versatile-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x9206000 0x1000>;
 };
 
 i2c_ddr4_eeprom: i2c@9208000 {

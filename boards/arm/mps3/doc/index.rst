@@ -1,61 +1,133 @@
-.. _mps3_an547_board:
+.. _mps3_board:
 
-ARM MPS3 AN547
+ARM MPS3
 ###############
 
 Overview
 ********
 
-The mps3_an547 board configuration is used by Zephyr applications that run
-on the MPS3 AN547 board. It provides support for the MPS3 AN547 ARM Cortex-M55
-CPU and the following devices:
+The mps3 board configuration is used by Zephyr applications that run
+on the MPS3 board. It provides support for the following devices:
 
 - Nested Vectored Interrupt Controller (NVIC)
 - System Tick System Clock (SYSTICK)
 - Cortex-M System Design Kit GPIO
 - Cortex-M System Design Kit UART
 - Ethos-U55 NPU
+- AN547 and AN552 support Arm Cortex-M55 CPU
 
-.. image:: img/mps3_an547.jpg
+.. image:: img/mps3.jpg
      :align: center
-     :alt: ARM MPS3 AN547
+     :alt: ARM MPS3
 
-This board configuration also supports using the `Corstone-300 FVP`_ to emulate
-a MPS3 AN547 hardware platform.
+`Corstone-300 FVP`_ (Fixed Virtual Platforms) is a complete
+simulations of the Arm system, including processor, memory and peripherals.
+They are available free of charge for Linux and Windows systems.
+The FVPs have been selected for simulation since they provide access to the
+Ethos-U55 NPU, which is unavailable in QEMU or other simulation platforms.
 
-The Corstone-300 FVP (Fixed Virtual Platform) is a complete simulation of the
-Arm system, including processor, memory and peripherals. It is a available free
-of charge for Linux and Windows systems. The FVP has been selected for
-simulation since it provides access to the Ethos-U55 NPU, which is unavailable
-in QEMU or other simulation platforms.
-
-To run the Fixed Virtual Platform simulation tool you must download "FVP model
-for the Corstone-300 MPS3" from Arm and install it on your host PC. This board
-has been tested with version 11.12.57 (Nov  2 2020).
 
 Zephyr board options
 ====================
 
-The MPS3+ AN547 is an SoC with Cortex-M55 architecture. Zephyr provides support
-for building for both Secure and Non-Secure firmware.
+.. tabs::
 
-The BOARD options are summarized below:
+  .. tab:: MPS3 Corstone-300 (AN547)
 
-+----------------------+-----------------------------------------------+
-|   BOARD              | Description                                   |
-+======================+===============================================+
-| ``mps3/an547``       | For building Secure (or Secure-only) firmware |
-+----------------------+-----------------------------------------------+
-| ``mps3/an547/ns``    | For building Non-Secure firmware              |
-+----------------------+-----------------------------------------------+
+   The MPS3+ AN547 is an SoC with Cortex-M55 architecture. Zephyr provides support
+   for building for both Secure and Non-Secure firmware.
+
+   The BOARD options are summarized below:
+
+   +-------------------------------+-----------------------------------------------+
+   |   BOARD                       | Description                                   |
+   +===============================+===============================================+
+   | ``mps3/corstone300/an547``    | For building Secure (or Secure-only) firmware |
+   +-------------------------------+-----------------------------------------------+
+   | ``mps3/corstone300/an547/ns`` | For building Non-Secure firmware              |
+   +-------------------------------+-----------------------------------------------+
+
+   FPGA Usage:
+    - Follow `Programming and Debugging`_ for build and flash instructions.
+
+   FVP Usage:
+    - FVP is not supported for this variant.
+
+   QEMU Usage:
+    - To run with QEMU instead of the default FVP, override the emulator selection at build time via:
+
+    .. code-block:: bash
+
+     $ west build -b mps3_an547 samples/hello_world -DEMU_PLATFORM=qemu -t run
+
+  .. tab:: MPS3 Corstone-300 (AN552)
+
+   The MPS3+ AN552 is an SoC with Cortex-M55 architecture. Zephyr provides support
+   for building for both Secure and Non-Secure firmware.
+
+   The BOARD options are summarized below:
+
+   +-------------------------------+-----------------------------------------------+
+   |   BOARD                       | Description                                   |
+   +===============================+===============================================+
+   | ``mps3/corstone300/an552``    | For building Secure (or Secure-only) firmware |
+   +-------------------------------+-----------------------------------------------+
+   | ``mps3/corstone300/an552/ns`` | For building Non-Secure firmware              |
+   +-------------------------------+-----------------------------------------------+
+
+   FPGA Usage:
+    - Follow `Programming and Debugging`_ for build and flash instructions.
+
+   FVP Usage:
+    - FVP not supported for this variant.
+
+   QEMU Usage:
+    - QEMU not supported for this variant of board.
+
+  .. tab:: MPS3 Corstone-300 (FVP)
+
+   The MPS3+ FVP is an SoC with Cortex-M55 architecture. Zephyr provides support
+   for building for both Secure and Non-Secure firmware.
+
+   The BOARD options are summarized below:
+
+   +-------------------------------+-----------------------------------------------+
+   |   BOARD                       | Description                                   |
+   +===============================+===============================================+
+   | ``mps3/corstone300/fvp``      | For building Secure (or Secure-only) firmware |
+   +-------------------------------+-----------------------------------------------+
+   | ``mps3/corstone300/fvp/ns``   | For building Non-Secure firmware              |
+   +-------------------------------+-----------------------------------------------+
+
+   FVP Usage:
+    - To run with the FVP, first set environment variable ``ARMFVP_BIN_PATH`` before using it. Then you can run it with ``west build -t run``.
+
+    .. code-block:: bash
+
+       export ARMFVP_BIN_PATH=/path/to/fvp/directory
+       west build -b {BOARD qualifier from table above} samples/hello_world -t run
+
+   To run the Fixed Virtual Platform simulation tool you must download "FVP model
+   for the Corstone-300 MPS3" from Arm and install it on your host PC. This board
+   has been tested with version 11.24.13 (Jan  4 2024).
+
+   QEMU Usage:
+    - QEMU not supported for this variant of board.
+
+  .. note::
+     Board qualifier must include the board name as mentioned above.
+     ``mps3/corstone300`` without the board name is not a valid qualifier.
 
 Hardware
 ********
 
-ARM MPS3 AN547 provides the following hardware components:
+ARM MPS3 provides the following hardware components:
 
-- ARM Cortex-M55
-- Soft Macro Model (SMM) implementation of SSE-300 subsystem
+- CPU
+
+  - AN547 and AN552 support Arm Cortex-M55 CPU and
+    Soft Macro Model (SMM) implementation of SSE-300 subsystem
+
 - Memory
 
   - 8MB BRAM
@@ -89,7 +161,7 @@ ARM MPS3 AN547 provides the following hardware components:
 Supported Features
 ===================
 
-The ``mps3/an547`` board configuration supports the following hardware features:
+The ``MPS3`` board configuration supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -109,14 +181,15 @@ See the `MPS3 FPGA Website`_ for a complete list of MPS3 AN547 board hardware
 features.
 
 The default configuration can be found in
-:zephyr_file:`boards/arm/mps3/mps3_an547_defconfig`.
+ - For AN547: :zephyr_file:`boards/arm/mps3/mps3_corstone300_an547_defconfig`.
+ - For AN552: :zephyr_file:`boards/arm/mps3/mps3_corstone300_an552_defconfig`.
+ - For FVP  : :zephyr_file:`boards/arm/mps3/mps3_corstone300_fvp_defconfig`.
 
-For more details refer to `MPS3 AN547 Technical Reference Manual (TRM)`_.
 
 Serial Port
 ===========
 
-The MPS3 AN547 has six UARTs. The Zephyr console output by default, uses
+The MPS3 has six UARTs. The Zephyr console output by default, uses
 UART0, which is exposed over the Debug USB interface (J8).
 
 Serial port 0 on the Debug USB interface is the MCC board control console.
@@ -127,26 +200,28 @@ Serial port 2 on the Debug USB interface is connected to UART 1.
 
 Serial port 3 on the Debug USB interface is connected to UART 2.
 
+.. Programming and Debugging:
+
 Programming and Debugging
 *************************
 
 Flashing
 ========
 
-MPS3 AN547 provides:
+MPS3 provides:
 
 - A USB connection to the host computer, which exposes Mass Storage and
   CMSIS-DAP, and serial ports.
 
-Building an application
------------------------
+Building an application with AN547
+----------------------------------
 
 You can build applications in the usual way. Here is an example for
-the :zephyr:code-sample:`hello_world` application.
+the :zephyr:code-sample:`hello_world` application with AN547.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mps3/an547
+   :board: mps3/corstone300/an547
    :goals: build
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
@@ -178,7 +253,7 @@ The update requires 3 steps:
 
 1. Copy application files to ``<MPS3 device name>/SOFTWARE/``.
 2. Open ``<MPS3 device name>/MB/HBI0309C/AN547/images.txt``.
-3. Update the ``AN547/images.txt`` file as follows:
+3. Update the ``images.txt`` file as follows:
 
 .. code-block:: bash
 
@@ -200,31 +275,12 @@ serial port:
    Hello World! mps3
 
 
-FVP Usage
-=========
-
-To run with the FVP, first set environment variable ``ARMFVP_BIN_PATH`` before
-using it. Then you can run it with ``west build -t run``.
-
-.. code-block:: bash
-
-   export ARMFVP_BIN_PATH=/path/to/fvp/directory
-   west build -t run
-
-
-QEMU Usage
-==========
-
-To run with QEMU instead of the default FVP, override the emulator selection
-at build time via:
-
-.. code-block:: bash
-
-   $ west build -b mps3_an547 samples/hello_world -DEMU_PLATFORM=qemu -t run
-
-
-Note, however, that the Ethos-U55 NPU is not available in QEMU. If you require
-the use of the NPU, please use the default FVP for device emulation.
+For more details refer to:
+ - `MPS3 AN547 Technical Reference Manual (TRM)`_
+ - `MPS3 AN552 Technical Reference Manual (TRM)`_
+ - `MPS3 FPGA Prototyping Board Technical Reference Manual (TRM)`_
+ - `Cortex M55 Generic User Guide`_
+ - `Corelink SSE-300 Example Subsystem`_
 
 .. _Corstone-300 FVP:
    https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps
@@ -234,6 +290,9 @@ the use of the NPU, please use the default FVP for device emulation.
 
 .. _MPS3 AN547 Technical Reference Manual (TRM):
    https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/DAI0547B_SSE300_PLUS_U55_FPGA_for_mps3.pdf
+
+.. _MPS3 AN552 Technical Reference Manual (TRM):
+   https://developer.arm.com/documentation/dai0552/latest
 
 .. _MPS3 FPGA Prototyping Board Technical Reference Manual (TRM):
    https://developer.arm.com/documentation/100765/latest

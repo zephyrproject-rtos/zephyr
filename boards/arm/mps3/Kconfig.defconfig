@@ -1,7 +1,8 @@
 # Copyright (c) 2018-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_MPS3_AN547
+if BOARD_MPS3_CORSTONE300_AN547 || BOARD_MPS3_CORSTONE300_AN552 || BOARD_MPS3_CORSTONE300_FVP
 
 # MPU-based null-pointer dereferencing detection cannot
 # be applied as the (0x0 - 0x400) is unmapped but QEMU
