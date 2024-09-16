@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/debug/coredump.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/offsets.h>
@@ -189,3 +190,18 @@ uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_XTENSA;
 }
+
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+void arch_coredump_priv_stack_dump(struct k_thread *thread)
+{
+	struct xtensa_thread_stack_header *hdr_stack_obj;
+	uintptr_t start_addr, end_addr;
+
+	hdr_stack_obj = (struct xtensa_thread_stack_header *)thread->stack_obj;
+
+	start_addr = (uintptr_t)&hdr_stack_obj->privilege_stack[0];
+	end_addr = start_addr + sizeof(hdr_stack_obj->privilege_stack);
+
+	coredump_memory_dump(start_addr, end_addr);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
