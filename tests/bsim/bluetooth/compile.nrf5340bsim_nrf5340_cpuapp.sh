@@ -19,5 +19,6 @@ app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group.conf sysbuild=1 c
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/scan/slow/compile.sh
 
 wait_for_background_jobs

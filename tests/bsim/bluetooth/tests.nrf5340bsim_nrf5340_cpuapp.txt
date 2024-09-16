@@ -5,3 +5,4 @@ tests/bsim/bluetooth/ll/bis/tests_scripts/broadcast_iso.sh
 tests/bsim/bluetooth/samples/central_hr_peripheral_hr/
 tests/bsim/bluetooth/audio_samples/
 tests/bsim/bluetooth/audio/
+tests/bsim/bluetooth/host/scan/slow/
