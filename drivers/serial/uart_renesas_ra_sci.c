@@ -864,6 +864,7 @@ static void uart_ra_sci_callback_adapter(struct st_uart_callback_arg *fsp_args)
 		break;
 	case UART_EVENT_RX_COMPLETE:
 		async_evt_rx_complete(dev);
+		break;
 	case UART_EVENT_ERR_PARITY:
 		async_evt_rx_err(dev, UART_ERROR_PARITY);
 		break;
