@@ -959,7 +959,6 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	uint8_t authtag_len = level_2_authtag_len[level];
 	uint8_t ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
 	uint8_t payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
-	uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 
 	/* TODO: Handle src short address.
 	 * This will require to look up in nbr cache with short addr
@@ -970,9 +969,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		goto out;
 	}
 
-	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), ll_hdr_len, payload_len,
-				     authtag_len, ext_addr_le,
+				     authtag_len, net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(mpdu->mhr.aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		goto out;
