@@ -12,6 +12,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/irq.h>
@@ -217,6 +218,7 @@ struct uarte_nrfx_data {
 #define UARTE_FLAG_LOW_POWER_TX BIT(0)
 #define UARTE_FLAG_LOW_POWER_RX BIT(1)
 #define UARTE_FLAG_TRIG_RXTO BIT(2)
+#define UARTE_FLAG_POLL_OUT BIT(3)
 
 /* If enabled then ENDTX is PPI'ed to TXSTOP */
 #define UARTE_CFG_FLAG_PPI_ENDTX   BIT(0)
@@ -323,6 +325,7 @@ static void uarte_nrfx_isr_int(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct uarte_nrfx_config *config = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	/* If interrupt driven and asynchronous APIs are disabled then UART
@@ -334,34 +337,36 @@ static void uarte_nrfx_isr_int(const void *arg)
 		endtx_isr(dev);
 	}
 
-	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
+	bool txstopped = nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED);
+
+	if (txstopped && (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) ||
+	    (config->flags & UARTE_CFG_FLAG_LOW_POWER))) {
 		unsigned int key = irq_lock();
 
-		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
+		    (data->flags & UARTE_FLAG_POLL_OUT)) {
+			data->flags &= ~UARTE_FLAG_POLL_OUT;
+			pm_device_runtime_put(dev);
+		} else {
 			nrf_uarte_disable(uarte);
 		}
 
 #ifdef UARTE_INTERRUPT_DRIVEN
-		struct uarte_nrfx_data *data = dev->data;
-
 		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
 #endif
 		{
-			nrf_uarte_int_disable(uarte,
-					      NRF_UARTE_INT_TXSTOPPED_MASK);
+			nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		}
 
 		irq_unlock(key);
 	}
 
 #ifdef UARTE_INTERRUPT_DRIVEN
-	struct uarte_nrfx_data *data = dev->data;
-
 	if (!data->int_driven) {
 		return;
 	}
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+	if (txstopped) {
 		data->int_driven->fifo_fill_lock = 0;
 		if (data->int_driven->disable_tx_irq) {
 			nrf_uarte_int_disable(uarte,
@@ -580,17 +585,12 @@ static int wait_tx_ready(const struct device *dev)
 static void uarte_enable(const struct device *dev, uint32_t act_mask, uint32_t sec_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
-	int err;
 
 	if (atomic_or(&data->flags, act_mask) & sec_mask) {
 		/* Second direction already enabled so UARTE is enabled. */
 		return;
 	}
 
-	err = pins_state_change(dev, true);
-	if (err < 0) {
-		return err;
-	}
 #ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		const struct uarte_nrfx_config *config = dev->config;
@@ -624,32 +624,37 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 	const struct uarte_nrfx_config *config = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state state;
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		/* When PM or low power mode is not enabled then TXSTOPPED interrupt is
+		 * not enabled as there is nothing to do there but for PM/low power we
+		 * need to track when TX is no longer in use.
+		 */
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	} else if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+		enum pm_device_state state;
 
-	(void)pm_device_state_get(dev, &state);
-	if (state != PM_DEVICE_STATE_ACTIVE) {
-		return;
+		(void)pm_device_state_get(dev, &state);
+		if (state != PM_DEVICE_STATE_ACTIVE) {
+			return;
+		}
+	} else if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
+		uarte_enable(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	}
-#endif
 
 	if (IS_ENABLED(UARTE_ANY_CACHE) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
 		sys_cache_data_flush_range((void *)buf, len);
 	}
 
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
-	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
-
-	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		(void)uarte_enable(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT)) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 	}
-
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 }
 
-#if defined(UARTE_ANY_ASYNC) || defined(CONFIG_PM_DEVICE)
+#if defined(UARTE_ANY_ASYNC)
 static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask, uint32_t sec_mask)
 {
 	struct uarte_nrfx_data *data = dev->data;
@@ -659,7 +664,7 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask, ui
 		return;
 	}
 
-#if defined(UARTE_ANY_ASYNC) && !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
+#if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
 	const struct uarte_nrfx_config *config = dev->config;
 
 	if (data->async && HW_RX_COUNTING_ENABLED(config)) {
@@ -670,7 +675,6 @@ static void uarte_disable_locked(const struct device *dev, uint32_t dis_mask, ui
 	}
 #endif
 
-	(void)pins_state_change(dev, false);
 	nrf_uarte_disable(get_uarte_instance(dev));
 }
 #endif
@@ -728,7 +732,7 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 }
 #endif /* !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX) */
 
-static int uarte_nrfx_init(const struct device *dev)
+static int uarte_async_init(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -749,7 +753,6 @@ static int uarte_nrfx_init(const struct device *dev)
 #endif
 
 	nrf_uarte_int_enable(uarte, rx_int_mask);
-	nrf_uarte_enable(uarte);
 
 	k_timer_init(&data->async->rx.timer, rx_timeout, NULL);
 	k_timer_user_data_set(&data->async->rx.timer, (void *)dev);
@@ -828,7 +831,6 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 
 	data->async->tx.len = len;
 	data->async->tx.buf = buf;
-	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 
 	if (nrf_dma_accessible_check(uarte, buf)) {
 		data->async->tx.xfer_buf = buf;
@@ -838,6 +840,11 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 		(void)setup_tx_cache(dev);
 	}
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	}
+
+	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	start_tx_locked(dev, data);
 
 	irq_unlock(key);
@@ -978,7 +985,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	rdata->next_buf = NULL;
 	rdata->next_buf_len = 0;
 
-	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || (cfg->flags & UARTE_CFG_FLAG_LOW_POWER)) {
 		if (rdata->flush_cnt) {
 			int cpy_len = MIN(len, rdata->flush_cnt);
 
@@ -1029,7 +1036,10 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 
 	rdata->enabled = true;
-	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(dev);
+	} else if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
 		unsigned int key = irq_lock();
 
 		uarte_enable(dev, UARTE_FLAG_LOW_POWER_RX, UARTE_FLAG_LOW_POWER_TX);
@@ -1536,7 +1546,9 @@ static void rxto_isr(const struct device *dev)
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 #endif
 
-	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(dev);
+	} else if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
 		uint32_t key = irq_lock();
 
 		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX, UARTE_FLAG_LOW_POWER_TX);
@@ -1553,24 +1565,26 @@ static void txstopped_isr(const struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	unsigned int key;
 
-	if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
-		key = irq_lock();
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
-		irq_unlock(key);
+	key = irq_lock();
 
-		if (!data->async->tx.len) {
-			return;
+	size_t amount = (data->async->tx.amount >= 0) ?
+			data->async->tx.amount : nrf_uarte_tx_amount_get(uarte);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+		if (data->flags & UARTE_FLAG_POLL_OUT) {
+			pm_device_runtime_put(dev);
+			data->flags &= ~UARTE_FLAG_POLL_OUT;
 		}
+	} else if (config->flags & UARTE_CFG_FLAG_LOW_POWER) {
+		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
 	}
 
 	if (!data->async->tx.buf) {
+		irq_unlock(key);
 		return;
 	}
-
-	key = irq_lock();
-	size_t amount = (data->async->tx.amount >= 0) ?
-			data->async->tx.amount : nrf_uarte_tx_amount_get(uarte);
 
 	irq_unlock(key);
 
@@ -1622,6 +1636,10 @@ static void txstopped_isr(const struct device *dev)
 	nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 	data->async->tx.buf = NULL;
 	data->async->tx.len = 0;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(dev);
+	}
 
 	user_callback(dev, &evt);
 }
@@ -1785,6 +1803,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uarte_nrfx_config *config = dev->config;
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
+	struct uarte_nrfx_data *data = dev->data;
 	unsigned int key;
 
 	if (isr_mode) {
@@ -1793,7 +1812,6 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 			if (is_tx_ready(dev)) {
 #if UARTE_ANY_ASYNC
 				NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-				struct uarte_nrfx_data *data = dev->data;
 
 				if (data->async && data->async->tx.len &&
 					data->async->tx.amount < 0) {
@@ -1808,6 +1826,13 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 		}
 	} else {
 		key = wait_tx_ready(dev);
+	}
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
+			data->flags |= UARTE_FLAG_POLL_OUT;
+			pm_device_runtime_get(dev);
+		}
 	}
 
 	*config->poll_out_byte = c;
@@ -2043,84 +2068,6 @@ static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 }
 #endif /* UARTE_ENHANCED_POLL_OUT */
 
-static int uarte_instance_init(const struct device *dev,
-			       uint8_t interrupts_active)
-{
-	int err;
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	const struct uarte_nrfx_config *cfg = dev->config;
-
-#if	defined(CONFIG_UART_USE_RUNTIME_CONFIGURE) || defined(UARTE_ENHANCED_POLL_OUT) || \
-	defined(UARTE_ANY_ASYNC)
-	struct uarte_nrfx_data *data = dev->data;
-#endif
-
-	nrf_uarte_disable(uarte);
-
-#ifdef CONFIG_ARCH_POSIX
-	/* For simulation the DT provided peripheral address needs to be corrected */
-	((struct pinctrl_dev_config *)cfg->pcfg)->reg = (uintptr_t)cfg->uarte_regs;
-#endif
-
-	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
-		return err;
-	}
-
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
-	err = uarte_nrfx_configure(dev, &data->uart_config);
-	if (err) {
-		return err;
-	}
-#else
-	nrf_uarte_baudrate_set(uarte, cfg->nrf_baudrate);
-	nrf_uarte_configure(uarte, &cfg->hw_config);
-#endif
-
-#ifdef UARTE_HAS_ENDTX_STOPTX_SHORT
-	nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDTX_STOPTX);
-#elif defined(UARTE_ENHANCED_POLL_OUT)
-	if (cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
-		err = endtx_stoptx_ppi_init(uarte, data);
-		if (err < 0) {
-			return err;
-		}
-	}
-#endif
-#ifdef UARTE_ANY_ASYNC
-	if (data->async) {
-		err = uarte_nrfx_init(dev);
-		if (err < 0) {
-			return err;
-		}
-	} else
-#endif
-	{
-		/* Enable receiver and transmitter */
-		nrf_uarte_enable(uarte);
-
-		if (!cfg->disable_rx) {
-			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-
-			nrf_uarte_rx_buffer_set(uarte, cfg->poll_in_byte, 1);
-			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
-		}
-	}
-
-	if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) && !(cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
-	}
-
-	/* Set TXSTOPPED event by requesting fake (zero-length) transfer.
-	 * Pointer to RAM variable (data->tx_buffer) is set because otherwise
-	 * such operation may result in HardFault or RAM corruption.
-	 */
-	tx_start(dev, cfg->poll_out_byte, 0);
-
-	return 0;
-}
-
-#ifdef CONFIG_PM_DEVICE
 /** @brief Pend until TX is stopped.
  *
  * There are 2 configurations that must be handled:
@@ -2144,7 +2091,9 @@ static void wait_for_tx_stopped(const struct device *dev)
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_ENDTX_MASK);
 		NRFX_WAIT_FOR(is_tx_ready(dev), 1000, 1, res);
 		if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
-			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+			if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT)) {
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+			}
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 		}
 	}
@@ -2157,96 +2106,91 @@ static void wait_for_tx_stopped(const struct device *dev)
 	}
 }
 
-
-static int uarte_nrfx_pm_action(const struct device *dev,
-				enum pm_device_action action)
+static int uarte_pm_resume(const struct device *dev)
 {
+	const struct uarte_nrfx_config *cfg = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-#if defined(UARTE_ANY_ASYNC) || defined(UARTE_INTERRUPT_DRIVEN)
+#if defined(UARTE_ANY_ASYNC) || (defined(UARTE_INTERRUPT_DRIVEN) && defined(CONFIG_PM_DEVICE))
 	struct uarte_nrfx_data *data = dev->data;
 #endif
-	const struct uarte_nrfx_config *cfg = dev->config;
 	int ret;
 
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	nrf_uarte_enable(uarte);
+#if UARTE_BAUDRATE_RETENTION_WORKAROUND
+	nrf_uarte_baudrate_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
+			(data->nrf_baudrate), (cfg->nrf_baudrate));
+
+	nrf_uarte_baudrate_set(get_uarte_instance(dev), baudrate);
+#endif
+
 #ifdef UARTE_ANY_ASYNC
-	/* If low power mode for asynchronous mode is used then there is nothing to do here.
-	 * In low power mode UARTE is turned off whenever there is no activity.
-	 */
-	if (data->async && (cfg->flags & UARTE_CFG_FLAG_LOW_POWER)) {
+	if (data->async) {
+		if (HW_RX_COUNTING_ENABLED(cfg)) {
+			nrfx_timer_enable(&cfg->timer);
+		}
+
 		return 0;
 	}
 #endif
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-	{
-		ret = pins_state_change(dev, true);
-		if (ret < 0) {
-			return ret;
-		}
-
-		nrf_uarte_enable(uarte);
-#if UARTE_BAUDRATE_RETENTION_WORKAROUND
-		nrf_uarte_baudrate_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
-			(data->nrf_baudrate), (cfg->nrf_baudrate));
-
-		nrf_uarte_baudrate_set(get_uarte_instance(dev), baudrate);
-#endif
-
-#ifdef UARTE_ANY_ASYNC
-		if (data->async) {
-			if (HW_RX_COUNTING_ENABLED(cfg)) {
-				nrfx_timer_enable(&cfg->timer);
-			}
-
-			return 0;
+	if (!cfg->disable_rx) {
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+#if defined(UARTE_INTERRUPT_DRIVEN) && defined(CONFIG_PM_DEVICE)
+		if (data->int_driven && data->int_driven->rx_irq_enabled) {
+			nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDRX_MASK);
 		}
 #endif
-		if (!cfg->disable_rx) {
-
-			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
-#ifdef UARTE_INTERRUPT_DRIVEN
-			if (data->int_driven &&
-			    data->int_driven->rx_irq_enabled) {
-				nrf_uarte_int_enable(uarte,
-						     NRF_UARTE_INT_ENDRX_MASK);
-			}
-#endif
-		}
-		break;
 	}
-	case PM_DEVICE_ACTION_SUSPEND:
-		/* Disabling UART requires stopping RX, but stop RX event is
-		 * only sent after each RX if async UART API is used.
-		 */
-#ifdef UARTE_ANY_ASYNC
-		if (data->async) {
-			/* Entering inactive state requires device to be no
-			 * active asynchronous calls.
-			 */
-			__ASSERT_NO_MSG(!data->async->rx.enabled);
-			__ASSERT_NO_MSG(!data->async->tx.len);
-#if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
-			if (data->async && HW_RX_COUNTING_ENABLED(cfg)) {
-				nrfx_timer_disable(&cfg->timer);
-				/* Timer/counter value is reset when disabled. */
-				data->async->rx.total_byte_cnt = 0;
-				data->async->rx.total_user_byte_cnt = 0;
-			}
-#endif
 
+	return 0;
+}
+
+static int uarte_pm_suspend(const struct device *dev)
+{
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	const struct uarte_nrfx_config *cfg = dev->config;
+	struct uarte_nrfx_data *data = dev->data;
+
+	(void)data;
+#ifdef UARTE_ANY_ASYNC
+	if (data->async) {
+		/* Entering inactive state requires device to be no
+		 * active asynchronous calls.
+		 */
+		__ASSERT_NO_MSG(!data->async->rx.enabled);
+		__ASSERT_NO_MSG(!data->async->tx.len);
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+			/* If runtime PM is enabled then reference counting ensures that
+			 * suspend will not occur when TX is active.
+			 */
+			__ASSERT_NO_MSG(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED));
+		} else {
+			wait_for_tx_stopped(dev);
+		}
+#if !defined(CONFIG_UART_NRFX_UARTE_ENHANCED_RX)
+		if (data->async && HW_RX_COUNTING_ENABLED(cfg)) {
+			nrfx_timer_disable(&cfg->timer);
+			/* Timer/counter value is reset when disabled. */
+			data->async->rx.total_byte_cnt = 0;
+			data->async->rx.total_user_byte_cnt = 0;
 		}
 #endif
+	} else if (IS_ENABLED(UARTE_ANY_NONE_ASYNC))
+#endif
+	{
 		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
-#ifdef UARTE_INTERRUPT_DRIVEN
+#if defined(UARTE_INTERRUPT_DRIVEN) && defined(CONFIG_PM_DEVICE)
 			if (data->int_driven) {
 				data->int_driven->rx_irq_enabled =
-					nrf_uarte_int_enable_check(uarte,
-						NRF_UARTE_INT_ENDRX_MASK);
+						nrf_uarte_int_enable_check(uarte,
+							NRF_UARTE_INT_ENDRX_MASK);
 				if (data->int_driven->rx_irq_enabled) {
-					nrf_uarte_int_disable(uarte,
-						NRF_UARTE_INT_ENDRX_MASK);
+					nrf_uarte_int_disable(uarte, NRF_UARTE_INT_ENDRX_MASK);
 				}
 			}
 #endif
@@ -2262,22 +2206,140 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		}
 
 		wait_for_tx_stopped(dev);
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX, UARTE_FLAG_LOW_POWER_RX);
-		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_RX, UARTE_FLAG_LOW_POWER_TX);
+	}
 
-		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-		if (ret < 0) {
-			return ret;
+	nrf_uarte_disable(uarte);
+
+	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+}
+
+static int uarte_nrfx_pm_action(const struct device *dev,
+				enum pm_device_action action)
+{
+	int ret = -ENOTSUP;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = 0;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = uarte_pm_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (IS_ENABLED(CONFIG_PM_DEVICE)) {
+			ret = uarte_pm_suspend(dev);
 		}
-
 		break;
 	default:
-		return -ENOTSUP;
+		break;
 	}
+
+	return ret;
+}
+
+static int uarte_config_init(const struct device *dev)
+{
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	return uarte_nrfx_configure(dev, &((struct uarte_nrfx_data *)dev->data)->uart_config);
+#else
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+	nrf_uarte_baudrate_set(uarte, cfg->nrf_baudrate);
+	nrf_uarte_configure(uarte, &cfg->hw_config);
+	return 0;
+#endif
+}
+
+static int uarte_tx_path_init(const struct device *dev)
+{
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	const struct uarte_nrfx_config *cfg = dev->config;
+	bool handle_endtx = false;
+
+
+#ifdef UARTE_HAS_ENDTX_STOPTX_SHORT
+	nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDTX_STOPTX);
+#else
+#if defined(UARTE_ENHANCED_POLL_OUT)
+	struct uarte_nrfx_data *data = dev->data;
+	int err;
+
+	if (cfg->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
+		err = endtx_stoptx_ppi_init(uarte, data);
+		if (err < 0) {
+			return err;
+		}
+	} else
+#endif
+	{
+		handle_endtx = true;
+	}
+#endif
+
+	/* Get to the point where TXSTOPPED event is set but TXSTOPPED interrupt is
+	 * disabled. This trick is later on used to handle TX path and determine
+	 * using HW if TX is active (TXSTOPPED event set means TX is inactive).
+	 *
+	 * Set TXSTOPPED event by requesting fake (zero-length) transfer.
+	 * Pointer to RAM variable is set because otherwise such operation may
+	 * result in HardFault or RAM corruption.
+	 */
+	nrf_uarte_enable(uarte);
+	nrf_uarte_tx_buffer_set(uarte, cfg->poll_out_byte, 0);
+	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
+	if (handle_endtx) {
+		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
+		}
+		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+	}
+	while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+	}
+	nrf_uarte_disable(uarte);
 
 	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
+
+static int uarte_instance_init(const struct device *dev,
+			       uint8_t interrupts_active)
+{
+	int err;
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	const struct uarte_nrfx_config *cfg = dev->config;
+
+#ifdef CONFIG_ARCH_POSIX
+	/* For simulation the DT provided peripheral address needs to be corrected */
+	((struct pinctrl_dev_config *)cfg->pcfg)->reg = (uintptr_t)cfg->uarte_regs;
+#endif
+
+	err = uarte_config_init(dev);
+	if (err) {
+		return err;
+	}
+
+#ifdef UARTE_ANY_ASYNC
+	struct uarte_nrfx_data *data = dev->data;
+
+	if (data->async) {
+		err = uarte_async_init(dev);
+		if (err < 0) {
+			return err;
+		}
+	} else
+#endif
+	{
+		nrf_uarte_rx_buffer_set(uarte, cfg->poll_in_byte, 1);
+	}
+
+	err = uarte_tx_path_init(dev);
+	if (err) {
+		return err;
+	}
+
+	return pm_device_driver_init(dev, uarte_nrfx_pm_action);
+}
 
 #define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
 	do {								       \
@@ -2414,7 +2476,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 	}								       \
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action,		       \
-		COND_CODE_1(CONFIG_UART_##idx##_ASYNC, (PM_DEVICE_ISR_SAFE), (0))); \
+			    PM_DEVICE_ISR_SAFE);			       \
 									       \
 	DEVICE_DT_DEFINE(UARTE(idx),					       \
 		      uarte_##idx##_init,				       \
