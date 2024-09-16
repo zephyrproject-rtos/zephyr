@@ -335,7 +335,7 @@ __subsystem struct video_driver_api {
 	video_api_dequeue_t dequeue;
 	video_api_flush_t flush;
 	video_api_set_ctrl_t set_ctrl;
-	video_api_set_ctrl_t get_ctrl;
+	video_api_get_ctrl_t get_ctrl;
 	video_api_set_signal_t set_signal;
 	video_api_set_frmival_t set_frmival;
 	video_api_get_frmival_t get_frmival;
