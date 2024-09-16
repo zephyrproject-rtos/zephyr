@@ -458,7 +458,7 @@ static inline void async_rx_disabled(const struct device *dev)
 	struct uart_event event = {
 		.type = UART_RX_DISABLED,
 	};
-	return async_user_callback(dev, &event);
+	async_user_callback(dev, &event);
 }
 
 static inline void async_request_rx_buffer(const struct device *dev)
@@ -466,7 +466,7 @@ static inline void async_request_rx_buffer(const struct device *dev)
 	struct uart_event event = {
 		.type = UART_RX_BUF_REQUEST,
 	};
-	return async_user_callback(dev, &event);
+	async_user_callback(dev, &event);
 }
 
 static inline void async_rx_ready(const struct device *dev)
