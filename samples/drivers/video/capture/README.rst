@@ -50,7 +50,7 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 For :ref:`mimxrt1170_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/video/capture
+   :zephyr-app: samples/drivers/video/capture
    :board: mimxrt1170_evk/mimxrt1176/cm7
    :shield: nxp_btb44_ov5640,rk055hdmipi4ma0
    :goals: build
