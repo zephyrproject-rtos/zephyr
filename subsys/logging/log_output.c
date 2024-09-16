@@ -308,6 +308,28 @@ static int timestamp_print(const struct log_output *output,
 					date.year, date.month, date.day, hours, mins, seconds, ms,
 					us);
 #endif
+			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+				char time_str[sizeof("1970-01-01T00:00:00")];
+				struct tm *tm_timestamp;
+				time_t time_seconds = total_seconds;
+
+				tm_timestamp = gmtime(&time_seconds);
+
+				strftime(time_str, sizeof(time_str), "%FT%T", tm_timestamp);
+
+				length = print_formatted(output, "[%s,%06uZ] ", time_str,
+							 ms * 1000U + us);
+#else
+				struct YMD_date date;
+
+				get_YMD_from_seconds(total_seconds, &date);
+				hours = hours % 24;
+				length = print_formatted(output,
+							 "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
+							 date.year, date.month, date.day, hours,
+							 mins, seconds, ms * 1000U + us);
+#endif
 			} else {
 				length = print_formatted(output,
 							"[%02u:%02u:%02u.%03u,%03u] ",
