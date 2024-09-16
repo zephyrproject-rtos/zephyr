@@ -7,6 +7,24 @@
 #ifndef __INTEL_DAI_DRIVER_SSP_H__
 #define __INTEL_DAI_DRIVER_SSP_H__
 
+#define SSP_IP_VER_1_0 0x10000 /* cAVS */
+#define SSP_IP_VER_1_5 0x10500 /* ACE15 */
+#define SSP_IP_VER_2_0 0x20000 /* ACE20 */
+#define SSP_IP_VER_3_0 0x30000 /* ACE30 */
+
+/* SSP IP version defined by CONFIG_SOC*/
+#if defined(CONFIG_SOC_SERIES_INTEL_ADSP_CAVS)
+#define SSP_IP_VER SSP_IP_VER_1_0
+#elif defined(CONFIG_SOC_INTEL_ACE15_MTPM)
+#define SSP_IP_VER SSP_IP_VER_1_5
+#elif defined(CONFIG_SOC_INTEL_ACE20_LNL)
+#define SSP_IP_VER SSP_IP_VER_2_0
+#elif defined(CONFIG_SOC_INTEL_ACE30)
+#define SSP_IP_VER SSP_IP_VER_3_0
+#else
+#error "Unknown SSP IP"
+#endif
+
 #include <stdint.h>
 #include <zephyr/drivers/dai.h>
 #include "dai-params-intel-ipc3.h"
@@ -116,7 +134,7 @@ struct dai_intel_ssp_plat_data {
 	uint32_t base;
 	uint32_t ip_base;
 	uint32_t shim_base;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if SSP_IP_VER > SSP_IP_VER_1_5
 	uint32_t hdamlssp_base;
 	uint32_t i2svss_base;
 #endif
