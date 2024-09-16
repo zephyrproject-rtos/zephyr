@@ -78,7 +78,7 @@ Programming
 Set ``--shield dvp_fpc24_mt9m114`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/video/capture
+   :zephyr-app: samples/drivers/video/capture
    :board: mimxrt1064_evk
    :shield: dvp_fpc24_mt9m114
    :goals: build
