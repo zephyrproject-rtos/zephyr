@@ -94,7 +94,7 @@ features:
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/witte_technology/linum/linum_defconfig`
+:zephyr_file:`boards/witte/linum/linum_defconfig`
 
 
 Default Zephyr Peripheral Mapping:
