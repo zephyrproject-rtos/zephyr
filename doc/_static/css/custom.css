@@ -1053,3 +1053,11 @@ dark-mode-toggle::part(toggleLabel){
     font-family: 'FontAwesome';
     padding-right: 0.5em;
 }
+
+li>a.code-sample-link.reference.internal {
+    font-weight: 100;
+}
+
+li>a.code-sample-link.reference.internal.current {
+    text-decoration: underline;
+}

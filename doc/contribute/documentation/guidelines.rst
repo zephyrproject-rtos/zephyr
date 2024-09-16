@@ -1104,3 +1104,79 @@ Code samples
    Will render as:
 
       Check out :zephyr:code-sample:`blinky code sample <blinky>` for more information.
+
+.. rst:directive:: .. zephyr:code-sample-category:: id
+
+   This directive is used to define a category for grouping code samples.
+
+   For example::
+
+      .. zephyr:code-sample-category:: gpio
+         :name: GPIO
+         :show-listing:
+
+         Samples related to the GPIO subsystem.
+
+   The contents of the directive is used as the description of the category. It can contain any
+   valid reStructuredText content.
+
+   .. rubric:: Options
+
+   .. rst:directive:option:: name
+      :type: text
+
+      Indicates the human-readable name of the category.
+
+   .. rst:directive:option:: show-listing
+      :type: flag
+
+      If set, a listing of code samples in the category will be shown. The listing is automatically
+      generated based on all code samples found in the subdirectories of the current document.
+
+   .. rst:directive:option:: glob
+      :type: text
+
+      A glob pattern to match the files to include in the listing. The default is `*/*` but it can
+      be overridden e.g. when samples may be found in directories not sitting directly under the
+      category directory.
+
+.. rst:role:: zephyr:code-sample-category
+
+   This role is used to reference a code sample category described using
+   :rst:dir:`zephyr:code-sample-category`.
+
+   For example::
+
+      Check out :zephyr:code-sample-category:`cloud` samples for more information.
+
+   Will render as:
+
+      Check out :zephyr:code-sample-category:`cloud` samples for more information.
+
+.. rst:directive:: .. zephyr:code-sample-listing::
+
+   This directive is used to show a listing of all code samples found in one or more categories.
+
+   For example::
+
+      .. zephyr:code-sample-listing::
+         :categories: cloud
+
+   Will render as:
+
+      .. zephyr:code-sample-listing::
+         :categories: cloud
+
+   .. rubric:: Options
+
+   .. rst:directive:option:: categories
+      :type: text
+
+      A space-separated list of category IDs for which to show the listing.
+
+   .. rst:directive:option:: live-search
+      :type: flag
+
+      A flag to include a search box right above the listing. The search box allows users to filter
+      the listing by code sample name/description, which can be useful for categories with a large
+      number of samples. This option is only available in the HTML builder.
