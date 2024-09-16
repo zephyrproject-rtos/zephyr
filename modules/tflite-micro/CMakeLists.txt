@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Intel Corporation
-# Copyright 2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2022, 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_TENSORFLOW_LITE_MICRO)
@@ -175,6 +175,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/squared_difference.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/squeeze.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/strided_slice.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/strided_slice_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/sub.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/sub_common.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/${CMSIS_NN_OPTIMIZED_KERNEL_DIR}/svdf.cc
