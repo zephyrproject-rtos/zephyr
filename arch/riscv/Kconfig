@@ -37,6 +37,13 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+config RISCV_SMP_IPI_CLINT
+	bool
+	default y if DT_HAS_SIFIVE_CLINT0_ENABLED
+	depends on SMP
+	help
+	  Internal config to indicate that SMP IPI is routed through CLINT
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
