@@ -303,7 +303,7 @@ Creating an Application by Hand
 
 You can follow these steps to create a basic application directory from
 scratch. However, using the `example-application`_ repository or one of
-Zephyr's :ref:`samples-and-demos` as a starting point is likely to be easier.
+Zephyr's :zephyr:code-sample-category:`samples` as a starting point is likely to be easier.
 
 #. Create an application directory.
 
@@ -643,7 +643,7 @@ assignment:
 
    CONFIG_CPP=y
 
-Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
+Looking at :zephyr:code-sample-category:`existing samples <samples>` is a good way to get
 started.
 
 See :ref:`setting_configuration_values` for detailed documentation on setting

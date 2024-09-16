@@ -578,7 +578,7 @@ toolchain and OpenOCD::
    You need to make sure this happens every time you use this board.
 
 Now let's compile the :zephyr:code-sample:`hello_world` application. (You can try
-others as well; see :ref:`samples-and-demos` for more.)
+others as well; see :zephyr:code-sample-category:`samples` for more.)
 
 .. We can't use zephyr-app-commands to provide build instructions
    due to the below mentioned linker issue.

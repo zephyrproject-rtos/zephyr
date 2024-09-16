@@ -21,7 +21,7 @@ Source sample).
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_assistant` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

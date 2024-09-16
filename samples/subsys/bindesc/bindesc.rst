@@ -1,10 +1,5 @@
-.. _bindesc_samples:
+.. zephyr:code-sample-category:: bindesc
+   :name: Binary Descriptor
+   :show-listing:
 
-Binary Descriptor Samples
-#########################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate how to use :ref:`binary_descriptors`.

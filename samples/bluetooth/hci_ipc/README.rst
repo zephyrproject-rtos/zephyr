@@ -37,4 +37,4 @@ You might need to adjust the Kconfig configuration of this sample to make it
 compatible with the peer application. For example, :kconfig:option:`CONFIG_BT_MAX_CONN`
 must be equal to the maximum number of connections supported by the peer application.
 
-Refer to :ref:`bluetooth-samples` for general information about Bluetooth samples.
+Refer to :zephyr:code-sample-category:`bluetooth` for general information about Bluetooth samples.

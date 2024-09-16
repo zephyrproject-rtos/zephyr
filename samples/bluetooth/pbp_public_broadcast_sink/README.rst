@@ -15,7 +15,7 @@ a High Quality Public Broadcast Audio Stream configuration.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/pbp_public_broadcast_sink` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

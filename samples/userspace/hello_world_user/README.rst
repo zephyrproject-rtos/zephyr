@@ -1,7 +1,7 @@
-.. _hello_world_user:
+.. zephyr:code-sample:: helloworld_user
+   :name: Hello World
 
-Hello World
-###########
+   Print a simple "Hello World" from userspace.
 
 Overview
 ********

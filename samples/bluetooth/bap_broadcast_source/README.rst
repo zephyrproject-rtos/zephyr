@@ -17,7 +17,7 @@ The broadcast source will reset every 30 seconds to show the full API.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_source` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

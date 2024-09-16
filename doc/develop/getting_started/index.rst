@@ -478,7 +478,7 @@ Next Steps
 
 Here are some next steps for exploring Zephyr:
 
-* Try other :ref:`samples-and-demos`
+* Try other :zephyr:code-sample-category:`samples`
 * Learn about :ref:`application` and the :ref:`west <west>` tool
 * Find out about west's :ref:`flashing and debugging <west-build-flash-debug>`
   features, or more about :ref:`flashing_and_debugging` in general
