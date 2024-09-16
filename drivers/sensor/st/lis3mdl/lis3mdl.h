@@ -113,7 +113,9 @@ struct lis3mdl_data {
 	int16_t x_sample;
 	int16_t y_sample;
 	int16_t z_sample;
+#ifdef CONFIG_LIS3MDL_DIE_TEMP_EN
 	int16_t temp_sample;
+#endif /*CONFIG_LIS3MDL_DIE_TEMP_EN*/
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	const struct device *dev;
@@ -137,7 +139,7 @@ struct lis3mdl_config {
 	struct i2c_dt_spec i2c;
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	struct gpio_dt_spec irq_gpio;
-#endif
+#endif /*CONFIG_LIS3MDL_TRIGGER*/
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
@@ -148,6 +150,6 @@ int lis3mdl_trigger_set(const struct device *dev,
 int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan);
 
 int lis3mdl_init_interrupt(const struct device *dev);
-#endif
+#endif /*CONFIG_LIS3MDL_TRIGGER*/
 
 #endif /* __SENSOR_LIS3MDL__ */

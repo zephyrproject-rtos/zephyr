@@ -11,6 +11,10 @@ menuconfig LIS3MDL
 
 if LIS3MDL
 
+config LIS3MDL_DIE_TEMP_EN
+	bool "Enable die temperature sensor"
+	default y
+
 choice LIS3MDL_TRIGGER_MODE
 	prompt "Trigger mode"
 	default LIS3MDL_TRIGGER_GLOBAL_THREAD
