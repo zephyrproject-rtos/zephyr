@@ -12,9 +12,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu: cpu@0 {
 			device_type = "cpu";
-			compatible = "intel,x86";
 			d-cache-line-size = <64>;
 			reg = <0>;
 		};
