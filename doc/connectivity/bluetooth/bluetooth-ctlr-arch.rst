@@ -135,6 +135,113 @@ Execution Priorities
 
 - LLL is vendor ISR, ULL is Mayfly ISR concept, Host is kernel thread.
 
+Link Layer Control Procedures
+*****************************
+
+Following is a brief fly in on the main concepts in the implementation of
+control procedures handling in ULL.
+
+Three main execution contexts
+=============================
+
+- HCI/LLCP API
+   * Miscellaneous procedure initiation API
+   * From ull_llcp.c::ull_cp_<proc>() for initiating local procedures
+   * Interface with running procedures, local and remote
+
+- lll_prepare context to drive ull_cp_run()
+   * LLCP main state machine entry/tick'er
+   * From ull_peripheral.c/ull_central.c::ticker_cb via ull_conn_llcp()
+
+- rx_demux context to drive ull_cp_tx_ack() and ull_cp_rx()
+   * LLCP tx ack handling and PDU reception
+   * From ull_conn.c::ull_conn_rx()
+   * Handles passing PDUs into running procedures as well as possibly initiating remote procedures
+
+Data structures and PDU helpers
+===============================
+
+- struct llcp_struct
+   * Main LLCP data store
+   * Defined in ull_conn_types.h and declared as part of struct ll_conn
+   * Holds local and remote procedure request queues as well as conn specific LLCP data
+   * Basic conn-level abstraction
+
+- struct proc_ctx
+   * General procedure context data, contains miscellaneous procedure data and state as well as sys_snode_t for queueing
+   * Defined in ull_llcp_internal.h, declared/instantiated through ull_llcp.c::create_procedure()
+   * Also holds node references used in tx_ack as well as rx_node retention mechanisms
+
+- struct llcp_mem_pool
+   * Mem pool used to implement procedure contexts resource - instantiated in both a local and a remote version
+   * Used through ull_llcp.c::create_procedure()
+
+- Miscellaneous pdu gymnastics
+   * Encoding and decoding of control pdus done by ull_llcp_pdu.c::llcp_pdu_encode/decode_<PDU>()
+   * Miscellaneous pdu validation handled by ull_llcp.c::pdu_validate_<PDU>() via ull_llcp.c::pdu_is_valid()
+
+LLCP local and remote request/procedure state machines
+======================================================
+
+- ull_llcp_local.c
+   * State machine handling local initiated procedures
+   * Naming concept: lr _<...> => local request machine
+   * Local procedure queue handling
+   * Local run/rx/tx_ack switch
+
+- ull_llcp_remote.c
+   * Remote versions of the above
+   * Naming concept: rr_<...> => remote request machine
+   * Also handling of remote procedure initiation by llcp_rx_new()
+   * Miscellaneous procedure collision handling (in rr_st_idle())
+
+- ull_llcp_common/conn_upd/phy/enc/cc/chmu.c
+   * Individual procedure implementations (ull_llcp_common.c collects the simpler ones)
+   * Naming concept: lp_<...> => local initiated procedure, rp_<...> => remote initiated procedure
+   * Handling of procedure flow from init (possibly through instant) to completion and host notification if applicable
+
+Miscellaneous concepts
+======================
+
+- Procedure collision handling
+   * See BT spec for explanation
+   * Basically some procedures can exist in parallel but some can't - for instance only one instant based at a time
+   * Spec states rules for how to handle/resolve collisions when they happen
+
+- Termination handling
+   * Specific rules apply re. how termination is handled.
+   * Since we have resource handling re. procedure contexts and terminate must always be available this is handled as a special case
+   * Note also - there are miscellaneous cases where connection termination is triggered on invalid peer behavior
+
+- New remote procedure handling
+   * Table new_proc_lut[] maps LLCP PDUs to procedures/roles used in llcp_rr_new()
+   * Note - for any given connection, there can only ever be ONE remote procedure in the remote procedure queue
+
+- Miscellaneous minors
+   * pause/resume concepts - there are two (see spec for details)
+   * procedure execution can be paused by the encryption procedure
+   * data TX can be paused by PHY, DLE and ENC procedure
+   * RX node retention - ensures no waiting for allocation of RX node when needed for notification
+
+
+Miscellaneous unit test concepts
+================================
+
+- Individual ZTEST unit test for each procedure
+   * zephyr/tests/bluetooth/controller/ctrl_<proc>
+
+- Rx node handling is mocked
+   * Different configs are handled by separate conf files (see ctrl_conn_update for example)
+   * ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_accept_no_param_req)
+
+- Emulated versions of rx_demux/prepare context used in unit tests - testing ONLY procedure PDU flow
+   * event_prepare()/event_done() helpers emulating LLL prepare/done flow
+   * lt_rx()/lt_tx() 'lower tester' emulation of rx/tx
+   * ut_rx_node() 'upper tester' emulation of notification flow handling
+   * Bunch of helpers to generate and parse PDUs, as well as miscellaneous mocked ull_stuff()
+
+
+
 
 Lower Link Layer
 ****************
