@@ -20,7 +20,7 @@ tests:
   arch.interrupt.gen_isr_table.arm_mainline: &arm-mainline
     platform_allow: qemu_cortex_m3
     platform_exclude:
-      - stmf103_mini
+      - stm32f103_mini
       - nucleo_f103rb
       - olimexino_stm32
       - stm32_min_dev@black
