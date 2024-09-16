@@ -46,3 +46,7 @@
 	status = "okay";
 	current-speed = <115200>;
 };
+
+&cpu {
+	compatible = "intel,x86_64";
+};
