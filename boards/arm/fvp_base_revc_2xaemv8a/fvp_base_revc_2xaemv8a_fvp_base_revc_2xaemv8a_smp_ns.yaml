@@ -5,6 +5,9 @@ identifier: fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
 name: FVP Emulation FVP_Base_RevC-2xAEMvA (SMP)
 arch: arm64
 type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Base_RevC-2xAEMvA
 toolchain:
   - zephyr
   - cross-compile

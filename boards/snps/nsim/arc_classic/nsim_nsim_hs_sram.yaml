@@ -1,8 +1,9 @@
 identifier: nsim/nsim_hs/sram
 name: HS nSIM simulator (SRAM)
 type: sim
-simulation: nsim
-simulation_exec: nsimdrv
+simulation:
+  - name: nsim
+    exec: nsimdrv
 arch: arc
 toolchain:
   - zephyr
