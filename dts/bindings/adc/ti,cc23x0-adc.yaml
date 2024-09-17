@@ -23,5 +23,20 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  dmas:
+    description: |
+      Optional DMA specifier. The specifier will have a phandle reference to the
+      DMA controller, the channel number, and the peripheral trigger source.
+
+      Example for channel 3 with adc0trg trigger source:
+        dmas = <&dma 3 5>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. This should be "dma".
+
+      Example:
+        dma-names = "dma";
+
 io-channel-cells:
   - input
