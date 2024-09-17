@@ -934,8 +934,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint8_t level, authtag_len, ll_hdr_len, payload_len;
-	int8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
 	struct ieee802154_mhr *mhr = &mpdu->mhr;
+	struct ieee802154_address *src;
 	bool ret = false;
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
@@ -970,14 +970,15 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it.
 	 */
-	if (net_pkt_lladdr_src(pkt)->len != IEEE802154_EXT_ADDR_LENGTH) {
-		NET_ERR("Decrypting packages with short source addresses is not supported.");
+	if (mhr->fs->fc.src_addr_mode != IEEE802154_ADDR_MODE_EXTENDED) {
+		NET_ERR("Only encrypting packages with extended source addresses is supported.");
 		goto out;
 	}
 
-	sys_memcpy_swap(ext_addr_le, net_pkt_lladdr_src(pkt)->addr, net_pkt_lladdr_src(pkt)->len);
+	src = mhr->fs->fc.pan_id_comp ? &mhr->src_addr->comp.addr : &mhr->src_addr->plain.addr;
+
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt), ll_hdr_len, payload_len,
-				     authtag_len, ext_addr_le,
+				     authtag_len, src->ext_addr,
 				     sys_le32_to_cpu(mhr->aux_sec->frame_counter))) {
 		NET_ERR("Could not decipher the frame");
 		goto out;
