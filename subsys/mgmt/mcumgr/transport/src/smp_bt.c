@@ -49,6 +49,27 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT),		\
 				    (NULL))
 
+/* Permission levels for GATT characteristics of the SMP service. */
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN 0
+#endif
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT 0
+#endif
+#ifndef CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW
+#define CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW 0
+#endif
+
+#define SMP_GATT_PERM (							\
+	CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN ?			\
+	(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN) :	\
+	CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT ?			\
+	(BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT) :	\
+	(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE))			\
+
+#define SMP_GATT_PERM_WRITE_MASK \
+	(BT_GATT_PERM_WRITE | BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_AUTHEN)
+
 /* Minimum number of bytes that must be able to be sent with a notification to a target device
  * before giving up
  */
@@ -358,14 +379,10 @@ static void smp_bt_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	BT_GATT_CHARACTERISTIC(&smp_bt_chr_uuid.uuid,					\
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |			\
 			       BT_GATT_CHRC_NOTIFY,					\
-			       COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN,		\
-					   (BT_GATT_PERM_WRITE_AUTHEN),			\
-					   (BT_GATT_PERM_WRITE)),			\
+			       SMP_GATT_PERM & SMP_GATT_PERM_WRITE_MASK,		\
 			       NULL, smp_bt_chr_write, NULL),				\
 	BT_GATT_CCC(smp_bt_ccc_changed,							\
-		    COND_CODE_1(CONFIG_MCUMGR_TRANSPORT_BT_AUTHEN,			\
-				(BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN),	\
-				(BT_GATT_PERM_READ | BT_GATT_PERM_WRITE))),
+		    SMP_GATT_PERM),
 
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
