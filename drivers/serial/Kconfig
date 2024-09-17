@@ -206,8 +206,6 @@ rsource "Kconfig.sam0"
 
 source "drivers/serial/Kconfig.pic32cxsg"
 
-source "drivers/serial/Kconfig.pic32cxsg"
-
 source "drivers/serial/Kconfig.psoc6"
 
 rsource "Kconfig.pl011"

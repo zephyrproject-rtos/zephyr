@@ -93,3 +93,4 @@ Pylint.txt
 YAMLLint.txt
 /dts/arm/microchip/pic32cxsg
 pic32cx_sg41_cult
+/boards/microchip/pic32cxsg61_cult/board_jlink.cmake

@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Microchip 
+# Copyright (c) 2024 Microchip
 # SPDX-License-Identifier: Apache-2.0
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
