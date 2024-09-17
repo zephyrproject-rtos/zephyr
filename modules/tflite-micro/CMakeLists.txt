@@ -91,6 +91,7 @@ if(CONFIG_TENSORFLOW_LITE_MICRO)
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/add_n.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/arg_min_max.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/assign_variable.cc
+    ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/batch_matmul.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/batch_to_space_nd.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/broadcast_args.cc
     ${TENSORFLOW_LITE_MICRO_DIR}/tensorflow/lite/micro/kernels/broadcast_to.cc
