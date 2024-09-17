@@ -5,8 +5,9 @@ arch: riscv
 toolchain:
   - zephyr
 ram: 3840
-simulation: renode
-simulation_exec: renode
+simulation:
+  - name: renode
+    exec: renode
 testing:
   ignore_tags:
     - net
