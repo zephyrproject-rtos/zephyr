@@ -10,5 +10,4 @@ ram: 64
 flash: 512
 supported:
   - gpio
-  - arduino_gpio
 vendor: st
