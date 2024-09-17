@@ -1,0 +1,28 @@
+/ {
+	nrf_radio_fem: nrf21540_fem {
+		compatible        = "nordic,nrf21540-fem";
+		tx-en-gpios       = <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 */
+		rx-en-gpios       = <&arduino_header 9  GPIO_ACTIVE_HIGH>; /* D3 */
+		pdn-gpios         = <&arduino_header 15 GPIO_ACTIVE_HIGH>; /* D9 */
+		ant-sel-gpios     = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 */
+		mode-gpios        = <&arduino_header 8  GPIO_ACTIVE_HIGH>; /* D2 */
+		spi-if            = <&nrf_radio_fem_spi>;
+		supply-voltage-mv = <3000>;
+	};
+};
+
+&spi0 {
+	/* status   = "okay"; */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+
+	nrf_radio_fem_spi: nrf21540_fem_spi@0 {
+		compatible        = "nordic,nrf21540-fem-spi";
+		/* status            = "okay"; */
+		reg               = <0>;
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&radio {
+	fem = <&nrf_radio_fem>;
+};
