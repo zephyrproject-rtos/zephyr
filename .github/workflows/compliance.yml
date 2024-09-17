@@ -52,6 +52,7 @@ jobs:
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
         (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
+        git clean -f -d
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true

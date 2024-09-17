@@ -62,6 +62,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config --global update.narrow true
