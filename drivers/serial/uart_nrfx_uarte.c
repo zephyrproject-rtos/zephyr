@@ -98,6 +98,16 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_ANY_CACHE 1
 #endif
 
+#ifdef UARTE_ANY_CACHE
+/* uart120 instance does not retain BAUDRATE register when ENABLE=0. When this instance
+ * is used then baudrate must be set after enabling the peripheral and not before.
+ * This approach works for all instances so can be generally applied when uart120 is used.
+ * It is not default for all because it costs some resources. Since currently only uart120
+ * needs cache, that is used to determine if workaround shall be applied.
+ */
+#define UARTE_BAUDRATE_RETENTION_WORKAROUND 1
+#endif
+
 /*
  * RX timeout is divided into time slabs, this define tells how many divisions
  * should be made. More divisions - higher timeout accuracy and processor usage.
@@ -182,6 +192,9 @@ struct uarte_nrfx_int_driven {
 struct uarte_nrfx_data {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	struct uart_config uart_config;
+#ifdef UARTE_BAUDRATE_RETENTION_WORKAROUND
+	nrf_uarte_baudrate_t nrf_baudrate;
+#endif
 #endif
 #ifdef UARTE_INTERRUPT_DRIVEN
 	struct uarte_nrfx_int_driven *int_driven;
@@ -381,7 +394,6 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	const struct uarte_nrfx_config *config = dev->config;
 	/* calculated baudrate divisor */
 	nrf_uarte_baudrate_t nrf_baudrate = NRF_BAUDRATE(baudrate);
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (nrf_baudrate == 0) {
 		return -EINVAL;
@@ -392,7 +404,13 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 		nrf_baudrate /= config->clock_freq / NRF_UARTE_BASE_FREQUENCY_16MHZ;
 	}
 
-	nrf_uarte_baudrate_set(uarte, nrf_baudrate);
+#ifdef UARTE_BAUDRATE_RETENTION_WORKAROUND
+	struct uarte_nrfx_data *data = dev->data;
+
+	data->nrf_baudrate = nrf_baudrate;
+#else
+	nrf_uarte_baudrate_set(get_uarte_instance(dev), nrf_baudrate);
+#endif
 
 	return 0;
 }
@@ -572,6 +590,13 @@ static void uarte_enable(const struct device *dev, uint32_t act_mask, uint32_t s
 	}
 #endif
 	nrf_uarte_enable(get_uarte_instance(dev));
+#if UARTE_BAUDRATE_RETENTION_WORKAROUND
+	nrf_uarte_baudrate_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
+			(data->nrf_baudrate),
+			(((const struct uarte_nrfx_config *)dev->config)->nrf_baudrate));
+
+	nrf_uarte_baudrate_set(get_uarte_instance(dev), baudrate);
+#endif
 }
 
 /* At this point we should have irq locked and any previous transfer completed.
@@ -2153,6 +2178,11 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		}
 
 		nrf_uarte_enable(uarte);
+#if UARTE_BAUDRATE_RETENTION_WORKAROUND
+		nrf_uarte_baudrate_set(get_uarte_instance(dev),
+			COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
+				(data->nrf_baudrate), (cfg->nrf_baudrate));
+#endif
 
 #ifdef UARTE_ANY_ASYNC
 		if (data->async) {
