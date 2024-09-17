@@ -41,9 +41,6 @@
 #include <zephyr/internal/syscall_handler.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
-BUILD_ASSERT(CONFIG_MP_NUM_CPUS == CONFIG_MP_MAX_NUM_CPUS,
-	     "CONFIG_MP_NUM_CPUS and CONFIG_MP_MAX_NUM_CPUS need to be set the same");
-
 /* the only struct z_kernel instance */
 __pinned_bss
 struct z_kernel _kernel;
