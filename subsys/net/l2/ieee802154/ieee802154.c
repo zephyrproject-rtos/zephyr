@@ -271,11 +271,10 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
 		addr->addr = NULL;
 	}
 
-	/* The net stack expects link layer addresses to be in
-	 * big endian format for posix compliance so we must swap it.
-	 * This is ok as the L2 address field comes from the header
-	 * part of the packet buffer which will not be directly accessible
-	 * once the packet reaches the upper layers.
+	/* The net stack expects big endian link layer addresses for POSIX compliance
+	 * so we must swap it. This is ok as the L2 address field points into the L2
+	 * header of the frame buffer which will no longer be accessible once the
+	 * packet reaches upper layers.
 	 */
 	if (addr->len > 0) {
 		sys_mem_swap(addr->addr, addr->len);
@@ -435,9 +434,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 		return NET_DROP;
 	}
 
-	/* Setting L2 addresses must be done after packet authentication and internal
-	 * packet handling as it will mangle the package header to comply with upper
-	 * network layers' (POSIX) requirement to represent network addresses in big endian.
+	/* Setting LL addresses for upper layers must be done after L2 packet
+	 * handling as it will mangle the L2 frame header to comply with upper
+	 * layers' (POSIX) requirement to represent network addresses in big endian.
 	 */
 	swap_and_set_pkt_ll_addr(net_pkt_lladdr_src(pkt), !fs->fc.pan_id_comp,
 				 fs->fc.src_addr_mode, mpdu.mhr.src_addr);
