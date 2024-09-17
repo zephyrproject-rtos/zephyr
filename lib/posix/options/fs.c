@@ -166,6 +166,15 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	case ZFD_IOCTL_STAT: {
+		struct stat *buf = NULL;
+
+		buf = va_arg(args, struct stat *);
+		rc = stat(ptr->path, buf);
+		break;
+	}
+#endif
 	case ZFD_IOCTL_TRUNCATE: {
 		off_t length;
 
@@ -469,6 +478,11 @@ int mkdir(const char *path, mode_t mode)
 
 int fstat(int fildes, struct stat *buf)
 {
+	if (!IS_ENABLED(CONFIG_POSIX_FILE_SYSTEM_FSTAT)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
 	return zvfs_fstat(fildes, buf);
 }
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
