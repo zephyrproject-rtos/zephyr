@@ -1,8 +1,9 @@
 identifier: nsim/nsim_em11d
 name: EM11D Nsim simulator
 type: sim
-simulation: nsim
-simulation_exec: nsimdrv
+simulation:
+  - name: nsim
+    exec: nsimdrv
 arch: arc
 toolchain:
   - zephyr

@@ -7,7 +7,8 @@ toolchain:
   - xtools
 supported:
   - smp
-simulation: qemu
+simulation:
+  - name: qemu
 testing:
   default: true
   only_tags:

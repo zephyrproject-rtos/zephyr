@@ -1,7 +1,8 @@
 identifier: qemu_cortex_a53/qemu_cortex_a53/smp
 name: QEMU Emulation for Cortex-A53 SMP
 type: qemu
-simulation: qemu
+simulation:
+  - name: qemu
 arch: arm64
 toolchain:
   - zephyr

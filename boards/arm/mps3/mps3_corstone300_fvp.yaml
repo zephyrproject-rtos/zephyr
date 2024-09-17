@@ -7,8 +7,9 @@ type: mcu
 arch: arm
 ram: 512
 flash: 512
-simulation: armfvp
-simulation_exec: FVP_Corstone_SSE-300_Ethos-U55
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone_SSE-300_Ethos-U55
 toolchain:
   - gnuarmemb
   - zephyr

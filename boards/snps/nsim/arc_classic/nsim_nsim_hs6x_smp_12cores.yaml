@@ -1,8 +1,9 @@
 identifier: nsim/nsim_hs6x/smp/12cores
 name: Multi-core HS6x nSIM simulator (12 cores)
 type: sim
-simulation: mdb-nsim
-simulation_exec: mdb
+simulation:
+  - name: mdb-nsim
+    exec: mdb
 arch: arc
 toolchain:
   - cross-compile

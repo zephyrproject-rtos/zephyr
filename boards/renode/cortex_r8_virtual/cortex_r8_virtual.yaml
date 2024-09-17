@@ -5,8 +5,9 @@ arch: arm
 toolchain:
   - zephyr
 ram: 131072
-simulation: renode
-simulation_exec: renode
+simulation:
+  - name: renode
+    exec: renode
 testing:
   ignore_tags:
     - net

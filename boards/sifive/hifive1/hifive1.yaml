@@ -5,8 +5,9 @@ arch: riscv
 toolchain:
   - zephyr
 ram: 16
-simulation: renode
-simulation_exec: renode
+simulation:
+  - name: renode
+    exec: renode
 supported:
   - pwm
   - gpio
