@@ -28,6 +28,9 @@ struct posix_fs_desc {
 	};
 	bool is_dir;
 	bool used;
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	char path[MAX_FILE_NAME];
+#endif
 };
 
 static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
