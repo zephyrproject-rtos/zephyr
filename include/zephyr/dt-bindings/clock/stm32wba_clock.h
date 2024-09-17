@@ -18,8 +18,14 @@
 /* Low speed clocks defined in stm32_common_clocks.h */
 #define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
 #define STM32_SRC_HSI16		(STM32_SRC_HSE + 1)
+/** Bus clock */
+#define STM32_SRC_HCLK1		(STM32_SRC_HSI16 + 1)
+#define STM32_SRC_HCLK5		(STM32_SRC_HCLK1 + 1)
+#define STM32_SRC_PCLK1		(STM32_SRC_HCLK5 + 1)
+#define STM32_SRC_PCLK2		(STM32_SRC_PCLK1 + 1)
+#define STM32_SRC_PCLK7		(STM32_SRC_PCLK2 + 1)
 /** PLL outputs */
-#define STM32_SRC_PLL1_P	(STM32_SRC_HSI16 + 1)
+#define STM32_SRC_PLL1_P	(STM32_SRC_PCLK7 + 1)
 #define STM32_SRC_PLL1_Q	(STM32_SRC_PLL1_P + 1)
 #define STM32_SRC_PLL1_R	(STM32_SRC_PLL1_Q + 1)
 
