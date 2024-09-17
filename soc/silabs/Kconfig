@@ -130,7 +130,7 @@ config SOC_GECKO_PM_BACKEND_EMU
 	help
 	  Implement PM using direct calls to EMU driver in emlib
 
-endif
+endif # PM
 
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"

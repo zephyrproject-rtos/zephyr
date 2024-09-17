@@ -8,4 +8,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 20
 
-endif # SOC_SERIES_EFM32HG
+endif

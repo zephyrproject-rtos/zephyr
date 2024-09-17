@@ -7,4 +7,4 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 33
 
-endif # SOC_SERIES_EFR32FG1P
+endif

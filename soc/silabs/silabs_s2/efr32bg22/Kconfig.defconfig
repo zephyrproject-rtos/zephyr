@@ -14,4 +14,4 @@ config PM
 config GPIO_GECKO
 	default y
 
-endif # SOC_SERIES_EFR32BG22
+endif
