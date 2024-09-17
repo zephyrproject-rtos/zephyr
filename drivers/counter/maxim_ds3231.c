@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_SOC_POSIX
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
+#endif
+
 #define DT_DRV_COMPAT maxim_ds3231
 
 #include <zephyr/device.h>
