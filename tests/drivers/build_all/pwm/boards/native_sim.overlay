@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_max31790: max31790@0 {
+				compatible = "maxim,max31790";
+				status = "okay";
+				reg = <0x0>;
+
+				max31790_max31790_pwm: max31790_max31790_pwm {
+					compatible = "maxim,max31790-pwm";
+					status = "okay";
+					pwm-controller;
+					#pwm-cells = <2>;
+				};
+			};
+
+			test_i2c_pca9685: pca9685@1 {
+				status = "okay";
+				compatible = "nxp,pca9685-pwm";
+				reg = <0x1>;
+				#pwm-cells = <2>;
+			};
+		};
+	};
+};
