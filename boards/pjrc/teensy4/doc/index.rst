@@ -5,72 +5,100 @@ PJRC TEENSY 4
 
 Overview
 ********
+
 The Teensy is a complete USB-based microcontroller development system, in a
 very small footprint, capable of implementing many types of projects. All
 programming is done via the USB port.
 
+.. tabs::
 
-.. figure:: teensy40.jpg
-   :align: center
-   :alt: TEENSY40
+   .. group-tab:: Teensy 4.0
 
-   TEENSY40 (Credit: https://www.pjrc.com)
+      .. figure:: img/teensy40.jpg
+           :align: center
+           :alt: TEENSY40
 
-.. figure:: teensy41.jpg
-   :align: center
-   :alt: TEENSY41
+           (Credit: https://www.pjrc.com)
 
-   TEENSY41 (Credit: https://www.pjrc.com)
+   .. group-tab:: Teensy 4.1
+
+      .. figure:: img/teensy41.jpg
+           :align: center
+           :alt: TEENSY41
+
+           (Credit: https://www.pjrc.com)
 
 Hardware
 ********
 
-Teensy 4.0:
+.. tabs::
 
-- MIMXRT1062DVL6A MCU (600 MHz, 1024 KB on-chip memory)
-- 16 Mbit QSPI Flash
-- LED
-- USB 2.0 host connector
+   .. group-tab:: Teensy 4.0
 
-Teensy 4.1:
+      - MIMXRT1062DVL6A MCU (600 MHz, 1024 KB on-chip memory)
+      - 16 Mbit QSPI Flash
+      - User LED
+      - USB 2.0 host connector
 
-- MIMXRT1062DVJ6A MCU (600 MHz, 1024 KB on-chip memory)
-- 64 Mbit QSPI Flash
-- LED
-- USB 2.0 host connector
-- USB 2.0 OTG connector
-- 10/100 Mbit/s Ethernet PHY
-- TF socket for SD card
+      See the `Teensy 4.0 Website`_ for a complete hardware description.
 
-See the `Teensy 4.0 Website`_ for a complete hardware description.
+   .. group-tab:: Teensy 4.1
+
+      - MIMXRT1062DVJ6A MCU (600 MHz, 1024 KB on-chip memory)
+      - 64 Mbit QSPI Flash
+      - User LED
+      - USB 2.0 host connector
+      - USB 2.0 OTG connector
+      - 10/100 Mbit/s Ethernet transceiver
+      - TF socket for SD card
+
+      To connect an Ethernet cable, additional `Teensy 4.1 Ethernet Kit`_ is required.
+
+      See the `Teensy 4.1 Website`_ for a complete hardware description.
+
+For more information, check the `i.MX RT1060 Datasheet`_.
 
 Supported Features
 ==================
 
-The teensy40 board configuration supports the following hardware
+The Teensy 4.0 board configuration supports the following hardware
 features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
++-----------+------------+----------------------+
+| Interface | Controller | Driver/Component     |
++===========+============+======================+
+| ADC       | on-chip    | adc                  |
++-----------+------------+----------------------+
+| CLOCK     | on-chip    | clock_control        |
++-----------+------------+----------------------+
+| FLASH     | on-chip    | flash                |
++-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| I2S       | on-chip    | i2s                  |
++-----------+------------+----------------------+
+| NVIC      | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
+| RTC       | on-chip    | system clock         |
++-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
+| CAN       | on-chip    | can                  |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial               |
++-----------+------------+----------------------+
+| USB       | on-chip    | usb                  |
++-----------+------------+----------------------+
+| TRNG      | on-chip    | entropy              |
++-----------+------------+----------------------+
+| WDT       | on-chip    | watchdog             |
++-----------+------------+----------------------+
 
-The default configuration can be found in
-:zephyr_file:`boards/pjrc/teensy4/teensy40_defconfig`
-
-The teensy41 board configuration supports additional hardware
+The Teensy 4.1 board configuration supports additional hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -81,10 +109,7 @@ features:
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in
-:zephyr_file:`boards/pjrc/teensy4/teensy41_defconfig`
-
-Other hardware features are not currently supported by the port.
+Other hardware features have not been enabled yet for this board.
 
 Connections and IOs
 ===================
@@ -204,23 +229,97 @@ Programming and Debugging
 
 Flashing
 ========
-Build applications as usual (see :ref:`build_an_application` for more details).
 
-Flash hex-file with the documented tools:
+Both the Teensy 4.0 and Teensy 4.1 ship with a dedicated bootloader chip,
+which supports flashing using USB. This allows easy flashing of new images,
+but does not support debugging the device.
 
-.. _Teensy flash tools:
-   https://www.pjrc.com/teensy/loader.html
+#. Build the Zephyr kernel and the :zephyr:code-sample:`blinky` sample application.
 
-Debugging
-=========
-Console output is mapped to teensy pins 0 (RX1) and 1 (TX1). Connect a usb-to-serial adapter
-to use this serial console. Use the following settings with your serial terminal of choice (minicom, putty,
-etc.):
+.. tabs::
 
-- Speed: 115200
-- Data: 8 bits
-- Parity: None
-- Stop bits: 1
+   .. group-tab:: Teensy 4.0
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: teensy40
+         :goals: build
+         :compact:
+
+   .. group-tab:: Teensy 4.1
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: teensy41
+         :goals: build
+         :compact:
+
+#. Connect the board to your host computer using USB.
+
+#. Tap the reset button to enter bootloader mode.
+   Red LED blinks.
+
+#. Flash the image.
+
+.. tabs::
+
+   .. group-tab:: Teensy 4.0
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: teensy40
+         :goals: flash
+         :compact:
+
+   .. group-tab:: Teensy 4.1
+
+      .. zephyr-app-commands::
+         :zephyr-app: samples/basic/blinky
+         :board: teensy41
+         :goals: flash
+         :compact:
+
+#. You should see the orange LED blink.
+
+Configuring a Console
+=====================
+
+.. tabs::
+
+   .. group-tab:: UART-Console
+
+      By default console output is mapped to teensy pins 0 (RX1) and 1 (TX1). Connect a usb-to-serial adapter
+      to use this serial console. Use the following settings with your serial terminal of choice (minicom, putty,
+      etc.):
+
+      - Speed: 115200
+      - Data: 8 bits
+      - Parity: None
+      - Stop bits: 1
+
+   .. group-tab:: USB-Console
+
+      By mapping the console output to USB, a usb-to-serial adapter is no longer required.
+      Utilizing the :ref:`snippet-cdc-acm-console` and a config option will enable this feature.
+
+      #. If application code doesn´t enable USB device support, this must be done via Kconfig option.
+
+         .. code-block:: kconfig
+
+            CONFIG_USB_DEVICE_INITIALIZE_AT_BOOT=y
+
+      #. Build application including the snippet.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/basic/blinky
+            :snippets: cdc-acm-console
+            :board: teensy41
+            :goals: flash
+            :compact:
+
+      #. After application startup a serial device named like
+         ``tty.usbmodem14203`` should appear on your host computer.
+         You can use e.g. ``Serial Monitor`` plugin for VScode to monitor.
 
 References
 **********
@@ -230,14 +329,11 @@ References
 .. _Teensy 4.0 Website:
    https://www.pjrc.com/store/teensy40.html
 
-.. _Teensy Schematics:
-   https://www.pjrc.com/teensy/schematic.html
+.. _Teensy 4.1 Website:
+   https://www.pjrc.com/store/teensy41.html
 
-.. _i.MX RT1060 Website:
-   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1060-crossover-processor-with-arm-cortex-m7-core:i.MX-RT1060
+.. _Teensy 4.1 Ethernet Kit:
+   https://www.pjrc.com/store/ethernet_kit.html
 
 .. _i.MX RT1060 Datasheet:
    https://www.nxp.com/docs/en/nxp/data-sheets/IMXRT1060CEC.pdf
-
-.. _i.MX RT1060 Reference Manual:
-   https://www.nxp.com/webapp/Download?colCode=IMXRT1060RM
