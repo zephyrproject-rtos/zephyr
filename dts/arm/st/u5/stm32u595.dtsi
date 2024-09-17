@@ -64,7 +64,8 @@
 		adc2: adc@42028100 {
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			interrupts = <37 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
