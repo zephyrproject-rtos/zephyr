@@ -60,16 +60,6 @@
 			status = "disabled";
 		};
 
-		aes: aes@50060000 {
-			compatible = "st,stm32-aes";
-			reg = <0x50060000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
-			resets = <&rctl STM32_RESET(AHB2, 16U)>;
-			interrupts = <79 0>;
-			interrupt-names = "aes";
-			status = "disabled";
-		};
-
 		usbotg_fs: otgfs@50000000 {
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00001000>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
