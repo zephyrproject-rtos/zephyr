@@ -84,7 +84,7 @@ initialization function:
 
    #. Do ``DISEC`` to disable any events from devices.
 
-   #. Do ``SETDASA`` to use static addresses as dynamic address
+   #. Do ``SETDASA`` to assign a dynamic address using the static address of the device
       if so desired.
 
       * ``SETAASA`` may not be supported for all connected devices
