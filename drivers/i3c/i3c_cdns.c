@@ -2387,6 +2387,60 @@ static void cdns_i3c_target_ibi_hj_complete(const struct device *dev)
 }
 #endif
 
+static void cdns_i3c_target_sdr_tx_thr_int_handler(const struct device *dev,
+						   const struct i3c_target_callbacks *target_cb)
+{
+	int status = 0;
+	struct cdns_i3c_data *data = dev->data;
+	const struct cdns_i3c_config *config = dev->config;
+
+	if (target_cb != NULL && target_cb->read_processed_cb) {
+		/* with REV_ID 1.7, as a target, the fifos are full word, otherwise only the first
+		 * byte is used.
+		 */
+		if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+			/* while tx fifo is not full and there is still data available */
+			while ((!(sys_read32(config->base + SLV_STATUS1) &
+				  SLV_STATUS1_SDR_TX_FULL)) &&
+			       (status == 0)) {
+				/* call function pointer for read */
+				uint32_t tx_data = 0;
+				bool data_valid = false;
+
+				for (int j = 0; j < 4; j++) {
+					uint8_t byte;
+					/* will return negative if no data left to transmit and 0
+					 * if data available
+					 */
+					status = target_cb->read_processed_cb(data->target_config,
+									      &byte);
+					if (status == 0) {
+						data_valid = true;
+						tx_data |= (byte << (j * 8));
+					}
+				}
+				if (data_valid) {
+					cdns_i3c_write_tx_fifo(config, &tx_data, sizeof(uint32_t));
+				}
+			}
+		} else {
+			/* while tx fifo is not full and there is still data available */
+			while ((!(sys_read32(config->base + SLV_STATUS1) &
+				  SLV_STATUS1_SDR_TX_FULL)) &&
+			       (status == 0)) {
+				uint8_t byte;
+				/* will return negative if no data left to transmit and 0 if
+				 * data available
+				 */
+				status = target_cb->read_processed_cb(data->target_config, &byte);
+				if (status == 0) {
+					cdns_i3c_write_tx_fifo(config, &byte, sizeof(uint8_t));
+				}
+			}
+		}
+	}
+}
+
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
@@ -2468,25 +2522,7 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 
 		/* SLV SDR tx fifo threshold */
 		if (int_sl & SLV_INT_SDR_TX_THR) {
-			int status = 0;
-
-			if (target_cb != NULL && target_cb->read_processed_cb) {
-				/* while tx fifo is not full and there is still data available */
-				while ((!(sys_read32(config->base + SLV_STATUS1) &
-					  SLV_STATUS1_SDR_TX_FULL)) &&
-				       (status == 0)) {
-					/* call function pointer for read */
-					uint8_t byte;
-					/* will return negative if no data left to transmit and 0 if
-					 * data available
-					 */
-					status = target_cb->read_processed_cb(data->target_config,
-									      &byte);
-					if (status == 0) {
-						cdns_i3c_write_tx_fifo(config, &byte, sizeof(byte));
-					}
-				}
-			}
+			cdns_i3c_target_sdr_tx_thr_int_handler(dev, target_cb);
 		}
 
 		/* SLV SDR rx complete */
