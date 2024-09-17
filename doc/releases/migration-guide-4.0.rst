@@ -283,6 +283,10 @@ hawkBit
 MCUmgr
 ======
 
+* The ``MCUMGR_TRANSPORT_BT_AUTHEN`` Kconfig option from the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT` MCUmgr transport has been replaced with the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW` Kconfig choice.
+  The requirement for Bluetooth authentication is now indicated by the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN` Kconfig option.
+  To remove the default requirement for Bluetooth authentication it is necessary to enable the :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_PERM_RW` Kconfig option in the project configuration.
+
 Modem
 =====
 
