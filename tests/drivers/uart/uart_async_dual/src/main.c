@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/drivers/uart.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/ztest.h>
@@ -56,6 +58,40 @@ ZTEST_DMEM struct dut_data duts[] = {
 	},
 #endif
 };
+
+static void pm_check(const struct device *dev, const struct device *second_dev, bool exp_on,
+		     int line)
+{
+	if (!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		return;
+	}
+
+	if (dev == second_dev) {
+		return;
+	}
+
+	enum pm_device_state state;
+	int err;
+	int cnt;
+
+	cnt = pm_device_runtime_usage(dev);
+	err = pm_device_state_get(dev, &state);
+	zassert_equal(err, 0);
+
+	if (exp_on) {
+		zassert_not_equal(cnt, 0, "Wrong PM cnt:%d, line:%d", cnt, line);
+		zassert_equal(state, PM_DEVICE_STATE_ACTIVE,
+			"Wrong PM state %s, line:%d", pm_device_state_str(state), line);
+		return;
+	}
+
+	/* Expect device to be off. */
+	zassert_equal(cnt, 0, "Wrong PM count:%d, line:%d", cnt, line);
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED,
+			"Wrong PM state %s, line:%d", pm_device_state_str(state), line);
+}
+
+#define PM_CHECK(dev, second_dev, exp_on) pm_check(dev, second_dev, exp_on, __LINE__)
 
 static const struct device *rx_dev;
 static const struct device *tx_dev;
@@ -452,11 +488,20 @@ static void hci_like_callback(const struct device *dev, struct uart_event *evt, 
 {
 	switch (evt->type) {
 	case UART_TX_DONE:
+
 		zassert_true(dev == tx_dev);
+		if (IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST)) {
+			PM_CHECK(tx_dev, rx_dev, true);
+			pm_device_runtime_put(tx_dev);
+		}
+		PM_CHECK(tx_dev, rx_dev, false);
 		k_sem_give(&tx_data.sem);
 		break;
 	case UART_TX_ABORTED:
 		zassert_true(dev == tx_dev);
+		if (IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST)) {
+			pm_device_runtime_put(tx_dev);
+		}
 		zassert_false(tx_data.cont,
 				"Unexpected TX abort, receiver not reading data on time");
 		break;
@@ -568,6 +613,10 @@ static void hci_like_tx(struct test_tx_data *tx_data)
 	uint8_t len = buf[4] + 5;
 	int err;
 
+	if (IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST)) {
+		pm_device_runtime_get(tx_dev);
+	}
+
 	err = uart_tx(tx_dev, buf, len, TX_TIMEOUT);
 	zassert_equal(err, 0, "Unexpected err:%d", err);
 }
@@ -595,25 +644,57 @@ static void hci_like_rx(void)
 	uint8_t last_hdr = 0xff;
 	uint8_t len;
 	bool cont;
+	bool explicit_pm = IS_ENABLED(CONFIG_PM_RUNTIME_IN_TEST);
 
 	while (1) {
+		if (explicit_pm) {
+			pm_device_runtime_get(rx_dev);
+		}
+
 		cont = rx(rx_data.buf, 1);
 		if (!cont) {
+			if (explicit_pm) {
+				pm_device_runtime_put(rx_dev);
+			}
 			break;
 		}
 		check_pre_hdr(rx_data.buf, last_hdr);
 		last_hdr = rx_data.buf[0];
 
+		/* If explicitly requested device to stay on in should be on.
+		 * If application did not touch PM, device should be off.
+		 */
+		PM_CHECK(rx_dev, tx_dev, explicit_pm);
+
 		cont = rx(rx_data.buf, 4);
 		if (!cont) {
+			if (explicit_pm) {
+				pm_device_runtime_put(rx_dev);
+			}
 			break;
 		}
 		len = get_len(rx_data.buf);
 
+		/* If explicitly requested device to stay on in should be on.
+		 * If application did not touch PM, device should be off.
+		 */
+		PM_CHECK(rx_dev, tx_dev, explicit_pm);
+
 		cont = rx(rx_data.buf, len);
 		if (!cont) {
+			if (explicit_pm) {
+				pm_device_runtime_put(rx_dev);
+			}
 			break;
 		}
+
+		if (explicit_pm) {
+			pm_device_runtime_put(rx_dev);
+		}
+
+		/* Device shall be released and off. */
+		PM_CHECK(rx_dev, tx_dev, false);
+
 		check_payload(rx_data.buf, len);
 	}
 }
@@ -677,6 +758,8 @@ static void hci_like_test(uint32_t baudrate)
 	/* Flush data. */
 	(void)uart_tx_abort(tx_dev);
 	k_msleep(10);
+	PM_CHECK(tx_dev, rx_dev, false);
+
 	(void)uart_rx_enable(rx_dev, rx_data.buf, sizeof(rx_data.buf), RX_TIMEOUT);
 	k_msleep(1);
 	(void)uart_rx_disable(rx_dev);

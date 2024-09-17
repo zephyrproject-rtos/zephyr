@@ -28,6 +28,7 @@ dut: &uart0 {
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 &timer0 {

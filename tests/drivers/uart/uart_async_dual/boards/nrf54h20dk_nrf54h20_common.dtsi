@@ -67,6 +67,7 @@ dut: &uart134 {
 	pinctrl-1 = <&uart134_alt_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 dut_aux: &uart137 {
@@ -76,6 +77,7 @@ dut_aux: &uart137 {
 	pinctrl-1 = <&uart137_alt_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 dut2: &uart120 {
@@ -85,6 +87,7 @@ dut2: &uart120 {
 	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 	hw-flow-control;
+	zephyr,pm-device-runtime-auto;
 };
 
 &timer137 {

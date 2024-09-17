@@ -11,5 +11,10 @@ config UART_ASYNC_DUAL_TEST_TIMEOUT
 	  For how many loops will the stress test run. The higher this number the longer the
 	  test and therefore the higher likelihood an unlikely race/event will be triggered.
 
+config PM_RUNTIME_IN_TEST
+	bool "Use runtime PM in the test"
+	select PM_DEVICE
+	select PM_DEVICE_RUNTIME
+
 # Include Zephyr's Kconfig
 source "Kconfig"
