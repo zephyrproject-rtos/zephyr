@@ -3190,6 +3190,8 @@ ZTEST(devicetree_api, test_string_unquoted)
 #define XA 12.0
 #define XB 34.0
 #define XPLUS +
+#define XSTR1 "one"
+#define XSTR2 "two"
 	const double f0_expected = 0.1234;
 	const double f1_expected = 0.9e-3;
 	const double delta = 0.1e-4;
@@ -3201,6 +3203,10 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_t), val),
 		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_esc_t), val), XA XPLUS XB,
+		       delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED(DT_NODELABEL(test_str_unquoted_esc_s), val),
+			  "one plus two");
 	/* Test DT_STRING_UNQUOTED_OR */
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), val, (0.0)),
 		       f0_expected, delta, "");
@@ -3208,12 +3214,20 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), val, (0.0)),
 		       XA XPLUS XB, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_t), val, (0.0)),
+		       XA XPLUS XB, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_s), val, "nak"),
+			  "one plus two");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f0), nak, (0.0)),
 		       0.0, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_f1), nak, (0.0)),
 		       0.0, delta, "");
 	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_t), nak, (0.0)),
 		       0.0, delta, "");
+	zassert_within(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_t), nak, (0.0)),
+		       0.0, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_OR(DT_NODELABEL(test_str_unquoted_esc_s), nak, "nak"),
+			  "nak");
 	/* Test DT_INST_STRING_UNQUOTED */
 #define STRING_UNQUOTED_VAR(node_id) _CONCAT(var_, node_id)
 #define STRING_UNQUOTED_TEST_INST_EXPANSION(inst) \
@@ -3225,6 +3239,8 @@ ZTEST(devicetree_api, test_string_unquoted)
 	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_f1)),
 		       f1_expected, delta, "");
 	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_t)), XA XPLUS XB,
+		       delta, "");
+	zassert_within(STRING_UNQUOTED_VAR(DT_NODELABEL(test_str_unquoted_esc_t)), XA XPLUS XB,
 		       delta, "");
 
 	/* Test DT_INST_STRING_UNQUOTED_OR */
@@ -3242,15 +3258,21 @@ ZTEST(devicetree_api, test_string_unquoted)
 		       f1_expected, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[0],
 		       XA XPLUS XB, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_esc_t))[0],
+		       XA XPLUS XB, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f0))[1],
 		       1.0e10, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_f1))[1],
 		       1.0e10, delta, "");
 	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_t))[1],
 		       1.0e10, delta, "");
+	zassert_within(STRING_UNQUOTED_OR_VAR(DT_NODELABEL(test_str_unquoted_esc_t))[1], 1.0e10,
+		       delta, "");
 #undef XA
 #undef XB
 #undef XPLUS
+#undef XSTR1
+#undef XSTR2
 }
 
 #undef DT_DRV_COMPAT
@@ -3263,6 +3285,8 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 #define XD 78.0
 #define XPLUS +
 #define XMINUS -
+#define XSTR1  "one"
+#define XSTR2  "two"
 	const double delta = 0.1e-4;
 
 	/* DT_STRING_UNQUOTED_BY_IDX */
@@ -3292,6 +3316,11 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 		       XA XMINUS XB,  delta, "");
 	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_t), val, 3),
 		       XC XMINUS XD, delta, "");
+
+	zassert_within(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_esc), val, 0),
+		       XA XPLUS XB, delta, "");
+	zassert_str_equal(DT_STRING_UNQUOTED_BY_IDX(DT_NODELABEL(test_stra_unquoted_esc), val, 1),
+			  "one plus two");
 
 #define STRING_UNQUOTED_BY_IDX_VAR(node_id) _CONCAT(var_, node_id)
 #define STRING_UNQUOTED_BY_IDX_TEST_INST_EXPANSION(inst)       \
@@ -3335,6 +3364,26 @@ ZTEST(devicetree_api, test_string_idx_unquoted)
 #undef XD
 #undef XPLUS
 #undef XMINUS
+#undef XSTR1
+#undef XSTR2
+}
+
+#undef DT_DRV_COMPAT
+ZTEST(devicetree_api, test_string_escape)
+{
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_0), val), "\a\b\f\n\r\t\v");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_1), val), "\'single\' \"double\"");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_2), val), "first\nsecond");
+	zassert_str_equal(DT_PROP(DT_NODELABEL(test_str_escape_3), val), "\x01\x7F");
+}
+
+ZTEST(devicetree_api, test_string_array_escape)
+{
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 0), "\a\b\f\n\r\t\v");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 1),
+			  "\'single\' \"double\"");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 2), "first\nsecond");
+	zassert_str_equal(DT_PROP_BY_IDX(DT_NODELABEL(test_stra_escape), val, 3), "\x01\x7F");
 }
 
 #undef DT_DRV_COMPAT
