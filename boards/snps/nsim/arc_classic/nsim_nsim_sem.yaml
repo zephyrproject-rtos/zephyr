@@ -2,8 +2,9 @@ identifier: nsim/nsim_sem
 name: SEM Nsim simulator
 type: sim
 arch: arc
-simulation: nsim
-simulation_exec: nsimdrv
+simulation:
+  - name: nsim
+    exec: nsimdrv
 toolchain:
   - zephyr
   - cross-compile
