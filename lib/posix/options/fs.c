@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/dirent.h>
+#include <stdio.h>
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/posix/sys/stat.h>
@@ -122,6 +123,11 @@ int zvfs_open(const char *name, int flags)
 	}
 
 	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	memset(ptr->path, 0, MAX_FILE_NAME);
+	snprintf(ptr->path, MAX_FILE_NAME, "%s", name);
+#endif
 
 	return fd;
 }
