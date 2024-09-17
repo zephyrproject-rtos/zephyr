@@ -1,0 +1,27 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - rtc
+tests:
+  drivers.auxdisplay.build.i2c:
+    extra_args: DTC_OVERLAY_FILE="i2c_devices.overlay"
+    extra_configs:
+      - CONFIG_I2C=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.auxdisplay.build.spi:
+    extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.auxdisplay.build.uart:
+    extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"
+    extra_configs:
+      - CONFIG_SERIAL=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
