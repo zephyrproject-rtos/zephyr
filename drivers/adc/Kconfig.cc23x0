@@ -8,3 +8,13 @@ config ADC_CC23X0
 	select PINCTRL
 	help
 	  Enable the TI CC23X0 ADC driver.
+
+config ADC_CC23X0_DMA_DRIVEN
+	bool "DMA support for TI CC23X0 ADC devices"
+	depends on ADC_CC23X0
+	select DMA
+	help
+	  DMA driven mode offloads data transfer tasks from the CPU
+	  and requires fewer interrupts to handle the ADC sequence mode.
+	  When DMA mode is used, the ADC internal gain is not compensated
+	  for measurement adjustment.
