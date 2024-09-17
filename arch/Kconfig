@@ -819,7 +819,7 @@ config CPU_CACHE_INCOHERENT
 	help
 	  This hidden configuration should be selected when the CPU has
 	  incoherent cache. This applies to intra-CPU multiprocessing
-	  incoherence and makes only sense when MP_NUM_CPUS > 1.
+	  incoherence and makes only sense when MP_MAX_NUM_CPUS > 1.
 
 config CPU_HAS_ICACHE
 	bool
@@ -1025,7 +1025,7 @@ config CACHE_DOUBLEMAP
 	  point to the same cached/uncached memory at different locations.
 
 	  This applies to intra-CPU multiprocessing incoherence and makes only
-	  sense when MP_NUM_CPUS > 1.
+	  sense when MP_MAX_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"

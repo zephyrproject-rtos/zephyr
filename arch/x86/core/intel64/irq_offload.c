@@ -18,8 +18,8 @@
 extern void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *arg);
 extern const void *x86_irq_args[NR_IRQ_VECTORS];
 
-static void (*irq_offload_funcs[CONFIG_MP_NUM_CPUS])(const void *arg);
-static const void *irq_offload_args[CONFIG_MP_NUM_CPUS];
+static void (*irq_offload_funcs[CONFIG_MP_MAX_NUM_CPUS])(const void *arg);
+static const void *irq_offload_args[CONFIG_MP_MAX_NUM_CPUS];
 
 static void dispatcher(const void *arg)
 {
