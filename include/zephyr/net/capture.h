@@ -60,7 +60,7 @@ struct net_capture_interface_api {
 /**
  * @brief Setup network packet capturing support.
  *
- * @param remote_addr The value tells the tunnel remote/outer endpoint
+ * @param remote_addr_typo The value tells the tunnel remote/outer endpoint
  *        IP address. The IP address can be either IPv4 or IPv6 address.
  *        This address is used to select the network interface where the tunnel
  *        is created.
