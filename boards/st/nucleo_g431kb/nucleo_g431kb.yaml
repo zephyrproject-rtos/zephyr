@@ -1,0 +1,16 @@
+identifier: nucleo_g431kb
+name: ST Nucleo G431KB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 128
+supported:
+  - gpio
+  - pwm
+  - counter
+  - i2c
+vendor: st
