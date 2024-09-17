@@ -13,7 +13,6 @@ supported:
   - spi
   - i2c
   - uart
-  - usb
   - can
   - gpio
   - watchdog

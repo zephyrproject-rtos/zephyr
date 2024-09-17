@@ -17,7 +17,6 @@ supported:
   - i2c
   - can
   - backup_sram
-  - usb
   - quadspi
 ram: 128
 flash: 512

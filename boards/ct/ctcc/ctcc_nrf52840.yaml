@@ -9,7 +9,6 @@ toolchain:
 supported:
   - ble
   - gpio
-  - usb_cdc
   - usb_device
   - watchdog
 vendor: ct

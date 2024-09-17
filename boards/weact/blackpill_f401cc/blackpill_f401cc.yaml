@@ -9,7 +9,6 @@ toolchain:
 supported:
   - counter
   - spi
-  - usb
   - i2c
   - uart
   - pwm

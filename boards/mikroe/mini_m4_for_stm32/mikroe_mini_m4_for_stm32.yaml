@@ -14,5 +14,4 @@ supported:
   - i2c
   - spi
   - pwm
-  - usb
 vendor: mikroe
