@@ -59,6 +59,12 @@
 				compatible = "ovti,ov7670";
 				reg = <0x4>;
 			};
+
+			test_i2c_gc2145: gc2145@5 {
+				compatible = "galaxycore,gc2145";
+				reg = <0x5>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
