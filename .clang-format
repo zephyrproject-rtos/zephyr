@@ -101,5 +101,10 @@ SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never
 UseTab: ForContinuationAndIndentation
 WhitespaceSensitiveMacros:
+  - COND_CODE_0
+  - COND_CODE_1
+  - IF_DISABLED
+  - IF_ENABLED
+  - LISTIFY
   - STRINGIFY
   - Z_STRINGIFY
