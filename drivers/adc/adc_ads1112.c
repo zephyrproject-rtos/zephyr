@@ -176,7 +176,6 @@ static int ads1112_read_sample(const struct device *dev, uint16_t *buff)
 {
 	int res;
 	uint8_t sample[2] = {0};
-	const struct ads1112_config *config = dev->config;
 
 	res = ads1112_read_reg(dev, ADS1112_REG_OUTPUT, sample);
 	buff[0] = sys_get_be16(sample);
@@ -263,8 +262,6 @@ static int ads1112_validate_buffer_size(const struct adc_sequence *sequence)
 
 static int ads1112_validate_sequence(const struct device *dev, const struct adc_sequence *sequence)
 {
-	const struct ads1112_data *data = dev->data;
-
 	if (sequence->channels != BIT(0)) {
 		LOG_ERR("Invalid Channel 0x%x", sequence->channels);
 		return -EINVAL;
@@ -360,7 +357,6 @@ static int ads1112_read(const struct device *dev, const struct adc_sequence *seq
 static int ads1112_init(const struct device *dev)
 {
 	int rc = 0;
-	uint8_t status;
 	const struct ads1112_config *config = dev->config;
 	struct ads1112_data *data = dev->data;
 
