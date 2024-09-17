@@ -17,4 +17,4 @@ choice PM_POLICY
 	depends on PM
 endchoice
 
-endif # SOC_SERIES_EFR32MG24
+endif
