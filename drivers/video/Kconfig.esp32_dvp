@@ -8,3 +8,9 @@ config VIDEO_ESP32
 	default y
 	help
 	  This option enables the video interface for the esp32s3.
+
+config VIDEO_ESP32_VSYNC_INTERRUPT
+	bool "VSync interrupt"
+	select POLL
+	help
+	  Enables a new signal that gets triggered on vsync interrupt
