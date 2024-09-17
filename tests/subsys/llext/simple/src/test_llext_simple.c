@@ -351,7 +351,7 @@ ZTEST(llext, test_inter_ext)
 
 	int (*test_entry_fn)() = llext_find_sym(&ext_dependent->exp_tab, "test_entry");
 
-	zassert_not_null(test_entry_fn, "test_dependent should be an exported symbol");
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
 	test_entry_fn();
 
 	llext_unload(&ext_dependent);
