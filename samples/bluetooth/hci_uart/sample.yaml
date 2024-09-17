@@ -47,6 +47,16 @@ tests:
     tags:
       - uart
       - bluetooth
+  sample.bluetooth.hci_uart.nrf5340_audio_dk_cpuapp.fem:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340_audio_dk/nrf5340/cpuapp
+    extra_args: DTC_OVERLAY_FILE=./boards/nrf5340_audio_dk_nrf5340_cpuapp_nrf21540_ek.overlay
+    tags:
+      - uart
+      - bluetooth
   sample.bluetooth.hci_uart.nrf52833.all:
     harness: bluetooth
     platform_allow: nrf52833dk/nrf52833
