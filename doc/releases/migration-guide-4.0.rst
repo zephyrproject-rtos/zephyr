@@ -21,6 +21,9 @@ Build System
 Kernel
 ******
 
+* Removed the deprecated :kconfig:option:`CONFIG_MP_NUM_CPUS`, application should be updated to use
+  :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
+
 Boards
 ******
 
