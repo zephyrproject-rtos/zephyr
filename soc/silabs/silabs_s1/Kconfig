@@ -10,4 +10,4 @@ config SOC_FAMILY_SILABS_S1
 
 rsource "*/Kconfig"
 
-endif # SOC_FAMILY_SILABS_S1
+endif
