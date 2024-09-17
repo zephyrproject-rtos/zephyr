@@ -287,7 +287,7 @@ static inline void swap_and_set_pkt_ll_addr(struct net_linkaddr *addr, bool has_
  *
  * This is done before deciphering and authenticating encrypted frames.
  */
-static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
+static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mhr *mhr)
 {
 	struct ieee802154_address_field_plain *dst_plain = &mhr->dst_addr->plain;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -375,7 +375,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 
 	/* validate LL destination address (when IEEE802154_HW_FILTER not available) */
 	if (!(radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) &&
-	    !ieeee802154_check_dst_addr(iface, &mpdu.mhr)) {
+	    !ieee802154_check_dst_addr(iface, &mpdu.mhr)) {
 		return NET_DROP;
 	}
 
