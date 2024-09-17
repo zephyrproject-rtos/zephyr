@@ -13,6 +13,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=duplicate-code
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -189,7 +190,7 @@ class TestCoverage:
     )
     def test_enable_coverage(self, capfd, test_path, test_platforms, out_path, expected):
         args = ['-i','--outdir', out_path, '-T', test_path] + \
-               ['--enable-coverage', '-vv'] + \
+               ['--enable-coverage', '-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
