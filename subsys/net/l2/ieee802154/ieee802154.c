@@ -317,7 +317,7 @@ static bool ieeee802154_check_dst_addr(struct net_if *iface, struct ieee802154_m
 	if (!(dst_plain->pan_id == IEEE802154_BROADCAST_PAN_ID ||
 	      dst_plain->pan_id == sys_cpu_to_le16(ctx->pan_id))) {
 		LOG_DBG("Frame PAN ID does not match!");
-		return false;
+		goto out;
 	}
 
 	if (mhr->fs->fc.dst_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
