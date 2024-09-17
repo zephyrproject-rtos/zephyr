@@ -1099,20 +1099,26 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 	struct uarte_nrfx_data *data = dev->data;
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	int key;
 
 	if (async_rx->buf == NULL) {
 		return -EFAULT;
 	}
+
+	k_timer_stop(&async_rx->timer);
+
+	key = irq_lock();
+
 	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 	}
 
-	k_timer_stop(&async_rx->timer);
 	async_rx->enabled = false;
 	async_rx->discard_fifo = true;
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+	irq_unlock(key);
 
 	return 0;
 }
