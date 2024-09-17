@@ -47,6 +47,15 @@ tests:
     tags:
       - uart
       - bluetooth
+  sample.bluetooth.hci_uart.nrf5340dk_cpuapp:
+    harness: bluetooth
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags:
+      - uart
+      - bluetooth
   sample.bluetooth.hci_uart.nrf5340_audio_dk_cpuapp.fem:
     harness: bluetooth
     platform_allow:
