@@ -2065,7 +2065,7 @@ struct bt_le_scan_param {
 	uint8_t  type;
 
 	/** Bit-field of scanning options. */
-	uint32_t options;
+	uint8_t options;
 
 	/** Scan interval (N * 0.625 ms).
 	 *
