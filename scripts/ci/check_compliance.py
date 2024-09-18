@@ -382,6 +382,7 @@ class KconfigCheck(ComplianceTest):
         self.check_no_redefined_in_defconfig(kconf)
         self.check_no_enable_in_boolean_prompt(kconf)
         self.check_soc_name_sync(kconf)
+        self.check_board_disallowed_defconfigs(kconf)
         if full:
             self.check_no_undef_outside_kconfig(kconf)
 
@@ -678,6 +679,64 @@ class KconfigCheck(ComplianceTest):
                 kconf_syms.append(f"{name}{suffix}")
 
         return set(kconf_syms)
+
+    def check_board_disallowed_defconfigs(self, kconf):
+        """
+        Checks that there are no disallowed Kconfigs used in board defconfig files
+        """
+        # Grep for symbol references.
+        #
+        # Example output line for a reference to CONFIG_FOO at line 17 of
+        # foo/bar.c:
+        #
+        #   foo/bar.c<null>17<null>#ifdef CONFIG_FOO
+        #
+        # 'git grep --only-matching' would get rid of the surrounding context
+        # ('#ifdef '), but it was added fairly recently (second half of 2018),
+        # so we extract the references from each line ourselves instead.
+        #
+        # The regex uses word boundaries (\b) to isolate the reference, and
+        # negative lookahead to automatically whitelist the following:
+        #
+        #  - ##, for token pasting (CONFIG_FOO_##X)
+        #
+        #  - $, e.g. for CMake variable expansion (CONFIG_FOO_${VAR})
+        #
+        #  - @, e.g. for CMakes's configure_file() (CONFIG_FOO_@VAR@)
+        #
+        #  - {, e.g. for Python scripts ("CONFIG_FOO_{}_BAR".format(...)")
+        #
+        #  - *, meant for comments like '#endif /* CONFIG_FOO_* */
+
+        disallowed_symbols = [
+            "PINCTRL",
+            ".*_STACK_SIZE",
+        ]
+
+        disallowed_regex = "(" + "|".join(disallowed_symbols) + ")"
+
+        # Maps each undefined symbol to a list <filename>:<linenr> strings
+        disallowed_to_locs = collections.defaultdict(list)
+
+        # Warning: Needs to work with both --perl-regexp and the 're' module
+        regex = r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
+
+        grep_stdout = git("grep", "--line-number", "-I", "--null",
+                          "--perl-regexp", regex, "--", ":boards",
+                          cwd=Path(GIT_TOP))
+
+        # splitlines() supports various line terminators
+        for grep_line in grep_stdout.splitlines():
+            path, lineno, line = grep_line.split("\0")
+
+            # Extract symbol references (might be more than one) within the line
+            for sym_name in re.findall(regex, line):
+                sym_name = sym_name[len("CONFIG_"):]
+                if re.match(disallowed_regex, sym_name):
+                    # Only check in Kconfig fragment files, references might exist in documentation
+                    if path[-len("conf"):] == "conf" or path[-len("defconfig"):] == "defconfig":
+                        self.fmtd_failure("error", "BoardDisallowedKconfigs", path, lineno, desc=f"""
+Found disallowed Kconfig symbol in board Kconfig files: CONFIG_{sym_name:35}""")
 
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
