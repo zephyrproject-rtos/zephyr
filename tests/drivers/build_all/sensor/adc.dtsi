@@ -106,3 +106,8 @@ test_murata_ncp15xh103: murata-ncp15xh103 {
 	pulldown-ohm = <10000>;
 	connected-positive;
 };
+
+test_seeed_grove_light: seeed-grove-light {
+	compatible = "seeed,grove-light";
+	io-channels = <&test_adc 0>;
+};
