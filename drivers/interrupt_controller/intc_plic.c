@@ -39,6 +39,7 @@
 #define CONTEXT_CLAIM 0x04
 #define CONTEXT_ENABLE_BASE 0x2000
 #define CONTEXT_ENABLE_SIZE 0x80
+#define CONTEXT_PENDING_BASE 0x1000
 /*
  * Trigger type is mentioned, but not defined in the RISCV PLIC specs.
  * However, it is defined and supported by at least the Andes & Telink datasheet, and supported
@@ -87,6 +88,9 @@ struct plic_config {
 	mem_addr_t prio;
 	mem_addr_t irq_en;
 	mem_addr_t reg;
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+	mem_addr_t pend;
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
 	mem_addr_t trig;
 	uint32_t max_prio;
 	/* Number of IRQs that the PLIC physically supports */
@@ -203,6 +207,15 @@ static ALWAYS_INLINE uint32_t local_irq_to_irq(const struct device *dev, uint32_
 
 	return irq_to_level_2(local_irq) | config->irq;
 }
+
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+static inline mem_addr_t get_pending_reg(const struct device *dev, uint32_t local_irq)
+{
+	const struct plic_config *config = dev->config;
+
+	return config->pend + local_irq_to_reg_offset(local_irq);
+}
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
 
 /**
  * @brief Determine the PLIC device from the IRQ
@@ -357,6 +370,19 @@ void riscv_plic_set_priority(uint32_t irq, uint32_t priority)
 
 	sys_write32(priority, prio_addr);
 }
+
+#ifdef CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT
+void riscv_plic_irq_set_pending(uint32_t irq)
+{
+	const struct device *dev = get_plic_dev_from_irq(irq);
+	const uint32_t local_irq = irq_from_level_2(irq);
+	mem_addr_t pend_addr = get_pending_reg(dev, local_irq);
+	uint32_t pend_value = sys_read32(pend_addr);
+
+	WRITE_BIT(pend_value, local_irq & PLIC_REG_MASK, true);
+	sys_write32(pend_value, pend_addr);
+}
+#endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
 
 /**
  * @brief Get riscv PLIC-specific interrupt line causing an interrupt
@@ -883,6 +909,8 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 		.prio = PLIC_BASE_ADDR(n),                                                         \
 		.irq_en = PLIC_BASE_ADDR(n) + CONTEXT_ENABLE_BASE,                                 \
 		.reg = PLIC_BASE_ADDR(n) + CONTEXT_BASE,                                           \
+		IF_ENABLED(CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT,                                    \
+			   (.pend = PLIC_BASE_ADDR(n) + CONTEXT_PENDING_BASE,))                    \
 		IF_ENABLED(PLIC_SUPPORTS_TRIG_TYPE,                                                \
 			   (.trig = PLIC_BASE_ADDR(n) + PLIC_REG_TRIG_TYPE_OFFSET,))               \
 		.max_prio = DT_INST_PROP(n, riscv_max_priority),                                   \
