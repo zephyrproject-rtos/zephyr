@@ -41,3 +41,8 @@
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
 };
+
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
