@@ -500,12 +500,4 @@ config WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
 
 endchoice
 
-config SAE_PWE_EARLY_EXIT
-	bool "Exit early if PWE if found"
-	help
-	  In order to mitigate side channel attacks, even if the PWE is found the WPA
-	  supplicant goes through full iterations, but in some low-resource systems
-	  this can be intensive, so, add an option to exit early.
-	  Note that this is highly insecure and shouldn't be used in production
-
 endif # WIFI_NM_WPA_SUPPLICANT

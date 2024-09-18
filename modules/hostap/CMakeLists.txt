@@ -550,10 +550,4 @@ endif()
 zephyr_library_link_libraries_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	mbedTLS)
 
-if(CONFIG_SAE_PWE_EARLY_EXIT)
-	message(WARNING "CONFIG_SAE_PWE_EARLY_EXIT is enabled, "
-	"this is not secure and is a workaround for low resource systems, "
-	"please use it carefully and do not use it production.")
-endif()
-
 endif()
