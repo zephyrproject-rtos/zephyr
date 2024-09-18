@@ -116,6 +116,24 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
+/** Set 11k enable/disable
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param params 11k parameters
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_11k_enable(const struct device *dev, struct wifi_11k_params *params);
+
+/** Send 11k neighbor request
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param params 11k parameters
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 /** Send specific scan request
  *
