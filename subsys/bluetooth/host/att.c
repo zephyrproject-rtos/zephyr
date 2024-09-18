@@ -1549,19 +1549,6 @@ static uint8_t att_read_type_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
-	/* Reading Database Hash is special as it is required to make client
-	 * change aware.
-	 */
-	if (bt_uuid_cmp(&u.uuid, BT_UUID_GATT_DB_HASH) != 0) {
-		if (!bt_gatt_change_aware(chan->att->conn, true)) {
-			if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
-				return BT_ATT_ERR_DB_OUT_OF_SYNC;
-			} else {
-				return 0;
-			}
-		}
-	}
-
 	return att_read_type_rsp(chan, &u.uuid, start_handle, end_handle);
 }
 
