@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 /*
  * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
-__thread uint32_t is_user_mode;
+Z_THREAD_LOCAL uint32_t is_user_mode;
 #endif
 
 #endif /* CONFIG_USERSPACE */
