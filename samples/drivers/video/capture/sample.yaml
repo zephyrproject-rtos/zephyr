@@ -20,6 +20,7 @@ tests:
         - "size"
         - "timestamp"
     platform_allow:
+      - arduino_nicla_vision/stm32h747xx/m7
       - mimxrt1064_evk
       - mimxrt1170_evk/mimxrt1176/cm7
       - mm_swiftio
