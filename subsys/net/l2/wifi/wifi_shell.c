@@ -1215,14 +1215,14 @@ static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[]
 	params.btwt.nominal_wake = (uint8_t)strtol(argv[idx++], NULL, 10);
 	params.btwt.max_sta_support = (uint8_t)strtol(argv[idx++], NULL, 10);
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.btwt.twt_interval = (uint16_t)value;
 
 	params.btwt.twt_offset = (uint16_t)strtol(argv[idx++], NULL, 10);
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
 		return -EINVAL;
 	}
 	params.btwt.twt_exponent = (uint8_t)value;
@@ -1255,69 +1255,69 @@ static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc, char *argv[])
 
 	params.operation = WIFI_TWT_SETUP;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_INDIVIDUAL, WIFI_TWT_WAKE_TBTT)) {
+	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL, WIFI_TWT_WAKE_TBTT)) {
 		return -EINVAL;
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, WIFI_TWT_SETUP_CMD_REQUEST,
+	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
 			  WIFI_TWT_SETUP_CMD_DEMAND)) {
 		return -EINVAL;
 	}
 	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, 255)) {
+	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
 		return -EINVAL;
 	}
 	params.dialog_token = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
 		return -EINVAL;
 	}
 	params.flow_id = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.responder = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.trigger = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.implicit = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.announce = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_interval = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 1, WIFI_MAX_TWT_INTERVAL_US)) {
+	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_interval = (uint64_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0,
+	if (!parse_number(sh, &value, argv[idx++], 0,
 			  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
 		return -EINVAL;
 	}
 	params.setup.twt_wake_ahead_duration = (uint32_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.setup.twt_info_disable = (bool)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, WIFI_MAX_TWT_EXPONENT)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
 		return -EINVAL;
 	}
 	params.setup.exponent = (uint8_t)value;
@@ -1370,7 +1370,7 @@ static int cmd_wifi_twt_teardown(const struct shell *sh, size_t argc, char *argv
 	}
 	params.flow_id = (uint8_t)value;
 
-	if (!parse_number(sh, &value, argv[idx++], NULL, 0, 1)) {
+	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
 		return -EINVAL;
 	}
 	params.teardown.teardown_all = (bool)value;
@@ -1777,8 +1777,8 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 
 	context.sh = sh;
 
-	if (!parse_number(sh, (long *)&query_reason, argv[1], NULL,
-			WIFI_BTM_QUERY_REASON_UNDPECIFIED, WIFI_BTM_QUERY_REASON_LOW_RSSI)) {
+	if (!parse_number(sh, (long *)&query_reason, argv[1], WIFI_BTM_QUERY_REASON_UNDPECIFIED,
+			  WIFI_BTM_QUERY_REASON_LOW_RSSI)) {
 		return -EINVAL;
 	}
 
@@ -3119,8 +3119,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		     NULL,
 		     "<rts_threshold: rts threshold/off>.\n",
 		     cmd_wifi_set_rts_threshold,
-		     2,
-		     0),
 	SHELL_CMD_ARG(11v_btm_query,
 		     NULL,
 		     "<query_reason: The reason code for a BSS transition management query>.\n",
