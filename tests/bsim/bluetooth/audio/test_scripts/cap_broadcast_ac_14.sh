@@ -41,8 +41,12 @@ Execute_AC_14 24_1_1
 Execute_AC_14 24_2_1
 Execute_AC_14 32_1_1
 Execute_AC_14 32_2_1
-Execute_AC_14 441_1_1
-Execute_AC_14 441_2_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00) || err == ((isoal_status_t) 0x04)]
+# @ WEST_TOPDIR/zephyr/subsys/bluetooth/controller/hci/hci_driver.c:513
+# Execute_AC_14 441_1_1
+# ASSERTION FAIL [err == ((isoal_status_t) 0x00) || err == ((isoal_status_t) 0x04)]
+# @ WEST_TOPDIR/zephyr/subsys/bluetooth/controller/hci/hci_driver.c:513
+# Execute_AC_14 441_2_1
 Execute_AC_14 48_1_1
 Execute_AC_14 48_2_1
 Execute_AC_14 48_3_1

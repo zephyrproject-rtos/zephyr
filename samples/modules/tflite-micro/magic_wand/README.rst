@@ -1,7 +1,8 @@
-.. _tensorflow_magic_wand:
+.. zephyr:code-sample:: tflite-magicwand
+   :name: Magic Wand
 
-TensorFlow Lite Micro Magic Wand sample
-#######################################
+   Recognize gestures from an accelerometer using TensorFlow Lite for Microcontrollers and a 20KB
+   neural network.
 
 Overview
 ********

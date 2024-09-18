@@ -1,0 +1,5 @@
+board:
+  name: mck_ra8t1
+  vendor: renesas
+  socs:
+  - name: r7fa8t1ahecbd

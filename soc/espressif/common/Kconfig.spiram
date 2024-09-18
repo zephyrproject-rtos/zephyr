@@ -6,21 +6,14 @@ if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
 	default n if MCUBOOT
+	default n if ESP32_USE_UNSUPPORTED_REVISION && SOC_SERIES_ESP32
+	select SHARED_MULTI_HEAP
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.
 
 menu "SPI RAM config"
 	depends on ESP_SPIRAM
-
-config ESP_HEAP_MIN_EXTRAM_THRESHOLD
-	int "Minimum threshold for external RAM allocation"
-	default 8192
-	range 1024 131072
-	help
-	  Threshold to decide if memory will be allocated from DRAM
-	  or SPIRAM. If value of allocation size is less than this value,
-	  memory will be allocated from internal RAM.
 
 config ESP_HEAP_SEARCH_ALL_REGIONS
 	bool "Search for all available heap regions"

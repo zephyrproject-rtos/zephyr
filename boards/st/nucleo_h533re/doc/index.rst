@@ -165,12 +165,16 @@ The Zephyr nucleo_h533re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | Real Time Clock                     |
 +-----------+------------+-------------------------------------+
+| BKP SRAM  | on-chip    | Backup SRAM                         |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB full-speed host/device bus      |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -226,37 +230,66 @@ Serial Port
 Nucleo H533RE board has up to 4 USARTs, 2 UARTs, and one LPUART. The Zephyr console output is assigned
 to USART2. Default settings are 115200 8N1.
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM, you may want to disconnect VBAT from VDD_MCU.
+You can do it by removing ``SB38`` jumper on the back side of the board.
+VBAT can be provided via the left ST Morpho connector's pin 33.
+
 Programming and Debugging
 *************************
+
+Nucleo H533RE board includes an ST-LINK/V3EC embedded debug tool interface.
+This probe allows to flash the board using various tools.
 
 Applications for the ``nucleo_h533re`` board can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
+OpenOCD Support
+===============
+
+For now, openocd support  for stm32h5 is not available on upstream OpenOCD.
+You can check `OpenOCD official Github mirror`_.
+In order to use it though, you should clone from the cutomized
+`STMicroelectronics OpenOCD Github`_ and compile it following usual README guidelines.
+Once it is done, you can set the OPENOCD and OPENOCD_DEFAULT_PATH variables in
+:zephyr_file:`boards/st/nucleo_h533re/board.cmake` to point the build
+to the paths of the OpenOCD binary and its scripts,  before
+including the common openocd.board.cmake file:
+
+   .. code-block:: none
+
+      set(OPENOCD "<path_to_openocd_repo>/src/openocd" CACHE FILEPATH "" FORCE)
+      set(OPENOCD_DEFAULT_PATH <path_to_opneocd_repo>/tcl)
+      include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+
 Flashing
 ========
 
-Nucleo H533RE board includes an ST-LINK/V3EC embedded debug tool interface.
-This probe allows to flash the board using various tools.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Board is configured to be flashed using west STM32CubeProgrammer runner.
-Installation of `STM32CubeProgrammer`_ is then required to flash the board.
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
-Alternatively, pyocd or jlink via an external probe can also be used to flash
-and debug the board if west is told to use it as runner, which can be done by
-passing either or ``-r pyocd``, or ``-r jlink``.
+.. code-block:: console
 
-For pyocd additional target information needs to be installed.
-This can be done by executing the following commands.
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+   $ west flash --runner jlink
+
+For pyOCD, additional target information needs to be installed
+which can be done by executing the following commands:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32h5
 
-
 Flashing an application to Nucleo H533RE
-------------------------------------------
+----------------------------------------
 
 Connect the Nucleo H533RE to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
@@ -306,3 +339,9 @@ You can debug an application in the usual way. Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _OpenOCD official Github mirror:
+   https://github.com/openocd-org/openocd/
+
+.. _STMicroelectronics OpenOCD Github:
+   https://github.com/STMicroelectronics/OpenOCD/tree/openocd-cubeide-r6

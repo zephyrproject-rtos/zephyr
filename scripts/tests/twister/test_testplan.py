@@ -16,6 +16,7 @@ from contextlib import nullcontext
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 
+from twisterlib.statuses import TwisterStatus
 from twisterlib.testplan import TestPlan, change_skip_to_error_if_integration
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite
@@ -180,7 +181,7 @@ def test_apply_filters_part1(class_testplan, all_testsuites_dict, platforms_list
         plan.apply_filters(exclude_platform=['demo_board_1'],
                                                  platform=['demo_board_2'])
 
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", plan.instances.values()))
+    filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, plan.instances.values()))
     for d in filtered_instances:
         assert d.reason == expected_discards
 
@@ -214,7 +215,7 @@ def test_apply_filters_part2(class_testplan, all_testsuites_dict,
             ]
         }
     class_testplan.apply_filters(**kwargs)
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", class_testplan.instances.values()))
+    filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, class_testplan.instances.values()))
     for d in filtered_instances:
         assert d.reason == expected_discards
 
@@ -245,7 +246,7 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
     class_testplan.apply_filters(exclude_platform=['demo_board_1'],
                                              platform=['demo_board_2'])
 
-    filtered_instances = list(filter(lambda item:  item.status == "filtered", class_testplan.instances.values()))
+    filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, class_testplan.instances.values()))
     assert not filtered_instances
 
 def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms_list):
@@ -338,16 +339,16 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
     for testname, instance in class_testplan.instances.items():
         if quarantine_verify:
             if testname in expected_val:
-                assert not instance.status
+                assert instance.status == TwisterStatus.NONE
             else:
-                assert instance.status == 'filtered'
+                assert instance.status == TwisterStatus.FILTER
                 assert instance.reason == "Not under quarantine"
         else:
             if testname in expected_val:
-                assert instance.status == 'filtered'
+                assert instance.status == TwisterStatus.FILTER
                 assert instance.reason == "Quarantine: " + expected_val[testname]
             else:
-                assert not instance.status
+                assert instance.status == TwisterStatus.NONE
 
 
 TESTDATA_PART4 = [
@@ -392,7 +393,7 @@ def test_required_snippets_short(
     plan.apply_filters()
 
     filtered_instances = list(
-        filter(lambda item: item.status == "filtered", plan.instances.values())
+        filter(lambda item: item.status == TwisterStatus.FILTER, plan.instances.values())
     )
     if expected_filtered_len is not None:
         assert len(filtered_instances) == expected_filtered_len
@@ -808,14 +809,14 @@ def test_testplan_generate_subset(
         shuffle_tests_seed=seed
     )
     testplan.instances = {
-        'plat1/testA': mock.Mock(status=None),
-        'plat1/testB': mock.Mock(status=None),
-        'plat1/testC': mock.Mock(status=None),
-        'plat2/testA': mock.Mock(status=None),
-        'plat2/testB': mock.Mock(status=None),
-        'plat3/testA': mock.Mock(status='skipped'),
-        'plat3/testB': mock.Mock(status='skipped'),
-        'plat3/testC': mock.Mock(status='error'),
+        'plat1/testA': mock.Mock(status=TwisterStatus.NONE),
+        'plat1/testB': mock.Mock(status=TwisterStatus.NONE),
+        'plat1/testC': mock.Mock(status=TwisterStatus.NONE),
+        'plat2/testA': mock.Mock(status=TwisterStatus.NONE),
+        'plat2/testB': mock.Mock(status=TwisterStatus.NONE),
+        'plat3/testA': mock.Mock(status=TwisterStatus.SKIP),
+        'plat3/testB': mock.Mock(status=TwisterStatus.SKIP),
+        'plat3/testC': mock.Mock(status=TwisterStatus.ERROR),
     }
 
     testplan.generate_subset(subset, sets)
@@ -1232,7 +1233,7 @@ toolchain:
     p3_yamlfile = tmp_p3_dir / 'p3_B.conf'
     p3_yamlfile.write_text('')
 
-    env = mock.Mock(board_roots=[tmp_board_root_dir])
+    env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
 
     testplan = TestPlan(env=env)
 
@@ -1567,7 +1568,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             'retries': 0,
             'testcases': {
                 'TS1.tc1': {
-                    'status': 'passed',
+                    'status': TwisterStatus.PASS,
                     'reason': None,
                     'duration': 60.0,
                     'output': ''
@@ -1596,13 +1597,13 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             'retries': 1,
             'testcases': {
                     'TS3.tc1': {
-                        'status': 'error',
+                        'status': TwisterStatus.ERROR,
                         'reason': None,
                         'duration': 360.0,
                         'output': '[ERROR]: File \'dummy.yaml\' not found!\nClosing...'
                     },
                     'TS3.tc2': {
-                        'status': None,
+                        'status': TwisterStatus.NONE,
                         'reason': None,
                         'duration': 0,
                         'output': ''
@@ -1620,7 +1621,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             'retries': 0,
             'testcases': {
                 'TS4.tc1': {
-                    'status': 'skipped',
+                    'status': TwisterStatus.SKIP,
                     'reason': 'Not in requested test list.',
                     'duration': 360.0,
                     'output': '[INFO] Parsing...'
@@ -1721,9 +1722,9 @@ def test_testplan_create_build_dir_links(exists):
         instances_linked.append(instance)
 
     instances = {
-        'inst0': mock.Mock(status='passed'),
-        'inst1': mock.Mock(status='skipped'),
-        'inst2': mock.Mock(status='error'),
+        'inst0': mock.Mock(status=TwisterStatus.PASS),
+        'inst1': mock.Mock(status=TwisterStatus.SKIP),
+        'inst2': mock.Mock(status=TwisterStatus.ERROR),
     }
     expected_instances = [instances['inst0'], instances['inst2']]
 
@@ -1788,7 +1789,7 @@ TESTDATA_14 = [
     ('bad platform', 'dummy reason', [],
      'dummy status', 'dummy reason'),
     ('good platform', 'quarantined', [],
-     'error', 'quarantined but is one of the integration platforms'),
+     TwisterStatus.ERROR, 'quarantined but is one of the integration platforms'),
     ('good platform', 'dummy reason', [{'type': 'command line filter'}],
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'Skip filter'}],
@@ -1800,7 +1801,7 @@ TESTDATA_14 = [
     ('good platform', 'dummy reason', [{'type': 'Module filter'}],
      'dummy status', 'dummy reason'),
     ('good platform', 'dummy reason', [{'type': 'testsuite filter'}],
-     'error', 'dummy reason but is one of the integration platforms'),
+     TwisterStatus.ERROR, 'dummy reason but is one of the integration platforms'),
 ]
 
 @pytest.mark.parametrize(

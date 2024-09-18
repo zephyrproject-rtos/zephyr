@@ -53,6 +53,7 @@ config USB_DC_STM32
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select USB_DC_HAS_HS_SUPPORT if "$(DT_STM32_USBHS_SPEED)"
+	select PINCTRL
 	imply USB_DEVICE_REMOTE_WAKEUP
 	help
 	  Enable STM32 family USB device controller shim driver.
@@ -154,13 +155,10 @@ config USB_MCUX
 
 if USB_MCUX
 
-choice USB_MCUX_CONTROLLER_TYPE
-	prompt "USB Controller type"
-	help
-	  Select the type of controller available in the SoC.
-
 config USB_DC_NXP_EHCI
 	bool "MXRT EHCI USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_EHCI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select USB_DC_HAS_HS_SUPPORT
 	help
@@ -168,12 +166,12 @@ config USB_DC_NXP_EHCI
 
 config USB_DC_NXP_LPCIP3511
 	bool "LPC USB Device Controller"
+	default y
+	depends on DT_HAS_NXP_LPCIP3511_ENABLED
 	select USB_DC_HAS_HS_SUPPORT if "$(dt_nodelabel_enabled,usbhs)"
 	select PINCTRL
 	help
 	  LPC USB Device Controller Driver.
-
-endchoice
 
 config USB_DC_MSG_QUEUE_LEN
 	int

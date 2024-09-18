@@ -143,4 +143,35 @@
 		compatible = "nxp,rdc";
 		reg = <0x303d0000 DT_SIZE_K(64)>;
 	};
+
+	enet: enet@30be0000 {
+		compatible = "nxp,enet1g";
+		reg = <0x30be0000 DT_SIZE_K(64)>;
+		clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+		rdc = <RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)>;
+		status = "disabled";
+
+		enet_mac: ethernet {
+			compatible = "nxp,enet-mac";
+			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "COMMON";
+			interrupt-parent = <&gic>;
+			nxp,mdio = <&enet_mdio>;
+			nxp,ptp-clock = <&enet_ptp_clock>;
+			status = "disabled";
+		};
+		enet_mdio: mdio {
+			compatible = "nxp,enet-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		enet_ptp_clock: ptp_clock {
+			compatible = "nxp,enet-ptp-clock";
+			interrupts = <GIC_SPI 121 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
+			status = "disabled";
+		};
+	};
 };

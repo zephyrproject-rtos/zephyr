@@ -17,36 +17,44 @@
 #define DEV_ID            0x0
 #define DEV_ID_I3C_MASTER 0x5034
 
-#define CONF_STATUS0                 0x4
-#define CONF_STATUS0_CMDR_DEPTH(x)   (4 << (((x)&GENMASK(31, 29)) >> 29))
-#define CONF_STATUS0_ECC_CHK         BIT(28)
-#define CONF_STATUS0_INTEG_CHK       BIT(27)
-#define CONF_STATUS0_CSR_DAP_CHK     BIT(26)
-#define CONF_STATUS0_TRANS_TOUT_CHK  BIT(25)
-#define CONF_STATUS0_PROT_FAULTS_CHK BIT(24)
-#define CONF_STATUS0_GPO_NUM(x)      (((x)&GENMASK(23, 16)) >> 16)
-#define CONF_STATUS0_GPI_NUM(x)      (((x)&GENMASK(15, 8)) >> 8)
-#define CONF_STATUS0_IBIR_DEPTH(x)   (4 << (((x)&GENMASK(7, 6)) >> 7))
-#define CONF_STATUS0_SUPPORTS_DDR    BIT(5)
-#define CONF_STATUS0_SEC_MASTER      BIT(4)
-#define CONF_STATUS0_DEVS_NUM(x)     ((x)&GENMASK(3, 0))
+#define CONF_STATUS0                      0x4
+#define CONF_STATUS0_CMDR_DEPTH(x)        (4 << (((x) & GENMASK(31, 29)) >> 29))
+#define CONF_STATUS0_ECC_CHK              BIT(28)
+#define CONF_STATUS0_INTEG_CHK            BIT(27)
+#define CONF_STATUS0_CSR_DAP_CHK          BIT(26)
+#define CONF_STATUS0_TRANS_TOUT_CHK       BIT(25)
+#define CONF_STATUS0_PROT_FAULTS_CHK      BIT(24)
+#define CONF_STATUS0_GPO_NUM(x)           (((x) & GENMASK(23, 16)) >> 16)
+#define CONF_STATUS0_GPI_NUM(x)           (((x) & GENMASK(15, 8)) >> 8)
+#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 7))
+/* CONF_STATUS0_SUPPORTS_DDR moved to CONF_STATUS1 in rev >= 1p7 */
+#define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
+#define CONF_STATUS0_SEC_MASTER           BIT(4)
+/* And it was replaced with a Dev Role mask */
+#define CONF_STATUS0_DEV_ROLE(x)          ((x) & GENMASK(5, 4) >> 4)
+#define CONF_STATUS0_DEV_ROLE_MAIN_MASTER 0
+#define CONF_STATUS0_DEV_ROLE_SEC_MASTER  1
+#define CONF_STATUS0_DEV_ROLE_SLAVE       2
+#define CONF_STATUS0_DEVS_NUM(x)          ((x) & GENMASK(3, 0))
 
-#define CONF_STATUS1                    0x8
-#define CONF_STATUS1_IBI_HW_RES(x)      ((((x)&GENMASK(31, 28)) >> 28) + 1)
-#define CONF_STATUS1_CMD_DEPTH(x)       (4 << (((x)&GENMASK(27, 26)) >> 26))
-#define CONF_STATUS1_SLVDDR_RX_DEPTH(x) (8 << (((x)&GENMASK(25, 21)) >> 21))
-#define CONF_STATUS1_SLVDDR_TX_DEPTH(x) (8 << (((x)&GENMASK(20, 16)) >> 16))
-#define CONF_STATUS1_IBI_DEPTH(x)       (2 << (((x)&GENMASK(12, 10)) >> 10))
-#define CONF_STATUS1_RX_DEPTH(x)        (8 << (((x)&GENMASK(9, 5)) >> 5))
-#define CONF_STATUS1_TX_DEPTH(x)        (8 << ((x)&GENMASK(4, 0)))
+#define CONF_STATUS1                     0x8
+#define CONF_STATUS1_IBI_HW_RES(x)       ((((x) & GENMASK(31, 28)) >> 28) + 1)
+#define CONF_STATUS1_CMD_DEPTH(x)        (4 << (((x) & GENMASK(27, 26)) >> 26))
+#define CONF_STATUS1_SLV_DDR_RX_DEPTH(x) (8 << (((x) & GENMASK(25, 21)) >> 21))
+#define CONF_STATUS1_SLV_DDR_TX_DEPTH(x) (8 << (((x) & GENMASK(20, 16)) >> 16))
+#define CONF_STATUS1_SUPPORTS_DDR        BIT(14)
+#define CONF_STATUS1_ALT_MODE            BIT(13)
+#define CONF_STATUS1_IBI_DEPTH(x)        (2 << (((x) & GENMASK(12, 10)) >> 10))
+#define CONF_STATUS1_RX_DEPTH(x)         (8 << (((x) & GENMASK(9, 5)) >> 5))
+#define CONF_STATUS1_TX_DEPTH(x)         (8 << ((x) & GENMASK(4, 0)))
 
 #define REV_ID               0xc
-#define REV_ID_VID(id)       (((id)&GENMASK(31, 20)) >> 20)
-#define REV_ID_PID(id)       (((id)&GENMASK(19, 8)) >> 8)
-#define REV_ID_REV(id)       ((id)&GENMASK(7, 0))
+#define REV_ID_VID(id)       (((id) & GENMASK(31, 20)) >> 20)
+#define REV_ID_PID(id)       (((id) & GENMASK(19, 8)) >> 8)
+#define REV_ID_REV(id)       ((id) & GENMASK(7, 0))
 #define REV_ID_VERSION(m, n) ((m << 5) | (n))
-#define REV_ID_REV_MAJOR(id) (((id)&GENMASK(7, 5)) >> 5)
-#define REV_ID_REV_MINOR(id) ((id)&GENMASK(4, 0))
+#define REV_ID_REV_MAJOR(id) (((id) & GENMASK(7, 5)) >> 5)
+#define REV_ID_REV_MINOR(id) ((id) & GENMASK(4, 0))
 
 #define CTRL                     0x10
 #define CTRL_DEV_EN              BIT(31)
@@ -55,6 +63,7 @@
 #define CTRL_MCS_EN              BIT(28)
 #define CTRL_I3C_11_SUPP         BIT(26)
 #define CTRL_THD_DELAY(x)        (((x) << 24) & GENMASK(25, 24))
+#define CTRL_TC_EN               BIT(9)
 #define CTRL_HJ_DISEC            BIT(8)
 #define CTRL_MST_ACK             BIT(7)
 #define CTRL_HJ_ACK              BIT(6)
@@ -67,10 +76,11 @@
 #define CTRL_BUS_MODE_MASK       GENMASK(1, 0)
 #define THD_DELAY_MAX            3
 
-#define PRESCL_CTRL0        0x14
-#define PRESCL_CTRL0_I2C(x) ((x) << 16)
-#define PRESCL_CTRL0_I3C(x) (x)
-#define PRESCL_CTRL0_MAX    GENMASK(9, 0)
+#define PRESCL_CTRL0         0x14
+#define PRESCL_CTRL0_I2C(x)  ((x) << 16)
+#define PRESCL_CTRL0_I3C(x)  (x)
+#define PRESCL_CTRL0_I3C_MAX GENMASK(9, 0)
+#define PRESCL_CTRL0_I2C_MAX GENMASK(15, 0)
 
 #define PRESCL_CTRL1             0x18
 #define PRESCL_CTRL1_PP_LOW_MASK GENMASK(15, 8)
@@ -78,30 +88,35 @@
 #define PRESCL_CTRL1_OD_LOW_MASK GENMASK(7, 0)
 #define PRESCL_CTRL1_OD_LOW(x)   (x)
 
-#define MST_IER          0x20
-#define MST_IDR          0x24
-#define MST_IMR          0x28
-#define MST_ICR          0x2c
-#define MST_ISR          0x30
-#define MST_INT_HALTED   BIT(18)
-#define MST_INT_MR_DONE  BIT(17)
-#define MST_INT_IMM_COMP BIT(16)
-#define MST_INT_TX_THR   BIT(15)
-#define MST_INT_TX_OVF   BIT(14)
-#define MST_INT_IBID_THR BIT(12)
-#define MST_INT_IBID_UNF BIT(11)
-#define MST_INT_IBIR_THR BIT(10)
-#define MST_INT_IBIR_UNF BIT(9)
-#define MST_INT_IBIR_OVF BIT(8)
-#define MST_INT_RX_THR   BIT(7)
-#define MST_INT_RX_UNF   BIT(6)
-#define MST_INT_CMDD_EMP BIT(5)
-#define MST_INT_CMDD_THR BIT(4)
-#define MST_INT_CMDD_OVF BIT(3)
-#define MST_INT_CMDR_THR BIT(2)
-#define MST_INT_CMDR_UNF BIT(1)
-#define MST_INT_CMDR_OVF BIT(0)
-#define MST_INT_MASK     GENMASK(18, 0)
+#define SLV_STATUS4                 0x1C
+#define SLV_STATUS4_BUSCON_FILL_LVL GENMASK(16, 8)
+#define SLV_STATUS5_BUSCON_DATA     GENMASK(7, 0)
+
+#define MST_IER           0x20
+#define MST_IDR           0x24
+#define MST_IMR           0x28
+#define MST_ICR           0x2c
+#define MST_ISR           0x30
+#define MST_INT_HALTED    BIT(18)
+#define MST_INT_MR_DONE   BIT(17)
+#define MST_INT_IMM_COMP  BIT(16)
+#define MST_INT_TX_THR    BIT(15)
+#define MST_INT_TX_OVF    BIT(14)
+#define MST_INT_C_REF_ROV BIT(13)
+#define MST_INT_IBID_THR  BIT(12)
+#define MST_INT_IBID_UNF  BIT(11)
+#define MST_INT_IBIR_THR  BIT(10)
+#define MST_INT_IBIR_UNF  BIT(9)
+#define MST_INT_IBIR_OVF  BIT(8)
+#define MST_INT_RX_THR    BIT(7)
+#define MST_INT_RX_UNF    BIT(6)
+#define MST_INT_CMDD_EMP  BIT(5)
+#define MST_INT_CMDD_THR  BIT(4)
+#define MST_INT_CMDD_OVF  BIT(3)
+#define MST_INT_CMDR_THR  BIT(2)
+#define MST_INT_CMDR_UNF  BIT(1)
+#define MST_INT_CMDR_OVF  BIT(0)
+#define MST_INT_MASK      GENMASK(18, 0)
 
 #define MST_STATUS0             0x34
 #define MST_STATUS0_IDLE        BIT(18)
@@ -133,28 +148,37 @@
 #define CMDR_NACK_RESP          9
 #define CMDR_INVALID_DA         10
 #define CMDR_DDR_DROPPED        11
-#define CMDR_ERROR(x)           (((x)&GENMASK(27, 24)) >> 24)
-#define CMDR_XFER_BYTES(x)      (((x)&GENMASK(19, 8)) >> 8)
+#define CMDR_ERROR(x)           (((x) & GENMASK(27, 24)) >> 24)
+#define CMDR_XFER_BYTES(x)      (((x) & GENMASK(19, 8)) >> 8)
 #define CMDR_CMDID_HJACK_DISEC  0xfe
 #define CMDR_CMDID_HJACK_ENTDAA 0xff
-#define CMDR_CMDID(x)           ((x)&GENMASK(7, 0))
+#define CMDR_CMDID(x)           ((x) & GENMASK(7, 0))
 
 #define IBIR               0x3c
 #define IBIR_ACKED         BIT(12)
-#define IBIR_SLVID(x)      (((x)&GENMASK(11, 8)) >> 8)
+#define IBIR_SLVID(x)      (((x) & GENMASK(11, 8)) >> 8)
 #define IBIR_SLVID_INV     0xF
 #define IBIR_ERROR         BIT(7)
-#define IBIR_XFER_BYTES(x) (((x)&GENMASK(6, 2)) >> 2)
+#define IBIR_XFER_BYTES(x) (((x) & GENMASK(6, 2)) >> 2)
 #define IBIR_TYPE_IBI      0
 #define IBIR_TYPE_HJ       1
 #define IBIR_TYPE_MR       2
-#define IBIR_TYPE(x)       ((x)&GENMASK(1, 0))
+#define IBIR_TYPE(x)       ((x) & GENMASK(1, 0))
 
 #define SLV_IER             0x40
 #define SLV_IDR             0x44
 #define SLV_IMR             0x48
 #define SLV_ICR             0x4c
 #define SLV_ISR             0x50
+#define SLV_INT_CHIP_RST    BIT(31)
+#define SLV_INT_PERIPH_RST  BIT(30)
+#define SLV_INT_FLUSH_DONE  BIT(29)
+#define SLV_INT_RST_DAA     BIT(28)
+#define SLV_INT_BUSCON_UP   BIT(26)
+#define SLV_INT_MRL_UP      BIT(25)
+#define SLV_INT_MWL_UP      BIT(24)
+#define SLV_INT_IBI_THR     BIT(23)
+#define SLV_INT_IBI_DONE    BIT(22)
 #define SLV_INT_DEFSLVS     BIT(21)
 #define SLV_INT_TM          BIT(20)
 #define SLV_INT_ERROR       BIT(19)
@@ -177,19 +201,29 @@
 #define SLV_INT_DDR_WR_COMP BIT(2)
 #define SLV_INT_SDR_RD_COMP BIT(1)
 #define SLV_INT_SDR_WR_COMP BIT(0)
-#define SLV_INT_MASK        GENMASK(20, 0)
 
-#define SLV_STATUS0               0x54
-#define SLV_STATUS0_REG_ADDR(s)   (((s)&GENMASK(23, 16)) >> 16)
-#define SLV_STATUS0_XFRD_BYTES(s) ((s)&GENMASK(15, 0))
+#define SLV_STATUS0                   0x54
+#define SLV_STATUS0_IBI_XFRD_BYTEs(s) (((s) & GENMASK(31, 24)) >> 24)
+#define SLV_STATUS0_REG_ADDR(s)       (((s) & GENMASK(23, 16)) >> 16)
+#define SLV_STATUS0_XFRD_BYTES(s)     ((s) & GENMASK(15, 0))
 
 #define SLV_STATUS1              0x58
-#define SLV_STATUS1_AS(s)        (((s)&GENMASK(21, 20)) >> 20)
+#define SLV_STATUS1_SCL_IN_RST   BIT(31)
+#define SLV_STATUS1_HJ_IN_USE    BIT(30)
+#define SLV_STATUS1_NACK_NXT_PW  BIT(29)
+#define SLV_STATUS1_NACK_NXT_PR  BIT(28)
+#define SLV_STATUS1_MR_PEND      BIT(27)
+#define SLV_STATUS1_HJ_PEND      BIT(26)
+#define SLV_STATUS1_IBI_PEND     BIT(25)
+#define SLV_STATUS1_IBI_DIS      BIT(24)
+#define SLV_STATUS1_BUS_VAR      BIT(23)
+#define SLV_STATUS1_TCAM0_DIS    BIT(22)
+#define SLV_STATUS1_AS(s)        (((s) & GENMASK(21, 20)) >> 20)
 #define SLV_STATUS1_VEN_TM       BIT(19)
 #define SLV_STATUS1_HJ_DIS       BIT(18)
 #define SLV_STATUS1_MR_DIS       BIT(17)
 #define SLV_STATUS1_PROT_ERR     BIT(16)
-#define SLV_STATUS1_DA(s)        (((s)&GENMASK(15, 9)) >> 9)
+#define SLV_STATUS1_DA(s)        (((s) & GENMASK(15, 9)) >> 9)
 #define SLV_STATUS1_HAS_DA       BIT(8)
 #define SLV_STATUS1_DDR_RX_FULL  BIT(7)
 #define SLV_STATUS1_DDR_TX_FULL  BIT(6)
@@ -199,6 +233,16 @@
 #define SLV_STATUS1_SDR_TX_FULL  BIT(2)
 #define SLV_STATUS1_SDR_RX_EMPTY BIT(1)
 #define SLV_STATUS1_SDR_TX_EMPTY BIT(0)
+
+#define SLV_IBI_CTRL               0x5c
+#define SLV_IBI_TCAM_EVNT(x)       ((x) << 27)
+#define SLV_IBI_PL(x)              ((x) << 16)
+#define SLV_IBI_TCAM0              BIT(9)
+#define SLV_IBI_REQ                BIT(8)
+#define SLV_IBI_AUTO_CLR_IBI       1
+#define SLV_IBI_AUTO_CLR_PR        2
+#define SLV_IBI_AUTO_CLR_IBI_OR_PR 3
+#define SLV_IBI_CLEAR_TRIGGER(x)   ((x) << 4)
 
 #define CMD0_FIFO                   0x60
 #define CMD0_FIFO_IS_DDR            BIT(31)
@@ -213,16 +257,20 @@
 #define CMD0_FIFO_RSBC              BIT(25)
 #define CMD0_FIFO_IS_10B            BIT(24)
 #define CMD0_FIFO_PL_LEN(l)         ((l) << 12)
+#define CMD0_FIFO_IS_DB             BIT(11)
 #define CMD0_FIFO_PL_LEN_MAX        4095
 #define CMD0_FIFO_DEV_ADDR(a)       ((a) << 1)
 #define CMD0_FIFO_RNW               BIT(0)
 
 #define CMD1_FIFO            0x64
 #define CMD1_FIFO_CMDID(id)  ((id) << 24)
+#define CMD1_FIFO_DB(db)     (((db) & GENMASK(15, 8)) << 8)
 #define CMD1_FIFO_CSRADDR(a) (a)
 #define CMD1_FIFO_CCC(id)    (id)
 
 #define TX_FIFO 0x68
+
+#define TX_FIFO_STATUS 0x6C
 
 #define IMD_CMD0             0x70
 #define IMD_CMD0_PL_LEN(l)   ((l) << 12)
@@ -232,11 +280,26 @@
 #define IMD_CMD1         0x74
 #define IMD_CMD1_CCC(id) (id)
 
-#define IMD_DATA        0x78
-#define RX_FIFO         0x80
-#define IBI_DATA_FIFO   0x84
-#define SLV_DDR_TX_FIFO 0x88
-#define SLV_DDR_RX_FIFO 0x8c
+#define IMD_DATA                    0x78
+#define RX_FIFO                     0x80
+#define IBI_DATA_FIFO               0x84
+#define SLV_DDR_TX_FIFO             0x88
+#define SLV_DDR_RX_FIFO             0x8c
+#define DDR_PREAMBLE_MASK           GENMASK(19, 18)
+#define DDR_PREAMBLE_CMD_CRC        0x1 << 18
+#define DDR_PREAMBLE_DATA_ABORT     0x2 << 18
+#define DDR_PREAMBLE_DATA_ABORT_ALT 0x3 << 18
+#define DDR_DATA(x)                 (((x) & GENMASK(17, 2)) >> 2)
+#define DDR_EVEN_PARITY             BIT(0)
+#define DDR_ODD_PARITY              BIT(1)
+#define DDR_CRC_AND_HEADER_SIZE     0x4
+#define DDR_CONVERT_BUF_LEN(x)      (4 * (x))
+
+#define HDR_CMD_RD         BIT(15)
+#define HDR_CMD_CODE(c)    (((c) & GENMASK(6, 0)) << 8)
+#define DDR_CRC_TOKEN      (0xC << 14)
+#define DDR_CRC_TOKEN_MASK GENMASK(17, 14)
+#define DDR_CRC(t)         (((t) & (GENMASK(13, 9))) >> 9)
 
 #define CMD_IBI_THR_CTRL 0x90
 #define IBIR_THR(t)      ((t) << 24)
@@ -256,8 +319,8 @@
 #define SLV_DDR_TX_THR(t)      (t)
 
 #define FLUSH_CTRL            0x9c
-#define FLUSH_IBI_RESP        BIT(23)
-#define FLUSH_CMD_RESP        BIT(22)
+#define FLUSH_IBI_RESP        BIT(24)
+#define FLUSH_CMD_RESP        BIT(23)
 #define FLUSH_SLV_DDR_RX_FIFO BIT(22)
 #define FLUSH_SLV_DDR_TX_FIFO BIT(21)
 #define FLUSH_IMM_FIFO        BIT(20)
@@ -265,6 +328,26 @@
 #define FLUSH_RX_FIFO         BIT(18)
 #define FLUSH_TX_FIFO         BIT(17)
 #define FLUSH_CMD_FIFO        BIT(16)
+
+#define SLV_CTRL 0xA0
+
+#define SLV_PROT_ERR_TYPE 0xA4
+#define SLV_ERR6_IBI      BIT(9)
+#define SLV_ERR6_PR       BIT(8)
+#define SLV_ERR_GETCCC    BIT(7)
+#define SLV_ERR5          BIT(6)
+#define SLV_ERR4          BIT(5)
+#define SLV_ERR3          BIT(4)
+#define SLV_ERR2_PW       BIT(3)
+#define SLV_ERR2_SETCCC   BIT(2)
+#define SLV_ERR1          BIT(1)
+#define SLV_ERR0          BIT(0)
+
+#define SLV_STATUS2 0xA8
+
+#define SLV_STATUS3           0xAC
+#define SLV_STATUS3_BC_FSM(s) (((s) & GENMASK(26, 16)) >> 16)
+#define SLV_STATUS3_MWL(s)    ((s) & GENMASK(15, 0))
 
 #define TTO_PRESCL_CTRL0               0xb0
 #define TTO_PRESCL_CTRL0_PRESCL_I2C(x) ((x) << 16)
@@ -284,24 +367,24 @@
 #define DEVS_CTRL_DEVS_ACTIVE_MASK GENMASK(15, 0)
 #define MAX_DEVS                   16
 
-#define DEV_ID_RR0(d)              (0xc0 + ((d)*0x10))
+#define DEV_ID_RR0(d)              (0xc0 + ((d) * 0x10))
 #define DEV_ID_RR0_LVR_EXT_ADDR    BIT(11)
 #define DEV_ID_RR0_HDR_CAP         BIT(10)
 #define DEV_ID_RR0_IS_I3C          BIT(9)
-#define DEV_ID_RR0_DEV_ADDR_MASK   (GENMASK(6, 0) | GENMASK(15, 13))
-#define DEV_ID_RR0_SET_DEV_ADDR(a) (((a)&GENMASK(6, 0)) | (((a)&GENMASK(9, 7)) << 6))
+#define DEV_ID_RR0_DEV_ADDR_MASK   (GENMASK(7, 1) | GENMASK(15, 13))
+#define DEV_ID_RR0_SET_DEV_ADDR(a) (((a << 1) & GENMASK(7, 1)) | (((a) & GENMASK(9, 7)) << 13))
 #define DEV_ID_RR0_GET_DEV_ADDR(x) ((((x) >> 1) & GENMASK(6, 0)) | (((x) >> 6) & GENMASK(9, 7)))
 
-#define DEV_ID_RR1(d)           (0xc4 + ((d)*0x10))
+#define DEV_ID_RR1(d)           (0xc4 + ((d) * 0x10))
 #define DEV_ID_RR1_PID_MSB(pid) (pid)
 
-#define DEV_ID_RR2(d)           (0xc8 + ((d)*0x10))
+#define DEV_ID_RR2(d)           (0xc8 + ((d) * 0x10))
 #define DEV_ID_RR2_PID_LSB(pid) ((pid) << 16)
 #define DEV_ID_RR2_BCR(bcr)     ((bcr) << 8)
 #define DEV_ID_RR2_DCR(dcr)     (dcr)
 #define DEV_ID_RR2_LVR(lvr)     (lvr)
 
-#define SIR_MAP(x)               (0x180 + ((x)*4))
+#define SIR_MAP(x)               (0x180 + ((x) * 4))
 #define SIR_MAP_DEV_REG(d)       SIR_MAP((d) / 2)
 #define SIR_MAP_DEV_SHIFT(d, fs) ((fs) + (((d) % 2) ? 16 : 0))
 #define SIR_MAP_DEV_CONF_MASK(d) (GENMASK(15, 0) << (((d) % 2) ? 16 : 0))
@@ -315,10 +398,14 @@
 #define SIR_MAP_DEV_DA(a)        ((a) << 1)
 #define SIR_MAP_DEV_ACK          BIT(0)
 
-#define GPIR_WORD(x)     (0x200 + ((x)*4))
+#define GRPADDR_LIST 0x198
+
+#define GRPADDR_CS 0x19C
+
+#define GPIR_WORD(x)     (0x200 + ((x) * 4))
 #define GPI_REG(val, id) (((val) >> (((id) % 4) * 8)) & GENMASK(7, 0))
 
-#define GPOR_WORD(x)     (0x220 + ((x)*4))
+#define GPOR_WORD(x)     (0x220 + ((x) * 4))
 #define GPO_REG(val, id) (((val) >> (((id) % 4) * 8)) & GENMASK(7, 0))
 
 #define ASF_INT_STATUS        0x300
@@ -337,11 +424,11 @@
 #define ASF_SRAM_CORR_FAULT_STATUS      0x320
 #define ASF_SRAM_UNCORR_FAULT_STATUS    0x324
 #define ASF_SRAM_CORR_FAULT_INSTANCE(x) ((x) >> 24)
-#define ASF_SRAM_CORR_FAULT_ADDR(x)     ((x)&GENMASK(23, 0))
+#define ASF_SRAM_CORR_FAULT_ADDR(x)     ((x) & GENMASK(23, 0))
 
 #define ASF_SRAM_FAULT_STATS           0x328
 #define ASF_SRAM_FAULT_UNCORR_STATS(x) ((x) >> 16)
-#define ASF_SRAM_FAULT_CORR_STATS(x)   ((x)&GENMASK(15, 0))
+#define ASF_SRAM_FAULT_CORR_STATS(x)   ((x) & GENMASK(15, 0))
 
 #define ASF_TRANS_TOUT_CTRL   0x330
 #define ASF_TRANS_TOUT_EN     BIT(31)
@@ -384,8 +471,12 @@
 /* Target T_LOW period in open-drain mode. */
 #define I3C_BUS_TLOW_OD_MIN_NS 200
 
-/* MIPI I3C v1.1.1 Spec defines tsco max as 12ns */
-#define I3C_TSCO_DEFAULT_NS 10
+/*
+ * MIPI I3C v1.1.1 Spec defines tsco max as 12ns, but the default for devices is 8ns
+ * TODO: this should be configurable by the value with in maxRd from the CCC GETMXDS
+ * for individual devices
+ */
+#define I3C_TSCO_DEFAULT_NS 8
 
 /* Interrupt thresholds. */
 /* command response fifo threshold */
@@ -408,6 +499,8 @@ LOG_MODULE_REGISTER(I3C_CADENCE, CONFIG_I3C_CADENCE_LOG_LEVEL);
 
 /** Describes peripheral HW configuration determined from CONFx registers. */
 struct cdns_i3c_hw_config {
+	/* Revision ID */
+	uint32_t rev_id;
 	/* The maxiumum command queue depth. */
 	uint32_t cmd_mem_depth;
 	/* The maxiumum command response queue depth. */
@@ -416,8 +509,14 @@ struct cdns_i3c_hw_config {
 	uint32_t rx_mem_depth;
 	/* The maximum TX FIFO depth. */
 	uint32_t tx_mem_depth;
+	/* The maximum DDR RX FIFO depth. */
+	uint32_t ddr_rx_mem_depth;
+	/* The maximum DDR TX FIFO depth. */
+	uint32_t ddr_tx_mem_depth;
 	/* The maximum IBIR FIFO depth. */
 	uint32_t ibir_mem_depth;
+	/* The maximum IBI FIFO depth. */
+	uint32_t ibi_mem_depth;
 };
 
 /* Cadence I3C/I2C Device Private Data */
@@ -432,10 +531,13 @@ struct cdns_i3c_i2c_dev_data {
 struct cdns_i3c_cmd {
 	uint32_t cmd0;
 	uint32_t cmd1;
+	uint32_t ddr_header;
+	uint32_t ddr_crc;
 	uint32_t len;
 	uint32_t *num_xfer;
 	void *buf;
 	uint32_t error;
+	enum i3c_data_rate hdr;
 };
 
 /* Transfer data */
@@ -467,6 +569,7 @@ struct cdns_i3c_data {
 	struct i3c_target_config *target_config;
 	struct k_sem ibi_hj_complete;
 	uint32_t free_rr_slots;
+	uint16_t fifo_bytes_read;
 	uint8_t max_devs;
 };
 
@@ -482,9 +585,67 @@ struct cdns_i3c_data {
  * Private Functions Code
  ******************************************************************************/
 
+static uint8_t i3c_cdns_crc5(uint8_t crc5, uint16_t word)
+{
+	uint8_t crc0;
+	int i;
+
+	/*
+	 * crc0 = next_data_bit ^ crc[4]
+	 *                1         2            3       4
+	 * crc[4:0] = { crc[3:2], crc[1]^crc0, crc[0], crc0 }
+	 */
+	for (i = 15; i >= 0; --i) {
+		crc0 = ((word >> i) ^ (crc5 >> 4)) & 0x1;
+		crc5 = ((crc5 << 1) & 0x1a) | (((crc5 >> 1) ^ crc0) << 2) | crc0;
+	}
+
+	return crc5 & 0x1f;
+}
+
+static uint8_t cdns_i3c_ddr_parity(uint16_t payload)
+{
+	uint16_t pb;
+	uint8_t parity;
+
+	/* Calculate odd parity. */
+	pb = (payload >> 15) ^ (payload >> 13) ^ (payload >> 11) ^ (payload >> 9) ^ (payload >> 7) ^
+	     (payload >> 5) ^ (payload >> 3) ^ (payload >> 1);
+	parity = (pb & 1) << 1;
+	/* Calculate even and 1 parity */
+	pb = (payload >> 14) ^ (payload >> 12) ^ (payload >> 10) ^ (payload >> 8) ^ (payload >> 6) ^
+	     (payload >> 4) ^ (payload >> 2) ^ payload ^ 1;
+	parity |= (pb & 1);
+
+	return parity;
+}
+
+/* This prepares the ddr word from the payload add adding on parity, This
+ * does not write the preamble
+ */
+static uint32_t prepare_ddr_word(uint16_t payload)
+{
+	return (uint32_t)payload << 2 | cdns_i3c_ddr_parity(payload);
+}
+
+/* This ensures that PA0 contains 1'b1 which allows for easier Bus Turnaround */
+static uint16_t prepare_ddr_cmd_parity_adjustment_bit(uint16_t word)
+{
+	uint16_t pb;
+
+	pb = (word >> 14) ^ (word >> 12) ^ (word >> 10) ^ (word >> 8) ^ (word >> 6) ^ (word >> 4) ^
+	     (word >> 2);
+
+	if (pb & 1) {
+		word |= BIT(0);
+	}
+
+	return word;
+}
+
 /* Computes and sets parity */
 /* Returns [7:1] 7-bit addr, [0] even/xor parity */
-static uint8_t cdns_i3c_even_parity(uint8_t byte)
+static uint8_t cdns_i3c_even_parity_byte(uint8_t byte)
 {
 	uint8_t parity = 0;
 	uint8_t b = byte;
@@ -592,6 +753,79 @@ static void cdns_i3c_write_tx_fifo(const struct cdns_i3c_config *config, const v
 	}
 }
 
+static void cdns_i3c_write_ddr_tx_fifo(const struct cdns_i3c_config *config, const void *buf,
+				       uint32_t len)
+{
+	const uint32_t *ptr = buf;
+	uint32_t remain, val;
+
+	for (remain = len; remain >= 4; remain -= 4) {
+		val = *ptr++;
+		sys_write32(val, config->base + SLV_DDR_TX_FIFO);
+	}
+
+	if (remain > 0) {
+		val = 0;
+		memcpy(&val, ptr, remain);
+		sys_write32(val, config->base + SLV_DDR_TX_FIFO);
+	}
+}
+
+#ifdef CONFIG_I3C_USE_IBI
+static void cdns_i3c_write_ibi_fifo(const struct cdns_i3c_config *config, const void *buf,
+				    uint32_t len)
+{
+	const uint32_t *ptr = buf;
+	uint32_t remain, val;
+
+	for (remain = len; remain >= 4; remain -= 4) {
+		val = *ptr++;
+		sys_write32(val, config->base + IBI_DATA_FIFO);
+	}
+
+	if (remain > 0) {
+		val = 0;
+		memcpy(&val, ptr, remain);
+		sys_write32(val, config->base + IBI_DATA_FIFO);
+	}
+}
+#endif /* CONFIG_I3C_USE_IBI */
+
+static void cdns_i3c_target_read_rx_fifo(const struct device *dev)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+
+	/* Version 1p7 uses the full 32b FIFO width */
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+		uint16_t xferred_bytes =
+			SLV_STATUS0_XFRD_BYTES(sys_read32(config->base + SLV_STATUS0));
+
+		for (int i = data->fifo_bytes_read; i < xferred_bytes; i += 4) {
+			uint32_t rx_data = sys_read32(config->base + RX_FIFO);
+			/* Call write received cb for each remaining byte  */
+			for (int j = 0; j < MIN(4, xferred_bytes - i); j++) {
+				target_cb->write_received_cb(data->target_config,
+							     (rx_data >> (8 * j)));
+			}
+		}
+		/*
+		 * store the xfer bytes as the thr interrupt may trigger again as xferred_bytes will
+		 * count up to the "total" bytes received
+		 */
+		data->fifo_bytes_read = xferred_bytes;
+	} else {
+		/*
+		 * Target writes only write to the first byte of the 32 bit
+		 * width fifo for older version
+		 */
+		uint8_t rx_data = (uint8_t)sys_read32(config->base + RX_FIFO);
+
+		target_cb->write_received_cb(data->target_config, rx_data);
+	}
+}
+
 static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf, uint32_t len)
 {
 	uint32_t *ptr = buf;
@@ -611,6 +845,45 @@ static int cdns_i3c_read_rx_fifo(const struct cdns_i3c_config *config, void *buf
 		}
 		val = sys_le32_to_cpu(sys_read32(config->base + RX_FIFO));
 		memcpy(ptr, &val, remain);
+	}
+
+	return 0;
+}
+
+static int cdns_i3c_read_rx_fifo_ddr_xfer(const struct cdns_i3c_config *config, void *buf,
+					  uint32_t len, uint32_t ddr_header)
+{
+	uint16_t *ptr = buf;
+	uint32_t val;
+	uint32_t preamble;
+	uint8_t crc5 = 0x1F;
+
+	/*
+	 * TODO: This function does not support threshold interrupts, it is expected that the
+	 * whole packet to be within the FIFO and not split across multiple calls to this function.
+	 */
+	crc5 = i3c_cdns_crc5(crc5, (uint16_t)DDR_DATA(ddr_header));
+
+	for (int i = 0; i < len; i++) {
+		if (cdns_i3c_rx_fifo_empty(config)) {
+			return -EIO;
+		}
+		val = sys_read32(config->base + RX_FIFO);
+		preamble = (val & DDR_PREAMBLE_MASK);
+
+		if (preamble == DDR_PREAMBLE_DATA_ABORT ||
+		    preamble == DDR_PREAMBLE_DATA_ABORT_ALT) {
+			*ptr++ = sys_cpu_to_be16((uint16_t)DDR_DATA(val));
+			crc5 = i3c_cdns_crc5(crc5, (uint16_t)DDR_DATA(val));
+		} else if ((preamble == DDR_PREAMBLE_CMD_CRC) &&
+			   ((val & DDR_CRC_TOKEN_MASK) == DDR_CRC_TOKEN)) {
+			uint8_t crc = (uint8_t)DDR_CRC(val);
+
+			if (crc5 != crc) {
+				LOG_ERR("DDR RX crc error");
+				return -EIO;
+			}
+		}
 	}
 
 	return 0;
@@ -697,7 +970,7 @@ static void cdns_i3c_set_prescalers(const struct device *dev)
 static uint32_t prepare_rr0_dev_address(uint16_t addr)
 {
 	/* RR0[7:1] = addr[6:0] | parity^[0] */
-	uint32_t ret = cdns_i3c_even_parity(addr);
+	uint32_t ret = cdns_i3c_even_parity_byte(addr);
 
 	if (addr & GENMASK(9, 7)) {
 		/* RR0[15:13] = addr[9:7] */
@@ -843,15 +1116,52 @@ static int cdns_i3c_target_ibi_raise_hj(const struct device *dev)
 	return 0;
 }
 
+static int cdns_i3c_target_ibi_raise_intr(const struct device *dev, struct i3c_ibi *request)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	const struct cdns_i3c_data *data = dev->data;
+	uint32_t ibi_ctrl_val;
+
+	LOG_DBG("%s: issuing IBI TIR", dev->name);
+
+	/*
+	 * Ensure data will fit within FIFO
+	 *
+	 * TODO: This limitation prevents burst transfers greater than the
+	 *       FIFO sizes and should be replaced with an implementation that
+	 *       utilizes the IBI data threshold interrupts.
+	 */
+	if (request->payload_len > data->hw_cfg.ibi_mem_depth) {
+		LOG_ERR("%s: payload too large for IBI TIR", dev->name);
+		return -ENOMEM;
+	}
+
+	cdns_i3c_write_ibi_fifo(config, request->payload, request->payload_len);
+
+	/* Write Payload Length and Start Condition */
+	ibi_ctrl_val = sys_read32(config->base + SLV_IBI_CTRL);
+	ibi_ctrl_val |= SLV_IBI_PL(request->payload_len);
+	ibi_ctrl_val |= SLV_IBI_REQ;
+	sys_write32(ibi_ctrl_val, config->base + SLV_IBI_CTRL);
+	return 0;
+}
+
 static int cdns_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *request)
 {
+	struct cdns_i3c_data *data = dev->data;
+
 	if (request == NULL) {
 		return -EINVAL;
 	}
 
 	switch (request->ibi_type) {
 	case I3C_IBI_TARGET_INTR:
-		return -ENOTSUP;
+		/* Check IP Revision since older versions of CDNS IP do not support IBI interrupt*/
+		if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+			return cdns_i3c_target_ibi_raise_intr(dev, request);
+		} else {
+			return -ENOTSUP;
+		}
 	case I3C_IBI_CONTROLLER_ROLE_REQUEST:
 		/* TODO: Cadence I3C can support CR, but not implemented yet */
 		return -ENOTSUP;
@@ -938,8 +1248,39 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 
 	/* Write all tx data to fifo */
 	for (unsigned int i = 0; i < xfer->num_cmds; i++) {
-		if (!(xfer->cmds[i].cmd0 & CMD0_FIFO_RNW)) {
-			cdns_i3c_write_tx_fifo(config, xfer->cmds[i].buf, xfer->cmds[i].len);
+		if (xfer->cmds[i].hdr == I3C_DATA_RATE_SDR) {
+			if (!(xfer->cmds[i].cmd0 & CMD0_FIFO_RNW)) {
+				cdns_i3c_write_tx_fifo(config, xfer->cmds[i].buf,
+						       xfer->cmds[i].len);
+			}
+		} else if (xfer->cmds[i].hdr == I3C_DATA_RATE_HDR_DDR) {
+			/* DDR Xfer requires sending header block*/
+			cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_header,
+					       DDR_CRC_AND_HEADER_SIZE);
+			/* If not read operation need to send data + crc of data*/
+			if (!(DDR_DATA(xfer->cmds[i].ddr_header) & HDR_CMD_RD)) {
+				uint8_t *buf = (uint8_t *)xfer->cmds[i].buf;
+				uint32_t ddr_message = 0;
+				uint16_t ddr_data_payload = sys_get_be16(&buf[0]);
+				/* HDR-DDR Data Words */
+				ddr_message = (DDR_PREAMBLE_DATA_ABORT |
+					       prepare_ddr_word(ddr_data_payload));
+				cdns_i3c_write_tx_fifo(config, &ddr_message,
+						       DDR_CRC_AND_HEADER_SIZE);
+				for (int j = 2; j < ((xfer->cmds[i].len - 2) * 2); j += 2) {
+					ddr_data_payload = sys_get_be16(&buf[j]);
+					ddr_message = (DDR_PREAMBLE_DATA_ABORT_ALT |
+						       prepare_ddr_word(ddr_data_payload));
+					cdns_i3c_write_tx_fifo(config, &ddr_message,
+							       DDR_CRC_AND_HEADER_SIZE);
+				}
+				/* HDR-DDR CRC Word */
+				cdns_i3c_write_tx_fifo(config, &xfer->cmds[i].ddr_crc,
+						       DDR_CRC_AND_HEADER_SIZE);
+			}
+		} else {
+			xfer->ret = -ENOTSUP;
+			return;
 		}
 	}
 
@@ -949,6 +1290,17 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 		xfer->cmds[i].cmd1 |= CMD1_FIFO_CMDID(i);
 		sys_write32(xfer->cmds[i].cmd1, config->base + CMD1_FIFO);
 		sys_write32(xfer->cmds[i].cmd0, config->base + CMD0_FIFO);
+
+		if (xfer->cmds[i].hdr == I3C_DATA_RATE_HDR_DDR) {
+			sys_write32(0x00, config->base + CMD1_FIFO);
+			if ((DDR_DATA(xfer->cmds[i].ddr_header) & HDR_CMD_RD)) {
+				sys_write32(CMD0_FIFO_IS_DDR | CMD0_FIFO_PL_LEN(1),
+					    config->base + CMD0_FIFO);
+			} else {
+				sys_write32(CMD0_FIFO_IS_DDR | CMD0_FIFO_PL_LEN(xfer->cmds[i].len),
+					    config->base + CMD0_FIFO);
+			}
+		}
 	}
 
 	/* kickoff transfer */
@@ -970,9 +1322,9 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
-	struct cdns_i3c_cmd *dcmd = &data->xfer.cmds[0];
+	struct cdns_i3c_cmd *cmd;
 	int ret = 0;
-	int num_cmds = 0;
+	uint8_t num_cmds = 0;
 
 	/* make sure we are currently the active controller */
 	if (!(sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE)) {
@@ -999,7 +1351,9 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 	}
 
 	uint32_t rxsize = 0;
-	uint32_t txsize = ROUND_UP(payload->ccc.data_len, 4);
+	/* defining byte is stored in a separate register for direct CCCs */
+	uint32_t txsize =
+		i3c_ccc_is_payload_broadcast(payload) ? ROUND_UP(payload->ccc.data_len, 4) : 0;
 
 	for (int i = 0; i < payload->targets.num_targets; i++) {
 		if (payload->targets.payloads[i].rnw) {
@@ -1023,61 +1377,79 @@ static int cdns_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *pay
 		goto error;
 	}
 
-	dcmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
-	dcmd->cmd0 = CMD0_FIFO_IS_CCC;
-	dcmd->len = 0;
-
-	size_t idx = 0;
-
-	if (payload->ccc.data_len > 0) {
-		/* Write additional data for CCC if needed */
-		dcmd->buf = payload->ccc.data;
-		dcmd->len = payload->ccc.data_len;
-		dcmd->cmd0 |= CMD0_FIFO_PL_LEN(payload->ccc.data_len);
-		/* write the address of num_xfer which is to be updated upon message completion */
-		dcmd->num_xfer = &(payload->ccc.num_xfer);
-	} else if (payload->targets.num_targets > 0) {
-		dcmd->buf = payload->targets.payloads[0].data;
-		dcmd->len = payload->targets.payloads[0].data_len;
-		dcmd->cmd0 |= CMD0_FIFO_DEV_ADDR(payload->targets.payloads[0].addr) |
-			      CMD0_FIFO_PL_LEN(payload->targets.payloads[0].data_len);
-		if (payload->targets.payloads[0].rnw) {
-			dcmd->cmd0 |= CMD0_FIFO_RNW;
-		}
-		/* write the address of num_xfer which is to be updated upon message completion */
-		dcmd->num_xfer = &(payload->targets.payloads[0].num_xfer);
-		idx++;
-	}
-	num_cmds++;
-
+	/* if this is a direct CCC */
 	if (!i3c_ccc_is_payload_broadcast(payload)) {
-		/*
-		 * If there are payload(s) for each target,
-		 * RESTART and then send payload for each target.
+		/* if the CCC has no data bytes, then the target payload must be in
+		 * the same command buffer
 		 */
-		while (idx < payload->targets.num_targets) {
+		for (int i = 0; i < payload->targets.num_targets; i++) {
+			cmd = &data->xfer.cmds[i];
 			num_cmds++;
-			struct cdns_i3c_cmd *cmd = &data->xfer.cmds[idx + 1];
-			struct i3c_ccc_target_payload *tgt_payload =
-				&payload->targets.payloads[idx];
-			/* Send repeated start on all transfers except the last */
-			if (idx < (payload->targets.num_targets - 1)) {
+			cmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
+			cmd->cmd0 = CMD0_FIFO_IS_CCC;
+			/* if there is a defining byte */
+			if (payload->ccc.data_len == 1) {
+				/* Only revision 1p7 supports defining byte for direct CCCs */
+				if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+					cmd->cmd0 |= CMD0_FIFO_IS_DB;
+					cmd->cmd1 |= CMD1_FIFO_DB(payload->ccc.data[0]);
+				} else {
+					LOG_ERR("%s: Defining Byte with Direct CCC not supported "
+						"with rev %lup%lu",
+						dev->name, REV_ID_REV_MAJOR(data->hw_cfg.rev_id),
+						REV_ID_REV_MINOR(data->hw_cfg.rev_id));
+					ret = -ENOTSUP;
+					goto error;
+				}
+			} else if (payload->ccc.data_len > 1) {
+				LOG_ERR("%s: Defining Byte length greater than 1", dev->name);
+				ret = -EINVAL;
+				goto error;
+			}
+			/* for a short CCC, i.e. where a direct ccc has multiple targets,
+			 * BCH must be 0 for subsequent targets and RSBC must be 1, otherwise
+			 * if there is just one target, RSBC must be 0 on the first target
+			 */
+			if (i == 0) {
+				cmd->cmd0 |= CMD0_FIFO_BCH;
+			}
+			if (i < (payload->targets.num_targets - 1)) {
 				cmd->cmd0 |= CMD0_FIFO_RSBC;
 			}
-			cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(tgt_payload->addr);
-			if (tgt_payload->rnw) {
+			cmd->buf = payload->targets.payloads[i].data;
+			cmd->len = payload->targets.payloads[i].data_len;
+			cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(payload->targets.payloads[i].addr) |
+				     CMD0_FIFO_PL_LEN(payload->targets.payloads[i].data_len);
+			if (payload->targets.payloads[i].rnw) {
 				cmd->cmd0 |= CMD0_FIFO_RNW;
 			}
-
-			cmd->buf = tgt_payload->data;
-			cmd->len = tgt_payload->data_len;
+			cmd->hdr = I3C_DATA_RATE_SDR;
 			/*
 			 * write the address of num_xfer which is to be updated upon message
 			 * completion
 			 */
-			cmd->num_xfer = &(tgt_payload->num_xfer);
+			cmd->num_xfer = &(payload->targets.payloads[i].num_xfer);
+		}
+	} else {
+		cmd = &data->xfer.cmds[0];
+		num_cmds++;
+		cmd->cmd1 = CMD1_FIFO_CCC(payload->ccc.id);
+		cmd->cmd0 = CMD0_FIFO_IS_CCC | CMD0_FIFO_BCH;
+		cmd->hdr = I3C_DATA_RATE_SDR;
 
-			idx++;
+		if (payload->ccc.data_len > 0) {
+			/* Write additional data for CCC if needed */
+			cmd->buf = payload->ccc.data;
+			cmd->len = payload->ccc.data_len;
+			cmd->cmd0 |= CMD0_FIFO_PL_LEN(payload->ccc.data_len);
+			/* write the address of num_xfer which is to be updated upon message
+			 * completion
+			 */
+			cmd->num_xfer = &(payload->ccc.num_xfer);
+		} else {
+			/* no data to transfer */
+			cmd->len = 0;
+			cmd->num_xfer = NULL;
 		}
 	}
 
@@ -1117,7 +1489,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 
 	/* DAA should not be done by secondary controllers */
 	if (ctrl_config->is_secondary) {
-		return -ENOTSUP;
+		return -EACCES;
 	}
 
 	/* read dev active reg */
@@ -1281,7 +1653,7 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 	const struct cdns_i3c_config *config = dev->config;
 	uint32_t cmdr;
 	uint32_t id = 0;
-	uint32_t rx = 0;
+	uint32_t xfer = 0;
 	int ret = 0;
 	struct cdns_i3c_cmd *cmd;
 	bool was_full;
@@ -1310,13 +1682,19 @@ static void cdns_i3c_complete_transfer(const struct device *dev)
 
 		cmd = &data->xfer.cmds[id];
 
+		xfer = MIN(CMDR_XFER_BYTES(cmdr), cmd->len);
+		if (cmd->num_xfer != NULL) {
+			*cmd->num_xfer = xfer;
+		}
 		/* Read any rx data into buffer */
 		if (cmd->cmd0 & CMD0_FIFO_RNW) {
-			rx = MIN(CMDR_XFER_BYTES(cmdr), cmd->len);
-			if (cmd->num_xfer != NULL) {
-				*cmd->num_xfer = rx;
-			}
-			ret = cdns_i3c_read_rx_fifo(config, cmd->buf, rx);
+			ret = cdns_i3c_read_rx_fifo(config, cmd->buf, xfer);
+		}
+
+		if ((cmd->hdr == I3C_DATA_RATE_HDR_DDR) &&
+		    (DDR_DATA(cmd->ddr_header) & HDR_CMD_RD)) {
+			ret = cdns_i3c_read_rx_fifo_ddr_xfer(config, cmd->buf, xfer,
+							     cmd->ddr_header);
 		}
 
 		/* Record error */
@@ -1476,6 +1854,8 @@ static int cdns_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device
 
 		cmd->len = msgs[i].len;
 		cmd->buf = msgs[i].buf;
+		/* not an i3c transfer, but must be set to sdr */
+		cmd->hdr = I3C_DATA_RATE_SDR;
 
 		cmd->cmd0 = CMD0_FIFO_PRIV_XMIT_MODE(XMIT_BURST_WITHOUT_SUBADDR);
 		cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(i2c_dev->addr);
@@ -1768,38 +2148,106 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 	for (int i = 0; i < num_msgs; i++) {
 		struct cdns_i3c_cmd *cmd = &data->xfer.cmds[i];
 		uint32_t pl = msgs[i].len;
-
-		cmd->len = pl;
-		cmd->buf = msgs[i].buf;
-
-		cmd->cmd0 = CMD0_FIFO_PRIV_XMIT_MODE(XMIT_BURST_WITHOUT_SUBADDR);
-		cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(target->dynamic_addr);
-		if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
-			cmd->cmd0 |= CMD0_FIFO_RNW;
-			/*
-			 * For I3C_XMIT_MODE_NO_ADDR reads in SDN mode,
-			 * CMD0_FIFO_PL_LEN specifies the abort limit not bytes to read
+		/* check hdr mode */
+		if ((!(msgs[i].flags & I3C_MSG_HDR)) ||
+		    ((msgs[i].flags & I3C_MSG_HDR) && (msgs[i].hdr_mode == 0))) {
+			/* HDR message flag is not set or if hdr flag is set but no hdr mode is set
 			 */
-			cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl + 1);
+			cmd->len = pl;
+			cmd->buf = msgs[i].buf;
+
+			cmd->cmd0 = CMD0_FIFO_PRIV_XMIT_MODE(XMIT_BURST_WITHOUT_SUBADDR);
+			cmd->cmd0 |= CMD0_FIFO_DEV_ADDR(target->dynamic_addr);
+			if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
+				cmd->cmd0 |= CMD0_FIFO_RNW;
+				/*
+				 * For I3C_XMIT_MODE_NO_ADDR reads in SDN mode,
+				 * CMD0_FIFO_PL_LEN specifies the abort limit not bytes to read
+				 */
+				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl + 1);
+			} else {
+				cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
+			}
+
+			/* Send broadcast header on first transfer or after a STOP. */
+			if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
+				cmd->cmd0 |= CMD0_FIFO_BCH;
+				send_broadcast = false;
+			}
+
+			/*
+			 * Send repeated start on all transfers except the last or those marked
+			 * STOP.
+			 */
+			if ((i < (num_msgs - 1)) && ((msgs[i].flags & I3C_MSG_STOP) == 0)) {
+				cmd->cmd0 |= CMD0_FIFO_RSBC;
+			} else {
+				send_broadcast = true;
+			}
+
+			/*
+			 * write the address of num_xfer which is to be updated upon message
+			 * completion
+			 */
+			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->hdr = I3C_DATA_RATE_SDR;
+		} else if ((data->common.ctrl_config.supported_hdr & I3C_MSG_HDR_DDR) &&
+			   (msgs[i].hdr_mode == I3C_MSG_HDR_DDR) && (msgs[i].flags & I3C_MSG_HDR)) {
+			uint16_t ddr_header_payload;
+
+			/* DDR sends data out in 16b, so len must be a multiple of 2 */
+			if (!((pl % 2) == 0)) {
+				ret = -EINVAL;
+				goto error;
+			}
+			/* HDR message flag is set and hdr mode is DDR */
+			cmd->buf = msgs[i].buf;
+			if ((msgs[i].flags & I3C_MSG_RW_MASK) == I3C_MSG_READ) {
+				/* HDR-DDR Read */
+				ddr_header_payload = HDR_CMD_RD |
+						     HDR_CMD_CODE(msgs[i].hdr_cmd_code) |
+						     (target->dynamic_addr << 1);
+				/* Parity Adjustment Bit for Reads */
+				ddr_header_payload =
+					prepare_ddr_cmd_parity_adjustment_bit(ddr_header_payload);
+				/* HDR-DDR Command Word */
+				cmd->ddr_header =
+					DDR_PREAMBLE_CMD_CRC | prepare_ddr_word(ddr_header_payload);
+			} else {
+				uint8_t crc5 = 0x1F;
+				/* HDR-DDR Write */
+				ddr_header_payload = HDR_CMD_CODE(msgs[i].hdr_cmd_code) |
+						     (target->dynamic_addr << 1);
+				/* HDR-DDR Command Word */
+				cmd->ddr_header =
+					DDR_PREAMBLE_CMD_CRC | prepare_ddr_word(ddr_header_payload);
+				/* calculate crc5 */
+				crc5 = i3c_cdns_crc5(crc5, ddr_header_payload);
+				for (int j = 0; j < pl; j += 2) {
+					crc5 = i3c_cdns_crc5(
+						crc5,
+						sys_get_be16((void *)((uintptr_t)cmd->buf + j)));
+				}
+				cmd->ddr_crc = DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN | (crc5 << 9);
+			}
+			/* Length of DDR Transfer is length of payload (in 16b) + header and CRC
+			 * blocks
+			 */
+			cmd->len = ((pl / 2) + 2);
+
+			/* prep command FIFO for ENTHDR0 */
+			cmd->cmd0 = CMD0_FIFO_IS_CCC;
+			cmd->cmd1 = I3C_CCC_ENTHDR0;
+			/* write the address of num_xfer which is to be updated upon message
+			 * completion
+			 */
+			cmd->num_xfer = &(msgs[i].num_xfer);
+			cmd->hdr = I3C_DATA_RATE_HDR_DDR;
 		} else {
-			cmd->cmd0 |= CMD0_FIFO_PL_LEN(pl);
+			LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, msgs[i].hdr_mode);
+			ret = -ENOTSUP;
+			goto error;
 		}
-
-		/* Send broadcast header on first transfer or after a STOP. */
-		if (!(msgs[i].flags & I3C_MSG_NBCH) && (send_broadcast)) {
-			cmd->cmd0 |= CMD0_FIFO_BCH;
-			send_broadcast = false;
-		}
-
-		/* Send repeated start on all transfers except the last or those marked STOP. */
-		if ((i < (num_msgs - 1)) && ((msgs[i].flags & I3C_MSG_STOP) == 0)) {
-			cmd->cmd0 |= CMD0_FIFO_RSBC;
-		} else {
-			send_broadcast = true;
-		}
-
-		/* write the address of num_xfer which is to be updated upon message completion */
-		cmd->num_xfer = &(msgs[i].num_xfer);
 	}
 
 	data->xfer.ret = -ETIMEDOUT;
@@ -1983,12 +2431,6 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 				dev->name);
 #endif
 		}
-
-		/* In-band interrupt data */
-		if (int_st & MST_INT_IBID_THR) {
-			sys_write32(MST_INT_IBID_THR, config->base + MST_ICR);
-		}
-
 		/* In-band interrupt data */
 		if (int_st & MST_INT_TX_OVF) {
 			sys_write32(MST_INT_TX_OVF, config->base + MST_ICR);
@@ -2009,19 +2451,16 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		uint32_t int_sl = sys_read32(config->base + SLV_ISR);
 		struct cdns_i3c_data *data = dev->data;
 		const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+		/* Clear interrupts */
+		sys_write32(int_sl, config->base + SLV_ICR);
 
 		/* SLV SDR rx fifo threshold */
 		if (int_sl & SLV_INT_SDR_RX_THR) {
 			/* while rx fifo is not empty */
 			while (!(sys_read32(config->base + SLV_STATUS1) &
 				 SLV_STATUS1_SDR_RX_EMPTY)) {
-				/* Target writes only write to the first byte of the 32 bit width
-				 * fifo
-				 */
-				uint8_t rx_data = (uint8_t)sys_read32(config->base + RX_FIFO);
-				/* call function pointer for write */
 				if (target_cb != NULL && target_cb->write_received_cb != NULL) {
-					target_cb->write_received_cb(data->target_config, rx_data);
+					cdns_i3c_target_read_rx_fifo(dev);
 				}
 			}
 		}
@@ -2063,6 +2502,8 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 		if (int_sl & SLV_INT_SDR_WR_COMP) {
 			/* a read needs to be done on slv_status 0 else a NACK will happen */
 			(void)sys_read32(config->base + SLV_STATUS0);
+			/* clear bytes read parameter */
+			data->fifo_bytes_read = 0;
 			/* call stop function pointer */
 			if (target_cb != NULL && target_cb->stop_cb) {
 				target_cb->stop_cb(data->target_config);
@@ -2109,7 +2550,95 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 			LOG_ERR("%s: slave sdr tx buffer overflow,", dev->name);
 		}
 
-		sys_write32(int_sl, config->base + SLV_ICR);
+		if (int_sl & SLV_INT_DDR_RX_THR) {
+		}
+
+		/* SLV DDR WR COMPLETE */
+		if (int_sl & SLV_INT_DDR_WR_COMP) {
+			/* initial value of CRC5 for HDR-DDR is 0x1F */
+			uint8_t crc5 = 0x1F;
+
+			while (!(sys_read32(config->base + SLV_STATUS1) &
+				 SLV_STATUS1_DDR_RX_EMPTY)) {
+				uint32_t ddr_rx_data = sys_read32(config->base + SLV_DDR_RX_FIFO);
+				uint32_t preamble = (ddr_rx_data & DDR_PREAMBLE_MASK);
+
+				if (preamble == DDR_PREAMBLE_DATA_ABORT ||
+				    preamble == DDR_PREAMBLE_DATA_ABORT_ALT) {
+					uint16_t ddr_payload = DDR_DATA(ddr_rx_data);
+
+					if (cdns_i3c_ddr_parity(ddr_payload) !=
+					    (ddr_rx_data & (DDR_ODD_PARITY | DDR_EVEN_PARITY))) {
+						LOG_ERR("%s: Received incorrect DDR Parity",
+							dev->name);
+					}
+					/* calculate a running a crc */
+					crc5 = i3c_cdns_crc5(crc5, ddr_payload);
+
+					if (target_cb != NULL &&
+					    target_cb->write_received_cb != NULL) {
+						/* DDR receives 2B for each payload */
+						target_cb->write_received_cb(
+							data->target_config,
+							(uint8_t)((ddr_payload >> 8) & 0xFF));
+						target_cb->write_received_cb(
+							data->target_config,
+							(uint8_t)(ddr_payload));
+					}
+
+				} else if ((preamble == DDR_PREAMBLE_CMD_CRC) &&
+					   ((ddr_rx_data & DDR_CRC_TOKEN_MASK) == DDR_CRC_TOKEN)) {
+					/* should come through here last */
+					if (crc5 != DDR_CRC(ddr_rx_data)) {
+						LOG_ERR("%s: Received incorrect DDR CRC5",
+							dev->name);
+					}
+				} else if (preamble == DDR_PREAMBLE_CMD_CRC) {
+					/* should come through here first */
+					uint16_t ddr_header_payload = DDR_DATA(ddr_rx_data);
+
+					crc5 = i3c_cdns_crc5(crc5, ddr_header_payload);
+				}
+			}
+
+			if (target_cb != NULL && target_cb->stop_cb != NULL) {
+				target_cb->stop_cb(data->target_config);
+			}
+		}
+
+		/* SLV SDR rx complete */
+		if (int_sl & SLV_INT_DDR_RD_COMP) {
+			/* a read needs to be done on slv_status 0 else a NACK will happen */
+			(void)sys_read32(config->base + SLV_STATUS0);
+			/* call stop function pointer */
+			if (target_cb != NULL && target_cb->stop_cb) {
+				target_cb->stop_cb(data->target_config);
+			}
+		}
+
+		/*SLV DDR TX THR*/
+		if (int_sl & SLV_INT_DDR_TX_THR) {
+			int status = 0;
+
+			if (target_cb != NULL && target_cb->read_processed_cb) {
+
+				while ((!(sys_read32(config->base + SLV_STATUS1) &
+					  SLV_STATUS1_DDR_TX_FULL)) &&
+				       (status == 0)) {
+					/* call function pointer for read */
+					uint8_t byte;
+					/* will return negative if no data left to transmit
+					 * and 0 if data available
+					 */
+					status = target_cb->read_processed_cb(data->target_config,
+									      &byte);
+					if (status == 0) {
+						cdns_i3c_write_ddr_tx_fifo(config, &byte,
+									   sizeof(byte));
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -2134,20 +2663,29 @@ static void cdns_i3c_read_hw_cfg(const struct device *dev)
 	uint32_t cfg0 = sys_read32(config->base + CONF_STATUS0);
 	uint32_t cfg1 = sys_read32(config->base + CONF_STATUS1);
 
+	data->hw_cfg.rev_id = revid;
 	data->hw_cfg.cmdr_mem_depth = CONF_STATUS0_CMDR_DEPTH(cfg0) * 4;
 	data->hw_cfg.cmd_mem_depth = CONF_STATUS1_CMD_DEPTH(cfg1) * 4;
 	data->hw_cfg.rx_mem_depth = CONF_STATUS1_RX_DEPTH(cfg1) * 4;
 	data->hw_cfg.tx_mem_depth = CONF_STATUS1_TX_DEPTH(cfg1) * 4;
+	data->hw_cfg.ddr_rx_mem_depth = CONF_STATUS1_SLV_DDR_RX_DEPTH(cfg1) * 4;
+	data->hw_cfg.ddr_tx_mem_depth = CONF_STATUS1_SLV_DDR_TX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ibir_mem_depth = CONF_STATUS0_IBIR_DEPTH(cfg0) * 4;
+	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg0) * 4;
 
 	LOG_DBG("%s: FIFO info:\r\n"
 		"  cmd_mem_depth = %u\r\n"
 		"  cmdr_mem_depth = %u\r\n"
 		"  rx_mem_depth = %u\r\n"
 		"  tx_mem_depth = %u\r\n"
+		"  ddr_rx_mem_depth = %u\r\n"
+		"  ddr_tx_mem_depth = %u\r\n"
+		"  ibi_mem_depth = %u\r\n"
 		"  ibir_mem_depth = %u",
 		dev->name, data->hw_cfg.cmd_mem_depth, data->hw_cfg.cmdr_mem_depth,
-		data->hw_cfg.rx_mem_depth, data->hw_cfg.tx_mem_depth, data->hw_cfg.ibir_mem_depth);
+		data->hw_cfg.rx_mem_depth, data->hw_cfg.tx_mem_depth, data->hw_cfg.ddr_rx_mem_depth,
+		data->hw_cfg.ddr_tx_mem_depth, data->hw_cfg.ibi_mem_depth,
+		data->hw_cfg.ibir_mem_depth);
 
 	/* Regardless of the cmd depth size we are limited by our cmd array length. */
 	data->hw_cfg.cmd_mem_depth = MIN(data->hw_cfg.cmd_mem_depth, ARRAY_SIZE(data->xfer.cmds));
@@ -2189,6 +2727,63 @@ out_configure:
 	return ret;
 }
 
+static int cdns_i3c_target_tx_ddr_write(const struct device *dev, uint8_t *buf, uint16_t len)
+{
+	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
+	uint32_t i, preamble;
+	uint32_t data_word;
+	uint8_t crc5 = 0x1F;
+
+	/* check if there is space available in the tx fifo */
+	if (sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_DDR_TX_FULL) {
+		return -ENOSPC;
+	}
+
+	/* DDR sends data out in 16b, so len must be a multiple of 2 */
+	if (!((len % 2) == 0)) {
+		return -EINVAL;
+	}
+
+	/* Header shall be known in advanced to calculate crc5 */
+	uint8_t slave_da = SLV_STATUS1_DA(sys_read32(config->base + SLV_STATUS1));
+	uint16_t ddr_payload_header = HDR_CMD_RD | (slave_da << 1);
+
+	ddr_payload_header = prepare_ddr_cmd_parity_adjustment_bit(ddr_payload_header);
+	crc5 = i3c_cdns_crc5(crc5, ddr_payload_header);
+
+	/* write as much as you can to the fifo */
+	for (i = 0;
+	     i < len && (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_DDR_TX_FULL));
+	     i += 2) {
+		/* Use ALT with other than first packets */
+		preamble = (i > 0) ? DDR_PREAMBLE_DATA_ABORT_ALT : DDR_PREAMBLE_DATA_ABORT;
+		data_word = (preamble | prepare_ddr_word(sys_get_be16(&buf[i])));
+		crc5 = i3c_cdns_crc5(crc5, sys_get_be16(&buf[i]));
+		sys_write32(data_word, config->base + SLV_DDR_TX_FIFO);
+	}
+	/* end of data buffer, write crc packet (if we are still not full) */
+	if ((i == len) && (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_DDR_TX_FULL))) {
+		sys_write32(DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN | crc5 << 9,
+			    config->base + SLV_DDR_TX_FIFO);
+	}
+
+	/* setup THR interrupt */
+	uint32_t thr_ctrl = sys_read32(config->base + SLV_DDR_TX_RX_THR_CTRL);
+
+	/*
+	 * Interrupt at half of the data or FIFO depth to give it enough time to be
+	 * processed. The ISR will then callback to the function pointer
+	 * `read_processed_cb` to collect more data to transmit
+	 */
+	thr_ctrl &= ~TX_THR_MASK;
+	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, len / 2));
+
+	sys_write32(thr_ctrl, config->base + SLV_DDR_TX_RX_THR_CTRL);
+	/* return total bytes written */
+	return i;
+}
+
 /**
  * @brief Writes to the Target's TX FIFO
  *
@@ -2204,10 +2799,16 @@ out_configure:
  * @retval -EACCES Not in Target Mode
  * @retval -ENOSPC No space in Tx FIFO
  */
-static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint16_t len)
+static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint16_t len,
+				    uint8_t hdr_mode)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	struct cdns_i3c_data *data = dev->data;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	const uint32_t *buf_32 = (uint32_t *)buf;
+	uint32_t i = 0;
+	uint32_t val = 0;
+	uint16_t remain = len;
 
 	/* check if we are currently a target */
 	if (sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE) {
@@ -2221,26 +2822,56 @@ static int cdns_i3c_target_tx_write(const struct device *dev, uint8_t *buf, uint
 
 	k_mutex_lock(&data->bus_lock, K_FOREVER);
 
-	/* write as much as you can to the fifo */
-	uint16_t i;
-
-	for (i = 0;
-	     i < len && (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_SDR_TX_FULL));
-	     i++) {
-		sys_write32((uint32_t)buf[i], config->base + TX_FIFO);
+	/* rev 1p7 requires the length be written to the SLV_CTRL reg */
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+		sys_write32(len, config->base + SLV_CTRL);
 	}
+	if (hdr_mode == I3C_MSG_HDR_DDR) {
+		if (ctrl_config->supported_hdr & I3C_MSG_HDR_DDR) {
+			i = cdns_i3c_target_tx_ddr_write(dev, buf, len);
+			/* TODO: DDR THR interrupt support not implemented yet*/
+		} else {
+			LOG_ERR("%s: HDR-DDR not supported", dev->name);
+			i = -ENOTSUP;
+		}
+	} else if (hdr_mode == 0) {
+		/* write as much as you can to the fifo */
+		while (i < len &&
+		       (!(sys_read32(config->base + SLV_STATUS1) & SLV_STATUS1_SDR_TX_FULL))) {
+			/* with rev 1p7, while as a target, the fifos are using the full word,
+			 * otherwise only the first byte is used
+			 */
+			if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+				remain = len - i;
+				if (remain >= 4) {
+					val = *buf_32++;
+				} else if (remain > 0) {
+					val = 0;
+					memcpy(&val, buf_32, remain);
+				}
+				sys_write32(val, config->base + TX_FIFO);
+				i += 4;
+			} else {
+				sys_write32((uint32_t)buf[i], config->base + TX_FIFO);
+				i++;
+			}
+		}
 
-	/* setup THR interrupt */
-	uint32_t thr_ctrl = sys_read32(config->base + TX_RX_THR_CTRL);
+		/* setup THR interrupt */
+		uint32_t thr_ctrl = sys_read32(config->base + TX_RX_THR_CTRL);
 
-	/*
-	 * Interrupt at half of the data or FIFO depth to give it enough time to be
-	 * processed. The ISR will then callback to the function pointer
-	 * `read_processed_cb` to collect more data to transmit
-	 */
-	thr_ctrl &= ~TX_THR_MASK;
-	thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, i / 2));
-	sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
+		/*
+		 * Interrupt at half of the data or FIFO depth to give it enough time to be
+		 * processed. The ISR will then callback to the function pointer
+		 * `read_processed_cb` to collect more data to transmit
+		 */
+		thr_ctrl &= ~TX_THR_MASK;
+		thr_ctrl |= TX_THR(MIN((data->hw_cfg.tx_mem_depth / 4) / 2, len / 2));
+		sys_write32(thr_ctrl, config->base + TX_RX_THR_CTRL);
+	} else {
+		LOG_ERR("%s: Unsupported HDR Mode %d", dev->name, hdr_mode);
+		i = -ENOTSUP;
+	}
 
 	k_mutex_unlock(&data->bus_lock);
 
@@ -2424,16 +3055,28 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	const struct cdns_i3c_config *config = dev->config;
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
 
+	cdns_i3c_read_hw_cfg(dev);
+
 	/* Clear all retaining regs */
 	sys_write32(DEVS_CTRL_DEV_CLR_ALL, config->base + DEVS_CTRL);
 
 	uint32_t conf0 = sys_read32(config->base + CONF_STATUS0);
-
+	uint32_t conf1 = sys_read32(config->base + CONF_STATUS1);
 	data->max_devs = CONF_STATUS0_DEVS_NUM(conf0);
 	data->free_rr_slots = GENMASK(data->max_devs, 1);
-	ctrl_config->is_secondary = (conf0 & CONF_STATUS0_SEC_MASTER) ? true : false;
-	ctrl_config->supported_hdr = (conf0 & CONF_STATUS0_SUPPORTS_DDR) ? I3C_MSG_HDR_DDR : 0;
 
+	/* DDR supported bit moved in 1p7 revision along with dev role added */
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 7)) {
+		ctrl_config->supported_hdr =
+			(conf1 & CONF_STATUS1_SUPPORTS_DDR) ? I3C_MSG_HDR_DDR : 0;
+		ctrl_config->is_secondary =
+			(CONF_STATUS0_DEV_ROLE(conf0) == CONF_STATUS0_DEV_ROLE_SEC_MASTER) ? true
+											   : false;
+	} else {
+		ctrl_config->supported_hdr =
+			(conf0 & CONF_STATUS0_SUPPORTS_DDR) ? I3C_MSG_HDR_DDR : 0;
+		ctrl_config->is_secondary = (conf0 & CONF_STATUS0_SEC_MASTER) ? true : false;
+	}
 	k_mutex_init(&data->bus_lock);
 	k_sem_init(&data->xfer.complete, 0, 1);
 	k_sem_init(&data->ibi_hj_complete, 0, 1);
@@ -2445,8 +3088,6 @@ static int cdns_i3c_bus_init(const struct device *dev)
 
 	/* Ensure the bus is disabled. */
 	sys_write32(~CTRL_DEV_EN & sys_read32(config->base + CTRL), config->base + CTRL);
-
-	cdns_i3c_read_hw_cfg(dev);
 
 	/* determine prescaler timings for i3c and i2c scl */
 	cdns_i3c_set_prescalers(dev);
@@ -2478,19 +3119,24 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	 *
 	 * Set the I3C Bus Mode based on the LVR of the I2C devices
 	 */
-	uint32_t ctrl = CTRL_HJ_DISEC | CTRL_MCS_EN | (CTRL_BUS_MODE_MASK & cdns_mode) |
-			CTRL_THD_DELAY(cdns_i3c_clk_to_data_turnaround(dev));
+	uint32_t ctrl = CTRL_HJ_DISEC | CTRL_MCS_EN | (CTRL_BUS_MODE_MASK & cdns_mode);
 	/* Disable Controllership requests as it is not supported yet by the driver */
 	ctrl &= ~CTRL_MST_ACK;
+
+	/*
+	 * Cadence I3C release r104v1p0 and above support configuration of the clock to data
+	 * turnaround time.
+	 */
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 4)) {
+		ctrl |= CTRL_THD_DELAY(cdns_i3c_clk_to_data_turnaround(dev));
+	}
 
 	/*
 	 * Cadence I3C release r105v1p0 and above support I3C v1.1 timing change
 	 * for tCASHr_min = tCAS_min / 2, otherwise tCASr_min = tCAS_min (as
 	 * per MIPI spec v1.0)
 	 */
-	uint32_t rev_id = sys_read32(config->base + REV_ID);
-
-	if (REV_ID_REV(rev_id) >= REV_ID_VERSION(1, 5)) {
+	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 5)) {
 		ctrl |= CTRL_I3C_11_SUPP;
 	}
 
@@ -2511,12 +3157,14 @@ static int cdns_i3c_bus_init(const struct device *dev)
 			    config->base + TX_RX_THR_CTRL);
 	} else {
 		sys_write32(TX_THR(1) | RX_THR(1), config->base + TX_RX_THR_CTRL);
+		sys_write32(SLV_DDR_TX_THR(0) | SLV_DDR_RX_THR(1),
+			    config->base + SLV_DDR_TX_RX_THR_CTRL);
 	}
-
 	/* enable target interrupts */
 	sys_write32(SLV_INT_DA_UPD | SLV_INT_SDR_RD_COMP | SLV_INT_SDR_WR_COMP |
 			    SLV_INT_SDR_RX_THR | SLV_INT_SDR_TX_THR | SLV_INT_SDR_RX_UNF |
-			    SLV_INT_SDR_TX_OVF | SLV_INT_HJ_DONE,
+			    SLV_INT_SDR_TX_OVF | SLV_INT_HJ_DONE | SLV_INT_DDR_WR_COMP |
+			    SLV_INT_DDR_RD_COMP | SLV_INT_DDR_RX_THR | SLV_INT_DDR_TX_THR,
 		    config->base + SLV_IER);
 
 	/* Enable IBI interrupts. */
@@ -2534,6 +3182,8 @@ static int cdns_i3c_bus_init(const struct device *dev)
 
 	/* only primary controllers are responsible for initializing the bus */
 	if (!ctrl_config->is_secondary) {
+		/* Sleep to wait for bus idle. */
+		k_busy_wait(201);
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 #ifdef CONFIG_I3C_USE_IBI

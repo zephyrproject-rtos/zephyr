@@ -64,7 +64,7 @@ static int cmd_kernel_uptime(const struct shell *sh, size_t argc, char **argv)
 
 	/* No need to enable the getopt and getopt_long for just one option. */
 	if (strcmp("-p", argv[1]) && strcmp("--pretty", argv[1]) != 0) {
-		shell_error(sh, "Usupported option: %s", argv[1]);
+		shell_error(sh, "Unsupported option: %s", argv[1]);
 		return -EIO;
 	}
 
@@ -127,6 +127,10 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		    k_thread_state_str(thread, state_str, sizeof(state_str)),
 		    thread->entry.pEntry);
 
+#ifdef CONFIG_SCHED_CPU_MASK
+	shell_print(sh, "\tcpu_mask: 0x%x", thread->base.cpu_mask);
+#endif /* CONFIG_SCHED_CPU_MASK */
+
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	ret = 0;
 
@@ -186,8 +190,7 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 
 }
 
-static int cmd_kernel_threads(const struct shell *sh,
-			      size_t argc, char **argv)
+static int cmd_kernel_thread_list(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -203,66 +206,6 @@ static int cmd_kernel_threads(const struct shell *sh,
 
 	return 0;
 }
-
-#if defined(CONFIG_ARCH_HAS_STACKWALK)
-
-static bool print_trace_address(void *arg, unsigned long ra)
-{
-	const struct shell *sh = arg;
-#ifdef CONFIG_SYMTAB
-	uint32_t offset = 0;
-	const char *name = symtab_find_symbol_name(ra, &offset);
-
-	shell_print(sh, "ra: %p [%s+0x%x]", (void *)ra, name, offset);
-#else
-	shell_print(sh, "ra: %p", (void *)ra);
-#endif
-
-	return true;
-}
-
-struct unwind_entry {
-	const struct k_thread *const thread;
-	bool valid;
-};
-
-static void is_valid_thread(const struct k_thread *cthread, void *user_data)
-{
-	struct unwind_entry *entry = user_data;
-
-	if (cthread == entry->thread) {
-		entry->valid = true;
-	}
-}
-
-static int cmd_kernel_unwind(const struct shell *sh, size_t argc, char **argv)
-{
-	struct k_thread *thread;
-
-	if (argc == 1) {
-		thread = _current;
-	} else {
-		thread = UINT_TO_POINTER(strtoll(argv[1], NULL, 16));
-		struct unwind_entry entry = {
-			.thread = thread,
-			.valid = false,
-		};
-
-		k_thread_foreach_unlocked(is_valid_thread, &entry);
-
-		if (!entry.valid) {
-			shell_error(sh, "Invalid thread id %p", (void *)thread);
-			return -EINVAL;
-		}
-	}
-	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
-
-	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
-
-	return 0;
-}
-
-#endif /* CONFIG_ARCH_HAS_STACKWALK */
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
@@ -295,8 +238,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static int cmd_kernel_stacks(const struct shell *sh,
-			     size_t argc, char **argv)
+static int cmd_kernel_thread_stacks(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -333,7 +275,286 @@ static int cmd_kernel_stacks(const struct shell *sh,
 
 	return 0;
 }
+#endif /* CONFIG_INIT_STACKS & CONFIG_THREAD_STACK_INFO & CONFIG_THREAD_MONITOR */
+
+struct thread_entry {
+	const struct k_thread *const thread;
+	bool valid;
+};
+
+static void thread_valid_cb(const struct k_thread *cthread, void *user_data)
+{
+	struct thread_entry *entry = user_data;
+
+	if (cthread == entry->thread) {
+		entry->valid = true;
+	}
+}
+
+__maybe_unused
+static bool thread_is_valid(const struct k_thread *thread)
+{
+	struct thread_entry entry = {
+		.thread = thread,
+		.valid = false,
+	};
+
+	k_thread_foreach(thread_valid_cb, &entry);
+
+	return entry.valid;
+}
+
+#if defined(CONFIG_ARCH_STACKWALK)
+
+static bool print_trace_address(void *arg, unsigned long ra)
+{
+	const struct shell *sh = arg;
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(ra, &offset);
+
+	shell_print(sh, "ra: %p [%s+0x%x]", (void *)ra, name, offset);
+#else
+	shell_print(sh, "ra: %p", (void *)ra);
 #endif
+
+	return true;
+}
+
+static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **argv)
+{
+	struct k_thread *thread;
+	int err = 0;
+
+	if (argc == 1) {
+		thread = _current;
+	} else {
+		thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+		if (err != 0) {
+			shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+			return err;
+		}
+
+		if (!thread_is_valid(thread)) {
+			shell_error(sh, "Invalid thread id %p", (void *)thread);
+			return -EINVAL;
+		}
+	}
+	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
+
+	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
+
+	return 0;
+}
+
+#endif /* CONFIG_ARCH_STACKWALK */
+
+#ifdef CONFIG_SCHED_CPU_MASK
+static int cmd_kernel_thread_mask_clear(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	int rc, err = 0;
+	struct k_thread *thread;
+
+	thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+	if (err != 0) {
+		shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+		return err;
+	}
+
+	if (!thread_is_valid(thread)) {
+		shell_error(sh, "Invalid thread id %p", (void *)thread);
+		return -EINVAL;
+	}
+
+	rc = k_thread_cpu_mask_clear(thread);
+	if (rc != 0) {
+		shell_error(sh, "Failed - %d", rc);
+	} else {
+		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
+			    thread->base.cpu_mask);
+	}
+
+	return rc;
+}
+
+static int cmd_kernel_thread_mask_enable_all(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	int rc, err = 0;
+	struct k_thread *thread;
+
+	thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+	if (err != 0) {
+		shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+		return err;
+	}
+
+	if (!thread_is_valid(thread)) {
+		shell_error(sh, "Invalid thread id %p", (void *)thread);
+		return -EINVAL;
+	}
+
+	rc = k_thread_cpu_mask_enable_all(thread);
+	if (rc != 0) {
+		shell_error(sh, "Failed - %d", rc);
+	} else {
+		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
+			    thread->base.cpu_mask);
+	}
+
+	return rc;
+}
+
+static int cmd_kernel_thread_mask_enable(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	int rc, cpu, err = 0;
+	struct k_thread *thread;
+
+	thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+	if (err != 0) {
+		shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+		return err;
+	}
+
+	if (!thread_is_valid(thread)) {
+		shell_error(sh, "Invalid thread id %p", (void *)thread);
+		return -EINVAL;
+	}
+
+	cpu = (int)shell_strtol(argv[2], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Unable to parse CPU ID %s (err %d)", argv[2], err);
+		return err;
+	}
+
+	rc = k_thread_cpu_mask_enable(thread, cpu);
+	if (rc != 0) {
+		shell_error(sh, "Failed - %d", rc);
+	} else {
+		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
+			    thread->base.cpu_mask);
+	}
+
+	return rc;
+}
+
+static int cmd_kernel_thread_mask_disable(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	int rc, cpu, err = 0;
+	struct k_thread *thread;
+
+	thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+	if (err != 0) {
+		shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+		return err;
+	}
+
+	if (!thread_is_valid(thread)) {
+		shell_error(sh, "Invalid thread id %p", (void *)thread);
+		return -EINVAL;
+	}
+
+	cpu = (int)shell_strtol(argv[2], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Unable to parse CPU ID %s (err %d)", argv[2], err);
+		return err;
+	}
+
+	rc = k_thread_cpu_mask_disable(thread, cpu);
+	if (rc != 0) {
+		shell_error(sh, "Failed - %d", rc);
+	} else {
+		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
+			    thread->base.cpu_mask);
+	}
+
+	return rc;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_thread_mask,
+	SHELL_CMD_ARG(clear, NULL,
+		      "Sets all CPU enable masks to zero.\n"
+		      "Usage: kernel thread mask clear <thread ID>",
+		      cmd_kernel_thread_mask_clear, 2, 0),
+	SHELL_CMD_ARG(enable_all, NULL,
+		      "Sets all CPU enable masks to one.\n"
+		      "Usage: kernel thread mask enable_all <thread ID>",
+		      cmd_kernel_thread_mask_enable_all, 2, 0),
+	SHELL_CMD_ARG(enable, NULL,
+		      "Enable thread to run on specified CPU.\n"
+		      "Usage: kernel thread mask enable <thread ID> <CPU ID>",
+		      cmd_kernel_thread_mask_enable, 3, 0),
+	SHELL_CMD_ARG(disable, NULL,
+		      "Prevent thread to run on specified CPU.\n"
+		      "Usage: kernel thread mask disable <thread ID> <CPU ID>",
+		      cmd_kernel_thread_mask_disable, 3, 0),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
+static int cmd_kernel_thread_pin(const struct shell *sh,
+				  size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+
+	int cpu, err = 0;
+	struct k_thread *thread;
+
+	thread = UINT_TO_POINTER(shell_strtoull(argv[1], 16, &err));
+	if (err != 0) {
+		shell_error(sh, "Unable to parse thread ID %s (err %d)", argv[1], err);
+		return err;
+	}
+
+	if (!thread_is_valid(thread)) {
+		shell_error(sh, "Invalid thread id %p", (void *)thread);
+		return -EINVAL;
+	}
+
+	cpu = shell_strtoul(argv[2], 10, &err);
+	if (err != 0) {
+		shell_error(sh, "Unable to parse CPU ID %s (err %d)", argv[2], err);
+		return err;
+	}
+
+	shell_print(sh, "Pinning %p %s to CPU %d", (void *)thread, thread->name, cpu);
+	err = k_thread_cpu_pin(thread, cpu);
+	if (err != 0) {
+		shell_error(sh, "Failed - %d", err);
+	} else {
+		shell_print(sh, "%p %s cpu_mask: 0x%x", (void *)thread, thread->name,
+			    thread->base.cpu_mask);
+	}
+
+	return err;
+}
+#endif /* CONFIG_SCHED_CPU_MASK */
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_thread,
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
+		defined(CONFIG_THREAD_MONITOR)
+	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_thread_stacks),
+	SHELL_CMD(list, NULL, "List kernel threads.", cmd_kernel_thread_list),
+#endif
+#if defined(CONFIG_ARCH_STACKWALK)
+	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_thread_unwind, 1, 1),
+#endif /* CONFIG_ARCH_STACKWALK */
+#if defined(CONFIG_SCHED_CPU_MASK)
+	SHELL_CMD_ARG(mask, &sub_kernel_thread_mask, "Configure thread CPU mask affinity.", NULL, 2,
+		      0),
+	SHELL_CMD_ARG(pin, NULL,
+		      "Pin thread to a CPU.\n"
+		      "Usage: kernel pin <thread ID> <CPU ID>",
+		      cmd_kernel_thread_pin, 3, 0),
+#endif /* CONFIG_SCHED_CPU_MASK */
+	SHELL_SUBCMD_SET_END /* Array terminated. */
+);
 
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 extern struct sys_heap _system_heap;
@@ -452,16 +673,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel_reboot,
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 	SHELL_CMD(cycles, NULL, "Kernel cycles.", cmd_kernel_cycles),
 #if defined(CONFIG_REBOOT)
-	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", NULL),
+	SHELL_CMD(reboot, &sub_kernel_reboot, "Reboot.", cmd_kernel_reboot_cold),
 #endif
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO) && \
-		defined(CONFIG_THREAD_MONITOR)
-	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
-	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
-#if defined(CONFIG_ARCH_HAS_STACKWALK)
-	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_unwind, 1, 1),
-#endif /* CONFIG_ARCH_HAS_STACKWALK */
-#endif
+	SHELL_CMD(thread, &sub_kernel_thread, "Kernel threads.", NULL),
 #if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	SHELL_CMD(heap, NULL, "System heap usage statistics.", cmd_kernel_heap),
 #endif

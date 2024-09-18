@@ -11,6 +11,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/random/random.h>
 #include <soc/soc_memory_layout.h>
+#include <zephyr/multi_heap/shared_multi_heap.h>
 
 /* definitions used in Flash & RAM operations */
 #define SPIRAM_ALLOC_SIZE               (24 * 1024)
@@ -201,7 +202,7 @@ static void psram_test(void)
 
 static void psram_init(void)
 {
-	mem = k_malloc(SPIRAM_ALLOC_SIZE);
+	mem = shared_multi_heap_aligned_alloc(SMH_REG_ATTR_EXTERNAL, 32, SPIRAM_ALLOC_SIZE);
 	if (!mem) {
 		TC_ERROR("SPIRAM allocation has failed\n");
 	}

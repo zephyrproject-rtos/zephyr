@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -783,7 +783,7 @@ static int gatt_proxy_advertise(void)
 {
 	int err;
 
-	int32_t max_adv_duration;
+	int32_t max_adv_duration = 0;
 	int cnt;
 	struct bt_mesh_subnet *sub;
 	struct proxy_adv_request request;

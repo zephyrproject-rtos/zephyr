@@ -79,6 +79,34 @@ The following is an example of a very simple response handling function:
         }
     }
 
+CoAP options may also be added to the request by the application. The following is an example of
+the application adding a Block2 option to the initial request, to suggest a maximum block size to
+the server for a resource that it expects to be large enough to require a blockwise transfer (see
+RFC7959 Figure 3: Block-Wise GET with Early Negotiation).
+
+.. code-block:: c
+
+    static struct coap_client;
+    struct coap_client_request req = { 0 };
+
+    /* static, since options must remain valid throughout the whole execution of the request */
+    static struct coap_client_option block2_option;
+
+    coap_client_init(&client, NULL);
+    block2_option = coap_client_option_initial_block2();
+
+    req.method = COAP_METHOD_GET;
+    req.confirmable = true;
+    req.path = "test";
+    req.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN;
+    req.cb = response_cb;
+    req.options = &block2_option;
+    req.num_options = 1;
+    req.payload = NULL;
+    req.len = 0;
+
+    ret = coap_client_req(&client, sock, &address, &req, -1);
+
 API Reference
 *************
 

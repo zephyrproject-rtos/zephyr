@@ -5,17 +5,19 @@
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import pkg_resources
-import sys
-from pathlib import Path
+import argparse
 import json
 import logging
-import subprocess
-import shutil
+import os
 import re
-import argparse
+import shutil
+import subprocess
+import sys
 from datetime import datetime, timezone
+from importlib import metadata
+from pathlib import Path
+from typing import Generator, List
+
 from twisterlib.coverage import supported_coverage_formats
 
 logger = logging.getLogger('twister')
@@ -40,12 +42,21 @@ import zephyr_module
 # Note "normalization" is different from canonicalization, see os.path.
 canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
-installed_packages = [pkg.project_name for pkg in pkg_resources.working_set]  # pylint: disable=not-an-iterable
+
+def _get_installed_packages() -> Generator[str, None, None]:
+    """Return list of installed python packages."""
+    for dist in metadata.distributions():
+        yield dist.metadata['Name']
+
+
+installed_packages: List[str] = list(_get_installed_packages())
 PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
+
 
 def norm_path(astring):
     newstring = os.path.normpath(astring).replace(os.sep, '/')
     return newstring
+
 
 def add_parse_arguments(parser = None):
     if parser is None:
@@ -68,6 +79,13 @@ Artificially long but functional example:
                                  __/fifo_api/testcase.yaml
     """)
 
+    test_plan_report = parser.add_argument_group(
+        title="Test plan reporting",
+        description="Report the composed test plan details and exit (dry-run)."
+    )
+
+    test_plan_report_xor = test_plan_report.add_mutually_exclusive_group()
+
     platform_group_option = parser.add_mutually_exclusive_group()
 
     run_group_option = parser.add_mutually_exclusive_group()
@@ -86,19 +104,20 @@ Artificially long but functional example:
        title="Memory footprint",
        description="Collect and report ROM/RAM size footprint for the test instance images built.")
 
-    case_select.add_argument(
+    test_plan_report_xor.add_argument(
         "-E",
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Write a list of tests and platforms to be run to file.")
+        help="Write a list of tests and platforms to be run to %(metavar)s file and stop execution. "
+             "The resulting file will have the same content as 'testplan.json'.")
 
     case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load a list of tests and platforms to be run from file.")
+        help="Load a list of tests and platforms to be run from a JSON file ('testplan.json' schema).")
 
     case_select.add_argument(
         "-T", "--testsuite-root", action="append", default=[], type = norm_path,
@@ -114,7 +133,7 @@ Artificially long but functional example:
         help="Run only those tests that failed the previous twister run "
              "invocation.")
 
-    case_select.add_argument("--list-tests", action="store_true",
+    test_plan_report_xor.add_argument("--list-tests", action="store_true",
                              help="""List of all sub-test functions recursively found in
         all --testsuite-root arguments. Note different sub-tests can share
         the same section name and come from different directories.
@@ -123,8 +142,8 @@ Artificially long but functional example:
         and net.socket.fd_set belong to different directories.
         """)
 
-    case_select.add_argument("--test-tree", action="store_true",
-                             help="""Output the test plan in a tree form""")
+    test_plan_report_xor.add_argument("--test-tree", action="store_true",
+                             help="""Output the test plan in a tree form.""")
 
     platform_group_option.add_argument(
         "-G",
@@ -223,7 +242,7 @@ Artificially long but functional example:
     parser.add_argument(
         "--pytest-args", action="append",
         help="""Pass additional arguments to the pytest subprocess. This parameter
-        will override the pytest_args from the harness_config in YAML file.
+        will extend the pytest_args from the harness_config in YAML file.
         """)
 
     valgrind_asan_group.add_argument(
@@ -484,7 +503,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Build/test on all platforms. Any --platform arguments "
              "ignored.")
 
-    parser.add_argument("--list-tags", action="store_true",
+    test_plan_report_xor.add_argument("--list-tags", action="store_true",
                         help="List all tags occurring in selected tests.")
 
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
@@ -946,6 +965,22 @@ class TwisterEnv:
             snippet_root = module.meta.get("build", {}).get("settings", {}).get("snippet_root")
             if snippet_root:
                 self.snippet_roots.append(Path(module.project) / snippet_root)
+
+
+        self.soc_roots = [Path(ZEPHYR_BASE), Path(ZEPHYR_BASE) / 'subsys' / 'testsuite']
+        self.dts_roots = [Path(ZEPHYR_BASE)]
+        self.arch_roots = [Path(ZEPHYR_BASE)]
+
+        for module in modules:
+            soc_root = module.meta.get("build", {}).get("settings", {}).get("soc_root")
+            if soc_root:
+                self.soc_roots.append(os.path.join(module.project, soc_root))
+            dts_root = module.meta.get("build", {}).get("settings", {}).get("dts_root")
+            if dts_root:
+                self.dts_roots.append(os.path.join(module.project, dts_root))
+            arch_root = module.meta.get("build", {}).get("settings", {}).get("arch_root")
+            if arch_root:
+                self.arch_roots.append(os.path.join(module.project, arch_root))
 
         self.hwm = None
 

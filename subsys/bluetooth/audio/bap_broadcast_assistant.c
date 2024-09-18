@@ -30,13 +30,14 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 
 #include <zephyr/logging/log.h>
@@ -182,13 +183,17 @@ static bool past_available(const struct bt_conn *conn,
 			   const bt_addr_le_t *adv_addr,
 			   uint8_t sid)
 {
-	LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
-		BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
-		BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
+		LOG_DBG("%p remote %s PAST, local %s PAST", (void *)conn,
+			BT_FEAT_LE_PAST_RECV(conn->le.features) ? "supports" : "does not support",
+			BT_FEAT_LE_PAST_SEND(bt_dev.le.features) ? "supports" : "does not support");
 
-	return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
-	       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
-	       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+		return BT_FEAT_LE_PAST_RECV(conn->le.features) &&
+		       BT_FEAT_LE_PAST_SEND(bt_dev.le.features) &&
+		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+	} else {
+		return false;
+	}
 }
 
 static int parse_recv_state(const void *data, uint16_t length,
@@ -1219,12 +1224,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 
 		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
 
-		if (param->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
-			subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
-		} else {
-			subgroup->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
-		}
+		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");
@@ -1324,12 +1324,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 		}
 		subgroup = net_buf_simple_add(&att_buf, subgroup_size);
 
-		if (param->subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* The BIS Index bitfield to be sent must use BIT(0) for BIS Index 1 */
-			subgroup->bis_sync = param->subgroups[i].bis_sync >> 1;
-		} else {
-			subgroup->bis_sync = BT_BAP_BIS_SYNC_NO_PREF;
-		}
+		subgroup->bis_sync = param->subgroups[i].bis_sync;
 
 		CHECKIF(param->pa_sync == 0 && subgroup->bis_sync != 0) {
 			LOG_DBG("Only syncing to BIS is not allowed");

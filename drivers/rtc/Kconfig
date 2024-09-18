@@ -42,6 +42,7 @@ config RTC_SHELL
 	  RTC Shell commands
 
 source "drivers/rtc/Kconfig.am1805"
+source "drivers/rtc/Kconfig.ambiq"
 source "drivers/rtc/Kconfig.ds1307"
 source "drivers/rtc/Kconfig.emul"
 source "drivers/rtc/Kconfig.fake"
@@ -54,5 +55,7 @@ source "drivers/rtc/Kconfig.sam"
 source "drivers/rtc/Kconfig.smartbond"
 source "drivers/rtc/Kconfig.stm32"
 source "drivers/rtc/Kconfig.numaker"
+source "drivers/rtc/Kconfig.rv8263"
+source "drivers/rtc/Kconfig.xmc4xxx"
 
 endif # RTC

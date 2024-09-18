@@ -208,6 +208,34 @@ int arch_float_disable(struct k_thread *thread);
 int arch_float_enable(struct k_thread *thread, unsigned int options);
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET)
+/**
+ * @brief Obtain privileged stack usage information for the specified thread
+ *
+ * Must be called under supervisor mode.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * error will be generated.
+ *
+ * @param[in]  thread     Thread to inspect stack information
+ * @param[out] stack_size Filled in with the size of the stack space of
+ *                        the target thread in bytes.
+ * @param[out] unused_ptr Filled in with the unused stack space of
+ *                        the target thread in bytes.
+ *
+ * @return 0 on success
+ * @return -EBADF Bad thread object
+ * @return -EPERM No permissions on thread object
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited or not a user thread
+ * @return -EFAULT Bad memory address for unused_ptr
+ */
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr);
+#endif /* CONFIG_USERSPACE && CONFIG_ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET */
+
 /** @} */
 
 /**
@@ -556,6 +584,22 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  * @return The character printed
  */
 int arch_printk_char_out(int c);
+
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+/**
+ * Set thread name hook
+ *
+ * If implemented, any invocation of a function setting a thread name
+ * will invoke this function.
+ *
+ * @param thread    Pointer to thread object
+ * @param str       The thread name
+ *
+ * @retval 0        On success.
+ * @retval -EAGAIN  If the operation could not be performed.
+ */
+int arch_thread_name_set(struct k_thread *thread, const char *str);
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 
 /**
  * Architecture-specific kernel initialization hook

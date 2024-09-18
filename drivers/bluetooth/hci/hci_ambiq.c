@@ -22,9 +22,6 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 
 #include "apollox_blue.h"
 
-#define HCI_SPI_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ambiq_bt_hci_spi)
-#define SPI_DEV_NODE DT_BUS(HCI_SPI_NODE)
-
 /* Offset of special item */
 #define PACKET_TYPE         0
 #define PACKET_TYPE_SIZE    1
@@ -56,11 +53,13 @@ LOG_MODULE_REGISTER(bt_hci_driver);
 #define SPI_BUSY_TX_ATTEMPTS      200
 
 static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
-static const struct device *spi_dev = DEVICE_DT_GET(SPI_DEV_NODE);
-static struct spi_config spi_cfg = {
-	.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA |
-		     SPI_WORD_SET(8),
-};
+
+static struct spi_dt_spec spi_bus =
+	SPI_DT_SPEC_INST_GET(0,
+			     SPI_OP_MODE_MASTER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
+				     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8),
+			     0);
+
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
@@ -97,11 +96,11 @@ static inline int bt_spi_transceive(void *tx, uint32_t tx_len, void *rx, uint32_
 	 * held at this moment to continue to send or receive packets.
 	 */
 	if (tx_len && rx_len) {
-		spi_cfg.operation |= SPI_HOLD_ON_CS;
+		spi_bus.config.operation |= SPI_HOLD_ON_CS;
 	} else {
-		spi_cfg.operation &= ~SPI_HOLD_ON_CS;
+		spi_bus.config.operation &= ~SPI_HOLD_ON_CS;
 	}
-	return spi_transceive(spi_dev, &spi_cfg, &spi_tx, &spi_rx);
+	return spi_transceive_dt(&spi_bus, &spi_tx, &spi_rx);
 }
 
 static int spi_send_packet(uint8_t *data, uint16_t len)
@@ -379,7 +378,7 @@ static int bt_apollo_open(const struct device *dev, bt_hci_recv_t recv)
 	struct bt_apollo_data *hci = dev->data;
 	int ret;
 
-	ret = bt_hci_transport_setup(spi_dev);
+	ret = bt_hci_transport_setup(spi_bus.bus);
 	if (ret) {
 		return ret;
 	}
@@ -420,7 +419,7 @@ static int bt_apollo_init(const struct device *dev)
 
 	ARG_UNUSED(dev);
 
-	if (!device_is_ready(spi_dev)) {
+	if (!device_is_ready(spi_bus.bus)) {
 		LOG_ERR("SPI device not ready");
 		return -ENODEV;
 	}
@@ -435,11 +434,10 @@ static int bt_apollo_init(const struct device *dev)
 	return 0;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct bt_apollo_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct bt_apollo_data hci_data_##inst = {};                                         \
+	DEVICE_DT_INST_DEFINE(inst, bt_apollo_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,     \
+			      CONFIG_BT_HCI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

@@ -35,7 +35,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/thread_stack.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
@@ -1437,19 +1437,14 @@ static int cmd_stream_qos(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int create_unicast_group(const struct shell *sh)
+static int set_group_param(
+	const struct shell *sh, struct bt_bap_unicast_group_param *group_param,
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)],
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)])
 {
-	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)];
-	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)];
-	struct bt_bap_unicast_group_param group_param;
 	size_t source_cnt = 0;
 	size_t sink_cnt = 0;
 	size_t cnt = 0;
-	int err;
-
-	memset(pair_param, 0, sizeof(pair_param));
-	memset(stream_params, 0, sizeof(stream_params));
-	memset(&group_param, 0, sizeof(group_param));
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_shell_stream(&unicast_streams[i]);
@@ -1479,16 +1474,50 @@ static int create_unicast_group(const struct shell *sh)
 		return -ENOEXEC;
 	}
 
-	group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	group_param.params = pair_param;
-	group_param.params_count = MAX(source_cnt, sink_cnt);
+	group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
+	group_param->params = pair_param;
+	group_param->params_count = MAX(source_cnt, sink_cnt);
 
-	err = bt_bap_unicast_group_create(&group_param,
-					    &default_unicast_group);
+	return 0;
+}
+
+static int create_unicast_group(const struct shell *sh)
+{
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_param group_param = {0};
+	int err;
+
+	err = set_group_param(sh, &group_param, pair_param, stream_params);
 	if (err != 0) {
-		shell_error(sh,
-			    "Unable to create default unicast group: %d",
-			    err);
+		return err;
+	}
+
+	err = bt_bap_unicast_group_create(&group_param, &default_unicast_group);
+	if (err != 0) {
+		shell_error(sh, "Unable to create default unicast group: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int reconfig_unicast_group(const struct shell *sh)
+{
+	struct bt_bap_unicast_group_stream_pair_param pair_param[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(unicast_streams)] = {0};
+	struct bt_bap_unicast_group_param group_param = {0};
+	int err;
+
+	err = set_group_param(sh, &group_param, pair_param, stream_params);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_bap_unicast_group_reconfig(default_unicast_group, &group_param);
+	if (err != 0) {
+		shell_error(sh, "Unable to create default unicast group: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -1512,6 +1541,11 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 	if (default_unicast_group == NULL) {
 		err = create_unicast_group(sh);
+		if (err != 0) {
+			return err;
+		}
+	} else {
+		err = reconfig_unicast_group(sh);
 		if (err != 0) {
 			return err;
 		}
@@ -3477,7 +3511,7 @@ static int cmd_sync_broadcast(const struct shell *sh, size_t argc, char *argv[])
 				return -ENOEXEC;
 			}
 
-			bis_bitfield |= BIT(val);
+			bis_bitfield |= BT_ISO_BIS_INDEX_BIT(val);
 			stream_cnt++;
 		}
 	}
@@ -3649,7 +3683,47 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
+	if (argc != 1 && (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && argc != 3)) {
+		shell_error(sh, "Invalid argument count");
+		shell_help(sh);
+
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
+	unsigned long snk_cnt, src_cnt;
+	struct bt_bap_unicast_server_register_param unicast_server_param = {
+		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+	};
+
+
+	if (argc == 3) {
+		snk_cnt = shell_strtoul(argv[1], 0, &err);
+		if (snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT) {
+			shell_error(sh, "Invalid Sink ASE count: %lu. Valid interval: [0, %u]",
+				    snk_cnt, CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT);
+
+			return -ENOEXEC;
+		}
+
+		unicast_server_param.snk_cnt = snk_cnt;
+
+		src_cnt = shell_strtoul(argv[2], 0, &err);
+		if (src_cnt > CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT) {
+			shell_error(sh, "Invalid Source ASE count: %lu. Valid interval: [0, %u]",
+				    src_cnt, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT);
+
+			return -ENOEXEC;
+		}
+
+		unicast_server_param.src_cnt = src_cnt;
+	} else {
+		snk_cnt = CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT;
+		src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT;
+	}
+
+	bt_bap_unicast_server_register(&unicast_server_param);
 	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
@@ -3970,7 +4044,8 @@ static int cmd_print_ase_info(const struct shell *sh, size_t argc, char *argv[])
 	"[bcast_flag]" HELP_SEP "[extended <meta>]" HELP_SEP "[vendor <meta>]]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	bap_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
+	bap_cmds, SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1,
+				IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) ? 2 : 0),
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 	SHELL_CMD_ARG(select_broadcast, NULL, "<stream>", cmd_select_broadcast_source, 2, 0),
 	SHELL_CMD_ARG(create_broadcast, NULL, "[preset <preset_name>] [enc <broadcast_code>]",

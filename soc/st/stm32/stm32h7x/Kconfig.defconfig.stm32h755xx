@@ -1,0 +1,14 @@
+# ST STM32H755X MCU configuration options
+
+# Copyright (c) 2024 S&C Electric Company
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H755XX_M7 || SOC_STM32H755XX_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+config NUM_IRQS
+	default 150
+
+endif # SOC_STM32H755XX_M7 || SOC_STM32H755XX_M4

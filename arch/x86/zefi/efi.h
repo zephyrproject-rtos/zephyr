@@ -10,6 +10,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <stdbool.h>
+#include <zephyr/autoconf.h>
 
 #define __abi __attribute__((ms_abi))
 
@@ -617,6 +618,24 @@ struct efi_system_table {
 	/** A pointer to the configuration table(s) */
 	struct efi_configuration_table *ConfigurationTable;
 };
+
+#ifdef CONFIG_DYNAMIC_BOOTARGS
+struct efi_loaded_image_protocol {
+	uint32_t Revision;
+	void *ParentHandle;
+	struct efi_system_table *SystemTable;
+	void *DeviceHandle;
+	void *FilePath;
+	void *Reserved;
+	uint32_t LoadOptionsSize;
+	void *LoadOptions;
+	void *ImageBase;
+	uint64_t ImageSize;
+	enum efi_memory_type ImageCodeType;
+	enum efi_memory_type ImageDataType;
+	efi_unload_image_t Unload;
+};
+#endif /* CONFIG_DYNAMIC_BOOTARGS */
 
 #endif /* _ASMLANGUAGE */
 

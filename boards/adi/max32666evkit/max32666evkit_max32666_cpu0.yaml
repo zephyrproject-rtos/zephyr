@@ -1,0 +1,19 @@
+identifier: max32666evkit/max32666/cpu0
+name: max32666evkit cpu0
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - dma
+  - i2c
+  - gpio
+  - serial
+  - trng
+  - watchdog
+  - adc
+ram: 560
+flash: 1024

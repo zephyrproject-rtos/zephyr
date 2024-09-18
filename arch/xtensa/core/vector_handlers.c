@@ -363,9 +363,13 @@ void *xtensa_excint1_c(void *esf)
 
 	switch (cause) {
 	case EXCCAUSE_LEVEL1_INTERRUPT:
+#ifdef CONFIG_XTENSA_MMU
 		if (!is_dblexc) {
 			return xtensa_int1_c(interrupted_stack);
 		}
+#else
+		return xtensa_int1_c(interrupted_stack);
+#endif /* CONFIG_XTENSA_MMU */
 		break;
 #ifndef CONFIG_USERSPACE
 	/* Syscalls are handled earlier in assembly if MMU is enabled.

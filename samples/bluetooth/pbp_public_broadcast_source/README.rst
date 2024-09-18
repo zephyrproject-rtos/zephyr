@@ -1,5 +1,5 @@
 .. zephyr:code-sample:: bluetooth_public_broadcast_source
-   :name: Bluetooth: Public Broadcast Source
+   :name: Public Broadcast Source
    :relevant-api: bluetooth
 
    Bluetooth: Public Broadcast Source
@@ -50,7 +50,7 @@ If you prefer to only build the application core image, you can do so by doing i
    :goals: build
 
 In that case you can pair this application core image with the
-:ref:`hci_ipc sample <bluetooth-hci-ipc-sample>`
+:zephyr:code-sample:`bluetooth_hci_ipc` sample
 :zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_iso-bt_ll_sw_split.conf` configuration.
 
 Building for a simulated nrf5340bsim

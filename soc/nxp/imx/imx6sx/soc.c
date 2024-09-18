@@ -159,8 +159,9 @@ static void SOC_CacheInit(void)
 	LMEM_PSCCR = LMEM_PSCCR_INVW1_MASK | LMEM_PSCCR_INVW0_MASK;
 	LMEM_PSCCR |= LMEM_PSCCR_GO_MASK;
 	/* Wait until the command completes */
-	while (LMEM_PSCCR & LMEM_PSCCR_GO_MASK)
+	while (LMEM_PSCCR & LMEM_PSCCR_GO_MASK) {
 		;
+	}
 	/* Enable system bus cache, enable write buffer */
 	LMEM_PSCCR = (LMEM_PSCCR_ENWRBUF_MASK | LMEM_PSCCR_ENCACHE_MASK);
 	barrier_isync_fence_full();
@@ -172,8 +173,9 @@ static void SOC_CacheInit(void)
 	LMEM_PCCCR = LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK;
 	LMEM_PCCCR |= LMEM_PCCCR_GO_MASK;
 	/* Wait until the command completes */
-	while (LMEM_PCCCR & LMEM_PCCCR_GO_MASK)
+	while (LMEM_PCCCR & LMEM_PCCCR_GO_MASK) {
 		;
+	}
 	/* Enable code bus cache, enable write buffer */
 	LMEM_PCCCR = (LMEM_PCCCR_ENWRBUF_MASK | LMEM_PCCCR_ENCACHE_MASK);
 	barrier_isync_fence_full();

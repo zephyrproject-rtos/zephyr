@@ -7,10 +7,12 @@
 #define DT_DRV_COMPAT st_stm32_dcmi
 
 #include <errno.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -18,8 +20,7 @@
 
 #include <stm32_ll_dma.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_STM32_DCMI_LOG_LEVEL);
+LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 
 K_HEAP_DEFINE(video_stm32_buffer_pool, CONFIG_VIDEO_BUFFER_POOL_SZ_MAX);
 
@@ -215,7 +216,7 @@ static int video_stm32_dcmi_set_fmt(const struct device *dev,
 	struct video_stm32_dcmi_data *data = dev->data;
 	unsigned int bpp = video_pix_fmt_bpp(fmt->pixelformat);
 
-	if (!bpp || ep != VIDEO_EP_OUT) {
+	if (bpp == 0 || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
@@ -238,7 +239,7 @@ static int video_stm32_dcmi_get_fmt(const struct device *dev,
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	if ((fmt == NULL) || (ep != VIDEO_EP_OUT)) {
+	if (fmt == NULL || (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL)) {
 		return -EINVAL;
 	}
 
@@ -308,12 +309,17 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 				  struct video_buffer *vbuf)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
+	const uint32_t buffer_size = data->pitch * data->height;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
-	vbuf->bytesused = data->pitch * data->height;
+	if (buffer_size > vbuf->size) {
+		return -EINVAL;
+	}
+
+	vbuf->bytesused = buffer_size;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
@@ -327,7 +333,7 @@ static int video_stm32_dcmi_dequeue(const struct device *dev,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -346,12 +352,34 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 	const struct video_stm32_dcmi_config *config = dev->config;
 	int ret = -ENODEV;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
 	/* Forward the message to the sensor device */
 	ret = video_get_caps(config->sensor_dev, ep, caps);
+
+	return ret;
+}
+
+static inline int video_stm32_dcmi_set_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+	int ret;
+
+	/* Forward to source dev if any */
+	ret = video_set_ctrl(config->sensor_dev, cid, value);
+
+	return ret;
+}
+
+static inline int video_stm32_dcmi_get_ctrl(const struct device *dev, unsigned int cid, void *value)
+{
+	const struct video_stm32_dcmi_config *config = dev->config;
+	int ret;
+
+	/* Forward to source dev if any */
+	ret = video_get_ctrl(config->sensor_dev, cid, value);
 
 	return ret;
 }
@@ -364,6 +392,8 @@ static const struct video_driver_api video_stm32_dcmi_driver_api = {
 	.enqueue = video_stm32_dcmi_enqueue,
 	.dequeue = video_stm32_dcmi_dequeue,
 	.get_caps = video_stm32_dcmi_get_caps,
+	.set_ctrl = video_stm32_dcmi_set_ctrl,
+	.get_ctrl = video_stm32_dcmi_get_ctrl,
 };
 
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)

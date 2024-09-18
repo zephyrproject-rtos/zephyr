@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,11 +31,15 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WPA2-PSK";
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		return "WPA2-PSK-SHA256";
-	case WIFI_SECURITY_TYPE_SAE:
-		return "WPA3-SAE";
+	case WIFI_SECURITY_TYPE_SAE_HNP:
+		return "WPA3-SAE-HNP";
+	case WIFI_SECURITY_TYPE_SAE_H2E:
+		return "WPA3-SAE-H2E";
+	case WIFI_SECURITY_TYPE_SAE_AUTO:
+		return "WPA3-SAE-AUTO";
 	case WIFI_SECURITY_TYPE_WAPI:
 		return "WAPI";
-	case WIFI_SECURITY_TYPE_EAP:
+	case WIFI_SECURITY_TYPE_EAP_TLS:
 		return "EAP";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
@@ -279,7 +284,9 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||
-	    ((params->security == WIFI_SECURITY_TYPE_SAE) &&
+	    ((params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+		  params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+		  params->security == WIFI_SECURITY_TYPE_SAE_AUTO) &&
 	      ((params->psk_length == 0U) || !params->psk) &&
 		  ((params->sae_password_length == 0U) || !params->sae_password)) ||
 	    ((params->channel != WIFI_CHANNEL_ANY) &&
@@ -515,6 +522,20 @@ static int wifi_iface_stats(uint32_t mgmt_request, struct net_if *iface,
 	return wifi_mgmt_api->get_stats(dev, stats);
 }
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI, wifi_iface_stats);
+
+static int wifi_iface_stats_reset(uint32_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->reset_stats == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->reset_stats(dev);
+}
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI, wifi_iface_stats_reset);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
 static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
@@ -754,6 +775,44 @@ static int wifi_get_version(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION, wifi_get_version);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+static int wifi_btm_query(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	uint8_t query_reason = *((uint8_t *)data);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->btm_query == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (query_reason >= WIFI_BTM_QUERY_REASON_UNSPECIFIED &&
+	    query_reason <= WIFI_BTM_QUERY_REASON_LEAVING_ESS) {
+		return wifi_mgmt_api->btm_query(dev, query_reason);
+	}
+
+	return -EINVAL;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY, wifi_btm_query);
+#endif
+
+static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *iface,
+			void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_connect_req_params *conn_params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_conn_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->get_conn_params(dev, conn_params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
+
 static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {
@@ -773,6 +832,75 @@ static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD, wifi_set_rts_threshold);
+
+static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_dpp_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->dpp_dispatch == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->dpp_dispatch(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
+
+static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if *iface,
+					   void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->pmksa_flush == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->pmksa_flush(dev);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
+
+static int wifi_get_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	unsigned int *rts_threshold = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_rts_threshold == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*rts_threshold)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, wifi_get_rts_threshold);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+static int wifi_set_enterprise_creds(uint32_t mgmt_request, struct net_if *iface,
+					   void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_enterprise_creds_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->enterprise_creds == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->enterprise_creds(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS, wifi_set_enterprise_creds);
+#endif
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,

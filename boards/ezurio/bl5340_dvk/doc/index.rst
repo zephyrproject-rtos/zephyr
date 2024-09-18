@@ -409,9 +409,9 @@ Testing Bluetooth on the BL5340 DVK
 Many of the Bluetooth examples will work on the BL5340 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 References
 **********

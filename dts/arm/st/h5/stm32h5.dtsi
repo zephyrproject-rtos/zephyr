@@ -117,6 +117,14 @@
 			};
 		};
 
+		backup_sram: memory@40036400 {
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+			reg = <0x40036400 DT_SIZE_K(2)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
+			zephyr,memory-region = "BACKUP_SRAM";
+			status = "disabled";
+		};
+
 		power-states {
 			stop: state0 {
 				compatible = "zephyr,power-state";
@@ -443,7 +451,8 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			interrupts = <55 5>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			status = "disabled";
 		};
 
@@ -453,7 +462,8 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			interrupts = <56 5>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>,
+				 <&rcc STM32_SRC_PLL1_Q SPI2_SEL(0)>;
 			status = "disabled";
 		};
 
@@ -463,7 +473,8 @@
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
 			interrupts = <57 5>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>,
+				 <&rcc STM32_SRC_PLL1_Q SPI3_SEL(0)>;
 			status = "disabled";
 		};
 

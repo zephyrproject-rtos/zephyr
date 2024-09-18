@@ -10,5 +10,11 @@ toolchain:
 supported:
   - gpio
   - serial
+  - trng
+  - i2c
+  - dma
+  - watchdog
+  - spi
+  - adc
 ram: 128
 flash: 512

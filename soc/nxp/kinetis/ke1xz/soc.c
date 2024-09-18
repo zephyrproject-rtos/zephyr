@@ -126,6 +126,22 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Lpi2c1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpi2c1), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio), okay)
+	CLOCK_SetIpSrc(kCLOCK_Flexio0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(flexio), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi0), okay)
+	CLOCK_SetIpSrc(kCLOCK_Lpspi0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi0), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay)
+	CLOCK_SetIpSrc(kCLOCK_Lpspi1,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi1), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay)
+	CLOCK_SetIpSrc(kCLOCK_Adc0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
+#endif
 }
 
 static int ke1xz_init(void)
@@ -137,14 +153,14 @@ static int ke1xz_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* SystemInit is provided by the NXP SDK */
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+#endif /* CONFIG_SOC_RESET_HOOK */
 
 SYS_INIT(ke1xz_init, PRE_KERNEL_1, 0);

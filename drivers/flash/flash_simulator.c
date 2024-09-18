@@ -437,14 +437,14 @@ DEVICE_DT_INST_DEFINE(0, flash_init, NULL,
 
 #ifdef CONFIG_ARCH_POSIX
 
-static void flash_native_posix_cleanup(void)
+static void flash_native_cleanup(void)
 {
 	flash_mock_cleanup_native(flash_in_ram, flash_fd, mock_flash,
 				  FLASH_SIMULATOR_FLASH_SIZE, flash_file_path,
 				  flash_rm_at_exit);
 }
 
-static void flash_native_posix_options(void)
+static void flash_native_options(void)
 {
 	static struct args_struct_t flash_options[] = {
 		{ .option = "flash",
@@ -476,9 +476,8 @@ static void flash_native_posix_options(void)
 	native_add_command_line_opts(flash_options);
 }
 
-
-NATIVE_TASK(flash_native_posix_options, PRE_BOOT_1, 1);
-NATIVE_TASK(flash_native_posix_cleanup, ON_EXIT, 1);
+NATIVE_TASK(flash_native_options, PRE_BOOT_1, 1);
+NATIVE_TASK(flash_native_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */
 

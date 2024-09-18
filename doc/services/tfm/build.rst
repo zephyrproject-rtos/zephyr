@@ -145,7 +145,7 @@ Use the ``tfm_ram_report`` to get the RAM report for TF-M secure firmware (tfm_s
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: mps2_an521_ns
     :goals: tfm_ram_report
 
@@ -153,7 +153,7 @@ Use the ``tfm_rom_report`` to get the ROM report for TF-M secure firmware (tfm_s
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: mps2_an521_ns
     :goals: tfm_rom_report
 
@@ -161,7 +161,7 @@ Use the ``bl2_ram_report`` to get the RAM report for TF-M MCUboot, if enabled.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: mps2_an521_ns
     :goals: bl2_ram_report
 
@@ -169,6 +169,6 @@ Use the ``bl2_rom_report`` to get the ROM report for TF-M MCUboot, if enabled.
 
 .. zephyr-app-commands::
     :tool: all
-    :app: samples/hello_world
+    :zephyr-app: samples/hello_world
     :board: mps2_an521_ns
     :goals: bl2_rom_report

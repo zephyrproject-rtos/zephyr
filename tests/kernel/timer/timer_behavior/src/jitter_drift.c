@@ -285,7 +285,7 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%d"
 		 ", \"CONFIG_TIMER_TEST_PERIOD\":%d"
 		 ", \"CONFIG_TIMER_TEST_SAMPLES\":%d"
-		 ", \"MAX STD DEV\":%d"
+		 ", \"MAX_STD_DEV\":%d"
 		 "}\n",
 		 mechanism,
 		 CONFIG_TIMER_TEST_SAMPLES - periodic_rollovers, periodic_rollovers,

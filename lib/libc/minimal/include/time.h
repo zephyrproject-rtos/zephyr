@@ -45,12 +45,22 @@ typedef _SUSECONDS_T_ suseconds_t;
 
 /*
  * Conversion between civil time and UNIX time.  The companion
- * localtime() and inverse mktime() are not provided here since they
+ * mktime() is not provided here since it
  * require access to time zone information.
+ *
+ * The localtime() & localtime_r() simply
+ * wraps around the gmtime() & gmtime_r() functions, the
+ * results are always expressed as UTC.
  */
 struct tm *gmtime(const time_t *timep);
 struct tm *gmtime_r(const time_t *ZRESTRICT timep,
 		    struct tm *ZRESTRICT result);
+char *asctime(const struct tm *timeptr);
+struct tm *localtime(const time_t *timer);
+char *ctime(const time_t *clock);
+char *asctime_r(const struct tm *ZRESTRICT tp, char *ZRESTRICT buf);
+char *ctime_r(const time_t *clock, char *buf);
+struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
 
 time_t time(time_t *tloc);
 

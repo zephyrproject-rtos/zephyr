@@ -1,0 +1,149 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker USB Type-C port controller
+
+compatible: "nuvoton,numaker-tcpc"
+
+include: [base.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
+
+  vconn-overcurrent-event-polarity:
+    type: string
+    description: |
+      Polarity of VCONN overcurrent event
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vconn-discharge-polarity:
+    type: string
+    description: |
+      Polarity of VCONN discharge
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vconn-enable-polarity:
+    type: string
+    description: |
+      Polarity of VCONN enable
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-overcurrent-event-polarity:
+    type: string
+    description: |
+      Polarity of VBUS overcurrent event
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-forceoff-event-polarity:
+    type: string
+    description: |
+      Polarity of VBUS force-off event
+    enum:
+      - "low-active"
+      - "high-active"
+
+  frs-tx-polarity:
+    type: string
+    description: |
+      Polarity of fast role swap tx
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-discharge-enable-polarity:
+    type: string
+    description: |
+      Polarity of VBUS discharge enable
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-sink-enable-polarity:
+    type: string
+    description: |
+      Polarity of VBUS sink enable
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-source-enable-polarity:
+    type: string
+    description: |
+      Polarity of VBUS source enable
+    enum:
+      - "low-active"
+      - "high-active"
+
+  vbus-divide:
+    type: string
+    required: true
+    description: |
+      VBUS measurement divider
+    enum:
+      - "no-divide"
+      - "divide-10"
+      - "divide-20"
+
+  dead-battery:
+    type: boolean
+    description: |
+      Determine if USB-C Dead Battery pull-down resistor should be
+      applied to the CC lines.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  gpios:
+    type: phandle-array
+    required: true
+
+  gpio-names:
+    type: string-array
+    required: true
+    description: |
+      Valid names of GPIO:
+      "vbus-detect": GPIO for VBUS detect (must)
+      "vbus-discharge": GPIO for VBUS discharge (option)
+      "vconn-discharge": GPIO for VCONN discharge (option)
+
+  io-channels:
+    type: phandle-array
+    description: |
+      EADC channels for measuring VBUS/VCONN voltage
+
+  io-channel-names:
+    type: string-array
+    description: |
+      Valid names of EADC channels:
+      "chn-vbus": EADC channel for measuring VBUS voltage (option)
+      "chn-vconn": EADC channel for measuring VCONN voltage (option)
+
+  adc-measure-timer-trigger-rate:
+    type: int
+    description: |
+      Rate of timer-triggered EADC measurement (Hz).
+      This is ignored when none of above is specified.
+      The default is chosen by following BSP sample,
+      and is to update UTCPD in a proper rate.
+    default: 100

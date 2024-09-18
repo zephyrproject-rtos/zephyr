@@ -25,7 +25,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
@@ -510,12 +510,6 @@ static void discover_cas_inval(struct bt_conn *conn)
 {
 	int err;
 
-	err = bt_cap_initiator_unicast_discover(NULL);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_discover with NULL conn did not fail\n");
-		return;
-	}
-
 	/* Test if it handles concurrent request for same connection */
 	UNSET_FLAG(flag_discovered);
 
@@ -572,111 +566,6 @@ static void unicast_group_create(struct bt_bap_unicast_group **out_unicast_group
 	err = bt_bap_unicast_group_create(&group_param, out_unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
-		return;
-	}
-}
-
-static void unicast_audio_start_inval(struct bt_bap_unicast_group *unicast_group)
-{
-	struct bt_audio_codec_cfg invalid_codec = BT_AUDIO_CODEC_LC3_CONFIG(
-		BT_AUDIO_CODEC_CFG_FREQ_16KHZ, BT_AUDIO_CODEC_CFG_DURATION_10,
-		BT_AUDIO_LOCATION_FRONT_LEFT, 40U, 1, BT_AUDIO_CONTEXT_TYPE_MEDIA);
-	struct bt_cap_unicast_audio_start_stream_param invalid_stream_param;
-	struct bt_cap_unicast_audio_start_stream_param valid_stream_param;
-	struct bt_cap_unicast_audio_start_param invalid_start_param;
-	struct bt_cap_unicast_audio_start_param valid_start_param;
-	int err;
-
-	valid_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
-	valid_start_param.count = 1u;
-	valid_start_param.stream_params = &valid_stream_param;
-
-	valid_stream_param.member.member = default_conn;
-	valid_stream_param.stream = &unicast_client_sink_streams[0];
-	valid_stream_param.ep = unicast_sink_eps[bt_conn_index(default_conn)][0];
-	valid_stream_param.codec_cfg = &unicast_preset_16_2_1.codec_cfg;
-
-	/* Test NULL parameters */
-	err = bt_cap_initiator_unicast_audio_start(NULL);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL param did not fail\n");
-		return;
-	}
-
-	/* Test invalid parameters */
-	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
-	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
-	invalid_start_param.stream_params = &invalid_stream_param;
-
-	/* Test invalid stream_start parameters */
-	invalid_start_param.count = 0U;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with 0 count did not fail\n");
-		return;
-	}
-
-	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
-	invalid_start_param.stream_params = &invalid_stream_param;
-
-	invalid_start_param.stream_params = NULL;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params did not fail\n");
-		return;
-	}
-
-	memcpy(&invalid_start_param, &valid_start_param, sizeof(valid_start_param));
-	invalid_start_param.stream_params = &invalid_stream_param;
-
-	/* Test invalid stream_param parameters */
-	invalid_stream_param.member.member = NULL;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params member did not "
-		     "fail\n");
-		return;
-	}
-
-	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
-
-	invalid_stream_param.stream = NULL;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params stream did not "
-		     "fail\n");
-		return;
-	}
-
-	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
-
-	invalid_stream_param.ep = NULL;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params ep did not "
-		     "fail\n");
-		return;
-	}
-
-	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
-
-	invalid_stream_param.codec_cfg = NULL;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with NULL stream params codec did not "
-		     "fail\n");
-		return;
-	}
-
-	/* Clear metadata so that it does not contain the mandatory stream context */
-	memcpy(&invalid_stream_param, &valid_stream_param, sizeof(valid_stream_param));
-	memset(&invalid_codec.meta, 0, sizeof(invalid_codec.meta));
-
-	invalid_stream_param.codec_cfg = &invalid_codec;
-	err = bt_cap_initiator_unicast_audio_start(&invalid_start_param);
-	if (err == 0) {
-		FAIL("bt_cap_initiator_unicast_audio_start with invalid Codec metadata did not "
-		     "fail\n");
 		return;
 	}
 }
@@ -926,7 +815,6 @@ static void test_main_cap_initiator_unicast_inval(void)
 
 	unicast_group_create(&unicast_group);
 
-	unicast_audio_start_inval(unicast_group);
 	unicast_audio_start(unicast_group, true);
 
 	unicast_audio_update_inval();

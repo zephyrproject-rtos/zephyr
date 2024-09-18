@@ -33,13 +33,24 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/udp.h>
 
 #include "net_private.h"
 #include "tcp_internal.h"
+
+/* Make sure net_buf data size is large enough that IPv6
+ * and possible extensions fit to the network buffer.
+ * The check is done using an arbitrarily chosen value 96 by monitoring
+ * wireshark traffic to see what the typical header lengts are.
+ * It is still recommended to use the default value 128 but allow smaller
+ * value if really needed.
+ */
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE) && defined(CONFIG_NET_NATIVE_IPV6)
+BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= 96);
+#endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
 /* Find max header size of IP protocol (IPv4 or IPv6) */
 #if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_RAW_MODE) || \
@@ -1274,7 +1285,8 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
-	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+	    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 		create_time = k_cycle_get_32();
 	} else {
 		ARG_UNUSED(create_time);
@@ -1313,7 +1325,8 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
-	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+	    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 		net_pkt_set_create_time(pkt, create_time);
 	}
 
@@ -1833,8 +1846,9 @@ static void clone_pkt_lladdr(struct net_pkt *pkt, struct net_pkt *clone_pkt,
 {
 	int32_t ll_addr_offset;
 
-	if (!lladdr->addr)
+	if (!lladdr->addr) {
 		return;
+	}
 
 	ll_addr_offset = net_pkt_find_offset(pkt, lladdr->addr);
 

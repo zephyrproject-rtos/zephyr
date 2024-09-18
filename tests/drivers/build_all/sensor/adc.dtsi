@@ -7,6 +7,8 @@
  * Application overlay for ADC devices
  */
 
+ #include <zephyr/dt-bindings/battery/battery.h>
+
 test_adc_mcp9700a: mcp9700a {
 	status = "okay";
 	compatible = "microchip,mcp970x";
@@ -32,6 +34,16 @@ test_current: current_amp {
 	sense-resistor-micro-ohms = <10>;
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
+};
+
+test_composite_fuel_gauge: composite_fuel_gauge {
+	compatible = "zephyr,fuel-gauge-composite";
+	status = "okay";
+	battery-voltage = <&test_voltage>;
+	battery-current = <&test_current>;
+	device-chemistry = "lithium-ion-polymer";
+	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+	charge-full-design-microamp-hours = <1000000>;
 };
 
 test_adc_emul: adc-emul {

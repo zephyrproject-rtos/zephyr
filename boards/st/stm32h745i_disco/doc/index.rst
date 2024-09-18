@@ -150,6 +150,8 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``stm32h745i_disco`` board should be built per core target,
 using either ``stm32h745i_disco/stm32h745xx/m7`` or ``stm32h745i_disco/stm32h745xx/m4`` as the target
 (see :ref:`build_an_application` and :ref:`application_run` for more details).
@@ -161,10 +163,22 @@ using either ``stm32h745i_disco/stm32h745xx/m7`` or ``stm32h745i_disco/stm32h745
 Flashing
 ========
 
-STM32H745I-DISCO board includes an ST-LINK/V3 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+The target core is detected automatically.
 
-Flashing operation will depend on the target and the SoC
-option bytes configuration.
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+Flashing an application to STM32H745I-DISCO
+-------------------------------------------
+
+Flashing operation will depend on the target and the SoC option bytes configuration.
 
 By default:
 
@@ -175,13 +189,6 @@ Also, the out of the box default board configuration enables CM7 and CM4 boot wh
 board is powered (Option bytes BCM7 and BCM4 are checked).
 In that configuration, Kconfig boot option ``STM32H7_BOOT_CM4_CM7`` should be selected.
 Zephyr flash configuration has been set to meet these default settings.
-
-Alternatively, west `STM32CubeProgrammer`_ runner can be used, after installing
-it, to flash applications for both cores. The target core is detected automatically.
-
-.. code-block:: console
-
-   $ west flash --runner stm32cubeprogrammer
 
 Flashing an application to STM32H745XI M7 Core
 ----------------------------------------------

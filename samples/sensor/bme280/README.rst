@@ -1,7 +1,8 @@
-.. _bme280:
+.. zephyr:code-sample:: bme280
+   :name: BME280 humidity and pressure sensor
+   :relevant-api: sensor_interface
 
-BME280 Humidity and Pressure Sensor
-###################################
+   Get temperature, pressure, and humidity data from a BME280 sensor.
 
 Overview
 ********

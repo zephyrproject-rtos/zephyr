@@ -95,20 +95,14 @@ void sai_isr(const void *parameter)
 
 	/* check for TX FIFO error */
 	if (SAI_TX_RX_STATUS_IS_SET(DAI_DIR_TX, data->regmap, kSAI_FIFOErrorFlag)) {
-		LOG_ERR("FIFO underrun detected");
-		/* TODO: this will crash the program and should be addressed as
-		 * mentioned in TODO list's 2).
-		 */
-		z_irq_spurious(NULL);
+		LOG_WRN("FIFO underrun detected");
+		SAI_TX_RX_STATUS_CLEAR(DAI_DIR_TX, data->regmap, kSAI_FIFOErrorFlag);
 	}
 
 	/* check for RX FIFO error */
 	if (SAI_TX_RX_STATUS_IS_SET(DAI_DIR_RX, data->regmap, kSAI_FIFOErrorFlag)) {
-		LOG_ERR("FIFO overrun detected");
-		/* TODO: this will crash the program and should be addressed as
-		 * mentioned in TODO list's 2).
-		 */
-		z_irq_spurious(NULL);
+		LOG_WRN("FIFO overrun detected");
+		SAI_TX_RX_STATUS_CLEAR(DAI_DIR_RX, data->regmap, kSAI_FIFOErrorFlag);
 	}
 }
 

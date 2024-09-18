@@ -11,11 +11,6 @@ config BOARD_NRF9160DK
 
 if BOARD_NRF9160DK_NRF52840
 
-config BOARD_ENABLE_DCDC
-	bool "DCDC mode"
-	select SOC_DCDC_NRF52X
-	default y
-
 module = BOARD_NRF9160DK
 module-str = Board Control
 source "subsys/logging/Kconfig.template.log_config"

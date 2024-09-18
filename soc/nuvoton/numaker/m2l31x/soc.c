@@ -9,12 +9,15 @@
 /* Hardware and starter kit includes. */
 #include <NuMicro.h>
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 
 	/* Unlock protected registers */
 	SYS_UnlockReg();
+
+	/* Release I/O hold status */
+	CLK->IOPDCTL = 1;
 
 	/*
 	 * -------------------

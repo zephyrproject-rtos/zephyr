@@ -22,7 +22,7 @@
 
 #include <zephyr/usb/usb_device.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -211,7 +211,7 @@ static void process_unack(void)
 	LOG_DBG("Need to remove %u packet from the queue", number_removed);
 
 	while (number_removed) {
-		struct net_buf *buf = net_buf_get(&h5.unack_queue, K_NO_WAIT);
+		struct net_buf *buf = k_fifo_get(&h5.unack_queue, K_NO_WAIT);
 
 		if (!buf) {
 			LOG_ERR("Unack queue is empty");
@@ -341,22 +341,22 @@ static void retx_timeout(struct k_work *work)
 		k_fifo_init(&tmp_queue);
 
 		/* Queue to temporary queue */
-		while ((buf = net_buf_get(&h5.tx_queue, K_NO_WAIT))) {
-			net_buf_put(&tmp_queue, buf);
+		while ((buf = k_fifo_get(&h5.tx_queue, K_NO_WAIT))) {
+			k_fifo_put(&tmp_queue, buf);
 		}
 
 		/* Queue unack packets to the beginning of the queue */
-		while ((buf = net_buf_get(&h5.unack_queue, K_NO_WAIT))) {
+		while ((buf = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
 			/* include also packet type */
 			net_buf_push(buf, sizeof(uint8_t));
-			net_buf_put(&h5.tx_queue, buf);
+			k_fifo_put(&h5.tx_queue, buf);
 			h5.tx_seq = (h5.tx_seq - 1) & 0x07;
 			unack_queue_len--;
 		}
 
 		/* Queue saved packets from temp queue */
-		while ((buf = net_buf_get(&tmp_queue, K_NO_WAIT))) {
-			net_buf_put(&h5.tx_queue, buf);
+		while ((buf = k_fifo_get(&tmp_queue, K_NO_WAIT))) {
+			k_fifo_put(&h5.tx_queue, buf);
 		}
 	}
 
@@ -400,13 +400,13 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		net_buf_unref(buf);
 		break;
 	case HCI_3WIRE_LINK_PKT:
-		net_buf_put(&h5.rx_queue, buf);
+		k_fifo_put(&h5.rx_queue, buf);
 		break;
 	case HCI_COMMAND_PKT:
 	case HCI_ACLDATA_PKT:
 	case HCI_ISODATA_PKT:
 		hexdump("=> ", buf->data, buf->len);
-		net_buf_put(&tx_queue, buf);
+		k_fifo_put(&tx_queue, buf);
 		break;
 	}
 }
@@ -563,7 +563,7 @@ static int h5_queue(struct net_buf *buf)
 {
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
-	net_buf_put(&h5.tx_queue, buf);
+	k_fifo_put(&h5.tx_queue, buf);
 
 	return 0;
 }
@@ -597,7 +597,7 @@ static void process_events(struct k_poll_event *ev, int count)
 		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
 			if (ev->tag == 0) {
 				/* Wait until a buffer is available */
-				buf = net_buf_get(&tx_queue, K_NO_WAIT);
+				buf = k_fifo_get(&tx_queue, K_NO_WAIT);
 				__ASSERT_NO_MSG(buf);
 
 				/* Pass buffer to the stack */
@@ -607,7 +607,7 @@ static void process_events(struct k_poll_event *ev, int count)
 					net_buf_unref(buf);
 				}
 			} else if (ev->tag == 2) {
-				buf = net_buf_get(&h5.tx_queue, K_FOREVER);
+				buf = k_fifo_get(&h5.tx_queue, K_FOREVER);
 				__ASSERT_NO_MSG(buf);
 
 				type = h5_get_type(buf);
@@ -616,7 +616,7 @@ static void process_events(struct k_poll_event *ev, int count)
 				/* buf is dequeued from tx_queue and queued to unack
 				 * queue.
 				 */
-				net_buf_put(&h5.unack_queue, buf);
+				k_fifo_put(&h5.unack_queue, buf);
 				unack_queue_len++;
 
 				k_work_reschedule(&retx_work, H5_TX_ACK_TIMEOUT);
@@ -684,19 +684,19 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf, *cache;
 
-		buf = net_buf_get(&h5.rx_queue, K_FOREVER);
+		buf = k_fifo_get(&h5.rx_queue, K_FOREVER);
 
 		hexdump("=> ", buf->data, buf->len);
 
 		if (!memcmp(buf->data, sync_req, sizeof(sync_req))) {
 			if (h5.link_state == ACTIVE) {
-				while ((cache = net_buf_get(&h5.unack_queue, K_NO_WAIT))) {
+				while ((cache = k_fifo_get(&h5.unack_queue, K_NO_WAIT))) {
 					net_buf_unref(cache);
 				}
 
 				unack_queue_len = 0;
 
-				while ((cache = net_buf_get(&h5.tx_queue, K_NO_WAIT))) {
+				while ((cache = k_fifo_get(&h5.tx_queue, K_NO_WAIT))) {
 					net_buf_unref(cache);
 				}
 
@@ -810,7 +810,7 @@ int main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = h5_queue(buf);
 		if (err) {
 			LOG_ERR("Failed to send");

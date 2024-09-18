@@ -1,7 +1,8 @@
-.. _die_temp_polling:
+.. zephyr:code-sample:: die_temp_polling
+   :name: CPU die temperature polling
+   :relevant-api: sensor_interface
 
-CPU Die Temperature polling
-###########################
+   Get CPU die temperature data from a sensor using polling.
 
 Overview
 ********

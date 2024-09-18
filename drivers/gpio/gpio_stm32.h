@@ -271,6 +271,6 @@ struct gpio_stm32_data {
  *
  * @return 0 on success, negative errno code on failure
  */
-int gpio_stm32_configure(const struct device *dev, int pin, int conf, int func);
+int gpio_stm32_configure(const struct device *dev, gpio_pin_t pin, uint32_t conf, uint32_t func);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */

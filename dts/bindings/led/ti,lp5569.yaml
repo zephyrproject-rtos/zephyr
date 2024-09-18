@@ -3,3 +3,23 @@ description: TI LP5569 LED
 compatible: "ti,lp5569"
 
 include: i2c-device.yaml
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO used to enable the lp5569.
+
+  charge-pump-mode:
+    type: string
+    default: "disabled"
+    enum:
+      - "disabled"
+      - "1x"
+      - "1x5"
+      - "auto"
+    description: |
+      If provided, configures the internal charge-pump mode in the MISC
+      register. This can be useful to supply a higher voltage to the LEDs, than
+      what the lp5569 is being supplied.
+      The default corresponds to the reset value of the register.

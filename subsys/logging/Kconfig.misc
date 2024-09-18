@@ -58,7 +58,7 @@ config LOG_FMT_SECTION
 
 config LOG_FMT_SECTION_STRIP
 	bool "Strip log strings from binary"
-	depends on LOG_DICTIONARY_SUPPORT
+	depends on LOG_DICTIONARY_DB
 	depends on LOG_FMT_SECTION
 	depends on LINKER_DEVNULL_SUPPORT
 	depends on !LOG_ALWAYS_RUNTIME

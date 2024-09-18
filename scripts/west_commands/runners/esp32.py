@@ -62,6 +62,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                             help='serial port to flash')
         parser.add_argument('--esp-baud-rate', default='921600',
                             help='serial baud rate, default 921600')
+        parser.add_argument('--esp-monitor-baud', default='115200',
+                            help='serial monitor baud rate, default 115200')
         parser.add_argument('--esp-flash-size', default='detect',
                             help='flash size, default "detect"')
         parser.add_argument('--esp-flash-freq', default='40m',
@@ -105,14 +107,15 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         # Add Python interpreter
         cmd_flash = [sys.executable, self.espidf, '--chip', 'auto']
 
+        if self.device is not None:
+            cmd_flash.extend(['--port', self.device])
+
         if self.erase is True:
             cmd_erase = cmd_flash + ['erase_flash']
             self.check_call(cmd_erase)
 
         if self.no_stub is True:
             cmd_flash.extend(['--no-stub'])
-        if self.device is not None:
-            cmd_flash.extend(['--port', self.device])
         cmd_flash.extend(['--baud', self.baud])
         cmd_flash.extend(['--before', 'default_reset'])
         if self.reset:

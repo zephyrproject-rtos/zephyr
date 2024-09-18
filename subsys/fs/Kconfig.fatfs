@@ -135,8 +135,8 @@ config FS_FATFS_FF_USE_LFN
 
 config FS_FATFS_MAX_LFN
 	int "Max filename length"
-	range 12 255
-	default 255
+	range 12 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
 	  additional 608 bytes at exFAT enabled.
@@ -229,6 +229,28 @@ config FS_FATFS_REENTRANT
 	  Enable the FatFs re-entrancy (thread safe) option for file/directory
 	  access for each volume. Will create a zephyr mutex object for each
 	  FatFs volume and a FatFs system mutex.
+
+config FS_FATFS_LBA64
+	bool "Support for 64-bit LBA"
+	depends on FS_FATFS_EXFAT
+	help
+	  This option enables support for 64-bit LBA, which also
+	  enables GPT support.
+
+config FS_FATFS_MULTI_PARTITION
+	bool "Support for multiple volumes on the physical drive"
+	help
+	  When this function is enabled, each logical drive number can
+	  be bound to arbitrary physical drive and partition listed
+	  in the VolToPart[] of the fatfs module. The VolToPart[] is expected to be
+	  provided by Zephyr application.
+	  The mount points have to be numbered in this case.
+	  For example, 2 FAT partition on SD disk (3) in terms of Zephyr:
+	    {3, 1} - mount point "/0:"
+	    {3, 2} - mount point "/1:"
+	  When disabled (default), each logical drive number is bound to the same
+	  physical drive number and only an FAT volume found on the physical drive
+	  will be mounted.
 
 endmenu
 

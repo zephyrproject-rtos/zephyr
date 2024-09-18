@@ -46,6 +46,7 @@ tests:
     platform_exclude:
       - qemu_cortex_a9 # FIXME: See issue #39948
       - hifive1        # FIXME: See issue #66070
+      - m2gl025_miv    # FIXME: See issue #66070
     tags: kernel
     integration_platforms:
       - qemu_x86

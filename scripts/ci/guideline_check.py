@@ -11,11 +11,18 @@ from unidiff import PatchSet
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-coccinelle_scripts = ["/scripts/coccinelle/reserved_names.cocci",
+RESERVED_NAMES_SCRIPT = "/scripts/coccinelle/reserved_names.cocci"
+
+coccinelle_scripts = [RESERVED_NAMES_SCRIPT,
                       "/scripts/coccinelle/same_identifier.cocci",
                       #"/scripts/coccinelle/identifier_length.cocci",
                       ]
 
+coccinelle_reserved_names_exclude_regex = [
+    r"lib/libc/.*",
+    r"lib/posix/.*",
+    r"include/zephyr/posix/.*",
+]
 
 def parse_coccinelle(contents: str, violations: dict):
     reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
@@ -69,7 +76,18 @@ def main():
             continue
 
         for script in coccinelle_scripts:
-            script_path = os.getenv("ZEPHYR_BASE") + "/" + script
+
+            skip_reserved_names = False
+            if script == RESERVED_NAMES_SCRIPT:
+                for path in coccinelle_reserved_names_exclude_regex:
+                    if re.match(path, f.path):
+                        skip_reserved_names = True
+                        break
+
+            if skip_reserved_names:
+                continue
+
+            script_path =zephyr_base + "/" + script
             print(f"Running {script} on {f.path}")
             try:
                 cocci = sh.coccicheck(

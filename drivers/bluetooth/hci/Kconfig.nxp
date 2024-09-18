@@ -23,6 +23,25 @@ config HCI_NXP_SET_CAL_DATA_ANNEX100
 	  If enabled, the Host will send calibration data annex 100 to the BLE Controller during HCI
 	  init.
 
+if BT_NXP
+
+config BT_DIS_MANUF
+	default "NXP"
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 84
+
+config HEAP_MEM_POOL_SIZE
+	default 256
+
+config FLASH
+	default y
+
+endif # BT_NXP
+
 if BT_H4_NXP_CTLR
 
 config BT_NXP_NW612

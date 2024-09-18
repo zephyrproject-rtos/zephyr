@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 1, 1)>,
+			<RA_PSEL(RA_PSEL_SCI_0, 1, 0)>;
+		};
+	};
+};

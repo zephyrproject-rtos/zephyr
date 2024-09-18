@@ -21,6 +21,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
+#include <zephyr/platform/hooks.h>
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
 #include <cortex_a_r/stack.h>
@@ -147,6 +148,9 @@ extern FUNC_NORETURN void z_cstart(void);
  */
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
 	/* Initialize tpidruro with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[0]);
 

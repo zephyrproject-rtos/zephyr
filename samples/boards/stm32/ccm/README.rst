@@ -43,7 +43,7 @@ Building and Running
 ********************
 
 .. zephyr-app-commands::
-   :app: samples/boards/stm32/ccm
+   :zephyr-app: samples/boards/stm32/ccm
    :goals: build flash
 
 The first time the example is run after power on, the output will

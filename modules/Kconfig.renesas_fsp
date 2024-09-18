@@ -8,6 +8,8 @@ config HAS_RENESAS_RA_FSP
 	help
 	  Enable Renesas RA FSP support
 
+if HAS_RENESAS_RA_FSP
+
 config USE_RA_FSP_SCI_B_UART
 	bool
 	help
@@ -17,3 +19,46 @@ config USE_RA_FSP_DTC
 	bool
 	help
 	  Enable RA FSP DTC driver
+
+config USE_RA_FSP_I2C_IIC
+	bool
+	help
+	  Enable Renesas RA I2C IIC Master driver
+
+config USE_RA_FSP_SCI_UART
+	bool
+	help
+	  Enable RA FSP SCI UART driver
+
+config USE_RA_FSP_ADC
+	bool
+	help
+	  Enable RA FSP ADC driver
+
+config USE_RA_FSP_SCE
+	bool
+	help
+	  Enable RA FSP SCE driver
+
+if USE_RA_FSP_SCE
+
+config HAS_RENESAS_RA_RSIP_E51A
+	bool
+	default y
+	depends on ENTROPY_RENESAS_RA_RSIP_E51A_TRNG
+	help
+	  Includes RSIP-E51A implementation for SCE driver
+
+endif
+
+config USE_RA_FSP_SPI_B
+	bool
+	help
+	  Enable RA FSP SPI-B driver
+
+config USE_RA_FSP_FLASH_HP
+	bool
+	help
+	  Enable RA FSP FLASH HP driver
+
+endif # HAS_RENESAS_RA_FSP

@@ -7,12 +7,11 @@
 /dts-v1/;
 
 #include <nordic/nrf54h20_cpurad.dtsi>
-#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
-#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
-#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+#include "nrf54h20dk_nrf54h20-common.dtsi"
 
 /delete-node/ &cpuapp_cpuppr_ipc;
 /delete-node/ &cpuapp_cpusys_ipc;
+/delete-node/ &cpuapp_cpuflpr_ipc;
 /delete-node/ &cpusec_cpuapp_ipc;
 
 / {

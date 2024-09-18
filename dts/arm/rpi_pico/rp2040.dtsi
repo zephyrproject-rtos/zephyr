@@ -325,9 +325,9 @@
 			status = "disabled";
 		};
 
-		usbd: usbd@50100000 {
+		usbd: usbd@50110000 {
 			compatible = "raspberrypi,pico-usbd";
-			reg = <0x50100000 0x10000>;
+			reg = <0x50110000 0x10000>;
 			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_USB>;
 			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;

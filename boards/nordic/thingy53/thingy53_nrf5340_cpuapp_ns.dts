@@ -13,7 +13,7 @@
 	compatible = "nordic,thingy53-nrf5340-cpuapp";
 
 	chosen {
-		zephyr,sram = &sram0_ns;
+		zephyr,sram = &sram0_ns_app;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
@@ -21,4 +21,16 @@
 	aliases {
 		watchdog0 = &wdt0;
 	};
+};
+
+&vregmain {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregradio {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregh {
+	status = "okay";
 };

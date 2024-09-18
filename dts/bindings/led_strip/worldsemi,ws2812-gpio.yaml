@@ -6,9 +6,95 @@ description: |
 
   Driver bindings for bit-banging a WS2812 or compatible LED strip.
 
-  The GPIO driver uses inline assembly, and isn't available for all
-  boards.
+  The CPU driver uses inline assembly, and isn't available for all
+  boards. The timing is automatically derived from the CPU clock frequency,
+  or can be provided by setting the delay-txx properties in the device
+  tree, or can be manually provided by the Kconfig settings DELAY_Txx.
+
+  The four delays provided (calculated based on the clock frequency,
+  provided by a dts, or Kconfig file) determine the delays as depicted
+  below. The exact timings of the LED strip data line might vary on the
+  type of LEDs used, consult the data-sheet for the precise timings.
+
+  0 code
+     +-------+                 +---
+     |       |                 |
+     |  T0H  |       T0L       |
+     |       |                 |
+  ---+       +-----------------+
+
+  1 code
+     +---------------+         +---
+     |               |         |
+     |      T1H      |   T1L   |
+     |               |         |
+  ---+               +---------+
+
+
+  Example dts file:
+  / {
+        cpus {
+            cpu@0 {
+                clock-frequency = <64000000>;
+            };
+        };
+
+        rgb_led: ws2812 {
+            compatible = "worldsemi,ws2812-gpio";
+            chain-length = <1>;
+            color-mapping = <LED_COLOR_ID_GREEN
+                             LED_COLOR_ID_RED
+                             LED_COLOR_ID_BLUE>;
+            gpios = <&gpio0 16 0>;
+        };
+  };
+
+  Example dts file:
+  / {
+        chosen {
+            zephyr,led-strip = &rgb_led;
+        };
+
+        rgb_led: ws2812 {
+            compatible = "worldsemi,ws2812-gpio";
+            chain-length = <1>;
+            color-mapping = <LED_COLOR_ID_GREEN
+                             LED_COLOR_ID_RED
+                             LED_COLOR_ID_BLUE>;
+            reset-delay = <50>;
+            gpios = <&gpio0 16 0>;
+            delay-t1h = <48>;
+            delay-t1l = <32>;
+            delay-t0h = <16>;
+            delay-t0l = <32>;
+        };
+  };
 
 compatible: "worldsemi,ws2812-gpio"
 
 include: [base.yaml, ws2812-gpio.yaml]
+
+properties:
+  delay-t1h:
+    type: int
+    description: |
+      Number of NOP assembly operations to create a delay for a 1 bit, high
+      voltage period (default 700 nsec)
+
+  delay-t1l:
+    type: int
+    description: |
+      Number of NOP assembly operations to create a delay for a 1 bit, low
+      voltage period (default 600 nsec)
+
+  delay-t0h:
+    type: int
+    description: |
+      Number of NOP assembly operations to create a delay for a 0 bit, high
+      voltage period (default 350 nsec)
+
+  delay-t0l:
+    type: int
+    description: |
+      Number of NOP assembly operations to create a delay for a 0 bit, low
+      voltage period (default 800 nsec)

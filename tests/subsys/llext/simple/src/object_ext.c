@@ -45,4 +45,4 @@ void test_entry(void)
 
 	run_id += 1;
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

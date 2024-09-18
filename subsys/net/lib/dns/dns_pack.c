@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "dns_pack.h"
 

@@ -7,8 +7,8 @@
 #include <mem.h>
 #include <arm/armv8.1-m.dtsi>
 #include <freq.h>
-#include <zephyr/dt-bindings/pinctrl/renesas/ra-pinctrl.h>
-
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
 
 / {
 	cpus {
@@ -44,13 +44,13 @@
 		};
 
 		pinctrl: pin-controller@40400800 {
-			compatible = "renesas,ra8-pinctrl";
+			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x40400800 0x3c0>;
 			status = "okay";
 		};
 
 		ioport0: gpio@40400000 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400000 0x20>;
 			port = <0>;
 			gpio-controller;
@@ -60,7 +60,7 @@
 		};
 
 		ioport1: gpio@40400020 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400020 0x20>;
 			port = <1>;
 			gpio-controller;
@@ -70,7 +70,7 @@
 		};
 
 		ioport2: gpio@40400040 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400040 0x20>;
 			port = <2>;
 			gpio-controller;
@@ -80,7 +80,7 @@
 		};
 
 		ioport3: gpio@40400060 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400060 0x20>;
 			port = <3>;
 			gpio-controller;
@@ -90,7 +90,7 @@
 		};
 
 		ioport4: gpio@40400080 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400080 0x20>;
 			port = <4>;
 			gpio-controller;
@@ -101,7 +101,7 @@
 		};
 
 		ioport5: gpio@404000a0 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x404000a0 0x20>;
 			port = <5>;
 			gpio-controller;
@@ -111,7 +111,7 @@
 		};
 
 		ioport6: gpio@404000c0 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x404000c0 0x20>;
 			port = <6>;
 			gpio-controller;
@@ -121,7 +121,7 @@
 		};
 
 		ioport7: gpio@404000e0 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x404000e0 0x20>;
 			port = <7>;
 			gpio-controller;
@@ -131,7 +131,7 @@
 		};
 
 		ioport8: gpio@40400100 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400100 0x20>;
 			port = <8>;
 			gpio-controller;
@@ -141,7 +141,7 @@
 		};
 
 		ioport9: gpio@40400120 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400120 0x20>;
 			port = <9>;
 			gpio-controller;
@@ -151,7 +151,7 @@
 		};
 
 		ioporta: gpio@40400140 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400140 0x20>;
 			port = <10>;
 			gpio-controller;
@@ -161,7 +161,7 @@
 		};
 
 		ioportb: gpio@40400160 {
-			compatible = "renesas,ra8-gpio";
+			compatible = "renesas,ra-gpio-ioport";
 			reg = <0x40400160 0x20>;
 			port = <11>;
 			gpio-controller;
@@ -170,12 +170,29 @@
 			status = "disabled";
 		};
 
+		iic0: iic0@4025e000 {
+			compatible = "renesas,ra-iic";
+			channel = <0>;
+			interrupts = <87 1>, <88 1>, <89 1>, <90 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E000 0x100>;
+			status = "disabled";
+		};
+		iic1: iic1@4025e100 {
+			compatible = "renesas,ra-iic";
+			channel = <1>;
+			interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4025E100 0x100>;
+			status = "disabled";
+		};
+
 		sci0: sci0@40358000 {
 			compatible = "renesas,ra-sci";
 			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358000 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 31>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -189,7 +206,7 @@
 			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358100 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 30>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -203,7 +220,7 @@
 			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358200 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 29>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -217,7 +234,7 @@
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358300 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 28>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -231,7 +248,7 @@
 			interrupts = <20 1>, <21 1>, <22 1>, <23 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358400 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 27>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -245,7 +262,7 @@
 			interrupts = <24 1>, <25 1>, <26 1>, <27 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40358900 0x100>;
-			clocks = <&sciclk>;
+			clocks = <&sciclk MSTPB 22>;
 			status = "disabled";
 			uart {
 				compatible = "renesas,ra8-uart-sci-b";
@@ -254,10 +271,65 @@
 			};
 		};
 
-		flash-controller@407fe000 {
-			reg = <0x407fe000 0x1000>;
+		flash: flash-controller@40100000 {
+			compatible = "renesas,ra-flash-hp-controller";
+			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			interrupts = <38 2>, <39 2>;
+			interrupt-names = "frdyi", "fiferr";
+		};
+
+		adc0: adc@40332000 {
+			compatible = "renesas,ra-adc";
+			interrupts = <38 1>;
+			interrupt-names = "scanend";
+			reg = <0x40332000 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-count = <12>;
+			status = "disabled";
+		};
+
+		adc1: adc@40332200 {
+			compatible = "renesas,ra-adc";
+			interrupts = <39 1>;
+			interrupt-names = "scanend";
+			reg = <0x40332200 0x100>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-count = <13>;
+			status = "disabled";
+		};
+
+		trng: trng {
+			compatible = "renesas,ra-rsip-e51a-trng";
+		};
+
+		spi0: spi@4035c000 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			clocks = <&pclka MSTPB 19>;
+			clock-names = "spiclk";
+			interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c000 0x100>;
+			status = "disabled";
+		};
+
+		spi1: spi@4035c100 {
+			compatible = "renesas,ra8-spi-b";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <1>;
+			clocks = <&pclka MSTPB 18>;
+			clock-names = "spiclk";
+			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x4035c100 0x100>;
+			status = "disabled";
 		};
 
 		option_setting_ofs: option_setting_ofs@300a100 {

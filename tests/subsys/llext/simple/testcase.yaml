@@ -45,6 +45,13 @@ tests:
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  llext.simple.readonly_fs_loader:
+    arch_allow: arm # Xtensa needs writable storage
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.simple.writable:
     arch_allow: arm xtensa
     integration_platforms:

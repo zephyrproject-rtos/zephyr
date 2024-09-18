@@ -1,14 +1,15 @@
 .. zephyr:code-sample:: bluetooth_cap_initiator
-   :name: Bluetooth: Common Audio Profile Initiator
+   :name: Common Audio Profile Initiator
    :relevant-api: bt_cap bt_bap bluetooth
 
-   CAP Initiator sample that connects to CAP Acceptors and setup audio streaming.
+   Connect to CAP Acceptors and setup unicast audio streaming or broadcast audio streams.
 
 Overview
 ********
 
 Application demonstrating the CAP Initiator functionality.
-Starts by scanning for a CAP Acceptor and then connects to and sets up available streams.
+Starts by either scanning for a CAP Acceptor and then connects to and sets up available unicast
+audio streams, sets up a broadcast audio stream, or both.
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_initiator` in the Zephyr tree.
 
@@ -47,7 +48,7 @@ If you prefer to only build the application core image, you can do so by doing i
    :goals: build
 
 In that case you can pair this application core image with the
-:ref:`hci_ipc sample <bluetooth-hci-ipc-sample>`
+:zephyr:code-sample:`bluetooth_hci_ipc` sample
 :zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_iso-bt_ll_sw_split.conf` configuration.
 
 Building for a simulated nrf5340bsim

@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
  *
- * Copyright (C) 2023, Intel Corporation
+ * Copyright (C) 2024, Intel Corporation
  *
  */
 
@@ -239,4 +239,110 @@
 		status = "disabled";
 	};
 
+	dma0: dma@10DB0000 {
+		compatible = "snps,designware-dma-axi";
+		#dma-cells = <1>;
+		reg = <0x10DB0000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 82 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 83 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 84 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>;
+		dma-channels = <4>;
+		resets = <&reset RSTMGR_DMA_RSTLINE>;
+		status = "disabled";
+	};
+
+	dma1: dma@10DC0000 {
+		compatible = "snps,designware-dma-axi";
+		#dma-cells = <1>;
+		reg = <0x10DC0000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 166 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 167 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 168 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 169 IRQ_TYPE_LEVEL
+				 IRQ_DEFAULT_PRIORITY>;
+		dma-channels = <4>;
+		resets = <&reset RSTMGR_DMA_RSTLINE>;
+	};
+
+	xgmac0: xgmac@10810000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10810000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 01];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio0: mdio@10810000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10810000 0x10000>;
+		resets = <&reset RSTMGR_TSN0_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
+
+	xgmac1: xgmac@10820000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10820000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 207 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 02];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio1: mdio@10820000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10820000 0x10000>;
+		resets = <&reset RSTMGR_TSN1_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
+
+	xgmac2: xgmac@10830000 {
+		compatible = "snps,dwcxgmac";
+		reg = <0x10830000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL
+			      IRQ_DEFAULT_PRIORITY>;
+		local-mac-address = [06 00 00 00 00 03];
+		max-frame-size = <1518>;
+		tx-fifo-size = <32768>;
+		rx-fifo-size = <16384>;
+		pblx8;
+		blen32;
+		status = "disabled";
+	};
+
+	mdio2: mdio@10830000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x10830000 0x10000>;
+		resets = <&reset RSTMGR_TSN2_RSTLINE>;
+		compatible = "snps,dwcxgmac-mdio";
+		status = "disabled";
+	};
 };

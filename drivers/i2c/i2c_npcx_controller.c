@@ -425,8 +425,9 @@ static int i2c_ctrl_wait_stop_completed(const struct device *dev, int timeout)
 		 * Wait till i2c bus is idle. This bit is cleared to 0
 		 * automatically after the STOP condition is generated.
 		 */
-		if (!IS_BIT_SET(inst->SMBCTL1, NPCX_SMBCTL1_STOP))
+		if (!IS_BIT_SET(inst->SMBCTL1, NPCX_SMBCTL1_STOP)) {
 			break;
+		}
 		k_msleep(1);
 	} while (--timeout);
 

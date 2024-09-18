@@ -8,6 +8,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 
 #define NUM_RSP_SLOTS 5
 #define NUM_SUBEVENTS 5
@@ -91,9 +92,6 @@ static void response_cb(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response
 	if (buf) {
 		printk("Response: subevent %d, slot %d\n", info->subevent, info->response_slot);
 		bt_data_parse(buf, print_ad_field, NULL);
-	} else {
-		printk("Failed to receive response: subevent %d, slot %d\n", info->subevent,
-		       info->response_slot);
 	}
 }
 
@@ -116,7 +114,7 @@ void connected_cb(struct bt_conn *conn, uint8_t err)
 
 void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason 0x%02X)\n", reason);
+	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -281,13 +279,14 @@ int main(void)
 	}
 
 	/* Enable Periodic Advertising */
+	printk("Start Periodic Advertising\n");
 	err = bt_le_per_adv_start(pawr_adv);
 	if (err) {
 		printk("Failed to enable periodic advertising (err %d)\n", err);
 		return 0;
 	}
 
-	printk("Start Periodic Advertising\n");
+	printk("Start Extended Advertising\n");
 	err = bt_le_ext_adv_start(pawr_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err) {
 		printk("Failed to start extended advertising (err %d)\n", err);
@@ -367,6 +366,12 @@ int main(void)
 		printk("PAwR config written to sync %d, disconnecting\n", num_synced - 1);
 
 disconnect:
+		/* Adding delay (2ms * interval value, using 2ms intead of the 1.25ms
+		 * used by controller) to ensure sync is established before
+		 * disconnection.
+		 */
+		k_sleep(K_MSEC(per_adv_params.interval_max * 2));
+
 		err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		if (err) {
 			return 0;

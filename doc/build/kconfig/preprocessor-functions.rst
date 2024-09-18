@@ -12,6 +12,8 @@ These functions are defined in
    The official Kconfig preprocessor documentation can be found `here
    <https://www.kernel.org/doc/html/latest/kbuild/kconfig-macro-language.html>`__.
 
+See the Python docstrings in :zephyr_file:`scripts/kconfig/kconfigfunctions.py`
+for detailed documentation.
 Most of the custom preprocessor functions are used to get devicetree
 information into Kconfig. For example, the default value of a Kconfig symbol
 can be fetched from a devicetree ``reg`` property.
@@ -20,9 +22,6 @@ Devicetree-related Functions
 ****************************
 
 The functions listed below are used to get devicetree information into Kconfig.
-See the Python docstrings in :zephyr_file:`scripts/kconfig/kconfigfunctions.py`
-for detailed documentation.
-
 The ``*_int`` version of each function returns the value as a decimal integer,
 while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
 
@@ -75,9 +74,47 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_nodelabel_reg_size_hex,<node label>[,<index>,<unit>])
    $(dt_nodelabel_reg_size_int,<node label>[,<index>,<unit>])
    $(dt_path_enabled,<node path>)
+
+
+Integer functions
+*****************
+
+The functions listed below can be used to do arithmetic operations
+on integer variables, such as addition, subtraction and more.
+
+.. code-block:: none
+
+   $(add,<value>[,value]...)
+   $(dec,<value>[,value]...)
+   $(div,<value>[,value]...)
+   $(inc,<value>[,value]...)
+   $(max,<value>[,value]...)
+   $(min,<value>[,value]...)
+   $(mod,<value>[,value]...)
+   $(mul,<value>[,value]...)
+   $(sub,<value>[,value]...)
+
+
+String functions
+****************
+
+The functions listed below can be used to modify string variables.
+
+.. code-block:: none
+
    $(normalize_upper,<string>)
-   $(shields_list_contains,<shield name>)
    $(substring,<string>,<start>[,<stop>])
+
+
+Other functions
+***************
+
+Functions to perform specific operations, currently only a check if a shield
+name is specified.
+
+.. code-block:: none
+
+   $(shields_list_contains,<shield name>)
 
 
 Example Usage

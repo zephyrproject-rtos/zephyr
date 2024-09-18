@@ -82,7 +82,7 @@ connectivity.
 
    websocket.enableTrace(True)
    ws = websocket.WebSocket()
-   ws.connect("ws://192.0.2.1/")
+   ws.connect("ws://192.0.2.1/ws_echo")
    ws.send("Hello, Server")
    print(ws.recv())
    while True:

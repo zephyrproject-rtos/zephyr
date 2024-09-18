@@ -17,7 +17,7 @@
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/crc.h>
 
@@ -99,7 +99,7 @@ struct foo {
 /* Check that BUILD_ASSERT compiles. */
 BUILD_ASSERT(sizeof(foo) == sizeof(int));
 
-static struct foo foos[5];
+__maybe_unused static struct foo foos[5];
 /* Check that ARRAY_SIZE compiles. */
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 

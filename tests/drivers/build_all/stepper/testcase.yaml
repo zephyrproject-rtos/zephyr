@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.stepper.build:
+    tags:
+      - drivers
+      - stepper
+    build_only: true
+    platform_allow:
+      - native_posix
+      - native_sim

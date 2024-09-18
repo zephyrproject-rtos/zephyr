@@ -97,6 +97,17 @@ uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 #endif
 }
 
+static bool valid_ltv_cb(struct bt_data *data, void *user_data)
+{
+	/* just return true to continue parsing as bt_data_parse will validate for us */
+	return true;
+}
+
+bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
+{
+	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
+}
+
 #if defined(CONFIG_BT_CONN)
 
 static uint8_t bt_audio_security_check(const struct bt_conn *conn)

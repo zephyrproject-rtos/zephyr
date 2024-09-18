@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(DPPI_PRESENT)
 
 /*******************************************************************************
  * Enable Radio on Event Timer tick:
@@ -38,6 +37,10 @@
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
 #define HAL_EVENT_TIMER_START_PPI 7
+#define HAL_PPIB_SEND_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_EVENT_TIMER_START_PPI)
+#define HAL_PPIB_RECEIVE_EVENT_TIMER_START_PPI \
+	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_EVENT_TIMER_START_PPI)
 
 /*******************************************************************************
  * Capture event timer on Radio ready:
@@ -98,9 +101,9 @@
  */
 #if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI 24
-#else
+#else /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI HAL_RADIO_END_TIME_CAPTURE_PPI
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -167,5 +170,3 @@
  */
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
-
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || DPPI_PRESENT */

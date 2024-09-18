@@ -117,6 +117,8 @@ features:
 +-------------+------------+-------------------------------------+
 | RTC         | on-chip    | rtc                                 |
 +-------------+------------+-------------------------------------+
+| FDCAN1      | on-chip    | CAN-FD Controller                   |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -138,6 +140,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD3 : PB14
 - I2C : PB8, PB9
 - SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
+- FDCAN1 RX/TX : PD0, PD1
 
 System Clock
 ------------
@@ -158,26 +161,38 @@ Backup SRAM
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB52`` jumper on the back side of the board.
 
+FDCAN
+=====
+
+The Nucleo H723ZG board does not have any onboard CAN transceiver. In order to
+use the FDCAN bus on this board, an external CAN bus transceiver must be
+connected to pins PD0 (RX) and PD1 (TX).
+
 Programming and Debugging
 *************************
 
-Currently the ``nucleo_h723zg`` board supports stm32cubeprogrammer (default), OpenOCD and J-Link debuggers.
+Nucleo H723ZG board includes an ST-LINK/V3 embedded debug tool interface.
 
 .. note::
 
-   Official OpenOCD support for this board was added on October '20.
-   Make sure your openocd version is older than that.
-   Following links may be helpful: `OpenOCD installing Debug Version`_
-   and `OpenOCD installing with ST-LINK V3 support`_
-
-.. note::
-
-   Check if your ST-LINK V3 has newest FW version. It can be done with `STM32CubeIDE`_
+   Check if your ST-LINK V3 has newest FW version. It can be done with `STM32CubeProgrammer`_
 
 Flashing
 ========
 
-Nucleo H723ZG board includes an ST-LINK/V3 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+Flashing an application to Nucleo H723ZG
+----------------------------------------
 
 First, connect the NUCLEO-H723ZG to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
@@ -248,3 +263,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeIDE:
    https://www.st.com/en/development-tools/stm32cubeide.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

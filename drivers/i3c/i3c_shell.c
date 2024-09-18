@@ -214,7 +214,7 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 						    "\tdcr: 0x%02x\n"
 						    "\tmaxrd: 0x%02x\n"
 						    "\tmaxwr: 0x%02x\n"
-						    "\tmax_read_turnaround: 0x%08x\n"
+						    "\tmax_read_turnaround: 0x%06x\n"
 						    "\tmrl: 0x%04x\n"
 						    "\tmwl: 0x%04x\n"
 						    "\tmax_ibi: 0x%02x\n"
@@ -262,7 +262,7 @@ static int cmd_i3c_info(const struct shell *shell_ctx, size_t argc, char **argv)
 					    "\tdcr: 0x%02x\n"
 					    "\tmaxrd: 0x%02x\n"
 					    "\tmaxwr: 0x%02x\n"
-					    "\tmax_read_turnaround: 0x%08x\n"
+					    "\tmax_read_turnaround: 0x%06x\n"
 					    "\tmrl: 0x%04x\n"
 					    "\tmwl: 0x%04x\n"
 					    "\tmax_ibi: 0x%02x\n"
@@ -524,6 +524,42 @@ static int cmd_i3c_ccc_entdaa(const struct shell *shell_ctx, size_t argc, char *
 	return i3c_do_daa(dev);
 }
 
+/* i3c ccc setaasa <device> */
+static int cmd_i3c_ccc_setaasa(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_setaasa_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC SETAASA.");
+		return ret;
+	}
+
+	/* set all devices DA to SA */
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			if ((desc->supports_setaasa) && (desc->dynamic_addr == 0) &&
+			    (desc->static_addr != 0)) {
+				desc->dynamic_addr = desc->static_addr;
+			}
+		}
+	}
+
+	return ret;
+}
+
 /* i3c ccc setdasa <device> <target> */
 static int cmd_i3c_ccc_setdasa(const struct shell *shell_ctx, size_t argc, char **argv)
 {
@@ -555,6 +591,13 @@ static int cmd_i3c_ccc_setdasa(const struct shell *shell_ctx, size_t argc, char 
 
 	/* update the target's dynamic address */
 	desc->dynamic_addr = desc->init_dynamic_addr ? desc->init_dynamic_addr : desc->static_addr;
+	if (desc->dynamic_addr != desc->static_addr) {
+		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
+		if (ret < 0) {
+			shell_error(shell_ctx, "I3C: unable to reattach device");
+			return ret;
+		}
+	}
 
 	return ret;
 }
@@ -642,6 +685,7 @@ static int cmd_i3c_ccc_getbcr(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "BCR: 0x%02x", bcr.bcr);
+	desc->bcr = bcr.bcr;
 
 	return ret;
 }
@@ -677,6 +721,7 @@ static int cmd_i3c_ccc_getdcr(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "DCR: 0x%02x", dcr.dcr);
+	desc->dcr = dcr.dcr;
 
 	return ret;
 }
@@ -746,10 +791,13 @@ static int cmd_i3c_ccc_getmrl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mrl = mrl.len;
 	if (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
 		shell_print(shell_ctx, "MRL: 0x%04x; IBI Length:0x%02x", mrl.len, mrl.ibi_len);
+		desc->data_length.max_ibi = mrl.ibi_len;
 	} else {
 		shell_print(shell_ctx, "MRL: 0x%04x", mrl.len);
+		desc->data_length.max_ibi = 0;
 	}
 
 	return ret;
@@ -786,6 +834,7 @@ static int cmd_i3c_ccc_getmwl(const struct shell *shell_ctx, size_t argc, char *
 	}
 
 	shell_print(shell_ctx, "MWL: 0x%04x", mwl.len);
+	desc->data_length.mwl = mwl.len;
 
 	return ret;
 }
@@ -831,6 +880,11 @@ static int cmd_i3c_ccc_setmrl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mrl = mrl.len;
+	if (argc > 3) {
+		desc->data_length.max_ibi = mrl.ibi_len;
+	}
+
 	return ret;
 }
 
@@ -866,6 +920,8 @@ static int cmd_i3c_ccc_setmwl(const struct shell *shell_ctx, size_t argc, char *
 		return ret;
 	}
 
+	desc->data_length.mwl = mwl.len;
+
 	return ret;
 }
 
@@ -873,6 +929,8 @@ static int cmd_i3c_ccc_setmwl(const struct shell *shell_ctx, size_t argc, char *
 static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
 	struct i3c_ccc_mrl mrl;
 	int ret;
 
@@ -881,6 +939,7 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+	data = (struct i3c_driver_data *)dev->data;
 
 	mrl.len = strtol(argv[2], NULL, 16);
 	if (argc > 3) {
@@ -893,6 +952,17 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 		return ret;
 	}
 
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			desc->data_length.mrl = mrl.len;
+			if ((argc > 3) && (desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE)) {
+				desc->data_length.max_ibi = mrl.ibi_len;
+			}
+		}
+	}
+
 	return ret;
 }
 
@@ -900,6 +970,8 @@ static int cmd_i3c_ccc_setmrl_bc(const struct shell *shell_ctx, size_t argc, cha
 static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, char **argv)
 {
 	const struct device *dev;
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
 	struct i3c_ccc_mwl mwl;
 	int ret;
 
@@ -908,12 +980,71 @@ static int cmd_i3c_ccc_setmwl_bc(const struct shell *shell_ctx, size_t argc, cha
 		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
+	data = (struct i3c_driver_data *)dev->data;
 
 	mwl.len = strtol(argv[3], NULL, 16);
 
 	ret = i3c_ccc_do_setmwl_all(dev, &mwl);
 	if (ret < 0) {
 		shell_error(shell_ctx, "I3C: unable to send CCC SETMWL BC.");
+		return ret;
+	}
+
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			desc->data_length.mwl = mwl.len;
+		}
+	}
+
+	return ret;
+}
+
+/* i3c ccc deftgts <device> */
+static int cmd_i3c_ccc_deftgts(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	if (!i3c_bus_has_sec_controller(dev)) {
+		shell_error(shell_ctx, "I3C: No secondary controller on the bus");
+		return -ENXIO;
+	}
+
+	ret = i3c_bus_deftgts(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC DEFTGTS.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc enttm <device> <defining byte> */
+static int cmd_i3c_ccc_enttm(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	enum i3c_ccc_enttm_defbyte defbyte;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	defbyte = strtol(argv[2], NULL, 16);
+
+	ret = i3c_ccc_do_enttm(dev, defbyte);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTTM.");
 		return ret;
 	}
 
@@ -1062,6 +1193,226 @@ static int cmd_i3c_ccc_disec(const struct shell *shell_ctx, size_t argc, char **
 	return ret;
 }
 
+/* i3c ccc entas0_bc <device> */
+static int cmd_i3c_ccc_entas0_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas0_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS0 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas1_bc <device> */
+static int cmd_i3c_ccc_entas1_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas1_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS1 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas2_bc <device> */
+static int cmd_i3c_ccc_entas2_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas2_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS2 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas3_bc <device> */
+static int cmd_i3c_ccc_entas3_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	ret = i3c_ccc_do_entas3_all(dev);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS3 BC.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas0 <device> <target> */
+static int cmd_i3c_ccc_entas0(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas0(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS0.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas1 <device> <target> */
+static int cmd_i3c_ccc_entas1(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas1(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS1.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas2 <device> <target> */
+static int cmd_i3c_ccc_entas2(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas2(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS2.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc entas3 <device> <target> */
+static int cmd_i3c_ccc_entas3(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	ret = i3c_ccc_do_entas3(desc);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC ENTAS3.");
+		return ret;
+	}
+
+	return ret;
+}
+
 /* i3c ccc getstatus <device> <target> [<defining byte>] */
 static int cmd_i3c_ccc_getstatus(const struct shell *shell_ctx, size_t argc, char **argv)
 {
@@ -1145,12 +1496,6 @@ static int cmd_i3c_ccc_getcaps(const struct shell *shell_ctx, size_t argc, char 
 		return -ENODEV;
 	}
 
-	if (!(desc->bcr & I3C_BCR_ADV_CAPABILITIES)) {
-		shell_error(shell_ctx, "I3C: Device %s does not support advanced capabilities",
-			    desc->dev->name);
-		return -ENOTSUP;
-	}
-
 	/* If there is a defining byte, then it is assumed to be Format 2 */
 	if (argc > 3) {
 		fmt = GETCAPS_FORMAT_2;
@@ -1189,6 +1534,124 @@ static int cmd_i3c_ccc_getcaps(const struct shell *shell_ctx, size_t argc, char 
 		shell_print(shell_ctx, "GETCAPS: 0x%02x; 0x%02x; 0x%02x; 0x%02x",
 			    caps.fmt1.getcaps[0], caps.fmt1.getcaps[1], caps.fmt1.getcaps[2],
 			    caps.fmt1.getcaps[3]);
+	}
+
+	return ret;
+}
+
+/* i3c ccc getvendor <device> <target> <id> [<defining byte>] */
+static int cmd_i3c_ccc_getvendor(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t defbyte;
+	size_t num_xfer;
+	uint8_t id;
+	int ret;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	if (argc > 3) {
+		defbyte = strtol(argv[3], NULL, 16);
+		ret = i3c_ccc_do_getvendor_defbyte(desc, id, defbyte, buf, MAX_I3C_BYTES,
+						   &num_xfer);
+	} else {
+		ret = i3c_ccc_do_getvendor(desc, id, buf, MAX_I3C_BYTES, &num_xfer);
+	}
+
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
+	}
+
+	shell_hexdump(shell_ctx, buf, num_xfer);
+
+	return ret;
+}
+
+/* i3c ccc setvendor <device> <target> <id> [<bytes>] */
+static int cmd_i3c_ccc_setvendor(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	struct i3c_driver_data *data;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t data_length;
+	uint8_t id;
+	int ret;
+	int i;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(shell_ctx, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+	data = (struct i3c_driver_data *)dev->data;
+
+	data_length = argc - 4;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[4 + i], NULL, 16);
+	}
+
+	ret = i3c_ccc_do_setvendor(desc, id, buf, data_length);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
+	}
+
+	return ret;
+}
+
+/* i3c ccc setvendor_bc <device> <id> [<bytes>] */
+static int cmd_i3c_ccc_setvendor_bc(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t data_length;
+	uint8_t id;
+	int ret;
+	int i;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data_length = argc - 3;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[3 + i], NULL, 16);
+	}
+
+	ret = i3c_ccc_do_setvendor_all(dev, id, buf, data_length);
+	if (ret < 0) {
+		shell_error(shell_ctx, "I3C: unable to send CCC VENDOR.");
+		return ret;
 	}
 
 	return ret;
@@ -1343,6 +1806,106 @@ static int cmd_i3c_i2c_detach(const struct shell *shell_ctx, size_t argc, char *
 	return ret;
 }
 
+/*
+ * This is a workaround command to perform an I2C Scan which is not as
+ * simple on an I3C bus as it is with the I2C Shell.
+ *
+ * This will print "I3" if an address is already assigned for an I3C
+ * device and it will print "I2" if an address is already assigned for
+ * an I2C device. It will print RS, if the address is reserved according
+ * to section 5.1.2.2.5 I3C Target Address Restrictions in I3C v1.1.1.
+ *
+ * This sends I2C messages without any data (i.e. stop condition after
+ * sending just the address). If there is an ACK for the address, it
+ * is assumed there is a device present.
+ *
+ * WARNING: As there is no standard I2C detection command, this code
+ * uses arbitrary SMBus commands (namely SMBus quick write and SMBus
+ * receive byte) to probe for devices.  This operation can confuse
+ * your I2C bus, cause data loss, and is known to corrupt the Atmel
+ * AT24RF08 EEPROM found on many IBM Thinkpad laptops.
+ *
+ * https://manpages.debian.org/buster/i2c-tools/i2cdetect.8.en.html
+ */
+/* i3c i2c_scan <device> */
+static int cmd_i3c_i2c_scan(const struct shell *shell_ctx, size_t argc, char **argv)
+{
+	const struct device *dev;
+	struct i3c_driver_data *data;
+	enum i3c_addr_slot_status slot;
+	uint8_t cnt = 0, first = 0x04, last = 0x77;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+
+	if (!dev) {
+		shell_error(shell_ctx, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data = (struct i3c_driver_data *)dev->data;
+
+	shell_print(shell_ctx, "     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f");
+	for (uint8_t i = 0; i <= last; i += 16) {
+		shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x: ", i);
+		for (uint8_t j = 0; j < 16; j++) {
+			if (i + j < first || i + j > last) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "   ");
+				continue;
+			}
+
+			slot = i3c_addr_slots_status(&data->attached_dev.addr_slots, i + j);
+			if (slot == I3C_ADDR_SLOT_STATUS_FREE) {
+				struct i2c_msg msgs[1];
+				uint8_t dst;
+				int ret;
+				struct i3c_i2c_device_desc desc = {
+					.bus = dev,
+					.addr = i + j,
+					.lvr = 0x00,
+				};
+
+				ret = i3c_attach_i2c_device(&desc);
+				if (ret < 0) {
+					shell_error(shell_ctx,
+						    "I3C: unable to attach I2C addr 0x%02x.",
+						    desc.addr);
+				}
+
+				/* Send the address to read from */
+				msgs[0].buf = &dst;
+				msgs[0].len = 0U;
+				msgs[0].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+				if (i2c_transfer(dev, &msgs[0], 1, i + j) == 0) {
+					shell_fprintf(shell_ctx, SHELL_NORMAL, "%02x ", i + j);
+					++cnt;
+				} else {
+					shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
+				}
+
+				ret = i3c_detach_i2c_device(&desc);
+				if (ret < 0) {
+					shell_error(shell_ctx,
+						    "I3C: unable to detach I2C addr 0x%02x.",
+						    desc.addr);
+				}
+			} else if (slot == I3C_ADDR_SLOT_STATUS_I3C_DEV) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "I3 ");
+			} else if (slot == I3C_ADDR_SLOT_STATUS_I2C_DEV) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "I2 ");
+			} else if (slot == I3C_ADDR_SLOT_STATUS_RSVD) {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "RS ");
+			} else {
+				shell_fprintf(shell_ctx, SHELL_NORMAL, "-- ");
+			}
+		}
+		shell_print(shell_ctx, "");
+	}
+
+	shell_print(shell_ctx, "%u additional devices found on %s", cnt, argv[ARGV_DEV]);
+
+	return 0;
+}
+
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
@@ -1396,6 +1959,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC ENTDAA\n"
 		      "Usage: ccc entdaa <device>",
 		      cmd_i3c_ccc_entdaa, 2, 0),
+	SHELL_CMD_ARG(setaasa, &dsub_i3c_device_name,
+		      "Send CCC SETAASA\n"
+		      "Usage: ccc setaasa <device>",
+		      cmd_i3c_ccc_setaasa, 2, 0),
 	SHELL_CMD_ARG(setdasa, &dsub_i3c_device_attached_name,
 		      "Send CCC SETDASA\n"
 		      "Usage: ccc setdasa <device> <target>",
@@ -1440,6 +2007,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC SETMWL BC\n"
 		      "Usage: ccc setmwl_bc <device> <max write length>",
 		      cmd_i3c_ccc_setmwl_bc, 3, 0),
+	SHELL_CMD_ARG(deftgts, &dsub_i3c_device_name,
+		      "Send CCC DEFTGTS\n"
+		      "Usage: ccc deftgts <device>",
+		      cmd_i3c_ccc_deftgts, 2, 0),
+	SHELL_CMD_ARG(enttm, &dsub_i3c_device_name,
+		      "Send CCC ENTTM\n"
+		      "Usage: ccc enttm <device> <defining byte>",
+		      cmd_i3c_ccc_enttm, 3, 0),
 	SHELL_CMD_ARG(rstact_bc, &dsub_i3c_device_name,
 		      "Send CCC RSTACT BC\n"
 		      "Usage: ccc rstact_bc <device> <defining byte>",
@@ -1460,6 +2035,38 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC DISEC\n"
 		      "Usage: ccc disec <device> <target> <defining byte>",
 		      cmd_i3c_ccc_disec, 4, 0),
+	SHELL_CMD_ARG(entas0_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS0 BC\n"
+		      "Usage: ccc entas0 <device>",
+		      cmd_i3c_ccc_entas0_bc, 2, 0),
+	SHELL_CMD_ARG(entas1_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS1 BC\n"
+		      "Usage: ccc entas1 <device>",
+		      cmd_i3c_ccc_entas1_bc, 2, 0),
+	SHELL_CMD_ARG(entas2_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS2 BC\n"
+		      "Usage: ccc entas2 <device>",
+		      cmd_i3c_ccc_entas2_bc, 2, 0),
+	SHELL_CMD_ARG(entas3_bc, &dsub_i3c_device_name,
+		      "Send CCC ENTAS3 BC\n"
+		      "Usage: ccc entas3 <device>",
+		      cmd_i3c_ccc_entas3_bc, 2, 0),
+	SHELL_CMD_ARG(entas0, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS0\n"
+		      "Usage: ccc entas0 <device> <target>",
+		      cmd_i3c_ccc_entas0, 3, 0),
+	SHELL_CMD_ARG(entas1, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS1\n"
+		      "Usage: ccc entas1 <device> <target>",
+		      cmd_i3c_ccc_entas1, 3, 0),
+	SHELL_CMD_ARG(entas2, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS2\n"
+		      "Usage: ccc entas2 <device> <target>",
+		      cmd_i3c_ccc_entas2, 3, 0),
+	SHELL_CMD_ARG(entas3, &dsub_i3c_device_attached_name,
+		      "Send CCC ENTAS3\n"
+		      "Usage: ccc entas3 <device> <target>",
+		      cmd_i3c_ccc_entas3, 3, 0),
 	SHELL_CMD_ARG(getstatus, &dsub_i3c_device_attached_name,
 		      "Send CCC GETSTATUS\n"
 		      "Usage: ccc getstatus <device> <target> [<defining byte>]",
@@ -1468,6 +2075,18 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC GETCAPS\n"
 		      "Usage: ccc getcaps <device> <target> [<defining byte>]",
 		      cmd_i3c_ccc_getcaps, 3, 1),
+	SHELL_CMD_ARG(getvendor, &dsub_i3c_device_attached_name,
+		      "Send CCC GETVENDOR\n"
+		      "Usage: ccc getvendor <device> <target> <id> [<defining byte>]",
+		      cmd_i3c_ccc_getvendor, 4, 1),
+	SHELL_CMD_ARG(setvendor, &dsub_i3c_device_attached_name,
+		      "Send CCC SETVENDOR\n"
+		      "Usage: ccc setvendor <device> <target> <id> [<bytes>]",
+		      cmd_i3c_ccc_setvendor, 4, MAX_I3C_BYTES),
+	SHELL_CMD_ARG(setvendor_bc, &dsub_i3c_device_name,
+		      "Send CCC SETVENDOR BC\n"
+		      "Usage: ccc setvendor_bc <device> <id> [<bytes>]",
+		      cmd_i3c_ccc_setvendor_bc, 3, MAX_I3C_BYTES),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
@@ -1518,6 +2137,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Detach I2C device from the bus\n"
 		      "Usage: i2c_detach <device> <addr>",
 		      cmd_i3c_i2c_detach, 3, 0),
+	SHELL_CMD_ARG(i2c_scan, &dsub_i3c_device_name,
+		      "Scan I2C devices\n"
+		      "Usage: i2c_scan <device>",
+		      cmd_i3c_i2c_scan, 2, 0),
 	SHELL_CMD_ARG(ccc, &sub_i3c_ccc_cmds,
 		      "Send I3C CCC\n"
 		      "Usage: ccc <sub cmd>",

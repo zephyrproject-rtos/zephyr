@@ -14,8 +14,15 @@ extern enum bst_result_t bst_result;
 static struct bt_conn *default_conn;
 
 #define PSM 0x80
+#define DATA_SIZE 500
+#define USER_DATA_SIZE 10
+
+/* Pool to allocate a buffer that is too large to send */
+NET_BUF_POOL_DEFINE(buf_pool, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_SIZE), USER_DATA_SIZE, NULL);
 
 CREATE_FLAG(is_connected);
+CREATE_FLAG(is_sent);
+CREATE_FLAG(has_received);
 CREATE_FLAG(chan_connected);
 
 static void chan_connected_cb(struct bt_l2cap_chan *l2cap_chan)
@@ -32,18 +39,32 @@ static void chan_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	UNSET_FLAG(chan_connected);
 }
 
+struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
+{
+	return net_buf_alloc(&buf_pool, K_NO_WAIT);
+}
+
 static int chan_recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	(void)chan;
-	(void)buf;
+	ARG_UNUSED(chan);
+	ARG_UNUSED(buf);
+
+	SET_FLAG(has_received);
 
 	return 0;
+}
+
+void sent_cb(struct bt_l2cap_chan *chan)
+{
+	SET_FLAG(is_sent);
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.connected = chan_connected_cb,
 	.disconnected = chan_disconnected_cb,
 	.recv = chan_recv_cb,
+	.sent = sent_cb,
+	.alloc_buf = alloc_buf_cb,
 };
 
 static struct bt_l2cap_le_chan channel;
@@ -53,6 +74,7 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 {
 	channel.chan.ops = &l2cap_ops;
 	*l2cap_chan = &channel.chan;
+	channel.rx.mtu = DATA_SIZE;
 
 	return 0;
 }
@@ -69,6 +91,8 @@ static void connect_l2cap_channel(void)
 	int err;
 
 	channel.chan.ops = &l2cap_ops;
+
+	channel.rx.mtu = DATA_SIZE;
 
 	err = bt_l2cap_ecred_chan_connect(default_conn, chans, server.psm);
 	if (err) {
@@ -161,22 +185,44 @@ static void test_peripheral_main(void)
 
 	register_l2cap_server();
 
-	WAIT_FOR_FLAG_UNSET(is_connected);
+	if (!IS_ENABLED(CONFIG_NO_RUNTIME_CHECKS)) {
+		PASS("Peripheral done\n");
+		return;
+	}
+
+	WAIT_FOR_FLAG_SET(has_received);
+
+	/* /\* Wait until we get the credits *\/ */
+	/* k_sleep(K_MSEC(100)); */
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		FAIL("Failed to disconnect (err %d)\n", err);
+		return;
+	}
 
 	PASS("Test passed\n");
 }
 
 #define FILL	       0xAA
-#define DATA_SIZE      BT_L2CAP_BUF_SIZE(BT_L2CAP_SDU_RX_MTU) + 1
-#define USER_DATA_SIZE 10
 
-/* Pool to allocate a buffer that is too large to send */
-NET_BUF_POOL_DEFINE(buf_pool, 1, DATA_SIZE, USER_DATA_SIZE, NULL);
+static void print_user_data(struct net_buf *buf)
+{
+	for (int i = 0; i < buf->user_data_size; i++) {
+		printk("%02X", buf->user_data[i]);
+	}
+	printk("\n");
+}
 
 static void test_central_main(void)
 {
 	struct net_buf *buf;
 	int err;
+	bool has_checks = !IS_ENABLED(CONFIG_NO_RUNTIME_CHECKS);
+
+	printk("##################\n");
+	printk("(%s-checks) Starting test\n",
+	       has_checks ? "Enabled" : "Disabled");
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -198,40 +244,44 @@ static void test_central_main(void)
 		FAIL("Buffer allcation failed\n");
 	}
 
-	/* Don't care about the content of the packet itself, just the length */
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
+
 	(void)net_buf_add(buf, DATA_SIZE);
-	/* Fill the user data with a pattern to more easily see any changes */
+	/* Fill the user data with a non-zero pattern */
 	(void)memset(buf->user_data, FILL, buf->user_data_size);
 
-	/* Try to send a buffer larger than the MTU */
+	printk("Buffer user_data before\n");
+	print_user_data(buf);
+
+	/* Send the buffer. We don't care that the other side receives it.
+	 * Only about when we will get called.
+	 */
 	err = bt_l2cap_chan_send(&channel.chan, buf);
-	if (err != -EMSGSIZE) {
-		FAIL("Expected error code -EMSGSIZE, got %d\n", err);
+
+	/* L2CAP will take our `buf` with non-null user_data. We verify that:
+	 * - it is cleared
+	 * - we don't segfault later (e.g. in `tx_notify`)
+	 */
+
+	if (err != 0) {
+		FAIL("Got error %d\n", err);
 	}
 
-	printk("Buffer user data (Expecting all bytes to be " STRINGIFY(FILL) "): ");
-	for (int i = 0; i < USER_DATA_SIZE; i++) {
-		printk("%02X", buf->user_data[i]);
-	}
+	WAIT_FOR_FLAG_SET(is_sent);
+
+	printk("Buffer user_data after (should've been cleared)\n");
+	print_user_data(buf);
 
 	printk("\n");
 
-	/* Validate that the user data is unchanged */
+	/* Validate that the user data has changed */
 	for (int i = 0; i < USER_DATA_SIZE; i++) {
-		if (buf->user_data[i] != FILL) {
-			FAIL("Buffer user data should not change.\n");
+		if (buf->user_data[i] == FILL) {
+			FAIL("Buffer user data should be reset by stack.\n");
 		}
 	}
 
-	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	if (err) {
-		FAIL("Failed to disconnect (err %d)\n", err);
-		return;
-	}
-
-	WAIT_FOR_FLAG_UNSET(is_connected);
-
-	PASS("Test passed\n");
+	PASS("(Disabled-checks) Test passed\n");
 }
 
 static const struct bst_test_instance test_def[] = {

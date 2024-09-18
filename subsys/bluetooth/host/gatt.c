@@ -828,8 +828,9 @@ static uint8_t gen_hash_m(const struct bt_gatt_attr *attr, uint16_t handle,
 	ssize_t len;
 	uint16_t value;
 
-	if (attr->uuid->type != BT_UUID_TYPE_16)
+	if (attr->uuid->type != BT_UUID_TYPE_16) {
 		return BT_GATT_ITER_CONTINUE;
+	}
 
 	u16 = (struct bt_uuid_16 *)attr->uuid;
 
@@ -3164,6 +3165,11 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn)
+{
+	return bt_att_get_uatt_mtu(conn);
+}
+
 uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			uint16_t mask)
 {
@@ -3775,8 +3781,9 @@ static void gatt_discover_next(struct bt_conn *conn, uint16_t last_handle,
 			       struct bt_gatt_discover_params *params)
 {
 	/* Skip if last_handle is not set */
-	if (!last_handle)
+	if (!last_handle) {
 		goto discover;
+	}
 
 	/* Continue from the last found handle */
 	params->start_handle = last_handle;
@@ -5677,7 +5684,11 @@ static struct bt_gatt_exchange_params gatt_exchange_params = {
 #endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
 #endif /* CONFIG_BT_GATT_CLIENT */
 
-#define CCC_STORE_MAX 48
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX)
+#define CCC_STORE_MAX CONFIG_BT_SETTINGS_CCC_STORE_MAX
+#else /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
+#define CCC_STORE_MAX 0
+#endif /* defined(CONFIG_BT_SETTINGS_CCC_STORE_MAX) */
 
 static struct bt_gatt_ccc_cfg *ccc_find_cfg(struct _bt_gatt_ccc *ccc,
 					    const bt_addr_le_t *addr,
@@ -6076,6 +6087,12 @@ static uint8_t ccc_save(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	LOG_DBG("Storing CCCs handle 0x%04x value 0x%04x", handle, cfg->value);
+
+	CHECKIF(save->count >= CCC_STORE_MAX) {
+		LOG_ERR("Too many Client Characteristic Configuration. "
+				"See CONFIG_BT_SETTINGS_CCC_STORE_MAX\n");
+		return BT_GATT_ITER_STOP;
+	}
 
 	save->store[save->count].handle = handle;
 	save->store[save->count].value = cfg->value;

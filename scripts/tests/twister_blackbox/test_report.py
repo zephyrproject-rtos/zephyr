@@ -349,18 +349,18 @@ class TestReport:
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report'],
-                {'qemu_x86': 5, 'frdm_k64f': 1}
+                {'qemu_x86': 5, 'intel_adl_crb': 1}
             ),
             (
                 os.path.join(TEST_DATA, 'tests', 'dummy'),
                 ['--detailed-skipped-report', '--report-filtered'],
-                {'qemu_x86': 6, 'frdm_k64f': 6}
+                {'qemu_x86': 6, 'intel_adl_crb': 6}
             ),
         ],
         ids=['dummy tests', 'dummy tests with filtered']
     )
     def test_detailed_skipped_report(self, out_path, test_path, flags, expected_testcase_counts):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                flags + \
                [val for pair in zip(
@@ -396,7 +396,7 @@ class TestReport:
         ids=['no filtered', 'with filtered']
     )
     def test_report_filtered(self, out_path, test_path, report_filtered, expected_filtered_count):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         args = ['-i', '--outdir', out_path, '-T', test_path] + \
                (['--report-filtered'] if report_filtered else []) + \
                [val for pair in zip(
@@ -420,7 +420,7 @@ class TestReport:
             f'Expected {expected_filtered_count} filtered statuses, got {filtered_status_count}.'
 
     def test_enable_size_report(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'device', 'group')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--enable-size-report'] + \

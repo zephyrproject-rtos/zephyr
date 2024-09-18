@@ -132,7 +132,7 @@ The current minimum required version for the main dependencies are:
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf python3 ccache qemu dtc libmagic wget openocd
+            brew install cmake ninja gperf python3 python-tk ccache qemu dtc libmagic wget openocd
 
       #. Add the Homebrew Python folder to the path, in order to be able to
          execute ``python`` and ``pip`` as well ``python3`` and ``pip3``.
@@ -207,298 +207,176 @@ Get Zephyr and install Python dependencies
 
 Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
 <west>` workspace named :file:`zephyrproject`. You'll also install Zephyr's
-additional Python dependencies.
+additional Python dependencies in a `Python virtual environment`_.
 
-
-.. note::
-
-    It is easy to run into Python package incompatibilities when installing
-    dependencies at a system or user level. This situation can happen,
-    for example, if working on multiple Zephyr versions or other projects
-    using Python on the same machine.
-
-    For this reason it is suggested to use `Python virtual environments`_.
-
-.. _Python virtual environments: https://docs.python.org/3/library/venv.html
+.. _Python virtual environment: https://docs.python.org/3/library/venv.html
 
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      .. tabs::
+      #. Use ``apt`` to install Python ``venv`` package:
 
-         .. group-tab:: Install within virtual environment
+         .. code-block:: bash
 
-            #. Use ``apt`` to install Python ``venv`` package:
+            sudo apt install python3-venv
 
-               .. code-block:: bash
+      #. Create a new virtual environment:
 
-                  sudo apt install python3-venv
+         .. code-block:: bash
 
-            #. Create a new virtual environment:
+            python3 -m venv ~/zephyrproject/.venv
 
-               .. code-block:: bash
+      #. Activate the virtual environment:
 
-                  python3 -m venv ~/zephyrproject/.venv
+         .. code-block:: bash
 
-            #. Activate the virtual environment:
+            source ~/zephyrproject/.venv/bin/activate
 
-               .. code-block:: bash
+         Once activated your shell will be prefixed with ``(.venv)``. The
+         virtual environment can be deactivated at any time by running
+         ``deactivate``.
 
-                  source ~/zephyrproject/.venv/bin/activate
+         .. note::
 
-               Once activated your shell will be prefixed with ``(.venv)``. The
-               virtual environment can be deactivated at any time by running
-               ``deactivate``.
+            Remember to activate the virtual environment every time you
+            start working.
 
-               .. note::
+      #. Install west:
 
-                  Remember to activate the virtual environment every time you
-                  start working.
+         .. code-block:: bash
 
-            #. Install west:
+            pip install west
 
-               .. code-block:: bash
+      #. Get the Zephyr source code:
 
-                  pip install west
+         .. code-block:: bash
 
-            #. Get the Zephyr source code:
+           west init ~/zephyrproject
+           cd ~/zephyrproject
+           west update
 
-               .. code-block:: bash
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
 
-                 west init ~/zephyrproject
-                 cd ~/zephyrproject
-                 west update
+         .. code-block:: bash
 
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
+            west zephyr-export
 
-               .. code-block:: bash
+      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip``.
 
-                  west zephyr-export
+         .. code-block:: bash
 
-            #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip``.
-
-               .. code-block:: bash
-
-                  pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
-
-         .. group-tab:: Install globally
-
-            #. Install west, and make sure :file:`~/.local/bin` is on your
-               :envvar:`PATH` :ref:`environment variable <env_vars>`:
-
-               .. code-block:: bash
-
-                  pip3 install --user -U west
-                  echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-                  source ~/.bashrc
-
-            #. Get the Zephyr source code:
-
-               .. code-block:: bash
-
-                  west init ~/zephyrproject
-                  cd ~/zephyrproject
-                  west update
-
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
-
-               .. code-block:: bash
-
-                  west zephyr-export
-
-            #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip3``.
-
-               .. code-block:: bash
-
-                  pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: macOS
 
-      .. tabs::
+      #. Create a new virtual environment:
 
-         .. group-tab:: Install within virtual environment
+         .. code-block:: bash
 
-            #. Create a new virtual environment:
+            python3 -m venv ~/zephyrproject/.venv
 
-               .. code-block:: bash
+      #. Activate the virtual environment:
 
-                  python3 -m venv ~/zephyrproject/.venv
+         .. code-block:: bash
 
-            #. Activate the virtual environment:
+            source ~/zephyrproject/.venv/bin/activate
 
-               .. code-block:: bash
+         Once activated your shell will be prefixed with ``(.venv)``. The
+         virtual environment can be deactivated at any time by running
+         ``deactivate``.
 
-                  source ~/zephyrproject/.venv/bin/activate
+         .. note::
 
-               Once activated your shell will be prefixed with ``(.venv)``. The
-               virtual environment can be deactivated at any time by running
-               ``deactivate``.
+            Remember to activate the virtual environment every time you
+            start working.
 
-               .. note::
+      #. Install west:
 
-                  Remember to activate the virtual environment every time you
-                  start working.
+         .. code-block:: bash
 
-            #. Install west:
+            pip install west
 
-               .. code-block:: bash
+      #. Get the Zephyr source code:
 
-                  pip install west
+         .. code-block:: bash
 
-            #. Get the Zephyr source code:
+            west init ~/zephyrproject
+            cd ~/zephyrproject
+            west update
 
-               .. code-block:: bash
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
 
-                  west init ~/zephyrproject
-                  cd ~/zephyrproject
-                  west update
+         .. code-block:: bash
 
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
+            west zephyr-export
 
-               .. code-block:: bash
+      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip``.
 
-                  west zephyr-export
+         .. code-block:: bash
 
-            #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip``.
-
-               .. code-block:: bash
-
-                  pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
-
-         .. group-tab:: Install globally
-
-            #. Install west:
-
-               .. code-block:: bash
-
-                  pip3 install -U west
-
-            #. Get the Zephyr source code:
-
-               .. code-block:: bash
-
-                  west init ~/zephyrproject
-                  cd ~/zephyrproject
-                  west update
-
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
-
-               .. code-block:: bash
-
-                  west zephyr-export
-
-            #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip3``.
-
-               .. code-block:: bash
-
-                  pip3 install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: Windows
 
-      .. tabs::
+      #. Open a ``cmd.exe`` terminal window **as a regular user**
 
-         .. group-tab:: Install within virtual environment
+      #. Create a new virtual environment:
 
-            #. Open a ``cmd.exe`` terminal window **as a regular user**
+         .. code-block:: bat
 
-            #. Create a new virtual environment:
+            cd %HOMEPATH%
+            python -m venv zephyrproject\.venv
 
-               .. code-block:: bat
+      #. Activate the virtual environment:
 
-                  cd %HOMEPATH%
-                  python -m venv zephyrproject\.venv
+         .. code-block:: bat
 
-            #. Activate the virtual environment:
+            zephyrproject\.venv\Scripts\activate.bat
 
-               .. code-block:: bat
+         Once activated your shell will be prefixed with ``(.venv)``. The
+         virtual environment can be deactivated at any time by running
+         ``deactivate``.
 
-                  zephyrproject\.venv\Scripts\activate.bat
+         .. note::
 
-               Once activated your shell will be prefixed with ``(.venv)``. The
-               virtual environment can be deactivated at any time by running
-               ``deactivate``.
+            Remember to activate the virtual environment every time you
+            start working.
 
-               .. note::
+      #. Install west:
 
-                  Remember to activate the virtual environment every time you
-                  start working.
+         .. code-block:: bat
 
-            #. Install west:
+            pip install west
 
-               .. code-block:: bat
+      #. Get the Zephyr source code:
 
-                  pip install west
+         .. code-block:: bat
 
-            #. Get the Zephyr source code:
+            west init zephyrproject
+            cd zephyrproject
+            west update
 
-               .. code-block:: bat
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
 
-                  west init zephyrproject
-                  cd zephyrproject
-                  west update
+         .. code-block:: bat
 
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
+            west zephyr-export
 
-               .. code-block:: bat
+      #. Zephyr's ``scripts\requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip``.
 
-                  west zephyr-export
+         .. code-block:: bat
 
-            #. Zephyr's ``scripts\requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip``.
-
-               .. code-block:: bat
-
-                  pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
-
-         .. group-tab:: Install globally
-
-            #. Open a ``cmd.exe`` terminal window **as a regular user**
-
-            #. Install west:
-
-               .. code-block:: bat
-
-                  pip3 install -U west
-
-            #. Get the Zephyr source code:
-
-               .. code-block:: bat
-
-                  cd %HOMEPATH%
-                  west init zephyrproject
-                  cd zephyrproject
-                  west update
-
-            #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
-               automatically load boilerplate code required for building Zephyr
-               applications.
-
-               .. code-block:: bat
-
-                  west zephyr-export
-
-            #. Zephyr's ``scripts\requirements.txt`` file declares additional Python
-               dependencies. Install them with ``pip3``.
-
-               .. code-block:: bat
-
-                  pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
-
+            pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
 Install the Zephyr SDK
 **********************

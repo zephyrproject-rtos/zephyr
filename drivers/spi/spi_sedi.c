@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/pm/device.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -301,6 +302,9 @@ static const struct spi_driver_api sedi_spi_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_sedi_transceive_async,
 #endif  /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_sedi_release,
 };
 
@@ -398,13 +402,13 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 		SPI_CONTEXT_INIT_LOCK(spi_##num##_data, ctx),	               \
 		SPI_CONTEXT_INIT_SYNC(spi_##num##_data, ctx),	               \
 	};								       \
-	const static struct spi_sedi_config spi_##num##_config = {	               \
+	const static struct spi_sedi_config spi_##num##_config = {	       \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(num)),                        \
 		.spi_device = num, .irq_config = spi_##num##_irq_init,         \
 	};								       \
 	PM_DEVICE_DEFINE(spi_##num, spi_sedi_device_ctrl);		       \
 	DEVICE_DT_INST_DEFINE(num,					       \
-			      &spi_sedi_init,				       \
+			      spi_sedi_init,				       \
 			      PM_DEVICE_GET(spi_##num),		               \
 			      &spi_##num##_data,			       \
 			      &spi_##num##_config,			       \

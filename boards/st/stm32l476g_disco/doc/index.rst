@@ -162,11 +162,21 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+STM32L476G Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Flashing
 ========
 
-STM32L476G Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32L476G Discovery
 -----------------------------------------------
@@ -216,3 +226,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32L476 reference manual:
    https://www.st.com/resource/en/reference_manual/DM00083560.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

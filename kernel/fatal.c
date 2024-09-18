@@ -110,8 +110,9 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 
-	LOG_ERR("Current thread: %p (%s)", thread,
-		thread_name_get(thread));
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
+	}
 
 	coredump(reason, esf, thread);
 

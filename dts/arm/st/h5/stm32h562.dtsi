@@ -57,11 +57,7 @@
 		};
 
 		backup_sram: memory@40036400 {
-			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
 			reg = <0x40036400 DT_SIZE_K(4)>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
-			zephyr,memory-region = "BACKUP_SRAM";
-			status = "disabled";
 		};
 
 		lptim3: timers@44004800 {
@@ -443,6 +439,7 @@
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			resets = <&rctl STM32_RESET(AHB2, 16U)>;
 			interrupts = <116 0>;
 			status = "disabled";
 		};

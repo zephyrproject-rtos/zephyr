@@ -21,6 +21,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
+#include <zephyr/platform/hooks.h>
 
 /**
  * @brief Prepare to and run C code
@@ -30,6 +31,10 @@
 
 void z_prep_c(void)
 {
+#if defined(CONFIG_SOC_PREP_HOOK)
+	soc_prep_hook();
+#endif
+
 	z_bss_zero();
 	z_data_copy();
 	/* In most XIP scenarios we copy the exception code into RAM, so need

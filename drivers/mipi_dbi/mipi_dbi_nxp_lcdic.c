@@ -558,11 +558,12 @@ out:
 	return ret;
 }
 
-static int mipi_dbi_lcdic_reset(const struct device *dev, uint32_t delay)
+static int mipi_dbi_lcdic_reset(const struct device *dev, k_timeout_t delay)
 {
 	const struct mipi_dbi_lcdic_config *config = dev->config;
 	LCDIC_Type *base = config->base;
 	uint32_t lcdic_freq;
+	uint32_t delay_ms = k_ticks_to_ms_ceil32(delay.ticks);
 	uint8_t rst_width, pulse_cnt;
 
 	/* Calculate delay based off timer0 ratio. Formula given
@@ -574,8 +575,7 @@ static int mipi_dbi_lcdic_reset(const struct device *dev, uint32_t delay)
 				   &lcdic_freq)) {
 		return -EIO;
 	}
-	rst_width = (delay * (lcdic_freq)) /
-			((1 << LCDIC_TIMER0_RATIO) * MSEC_PER_SEC);
+	rst_width = (delay_ms * (lcdic_freq)) / ((1 << LCDIC_TIMER0_RATIO) * MSEC_PER_SEC);
 	/* If rst_width is larger than max value supported by hardware,
 	 * increase the pulse count (rounding up)
 	 */
@@ -660,7 +660,7 @@ static int mipi_dbi_lcdic_init(const struct device *dev)
 	return 0;
 }
 
-static struct mipi_dbi_driver_api mipi_dbi_lcdic_driver_api = {
+static const struct mipi_dbi_driver_api mipi_dbi_lcdic_driver_api = {
 	.command_write = mipi_dbi_lcdic_write_cmd,
 	.write_display = mipi_dbi_lcdic_write_display,
 	.reset = mipi_dbi_lcdic_reset,

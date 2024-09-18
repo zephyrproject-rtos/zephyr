@@ -45,6 +45,7 @@
 
 /**
  * @defgroup xtensa_apis Xtensa APIs
+ * @ingroup arch-interface
  * @{
  * @}
  *

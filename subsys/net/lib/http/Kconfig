@@ -34,6 +34,7 @@ config HTTP_SERVER
 	select HTTP_PARSER
 	select HTTP_PARSER_URL
 	select EXPERIMENTAL
+	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
 	  HTTP1 and HTTP2 server support.
 
@@ -69,14 +70,14 @@ config HTTP_SERVER_MAX_STREAMS
 config HTTP_SERVER_CLIENT_BUFFER_SIZE
 	int "Client Buffer Size"
 	default 256
-	range 64 4294967295
+	range 64 $(UINT32_MAX)
 	help
 	  This setting determines the buffer size for each client.
 
 config HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE
 	int "Size of the buffer used for decoding Huffman-encoded strings"
 	default 256
-	range 64 4294967295
+	range 64 $(UINT32_MAX)
 	help
 	  Size of the buffer used for decoding Huffman-encoded strings when
 	  processing HPACK compressed headers. This effectively limits the
@@ -95,6 +96,40 @@ config HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
 	range 1 128
 	help
 	  This setting determines the maximum length of the HTTP Content-Length field.
+
+config HTTP_SERVER_MAX_HEADER_LEN
+	int "Maximum HTTP Header Field/Value Length"
+	default 32
+	range 32 512
+	help
+	  This setting determines the maximum length of HTTP header field or value
+	  that can be parsed. The default value is sufficient for HTTP server
+	  internal header processing, and only needs to be increased if the
+	  application wishes to access headers of a greater length.
+
+config HTTP_SERVER_CAPTURE_HEADERS
+	bool "Allow capturing HTTP headers for application use"
+	help
+	  This setting enables the HTTP server to capture selected headers that have
+	  been registered by the application.
+
+config HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE
+	int "Size of buffer for capturing HTTP headers for application use"
+	default 128
+	range 32 2048
+	depends on HTTP_SERVER_CAPTURE_HEADERS
+	help
+	  This setting determines the size of the (per-client) buffer used to store
+	  HTTP headers for later use by the application.
+
+config HTTP_SERVER_CAPTURE_HEADER_COUNT
+	int "Maximum number of HTTP headers to be captured for application use"
+	default 3
+	range 1 100
+	depends on HTTP_SERVER_CAPTURE_HEADERS
+	help
+	  This setting determines the maximum number of HTTP headers it is possible
+	  to capture for application use in a single HTTP request.
 
 config HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT
 	int "Client inactivity timeout (seconds)"

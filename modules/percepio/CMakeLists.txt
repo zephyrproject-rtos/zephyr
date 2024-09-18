@@ -104,7 +104,7 @@ if(CONFIG_PERCEPIO_TRACERECORDER)
     )
 
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND python3 ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_syscalls.py ${CMAKE_BINARY_DIR} ${ZEPHYR_BASE}
+      COMMAND ${PYTHON_EXECUTABLE} ${TRACERECORDER_DIR}/kernelports/Zephyr/scripts/tz_parse_syscalls.py ${CMAKE_BINARY_DIR} ${ZEPHYR_BASE}
     )
 
 endif()

@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2020 Tobias Svehagen
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "adafruit_feather_nrf52840_common.dtsi"
+#include "adafruit_feather_nrf52840_flash_uf2.dtsi"
+
+/ {
+	model = "Adafruit Feather nRF52840 Sense";
+	compatible = "adafruit,feather-nrf52840-sense-uf2";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+		zephyr,uart-mcumgr = &cdc_acm_uart0;
+		zephyr,bt-mon-uart = &cdc_acm_uart0;
+		zephyr,bt-c2h-uart = &cdc_acm_uart0;
+	};
+
+	leds {
+		led0: led_0 {
+			gpios = <&gpio1 9 0>;
+		};
+	};
+};
+
+&i2c0 {
+	SHT3XD: sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+	};
+};
+
+zephyr_udc0: &usbd {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

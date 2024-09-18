@@ -64,8 +64,6 @@ Supported Releases
 +-----------------+----------------+---------------+
 | `Zephyr 3.6.0`_ | 2024-02-23     | 2024-11-29    |
 +-----------------+----------------+---------------+
-| `Zephyr 3.5.0`_ | 2023-10-20     | 2024-07-26    |
-+-----------------+----------------+---------------+
 
 As of 2022-01-01, LTS1 (1.14.x) is not supported and has reached end of life (EOL).
 
@@ -85,7 +83,8 @@ needs to be changed are to be detailed in the release's migration guide.
 
    eol_releases
    release-notes-2.7
-   release-notes-3.[5-7]
+   release-notes-3.[6-7]
+   release-notes-4.0
 
 Migration Guides
 ****************
@@ -121,6 +120,5 @@ to be able to understand the context of the change.
 .. _`GitHub repository`: https://github.com/zephyrproject-rtos/zephyr
 .. _`GitHub tagged releases`: https://github.com/zephyrproject-rtos/zephyr/tags
 .. _`Zephyr 2.7.6`: https://docs.zephyrproject.org/2.7.6/
-.. _`Zephyr 3.5.0`: https://docs.zephyrproject.org/3.5.0/
 .. _`Zephyr 3.6.0`: https://docs.zephyrproject.org/3.6.0/
 .. _`Zephyr 3.7.0`: https://docs.zephyrproject.org/3.7.0/

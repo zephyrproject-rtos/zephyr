@@ -125,7 +125,7 @@ an external programmer. The programmer is attached to the SWD header.
 Build the Zephyr kernel and the :zephyr:code-sample:`led-strip` sample application.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/drivers/led_apa102
+      :zephyr-app: samples/drivers/led/led_strip
       :board: blueclover_plt_demo_v2/nrf52832
       :goals: build
       :compact:
@@ -133,7 +133,7 @@ Build the Zephyr kernel and the :zephyr:code-sample:`led-strip` sample applicati
 Flash the image.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/drivers/led_apa102
+      :zephyr-app: samples/drivers/led/led_strip
       :board: blueclover_plt_demo_v2/nrf52832
       :goals: flash
       :compact:

@@ -950,10 +950,12 @@ try_send:
 	net_ipv6_nbr_unlock();
 
 #if defined(CONFIG_NET_IPV6_ND)
-	/* We need to send NS and wait for NA before sending the packet. */
+	/* We need to send NS and wait for NA before sending the packet. If the packet was
+	 * forwarded from another interface do not use the original source address.
+	 */
 	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
-			       (struct in6_addr *)ip_hdr->src, NULL, nexthop,
-			       false);
+			       net_pkt_forwarding(pkt) ? NULL : (struct in6_addr *)ip_hdr->src,
+			       NULL, nexthop, false);
 	if (ret < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the pkt.
@@ -1308,7 +1310,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 						net_pkt_iface(pkt),
 						net_if_get_by_iface(
 							net_pkt_iface(pkt)));
-					goto drop;
+					goto silent_drop;
 				}
 
 				routing = true;
@@ -1318,7 +1320,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 
 		NET_DBG("DROP: No such interface address %s",
 			net_sprint_ipv6_addr(&ns_hdr->tgt));
-		goto drop;
+		goto silent_drop;
 	} else {
 		tgt = &ifaddr->address.in6_addr;
 		na_src = (struct in6_addr *)ip_hdr->dst;
@@ -1339,7 +1341,7 @@ nexthop_found:
 		if (!net_ipv6_is_addr_solicited_node((struct in6_addr *)ip_hdr->dst)) {
 			NET_DBG("DROP: Not solicited node addr %s",
 				net_sprint_ipv6_addr(&ip_hdr->dst));
-			goto drop;
+			goto silent_drop;
 		}
 
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
@@ -1350,7 +1352,7 @@ nexthop_found:
 
 			dad_failed(net_pkt_iface(pkt),
 				   &ifaddr->address.in6_addr);
-			goto drop;
+			goto silent_drop;
 		}
 
 		/* We reuse the received packet for the NA addresses*/
@@ -1371,7 +1373,7 @@ nexthop_found:
 	if (net_ipv6_is_my_addr((struct in6_addr *)ip_hdr->src)) {
 		NET_DBG("DROP: Duplicate IPv6 %s address",
 			net_sprint_ipv6_addr(&ip_hdr->src));
-		goto drop;
+		goto silent_drop;
 	}
 
 	/* Address resolution */
@@ -1407,7 +1409,7 @@ nexthop_found:
 		goto send_na;
 	} else {
 		NET_DBG("DROP: NUD failed");
-		goto drop;
+		goto silent_drop;
 	}
 
 send_na:
@@ -1433,6 +1435,14 @@ drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
 	return -EIO;
+
+silent_drop:
+	/* If the event is not really an error then just ignore it and
+	 * return 0 so that icmpv6 module will not complain about it.
+	 */
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
+
+	return 0;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 

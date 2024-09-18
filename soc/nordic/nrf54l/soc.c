@@ -12,11 +12,14 @@
  * for the Nordic Semiconductor nRF54L family processor.
  */
 
+#include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 #if defined(NRF_APPLICATION)
 #include <cmsis_core.h>
@@ -149,9 +152,9 @@ static int nordicsemi_nrf54l_init(void)
 		nrf_power_task_trigger(NRF_POWER, NRF_POWER_TASK_CONSTLAT);
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_NRF54L_VREG_MAIN_DCDC)) {
-		nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
-	}
+#if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
+#endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54L_NORMAL_VOLTAGE_MODE)) {
 		nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MEDIUM, false);

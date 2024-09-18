@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
 
@@ -398,6 +399,20 @@
 				prescaler = <0>;
 			};
 
+			pdm20: pdm@d0000 {
+				compatible = "nordic,nrf-pdm";
+				status = "disabled";
+				reg = <0xd0000 0x1000>;
+				interrupts = <208 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
+			pdm21: pdm@d1000 {
+				compatible = "nordic,nrf-pdm";
+				status = "disabled";
+				reg = <0xd1000 0x1000>;
+				interrupts = <209 NRF_DEFAULT_IRQ_PRIORITY>;
+			};
+
 			pwm20: pwm@d2000 {
 				compatible = "nordic,nrf-pwm";
 				status = "disabled";
@@ -576,6 +591,22 @@
 				reg = <0x10e000 0x1000>;
 				interrupts = <270 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+			};
+
+			regulators: regulator@120000 {
+				compatible = "nordic,nrf54l-regulators";
+				reg = <0x120000 0x1000>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				vregmain: regulator@120600 {
+					compatible = "nordic,nrf5x-regulator";
+					reg = <0x120600 0x1>;
+					status = "disabled";
+					regulator-name = "VREGMAIN";
+					regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+				};
 			};
 		};
 

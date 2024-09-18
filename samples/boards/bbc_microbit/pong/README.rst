@@ -16,8 +16,8 @@ to select the current choice. To start the game, the player with the
 ball launches the ball by pressing both buttons.
 
 When multi-player mode has been selected the game will try to look for
-and connect to a second micro:bit which has also been set into multi-
-player mode.
+and connect to a second micro:bit which has also been set into multi-player
+mode.
 
 If the board has a piezo buzzer connected to pin 0, this will be used to
 generate beeps whenever the ball hits a wall or the paddle.

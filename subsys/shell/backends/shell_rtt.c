@@ -85,6 +85,9 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 
 	if (blocking) {
+		if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
+			panic_mode = true;
+		}
 		k_timer_stop(&sh_rtt->timer);
 	}
 

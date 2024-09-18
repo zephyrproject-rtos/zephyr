@@ -861,7 +861,7 @@ Drivers and Sensors
 
   * Added GNSS device driver API test suite.
   * Added support for the u-blox UBX protocol.
-  * Added device driver for the u-blox M10 GNSS modem (:dtcompatible:`u-blox,m10`).
+  * Added device driver for the u-blox M8 GNSS modem (:dtcompatible:`u-blox,m8`).
   * Added device driver for the Luatos Air530z GNSS modem (:dtcompatible:`luatos,air530z`).
 
 * GPIO

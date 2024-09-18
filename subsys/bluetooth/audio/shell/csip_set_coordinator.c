@@ -22,7 +22,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>

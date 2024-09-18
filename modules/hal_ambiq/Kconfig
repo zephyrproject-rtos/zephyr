@@ -10,6 +10,11 @@ config AMBIQ_HAL
 
 if AMBIQ_HAL
 
+config AMBIQ_HAL_USE_ADC
+	bool
+	help
+	  Use the ADC driver from Ambiq HAL
+
 config AMBIQ_HAL_USE_GPIO
 	bool
 	help
@@ -54,5 +59,10 @@ config AMBIQ_HAL_USE_BLEIF
 	bool
 	help
 	  Use the BLEIF driver from Ambiq HAL
+
+config AMBIQ_HAL_USE_ADC
+	bool
+	help
+	  Use the ADC driver from Ambiq HAL
 
 endif # AMBIQ_HAL

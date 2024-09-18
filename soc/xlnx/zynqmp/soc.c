@@ -10,7 +10,7 @@
 
 #include <cmsis_core.h>
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/*
 	 * Use normal exception vectors address range (0x0-0x1C).

@@ -329,10 +329,25 @@ config TRACING_PM
 	  Enable tracing Power Management.
 
 config TRACING_NETWORKING
-	bool "Tracing Network Sockets"
+	bool "Tracing Network Objects"
 	default y if NETWORKING
 	help
+	  Enable tracing network objects.
+
+config TRACING_NET_SOCKETS
+	bool "Tracing Network Sockets"
+	depends on TRACING_NETWORKING
+	default y if NET_SOCKETS
+	help
 	  Enable tracing network sockets.
+
+config TRACING_NET_CORE
+	bool "Tracing Network Core IP stack"
+	depends on TRACING_NETWORKING
+	default y if NET_IP
+	help
+	  Enable tracing core network IP stack, like packet reception
+	  and sending.
 
 endmenu  # Tracing Configuration
 

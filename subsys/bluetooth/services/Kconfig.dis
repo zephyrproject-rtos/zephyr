@@ -117,6 +117,8 @@ config BT_DIS_FW_REV
 config BT_DIS_FW_REV_STR
 	string "Firmware revision"
 	depends on BT_DIS_FW_REV
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != ""
+	default "0.0.0+0"
 	help
 	  Enable firmware revision characteristic in Device Information Service.
 
@@ -141,5 +143,75 @@ config BT_DIS_SW_REV_STR
 	depends on BT_DIS_SW_REV
 	help
 	  Enable software revision characteristic in Device Information Service.
+
+config BT_DIS_UDI
+	bool "DIS UDI for Medical Devices characteristic"
+	help
+	  Enable UDI for Medical Devices characteristic in Device Information Service.
+
+if BT_DIS_UDI
+config BT_DIS_UDI_LABEL_STR
+	string "UDI Label"
+	help
+	  String value matching the UDI in human readable form
+	  as assigned to the product by a recognized UDI Issuer.
+
+config BT_DIS_UDI_DI_STR
+	string "UDI Device Identifier"
+	help
+	  A fixed portion of a UDI that identifies the labeler and the
+	  specific version or model of a device.
+
+config BT_DIS_UDI_ISSUER_STR
+	string "UDI Issuer"
+	help
+	  OID representing the UDI Issuing Organization, such as GS1.
+
+config BT_DIS_UDI_AUTHORITY_STR
+	string "UDI Authority"
+	help
+	  OID representing the regional UDI Authority, such as the US FDA.
+endif # BT_DIS_UDI
+
+config BT_DIS_SYSTEM_ID
+	bool "DIS System ID characteristic [experimental]"
+	select EXPERIMENTAL
+	help
+	  Enable System ID characteristic in Device Information Service.
+	  The System ID characteristic is used to represent an extended unique identifier (EUI) of the system
+	  implementing the service that contains this characteristic. This 64-bit structure is an EUI-64 which consists
+	  of an Organizationally Unique Identifier (OUI) concatenated with a manufacturer-defined identifier.
+
+	  This will be transmitted as the 40 bit identifier followed by the 24-bit OUI.
+	  Both in little-endian format.
+
+if BT_DIS_SYSTEM_ID
+config BT_DIS_SYSTEM_ID_OUI
+	hex "Organizationally Unique Identifier (OUI) of the manufacturer."
+	range 0 0xFFFFFF
+	default 0
+	help
+	  The OUI is a 24-bit number issued by the IEEE Registration Authority.
+	  System ID characteristic in Device Information Service.
+	  Shall contain an Organisationally Unique Identifier (OUI) followed by a manufacturer-defined indentifier unique for the device.
+
+config BT_DIS_SYSTEM_ID_IDENTIFIER
+	hex "Manufacturer-defined unique identifier."
+	range 0 0xFFFFFFFFFF
+	default 0
+	help
+	  The manufacturer-defined unique identifier is 40 bits long.
+endif # BT_DIS_SYSTEM_ID
+
+config BT_DIS_IEEE_RCDL
+	bool "DIS IEEE 11073-20601 Regulatory Certification Data List characteristic"
+	help
+	  Enable IEEE 11073-20601 Regulatory Certification Data List characteristic in Device Information Service.
+
+config BT_DIS_IEEE_RCDL_STR
+	string "IEEE 11073-20601 Regulatory Certification Data List"
+	depends on BT_DIS_IEEE_RCDL
+	help
+	  IEEE 11073-20601 Regulatory Certification Data List characteristic in Device Information Service string contents.
 
 endif # BT_DIS

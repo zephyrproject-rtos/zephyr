@@ -106,6 +106,9 @@ struct ace_dfpmccu {
 
 #define ACE_CLKCTL_WOVCRO    BIT(4)	  /* Request WOVCRO clock */
 
+#define ACE_CRODIV_CARCDS_MASK	GENMASK(7, 0)
+#define ACE_CRODIV_CARCDS(x)	((x) & ACE_CRODIV_CARCDS_MASK)
+
 #define SHIM_LDOCTL_HPSRAM_LDO_ON     (3 << 0)
 #define SHIM_LDOCTL_HPSRAM_LDO_BYPASS BIT(0)
 

@@ -1,0 +1,22 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mimxrt1180_evk/mimxrt1189/cm7
+name: NXP MIMXRT1180-EVK CM7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 256
+supported:
+  - gpio
+  - uart
+  - i2c
+  - counter
+vendor: nxp

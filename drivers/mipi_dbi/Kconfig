@@ -25,5 +25,6 @@ source "drivers/mipi_dbi/Kconfig.spi"
 source "drivers/mipi_dbi/Kconfig.smartbond"
 source "drivers/mipi_dbi/Kconfig.nxp_lcdic"
 source "drivers/mipi_dbi/Kconfig.nxp_flexio_lcdif"
+source "drivers/mipi_dbi/Kconfig.stm32_fmc"
 
 endif

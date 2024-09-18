@@ -4,4 +4,5 @@ board:
   socs:
   - name: polarfire
     variants:
-    - name: 'smp'
+    - name: smp
+      cpucluster: u54

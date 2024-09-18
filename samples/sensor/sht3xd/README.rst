@@ -1,7 +1,8 @@
-.. _sht3xd:
+.. zephyr:code-sample:: sht3xd
+   :name: SHT3XD humidity sensor
+   :relevant-api: sensor_interface
 
-SHT3XD: High accuracy digital I2C humidity sensor
-#################################################
+   Get temperature and humidity from a SHT3XD sensor (polling & trigger mode).
 
 Description
 ***********

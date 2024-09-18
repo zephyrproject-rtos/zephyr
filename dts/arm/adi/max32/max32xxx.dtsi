@@ -8,11 +8,13 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/adi_max32_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 #include <freq.h>
 
 / {
 	chosen {
+		zephyr,entropy = &trng;
 		zephyr,flash-controller = &flc0;
 	};
 
@@ -186,6 +188,34 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			interrupts = <34 0>;
+			status = "disabled";
+		};
+
+		trng: trng@4004d000 {
+			compatible = "adi,max32-trng";
+			reg = <0x4004d000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40003000  {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003000 0x400>;
+			interrupts = <1 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			status = "disabled";
+		};
+
+		adc: adc@40034000 {
+			compatible = "adi,max32-adc-10b", "adi,max32-adc";
+			reg = <0x40034000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 23>;
+			channel-count = <17>;
+			#io-channel-cells = <1>;
+			interrupts = <20 0>;
+			resolution = <10>;
+			vref-mv = <1220>;
 			status = "disabled";
 		};
 	};

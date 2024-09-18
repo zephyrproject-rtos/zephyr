@@ -186,8 +186,9 @@ static int dw_wdt_init(const struct device *dev)
 	}
 #endif
 	ret = dw_wdt_probe((uint32_t)reg_base, dev_config->reset_pulse_length);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	if (dev_config->irq_config) {

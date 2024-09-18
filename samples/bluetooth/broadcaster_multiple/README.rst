@@ -1,7 +1,8 @@
-.. _bluetooth-broadcaster-multiple-sample:
+.. zephyr:code-sample:: bluetooth_broadcaster_multiple
+   :name: Multiple Broadcaster
+   :relevant-api: bluetooth
 
-Bluetooth: Multiple Broadcaster
-###############################
+   Advertise multiple advertising sets.
 
 Overview
 ********

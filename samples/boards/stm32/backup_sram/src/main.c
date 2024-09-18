@@ -12,8 +12,15 @@
 #define BACKUP_DEV_COMPAT st_stm32_backup_sram
 #endif
 
+#define BACKUP_MAGIC 0x600DCE11
+
+struct backup_store {
+	uint32_t value;
+	uint32_t magic;
+};
+
 /** Value stored in backup SRAM. */
-__stm32_backup_sram_section uint32_t backup_value;
+__stm32_backup_sram_section struct backup_store backup;
 
 int main(void)
 {
@@ -24,14 +31,20 @@ int main(void)
 		return 0;
 	}
 
-	printk("Current value in backup SRAM (%p): %d\n", &backup_value, backup_value);
+	if (backup.magic != BACKUP_MAGIC) {
+		backup.magic = BACKUP_MAGIC;
+		backup.value = 0;
+		printk("Invalid magic in backup SRAM structure - resetting value.\n");
+	}
 
-	backup_value++;
+	printk("Current value in backup SRAM (%p): %d\n", &backup.value, backup.value);
+
+	backup.value++;
 #if __DCACHE_PRESENT
-	SCB_CleanDCache_by_Addr(&backup_value, sizeof(backup_value));
+	SCB_CleanDCache_by_Addr(&backup, sizeof(backup));
 #endif
 
-	printk("Next reported value should be: %d\n", backup_value);
+	printk("Next reported value should be: %d\n", backup.value);
 	printk("Keep VBAT power source and reset the board now!\n");
 	return 0;
 }

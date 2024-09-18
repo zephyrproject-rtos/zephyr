@@ -32,12 +32,15 @@ static int lwm2m_get_res_buf_custom_fake(const struct lwm2m_obj_path *path, void
 					 uint16_t *buffer_len, uint16_t *data_len,
 					 uint8_t *data_flags)
 {
-	if (buffer_ptr)
+	if (buffer_ptr) {
 		*buffer_ptr = my_buf;
-	if (buffer_len)
+	}
+	if (buffer_len) {
 		*buffer_len = sizeof(my_buf);
-	if (data_len)
+	}
+	if (data_len) {
 		*data_len = my_data_len;
+	}
 
 	return 0;
 }

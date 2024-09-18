@@ -188,6 +188,8 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
  * will wake up the system at a known time in the future. By registering such
  * event, the policy manager will be able to decide whether certain power states
  * are worth entering or not.
+ * CPU is woken up before the time passed in cycle to prevent the event handling
+ * latency
  *
  * @note It is mandatory to unregister events once they have happened by using
  * pm_policy_event_unregister(). Not doing so is an API contract violation,
@@ -195,21 +197,21 @@ void pm_policy_latency_changed_unsubscribe(struct pm_policy_latency_subscription
  * *far* future, that is, after the cycle counter rollover.
  *
  * @param evt Event.
- * @param time_us When the event will occur, in microseconds from now.
+ * @param cycle When the event will occur, in absolute time (cycles).
  *
  * @see pm_policy_event_unregister
  */
-void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us);
+void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle);
 
 /**
  * @brief Update an event.
  *
  * @param evt Event.
- * @param time_us When the event will occur, in microseconds from now.
+ * @param cycle When the event will occur, in absolute time (cycles).
  *
  * @see pm_policy_event_register
  */
-void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us);
+void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle);
 
 /**
  * @brief Unregister an event.
@@ -245,6 +247,14 @@ void pm_policy_device_power_lock_get(const struct device *dev);
  * @see pm_policy_state_lock_put()
  */
 void pm_policy_device_power_lock_put(const struct device *dev);
+
+/**
+ * @brief Returns the ticks until the next event
+ *
+ * If an event is registred, it will return the number of ticks until the next event as
+ * a positive or zero value. Otherwise it returns -1
+ */
+int32_t pm_policy_next_event_ticks(void);
 
 #else
 static inline void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
@@ -287,18 +297,16 @@ static inline void pm_policy_latency_request_remove(
 	ARG_UNUSED(req);
 }
 
-static inline void pm_policy_event_register(struct pm_policy_event *evt,
-					    uint32_t time_us)
+static inline void pm_policy_event_register(struct pm_policy_event *evt, uint32_t cycle)
 {
 	ARG_UNUSED(evt);
-	ARG_UNUSED(time_us);
+	ARG_UNUSED(cycle);
 }
 
-static inline void pm_policy_event_update(struct pm_policy_event *evt,
-					  uint32_t time_us)
+static inline void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle)
 {
 	ARG_UNUSED(evt);
-	ARG_UNUSED(time_us);
+	ARG_UNUSED(cycle);
 }
 
 static inline void pm_policy_event_unregister(struct pm_policy_event *evt)
@@ -314,6 +322,11 @@ static inline void pm_policy_device_power_lock_get(const struct device *dev)
 static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+}
+
+static inline int32_t pm_policy_next_event_ticks(void)
+{
+	return -1;
 }
 
 #endif /* CONFIG_PM */

@@ -103,5 +103,5 @@ components on the VBLUno52 board:
 * :ref:`hello_world`
 * :zephyr:code-sample:`blinky`
 * :zephyr:code-sample:`button`
-* :ref:`bluetooth-beacon-sample`
-* :ref:`peripheral_hr`
+* :zephyr:code-sample:`bluetooth_beacon`
+* :zephyr:code-sample:`ble_peripheral_hr`

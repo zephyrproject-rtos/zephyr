@@ -44,16 +44,12 @@ if(NOT CONFIG_LOG_MODE_MINIMAL)
   )
 
   zephyr_sources_ifdef(
-    CONFIG_LOG_FRONTEND_DICT_UART
-    log_frontend_dict_uart.c
-  )
-
-  zephyr_sources_ifdef(
     CONFIG_LOG_DICTIONARY_SUPPORT
     log_output_dict.c
   )
 
   add_subdirectory(backends)
+  add_subdirectory(frontends)
 
   # For some reason, running sys-t with catalog message on
   # Cortex-M0 would result in hard fault in mipi_catalog_formatter()

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,16 @@
 
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
+
+/**
+ * @brief Get version
+ *
+ * @param dev: Wi-Fi interface name to use
+ * @param params: version to fill
+ *
+ * @return: 0 for OK; <0 for ERROR
+ */
+int supplicant_get_version(const struct device *dev, struct wifi_version *params);
 
 /**
  * @brief Request a connection
@@ -73,6 +84,14 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
+/** Flush PMKSA cache entries
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_pmksa_flush(const struct device *dev);
+
 /**
  * @brief Set Wi-Fi power save configuration
  *
@@ -119,6 +138,18 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+/** Set Wi-Fi enterprise mode CA/client Cert and key
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param file Pointer to the CA/client Cert and key.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_add_enterprise_creds(const struct device *dev,
+		struct wifi_enterprise_creds_params *creds);
+#endif
+
 /**
  * @brief Set Wi-Fi packet filter for sniffing operation
  *
@@ -137,7 +168,53 @@ int supplicant_filter(const struct device *dev, struct wifi_filter_info *filter)
  */
 int supplicant_channel(const struct device *dev, struct wifi_channel_info *channel);
 
+/**
+ * @brief Set Wi-Fi RTS threshold
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param rts_threshold RTS threshold to set
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+/** Send bss transition query
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param reason query reason
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_btm_query(const struct device *dev, uint8_t reason);
+#endif
+
+/** Get Wi-Fi connection parameters recently used
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params the Wi-Fi connection parameters recently used
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_get_wifi_conn_params(const struct device *dev,
+			 struct wifi_connect_req_params *params);
+
 #ifdef CONFIG_AP
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Get Wi-Fi AP Status
+ *
+ * @param dev Wi-Fi device
+ * @param params AP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_state(const struct device *dev, int *state);
+#else
+static inline int hapd_state(const struct device *dev, int *state)
+{
+	return -EINVAL;
+}
+#endif
+
 /**
  * @brief Set Wi-Fi AP configuration
  *
@@ -165,4 +242,14 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 				 const uint8_t *mac_addr);
 
 #endif /* CONFIG_AP */
+
+/**
+ * @brief Dispatch DPP operations
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param dpp_params DPP action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */

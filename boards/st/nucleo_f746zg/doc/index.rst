@@ -179,6 +179,8 @@ do it by removing ``SB156`` jumper on the back side of the board.
 Programming and Debugging
 *************************
 
+Nucleo F746ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_f746zg`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -186,21 +188,19 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo F746ZG board includes an ST-LINK/V2-1 embedded debug tool interface.
-
-Flashing an application to Nucleo F746ZG
-----------------------------------------
-
 The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
-so its installation is required to be able to flash the board.
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-Alternatively, openocd (provided in Zephyr SDK) or JLink can also be used to
-flash the board using the ``--runner`` (or ``-r``) option:
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
 
 .. code-block:: console
 
    $ west flash --runner openocd
    $ west flash --runner jlink
+
+Flashing an application to Nucleo F746ZG
+----------------------------------------
 
 Here is an example for the :ref:`hello_world` application.
 

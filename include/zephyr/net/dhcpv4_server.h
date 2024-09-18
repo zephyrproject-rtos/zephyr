@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief DHCPv4 server
  * @defgroup dhcpv4_server DHCPv4 server
+ * @since 3.6
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */
@@ -106,6 +108,34 @@ typedef void (*net_dhcpv4_lease_cb_t)(struct net_if *iface,
 int net_dhcpv4_server_foreach_lease(struct net_if *iface,
 				    net_dhcpv4_lease_cb_t cb,
 				    void *user_data);
+
+/**
+ * @typedef net_dhcpv4_server_provider_cb_t
+ * @brief Callback used to let application provide an address for a given
+ * client ID
+ * @details This function is called before assigning an address to a client,
+ * and lets the application override the address for a given client. If the
+ * callback returns 0, addr needs to be a valid address and will be assigned
+ * to the client. If the callback returns anything non-zero, the client will
+ * be assigned an address from the pool.
+ *
+ * @param iface Pointer to the network interface
+ * @param client_id Pointer to client requesting an address
+ * @param addr Address to be assigned to client
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef int (*net_dhcpv4_server_provider_cb_t)(struct net_if *iface,
+					       const struct dhcpv4_client_id *client_id,
+					       struct in_addr *addr,
+					       void *user_data);
+/**
+ * @brief Set the callback used to provide addresses to the DHCP server.
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data A valid pointer to user data or NULL
+ */
+void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb,
+				       void *user_data);
 
 /**
  * @}

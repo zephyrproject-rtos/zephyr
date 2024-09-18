@@ -10,7 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
@@ -162,7 +162,7 @@ size_t smp_shell_rx_bytes(struct smp_shell_data *data, const uint8_t *bytes,
 		if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD &&
 		    byte == '\n') {
 			if (data->buf) {
-				net_buf_put(&data->buf_ready, data->buf);
+				k_fifo_put(&data->buf_ready, data->buf);
 				data->buf = NULL;
 			}
 			atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
@@ -187,7 +187,7 @@ void smp_shell_process(struct smp_shell_data *data)
 	struct net_buf *nb;
 
 	while (true) {
-		buf = net_buf_get(&data->buf_ready, K_NO_WAIT);
+		buf = k_fifo_get(&data->buf_ready, K_NO_WAIT);
 		if (!buf) {
 			break;
 		}

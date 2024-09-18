@@ -267,7 +267,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (((struct uart_ns16550_dev_data *)(dev)->data)->iir_cache)
 
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 /* Register definitions (ITE_IT8XXX2) */
 #define REG_ECSPMR 0x08 /* EC Serial port mode reg */
 
@@ -427,8 +427,7 @@ static uint8_t ns16550_inbyte(const struct uart_ns16550_device_config *cfg,
 	return 0;
 }
 
-#if (defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA) & (defined(CONFIG_UART_ASYNC_API)))\
-	| UART_NS16550_PCP_ENABLED
+__maybe_unused
 static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 			    uintptr_t port, uint32_t val)
 {
@@ -444,6 +443,7 @@ static void ns16550_outword(const struct uart_ns16550_device_config *cfg,
 	}
 }
 
+__maybe_unused
 static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 			      uintptr_t port)
 {
@@ -455,7 +455,6 @@ static uint32_t ns16550_inword(const struct uart_ns16550_device_config *cfg,
 	/* MMIO mapped */
 	return sys_read32(port);
 }
-#endif
 
 static inline uint8_t reg_interval(const struct device *dev)
 {
@@ -482,7 +481,7 @@ static inline uintptr_t get_port(const struct device *dev)
 	return port;
 }
 
-static uint32_t get_uart_burdrate_divisor(const struct device *dev,
+static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 					  uint32_t baud_rate,
 					  uint32_t pclk)
 {
@@ -494,8 +493,8 @@ static uint32_t get_uart_burdrate_divisor(const struct device *dev,
 	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
 }
 
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
-static uint32_t get_ite_uart_burdrate_divisor(const struct device *dev,
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
+static uint32_t get_ite_uart_baudrate_divisor(const struct device *dev,
 					      uint32_t baud_rate,
 					      uint32_t pclk)
 {
@@ -517,7 +516,7 @@ static uint32_t get_ite_uart_burdrate_divisor(const struct device *dev,
 		 */
 		ns16550_outbyte(dev_cfg, ECSPMR(dev), ECSPMR_ECHS);
 	} else {
-		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 		/* Set ECSPMR register as default */
 		ns16550_outbyte(dev_cfg, ECSPMR(dev), 0);
 	}
@@ -534,10 +533,10 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 	uint8_t lcr_cache;
 
 	if ((baud_rate != 0U) && (pclk != 0U)) {
-#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BUADRATE
-		divisor = get_ite_uart_burdrate_divisor(dev, baud_rate, pclk);
+#ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
+		divisor = get_ite_uart_baudrate_divisor(dev, baud_rate, pclk);
 #else
-		divisor = get_uart_burdrate_divisor(dev, baud_rate, pclk);
+		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 #endif
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
@@ -1958,7 +1957,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
+	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,             \
 			      &uart_ns16550_driver_api);                             \
@@ -1976,7 +1975,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	static struct uart_ns16550_dev_data uart_ns16550_dev_data_##n = {            \
 		UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                          \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
+	DEVICE_DT_INST_DEFINE(n, uart_ns16550_init, NULL,                            \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
 			      PRE_KERNEL_1,            \
 			      CONFIG_SERIAL_INIT_PRIORITY,                           \

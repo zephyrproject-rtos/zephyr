@@ -139,5 +139,6 @@ tests:
   sample.net.sockets.echo_server.nsos:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     extra_args:
       - OVERLAY_CONFIG="overlay-nsos.conf"

@@ -359,36 +359,37 @@ int pm_device_driver_init(const struct device *dev,
 			  pm_device_action_cb_t action_cb)
 {
 	struct pm_device_base *pm = dev->pm_base;
-	int rc = 0;
+	int rc;
 
 	/* Work only needs to be performed if the device is powered */
-	if (pm_device_is_powered(dev)) {
-		/* Run power-up logic */
-		rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
-		if (rc != 0) {
-			return rc;
-		}
-		/* If device has no PM structure */
-		if (pm == NULL) {
-			/* Device should always be active */
-			return action_cb(dev, PM_DEVICE_ACTION_RESUME);
-		}
-		/* If device will have PM device runtime enabled */
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
-		    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
-			/* Init into suspend mode.
-			 * This saves a SUSPENDED->ACTIVE->SUSPENDED cycle.
-			 */
-			pm_device_init_suspended(dev);
-		}
-		/* No PM enabled on the device by default */
-		else {
-			/* Startup into active mode */
-			return action_cb(dev, PM_DEVICE_ACTION_RESUME);
-		}
-	} else {
+	if (!pm_device_is_powered(dev)) {
 		/* Start in off mode */
 		pm_device_init_off(dev);
+		return 0;
 	}
-	return rc;
+
+	/* Run power-up logic */
+	rc = action_cb(dev, PM_DEVICE_ACTION_TURN_ON);
+	if (rc != 0) {
+		return rc;
+	}
+
+	/* If device has no PM structure */
+	if (pm == NULL) {
+		/* Device should always be active */
+		return action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	}
+
+	/* If device will have PM device runtime enabled */
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) &&
+	    atomic_test_bit(&pm->flags, PM_DEVICE_FLAG_RUNTIME_AUTO)) {
+		/* Init into suspend mode.
+		 * This saves a SUSPENDED->ACTIVE->SUSPENDED cycle.
+		 */
+		pm_device_init_suspended(dev);
+		return 0;
+	}
+
+	/* Startup into active mode */
+	return action_cb(dev, PM_DEVICE_ACTION_RESUME);
 }

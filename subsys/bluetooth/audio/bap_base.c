@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -593,7 +593,7 @@ static bool base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis, voi
 {
 	uint32_t *base_bis_index_bitfield = user_data;
 
-	*base_bis_index_bitfield |= BIT(bis->index);
+	*base_bis_index_bitfield |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }

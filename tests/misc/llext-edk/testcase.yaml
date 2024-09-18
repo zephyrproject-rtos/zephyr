@@ -5,5 +5,5 @@ tests:
       - pytest
       - edk
     platform_allow:
-      - native_sim
+      - qemu_cortex_r5
     toolchain_exclude: llvm

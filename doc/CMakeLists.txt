@@ -32,6 +32,7 @@ find_program(SPHINXBUILD sphinx-build)
 if(NOT SPHINXBUILD)
   message(FATAL_ERROR "The 'sphinx-build' command was not found")
 endif()
+find_program(SPHINXAUTOBUILD sphinx-autobuild)
 
 find_package(LATEX COMPONENTS PDFLATEX)
 find_program(LATEXMK latexmk)
@@ -45,6 +46,7 @@ endif()
 set(SPHINX_ENV
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
   DOT_EXECUTABLE=${DOXYGEN_DOT_EXECUTABLE}
+  DOCS_HTML_DIR=${CMAKE_CURRENT_BINARY_DIR}/html
 )
 
 if(DEFINED ENV{ZEPHYR_DOXYGEN_OVERLAY})
@@ -172,6 +174,35 @@ set_target_properties(
 
 add_dependencies(html devicetree)
 
+#-------------------------------------------------------------------------------
+# html-live
+
+add_doc_target(
+  html-live
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  ${SPHINXAUTOBUILD}
+    --watch ${DOCS_CFG_DIR}
+    --ignore ${DOCS_BUILD_DIR}
+    -b html
+    -c ${DOCS_CFG_DIR}
+    -d ${DOCS_DOCTREE_DIR}
+    -w ${DOCS_BUILD_DIR}/html.log
+    -t ${DOC_TAG}
+    ${SPHINXOPTS}
+    ${SPHINXOPTS_EXTRA}
+    ${DOCS_SRC_DIR}
+    ${DOCS_HTML_DIR}
+  USES_TERMINAL
+  COMMENT "Running Sphinx HTML autobuild..."
+)
+
+set_target_properties(
+  html-live html-live-nodeps
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
+)
+
+add_dependencies(html-live devicetree)
 #-------------------------------------------------------------------------------
 # pdf
 

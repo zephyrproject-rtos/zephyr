@@ -1,0 +1,22 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX9352_M33
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+config NUM_IRQS
+	int
+	default 268
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 200000000
+
+endif

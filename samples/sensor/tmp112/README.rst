@@ -1,7 +1,8 @@
-.. _tmp112_sample:
+.. zephyr:code-sample:: tmp112
+   :name: TMP112 Temperature Sensor
+   :relevant-api: sensor_interface
 
-TMP112 sample
-#############
+   Get temperature data from a TMP112 sensor (polling & trigger mode).
 
 Overview
 ********

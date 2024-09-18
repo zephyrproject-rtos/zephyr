@@ -389,8 +389,9 @@ uint16_t event_counter(struct ll_conn *conn)
 	 * return the current event counter value (i.e. -1);
 	 * otherwise return the next event counter value
 	 */
-	if (*evt_active)
+	if (*evt_active) {
 		event_counter--;
+	}
 
 	return event_counter;
 }

@@ -8,7 +8,7 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "util/memq.h"
 

@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <soc.h>
 
 #include "em_cmu.h"
@@ -386,6 +387,9 @@ static const struct spi_driver_api spi_gecko_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gecko_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_gecko_release,
 };
 

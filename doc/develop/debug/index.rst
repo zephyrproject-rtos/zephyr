@@ -225,7 +225,7 @@ Generate and Import an Eclipse Project
 
    .. zephyr-app-commands::
       :tool: all
-      :app: %ZEPHYR_BASE%\samples\synchronization
+      :zephyr-app: samples/synchronization
       :host-os: win
       :board: frdm_k64f
       :gen-args: -G"Eclipse CDT4 - Ninja"

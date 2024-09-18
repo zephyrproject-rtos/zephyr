@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  rdc:
+    type: int
+    description: |
+      Set the RDC permission for specified peripheral: Resource Domain Controller (RDC)
+      supports flexible configuration on IP’s access permission, each individual IP can,
+      for example, be configured as A-core only or M-core only. This property uses some
+      macros defined in 'include/zephyr/dt-bindings/rdc/imx_rdc.h' to configure current
+      peripheral's access permission.
+      For example to allow both A53 and M7 Core to have read/write permission to current
+      peripheral:
+      rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW)|\
+              RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;

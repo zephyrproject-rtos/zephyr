@@ -88,8 +88,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
-	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
-	defined(CONFIG_SOC_LPC55S69_CPU0)
+	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
+	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
 	/* Set up the clock sources */
 	/* Configure FRO192M */
 	/* Ensure FRO is on  */
@@ -269,6 +269,8 @@ static ALWAYS_INLINE void clock_init(void)
 
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
+DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
+
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
 #if defined(CONFIG_SOC_LPC55S36)
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom6Clk, 0U, true);
@@ -367,9 +369,9 @@ static int nxp_lpc55xxx_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 
@@ -383,7 +385,7 @@ void z_arm_platform_init(void)
 #endif
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+#endif /* CONFIG_SOC_RESET_HOOK */
 
 SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
 

@@ -222,9 +222,9 @@ Testing Bluetooth on the BL654 Sensor Board
 Many of the Bluetooth examples will work on the BL654 Sensor Board.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LED and button on the BL654 Sensor Board

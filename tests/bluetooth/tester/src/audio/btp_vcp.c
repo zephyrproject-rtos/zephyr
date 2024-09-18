@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/testing.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/vocs.h>
@@ -144,12 +143,12 @@ static uint8_t unmute(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
-static void vcs_state_cb(int err, uint8_t volume, uint8_t mute)
+static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
 	LOG_DBG("VCP state cb err (%d)", err);
 }
 
-static void vcs_flags_cb(int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
 	LOG_DBG("VCP flags cb err (%d)", err);
 }

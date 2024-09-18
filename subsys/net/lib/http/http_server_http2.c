@@ -371,6 +371,102 @@ out:
 	return ret;
 }
 
+static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
+					   struct http2_frame *frame,
+					   struct http_client_ctx *client)
+{
+	int ret;
+	struct fs_file_t file;
+	char fname[HTTP_SERVER_MAX_URL_LENGTH];
+	char content_type[HTTP_SERVER_MAX_CONTENT_TYPE_LEN] = "text/html";
+	struct http_resource_detail res_detail = {
+		.bitmask_of_supported_http_methods =
+			static_fs_detail->common.bitmask_of_supported_http_methods,
+		.content_type = content_type,
+		.path_len = static_fs_detail->common.path_len,
+		.type = static_fs_detail->common.type,
+	};
+	bool gzipped;
+	int len;
+	int remaining;
+	char tmp[64];
+
+	if (!(static_fs_detail->common.bitmask_of_supported_http_methods & BIT(HTTP_GET))) {
+		return -ENOTSUP;
+	}
+
+	if (client->current_stream == NULL) {
+		return -ENOENT;
+	}
+
+	/* get filename and content-type from url */
+	len = strlen(client->url_buffer);
+	if (len == 1) {
+		/* url is just the leading slash, use index.html as filename */
+		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
+	} else {
+		http_server_get_content_type_from_extension(client->url_buffer, content_type,
+							    sizeof(content_type));
+		snprintk(fname, sizeof(fname), "%s%s", static_fs_detail->fs_path,
+			 client->url_buffer);
+	}
+
+	/* open file, if it exists */
+	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, &gzipped);
+	if (ret < 0) {
+		LOG_ERR("fs_stat %s: %d", fname, ret);
+
+		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
+					 0);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+		}
+		return ret;
+	}
+	fs_file_t_init(&file);
+	ret = fs_open(&file, fname, FS_O_READ);
+	if (ret < 0) {
+		LOG_ERR("fs_open %s: %d", fname, ret);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* send headers */
+	if (gzipped) {
+		res_detail.content_encoding = "gzip";
+	}
+	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		goto out;
+	}
+
+	client->current_stream->headers_sent = true;
+
+	/* read and send file */
+	remaining = client->data_len;
+	while (remaining > 0) {
+		len = fs_read(&file, tmp, sizeof(tmp));
+
+		remaining -= len;
+		ret = send_data_frame(client, tmp, len, frame->stream_identifier,
+				      (remaining > 0) ? 0 : HTTP2_FLAG_END_STREAM);
+		if (ret < 0) {
+			LOG_DBG("Cannot write to socket (%d)", ret);
+			goto out;
+		}
+	}
+
+	client->current_stream->end_stream_sent = true;
+
+out:
+	/* close file */
+	fs_close(&file);
+
+	return ret;
+}
+
 static int dynamic_get_req_v2(struct http_resource_detail_dynamic *dynamic_detail,
 			      struct http_client_ctx *client)
 {
@@ -869,6 +965,12 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
+		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
+			ret = handle_http2_static_fs_resource(
+				(struct http_resource_detail_static_fs *)detail, frame, client);
+			if (ret < 0) {
+				goto error;
+			}
 		} else if (detail->type == HTTP_RESOURCE_TYPE_DYNAMIC) {
 			ret = handle_http2_dynamic_resource(
 				(struct http_resource_detail_dynamic *)detail,
@@ -1033,9 +1135,62 @@ int handle_http_frame_data(struct http_client_ctx *client)
 	return 0;
 }
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+static void check_user_request_headers_http2(struct http_header_capture_ctx *ctx,
+					     struct http_hpack_header_buf *hdr_buf)
+{
+	size_t required_len;
+	char *dest = &ctx->buffer[ctx->cursor];
+	size_t remaining = sizeof(ctx->buffer) - ctx->cursor;
+	struct http_header *current_header = &ctx->headers[ctx->count];
+
+	STRUCT_SECTION_FOREACH(http_header_name, header) {
+		required_len = hdr_buf->name_len + hdr_buf->value_len + 2;
+
+		if (hdr_buf->name_len == strlen(header->name) &&
+		    (strncasecmp(hdr_buf->name, header->name, hdr_buf->name_len) == 0)) {
+			if (ctx->count == ARRAY_SIZE(ctx->headers)) {
+				LOG_DBG("Header '%s' dropped: not enough slots", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			if (remaining < required_len) {
+				LOG_DBG("Header '%s' dropped: buffer too small", header->name);
+				ctx->status = HTTP_HEADER_STATUS_DROPPED;
+				break;
+			}
+
+			/* Copy header name from user-registered header to make HTTP1/HTTP2
+			 * transparent to the user - they do not need a case-insensitive comparison
+			 * to check which header was matched.
+			 */
+			memcpy(dest, header->name, hdr_buf->name_len);
+			dest[hdr_buf->name_len] = '\0';
+			current_header->name = dest;
+			ctx->cursor += (hdr_buf->name_len + 1);
+			dest += (hdr_buf->name_len + 1);
+
+			/* Copy header value */
+			memcpy(dest, hdr_buf->value, hdr_buf->value_len);
+			dest[hdr_buf->value_len] = '\0';
+			current_header->value = dest;
+			ctx->cursor += (hdr_buf->value_len + 1);
+
+			ctx->count++;
+			break;
+		}
+	}
+}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 static int process_header(struct http_client_ctx *client,
 			  struct http_hpack_header_buf *header)
 {
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	check_user_request_headers_http2(&client->header_capture_ctx, header);
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 	if (header->name_len == (sizeof(":method") - 1) &&
 	    memcmp(header->name, ":method", header->name_len) == 0) {
 		/* TODO Improve string to method conversion */
@@ -1287,6 +1442,12 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			ret = handle_http2_static_resource(
 				(struct http_resource_detail_static *)detail,
 				frame, client);
+			if (ret < 0) {
+				return ret;
+			}
+		} else if (detail->type == HTTP_RESOURCE_TYPE_STATIC_FS) {
+			ret = handle_http2_static_fs_resource(
+				(struct http_resource_detail_static_fs *)detail, frame, client);
 			if (ret < 0) {
 				return ret;
 			}

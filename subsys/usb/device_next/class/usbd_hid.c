@@ -60,16 +60,20 @@ enum {
 	HID_DEV_CLASS_ENABLED,
 };
 
-struct hid_device_data {
-	struct usbd_hid_descriptor *const desc;
+struct hid_device_config {
+	struct usbd_hid_descriptor *desc;
 	struct usbd_class_data *c_data;
-	struct net_buf_pool *const pool_out;
-	struct net_buf_pool *const pool_in;
+	struct net_buf_pool *pool_out;
+	struct net_buf_pool *pool_in;
+	const struct usb_desc_header **fs_desc;
+	const struct usb_desc_header **hs_desc;
+};
+
+struct hid_device_data {
+	const struct device *dev;
 	const struct hid_device_ops *ops;
 	const uint8_t *rdesc;
 	size_t rsize;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
 	atomic_t state;
 	struct k_sem in_sem;
 	struct k_work output_work;
@@ -80,8 +84,8 @@ struct hid_device_data {
 static inline uint8_t hid_get_in_ep(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct hid_device_data *ddata = dev->data;
-	struct usbd_hid_descriptor *desc = ddata->desc;
+	const struct hid_device_config *dcfg = dev->config;
+	struct usbd_hid_descriptor *desc = dcfg->desc;
 
 	return desc->in_ep.bEndpointAddress;
 }
@@ -89,8 +93,8 @@ static inline uint8_t hid_get_in_ep(struct usbd_class_data *const c_data)
 static inline uint8_t hid_get_out_ep(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct hid_device_data *ddata = dev->data;
-	struct usbd_hid_descriptor *desc = ddata->desc;
+	const struct hid_device_config *dcfg = dev->config;
+	struct usbd_hid_descriptor *desc = dcfg->desc;
 
 	return desc->out_ep.bEndpointAddress;
 }
@@ -265,8 +269,9 @@ static int handle_get_report(const struct device *dev,
 static int handle_set_protocol(const struct device *dev,
 			       const struct usb_setup_packet *const setup)
 {
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
-	struct usbd_hid_descriptor *const desc = ddata->desc;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
 	const struct hid_device_ops *const ops = ddata->ops;
 	const uint16_t protocol = setup->wValue;
 
@@ -302,8 +307,9 @@ static int handle_get_protocol(const struct device *dev,
 			       const struct usb_setup_packet *const setup,
 			       struct net_buf *const buf)
 {
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
-	struct usbd_hid_descriptor *const desc = ddata->desc;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	if (setup->wValue != 0 || setup->wLength != 1) {
 		errno = -ENOTSUP;
@@ -326,10 +332,11 @@ static int handle_get_descriptor(const struct device *dev,
 				 const struct usb_setup_packet *const setup,
 				 struct net_buf *const buf)
 {
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
 	uint8_t desc_type = USB_GET_DESCRIPTOR_TYPE(setup->wValue);
 	uint8_t desc_idx = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
-	struct usbd_hid_descriptor *const desc = ddata->desc;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	switch (desc_type) {
 	case USB_DESC_HID_REPORT:
@@ -419,9 +426,10 @@ static void usbd_hid_sof(struct usbd_class_data *const c_data)
 static void usbd_hid_enable(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *ddata = dev->data;
 	const struct hid_device_ops *const ops = ddata->ops;
-	struct usbd_hid_descriptor *const desc = ddata->desc;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	atomic_set_bit(&ddata->state, HID_DEV_CLASS_ENABLED);
 	ddata->protocol = HID_PROTOCOL_REPORT;
@@ -468,13 +476,13 @@ static void *usbd_hid_get_desc(struct usbd_class_data *const c_data,
 			       const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
-	struct hid_device_data *ddata = dev->data;
+	const struct hid_device_config *dcfg = dev->config;
 
 	if (speed == USBD_SPEED_HS) {
-		return ddata->hs_desc;
+		return dcfg->hs_desc;
 	}
 
-	return ddata->fs_desc;
+	return dcfg->fs_desc;
 }
 
 static int usbd_hid_init(struct usbd_class_data *const c_data)
@@ -489,14 +497,16 @@ static void usbd_hid_shutdown(struct usbd_class_data *const c_data)
 	LOG_DBG("HID class %s shutdown", c_data->name);
 }
 
-static struct net_buf *hid_buf_alloc_ext(struct hid_device_data *const ddata,
+static struct net_buf *hid_buf_alloc_ext(const struct hid_device_config *const dcfg,
 					 const uint16_t size, void *const data,
 					 const uint8_t ep)
 {
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
-	buf = net_buf_alloc_with_data(ddata->pool_in, data, size, K_NO_WAIT);
+	__ASSERT(IS_UDC_ALIGNED(data), "Application provided unaligned buffer");
+
+	buf = net_buf_alloc_with_data(dcfg->pool_in, data, size, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
@@ -508,13 +518,13 @@ static struct net_buf *hid_buf_alloc_ext(struct hid_device_data *const ddata,
 	return buf;
 }
 
-static struct net_buf *hid_buf_alloc(struct hid_device_data *const ddata,
+static struct net_buf *hid_buf_alloc(const struct hid_device_config *const dcfg,
 				     const uint8_t ep)
 {
 	struct net_buf *buf = NULL;
 	struct udc_buf_info *bi;
 
-	buf = net_buf_alloc(ddata->pool_out, K_NO_WAIT);
+	buf = net_buf_alloc(dcfg->pool_out, K_NO_WAIT);
 	if (!buf) {
 		return NULL;
 	}
@@ -531,14 +541,16 @@ static void hid_dev_output_handler(struct k_work *work)
 	struct hid_device_data *ddata = CONTAINER_OF(work,
 						     struct hid_device_data,
 						     output_work);
-	struct usbd_class_data *c_data = ddata->c_data;
+	const struct device *dev = ddata->dev;
+	const struct hid_device_config *dcfg = dev->config;
+	struct usbd_class_data *c_data = dcfg->c_data;
 	struct net_buf *buf;
 
 	if (!atomic_test_bit(&ddata->state, HID_DEV_CLASS_ENABLED)) {
 		return;
 	}
 
-	buf = hid_buf_alloc(ddata, hid_get_out_ep(c_data));
+	buf = hid_buf_alloc(dcfg, hid_get_out_ep(c_data));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return;
@@ -553,9 +565,10 @@ static void hid_dev_output_handler(struct k_work *work)
 static int hid_dev_submit_report(const struct device *dev,
 				 const uint16_t size, const uint8_t *const report)
 {
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
 	const struct hid_device_ops *ops = ddata->ops;
-	struct usbd_class_data *c_data = ddata->c_data;
+	struct usbd_class_data *c_data = dcfg->c_data;
 	struct net_buf *buf;
 	int ret;
 
@@ -565,7 +578,7 @@ static int hid_dev_submit_report(const struct device *dev,
 		return -EACCES;
 	}
 
-	buf = hid_buf_alloc_ext(ddata, size, (void *)report, hid_get_in_ep(c_data));
+	buf = hid_buf_alloc_ext(dcfg, size, (void *)report, hid_get_in_ep(c_data));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate net_buf");
 		return -ENOMEM;
@@ -588,8 +601,9 @@ static int hid_dev_register(const struct device *dev,
 			    const uint8_t *const rdesc, const uint16_t rsize,
 			    const struct hid_device_ops *const ops)
 {
+	const struct hid_device_config *dcfg = dev->config;
 	struct hid_device_data *const ddata = dev->data;
-	struct usbd_hid_descriptor *const desc = ddata->desc;
+	struct usbd_hid_descriptor *const desc = dcfg->desc;
 
 	if (atomic_test_bit(&ddata->state, HID_DEV_CLASS_ENABLED)) {
 		return -EALREADY;
@@ -628,6 +642,10 @@ static int hid_dev_register(const struct device *dev,
 static int hid_device_init(const struct device *dev)
 {
 	struct hid_device_data *const ddata = dev->data;
+
+	ddata->dev = dev;
+
+	k_sem_init(&ddata->in_sem, 0, 1);
 
 	k_work_init(&ddata->output_work, hid_dev_output_handler);
 	LOG_DBG("HID device %s init", dev->name);
@@ -724,6 +742,8 @@ static const struct hid_device_driver_api hid_device_api = {
 		    (USBD_HID_INTERFACE_ALTERNATE_DEFINE(n)))
 
 #define USBD_HID_INSTANCE_DEFINE(n)						\
+	HID_VERIFY_REPORT_SIZES(n);						\
+										\
 	NET_BUF_POOL_DEFINE(hid_buf_pool_in_##n,				\
 			    CONFIG_USBD_HID_IN_BUF_COUNT, 0,			\
 			    sizeof(struct udc_buf_info), NULL);			\
@@ -735,18 +755,19 @@ static const struct hid_device_driver_api hid_device_api = {
 			  &usbd_hid_api,					\
 			  (void *)DEVICE_DT_GET(DT_DRV_INST(n)), NULL);		\
 										\
-	static struct hid_device_data hid_data_##n = {				\
+	static const struct hid_device_config hid_config_##n = {		\
 		.desc = &hid_desc_##n,						\
 		.c_data = &hid_##n,						\
 		.pool_in = &hid_buf_pool_in_##n,				\
 		.pool_out = HID_OUT_POOL_ADDR(n),				\
-		.in_sem = Z_SEM_INITIALIZER(hid_data_##n.in_sem, 0, 1),		\
 		.fs_desc = hid_fs_desc_##n,					\
 		.hs_desc = hid_hs_desc_##n,					\
 	};									\
 										\
+	static struct hid_device_data hid_data_##n;				\
+										\
 	DEVICE_DT_INST_DEFINE(n, hid_device_init, NULL,				\
-		&hid_data_##n, NULL,						\
+		&hid_data_##n, &hid_config_##n,					\
 		POST_KERNEL, CONFIG_USBD_HID_INIT_PRIORITY,			\
 		&hid_device_api);
 

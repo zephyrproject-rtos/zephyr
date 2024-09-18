@@ -6,7 +6,7 @@ YD-ESP32
 Overview
 ********
 
-The YD-ESP32 development board is one of VCC-GND® Studio’s official boards.
+The YD-ESP32 development board is one of VCC-GND® Studio's official boards.
 This board is based on the ESP32-WROOM-32E module, with the ESP32 as the core.
 
 .. figure:: img/yd_esp32.png
@@ -23,7 +23,7 @@ with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
 Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
 variations.  ESP32 is created and developed by Espressif Systems, a
 Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-process. [1]_
+process.
 
 The features include the following:
 
@@ -52,6 +52,9 @@ The features include the following:
 
 - Cryptographic hardware acceleration (RNG, ECC, RSA, SHA-2, AES)
 - 5uA deep sleep current
+
+For more information, check the datasheet at `ESP32 Datasheet`_ or the technical reference
+manual at `ESP32 Technical Reference Manual`_.
 
 Supported Features
 ==================
@@ -130,7 +133,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -156,7 +159,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: yd_esp32
    :goals: build
    :west-args: --sysbuild
@@ -192,7 +195,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -239,7 +242,7 @@ The board contains an addressable RGB LED (`XL-5050RGBC-WS2812B`_), driven by GP
 Here is an example of how to test it using the :zephyr:code-sample:`led-strip` application.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/led_strip
+   :zephyr-app: samples/drivers/led/led_strip
    :board: yd_esp32/esp32/procpu
    :goals: flash
 
@@ -249,8 +252,7 @@ Here is an example of how to test it using the :zephyr:code-sample:`led-strip` a
 Debugging
 *********
 
-ESP32 support on OpenOCD is available upstream as of version 0.12.0.
-Download and install OpenOCD from `OpenOCD`_.
+ESP32 support on OpenOCD is available at `OpenOCD ESP32`_.
 
 On the YD-ESP32 board, the JTAG pins are not run to a
 standard connector (e.g. ARM 20-pin) and need to be manually connected
@@ -274,8 +276,7 @@ to the external programmer (e.g. a Flyswatter2):
 | IO15       | TDO       |
 +------------+-----------+
 
-Further documentation can be obtained from the SoC vendor in `JTAG debugging
-for ESP32`_.
+Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32`_.
 
 Here is an example for building the :ref:`hello_world` application.
 
@@ -302,12 +303,11 @@ GDB stub is enabled on ESP32.
   This does not work as the code is on flash which cannot be randomly
   accessed for modification.
 
-.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
-.. _`OpenOCD`: https://github.com/openocd-org/openocd
-
 References
 **********
 
-.. [1] https://en.wikipedia.org/wiki/ESP32
-.. _ESP32 Technical Reference Manual: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-.. _Hardware Reference: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/index.html
+.. _`ESP32-DevKitC-WROVER`: https://docs.espressif.com/projects/esp-idf/en/stable/esp32/hw-reference/esp32/get-started-devkitc.html#
+.. _`ESP32 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
+.. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+.. _`JTAG debugging for ESP32`: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/jtag-debugging/index.html
+.. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases

@@ -8,8 +8,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include <hal/nrf_rtc.h>
-
 #include <zephyr/toolchain.h>
 
 #include <soc.h>
@@ -20,6 +18,7 @@
 
 #include "hal/swi.h"
 #include "hal/ccm.h"
+#include "hal/cntr.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
 
@@ -59,9 +58,9 @@ static struct {
 } event;
 
 /* Entropy device */
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 static const struct device *const dev_entropy = DEVICE_DT_GET(DT_NODELABEL(rng));
-#endif /* CONFIG_ENTROPY_NRF5_RNG */
+#endif /* CONFIG_ENTROPY_HAS_DRIVER */
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -120,8 +119,13 @@ static void rtc0_nrf5_isr(const void *arg)
 	lll_prof_enter_ull_high();
 
 	/* On compare0 run ticker worker instance0 */
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	if (NRF_GRTC->EVENTS_COMPARE[HAL_CNTR_GRTC_CC_IDX_TICKER]) {
+		nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	if (NRF_RTC->EVENTS_COMPARE[0]) {
 		nrf_rtc_event_clear(NRF_RTC, NRF_RTC_EVENT_COMPARE_0);
+#endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 		ticker_trigger(0);
 	}
@@ -175,12 +179,12 @@ int lll_init(void)
 {
 	int err;
 
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	/* Get reference to entropy device */
 	if (!device_is_ready(dev_entropy)) {
 		return -ENODEV;
 	}
-#endif /* CONFIG_ENTROPY_NRF5_RNG */
+#endif /* CONFIG_ENTROPY_HAS_DRIVER */
 
 	/* Initialise LLL internals */
 	event.curr.abort_cb = NULL;
@@ -323,54 +327,54 @@ int lll_deinit(void)
 
 int lll_csrand_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	return entropy_get_entropy(dev_entropy, buf, len);
-#else
+#else /* !CONFIG_ENTROPY_HAS_DRIVER */
 	/* FIXME: No suitable entropy device available yet.
 	 *        It is required by Controller to use random numbers.
 	 *        Hence, return uninitialized buf contents, for now.
 	 */
 	return 0;
-#endif
+#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
 }
 
 int lll_csrand_isr_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
-#else
+#else /* !CONFIG_ENTROPY_HAS_DRIVER */
 	/* FIXME: No suitable entropy device available yet.
 	 *        It is required by Controller to use random numbers.
 	 *        Hence, return uninitialized buf contents, for now.
 	 */
 	return 0;
-#endif
+#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
 }
 
 int lll_rand_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	return entropy_get_entropy(dev_entropy, buf, len);
-#else
+#else /* !CONFIG_ENTROPY_HAS_DRIVER */
 	/* FIXME: No suitable entropy device available yet.
 	 *        It is required by Controller to use random numbers.
 	 *        Hence, return uninitialized buf contents, for now.
 	 */
 	return 0;
-#endif
+#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
 }
 
 int lll_rand_isr_get(void *buf, size_t len)
 {
-#if defined(CONFIG_ENTROPY_NRF5_RNG)
+#if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
-#else
+#else /* !CONFIG_ENTROPY_HAS_DRIVER */
 	/* FIXME: No suitable entropy device available yet.
 	 *        It is required by Controller to use random numbers.
 	 *        Hence, return uninitialized buf contents, for now.
 	 */
 	return 0;
-#endif
+#endif /* !CONFIG_ENTROPY_HAS_DRIVER */
 }
 
 int lll_reset(void)

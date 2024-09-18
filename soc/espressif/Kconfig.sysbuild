@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_OVERWRITE_ONLY if SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6 || SOC_ESP32_PROCPU || SOC_SERIES_ESP32S2 || SOC_ESP32S3_PROCPU
+endchoice

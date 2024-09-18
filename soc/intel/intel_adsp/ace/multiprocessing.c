@@ -73,18 +73,23 @@ static void ipc_isr(void *arg)
 
 unsigned int soc_num_cpus;
 
-static __imr int soc_num_cpus_init(void)
+__imr void soc_num_cpus_init(void)
 {
 	/* Need to set soc_num_cpus early to arch_num_cpus() works properly */
 	soc_num_cpus = ((sys_read32(DFIDCCP) >> CAP_INST_SHIFT) & CAP_INST_MASK) + 1;
 	soc_num_cpus = MIN(CONFIG_MP_MAX_NUM_CPUS, soc_num_cpus);
 
-	return 0;
 }
-SYS_INIT(soc_num_cpus_init, EARLY, 1);
 
 void soc_mp_init(void)
 {
+#if defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW)
+	/* BADDR stores the Xtensa LX7 AltResetVec input */
+	for (int i = 0; i < soc_num_cpus; i++) {
+		DSPCS.bootctl[i].baddr = (uint32_t)z_soc_mp_asm_entry;
+	}
+#endif
+
 	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_isr, 0, 0);
 
 	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
@@ -122,6 +127,7 @@ void soc_mp_on_d3_exit(void)
 
 void soc_start_core(int cpu_num)
 {
+#if !defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW)
 	int retry = CORE_POWER_CHECK_NUM;
 
 	if (cpu_num > 0) {
@@ -155,6 +161,7 @@ void soc_start_core(int cpu_num)
 		/* Tell the ACE ROM that it should use secondary core flow */
 		DSPCS.bootctl[cpu_num].battr |= DSPBR_BATTR_LPSCTL_BATTR_SLAVE_CORE;
 	}
+#endif /* !defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW) */
 
 	/* Setting the Power Active bit to the off state before powering up the core. This step is
 	 * required by the HW if we are starting core for a second time. Without this sequence, the
@@ -170,6 +177,7 @@ void soc_start_core(int cpu_num)
 
 	DSPCS.capctl[cpu_num].ctl |= DSPCS_CTL_SPA;
 
+#if !defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW)
 	/* Waiting for power up */
 	while (((DSPCS.capctl[cpu_num].ctl & DSPCS_CTL_CPA) != DSPCS_CTL_CPA) &&
 	       (retry > 0)) {
@@ -180,6 +188,7 @@ void soc_start_core(int cpu_num)
 	if (retry == 0) {
 		__ASSERT(false, "%s secondary core has not powered up", __func__);
 	}
+#endif /* !defined(CONFIG_INTEL_ADSP_SIM_NO_SECONDARY_CORE_FLOW) */
 }
 
 void soc_mp_startup(uint32_t cpu)

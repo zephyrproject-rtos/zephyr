@@ -31,6 +31,7 @@ Peripherals
    fuel_gauge.rst
    gnss.rst
    gpio.rst
+   haptics.rst
    hwinfo.rst
    i2c_eeprom_target.rst
    i3c.rst
@@ -54,6 +55,7 @@ Peripherals
    sdhc.rst
    sensor/index.rst
    spi.rst
+   stepper.rst
    smbus.rst
    uart.rst
    usbc_vbus.rst

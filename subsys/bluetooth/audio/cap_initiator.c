@@ -21,11 +21,12 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <sys/errno.h>
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
@@ -719,11 +720,6 @@ static bool valid_unicast_audio_start_param(const struct bt_cap_unicast_audio_st
 
 		bap_stream = &cap_stream->bap_stream;
 
-		CHECKIF(bap_stream->ep != NULL) {
-			LOG_DBG("param->streams[%zu] is already started", i);
-			return false;
-		}
-
 		CHECKIF(bap_stream->group == NULL) {
 			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
 			return false;
@@ -865,6 +861,8 @@ static int cap_initiator_unicast_audio_configure(
 
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param)
 {
+	bool all_streaming = true;
+
 	if (bt_cap_common_proc_is_active()) {
 		LOG_DBG("A CAP procedure is already in progress");
 
@@ -873,6 +871,20 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
 
 	if (!valid_unicast_audio_start_param(param)) {
 		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_bap_stream *bap_stream =
+			&param->stream_params[i].stream->bap_stream;
+
+		if (!stream_is_in_state(bap_stream, BT_BAP_EP_STATE_STREAMING)) {
+			all_streaming = false;
+		}
+	}
+
+	if (all_streaming) {
+		LOG_DBG("All streams are already in the streaming state");
+		return -EALREADY;
 	}
 
 	return cap_initiator_unicast_audio_configure(param);
@@ -978,7 +990,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		if (free_conn != NULL) {
 			*free_conn = stream_conn;
 		} else {
-			__ASSERT_PRINT("No free conns");
+			__ASSERT(false, "[%zu]: No free conns", i);
+			return;
 		}
 	}
 

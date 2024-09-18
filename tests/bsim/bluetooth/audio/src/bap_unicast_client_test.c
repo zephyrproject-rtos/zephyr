@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
@@ -52,7 +52,7 @@ static struct bt_bap_ep *g_sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 static struct bt_bap_unicast_group_stream_pair_param pair_params[ARRAY_SIZE(test_streams)];
 static struct bt_bap_unicast_group_stream_param stream_params[ARRAY_SIZE(test_streams)];
 
-/* Mandatory support preset by both client and server */
+/*Mandatory support preset by both client and server */
 static struct bt_bap_lc3_preset preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
@@ -627,7 +627,8 @@ static void discover_sources(void)
 	WAIT_FOR_FLAG(flag_source_discovered);
 }
 
-static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep *ep)
+static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep *ep,
+				  struct bt_audio_codec_cfg *codec_cfg)
 {
 	int err;
 
@@ -636,7 +637,7 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 
 	do {
 
-		err = bt_bap_stream_config(default_conn, stream, ep, &preset_16_2_1.codec_cfg);
+		err = bt_bap_stream_config(default_conn, stream, ep, codec_cfg);
 		if (err == -EBUSY) {
 			k_sleep(BAP_STREAM_RETRY_WAIT);
 		} else if (err != 0) {
@@ -656,7 +657,8 @@ static void codec_configure_streams(size_t stream_cnt)
 	for (size_t i = 0U; i < ARRAY_SIZE(pair_params); i++) {
 		if (pair_params[i].rx_param != NULL && g_sources[i] != NULL) {
 			struct bt_bap_stream *stream = pair_params[i].rx_param->stream;
-			const int err = codec_configure_stream(stream, g_sources[i]);
+			const int err = codec_configure_stream(stream, g_sources[i],
+							       &preset_16_2_1.codec_cfg);
 
 			if (err != 0) {
 				FAIL("Unable to configure source stream[%zu]: %d", i, err);
@@ -666,7 +668,8 @@ static void codec_configure_streams(size_t stream_cnt)
 
 		if (pair_params[i].tx_param != NULL && g_sinks[i] != NULL) {
 			struct bt_bap_stream *stream = pair_params[i].tx_param->stream;
-			const int err = codec_configure_stream(stream, g_sinks[i]);
+			const int err = codec_configure_stream(stream, g_sinks[i],
+							       &preset_16_2_1.codec_cfg);
 
 			if (err != 0) {
 				FAIL("Unable to configure sink stream[%zu]: %d", i, err);
@@ -1191,6 +1194,92 @@ static void test_main_acl_disconnect(void)
 	PASS("Unicast client ACL disconnect passed\n");
 }
 
+static void test_main_async_group(void)
+{
+	struct bt_bap_stream rx_stream = {0};
+	struct bt_bap_stream tx_stream = {0};
+	struct bt_audio_codec_qos rx_qos = BT_AUDIO_CODEC_QOS_UNFRAMED(7500U, 30U, 2U, 75U, 40000U);
+	struct bt_audio_codec_qos tx_qos =
+		BT_AUDIO_CODEC_QOS_UNFRAMED(10000U, 40U, 2U, 100U, 40000U);
+	struct bt_bap_unicast_group_stream_param rx_param = {
+		.qos = &rx_qos,
+		.stream = &rx_stream,
+	};
+	struct bt_bap_unicast_group_stream_param tx_param = {
+		.qos = &tx_qos,
+		.stream = &tx_stream,
+	};
+	struct bt_bap_unicast_group_stream_pair_param pair_param = {
+		.rx_param = &rx_param,
+		.tx_param = &tx_param,
+	};
+	struct bt_bap_unicast_group_param param = {
+		.params = &pair_param,
+		.params_count = 1U,
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+	};
+	struct bt_bap_unicast_group *unicast_group;
+	int err;
+
+	init();
+
+	err = bt_bap_unicast_group_create(&param, &unicast_group);
+	if (err != 0) {
+		FAIL("Unable to create unicast group: %d", err);
+
+		return;
+	}
+
+	PASS("Unicast client async group parameters passed\n");
+}
+
+static void test_main_reconf_group(void)
+{
+	static struct bt_bap_lc3_preset preset_16_2_2 = BT_BAP_LC3_UNICAST_PRESET_16_2_2(
+		BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+	struct bt_bap_stream rx_stream = {0};
+	struct bt_bap_stream tx_stream = {0};
+	struct bt_bap_unicast_group_stream_param rx_param = {
+		.qos = &preset_16_2_1.qos,
+		.stream = &rx_stream,
+	};
+	struct bt_bap_unicast_group_stream_param tx_param = {
+		.qos = &preset_16_2_1.qos,
+		.stream = &tx_stream,
+	};
+	struct bt_bap_unicast_group_stream_pair_param pair_param = {
+		.rx_param = &rx_param,
+		.tx_param = &tx_param,
+	};
+	struct bt_bap_unicast_group_param param = {
+		.params = &pair_param,
+		.params_count = 1U,
+		.packing = BT_ISO_PACKING_SEQUENTIAL,
+	};
+	struct bt_bap_unicast_group *unicast_group;
+	int err;
+
+	init();
+
+	err = bt_bap_unicast_group_create(&param, &unicast_group);
+	if (err != 0) {
+		FAIL("Unable to create unicast group: %d", err);
+
+		return;
+	}
+
+	rx_param.qos = &preset_16_2_2.qos;
+	tx_param.qos = &preset_16_2_2.qos;
+	err = bt_bap_unicast_group_reconfig(unicast_group, &param);
+	if (err != 0) {
+		FAIL("Unable to reconfigure unicast group: %d", err);
+
+		return;
+	}
+
+	PASS("Unicast client async group parameters passed\n");
+}
+
 static const struct bst_test_instance test_unicast_client[] = {
 	{
 		.test_id = "unicast_client",
@@ -1203,6 +1292,22 @@ static const struct bst_test_instance test_unicast_client[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_acl_disconnect,
+	},
+	{
+		.test_id = "unicast_client_async_group",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_async_group,
+		.test_descr = "Tests that a unicast group (CIG) can be created with different "
+			      "values in each direction, such as 10000us SDU interval in C to P "
+			      "and 7500us for P to C",
+	},
+	{
+		.test_id = "unicast_client_reconf_group",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_reconf_group,
+		.test_descr = "Tests that a unicast group (CIG) can be reconfigred with new values",
 	},
 	BSTEST_END_MARKER,
 };

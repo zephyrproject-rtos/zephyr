@@ -105,7 +105,7 @@ static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	uint8_t dfll_div;
 

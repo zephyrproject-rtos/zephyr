@@ -344,9 +344,15 @@ ZTEST(demand_paging_stat, test_backing_store_capacity)
 	mem = k_mem_map(size, K_MEM_PERM_RW);
 	zassert_not_null(mem, "k_mem_map failed");
 
-	/* Show no memory is left */
-	ret = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
-	zassert_is_null(ret, "k_mem_map shouldn't have succeeded");
+	if (!IS_ENABLED(CONFIG_DEMAND_MAPPING)) {
+		/* Show no memory is left */
+		ret = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+		zassert_is_null(ret, "k_mem_map shouldn't have succeeded");
+	} else {
+		/* Show it doesn't matter */
+		ret = k_mem_map(CONFIG_MMU_PAGE_SIZE, K_MEM_PERM_RW);
+		zassert_not_null(ret, "k_mem_map should have succeeded");
+	}
 
 	key = irq_lock();
 	faults = k_mem_num_pagefaults_get();
@@ -448,6 +454,10 @@ ZTEST_USER(demand_paging_stat, test_user_get_hist)
 void *demand_paging_api_setup(void)
 {
 	arena = k_mem_map(arena_size, K_MEM_PERM_RW);
+	if (IS_ENABLED(CONFIG_DEMAND_MAPPING)) {
+		/* force pages in */
+		k_mem_page_in(arena, arena_size);
+	}
 	test_k_mem_page_out();
 
 	return NULL;

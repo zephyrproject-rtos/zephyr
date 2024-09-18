@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -70,15 +72,18 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 {
 	void *initial_entry;
 
-	struct z_x86_thread_stack_header *header =
+	if (z_stack_is_user_capable(thread->stack_obj)) {
+		struct z_x86_thread_stack_header *header =
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
-		(struct z_x86_thread_stack_header *)thread->stack_info.mapped.addr;
+			(struct z_x86_thread_stack_header *)thread->stack_info.mapped.addr;
 #else
-		(struct z_x86_thread_stack_header *)thread->stack_obj;
+			(struct z_x86_thread_stack_header *)thread->stack_obj;
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
-	thread->arch.psp =
-		header->privilege_stack + sizeof(header->privilege_stack);
+		thread->arch.psp = header->privilege_stack + sizeof(header->privilege_stack);
+	} else {
+		thread->arch.psp = NULL;
+	}
 
 #ifndef CONFIG_X86_COMMON_PAGE_TABLE
 	/* Important this gets cleared, so that arch_mem_domain_* APIs
@@ -90,6 +95,28 @@ void *z_x86_userspace_prepare_thread(struct k_thread *thread)
 
 	if ((thread->base.user_options & K_USER) != 0U) {
 		initial_entry = arch_user_mode_enter;
+
+#ifdef CONFIG_INIT_STACKS
+		/* setup_thread_stack() does not initialize the architecture specific
+		 * privileged stack. So we need to do it manually here as this function
+		 * is called by arch_new_thread() via z_setup_new_thread() after
+		 * setup_thread_stack() but before thread starts running.
+		 *
+		 * Note that only user threads have privileged stacks and kernel
+		 * only threads do not.
+		 *
+		 * Also note that this needs to be done before calling
+		 * z_x86_userspace_enter() where it clears the user stack.
+		 * That function requires using the privileged stack for
+		 * code execution so we cannot clear that at the same time.
+		 */
+		struct z_x86_thread_stack_header *hdr_stack_obj =
+			(struct z_x86_thread_stack_header *)thread->stack_obj;
+
+		(void)memset(&hdr_stack_obj->privilege_stack[0], 0xaa,
+			     sizeof(hdr_stack_obj->privilege_stack));
+#endif
+
 	} else {
 		initial_entry = z_thread_entry;
 	}
@@ -157,4 +184,20 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			      _current->stack_info.start);
 	CODE_UNREACHABLE;
+}
+
+int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,
+				     size_t *unused_ptr)
+{
+	struct z_x86_thread_stack_header *hdr_stack_obj;
+
+	if ((thread->base.user_options & K_USER) != K_USER) {
+		return -EINVAL;
+	}
+
+	hdr_stack_obj = (struct z_x86_thread_stack_header *)thread->stack_obj;
+
+	return z_stack_space_get(&hdr_stack_obj->privilege_stack[0],
+				 sizeof(hdr_stack_obj->privilege_stack),
+				 unused_ptr);
 }

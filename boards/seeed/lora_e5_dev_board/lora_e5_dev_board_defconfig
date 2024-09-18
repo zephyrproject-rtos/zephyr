@@ -7,9 +7,6 @@ CONFIG_SERIAL=y
 # Enable GPIO
 CONFIG_GPIO=y
 
-# Enable Clocks
-CONFIG_CLOCK_CONTROL=y
-
 # Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
@@ -22,6 +19,3 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable regulator for the power-rails
 CONFIG_REGULATOR=y
-
-# Enable pin controller
-CONFIG_PINCTRL=y

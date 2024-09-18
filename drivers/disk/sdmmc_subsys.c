@@ -93,12 +93,9 @@ static int disk_sdmmc_access_ioctl(struct disk_info *disk, uint8_t cmd, void *bu
 	case DISK_IOCTL_CTRL_INIT:
 		return disk_sdmmc_access_init(disk);
 	case DISK_IOCTL_CTRL_DEINIT:
-		sdmmc_ioctl(&data->card, DISK_IOCTL_CTRL_SYNC, NULL);
-		/* sd_init() will toggle power to SDMMC, so we can just mark
-		 * disk as uninitialized
-		 */
+		/* Card will be uninitialized after DEINIT */
 		data->status = SD_UNINIT;
-		return 0;
+		return sdmmc_ioctl(&data->card, DISK_IOCTL_CTRL_DEINIT, NULL);
 	default:
 		return sdmmc_ioctl(&data->card, cmd, buf);
 	}

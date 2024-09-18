@@ -194,5 +194,9 @@ void hal_ticker_instance0_sched(uint8_t caller_id, uint8_t callee_id, uint8_t ch
 
 void hal_ticker_instance0_trigger_set(uint32_t value)
 {
-	cntr_cmp_set(0, value);
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	cntr_cmp_set(HAL_CNTR_GRTC_CC_IDX_TICKER, value);
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+	cntr_cmp_set(0U, value);
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 }

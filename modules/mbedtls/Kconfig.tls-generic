@@ -4,43 +4,30 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menu "TLS configuration"
+menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
-menu "Supported TLS version"
-
-config MBEDTLS_TLS_VERSION_1_0
-	bool "Support for TLS 1.0"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
-
-config MBEDTLS_TLS_VERSION_1_1
-	bool "Support for TLS 1.1 (DTLS 1.0)"
-	select MBEDTLS_CIPHER
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_MD
+menu "TLS"
 
 config MBEDTLS_TLS_VERSION_1_2
 	bool "Support for TLS 1.2 (DTLS 1.2)"
 	select MBEDTLS_CIPHER
 	select MBEDTLS_MD
 
+if MBEDTLS_TLS_VERSION_1_2
+
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
-	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
 config MBEDTLS_SSL_EXPORT_KEYS
 	bool "Support for exporting SSL key block and master secret"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
-	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
-endmenu
+endif
+
+endmenu # TLS
 
 menu "Ciphersuite configuration"
 
@@ -384,10 +371,24 @@ config MBEDTLS_HAVE_ASM
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
-config MBEDTLS_ENTROPY_ENABLED
-	bool "MbedTLS generic entropy pool"
+config MBEDTLS_ENTROPY_C
+	bool "Mbed TLS entropy accumulator"
 	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
-	default y if MBEDTLS_ZEPHYR_ENTROPY
+	help
+	  This module gathers entropy data from enabled entropy sources. It's
+	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
+	  a deterministic random number generator.
+
+config MBEDTLS_ENTROPY_POLL_ZEPHYR
+	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
+	depends on MBEDTLS_ENTROPY_C
+	help
+	  Provide entropy data to the Mbed TLS's entropy module through either
+	  an entropy driver (if available in the system) or a generic random
+	  number generator.
+	  Warning: the latter choice is potentially non secure because it might
+	  end up using weaker/test-only sources (ex: random number generator
+	  built on system timer).
 
 config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	bool "MbedTLS optimizations for OpenThread"
@@ -460,27 +461,55 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
-choice MBEDTLS_PSA_CRYPTO_RND_SOURCE
+choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
 	bool "Use a cryptographically secure driver as random source"
-	depends on CSPRNG_ENABLED
 	help
-	  Use cryptographically secure random generator to provide random data
-	  instead of legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG).
+	  Use a cryptographically secure random generator to provide random data
+	  instead of legacy Mbed TLS modules. This has a smaller footprint
+	  than its legacy counterpart MBEDTLS_PSA_CRYPTO_LEGACY_RNG, but it
+	  requires a cryptographically secure random number generator (CSPRNG)
+	  to be available in the system. If no CSPRNG is available:
+	  - there is no fallback to weak entropy random generators.
+	  - the initialization of PSA crypto will fail and none of its API
+	    will be available.
 
 config MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 	bool "Use legacy modules to generate random data"
-	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_ENTROPY_C
 	select MBEDTLS_HMAC_DRBG_ENABLED if !MBEDTLS_CTR_DRBG_ENABLED
 	help
-	  Use legacy MbedTLS modules (ENTROPY + CTR_DRBG/HMAC_DRBG) as random
-	  source generators.
+	  Use legacy Mbed TLS modules to generate random data. In this
+	  configuration the entropy module is used to gather some data and then
+	  either ctr_drbg or hmac_drbg are applied on top of it to improve
+	  the randomness.
+	  Security level in this case really depends on the type of entropy
+	  sources which are enabled in the system: if weak entropy sources are
+	  used, then the generated data will only be pseudo random. Strong
+	  entropy sources are strongly recommended (if possible) to have real
+	  random data.
+	  Another difference betwen this implementation and the
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG counterpart is the memory footprint:
+	  this implementation brings in legacy modules which are not required
+	  in the "external" version, so the footprint is larger.
 
 endchoice
+
+config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
+	bool "Allow non cryptographically secure random sources (for test only!)"
+	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	help
+	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is by default limited to rely only
+	  on cryptographically secure random number generators. However, only
+	  for test purposes, it might be useful to enable external random
+	  number generation, but have it using weak random sources (non
+	  cryptographically secure).
+	  Warning: this is meant to be enabled only for tests, not in production
+	  as the generated values are not cryptographically secure!
 
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"

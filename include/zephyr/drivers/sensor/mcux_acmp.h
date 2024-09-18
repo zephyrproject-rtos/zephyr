@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
- * Copyright 2022 NXP
+ * Copyright 2022, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,12 @@ extern "C" {
 #define MCUX_ACMP_HAS_DISCRETE_MODE 1
 #else
 #define MCUX_ACMP_HAS_DISCRETE_MODE 0
+#endif
+
+#if defined(FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT) && (FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT == 1U)
+#define MCUX_ACMP_HAS_HYSTCTR 1
+#else
+#define MCUX_ACMP_HAS_HYSTCTR 0
 #endif
 
 enum sensor_channel_mcux_acmp {

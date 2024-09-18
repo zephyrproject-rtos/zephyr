@@ -1,6 +1,6 @@
 tests:
   dummy.device.group:
-    platform_allow: frdm_k64f
+    platform_allow: intel_adl_crb
     integration_platforms:
-      - frdm_k64f
+      - intel_adl_crb
     tags: device

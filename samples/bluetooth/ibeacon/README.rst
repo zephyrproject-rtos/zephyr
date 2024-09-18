@@ -1,12 +1,13 @@
-.. _bluetooth-ibeacon-sample:
+.. zephyr:code-sample:: bluetooth_ibeacon
+   :name: iBeacon
+   :relevant-api: bluetooth
 
-Bluetooth: iBeacon
-##################
+   Advertise an Apple iBeacon using GAP Broadcaster role.
 
 Overview
 ********
 
-This simple application demonstrates the BLE Broadcaster role
+This simple application demonstrates the GAP Broadcaster role
 functionality by advertising an Apple iBeacon. The calibrated RSSI @ 1
 meter distance can be set using an IBEACON_RSSI build variable
 (e.g. IBEACON_RSSI=0xb8 for -72 dBm RSSI @ 1 meter), or by manually

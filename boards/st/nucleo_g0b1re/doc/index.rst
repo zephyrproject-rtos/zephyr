@@ -147,6 +147,8 @@ For more details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+Nucleo G0B1RE board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_g0b1re`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -154,20 +156,27 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G0B1RE board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-This interface is not yet supported by the openocd version included in the Zephyr SDK.
-But JLink, STM32CubeProgrammer and Pyocd interfaces are supported.
+Alternatively, OpenOCD, JLink, or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
+
 Pyocd support is currently limited: As the stm32g0b1 target causes issues,
-the stm32g071 target is used. For STM32G0 support pyocd needs additional target
+the stm32g071 target is used. For STM32G0 support pyOCD needs additional target
 information, which can be installed by adding "pack" support with the
-following pyocd command:
+following pyOCD commands:
 
 .. code-block:: console
 
    $ pyocd pack --update
    $ pyocd pack --install stm32g0
-
 
 Flashing an application to Nucleo G0B1RE
 ----------------------------------------
@@ -209,3 +218,6 @@ References
 
 .. _G0B1RE on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g0b1re.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

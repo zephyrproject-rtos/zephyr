@@ -25,7 +25,7 @@ jobs:
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -129,7 +129,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.13.20240601
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.26.14.20240823
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -310,7 +310,7 @@ jobs:
     if: success() || failure()
 
     steps:
-      # Needed for opensearch and upload script
+      # Needed for elasticearch and upload script
       - if: github.event_name == 'push' || github.event_name == 'schedule'
         name: Checkout
         uses: actions/checkout@v4
@@ -324,7 +324,7 @@ jobs:
           path: artifacts
 
       - if: github.event_name == 'push' || github.event_name == 'schedule'
-        name: Upload to opensearch
+        name: Upload to elasticsearch
         run: |
           pip3 install elasticsearch
           # set run date on upload to get consistent and unified data across the matrix.

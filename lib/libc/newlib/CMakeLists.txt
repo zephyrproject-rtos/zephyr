@@ -13,18 +13,11 @@ set_source_files_properties(libc-hooks.c PROPERTIES COMPILE_OPTIONS $<TARGET_PRO
 # explicitly include the newlib header that provides those macros.
 zephyr_include_directories(include)
 
-# LIBC_*_DIR may or may not have been set by the toolchain. E.g. when
+# LIBC_LIBRARY_DIR may or may not have been set by the toolchain. E.g. when
 # using ZEPHYR_TOOLCHAIN_VARIANT=cross-compile it will be either up to the
 # toolchain to know where it's libc implementation is, or if it is
-# unable to, it will be up to the user to specify LIBC_*_DIR vars to
-# point to a newlib implementation.  Note that this does not change the
-# directory order if LIBC_INCLUDE_DIR is already a system header
-# directory.
-
-if(LIBC_INCLUDE_DIR)
-  zephyr_include_directories(${LIBC_INCLUDE_DIR})
-endif()
-
+# unable to, it will be up to the user to specify LIBC_LIBRARY_DIR vars to
+# point to a newlib implementation.
 if(LIBC_LIBRARY_DIR)
   set(LIBC_LIBRARY_DIR_FLAG -L${LIBC_LIBRARY_DIR})
 endif()

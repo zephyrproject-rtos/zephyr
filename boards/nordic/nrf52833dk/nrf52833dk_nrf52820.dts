@@ -93,6 +93,10 @@
 	};
 };
 
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
 &sw_pwm {
 	status ="okay";
 	channel-gpios = <&gpio0 13 PWM_POLARITY_INVERTED>;

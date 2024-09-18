@@ -41,6 +41,7 @@
 /soc/riscv/riscv-privileged/gd32vf103/     @soburi
 /soc/starfive/jh71xx/ 			  @pfarwsi
 /soc/riscv/riscv-privileged/niosv/         @sweeaun
+/boards/adafruit/feather_nrf52840/        @jacobw
 /boards/ene/                              @ene-steven
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
@@ -187,6 +188,7 @@
 /drivers/dai/intel/ssp/                   @kv2019i @marcinszkudlinski @abonislawski
 /drivers/dai/intel/dmic/                  @marcinszkudlinski @abonislawski
 /drivers/dai/intel/alh/                   @abonislawski
+/drivers/dma/dma_dw_axi.c                 @pbalsundar
 /drivers/dma/*dw*                         @tbursztyka
 /drivers/dma/*dw_common*                  @abonislawski
 /drivers/dma/*sam0*                       @Sizurka
@@ -208,6 +210,8 @@
 /drivers/ethernet/*adin2111*              @GeorgeCGV
 /drivers/ethernet/*oa_tc6*                @lmajewski
 /drivers/ethernet/*lan865x*               @lmajewski
+/drivers/ethernet/dwc_xgmac               @Smale-12048867
+/drivers/ethernet/dwc_xgmac/dwc_xgmac     @Smale-12048867
 /drivers/ethernet/phy/                    @rlubos @tbursztyka @arvinf @jukkar
 /drivers/ethernet/phy/*adin2111*          @GeorgeCGV
 /drivers/mdio/*adin2111*                  @GeorgeCGV
@@ -326,7 +330,6 @@
 /drivers/serial/uart_altera.c             @gohshunjing
 /drivers/serial/*ns16550*                 @dcpleung @nashif @gdengi
 /drivers/serial/*nrfx*                    @anangl
-/drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78
@@ -367,7 +370,6 @@
 /drivers/timer/*rcar_cmt*                 @aaillet
 /drivers/timer/*esp32_sys*                @uLipe
 /drivers/timer/*sam0_rtc*                 @bendiscz
-/drivers/timer/*arcv2*                    @ruuddw
 /drivers/timer/*xtensa*                   @dcpleung
 /drivers/timer/*rv32m1_lptmr*             @mbolivar
 /drivers/timer/*nrf_rtc*                  @anangl
@@ -395,7 +397,6 @@
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
-/dts/arc/                                 @abrodkin @ruuddw @iriszzw @evgeniy-paltsev
 /dts/arm/acsip/                           @NorthernDean
 /dts/arm/aspeed/                          @aspeeddylan
 /dts/arm/atmel/                           @galak @nandojve

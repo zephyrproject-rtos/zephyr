@@ -6,7 +6,7 @@ config SOC_SERIES_RW6XX
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
 	select CLOCK_CONTROL
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
@@ -15,14 +15,10 @@ config SOC_SERIES_RW6XX
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
 	select HAS_MCUX_FLEXCOMM
-	select INIT_SYS_PLL
 	select HAS_MCUX_CACHE
 	select HAS_PM
 
 if SOC_SERIES_RW6XX
-
-config INIT_SYS_PLL
-	bool "Initialize SYS PLL"
 
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
@@ -33,14 +29,7 @@ menuconfig NXP_RW6XX_BOOT_HEADER
 
 if NXP_RW6XX_BOOT_HEADER
 
-choice BOOT_DEVICE
-	prompt "Boot device selection"
-	default BOOT_FLEXSPI_NOR
-
-config BOOT_FLEXSPI_NOR
-	bool "FlexSPI serial NOR"
-
-endchoice
+rsource "../common/Kconfig.rom_loader"
 
 config FLASH_CONFIG_OFFSET
 	hex "Flash config data offset"
@@ -60,34 +49,6 @@ config IMAGE_VECTOR_TABLE_OFFSET
 
 endif # NXP_RW6XX_BOOT_HEADER
 
-# Used for default value in FLASH_MCUX_FLEXSPI_XIP
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_FLEXSPI := nxp,imx-flexspi
-# Macros to shorten Kconfig definitions
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
-
-config FLASH_MCUX_FLEXSPI_XIP
-	bool "MCUX FlexSPI flash access with xip"
-	default $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_FLEXSPI))
-	select XIP
-	help
-	  Allows for the soc to safely initialize the clocks for the
-	  FlexSpi when planning to execute code in FlexSpi Memory.
-
-config NXP_RW_ROM_RAMLOADER
-	depends on !FLASH_MCUX_FLEXSPI_XIP
-	# Required so that debugger will load image to correct offset
-	select BUILD_OUTPUT_HEX
-	bool "Create output image that RW ROM can load from FlexSPI to ram"
-	help
-	  Builds an output image that the RW BootROM can load from the
-	  FlexSPI boot device into RAM region. The image will be loaded
-	  from FLEXSPI into the region specified by `zephyr,flash` node.
-
-config FLASH_MCUX_FLEXSPI_XIP_MEM
-	string
-	default "RAM"
-	depends on MEMC_MCUX_FLEXSPI
+rsource "../common/Kconfig.flexspi_xip"
 
 endif # SOC_SERIES_RW6XX

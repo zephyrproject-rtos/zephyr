@@ -16,9 +16,10 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -105,28 +106,6 @@ static struct sync_state *sync_state_get_by_src_id(uint8_t src_id)
 	}
 
 	return NULL;
-}
-
-static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
-{
-	uint16_t pa_timeout;
-
-	if (pa_interval == BT_BAP_PA_INTERVAL_UNKNOWN) {
-		/* Use maximum value to maximize chance of success */
-		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
-	} else {
-		uint32_t interval_ms;
-		uint32_t timeout;
-
-		/* Add retries and convert to unit in 10's of ms */
-		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
-		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-		/* Enforce restraints */
-		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-	}
-
-	return pa_timeout;
 }
 
 static void pa_timer_handler(struct k_work *work)
@@ -487,11 +466,19 @@ static struct bt_le_scan_cb scan_cb = {
 static int add_source(struct sync_state *state)
 {
 	struct bt_bap_scan_delegator_add_src_param param;
+	struct bt_le_per_adv_sync_info sync_info;
 	int res;
 
 	UNSET_FLAG(flag_recv_state_updated);
 
-	param.pa_sync = state->pa_sync;
+	res = bt_le_per_adv_sync_get_info(state->pa_sync, &sync_info);
+	if (res != 0) {
+		FAIL("Failed to get PA sync info: %d)\n", res);
+		return true;
+	}
+
+	bt_addr_le_copy(&param.addr, &sync_info.addr);
+	param.sid = sync_info.sid;
 	param.encrypt_state = BT_BAP_BIG_ENC_STATE_NO_ENC;
 	param.broadcast_id = g_broadcast_id;
 	param.num_subgroups = 1U;
@@ -645,12 +632,17 @@ static void remove_all_sources(void)
 static int sync_broadcast(struct sync_state *state)
 {
 	int err;
+	uint32_t bis_sync[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 
 	UNSET_FLAG(flag_recv_state_updated);
 
+	for (size_t i = 0U; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
+		bis_sync[i] = BT_ISO_BIS_INDEX_BIT(i + 1);
+	}
+
 	/* We don't actually need to sync to the BIG/BISes */
-	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id,
-						       (uint32_t []){ BIT(1) });
+	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, bis_sync);
+
 	if (err) {
 		return err;
 	}

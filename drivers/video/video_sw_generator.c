@@ -3,13 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT zephyr_sw_generator
+
 #include <zephyr/kernel.h>
-
 #include <zephyr/drivers/video.h>
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_sw_generator);
+
+LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_PATTERN_COLOR_BAR 0
 #define VIDEO_PATTERN_FPS       30
@@ -52,7 +53,7 @@ static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpo
 	struct video_sw_generator_data *data = dev->data;
 	int i = 0;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -79,7 +80,7 @@ static int video_sw_generator_get_fmt(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -171,7 +172,7 @@ static int video_sw_generator_enqueue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 
@@ -185,7 +186,7 @@ static int video_sw_generator_dequeue(const struct device *dev, enum video_endpo
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	if (ep != VIDEO_EP_OUT) {
+	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
 

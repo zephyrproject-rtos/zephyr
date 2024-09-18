@@ -145,6 +145,11 @@ void npcx_dbg_freeze_enable(bool enable)
 /* Pin-control driver registration */
 static int npcx_scfg_init(void)
 {
+	/* If booter doesn't set the host interface type */
+	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
+		npcx_host_interface_sel(NPCX_HIF_TYPE_ESPI_SHI);
+	}
+
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
 		npcx_pinctrl_alt_sel(&def_alts[i], 0);

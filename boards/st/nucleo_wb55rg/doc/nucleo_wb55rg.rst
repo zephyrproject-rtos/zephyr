@@ -241,18 +241,27 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_wb55rg`` board configuration can be built the
 usual way (see :ref:`build_an_application`).
 
 Flashing
 ========
 
-Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is supported by the openocd version included in the
-Zephyr SDK since v0.11.0.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
-If you prefer, you can use pyocd, but it requires to enable "pack" support with
-the following pyocd command:
+Alternatively, OpenOCD or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner pyocd
+
+If you prefer, you can use pyOCD, but it requires to enable "pack" support with
+the following pyOCD command:
 
 .. code-block:: console
 
@@ -309,3 +318,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32WB5RG reference manual:
    https://www.st.com/resource/en/reference_manual/dm00318631.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

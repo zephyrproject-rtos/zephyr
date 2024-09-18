@@ -9,8 +9,6 @@
 #ifndef __ZEPHYR_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
 #define __ZEPHYR_ACE_LIB_ASM_MEMORY_MANAGEMENT_H__
 
-#ifdef _ASMLANGUAGE
-
 /* These definitions should be placed elsewhere, but I can't find a good place for them. */
 #define LSPGCTL				0x71D80
 #define LSPGCTL_HIGH			((LSPGCTL >> 4) & 0xff00)
@@ -18,6 +16,8 @@
 #define MAX_MEMORY_SEGMENTS		1
 #define EBB_SEGMENT_SIZE		32
 #define PLATFORM_HPSRAM_EBB_COUNT	22
+
+#ifdef _ASMLANGUAGE
 
 .macro m_ace_hpsram_power_change segment_index, mask, ax, ay, az, au, aw
 	.if \segment_index == 0

@@ -143,8 +143,8 @@ static sys_slist_t latency_subs;
 static struct k_spinlock events_lock;
 /** List of events. */
 static sys_slist_t events_list;
-/** Next event, in absolute cycles (<0: none, [0, UINT32_MAX]: cycles) */
-static int64_t next_event_cyc = -1;
+/** Pointer to Next Event. */
+static struct pm_policy_event *next_event;
 
 /** @brief Update maximum allowed latency. */
 static void update_max_latency(void)
@@ -182,6 +182,9 @@ static void update_next_event(uint32_t cyc)
 	int64_t new_next_event_cyc = -1;
 	struct pm_policy_event *evt;
 
+	/* unset the next event pointer */
+	next_event = NULL;
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&events_list, evt, node) {
 		uint64_t cyc_evt = evt->value_cyc;
 
@@ -199,18 +202,26 @@ static void update_next_event(uint32_t cyc)
 			cyc_evt += (uint64_t)UINT32_MAX + 1U;
 		}
 
-		if ((new_next_event_cyc < 0) ||
-		    (cyc_evt < new_next_event_cyc)) {
+		if ((new_next_event_cyc < 0) || (cyc_evt < new_next_event_cyc)) {
 			new_next_event_cyc = cyc_evt;
+			next_event = evt;
 		}
 	}
+}
 
-	/* undo padding for events in the [0, cyc) range */
-	if (new_next_event_cyc > UINT32_MAX) {
-		new_next_event_cyc -= (uint64_t)UINT32_MAX + 1U;
+int32_t pm_policy_next_event_ticks(void)
+{
+	int32_t cyc_evt = -1;
+
+	if ((next_event) && (next_event->value_cyc > 0)) {
+		cyc_evt = next_event->value_cyc - k_cycle_get_32();
+		cyc_evt = MAX(0, cyc_evt);
+		BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+			     "HW Cycles per sec should be greater that ticks per sec");
+		return k_cyc_to_ticks_floor32(cyc_evt);
 	}
 
-	next_event_cyc = new_next_event_cyc;
+	return -1;
 }
 
 #ifdef CONFIG_PM_POLICY_DEFAULT
@@ -232,12 +243,12 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 
 	num_cpu_states = pm_state_cpu_get_all(cpu, &cpu_states);
 
-	if (next_event_cyc >= 0) {
+	if ((next_event) && (next_event->value_cyc >= 0)) {
 		uint32_t cyc_curr = k_cycle_get_32();
-		int64_t cyc_evt = next_event_cyc - cyc_curr;
+		int64_t cyc_evt = next_event->value_cyc - cyc_curr;
 
 		/* event happening after cycle counter max value, pad */
-		if (next_event_cyc <= cyc_curr) {
+		if (next_event->value_cyc <= cyc_curr) {
 			cyc_evt += UINT32_MAX;
 		}
 
@@ -392,13 +403,12 @@ void pm_policy_event_register(struct pm_policy_event *evt, uint32_t time_us)
 	k_spin_unlock(&events_lock, key);
 }
 
-void pm_policy_event_update(struct pm_policy_event *evt, uint32_t time_us)
+void pm_policy_event_update(struct pm_policy_event *evt, uint32_t cycle)
 {
 	k_spinlock_key_t key = k_spin_lock(&events_lock);
-	uint32_t cyc = k_cycle_get_32();
 
-	evt->value_cyc = cyc + k_us_to_cyc_ceil32(time_us);
-	update_next_event(cyc);
+	evt->value_cyc = cycle;
+	update_next_event(k_cycle_get_32());
 
 	k_spin_unlock(&events_lock, key);
 }

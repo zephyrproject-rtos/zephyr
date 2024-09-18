@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(cat1_spi);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/kernel.h>
 
 #include <cyhal_scb_common.h>
@@ -291,6 +292,9 @@ static const struct spi_driver_api ifx_cat1_spi_api = {
 #if defined(CONFIG_SPI_ASYNC)
 	.transceive_async = ifx_cat1_spi_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = ifx_cat1_spi_release,
 };
 
@@ -340,7 +344,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		},                                                                                 \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                     \
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_spi_init, NULL, &spi_cat1_data_##n,                      \
 			      &spi_cat1_config_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_cat1_spi_api);
 

@@ -31,13 +31,30 @@
 	status = "okay";
 };
 
-&can0 {
-	pinctrl-0 = <&can0_default>;
+&canxl0 {
+	pinctrl-0 = <&canxl0_default>;
 	pinctrl-names = "default";
-	status = "okay";
 };
 
-&can1 {
-	pinctrl-0 = <&can1_default>;
+&canxl1 {
+	pinctrl-0 = <&canxl1_default>;
 	pinctrl-names = "default";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&flexcan0_default>;
+	pinctrl-names = "default";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+};
+
+&sar_adc0 {
+	vref-mv = <1800>;
+};
+
+&sar_adc1 {
+	vref-mv = <1800>;
 };

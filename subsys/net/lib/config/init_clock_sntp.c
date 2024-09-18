@@ -8,6 +8,7 @@
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <errno.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/sntp.h>
 #include <zephyr/posix/time.h>
 

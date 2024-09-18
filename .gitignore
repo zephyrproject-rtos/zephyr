@@ -76,6 +76,7 @@ tags
 BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
+ClangFormat.txt
 DevicetreeBindings.txt
 GitDiffCheck.txt
 Gitlint.txt

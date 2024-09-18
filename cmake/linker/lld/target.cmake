@@ -30,7 +30,6 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   endif()
 
   zephyr_get_include_directories_for_lang(C current_includes)
-  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
   add_custom_command(
     OUTPUT ${linker_script_gen}
@@ -45,9 +44,9 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
     -D_LINKER
     -D_ASMLANGUAGE
+    -D__LLD_LINKER_CMD__
     -imacros ${AUTOCONF_H}
     ${current_includes}
-    ${current_defines}
     ${template_script_defines}
     -E ${LINKER_SCRIPT}
     -P # Prevent generation of debug `#line' directives.
@@ -108,8 +107,5 @@ endfunction(toolchain_ld_link_elf)
 
 
 # Load toolchain_ld-family macros
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

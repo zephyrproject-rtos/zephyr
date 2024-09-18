@@ -187,6 +187,38 @@ following code to the application's ``CMakeLists.txt`` file:
 
 where ``src/index.html`` is the location of the webpage to be compressed.
 
+Static filesystem resources
+===========================
+
+Static filesystem resource content is defined build-time and is immutable. The following
+example shows how the path can be defined as a static resource in the application:
+
+.. code-block:: c
+
+    struct http_resource_detail_static_fs static_fs_resource_detail = {
+        .common = {
+            .type                              = HTTP_RESOURCE_TYPE_STATIC_FS,
+            .bitmask_of_supported_http_methods = BIT(HTTP_GET),
+        },
+        .fs_path = "/lfs1/www",
+    };
+
+    HTTP_RESOURCE_DEFINE(static_fs_resource, my_service, "*", &static_fs_resource_detail);
+
+All files located in /lfs1/www are made available to the client. If a file is
+gzipped, .gz must be appended to the file name (e.g. index.html.gz), then the
+server delivers index.html.gz when the client requests index.html and adds gzip
+content-encoding to the HTTP header.
+
+The content type is evaluated based on the file extension. The server supports
+.html, .js, .css, .jpg, .png and .svg. More content types can be provided with the
+:c:macro:`HTTP_SERVER_CONTENT_TYPE` macro. All other files are provided with the
+content type text/html.
+
+.. code-block:: c
+
+    HTTP_SERVER_CONTENT_TYPE(json, "application/json")
+
 Dynamic resources
 =================
 
@@ -313,6 +345,38 @@ a simple callback, used only to store the socket descriptor provided. Further
 processing of the Websocket connection is application-specific, hence outside
 of scope of this guide. See :zephyr:code-sample:`sockets-http-server` for an
 example Websocket-based echo service implementation.
+
+Accessing request headers
+=========================
+
+The application can register an interest in any specific HTTP request headers.
+These headers are then stored for each incoming request, and can be accessed
+from within a dynamic resource callback.
+
+This feature must first be enabled with
+:kconfig:option:`CONFIG_HTTP_SERVER_CAPTURE_HEADERS` Kconfig option.
+
+Then the application can register headers to be captured, and read the values
+from within the dynamic resource callback:
+
+.. code-block:: c
+
+    HTTP_SERVER_REGISTER_HEADER_CAPTURE(capture_user_agent, "User-Agent");
+
+    static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
+                           uint8_t *buffer, size_t len, void *user_data)
+    {
+        size_t header_count = client->header_capture_ctx.count;
+        const struct http_header *headers = client->header_capture_ctx.headers;
+
+        LOG_INF("Captured %d headers with request", header_count);
+
+        for (uint32_t i = 0; i < header_count; i++) {
+            LOG_INF("Header: '%s: %s'", headers[i].name, headers[i].value);
+        }
+
+        return 0;
+    }
 
 API Reference
 *************

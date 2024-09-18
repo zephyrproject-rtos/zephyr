@@ -1,7 +1,8 @@
-.. _sm351lt:
+.. zephyr:code-sample:: sm351lt
+   :name: SM351LT Magnetoresistive Sensor
+   :relevant-api: sensor_interface
 
-SM351LT: Magnetoresistive Sensor Example
-########################################
+   Detect a magnet's presence using the SM351LT magnetoresistive sensor (polling & trigger mode).
 
 Overview
 ********

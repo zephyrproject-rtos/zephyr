@@ -30,7 +30,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
 #ifdef __cplusplus

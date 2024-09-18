@@ -155,6 +155,8 @@ enable console output you should use a serial cable and connect it to UART2 pins
 Programming and Debugging
 *************************
 
+STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32f4_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -162,8 +164,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32F4DISCOVERY Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
-This interface is supported by the openocd version included in Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
@@ -211,3 +221,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _SK Pang CAN breakout board:
    https://www.skpang.co.uk/products/can-bus-can-fd-breakout-board-5v-supply-and-3-3v-logic
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

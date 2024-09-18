@@ -242,10 +242,10 @@ Enable this option group with :kconfig:option:`CONFIG_POSIX_FILE_SYSTEM`.
     opendir(), yes
     pathconf(),
     readdir(), yes
-    remove(),
+    remove(), yes
     rename(), yes
     rewinddir(),
-    rmdir(),
+    rmdir(), yes
     stat(), yes
     statvfs(),
     tmpfile(),
@@ -450,31 +450,36 @@ POSIX_SIGNAL_JUMP
 POSIX_SIGNALS
 +++++++++++++
 
-Signal services are a basic mechanism within POSIX-based systems and are
-required for error and event handling.
-
 Enable this option group with :kconfig:option:`CONFIG_POSIX_SIGNALS`.
+
+.. note::
+   As processes are not yet supported in Zephyr, the ISO C functions ``abort()``, ``signal()``,
+   and ``raise()``, as well as the other POSIX functions listed below, may exhibit undefined
+   behaviour. The POSIX functions ``kill()``, ``pause()``, ``sigaction()``, ``sigpending()``,
+   ``sigsuspend()``, and ``sigwait()`` are implemented to ensure that conformant applications can
+   link, but they are expected to fail, setting errno to ``ENOSYS``
+   :ref:`†<posix_undefined_behaviour>`.
 
 .. csv-table:: POSIX_SIGNALS
    :header: API, Supported
    :widths: 50,10
 
-    abort(),yes
-    alarm(),
-    kill(),
-    pause(),
-    raise(),
-    sigaction(),
+    abort(),yes :ref:`†<posix_undefined_behaviour>`
+    alarm(),yes :ref:`†<posix_undefined_behaviour>`
+    kill(),yes :ref:`†<posix_undefined_behaviour>`
+    pause(),yes :ref:`†<posix_undefined_behaviour>`
+    raise(),yes :ref:`†<posix_undefined_behaviour>`
+    sigaction(),yes :ref:`†<posix_undefined_behaviour>`
     sigaddset(),yes
     sigdelset(),yes
     sigemptyset(),yes
     sigfillset(),yes
     sigismember(),yes
-    signal(),
-    sigpending(),
+    signal(),yes :ref:`†<posix_undefined_behaviour>`
+    sigpending(),yes :ref:`†<posix_undefined_behaviour>`
     sigprocmask(),yes
-    sigsuspend(),
-    sigwait(),
+    sigsuspend(),yes :ref:`†<posix_undefined_behaviour>`
+    sigwait(),yes :ref:`†<posix_undefined_behaviour>`
     strsignal(),yes
 
 .. _posix_option_group_single_process:
@@ -871,9 +876,9 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_SYNCHRONIZED_IO`.
    :header: API, Supported
    :widths: 50,10
 
-    fdatasync(),
+    fdatasync(),yes
     fsync(),yes
-    msync(),
+    msync(),yes
 
 .. _posix_option_thread_attr_stackaddr:
 
@@ -942,11 +947,11 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_PRIO_PROTECT`.
    :header: API, Supported
    :widths: 50,10
 
-    pthread_mutex_getprioceiling(),
-    pthread_mutex_setprioceiling(),
-    pthread_mutexattr_getprioceiling(),
+    pthread_mutex_getprioceiling(),yes
+    pthread_mutex_setprioceiling(),yes
+    pthread_mutexattr_getprioceiling(),yes
     pthread_mutexattr_getprotocol(),yes
-    pthread_mutexattr_setprioceiling(),
+    pthread_mutexattr_setprioceiling(),yes
     pthread_mutexattr_setprotocol(),yes
 
 .. _posix_option_thread_priority_scheduling:
@@ -981,23 +986,23 @@ Enable this option with :kconfig:option:`CONFIG_POSIX_THREAD_SAFE_FUNCTIONS`.
     :header: API, Supported
     :widths: 50,10
 
-    asctime_r(),
-    ctime_r(),
+    asctime_r(), yes
+    ctime_r(), yes (UTC timezone only)
     flockfile(),
     ftrylockfile(),
     funlockfile(),
     getc_unlocked(),
     getchar_unlocked(),
-    getgrgid_r(),
-    getgrnam_r(),
-    getpwnam_r(),
-    getpwuid_r(),
+    getgrgid_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getgrnam_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getpwnam_r(),yes :ref:`†<posix_undefined_behaviour>`
+    getpwuid_r(),yes :ref:`†<posix_undefined_behaviour>`
     gmtime_r(), yes
-    localtime_r(),
+    localtime_r(), yes (UTC timezone only)
     putc_unlocked(),
     putchar_unlocked(),
     rand_r(), yes
-    readdir_r(),
+    readdir_r(), yes
     strerror_r(), yes
     strtok_r(), yes
 

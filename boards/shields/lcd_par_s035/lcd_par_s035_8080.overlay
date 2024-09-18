@@ -10,6 +10,23 @@
 	chosen {
 		zephyr,display = &st7796s;
 	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&gt911_lcd_par_s035>;
+		swap-xy;
+		invert-y;
+	};
+};
+
+&nxp_8080_touch_panel_i2c {
+	status = "okay";
+	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&nxp_lcd_8080_connector 9 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &nxp_flexio_lcd {

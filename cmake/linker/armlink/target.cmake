@@ -6,17 +6,11 @@ find_program(CMAKE_LINKER ${CROSS_COMPILE}armlink PATHS ${TOOLCHAIN_HOME} NO_DEF
 
 add_custom_target(armlink)
 
-macro(toolchain_ld_base)
-endmacro()
-
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
     zephyr_link_libraries(--undefined=${symbol})
   endforeach()
 endfunction()
-
-macro(toolchain_ld_baremetal)
-endmacro()
 
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(STEERING_FILE)
@@ -114,6 +108,5 @@ function(toolchain_ld_link_elf)
   )
 endfunction(toolchain_ld_link_elf)
 
-include(${ZEPHYR_BASE}/cmake/linker/ld/target_cpp.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_relocation.cmake)
 include(${ZEPHYR_BASE}/cmake/linker/ld/target_configure.cmake)

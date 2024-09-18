@@ -35,6 +35,7 @@
 		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm0;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
@@ -464,6 +465,15 @@ zephyr_udc0: &usbhs {
 	pinctrl-names = "default";
 
 	status = "okay";
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a 0 0>;
+		clock-source = "MCLK";
+
+		clocks = <&clkctl0 MCUX_AUDIO_MCLK>;
+		clock-names = "mclk";
+	};
 };
 
 &mbox {

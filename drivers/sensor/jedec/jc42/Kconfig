@@ -1,0 +1,49 @@
+# JEDEC JC 42.4 compliant temperature sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig JC42
+	bool "JC42 temperature sensor"
+	default y
+	depends on DT_HAS_JEDEC_JC_42_4_TEMP_ENABLED
+	select I2C
+	help
+	  Enable driver for JC42 temperature sensor.
+
+if JC42
+
+choice
+	prompt "JC42 trigger mode"
+	default JC42_TRIGGER_NONE
+
+config JC42_TRIGGER_NONE
+	bool "No trigger"
+
+config JC42_TRIGGER_GLOBAL_THREAD
+	depends on GPIO
+	select JC42_TRIGGER
+	bool "Use global thread"
+
+config JC42_TRIGGER_OWN_THREAD
+	depends on GPIO
+	select JC42_TRIGGER
+	bool "Use own thread"
+
+endchoice
+
+config JC42_TRIGGER
+	bool
+
+config JC42_THREAD_STACK_SIZE
+	int "Sensor delayed work thread stack size"
+	depends on JC42_TRIGGER_OWN_THREAD
+	default 1024
+
+config JC42_THREAD_PRIORITY
+	int "JC42 thread priority"
+	depends on JC42_TRIGGER_OWN_THREAD
+	default 10
+
+endif # JC42

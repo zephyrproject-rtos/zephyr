@@ -48,7 +48,7 @@ static const struct bt_audio_codec_qos_pref unicast_qos_pref =
 #define UNICAST_CHANNEL_COUNT_1 BIT(0)
 
 static struct bt_cap_stream
-	unicast_streams[CONFIG_BT_ASCS_ASE_SNK_COUNT + CONFIG_BT_ASCS_ASE_SRC_COUNT];
+	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 CREATE_FLAG(flag_unicast_stream_started);
 CREATE_FLAG(flag_gmap_discovered);
@@ -218,6 +218,11 @@ static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_as
 
 	return 0;
 }
+
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
 
 static struct bt_bap_unicast_server_cb unicast_server_cbs = {
 	.config = unicast_server_config,
@@ -400,6 +405,13 @@ static void test_main(void)
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &unicast_cap);
 	if (err != 0) {
 		FAIL("Capability register failed (err %d)\n", err);
+
+		return;
+	}
+
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		FAIL("Failed to register unicast server (err %d)\n", err);
 
 		return;
 	}

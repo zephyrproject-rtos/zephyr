@@ -71,7 +71,7 @@ const struct arm_mmu_config mmu_config = {
 
 /* Platform-specific early initialization */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/*
 	 * When coming out of u-boot rather than downloading the Zephyr binary

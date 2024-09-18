@@ -24,6 +24,7 @@
 		led2 = &led2;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc0;
 	};
 
 	leds {
@@ -62,8 +63,20 @@
 	status = "okay";
 };
 
+&adc0 {
+compatible = "ambiq,adc";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &counter0 {
 	status = "okay";
+};
+
+&rtc0 {
+	status = "okay";
+	clock = "XTAL";
 };
 
 &wdt0 {
@@ -82,6 +95,7 @@
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 	clock-frequency = <1000000>;
 	status = "okay";
 };

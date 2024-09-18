@@ -16,7 +16,7 @@ config STM32_MEMMAP
 	  This option enables the XIP mode for the external NOR flash
 	  mounted on STM32 boards.
 
-config SOC_FLASH_STM32
+menuconfig SOC_FLASH_STM32
 	bool "STM32 flash driver"
 	depends on DT_HAS_ST_STM32_FLASH_CONTROLLER_ENABLED
 	select FLASH_HAS_DRIVER_ENABLED
@@ -50,7 +50,8 @@ config FLASH_STM32_WRITE_PROTECT_DISABLE_PREVENTION
 
 config FLASH_STM32_READOUT_PROTECTION
 	bool "Extended operation for flash readout protection control"
-	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32G4X
+	depends on SOC_SERIES_STM32F4X || SOC_SERIES_STM32L4X || \
+			   SOC_SERIES_STM32G4X || SOC_SERIES_STM32F7X
 	select FLASH_HAS_EX_OP
 	default n
 	help

@@ -187,9 +187,9 @@ Testing Bluetooth on the Pinnacle 100 DVK
 Many of the Bluetooth examples will work on the Pinnacle 100 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 Testing the LEDs and buttons in the Pinnacle 100 DVK
 ====================================================

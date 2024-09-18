@@ -10,3 +10,4 @@ config SOC_SERIES_APOLLO3X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select AMBIQ_HAL
+	select HAS_PM

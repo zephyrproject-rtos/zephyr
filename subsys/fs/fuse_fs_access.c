@@ -6,6 +6,9 @@
 
 #define FUSE_USE_VERSION 26
 
+#undef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+
 #include <fuse.h>
 #include <libgen.h>
 #include <linux/limits.h>
@@ -15,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mount.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 

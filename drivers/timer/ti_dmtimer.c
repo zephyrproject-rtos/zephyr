@@ -54,8 +54,9 @@ static void ti_dm_timer_write_masks(uint32_t data, uint32_t reg, uint32_t mask, 
 static void ti_dmtimer_isr(void *data)
 {
 	/* If no pending event */
-	if (!TI_DM_TIMER_READ(IRQSTATUS))
+	if (!TI_DM_TIMER_READ(IRQSTATUS)) {
 		return;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

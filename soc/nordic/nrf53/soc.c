@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <soc/nrfx_coredep.h>
 #include <zephyr/logging/log.h>
 #include <nrf_erratas.h>
@@ -522,13 +523,15 @@ static int nordicsemi_nrf53_init(void)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
 
-#if defined(CONFIG_SOC_DCDC_NRF53X_APP)
+#if defined(CONFIG_SOC_DCDC_NRF53X_APP) || \
+	(DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #endif
-#if defined(CONFIG_SOC_DCDC_NRF53X_NET)
+#if defined(CONFIG_SOC_DCDC_NRF53X_NET) || \
+	(DT_PROP(DT_NODELABEL(vregradio), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_RADIO, true);
 #endif
-#if defined(CONFIG_SOC_DCDC_NRF53X_HV)
+#if defined(CONFIG_SOC_DCDC_NRF53X_HV) || DT_NODE_HAS_STATUS(DT_NODELABEL(vregh), okay)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
 

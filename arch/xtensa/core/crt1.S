@@ -4,7 +4,7 @@
  */
 
 /*
- * Control arrives here at _start from the reset vector or from crt0-app.S.
+ * Control arrives here at _start from the reset vector.
  */
 
 #include <xtensa/coreasm.h>
@@ -22,7 +22,7 @@
  */
 
 .global __start
-.type	z_cstart, @function
+.type	z_prep_c, @function
 
 
 /* Macros to abstract away ABI differences */
@@ -52,7 +52,7 @@ _start:
 	/*
 	 *  _start is typically NOT at the beginning of the text segment --
 	 *  it is always called from either the reset vector (__start) or other
-	 *  code that does equivalent initialization (such as crt0-app.S).
+	 *  code that does equivalent initialization.
 	 *
 	 *  Assumptions on entry to _start:
 	 *	- low (level-one) and medium priority interrupts are disabled
@@ -189,6 +189,6 @@ _start:
 #endif /* !XCHAL_HAVE_BOOTLOADER */
 
 	/* Enter C domain, never returns from here */
-	CALL	z_cstart
+	CALL	z_prep_c
 
 	.size	_start, . - _start

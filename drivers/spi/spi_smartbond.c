@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_smartbond);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
@@ -1121,6 +1122,9 @@ static const struct spi_driver_api spi_smartbond_driver_api = {
 	.transceive = spi_smartbond_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_smartbond_transceive_async,
+#endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
 	.release = spi_smartbond_release,
 };

@@ -37,6 +37,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;

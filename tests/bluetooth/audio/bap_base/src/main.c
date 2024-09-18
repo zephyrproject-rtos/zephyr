@@ -221,7 +221,7 @@ ZTEST_F(bap_base_test_suite, test_base_get_bis_indexes)
 
 	ret = bt_bap_base_get_bis_indexes(base, &bis_indexes);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(bis_indexes, 0x00000006 /* Bit 1 and 2 */,
+	zassert_equal(bis_indexes, 0x00000003 /* Bit 1 and 2 */,
 		      "Unexpected BIS index value: 0x%08X", bis_indexes);
 }
 

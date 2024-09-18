@@ -1,7 +1,8 @@
-.. _bluetooth_encrypted_advertising_sample:
+.. zephyr:code-sample:: bluetooth_encrypted_advertising
+   :name: Encrypted Advertising
+   :relevant-api: bluetooth
 
-Bluetooth: Encrypted Advertising
-################################
+   Use the Bluetooth LE encrypted advertising feature.
 
 Overview
 ********

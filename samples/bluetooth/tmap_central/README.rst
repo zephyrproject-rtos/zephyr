@@ -1,7 +1,8 @@
-.. _bluetooth_tmap_central:
+.. zephyr:code-sample:: ble_peripheral_tmap_central
+   :name: TMAP (Central)
+   :relevant-api: bt_audio bt_bap bluetooth
 
-Bluetooth: TMAP Central
-#######################
+   Implement the LE Audio TMAP central functionality (CG and UMS roles).
 
 Overview
 ********

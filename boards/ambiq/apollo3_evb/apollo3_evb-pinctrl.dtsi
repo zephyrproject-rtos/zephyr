@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+#include "apollo3_evb_connector.dtsi"
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -69,66 +70,37 @@
 		group1 {
 			pinmux = <M0SCK_P5>, <M0MISO_P6>, <M0MOSI_P7>;
 		};
-		group2 {
-			pinmux = <NCE11_P11>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <0>;
-			ambiq,iom-num = <0>;
-		};
 	};
 	spi1_default: spi1_default {
 		group1 {
 			pinmux = <M1SCK_P8>, <M1MISO_P9>, <M1MOSI_P10>;
-		};
-		group2 {
-			pinmux = <NCE14_P14>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <1>;
-			ambiq,iom-num = <1>;
 		};
 	};
 	spi2_default: spi2_default {
 		group1 {
 			pinmux = <M2SCK_P27>, <M2MISO_P25>, <M2MOSI_P28>;
 		};
-		group2 {
-			pinmux = <NCE15_P15>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <3>;
-			ambiq,iom-num = <2>;
-		};
 	};
 	spi3_default: spi3_default {
 		group1 {
 			pinmux = <M3SCK_P42>, <M3MISO_P43>, <M3MOSI_P38>;
-		};
-		group2 {
-			pinmux = <NCE12_P12>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <0>;
-			ambiq,iom-num = <3>;
 		};
 	};
 	spi4_default: spi4_default {
 		group1 {
 			pinmux = <M4SCK_P39>, <M4MISO_P40>, <M4MOSI_P44>;
 		};
-		group2 {
-			pinmux = <NCE13_P13>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <1>;
-			ambiq,iom-num = <4>;
-		};
 	};
 	spi5_default: spi5_default {
 		group1 {
 			pinmux = <M5SCK_P48>, <M5MISO_P49>, <M5MOSI_P47>;
 		};
-		group2 {
-			pinmux = <NCE16_P16>;
-			drive-push-pull;
-			ambiq,iom-nce-module = <0>;
-			ambiq,iom-num = <5>;
+	};
+
+	adc0_default: adc0_default{
+		group1 {
+			pinmux = <ADCSE4_P32>, <ADCSE7_P35>;
+			drive-strength = "0.1";
 		};
 	};
 

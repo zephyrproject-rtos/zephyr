@@ -130,3 +130,5 @@ zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library_include_directories_ifdef(CONFIG_BUILD_WITH_TFM
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
 )
+
+zephyr_library_sources_ifdef(CONFIG_BT_TESTING testing.c)

@@ -17,7 +17,8 @@ config MODEM_CELLULAR
 		    DT_HAS_SIMCOM_SIM7080_ENABLED || DT_HAS_U_BLOX_SARA_R4_ENABLED || \
 		    DT_HAS_U_BLOX_SARA_R5_ENABLED || DT_HAS_SWIR_HL7800_ENABLED || \
 		    DT_HAS_TELIT_ME910G1_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \
-		    DT_HAS_NORDIC_NRF91_SLM_ENABLED || DT_HAS_SQN_GM02S_ENABLED)
+		    DT_HAS_NORDIC_NRF91_SLM_ENABLED || DT_HAS_SQN_GM02S_ENABLED || \
+		    DT_HAS_U_BLOX_LARA_R6_ENABLED)
 	help
 	  This driver uses the generic 3gpp AT commands, along
 	  with the standard protocols CMUX and PPP, to configure
@@ -43,6 +44,7 @@ config MODEM_CELLULAR_UART_BUFFER_SIZES
 
 config MODEM_CELLULAR_CMUX_MAX_FRAME_SIZE
 	int "The maximum CMUX frame size in bytes."
+	default 32 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 	default 128
 	help
 	  This value affects the size of buffers used to receive and transmit CMUX frames.
@@ -54,5 +56,17 @@ config MODEM_CELLULAR_CHAT_BUFFER_SIZES
 config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
+
+config MODEM_CELLULAR_NEW_BAUDRATE
+	int "New baudrate to configure modem to, if supported"
+	range 9600 4000000
+	default 3000000 if DT_HAS_U_BLOX_LARA_R6_ENABLED
+	default 115200
+
+config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
+	int "Time modem takes to change baudrate, in milliseconds"
+	range 0 1000
+	default 100 if DT_HAS_U_BLOX_LARA_R6_ENABLED
+	default 300
 
 endif

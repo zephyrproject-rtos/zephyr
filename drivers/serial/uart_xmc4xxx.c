@@ -428,6 +428,28 @@ static inline void async_evt_rx_release_buffer(struct uart_xmc4xxx_data *data, i
 	}
 }
 
+static inline void async_evt_rx_stopped(struct uart_xmc4xxx_data *data,
+					enum uart_rx_stop_reason reason)
+{
+	struct uart_event event = {.type = UART_RX_STOPPED, .data.rx_stop.reason = reason};
+	struct uart_event_rx *rx = &event.data.rx_stop.data;
+	struct dma_status stat;
+
+	if (data->dma_rx.buffer_len == 0 || data->async_cb == NULL) {
+		return;
+	}
+
+	rx->buf = data->dma_rx.buffer;
+	if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
+		data->dma_rx.counter = data->dma_rx.buffer_len - stat.pending_length;
+	}
+
+	rx->len = data->dma_rx.counter - data->dma_rx.offset;
+	rx->offset = data->dma_rx.counter;
+
+	data->async_cb(data->dev, &event, data->async_user_data);
+}
+
 static inline void async_evt_rx_disabled(struct uart_xmc4xxx_data *data)
 {
 	struct uart_event event = {.type = UART_RX_DISABLED};
@@ -707,13 +729,19 @@ static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data
 	unsigned int key;
 	int ret;
 
-	if (status != 0) {
-		return;
-	}
-
 	__ASSERT_NO_MSG(channel == data->dma_rx.dma_channel);
 	key = irq_lock();
 	k_work_cancel_delayable(&data->dma_rx.timeout_work);
+
+	if (status < 0) {
+		async_evt_rx_stopped(data, UART_ERROR_OVERRUN);
+		uart_xmc4xxx_irq_rx_disable(dev_uart);
+		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
+		async_evt_rx_release_buffer(data, CURRENT_BUFFER);
+		async_evt_rx_release_buffer(data, NEXT_BUFFER);
+		async_evt_rx_disabled(data);
+		goto done;
+	}
 
 	if (data->dma_rx.buffer_len == 0) {
 		goto done;
@@ -725,8 +753,8 @@ static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data
 	async_evt_rx_release_buffer(data, CURRENT_BUFFER);
 
 	if (!data->rx_next_buffer) {
-		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		uart_xmc4xxx_irq_rx_disable(dev_uart);
+		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		async_evt_rx_disabled(data);
 		goto done;
 	}
@@ -743,8 +771,8 @@ static void uart_xmc4xxx_dma_rx_cb(const struct device *dma_dev, void *user_data
 			 data->dma_rx.buffer_len);
 
 	if (ret < 0) {
-		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		uart_xmc4xxx_irq_rx_disable(dev_uart);
+		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		async_evt_rx_release_buffer(data, CURRENT_BUFFER);
 		async_evt_rx_disabled(data);
 		goto done;
@@ -1004,7 +1032,7 @@ XMC4XXX_IRQ_STRUCT_INIT(index)						\
 	.fifo_rx_size = DT_INST_ENUM_IDX(index, fifo_rx_size),          \
 };									\
 									\
-	DEVICE_DT_INST_DEFINE(index, &uart_xmc4xxx_init,		\
+	DEVICE_DT_INST_DEFINE(index, uart_xmc4xxx_init,			\
 			    NULL,					\
 			    &xmc4xxx_data_##index,			\
 			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\

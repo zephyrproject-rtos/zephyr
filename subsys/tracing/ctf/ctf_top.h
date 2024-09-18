@@ -151,6 +151,12 @@ typedef enum {
 	CTF_EVENT_SOCKET_GETSOCKNAME_EXIT = 0x59,
 	CTF_EVENT_SOCKET_SOCKETPAIR_ENTER = 0x5A,
 	CTF_EVENT_SOCKET_SOCKETPAIR_EXIT = 0x5B,
+	CTF_EVENT_NET_RECV_DATA_ENTER = 0x5C,
+	CTF_EVENT_NET_RECV_DATA_EXIT = 0x5D,
+	CTF_EVENT_NET_SEND_DATA_ENTER = 0x5E,
+	CTF_EVENT_NET_SEND_DATA_EXIT = 0x5F,
+	CTF_EVENT_NET_RX_TIME = 0x60,
+	CTF_EVENT_NET_TX_TIME = 0x61,
 
 } ctf_event_t;
 
@@ -607,6 +613,49 @@ static inline void ctf_top_socket_socketpair_enter(uint32_t family, uint32_t typ
 static inline void ctf_top_socket_socketpair_exit(int32_t sock_A, int32_t sock_B, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_SOCKET_SOCKETPAIR_EXIT), sock_A, sock_B, ret);
+}
+
+
+static inline void ctf_top_net_recv_data_enter(int32_t if_index, uint32_t iface, uint32_t pkt,
+					       uint32_t len)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_ENTER),
+		  if_index, iface, pkt, len);
+}
+
+static inline void ctf_top_net_recv_data_exit(int32_t if_index, uint32_t iface, uint32_t pkt,
+					      int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RECV_DATA_EXIT),
+		  if_index, iface, pkt, ret);
+}
+
+static inline void ctf_top_net_send_data_enter(int32_t if_index, uint32_t iface, uint32_t pkt,
+					       uint32_t len)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_SEND_DATA_ENTER),
+		  if_index, iface, pkt, len);
+}
+
+static inline void ctf_top_net_send_data_exit(int32_t if_index, uint32_t iface, uint32_t pkt,
+					      int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_SEND_DATA_EXIT),
+		  if_index, iface, pkt, ret);
+}
+
+static inline void ctf_top_net_rx_time(int32_t if_index, uint32_t iface, uint32_t pkt,
+				       uint32_t priority, uint32_t tc, uint32_t duration)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_RX_TIME),
+		  if_index, iface, pkt, priority, tc, duration);
+}
+
+static inline void ctf_top_net_tx_time(int32_t if_index, uint32_t iface, uint32_t pkt,
+				       uint32_t priority, uint32_t tc, uint32_t duration)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_TX_TIME),
+		  if_index, iface, pkt, priority, tc, duration);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

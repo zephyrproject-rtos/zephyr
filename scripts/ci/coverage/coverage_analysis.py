@@ -52,7 +52,7 @@ class Json_report:
             for element in parser:
                 for testsuite in element:
                     for testcase in testsuite['testcases']:
-                        if testcase['status'] is None:
+                        if testcase['status'] == 'None':
                             testcase_name = testcase['identifier']
                             component_name = testcase_name[:testcase_name.find('.')]
                             component = {

@@ -12,27 +12,11 @@ config SOC_SERIES_ESP32C3
 	select RISCV_ISA_EXT_C
 	select RISCV_ISA_EXT_ZICSR
 	select HAS_ESPRESSIF_HAL
-	select XIP if !MCUBOOT
 	select HAS_PM
 	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32C3
 
-config IDF_TARGET_ESP32C3
-	bool "ESP32C3 as target board"
-	default y
-
-config ESP32_PHY_MAX_WIFI_TX_POWER
-	int "Max WiFi TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for WiFi radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_PHY_MAX_TX_POWER
-	int
-	default ESP32_PHY_MAX_WIFI_TX_POWER
 
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"

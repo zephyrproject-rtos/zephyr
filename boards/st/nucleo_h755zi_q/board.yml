@@ -1,0 +1,5 @@
+board:
+  name: nucleo_h755zi_q
+  vendor: st
+  socs:
+    - name: stm32h755xx

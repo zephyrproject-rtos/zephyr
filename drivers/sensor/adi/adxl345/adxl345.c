@@ -165,7 +165,7 @@ static int adxl345_sample_fetch(const struct device *dev,
 		data->bufz[s] = sample.z;
 	}
 
-	return samples_count;
+	return 0;
 }
 
 static int adxl345_channel_get(const struct device *dev,

@@ -1,0 +1,217 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra4/ra4-cm33-common.dtsi>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(128)>;
+		};
+
+		ioport6: gpio@400800c0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400800e0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		sci1: sci1@40118100 {
+			compatible = "renesas,ra-sci";
+			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118100 0x100>;
+			clocks = <&pclka MSTPB 30>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
+		sci2: sci2@40118200 {
+			compatible = "renesas,ra-sci";
+			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118200 0x100>;
+			clocks = <&pclka MSTPB 29>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <2>;
+				status = "disabled";
+			};
+		};
+
+		sci3: sci3@40118300 {
+			compatible = "renesas,ra-sci";
+			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118300 0x100>;
+			clocks = <&pclka MSTPB 28>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <3>;
+				status = "disabled";
+			};
+		};
+
+		sci4: sci4@40118400 {
+			compatible = "renesas,ra-sci";
+			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupt-names = "rxi", "txi", "tei", "eri";
+			reg = <0x40118400 0x100>;
+			clocks = <&pclka MSTPB 27>;
+			status = "disabled";
+			uart {
+				compatible = "renesas,ra-sci-uart";
+				channel = <4>;
+				status = "disabled";
+			};
+		};
+	};
+
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-xtal {
+			compatible = "renesas,ra-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(24)>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,ra-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL */
+			source = <RA_PLL_SOURCE_MAIN_OSC>;
+			div = <RA_PLL_DIV_3>;
+			mul = <25 0>;
+			status = "disabled";
+		};
+
+		pll2: pll2 {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL */
+			source = <RA_PLL_SOURCE_DISABLE>;
+			div = <RA_PLL_DIV_2>;
+			mul = <20 0>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@40084000 {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x40084000 4>, <0x40084004 4>, <0x40084008 4>,
+			      <0x4008400c 4>, <0x40084010 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD", "MSTPE";
+			#clock-cells = <0>;
+			sysclock-src = <RA_CLOCK_SOURCE_PLL>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clk_div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+		};
+	};
+};

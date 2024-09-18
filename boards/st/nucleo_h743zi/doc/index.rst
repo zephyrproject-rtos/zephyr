@@ -184,20 +184,26 @@ Requires an external CAN or CANFD transceiver.
 Programming and Debugging
 *************************
 
+Nucleo H743ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``nucleo_h743zi`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-.. note::
-
-   If using OpenOCD you will need a recent development version as the last
-   official release does not support H7 series yet. You can also choose the
-   ``stm32cubeprogrammer`` runner.
-
 Flashing
 ========
 
-Nucleo H743ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD, JLink or pyOCD can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+   $ west flash --runner pyocd
 
 Flashing an application to Nucleo H743ZI
 ----------------------------------------
@@ -246,3 +252,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32H743 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00314099.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

@@ -27,7 +27,21 @@ tests:
       - CONFIG_BT_TRANSMIT_POWER_CONTROL=y
       - CONFIG_BT_CTLR=n
     platform_allow:
+      - native_sim
+    build_only: true
+  bluetooth.shell.path_loss_monitoring:
+    extra_configs:
+      - CONFIG_BT_PATH_LOSS_MONITORING=y
+      - CONFIG_BT_CTLR=n
+    platform_allow:
       - native_posix
+    build_only: true
+  bluetooth.shell.subrating:
+    extra_configs:
+      - CONFIG_BT_SUBRATING=y
+      - CONFIG_BT_CTLR=n
+    platform_allow:
+      - native_sim
     build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
@@ -248,12 +262,12 @@ tests:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_server_ase_src:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
-      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_client_ase_snk:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -280,14 +294,14 @@ tests:
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SOURCE=n
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT=0
-      - CONFIG_BT_ASCS_ASE_SRC_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0
   bluetooth.audio_shell.no_audio_rx:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
     extra_configs:
       - CONFIG_BT_BAP_BROADCAST_SINK=n
       - CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT=0
-      - CONFIG_BT_ASCS_ASE_SNK_COUNT=0
+      - CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT=0
   bluetooth.audio_shell.no_has:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
@@ -355,19 +369,19 @@ tests:
   bluetooth.audio_shell.no_gmap:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_GMAP=n
   bluetooth.audio_shell.no_cap_commander:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.only_cap_commander:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_posix
+    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_CAP_ACCEPTOR=n

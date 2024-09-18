@@ -171,6 +171,8 @@ a.icon-home:visited {
 
 .wy-nav-content {
     background-color: var(--content-background-color);
+    min-height: 100vh;
+    display: flex;
 }
 
 .wy-body-for-nav {
@@ -757,6 +759,9 @@ kbd, .kbd,
         overflow-y: initial;
         max-height: initial;
     }
+    .wy-nav-content {
+        min-height: calc(100dvh - 64px);
+    }
 }
 
 /* Scrollbar styling */
@@ -778,23 +783,6 @@ kbd, .kbd,
 }
 .wy-menu.wy-menu-vertical::-webkit-scrollbar-thumb:active {
     background-color: var(--navbar-scrollbar-active-color);
-}
-
-/* Breathe tweaks */
-
-.rst-content .section > dl > dd {
-    margin-left: 0;
-}
-
-.rst-content p.breathe-sectiondef-title {
-    font-size: 115%;
-    color: var(--link-color);
-}
-
-.rst-content dl:not(.docutils) dl:not(.rst-other-versions) dt {
-    background: var(--admonition-note-background-color) !important;
-    border-top: none !important;
-    border-left: none !important;
 }
 
 /* Misc tweaks */
@@ -866,7 +854,7 @@ dark-mode-toggle::part(toggleLabel){
     -webkit-box-align: center;
         -ms-flex-align: center;
             align-items: center;
-    border-radius: 0.5rem;
+    border-radius: 1rem;
     background: linear-gradient(135deg, #0070c5 0%, #5c13a5 100%);
     color: white;
 }
@@ -888,12 +876,34 @@ dark-mode-toggle::part(toggleLabel){
     font-size: 0.9rem;
     margin-top: 0.5rem;
     color: var(--body-color);
+    font-weight: 200;
+    margin-left: -0.9em;
+    margin-right: -0.9em;
+    line-height: 1.4rem;
 }
 
 .grid-icon {
    line-height: 1.5;
    font-size: 3rem;
    color: white;
+}
+
+.lastupdated {
+    font-weight: 200;
+    font-size: 0.9rem;
+}
+
+/* Make actual document take all vertical space available so that footer is always at the bottom */
+
+.rst-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.document {
+    flex-grow: 1;
 }
 
 /* Custom search box, including search engine selection */
@@ -953,3 +963,33 @@ dark-mode-toggle::part(toggleLabel){
   #search-se-menu ul li.selected .fa-check {
     display: inline;
   }
+
+.doxygroup::after {
+    content: 'Doxygen';
+    display: inline-block;
+    background-color: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-size: 0.875em;
+    font-weight: bold;
+}
+
+.code-sample-list li {
+    margin-bottom: 0.25em;
+}
+.code-sample-name {
+    font-weight: bold;
+    padding-right: 0.5em;
+}
+
+.code-sample-description {
+    font-weight: 300;
+}
+
+.code-sample-description::before {
+    content: '\F0A9'; /* arrow-circle-right */
+    font-family: 'FontAwesome';
+    padding-right: 0.5em;
+}

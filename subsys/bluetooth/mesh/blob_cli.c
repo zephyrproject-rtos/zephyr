@@ -19,8 +19,6 @@ LOG_MODULE_REGISTER(bt_mesh_blob_cli);
 	SYS_SLIST_FOR_EACH_CONTAINER((sys_slist_t *)&(cli)->inputs->targets,   \
 				     target, n)
 
-#define CHUNK_SIZE_MAX BLOB_CHUNK_SIZE_MAX(BT_MESH_TX_SDU_MAX)
-
 /* The Maximum BLOB Poll Interval - T_MBPI */
 #define BLOB_POLL_TIME_MAX_SECS 30
 
@@ -1496,7 +1494,7 @@ int bt_mesh_blob_cli_caps_get(struct bt_mesh_blob_cli *cli,
 	cli->caps.min_block_size_log = 0x06;
 	cli->caps.max_block_size_log = 0x20;
 	cli->caps.max_chunks = CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX;
-	cli->caps.max_chunk_size = CHUNK_SIZE_MAX;
+	cli->caps.max_chunk_size = BLOB_TX_CHUNK_SIZE;
 	cli->caps.max_size = 0xffffffff;
 	cli->caps.mtu_size = 0xffff;
 	cli->caps.modes = BT_MESH_BLOB_XFER_MODE_ALL;
@@ -1521,9 +1519,9 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 		return -EBUSY;
 	}
 
-	if (!(xfer->mode & BT_MESH_BLOB_XFER_MODE_ALL) ||
-	    xfer->block_size_log < 0x06 || xfer->block_size_log > 0x20 ||
-	    xfer->chunk_size < 8 || xfer->chunk_size > CHUNK_SIZE_MAX) {
+	if (!(xfer->mode & BT_MESH_BLOB_XFER_MODE_ALL) || xfer->block_size_log < 0x06 ||
+	    xfer->block_size_log > 0x20 || xfer->chunk_size < 8 ||
+	    xfer->chunk_size > BLOB_TX_CHUNK_SIZE) {
 		LOG_ERR("Incompatible transfer parameters");
 		return -EINVAL;
 	}

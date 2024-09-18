@@ -359,6 +359,9 @@ static void evt_handler(nrfx_uarte_event_t const *event, void *context)
 		break;
 	case NRFX_UARTE_EVT_ERROR:
 		data->async->err = event->data.error.error_mask;
+		if (IS_ASYNC_API(dev)) {
+			(void)uart_rx_disable(dev);
+		}
 		break;
 	case NRFX_UARTE_EVT_RX_BUF_REQUEST:
 		on_rx_buf_req(dev);
@@ -643,6 +646,10 @@ static int uarte_nrfx_configure(const struct device *dev,
 	struct uarte_nrfx_data *data = dev->data;
 	nrf_uarte_config_t uarte_cfg;
 
+#if NRF_UARTE_HAS_FRAME_TIMEOUT
+	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_DIS;
+#endif
+
 #if defined(UARTE_CONFIG_STOP_Msk)
 	switch (cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
@@ -850,7 +857,7 @@ static int uarte_nrfx_init(const struct device *dev)
 
 	if (UARTE_ANY_INTERRUPT_DRIVEN) {
 		if (cfg->a2i_config) {
-			err = uart_async_to_irq_init(data->a2i_data, cfg->a2i_config);
+			err = uart_async_to_irq_init(dev);
 			if (err < 0) {
 				return err;
 			}

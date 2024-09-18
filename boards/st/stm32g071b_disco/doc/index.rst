@@ -115,6 +115,8 @@ For more details please refer to `STM32G0 Discovery board User Manual`_.
 Programming and Debugging
 *************************
 
+The STM32G071B Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``stm32g071b_disco`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -122,7 +124,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-The STM32G071B Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 .. code-block:: console
 
@@ -168,3 +171,6 @@ References
 
 .. _G071RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g071rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

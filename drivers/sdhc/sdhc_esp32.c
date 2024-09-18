@@ -12,8 +12,9 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-/* ESP32 includes */
 #include <esp_clk_tree.h>
 #include <hal/sdmmc_ll.h>
 #include <esp_intr_alloc.h>
@@ -51,6 +52,8 @@ struct sdhc_esp32_config {
 
 	int slot;
 	const sdmmc_dev_t *sdio_hw;
+	const struct device *clock_dev;
+	const clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
 	const struct gpio_dt_spec pwr_gpio;
 	/*
@@ -65,6 +68,8 @@ struct sdhc_esp32_config {
 	const int d3_pin;
 
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 	uint8_t bus_width_cfg;
 
 	struct sdhc_host_props props;
@@ -871,24 +876,13 @@ int sdmmc_host_set_bus_width(sdmmc_dev_t *sdio_hw, int slot, size_t width)
 	}
 
 	const uint16_t mask = BIT(slot);
-	uint16_t temp;
 
 	if (width == 1) {
-		temp = sdio_hw->ctype.card_width_8 & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
-
-		temp = sdio_hw->ctype.card_width & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width, temp);
-
+		sdio_hw->ctype.card_width_8 &= ~mask;
+		sdio_hw->ctype.card_width &= ~mask;
 	} else if (width == 4) {
-		temp = sdio_hw->ctype.card_width_8 & ~mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
-
-		temp = sdio_hw->ctype.card_width | mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width, temp);
-	} else if (width == 8) {
-		temp = sdio_hw->ctype.card_width_8 | mask;
-		HAL_FORCE_MODIFY_U32_REG_FIELD(sdio_hw->ctype, card_width_8, temp);
+		sdio_hw->ctype.card_width_8 &= ~mask;
+		sdio_hw->ctype.card_width |= mask;
 	} else {
 		return ESP_ERR_INVALID_ARG;
 	}
@@ -1195,7 +1189,7 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	if ((ret_esp != 0) || esp_cmd.error) {
-		LOG_DBG("\nError for command: %u arg %08x ret_esp = 0x%x error = 0x%x\n",
+		LOG_DBG("Error command: %u arg %08x ret_esp = 0x%x error = 0x%x\n",
 			cmd->opcode, cmd->arg, ret_esp, esp_cmd.error);
 
 		ret_esp = (ret_esp > 0) ? ret_esp : esp_cmd.error;
@@ -1320,9 +1314,16 @@ static int sdhc_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* enable bus clock for registers */
-	sdmmc_ll_enable_bus_clock(sdio_hw, true);
-	sdmmc_ll_reset_register(sdio_hw);
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+
+	if (ret != 0) {
+		LOG_ERR("Error enabling SDHC clock");
+		return ret;
+	}
 
 	/* Enable clock to peripheral. Use smallest divider first */
 	ret = sdmmc_host_set_clk_div(sdio_hw, 2);
@@ -1340,8 +1341,11 @@ static int sdhc_esp32_init(const struct device *dev)
 	sdio_hw->ctrl.int_enable = 0;
 
 	/* Attach interrupt handler */
-	ret = esp_intr_alloc(cfg->irq_source, 0, &sdio_esp32_isr, (void *)dev,
-			     &data->s_host_ctx.intr_handle);
+	ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
+				&sdio_esp32_isr, (void *)dev,
+				&data->s_host_ctx.intr_handle);
 
 	if (ret != 0) {
 		k_msgq_purge(data->s_host_ctx.event_queue);
@@ -1406,7 +1410,11 @@ static const struct sdhc_driver_api sdhc_api = {.reset = sdhc_esp32_reset,
                                                                                                    \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
-		.irq_source = DT_IRQN(DT_INST_PARENT(n)),                                          \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), offset), \
+		.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                            \
+		.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority),                     \
+		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n)),                                 \

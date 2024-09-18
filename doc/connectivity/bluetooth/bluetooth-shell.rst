@@ -394,7 +394,7 @@ The server can now notify the client with the command :code:`gatt notify`.
 Another option available through the GATT command is initiating the MTU exchange. To do it, use the
 :code:`gatt exchange-mtu` command. To update the shell maximum MTU, you need to update Kconfig
 symbols in the configuration file of the shell. For more details, see
-:ref:`bluetooth_mtu_update_sample`.
+:zephyr:code-sample:`bluetooth_mtu_update`.
 
 L2CAP
 *****

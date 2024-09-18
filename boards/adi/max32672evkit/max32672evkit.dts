@@ -10,6 +10,7 @@
 #include <adi/max32/max32672-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	model = "Analog Devices MAX32672EVKIT";
@@ -20,6 +21,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
+		zephyr,display = &st7735;
 	};
 
 	leds {
@@ -48,6 +50,43 @@
 		led0 = &led1;
 		led1 = &led2;
 		sw0 = &pb1;
+		watchdog0 = &wdt0;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		/* Enable D/C line for 4wire mode */
+		/* dc-gpios = <&gpio0 19 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>; */
+		spi-dev = <&spi0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		st7735: st7735@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = <MIPI_DBI_MODE_SPI_3WIRE>;
+
+			reg = <0>;
+			width = <130>;
+			height = <132>;
+			x-offset = <0>;
+			y-offset = <0>;
+			madctl = <0xc0>;
+			colmod = <0x05>;
+			vmctr1 = <0x51>;
+			pwctr1 = [02 02];
+			pwctr2 = [c5];
+			pwctr3 = [0d 00];
+			pwctr4 = [8d 1a];
+			pwctr5 = [8d ee];
+			frmctr1 = [02 35 36];
+			frmctr2 = [02 35 36];
+			frmctr3 = [02 35 36 02 35 36];
+			gamctrp1 = [0a 1c 0c 14 33 2b 24 28 27 25 2c 39 00 05 03 0d];
+			gamctrn1 = [0a 1c 0c 14 33 2b 24 28 27 25 2d 3a 00 05 03 0d];
+		};
 	};
 };
 
@@ -70,4 +109,43 @@
 
 &gpio1 {
 	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p0_6 &i2c0a_sda_p0_7>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1a_mosi_p0_15 &spi1a_miso_p0_14 &spi1a_sck_p0_16 &spi1a_ss0_p0_17>;
+	pinctrl-names = "default";
+};
+
+&spi0a_mosi_p0_3 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&spi0a_sck_p0_4 {
+	power-source=<MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0a_mosi_p0_3 &spi0a_miso_p0_2 &spi0a_sck_p0_4>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 5 (GPIO_ACTIVE_LOW | MAX32_VSEL_VDDIOH)>;
 };

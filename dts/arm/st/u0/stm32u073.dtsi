@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u0/stm32u031.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u073", "st,stm32u0", "simple-bus";
+	};
+
+	sram1: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: memory@20008000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM2";
+	};
+};

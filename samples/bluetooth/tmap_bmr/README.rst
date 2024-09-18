@@ -1,7 +1,8 @@
-.. _bluetooth_tmap_bmr:
+.. zephyr:code-sample:: ble_peripheral_tmap_bmr
+   :name: TMAP Broadcast Media Receiver (BMR)
+   :relevant-api: bt_audio bt_bap bluetooth
 
-Bluetooth: TMAP BMR
-###################
+   Implement the LE Audio TMAP Broadcast Media Receiver (BMR) role.
 
 Overview
 ********

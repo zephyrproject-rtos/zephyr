@@ -77,7 +77,13 @@ config USE_INFINEON_FLASH
 	help
 	  Enable Flash HAL module driver for Infineon devices
 
+config USE_INFINEON_SMIF
+	bool
+	help
+	  Enable SMIF HAL driver for Infineon devices
+
 endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_PSOC6_LEGACY
+
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
 	help

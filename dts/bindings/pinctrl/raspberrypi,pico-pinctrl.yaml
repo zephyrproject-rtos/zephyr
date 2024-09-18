@@ -121,3 +121,22 @@ child-binding:
         description: |
           The slew rate of a pin. 0 corresponds to slow, and 1 corresponds to fast.
           The default value is 0 (slow), as this is the power on reset value.
+      raspberrypi,oe-override:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        default: 0
+        description: |
+          Override output-enable for a pin.
+
+          - 0 (RP2_GPIO_OVERRIDE_NORMAL) - drive output enable from selected
+              peripheral signal.
+          - 1 (RP2_GPIO_OVERRIDE_INVERT) - drive output enable from inverse of
+              selected peripheral signal.
+          - 2 (RP2_GPIO_OVERRIDE_LOW) - disable output.
+          - 3 (RP2_GPIO_OVERRIDE_HIGH) - enable output.
+
+          The default value is 0, as this is the power on reset value.

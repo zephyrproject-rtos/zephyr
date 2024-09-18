@@ -9,13 +9,12 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - bluetooth
   - gpio
   - uart
   - watchdog
 testing:
   ignore_tags:
-    - net
-    - bluetooth
     - pm
     - hwinfo
 vendor: silabs

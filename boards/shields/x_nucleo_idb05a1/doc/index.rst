@@ -78,7 +78,7 @@ of the shield for the project build by adding the ``--shield`` arg to the
 build command:
 
  .. zephyr-app-commands::
-    :zephyr-app: your_app
+    :app: your_app
     :board: your_board_name
     :shield: x_nucleo_idb05a1
     :goals: build

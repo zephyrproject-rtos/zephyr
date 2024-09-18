@@ -3,6 +3,7 @@
 
  * Copyright (c) 2020 Intel Corporation
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -356,5 +357,8 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep);
 int bt_ascs_release_ase(struct bt_bap_ep *ep);
 
 void bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_data);
+
+int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt);
+int bt_ascs_unregister(void);
 
 #endif /* BT_ASCS_INTERNAL_H */

@@ -129,6 +129,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	uint32_t aux_offset_us;
 	uint32_t overhead_us;
 	uint8_t *pri_dptr;
+	uint32_t pdu_us;
 	uint8_t phy;
 
 	LL_ASSERT(pdu->type == PDU_ADV_TYPE_EXT_IND);
@@ -183,6 +184,12 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * window_size_us;
 
+	/* Skip reception if invalid aux offset */
+	pdu_us = PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
+	if (aux_offset_us < pdu_us) {
+		return 0U;
+	}
+
 	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
 		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
@@ -233,7 +240,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(pdu_phy,
 						     pdu_phy_flags_rx) -
-			    PDU_AC_US(pdu->len, pdu_phy, pdu_phy_flags_rx);
+			    pdu_us;
 
 	radio_isr_set(setup_cb, node_rx);
 	radio_disable();
@@ -338,6 +345,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= EVENT_JITTER_US;
 
 	start_us = radio_tmr_start_us(0, aux_start_us);
+	LL_ASSERT(start_us == (aux_start_us + 1U));
 
 	/* Setup header complete timeout */
 	hcto = start_us;

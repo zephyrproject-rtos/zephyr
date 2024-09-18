@@ -247,7 +247,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context = net_pkt_context(pkt);
 
 	if (net_if_flag_is_set(iface, NET_IF_LOWER_UP)) {
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			pkt_priority = net_pkt_priority(pkt);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
@@ -262,7 +263,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		status = net_if_l2(iface)->send(iface, pkt);
 		net_if_tx_unlock(iface);
 
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) ||
+		    IS_ENABLED(CONFIG_TRACING_NET_CORE)) {
 			uint32_t end_tick = k_cycle_get_32();
 
 			net_pkt_set_tx_stats_tick(pkt, end_tick);
@@ -271,6 +273,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 						    pkt_priority,
 						    create_time,
 						    end_tick);
+
+			SYS_PORT_TRACING_FUNC(net, tx_time, pkt, end_tick);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
 				update_txtime_stats_detail(
@@ -441,6 +445,7 @@ static inline void init_iface(struct net_if *iface)
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	const struct net_l2 *l2;
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
@@ -455,10 +460,24 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !net_if_l2(iface)) {
-		NET_WARN("no l2 for iface %p, discard pkt", iface);
-		verdict = NET_DROP;
-		goto done;
+	/* The check for CONFIG_NET_*_OFFLOAD here is an optimization;
+	 * This is currently the only way for net_if_l2 to be NULL or missing send().
+	 */
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) || IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
+		l2 = net_if_l2(iface);
+		if (l2 == NULL) {
+			/* Offloaded ifaces may choose not to use an L2 at all. */
+			NET_WARN("no l2 for iface %p, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		} else if (l2->send == NULL) {
+			/* Or, their chosen L2 (for example, OFFLOADED_NETDEV_L2)
+			 * might simply not implement send.
+			 */
+			NET_WARN("l2 for iface %p cannot send, discard pkt", iface);
+			verdict = NET_DROP;
+			goto done;
+		}
 	}
 
 	/* If the ll address is not set at all, then we must set
@@ -1105,6 +1124,10 @@ static void join_mcast_allnodes(struct net_if *iface)
 	struct in6_addr addr;
 	int ret;
 
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
+
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	ret = net_ipv6_mld_join(iface, &addr);
@@ -1120,6 +1143,10 @@ static void join_mcast_solicit_node(struct net_if *iface,
 {
 	struct in6_addr addr;
 	int ret;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
@@ -1160,6 +1187,10 @@ static void leave_mcast_all(struct net_if *iface)
 static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 {
 	enum net_l2_flags flags = 0;
+
+	if (iface->config.ip.ipv6 == NULL) {
+		return;
+	}
 
 	flags = l2_flags_get(iface);
 	if (flags & NET_L2_MULTICAST) {
@@ -1684,7 +1715,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 		int ret;
 
 		if (!ipv6->mcast[i].is_used ||
-		    net_if_ipv4_maddr_is_joined(&ipv6->mcast[i])) {
+		    net_if_ipv6_maddr_is_joined(&ipv6->mcast[i])) {
 			continue;
 		}
 
@@ -1693,6 +1724,10 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
 				net_if_get_by_iface(iface), ret);
+		} else {
+			NET_DBG("Rejoined mcast address %s for %d",
+				net_sprint_ipv6_addr(&ipv6->mcast[i].address.in6_addr),
+				net_if_get_by_iface(iface));
 		}
 	}
 
@@ -4042,6 +4077,27 @@ bool z_vrfy_net_if_ipv4_set_netmask_by_addr_by_index(int index,
 #include <zephyr/syscalls/net_if_ipv4_set_netmask_by_addr_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface)
+{
+	struct in_addr gw = { 0 };
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		goto out;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		goto out;
+	}
+
+	gw = iface->config.ip.ipv4->gw;
+out:
+	net_if_unlock(iface);
+
+	return gw;
+}
+
 void net_if_ipv4_set_gw(struct net_if *iface, const struct in_addr *gw)
 {
 	net_if_lock(iface);
@@ -5156,13 +5212,11 @@ static void notify_iface_up(struct net_if *iface)
 	/* In many places it's assumed that link address was set with
 	 * net_if_set_link_addr(). Better check that now.
 	 */
-#if defined(CONFIG_NET_L2_CANBUS_RAW)
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+	    IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	    (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)))	{
 		/* CAN does not require link address. */
-	} else
-#endif	/* CONFIG_NET_L2_CANBUS_RAW */
-	{
+	} else {
 		if (!net_if_is_offloaded(iface)) {
 			NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 		}
@@ -5667,10 +5721,12 @@ bool net_if_is_wifi(struct net_if *iface)
 	if (net_if_is_offloaded(iface)) {
 		return net_off_is_wifi_offloaded(iface);
 	}
-#if defined(CONFIG_NET_L2_ETHERNET)
-	return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
-		net_eth_type_is_wifi(iface);
-#endif
+
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
+		return net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET) &&
+			net_eth_type_is_wifi(iface);
+	}
+
 	return false;
 }
 
@@ -5796,78 +5852,48 @@ int net_if_get_by_name(const char *name)
 #if defined(CONFIG_NET_INTERFACE_NAME)
 static void set_default_name(struct net_if *iface)
 {
-	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1] = { 0 };
+	char name[CONFIG_NET_INTERFACE_NAME_LEN + 1];
 	int ret;
 
 	if (net_if_is_wifi(iface)) {
 		static int count;
 
-		snprintk(name, sizeof(name) - 1, "wlan%d", count++);
+		snprintk(name, sizeof(name), "wlan%d", count++);
 
-	} else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET)) {
-#if defined(CONFIG_NET_L2_ETHERNET)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "eth%d", count++);
-		}
-#endif /* CONFIG_NET_L2_ETHERNET */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154)) {
-#if defined(CONFIG_NET_L2_IEEE802154)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "ieee%d", count++);
-		}
-#endif /* CONFIG_NET_L2_IEEE802154 */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_DUMMY)) {
-#if defined(CONFIG_NET_L2_DUMMY)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "dummy%d", count++);
-		}
-#endif /* CONFIG_NET_L2_DUMMY */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW)) {
-#if defined(CONFIG_NET_L2_CANBUS_RAW)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "can%d", count++);
-		}
-#endif /* CONFIG_NET_L2_CANBUS_RAW */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_PPP)) {
-#if defined(CONFIG_NET_L2_PPP)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(PPP)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "ppp%d", count++);
-		}
-#endif /* CONFIG_NET_L2_PPP */
-	}
-
-	if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
-#if defined(CONFIG_NET_L2_OPENTHREAD)
-		if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
-			static int count;
-
-			snprintk(name, sizeof(name) - 1, "thread%d", count++);
-		}
-#endif /* CONFIG_NET_L2_OPENTHREAD */
-	}
-
-	if (name[0] == '\0') {
+	} else if (IS_ENABLED(CONFIG_NET_L2_ETHERNET) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET))) {
 		static int count;
 
-		snprintk(name, sizeof(name) - 1, "net%d", count++);
+		snprintk(name, sizeof(name), "eth%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "ieee%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_DUMMY) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "dummy%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_CANBUS_RAW) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(CANBUS_RAW))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "can%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_PPP) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(PPP))) {
+		static int count;
+
+		snprintk(name, sizeof(name) - 1, "ppp%d", count++);
+	} else if (IS_ENABLED(CONFIG_NET_L2_OPENTHREAD) &&
+		   (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD))) {
+		static int count;
+
+		snprintk(name, sizeof(name), "thread%d", count++);
+	} else {
+		static int count;
+
+		snprintk(name, sizeof(name), "net%d", count++);
 	}
 
 	ret = net_if_set_name(iface, name);

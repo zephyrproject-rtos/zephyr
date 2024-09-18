@@ -1,10 +1,13 @@
-.. _lsm6dsl:
+.. zephyr:code-sample:: lsmd6dsl
+   :name: LSM6DSL IMU sensor
+   :relevant-api: sensor_interface
 
-LSM6DSL: IMU sensor Monitor
-###########################
+   Get accelerometer and gyroscope data from an LSM6DSL sensor (polling & trigger
+   mode).
 
 Overview
 ********
+
 This sample sets the LSM6DSL accelerometer and gyroscope to 104Hz
 and enable a trigger on data ready. It displays on the console the
 values for accelerometer and gyroscope, plus optionally the values of

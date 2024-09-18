@@ -77,8 +77,7 @@ function(runners_yaml_append_config)
   runners_yaml_append("")
 endfunction()
 
-# Save runner state in a YAML file, and put that YAML file's location
-# in the cache.
+# Save runner state in a YAML file.
 function(create_runners_yaml)
   set(runners ${ARGV})
 
@@ -128,7 +127,7 @@ function(create_runners_yaml)
     endif()
   endforeach()
 
-  # Write the final contents and set its location in the cache.
+  # Write the final contents.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
     $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)
 endfunction()

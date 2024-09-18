@@ -30,12 +30,13 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_REGISTER(bt_bap_scan_delegator, CONFIG_BT_BAP_SCAN_DELEGATOR_LOG_LEVEL);
 
@@ -205,7 +206,7 @@ static void net_buf_put_recv_state(const struct bass_recv_state_internal *recv_s
 	for (int i = 0; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync >> 1);
+		(void)net_buf_simple_add_le32(&read_buf, subgroup->bis_sync);
 		(void)net_buf_simple_add_u8(&read_buf, subgroup->metadata_len);
 		(void)net_buf_simple_add_mem(&read_buf, subgroup->metadata,
 					     subgroup->metadata_len);
@@ -448,14 +449,18 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb =  {
 
 static bool supports_past(struct bt_conn *conn, uint8_t pa_sync_val)
 {
-	LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
-		BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
-		BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
-		pa_sync_val);
+	if (IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)) {
+		LOG_DBG("%p remote %s PAST, local %s PAST (req %u)", (void *)conn,
+			BT_FEAT_LE_PAST_SEND(conn->le.features) ? "supports" : "does not support",
+			BT_FEAT_LE_PAST_RECV(bt_dev.le.features) ? "supports" : "does not support",
+			pa_sync_val);
 
-	return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
-	       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
-	       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
+		return pa_sync_val == BT_BAP_BASS_PA_REQ_SYNC_PAST &&
+		       BT_FEAT_LE_PAST_SEND(conn->le.features) &&
+		       BT_FEAT_LE_PAST_RECV(bt_dev.le.features);
+	} else {
+		return false;
+	}
 }
 
 static int pa_sync_request(struct bt_conn *conn,
@@ -597,10 +602,6 @@ static int scan_delegator_add_source(struct bt_conn *conn,
 		}
 
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
-		if (internal_state->requested_bis_sync[i] != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* Received BIS Index bitfield uses BIT(0) for BIS Index 1 */
-			internal_state->requested_bis_sync[i] <<= 1;
-		}
 
 		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
@@ -763,10 +764,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		old_bis_sync_req = internal_state->requested_bis_sync[i];
 
 		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
-		if (internal_state->requested_bis_sync[i] != BT_BAP_BIS_SYNC_NO_PREF) {
-			/* Received BIS Index bitfield uses BIT(0) for BIS Index 1 */
-			internal_state->requested_bis_sync[i] <<= 1;
-		}
 
 		if (internal_state->requested_bis_sync[i] &&
 		    pa_sync == BT_BAP_BASS_PA_REQ_NO_SYNC) {
@@ -1298,9 +1295,13 @@ static bool valid_bt_bap_scan_delegator_add_src_param(
 		return false;
 	}
 
-	if (param->pa_sync == NULL) {
-		LOG_DBG("NULL pa_sync");
+	CHECKIF(param->addr.type > BT_ADDR_LE_RANDOM) {
+		LOG_DBG("param->addr.type %u is invalid", param->addr.type);
+		return false;
+	}
 
+	CHECKIF(param->sid > BT_GAP_SID_MAX) {
+		LOG_DBG("param->sid %d is invalid", param->sid);
 		return false;
 	}
 
@@ -1337,19 +1338,22 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 {
 	struct bass_recv_state_internal *internal_state = NULL;
 	struct bt_bap_scan_delegator_recv_state *state;
-	struct bt_le_per_adv_sync_info sync_info;
-	int err;
+	struct bt_le_per_adv_sync *pa_sync;
 
 	CHECKIF(!valid_bt_bap_scan_delegator_add_src_param(param)) {
 		return -EINVAL;
 	}
 
-	internal_state = bass_lookup_pa_sync(param->pa_sync);
-	if (internal_state != NULL) {
-		LOG_DBG("PA Sync already in a receive state with src_id %u",
-			internal_state->state.src_id);
+	pa_sync = bt_le_per_adv_sync_lookup_addr(&param->addr, param->sid);
 
-		return -EALREADY;
+	if (pa_sync != NULL) {
+		internal_state = bass_lookup_pa_sync(pa_sync);
+		if (internal_state != NULL) {
+			LOG_DBG("PA Sync already in a receive state with src_id %u",
+				internal_state->state.src_id);
+
+			return -EALREADY;
+		}
 	}
 
 	internal_state = get_free_recv_state();
@@ -1359,20 +1363,14 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 		return -ENOMEM;
 	}
 
-	err = bt_le_per_adv_sync_get_info(param->pa_sync, &sync_info);
-	if (err != 0) {
-		LOG_DBG("Failed to get sync info: %d", err);
-
-		return err;
-	}
-
 	state = &internal_state->state;
 
 	state->src_id = next_src_id();
-	bt_addr_le_copy(&state->addr, &sync_info.addr);
-	state->adv_sid = sync_info.sid;
+	bt_addr_le_copy(&state->addr, &param->addr);
+	state->adv_sid = param->sid;
 	state->broadcast_id = param->broadcast_id;
-	state->pa_sync_state = BT_BAP_PA_STATE_SYNCED;
+	state->pa_sync_state =
+		pa_sync == NULL ? BT_BAP_PA_STATE_NOT_SYNCED : BT_BAP_PA_STATE_SYNCED;
 	state->num_subgroups = param->num_subgroups;
 	if (state->num_subgroups > 0U) {
 		(void)memcpy(state->subgroups, param->subgroups,
@@ -1382,7 +1380,7 @@ int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_par
 	}
 
 	internal_state->active = true;
-	internal_state->pa_sync = param->pa_sync;
+	internal_state->pa_sync = pa_sync;
 
 	/* Set all requested_bis_sync to BT_BAP_BIS_SYNC_NO_PREF, as no
 	 * Broadcast Assistant has set any requests yet
@@ -1471,6 +1469,12 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
 
 	if (state->encrypt_state != param->encrypt_state) {
 		state->encrypt_state = param->encrypt_state;
+
+		if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+			(void)memcpy(state->bad_code, internal_state->broadcast_code,
+				     sizeof(internal_state->state.bad_code));
+		}
+
 		state_changed = true;
 	}
 

@@ -1,7 +1,8 @@
-.. _fxos8700:
+.. zephyr:code-sample:: fxos8700
+   :name: FXOS8700 Accelerometer/Magnetometer Sensor
+   :relevant-api: sensor_interface
 
-FXOS8700 Accelerometer/Magnetometer Sensor
-##########################################
+   Get accelerometer and magnetometer data from an FXOS8700 sensor (polling & trigger mode).
 
 Overview
 ********

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Vestas Wind Systems A/S
- * Copyright 2022 NXP
+ * Copyright 2022, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,6 +107,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 		}
 		break;
 #endif /* MCUX_ACMP_HAS_OFFSET */
+#if MCUX_ACMP_HAS_HYSTCTR
 	case SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL:
 		if (val1 >= kACMP_HysteresisLevel0 &&
 		    val1 <= kACMP_HysteresisLevel3) {
@@ -118,6 +119,7 @@ static int mcux_acmp_attr_set(const struct device *dev,
 			return -EINVAL;
 		}
 		break;
+#endif /* MCUX_ACMP_HAS_HYSTCTR */
 	case SENSOR_ATTR_MCUX_ACMP_DAC_VOLTAGE_REFERENCE:
 		if (val1 >= kACMP_VrefSourceVin1 &&
 		    val1 <= kACMP_VrefSourceVin2) {
@@ -271,9 +273,11 @@ static int mcux_acmp_attr_get(const struct device *dev,
 		val->val1 = data->config.offsetMode;
 		break;
 #endif /* MCUX_ACMP_HAS_OFFSET */
+#if MCUX_ACMP_HAS_HYSTCTR
 	case SENSOR_ATTR_MCUX_ACMP_HYSTERESIS_LEVEL:
 		val->val1 = data->config.hysteresisMode;
 		break;
+#endif /* MCUX_ACMP_HAS_HYSTCTR */
 	case SENSOR_ATTR_MCUX_ACMP_DAC_VOLTAGE_REFERENCE:
 		val->val1 = data->dac.referenceVoltageSource;
 		break;

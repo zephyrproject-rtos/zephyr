@@ -802,7 +802,7 @@ As an example, let's build the Hello World sample for the ``reel_board``:
 
 .. zephyr-app-commands::
    :tool: all
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: reel_board
    :goals: build
 
@@ -820,7 +820,7 @@ Using CMake directly:
 
 .. zephyr-app-commands::
    :tool: cmake
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :generator: make
    :host-os: unix
    :board: reel_board

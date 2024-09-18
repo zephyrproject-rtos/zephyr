@@ -127,7 +127,7 @@ struct bt_mesh_blob_srv_cb {
 		       const struct bt_mesh_blob_io **io);
 };
 
-/** @brief BLOB Transfer Server instance. */
+/** @brief BLOB Transfer Server model instance. */
 struct bt_mesh_blob_srv {
 	/** Event handler callbacks. */
 	const struct bt_mesh_blob_srv_cb *cb;

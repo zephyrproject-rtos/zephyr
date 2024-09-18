@@ -10,6 +10,8 @@
 	uac2_headset: usb_audio2 {
 		compatible = "zephyr,uac2";
 		status = "okay";
+		full-speed;
+		high-speed;
 		audio-function = <AUDIO_FUNCTION_HEADSET>;
 
 		uac_aclk: aclk {
@@ -69,6 +71,44 @@
 			implicit-feedback;
 			subslot-size = <2>;
 			bit-resolution = <16>;
+		};
+	};
+};
+
+/ {
+	hs_uac2_headphones: hs_usb_audio2 {
+		compatible = "zephyr,uac2";
+		status = "okay";
+		high-speed;
+		audio-function = <AUDIO_FUNCTION_OTHER>;
+
+		hs_uac_aclk: hs_aclk {
+			compatible = "zephyr,uac2-clock-source";
+			clock-type = "internal-programmable";
+			frequency-control = "host-programmable";
+			sampling-frequencies = <192000>;
+		};
+
+		hs_out_terminal: hs_out_terminal {
+			compatible = "zephyr,uac2-input-terminal";
+			clock-source = <&hs_uac_aclk>;
+			terminal-type = <USB_TERMINAL_STREAMING>;
+			front-left;
+			front-right;
+		};
+
+		hs_headphones_output: hs_headphones {
+			compatible = "zephyr,uac2-output-terminal";
+			data-source = <&hs_out_terminal>;
+			clock-source = <&hs_uac_aclk>;
+			terminal-type = <OUTPUT_TERMINAL_HEADPHONES>;
+		};
+
+		hs_as_iso_out: hs_out_interface {
+			compatible = "zephyr,uac2-audio-streaming";
+			linked-terminal = <&hs_out_terminal>;
+			subslot-size = <3>;
+			bit-resolution = <24>;
 		};
 	};
 };

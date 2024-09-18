@@ -71,7 +71,7 @@ LOG_MODULE_REGISTER(bt_ctlr_isoal, CONFIG_BT_CTLR_ISOAL_LOG_LEVEL);
 /* Defined the wrapping point and mid point in the range of time input values,
  * which depend on range of the controller's clock in microseconds.
  */
-#define ISOAL_TIME_WRAPPING_POINT_US      (HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_MASK))
+#define ISOAL_TIME_WRAPPING_POINT_US      (HAL_TICKER_TICKS_TO_US_64BIT(HAL_TICKER_CNTR_MASK))
 #define ISOAL_TIME_MID_POINT_US           (ISOAL_TIME_WRAPPING_POINT_US / 2)
 #define ISOAL_TIME_SPAN_FULL_US           (ISOAL_TIME_WRAPPING_POINT_US + 1)
 #define ISOAL_TIME_SPAN_HALF_US           (ISOAL_TIME_SPAN_FULL_US / 2)

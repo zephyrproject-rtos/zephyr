@@ -48,7 +48,6 @@ Roles
 """
 from typing import Any, Dict, Iterator, List, Tuple
 
-from breathe.directives.content_block import DoxygenGroupDirective
 from docutils import nodes
 from docutils.nodes import Node
 from docutils.parsers.rst import Directive, directives
@@ -59,6 +58,7 @@ from sphinx.transforms import SphinxTransform
 from sphinx.transforms.post_transforms import SphinxPostTransform
 from sphinx.util import logging
 from sphinx.util.nodes import NodeMatcher, make_refnode
+from zephyr.doxybridge import DoxygenGroupDirective
 from zephyr.gh_utils import gh_link_get_url
 
 import json
@@ -88,8 +88,11 @@ class ConvertCodeSampleNode(SphinxTransform):
         """
         Transforms a `CodeSampleNode` into a `nodes.section` named after the code sample name.
 
-        Moves all sibling nodes that are after the `CodeSampleNode` in the documement under this new
+        Moves all sibling nodes that are after the `CodeSampleNode` in the document under this new
         section.
+
+        Adds a "See Also" section at the end with links to all relevant APIs as per the samples's
+        `relevant-api` attribute.
         """
         parent = node.parent
         siblings_to_move = []
@@ -110,6 +113,31 @@ class ConvertCodeSampleNode(SphinxTransform):
             # Remove the moved siblings from their original parent
             for sibling in siblings_to_move:
                 parent.remove(sibling)
+
+            # Add a "See Also" section at the end with links to relevant APIs
+            if node["relevant-api"]:
+                see_also_section = nodes.section(ids=["see-also"])
+                see_also_section += nodes.title(text="See also")
+
+                for api in node["relevant-api"]:
+                    desc_node = addnodes.desc()
+                    desc_node["domain"] = "c"
+                    desc_node["objtype"] = "group"
+
+                    title_signode = addnodes.desc_signature()
+                    api_xref = addnodes.pending_xref(
+                        "",
+                        refdomain="c",
+                        reftype="group",
+                        reftarget=api,
+                        refwarn=True,
+                    )
+                    api_xref += nodes.Text(api)
+                    title_signode += api_xref
+                    desc_node += title_signode
+                    see_also_section += desc_node
+
+                new_section += see_also_section
 
             # Set sample description as the meta description of the document for improved SEO
             meta_description = nodes.meta()
@@ -136,6 +164,38 @@ class ConvertCodeSampleNode(SphinxTransform):
             node.document += json_ld
 
 
+def create_code_sample_list(code_samples):
+    """
+    Creates a bullet list (`nodes.bullet_list`) of code samples from a list of code samples.
+
+    The list is alphabetically sorted (case-insensitive) by the code sample name.
+    """
+
+    ul = nodes.bullet_list(classes=["code-sample-list"])
+
+    for code_sample in sorted(code_samples, key=lambda x: x["name"].casefold()):
+        li = nodes.list_item()
+
+        sample_xref = addnodes.pending_xref(
+            "",
+            refdomain="zephyr",
+            reftype="code-sample",
+            reftarget=code_sample["id"],
+            refwarn=True,
+        )
+        sample_xref += nodes.Text(code_sample["name"])
+        li += nodes.inline("", "", sample_xref, classes=["code-sample-name"])
+
+        li += nodes.inline(
+            text=code_sample["description"].astext(),
+            classes=["code-sample-description"],
+        )
+
+        ul += li
+
+    return ul
+
+
 class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
     default_priority = 5  # before ReferencesResolver
 
@@ -158,27 +218,8 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
                 admonition["classes"].append("dropdown") # used by sphinx-togglebutton extension
                 admonition["classes"].append("toggle-shown") # show the content by default
 
-                sample_dl = nodes.definition_list()
-
-                for code_sample in sorted(code_samples, key=lambda x: x["name"]):
-                    term = nodes.term()
-
-                    sample_xref = addnodes.pending_xref(
-                        "",
-                        refdomain="zephyr",
-                        reftype="code-sample",
-                        reftarget=code_sample["id"],
-                        refwarn=True,
-                    )
-                    sample_xref += nodes.inline(text=code_sample["name"])
-                    term += sample_xref
-                    definition = nodes.definition()
-                    definition += nodes.paragraph(text=code_sample["description"].astext())
-                    sample_dli = nodes.definition_list_item()
-                    sample_dli += term
-                    sample_dli += definition
-                    sample_dl += sample_dli
-                admonition += sample_dl
+                sample_list = create_code_sample_list(code_samples)
+                admonition += sample_list
 
                 # replace node with the newly created admonition
                 node.replace_self(admonition)
@@ -231,6 +272,7 @@ class CodeSampleDirective(Directive):
         code_sample_node = CodeSampleNode()
         code_sample_node["id"] = code_sample_id
         code_sample_node["name"] = name
+        code_sample_node["relevant-api"] = relevant_api_list
         code_sample_node += description_node
 
         return [code_sample_node]
@@ -310,7 +352,7 @@ class CustomDoxygenGroupDirective(DoxygenGroupDirective):
         nodes = super().run()
 
         if self.config.zephyr_breathe_insert_related_samples:
-            return [RelatedCodeSamplesNode(id=self.arguments[0]), *nodes]
+            return [*nodes, RelatedCodeSamplesNode(id=self.arguments[0])]
         else:
             return nodes
 
@@ -323,7 +365,7 @@ def setup(app):
     app.add_transform(ConvertCodeSampleNode)
     app.add_post_transform(ProcessRelatedCodeSamplesNode)
 
-    # monkey-patching of Breathe's DoxygenGroupDirective
+    # monkey-patching of the DoxygenGroupDirective
     app.add_directive("doxygengroup", CustomDoxygenGroupDirective, override=True)
 
     return {

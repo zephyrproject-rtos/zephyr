@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tbm {
+	status = "okay";
+};
+
+&tddconf {
+	status = "okay";
+	stmsink = "etr";
+	portconfig = <0>;
+};

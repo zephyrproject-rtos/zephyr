@@ -939,7 +939,9 @@ static void isr_window(void *param)
 	uint32_t ticks_at_start;
 
 	ticks_at_start = ticker_ticks_now_get() +
-			 HAL_TICKER_CNTR_CMP_OFFSET_MIN;
+			 HAL_TICKER_US_TO_TICKS(HAL_RADIO_ISR_LATENCY_MAX_US) +
+			 HAL_TICKER_CNTR_CMP_OFFSET_MIN +
+			 HAL_TICKER_CNTR_SET_LATENCY;
 	remainder_us = radio_tmr_start_tick(0, ticks_at_start);
 #else /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 

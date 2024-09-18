@@ -22,7 +22,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -31,7 +31,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C2) || defined(CONFIG_SOC_SERIES_ESP32C3)
 #define ESP32_COUNTER_RTC_ISR_HANDLER isr_handler_t
 #else
 #define ESP32_COUNTER_RTC_ISR_HANDLER intr_handler_t
@@ -42,6 +42,8 @@ static void counter_esp32_isr(void *arg);
 struct counter_esp32_config {
 	struct counter_config_info counter_info;
 	int irq_source;
+	int irq_priority;
+	int irq_flags;
 	const struct device *clock_dev;
 };
 
@@ -56,19 +58,23 @@ static int counter_esp32_init(const struct device *dev)
 	const struct counter_esp32_config *cfg = dev->config;
 	struct counter_esp32_data *data = dev->data;
 
-
 	/* RTC_SLOW_CLK is the default clk source */
 	clock_control_get_rate(cfg->clock_dev,
 			       (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW,
 			       &data->clk_src_freq);
 
-	esp_intr_alloc(cfg->irq_source,
-			0,
-			(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
-			(void *)dev,
-			NULL);
+	int ret = esp_intr_alloc(cfg->irq_source,
+				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+				(ESP32_COUNTER_RTC_ISR_HANDLER)counter_esp32_isr,
+				(void *)dev,
+				NULL);
 
-	return 0;
+	if (ret != 0) {
+		LOG_ERR("could not allocate interrupt (err %d)", ret);
+	}
+
+	return ret;
 }
 
 static int counter_esp32_start(const struct device *dev)
@@ -108,7 +114,8 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 	uint32_t now;
 	uint32_t ticks = 0;
 
-#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32C2) || \
+	defined(CONFIG_SOC_SERIES_ESP32C3)
 	/* In ESP32/C3 Series the min possible value is 30 us*/
 	if (counter_ticks_to_us(dev, alarm_cfg->ticks) < 30) {
 		return -EINVAL;
@@ -199,7 +206,9 @@ static const struct counter_esp32_config counter_config = {
 		.channels = 1
 	},
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.irq_source = DT_INST_IRQN(0),
+	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
+	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
+	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags)
 };
 
 static const struct counter_driver_api rtc_timer_esp32_api = {

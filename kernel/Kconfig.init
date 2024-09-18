@@ -1,0 +1,45 @@
+# Kernel init hook options
+
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+
+menu "SoC and Board Hooks"
+
+config SOC_RESET_HOOK
+	bool "Run early SoC reset hook"
+	help
+	  Run an early SoC reset hook.
+
+	  A custom hook soc_reset_hook() is executed at the beginning of the
+	  startup code (__start). soc_reset_hook() must be implemented by the SoC.
+
+config SOC_PREP_HOOK
+	bool "Run early SoC preparation hook"
+	help
+	  Run an early SoC preparation hook.
+
+	  A custom hook soc_prep_hook() is executed at the beginning of the
+	  c prep code (prep_c). soc_prep_hook() must be implemented by the SoC.
+
+config SOC_EARLY_INIT_HOOK
+	bool "Run early SoC hook"
+	help
+	  Run an early SoC initialization hook.
+
+config SOC_LATE_INIT_HOOK
+	bool "Run late SoC hook"
+	help
+	  Run a late SoC initialization hook.
+
+config BOARD_EARLY_INIT_HOOK
+	bool "Run early board hook"
+	help
+	  Run an early board initialization hook.
+
+config BOARD_LATE_INIT_HOOK
+	bool "Run late board hook"
+	help
+	  Run a late board initialization hook.
+
+endmenu

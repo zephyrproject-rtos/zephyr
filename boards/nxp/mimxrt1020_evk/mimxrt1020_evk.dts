@@ -24,6 +24,7 @@
 		zephyr,flash-controller = &is25wp064;
 		zephyr,flash = &is25wp064;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;

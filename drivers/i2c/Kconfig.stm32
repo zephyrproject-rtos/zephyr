@@ -5,6 +5,7 @@ menuconfig I2C_STM32
 	bool "STM32 I2C driver"
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
+	select PINCTRL
 	help
 	  Enable I2C support on the STM32 SoCs
 

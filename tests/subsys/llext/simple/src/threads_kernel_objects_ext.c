@@ -42,4 +42,4 @@ void test_entry(void)
 	k_thread_join(&my_thread, K_FOREVER);
 	printk("Test thread joined\n");
 }
-LL_EXTENSION_SYMBOL(test_entry);
+EXPORT_SYMBOL(test_entry);

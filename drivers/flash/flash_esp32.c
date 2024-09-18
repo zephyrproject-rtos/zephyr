@@ -146,10 +146,11 @@ flash_esp32_get_parameters(const struct device *dev)
 
 static int flash_esp32_init(const struct device *dev)
 {
-	struct flash_esp32_dev_data *const dev_data = dev->data;
 	uint32_t ret = 0;
 
 #ifdef CONFIG_MULTITHREADING
+	struct flash_esp32_dev_data *const dev_data = dev->data;
+
 	k_sem_init(&dev_data->sem, 1, 1);
 #endif /* CONFIG_MULTITHREADING */
 	ret = esp_flash_init_default_chip();

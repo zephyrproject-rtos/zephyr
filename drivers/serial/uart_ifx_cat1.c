@@ -526,7 +526,7 @@ static const struct uart_driver_api ifx_cat1_uart_driver_api = {
 	};										     \
 											     \
 	DEVICE_DT_INST_DEFINE(n,							     \
-			      &ifx_cat1_uart_init, NULL,				     \
+			      ifx_cat1_uart_init, NULL,					     \
 			      &ifx_cat1_uart##n##_data,					     \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,			     \
 			      CONFIG_SERIAL_INIT_PRIORITY,				     \

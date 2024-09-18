@@ -1,7 +1,8 @@
-.. _ble_mesh_provisioner:
+.. zephyr:code-sample:: ble_mesh_provisioner
+   :name: Mesh Provisioner
+   :relevant-api: bt_mesh bluetooth
 
-Bluetooth: Mesh Provisioner
-###########################
+   Provision a node and configure it using the Bluetooth Mesh APIs.
 
 Overview
 ********
@@ -54,7 +55,7 @@ Refer to your :ref:`board's documentation <boards>` for alternative
 flash instructions if your board doesn't support the ``flash`` target.
 
 To run the application on an :ref:`nrf5340dk_nrf5340`, a Bluetooth controller application
-must also run on the network core. The :ref:`bluetooth-hci-ipc-sample` sample
+must also run on the network core. The :zephyr:code-sample:`bluetooth_hci_ipc` sample
 application may be used. Build this sample with configuration
 :zephyr_file:`samples/bluetooth/hci_ipc/nrf5340_cpunet_bt_mesh-bt_ll_sw_split.conf`
 to enable mesh support.

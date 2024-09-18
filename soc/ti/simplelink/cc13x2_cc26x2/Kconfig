@@ -45,8 +45,8 @@ config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
 config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_PIN
 	int "ROM bootloader backdoor pin"
 	depends on CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE
-	range 0 255
-	default 255
+	range 0 $(UINT8_MAX)
+	default $(UINT8_MAX)
 	help
 	  Set the pin that is level checked if the bootloader backdoor is
 	  enabled.
@@ -60,3 +60,10 @@ config CC13X2_CC26X2_BOOTLOADER_BACKDOOR_LEVEL
 	  Set the active level of the pin selected for the bootloader backdoor.
 
 endmenu
+
+config CC13X2_CC26X2_BASIC_BT
+	bool "Baremetal Bluetooth support"
+	depends on SOC_CC1352P
+	help
+	  Enable Bluetooth support for the CC13X2 and CC26X2 series of MCUs
+	  using the TI driverlib without the Zephyr or TI Bluetooth stack.

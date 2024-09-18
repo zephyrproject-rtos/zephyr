@@ -64,7 +64,7 @@ the next interface, preventing other composite functions from working.
 Because of this problem, HCI USB should not be used in a composite configuration.
 This problem is fixed in the implementation for new USB support.
 
-See :ref:`bluetooth-hci-usb-sample` sample for reference.
+See :zephyr:code-sample:`bluetooth_hci_usb` sample for reference.
 
 .. _usb_device_cdc_acm:
 
@@ -168,7 +168,7 @@ List of few Zephyr specific chosen properties which can be used to select
 CDC ACM UART as backend for a subsystem or application:
 
 * ``zephyr,bt-c2h-uart`` used in Bluetooth,
-  for example see :ref:`bluetooth-hci-uart-sample`
+  for example see :zephyr:code-sample:`bluetooth_hci_uart`
 * ``zephyr,ot-uart`` used in OpenThread,
   for example see :zephyr:code-sample:`coprocessor`
 * ``zephyr,shell-uart`` used by shell for serial backend,
@@ -311,7 +311,7 @@ The disadvantage of this is that Kconfig options such as
 :kconfig:option:`CONFIG_HID_INTERRUPT_EP_MPS` apply to all instances. This design
 issue will be fixed in the HID class implementation for the new USB support.
 
-See :zephyr:code-sample:`usb-hid` or :zephyr:code-sample:`usb-hid-mouse` sample for reference.
+See :zephyr:code-sample:`usb-hid-mouse` sample for reference.
 
 Mass Storage Class
 ==================
@@ -577,7 +577,7 @@ The following Product IDs are currently used:
 +====================================================+========+
 | :zephyr:code-sample:`usb-cdc-acm`                  | 0x0001 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-cdc-acm-composite`        | 0x0002 |
+| Reserved (previously: usb-cdc-acm-composite)       | 0x0002 |
 +----------------------------------------------------+--------+
 | Reserved (previously: usb-hid-cdc)                 | 0x0003 |
 +----------------------------------------------------+--------+
@@ -585,7 +585,7 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (Run-Time)           | 0x0005 |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`usb-hid`                      | 0x0006 |
+| Reserved (previously: usb-hid)                     | 0x0006 |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-hid-mouse`                | 0x0007 |
 +----------------------------------------------------+--------+
@@ -595,13 +595,15 @@ The following Product IDs are currently used:
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`webusb`                       | 0x000A |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-sample`                    | 0x000B |
+| :zephyr:code-sample:`bluetooth_hci_usb`            | 0x000B |
 +----------------------------------------------------+--------+
-| :ref:`bluetooth-hci-usb-h4-sample`                 | 0x000C |
+| :zephyr:code-sample:`bluetooth_hci_usb_h4`         | 0x000C |
 +----------------------------------------------------+--------+
-| :zephyr:code-sample:`wpan-usb`                     | 0x000D |
+| Reserved (previously: wpan-usb)                    | 0x000D |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`uac2-explicit-feedback`       | 0x000E |
++----------------------------------------------------+--------+
+| :zephyr:code-sample:`uac2-implicit-feedback`       | 0x000F |
 +----------------------------------------------------+--------+
 | :zephyr:code-sample:`usb-dfu` (DFU Mode)           | 0xFFFF |
 +----------------------------------------------------+--------+

@@ -14,8 +14,7 @@
 #include <esp_private/spi_flash_os.h>
 #include <esp_private/esp_mmu_map_private.h>
 #if CONFIG_ESP_SPIRAM
-#include <esp_psram.h>
-#include <esp_private/esp_psram_extram.h>
+#include "psram.h"
 #endif
 
 #include <zephyr/kernel_structs.h>
@@ -41,13 +40,11 @@
 #endif /* CONFIG_SOC_ENABLE_APPCPU */
 
 #include <zephyr/sys/printk.h>
+#include "esp_log.h"
 
-#if CONFIG_ESP_SPIRAM
-extern int _ext_ram_bss_start;
-extern int _ext_ram_bss_end;
-#endif
+#define TAG "boot.esp32"
 
-extern void z_cstart(void);
+extern void z_prep_c(void);
 extern void esp_reset_reason_init(void);
 
 #ifdef CONFIG_SOC_ENABLE_APPCPU
@@ -120,7 +117,7 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	/* Initialize the architecture CPU pointer.  Some of the
 	 * initialization code wants a valid _current before
-	 * arch_kernel_init() is invoked.
+	 * z_prep_c() is invoked.
 	 */
 	__asm__ __volatile__("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
 
@@ -152,26 +149,7 @@ void IRAM_ATTR __esp_platform_start(void)
 #endif
 
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_psram_init();
-
-	if (err != ESP_OK) {
-		printk("Failed to Initialize SPIRAM, aborting.\n");
-		abort();
-	}
-	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
-		printk("SPIRAM size is less than configured size, aborting.\n");
-		abort();
-	}
-
-	if (esp_psram_is_initialized()) {
-		if (!esp_psram_extram_test()) {
-			printk("External RAM failed memory test!");
-			abort();
-		}
-	}
-
-	memset(&_ext_ram_bss_start, 0,
-	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+	esp_init_psram();
 #endif /* CONFIG_ESP_SPIRAM */
 
 /* Scheduler is not started at this point. Hence, guard functions
@@ -187,8 +165,17 @@ void IRAM_ATTR __esp_platform_start(void)
 
 	esp_intr_initialize();
 
+#if CONFIG_ESP_SPIRAM
+	/* Init Shared Multi Heap for PSRAM */
+	int err = esp_psram_smh_init();
+
+	if (err) {
+		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
+	}
+#endif
+
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

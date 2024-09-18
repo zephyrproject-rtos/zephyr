@@ -21,4 +21,4 @@ config SOC_SERIES_KINETIS_KV5X
 	select HAS_OSC
 	select HAS_MCG
 	select HAS_MCUX_RCM
-	select PLATFORM_SPECIFIC_INIT
+	select SOC_RESET_HOOK

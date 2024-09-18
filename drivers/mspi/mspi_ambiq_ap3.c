@@ -1356,7 +1356,7 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 
 #define MSPI_CONFIG(n)                                                                           \
 	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - REG_MSPI_BASEADDR) /             \
+		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI0_BASE) /                    \
 					 (DT_INST_REG_SIZE(n) * 4),                              \
 		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
 		.duplex                = MSPI_HALF_DUPLEX,                                       \

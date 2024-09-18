@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
@@ -37,7 +37,6 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
-#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -710,7 +709,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		struct bt_smp_br *smp;
 
-		chan = bt_l2cap_le_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
+		chan = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SMP);
 		__ASSERT(chan, "No SMP channel found");
 
 		smp = CONTAINER_OF(chan, struct bt_smp_br, chan.chan);
@@ -1462,7 +1461,7 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf,
+	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf,
 				NULL, NULL)) {
 		net_buf_unref(buf);
 	}
@@ -4703,8 +4702,8 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 	struct bt_smp *smp = CONTAINER_OF(chan, struct bt_smp, chan.chan);
 	struct bt_conn *conn = chan->conn;
 
-	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x", chan, conn,
-		conn->handle, conn->encrypt, hci_status);
+	LOG_DBG("chan %p conn %p handle %u encrypt 0x%02x hci status 0x%02x %s", chan, conn,
+		conn->handle, conn->encrypt, hci_status, bt_hci_err_to_str(hci_status));
 
 	if (!atomic_test_and_clear_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		/* We where not waiting for encryption procedure.
@@ -5233,11 +5232,13 @@ static int smp_f6_test(void)
 	int err;
 
 	err = bt_crypto_f6(w, n1, n2, r, io_cap, &a1, &a2, res);
-	if (err)
+	if (err) {
 		return err;
+	}
 
-	if (memcmp(res, exp, 16))
+	if (memcmp(res, exp, 16)) {
 		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -6037,8 +6038,8 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
 #if defined(CONFIG_BT_CLASSIC)
-BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
-			bt_smp_br_accept, NULL);
+BT_L2CAP_BR_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
+			bt_smp_br_accept);
 #endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)

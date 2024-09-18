@@ -1,7 +1,7 @@
-.. _dap-sample:
+.. zephyr:code-sample:: cmsis-dap
+   :name: CMSIS-DAP
 
-DAP Sample Application
-######################
+   Implement a custom CMSIS-DAP controller using SWDP interface driver.
 
 Overview
 ********

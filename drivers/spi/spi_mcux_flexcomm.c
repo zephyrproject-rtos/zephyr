@@ -9,6 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_spi.h>
 #include <zephyr/logging/log.h>
@@ -815,6 +816,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_mcux_release,
 };
 
@@ -885,7 +889,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 		SPI_DMA_CHANNELS(id)		\
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
-			    &spi_mcux_init,				\
+			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\

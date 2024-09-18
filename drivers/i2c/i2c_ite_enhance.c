@@ -53,7 +53,7 @@ struct i2c_cq_packet {
 	uint8_t id;
 	uint8_t cmd_l;
 	uint8_t cmd_h;
-	uint8_t wdata[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, wdata);
 };
 #endif /* CONFIG_I2C_IT8XXX2_CQ_MODE */
 
@@ -1460,6 +1460,9 @@ static const struct i2c_driver_api i2c_enhance_driver_api = {
 #ifdef CONFIG_I2C_TARGET
 	.target_register = i2c_enhance_target_register,
 	.target_unregister = i2c_enhance_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 

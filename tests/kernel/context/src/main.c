@@ -57,7 +57,7 @@
 #elif defined(CONFIG_SPARC)
 #elif defined(CONFIG_MIPS)
 #elif defined(CONFIG_ARCH_POSIX)
-#if  defined(CONFIG_BOARD_NATIVE_POSIX)
+#if defined(CONFIG_BOARD_NATIVE_POSIX) || defined(CONFIG_BOARD_NATIVE_SIM)
 #define TICK_IRQ TIMER_TICK_IRQ
 #else
 /*

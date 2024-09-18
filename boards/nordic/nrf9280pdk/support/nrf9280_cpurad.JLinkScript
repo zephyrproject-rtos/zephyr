@@ -1,0 +1,48 @@
+// Debug Halting Control and Status Register
+__constant U32 _DHCSR_ADDR      = 0xE000EDF0;
+__constant U32 _DHCSR_DBGKEY    = (0xA05F << 16);
+__constant U32 _DHCSR_C_DEBUGEN = (1 <<  0);
+__constant U32 _DHCSR_C_HALT    = (1 <<  1);
+
+// Debug Exception and Monitor Control Register
+__constant U32 _DEMCR_ADDR         = 0xE000EDFC;
+__constant U32 _DEMCR_VC_CORERESET = (1 <<  0);
+__constant U32 _DEMCR_TRCENA       = (1 << 24);
+
+// CPU wait enable register
+__constant U32 _CPUCONF_CPUWAIT_ADDR = 0x5301150C;
+
+int ConfigTargetSettings(void) {
+	JLINK_ExecCommand("CORESIGHT_AddAP = Index=1 Type=AHB-AP");
+	CORESIGHT_IndexAHBAPToUse = 1;
+
+	return 0;
+}
+
+int ResetTarget(void) {
+	// ADAC reset
+	JLINK_CORESIGHT_WriteDP(2, 0x04000010);
+	JLINK_CORESIGHT_WriteAP(0, 0xA3030000);
+	JLINK_CORESIGHT_WriteAP(0, 0x00000004);
+	JLINK_CORESIGHT_WriteAP(0, 0x01030000);
+
+	JLINK_SYS_Sleep(100);
+	JLINK_CORESIGHT_ReadAP(2);
+	JLINK_CORESIGHT_ReadAP(2);
+	JLINK_CORESIGHT_ReadAP(2);
+	JLINK_CORESIGHT_ReadAP(2);
+
+	// Halt the CPU
+	JLINK_MEM_WriteU32(_DHCSR_ADDR, (_DHCSR_DBGKEY | _DHCSR_C_HALT | _DHCSR_C_DEBUGEN));
+
+	// Set vector catch on reset (to halt the CPU immediately after reset)
+	JLINK_MEM_WriteU32(_DEMCR_ADDR, (_DEMCR_VC_CORERESET | _DEMCR_TRCENA));
+
+	// Disable CPU wait
+	JLINK_MEM_WriteU32(_CPUCONF_CPUWAIT_ADDR, 0);
+
+	// Clear vector catch stuff
+	JLINK_MEM_WriteU32(_DEMCR_ADDR, _DEMCR_TRCENA);
+
+	return 0;
+}

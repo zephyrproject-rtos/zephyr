@@ -72,6 +72,8 @@ source "drivers/clock_control/Kconfig.gd32"
 
 source "drivers/clock_control/Kconfig.sam"
 
+source "drivers/clock_control/Kconfig.si32"
+
 source "drivers/clock_control/Kconfig.smartbond"
 
 source "drivers/clock_control/Kconfig.numaker"
@@ -82,6 +84,8 @@ source "drivers/clock_control/Kconfig.agilex5"
 
 source "drivers/clock_control/Kconfig.renesas_ra"
 
+source "drivers/clock_control/Kconfig.renesas_ra_cgc"
+
 source "drivers/clock_control/Kconfig.max32"
 
 source "drivers/clock_control/Kconfig.ambiq"
@@ -91,5 +95,7 @@ source "drivers/clock_control/Kconfig.pwm"
 source "drivers/clock_control/Kconfig.rpi_pico"
 
 source "drivers/clock_control/Kconfig.nrf_auxpll"
+
+source "drivers/clock_control/Kconfig.arm_scmi"
 
 endif # CLOCK_CONTROL

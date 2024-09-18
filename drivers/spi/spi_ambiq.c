@@ -10,9 +10,14 @@
 LOG_MODULE_REGISTER(spi_ambiq);
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/device_runtime.h>
+
 #include <stdlib.h>
 #include <errno.h>
 #include "spi_context.h"
@@ -36,6 +41,7 @@ struct spi_ambiq_data {
 	am_hal_iom_config_t iom_cfg;
 	void *iom_handler;
 	int inst_idx;
+	bool cont;
 };
 
 typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uint32_t len);
@@ -55,8 +61,13 @@ static void spi_ambiq_callback(void *callback_ctxt, uint32_t status)
 	struct spi_ambiq_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
+	/* de-assert cs until transfer finished and no need to hold cs */
+	if (!data->cont) {
+		spi_context_cs_control(ctx, false);
+	}
 	spi_context_complete(ctx, dev, (status == AM_HAL_STATUS_SUCCESS) ? 0 : -EIO);
 }
+#endif
 
 static void spi_ambiq_reset(const struct device *dev)
 {
@@ -67,12 +78,12 @@ static void spi_ambiq_reset(const struct device *dev)
 	am_hal_iom_disable(data->iom_handler);
 	/* NULL config to trigger reconfigure on next xfer */
 	ctx->config = NULL;
+	spi_context_cs_control(ctx, false);
 	/* signal any thread waiting on sync semaphore */
 	spi_context_complete(ctx, dev, -ETIMEDOUT);
 	/* clean up for next xfer */
 	k_sem_reset(&ctx->sync);
 }
-#endif
 
 static void spi_ambiq_isr(const struct device *dev)
 {
@@ -167,14 +178,13 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	return ret;
 }
 
-static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e dir,
-				      am_hal_iom_transfer_t trans, bool cont)
+static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e dir)
 {
+	am_hal_iom_transfer_t trans = {0};
 	struct spi_ambiq_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	bool is_last = false;
 	uint32_t rem_num, cur_num = 0;
-	size_t count = 0;
 	int ret = 0;
 	spi_context_update_trx ctx_update;
 
@@ -182,186 +192,146 @@ static int spi_ambiq_xfer_half_duplex(const struct device *dev, am_hal_iom_dir_e
 		return -EINVAL;
 	} else if (dir == AM_HAL_IOM_RX) {
 		trans.eDirection = AM_HAL_IOM_RX;
-		count = ctx->rx_count;
 		ctx_update = spi_context_update_rx;
-	} else if (dir == AM_HAL_IOM_TX) {
+	} else {
 		trans.eDirection = AM_HAL_IOM_TX;
-		count = ctx->tx_count;
 		ctx_update = spi_context_update_tx;
 	}
-	/* Only instruction */
-	if ((!count) && (trans.ui32InstrLen)) {
-		trans.bContinue = cont;
+	if (dir == AM_HAL_IOM_RX) {
+		rem_num = ctx->rx_len;
+	} else {
+		rem_num = ctx->tx_len;
+	}
+	while (rem_num) {
+		cur_num = (rem_num > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI
+								 : rem_num;
+		trans.ui32NumBytes = cur_num;
+		trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
+		trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
+		ctx_update(ctx, 1, cur_num);
+		if ((!spi_context_tx_buf_on(ctx)) && (!spi_context_rx_buf_on(ctx))) {
+			is_last = true;
+		}
 #ifdef CONFIG_SPI_AMBIQ_DMA
 		if (AM_HAL_STATUS_SUCCESS !=
-		    am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, spi_ambiq_callback,
+		    am_hal_iom_nonblocking_transfer(data->iom_handler, &trans,
+						    ((is_last == true) ? spi_ambiq_callback : NULL),
 						    (void *)dev)) {
-			spi_ambiq_reset(dev);
 			return -EIO;
 		}
-		ret = spi_context_wait_for_completion(ctx);
+		if (is_last) {
+			ret = spi_context_wait_for_completion(ctx);
+		}
 #else
 		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
 #endif
-	} else {
-		for (size_t i = 0; i < count; i++) {
-			if (dir == AM_HAL_IOM_RX) {
-				rem_num = ctx->rx_len;
-			} else {
-				rem_num = ctx->tx_len;
-			}
-			while (rem_num) {
-				cur_num = (rem_num > AM_HAL_IOM_MAX_TXNSIZE_SPI)
-						  ? AM_HAL_IOM_MAX_TXNSIZE_SPI
-						  : rem_num;
-				if ((i == (count - 1)) && (cur_num == rem_num)) {
-					is_last = true;
-				}
-				trans.bContinue = (is_last == true) ? cont : true;
-				trans.ui32NumBytes = cur_num;
-				trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-				trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
-#ifdef CONFIG_SPI_AMBIQ_DMA
-				if (AM_HAL_STATUS_SUCCESS !=
-				    am_hal_iom_nonblocking_transfer(
-					    data->iom_handler, &trans,
-					    ((is_last == true) ? spi_ambiq_callback : NULL),
-					    (void *)dev)) {
-					spi_ambiq_reset(dev);
-					return -EIO;
-				}
-				if (is_last) {
-					ret = spi_context_wait_for_completion(ctx);
-				}
-#else
-				ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
-#endif
-				rem_num -= cur_num;
-				ctx_update(ctx, 1, cur_num);
-			}
+		rem_num -= cur_num;
+		if (ret != 0) {
+			return -EIO;
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
-static int spi_ambiq_xfer_full_duplex(const struct device *dev, am_hal_iom_dir_e dir,
-				      am_hal_iom_transfer_t trans, bool cont)
+static int spi_ambiq_xfer_full_duplex(const struct device *dev)
 {
+	am_hal_iom_transfer_t trans = {0};
 	struct spi_ambiq_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	bool trx_once = (ctx->tx_len == ctx->rx_len);
 	int ret = 0;
 
-	if (dir != AM_HAL_IOM_FULLDUPLEX) {
-		return -EINVAL;
-	}
 	/* Tx and Rx length must be the same for am_hal_iom_spi_blocking_fullduplex */
-	trans.eDirection = dir;
+	trans.eDirection = AM_HAL_IOM_FULLDUPLEX;
 	trans.ui32NumBytes = MIN(ctx->rx_len, ctx->tx_len);
 	trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
 	trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-	trans.bContinue = (trx_once) ? cont : true;
 	spi_context_update_tx(ctx, 1, trans.ui32NumBytes);
 	spi_context_update_rx(ctx, 1, trans.ui32NumBytes);
 
 	ret = am_hal_iom_spi_blocking_fullduplex(data->iom_handler, &trans);
+	if (ret != 0) {
+		return -EIO;
+	}
 
 	/* Transfer the remaining bytes */
 	if (!trx_once) {
+		spi_context_update_trx ctx_update;
+
 		if (ctx->tx_len) {
 			trans.eDirection = AM_HAL_IOM_TX;
 			trans.ui32NumBytes = ctx->tx_len;
 			trans.pui32TxBuffer = (uint32_t *)ctx->tx_buf;
-		} else if (ctx->rx_len) {
+			ctx_update = spi_context_update_tx;
+		} else {
 			trans.eDirection = AM_HAL_IOM_RX;
 			trans.ui32NumBytes = ctx->rx_len;
 			trans.pui32RxBuffer = (uint32_t *)ctx->rx_buf;
+			ctx_update = spi_context_update_rx;
 		}
-		trans.bContinue = cont;
 		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
-	}
-
-	return ret;
-}
-
-static int spi_ambiq_fill_instruction(const struct device *dev, am_hal_iom_transfer_t *trans,
-				      uint32_t len)
-{
-	struct spi_ambiq_data *data = dev->data;
-	struct spi_context *ctx = &data->ctx;
-	int ret = 0;
-
-	/*
-	 * The instruction length can only be:
-	 * 0~AM_HAL_IOM_MAX_OFFSETSIZE.
-	 * split transaction if oversize
-	 */
-	if (trans->ui32InstrLen + len > AM_HAL_IOM_MAX_OFFSETSIZE) {
-		ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX, *trans, true);
-	} else {
-		trans->ui32InstrLen += len;
-		for (int i = 0; i < len; i++) {
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-			trans->ui32Instr = (trans->ui32Instr << 8) | (*ctx->tx_buf);
-#else
-			trans->ui64Instr = (trans->ui64Instr << 8) | (*ctx->tx_buf);
-#endif
-			spi_context_update_tx(ctx, 1, 1);
+		ctx_update(ctx, 1, trans.ui32NumBytes);
+		if (ret != 0) {
+			return -EIO;
 		}
 	}
-	return ret;
+
+	return 0;
 }
 
 static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_ambiq_data *data = dev->data;
-	const struct spi_ambiq_config *cfg = dev->config;
 	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
-	bool cont = (config->operation & SPI_HOLD_ON_CS) ? true : false;
+	data->cont = (config->operation & SPI_HOLD_ON_CS) ? true : false;
 
-	am_hal_iom_transfer_t trans = {0};
+	spi_context_cs_control(ctx, true);
 
-	/* TODO Need to get iom_nce from different nodes of spi */
-#if defined(CONFIG_SOC_SERIES_APOLLO3X)
-	trans.uPeerInfo.ui32SpiChipSelect = cfg->pcfg->states->pins[SPI_CS_INDEX].iom_nce;
-#else
-	trans.uPeerInfo.ui32SpiChipSelect = cfg->pcfg->states->pins[SPI_CS_INDEX].iom_nce % 4;
-#endif
-
-	/* There's data to send */
-	if (spi_context_tx_on(ctx)) {
-		/* Always put the first byte to instuction */
-		ret = spi_ambiq_fill_instruction(dev, &trans, 1);
-		/* There's data to Receive */
-		if (spi_context_rx_on(ctx)) {
-			/* Regard the first tx_buf as cmd if there are more than one buffer */
-			if (ctx->rx_count > 1) {
-				ret = spi_ambiq_fill_instruction(dev, &trans, ctx->tx_len);
-				/* Skip the cmd buffer for rx. */
+	while (1) {
+		if (spi_context_tx_buf_on(ctx) && spi_context_rx_buf_on(ctx)) {
+			if (ctx->rx_buf == ctx->tx_buf) {
 				spi_context_update_rx(ctx, 1, ctx->rx_len);
+			} else if (!(config->operation & SPI_HALF_DUPLEX)) {
+				ret = spi_ambiq_xfer_full_duplex(dev);
+				if (ret != 0) {
+					spi_ambiq_reset(dev);
+					LOG_ERR("SPI full-duplex comm error: %d", ret);
+					return ret;
+				}
 			}
-			if ((!(config->operation & SPI_HALF_DUPLEX)) && (spi_context_tx_on(ctx))) {
-				ret = spi_ambiq_xfer_full_duplex(dev, AM_HAL_IOM_FULLDUPLEX, trans,
-								 cont);
-			} else {
-				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX, trans,
-								 cont);
-			}
-		} else { /* There's no data to Receive */
-			/* Regard the first tx_buf as cmd if there are more than one buffer */
-			if (ctx->tx_count > 1) {
-				ret = spi_ambiq_fill_instruction(dev, &trans, ctx->tx_len);
-			}
-			ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX, trans, cont);
 		}
-	} else { /* There's no data to send */
-		ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX, trans, cont);
+		if (spi_context_tx_on(ctx)) {
+			if (ctx->tx_buf == NULL) {
+				spi_context_update_tx(ctx, 1, ctx->tx_len);
+			} else {
+				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_TX);
+				if (ret != 0) {
+					spi_ambiq_reset(dev);
+					LOG_ERR("SPI TX comm error: %d", ret);
+					return ret;
+				}
+			}
+		} else if (spi_context_rx_on(ctx)) {
+			if (ctx->rx_buf == NULL) {
+				spi_context_update_rx(ctx, 1, ctx->rx_len);
+			} else {
+				ret = spi_ambiq_xfer_half_duplex(dev, AM_HAL_IOM_RX);
+				if (ret != 0) {
+					spi_ambiq_reset(dev);
+					LOG_ERR("SPI Rx comm error: %d", ret);
+					return ret;
+				}
+			}
+		} else {
+			break;
+		}
 	}
 
 #ifndef CONFIG_SPI_AMBIQ_DMA
-	if (!cont) {
+	if (!data->cont) {
+		spi_context_cs_control(ctx, false);
 		spi_context_complete(ctx, dev, ret);
 	}
 #endif
@@ -379,6 +349,12 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 		return 0;
 	}
 
+	ret = pm_device_runtime_get(dev);
+
+	if (ret < 0) {
+		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+	}
+
 	/* context setup */
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
 
@@ -394,6 +370,15 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_ambiq_xfer(dev, config);
 
 	spi_context_release(&data->ctx, ret);
+
+	/* Use async put to avoid useless device suspension/resumption
+	 * when doing consecutive transmission.
+	 */
+	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+
+	if (ret < 0) {
+		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+	}
 
 	return ret;
 }
@@ -418,6 +403,9 @@ static int spi_ambiq_release(const struct device *dev, const struct spi_config *
 
 static const struct spi_driver_api spi_ambiq_driver_api = {
 	.transceive = spi_ambiq_transceive,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_ambiq_release,
 };
 
@@ -428,7 +416,7 @@ static int spi_ambiq_init(const struct device *dev)
 	int ret = 0;
 
 	if (AM_HAL_STATUS_SUCCESS !=
-	    am_hal_iom_initialize((cfg->base - REG_IOM_BASEADDR) / cfg->size, &data->iom_handler)) {
+	    am_hal_iom_initialize((cfg->base - IOM0_BASE) / cfg->size, &data->iom_handler)) {
 		LOG_ERR("Fail to initialize SPI\n");
 		return -ENXIO;
 	}
@@ -436,6 +424,7 @@ static int spi_ambiq_init(const struct device *dev)
 	ret = cfg->pwr_func();
 
 	ret |= pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	ret |= spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
 		LOG_ERR("Fail to config SPI pins\n");
 		goto end;
@@ -455,6 +444,35 @@ end:
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int spi_ambiq_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct spi_ambiq_data *data = dev->data;
+	uint32_t ret;
+	am_hal_sysctrl_power_state_e status;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		status = AM_HAL_SYSCTRL_WAKE;
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		status = AM_HAL_SYSCTRL_DEEPSLEEP;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = am_hal_iom_power_ctrl(data->iom_handler, status, true);
+
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		LOG_ERR("am_hal_iom_power_ctrl failed: %d", ret);
+		return -EPERM;
+	} else {
+		return 0;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define AMBIQ_SPI_INIT(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static int pwr_on_ambiq_spi_##n(void)                                                      \
@@ -473,7 +491,8 @@ end:
 	};                                                                                         \
 	static struct spi_ambiq_data spi_ambiq_data##n = {                                         \
 		SPI_CONTEXT_INIT_LOCK(spi_ambiq_data##n, ctx),                                     \
-		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx), .inst_idx = n};                     \
+		SPI_CONTEXT_INIT_SYNC(spi_ambiq_data##n, ctx),                                     \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx).inst_idx = n};                \
 	static const struct spi_ambiq_config spi_ambiq_config##n = {                               \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.size = DT_INST_REG_SIZE(n),                                                       \
@@ -481,7 +500,9 @@ end:
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.irq_config_func = spi_irq_config_func_##n,                                        \
 		.pwr_func = pwr_on_ambiq_spi_##n};                                                 \
-	DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, NULL, &spi_ambiq_data##n, &spi_ambiq_config##n,   \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_ambiq_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(n, spi_ambiq_pm_action);                                          \
+	DEVICE_DT_INST_DEFINE(n, spi_ambiq_init, PM_DEVICE_DT_INST_GET(n), &spi_ambiq_data##n,     \
+			      &spi_ambiq_config##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,         \
+			      &spi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_SPI_INIT)

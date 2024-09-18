@@ -1,7 +1,7 @@
 .. _imx93_evk:
 
-NXP i.MX93 EVK (Cortex-A55)
-############################
+NXP i.MX93 EVK
+##############
 
 Overview
 ********
@@ -48,8 +48,8 @@ Cortex®-M33 core. Zephyr OS is ported to run on one of the Cortex®-A55 core.
 Supported Features
 ==================
 
-The Zephyr mimx93_evk board configuration supports the following hardware
-features:
+The Zephyr mimx93_evk board Cortex-A Core configuration supports the following
+hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -58,7 +58,36 @@ features:
 +-----------+------------+-------------------------------------+
 | ARM TIMER | on-chip    | system clock                        |
 +-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO                                |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | TPM Counter                         |
++-----------+------------+-------------------------------------+
+| ENET      | on-chip    | ethernet port                       |
++-----------+------------+-------------------------------------+
+
+The Zephyr imx93_evk board Cortex-M33 configuration supports the following
+hardware features:
+
++-----------+------------+-------------------------------------+
+| Interface | Controller | Driver/Component                    |
++===========+============+=====================================+
+| NVIC      | on-chip    | interrupt controller                |
++-----------+------------+-------------------------------------+
+| SYSTICK   | on-chip    | systick                             |
++-----------+------------+-------------------------------------+
+| CLOCK     | on-chip    | clock_control                       |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | GPIO                                |
 +-----------+------------+-------------------------------------+
 
 Devices
@@ -68,15 +97,45 @@ System Clock
 
 This board configuration uses a system clock frequency of 24 MHz.
 Cortex-A55 Core runs up to 1.7 GHz.
+Cortex-M33 Core runs up to 200MHz in which SYSTICK runs on same frequency.
 
 Serial Port
 -----------
 
 This board configuration uses a single serial communication channel with the
-CPU's UART4.
+CPU's UART2 for A55 core and M33 core.
 
-Programming and Debugging
-*************************
+Board MUX Control
+-----------------
+
+This board configuration uses a series of digital multiplexers to switch between
+different board functions. The multiplexers are controlled by a GPIO signal called
+``EXP_SEL`` from onboard GPIO expander ADP5585. It can be configured to select
+function set "A" or "B" by dts configuration if board control module is enabled.
+The following dts node is defined:
+
+.. code-block:: dts
+
+    board_exp_sel: board-exp-sel {
+        compatible = "imx93evk-exp-sel";
+        mux-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+        mux = "A";
+    };
+
+Following steps are required to configure the ``EXP_SEL`` signal:
+
+1. Enable Kconfig option ``CONFIG_BOARD_MIMX93_EVK_EXP_SEL_INIT``.
+2. Select ``mux="A";`` or ``mux="B";`` in ``&board_exp_sel`` devicetree node.
+
+Kconfig option ``CONFIG_BOARD_MIMX93_EVK_EXP_SEL_INIT`` is enabled if a board
+function that requires configuring the mux is enabled. The MUX option is
+automatically selected if certain board function is enabled, and takes precedence
+over dts config. For instance, if ``CONFIG_CAN`` is enabled, MUX A is selected
+even if ``mux="B";`` is configured in dts, and an warning would be reported in
+the log.
+
+Programming and Debugging (A55)
+*******************************
 
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
@@ -102,19 +161,58 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: mimx93_evk/mimx9352/a55
-   :goals: run
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
 
 This will build an image with the synchronization sample app, boot it and
-display the following ram console output:
+display the following console output:
 
 .. code-block:: console
 
-    *** Booting Zephyr OS build zephyr-v3.2.0-8-g1613870534a0  ***
-    thread_a: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_b: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_a: Hello World from cpu 0 on mimx93_evk_a55!
-    thread_b: Hello World from cpu 0 on mimx93_evk_a55!
+    *** Booting Zephyr OS build Booting Zephyr OS build v3.7.0-2055-g630f27a5a867  ***
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+
+Programming and Debugging (M33)
+*******************************
+
+Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
+plug the SD card into the board. Power it up and stop the u-boot execution at
+prompt.
+
+Use U-Boot to load and kick zephyr.bin to Cortex-M33 Core:
+
+.. code-block:: console
+
+    load mmc 1:1 0x80000000 zephyr.bin;cp.b 0x80000000 0x201e0000 0x30000;bootaux 0x1ffe0000 0
+
+Use this configuration to run basic Zephyr applications and kernel tests,
+for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: imx93_evk/mimx9352/m33
+   :goals: run
+
+This will build an image with the synchronization sample app, boot it and
+display the following console output:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v3.7.0-684-g71a7d05ba60a ***
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+    thread_a: Hello World from cpu 0 on imx93_evk!
+    thread_b: Hello World from cpu 0 on imx93_evk!
+
+To make a container image flash.bin with ``zephyr.bin`` for SD/eMMC programming and booting
+from BootROM. Refer to user manual of i.MX93 `MCUX SDK release`_.
+
+.. _MCUX SDK release:
+   https://mcuxpresso.nxp.com/
 
 References
 ==========

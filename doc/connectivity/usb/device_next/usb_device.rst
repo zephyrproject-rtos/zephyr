@@ -55,6 +55,8 @@ Samples
 
 * :zephyr:code-sample:`uac2-explicit-feedback`
 
+* :zephyr:code-sample:`uac2-implicit-feedback`
+
 Samples ported to new USB device support
 ----------------------------------------
 
@@ -62,7 +64,7 @@ To build a sample that supports both the old and new USB device stack, set the
 configuration ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via
 ``west``.
 
-* :ref:`bluetooth-hci-usb-sample`
+* :zephyr:code-sample:`bluetooth_hci_usb`
 
 * :zephyr:code-sample:`usb-cdc-acm`
 

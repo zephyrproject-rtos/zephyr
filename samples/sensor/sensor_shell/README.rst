@@ -1,7 +1,8 @@
-.. _sensor_shell_sample:
+.. zephyr:code-sample:: sensor_shell
+   :name: Sensor shell
+   :relevant-api: sensor_interface
 
-Sensor Shell Module Sample
-##########################
+   Interact with sensors using the shell module.
 
 Overview
 ********

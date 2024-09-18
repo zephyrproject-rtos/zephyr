@@ -1,0 +1,14 @@
+# Temporary override
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BT_BAP_BASE
+	# Override until someone fixes the UT build system
+	bool
+	default y
+
+# Include Zephyr's Kconfig.
+source "Kconfig.zephyr"

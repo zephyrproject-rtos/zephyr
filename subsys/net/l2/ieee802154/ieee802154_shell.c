@@ -214,9 +214,10 @@ static void scan_result_cb(struct net_mgmt_event_callback *cb,
 	char buf[64];
 
 	shell_fprintf(cb_shell, SHELL_NORMAL,
-		      "\nChannel: %u\tPAN ID: %u\tCoordinator Address: %s\t "
-		      "LQI: %u\n", params.channel, params.pan_id,
-		      print_coordinator_address(buf, sizeof(buf)), params.lqi);
+		      "Channel: %u\tPAN ID: %u\tCoordinator Address: %s\t "
+		      "LQI: %u Associable: %s\n", params.channel, params.pan_id,
+		      print_coordinator_address(buf, sizeof(buf)), params.lqi,
+		      params.association_permitted ? "yes" : "no");
 }
 
 static int cmd_ieee802154_scan(const struct shell *sh,

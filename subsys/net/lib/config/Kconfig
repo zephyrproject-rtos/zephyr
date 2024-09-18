@@ -206,7 +206,7 @@ endif # NET_DHCPV6
 
 config NET_CONFIG_CLOCK_SNTP_INIT
 	bool "Initialize system clock using SNTP on application startup"
-	depends on SNTP && POSIX_CLOCK
+	depends on SNTP && POSIX_TIMERS
 	help
 	  Perform an SNTP request over networking to get and absolute
 	  wall clock time, and initialize system time from it, so

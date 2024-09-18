@@ -32,6 +32,7 @@ config SPI_RTIO
 	bool "RTIO support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select RTIO
+	select RTIO_WORKQ
 	help
 	  This option enables the RTIO API calls. RTIO support is
 	  experimental as the API itself is unstable.
@@ -157,5 +158,7 @@ source "drivers/spi/Kconfig.mchp_mss"
 source "drivers/spi/Kconfig.grlib_spimctrl"
 
 source "drivers/spi/Kconfig.max32"
+
+source "drivers/spi/Kconfig.renesas_ra8"
 
 endif # SPI

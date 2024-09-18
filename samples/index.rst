@@ -28,7 +28,6 @@ Samples and Demos
    kernel/*
    tfm_integration/tfm_integration.rst
    modules/*
-   compression/*
    fuel_gauge/*
 
 .. comment

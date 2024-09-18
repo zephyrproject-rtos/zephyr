@@ -203,7 +203,7 @@ a list of supported boards.
 #. Build the blinky sample for the ``reel_board``:
 
    .. zephyr-app-commands::
-      :app: samples/basic/blinky
+      :zephyr-app: samples/basic/blinky
       :board: reel_board
       :goals: build
 

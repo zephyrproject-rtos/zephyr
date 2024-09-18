@@ -15,10 +15,13 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/sections.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
 #include "fsl_power.h"
 #include "fsl_clock.h"
 #include <fsl_cache.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_XIP
 #include "flash_clock_setup.h"
@@ -30,17 +33,17 @@
 #endif
 
 /* Board System oscillator settling time in us */
-#define BOARD_SYSOSC_SETTLING_US                        100U
+#define BOARD_SYSOSC_SETTLING_US 100U
 /* Board xtal frequency in Hz */
-#define BOARD_XTAL_SYS_CLK_HZ                      24000000U
+#define BOARD_XTAL_SYS_CLK_HZ    24000000U
 /* Core clock frequency: 198000000Hz */
-#define CLOCK_INIT_CORE_CLOCK                     198000000U
+#define CLOCK_INIT_CORE_CLOCK    198000000U
 
-#define CTIMER_CLOCK_SOURCE(node_id) \
+#define CTIMER_CLOCK_SOURCE(node_id)                                                               \
 	TO_CTIMER_CLOCK_SOURCE(DT_CLOCKS_CELL(node_id, name), DT_PROP(node_id, clk_source))
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
-#define TO_CLOCK_ATTACH_ID(inst, val) CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
-#define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+#define TO_CLOCK_ATTACH_ID(inst, val)     CLKCTL1_TUPLE_MUXA(CT32BIT##inst##FCLKSEL_OFFSET, val)
+#define CTIMER_CLOCK_SETUP(node_id)       CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
 
 const clock_sys_pll_config_t g_sysPllConfig_clock_init = {
 	/* OSC clock */
@@ -50,8 +53,7 @@ const clock_sys_pll_config_t g_sysPllConfig_clock_init = {
 	/* Denominator of the SYSPLL0 fractional loop divider is 1 */
 	.denominator = 1,
 	/* Divide by 22 */
-	.sys_pll_mult = kCLOCK_SysPllMult22
-};
+	.sys_pll_mult = kCLOCK_SysPllMult22};
 
 const clock_audio_pll_config_t g_audioPllConfig_clock_init = {
 	/* OSC clock */
@@ -61,22 +63,13 @@ const clock_audio_pll_config_t g_audioPllConfig_clock_init = {
 	/* Denominator of the Audio PLL fractional loop divider is 1 */
 	.denominator = 27000,
 	/* Divide by 22 */
-	.audio_pll_mult = kCLOCK_AudioPllMult22
-};
+	.audio_pll_mult = kCLOCK_AudioPllMult22};
 
 const clock_frg_clk_config_t g_frg0Config_clock_init = {
-	.num = 0,
-	.sfg_clock_src = kCLOCK_FrgPllDiv,
-	.divider = 255U,
-	.mult = 0
-};
+	.num = 0, .sfg_clock_src = kCLOCK_FrgPllDiv, .divider = 255U, .mult = 0};
 
 const clock_frg_clk_config_t g_frg12Config_clock_init = {
-	.num = 12,
-	.sfg_clock_src = kCLOCK_FrgMainClk,
-	.divider = 255U,
-	.mult = 167
-};
+	.num = 12, .sfg_clock_src = kCLOCK_FrgMainClk, .divider = 255U, .mult = 167};
 
 #if CONFIG_USB_DC_NXP_LPCIP3511
 /* USB PHY condfiguration */
@@ -106,29 +99,28 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
-__imx_boot_ivt_section void (* const image_vector_table[])(void)  = {
-	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE),  /* 0x00 */
-	z_arm_reset,				/* 0x04 */
-	z_arm_nmi,					/* 0x08 */
-	z_arm_hard_fault,			/* 0x0C */
-	z_arm_mpu_fault,			/* 0x10 */
-	z_arm_bus_fault,			/* 0x14 */
-	z_arm_usage_fault,			/* 0x18 */
+__imx_boot_ivt_section void (*const image_vector_table[])(void) = {
+	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
+	z_arm_reset,                                         /* 0x04 */
+	z_arm_nmi,                                           /* 0x08 */
+	z_arm_hard_fault,                                    /* 0x0C */
+	z_arm_mpu_fault,                                     /* 0x10 */
+	z_arm_bus_fault,                                     /* 0x14 */
+	z_arm_usage_fault,                                   /* 0x18 */
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
-	z_arm_secure_fault,			/* 0x1C */
+	z_arm_secure_fault, /* 0x1C */
 #else
 	z_arm_exc_spurious,
-#endif /* CONFIG_ARM_SECURE_FIRMWARE */
-	(void (*)())_flash_used,	/* 0x20, imageLength. */
-	0,				/* 0x24, imageType (Plain Image) */
-	0,				/* 0x28, authBlockOffset/crcChecksum */
-	z_arm_svc,		/* 0x2C */
-	z_arm_debug_monitor,	/* 0x30 */
-	(void (*)())image_vector_table,		/* 0x34, imageLoadAddress. */
-	z_arm_pendsv,						/* 0x38 */
-#if defined(CONFIG_SYS_CLOCK_EXISTS) && \
-		defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
-	sys_clock_isr,						/* 0x3C */
+#endif                                  /* CONFIG_ARM_SECURE_FIRMWARE */
+	(void (*)())_flash_used,        /* 0x20, imageLength. */
+	0,                              /* 0x24, imageType (Plain Image) */
+	0,                              /* 0x28, authBlockOffset/crcChecksum */
+	z_arm_svc,                      /* 0x2C */
+	z_arm_debug_monitor,            /* 0x30 */
+	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
+	z_arm_pendsv,                   /* 0x38 */
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
+	sys_clock_isr, /* 0x3C */
 #else
 	z_arm_exc_spurious,
 #endif
@@ -195,7 +187,7 @@ static void usb_device_clock_init(void)
 
 #endif
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #ifndef CONFIG_NXP_IMXRT_BOOT_HEADER
 	/*
@@ -204,13 +196,13 @@ void z_arm_platform_init(void)
 	 * set the stack pointer, since we are about to push to
 	 * the stack when we call SystemInit
 	 */
-	 /* Clear stack limit registers */
-	 __set_MSPLIM(0);
-	 __set_PSPLIM(0);
+	/* Clear stack limit registers */
+	__set_MSPLIM(0);
+	__set_PSPLIM(0);
 	/* Disable MPU */
-	 MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
-	 /* Set stack pointer */
-	 __set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
+	MPU->CTRL &= ~MPU_CTRL_ENABLE_Msk;
+	/* Set stack pointer */
+	__set_MSP((uint32_t)(z_main_stack + CONFIG_MAIN_STACK_SIZE));
 #endif /* !CONFIG_NXP_IMXRT_BOOT_HEADER */
 	/* This is provided by the SDK */
 	SystemInit();
@@ -281,15 +273,20 @@ void __weak rt5xx_clock_init(void)
 	/* Switch SYSTICK_CLK to MAIN_CLK_DIV */
 	CLOCK_AttachClk(kMAIN_CLK_DIV_to_SYSTICK_CLK);
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)
-	#ifdef CONFIG_FLEXCOMM0_CLK_SRC_FRG
-		/* Switch FLEXCOMM0 to FRG */
-		CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
-	#elif defined(CONFIG_FLEXCOMM0_CLK_SRC_FRO)
-		CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM0);
-	#endif
+#ifdef CONFIG_FLEXCOMM0_CLK_SRC_FRG
+	/* Switch FLEXCOMM0 to FRG */
+	CLOCK_AttachClk(kFRG_to_FLEXCOMM0);
+#elif defined(CONFIG_FLEXCOMM0_CLK_SRC_FRO)
+	CLOCK_AttachClk(kFRO_DIV4_to_FLEXCOMM0);
+#endif
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511
 	usb_device_clock_init();
+#endif
+
+#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_i2s, okay) && CONFIG_I2S)
+	/* attach AUDIO PLL clock to FLEXCOMM1 (I2S_PDM) */
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM0);
 #endif
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm1), nxp_lpc_i2s, okay) && CONFIG_I2S)
@@ -333,21 +330,21 @@ void __weak rt5xx_clock_init(void)
 	 *
 	 * The root clock used here is the AUX0 PLL (PLL0 PFD2).
 	 */
-	CLOCK_SetClkDiv(kCLOCK_DivDcPixelClk,
+	CLOCK_SetClkDiv(
+		kCLOCK_DivDcPixelClk,
 		((CLOCK_GetSysPfdFreq(kCLOCK_Pfd2) /
-		DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings),
-			clock_frequency)) + 1));
+		  DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency)) +
+		 1));
 
 	CLOCK_EnableClock(kCLOCK_DisplayCtrl);
 	RESET_ClearPeripheralReset(kDISP_CTRL_RST_SHIFT_RSTn);
 
 	CLOCK_EnableClock(kCLOCK_AxiSwitch);
 	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
-#if defined(CONFIG_MEMC) && DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), \
-	nxp_imx_flexspi, okay)
+#if defined(CONFIG_MEMC) && DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexspi2), nxp_imx_flexspi, okay)
 	/* Enable write-through for FlexSPI1 space */
 	CACHE64_POLSEL0->REG1_TOP = 0x27FFFC00U;
-	CACHE64_POLSEL0->POLSEL   = 0x11U;
+	CACHE64_POLSEL0->POLSEL = 0x11U;
 #endif
 #endif
 
@@ -441,6 +438,13 @@ void __weak rt5xx_clock_init(void)
 
 	/* Set main clock to FRO as deep sleep clock by default. */
 	POWER_SetDeepSleepClock(kDeepSleepClk_Fro);
+
+#if CONFIG_AUDIO_CODEC_WM8904
+	/* attach AUDIO PLL clock to MCLK */
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMclkClk, 1);
+	SYSCTL1->MCLKPINDIR = SYSCTL1_MCLKPINDIR_MCLKPINDIR_MASK;
+#endif
 }
 
 #if CONFIG_MIPI_DSI
@@ -478,13 +482,13 @@ void __weak imxrt_pre_init_display_interface(void)
 	 */
 	CLOCK_AttachClk(kAUX1_PLL_to_MIPI_DPHY_CLK);
 	CLOCK_InitSysPfd(kCLOCK_Pfd3,
-		((CLOCK_GetSysPllFreq() * 18ull) /
-		((unsigned long long)(DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)))));
+			 ((CLOCK_GetSysPllFreq() * 18ull) /
+			  ((unsigned long long)(DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)))));
 	CLOCK_SetClkDiv(kCLOCK_DivDphyClk, 1);
 #elif defined(CONFIG_MIPI_DPHY_CLK_SRC_FRO)
 	CLOCK_AttachClk(kFRO_DIV1_to_MIPI_DPHY_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivDphyClk,
-		(CLK_FRO_CLK / DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)));
+			(CLK_FRO_CLK / DT_PROP(DT_NODELABEL(mipi_dsi), phy_clock)));
 #endif
 	/* Clear DSI control reset (Note that DPHY reset is cleared later)*/
 	RESET_ClearPeripheralReset(kMIPI_DSI_CTRL_RST_SHIFT_RSTn);
@@ -504,7 +508,6 @@ void __weak imxrt_deinit_display_interface(void)
 	/* Remove clock from DPHY */
 	CLOCK_AttachClk(kNONE_to_MIPI_DPHY_CLK);
 }
-
 
 #endif
 

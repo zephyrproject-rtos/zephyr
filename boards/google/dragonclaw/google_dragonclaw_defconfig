@@ -12,12 +12,6 @@ CONFIG_UART_CONSOLE=y
 # GPIO Controller
 CONFIG_GPIO=y
 
-# Clock Controller
-CONFIG_CLOCK_CONTROL=y
-
-# Pin Controller
-CONFIG_PINCTRL=y
-
 # Enable MPU and HW stack protection
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y

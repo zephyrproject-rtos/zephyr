@@ -19,6 +19,7 @@
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
 #define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
 #define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
+#define LOG_COLOR_CODE_BLUE    "\x1B[1;34m"
 
 #define HEXDUMP_BYTES_IN_LINE 16
 
@@ -38,10 +39,10 @@ static const char *const severity[] = {
 
 static const char *const colors[] = {
 	NULL,
-	LOG_COLOR_CODE_RED,     /* err */
-	LOG_COLOR_CODE_YELLOW,  /* warn */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_RED : NULL,    /* err */
+	IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR) ? LOG_COLOR_CODE_YELLOW : NULL, /* warn */
 	IS_ENABLED(CONFIG_LOG_INFO_COLOR_GREEN) ? LOG_COLOR_CODE_GREEN : NULL,   /* info */
-	NULL                    /* dbg */
+	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
 
 static uint32_t freq;

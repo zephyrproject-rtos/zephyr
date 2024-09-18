@@ -58,9 +58,9 @@ respectively.
 DNS server
 ==========
 
-The dnsmasq tool may be used for testing purposes. Sample dnsmasq start
-script can be downloaded from the zephyrproject-rtos/net-tools project area:
-https://github.com/zephyrproject-rtos/net-tools
+The dnsmasq tool may be used for testing purposes. On a Zephyr project default
+installation, the sample dnsmasq start script can be found in the `net-tools`_
+project or downloaded from https://github.com/zephyrproject-rtos/net-tools.
 
 Open a terminal window and type:
 
@@ -106,6 +106,7 @@ For testing mDNS, use Avahi script in net-tools project:
     $ cd net-tools
     $ ./avahi-daemon.sh
 
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
 LLMNR Responder
 ===============

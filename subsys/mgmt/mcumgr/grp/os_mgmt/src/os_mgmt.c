@@ -836,7 +836,7 @@ static int os_mgmt_datetime_read(struct smp_streamer *ctxt)
 
 	sprintf(date_string, "%4d-%02d-%02dT%02d:%02d:%02d"
 #ifdef CONFIG_MCUMGR_GRP_OS_DATETIME_MS
-		".%d"
+		".%03d"
 #endif
 		, (uint16_t)(current_time.tm_year + RTC_DATETIME_YEAR_OFFSET),
 		(uint8_t)(current_time.tm_mon + RTC_DATETIME_MONTH_OFFSET),
@@ -1076,6 +1076,9 @@ static struct mgmt_group os_mgmt_group = {
 	.mg_group_id = MGMT_GROUP_ID_OS,
 #ifdef CONFIG_MCUMGR_SMP_SUPPORT_ORIGINAL_PROTOCOL
 	.mg_translate_error = os_mgmt_translate_error_code,
+#endif
+#ifdef CONFIG_MCUMGR_GRP_ENUM_DETAILS_NAME
+	.mg_group_name = "os mgmt",
 #endif
 };
 

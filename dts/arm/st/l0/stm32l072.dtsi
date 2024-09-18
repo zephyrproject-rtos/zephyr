@@ -11,17 +11,17 @@
 		zephyr,entropy = &rng;
 	};
 
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32l072", "st,stm32l0", "simple-bus";
-
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
-			};
-		};
 
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";

@@ -105,6 +105,10 @@ bool net_context_is_reuseport_set(struct net_context *context)
 bool net_context_is_v6only_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_IPV4_MAPPING_TO_IPV6)
+	if (context == NULL) {
+		return false;
+	}
+
 	return context->options.ipv6_v6only;
 #else
 	ARG_UNUSED(context);
@@ -117,6 +121,17 @@ bool net_context_is_recv_pktinfo_set(struct net_context *context)
 {
 #if defined(CONFIG_NET_CONTEXT_RECV_PKTINFO)
 	return context->options.recv_pktinfo;
+#else
+	ARG_UNUSED(context);
+
+	return false;
+#endif
+}
+
+bool net_context_is_timestamping_set(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
+	return (bool)(context->options.timestamping > 0);
 #else
 	ARG_UNUSED(context);
 
@@ -861,7 +876,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			ptr = &maddr->address.in_addr;
 
-		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
+		} else if (UNALIGNED_GET(&addr4->sin_addr.s_addr) == INADDR_ANY) {
 			if (iface == NULL) {
 				iface = net_if_ipv4_select_src_iface(
 					&net_sin(&context->remote)->sin_addr);

@@ -43,8 +43,13 @@ void z_shell_op_cursor_horiz_move(const struct shell *sh, int32_t delta)
  */
 static inline bool full_line_cmd(const struct shell *sh)
 {
-	return ((sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt))
-			% sh->ctx->vt100_ctx.cons.terminal_wid == 0U);
+	size_t line_length = sh->ctx->cmd_buff_len + z_shell_strlen(sh->ctx->prompt);
+
+	if (line_length == 0) {
+		return false;
+	}
+
+	return (line_length % sh->ctx->vt100_ctx.cons.terminal_wid == 0U);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */

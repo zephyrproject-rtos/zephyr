@@ -42,6 +42,7 @@ static const struct wpa_supp_event_info {
 	{ "CTRL-EVENT-NETWORK-ADDED", SUPPLICANT_EVENT_NETWORK_ADDED },
 	{ "CTRL-EVENT-NETWORK-REMOVED", SUPPLICANT_EVENT_NETWORK_REMOVED },
 	{ "CTRL-EVENT-DSCP-POLICY", SUPPLICANT_EVENT_DSCP_POLICY },
+	{ "CTRL-EVENT-REGDOM-CHANGE", SUPPLICANT_EVENT_REGDOM_CHANGE },
 };
 
 static void copy_mac_addr(const unsigned int *src, uint8_t *dst)
@@ -71,6 +72,8 @@ static enum wifi_conn_status wpas_to_wifi_mgmt_conn_status(int status)
 static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 {
 	switch (status) {
+	case WIFI_REASON_DISCONN_SUCCESS:
+		return WIFI_REASON_DISCONN_SUCCESS;
 	case WLAN_REASON_DEAUTH_LEAVING:
 		return WIFI_REASON_DISCONN_AP_LEAVING;
 	case WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY:
@@ -249,7 +252,11 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 }
 
 #ifdef CONFIG_AP
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+static enum wifi_link_mode get_sta_link_mode(struct hostapd_iface *iface, struct sta_info *sta)
+#else
 static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struct sta_info *sta)
+#endif
 {
 	if (sta->flags & WLAN_STA_HE) {
 		return WIFI_6;
@@ -259,28 +266,48 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 		return WIFI_4;
 	} else if (sta->flags & WLAN_STA_NONERP) {
 		return WIFI_1;
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	} else if (wpa_s->assoc_freq > 4000) {
 		return WIFI_2;
 	} else if (wpa_s->assoc_freq > 2000) {
 		return WIFI_3;
+#else
+	} else if (iface->freq > 4000) {
+		return WIFI_2;
+	} else if (iface->freq > 2000) {
+		return WIFI_3;
+#endif
 	} else {
 		return WIFI_LINK_MODE_UNKNOWN;
 	}
 }
 
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+static bool is_twt_capable(struct hostapd_iface *iface, struct sta_info *sta)
+{
+	return hostapd_get_he_twt_responder(iface->bss[0], IEEE80211_MODE_AP);
+}
+#else
 static bool is_twt_capable(struct wpa_supplicant *wpa_s, struct sta_info *sta)
 {
 	return hostapd_get_he_twt_responder(wpa_s->ap_iface->bss[0], IEEE80211_MODE_AP);
 }
+#endif
 
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
 					enum wifi_ap_status ap_status)
 {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct hostapd_iface *iface = ctx;
+	char *ifname = iface->conf->bss[0]->iface;
+#else
 	struct wpa_supplicant *wpa_s = ctx;
+	char *ifname = wpa_s->ifname;
+#endif
 	int status = ap_status;
 
-	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+	return supplicant_send_wifi_mgmt_event(ifname,
 					       event,
 					       (void *)&status,
 					       sizeof(int));
@@ -291,21 +318,27 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 					   void *data)
 {
 	struct sta_info *sta = data;
-	struct wpa_supplicant *wpa_s = ctx;
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct hostapd_iface *ap_ctx = ctx;
+	char *ifname = ap_ctx->bss[0]->conf->iface;
+#else
+	struct wpa_supplicant *ap_ctx = ctx;
+	char *ifname = ap_ctx->ifname;
+#endif
 	struct wifi_ap_sta_info sta_info = { 0 };
 
-	if (!wpa_s || !sta) {
+	if (!ap_ctx || !sta) {
 		return -EINVAL;
 	}
 
 	memcpy(sta_info.mac, sta->addr, sizeof(sta_info.mac));
 
 	if (event == NET_EVENT_WIFI_CMD_AP_STA_CONNECTED) {
-		sta_info.link_mode = get_sta_link_mode(wpa_s, sta);
-		sta_info.twt_capable = is_twt_capable(wpa_s, sta);
+		sta_info.link_mode = get_sta_link_mode(ap_ctx, sta);
+		sta_info.twt_capable = is_twt_capable(ap_ctx, sta);
 	}
 
-	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+	return supplicant_send_wifi_mgmt_event(ifname,
 					       event,
 					       (void *)&sta_info,
 					       sizeof(sta_info));

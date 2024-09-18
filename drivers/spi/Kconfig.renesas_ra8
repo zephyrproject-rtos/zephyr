@@ -1,0 +1,34 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RENESAS_RA8
+	bool "Renesas RA SPI B"
+	default y
+	depends on DT_HAS_RENESAS_RA8_SPI_B_ENABLED
+	select USE_RA_FSP_SPI_B
+	help
+	  Enable Renesas RA RA SPI B Driver.
+
+if SPI_RENESAS_RA8
+
+config SPI_B_INTERRUPT
+	bool "RA MCU SPI B Interrupt Support"
+	help
+	  Enable Interrupt support for the SPI B Driver of RA family.
+
+config SPI_B_RA_DTC
+	bool "RA MCU SPI DTC Support"
+	default y
+	select USE_RA_FSP_DTC
+	help
+	  Enable the SPI DTC mode for SPI instances
+
+config SPI_B_USE_HW_SS
+	bool "RA MCU SPI B Hardware Slave Select support"
+	default y
+	help
+	  Use Slave Select pin instead of software Slave Select.
+
+endif # RA_SPI_B

@@ -88,31 +88,6 @@ struct llext_symtable {
 
 
 /**
- * @brief Export a constant symbol to extensions
- *
- * Takes a symbol (function or object) by symbolic name and adds the name
- * and address of the symbol to a table of symbols that may be referenced
- * by extensions.
- *
- * @param x Symbol to export to extensions
- */
-#if defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
-#define EXPORT_SYMBOL(x)							\
-	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
-		x ## _sym_name[] = STRINGIFY(x);				\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
-		.name = x ## _sym_name, .addr = (const void *)&x,		\
-	}
-#elif defined(CONFIG_LLEXT)
-#define EXPORT_SYMBOL(x)							\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
-		.name = STRINGIFY(x), .addr = (const void *)&x,			\
-	}
-#else
-#define EXPORT_SYMBOL(x)
-#endif
-
-/**
  * @brief Exports a symbol from an extension to the base image
  *
  * This macro can be used in extensions to add a symbol (function or object)
@@ -130,6 +105,33 @@ struct llext_symtable {
 	}
 #else
 #define LL_EXTENSION_SYMBOL(x)
+#endif
+
+/**
+ * @brief Export a constant symbol to extensions
+ *
+ * Takes a symbol (function or object) by symbolic name and adds the name
+ * and address of the symbol to a table of symbols that may be referenced
+ * by extensions.
+ *
+ * @param x Symbol to export to extensions
+ */
+#if defined(LL_EXTENSION_BUILD)
+#define EXPORT_SYMBOL(x) LL_EXTENSION_SYMBOL(x)
+#elif defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
+#define EXPORT_SYMBOL(x)							\
+	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
+		x ## _sym_name[] = STRINGIFY(x);				\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+		.name = x ## _sym_name, .addr = (const void *)&x,		\
+	}
+#elif defined(CONFIG_LLEXT)
+#define EXPORT_SYMBOL(x)							\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+	}
+#else
+#define EXPORT_SYMBOL(x)
 #endif
 
 /**

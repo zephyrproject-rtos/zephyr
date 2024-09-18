@@ -106,4 +106,9 @@ config FLASH_MCUX_FLEXSPI_HYPERFLASH_WRITE_BUFFER
 	  This prevents faults when the data to write would be located on the
 	  flash itself.
 
+# Avoid RWW hazards by defaulting logging to disabled
+choice FLASH_LOG_LEVEL_CHOICE
+	default FLASH_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
+endchoice
+
 endif # HAS_MCUX_FLEXSPI

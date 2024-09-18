@@ -27,6 +27,10 @@
 #include <zephyr/mgmt/mcumgr/grp/settings_mgmt/settings_mgmt_callbacks.h>
 #endif
 
+#ifdef CONFIG_MCUMGR_GRP_ENUM
+#include <zephyr/mgmt/mcumgr/grp/enum_mgmt/enum_mgmt_callbacks.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -118,6 +122,7 @@ enum mgmt_cb_groups {
 	MGMT_EVT_GRP_IMG,
 	MGMT_EVT_GRP_FS,
 	MGMT_EVT_GRP_SETTINGS,
+	MGMT_EVT_GRP_ENUM,
 
 	MGMT_EVT_GRP_USER_CUSTOM_START		= MGMT_GROUP_ID_PERUSER,
 };
@@ -180,6 +185,9 @@ enum img_mgmt_group_events {
 	/** Callback when an image write command has finished writing to flash. */
 	MGMT_EVT_OP_IMG_MGMT_DFU_CHUNK_WRITE_COMPLETE	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 5),
 
+	/** Callback when an image slot's state is encoded for a response. */
+	MGMT_EVT_OP_IMG_MGMT_IMAGE_SLOT_STATE		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_IMG, 6),
+
 	/** Used to enable all img_mgmt_group events. */
 	MGMT_EVT_OP_IMG_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_IMG),
 };
@@ -216,6 +224,17 @@ enum settings_mgmt_group_events {
 
 	/** Used to enable all settings_mgmt_group events. */
 	MGMT_EVT_OP_SETTINGS_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_SETTINGS),
+};
+
+/**
+ * MGMT event opcodes for enumeration management group.
+ */
+enum enum_mgmt_group_events {
+	/** Callback when fetching details on supported command groups. */
+	MGMT_EVT_OP_ENUM_MGMT_DETAILS		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_ENUM, 0),
+
+	/** Used to enable all enum_mgmt_group events. */
+	MGMT_EVT_OP_ENUM_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_ENUM),
 };
 
 /**

@@ -14,6 +14,8 @@
  * @brief HTTP server API
  *
  * @defgroup http_server HTTP server API
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */
@@ -24,6 +26,7 @@
 #include <zephyr/net/http/parser.h>
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/iterable_sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,17 +39,14 @@ extern "C" {
 #define HTTP_SERVER_MAX_STREAMS          CONFIG_HTTP_SERVER_MAX_STREAMS
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN CONFIG_HTTP_SERVER_MAX_CONTENT_TYPE_LENGTH
 #define HTTP_SERVER_MAX_URL_LENGTH       CONFIG_HTTP_SERVER_MAX_URL_LENGTH
+#define HTTP_SERVER_MAX_HEADER_LEN       CONFIG_HTTP_SERVER_MAX_HEADER_LEN
 #else
 #define HTTP_SERVER_CLIENT_BUFFER_SIZE   0
 #define HTTP_SERVER_MAX_STREAMS          0
 #define HTTP_SERVER_MAX_CONTENT_TYPE_LEN 0
 #define HTTP_SERVER_MAX_URL_LENGTH       0
+#define HTTP_SERVER_MAX_HEADER_LEN       0
 #endif
-
-/* Maximum header field name / value length. This is only used to detect Upgrade and
- * websocket header fields and values in the http1 server so the value is quite short.
- */
-#define HTTP_SERVER_MAX_HEADER_LEN 32
 
 #define HTTP2_PREFACE "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
@@ -58,6 +58,9 @@ extern "C" {
 enum http_resource_type {
 	/** Static resource, cannot be modified on runtime. */
 	HTTP_RESOURCE_TYPE_STATIC,
+
+	/** serves static gzipped files from a filesystem */
+	HTTP_RESOURCE_TYPE_STATIC_FS,
 
 	/** Dynamic resource, server interacts with the application via registered
 	 *  @ref http_resource_dynamic_cb_t.
@@ -114,6 +117,37 @@ struct http_resource_detail_static {
 /* Make sure that the common is the first in the struct. */
 BUILD_ASSERT(offsetof(struct http_resource_detail_static, common) == 0);
 /** @endcond */
+
+/**
+ * @brief Representation of a static filesystem server resource.
+ */
+struct http_resource_detail_static_fs {
+	/** Common resource details. */
+	struct http_resource_detail common;
+
+	/** Path in the local filesystem */
+	const char *fs_path;
+};
+
+/** @cond INTERNAL_HIDDEN */
+/* Make sure that the common is the first in the struct. */
+BUILD_ASSERT(offsetof(struct http_resource_detail_static_fs, common) == 0);
+/** @endcond */
+
+struct http_content_type {
+	const char *extension;
+	size_t extension_len;
+	const char *content_type;
+};
+
+#define HTTP_SERVER_CONTENT_TYPE(_extension, _content_type)                                        \
+	const STRUCT_SECTION_ITERABLE(http_content_type, _extension) = {                           \
+		.extension = STRINGIFY(_extension),                                                \
+		.extension_len = sizeof(STRINGIFY(_extension)) - 1,                                \
+		.content_type = _content_type,                                                     \
+	};
+
+#define HTTP_SERVER_CONTENT_TYPE_FOREACH(_it) STRUCT_SECTION_FOREACH(http_content_type, _it)
 
 struct http_client_ctx;
 
@@ -293,6 +327,46 @@ struct http2_frame {
 	uint8_t padding_len; /**< Frame padding length. */
 };
 
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+/** @brief HTTP header representation */
+struct http_header {
+	const char *name;  /**< Pointer to header name NULL-terminated string. */
+	const char *value; /**< Pointer to header value NULL-terminated string. */
+};
+
+/** @brief Status of captured headers */
+enum http_header_status {
+	HTTP_HEADER_STATUS_OK,      /**< All available headers were successfully captured. */
+	HTTP_HEADER_STATUS_DROPPED, /**< One or more headers were dropped due to lack of space. */
+};
+
+/** @brief Context for capturing HTTP headers */
+struct http_header_capture_ctx {
+	/** Buffer for HTTP headers captured for application use */
+	unsigned char buffer[CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
+
+	/** Descriptor of each captured HTTP header */
+	struct http_header headers[CONFIG_HTTP_SERVER_CAPTURE_HEADER_COUNT];
+
+	/** Status of captured headers */
+	enum http_header_status status;
+
+	/** Number of headers captured */
+	size_t count;
+
+	/** Current position in buffer */
+	size_t cursor;
+
+	/** The next HTTP header value should be stored */
+	bool store_next_value;
+};
+
+/** @brief HTTP header name representation */
+struct http_header_name {
+	const char *name; /**< Pointer to header name NULL-terminated string. */
+};
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
+
 /**
  * @brief Representation of an HTTP client connected to the server.
  */
@@ -335,6 +409,11 @@ struct http_client_ctx {
 
 	/** HTTP/1 parser context. */
 	struct http_parser parser;
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+	/** Header capture context */
+	struct http_header_capture_ctx header_capture_ctx;
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 	/** Request URL. */
 	unsigned char url_buffer[HTTP_SERVER_MAX_URL_LENGTH];
@@ -390,6 +469,23 @@ struct http_client_ctx {
 	/** The next frame on the stream is expectd to be a continuation frame. */
 	bool expect_continuation : 1;
 };
+
+#if defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)
+/**
+ * @brief Register an HTTP request header to be captured by the server
+ *
+ * @param _id variable name for the header capture instance
+ * @param _header header to be captured, as literal string
+ */
+#define HTTP_SERVER_REGISTER_HEADER_CAPTURE(_id, _header)                                          \
+	BUILD_ASSERT(sizeof(_header) <= CONFIG_HTTP_SERVER_MAX_HEADER_LEN,                         \
+		     "Header is too long to be captured, try increasing "                          \
+		     "CONFIG_HTTP_SERVER_MAX_HEADER_LEN");                                         \
+	static const char *const _id##_str = _header;                                              \
+	static const STRUCT_SECTION_ITERABLE(http_header_name, _id) = {                            \
+		.name = _id##_str,                                                                 \
+	}
+#endif /* defined(CONFIG_HTTP_SERVER_CAPTURE_HEADERS) */
 
 /** @brief Start the HTTP2 server.
  *

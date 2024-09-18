@@ -53,6 +53,10 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | CANEXCEL  | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| SAR_ADC   | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -106,7 +110,7 @@ board.
 System Clock
 ============
 
-The Cortex-R52 cores are configured to run at 800 MHz.
+The Cortex-R52 cores are configured to run at 1 GHz.
 
 Serial Port
 ===========
@@ -129,15 +133,33 @@ single Virtual SI (VSI). The rest of the VSI's shall be assigned to different
 cores of the system. Refer to :ref:`nxp_s32_netc-samples` to learn how to
 configure the Ethernet network controller.
 
-Controller Area Network (CAN)
-=============================
+Controller Area Network
+=======================
 
-Currently, the CANXL transceiver is not populated in this board. So CAN transceiver
-connection is required for running external traffic. We can use any CAN transceiver,
-which supports CAN 2.0 and CAN FD protocol.
+CANEXCEL
+--------
 
-CAN driver supports classic (CAN 2.0) and CAN FD mode. Remote transmission request is
-not supported as this feature is not available on NXP S32 CANXL HAL.
+CANEXCEL supports CAN Classic (CAN 2.0) and CAN FD modes. Remote transmission
+request is not supported.
+
+Note that this board does not currently come with CAN transceivers installed for
+the CANEXCEL ports. To facilitate external traffic, you will need to add a CAN
+transceiver. Any transceiver pin-compatible with CAN 2.0 and CAN FD protocols
+can be used.
+
+FlexCAN
+-------
+
+FlexCAN supports CAN Classic (CAN 2.0) and CAN FD modes.
+
+ADC
+===
+
+ADC is provided through ADC SAR controller with 2 instances. Each ADC SAR instance has
+12-bit resolution. ADC channels are divided into 2 groups (precision and internal/standard).
+
+.. note::
+   All channels of an instance only run on 1 group channel at the same time.
 
 Programming and Debugging
 *************************

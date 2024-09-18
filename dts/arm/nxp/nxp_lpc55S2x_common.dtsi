@@ -256,6 +256,16 @@
 		status = "disabled";
 	};
 
+	sc_timer: pwm@85000 {
+		compatible = "nxp,sctimer-pwm";
+		reg = <0x85000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+		clocks = <&syscon MCUX_SCTIMER_CLK>;
+		prescaler = <2>;
+		#pwm-cells = <3>;
+	};
+
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		/* Enabling cs-gpios below will allow using GPIO CS,

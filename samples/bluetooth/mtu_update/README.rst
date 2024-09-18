@@ -1,7 +1,8 @@
-.. _bluetooth_mtu_update_sample:
+.. zephyr:code-sample:: bluetooth_mtu_update
+   :name: MTU Update
+   :relevant-api: bt_gatt bluetooth
 
-Bluetooth: MTU Update
-#####################
+   Configure and exchange MTU between two devices.
 
 Q&A:
 ****

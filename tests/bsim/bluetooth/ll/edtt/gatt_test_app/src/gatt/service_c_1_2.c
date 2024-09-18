@@ -93,10 +93,12 @@ static ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value_v9__128_bit_uuid_value))
+	if (offset >= sizeof(value_v9__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v9__128_bit_uuid_value))
+	}
+	if (offset + len > sizeof(value_v9__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -147,10 +149,12 @@ static ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(des_v9d2__128_bit_uuid_value))
+	if (offset >= sizeof(des_v9d2__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(des_v9d2__128_bit_uuid_value))
+	}
+	if (offset + len > sizeof(des_v9d2__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 
@@ -178,10 +182,12 @@ static ssize_t write_des_v9d3__128_bit_uuid(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(des_v9d3__128_bit_uuid_value))
+	if (offset >= sizeof(des_v9d3__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(des_v9d3__128_bit_uuid_value))
+	}
+	if (offset + len > sizeof(des_v9d3__128_bit_uuid_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
 
 	memcpy(value + offset, buf, len);
 

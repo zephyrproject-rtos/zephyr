@@ -21,7 +21,7 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-config PLATFORM_SPECIFIC_INIT
+config SOC_RESET_HOOK
 	default y
 
 endif # SOC_FAMILY_XILINX_ZYNQ7000

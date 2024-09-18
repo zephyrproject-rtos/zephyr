@@ -1,0 +1,83 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx93_m33.dtsi>
+#include "imx93_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX93 EVK board";
+	compatible = "nxp,imx93_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+	};
+
+	aliases {
+		led0 = &led_r;
+		led1 = &led_g;
+		sw0 = &btn_1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_r: led_r {
+			label = "LED_R";
+			gpios = <&gpio2 13 GPIO_ACTIVE_HIGH>;
+		};
+		led_g: led_g {
+			label = "LED_G";
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+		};
+		led_b: led_b {
+			label = "LED_B";
+			gpios = <&gpio2 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		btn_1: btn_1{
+			label = "BTN1";
+			gpios = <&gpio2 23 GPIO_ACTIVE_LOW>;
+		};
+
+		btn_2: btn_2{
+			label = "BTN2";
+			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};

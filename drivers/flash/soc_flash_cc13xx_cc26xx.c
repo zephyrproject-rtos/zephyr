@@ -43,8 +43,9 @@ static int flash_cc13xx_cc26xx_init(const struct device *dev)
 
 static void flash_cc13xx_cc26xx_cache_restore(uint32_t vims_mode)
 {
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING)
+	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
 		;
+	}
 
 	/* Restore VIMS mode and line buffers */
 	if (vims_mode != VIMS_MODE_DISABLED) {
@@ -61,8 +62,9 @@ static uint32_t flash_cc13xx_cc26xx_cache_disable(void)
 	/* VIMS and both line buffers should be off during flash update */
 	VIMSLineBufDisable(VIMS_BASE);
 
-	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING)
+	while (VIMSModeGet(VIMS_BASE) == VIMS_MODE_CHANGING) {
 		;
+	}
 
 	/* Save current VIMS mode for restoring it later */
 	vims_mode = VIMSModeGet(VIMS_BASE);
@@ -139,8 +141,9 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	/* Erase sector/page one by one, break out in case of an error */
 	cnt = size / FLASH_ERASE_SIZE;
 	for (i = 0; i < cnt; i++, offs += FLASH_ERASE_SIZE) {
-		while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
+		while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
 			;
+		}
 
 		rc = FlashSectorErase(offs);
 		if (rc != FAPI_STATUS_SUCCESS) {
@@ -200,8 +203,9 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 
 	key = irq_lock();
 
-	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY)
+	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
 		;
+	}
 	rc = FlashProgram((uint8_t *)data, offs, size);
 	if (rc != FAPI_STATUS_SUCCESS) {
 		rc = -EIO;

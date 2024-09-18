@@ -8,8 +8,12 @@
 
 #include <string.h>
 #include <errno.h>
+#if CONFIG_SPI_MAX32_DMA
+#include <zephyr/drivers/dma.h>
+#endif
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -19,6 +23,14 @@
 LOG_MODULE_REGISTER(spi_max32, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
+#ifdef CONFIG_SPI_MAX32_DMA
+struct max32_spi_dma_config {
+	const struct device *dev;
+	const uint32_t channel;
+	const uint32_t slot;
+};
+#endif /* CONFIG_SPI_MAX32_DMA */
+
 struct max32_spi_config {
 	mxc_spi_regs_t *regs;
 	const struct pinctrl_dev_config *pctrl;
@@ -27,6 +39,10 @@ struct max32_spi_config {
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
+#ifdef CONFIG_SPI_MAX32_DMA
+	struct max32_spi_dma_config tx_dma;
+	struct max32_spi_dma_config rx_dma;
+#endif /* CONFIG_SPI_MAX32_DMA */
 };
 
 /* Device run time data */
@@ -35,10 +51,20 @@ struct max32_spi_data {
 	const struct device *dev;
 	mxc_spi_req_t req;
 	uint8_t dummy[2];
+#ifdef CONFIG_SPI_MAX32_DMA
+	volatile uint8_t dma_stat;
+#endif /* CONFIG_SPI_MAX32_DMA */
 #ifdef CONFIG_SPI_ASYNC
 	struct k_work async_work;
 #endif /* CONFIG_SPI_ASYNC */
 };
+
+#ifdef CONFIG_SPI_MAX32_DMA
+#define SPI_MAX32_DMA_ERROR_FLAG   0x01U
+#define SPI_MAX32_DMA_RX_DONE_FLAG 0x02U
+#define SPI_MAX32_DMA_TX_DONE_FLAG 0x04U
+#define SPI_MAX32_DMA_DONE_FLAG    (SPI_MAX32_DMA_RX_DONE_FLAG | SPI_MAX32_DMA_TX_DONE_FLAG)
+#endif /* CONFIG_SPI_MAX32_DMA */
 
 #ifdef CONFIG_SPI_MAX32_INTERRUPT
 static void spi_max32_callback(mxc_spi_req_t *req, int error);
@@ -343,9 +369,212 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	return ret;
 }
 
+#ifdef CONFIG_SPI_MAX32_DMA
+static void spi_max32_dma_callback(const struct device *dev, void *arg, uint32_t channel,
+				   int status)
+{
+	struct max32_spi_data *data = arg;
+	const struct device *spi_dev = data->dev;
+	const struct max32_spi_config *config = spi_dev->config;
+	uint32_t len;
+
+	if (status < 0) {
+		LOG_ERR("DMA callback error with channel %d.", channel);
+	} else {
+		/* identify the origin of this callback */
+		if (channel == config->tx_dma.channel) {
+			data->dma_stat |= SPI_MAX32_DMA_TX_DONE_FLAG;
+		} else if (channel == config->rx_dma.channel) {
+			data->dma_stat |= SPI_MAX32_DMA_RX_DONE_FLAG;
+		}
+	}
+	if ((data->dma_stat & SPI_MAX32_DMA_DONE_FLAG) == SPI_MAX32_DMA_DONE_FLAG) {
+		len = spi_context_max_continuous_chunk(&data->ctx);
+		spi_context_update_tx(&data->ctx, 1, len);
+		spi_context_update_rx(&data->ctx, 1, len);
+		spi_context_complete(&data->ctx, spi_dev, status == 0 ? 0 : -EIO);
+	}
+}
+
+static int spi_max32_tx_dma_load(const struct device *dev, const uint8_t *buf, uint32_t len,
+				 uint8_t word_shift)
+{
+	int ret;
+	const struct max32_spi_config *config = dev->config;
+	struct max32_spi_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.dma_callback = spi_max32_dma_callback;
+	dma_cfg.user_data = (void *)data;
+	dma_cfg.dma_slot = config->tx_dma.slot;
+	dma_cfg.block_count = 1;
+	dma_cfg.source_data_size = 1U << word_shift;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_data_size = 1U << word_shift;
+	dma_cfg.head_block = &dma_blk;
+	dma_blk.block_size = len;
+	if (buf) {
+		dma_blk.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		dma_blk.source_address = (uint32_t)buf;
+	} else {
+		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		dma_blk.source_address = (uint32_t)data->dummy;
+	}
+
+	ret = dma_config(config->tx_dma.dev, config->tx_dma.channel, &dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Error configuring Tx DMA (%d)", ret);
+	}
+
+	return dma_start(config->tx_dma.dev, config->tx_dma.channel);
+}
+
+static int spi_max32_rx_dma_load(const struct device *dev, const uint8_t *buf, uint32_t len,
+				 uint8_t word_shift)
+{
+	int ret;
+	const struct max32_spi_config *config = dev->config;
+	struct max32_spi_data *data = dev->data;
+	struct dma_config dma_cfg = {0};
+	struct dma_block_config dma_blk = {0};
+
+	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg.dma_callback = spi_max32_dma_callback;
+	dma_cfg.user_data = (void *)data;
+	dma_cfg.dma_slot = config->rx_dma.slot;
+	dma_cfg.block_count = 1;
+	dma_cfg.source_data_size = 1U << word_shift;
+	dma_cfg.source_burst_length = 1U;
+	dma_cfg.dest_data_size = 1U << word_shift;
+	dma_cfg.head_block = &dma_blk;
+	dma_blk.block_size = len;
+	if (buf) {
+		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		dma_blk.dest_address = (uint32_t)buf;
+	} else {
+		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		dma_blk.dest_address = (uint32_t)data->dummy;
+	}
+	ret = dma_config(config->rx_dma.dev, config->rx_dma.channel, &dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Error configuring Rx DMA (%d)", ret);
+	}
+
+	return dma_start(config->rx_dma.dev, config->rx_dma.channel);
+}
+
+static int transceive_dma(const struct device *dev, const struct spi_config *config,
+			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+			  bool async, spi_callback_t cb, void *userdata)
+{
+	int ret = 0;
+	const struct max32_spi_config *cfg = dev->config;
+	struct max32_spi_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	mxc_spi_regs_t *spi = cfg->regs;
+	struct dma_status status;
+	uint32_t len, word_count;
+	uint8_t dfs_shift;
+
+	bool hw_cs_ctrl = true;
+
+	spi_context_lock(ctx, async, cb, userdata, config);
+
+	ret = dma_get_status(cfg->tx_dma.dev, cfg->tx_dma.channel, &status);
+	if (ret < 0 || status.busy) {
+		ret = ret < 0 ? ret : -EBUSY;
+		goto unlock;
+	}
+
+	ret = dma_get_status(cfg->rx_dma.dev, cfg->rx_dma.channel, &status);
+	if (ret < 0 || status.busy) {
+		ret = ret < 0 ? ret : -EBUSY;
+		goto unlock;
+	}
+
+	ret = spi_configure(dev, config);
+	if (ret != 0) {
+		ret = -EIO;
+		goto unlock;
+	}
+
+	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
+
+	/* Check if CS GPIO exists */
+	if (spi_cs_is_gpio(config)) {
+		hw_cs_ctrl = false;
+	}
+	MXC_SPI_HWSSControl(cfg->regs, hw_cs_ctrl);
+
+	/* Assert the CS line if HW control disabled */
+	if (!hw_cs_ctrl) {
+		spi_context_cs_control(ctx, true);
+	}
+
+	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+
+	do {
+		spi->ctrl0 &= ~(MXC_F_SPI_CTRL0_EN);
+
+		len = spi_context_max_continuous_chunk(ctx);
+		dfs_shift = spi_max32_get_dfs_shift(ctx);
+		word_count = len >> dfs_shift;
+
+		MXC_SETFIELD(spi->ctrl1, MXC_F_SPI_CTRL1_RX_NUM_CHAR,
+			     word_count << MXC_F_SPI_CTRL1_RX_NUM_CHAR_POS);
+		spi->dma |= ADI_MAX32_SPI_DMA_RX_FIFO_CLEAR;
+		spi->dma |= MXC_F_SPI_DMA_RX_FIFO_EN;
+		spi->dma |= ADI_MAX32_SPI_DMA_RX_DMA_EN;
+		MXC_SPI_SetRXThreshold(spi, 0);
+
+		ret = spi_max32_rx_dma_load(dev, ctx->rx_buf, len, dfs_shift);
+		if (ret < 0) {
+			goto unlock;
+		}
+
+		MXC_SETFIELD(spi->ctrl1, MXC_F_SPI_CTRL1_TX_NUM_CHAR,
+			     word_count << MXC_F_SPI_CTRL1_TX_NUM_CHAR_POS);
+		spi->dma |= ADI_MAX32_SPI_DMA_TX_FIFO_CLEAR;
+		spi->dma |= MXC_F_SPI_DMA_TX_FIFO_EN;
+		spi->dma |= ADI_MAX32_SPI_DMA_TX_DMA_EN;
+		MXC_SPI_SetTXThreshold(spi, 1);
+
+		ret = spi_max32_tx_dma_load(dev, ctx->tx_buf, len, dfs_shift);
+		if (ret < 0) {
+			goto unlock;
+		}
+
+		spi->ctrl0 |= MXC_F_SPI_CTRL0_EN;
+
+		data->dma_stat = 0;
+		MXC_SPI_StartTransmission(spi);
+		ret = spi_context_wait_for_completion(ctx);
+	} while (!ret && (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)));
+
+unlock:
+	/* Deassert the CS line if hw control disabled */
+	if (!hw_cs_ctrl) {
+		spi_context_cs_control(ctx, false);
+	}
+
+	spi_context_release(ctx, ret);
+
+	return ret;
+}
+#endif /* CONFIG_SPI_MAX32_DMA */
+
 static int api_transceive(const struct device *dev, const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
+#ifdef CONFIG_SPI_MAX32_DMA
+	const struct max32_spi_config *cfg = dev->config;
+
+	if (cfg->tx_dma.channel != 0xFF && cfg->rx_dma.channel != 0xFF) {
+		return transceive_dma(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+	}
+#endif /* CONFIG_SPI_MAX32_DMA */
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
@@ -513,6 +742,9 @@ static const struct spi_driver_api spi_max32_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = api_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = api_release,
 };
 
@@ -532,6 +764,26 @@ static const struct spi_driver_api spi_max32_api = {
 #define SPI_MAX32_IRQ_CONFIG_FUNC(n)
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
 
+#if CONFIG_SPI_MAX32_DMA
+#define MAX32_DT_INST_DMA_CTLR(n, name)                                                            \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
+		    (DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, name))), (NULL))
+
+#define MAX32_DT_INST_DMA_CELL(n, name, cell)                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas), (DT_INST_DMAS_CELL_BY_NAME(n, name, cell)),    \
+		    (0xff))
+
+#define MAX32_SPI_DMA_INIT(n)                                                                      \
+	.tx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, tx),                                               \
+	.tx_dma.channel = MAX32_DT_INST_DMA_CELL(n, tx, channel),                                  \
+	.tx_dma.slot = MAX32_DT_INST_DMA_CELL(n, tx, slot),                                        \
+	.rx_dma.dev = MAX32_DT_INST_DMA_CTLR(n, rx),                                               \
+	.rx_dma.channel = MAX32_DT_INST_DMA_CELL(n, rx, channel),                                  \
+	.rx_dma.slot = MAX32_DT_INST_DMA_CELL(n, rx, slot),
+#else
+#define MAX32_SPI_DMA_INIT(n)
+#endif
+
 #define DEFINE_SPI_MAX32(_num)                                                                     \
 	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	SPI_MAX32_IRQ_CONFIG_FUNC(_num)                                                            \
@@ -541,7 +793,7 @@ static const struct spi_driver_api spi_max32_api = {
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(_num)),                                 \
 		.perclk.bus = DT_INST_CLOCKS_CELL(_num, offset),                                   \
 		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
-		SPI_MAX32_CONFIG_IRQ_FUNC(_num)};                                                  \
+		MAX32_SPI_DMA_INIT(_num) SPI_MAX32_CONFIG_IRQ_FUNC(_num)};                         \
 	static struct max32_spi_data max32_spi_data_##_num = {                                     \
 		SPI_CONTEXT_INIT_LOCK(max32_spi_data_##_num, ctx),                                 \
 		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                                 \

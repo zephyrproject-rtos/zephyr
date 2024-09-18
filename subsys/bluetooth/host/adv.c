@@ -246,7 +246,7 @@ static void adv_delete(struct bt_le_ext_adv *adv)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-static struct bt_le_ext_adv *bt_adv_lookup_handle(uint8_t handle)
+struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 {
 	if (handle < ARRAY_SIZE(adv_pool) &&
 	    atomic_test_bit(adv_pool[handle].flags, BT_ADV_CREATED)) {
@@ -1139,6 +1139,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &cp->own_addr_type);
 	if (err) {
+		net_buf_unref(buf);
 		return err;
 	}
 
@@ -1215,6 +1216,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	}
 
 	cp->sid = param->sid;
+
+	cp->sec_adv_max_skip = param->secondary_max_skip;
 
 	cp->props = sys_cpu_to_le16(props);
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);
@@ -2020,7 +2023,7 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	}
 
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_subevent_data_request));
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
 		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
 
@@ -2050,7 +2053,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 	}
 
 	evt = net_buf_pull_mem(buf, sizeof(struct bt_hci_evt_le_per_adv_response_report));
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	if (!adv) {
 		LOG_ERR("Unknown advertising handle %d", evt->adv_handle);
 
@@ -2150,10 +2153,11 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 #endif
 
 	evt = (void *)buf->data;
-	adv = bt_adv_lookup_handle(evt->adv_handle);
+	adv = bt_hci_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
 
-	LOG_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u", evt->status,
+	LOG_DBG("status 0x%02x %s adv_handle %u conn_handle 0x%02x num %u",
+		evt->status, bt_hci_err_to_str(evt->status),
 		evt->adv_handle, conn_handle, evt->num_completed_ext_adv_evts);
 
 	if (!adv) {
@@ -2262,7 +2266,7 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	struct bt_le_ext_adv *adv;
 
 	evt = (void *)buf->data;
-	adv = bt_adv_lookup_handle(evt->handle);
+	adv = bt_hci_adv_lookup_handle(evt->handle);
 
 	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
 

@@ -26,6 +26,7 @@ zephyr_library_sources_ifdef(CONFIG_INPUT_PINNACLE input_pinnacle.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_PMW3610 input_pmw3610.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_SBUS input_sbus.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_STMPE811 input_stmpe811.c)
+zephyr_library_sources_ifdef(CONFIG_INPUT_TOUCH input_touch.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_XEC_KBD input_xec_kbd.c)
 zephyr_library_sources_ifdef(CONFIG_INPUT_XPT2046 input_xpt2046.c)
 # zephyr-keep-sorted-stop

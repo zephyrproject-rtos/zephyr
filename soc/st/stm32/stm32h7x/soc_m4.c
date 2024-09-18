@@ -51,8 +51,9 @@ static int stm32h7_m4_init(void)
 		 * End of system initialization is reached when CM7 takes HSEM.
 		 */
 		while ((HSEM->RLR[CFG_HW_ENTRY_STOP_MODE_SEMID] & HSEM_R_LOCK)
-				!= HSEM_R_LOCK)
+				!= HSEM_R_LOCK) {
 			;
+		}
 	}
 
 	return 0;

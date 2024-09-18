@@ -11,10 +11,6 @@ menuconfig MEMC
 
 if MEMC
 
-module = MEMC
-module-str = memc
-source "subsys/logging/Kconfig.template.log_config"
-
 config MEMC_INIT_PRIORITY
 	int "Initialization priority"
 	default 0
@@ -34,5 +30,9 @@ source "drivers/memc/Kconfig.nxp_s32"
 source "drivers/memc/Kconfig.smartbond"
 
 source "drivers/memc/Kconfig.mspi"
+
+module = MEMC
+module-str = memc
+source "subsys/logging/Kconfig.template.log_config"
 
 endif

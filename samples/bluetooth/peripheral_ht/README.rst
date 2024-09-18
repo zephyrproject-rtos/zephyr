@@ -1,12 +1,13 @@
-.. _peripheral_ht:
+.. zephyr:code-sample:: ble_peripheral_ht
+   :name: Health Thermometer (Peripheral)
+   :relevant-api: bt_bas bluetooth
 
-Bluetooth: Peripheral HT
-########################
+   Expose a Health Thermometer (HT) GATT Service generating dummy temperature values.
 
 Overview
 ********
 
-Similar to the :ref:`Peripheral <ble_peripheral>` sample, except that this
+Similar to the :zephyr:code-sample:`ble_peripheral` sample, except that this
 application specifically exposes the HT (Health Thermometer) GATT Service.
 
 On Nordic nRF devices, this sample uses the built-in TEMP peripheral to return
@@ -18,7 +19,7 @@ Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************

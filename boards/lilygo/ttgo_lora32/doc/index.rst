@@ -99,7 +99,7 @@ MCUboot bootloader
 ==================
 
 User may choose to use MCUboot bootloader instead. In that case the bootloader
-must be build (and flash) at least once.
+must be built (and flashed) at least once.
 
 There are two options to be used when building an application:
 
@@ -125,7 +125,7 @@ To build the sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/hello_world
+   :zephyr-app: samples/hello_world
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
@@ -161,7 +161,7 @@ Manual build
 ============
 
 During the development cycle, it is intended to build & flash as quickly possible.
-For that reason, images can be build one at a time using traditional build.
+For that reason, images can be built one at a time using traditional build.
 
 The instructions following are relevant for both manual build and sysbuild.
 The only difference is the structure of the build directory.
@@ -214,7 +214,7 @@ To build the LoRa transmit sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/drivers/lora/send
+   :zephyr-app: samples/drivers/lora/send
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
@@ -224,7 +224,7 @@ To build the LoRa receive sample application using sysbuild use the command:
 
 .. zephyr-app-commands::
    :tool: west
-   :app: samples/drivers/lora/receive
+   :zephyr-app: samples/drivers/lora/receive
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild

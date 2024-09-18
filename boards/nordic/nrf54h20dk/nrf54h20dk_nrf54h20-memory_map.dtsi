@@ -51,6 +51,23 @@
 			};
 		};
 
+		etr_buf_ram0x_region: memory@2f0be000 {
+			compatible = "nordic,owned-memory";
+			reg = <0x2f0be000 DT_SIZE_K(4)>;
+			status = "disabled";
+			perm-read;
+			perm-write;
+			perm-secure;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x2f0be000 0x1000>;
+
+			/* TODO In future move this region to cpuapp_ram0x_region. */
+			etr_buffer: memory@0 {
+				reg = <0x0 DT_SIZE_K(4)>;
+			};
+		};
+
 		cpuapp_cpurad_ram0x_region: memory@2f0bf000 {
 			compatible = "nordic,owned-memory";
 			reg = <0x2f0bf000 DT_SIZE_K(4)>;
@@ -93,6 +110,10 @@
 			};
 		};
 
+		/*
+		 * NOTE: perm-execute is not required as FLPR has a direct
+		 * bridge with RAM21, bypassing MPC.
+		 */
 		ram21_region: memory@2f890000 {
 			compatible = "nordic,owned-memory";
 			status = "disabled";
@@ -104,9 +125,21 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x2f890000 0x10000>;
 
-			dma_fast_region: memory@8000 {
+			cpuflpr_code_data: memory@0 {
+				reg = <0x0 DT_SIZE_K(46)>;
+			};
+
+			cpuapp_cpuflpr_ipc_shm: memory@b800 {
+				reg = <0xb800 DT_SIZE_K(1)>;
+			};
+
+			cpuflpr_cpuapp_ipc_shm: memory@bc00 {
+				reg = <0xbc00 DT_SIZE_K(1)>;
+			};
+
+			dma_fast_region: memory@c000 {
 				compatible = "zephyr,memory-region";
-				reg = <0x8000 DT_SIZE_K(16)>;
+				reg = <0xc000 DT_SIZE_K(16)>;
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM21";
@@ -194,11 +227,15 @@
 		#size-cells = <1>;
 
 		cpuapp_slot0_partition: partition@a6000 {
-			reg = <0xa6000 DT_SIZE_K(296)>;
+			reg = <0xa6000 DT_SIZE_K(248)>;
 		};
 
-		cpuppr_code_partition: partition@f0000 {
-			reg = <0xf0000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@e4000 {
+			reg = <0xe4000 DT_SIZE_K(64)>;
+		};
+
+		cpuflpr_code_partition: partition@f4000 {
+			reg = <0xf4000 DT_SIZE_K(48)>;
 		};
 	};
 

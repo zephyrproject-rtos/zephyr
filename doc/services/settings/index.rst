@@ -30,15 +30,15 @@ Handlers
 ********
 
 Settings handlers for subtree implement a set of handler functions.
-These are registered using a call to ``settings_register()``.
+These are registered using a call to :c:func:`settings_register()`.
 
 **h_get**
     This gets called when asking for a settings element value by its name using
-    ``settings_runtime_get()`` from the runtime backend.
+    :c:func:`settings_runtime_get()` from the runtime backend.
 
 **h_set**
     This gets called when the value is loaded from persisted storage with
-    ``settings_load()``, or when using ``settings_runtime_set()`` from the
+    :c:func:`settings_load()`, or when using :c:func:`settings_runtime_set()` from the
     runtime backend.
 
 **h_commit**
@@ -49,7 +49,7 @@ These are registered using a call to ``settings_register()``.
 
 **h_export**
     This gets called to write all current settings. This happens
-    when ``settings_save()`` tries to save the settings or transfer to any
+    when :c:func:`settings_save()` tries to save the settings or transfer to any
     user-implemented back-end.
 
 Backends
@@ -57,26 +57,26 @@ Backends
 
 Backends are meant to load and save data to/from setting handlers, and
 implement a set of handler functions. These are registered using a call to
-``settings_src_register()`` for backends that can load data, and/or
-``settings_dst_register()`` for backends that can save data. The current
+:c:func:`settings_src_register()` for backends that can load data, and/or
+:c:func:`settings_dst_register()` for backends that can save data. The current
 implementation allows for multiple source backends but only a single destination
 backend.
 
 **csi_load**
     This gets called when loading values from persistent storage using
-    ``settings_load()``.
+    :c:func:`settings_load()`.
 
 **csi_save**
     This gets called when saving a single setting to persistent storage using
-    ``settings_save_one()``.
+    :c:func:`settings_save_one()`.
 
 **csi_save_start**
     This gets called when starting a save of all current settings using
-    ``settings_save()``.
+    :c:func:`settings_save()`.
 
 **csi_save_end**
     This gets called after having saved of all current settings using
-    ``settings_save()``.
+    :c:func:`settings_save()`.
 
 Zephyr Storage Backends
 ***********************
@@ -87,19 +87,19 @@ Zephyr has three storage backends: a Flash Circular Buffer
 (:kconfig:option:`CONFIG_SETTINGS_NVS`).
 
 You can declare multiple sources for settings; settings from
-all of these are restored when ``settings_load()`` is called.
+all of these are restored when :c:func:`settings_load()` is called.
 
 There can be only one target for writing settings; this is where
-data is stored when you call ``settings_save()``, or ``settings_save_one()``.
+data is stored when you call :c:func:`settings_save()`, or :c:func:`settings_save_one()`.
 
-FCB read target is registered using ``settings_fcb_src()``, and write target
-using ``settings_fcb_dst()``. As a side-effect,  ``settings_fcb_src()``
+FCB read target is registered using :c:func:`settings_fcb_src()`, and write target
+using :c:func:`settings_fcb_dst()`. As a side-effect,  :c:func:`settings_fcb_src()`
 initializes the FCB area, so it must be called before calling
-``settings_fcb_dst()``. File read target is registered using
-``settings_file_src()``, and write target by using ``settings_file_dst()``.
+:c:func:`settings_fcb_dst()`. File read target is registered using
+:c:func:`settings_file_src()`, and write target by using :c:func:`settings_file_dst()`.
 Non-volatile storage read target is registered using
-``settings_nvs_src()``, and write target by using
-``settings_nvs_dst()``.
+:c:func:`settings_nvs_src()`, and write target by using
+:c:func:`settings_nvs_dst()`.
 
 Storage Location
 ****************
@@ -110,12 +110,12 @@ selected by setting the ``zephyr,settings-partition`` property of the
 chosen node in the devicetree.
 
 The file path used by the file backend to store settings is selected via the
-option ``CONFIG_SETTINGS_FILE_PATH``.
+option :kconfig:option:`CONFIG_SETTINGS_FILE_PATH`.
 
 Loading data from persisted storage
 ***********************************
 
-A call to ``settings_load()`` uses an ``h_set`` implementation
+A call to :c:func:`settings_load()` uses an ``h_set`` implementation
 to load settings data from storage to volatile memory.
 After all data is loaded, the ``h_commit`` handler is issued,
 signalling the application that the settings were successfully
@@ -130,12 +130,12 @@ call the callback with only the newest entity.
 Storing data to persistent storage
 **********************************
 
-A call to ``settings_save_one()`` uses a backend implementation to store
-settings data to the storage medium. A call to ``settings_save()`` uses an
+A call to :c:func:`settings_save_one()` uses a backend implementation to store
+settings data to the storage medium. A call to :c:func:`settings_save()` uses an
 ``h_export`` implementation to store different data in one operation using
-``settings_save_one()``.
+:c:func:`settings_save_one()`.
 A key need to be covered by a ``h_export`` only if it is supposed to be stored
-by ``settings_save()`` call.
+by :c:func:`settings_save()` call.
 
 For both FCB and file back-end only storage requests with data which
 changes most actual key's value are stored, therefore there is no need to check
@@ -219,7 +219,7 @@ persisted storage.
 
 In this example, the ``main`` function increments ``foo_val``, and then
 persists the latest number. When the system restarts, the application calls
-``settings_load()`` while initializing, and ``foo_val`` will continue counting
+:c:func:`settings_load()` while initializing, and ``foo_val`` will continue counting
 up from where it was before restart.
 
 .. code-block:: c
@@ -319,7 +319,7 @@ handler (:kconfig:option:`CONFIG_SETTINGS_CUSTOM`).
 API Reference
 *************
 
-The Settings subsystem APIs are provided by ``settings.h``:
+The Settings subsystem APIs are provided by :zephyr_file:`include/zephyr/settings/settings.h`.
 
 API for general settings usage
 ==============================

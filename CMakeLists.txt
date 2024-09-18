@@ -360,8 +360,21 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-# @Intent: Set fundamental linker specific flags
-toolchain_ld_base()
+find_package(Deprecated COMPONENTS toolchain_ld_base)
+
+if(DEFINED TOOLCHAIN_LD_FLAGS)
+  zephyr_ld_options(${TOOLCHAIN_LD_FLAGS})
+endif()
+
+zephyr_link_libraries(PROPERTY base)
+
+zephyr_link_libraries_ifndef(CONFIG_LINKER_USE_RELAX PROPERTY no_relax)
+
+zephyr_link_libraries_ifdef(CONFIG_LINKER_USE_RELAX PROPERTY relax)
+
+# Sort the common symbols and each input section by alignment
+# in descending order to minimize padding between these symbols.
+zephyr_link_libraries_ifdef(CONFIG_LINKER_SORT_BY_ALIGNMENT PROPERTY sort_alignment)
 
 toolchain_ld_force_undefined_symbols(
   _OffsetAbsSyms
@@ -369,13 +382,37 @@ toolchain_ld_force_undefined_symbols(
 )
 
 if(NOT CONFIG_NATIVE_BUILD)
-  # @Intent: Set linker specific flags for bare metal target
-  toolchain_ld_baremetal()
+  find_package(Deprecated COMPONENTS toolchain_ld_baremetal)
+
+  zephyr_link_libraries(PROPERTY baremetal)
+
+  # Note that some architectures will skip this flag if set to error, even
+  # though the compiler flag check passes (e.g. ARC and Xtensa). So warning
+  # should be the default for now.
+  #
+  # Skip this for native application as Zephyr only provides
+  # additions to the host toolchain linker script. The relocation
+  # sections (.rel*) requires us to override those provided
+  # by host toolchain. As we can't account for all possible
+  # combination of compiler and linker on all machines used
+  # for development, it is better to turn this off.
+  #
+  # CONFIG_LINKER_ORPHAN_SECTION_PLACE is to place the orphan sections
+  # without any warnings or errors, which is the default behavior.
+  # So there is no need to explicitly set a linker flag.
+  if(CONFIG_LINKER_ORPHAN_SECTION_WARN)
+    zephyr_link_libraries(PROPERTY orphan_warning)
+  elseif(CONFIG_LINKER_ORPHAN_SECTION_ERROR)
+    zephyr_link_libraries(PROPERTY orphan_error)
+  endif()
 endif()
 
-if(CONFIG_CPP AND NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
-  # @Intent: Set linker specific flags for C++
-  toolchain_ld_cpp()
+if(CONFIG_CPP)
+  if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY)
+    find_package(Deprecated COMPONENTS toolchain_ld_cpp)
+  endif()
+
+  zephyr_link_libraries(PROPERTY cpp_base)
 endif()
 
 # @Intent: Add the basic toolchain warning flags
@@ -1613,11 +1650,14 @@ endif()
 
 if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
   math(EXPR adjustment "${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT DECIMAL)
+  set(args_adjustment ${CONFIG_BUILD_OUTPUT_ADJUST_LMA_SECTIONS})
+  list(TRANSFORM args_adjustment PREPEND $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>)
+  list(TRANSFORM args_adjustment APPEND +${adjustment})
   list(APPEND
     post_build_commands
     COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
-            $<TARGET_PROPERTY:bintools,elfconvert_flag_lma_adjust>${adjustment}
+            ${args_adjustment}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_ELF_NAME}
     )
@@ -2133,12 +2173,15 @@ endif()
 set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.tar.xz)
 
 # TODO maybe generate flags for C CXX ASM
+zephyr_get_compile_definitions_for_lang(C zephyr_defs)
 zephyr_get_compile_options_for_lang(C zephyr_flags)
 
 # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_edk_cflags)
-llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_edk_cflags} llext_edk_cflags)
+llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
+llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
 
+set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
+list(APPEND llext_edk_cflags ${llext_filt_flags})
 list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
 list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
 
@@ -2162,7 +2205,7 @@ add_custom_command(
         -DAPPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
         -DINTERFACE_INCLUDE_DIRECTORIES="$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>"
         -Dllext_edk_file=${llext_edk_file}
-        -Dllext_cflags="${llext_edk_cflags}"
+        -Dllext_edk_cflags="${llext_edk_cflags}"
         -Dllext_edk_name=${CONFIG_LLEXT_EDK_NAME}
         -DWEST_TOPDIR=${WEST_TOPDIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}

@@ -37,6 +37,12 @@
 
 #define LONG_META_LEN (sizeof((uint8_t []){LONG_META}) + 1U) /* Size of data + type */
 
+#define BROADCAST_CODE                                                                             \
+	((uint8_t[]){0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, \
+		     0xdd, 0xee, 0xff})
+#define INCORRECT_BROADCAST_CODE                                                                   \
+	((uint8_t[]){0xDE, 0xAD, 0xBE, 0xEF, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, \
+		     0xdd, 0xee, 0xff})
 struct unicast_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;

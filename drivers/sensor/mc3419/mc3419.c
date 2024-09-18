@@ -143,8 +143,7 @@ static int mc3419_set_odr(const struct device *dev,
 	}
 
 	LOG_DBG("Set ODR Rate to 0x%x", data_rate);
-	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_SAMPLE_RATE_2,
-				    CONFIG_MC3419_DECIMATION_RATE);
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, MC3419_REG_SAMPLE_RATE_2, cfg->decimation_rate);
 	if (ret < 0) {
 		LOG_ERR("Failed to set decimation rate (%d)", ret);
 		return ret;
@@ -271,6 +270,12 @@ static int mc3419_init(const struct device *dev)
 	}
 #endif
 
+	ret = i2c_reg_update_byte_dt(&cfg->i2c, MC3419_REG_RANGE_SELECT_CTRL, MC3419_LPF_MASK,
+				     cfg->lpf_fc_sel);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure LPF (%d)", ret);
+		return ret;
+	}
 	/* Leave the sensor in default power on state, will be
 	 * enabled by configure attr or setting trigger.
 	 */
@@ -297,18 +302,16 @@ static const struct sensor_driver_api mc3419_api = {
 #define MC3419_CFG_IRQ(idx)
 #endif
 
-#define MC3419_DEFINE(idx)						\
-	static const struct mc3419_config mc3419_config_##idx = {	\
-		.i2c = I2C_DT_SPEC_INST_GET(idx),			\
-		MC3419_CFG_IRQ(idx)					\
-	};								\
-	static struct mc3419_driver_data mc3419_data_##idx;		\
-	SENSOR_DEVICE_DT_INST_DEFINE(idx,				\
-				mc3419_init, NULL,			\
-				&mc3419_data_##idx,			\
-				&mc3419_config_##idx,			\
-				POST_KERNEL,				\
-				CONFIG_SENSOR_INIT_PRIORITY,		\
-				&mc3419_api);
+#define MC3419_DEFINE(idx)                                                                         \
+                                                                                                   \
+	static const struct mc3419_config mc3419_config_##idx = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
+		.lpf_fc_sel = DT_INST_PROP(idx, lpf_fc_sel),                                       \
+		.decimation_rate = DT_INST_PROP(idx, decimation_rate),                             \
+		MC3419_CFG_IRQ(idx)};                                                              \
+	static struct mc3419_driver_data mc3419_data_##idx;                                        \
+	SENSOR_DEVICE_DT_INST_DEFINE(idx, mc3419_init, NULL, &mc3419_data_##idx,                   \
+				     &mc3419_config_##idx, POST_KERNEL,                            \
+				     CONFIG_SENSOR_INIT_PRIORITY, &mc3419_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MC3419_DEFINE)

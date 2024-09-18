@@ -153,6 +153,8 @@ For more details please refer to `STM32G0 Evaluation board User Manual`_.
 Programming and Debugging
 *************************
 
+The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 Applications for the ``stm32g081b_eval`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -160,7 +162,8 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-The STM32G081B Evaluation board includes an ST-LINK/V2-1 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 .. code-block:: console
 
@@ -206,3 +209,6 @@ References
 
 .. _G081RB on www.st.com:
    https://www.st.com/en/microcontrollers/stm32g081rb.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

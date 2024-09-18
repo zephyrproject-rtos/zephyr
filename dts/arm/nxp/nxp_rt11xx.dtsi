@@ -11,7 +11,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/pm/imx_spc.h>
+#include <zephyr/dt-bindings/power/imx_spc.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 / {
 	chosen {
@@ -750,6 +750,22 @@
 			};
 		};
 
+		flexio1: flexio@400ac000 {
+			compatible = "nxp,flexio";
+			reg = <0x400ac000 0x4000>;
+			interrupts = <110 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@400b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x400b0000 0x4000>;
+			interrupts = <111 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_CLK 0 0>;
+			status = "disabled";
+		};
+
 		enet: ethernet@40424000 {
 			compatible = "nxp,enet";
 			reg = <0x40424000 0x628>;
@@ -831,13 +847,13 @@
 			status = "disabled";
 		};
 
-		usbphy1: usbphy@0x40434000 {
+		usbphy1: usbphy@40434000 {
 			compatible = "nxp,usbphy";
 			reg = <0x40434000 0x1000>;
 			status = "disabled";
 		};
 
-		usbphy2: usbphy@0x40438000 {
+		usbphy2: usbphy@40438000 {
 			compatible = "nxp,usbphy";
 			reg = <0x40438000 0x1000>;
 			status = "disabled";

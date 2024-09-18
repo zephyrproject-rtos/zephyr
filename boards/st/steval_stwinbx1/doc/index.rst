@@ -361,10 +361,9 @@ You should see the following confirmation on your Linux host:
    usb 3-1: Manufacturer: STMicroelectronics
    usb 3-1: SerialNumber: 207136863530
 
-.. You can build and flash the provided sample application
-.. (:ref:`sensortile_box_pro_sample_sensors`) that reads sensors data and outputs
-.. values on the console.
-
+You can build and flash the provided sample application
+(:ref:`steval_stwinbx1_sample_sensors`) that reads sensors data and outputs
+values on the console.
 
 .. _STEVAL-STWINBX1 Development kit website:
    https://www.st.com/en/evaluation-tools/steval-stwinbx1.html

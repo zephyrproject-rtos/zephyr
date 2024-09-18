@@ -477,6 +477,11 @@ static void isr_tx_rx(void *param)
 		node_rx_prof = lll_prof_reserve();
 	}
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
@@ -605,6 +610,11 @@ static void isr_rx(void *param)
 
 			return;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_cputime_capture();
+		lll_prof_send();
 	}
 
 isr_rx_do_close:

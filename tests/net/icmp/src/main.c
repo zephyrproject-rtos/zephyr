@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(net_test, ICMP_LOG_LEVEL);
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/ztest.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>

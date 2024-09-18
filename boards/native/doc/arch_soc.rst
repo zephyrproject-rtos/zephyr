@@ -33,9 +33,9 @@ target hardware in the early phases of development.
 Types of POSIX arch based boards
 ================================
 
-Today there are two types of POSIX boards: The native boards, :ref:`native_posix<native_posix>`
-and :ref:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
-While they share the main objectives and principles, the first are intended as
+Today there are two types of POSIX boards:
+:ref:`native_sim<native_sim>`, and the :ref:`bsim boards<bsim boards>`.
+While they share the main objectives and principles, the first is intended as
 a HW agnostic test platform which in some cases utilizes the host OS
 peripherals, while the second intend to simulate a particular HW platform,
 with focus on their radio (e.g. BT LE) and utilize the `BabbleSim`_ physical layer

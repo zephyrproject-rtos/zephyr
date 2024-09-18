@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2024 Accenture
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 12>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group_1 {
+			pinmux = <ADC0_SE12_PTC14>;
+			drive-strength = "low";
+		};
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&adc1 {
+	status = "disabled";
+};

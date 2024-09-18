@@ -419,6 +419,40 @@ struct spi_dt_spec {
 	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
 
 /**
+ * @brief Value that will never compare true with any valid overrun character
+ */
+#define SPI_MOSI_OVERRUN_UNKNOWN 0x100
+
+/**
+ * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ *
+ * For drivers where the MOSI line state when receiving is important, this value
+ * can be queried at compile-time to determine whether allocating a constant
+ * array is necessary.
+ *
+ * @param node_id Devicetree node identifier for the SPI device to query
+ *
+ * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default MOSI value otherwise
+ */
+#define SPI_MOSI_OVERRUN_DT(node_id) \
+	DT_PROP_OR(node_id, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+
+/**
+ * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ *
+ * This is equivalent to
+ * <tt>SPI_MOSI_OVERRUN_DT(DT_DRV_INST(inst))</tt>.
+ *
+ * @param inst Devicetree instance number
+ *
+ * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default MOSI value otherwise
+ */
+#define SPI_MOSI_OVERRUN_DT_INST(inst) \
+	DT_INST_PROP_OR(inst, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+
+/**
  * @brief SPI buffer structure
  */
 struct spi_buf {

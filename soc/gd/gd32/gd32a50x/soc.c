@@ -8,7 +8,7 @@
 #include <soc.h>
 
 /* initial ecc memory */
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	register unsigned r0 __asm("r0") = DT_REG_ADDR(DT_CHOSEN(zephyr_sram));
 	register unsigned r1 __asm("r1") =

@@ -106,6 +106,8 @@ The STM32C0116 Discovery board is configured as follows:
 Programming and Debugging
 *************************
 
+STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+
 Applications for the ``stm32c0116_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -113,7 +115,15 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32C0116-DK Discovery kit includes an ST-LINK/V2 embedded debug tool interface.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner jlink
 
 Flashing an application to STM32C0116-DK
 -------------------------------------------
@@ -152,3 +162,6 @@ You should see the following message on the console:
 
 .. _STM32C0x1 reference manual:
    https://www.st.com/resource/en/reference_manual/rm0490-stm32c0x1-advanced-armbased-64bit-mcus-stmicroelectronics.pdf
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

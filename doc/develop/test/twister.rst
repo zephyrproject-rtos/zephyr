@@ -186,6 +186,8 @@ testing:
   testing relating keywords to provide best coverage for the features of this
   board.
 
+.. _twister_default_testing_board:
+
   default: [True|False]:
     This is a default board, it will tested with the highest priority and is
     covered when invoking the simplified twister without any additional
@@ -315,6 +317,8 @@ identifier in the YAML files.
 
 Each test scenario entry in the test application configuration can define the
 following key/value pairs:
+
+..  _test_config_args:
 
 tags: <list of tags> (required)
     A set of string tags for the test scenario. Usually pertains to
@@ -822,6 +826,37 @@ To load arguments from a file, add ``+`` before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
+Selecting platform scope
+************************
+
+One of the key features of Twister is its ability to decide on which platforms a given
+test scenario should run. This behavior has its roots in Twister being developed as
+a test runner for Zephyr's CI. With hundreds of available platforms and thousands of
+tests, the testing tools should be able to adapt the scope and select/filter out what
+is relevant and what is not.
+
+Twister always prepares an initial list of platforms in scope for a given test,
+based on command line arguments and the :ref:`test's configuration <test_config_args>`. Then,
+platforms that don't fulfill the conditions required in the configuration yaml
+(e.g. minimum ram) are filtered out from the scope.
+Using ``--force-platform`` allows to override filtering caused by ``platform_allow``,
+``platform_exclude``, ``arch_allow`` and ``arch_exclude`` keys in test configuration
+files.
+
+Command line arguments define the initial scope in the following way:
+
+* ``-p/--platform <platform_name>`` (can be used multiple times): only platforms
+  passed with this argument;
+* ``-l/--all``: all available platforms;
+* ``-G/--integration``: all platforms from an ``integration_platforms`` list in
+  a given test configuration file. If a test has no ``integration_platforms``
+  `"scope presumption"` will happen;
+* No scope argument: `"scope presumption"` will happen.
+
+`"Scope presumption"`: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
+is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
+is used as the initial scope.
 
 Managing tests timeouts
 ***********************

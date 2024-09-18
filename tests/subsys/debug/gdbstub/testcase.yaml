@@ -4,10 +4,24 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+common:
+  tags:
+    - debug
+    - gdbstub
+  filter: CONFIG_ARCH_HAS_GDBSTUB
+
 tests:
+  # Basic build-only test for all platforms supporting gdbstub
+  debug.gdbstub.build_only:
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a9
+    build_only: true
+
   # Connect to Zephyr gdbstub and run a simple GDB script
   debug.gdbstub.breakpoints:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
     harness: pytest
     harness_config:
       pytest_root:
@@ -19,9 +33,6 @@ tests:
         - "test_breakpoints.gdbinit"
         - "--gdb_target_remote"
         - "tcp::5678"
-    tags:
-      - debug
-      - gdbstub
     extra_configs:
       # Make sure the gdbstub port chosen is unique for this test to avoid conflicts
       # when Twister runs tests in parallel on the same host.
@@ -33,7 +44,8 @@ tests:
   # Use non-default QEMU gdbstub port 1235 for this test to avoid conflicts
   # with some other test on QEMU running in parallel.
   debug.gdbstub_qemu.breakpoints:
-    platform_allow: qemu_x86
+    platform_allow:
+      - qemu_x86
     harness: pytest
     harness_config:
       pytest_root:
@@ -45,9 +57,6 @@ tests:
         - "test_breakpoints.gdbinit"
         - "--gdb_target_remote"
         - "tcp::1235"
-    tags:
-      - debug
-      - gdbstub
     extra_configs:
       # Turn off Zephyr's gdbstub for this test case.
       - CONFIG_GDBSTUB=n

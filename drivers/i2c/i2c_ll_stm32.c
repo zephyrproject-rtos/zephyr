@@ -176,9 +176,6 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 				ret = -EINVAL;
 				break;
 			}
-		} else {
-			/* Stop condition is required for the last message */
-			current->flags |= I2C_MSG_STOP;
 		}
 
 		current++;
@@ -311,7 +308,6 @@ restore:
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
-
 static const struct i2c_driver_api api_funcs = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
@@ -322,6 +318,9 @@ static const struct i2c_driver_api api_funcs = {
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_stm32_target_register,
 	.target_unregister = i2c_stm32_target_unregister,
+#endif
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
 };
 

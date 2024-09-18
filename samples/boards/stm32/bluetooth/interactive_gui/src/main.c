@@ -22,7 +22,7 @@
 #include <zephyr/drivers/bluetooth/hci_driver_bluenrg.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/usb/usb_device.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -314,7 +314,7 @@ static void rx_isr(void)
 			if (remaining == 0) {
 				/* Packet received */
 				LOG_DBG("putting RX packet in queue.");
-				net_buf_put(&tx_queue, buf);
+				k_fifo_put(&tx_queue, buf);
 				state = ST_IDLE;
 			}
 			break;
@@ -343,7 +343,7 @@ static void tx_isr(void)
 	int len;
 
 	if (!buf) {
-		buf = net_buf_get(&uart_tx_queue, K_NO_WAIT);
+		buf = k_fifo_get(&uart_tx_queue, K_NO_WAIT);
 		if (!buf) {
 			uart_irq_tx_disable(hci_uart_dev);
 			return;
@@ -384,7 +384,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		uint8_t response[16];
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = k_fifo_get(&tx_queue, K_FOREVER);
 		buf_type = bt_buf_get_type(buf);
 		if (buf_type == H4_ST_VND_CMD) {
 			len = parse_cmd(buf->data, buf->len, response);
@@ -411,7 +411,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 static int h4_send(struct net_buf *buf)
 {
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-	net_buf_put(&uart_tx_queue, buf);
+	k_fifo_put(&uart_tx_queue, buf);
 	uart_irq_tx_enable(hci_uart_dev);
 	return 0;
 }
@@ -450,7 +450,7 @@ int main(void)
 	while (1) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
 			LOG_ERR("Failed to send");

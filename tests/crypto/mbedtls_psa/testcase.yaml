@@ -1,0 +1,41 @@
+# The goal here is to showcase that Mbed TLS's PSA crypto implementation can be
+# supported on any platform. A very minimal configuration is tested here: simply
+# enable support for PSA crypto APIs in Mbed TLS and then test them with:
+# - psa_crypto_init() which is required before any PSA crypto operation
+# - psa_generate_random() which is always available as long as PSA crypto is
+#   initialized.
+#
+# Since it might take too long to execute this test on all platforms
+# supported by Zephyr, we reduce to a very small selected group whose
+# characteristics are:
+# - no TF-M enabled devices because we assume that the TF-M implementation
+#   of PSA crypto is working fine on the platforms that support TF-M.
+# - platform should be testable by the CI.
+# - enable CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG in order to reduce as much
+#   as possible usage of legacy modules in Mbed TLS.
+# - pick 1 platform which supports entropy driver and 1 which does not. The
+#   latter case will allow to test
+#   CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG.
+common:
+  filter: not CONFIG_BUILD_WITH_TFM
+  tags:
+    - mbedtls
+    - psa
+tests:
+  crypto.mbedtls_psa.with_entropy_driver:
+    filter: CONFIG_CSPRNG_ENABLED
+    # Pick a platform which has an entropy driver and enable it.
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_ENTROPY_GENERATOR=y
+  crypto.mbedtls_psa.without_entropy_driver:
+    filter: not CONFIG_CSPRNG_ENABLED
+    # Pick a platform which does not have an entropy driver. In this case we
+    # enable the timer random generator because it's always available on all
+    # platforms.
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG=y
+      - CONFIG_TEST_RANDOM_GENERATOR=y

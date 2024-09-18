@@ -54,6 +54,11 @@ config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
 
+# Avoid RWW hazards by defaulting logging to disabled
+choice MEMC_LOG_LEVEL_CHOICE
+	default MEMC_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
+endchoice
+
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
 
