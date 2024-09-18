@@ -300,7 +300,6 @@
 		reg = <0x2dc0000 0x4000>;
 		interrupts = <200 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	acmp2: cmp@2dd0000 {
@@ -308,7 +307,6 @@
 		reg = <0x2dd0000 0x4000>;
 		interrupts = <201 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	acmp3: cmp@2de0000 {
@@ -316,7 +314,6 @@
 		reg = <0x2de0000 0x4000>;
 		interrupts = <202 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	acmp4: cmp@2df0000 {
@@ -324,7 +321,6 @@
 		reg = <0x2df0000 0x4000>;
 		interrupts = <203 0>;
 		status = "disabled";
-		#io-channel-cells = <2>;
 	};
 
 	lpadc1: lpadc@2600000 {
