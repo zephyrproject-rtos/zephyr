@@ -322,7 +322,7 @@ Libraries / Subsystems
     * Fixed formatting of milliseconds in :c:enum:`OS_MGMT_ID_DATETIME_STR` by adding
       leading zeros.
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
-      can be enabled witbh :kconfig:option`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
+      can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
 
 * Logging
