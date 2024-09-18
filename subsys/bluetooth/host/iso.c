@@ -2028,6 +2028,11 @@ int bt_iso_cig_create(const struct bt_iso_cig_param *param, struct bt_iso_cig **
 	bool advanced = false;
 	int i;
 
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
 	CHECKIF(out_cig == NULL) {
 		LOG_DBG("out_cig is NULL");
 		return -EINVAL;
@@ -2142,6 +2147,11 @@ int bt_iso_cig_reconfigure(struct bt_iso_cig *cig, const struct bt_iso_cig_param
 
 	CHECKIF(cig == NULL) {
 		LOG_DBG("cig is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
 
@@ -2891,6 +2901,21 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 	struct bt_iso_big *big;
 	bool advanced = false;
 
+	CHECKIF(padv == NULL) {
+		LOG_DBG("padv is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(out_big == NULL) {
+		LOG_DBG("out_big is NULL");
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(padv->flags, BT_PER_ADV_PARAMS_SET)) {
 		LOG_DBG("PA params not set; invalid adv object");
 		return -EINVAL;
@@ -3077,6 +3102,11 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	struct bt_iso_chan *bis;
 	int err;
 
+	CHECKIF(big == NULL) {
+		LOG_DBG("big is NULL");
+		return -EINVAL;
+	}
+
 	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis) {
 		LOG_DBG("BIG not initialized");
 		return -EINVAL;
@@ -3254,6 +3284,21 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 	int err;
 	struct bt_iso_chan *bis;
 	struct bt_iso_big *big;
+
+	CHECKIF(sync == NULL) {
+		LOG_DBG("sync is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param == NULL) {
+		LOG_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(out_big == NULL) {
+		LOG_DBG("out_big is NULL");
+		return -EINVAL;
+	}
 
 	if (!atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
 		LOG_DBG("PA sync not synced");
