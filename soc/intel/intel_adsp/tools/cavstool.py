@@ -962,28 +962,30 @@ async def main():
         if not args.log_only:
             handle_ipc()
 
+def args_parse():
+    global args
+    ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
+    ap.add_argument("-q", "--quiet", action="store_true",
+                    help="No loader output, just DSP logging")
+    ap.add_argument("-v", "--verbose", action="store_true",
+                    help="More loader output, DEBUG logging level")
+    ap.add_argument("-l", "--log-only", action="store_true",
+                    help="Don't load firmware, just show log output")
+    ap.add_argument("-p", "--shell-pty", action="store_true",
+                    help="Create a Zephyr shell pty if enabled in firmware")
+    ap.add_argument("-n", "--no-history", action="store_true",
+                    help="No current log buffer at start, just new output")
+    ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
-ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
-ap.add_argument("-q", "--quiet", action="store_true",
-                help="No loader output, just DSP logging")
-ap.add_argument("-v", "--verbose", action="store_true",
-                help="More loader output, DEBUG logging level")
-ap.add_argument("-l", "--log-only", action="store_true",
-                help="Don't load firmware, just show log output")
-ap.add_argument("-p", "--shell-pty", action="store_true",
-                help="Create a Zephyr shell pty if enabled in firmware")
-ap.add_argument("-n", "--no-history", action="store_true",
-                help="No current log buffer at start, just new output")
-ap.add_argument("fw_file", nargs="?", help="Firmware file")
+    args = ap.parse_args()
 
-args = ap.parse_args()
-
-if args.quiet:
-    log.setLevel(logging.WARN)
-elif args.verbose:
-    log.setLevel(logging.DEBUG)
+    if args.quiet:
+        log.setLevel(logging.WARN)
+    elif args.verbose:
+        log.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
+    args_parse()
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
