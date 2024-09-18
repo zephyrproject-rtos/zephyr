@@ -186,11 +186,6 @@ config WIFI_NM_WPA_SUPPLICANT_WPS
 	bool "WPS support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
-config WIFI_NM_HOSTAPD_WPS
-	bool "WPS hostapd support"
-	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
-	depends on WIFI_NM_HOSTAPD_AP
-
 config WIFI_NM_WPA_SUPPLICANT_P2P
 	bool "P2P mode support"
 	select WIFI_NM_WPA_SUPPLICANT_AP

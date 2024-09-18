@@ -912,37 +912,6 @@ static int wifi_wps_pin(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_PIN, wifi_wps_pin);
 
-static int wifi_ap_wps_pbc(uint32_t mgmt_request, struct net_if *iface,
-			   void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_wps_pbc == NULL) {
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->ap_wps_pbc(dev);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_WPS_PBC, wifi_ap_wps_pbc);
-
-static int wifi_ap_wps_pin(uint32_t mgmt_request, struct net_if *iface,
-			   void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-	struct wifi_wps_pin_params *params = data;
-
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_wps_pin == NULL) {
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->ap_wps_pin(dev, params);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_WPS_PIN, wifi_ap_wps_pin);
-
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
