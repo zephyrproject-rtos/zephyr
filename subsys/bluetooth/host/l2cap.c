@@ -938,16 +938,14 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 		__maybe_unused struct net_buf *b = k_fifo_get(&lechan->tx_queue, K_NO_WAIT);
 
 		__ASSERT_NO_MSG(b == pdu);
-	}
 
-	if (last_frag && L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
-		bool sdu_end = last_frag && last_seg;
-
-		LOG_DBG("adding %s callback", sdu_end ? "`sdu_sent`" : "NULL");
-		/* No user callbacks for SDUs */
-		make_closure(pdu->user_data,
-			     sdu_end ? l2cap_chan_sdu_sent : NULL,
-			     sdu_end ? UINT_TO_POINTER(lechan->tx.cid) : NULL);
+		if (L2CAP_LE_CID_IS_DYN(lechan->tx.cid)) {
+			LOG_DBG("adding `sdu_sent` callback");
+			/* No user callbacks for SDUs */
+			make_closure(pdu->user_data,
+				     l2cap_chan_sdu_sent,
+				     UINT_TO_POINTER(lechan->tx.cid));
+		}
 	}
 
 	if (last_frag) {
