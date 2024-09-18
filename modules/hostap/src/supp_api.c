@@ -1512,6 +1512,20 @@ out:
 	return ret;
 }
 
+void hapd_update_channel(uint8_t *channel)
+{
+	struct wpa_global *global = zephyr_get_default_supplicant_context();
+	struct wpa_supplicant *wpa_s = global->ifaces;
+
+	if(wpa_s->wpa_state == WPA_COMPLETED) {
+		uint8_t con_chan = 0;
+
+		ieee80211_freq_to_chan(wpa_s->assoc_freq, &con_chan);
+		*channel = con_chan;
+		wpa_printf(MSG_DEBUG, "STA has connection on channel %d, setup AP on same channel", *channel);
+	}
+}
+
 int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_params *params)
 {
 	int ret = 0;
@@ -1519,6 +1533,7 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 	if (!hostapd_cli_cmd_v("set ssid %s", params->ssid))
 		goto out;
 
+	hapd_update_channel(&params->channel);
 	if (params->channel == 0) {
 		if(params->band == 0) {
 			if (!hostapd_cli_cmd_v("set hw_mode g"))
