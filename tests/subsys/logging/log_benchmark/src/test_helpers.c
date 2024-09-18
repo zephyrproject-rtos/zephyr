@@ -29,7 +29,7 @@ void z_impl_test_helpers_log_setup(void)
 #ifdef CONFIG_USERSPACE
 static inline void z_vrfy_test_helpers_log_setup(void)
 {
-	return z_impl_test_helpers_log_setup();
+	z_impl_test_helpers_log_setup();
 }
 #include <zephyr/syscalls/test_helpers_log_setup_mrsh.c>
 #endif
