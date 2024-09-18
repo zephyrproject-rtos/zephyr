@@ -15,13 +15,25 @@ if MC3419
 config MC3419_TRIGGER
 	bool "Trigger mode"
 
-if MC3419_TRIGGER
+choice MC3419_TRIGGER_MODE
+	prompt "Trigger mode"
+	default MC3419_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config MC3419_TRIGGER_NONE
+	bool "No trigger"
 
 config MC3419_TRIGGER_OWN_THREAD
 	bool "Use own thread"
+	select MC3419_TRIGGER
 	help
 	 Enable trigger to run in own thread. By
 	 default it is global thread mode.
+
+endchoice # MC3419_TRIGGER_MODE
+
+if MC3419_TRIGGER
 
 config MC3419_THREAD_PRIORITY
 	int "Own thread priority"
