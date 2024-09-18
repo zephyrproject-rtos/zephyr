@@ -175,8 +175,10 @@ static void iis328dq_handle_interrupt(const struct device *dev)
 	struct iis328dq_data *data = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	iis328dq_status_reg_t status;
+#ifdef CONFIG_IIS328DQ_THRESHOLD
 	iis328dq_int1_src_t sources1;
 	iis328dq_int2_src_t sources2;
+#endif
 
 	iis328dq_status_reg_get(ctx, &status);
 
