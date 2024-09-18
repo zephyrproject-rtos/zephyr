@@ -55,6 +55,9 @@ Deprecated in this release
 Architectures
 *************
 
+* Common
+  * Added :c:func:`irq_set_pending`. Existing implementation in the drivers have been connected to this API.
+
 * ARC
 
 * ARM
