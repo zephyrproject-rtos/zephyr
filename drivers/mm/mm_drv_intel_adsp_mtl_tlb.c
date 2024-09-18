@@ -478,7 +478,11 @@ static int sys_mm_drv_unmap_region_initial(void *virt_in, size_t size)
 
 		int ret2 = sys_mm_drv_unmap_page_wflush(va, false);
 
-		if (ret2 != 0) {
+		/* -EFAULT means that this page is not mapped.
+		 * This is not an error since we want to unmap all virtual memory without knowing
+		 * which pages are mapped.
+		 */
+		if (ret2 != 0 && ret2 != -EFAULT) {
 			__ASSERT(false, "cannot unmap %p\n", va);
 
 			ret = ret2;
