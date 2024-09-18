@@ -170,8 +170,6 @@ static void nxp_enet_mdio_isr_cb(const struct device *dev)
 {
 	struct nxp_enet_mdio_data *data = dev->data;
 
-	data->base->EIR |= ENET_EIR_MII_MASK;
-
 	/* Signal that operation finished */
 	k_sem_give(&data->mdio_sem);
 
