@@ -44,6 +44,14 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
                                                                 NRF_PPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR    NRF54H20_XXAA
                                                                 NRF_FLPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUAPP NRF54H20_ENGB_XXAA
+                                                                 NRF_APPLICATION)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPURAD NRF54H20_ENGB_XXAA
+                                                                 NRF_RADIOCORE)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUPPR NRF54H20_ENGB_XXAA
+                                                                 NRF_PPR)
+zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUFLPR NRF54H20_ENGB_XXAA
+                                                                  NRF_FLPR)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA       NRF54L15_ENGA_XXAA)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP NRF_APPLICATION)
 zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR NRF_FLPR)
@@ -221,6 +229,10 @@ mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUAPP      nrf54h20_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUPPR      nrf54h20_ppr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR     nrf54h20_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54H20_CPURAD      nrf54h20_radiocore.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUAPP  nrf54h20_engb_application.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUPPR  nrf54h20_engb_ppr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPUFLPR nrf54h20_engb_flpr.svd)
+mdk_svd_ifdef(CONFIG_SOC_NRF54H20_ENGB_CPURAD  nrf54h20_engb_radiocore.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUAPP nrf54l15_enga_application.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR nrf54l15_enga_flpr.svd)
 mdk_svd_ifdef(CONFIG_SOC_NRF54L15_CPUAPP      nrf54l15_application.svd)
