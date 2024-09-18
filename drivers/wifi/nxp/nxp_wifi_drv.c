@@ -56,7 +56,7 @@ static struct nxp_wifi_dev nxp_wifi0; /* static instance */
 
 static struct wlan_network nxp_wlan_network;
 
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 static char uap_ssid[IEEEtypes_SSID_SIZE + 1];
 #endif
 
@@ -231,7 +231,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	case WLAN_REASON_UAP_SUCCESS:
 		net_eth_carrier_on(g_uap.netif);
 		LOG_DBG("WLAN: UAP Started");
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 		ret = wlan_get_current_uap_network_ssid(uap_ssid);
 		if (ret != WM_SUCCESS) {
 			LOG_ERR("Failed to get Soft AP nxp_wlan_network ssid");
@@ -547,7 +547,7 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 
 static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
 {
-	int status = NXP_WIFI_RET_SUCCESS;
+	nxp_wifi_ret_t status = NXP_WIFI_RET_SUCCESS;
 	int ret = WM_SUCCESS;
 	interface_t *if_handle = (interface_t *)dev->data;
 
@@ -1830,7 +1830,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.set_country              = wifi_nxp_wpa_supp_set_country,
 	.get_country              = wifi_nxp_wpa_supp_get_country,
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	.hapd_init                = wifi_nxp_hostapd_dev_init,
 	.hapd_deinit              = wifi_nxp_hostapd_dev_deinit,
 #endif
