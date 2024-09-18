@@ -46,6 +46,8 @@ class LogFormatter(logging.Formatter):
 def main():
     global header_file
     global flash_area_num
+    global isr_index
+    global result
 
     args = parse_args()
 
@@ -68,6 +70,8 @@ def main():
         sys.exit(f"devicetree error: {e}")
 
     flash_area_num = 0
+    isr_index = 0
+    result = 0
 
     # Save merged DTS source, as a debugging aid
     with open(args.dts_out, "w", encoding="utf-8") as f:
@@ -460,9 +464,27 @@ def write_interrupts(node):
             return irq_num + 16
         err(f"Invalid interrupt type specified for {irq!r}")
 
+    def map_renesas_ra_irq(irq):
+        # Handles isr vector table generation
+        global isr_index, result
+        if "irq" not in irq.data:
+            err(f"Expected binding for {irq.controller!r} to have 'irq' in "
+                "interrupt-cells")
+        irq_num = irq.data["irq"]
+        if node.status == "okay":
+            if irq_num != ra_icu_unspecified:
+                logging.info(f"Fixed interrupt number {irq_num} will be "
+                                "automatically allocated")
+            result = isr_index
+            isr_index += 1
+            return result
+        else:
+            return ra_icu_unspecified
+
     idx_vals = []
     name_vals = []
     path_id = node.z_path_id
+    ra_icu_unspecified = 0xff
 
     if node.interrupts is not None:
         idx_vals.append((f"{path_id}_IRQ_NUM", len(node.interrupts)))
@@ -474,6 +496,8 @@ def write_interrupts(node):
             if cell_name == "irq":
                 if "arm,gic" in irq.controller.compats:
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
+                elif "renesas,ra-interrupt-controller" in irq.controller.compats:
+                    cell_value = map_renesas_ra_irq(irq)
 
             idx_vals.append((f"{path_id}_IRQ_IDX_{i}_EXISTS", 1))
             idx_macro = f"{path_id}_IRQ_IDX_{i}_VAL_{name}"
