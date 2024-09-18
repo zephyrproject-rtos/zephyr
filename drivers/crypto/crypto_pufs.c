@@ -1094,6 +1094,9 @@ static struct crypto_driver_api s_crypto_funcs = {
   .hash_begin_session = NULL, /* TODO */
   .hash_free_session =  NULL, /* TODO */
   .hash_async_callback_set =  NULL, /* TODO */
+  .sign_begin_session = NULL, /* TODO */
+  .sign_free_session =  NULL, /* TODO */
+  .sign_async_callback_set =  NULL, /* TODO */
   .query_hw_caps =  NULL /* TODO */
 };
 
