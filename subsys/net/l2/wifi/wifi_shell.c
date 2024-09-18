@@ -1009,75 +1009,6 @@ static int cmd_wifi_stats(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wifi_11k_enable(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_11k_params params = { 0 };
-
-	context.sh = sh;
-
-	if (argc != 2) {
-		PR_WARNING("Usage: %s <0/1> < 0--disable host 11k; 1---enable host 11k>\n",
-			argv[0]);
-		return -ENOEXEC;
-	}
-
-	params.enable_11k = (int)strtol(argv[1], NULL, 10);
-
-	if ((params.enable_11k < 0) || (params.enable_11k > 1)) {
-		PR_WARNING("Usage: %s <0/1> < 0--disable host 11k; 1---enable host 11k>\n",
-			argv[0]);
-		return -ENOEXEC;
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_11K_ENABLE, iface, &params, sizeof(params))) {
-		PR_WARNING("11k enable/disable failed\n");
-		return -ENOEXEC;
-	}
-
-	PR("%s %s requested\n", argv[0], argv[1]);
-
-	return 0;
-}
-
-
-static int cmd_wifi_11k_neighbor_request(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_11k_params params = { 0 };
-
-	context.sh = sh;
-
-	if ((argc != 1 && argc != 3) || (argc == 3 && !strncasecmp("ssid", argv[1], 4))) {
-		PR_WARNING("Invalid input arguments\n");
-		PR_WARNING("Usage: %s\n", argv[0]);
-		PR_WARNING("or	 %s ssid <ssid>\n", argv[0]);
-		return -ENOEXEC;
-	}
-
-	if (argc == 3) {
-		if (strlen(argv[2]) > (sizeof(params.ssid) - 1)) {
-			PR_WARNING("Error: ssid too long\n");
-			return -ENOEXEC;
-		}
-		(void)memcpy((void *)params.ssid, (const void *)argv[2],
-			(size_t)strlen(argv[2]));
-
-	}
-
-	if (net_mgmt(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST, iface, &params, sizeof(params))) {
-		PR_WARNING("11k neighbor request failed\n");
-		return -ENOEXEC;
-	}
-
-	if (argc == 3)
-		PR("%s %s %s requested\n", argv[0], argv[1], argv[2]);
-	else
-		PR("%s requested\n", argv[0]);
-
-	return 0;
-}
-
 static int cmd_wifi_ps(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -3171,10 +3102,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Set operation example for interface index 1 (setting channel 5)\n"
 		      "wifi -i1 -c5.\n",
 		      cmd_wifi_channel, 2, 4),
-	SHELL_CMD_ARG(11k_enable, NULL, "<0/1>\n",
-		      cmd_wifi_11k_enable, 2, 0),
-	SHELL_CMD_ARG(11k_neighbor_request, NULL, "[ssid <ssid>]\n",
-		      cmd_wifi_11k_neighbor_request, 1, 2),
 	SHELL_CMD_ARG(ps_timeout, NULL, "<val> - PS inactivity timer(in ms).\n",
 		      cmd_wifi_ps_timeout, 2, 0),
 	SHELL_CMD_ARG(ps_listen_interval, NULL,

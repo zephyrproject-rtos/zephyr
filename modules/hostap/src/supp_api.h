@@ -134,23 +134,6 @@ int supplicant_spec_scan(const struct device *dev, struct wifi_scan_params *para
  */
 int suppliant_11r_roaming(const struct device *dev);
 #endif
-/** Set 11k enable/disable
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param params 11k parameters
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_11k_enable(const struct device *dev, struct wifi_11k_params *params);
-
-/** Send 11k neighbor request
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param params 11k parameters
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_11k_neighbor_request(const struct device *dev, struct wifi_11k_params *params);
 
 /**
  * @brief Set Wi-Fi power save configuration
