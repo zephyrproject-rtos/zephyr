@@ -801,7 +801,7 @@ static void dfu_suspended(struct bt_mesh_dfu_cli *cli)
 	struct bt_mesh_dfd_srv *srv =
 		CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
 
-	srv->phase = BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED;
+	dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
 }
 
 static void dfu_ended(struct bt_mesh_dfu_cli *cli,
