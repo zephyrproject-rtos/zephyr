@@ -53,8 +53,6 @@ void  z_early_memcpy(void *dst, const void *src, size_t n)
 		*(d_byte++) = *(s_byte++);
 		n--;
 	}
-
-	return (void)dst;
 }
 
 __boot_func
@@ -69,7 +67,6 @@ void z_early_memset(void *dst, int c, size_t n)
 		*(d_byte++) = c_byte;
 		n--;
 	}
-	return (void)dst;
 }
 
 void *relocate_code_setup(void)
