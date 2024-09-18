@@ -23,18 +23,17 @@ class TwisterStatus(str, Enum):
 
     @staticmethod
     def get_color(status: TwisterStatus) -> str:
-        match(status):
-            case TwisterStatus.PASS:
-                color = Fore.GREEN
-            case TwisterStatus.SKIP | TwisterStatus.FILTER | TwisterStatus.BLOCK:
-                color = Fore.YELLOW
-            case TwisterStatus.FAIL | TwisterStatus.ERROR:
-                color = Fore.RED
-            case TwisterStatus.STARTED | TwisterStatus.NONE:
-                color = Fore.MAGENTA
-            case _:
-                color = Fore.RESET
-        return color
+        status2color = {
+            TwisterStatus.PASS: Fore.GREEN,
+            TwisterStatus.SKIP: Fore.YELLOW,
+            TwisterStatus.FILTER: Fore.YELLOW,
+            TwisterStatus.BLOCK: Fore.YELLOW,
+            TwisterStatus.FAIL: Fore.RED,
+            TwisterStatus.ERROR: Fore.RED,
+            TwisterStatus.STARTED: Fore.MAGENTA,
+            TwisterStatus.NONE: Fore.MAGENTA
+        }
+        return status2color[status] if status in status2color else Fore.RESET
 
     # All statuses below this comment can be used for TestCase
     BLOCK = 'blocked'
