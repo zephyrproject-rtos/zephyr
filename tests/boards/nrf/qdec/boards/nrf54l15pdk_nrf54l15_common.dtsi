@@ -28,6 +28,14 @@
 				<NRF_PSEL(QDEC_B, 1, 10)>;
 		};
 	};
+
+	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 8)>,
+				<NRF_PSEL(QDEC_B, 1, 10)>;
+			low-power-enable;
+		};
+	};
 };
 
 &gpio1 {
@@ -37,7 +45,9 @@
 &qdec20 {
 	status = "okay";
 	pinctrl-0 = <&qdec_pinctrl>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&qdec_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
 	steps = <127>;
 	led-pre = <500>;
+	zephyr,pm-device-runtime-auto;
 };

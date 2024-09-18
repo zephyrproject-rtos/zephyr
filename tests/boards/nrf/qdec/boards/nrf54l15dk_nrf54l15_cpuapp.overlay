@@ -4,3 +4,8 @@
  */
 
 #include "nrf54l15pdk_nrf54l15_common.dtsi"
+
+/* To prevent enabling console receiver. */
+&uart20 {
+	disable-rx;
+};
