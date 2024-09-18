@@ -716,7 +716,7 @@ static void isr_done(void *param)
 
 			err = isr_close_adv_mesh();
 			if (err) {
-				return 0;
+				return;
 			}
 		}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
