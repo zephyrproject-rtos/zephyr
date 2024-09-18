@@ -31,12 +31,27 @@
 				<NRF_PSEL(QDEC_B, 1, 3)>;   /* Arduino D2 */
 		};
 	};
+
+	qdec_sleep_pinctrl: qdec_sleep_pinctrl {
+		group1 {
+			psels = <NRF_PSEL(QDEC_A, 1, 1)>,   /* Ardiuno D0 */
+				<NRF_PSEL(QDEC_B, 1, 3)>;   /* Arduino D2 */
+			low-power-enable;
+		};
+	};
 };
 
 &qdec0 {
 	status = "okay";
 	pinctrl-0 = <&qdec_pinctrl>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&qdec_sleep_pinctrl>;
+	pinctrl-names = "default", "sleep";
 	steps = < 127 >;
 	led-pre = < 500 >;
+	zephyr,pm-device-runtime-auto;
+};
+
+/* To prevent enabling console receiver. */
+&uart0 {
+	disable-rx;
 };
