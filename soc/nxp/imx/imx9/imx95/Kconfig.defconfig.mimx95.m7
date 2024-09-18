@@ -19,4 +19,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 800000000
 
+config CACHE_MANAGEMENT
+	default y
+
 endif # SOC_MIMX9596_M7
