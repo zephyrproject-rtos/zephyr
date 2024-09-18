@@ -204,7 +204,9 @@ enum mspi_timing_param {
  * @brief Stub for struct timing_cfg
  */
 struct mspi_timing_cfg {
-
+#ifdef __cplusplus
+	uint8_t reserved;
+#endif
 };
 
 /**
