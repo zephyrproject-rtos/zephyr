@@ -1034,7 +1034,7 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc, char *a
 
 static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_sap();
+	struct net_if *iface = net_if_get_wifi_uap();
 	struct wifi_twt_params params = {0};
 	int idx = 1;
 	long value;
@@ -1332,11 +1332,7 @@ static int cmd_wifi_ap_stations(const struct shell *sh, size_t argc, char *argv[
 
 static int cmd_wifi_ap_sta_disconnect(const struct shell *sh, size_t argc, char *argv[])
 {
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	struct net_if *iface = net_if_get_wifi_sap();
-#else
 	struct net_if *iface = net_if_get_first_wifi();
-#endif
 	uint8_t mac[6];
 	int ret;
 
@@ -1402,7 +1398,7 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_sap();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_ap_config_params ap_config_params = { 0 };
 	int ret = -1;
 
