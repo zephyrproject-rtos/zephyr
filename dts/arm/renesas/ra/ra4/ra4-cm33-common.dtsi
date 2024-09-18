@@ -8,6 +8,7 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-interrupt.h>
 
 / {
 	cpus {
@@ -29,7 +30,14 @@
 	};
 
 	soc {
-		interrupt-parent = <&nvic>;
+		interrupt-parent = <&icu>;
+		icu: interrupt-controller@40006000 {
+			compatible = "renesas,ra-interrupt-controller";
+			reg = <0x40006000 0x40>;
+			reg-names = "icu";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
@@ -111,7 +119,8 @@
 
 		sci0: sci0@40118000 {
 			compatible = "renesas,ra-sci";
-			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118000 0x100>;
 			clocks = <&pclka MSTPB 31>;
@@ -125,7 +134,8 @@
 
 		sci9: sci9@40118900 {
 			compatible = "renesas,ra-sci";
-			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118900 0x100>;
 			clocks = <&pclka MSTPB 22>;

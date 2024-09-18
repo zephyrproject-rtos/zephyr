@@ -23,7 +23,8 @@
 
 		sci4: sci4@40070080  {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
