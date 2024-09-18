@@ -43,7 +43,7 @@ manual at `ESP32-C3 Technical Reference Manual`_.
 Supported Features
 ==================
 
-Current Zephyr's ESP32-C3-SUPERMINI board supports the following features:
+Currently Zephyr's ``esp32c3_supermini`` board supports the following features:
 
 +------------+------------+-------------------------------------+
 | Interface  | Controller | Driver/Component                    |
