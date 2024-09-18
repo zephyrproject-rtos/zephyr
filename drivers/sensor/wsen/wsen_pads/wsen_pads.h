@@ -37,7 +37,7 @@ struct pads_data {
 
 	struct gpio_callback data_ready_cb;
 
-	struct sensor_trigger *data_ready_triggerP;
+	const struct sensor_trigger *data_ready_triggerP;
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_WSEN_PADS_TRIGGER_OWN_THREAD)
