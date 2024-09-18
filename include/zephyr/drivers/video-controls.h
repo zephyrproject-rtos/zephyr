@@ -43,6 +43,31 @@ extern "C" {
  */
 
 /**
+ * @name Control Get operations
+ *
+ * Extra flags for video controls to inquire about the dimensions of an existing
+ * control: the minimum, maximum, or default value.
+ *
+ * For instance, OR-ing @c VIDEO_CID_CAMERA_EXPOSURE and @c VIDEO_CTRL_GET_MAX
+ * permits to query the maximum exposure time instead of the current exposure
+ * time.
+ *
+ * If no Control Get flag is added to a CID, the behavior is to fetch the current
+ * value as with @ref VIDEO_CTRL_GET_CUR.
+ * These must only be used along with the @ref video_get_ctrl() API.
+ *
+ * @{
+ */
+#define VIDEO_CTRL_GET_CUR		0x00000000	/**< Get the current value */
+#define VIDEO_CTRL_GET_MIN		0x00001000	/**< Get the minimum value */
+#define VIDEO_CTRL_GET_MAX		0x00002000	/**< Get the maximum value */
+#define VIDEO_CTRL_GET_DEF		0x00003000	/**< Get the default value */
+#define VIDEO_CTRL_GET_MASK		0x0000f000	/**< Mask for get operations */
+/**
+ * @}
+ */
+
+/**
  * @name Generic class control IDs
  * @{
  */
