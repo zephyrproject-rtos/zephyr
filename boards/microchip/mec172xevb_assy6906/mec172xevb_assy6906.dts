@@ -150,7 +150,7 @@
 	pinctrl-names = "default";
 
 	pca9555@26 {
-		compatible = "nxp,pca95xx";
+		compatible = "nxp,pca9555";
 
 		/* Depends on JP53 for device address.
 		 * Pin 1-2 = A0, pin 3-4 = A1, pin 5-6 = A2.
@@ -160,6 +160,7 @@
 		 * resulting in device address 0x26.
 		 */
 		reg = <0x26>;
+		ngpios = <16>;
 
 		gpio-controller;
 		#gpio-cells = <2>;

@@ -105,13 +105,13 @@
 				int-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_pca95xx: pca95xx@3 {
-				compatible = "nxp,pca95xx";
+			test_i2c_pca95xx: pca9555@3 {
+				compatible = "nxp,pca9555";
 				reg = <0x03>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				interrupt-gpios = <&test_gpio 0 0>;
+				int-gpios = <&test_gpio 0 0>;
 			};
 
 			test_i2c_pcf8575: pcf8575@4 {

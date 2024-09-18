@@ -29,7 +29,7 @@ ZTEST(i2c, test_i2c_pca95xx)
 	uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER;
 
 	/* get i2c device */
-	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pca95xx));
+	const struct i2c_dt_spec i2c = I2C_DT_SPEC_GET(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_pca9555));
 
 	zassert_true(device_is_ready(i2c.bus), "I2C controller device is not ready");
 
