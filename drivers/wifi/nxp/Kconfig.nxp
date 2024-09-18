@@ -573,44 +573,6 @@ config NXP_WIFI_WMM
 	help
 	  This option enables the use of 802.11 WMM support.
 
-config NXP_WIFI_SET_SU
-	bool "Single User Support"
-	default y
-	depends on NXP_WIFI_11AX
-	help
-	  This option enables the use of single user support.
-
-config NXP_WIFI_MULTI_BSSID_SUPPORT
-	bool "Multiple BSSID Support"
-	default y
-	depends on NXP_WIFI_11AX
-	help
-	  This option enables the use of multiple BSSID support.
-
-config NXP_WIFI_FRAG_THRESHOLD
-	bool "Set Fragment Threshold Support"
-	default y
-	help
-	  This option enables the set of fragment threshold support.
-
-config NXP_WIFI_FORCE_RTS
-	bool "Force RTS Support"
-	default y
-	help
-	  This option enables the set of force RTS support.
-
-config NXP_WIFI_TX_AMPDU_PROT_MODE
-	bool "TX AMPDU Protection Mode Support"
-	default y
-	help
-	  This option enables TX AMPDU protection mode support.
-
-config NXP_WIFI_EXTERNAL_COEX_PTA
-	bool "External COEX PTA Support"
-	default y
-	help
-	  This option enables the use of external coex PTA support.
-
 config NXP_WIFI_TURBO_MODE
 	bool "Turbo Mode"
 	default y
@@ -685,9 +647,8 @@ config NXP_WIFI_RECOVERY
 
 if NXP_RW610
 
-config NXP_WIFI_FW_VDLLV2
+config FW_VDLLV2
 	bool "Firmware virtual dynamic link library version 2"
-	default y
 	help
 	  This option is to load some firmware features in run-time.
 
