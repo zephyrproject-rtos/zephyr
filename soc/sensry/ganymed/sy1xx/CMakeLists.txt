@@ -3,8 +3,6 @@
 
 zephyr_include_directories(common)
 
-zephyr_compile_options(-march=rv32imc_zicsr -mabi=ilp32)
-
 zephyr_sources(
         common/crt0.S
         common/soc.c
