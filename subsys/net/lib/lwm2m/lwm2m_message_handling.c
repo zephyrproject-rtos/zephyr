@@ -2812,7 +2812,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		if (has_block2 && IS_ENABLED(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)) {
 			msg = find_ongoing_block2_tx();
 			if (msg) {
-				return handle_ongoing_block2_tx(msg, &response);
+				handle_ongoing_block2_tx(msg, &response);
 			}
 			return;
 		}
