@@ -58,7 +58,7 @@ ZTEST(test_pbuf, test_rw)
 		write_buf[i] = i+1;
 	}
 
-	zassert_equal(pbuf_init(&pb), 0);
+	zassert_equal(pbuf_tx_init(&pb), 0);
 
 	/* Write MSGA_SZ bytes packet. */
 	ret = pbuf_write(&pb, write_buf, MSGA_SZ);
@@ -132,9 +132,9 @@ ZTEST(test_pbuf, test_retcodes)
 	};
 
 	/* Initialize buffers. */
-	zassert_equal(pbuf_init(&pb0), 0);
-	zassert_equal(pbuf_init(&pb1), 0);
-	zassert_equal(pbuf_init(&pb2), 0);
+	zassert_equal(pbuf_tx_init(&pb0), 0);
+	zassert_equal(pbuf_tx_init(&pb1), 0);
+	zassert_equal(pbuf_tx_init(&pb2), 0);
 
 	print_pbuf_info(&pb0);
 	print_pbuf_info(&pb1);
@@ -274,7 +274,7 @@ ZTEST(test_pbuf, test_stress)
 		.cfg = &cfg,
 	};
 
-	zassert_equal(pbuf_init(&pb), 0);
+	zassert_equal(pbuf_tx_init(&pb), 0);
 	ctx.pbuf = &pb;
 	ctx.wr_cnt = 0;
 	ctx.rd_cnt = 0;

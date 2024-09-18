@@ -54,7 +54,7 @@ static int validate_cfg(const struct pbuf_cfg *cfg)
 	return 0;
 }
 
-int pbuf_init(struct pbuf *pb)
+int pbuf_tx_init(struct pbuf *pb)
 {
 	if (validate_cfg(pb->cfg) != 0) {
 		return -EINVAL;
@@ -73,6 +73,18 @@ int pbuf_init(struct pbuf *pb)
 	/* Take care cache. */
 	sys_cache_data_flush_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
 	sys_cache_data_flush_range((void *)(pb->cfg->rd_idx_loc), sizeof(*(pb->cfg->rd_idx_loc)));
+
+	return 0;
+}
+
+int pbuf_rx_init(struct pbuf *pb)
+{
+	if (validate_cfg(pb->cfg) != 0) {
+		return -EINVAL;
+	}
+	/* Initialize local copy of indexes. */
+	pb->data.wr_idx = 0;
+	pb->data.rd_idx = 0;
 
 	return 0;
 }
