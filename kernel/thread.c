@@ -355,7 +355,7 @@ void z_impl_k_thread_start(k_tid_t thread)
 static inline void z_vrfy_k_thread_start(k_tid_t thread)
 {
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	return z_impl_k_thread_start(thread);
+	z_impl_k_thread_start(thread);
 }
 #include <zephyr/syscalls/k_thread_start_mrsh.c>
 #endif /* CONFIG_USERSPACE */
