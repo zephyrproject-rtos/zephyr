@@ -41,14 +41,14 @@
  * supported config during the session setup.
  */
 #define CAP_OPAQUE_KEY_HNDL		BIT(0)
-#define CAP_RAW_KEY			BIT(1)
+#define CAP_RAW_KEY				BIT(1)
 
 /* TBD to define */
 #define CAP_KEY_LOADING_API		BIT(2)
 
 /** Whether the output is placed in separate buffer or not */
 #define CAP_INPLACE_OPS			BIT(3)
-#define CAP_SEPARATE_IO_BUFS		BIT(4)
+#define CAP_SEPARATE_IO_BUFS	BIT(4)
 
 /**
  * These denotes if the output (completion of a cipher_xxx_op) is conveyed
@@ -481,7 +481,7 @@ static inline int hash_compute(struct hash_ctx *ctx, struct hash_pkt *pkt)
 }
 
 /**
- * @brief Perform  a cryptographic multipart hash operation.
+ * @brief Perform a cryptographic multipart hash operation.
  *
  * This function can be called zero or more times, passing a slice of the
  * the data. The hash is calculated using all the given pieces.
@@ -502,5 +502,124 @@ static inline int hash_update(struct hash_ctx *ctx, struct hash_pkt *pkt)
 /**
  * @}
  */
+
+/**
+ * @brief Setup a signing / sign_verification session
+ *
+ * Initializes one time parameters, like the algorithm which may
+ * remain constant for all operations in the session. The state may be
+ * cached in hardware and/or driver data state variables.
+ *
+ * @param  dev      Pointer to the device structure for the driver instance.
+ * @param  ctx      Pointer to the context structure. Various one time
+ *			parameters like session capabilities and algorithm are
+ *			supplied via this structure. The structure documentation
+ *			specifies which fields are to be populated by the app
+ *			before making this call.
+ * @param  algo     The algorithm to be used in this session. e.g RSA2048 or ECDSA256
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int sign_begin_session(const struct device *dev,
+				     struct sign_ctx *ctx,
+				     enum sign_algo algo)
+{
+	uint32_t flags;
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+	ctx->device = dev;
+
+	flags = (ctx->flags & (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS));
+	__ASSERT(flags != 0U, "IO buffer type missing");
+	__ASSERT(flags != (CAP_INPLACE_OPS | CAP_SEPARATE_IO_BUFS),
+			"conflicting options for IO buffer type");
+
+	flags = (ctx->flags & (CAP_SYNC_OPS | CAP_ASYNC_OPS));
+	__ASSERT(flags != 0U, "sync/async type missing");
+	__ASSERT(flags != (CAP_SYNC_OPS |  CAP_ASYNC_OPS),
+			"conflicting options for sync/async");
+
+
+	return api->sign_begin_session(dev, ctx, algo);
+}
+
+/**
+ * @brief Cleanup a signing / sign_verification session
+ *
+ * Clears the hardware and/or driver state of a session. @see sign_begin_session
+ *
+ * @param  dev      Pointer to the device structure for the driver instance.
+ * @param  ctx      Pointer to the crypto signing / sign_verification context structure of the session
+ *		    to be freed.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int sign_free_session(const struct device *dev,
+				    struct sign_ctx *ctx)
+{
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+
+	return api->sign_free_session(dev, ctx);
+}
+
+/**
+ * @brief Registers an async signing / sign_verification completion callback with the driver
+ *
+ * The application can register an async signing / sign_verification completion callback 
+ * handler to be invoked by the driver, on completion of a prior request submitted via
+ * sign_op_handler. Based on crypto device hardware semantics, this is likely to
+ * be invoked from an ISR context.
+ *
+ * @param  dev   Pointer to the device structure for the driver instance.
+ * @param  cb    Pointer to application callback to be called by the driver.
+ *
+ * @return 0 on success, -ENOTSUP if the driver does not support async op,
+ *			  negative errno code on other error.
+ */
+static inline int sign_callback_set(const struct device *dev,
+				    sign_completion_cb cb)
+{
+	struct crypto_driver_api *api;
+
+	api = (struct crypto_driver_api *) dev->api;
+
+	if (api->sign_async_callback_set) {
+		return api->sign_async_callback_set(dev, cb);
+	}
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Perform a cryptographic signing / verification operation.
+ *
+ * @param  ctx   Pointer to the sign context of this op.
+ * @param  pkt   Structure holding the input.
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int sign_op_handler(struct sign_ctx *ctx, struct sign_pkt *pkt)
+{
+	pkt->ctx = ctx;
+
+	if(ctx->ops.signing_algo == CRYPTO_SIGN_ALGO_RSA2048) {
+		pkt->ctx = ctx;
+		if(ctx->ops.rsa_crypt_hndlr == NULL) {
+			return -EBADFD;
+		}
+		return ctx->ops.rsa_crypt_hndlr(ctx, pkt);
+	}
+	else if(ctx->ops.signing_algo == CRYPTO_SIGN_ALGO_ECDSA256) {
+		if(ctx->ops.ecdsa_crypt_hndlr == NULL) {
+			return -EBADFD;
+		}
+		return ctx->ops.ecdsa_crypt_hndlr(ctx, pkt);
+	}
+
+	return -ENOTSUP;
+
+}
 
 #endif /* ZEPHYR_INCLUDE_CRYPTO_H_ */

@@ -21,34 +21,41 @@
 
 
 /**
- * Hash algorithm
+ * Signing algorithm
  */
 enum sign_algo {
 	CRYPTO_SIGN_ALGO_RSA2048 = 0,
 	CRYPTO_SIGN_ALGO_ECDSA256 = 1
 };
 
+/**
+ * Signing Mode
+ */
+enum sign_mode {
+	CRYPTO_SIGN_COMPUTE = 0,
+	CRYPTO_SIGN_VERIFY = 1
+};
+
 /* Forward declarations */
 struct sign_ctx;
 struct sign_pkt;
 
-
-typedef int (*sign_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt,
-			 bool finish);
-
 /* Function signatures for sign verification using standard signing algorithms
  * like  RSA2048, ECDSA256.
  */
-typedef int (*rsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt, bool finish);
-
-typedef int (*ecdsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt, bool finish);			
+typedef int (*rsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt);
+typedef int (*ecdsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt);			
 
 struct sign_ops {
 
+	/* 
+	 The signing algorithm and mode shall be set by the User.
+	*/
 	enum sign_algo signing_algo;
+	enum sign_mode signing_mode;
 
+	// This anonymous union members are to be set by the driver.
 	union {
-		sign_op_t	sign_op_hndlr;
 		rsa_op_t	rsa_crypt_hndlr;
 		ecdsa_op_t	ecdsa_crypt_hndlr;
 	};
