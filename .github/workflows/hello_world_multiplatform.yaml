@@ -68,7 +68,7 @@ jobs:
           elif [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="-P native_sim --short-build-path -O/tmp/twister-out"
           fi
-          ./scripts/twister --force-color --inline-logs -T samples/hello_world -v $EXTRA_TWISTER_FLAGS
+          ./scripts/twister --force-color --inline-logs -T samples/hello_world -T samples/cpp/hello_world -v $EXTRA_TWISTER_FLAGS
 
       - name: Upload artifacts
         if: failure()
@@ -77,3 +77,4 @@ jobs:
           if-no-files-found: ignore
           path:
             zephyr/twister-out/*/samples/hello_world/sample.basic.helloworld/build.log
+            zephyr/twister-out/*/samples/cpp/hello_world/sample.cpp.helloworld/build.log
