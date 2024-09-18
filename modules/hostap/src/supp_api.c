@@ -649,28 +649,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					goto out;
 				}
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
-					   params->psk)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"", resp.network_id,
-					   params->sae_password ? params->sae_password
-								: params->psk)) {
-				goto out;
-			}
-
-			if (params->pwe_configed) {
-				if (!wpa_cli_cmd_v("set sae_pwe %d", params->sae_pwe)) {
-					goto out;
-				}
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK SAE",
-					   resp.network_id)) {
-				goto out;
-			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS ||
 			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
@@ -1926,7 +1904,8 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_pairwise CCMP"))
 				goto out;
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK) {
+		}
+		else if (params->security == WIFI_SECURITY_TYPE_PSK) {
 			if (!hostapd_cli_cmd_v("set wpa 2"))
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK"))
@@ -1935,7 +1914,8 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP"))
 				goto out;
-		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
+		}
+		else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
 			if (!hostapd_cli_cmd_v("set wpa 2"))
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK-SHA256"))
@@ -1944,7 +1924,8 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP"))
 				goto out;
-		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
+		}
+		else if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			if (!hostapd_cli_cmd_v("set wpa 2"))
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_key_mgmt SAE"))
@@ -1956,21 +1937,9 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			if (!hostapd_cli_cmd_v("set sae_pwe 2"))
 				goto out;
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!hostapd_cli_cmd_v("set wpa 2"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK SAE"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk))
-				goto out;
-			if (!hostapd_cli_cmd_v("set sae_password %s",
-					params->sae_password ? params->sae_password : params->psk))
-				goto out;
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP"))
-				goto out;
-			if (!hostapd_cli_cmd_v("set sae_pwe 2"))
-				goto out;
-		} else if (params->security == WIFI_SECURITY_TYPE_DPP) {
+			iface->bss[0]->conf->sae_pwe = 2;
+		}
+		else if (params->security == WIFI_SECURITY_TYPE_DPP) {
 			if (!hostapd_cli_cmd_v("set wpa 2"))
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK DPP"))
