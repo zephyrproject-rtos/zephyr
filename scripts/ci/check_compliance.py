@@ -543,7 +543,7 @@ class KconfigCheck(ComplianceTest):
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
         kconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig')
 
-        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        root_args = argparse.Namespace(**{'soc_roots': soc_roots})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
         soc_folders = {soc.folder for soc in v2_systems.get_socs()}
