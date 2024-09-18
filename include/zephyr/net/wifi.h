@@ -206,27 +206,6 @@ enum wifi_frequency_bands {
 /** Helper function to get user-friendly frequency band name. */
 const char *wifi_band_txt(enum wifi_frequency_bands band);
 
-/**
- * @brief IEEE 802.11 operational frequency bandwidths (not exhaustive).
- */
-enum wifi_frequency_bandwidths {
-	/** 20 MHz. */
-	WIFI_FREQ_BANDWIDTH_20MHZ = 1,
-	/** 40 MHz. */
-	WIFI_FREQ_BANDWIDTH_40MHZ,
-	/** 80 MHz. */
-	WIFI_FREQ_BANDWIDTH_80MHZ,
-
-	/** Number of frequency bandwidths available. */
-	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,
-	/** Highest frequency bandwidth available. */
-	WIFI_FREQ_BANDWIDTH_MAX = __WIFI_FREQ_BANDWIDTH_AFTER_LAST - 1,
-	/** Invalid frequency bandwidth */
-	WIFI_FREQ_BANDWIDTH_UNKNOWN
-};
-
-const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
-
 /** Max SSID length */
 #define WIFI_SSID_MAX_LEN 32
 /** Minimum PSK length */
