@@ -843,7 +843,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 	struct hostapd_wmm_ac_params ac_vi = {aCWmin - 1, aCWmin, 3, 3008 / 32, 0}; /* video traffic */
 	struct hostapd_wmm_ac_params ac_vo = {aCWmin - 2, aCWmin - 1, 3, 1504 / 32, 0}; /* voice traffic */
 
-	dev = net_if_get_device(net_if_get_wifi_uap());
+	dev = net_if_get_device(net_if_get_wifi_sap());
 	strncpy(ifname, dev->name, IFNAMSIZ);
 	ifname[IFNAMSIZ] = '\0';
 
@@ -1012,7 +1012,7 @@ static void zephyr_hostapd_init(struct supplicant_context *ctx)
 
 	eloop_register_timeout(HOSTAPD_CLEANUP_INTERVAL, 0, hostapd_periodic, interfaces, NULL);
 
-	iface = net_if_get_wifi_uap();
+	iface = net_if_get_wifi_sap();
 	/* Allocate and parse configuration for full interface files */
 	dev = net_if_get_device(iface);
 	strncpy(ifname, dev->name, IFNAMSIZ);
