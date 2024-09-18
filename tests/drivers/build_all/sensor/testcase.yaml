@@ -24,6 +24,12 @@ tests:
     extra_args: OVERLAY_CONFIG=sensors_die_temp.conf
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+  sensors.build.emul:
+    tags: sensors
+    extra_args: OVERLAY_CONFIG=sensors_die_temp.conf
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_EMUL=y
   sensors.build.pm:
     extra_configs:
       - CONFIG_PM=y
