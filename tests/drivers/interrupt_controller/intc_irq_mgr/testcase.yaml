@@ -1,0 +1,14 @@
+common:
+  platform_allow: qemu_riscv64
+  tags:
+    - drivers
+    - interrupt
+
+tests:
+  drivers.interrupt_controller.intc_irq_mgr: {}
+
+  drivers.interrupt_controller.intc_irq_mgr.shell.build_only:
+    build_only: true
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_IRQ_MANAGER_SHELL=y
