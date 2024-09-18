@@ -81,6 +81,36 @@ function(relative_dir dir relative_out bindir_out)
     endif()
 endfunction()
 
+# Usage:
+#   edk_write_header(<target>)
+#
+# Initialize the file associated with <target> and write its header.
+function(edk_write_header target)
+    file(WRITE ${edk_file_${target}} "")
+endfunction()
+
+# Usage:
+#   edk_write_var(<target> <var_name> <var_value>)
+#
+# Write to the file associated with <target> an entry where <var_name> is
+# assigned the value <var_value>.
+function(edk_write_var target var_name var_value)
+    if(target STREQUAL "CMAKE")
+        # CMake: export assignments of the form:
+        #
+        #   set(var value1;value2;...)
+        #
+        file(APPEND ${edk_file_${target}} "set(${var_name} ${var_value})\n")
+    elseif(target STREQUAL "MAKEFILE")
+        # Makefile: export assignments of the form:
+        #
+        #   var = value1 value2 ...
+        #
+        list(JOIN var_value " " var_value_str)
+        file(APPEND ${edk_file_${target}} "${var_name} = ${var_value_str}\n")
+    endif()
+endfunction()
+
 
 
 if (CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
@@ -149,44 +179,39 @@ foreach(dir ${include_dirs})
     list(APPEND all_inc_flags_cmake "-I\${CMAKE_CURRENT_LIST_DIR}/${dest_rel}")
 endforeach()
 
+list(APPEND all_flags_make ${base_flags_make} ${imacros_gen_make} ${all_inc_flags_make})
+list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_cmake} ${all_inc_flags_cmake})
+
 if(CONFIG_LLEXT_EDK_USERSPACE_ONLY)
     # Copy syscall headers from edk directory, as they were regenerated there.
     file(COPY ${PROJECT_BINARY_DIR}/edk/include/generated/ DESTINATION ${llext_edk_inc}/zephyr/include/generated)
 endif()
 
+
+#
+# Generate the EDK flags files
+#
+
+set(edk_file_MAKEFILE ${llext_edk}/Makefile.cflags)
+set(edk_file_CMAKE ${llext_edk}/cmake.cflags)
+
 # Generate flags for Makefile
-list(APPEND all_flags_make ${base_flags_make} ${imacros_gen_make} ${all_inc_flags_make})
-list(JOIN all_flags_make " " all_flags_str)
-file(WRITE ${llext_edk}/Makefile.cflags "LLEXT_CFLAGS = ${all_flags_str}")
-
-list(JOIN all_inc_flags_make " " all_inc_flags_str)
-file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_ALL_INCLUDE_CFLAGS = ${all_inc_flags_str}")
-
-list(JOIN inc_flags_make " " inc_flags_str)
-file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_INCLUDE_CFLAGS = ${inc_flags_str}")
-
-list(JOIN inc_gen_flags_make " " inc_gen_flags_str)
-file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_INCLUDE_CFLAGS = ${inc_gen_flags_str}")
-
-list(JOIN base_flags_make " " base_flags_str)
-file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_BASE_CFLAGS = ${base_flags_str}")
-
-list(JOIN imacros_gen_make " " imacros_gen_str)
-file(APPEND ${llext_edk}/Makefile.cflags "\n\nLLEXT_GENERATED_IMACROS_CFLAGS = ${imacros_gen_str}")
+edk_write_header(MAKEFILE)
+edk_write_var(MAKEFILE "LLEXT_CFLAGS" "${all_flags_make}")
+edk_write_var(MAKEFILE "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags_make}")
+edk_write_var(MAKEFILE "LLEXT_INCLUDE_CFLAGS" "${inc_flags_make}")
+edk_write_var(MAKEFILE "LLEXT_GENERATED_INCLUDE_CFLAGS" "${gen_inc_flags_make}")
+edk_write_var(MAKEFILE "LLEXT_BASE_CFLAGS" "${base_flags_make}")
+edk_write_var(MAKEFILE "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen_make}")
 
 # Generate flags for CMake
-list(APPEND all_flags_cmake ${base_flags_cmake} ${imacros_gen_cmake} ${all_inc_flags_cmake})
-file(WRITE ${llext_edk}/cmake.cflags "set(LLEXT_CFLAGS ${all_flags_cmake})")
-
-file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_ALL_INCLUDE_CFLAGS ${all_inc_flags_cmake})")
-
-file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_INCLUDE_CFLAGS ${inc_flags_cmake})")
-
-file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_GENERATED_INCLUDE_CFLAGS ${inc_gen_flags_cmake})")
-
-file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_BASE_CFLAGS ${base_flags_cmake})")
-
-file(APPEND ${llext_edk}/cmake.cflags "\n\nset(LLEXT_GENERATED_IMACROS_CFLAGS ${imacros_gen_cmake})")
+edk_write_header(CMAKE)
+edk_write_var(CMAKE "LLEXT_CFLAGS" "${all_flags_cmake}")
+edk_write_var(CMAKE "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags_cmake}")
+edk_write_var(CMAKE "LLEXT_INCLUDE_CFLAGS" "${inc_flags_cmake}")
+edk_write_var(CMAKE "LLEXT_GENERATED_INCLUDE_CFLAGS" "${gen_inc_flags_cmake}")
+edk_write_var(CMAKE "LLEXT_BASE_CFLAGS" "${base_flags_cmake}")
+edk_write_var(CMAKE "LLEXT_GENERATED_IMACROS_CFLAGS" "${imacros_gen_cmake}")
 
 # Generate the tarball
 file(ARCHIVE_CREATE
