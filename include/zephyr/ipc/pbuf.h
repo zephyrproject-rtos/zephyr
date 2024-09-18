@@ -152,9 +152,9 @@ struct pbuf {
 	}
 
 /**
- * @brief Initialize the packet buffer.
+ * @brief Initialize the Tx packet buffer.
  *
- * This function initializes the packet buffer based on provided configuration.
+ * This function initializes the Tx packet buffer based on provided configuration.
  * If the configuration is incorrect, the function will return error.
  *
  * It is recommended to use PBUF_DEFINE macro for build time initialization.
@@ -165,7 +165,23 @@ struct pbuf {
  * @retval 0 on success.
  * @retval -EINVAL when the input parameter is incorrect.
  */
-int pbuf_init(struct pbuf *pb);
+int pbuf_tx_init(struct pbuf *pb);
+
+/**
+ * @brief Initialize the Rx packet buffer.
+ *
+ * This function initializes the Rx packet buffer.
+ * If the configuration is incorrect, the function will return error.
+ *
+ * It is recommended to use PBUF_DEFINE macro for build time initialization.
+ *
+ * @param pb	Pointer to the packed buffer containing
+ *		configuration and data. Configuration has to be
+ *		fixed before the initialization.
+ * @retval 0 on success.
+ * @retval -EINVAL when the input parameter is incorrect.
+ */
+int pbuf_rx_init(struct pbuf *pb);
 
 /**
  * @brief Write specified amount of data to the packet buffer.
