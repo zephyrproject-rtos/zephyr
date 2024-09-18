@@ -30,8 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CONTROLLER_NAME "btp_tester"
 
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
-/*consider ext_adv case*/
-#define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * 229)
+#define ADV_BUF_LEN (sizeof(struct btp_gap_device_found_ev) + 2 * 31)
 
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
