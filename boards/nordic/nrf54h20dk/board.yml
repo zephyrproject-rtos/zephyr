@@ -8,3 +8,8 @@ board:
       cpucluster: cpuppr
     - name: xip
       cpucluster: cpuflpr
+  revision:
+    format: major.minor.patch
+    default: "0.8.0"
+    revisions:
+    - name: "0.8.0"
