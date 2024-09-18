@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#include <hal/nrf_lrcconf.h>
+#include <soc_lrcconf.h>
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "multiple instances not supported");
@@ -20,7 +20,7 @@ struct dev_data_hfxo {
 	struct onoff_manager mgr;
 	onoff_notify_fn notify;
 	struct k_timer timer;
-	struct clock_lrcconf_sink lrcconf_sink;
+	sys_snode_t hfxo_node;
 };
 
 struct dev_config_hfxo {
@@ -58,7 +58,7 @@ static void onoff_start_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 	dev_data->notify = notify;
 
 	nrf_lrcconf_event_clear(NRF_LRCCONF010, NRF_LRCCONF_EVENT_HFXOSTARTED);
-	clock_request_lrcconf_poweron_main(&dev_data->lrcconf_sink);
+	soc_lrcconf_poweron_request(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
 	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_REQHFXO);
 
 	/* Due to a hardware issue, the HFXOSTARTED event is currently
@@ -74,7 +74,7 @@ static void onoff_stop_hfxo(struct onoff_manager *mgr, onoff_notify_fn notify)
 		CONTAINER_OF(mgr, struct dev_data_hfxo, mgr);
 
 	nrf_lrcconf_task_trigger(NRF_LRCCONF010, NRF_LRCCONF_TASK_STOPREQHFXO);
-	clock_release_lrcconf_poweron_main(&dev_data->lrcconf_sink);
+	soc_lrcconf_poweron_release(&dev_data->hfxo_node, NRF_LRCCONF_POWER_MAIN);
 	notify(mgr, 0);
 }
 
