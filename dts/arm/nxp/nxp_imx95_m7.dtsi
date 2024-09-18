@@ -77,6 +77,15 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
+		edma2: dma@42000000 {
+			compatible = "nxp,edma";
+			reg = <0x42000000 (DT_SIZE_K(64) * 33)>;
+			valid-channels = <30>, <31>;
+			interrupts = <143 0>, <143 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		lpi2c3: i2c@42530000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -128,6 +137,19 @@
 			reg = <0x425a0000 DT_SIZE_K(64)>;
 			interrupts = <67 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPUART6>;
+			status = "disabled";
+		};
+
+		sai3: dai@42650000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX95_CLK_SAI3>;
+			clock-names = "mclk1";
+			interrupts = <170 0>;
+			dai-index = <3>;
+			mclk-is-output;
+			dmas = <&edma2 30 60>, <&edma2 31 61>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
