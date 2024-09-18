@@ -748,45 +748,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						resp.network_id, params->key_passwd)) {
 				goto out;
 			}
-
-			if (enterprise_file.ca_cert2_len) {
-				if (wpas_config_process_blob(wpa_s->conf, "ca_cert2", enterprise_file.ca_cert2, enterprise_file.ca_cert2_len))
-					goto out;
-
-				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"", resp.network_id))
-					goto out;
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert\"", resp.network_id))
-					goto out;
-			}
-
-			if (enterprise_file.client_cert2_len) {
-				if (wpas_config_process_blob(wpa_s->conf, "client_cert2", enterprise_file.client_cert2, enterprise_file.client_cert2_len))
-					goto out;
-
-				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"", resp.network_id))
-					goto out;
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert\"", resp.network_id))
-					goto out;
-			}
-
-			if (enterprise_file.client_key2_len){
-				if (wpas_config_process_blob(wpa_s->conf, "private_key2", enterprise_file.client_key2, enterprise_file.client_key2_len))
-					goto out;
-
-				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"", resp.network_id))
-					goto out;
-
-				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"", resp.network_id, params->key2_passwd))
-					goto out;
-			} else {
-				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key\"", resp.network_id))
-					goto out;
-
-				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"", resp.network_id, params->key_passwd))
-					goto out;
-			}
 #endif
 		} else {
 			ret = -1;
