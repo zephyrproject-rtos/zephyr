@@ -532,38 +532,6 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 	return 0;
 }
 
-static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
-{
-	nxp_wifi_ret_t status = NXP_WIFI_RET_SUCCESS;
-	int ret = WM_SUCCESS;
-	interface_t *if_handle = (interface_t *)dev->data;
-
-	if (if_handle->state.interface != WLAN_BSS_TYPE_UAP) {
-		LOG_ERR("Wi-Fi not in uAP mode");
-		return -EIO;
-	}
-
-	if (s_nxp_wifi_State != NXP_WIFI_STARTED) {
-		status = NXP_WIFI_RET_NOT_READY;
-	}
-
-	if (status == NXP_WIFI_RET_SUCCESS) {
-		if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
-			ret = wlan_uap_set_sta_ageout_timer(params->max_inactivity * 10);
-			if (ret != WM_SUCCESS) {
-				status = NXP_WIFI_RET_FAIL;
-			}
-		} else {
-			return -EINVAL;
-		}
-	}
-
-	if (status != NXP_WIFI_RET_SUCCESS) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
 #endif
 
 static int nxp_wifi_process_results(unsigned int count)
@@ -1836,7 +1804,6 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 	.get_power_save_config = nxp_wifi_get_power_save,
 	.set_btwt = nxp_wifi_set_btwt,
 	.ap_bandwidth = nxp_wifi_ap_bandwidth,
-	.ap_config_params = nxp_wifi_ap_config_params,
 };
 
 static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
