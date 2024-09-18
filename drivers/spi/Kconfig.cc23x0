@@ -10,3 +10,12 @@ config SPI_CC23X0
 	select PINCTRL
 	help
 	  Enable support for the TI SimpleLink CC23x0 SPI peripheral
+
+config SPI_CC23X0_DMA_DRIVEN
+	bool "DMA support for TI CC23X0 SPI devices"
+	depends on SPI_CC23X0
+	select DMA
+	help
+	  DMA driven transactions for the SPI.
+	  DMA driven mode offloads data transfer tasks from the CPU
+	  and requires fewer interrupts to handle the SPI transfers.
