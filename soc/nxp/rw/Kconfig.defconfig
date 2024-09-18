@@ -105,9 +105,6 @@ config HEAP_MEM_POOL_SIZE
 
 endif # BT
 
-config NXP_MONOLITHIC_WIFI
-	default y if WIFI
-
 config NXP_MONOLITHIC_BT
 	default y if BT
 
