@@ -1426,22 +1426,6 @@ out:
 	return ret;
 }
 
-static int update_msg_controllen(struct msghdr *msg)
-{
-	struct cmsghdr *cmsg;
-	size_t cmsg_space = 0;
-
-	for (cmsg = CMSG_FIRSTHDR(msg); cmsg != NULL; cmsg = CMSG_NXTHDR(msg, cmsg)) {
-		if (cmsg->cmsg_len == 0) {
-			break;
-		}
-		cmsg_space += cmsg->cmsg_len;
-	}
-	msg->msg_controllen = cmsg_space;
-
-	return 0;
-}
-
 static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct msghdr *msg,
 				       void *buf,
@@ -1586,8 +1570,10 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (msg != NULL) {
 		if (msg->msg_control != NULL) {
 			if (msg->msg_controllen > 0) {
-				if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMPING) &&
-				    net_context_is_timestamping_set(ctx)) {
+				bool clear_controllen = true;
+
+				if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMPING)) {
+					clear_controllen = false;
 					if (add_timestamping(ctx, pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
@@ -1595,17 +1581,15 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
 				    net_context_is_recv_pktinfo_set(ctx)) {
+					clear_controllen = false;
 					if (add_pktinfo(ctx, pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
 				}
 
-				/* msg_controllen must be updated to reflect the total length of all
-				 * control messages in the buffer. If there are no control data,
-				 * msg_controllen will be cleared as expected It will also take into
-				 * account pre-existing control data
-				 */
-				update_msg_controllen(msg);
+				if (clear_controllen) {
+					msg->msg_controllen = 0;
+				}
 			}
 		} else {
 			msg->msg_controllen = 0U;
