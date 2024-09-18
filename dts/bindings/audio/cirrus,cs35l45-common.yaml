@@ -1,0 +1,9 @@
+# Copyright 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Active low signal used to reset the device to default state.
