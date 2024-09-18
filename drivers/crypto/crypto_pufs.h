@@ -523,17 +523,21 @@ struct pufs_crypto_hash {
 };
 
 /* Generic Callback Signature for different Sessions */
-typedef void (*session_completion_cb)(void *completed, int status);
+struct crypto_callbacks {
+  	cipher_completion_cb cipher_cb;
+    hash_completion_cb hash_cb;
+    sign_completion_cb sign_cb;
+};
 
 /* Device constant configuration parameters */
 struct pufs_data {
 	enum pufs_session_type pufs_session_type;
-  session_completion_cb session_callback;
+  struct crypto_callbacks session_callback;
 };
 
 /* Device constant configuration parameters */
 struct pufs_config {
-	void (*irq_init)(const struct pufs_config*);
+	void (*irq_init)(void);
 	uint32_t base;
 	uint32_t irq_num;
   uint32_t irq_priority;

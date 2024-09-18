@@ -117,7 +117,7 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
  * @param[in]  hash       Pointer to hash struct to return hash value in
  * @return                PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
+static enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
                                          struct pufs_crypto_hash *hash) {
   enum pufcc_status status;
   struct pufcc_intrpt_reg intrpt_reg = {0};
@@ -233,7 +233,7 @@ enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
  * @param[out] hash_out   Pointer to hash strcut to return hash value in
  * @return                PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data_addr,
+static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data_addr,
                                             bool first, bool last,
                                             uint32_t *prev_len,
                                             struct pufs_crypto_hash *hash_in,
@@ -376,7 +376,7 @@ enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data_addr,
  *
  * @return                 PUFCC_SUCCESS on success, otherwise an error code
  */
-enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
+static enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
                                     uint32_t in_len, uint32_t prev_len,
                                     enum pufcc_key_type key_type,
                                     uint32_t key_addr, uint32_t key_len,
@@ -495,7 +495,7 @@ enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
  * @param[in]  pub_key   RSA2048 public key
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_rsa2048_sign_verify(
+static enum pufcc_status pufcc_rsa2048_sign_verify(
     uint8_t *sig, struct pufs_crypto_addr *msg_addr,
     struct pufs_crypto_rsa2048_puk *pub_key) {
   enum pufcc_status status = PUFCC_SUCCESS;
@@ -567,7 +567,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
  * @param[in]  pub_key   ECDSA256 public key
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
-enum pufcc_status pufcc_ecdsa256_sign_verify(
+static enum pufcc_status pufcc_ecdsa256_sign_verify(
     struct pufs_crypto_ec256_sig *sig, struct pufs_crypto_addr *msg_addr,
     struct rs_crypto_ec256_puk *pub_key) {
   uint32_t temp32, prev_len = 0;
@@ -661,7 +661,7 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
  *
  * @return PUFCC_SUCCESS if OTP is setup successfully, otherwise an error code
  */
-enum pufcc_status pufcc_otp_setup_wait(void) {
+static enum pufcc_status pufcc_otp_setup_wait(void) {
   enum pufcc_status status = busy_wait(&rt_regs->status, PUFCC_RT_ERROR_MASK);
 
   return status;
@@ -1052,12 +1052,12 @@ static int crypto_pufs_init(const struct device *dev) {
   status = pufcc_otp_setup_wait();
 
   // Connect the IRQ
-  ((struct pufs_config*)dev->config)->irq_init((struct pufs_config*)dev->config);
+  ((struct pufs_config*)dev->config)->irq_init();
 
   return status;
 }
 
-static void pufs_irq_handler(const struct device *dev) { // TODO 
+static void pufs_irq_handler(const struct device *dev) { // TODO callback invocation in it
   // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
   struct pufcc_intrpt_reg *intrpt_reg_ptr =
       (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
@@ -1070,7 +1070,7 @@ static void pufs_irq_handler(const struct device *dev) { // TODO
   irq_disable(((struct pufs_config*)dev->config)->irq_num);
 }
 
-static void pufs_irq_Init(const struct pufs_config *inConfig) {
+static void pufs_irq_Init(void) {
     IRQ_CONNECT(
                   DT_INST_IRQN(0),
                   DT_INST_IRQ(0, priority),
@@ -1085,6 +1085,40 @@ static void pufs_irq_Init(const struct pufs_config *inConfig) {
      * the IRQ since we support only single
      * session at any moment.
      */
+}
+
+/********************************************************
+ * Following set of APIs are in compliance with the
+ * Zephyr user level Crypto API. These APIs will then
+ * subsequently call local functions for performing
+ * various crypto related operations.
+*********************************************************/
+
+/* Query the hardware capabilities */
+int pufs_query_hw_caps(const struct device *dev)
+{
+  return -ENOTSUP;
+}
+
+/* Setup a crypto session */
+int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
+                              enum cipher_algo algo, enum cipher_mode mode,
+                              enum cipher_op op_type)
+{
+  return -ENOTSUP;
+}
+
+/* Tear down an established session */
+int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx *ctx)
+{
+  return -ENOTSUP;
+}
+
+/* Register async crypto op completion callback with the driver */
+int cipher_async_callback_set(const struct device *dev,
+          cipher_completion_cb cb)
+{
+  return -ENOTSUP;
 }
 
 static struct crypto_driver_api s_crypto_funcs = {
@@ -1102,7 +1136,7 @@ static struct crypto_driver_api s_crypto_funcs = {
 
 static struct pufs_data s_pufs_session_data = {
   .pufs_session_type = PUFS_SESSION_UNDEFINED,
-  .session_callback = NULL
+  .session_callback = {NULL}
 };
 
 static const struct pufs_config s_pufs_configuration = {
