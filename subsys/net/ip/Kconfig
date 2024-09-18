@@ -168,7 +168,7 @@ config NET_IPV4_MAPPING_TO_IPV6
 config NET_SHELL
 	bool "Network shell utilities"
 	select SHELL
-	select NET_IPV4_IGMP if NET_IPV4
+	select NET_IPV4_IGMP if NET_NATIVE_IPV4
 	select REQUIRES_FLOAT_PRINTF
 	help
 	  Activate shell module that provides network commands like
