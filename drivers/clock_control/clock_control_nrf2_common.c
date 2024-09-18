@@ -4,7 +4,6 @@
  */
 
 #include "clock_control_nrf2_common.h"
-#include <hal/nrf_lrcconf.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
@@ -24,9 +23,6 @@ LOG_MODULE_REGISTER(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  * Used to access `clock_config_*` structures in a common way.
  */
 STRUCT_CLOCK_CONFIG(generic, ONOFF_CNT_MAX);
-
-static sys_slist_t poweron_main_list;
-static struct k_spinlock poweron_main_lock;
 
 static void update_config(struct clock_config_generic *cfg)
 {
@@ -162,35 +158,4 @@ int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
 	ARG_UNUSED(sys);
 
 	return -ENOSYS;
-}
-
-void clock_request_lrcconf_poweron_main(struct clock_lrcconf_sink *sink)
-{
-	K_SPINLOCK(&poweron_main_lock) {
-		if (sys_slist_len(&poweron_main_list) == 0) {
-			LOG_DBG("%s forced on", "main domain");
-			NRF_LRCCONF010->POWERON &= ~LRCCONF_POWERON_MAIN_Msk;
-			NRF_LRCCONF010->POWERON |= LRCCONF_POWERON_MAIN_AlwaysOn;
-		}
-
-		sys_slist_find_and_remove(&poweron_main_list, &sink->node);
-		sys_slist_append(&poweron_main_list, &sink->node);
-	}
-}
-
-void clock_release_lrcconf_poweron_main(struct clock_lrcconf_sink *sink)
-{
-	K_SPINLOCK(&poweron_main_lock) {
-		if (!sys_slist_find_and_remove(&poweron_main_list, &sink->node)) {
-			K_SPINLOCK_BREAK;
-		}
-
-		if (sys_slist_len(&poweron_main_list) > 0) {
-			K_SPINLOCK_BREAK;
-		}
-
-		LOG_DBG("%s automatic", "main domain");
-		NRF_LRCCONF010->POWERON &= ~LRCCONF_POWERON_MAIN_Msk;
-		NRF_LRCCONF010->POWERON |= LRCCONF_POWERON_MAIN_Automatic;
-	}
 }
