@@ -589,12 +589,6 @@ config NXP_WIFI_11R
 	help
 	  This option enables the use of 802.11r support.
 
-config NXP_WIFI_RTS_THRESHOLD
-	bool "Set RTS Threshold Support"
-	default y
-	help
-	  This option enables the set of rts threshold support.
-
 config NXP_WIFI_INACTIVITY_TIMEOUT_EXT
 	bool "Inactivity Timeout Ext Support"
 	default y
