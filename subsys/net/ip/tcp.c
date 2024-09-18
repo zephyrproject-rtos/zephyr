@@ -1177,17 +1177,6 @@ static bool tcp_short_window(struct tcp *conn)
 	return true;
 }
 
-static bool tcp_need_window_update(struct tcp *conn)
-{
-	int32_t threshold = MAX(conn_mss(conn), conn->recv_win_max / 2);
-
-	/* In case window is full again, and we didn't send a window update
-	 * since the window size dropped below threshold, do it now.
-	 */
-	return (conn->recv_win == conn->recv_win_max &&
-		conn->recv_win_sent <= threshold);
-}
-
 /**
  * @brief Update TCP receive window
  *
@@ -1216,8 +1205,7 @@ static int tcp_update_recv_wnd(struct tcp *conn, int32_t delta)
 
 	short_win_after = tcp_short_window(conn);
 
-	if (((short_win_before && !short_win_after) ||
-	     tcp_need_window_update(conn)) &&
+	if (short_win_before && !short_win_after &&
 	    conn->state == TCP_ESTABLISHED) {
 		k_work_cancel_delayable(&conn->ack_timer);
 		tcp_out(conn, ACK);
@@ -1309,11 +1297,6 @@ static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size
 		net_pkt_skip(pkt, net_pkt_get_len(pkt) - *len);
 
 		tcp_update_recv_wnd(conn, -*len);
-		if (*len > conn->recv_win_sent) {
-			conn->recv_win_sent = 0;
-		} else {
-			conn->recv_win_sent -= *len;
-		}
 
 		/* Do not pass data to application with TCP conn
 		 * locked as there could be an issue when the app tries
@@ -1599,10 +1582,6 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	}
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
-
-	if (flags & ACK) {
-		conn->recv_win_sent = conn->recv_win;
-	}
 
 	if (is_destination_local(pkt)) {
 		/* If the destination is local, we have to let the current
@@ -2133,7 +2112,6 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->state = TCP_LISTEN;
 	conn->recv_win_max = tcp_rx_window;
 	conn->recv_win = conn->recv_win_max;
-	conn->recv_win_sent = conn->recv_win_max;
 	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
