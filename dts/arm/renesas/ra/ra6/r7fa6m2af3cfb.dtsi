@@ -13,7 +13,7 @@
 			reg = <0x407e0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			interrupts = <4 1>, <5 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "frdyi", "fiferr";
 
 			flash0: flash@0 {

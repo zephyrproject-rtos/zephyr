@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/renesas-ra-interrupt.h>
 
 / {
 	cpus {
@@ -30,6 +31,14 @@
 	};
 
 	soc {
+		interrupt-parent = <&icu>;
+		icu: interrupt-controller@40006000 {
+			compatible = "renesas,ra-interrupt-controller";
+			reg = <0x40006000 0x40>;
+			reg-names = "icu";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
@@ -125,7 +134,8 @@
 
 		sci0: sci0@40070000  {
 			compatible = "renesas,ra-sci";
-			interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070000 0x20>;
 			clocks = <&pclka MSTPB 31>;
@@ -139,7 +149,8 @@
 
 		sci1: sci1@40070020  {
 			compatible = "renesas,ra-sci";
-			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070020 0x20>;
 			clocks = <&pclka MSTPB 30>;
@@ -153,7 +164,8 @@
 
 		sci2: sci2@40070040 {
 			compatible = "renesas,ra-sci";
-			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070040 0x20>;
 			clocks = <&pclka MSTPB 29>;
@@ -167,7 +179,8 @@
 
 		sci3: sci3@40070060  {
 			compatible = "renesas,ra-sci";
-			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070060 0x20>;
 			clocks = <&pclka MSTPB 27>;
@@ -181,7 +194,8 @@
 
 		sci4: sci4@40070080  {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
@@ -195,7 +209,8 @@
 
 		sci8: sci8@40070100  {
 			compatible = "renesas,ra-sci";
-			interrupts = <32 1>, <33 1>, <34 1>, <35 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070100 0x20>;
 			clocks = <&pclka MSTPB 23>;
@@ -209,7 +224,8 @@
 
 		sci9: sci9@40070120  {
 			compatible = "renesas,ra-sci";
-			interrupts = <36 1>, <37 1>, <38 1>, <39 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40070120 0x20>;
 			clocks = <&pclka MSTPB 22>;

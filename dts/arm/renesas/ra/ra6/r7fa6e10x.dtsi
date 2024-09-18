@@ -36,7 +36,8 @@
 
 		sci1: sci1@40118100 {
 			compatible = "renesas,ra-sci";
-			interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118100 0x100>;
 			clocks = <&pclka MSTPB 30>;
@@ -50,7 +51,8 @@
 
 		sci2: sci2@40118200 {
 			compatible = "renesas,ra-sci";
-			interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118200 0x100>;
 			clocks = <&pclka MSTPB 29>;
@@ -64,7 +66,8 @@
 
 		sci3: sci3@40118300 {
 			compatible = "renesas,ra-sci";
-			interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118300 0x100>;
 			clocks = <&pclka MSTPB 28>;
@@ -78,7 +81,8 @@
 
 		sci4: sci4@40118400 {
 			compatible = "renesas,ra-sci";
-			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+			interrupts = <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>,
+					 <RA_ICU_UNSPECIFIED 1>, <RA_ICU_UNSPECIFIED 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
 			reg = <0x40118400 0x100>;
 			clocks = <&pclka MSTPB 27>;
