@@ -1032,9 +1032,9 @@ static int cmd_wifi_twt_setup_quick(const struct shell *sh, size_t argc, char *a
 	return 0;
 }
 
-static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = net_if_get_wifi_uap();
+	struct net_if *iface = net_if_get_first_wifi();
 	struct wifi_twt_params params = {0};
 	int idx = 1;
 	long value;
@@ -1049,116 +1049,87 @@ static int cmd_wifi_btwt_setup(const struct shell *sh, size_t argc, char *argv[]
 	}
 	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
 
-    params.btwt.sub_id = (uint16_t)strtol(argv[idx++], NULL, 10);
-    params.btwt.nominal_wake = (uint8_t)strtol(argv[idx++], NULL, 10);
-    params.btwt.max_sta_support = (uint8_t)strtol(argv[idx++], NULL, 10);
-    
-    if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
-        return -EINVAL;
-    }
-    params.btwt.twt_interval = (uint16_t)value;
-    
-    params.btwt.twt_offset = (uint16_t)strtol(argv[idx++], NULL, 10);
-    
-    if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
-        return -EINVAL;
-    }
-    params.btwt.twt_exponent = (uint8_t)value;
-    
-    params.btwt.sp_gap = (uint8_t)strtol(argv[idx++], NULL, 10);
+	if (WIFI_TWT_INDIVIDUAL == params.negotiation_type) {
+		if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
+				  WIFI_TWT_SETUP_CMD_DEMAND)) {
+			return -EINVAL;
+		}
+		params.setup_cmd = (enum wifi_twt_setup_cmd)value;
 
-	if (net_mgmt(NET_REQUEST_WIFI_BTWT, iface, &params, sizeof(params))) {
-		PR_WARNING("%s with %s failed. reason : %s\n",
-			   wifi_twt_operation_txt(params.operation),
-			   wifi_twt_negotiation_type_txt(params.negotiation_type),
-			   wifi_twt_get_err_code_str(params.fail_reason));
+		if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
+			return -EINVAL;
+		}
+		params.dialog_token = (uint8_t)value;
 
-		return -ENOEXEC;
+		if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
+			return -EINVAL;
+		}
+		params.flow_id = (uint8_t)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+			return -EINVAL;
+		}
+		params.setup.responder = (bool)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+			return -EINVAL;
+		}
+		params.setup.trigger = (bool)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+			return -EINVAL;
+		}
+		params.setup.implicit = (bool)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+			return -EINVAL;
+		}
+		params.setup.announce = (bool)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
+			return -EINVAL;
+		}
+		params.setup.twt_wake_interval = (uint32_t)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+			return -EINVAL;
+		}
+		params.setup.twt_interval = (uint64_t)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0,
+				  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
+			return -EINVAL;
+		}
+		params.setup.twt_wake_ahead_duration = (uint32_t)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
+			return -EINVAL;
+		}
+		params.setup.twt_info_disable = (bool)value;
+
+		if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
+			return -EINVAL;
+		}
+		params.setup.exponent = (uint8_t)value;
+	} else if (WIFI_TWT_BROADCAST == params.negotiation_type) {
+		params.btwt.sub_id = (uint16_t)strtol(argv[idx++], NULL, 10);
+		params.btwt.nominal_wake = (uint8_t)strtol(argv[idx++], NULL, 10);
+		params.btwt.max_sta_support = (uint8_t)strtol(argv[idx++], NULL, 10);
+
+		if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
+			return -EINVAL;
+		}
+		params.btwt.twt_interval = (uint16_t)value;
+
+		params.btwt.twt_offset = (uint16_t)strtol(argv[idx++], NULL, 10);
+
+		if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
+			return -EINVAL;
+		}
+		params.btwt.twt_exponent = (uint8_t)value;
+
+		params.btwt.sp_gap = (uint8_t)strtol(argv[idx++], NULL, 10);
 	}
-
-	PR("TWT operation %s with dg: %d, flow_id: %d requested\n",
-	   wifi_twt_operation_txt(params.operation), params.dialog_token, params.flow_id);
-
-	return 0;
-}
-
-static int cmd_wifi_twt_setup(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_first_wifi();
-	struct wifi_twt_params params = {0};
-	int idx = 1;
-	long value;
-
-	context.sh = sh;
-
-	params.operation = WIFI_TWT_SETUP;
-
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_INDIVIDUAL, WIFI_TWT_WAKE_TBTT)) {
-		return -EINVAL;
-	}
-	params.negotiation_type = (enum wifi_twt_negotiation_type)value;
-
-	if (!parse_number(sh, &value, argv[idx++], WIFI_TWT_SETUP_CMD_REQUEST,
-			  WIFI_TWT_SETUP_CMD_DEMAND)) {
-		return -EINVAL;
-	}
-	params.setup_cmd = (enum wifi_twt_setup_cmd)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 1, 255)) {
-		return -EINVAL;
-	}
-	params.dialog_token = (uint8_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, (WIFI_MAX_TWT_FLOWS - 1))) {
-		return -EINVAL;
-	}
-	params.flow_id = (uint8_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.responder = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.trigger = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.implicit = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.announce = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_WAKE_INTERVAL_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_wake_interval = (uint32_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 1, WIFI_MAX_TWT_INTERVAL_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_interval = (uint64_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0,
-			  WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US)) {
-		return -EINVAL;
-	}
-	params.setup.twt_wake_ahead_duration = (uint32_t)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, 1)) {
-		return -EINVAL;
-	}
-	params.setup.twt_info_disable = (bool)value;
-
-	if (!parse_number(sh, &value, argv[idx++], 0, WIFI_MAX_TWT_EXPONENT)) {
-		return -EINVAL;
-	}
-	params.setup.exponent = (uint8_t)value;
 
 	if (net_mgmt(NET_REQUEST_WIFI_TWT, iface, &params, sizeof(params))) {
 		PR_WARNING("%s with %s failed. reason : %s\n",
