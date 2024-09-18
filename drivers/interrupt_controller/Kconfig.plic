@@ -13,6 +13,13 @@ config PLIC
 
 if PLIC
 
+config PLIC_SUPPORTS_SOFT_INTERRUPT
+	bool
+	default y
+	depends on DT_HAS_ANDESTECH_NCEPLIC100_ENABLED
+	help
+	  Enabled when the PLIC supports software-triggered interrupts.
+
 config PLIC_IRQ_AFFINITY
 	bool "Configure IRQ affinity"
 	depends on SMP
