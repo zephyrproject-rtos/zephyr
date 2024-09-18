@@ -41,6 +41,49 @@ BUILD_ASSERT(kACMP_PortInputFromDAC == 0);
 BUILD_ASSERT(kACMP_PortInputFromMux == 1);
 #endif /* MCUX_ACMP_HAS_INPSEL || MCUX_ACMP_HAS_INNSEL */
 
+/*
+ * prop New property name
+ * depr Deprecated property name
+ */
+#define MCUX_ACMP_DT_INST_PROP(inst, prop, depr)						\
+	COND_CODE_1(										\
+		DT_INST_NODE_HAS_PROP(inst, prop),						\
+		(DT_INST_PROP(inst, prop)),							\
+		(DT_INST_PROP(inst, depr))							\
+	)
+
+/*
+ * prop New property name
+ * depr Deprecated property name
+ */
+#define MCUX_ACMP_DT_INST_PROP_OR(inst, prop, depr, default_value)				\
+	COND_CODE_1(										\
+		DT_INST_NODE_HAS_PROP(inst, prop) || DT_INST_NODE_HAS_PROP(inst, depr),		\
+		(MCUX_ACMP_DT_INST_PROP(inst, prop, depr)),					\
+		(default_value)									\
+	)
+
+#define MCUX_ACMP_DT_INST_ENABLE_SAMPLE(inst) \
+	MCUX_ACMP_DT_INST_PROP(inst, filter_enable_sample, nxp_enable_sample)
+
+#define MCUX_ACMP_DT_INST_FILTER_COUNT(inst) \
+	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_count, nxp_filter_count, 0)
+
+#define MCUX_ACMP_DT_INST_FILTER_PERIOD(inst) \
+	MCUX_ACMP_DT_INST_PROP_OR(inst, filter_period, nxp_filter_period, 0)
+
+#define MCUX_ACMP_DT_INST_HIGH_SPEED(inst) \
+	MCUX_ACMP_DT_INST_PROP(inst, enable_high_speed_mode, nxp_high_speed_mode)
+
+#define MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(inst) \
+	MCUX_ACMP_DT_INST_PROP(inst, use_unfiltered_output, nxp_use_unfiltered_output)
+
+#define MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(inst) \
+	MCUX_ACMP_DT_INST_PROP(inst, enable_pin_out, nxp_enable_output_pin)
+
+#define MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(inst) \
+	MCUX_ACMP_DT_INST_PROP(inst, enable_window_mode, nxp_window_mode)
+
 struct mcux_acmp_config {
 	CMP_Type *base;
 	acmp_filter_config_t filter;
@@ -487,18 +530,18 @@ static const struct sensor_driver_api mcux_acmp_driver_api = {
 	.channel_get = mcux_acmp_channel_get,
 };
 
-#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)	\
+#define MCUX_ACMP_DECLARE_CONFIG(n, config_func_init)			\
 static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	.base = (CMP_Type *)DT_INST_REG_ADDR(n),			\
 	.filter = {							\
-		.enableSample = DT_INST_PROP(n, nxp_enable_sample),	\
-		.filterCount = DT_INST_PROP_OR(n, nxp_filter_count, 0), \
-		.filterPeriod = DT_INST_PROP_OR(n, nxp_filter_period, 0), \
+		.enableSample = MCUX_ACMP_DT_INST_ENABLE_SAMPLE(n),	\
+		.filterCount = MCUX_ACMP_DT_INST_FILTER_COUNT(n),	\
+		.filterPeriod = MCUX_ACMP_DT_INST_FILTER_PERIOD(n),	\
 	},								\
-	.high_speed = DT_INST_PROP(n, nxp_high_speed_mode),		\
-	.unfiltered = DT_INST_PROP(n, nxp_use_unfiltered_output),	\
-	.output = DT_INST_PROP(n, nxp_enable_output_pin),		\
-	.window = DT_INST_PROP(n, nxp_window_mode),			\
+	.high_speed = MCUX_ACMP_DT_INST_HIGH_SPEED(n),			\
+	.unfiltered = MCUX_ACMP_DT_INST_USE_UNFILTERED_MODE(n),		\
+	.output = MCUX_ACMP_DT_INST_USE_ENABLE_PIN_OUT(n),		\
+	.window = MCUX_ACMP_DT_INST_ENABLE_WINDOW_MODE(n),		\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	config_func_init						\
 }
