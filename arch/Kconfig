@@ -581,6 +581,11 @@ config IRQ_OFFLOAD_NESTED
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
 
+config IRQ_HAS_SET_PENDING
+	bool
+	help
+	  Selected when interrupt controller driver has implementation to set an IRQ as pending.
+
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"
 	default y
