@@ -11,9 +11,8 @@
 #include <zephyr/drivers/mspi/jesd216.h>
 
 /* Macro to check if any xspi device has a domain clock or more */
-#define MSPI_STM32_DOMAIN_CLOCK_INST_SUPPORT(inst) \
-	DT_CLOCKS_HAS_IDX(DT_INST_PARENT(inst), 1) ||
-#define MSPI_STM32_INST_DEV_DOMAIN_CLOCK_SUPPORT				\
+#define MSPI_STM32_DOMAIN_CLOCK_INST_SUPPORT(inst) DT_CLOCKS_HAS_IDX(DT_INST_PARENT(inst), 1) ||
+#define MSPI_STM32_INST_DEV_DOMAIN_CLOCK_SUPPORT                                                   \
 	(DT_INST_FOREACH_STATUS_OKAY(MSPI_STM32_DOMAIN_CLOCK_INST_SUPPORT) 0)
 
 /* This symbol takes the value 1 if device instance has a domain clock in its dts */
@@ -23,28 +22,28 @@
 #define MSPI_STM32_DOMAIN_CLOCK_SUPPORT 0
 #endif
 
-#define MSPI_STM32_FIFO_THRESHOLD       4U
+#define MSPI_STM32_FIFO_THRESHOLD 4U
 
-#define MSPI_MAX_FREQ        250000000
-#define MSPI_MAX_DEVICE      2
-#define MSPI_TIMEOUT_US      1000000
-#define STM32_MSPI_INST_ID    0
+#define MSPI_MAX_FREQ      250000000
+#define MSPI_MAX_DEVICE    2
+#define MSPI_TIMEOUT_US    1000000
+#define STM32_MSPI_INST_ID 0
 
 /* Valid range is [0, 255] */
-#define MSPI_STM32_CLOCK_PRESCALER_MIN  0U
-#define MSPI_STM32_CLOCK_PRESCALER_MAX  255U
+#define MSPI_STM32_CLOCK_PRESCALER_MIN                0U
+#define MSPI_STM32_CLOCK_PRESCALER_MAX                255U
 #define MSPI_STM32_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
 
 /* Max Time value during reset or erase operation */
-#define MSPI_STM32_RESET_MAX_TIME               100U
-#define MSPI_STM32_BULK_ERASE_MAX_TIME          460000U
-#define MSPI_STM32_SECTOR_ERASE_MAX_TIME        1000U
-#define MSPI_STM32_SUBSECTOR_4K_ERASE_MAX_TIME  400U
-#define MSPI_STM32_WRITE_REG_MAX_TIME           40U
-#define MSPI_STM32_MAX_FREQ                     48000000
-#define MSPI_MAX_DEVICE                         2
+#define MSPI_STM32_RESET_MAX_TIME              100U
+#define MSPI_STM32_BULK_ERASE_MAX_TIME         460000U
+#define MSPI_STM32_SECTOR_ERASE_MAX_TIME       1000U
+#define MSPI_STM32_SUBSECTOR_4K_ERASE_MAX_TIME 400U
+#define MSPI_STM32_WRITE_REG_MAX_TIME          40U
+#define MSPI_STM32_MAX_FREQ                    48000000
+#define MSPI_MAX_DEVICE                        2
 /* used as default value for DTS writeoc */
-#define SPI_NOR_WRITEOC_NONE 0xFF
+#define SPI_NOR_WRITEOC_NONE                   0xFF
 
 #if MSPI_STM32_USE_DMA
 /* Lookup table to set dma priority from the DTS */
@@ -114,12 +113,10 @@ struct mspi_stm32_conf {
 struct mspi_stm32_data {
 	/* XSPI handle is modifiable ; so part of data struct */
 	XSPI_HandleTypeDef hmspi;
-	struct mspi_dev_id  *dev_id;
+	struct mspi_dev_id *dev_id;
 
 	/* controller access mutex */
 	struct k_mutex lock;
-
-	struct k_sem sem;
 	struct k_sem sync;
 
 	struct mspi_dev_cfg dev_cfg;
