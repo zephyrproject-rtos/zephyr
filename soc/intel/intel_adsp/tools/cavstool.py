@@ -745,6 +745,9 @@ def debug_offset():
     ( base, stride ) = adsp_mem_window_config()
     return base + stride * 2
 
+def debug_slot_offset(num):
+    return debug_offset() + DEBUG_SLOT_SIZE * (1 + num)
+
 def shell_base_offset():
     return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
 
