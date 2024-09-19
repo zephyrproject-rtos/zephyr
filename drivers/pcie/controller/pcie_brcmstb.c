@@ -346,7 +346,7 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (bar_bus_addr == NULL) {
+	if (bar_bus_addr == 0) {
 		return false;
 	}
 
