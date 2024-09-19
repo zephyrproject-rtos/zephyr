@@ -11,6 +11,7 @@
 #include "boosterpack_connector.dtsi"
 #include "lp_em_cc2340r5-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -31,6 +32,8 @@
 		sw0 = &btn0;
 		sw1 = &btn1;
 		watchdog0 = &wdt0;
+		pwm-led0 = &pwm_green;
+		pwm-led1 = &pwm_red;
 	};
 
 	leds {
@@ -44,6 +47,20 @@
 		led1: led_1 {
 			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_green: pwm_led_0 {
+			pwms = <&pwm6 0 1000 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+		};
+
+		pwm_red: pwm_led_1 {
+			pwms = <&pwm5 0 1000 PWM_POLARITY_NORMAL>;
+			label = "Red PWM LED";
 		};
 	};
 
@@ -105,4 +122,26 @@
 		     &adc0_ch6
 		     &adc0_ch8>;
 	pinctrl-names = "default";
+};
+
+&lgpt1 {
+	clk-prescale = <0>;
+	status = "okay";
+};
+
+&lgpt2 {
+	clk-prescale = <0>;
+	status = "okay";
+};
+
+&pwm5 {
+	pinctrl-0 = <&pwm5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
