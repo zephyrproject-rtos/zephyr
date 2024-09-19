@@ -11,15 +11,27 @@ compatible: "nordic,nrf-tddconf"
 include: base.yaml
 
 properties:
-  stmsink:
-    type: string
-    description: indicates the sink for STM data
-    enum:
-      - "etr"
-      - "tpiu"
-      # - "etb" - Not supported yet
+  etbsources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the ETB sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
+  tpiusources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the TPIU sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
+  etrsources:
+    type: int
+    description: |
+      Bitmask of enabled sources for the ETR sink. Valid values can be found in
+      dt-bindings/misc/nordic-tddconf.h
+
   portconfig:
     type: int
+    default: 3
     description: TPIU clock divider - TDD HSFLL / 2^(2 + portconfig)
     enum:
       - 0
