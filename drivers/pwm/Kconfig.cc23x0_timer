@@ -1,0 +1,10 @@
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_CC23X0_TIMER
+	bool "TI SimpleLink CC23x0 LGPT PWM driver"
+	default y
+	depends on DT_HAS_TI_CC23X0_LGPT_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enables TI SimpleLink CC23x0 LGPT PWM driver.
