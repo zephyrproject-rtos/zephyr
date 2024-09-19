@@ -210,7 +210,7 @@ def adsp_mem_window_config():
 
     return (base, stride)
 
-def map_regs():
+def map_regs(log_only):
     p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
@@ -226,7 +226,7 @@ def map_regs():
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
         found_msg = f"Existing driver \"{mod}\" found"
-        if args.log_only:
+        if log_only:
             log.info(found_msg)
         else:
             log.warning(found_msg + ", unloading module")
@@ -920,7 +920,7 @@ async def main():
     global hda, sd, dsp, hda_ostream_id, hda_streams
 
     try:
-        (hda, sd, dsp, hda_ostream_id) = map_regs()
+        (hda, sd, dsp, hda_ostream_id) = map_regs(args.log_only)
     except Exception as e:
         log.error("Could not map device in sysfs; run as root?")
         log.error(e)
