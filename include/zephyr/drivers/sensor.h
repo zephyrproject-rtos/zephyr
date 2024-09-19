@@ -1405,16 +1405,52 @@ struct sensor_info {
 	SENSOR_INFO_DT_DEFINE(node_id);
 
 /**
+ * @brief Like DEVICE_INSTANCE() with sensor specifics.
+ *
+ * @details Defines a device which implements the sensor API. May define an
+ * element in the sensor info iterable section used to enumerate all sensor
+ * devices.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm_device PM device resources reference (NULL if device does not use
+ * PM).
+ * @param data_ptr Pointer to the device's private data.
+ * @param cfg_ptr The address to the structure containing the configuration
+ * information for this instance of the driver.
+ * @param level The initialization level. See init.h for details.
+ * @param api_ptr Provides an initial pointer to the API function struct used
+ * by the driver. Can be NULL.
+ */
+#define SENSOR_DEVICE_INSTANCE(node_id, init_fn, pm_device,		\
+			       data_ptr, cfg_ptr, level, api_ptr)	\
+	DEVICE_INSTANCE(node_id, init_fn, pm_device,			\
+			data_ptr, cfg_ptr, level, api_ptr);		\
+									\
+	SENSOR_INFO_DT_DEFINE(node_id);
+
+/**
  * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
  * compatible
  *
  * @param inst instance number. This is replaced by
  * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
- *
  * @param ... other parameters as expected by SENSOR_DEVICE_DT_DEFINE().
  */
 #define SENSOR_DEVICE_DT_INST_DEFINE(inst, ...)				\
 	SENSOR_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like SENSOR_DEVICE_INSTANCE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_INSTANCE().
+ *
+ * @param ... other parameters as expected by SENSOR_DEVICE_INSTANCE().
+ */
+#define SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ...)		\
+	SENSOR_DEVICE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @brief Helper function for converting struct sensor_value to integer milli units.
