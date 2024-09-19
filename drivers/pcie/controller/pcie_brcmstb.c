@@ -293,11 +293,16 @@ static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bd
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
+	if (!mem && mem64) {
 		return false;
 	}
 
-	if (!mem && !data->regions[PCIE_REGION_IO].size) {
+	if (mem && data->regions[PCIE_REGION_MEM64].size == 0 &&
+	    data->regions[PCIE_REGION_MEM].size == 0) {
+		return false;
+	}
+
+	if (!mem && data->regions[PCIE_REGION_IO].size == 0) {
 		return false;
 	}
 
@@ -313,11 +318,15 @@ static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (mem && !data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size) {
+	if (!mem && mem64) {
 		return false;
 	}
 
-	if (!mem && !data->regions[PCIE_REGION_IO].size) {
+	if (mem && data->regions[PCIE_REGION_MEM64].size == 0 && data->regions[PCIE_REGION_MEM].size == 0) {
+		return false;
+	}
+
+	if (!mem && data->regions[PCIE_REGION_IO].size == 0) {
 		return false;
 	}
 
@@ -337,7 +346,7 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (!bar_bus_addr) {
+	if (bar_bus_addr == NULL) {
 		return false;
 	}
 
