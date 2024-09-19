@@ -276,6 +276,10 @@ static int spi_mcux_configure(const struct device *dev,
 
 	LPSPI_MasterInit(base, &master_config, clock_freq);
 
+	if (IS_ENABLED(CONFIG_DEBUG)) {
+		base->CR |= LPSPI_CR_DBGEN_MASK;
+	}
+
 	LPSPI_MasterTransferCreateHandle(base, &data->handle,
 					 spi_mcux_master_transfer_callback,
 					 data);
