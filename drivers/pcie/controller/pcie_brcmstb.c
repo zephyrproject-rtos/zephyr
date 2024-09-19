@@ -359,41 +359,16 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 {
 	const struct pcie_brcmstb_config *config = dev->config;
 	struct pcie_brcmstb_data *data = dev->data;
+	enum pcie_region_type type;
 	int i;
 
 	for (i = 0; i < DMA_RANGES_IDX; i++) {
-		switch ((config->common->ranges[i].flags >> 24) & 0x03) {
-		case 0x01:
-			data->regions[PCIE_REGION_IO].bus_start =
-				config->common->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_IO].phys_start =
-				config->common->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_IO].size = config->common->ranges[i].map_length;
-			if (data->regions[PCIE_REGION_IO].bus_start < 0x1000) {
-				data->regions[PCIE_REGION_IO].allocation_offset = 0x1000;
-			}
-			break;
-		case 0x02:
-			data->regions[PCIE_REGION_MEM].bus_start =
-				config->common->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_MEM].phys_start =
-				config->common->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_MEM].size = config->common->ranges[i].map_length;
-			if (data->regions[PCIE_REGION_MEM].bus_start < 0x1000) {
-				data->regions[PCIE_REGION_MEM].allocation_offset = 0x1000;
-			}
-			break;
-		case 0x03:
-			data->regions[PCIE_REGION_MEM64].bus_start =
-				config->common->ranges[i].pcie_bus_addr;
-			data->regions[PCIE_REGION_MEM64].phys_start =
-				config->common->ranges[i].host_map_addr;
-			data->regions[PCIE_REGION_MEM64].size =
-				config->common->ranges[i].map_length;
-			if (data->regions[PCIE_REGION_MEM64].bus_start < 0x1000) {
-				data->regions[PCIE_REGION_MEM64].allocation_offset = 0x1000;
-			}
-			break;
+		type = ((config->common->ranges[i].flags >> 24) & 0x03) - 1;
+		data->regions[type].bus_start = config->common->ranges[i].pcie_bus_addr;
+		data->regions[type].phys_start = config->common->ranges[i].host_map_addr;
+		data->regions[type].size = config->common->ranges[i].map_length;
+		if (data->regions[type].bus_start < 0x1000) {
+			data->regions[type].allocation_offset = 0x1000;
 		}
 	}
 
