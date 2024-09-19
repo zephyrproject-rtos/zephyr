@@ -280,3 +280,4 @@ References
 .. _`ESP32-C3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf
 .. _`ESP32-C3 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32-c3_technical_reference_manual_en.pdf
 .. _`OpenOCD ESP32`: https://github.com/espressif/openocd-esp32/releases
+
