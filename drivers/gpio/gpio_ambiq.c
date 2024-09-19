@@ -36,7 +36,7 @@ struct ambiq_gpio_data {
 static int ambiq_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
-	int ret;
+	int ret = 0;
 
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	pin += dev_cfg->offset;
@@ -392,7 +392,7 @@ static int ambiq_gpio_pin_interrupt_configure(const struct device *dev, gpio_pin
 	const struct ambiq_gpio_config *const dev_cfg = dev->config;
 	struct ambiq_gpio_data *const data = dev->data;
 
-	int ret;
+	int ret = 0;
 #if defined(CONFIG_SOC_SERIES_APOLLO3X)
 	am_hal_gpio_pincfg_t pincfg = g_AM_HAL_GPIO_DEFAULT;
 	int gpio_pin = pin + dev_cfg->offset;
