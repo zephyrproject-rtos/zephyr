@@ -199,11 +199,6 @@ static int spi_mcux_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint32_t word_size;
 
-	if (spi_context_configured(&data->ctx, spi_cfg)) {
-		/* This configuration is already in use */
-		return 0;
-	}
-
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
 		return -ENOTSUP;
@@ -517,6 +512,8 @@ static int transceive_dma(const struct device *dev,
 		return ret;
 	}
 
+	base->TCR |= LPSPI_TCR_CONT_MASK;
+
 	/* DMA is fast enough watermarks are not required */
 	LPSPI_SetFifoWatermarks(base, 0U, 0U);
 
@@ -531,6 +528,11 @@ static int transceive_dma(const struct device *dev,
 			if (ret != 0) {
 				goto out;
 			}
+
+			while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
+				/* wait until previous tx finished */
+			}
+
 			/* Enable DMA Requests */
 			LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
 
@@ -538,9 +540,6 @@ static int transceive_dma(const struct device *dev,
 			ret = wait_dma_rx_tx_done(dev);
 			if (ret != 0) {
 				goto out;
-			}
-			while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
-				/* wait until module is idle */
 			}
 
 			/* Disable DMA */
@@ -551,6 +550,7 @@ static int transceive_dma(const struct device *dev,
 			spi_context_update_rx(&data->ctx, 1, dma_size);
 		}
 		spi_context_cs_control(&data->ctx, false);
+		base->TCR = 0;
 
 out:
 		spi_context_release(&data->ctx, ret);
