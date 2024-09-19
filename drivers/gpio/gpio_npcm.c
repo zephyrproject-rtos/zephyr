@@ -137,13 +137,14 @@ static int gpio_npcm_config(const struct device *dev,
 	else
 		inst->PTYPE &= ~mask;
 
-	/* Select opend drain with pull up need enable GPIO_PULL_EN */
-	if (((flags & GPIO_OPEN_DRAIN) != 0) &&
-	    ((flags & GPIO_PULL_UP) != 0)) {
-		inst_scfg->DEVALTCX |= BIT(NPCM_DEVALTCX_GPIO_PULL_EN);
+	/* Open drain output mode want to enable internal pull up */
+	if ((flags & GPIO_OPEN_DRAIN) && (flags & GPIO_OUTPUT)) {
+		if ((flags & GPIO_PULL_UP)) {
+			inst_scfg->DEVALTCX |= BIT(NPCM_DEVALTCX_GPIO_PULL_EN);
+		}
 	}
 
-	/* Select pull-up/down of GPIO 0:pull-up 1:pull-down */
+	/* Enable and select pull-up/down of GPIO 0:pull-up 1:pull-down */
 	if ((flags & GPIO_PULL_UP) != 0) {
 		inst->PPUD  &= ~mask;
 		inst->PPULL |= mask;
