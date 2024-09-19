@@ -44,7 +44,7 @@ To initiate Wi-Fi connection, the following command can be used:
 
 .. code-block:: console
 
-    uart:~$ wifi connect -s <SSID> -k 5 -a anon -K whatever
+    uart:~$ wifi connect -s <SSID> -k 7 -a anon -K whatever
 
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.
