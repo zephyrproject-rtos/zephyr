@@ -1048,6 +1048,12 @@ config BT_TESTING
 	  This option enables custom Bluetooth testing interface.
 	  Shall only be used for testing purposes.
 
+config BT_HTOP
+	bool "Bluetooth Statistics"
+	help
+	  Enable printing of Bluetooth performance statistics.
+	  Sort of like THREAD_ANALYZER.
+
 config BT_CONN_DISABLE_SECURITY
 	bool "Disable security"
 	depends on BT_TESTING
