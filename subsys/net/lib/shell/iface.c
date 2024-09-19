@@ -441,6 +441,29 @@ skip_ipv6:
 		PR("IPv6 retransmit timer    : %d\n",
 		   ipv6->retrans_timer);
 	}
+
+#if defined(CONFIG_NET_DHCPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		PR("DHCPv6 renewal time (T1) : %llu ms\n",
+		   iface->config.dhcpv6.t1);
+		PR("DHCPv6 rebind time (T2)  : %llu ms\n",
+		   iface->config.dhcpv6.t2);
+		PR("DHCPv6 expire time       : %llu ms\n",
+		   iface->config.dhcpv6.expire);
+		if (iface->config.dhcpv6.params.request_addr) {
+			PR("DHCPv6 address           : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.addr));
+		}
+
+		if (iface->config.dhcpv6.params.request_prefix) {
+			PR("DHCPv6 prefix            : %s\n",
+			   net_sprint_ipv6_addr(&iface->config.dhcpv6.prefix));
+		}
+
+		PR("DHCPv6 state             : %s\n",
+		   net_dhcpv6_state_name(iface->config.dhcpv6.state));
+	}
+#endif /* CONFIG_NET_DHCPV6 */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
