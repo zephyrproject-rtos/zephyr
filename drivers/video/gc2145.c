@@ -876,7 +876,7 @@ static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x,
 		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int gc2145_set_output_format(const struct device *dev, int output_format)
@@ -1155,9 +1155,10 @@ static int gc2145_init(const struct device *dev)
 	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
-		return -EIO;
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 /* Unique Instance */
