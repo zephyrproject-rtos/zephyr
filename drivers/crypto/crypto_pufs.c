@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(crypto_puf_security);
  ****************************************************************************/
 uint8_t __pufcc_descriptors[BUFFER_SIZE];
 static struct pufcc_sg_dma_desc *sg_dma_descs =
-    (struct pufcc_sg_dma_desc *)&__pufcc_descriptors;
+    (struct pufcc_sg_dma_desc *)__pufcc_descriptors;
 static uint8_t pufcc_buffer[BUFFER_SIZE];
 
 // PUFcc microprogram for RSA2048
@@ -120,12 +120,13 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
  * @fn    pufcc_calc_sha256_hash
  * @brief Calculates SHA256 hash
  *
- * @param[in]  data_addr  Data address info
- * @param[in]  hash       Pointer to hash struct to return hash value in
- * @return                PUFCC_SUCCESS on success, otherwise an error code.
+ * @param[in]  ctx    Context of the hash computation session.
+ * @param[in]  pkt    Input and output data related parameters for hash calculation.
+ * @return            PUFCC_SUCCESS on success, otherwise an error code.
  */
-static enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_addr,
-                                         struct pufs_crypto_hash *hash) {
+static enum pufcc_status pufcc_calc_sha256_hash(struct hash_ctx *ctx, 
+                                                struct hash_pkt *pkt) 
+{
   enum pufcc_status status;
   struct pufcc_intrpt_reg intrpt_reg = {0};
   struct pufcc_dma_cfg_0_reg dma_cfg_0_reg = {0};
@@ -158,10 +159,10 @@ static enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_ad
   REG_WRITE_32(&dma_regs->cfg_0, &dma_cfg_0_reg);
 
   // Set data source address in dsc_cfg_0 register
-  dma_regs->dsc_cfg_0 = data_addr->read_addr;
+  dma_regs->dsc_cfg_0 = (uint32_t)pkt->in_buf;
 
   // Set data length in dsc_cfg_2 register
-  dma_regs->dsc_cfg_2 = data_addr->len;
+  dma_regs->dsc_cfg_2 = pkt->in_len;
 
   // Set the dsc_cfg_4 register to values defined above
   REG_WRITE_32(&dma_regs->dsc_cfg_4, &dma_dsc_cfg_4_reg);
@@ -198,10 +199,10 @@ static enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_ad
 
   // Read the calculated hash
   for (uint8_t i = 0; i < (PUFCC_SHA_256_LEN / PUFCC_WORD_SIZE); i++) {
-    ((uint32_t *)hash->val)[i] = be2le(crypto_regs->dgst_out[i]);
+    ((uint32_t *)pkt->out_buf)[i] = be2le(crypto_regs->dgst_out[i]);
   }
 
-  hash->len = PUFCC_SHA_256_LEN;
+  pkt->out_len = PUFCC_SHA_256_LEN;
 
   return PUFCC_SUCCESS;
 }
@@ -210,45 +211,29 @@ static enum pufcc_status pufcc_calc_sha256_hash(struct pufs_crypto_addr *data_ad
  * @fn    pufcc_calc_sha256_hash_sg
  * @brief Calculates SHA256 hash of non-contiguous data.
  *        All non contiguous data addresses can be passed in as a single linked
- *        list in the form of 'pufs_crypto_addr' struct as 'data_addr' parameter
+ *        list in the form of 'hash_pkr' struct as 'pkt' parameter
  *        or this function can be invoked multiple times with partial data
- *        address info in the linked list by setting the 'first' and 'last'
+ *        address info in the linked list by setting the 'head' and 'tail'
  *        params accordingly as detailed below against each param. In case of
  *        partial data address info and hence multiple invocations, we also need
  *        to pass in previously calculated hash values to every invocation
- *        after the first one and the accumulated length of all previous
+ *        after the head one and the accumulated length of all previous
  *        messages/data.
  *
  *        Note: In case of multiple data chunks either in a single linked list
  *        or as partial linked lists using multiple invocations the sizes of all
  *        chunks must be multiples of 64 bytes except the last chunk.
  *
- * @param[in]  data_addr  A linked list of data address info
- * @param[in]  first      Boolean to indicate if 'data_addr' contains the first
- *                        data block
- * @param[in]  last       Boolean to indicate if 'data_addr' contains the last
- *                        data block
- *                        Note: 'first' and 'last' can both be true if
- *                        'data_addr' linked list contains both first and last
- *                        data blocks or if it contains a single data block that
- *                        is both first as well last.
- * @param[in]  prev_len   Pointer to accumulated length of previously processed
- *                        data; 0 for first invocation. Currently processed data
- *                        length will be added to this value.
- * @param[in]  hash_in    Hash of the data bocks processed already; can be NULL
- *                        for first invocation.
- * @param[out] hash_out   Pointer to hash strcut to return hash value in
- * @return                PUFCC_SUCCESS on success, otherwise an error code.
+ * @param[in]  ctx    Context of the hash computation session.
+ * @param[in]  pkt    Input and output data related parameters for hash calculation.
+ * @return            PUFCC_SUCCESS on success, otherwise an error code.
  */
-static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data_addr,
-                                            bool first, bool last,
-                                            uint32_t *prev_len,
-                                            struct pufs_crypto_hash *hash_in,
-                                            struct pufs_crypto_hash *hash_out) {
+static enum pufcc_status pufcc_calc_sha256_hash_sg(struct hash_ctx *ctx, 
+                                                   struct hash_pkt *pkt) {
   enum pufcc_status status;
   uint32_t plen = 0;
   uint8_t desc_count = 0;
-  struct pufs_crypto_addr *curr_addr = data_addr;
+  bool lvHead = pkt->head, lvTail = pkt->tail; 
   struct pufcc_dma_cfg_0_reg dma_cfg_0_reg = {0};
   struct pufcc_dma_dsc_cfg_4_reg dma_dsc_cfg_4_reg = {0};
   struct pufcc_dma_key_cfg0_reg dma_key_cfg0_reg = {0};
@@ -256,7 +241,7 @@ static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data
   struct pufcc_start_reg start_reg = {0};
   struct pufcc_hmac_config_reg hmac_config_reg = {0};
 
-  if (!first) plen = *prev_len;
+  if (!lvHead) plen = *pkt->prev_len;
 
   // Set DMA 'intrpt' register values
   intrpt_reg.intrpt_st = 1;  // Write 1 to clear interrupt
@@ -273,16 +258,16 @@ static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data
   dma_key_cfg0_reg.key_dst = PUFCC_DMA_KEY_DST_HASH;
 
   // Set previous hash value if it's not the first data block
-  if (!first) {
+  if (!lvHead) {
     for (uint8_t i = 0; i < (PUFCC_SHA_256_LEN / PUFCC_WORD_SIZE); i++) {
-      crypto_regs->dgst_in[i] = be2le(((uint32_t *)hash_in->val)[i]);
+      crypto_regs->dgst_in[i] = be2le(((uint32_t *)pkt->in_hash)[i]);
     }
   }
 
   // Set SGDMA descriptors
   do {
-    sg_dma_descs[desc_count].read_addr = be2le(curr_addr->read_addr);
-    sg_dma_descs[desc_count].length = be2le(curr_addr->len);
+    sg_dma_descs[desc_count].read_addr = be2le((uint32_t)pkt->in_buf);
+    sg_dma_descs[desc_count].length = be2le(pkt->in_len);
     sg_dma_descs[desc_count].next =
         be2le((uint32_t)&sg_dma_descs[desc_count + 1]);
 
@@ -293,33 +278,33 @@ static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data
     *(uint32_t *)&dma_dsc_cfg_4_reg = 0;
     dma_dsc_cfg_4_reg.offset = plen % 16;
 
-    plen += curr_addr->len;
-    curr_addr = curr_addr->next;
+    plen += pkt->in_len;
+    pkt = pkt->next;
 
-    if (!desc_count && first) {
+    if (!desc_count && lvHead) {
       dma_dsc_cfg_4_reg.head = 1;
     }
 
     // Mark this descriptor as last if there is no more data
-    if (!curr_addr) {
+    if (!pkt) {
       dma_dsc_cfg_4_reg.dn_pause = 1;
-      if (last) {
+      if (lvTail) {
         dma_dsc_cfg_4_reg.tail = 1;
       }
     }
 
     sg_dma_descs[desc_count].dsc_cfg_4 = be2le(*(uint32_t *)&dma_dsc_cfg_4_reg);
     desc_count++;
-  } while (curr_addr && ((desc_count * sizeof(struct pufcc_sg_dma_desc)) <
+  } while (pkt && ((desc_count * sizeof(struct pufcc_sg_dma_desc)) <
                          SG_DMA_MAX_DSCS_SIZE));
 
-  if (curr_addr) {
+  if (pkt) {
     // No enough descriptors available
     return PUFCC_E_OVERFLOW;
   }
 
   // Update accumulated data length
-  *prev_len = plen;
+  *pkt->prev_len = plen;
 
   /*** Configure DMA registers ***/
   // Enable SGDMA in dma_cfg_0 register
@@ -352,10 +337,11 @@ static enum pufcc_status pufcc_calc_sha256_hash_sg(struct pufs_crypto_addr *data
 
   // Read the calculated hash value
   for (uint8_t i = 0; i < (PUFCC_SHA_256_LEN / PUFCC_WORD_SIZE); i++) {
-    ((uint32_t *)hash_out->val)[i] = be2le(crypto_regs->dgst_out[i]);
+    ((uint32_t *)pkt->out_buf)[i] = be2le(crypto_regs->dgst_out[i]);
   }
 
-  hash_out->len = PUFCC_SHA_256_LEN;
+  pkt->out_len = PUFCC_SHA_256_LEN;
+
   return PUFCC_SUCCESS;
 }
 
@@ -581,11 +567,11 @@ static enum pufcc_status pufcc_ecdsa256_sign_verify(
   enum pufcc_status status;
   struct pufs_crypto_hash hash;
 
-  // Calculate hash of the message
-  if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
-      PUFCC_SUCCESS) {
-    return PUFCC_E_ERROR;
-  }
+  // Calculate hash of the message: TODO update here
+  // if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
+  //     PUFCC_SUCCESS) {
+  //   return PUFCC_E_ERROR;
+  // }
 
   // Set the EC NIST P256 parameters after reversing them
   reverse(pufcc_buffer, ecc_param_nistp256.prime, PUFCC_ECDSA_256_LEN);
@@ -938,11 +924,11 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
     return PUFCC_E_VERFAIL;
   }
 
-  // Calculate hash of the message
-  if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
-      PUFCC_SUCCESS) {
-    return PUFCC_E_ERROR;
-  }
+  // Calculate hash of the message: TODO Update here
+  // if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
+  //     PUFCC_SUCCESS) {
+  //   return PUFCC_E_ERROR;
+  // }
 
   if (memcmp(dec_msg + i + 19, hash.val, hash.len) != 0) {
     return PUFCC_E_VERFAIL;
@@ -1101,14 +1087,73 @@ static void pufs_irq_Init(void) {
  * various crypto related operations.
 *********************************************************/
 
+static int block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+{
+  return -ENOTSUP;
+}
+
+/* Function signatures for encryption/ decryption using standard cipher modes
+ * like  CBC, CTR, CCM.
+ */
+static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv)
+{
+  return -ENOTSUP;
+}
+
+static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr)
+{
+  return -ENOTSUP; // TODO replace with the following
+  // return pufcc_decrypt_aes(...);
+}
+
+static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
+}
+
+static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
+}
+
+static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
+{
+  enum pufcc_status lvStatus = PUFCC_SUCCESS;
+
+  if(!ctx->started) {    
+    lvStatus = pufcc_calc_sha256_hash(ctx, pkt);
+  } else {
+    lvStatus = pufcc_calc_sha256_hash_sg(ctx, pkt);
+  }
+
+  if(lvStatus != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
+    return -ECANCELED;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
+static int pufs_rsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
+{
+  return -ENOTSUP; // TODO replace with rsa sign verify call
+}
+
+static int pufs_ecdsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
+{
+  return -ENOTSUP; // TODO replace with ecdsa sign verify call
+}
+
 /* Query the driver capabilities */
 static int pufs_query_hw_caps(const struct device *dev)
 {
   return (
             CAP_RAW_KEY | CAP_INPLACE_OPS | \
             CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
-            CAP_ASYNC_OPS | CAP_NO_IV_PREFIX | \
-            CAP_NO_ENCRYPTION | CAP_NO_SIGNING
+            CAP_NO_IV_PREFIX | CAP_NO_ENCRYPTION | CAP_NO_SIGNING
          );
 }
 
@@ -1137,7 +1182,21 @@ static int pufs_cipher_async_callback_set(const struct device *dev,
 static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ctx,
                                    enum hash_algo algo)
 {
-  return -ENOTSUP;
+  ctx->device = dev;
+
+  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  
+  if(algo != CRYPTO_HASH_ALGO_SHA256) {
+    return -ENOTSUP;
+  }
+
+  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
+    return -ENOTSUP;
+  }
+
+  ctx->hash_hndlr = pufs_hash_op;  
+
+  return PUFCC_SUCCESS;
 }
 
 /* Tear down an established hash session */

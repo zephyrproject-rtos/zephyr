@@ -83,7 +83,8 @@ struct hash_ctx {
  * operation.
  *
  * The fields which has not been explicitly called out has to
- * be filled up by the app before calling hash_compute().
+ * be filled up by the app before calling hash_compute() or 
+ * hash_update().
  */
 struct hash_pkt {
 
@@ -98,12 +99,39 @@ struct hash_pkt {
 	/** Bytes to be operated upon */
 	size_t  in_len;
 
+	/** Bytes previously operated upon */
+	size_t  *prev_len;
+
 	/**
 	 * Start of the output buffer, to be allocated by
 	 * the application. Can be NULL for in-place ops. To be populated
 	 * with contents by the driver on return from op / async callback.
 	 */
 	uint8_t *out_buf;
+
+	/** Bytes in returned hash (out_buf) */
+	size_t  out_len;
+
+	/**
+	 * The pointer is for creating a linkedlist of 
+	 * incoming data in case the hash is calculated in chunks
+	 * where data might be coming from different places.
+	 */
+	struct hash_pkt *next;
+
+	/**
+	 * Whether this linkedlist contains head or not.
+	 * This boolean shall be initialized only once in
+	 * the beginning of every new linkedlist construction.
+	 */
+	bool head;
+
+	/**
+	 * Whether this linkedlist contains tail or not.
+	 * This boolean shall be initialized only once in
+	 * the beginning of every new linkedlist construction.
+	 */
+	bool tail;
 
 	/**
 	 * Context this packet relates to. This can be useful to get the
