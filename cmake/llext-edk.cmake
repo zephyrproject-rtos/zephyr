@@ -27,6 +27,13 @@
 #   edk directory. This is necessary when building an extension that only
 #   supports userspace, as the syscall headers are regenerated in the edk
 #   directory.
+# In addition, the following Zephyr internal variables are exported but
+# not guaranteed to be present or stable:
+# - ARCH, BOARD, SOC: information about the target of the EDK.
+# - TOOLCHAIN: the Zephyr toolchain variant used to compile the build.
+# - CROSS_COMPILE: the arch-specific prefix used to compile the build
+#   (when the toolchain defines it).
+# - COMPILER: the name of the compiler used to compile the build.
 
 cmake_minimum_required(VERSION 3.20.0)
 
@@ -89,9 +96,9 @@ function(relative_dir dir relative_out bindir_out)
     endif()
 endfunction()
 
-string(REGEX REPLACE "[^a-zA-Z0-9]" "_" llext_edk_name_sane ${llext_edk_name})
-string(TOUPPER ${llext_edk_name_sane} llext_edk_name_sane)
-set(install_dir_var "${llext_edk_name_sane}_INSTALL_DIR")
+string(REGEX REPLACE "[^a-zA-Z0-9]" "_" var_prefix ${llext_edk_name})
+string(TOUPPER ${var_prefix} var_prefix)
+set(install_dir_var "${var_prefix}_INSTALL_DIR")
 
 separate_arguments(llext_edk_cflags NATIVE_COMMAND ${llext_edk_cflags})
 
@@ -169,6 +176,11 @@ function(edk_write_header target)
     file(WRITE ${edk_file_${target}} "")
 endfunction()
 
+# Mark a section in the file with a single line comment
+function(edk_write_comment target comment)
+    file(APPEND ${edk_file_${target}} "\n# ${comment}\n")
+endfunction()
+
 # Define a variable in the file
 function(edk_write_var target var_name var_value)
     if(target STREQUAL "CMAKE")
@@ -200,6 +212,15 @@ endfunction()
 foreach(target ${edk_targets})
     edk_write_header(${target})
 
+    edk_write_comment(${target} "Target and build information")
+    edk_write_var(${target} "${var_prefix}_ARCH" "${ARCH}")
+    edk_write_var(${target} "${var_prefix}_BOARD" "${BOARD}")
+    edk_write_var(${target} "${var_prefix}_SOC" "${SOC}")
+    edk_write_var(${target} "${var_prefix}_TOOLCHAIN" "${TOOLCHAIN}")
+    edk_write_var(${target} "${var_prefix}_CROSS_COMPILE" "${CROSS_COMPILE}")
+    edk_write_var(${target} "${var_prefix}_COMPILER" "${COMPILER}")
+
+    edk_write_comment(${target} "Compile flags")
     edk_write_var(${target} "LLEXT_CFLAGS" "${all_flags}")
     edk_write_var(${target} "LLEXT_ALL_INCLUDE_CFLAGS" "${all_inc_flags}")
     edk_write_var(${target} "LLEXT_INCLUDE_CFLAGS" "${inc_flags}")
