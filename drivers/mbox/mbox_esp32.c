@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -33,8 +34,12 @@ struct esp32_mbox_memory {
 };
 
 struct esp32_mbox_config {
-	uint32_t irq_source_pro_cpu;
-	uint32_t irq_source_app_cpu;
+	int irq_source_pro_cpu;
+	int irq_priority_pro_cpu;
+	int irq_flags_pro_cpu;
+	int irq_source_app_cpu;
+	int irq_priority_app_cpu;
+	int irq_flags_app_cpu;
 };
 
 struct esp32_mbox_data {
@@ -189,6 +194,7 @@ static int esp32_mbox_init(const struct device *dev)
 {
 	struct esp32_mbox_data *data = (struct esp32_mbox_data *)dev->data;
 	struct esp32_mbox_config *cfg = (struct esp32_mbox_config *)dev->config;
+	int ret;
 
 	data->this_core_id = esp_core_id();
 	data->other_core_id = (data->this_core_id == 0) ? 1 : 0;
@@ -200,16 +206,21 @@ static int esp32_mbox_init(const struct device *dev)
 
 	/* pro_cpu is responsible to initialize the lock of shared memory */
 	if (data->this_core_id == 0) {
-		esp_intr_alloc(cfg->irq_source_pro_cpu, ESP_INTR_FLAG_IRAM,
-			       (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
-
+		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
+				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
+					     ESP_INTR_FLAG_IRAM,
+				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 		atomic_set(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
 	} else {
 		/* app_cpu wait for initialization from pro_cpu, then takes it,
 		 * after that releases
 		 */
-		esp_intr_alloc(cfg->irq_source_app_cpu, ESP_INTR_FLAG_IRAM,
-			       (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
+		ret = esp_intr_alloc(cfg->irq_source_app_cpu,
+				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_app_cpu) |
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_app_cpu) |
+					     ESP_INTR_FLAG_IRAM,
+				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 
 		LOG_DBG("Waiting CPU0 to sync");
 		while (!atomic_cas(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
@@ -221,7 +232,7 @@ static int esp32_mbox_init(const struct device *dev)
 		LOG_DBG("Synchronization done");
 	}
 
-	return 0;
+	return ret;
 }
 
 static const struct mbox_driver_api esp32_mbox_driver_api = {
@@ -238,8 +249,12 @@ static const struct mbox_driver_api esp32_mbox_driver_api = {
 
 #define ESP32_MBOX_INIT(idx)                                                                       \
 	static struct esp32_mbox_config esp32_mbox_device_cfg_##idx = {                            \
-		.irq_source_pro_cpu = DT_INST_IRQN(idx),                                           \
-		.irq_source_app_cpu = DT_INST_IRQN(idx) + 1,                                       \
+		.irq_source_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, irq),                             \
+		.irq_priority_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, priority),                      \
+		.irq_flags_pro_cpu = DT_INST_IRQ_BY_IDX(idx, 0, flags),                            \
+		.irq_source_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, irq),                             \
+		.irq_priority_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, priority),                      \
+		.irq_flags_app_cpu = DT_INST_IRQ_BY_IDX(idx, 1, flags),                            \
 	};                                                                                         \
 	static struct esp32_mbox_data esp32_mbox_device_data_##idx = {                             \
 		.shm_size = ESP32_MBOX_SHM_SIZE_BY_IDX(idx),                                       \
