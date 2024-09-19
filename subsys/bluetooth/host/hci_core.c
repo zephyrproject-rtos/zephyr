@@ -28,6 +28,7 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/bluetooth/hci_types.h>
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
 #else
@@ -2950,6 +2951,13 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt[static 3])
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
 		return BT_HCI_EVT_FLAG_RECV_PRIO;
+	case BT_HCI_EVT_LE_META_EVENT:
+		switch (evt[2]) {
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
+			return BT_HCI_EVT_FLAG_RECV_PRIO;
+		default:
+			return BT_HCI_EVT_FLAG_RECV;
+		}
 	default:
 		return BT_HCI_EVT_FLAG_RECV;
 	}
@@ -4016,6 +4024,11 @@ static const struct event_handler prio_events[] = {
 		      sizeof(struct bt_hci_evt_cmd_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_CMD_STATUS, hci_cmd_status,
 		      sizeof(struct bt_hci_evt_cmd_status)),
+#if defined(CONFIG_BT_OBSERVER)
+	/* Redirect to handle only BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT */
+	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_event,
+		      sizeof(struct bt_hci_evt_le_meta_event)),
+#endif	/* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_CONN)
 	EVENT_HANDLER(BT_HCI_EVT_DATA_BUF_OVERFLOW,
 		      hci_data_buf_overflow,
