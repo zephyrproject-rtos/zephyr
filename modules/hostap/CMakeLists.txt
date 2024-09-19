@@ -477,6 +477,17 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
   EAP_FAST
 )
 
+# Needs TLS1.3 and SESSION_TICKETS
+zephyr_library_sources_ifdef(CONFIG_EAP_FAST
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
+  ${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
+  EAP_FAST
+)
+
 zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	CONFIG_NO_CONFIG_BLOBS
 )
