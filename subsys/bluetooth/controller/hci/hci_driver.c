@@ -431,6 +431,29 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
+static bool node_to_evt(struct node_rx_pdu *node_rx, uint8_t *evt, uint8_t *meta)
+{
+#if defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_EXT_ADV)
+	switch (node_rx->hdr.type) {
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_2M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+		*evt = BT_HCI_EVT_LE_META_EVENT;
+		*meta = BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT;
+		return true;
+	case NODE_RX_TYPE_EXT_SCAN_TERMINATE:
+		*evt = BT_HCI_EVT_LE_META_EVENT;
+		*meta = BT_HCI_EVT_LE_SCAN_TIMEOUT;
+		return true;
+	default:
+		return false;
+	}
+
+#else
+	return false;
+#endif
+}
+
 static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 					  int8_t class)
 {
@@ -443,10 +466,17 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 	case HCI_CLASS_EVT_CONNECTION:
 	case HCI_CLASS_EVT_LLCP:
 		if (class == HCI_CLASS_EVT_DISCARDABLE) {
-			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true,
-					     K_NO_WAIT);
+			buf = bt_buf_get_evt(BT_HCI_EVT_UNKNOWN, true, K_NO_WAIT);
 		} else {
-			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			uint8_t evt = 0;
+			uint8_t meta = 0;
+			bool recognized = node_to_evt(node_rx, &evt, &meta);
+
+			if (recognized) {
+				buf = bt_buf_get_evt_but_better(evt, meta, K_FOREVER);
+			} else {
+				buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+			}
 		}
 		if (buf) {
 			hci_evt_encode(node_rx, buf);

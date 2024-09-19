@@ -205,8 +205,12 @@ static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 	LOG_DBG("type 0x%02x, evt 0x%02x", h4->rx.type, h4->rx.evt.evt);
 
 	switch (h4->rx.type) {
-	case BT_HCI_H4_EVT:
-		return bt_buf_get_evt(h4->rx.evt.evt, h4->rx.discardable, timeout);
+	case BT_HCI_H4_EVT: {
+		uint8_t evt = h4->rx.evt.evt;
+		uint8_t meta = h4->rx.hdr[3];
+
+		return bt_buf_get_evt_but_better(evt, meta, timeout);
+	}
 	case BT_HCI_H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, timeout);
 	case BT_HCI_H4_ISO:

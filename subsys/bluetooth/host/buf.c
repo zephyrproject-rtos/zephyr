@@ -82,6 +82,75 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	return buf;
 }
 
+static bool is_hci_event_discardable(const uint8_t evt_type, const uint8_t subevt_type)
+{
+	switch (evt_type) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		return true;
+#endif
+	case BT_HCI_EVT_LE_META_EVENT: {
+		switch (subevt_type) {
+		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+		default:
+			return false;
+		}
+	}
+	default:
+		return false;
+	}
+}
+
+struct net_buf *bt_buf_get_evt_but_better(uint8_t evt, uint8_t meta, k_timeout_t timeout)
+{
+	/* Always allocs so-called "discardable" events with K_NO_WAIT. Most of
+	 * the drivers will call from ISR so they should not block at all.
+	 *
+	 * For non-meta events, the `meta` param is just the next byte.
+	 */
+	struct net_buf *buf = NULL;
+
+	switch (evt) {
+	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
+	case BT_HCI_EVT_CMD_STATUS:
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_LE_META_EVENT: {
+		bool is_ext_adv = meta == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT;
+		bool is_meta = evt == BT_HCI_EVT_LE_META_EVENT;
+
+		if (is_meta && !is_ext_adv) {
+			/* For now we use the sync pool only for ext adv
+			 * reports. They cannot be marked as discardable thanks
+			 * to the geniuses in SIG that decided to save space and
+			 * only use two bits for reassembly status.
+			 */
+			break;
+		}
+		buf = net_buf_alloc(&sync_evt_pool, timeout);
+		break;
+	}
+	default:
+		break;
+	}
+
+	if (!buf) {
+		if (is_hci_event_discardable(evt, meta)) {
+			buf = net_buf_alloc(&discardable_pool, K_NO_WAIT);
+		} else {
+			return bt_buf_get_rx(BT_BUF_EVT, timeout);
+		}
+	}
+
+	if (buf) {
+		net_buf_reserve(buf, BT_BUF_RESERVE);
+		bt_buf_set_type(buf, BT_BUF_EVT);
+	}
+
+	return buf;
+}
+
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 			       k_timeout_t timeout)
 {
