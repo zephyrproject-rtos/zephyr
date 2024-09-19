@@ -17,6 +17,7 @@ supported:
   - rtc
   - adc
   - hwinfo
+  - usbd
 testing:
   ignore_tags:
     - net
