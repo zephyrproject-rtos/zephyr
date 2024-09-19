@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2024 Rapid Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
 #include "crypto_pufs.h"
 
 #include <string.h>
@@ -1094,14 +1101,19 @@ static void pufs_irq_Init(void) {
  * various crypto related operations.
 *********************************************************/
 
-/* Query the hardware capabilities */
-int pufs_query_hw_caps(const struct device *dev)
+/* Query the driver capabilities */
+static int pufs_query_hw_caps(const struct device *dev)
 {
-  return -ENOTSUP;
+  return (
+            CAP_RAW_KEY | CAP_INPLACE_OPS | \
+            CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
+            CAP_ASYNC_OPS | CAP_NO_IV_PREFIX | \
+            CAP_NO_ENCRYPTION | CAP_NO_SIGNING
+         );
 }
 
 /* Setup a crypto session */
-int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
+static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
                               enum cipher_algo algo, enum cipher_mode mode,
                               enum cipher_op op_type)
 {
@@ -1109,29 +1121,69 @@ int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
 }
 
 /* Tear down an established session */
-int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx *ctx)
+static int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx *ctx)
 {
   return -ENOTSUP;
 }
 
 /* Register async crypto op completion callback with the driver */
-int cipher_async_callback_set(const struct device *dev,
-          cipher_completion_cb cb)
+static int pufs_cipher_async_callback_set(const struct device *dev,
+                                          cipher_completion_cb cb)
+{
+  return -ENOTSUP;
+}
+
+/* Setup a hash session */
+static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ctx,
+                                   enum hash_algo algo)
+{
+  return -ENOTSUP;
+}
+
+/* Tear down an established hash session */
+static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx)
+{
+  return -ENOTSUP;
+}
+
+/* Register async hash op completion callback with the driver */
+static int pufs_hash_async_callback_set(const struct device *dev,
+                                       hash_completion_cb cb)
+{
+  return -ENOTSUP;
+}
+
+/* Setup a signature session */
+static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ctx,
+                                   enum sign_algo algo)
+{
+  return -ENOTSUP;
+}
+
+/* Tear down an established signature session */
+static int pufs_sign_free_session(const struct device *dev, struct sign_ctx *ctx)
+{
+  return -ENOTSUP;
+}
+
+/* Register async signature op completion callback with the driver */
+static int pufs_sign_async_callback_set(const struct device *dev,
+                                        sign_completion_cb cb)
 {
   return -ENOTSUP;
 }
 
 static struct crypto_driver_api s_crypto_funcs = {
-	.cipher_begin_session = NULL, /* TODO */
-  .cipher_free_session = NULL, /* TODO */
-  .cipher_async_callback_set = NULL, /* TODO */
-  .hash_begin_session = NULL, /* TODO */
-  .hash_free_session =  NULL, /* TODO */
-  .hash_async_callback_set =  NULL, /* TODO */
-  .sign_begin_session = NULL, /* TODO */
-  .sign_free_session =  NULL, /* TODO */
-  .sign_async_callback_set =  NULL, /* TODO */
-  .query_hw_caps =  NULL /* TODO */
+	.cipher_begin_session = pufs_cipher_begin_session,
+  .cipher_free_session = pufs_cipher_free_session,
+  .cipher_async_callback_set = pufs_cipher_async_callback_set,
+  .hash_begin_session = pufs_hash_begin_session,
+  .hash_free_session =  pufs_hash_free_session,
+  .hash_async_callback_set =  pufs_hash_async_callback_set,
+  .sign_begin_session = pufs_sign_begin_session,
+  .sign_free_session =  pufs_sign_free_session,
+  .sign_async_callback_set =  pufs_sign_async_callback_set,
+  .query_hw_caps =  pufs_query_hw_caps
 };
 
 static struct pufs_data s_pufs_session_data = {

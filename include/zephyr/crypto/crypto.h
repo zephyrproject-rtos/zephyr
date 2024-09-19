@@ -40,28 +40,40 @@
  * capabilities via provided API (crypto_query_hwcaps()), and choose a
  * supported config during the session setup.
  */
-#define CAP_OPAQUE_KEY_HNDL		BIT(0)
-#define CAP_RAW_KEY				BIT(1)
+#define CAP_OPAQUE_KEY_HNDL			BIT(0)
+#define CAP_RAW_KEY					BIT(1)
 
 /* TBD to define */
-#define CAP_KEY_LOADING_API		BIT(2)
+#define CAP_KEY_LOADING_API			BIT(2)
 
 /** Whether the output is placed in separate buffer or not */
-#define CAP_INPLACE_OPS			BIT(3)
-#define CAP_SEPARATE_IO_BUFS	BIT(4)
+#define CAP_INPLACE_OPS				BIT(3)
+#define CAP_SEPARATE_IO_BUFS		BIT(4)
 
 /**
  * These denotes if the output (completion of a cipher_xxx_op) is conveyed
  * by the op function returning, or it is conveyed by an async notification
  */
-#define CAP_SYNC_OPS			BIT(5)
-#define CAP_ASYNC_OPS			BIT(6)
+#define CAP_SYNC_OPS				BIT(5)
+#define CAP_ASYNC_OPS				BIT(6)
 
 /** Whether the hardware/driver supports autononce feature */
-#define CAP_AUTONONCE			BIT(7)
+#define CAP_AUTONONCE				BIT(7)
 
 /** Don't prefix IV to cipher blocks */
-#define CAP_NO_IV_PREFIX		BIT(8)
+#define CAP_NO_IV_PREFIX			BIT(8)
+
+/** Whether the driver supports encryption or not */
+#define CAP_NO_ENCRYPTION			BIT(9)
+
+/** Whether the driver supports decryption or not */
+#define CAP_NO_DECRYPTION			BIT(10)
+
+/** Whether the driver supports signing or not */
+#define CAP_NO_SIGNING				BIT(11)
+
+/** Whether the driver supports sign verification or not */
+#define CAP_NO_SIGN_VERIFICATION	BIT(12)
 
 /* More flags to be added as necessary */
 

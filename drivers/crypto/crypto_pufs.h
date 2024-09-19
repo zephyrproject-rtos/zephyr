@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Muhammad Junaid Aslam <junaid.aslam@rapidsilicon.com>
+ * Copyright (c) 2024 Rapid Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  *
