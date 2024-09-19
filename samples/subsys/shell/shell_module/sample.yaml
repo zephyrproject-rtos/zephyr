@@ -76,3 +76,19 @@ tests:
     harness: robot
     harness_config:
       robot_testsuite: shell_module.robot
+  sample.shell.shell_module.thread_mask:
+    filter: CONFIG_SMP
+    tags: shell
+    harness: keyboard
+    integration_platforms:
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+  sample.shell.shell_module.unwind:
+    filter: CONFIG_ARCH_HAS_STACKWALK
+    tags: shell
+    harness: keyboard
+    integration_platforms:
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_ARCH_STACKWALK=y
