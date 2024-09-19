@@ -47,6 +47,33 @@ LOG_MODULE_REGISTER(crypto_stm32);
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
+typedef HAL_StatusTypeDef status_t;
+
+/**
+ * @brief Function pointer type for AES encryption/decryption operations.
+ *
+ * This type defines a function pointer for generic AES operations.
+ *
+ * @param hcryp       Pointer to a CRYP_HandleTypeDef structure that contains
+ *                    the configuration information for the CRYP module.
+ * @param in_data     Pointer to input data (plaintext for encryption or ciphertext for decryption).
+ * @param size        Length of the input data in bytes.
+ * @param out_data    Pointer to output data (ciphertext for encryption or plaintext for
+ * decryption).
+ * @param timeout     Timeout duration in milliseconds.
+ *
+ * @retval status_t  HAL status of the operation.
+ */
+typedef status_t (*hal_cryp_aes_op_func_t)(CRYP_HandleTypeDef *hcryp, uint8_t *in_data,
+					   uint16_t size, uint8_t *out_data, uint32_t timeout);
+
+#define hal_ecb_encrypt_op HAL_CRYP_AESECB_Encrypt
+#define hal_ecb_decrypt_op HAL_CRYP_AESECB_Decrypt
+#define hal_cbc_encrypt_op HAL_CRYP_AESCBC_Encrypt
+#define hal_cbc_decrypt_op HAL_CRYP_AESCBC_Decrypt
+#define hal_ctr_encrypt_op HAL_CRYP_AESCTR_Encrypt
+#define hal_ctr_decrypt_op HAL_CRYP_AESCTR_Decrypt
+
 static int copy_reverse_words(uint8_t *dst_buf, int dst_len,
 			      const uint8_t *src_buf, int src_len)
 {
@@ -65,10 +92,10 @@ static int copy_reverse_words(uint8_t *dst_buf, int dst_len,
 	return 0;
 }
 
-static int do_encrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
+static int do_aes(struct cipher_ctx *ctx, hal_cryp_aes_op_func_t fn, uint8_t *in_buf, int in_len,
 		      uint8_t *out_buf)
 {
-	HAL_StatusTypeDef status;
+	status_t status;
 
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
@@ -82,10 +109,9 @@ static int do_encrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
 		return -EIO;
 	}
 
-	status = HAL_CRYP_Encrypt(&data->hcryp, (uint32_t *)in_buf, in_len,
-				  (uint32_t *)out_buf, HAL_MAX_DELAY);
+	status = fn(&data->hcryp, in_buf, in_len, out_buf, HAL_MAX_DELAY);
 	if (status != HAL_OK) {
-		LOG_ERR("Encryption error");
+		LOG_ERR("Encryption/decryption error");
 		k_sem_give(&data->device_sem);
 		return -EIO;
 	}
@@ -95,34 +121,18 @@ static int do_encrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
 	return 0;
 }
 
-static int do_decrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
-		      uint8_t *out_buf)
+static status_t hal_encrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pPlainData, uint16_t Size,
+			    uint8_t *pCypherData, uint32_t Timeout)
 {
-	HAL_StatusTypeDef status;
+	return HAL_CRYP_Encrypt(hcryp, (uint32_t *)pPlainData, Size, (uint32_t *)pCypherData,
+				Timeout);
+}
 
-	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(ctx->device);
-	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
-
-	k_sem_take(&data->device_sem, K_FOREVER);
-
-	status = HAL_CRYP_SetConfig(&data->hcryp, &session->config);
-	if (status != HAL_OK) {
-		LOG_ERR("Configuration error");
-		k_sem_give(&data->device_sem);
-		return -EIO;
-	}
-
-	status = HAL_CRYP_Decrypt(&data->hcryp, (uint32_t *)in_buf, in_len,
-				  (uint32_t *)out_buf, HAL_MAX_DELAY);
-	if (status != HAL_OK) {
-		LOG_ERR("Decryption error");
-		k_sem_give(&data->device_sem);
-		return -EIO;
-	}
-
-	k_sem_give(&data->device_sem);
-
-	return 0;
+static status_t hal_decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uint16_t Size,
+			    uint8_t *pPlainData, uint32_t Timeout)
+{
+	return HAL_CRYP_Decrypt(hcryp, (uint32_t *)pCypherData, Size, (uint32_t *)pPlainData,
+				Timeout);
 }
 
 static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
@@ -138,7 +148,7 @@ static int crypto_stm32_ecb_encrypt(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_ecb_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
 		pkt->out_len = 16;
 	}
@@ -159,7 +169,7 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	ret = do_decrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_ecb_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
 		pkt->out_len = 16;
 	}
@@ -186,8 +196,7 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 		out_offset = 16;
 	}
 
-	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len,
-			 pkt->out_buf + out_offset);
+	ret = do_aes(ctx, hal_cbc_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf + out_offset);
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len + out_offset;
 	}
@@ -212,8 +221,7 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 		in_offset = 16;
 	}
 
-	ret = do_decrypt(ctx, pkt->in_buf + in_offset, pkt->in_len,
-			 pkt->out_buf);
+	ret = do_aes(ctx, hal_cbc_decrypt_op, pkt->in_buf + in_offset, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len - in_offset;
 	}
@@ -236,7 +244,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 
 	session->config.pInitVect = ctr;
 
-	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_ctr_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len;
 	}
@@ -259,7 +267,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 
 	session->config.pInitVect = ctr;
 
-	ret = do_decrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
+	ret = do_aes(ctx, hal_ctr_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
 		pkt->out_len = pkt->in_len;
 	}
