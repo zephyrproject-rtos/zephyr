@@ -86,16 +86,18 @@ struct rv8263c8_data {
 	struct gpio_callback gpio_cb;
 #endif
 
+#if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	struct k_work interrupt_work;
+#endif
+
 #if CONFIG_RTC_ALARM && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	rtc_alarm_callback alarm_cb;
 	void *alarm_cb_data;
-	struct k_work alarm_work;
 #endif
 
 #if CONFIG_RTC_UPDATE && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	rtc_update_callback update_cb;
 	void *update_cb_data;
-	struct k_work update_work;
 #endif
 };
 
@@ -126,38 +128,9 @@ static void rv8263c8_gpio_callback_handler(const struct device *p_port, struct g
 
 	struct rv8263c8_data *data = CONTAINER_OF(p_cb, struct rv8263c8_data, gpio_cb);
 
-#if CONFIG_RTC_ALARM
-	k_work_submit(&data->alarm_work);
+#if CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE
+	k_work_submit(&data->interrupt_work);
 #endif
-
-#if CONFIG_RTC_UPDATE
-	k_work_submit(&data->update_work);
-#endif
-}
-#endif
-
-#if CONFIG_RTC_ALARM && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-static void rv8263c8_alarm_worker(struct k_work *p_work)
-{
-	struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, alarm_work);
-	const struct rv8263c8_config *config = data->dev->config;
-
-	LOG_DBG("Process alarm worker from interrupt");
-
-	if (data->alarm_cb != NULL) {
-		uint8_t reg;
-
-		i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
-
-		if (reg & RV8263C8_BM_AF) {
-			reg &= ~RV8263C8_BM_AF;
-
-			LOG_DBG("Calling alarm callback");
-			data->alarm_cb(data->dev, 0, data->alarm_cb_data);
-
-			i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, reg);
-		}
-	}
 }
 #endif
 
@@ -181,27 +154,48 @@ static int rv8263c8_update_enable_timer(const struct device *dev)
 		 RV8263_BM_TI_TP_PULSE;
 	return i2c_write_dt(&config->i2c_bus, buf, 2);
 }
+#endif
 
-static void rv8263c8_update_worker(struct k_work *p_work)
+#if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+static void rv8263c8_interrupt_worker(struct k_work *p_work)
 {
 	uint8_t reg;
-	struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, update_work);
+	struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, interrupt_work);
 	const struct rv8263c8_config *config = data->dev->config;
 
-	LOG_DBG("Process update worker from interrupt");
+	i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
 
-	if (data->update_cb != NULL) {
-		i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, &reg);
+#if CONFIG_RTC_ALARM
+	/* An alarm interrupt occurs. Clear the timer flag, */
+	/* and call the callback. */
+	if (reg & RV8263C8_BM_AF) {
+		LOG_DBG("Process alarm interrupt");
+		reg &= ~RV8263C8_BM_AF;
 
-		if (reg & RV8263C8_BM_TF) {
+		if (data->alarm_cb != NULL) {
+			LOG_DBG("Calling alarm callback");
+			data->alarm_cb(data->dev, 0, data->alarm_cb_data);
+		}
+	}
+#endif
+
+#if CONFIG_RTC_UPDATE
+	/* A timer interrupt occurs. Clear the timer flag, */
+	/* enable the timer again and call the callback. */
+	if (reg & RV8263C8_BM_TF) {
+		LOG_DBG("Process update interrupt");
+		reg &= ~RV8263C8_BM_TF;
+
+		if (data->update_cb != NULL) {
 			LOG_DBG("Calling update callback");
 			data->update_cb(data->dev, data->update_cb_data);
 		}
-	}
 
-	rv8263c8_update_enable_timer(data->dev);
-	i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, RV8263C8_BM_TF,
-			       RV8263C8_BM_TF);
+		rv8263c8_update_enable_timer(data->dev);
+	}
+#endif
+
+	i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, reg);
 }
 #endif
 
@@ -336,6 +330,7 @@ static int rv8263c8_init(const struct device *dev)
 #endif
 
 #if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	LOG_DBG("Configure interrupt pin");
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
 		LOG_ERR("GPIO not ready!");
 		return err;
@@ -364,18 +359,15 @@ static int rv8263c8_init(const struct device *dev)
 #endif
 
 	(void)k_sem_take(&data->lock, K_FOREVER);
-#if CONFIG_RTC_ALARM && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	data->alarm_work.handler = rv8263c8_alarm_worker;
-#endif
-
-#if CONFIG_RTC_UPDATE && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	data->update_work.handler = rv8263c8_update_worker;
+#if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+	data->interrupt_work.handler = rv8263c8_interrupt_worker;
 #endif
 
 #if (CONFIG_RTC_ALARM || CONFIG_RTC_UPDATE) && DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	data->dev = dev;
 #endif
 	k_sem_give(&data->lock);
+	LOG_DBG("Done");
 
 	return 0;
 }
@@ -442,19 +434,19 @@ static int rv8263c8_alarm_set_time(const struct device *dev, uint16_t id, uint16
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-		regs[3] = bin2bcd(timeptr->tm_min) & HOURS_BITS;
+		regs[3] = bin2bcd(timeptr->tm_hour) & HOURS_BITS;
 	} else {
 		regs[3] = RV8263C8_BM_ALARM_DISABLE;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
-		regs[4] = bin2bcd(timeptr->tm_min) & DATE_BITS;
+		regs[4] = bin2bcd(timeptr->tm_mday) & DATE_BITS;
 	} else {
 		regs[4] = RV8263C8_BM_ALARM_DISABLE;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
-		regs[5] = bin2bcd(timeptr->tm_min) & WEEKDAY_BITS;
+		regs[5] = bin2bcd(timeptr->tm_wday) & WEEKDAY_BITS;
 	} else {
 		regs[5] = RV8263C8_BM_ALARM_DISABLE;
 	}
