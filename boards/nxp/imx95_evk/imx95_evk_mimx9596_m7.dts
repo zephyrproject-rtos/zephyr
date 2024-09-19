@@ -23,6 +23,18 @@
 	};
 };
 
+&lpi2c5 {
+	pinctrl-0 = <&lpi2c5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c7 {
+	pinctrl-0 = <&lpi2c7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpuart3 {
 	status = "okay";
 	current-speed = <115200>;

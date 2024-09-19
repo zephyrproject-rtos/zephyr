@@ -16,4 +16,5 @@ toolchain:
   - xtools
 supported:
   - uart
+  - i2c
 vendor: nxp
