@@ -29,6 +29,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S syscall_helper.c)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_SMP smp.c)
 zephyr_library_sources_ifdef(CONFIG_XTENSA_HIFI_SHARING xtensa_hifi.S)
+zephyr_library_sources_ifdef(CONFIG_REBOOT reboot.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK

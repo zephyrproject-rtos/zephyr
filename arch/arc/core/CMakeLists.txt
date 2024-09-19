@@ -30,6 +30,8 @@ zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT smp.c)
 
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 
+zephyr_library_sources_ifdef(CONFIG_REBOOT reboot.c)
+
 add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARC_SECURE_FIRMWARE secureshield)
 
