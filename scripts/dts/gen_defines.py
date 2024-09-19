@@ -60,6 +60,7 @@ def main():
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
+                         warn_deprecated=not args.edtlib_Wno_deprecated,
                          default_prop_types=True,
                          infer_binding_for_paths=["/zephyr,user"],
                          werror=args.edtlib_Werror,
@@ -208,6 +209,9 @@ def parse_args():
                         help="if set, edtlib-specific warnings become errors. "
                              "(this does not apply to warnings shared "
                              "with dtc.)")
+    parser.add_argument("--edtlib-Wno-deprecated", action="store_true",
+                        help="if set, edtlib will not warn if a property on "
+                             "a node is deprecated.")
 
     return parser.parse_args()
 

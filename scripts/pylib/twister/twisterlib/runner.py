@@ -335,6 +335,8 @@ class CMake:
             warnings_as_errors = 'n'
             gen_defines_args = ""
 
+        gen_defines_args = gen_defines_args + ";--edtlib-Wno-deprecated"
+
         warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
         if self.instance.sysbuild:
             warning_command = 'SB_' + warning_command

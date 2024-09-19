@@ -1981,6 +1981,7 @@ class EDT:
                  dts: Optional[str],
                  bindings_dirs: List[str],
                  warn_reg_unit_address_mismatch: bool = True,
+                 warn_deprecated: bool = True,
                  default_prop_types: bool = True,
                  support_fixed_partitions_on_any_bus: bool = True,
                  infer_binding_for_paths: Optional[Iterable[str]] = None,
@@ -2000,6 +2001,10 @@ class EDT:
           If True, a warning is logged if a node has a 'reg' property where
           the address of the first entry does not match the unit address of the
           node
+
+        warn_deprecated (default: True):
+          If True, a warning is logged if a node has a property that is marked
+          as deprecated in its binding.
 
         default_prop_types (default: True):
           If True, default property types will be used when a node has no
@@ -2045,6 +2050,7 @@ class EDT:
 
         # Saved kwarg values for internal use
         self._warn_reg_unit_address_mismatch: bool = warn_reg_unit_address_mismatch
+        self._warn_deprecated: bool = warn_deprecated
         self._default_prop_types: bool = default_prop_types
         self._fixed_partitions_no_bus: bool = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths: Set[str] = set(infer_binding_for_paths or [])
@@ -2135,6 +2141,7 @@ class EDT:
             None,
             self.bindings_dirs,
             warn_reg_unit_address_mismatch=self._warn_reg_unit_address_mismatch,
+            warn_deprecated = self._warn_deprecated,
             default_prop_types=self._default_prop_types,
             support_fixed_partitions_on_any_bus=self._fixed_partitions_no_bus,
             infer_binding_for_paths=set(self._infer_binding_for_paths),
@@ -2346,7 +2353,7 @@ class EDT:
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
             node._init_props(default_prop_types=self._default_prop_types,
-                             err_on_deprecated=self._werror)
+                             err_on_deprecated=self._werror and self._warn_deprecated)
             node._init_interrupts()
             node._init_pinctrls()
 
