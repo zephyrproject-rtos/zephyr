@@ -561,6 +561,12 @@ config NET_TC_TX_COUNT
 
 endif # NETWORKING
 
+# nRF70 now uses variable buffers as default to optimize RAM usage. Default pool sizes are used, samples/apps can override
+# for higher performance.
+choice NET_PKT_DATA_ALLOC_TYPE
+	default NET_BUF_VARIABLE_DATA_SIZE
+endchoice
+
 config MAIN_STACK_SIZE
 	default 4096
 
