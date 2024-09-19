@@ -225,12 +225,12 @@ static mm_reg_t pcie_brcmstb_map_bus(const struct device *dev, pcie_bdf_t bdf, u
 	struct pcie_brcmstb_data *data = dev->data;
 
 	sys_write32(bdf << PCIE_ECAM_BDF_SHIFT, data->cfg_addr + PCIE_EXT_CFG_INDEX);
-	return data->cfg_addr + PCIE_EXT_CFG_DATA + reg;
+	return data->cfg_addr + PCIE_EXT_CFG_DATA + reg * sizeof(uint32_t);
 }
 
 static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
-	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
 
 	if (!conf_addr) {
 		return 0xffffffff;
@@ -242,7 +242,7 @@ static uint32_t pcie_brcmstb_conf_read(const struct device *dev, pcie_bdf_t bdf,
 void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
 			     uint32_t data)
 {
-	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg * 4);
+	mm_reg_t conf_addr = pcie_brcmstb_map_bus(dev, bdf, reg);
 
 	if (!conf_addr) {
 		return;
