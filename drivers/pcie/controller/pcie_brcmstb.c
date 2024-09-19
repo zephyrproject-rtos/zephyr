@@ -373,7 +373,19 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 	int i;
 
 	for (i = 0; i < DMA_RANGES_IDX; i++) {
-		type = ((config->common->ranges[i].flags >> 24) & 0x03) - 1;
+		switch ((config->common->ranges[i].flags >> 24) & 0x03) {
+			case 0x01:
+				type = PCIE_REGION_IO;
+				break;
+			case 0x02:
+				type = PCIE_REGION_MEM;
+				break;
+			case 0x03:
+				type = PCIE_REGION_MEM64;
+				break;
+			default:
+				continue;
+		}
 		data->regions[type].bus_start = config->common->ranges[i].pcie_bus_addr;
 		data->regions[type].phys_start = config->common->ranges[i].host_map_addr;
 		data->regions[type].size = config->common->ranges[i].map_length;
