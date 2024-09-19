@@ -1019,6 +1019,8 @@ static void dwc2_enter_hibernation(const struct device *dev)
 	/* Switch off power to the controller */
 	sys_set_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNSWTCH);
 
+	(void)dwc2_quirk_post_hibernation_entry(dev);
+
 	/* Mark that the core is hibernated */
 	priv->hibernated = 1;
 	LOG_DBG("Hibernated");
@@ -1031,6 +1033,8 @@ static void dwc2_exit_hibernation(const struct device *dev, bool rwup)
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	mem_addr_t gpwrdn_reg = (mem_addr_t)&base->gpwrdn;
 	mem_addr_t pcgcctl_reg = (mem_addr_t)&base->pcgcctl;
+
+	(void)dwc2_quirk_pre_hibernation_exit(dev);
 
 	/* Switch on power to the controller */
 	sys_clear_bits(gpwrdn_reg, USB_DWC2_GPWRDN_PWRDNSWTCH);
