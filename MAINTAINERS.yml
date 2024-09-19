@@ -3489,6 +3489,8 @@ Nuvoton NPCM Platforms:
     - soc/nuvoton/npcm/
     - boards/nuvoton/npcm*/
     - dts/arm/nuvoton/
+    - drivers/*/*_npcm*
+    - include/zephyr/dt-bindings/*/npcm_*
   labels:
     - "platform: Nuvoton NPCM"
 
