@@ -251,6 +251,20 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 	sys_write32(data, conf_addr);
 }
 
+static inline enum pcie_region_type
+pcie_brcmstb_determine_region_type(struct pcie_brcmstb_data *data, bool mem, bool mem64)
+{
+	if (mem &&
+	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
+	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
+		return PCIE_REGION_MEM64;
+	} else if (mem) {
+		return PCIE_REGION_MEM;
+	}
+
+	return PCIE_REGION_IO;
+}
+
 /* Region operations are almost the same as the ones of pcie_ecam */
 static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pcie_bdf_t bdf,
 					      size_t bar_size, uintptr_t *bar_bus_addr,
@@ -286,15 +300,7 @@ static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bd
 		return false;
 	}
 
-	if (mem &&
-	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
-		type = PCIE_REGION_MEM64;
-	} else if (mem) {
-		type = PCIE_REGION_MEM;
-	} else {
-		type = PCIE_REGION_IO;
-	}
+	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
 
 	return pcie_brcmstb_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
 }
@@ -314,15 +320,7 @@ static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie
 		return false;
 	}
 
-	if (mem &&
-	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
-		type = PCIE_REGION_MEM64;
-	} else if (mem) {
-		type = PCIE_REGION_MEM;
-	} else {
-		type = PCIE_REGION_IO;
-	}
+	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
 
 	*bar_base_addr =
 		(((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
@@ -342,15 +340,7 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 		return false;
 	}
 
-	if (mem &&
-	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
-		type = PCIE_REGION_MEM64;
-	} else if (mem) {
-		type = PCIE_REGION_MEM;
-	} else {
-		type = PCIE_REGION_IO;
-	}
+	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
 
 	*bar_addr = data->regions[type].phys_start + (bar_bus_addr - data->regions[type].bus_start);
 
