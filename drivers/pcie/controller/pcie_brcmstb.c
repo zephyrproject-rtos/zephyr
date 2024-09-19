@@ -277,7 +277,7 @@ static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pc
 		((bar_size)-1)) +
 	       1;
 
-	if (addr - data->regions[type].bus_start + bar_size > data->regions[type].size) {
+	if (addr + bar_size > data->regions[type].bus_start + data->regions[type].size) {
 		return false;
 	}
 
