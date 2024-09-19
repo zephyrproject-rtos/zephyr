@@ -13,11 +13,43 @@ config PLIC
 
 if PLIC
 
+config PLIC_IRQ_AFFINITY
+	bool "Configure IRQ affinity"
+	depends on SMP
+	depends on MP_MAX_NUM_CPUS > 1
+	help
+	  Enable configuration of IRQ affinity.
+
+config PLIC_IRQ_AFFINITY_MASK
+	hex "Default IRQ affinity mask"
+	depends on PLIC_IRQ_AFFINITY
+	default 0x1
+	help
+	  Default mask for the driver when IRQ affinity is enabled.
+
 config PLIC_SHELL
 	bool "PLIC shell commands"
 	depends on SHELL
 	help
 	  Enable additional shell commands useful for debugging.
 	  Caution: This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t)).
+
+if PLIC_SHELL
+
+config PLIC_SHELL_IRQ_COUNT
+	bool "IRQ count shell commands"
+	default y
+	help
+	  Records the number of hits per interrupt line and provide shell commands to access them.
+	  Caution: This can use quite a bit of RAM (PLICs * IRQs * sizeof(PLIC_IRQ_COUNT_TYPE)).
+
+config PLIC_SHELL_IRQ_AFFINITY
+	bool "Shell commands to configure IRQ affinity"
+	default y
+	depends on PLIC_IRQ_AFFINITY
+	help
+	  Provide shell commands to configure IRQ affinity in runtime.
+
+endif # PLIC_SHELL
 
 endif # PLIC
