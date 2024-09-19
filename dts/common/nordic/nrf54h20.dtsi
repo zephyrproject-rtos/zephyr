@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
 
 /delete-node/ &sw_pwm;
 
