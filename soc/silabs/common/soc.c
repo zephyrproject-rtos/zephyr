@@ -22,9 +22,7 @@
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
 #include <sl_device_init_dcdc.h>
 #include <sl_device_init_dpll.h>
-#include <sl_device_init_emu.h>
 #include <sl_device_init_hfxo.h>
-#include <sl_device_init_nvic.h>
 
 #ifdef CONFIG_PM
 #include <sl_hfxo_manager.h>
@@ -219,7 +217,6 @@ void soc_early_init_hook(void)
 	sl_device_init_dcdc();
 	sl_device_init_hfxo();
 	sl_device_init_dpll();
-	sl_device_init_emu();
 
 #ifdef CONFIG_PM
 	sl_power_manager_init();
