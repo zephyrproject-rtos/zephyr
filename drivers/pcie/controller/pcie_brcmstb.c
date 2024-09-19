@@ -254,15 +254,16 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 static inline enum pcie_region_type
 pcie_brcmstb_determine_region_type(struct pcie_brcmstb_data *data, bool mem, bool mem64)
 {
-	if (mem &&
-	    ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-	     (data->regions[PCIE_REGION_MEM64].size && !data->regions[PCIE_REGION_MEM].size))) {
-		return PCIE_REGION_MEM64;
-	} else if (mem) {
-		return PCIE_REGION_MEM;
+	if (!mem) {
+		return PCIE_REGION_IO;
 	}
 
-	return PCIE_REGION_IO;
+	if ((data->regions[PCIE_REGION_MEM64].size > 0) &&
+	    (mem64 || data->regions[PCIE_REGION_MEM].size == 0)) {
+		return PCIE_REGION_MEM64;
+	}
+
+	return PCIE_REGION_MEM;
 }
 
 /* Region operations are almost the same as the ones of pcie_ecam */
