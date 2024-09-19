@@ -1040,24 +1040,25 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		return 0;
 	}
 
-	drv_data->fmt = *fmt;
-
-	/* Set output format */
-	ret = gc2145_set_output_format(dev, fmt->pixelformat);
-	if (ret < 0) {
-		LOG_ERR("Failed to set the output format");
-		return ret;
-	}
-
 	/* Check if camera is capable of handling given format */
 	for (int i = 0; i < ARRAY_SIZE(fmts); i++) {
 		if (fmts[i].width_min == width && fmts[i].height_min == height &&
 		    fmts[i].pixelformat == fmt->pixelformat) {
+			drv_data->fmt = *fmt;
+
+			/* Set output format */
+			ret = gc2145_set_output_format(dev, fmt->pixelformat);
+			if (ret < 0) {
+				LOG_ERR("Failed to set the output format");
+				return ret;
+			}
+
 			/* Set window size */
 			ret = gc2145_set_resolution(dev, (enum resolutions)i);
 			if (ret < 0) {
 				LOG_ERR("Failed to set the resolution");
 			}
+
 			return ret;
 		}
 	}
