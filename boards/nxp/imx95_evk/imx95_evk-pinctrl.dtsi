@@ -6,6 +6,27 @@
 #include <nxp/nxp_imx/mimx9596avzxn-pinctrl.dtsi>
 
 &pinctrl {
+	lpi2c5_default: lpi2c5_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,
+				<&iomuxc_gpio_io22_lpi2c_sda_lpi2c5_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
+	lpi2c7_default: lpi2c7_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io09_lpi2c_scl_lpi2c7_scl>,
+				<&iomuxc_gpio_io08_lpi2c_sda_lpi2c7_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
 
 	lpuart1_default: lpuart1_default {
 		group0 {
