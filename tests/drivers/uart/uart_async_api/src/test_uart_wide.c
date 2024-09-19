@@ -6,6 +6,19 @@
 
 #include "test_uart.h"
 
+#ifdef CONFIG_DCACHE
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#define NOCACHE_MEM 1
+#else	/* CONFIG_NOCACHE_MEMORY */
+#warning "If target UART driver does not maintain cache coherence, this test may fail"
+#define NOCACHE_MEM 0
+#endif	/* CONFIG_NOCACHE_MEMORY */
+
+#else	/* CONFIG_DCACHE */
+#define NOCACHE_MEM 0
+#endif	/* CONFIG_DCACHE */
+
 K_SEM_DEFINE(tx_wide_done, 0, 1);
 K_SEM_DEFINE(tx_wide_aborted, 0, 1);
 K_SEM_DEFINE(rx_wide_rdy, 0, 1);
@@ -86,7 +99,11 @@ static void *single_read_setup_wide(void)
 
 ZTEST_USER(uart_async_single_read_wide, test_single_read_wide)
 {
+#if NOCACHE_MEM
+	static __aligned(32) uint16_t rx_buf[10] __nocache = {0};
+#else
 	uint16_t rx_buf[10] = {0};
+#endif /* NOCACHE_MEM */
 
 	/* Check also if sending from read only memory (e.g. flash) works. */
 	static const uint16_t tx_buf[5] = {0x74, 0x65, 0x73, 0x74, 0x0D};
