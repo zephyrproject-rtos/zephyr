@@ -6,6 +6,8 @@
  */
 
 #if K_HEAP_MEM_POOL_SIZE > 0
+#include "kernel_shell.h"
+
 #include <zephyr/sys/sys_heap.h>
 
 extern struct sys_heap _system_heap;
