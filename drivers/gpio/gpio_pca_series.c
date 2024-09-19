@@ -49,6 +49,10 @@ enum gpio_pca_series_part_no {
 	PCA_PART_NO_PCA9555,
 	PCA_PART_NO_PCA9574,
 	PCA_PART_NO_PCA9575,
+	PCA_PART_NO_PCAL9538,
+	PCA_PART_NO_PCAL9539,
+	PCA_PART_NO_PCAL6408A,
+	PCA_PART_NO_PCAL6416A,
 	PCA_PART_NO_PCAL6524,
 	PCA_PART_NO_PCAL6534,
 };
@@ -65,6 +69,10 @@ const char *const gpio_pca_series_part_name[] = {
 	"pca9555",
 	"pca9574",
 	"pca9575",
+	"pcal9538",
+	"pcal9539",
+	"pcal6408a",
+	"pcal6416a",
 	"pcal6524",
 	"pcal6534",
 };
@@ -2178,6 +2186,182 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pca9575 = {
 };
 
 /**
+ * @brief implement pcal953x and pcal64xxa driver
+ *
+ * @note flags = PCA_HAS_LATCH
+ *             | PCA_HAS_PULL
+ *             | PCA_HAS_INT_MASK
+ *
+ *       api set    :   standard
+ *
+ *       ngpios     :   8, 16;
+ *       part_no    :   pcal9534 pcal9538 pcal6408a
+ *                      pcal9535 pcal9539 pcal6416a
+ */
+#define GPIO_PCA_SERIES_FLAG_TYPE_2 (PCA_HAS_LATCH | PCA_HAS_PULL | PCA_HAS_INT_MASK)
+
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+/**
+ * cache map for flag = PCA_HAS_LATCH
+ *                    | PCA_HAS_PULL
+ *                    | PCA_HAS_INT_MASK
+ */
+static const uint8_t gpio_pca_series_cache_map_pcal953x[] = {
+	PCA_REG_INVALID, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x00, /** output_port */
+/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x01, /** configuration */
+	0x02, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	0x04, /** input_latch if PCA_HAS_LATCH*/
+	0x05, /** pull_enable if PCA_HAS_PULL */
+	0x06, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	PCA_REG_INVALID, /** interrupt_mask if PCA_HAS_INT_MASK,
+			   * non-cacheable if not PCA_HAS_INT_EXTEND
+			   */
+	PCA_REG_INVALID, /** int_status if PCA_HAS_INT_MASK, non-cacheable */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	0x07, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	0x08, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	0x09, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+
+static const uint8_t gpio_pca_series_reg_pcal9538[] = {
+	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x01, /** output_port */
+/*	0x02,     polarity_inversion  (unused, omitted) */
+	0x03, /** configuration */
+	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	0x42, /** input_latch if PCA_HAS_LATCH*/
+	0x43, /** pull_enable if PCA_HAS_PULL */
+	0x44, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	0x45, /** interrupt_mask if PCA_HAS_INT_MASK,
+		* non-cacheable if not PCA_HAS_INT_EXTEND
+		*/
+	0x46, /** int_status if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9538 (1U)
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCAL9538 GPIO_PCA_SERIES_FLAG_TYPE_2
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCAL9538 (&gpio_pca_series_part_cfg_pcal9538)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal9538 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9538,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCAL9538,
+	.regs = gpio_pca_series_reg_pcal9538,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCAL9538),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pcal953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pcal6408a share the same register layout with pcal9538, with
+ * additional voltage level translation capability.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL6408A GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9538
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCAL6408A GPIO_PCA_FLAG_PCA_PART_NO_PCAL9538
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCAL6408A (&gpio_pca_series_part_cfg_pcal6408a)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6408a = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL6408A,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCAL6408A,
+	.regs = gpio_pca_series_reg_pcal9538,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCAL6408A),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pcal953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+static const uint8_t gpio_pca_series_reg_pcal9539[] = {
+	0x00, /** input_port if not PCA_HAS_OUT_CONFIG, non-cacheable */
+	0x02, /** output_port */
+/*	0x04,     polarity_inversion  (unused, omitted) */
+	0x06, /** configuration */
+	0x40, /** 2b_output_drive_strength if PCA_HAS_LATCH*/
+	0x44, /** input_latch if PCA_HAS_LATCH*/
+	0x46, /** pull_enable if PCA_HAS_PULL */
+	0x48, /** pull_select if PCA_HAS_PULL */
+	PCA_REG_INVALID, /** input_status if PCA_HAS_OUT_CONFIG, non-cacheable */
+	PCA_REG_INVALID, /** output_config if PCA_HAS_OUT_CONFIG */
+#ifdef CONFIG_GPIO_PCA_SERIES_INTERRUPT
+	0x4a, /** interrupt_mask if PCA_HAS_INT_MASK,
+		* non-cacheable if not PCA_HAS_INT_EXTEND
+		*/
+	0x4c, /** int_status if PCA_HAS_INT_MASK */
+	PCA_REG_INVALID, /** 2b_interrupt_edge if PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** interrupt_clear if PCA_HAS_INT_EXTEND, non-cacheable */
+# ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+	PCA_REG_INVALID, /** 1b_input_history if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_rise if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+	PCA_REG_INVALID, /** 1b_interrupt_fall if PCA_HAS_LATCH and not PCA_HAS_INT_EXTEND */
+# endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+#endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
+};
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9539 (2U)
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCAL9539 GPIO_PCA_SERIES_FLAG_TYPE_2
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCAL9539 (&gpio_pca_series_part_cfg_pcal9539)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal9539 = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9539,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCAL9539,
+	.regs = gpio_pca_series_reg_pcal9539,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCAL9539),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pcal953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
+ * pcal6416a share the same register layout with pcal9539, with
+ * additional voltage level translation capability.
+ * no difference from driver perspective.
+ */
+
+#define GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL6416A GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL9539
+#define GPIO_PCA_FLAG_PCA_PART_NO_PCAL6416A GPIO_PCA_FLAG_PCA_PART_NO_PCAL9539
+#define GPIO_PCA_PART_CFG_PCA_PART_NO_PCAL6416A (&gpio_pca_series_part_cfg_pcal6416a)
+
+const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6416a = {
+	.port_no = GPIO_PCA_PORT_NO_PCA_PART_NO_PCAL6416A,
+	.flags = GPIO_PCA_FLAG_PCA_PART_NO_PCAL6416A,
+	.regs = gpio_pca_series_reg_pcal9539,
+#ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
+# ifdef GPIO_NXP_PCA_SERIES_DEBUG
+	.cache_size = GPIO_PCA_GET_CACHE_SIZE_BY_PART_NO(PCA_PART_NO_PCAL6416A),
+# endif /* GPIO_NXP_PCA_SERIES_DEBUG */
+	.cache_map = gpio_pca_series_cache_map_pcal953x,
+#endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
+};
+
+/**
  * @brief implement pcal65xx driver
  *
  * @note flags = PCA_HAS_LATCH
@@ -2367,6 +2551,22 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_P
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pca9575
 DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCA9575)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pcal9538
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCAL9538)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pcal9539
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCAL9539)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pcal6408a
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCAL6408A)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT nxp_pcal6416a
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCA_SERIES_DEVICE_INSTANCE, PCA_PART_NO_PCAL6416A)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_pcal6524
