@@ -482,7 +482,7 @@ def load_firmware(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -604,7 +604,7 @@ def load_firmware_ace(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.ROM_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -618,17 +618,17 @@ def load_firmware_ace(fw_file):
     sd.CTL |= 1
     log.info(f"ACE firmware load complete")
 
-def fw_is_alive():
+def fw_is_alive(dsp):
     return dsp.ROM_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered(timeout_s=2):
+def wait_fw_entered(dsp, timeout_s):
     log.info("Waiting %s for firmware handoff, ROM_STATUS = 0x%x",
              "forever" if timeout_s is None else f"{timeout_s} seconds",
              dsp.ROM_STATUS)
     hertz = 100
     attempts = None if timeout_s is None else timeout_s * hertz
     while True:
-        alive = fw_is_alive()
+        alive = fw_is_alive(dsp)
         if alive:
             break
         if attempts is not None:
@@ -875,10 +875,10 @@ def ipc_command(data, ext_data):
         sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
-        if not fw_is_alive():
+        if not fw_is_alive(dsp):
             if args.log_only:
                 log.info("DSP power seems off")
-                wait_fw_entered(timeout_s=None)
+                wait_fw_entered(dsp, timeout_s=None)
             else:
                 log.warning("DSP power seems off?!")
                 time.sleep(2) # potential spam reduction
@@ -929,7 +929,7 @@ async def main():
     log.info(f"Detected cAVS 1.8+ hardware")
 
     if args.log_only:
-        wait_fw_entered(timeout_s=None)
+        wait_fw_entered(dsp, timeout_s=None)
     else:
         if not args.fw_file:
             log.error("Firmware file argument missing")
