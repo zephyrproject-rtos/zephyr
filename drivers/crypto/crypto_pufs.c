@@ -1051,13 +1051,17 @@ static int crypto_pufs_init(const struct device *dev) {
 }
 
 static void pufs_irq_handler(const struct device *dev) { // TODO callback invocation in it
-  // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
+  int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -ECANCELED : 0);
   struct pufcc_intrpt_reg *intrpt_reg_ptr =
       (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
+
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
   // Clear and disable interrupt
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
   intrpt_reg_ptr->intrpt_en = 0;
+
+  // TODO call callback function here
 
   // Disable IRQ as the next asynch callback registeration shall enable it again.
   irq_disable(((struct pufs_config*)dev->config)->irq_num);
@@ -1123,6 +1127,9 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 {
   enum pufcc_status lvStatus = PUFCC_SUCCESS;
 
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.hash_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.hash_ctx = ctx;
+
   if(!ctx->started) {    
     lvStatus = pufcc_calc_sha256_hash(ctx, pkt);
   } else {
@@ -1152,7 +1159,7 @@ static int pufs_query_hw_caps(const struct device *dev)
 {
   return (
             CAP_RAW_KEY | CAP_INPLACE_OPS | \
-            CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
+            CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS | \
             CAP_NO_IV_PREFIX | CAP_NO_ENCRYPTION | CAP_NO_SIGNING
          );
 }
@@ -1172,19 +1179,26 @@ static int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx 
 }
 
 /* Register async crypto op completion callback with the driver */
-static int pufs_cipher_async_callback_set(const struct device *dev,
-                                          cipher_completion_cb cb)
+static int pufs_cipher_async_callback_set(const struct device *dev, cipher_completion_cb cb)
 {
-  return -ENOTSUP;
+  if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    return -ENOTSUP;
+  }
+
+  ((struct pufs_data*)dev->data)->session_callback.cipher_cb = cb;
+
+  // Enable IRQ.
+  irq_enable(((struct pufs_config*)dev->config)->irq_num);
+
+  return PUFCC_SUCCESS;
 }
 
 /* Setup a hash session */
-static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ctx,
-                                   enum hash_algo algo)
+static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ctx, enum hash_algo algo)
 {
-  ctx->device = dev;
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
   
   if(algo != CRYPTO_HASH_ALGO_SHA256) {
     return -ENOTSUP;
@@ -1192,6 +1206,20 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 
   if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
     return -ENOTSUP;
+  }
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
+
+    LOG_ERR(
+            "%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
+            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_HASH_CALCULATION)?"Hash":\
+            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_DECRYPTION)?"Decryption":\
+            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_SIGN_VERIFICATION)?"Sign_Verification":"Unknown")))
+           );
+
+    return -ENOTSUP;
+  } else {
+    lvPufsData->pufs_session_type = PUFS_SESSION_HASH_CALCULATION;
   }
 
   ctx->hash_hndlr = pufs_hash_op;  
@@ -1202,14 +1230,30 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 /* Tear down an established hash session */
 static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx)
 {
-  return -ENOTSUP;
+  ctx->device = NULL;
+
+  ctx->started = false;
+
+  ctx->flags = 0x00;
+ 
+  ctx->hash_hndlr = NULL;  
+
+  return PUFCC_SUCCESS;
 }
 
 /* Register async hash op completion callback with the driver */
-static int pufs_hash_async_callback_set(const struct device *dev,
-                                       hash_completion_cb cb)
+static int pufs_hash_async_callback_set(const struct device *dev, hash_completion_cb cb)
 {
-  return -ENOTSUP;
+  if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    return -ENOTSUP;
+  }
+
+  ((struct pufs_data*)dev->data)->session_callback.hash_cb = cb;
+
+  // Enable IRQ.
+  irq_enable(((struct pufs_config*)dev->config)->irq_num);
+
+  return PUFCC_SUCCESS;
 }
 
 /* Setup a signature session */
@@ -1226,10 +1270,18 @@ static int pufs_sign_free_session(const struct device *dev, struct sign_ctx *ctx
 }
 
 /* Register async signature op completion callback with the driver */
-static int pufs_sign_async_callback_set(const struct device *dev,
-                                        sign_completion_cb cb)
+static int pufs_sign_async_callback_set(const struct device *dev, sign_completion_cb cb)
 {
-  return -ENOTSUP;
+  if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    return -ENOTSUP;
+  }
+    
+  ((struct pufs_data*)dev->data)->session_callback.sign_cb = cb;
+
+  // Enable IRQ.
+  irq_enable(((struct pufs_config*)dev->config)->irq_num);
+
+  return PUFCC_SUCCESS;
 }
 
 static struct crypto_driver_api s_crypto_funcs = {

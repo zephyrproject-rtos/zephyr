@@ -529,10 +529,26 @@ struct crypto_callbacks {
     sign_completion_cb sign_cb;
 };
 
+/* Cipher, Hash and Sign session contexts */
+struct pufs_crypto_ctx {
+  struct hash_ctx *hash_ctx;
+  struct cipher_ctx *cipher_ctx;
+  struct sign_ctx *sign_ctx;
+};
+
+/* Cipher, Hash and Sign pkts */
+struct pufs_crypto_pkt {
+  struct hash_pkt *hash_pkt;
+  struct cipher_pkt *cipher_pkt;
+  struct sign_pkt *sign_pkt;
+};
+
 /* Device constant configuration parameters */
 struct pufs_data {
 	enum pufs_session_type pufs_session_type;
   struct crypto_callbacks session_callback;
+  struct pufs_crypto_ctx pufs_ctx;
+  struct pufs_crypto_pkt pufs_pkt;
 };
 
 /* Device constant configuration parameters */
