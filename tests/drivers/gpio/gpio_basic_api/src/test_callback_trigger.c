@@ -11,7 +11,7 @@ static struct drv_data data;
 static int cb_cnt;
 
 static void callback(const struct device *dev_in, struct gpio_callback *gpio_cb,
-		    uint32_t pins)
+		     uint32_t pins)
 {
 	const struct device *const dev_out = DEVICE_DT_GET(DEV_OUT);
 	const struct drv_data *dd = CONTAINER_OF(gpio_cb,
