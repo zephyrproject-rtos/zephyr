@@ -549,7 +549,9 @@ static void adc_stm32_calibration_start(const struct device *dev)
 		if ((dev_id != 0x482UL) && (rev_id != 0x2001UL)) {
 			adc_stm32_enable(adc);
 			MODIFY_REG(adc->CR, ADC_CR_CALINDEX, 0x9UL << ADC_CR_CALINDEX_Pos);
+			__DMB();
 			MODIFY_REG(adc->CALFACT2, 0xFFFFFF00UL, 0x03021100UL);
+			__DMB();
 			SET_BIT(adc->CALFACT, ADC_CALFACT_LATCH_COEF);
 			adc_stm32_disable(adc);
 		}
