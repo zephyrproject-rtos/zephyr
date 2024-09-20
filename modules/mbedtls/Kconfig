@@ -61,7 +61,7 @@ config CUSTOM_MBEDTLS_CFG_FILE
 
 config MBEDTLS_CFG_FILE
 	string "Mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
-	default "config-tls-generic.h"
+	default "config-mbedtls.h"
 	help
 	  Use a specific mbedTLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
@@ -88,7 +88,7 @@ module-str = Log level mbedTLS library debug hook
 source "subsys/logging/Kconfig.template.log_config"
 
 menu "Mbed TLS configuration"
-	depends on MBEDTLS_CFG_FILE = "config-tls-generic.h"
+	depends on MBEDTLS_CFG_FILE = "config-mbedtls.h"
 
 rsource "Kconfig.crypto"
 rsource "Kconfig.tls-x509"
