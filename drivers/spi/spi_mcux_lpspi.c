@@ -55,9 +55,6 @@ struct spi_dma_stream {
 
 struct spi_mcux_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
-#ifdef CONFIG_NXP_LP_FLEXCOMM
-	const struct device *parent_dev;
-#endif
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(const struct device *dev);
@@ -661,16 +658,7 @@ static int spi_mcux_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
-#if CONFIG_NXP_LP_FLEXCOMM
-	/* When using LP Flexcomm driver, register the interrupt handler
-	 * so we receive notification from the LP Flexcomm interrupt handler.
-	 */
-	nxp_lp_flexcomm_setirqhandler(config->parent_dev, dev, LP_FLEXCOMM_PERIPH_LPSPI,
-				      spi_mcux_isr);
-#else
-	/* Interrupt is managed by this driver */
 	config->irq_config_func(dev);
-#endif
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
@@ -849,31 +837,29 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #define SPI_DMA_CHANNELS(n)
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-#define SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)                                                       \
-	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_mcux_isr,               \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	} while (false)
-
-#define SPI_MCUX_LPSPI_MODULE_IRQ(n)                                                               \
-	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), (SPI_MCUX_LPSPI_MODULE_IRQ_CONNECT(n)))
-
-#ifdef CONFIG_NXP_LP_FLEXCOMM
-#define PARENT_DEV(n) .parent_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),
+#if defined(CONFIG_NXP_LP_FLEXCOMM)
+#define SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                                 \
+	nxp_lp_flexcomm_setirqhandler(DEVICE_DT_GET(DT_INST_PARENT(n)), DEVICE_DT_INST_GET(n),     \
+				      LP_FLEXCOMM_PERIPH_LPSPI, spi_mcux_isr);
 #else
-#define PARENT_DEV(n)
-#endif /* CONFIG_NXP_LP_FLEXCOMM */
+#define SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                                 \
+	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_mcux_isr,                       \
+		    DEVICE_DT_INST_GET(n), 0);                                                     \
+	irq_enable(DT_INST_IRQN(n));
+#endif
 
 #define SPI_MCUX_LPSPI_INIT(n)                                                                     \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	COND_CODE_1(CONFIG_SPI_RTIO, (SPI_MCUX_RTIO_DEFINE(n)), ());                               \
                                                                                                    \
-	static void spi_mcux_config_func_##n(const struct device *dev);                            \
+	static void spi_mcux_config_func_##n(const struct device *dev)                             \
+	{                                                                                          \
+		SPI_MCUX_LPSPI_IRQ_FUNC(n)                                                         \
+	}                                                                                          \
                                                                                                    \
 	static const struct spi_mcux_config spi_mcux_config_##n = {                                \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
-		PARENT_DEV(n).clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.irq_config_func = spi_mcux_config_func_##n,                                       \
 		.pcs_sck_delay = UTIL_AND(DT_INST_NODE_HAS_PROP(n, pcs_sck_delay),                 \
@@ -891,15 +877,9 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),                                     \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx) SPI_DMA_CHANNELS(n)           \
 			IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_mcux_rtio_##n,))             \
-                                                                                                   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL, &spi_mcux_data_##n, &spi_mcux_config_##n,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);        \
-                                                                                                   \
-	static void spi_mcux_config_func_##n(const struct device *dev)                             \
-	{                                                                                          \
-		SPI_MCUX_LPSPI_MODULE_IRQ(n);                                                      \
-	}
+			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_LPSPI_INIT)
