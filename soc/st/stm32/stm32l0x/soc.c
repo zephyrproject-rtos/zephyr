@@ -40,4 +40,8 @@ void soc_early_init_hook(void)
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/#34324 )
 	 */
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_DMA1);
+#ifdef CONFIG_PM
+	/* Enable Power clock */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+#endif
 }
