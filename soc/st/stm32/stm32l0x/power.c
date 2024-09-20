@@ -72,11 +72,3 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	 */
 	irq_unlock(0);
 }
-
-/* Initialize STM32 Power */
-void soc_early_init_hook(void)
-{
-
-	/* Enable Power clock */
-	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-}

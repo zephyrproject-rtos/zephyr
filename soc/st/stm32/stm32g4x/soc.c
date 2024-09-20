@@ -20,6 +20,8 @@
 #include <stm32_ll_pwr.h>
 #endif /* PWR_CR3_UCPD_DBDIS */
 
+extern void stm32_power_init(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
