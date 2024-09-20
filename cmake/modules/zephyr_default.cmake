@@ -114,6 +114,9 @@ list(APPEND zephyr_cmake_modules arch_v2)
 list(APPEND zephyr_cmake_modules soc_v1)
 list(APPEND zephyr_cmake_modules soc_v2)
 
+# Include LLEXT specific build helpers
+list(APPEND zephyr_cmake_modules llext)
+
 foreach(component ${SUB_COMPONENTS})
   if(NOT ${component} IN_LIST zephyr_cmake_modules)
     message(FATAL_ERROR
