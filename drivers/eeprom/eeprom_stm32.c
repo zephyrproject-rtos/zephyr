@@ -118,5 +118,5 @@ static const struct eeprom_stm32_config eeprom_config = {
 	.size = DT_INST_REG_SIZE(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
-		      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_stm32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &eeprom_config, POST_KERNEL,
+		      &eeprom_stm32_api);

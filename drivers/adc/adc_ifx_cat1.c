@@ -287,10 +287,9 @@ static const struct adc_driver_api adc_cat1_driver_api = {
 		.irq_priority = DT_INST_IRQ(n, priority),		       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_adc_init,			       \
-			      NULL, &ifx_cat1_adc_data##n,		       \
-			      &adc_cat1_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	       \
-			      &adc_cat1_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ifx_cat1_adc_init,			       \
+			      NULL, &ifx_cat1_adc_data##n,			       \
+			      &adc_cat1_cfg_##n,				       \
+			      POST_KERNEL, &adc_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_ADC_INIT)

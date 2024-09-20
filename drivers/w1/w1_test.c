@@ -67,8 +67,8 @@ static const struct w1_vnd_config w1_vnd_cfg_##inst = {			\
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		\
 };									\
 static struct w1_vnd_data w1_vnd_data_##inst = {};			\
-DEVICE_DT_INST_DEFINE(n, NULL, NULL, &w1_vnd_data_##inst,		\
+DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, &w1_vnd_data_##inst,	\
 		      &w1_vnd_cfg_##inst, POST_KERNEL,			\
-		      CONFIG_W1_INIT_PRIORITY, &w1_vnd_api);
+		      &w1_vnd_api);
 
 DT_INST_FOREACH_STATUS_OKAY(W1_VND_INIT)

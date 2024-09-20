@@ -165,13 +165,12 @@ static const struct mdio_driver_api mdio_nxp_s32_driver_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
 	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			&mdio_nxp_s32_init,						\
 			NULL,								\
 			&mdio_nxp_s32_data_##n,						\
 			&mdio_nxp_s32_config_##n,					\
 			POST_KERNEL,							\
-			CONFIG_MDIO_INIT_PRIORITY,					\
 			&mdio_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_NXP_S32_DEVICE)

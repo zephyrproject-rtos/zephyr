@@ -577,10 +577,9 @@ do {									\
 		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		\
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, adc_sam0_init, NULL,		\
 			    &adc_sam_data_##n,				\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
-			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_sam0_api);				\
 	static void adc_sam0_config_##n(const struct device *dev)	\
 	{								\

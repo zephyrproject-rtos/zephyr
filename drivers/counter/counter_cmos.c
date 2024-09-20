@@ -203,5 +203,5 @@ static const struct counter_driver_api api = {
 	.get_value = get_value
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &info, POST_KERNEL,
-		      CONFIG_COUNTER_INIT_PRIORITY, &api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &info, POST_KERNEL,
+		      &api);

@@ -552,13 +552,12 @@ static const struct uart_driver_api apbuart_driver_api = {
 		.usefifo        = 0,					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(index,					\
+	DEVICE_INSTANCE_FROM_DT_INST(index,				\
 			    &apbuart_init,				\
 			    NULL,					\
 			    &apbuart##index##_data,			\
 			    &apbuart##index##_config,			\
 			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &apbuart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APBUART_INIT)

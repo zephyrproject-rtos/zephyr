@@ -581,11 +581,10 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),	\
 	};														\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 		&mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
 		&mcux_lpadc_config_##n, POST_KERNEL,				\
-		CONFIG_ADC_INIT_PRIORITY,					\
-		&mcux_lpadc_driver_api);							\
+		&mcux_lpadc_driver_api);					\
 										\
 	static void mcux_lpadc_config_func_##n(const struct device *dev)	\
 	{									\

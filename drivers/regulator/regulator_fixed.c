@@ -114,9 +114,8 @@ static int regulator_fixed_init(const struct device *dev)
 		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
 	};                                                                        \
                                                                                   \
-	DEVICE_DT_INST_DEFINE(inst, regulator_fixed_init, NULL, &data##inst,      \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_fixed_init, NULL, &data##inst,\
 			      &config##inst, POST_KERNEL,                         \
-			      CONFIG_REGULATOR_FIXED_INIT_PRIORITY,               \
 			      &regulator_fixed_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_FIXED_DEFINE)

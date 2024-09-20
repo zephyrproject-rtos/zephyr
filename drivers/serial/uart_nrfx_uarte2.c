@@ -1059,13 +1059,12 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		return uarte_nrfx_init(dev);							\
 	}											\
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action);					\
-	DEVICE_DT_DEFINE(UARTE(idx),								\
+	DEVICE_INSTANCE(UARTE(idx),								\
 		      uarte_init_##idx,								\
 		      PM_DEVICE_DT_GET(UARTE(idx)),						\
 		      &uarte_data_##idx,							\
 		      &uarte_config_##idx,							\
 		      PRE_KERNEL_1,								\
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
 		      &uart_nrfx_uarte_driver_api)
 
 /* Macro creates device instance if it is enabled in devicetree. */

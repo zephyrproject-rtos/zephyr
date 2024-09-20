@@ -96,14 +96,12 @@ static struct regulator_parent_driver_api parent_api = {
 		.is_enabled = DT_PROP(node_id, fake_is_enabled_in_hardware),   \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_DEFINE(node_id, regulator_fake_init, NULL,                   \
+	DEVICE_INSTANCE(node_id, regulator_fake_init, NULL,                    \
 			 &FAKE_DATA_NAME(node_id), &FAKE_CONF_NAME(node_id),   \
-			 POST_KERNEL, CONFIG_REGULATOR_FAKE_INIT_PRIORITY,     \
-			 &api);
+			 POST_KERNEL, &api);
 
 #define REGULATOR_FAKE_DEFINE_ALL(inst)                                        \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL,       \
-			      CONFIG_REGULATOR_FAKE_COMMON_INIT_PRIORITY,      \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, NULL, POST_KERNEL,\
 			      &parent_api);                                    \
                                                                                \
 	DT_INST_FOREACH_CHILD(inst, REGULATOR_FAKE_DEFINE)

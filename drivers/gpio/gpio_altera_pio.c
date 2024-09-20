@@ -311,14 +311,13 @@ static const struct gpio_driver_api gpio_altera_driver_api = {
 		.outclear	= DT_INST_PROP(n, outclear),	\
 	};								\
 							\
-	DEVICE_DT_INST_DEFINE(n,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n,			\
 			      gpio_init,		\
 			      NULL,			\
 			      &gpio_altera_data_##n,	\
 			      &gpio_config_##n,		\
 			      POST_KERNEL,		\
-			      CONFIG_GPIO_INIT_PRIORITY,	\
-			      &gpio_altera_driver_api);		        \
+			      &gpio_altera_driver_api);	\
 									\
 	static void gpio_altera_cfg_func_##n(void)			\
 	{								\

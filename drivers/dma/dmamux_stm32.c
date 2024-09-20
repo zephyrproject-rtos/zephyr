@@ -388,12 +388,11 @@ const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
 									\
 static struct dmamux_stm32_data dmamux_stm32_data_##index;		\
 									\
-DEVICE_DT_INST_DEFINE(index,						\
+DEVICE_INSTANCE_FROM_DT_INST(index,					\
 		    &dmamux_stm32_init,					\
 		    NULL,						\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
-		    PRE_KERNEL_1, CONFIG_DMAMUX_STM32_INIT_PRIORITY,	\
-		    &dma_funcs);
+		    PRE_KERNEL_1, &dma_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DMAMUX_INIT)
 

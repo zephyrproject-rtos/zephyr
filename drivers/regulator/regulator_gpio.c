@@ -222,8 +222,7 @@ static int regulator_gpio_init(const struct device *dev)
 		.states = ((const int[])DT_INST_PROP(inst, states)),                               \
 		.states_cnt = DT_INST_PROP_LEN(inst, states) / 2,                                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, regulator_gpio_init, NULL, &data##inst, &config##inst,         \
-			      POST_KERNEL, CONFIG_REGULATOR_GPIO_INIT_PRIORITY,                    \
-			      &regulator_gpio_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_gpio_init, NULL, &data##inst, &config##inst,  \
+			      POST_KERNEL, &regulator_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_GPIO_DEFINE)

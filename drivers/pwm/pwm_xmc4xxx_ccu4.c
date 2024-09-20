@@ -106,7 +106,7 @@ static const struct pwm_xmc4xxx_ccu4_config config##n = {                       
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 	.slice_prescaler = DT_INST_PROP(n, slice_prescaler)};                              \
 											   \
-DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu4_init, NULL, NULL, &config##n, POST_KERNEL,       \
-		      CONFIG_PWM_INIT_PRIORITY, &pwm_xmc4xxx_ccu4_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(n, pwm_xmc4xxx_ccu4_init, NULL, NULL, &config##n, POST_KERNEL,\
+		      &pwm_xmc4xxx_ccu4_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_XMC4XXX_CCU4_INIT)

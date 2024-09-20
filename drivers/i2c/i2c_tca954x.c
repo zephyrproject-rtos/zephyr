@@ -172,13 +172,12 @@ BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT
 		.root = DEVICE_DT_GET(DT_PARENT(node_id)),		    \
 		.has_enable = has_enable_bit,                                                      \
 	};								    \
-	DEVICE_DT_DEFINE(node_id,					    \
+	DEVICE_INSTANCE(node_id,					    \
 			 tca954x_channel_init,				    \
 			 NULL,						    \
 			 NULL,						    \
 			 &tca##n##a_down_config_##node_id,		    \
-			 POST_KERNEL, CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO, \
-			 &tca954x_api_funcs);
+			 POST_KERNEL, &tca954x_api_funcs);
 
 #define TCA954x_ROOT_DEFINE(n, inst, ch, has_enable_bit)				          \
 	static const struct tca954x_root_config tca##n##a_cfg_##inst = {          \
@@ -190,10 +189,10 @@ BUILD_ASSERT(CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO > CONFIG_I2C_TCA954X_ROOT_INIT
 	static struct tca954x_root_data tca##n##a_data_##inst = {		  \
 		.lock = Z_MUTEX_INITIALIZER(tca##n##a_data_##inst.lock),	  \
 	};									  \
-	I2C_DEVICE_DT_DEFINE(DT_INST(inst, ti_tca##n##a),			  \
+	I2C_DEVICE_INSTANCE(DT_INST(inst, ti_tca##n##a),			  \
 			      tca954x_root_init, NULL,				  \
 			      &tca##n##a_data_##inst, &tca##n##a_cfg_##inst,	  \
-			      POST_KERNEL, CONFIG_I2C_TCA954X_ROOT_INIT_PRIO,	  \
+			      POST_KERNEL,					  \
 			      NULL);						  \
 	DT_FOREACH_CHILD_VARGS(DT_INST(inst, ti_tca##n##a), TCA954x_CHILD_DEFINE, n,               \
 			      has_enable_bit);

@@ -325,8 +325,7 @@ static const struct sdhc_driver_api ifx_cat1_sdio_api = {
                                                                                                    \
 	static struct ifx_cat1_sdio_data ifx_cat1_sdio_##n##_data;                                 \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_sdio_init, NULL, &ifx_cat1_sdio_##n##_data,             \
-			      &ifx_cat1_sdio_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, \
-			      &ifx_cat1_sdio_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &ifx_cat1_sdio_init, NULL, &ifx_cat1_sdio_##n##_data,      \
+			      &ifx_cat1_sdio_##n##_config, POST_KERNEL, &ifx_cat1_sdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SDHC_INIT)

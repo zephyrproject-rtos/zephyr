@@ -391,7 +391,7 @@ static const struct rtc_driver_api rtc_nxp_irtc_driver_api = {
                                                                                                    \
 	static struct nxp_irtc_data nxp_irtc_data_##n;                                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, nxp_irtc_init, NULL, &nxp_irtc_data_##n, &nxp_irtc_config_##n,    \
-			      PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY, &rtc_nxp_irtc_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, nxp_irtc_init, NULL, &nxp_irtc_data_##n, &nxp_irtc_config_##n,\
+			      PRE_KERNEL_1, &rtc_nxp_irtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_NXP_IRTC_DEVICE_INIT)

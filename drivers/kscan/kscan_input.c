@@ -109,10 +109,9 @@ static const struct kscan_driver_api kscan_input_driver_api = {
 		.input_dev = DEVICE_DT_GET(DT_INST_PARENT(index)),             \
 	};                                                                     \
 	static struct kscan_input_data kscan_input_data_##index;               \
-	DEVICE_DT_INST_DEFINE(index, kscan_input_init, NULL,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(index, kscan_input_init, NULL,            \
 			      &kscan_input_data_##index,                       \
 			      &kscan_input_config_##index,                     \
-			      POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,         \
-			      &kscan_input_driver_api);
+			      POST_KERNEL, &kscan_input_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(KSCAN_INPUT_INIT)

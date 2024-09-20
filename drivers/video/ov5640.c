@@ -1038,7 +1038,7 @@ static int ov5640_init(const struct device *dev)
 		.powerdown_gpio = GPIO_DT_SPEC_INST_GET_OR(n, powerdown_gpios, {0}),               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,     \
+			      POST_KERNEL, &ov5640_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5640_INIT)

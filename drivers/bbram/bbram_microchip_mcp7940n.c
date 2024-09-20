@@ -226,13 +226,12 @@ static const struct bbram_driver_api microchip_mcp7940n_bbram_api = {
 		microchip_mcp7940n_bbram_config_##inst = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			      &microchip_mcp7940n_bbram_init,					\
 			      NULL,								\
 			      &microchip_mcp7940n_bbram_data_##inst,				\
 			      &microchip_mcp7940n_bbram_config_##inst,				\
 			      POST_KERNEL,							\
-			      CONFIG_BBRAM_INIT_PRIORITY,					\
 			      &microchip_mcp7940n_bbram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_MCP7940N_BBRAM_DEVICE)

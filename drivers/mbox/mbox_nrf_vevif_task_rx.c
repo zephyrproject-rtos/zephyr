@@ -140,5 +140,5 @@ static int vevif_task_rx_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, vevif_task_rx_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_MBOX_INIT_PRIORITY, &vevif_task_rx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, vevif_task_rx_init, NULL, NULL, NULL, POST_KERNEL,
+		      &vevif_task_rx_driver_api);

@@ -372,6 +372,6 @@ static struct eeprom_xec_data eeprom_data;
 
 PM_DEVICE_DT_INST_DEFINE(0, eeprom_xec_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &eeprom_xec_init, PM_DEVICE_DT_INST_GET(0), &eeprom_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, &eeprom_xec_init, PM_DEVICE_DT_INST_GET(0), &eeprom_data,
 		    &eeprom_config, POST_KERNEL,
-		    CONFIG_EEPROM_INIT_PRIORITY, &eeprom_xec_api);
+		    &eeprom_xec_api);

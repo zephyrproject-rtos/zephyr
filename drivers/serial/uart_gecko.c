@@ -670,11 +670,10 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 									       \
 	static struct uart_gecko_data uart_gecko_data_##idx;		       \
 									       \
-	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init,			       \
-			    NULL, &uart_gecko_data_##idx,		       \
-			    &uart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
-			    CONFIG_SERIAL_INIT_PRIORITY,		       \
-			    &uart_gecko_driver_api);			       \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, uart_gecko_init,			       \
+			    NULL, &uart_gecko_data_##idx,			       \
+			    &uart_gecko_cfg_##idx, PRE_KERNEL_1,		       \
+			    &uart_gecko_driver_api);				       \
 									       \
 									       \
 	GECKO_UART_IRQ_HANDLER(idx)
@@ -724,11 +723,10 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 									       \
 	static struct uart_gecko_data usart_gecko_data_##idx;		       \
 									       \
-	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),\
-			    &usart_gecko_data_##idx,			       \
-			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
-			    CONFIG_SERIAL_INIT_PRIORITY,		       \
-			    &uart_gecko_driver_api);			       \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),\
+			    &usart_gecko_data_##idx,			\
+			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	\
+			    &uart_gecko_driver_api);			\
 									       \
 	GECKO_USART_IRQ_HANDLER(idx)
 #else
@@ -753,11 +751,10 @@ DT_INST_FOREACH_STATUS_OKAY(GECKO_UART_INIT)
 									       \
 	static struct uart_gecko_data usart_gecko_data_##idx;		       \
 									       \
-	DEVICE_DT_INST_DEFINE(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),\
-			    &usart_gecko_data_##idx,			       \
-			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	       \
-			    CONFIG_SERIAL_INIT_PRIORITY,		       \
-			    &uart_gecko_driver_api);			       \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, uart_gecko_init, PM_DEVICE_DT_INST_GET(idx),\
+			    &usart_gecko_data_##idx,			\
+			    &usart_gecko_cfg_##idx, PRE_KERNEL_1,	\
+			    &uart_gecko_driver_api);			\
 									       \
 	GECKO_USART_IRQ_HANDLER(idx)
 #endif

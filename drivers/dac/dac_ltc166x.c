@@ -119,11 +119,10 @@ static const struct dac_driver_api ltc166x_driver_api = {
 		.resolution = res, \
 		.nchannels = nchan, \
 	}; \
-	DEVICE_DT_DEFINE(INST_DT_LTC166X(n, t), \
+	DEVICE_INSTANCE(INST_DT_LTC166X(n, t), \
 			    &ltc166x_init, NULL, \
 			    NULL, \
 			    &ltc##t##_config_##n, POST_KERNEL, \
-			    CONFIG_DAC_LTC166X_INIT_PRIORITY, \
 			    &ltc166x_driver_api)
 
 /*

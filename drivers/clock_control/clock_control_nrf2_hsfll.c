@@ -232,10 +232,10 @@ static struct nrf_clock_control_driver_api hsfll_drv_api = {
 static struct hsfll_dev_data hsfll_data;
 #endif
 
-DEVICE_DT_INST_DEFINE(0, hsfll_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, hsfll_init, NULL,
 		      COND_CODE_1(CONFIG_NRFS_DVFS_LOCAL_DOMAIN,
 				  (&hsfll_data),
 				  (NULL)),
 		      NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      PRE_KERNEL_1,
 		      &hsfll_drv_api);

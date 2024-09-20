@@ -166,8 +166,7 @@ static const struct pwm_driver_api pwm_mcux_qtmr_driver_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mcux_qtmr_pwm_init, NULL, &pwm_mcux_qtmr_data_##n,                \
-			      &pwm_mcux_qtmr_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
-			      &pwm_mcux_qtmr_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, mcux_qtmr_pwm_init, NULL, &pwm_mcux_qtmr_data_##n,         \
+			      &pwm_mcux_qtmr_config_##n, POST_KERNEL, &pwm_mcux_qtmr_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_QTMR_DEVICE_INIT)

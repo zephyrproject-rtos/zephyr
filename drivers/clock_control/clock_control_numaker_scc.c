@@ -156,7 +156,7 @@ static int numaker_scc_init(const struct device *dev)
 		.core_clock = DT_INST_PROP_OR(inst, core_clock, 0),                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,     \
-			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &numaker_scc_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, numaker_scc_init, NULL, NULL, &numaker_scc_config_##inst,\
+			      PRE_KERNEL_1, &numaker_scc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_SCC_INIT);

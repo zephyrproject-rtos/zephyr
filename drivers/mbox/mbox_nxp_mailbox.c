@@ -202,9 +202,8 @@ static const struct mbox_driver_api nxp_mailbox_driver_api = {
 		irq_enable(DT_INST_IRQN(idx));                                                     \
 		return 0;                                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(idx, nxp_mailbox_##idx##_init, NULL, &nxp_mailbox_##idx##_data,      \
-			      &nxp_mailbox_##idx##_config, POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY, \
-			      &nxp_mailbox_driver_api)
+	DEVICE_INSTANCE_FROM_DT_INST(idx, nxp_mailbox_##idx##_init, NULL, &nxp_mailbox_##idx##_data,\
+			      &nxp_mailbox_##idx##_config, POST_KERNEL, &nxp_mailbox_driver_api)
 
 #define MAILBOX_INST(idx) MAILBOX_INSTANCE_DEFINE(idx);
 

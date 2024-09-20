@@ -1609,10 +1609,9 @@ static int it82xx2_usb_dc_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 	&it82xx2_usb_dc_init,
 	NULL,
 	&udata0,
 	&ucfg0,
-	POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	NULL);
+	POST_KERNEL, NULL);

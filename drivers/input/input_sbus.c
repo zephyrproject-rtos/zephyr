@@ -369,7 +369,7 @@ static int input_sbus_init(const struct device *dev)
 		.cb = sbus_uart_isr,                                                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, input_sbus_init, NULL, &sbus_data_##n, &sbus_cfg_##n,             \
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(n, input_sbus_init, NULL, &sbus_data_##n, &sbus_cfg_##n,      \
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_SBUS_INIT)

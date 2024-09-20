@@ -167,10 +167,9 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 									\
 	static struct imx_pwm_data imx_pwm_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &imx_pwm_init, NULL,		\
 			    &imx_pwm_data_##n,				\
 			    &imx_pwm_config_##n, POST_KERNEL,		\
-			    CONFIG_PWM_INIT_PRIORITY,			\
 			    &imx_pwm_driver_api);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx27_pwm)

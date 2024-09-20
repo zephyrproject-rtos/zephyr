@@ -3331,8 +3331,8 @@ static struct i3c_driver_api api = {
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,          \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY, &api);             \
+	DEVICE_INSTANCE_FROM_DT_INST(n, cdns_i3c_bus_init, NULL, &i3c_data_##n, &i3c_config_##n,   \
+			      POST_KERNEL, &api);                                                  \
 	static void cdns_i3c_config_func_##n(const struct device *dev)                             \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), cdns_i3c_irq_handler,       \

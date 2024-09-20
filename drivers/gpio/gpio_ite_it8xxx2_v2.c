@@ -548,13 +548,12 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.num_pins = DT_INST_PROP(inst, ngpios),                    \
 	.kbs_ctrl = DT_INST_PROP_OR(inst, keyboard_controller, 0), \
 	};                                                         \
-DEVICE_DT_INST_DEFINE(inst,                                        \
+DEVICE_INSTANCE_FROM_DT_INST(inst,                                 \
 		      gpio_ite_init,                               \
 		      NULL,                                        \
 		      &gpio_ite_data_##inst,                       \
 		      &gpio_ite_cfg_##inst,                        \
 		      PRE_KERNEL_1,                                \
-		      CONFIG_GPIO_INIT_PRIORITY,                   \
 		      &gpio_ite_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)

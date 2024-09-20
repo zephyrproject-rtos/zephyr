@@ -385,13 +385,12 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 									\
 	static struct mcux_igpio_data mcux_igpio_##n##_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    mcux_igpio_##n##_init,			\
 			    NULL,					\
 			    &mcux_igpio_##n##_data,			\
 			    &mcux_igpio_##n##_config,			\
 			    POST_KERNEL,				\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &mcux_igpio_driver_api);			\
 									\
 	static int mcux_igpio_##n##_init(const struct device *dev)	\

@@ -681,9 +681,8 @@ void pl011_isr(const struct device *dev)
 				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,       \
-			      &pl011_cfg_port_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,      \
-			      &pl011_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, pl011_init, PM_INST_GET(n), &pl011_data_port_##n,\
+			      &pl011_cfg_port_##n, PRE_KERNEL_1, &pl011_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 
@@ -718,12 +717,11 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 		.sbsa = true,					\
 	};							\
 								\
-	DEVICE_DT_INST_DEFINE(n, pl011_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, pl011_init,		\
 			NULL,					\
 			&pl011_data_sbsa_##n,			\
 			&pl011_cfg_sbsa_##n,			\
 			PRE_KERNEL_1,				\
-			CONFIG_SERIAL_INIT_PRIORITY,		\
 			&pl011_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PL011_SBSA_INIT)

@@ -337,8 +337,8 @@ static int max7219_init(const struct device *dev)
 		.intensity = DT_INST_PROP(n, intensity),                       \
 		.scan_limit = DT_INST_PROP(n, scan_limit),                     \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(n, max7219_init, NULL, &max7219_data_##n,        \
+	DEVICE_INSTANCE_FROM_DT_INST(n, max7219_init, NULL, &max7219_data_##n, \
 			      &max7219_config_##n, POST_KERNEL,                \
-			      CONFIG_DISPLAY_INIT_PRIORITY, &max7219_api);
+			      &max7219_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_MAX7219_INIT)

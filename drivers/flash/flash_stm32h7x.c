@@ -714,5 +714,5 @@ static int stm32h7_flash_init(const struct device *dev)
 	return flash_stm32h7_write_protection(dev, false);
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_stm32h7_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, stm32h7_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
+		      &flash_stm32h7_api);

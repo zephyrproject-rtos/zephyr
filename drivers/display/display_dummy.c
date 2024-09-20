@@ -124,11 +124,10 @@ static const struct display_driver_api dummy_display_api = {
 									\
 	static struct dummy_display_data dd_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, &dummy_display_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &dummy_display_init, NULL,	\
 			      &dd_data_##n,				\
 			      &dd_config_##n,				\
 			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
 			      &dummy_display_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(DISPLAY_DUMMY_DEFINE)

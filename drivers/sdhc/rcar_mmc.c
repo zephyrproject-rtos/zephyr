@@ -2208,7 +2208,7 @@ exit_unmap:
 		.uhs_support = 1,                                                                  \
 		.bus_width = DT_INST_PROP(n, bus_width),                                           \
 		RCAR_MMC_IRQ_CFG_FUNC_INIT(n)};                                                    \
-	DEVICE_DT_INST_DEFINE(n, rcar_mmc_init, NULL, &mmc_rcar_data_##n, &mmc_rcar_cfg_##n,       \
-			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &rcar_sdhc_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, rcar_mmc_init, NULL, &mmc_rcar_data_##n, &mmc_rcar_cfg_##n,\
+			      POST_KERNEL, &rcar_sdhc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RCAR_MMC_INIT)

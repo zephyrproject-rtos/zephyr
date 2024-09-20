@@ -117,6 +117,6 @@ static int flash_gd32_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, flash_gd32_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_gd32_init, NULL,
 		      &flash_data, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_gd32_driver_api);
+		      &flash_gd32_driver_api);

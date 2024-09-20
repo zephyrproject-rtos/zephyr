@@ -75,10 +75,9 @@ const static struct stm32_mco_config stm32_mco_config_##inst = {        \
 		(.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))  \
 };                                                                      \
 									\
-DEVICE_DT_INST_DEFINE(inst, stm32_mco_init, NULL,                       \
+DEVICE_INSTANCE_FROM_DT_INST(inst, stm32_mco_init, NULL,                \
 	NULL,                                                           \
 	&stm32_mco_config_##inst,                                       \
-	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,               \
-	NULL);
+	PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_MCO_INIT);

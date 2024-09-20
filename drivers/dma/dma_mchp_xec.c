@@ -833,10 +833,9 @@ static int dma_xec_init(const struct device *dev)
 		.irq_connect = dma_xec_irq_connect##i,					\
 	};										\
 	PM_DEVICE_DT_DEFINE(i, dmac_xec_pm_action);					\
-	DEVICE_DT_INST_DEFINE(i, &dma_xec_init,						\
+	DEVICE_INSTANCE_FROM_DT_INST(i, &dma_xec_init,					\
 		PM_DEVICE_DT_GET(i),							\
 		&dma_xec_data##i, &dma_xec_cfg##i,					\
-		PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,					\
-		&dma_xec_api);
+		PRE_KERNEL_1, &dma_xec_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_XEC_DEVICE)

@@ -231,6 +231,6 @@ static const struct flash_driver_api flash_b91_api = {
 };
 
 /* Driver registration */
-DEVICE_DT_INST_DEFINE(0, flash_b91_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_b91_init,
 		      NULL, &flash_data, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_b91_api);
+		      &flash_b91_api);

@@ -328,12 +328,11 @@ static const struct pwm_driver_api pwm_nxp_flexio_driver_api = {
 	};											\
 												\
 	static struct pwm_nxp_flexio_data pwm_nxp_flexio_data_##n;				\
-	DEVICE_DT_INST_DEFINE(n,								\
+	DEVICE_INSTANCE_FROM_DT_INST(n,								\
 			      &mcux_flexio_pwm_init,						\
 			      NULL,								\
 			      &pwm_nxp_flexio_data_##n,						\
 			      &pwm_nxp_flexio_config_##n,					\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,				\
-			      &pwm_nxp_flexio_driver_api);
+			      POST_KERNEL, &pwm_nxp_flexio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_NXP_FLEXIO_PWM_INIT)

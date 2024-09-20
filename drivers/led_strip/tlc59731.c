@@ -184,6 +184,6 @@ scape:
 		.length = DT_INST_PROP(i, chain_length),                                           \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(i, tlc59731_gpio_init, NULL, NULL, &tlc59731_cfg_##i, POST_KERNEL,   \
-			      CONFIG_LED_STRIP_INIT_PRIORITY, &tlc59731_gpio_api);
+	DEVICE_INSTANCE_FROM_DT_INST(i, tlc59731_gpio_init, NULL, NULL, &tlc59731_cfg_##i, POST_KERNEL,\
+			      &tlc59731_gpio_api);
 DT_INST_FOREACH_STATUS_OKAY(TLC59731_DEVICE)

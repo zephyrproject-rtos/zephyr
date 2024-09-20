@@ -426,8 +426,8 @@ static const struct auxdisplay_driver_api auxdisplay_serlcd_auxdisplay_api = {
                                                                                                    \
 	static struct auxdisplay_serlcd_data auxdisplay_serlcd_data_##inst;                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &auxdisplay_serlcd_init, NULL, &auxdisplay_serlcd_data_##inst, \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &auxdisplay_serlcd_init, NULL, &auxdisplay_serlcd_data_##inst,\
 			      &auxdisplay_serlcd_config_##inst, POST_KERNEL,                       \
-			      CONFIG_AUXDISPLAY_INIT_PRIORITY, &auxdisplay_serlcd_auxdisplay_api);
+			      &auxdisplay_serlcd_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_SERLCD_INST)

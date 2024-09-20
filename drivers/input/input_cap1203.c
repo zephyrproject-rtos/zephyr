@@ -205,8 +205,7 @@ static int cap1203_init(const struct device *dev)
 		.input_codes = cap1203_input_codes_##inst,                                         \
 	};                                                                                         \
 	static struct cap1203_data cap1203_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, cap1203_init, NULL, &cap1203_data_##index,                    \
-			      &cap1203_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(index, cap1203_init, NULL, &cap1203_data_##index,             \
+			      &cap1203_config_##index, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CAP1203_INIT)

@@ -1110,10 +1110,9 @@ static int lp5562_pm_action(const struct device *dev, enum pm_device_action acti
 	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);			\
 									\
 	struct lp5562_data lp5562_data_##id;				\
-	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),	\
-			&lp5562_data_##id,				\
-			&lp5562_config_##id, POST_KERNEL,		\
-			CONFIG_LED_INIT_PRIORITY,			\
-			&lp5562_led_api);				\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),\
+			&lp5562_data_##id,					\
+			&lp5562_config_##id, POST_KERNEL,			\
+			&lp5562_led_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(LP5562_DEFINE)

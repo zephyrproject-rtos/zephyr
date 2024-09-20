@@ -411,9 +411,8 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.channel_count = channels,                                                         \
 	};                                                                                         \
 	static struct max11102_17_data data_##name##_##index;                                      \
-	DEVICE_DT_INST_DEFINE(index, max11102_17_init, NULL, &data_##name##_##index,               \
-			      &config_##name##_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
-			      &api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, max11102_17_init, NULL, &data_##name##_##index,        \
+			      &config_##name##_##index, POST_KERNEL, &api);
 
 #define DT_DRV_COMPAT           maxim_max11102
 #define ADC_MAX11102_RESOLUTION 12

@@ -259,8 +259,8 @@ static const struct counter_driver_api counter_rtc_max32_driver_api = {
 		.irq_func = max32_rtc_irq_init_##_num,                                             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(_num, &rtc_max32_init, NULL, &rtc_max32_data_##_num,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(_num, &rtc_max32_init, NULL, &rtc_max32_data_##_num,          \
 			      &rtc_max32_config_##_num, PRE_KERNEL_1,                              \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_rtc_max32_driver_api);
+			      &counter_rtc_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_RTC_MAX32_INIT)

@@ -259,10 +259,9 @@ static const struct ptp_clock_driver_api ptp_clock_nxp_enet_api = {
 										\
 	static struct ptp_clock_nxp_enet_data ptp_clock_nxp_enet_##n##_data;	\
 										\
-	DEVICE_DT_INST_DEFINE(n, &ptp_clock_nxp_enet_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &ptp_clock_nxp_enet_init, NULL,		\
 				&ptp_clock_nxp_enet_##n##_data,			\
 				&ptp_clock_nxp_enet_##n##_config,		\
-				POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,	\
-				&ptp_clock_nxp_enet_api);
+				POST_KERNEL, &ptp_clock_nxp_enet_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_NXP_ENET_INIT)

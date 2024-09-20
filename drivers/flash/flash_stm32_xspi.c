@@ -2458,7 +2458,6 @@ static void flash_stm32_xspi_irq_config_func(const struct device *dev)
 	irq_enable(DT_IRQN(STM32_XSPI_NODE));
 }
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &flash_stm32_xspi_init, NULL,
 		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &flash_stm32_xspi_driver_api);
+		      POST_KERNEL, &flash_stm32_xspi_driver_api);

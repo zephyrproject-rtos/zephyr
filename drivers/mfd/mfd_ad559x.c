@@ -103,8 +103,7 @@ static int mfd_ad559x_init(const struct device *dev)
 		MFD_AD559X_DEFINE_BUS(inst),                                                       \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_ad559x_init, NULL, &mfd_ad559x_data_##inst,                \
-			      &mfd_ad559x_config_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,    \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_ad559x_init, NULL, &mfd_ad559x_data_##inst,         \
+			      &mfd_ad559x_config_##inst, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_AD559X_DEFINE);

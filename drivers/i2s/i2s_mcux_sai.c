@@ -1234,9 +1234,8 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(i2s_id, &i2s_mcux_initialize, NULL, &i2s_##i2s_id##_data,            \
-			      &i2s_##i2s_id##_config, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,       \
-			      &i2s_mcux_driver_api);                                               \
+	DEVICE_INSTANCE_FROM_DT_INST(i2s_id, &i2s_mcux_initialize, NULL, &i2s_##i2s_id##_data,     \
+			      &i2s_##i2s_id##_config, POST_KERNEL, &i2s_mcux_driver_api);          \
                                                                                                    \
 	static void i2s_irq_connect_##i2s_id(const struct device *dev)                             \
 	{                                                                                          \

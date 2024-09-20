@@ -957,13 +957,12 @@ static void spi_atcspi200_irq_handler(void *arg)
 		.xip = SPI_ROM_CFG_XIP(DT_DRV_INST(n)),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 		spi_atcspi200_init,					\
 		NULL,							\
 		&spi_atcspi200_dev_data_##n,				\
 		&spi_atcspi200_dev_cfg_##n,				\
 		POST_KERNEL,						\
-		CONFIG_SPI_INIT_PRIORITY,				\
 		&spi_atcspi200_api);					\
 									\
 	static void spi_atcspi200_cfg_##n(void)				\

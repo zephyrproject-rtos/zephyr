@@ -283,8 +283,8 @@ static const struct peci_npcx_config peci_npcx_config0 = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &peci_npcx_init, NULL, &peci_npcx_data0, &peci_npcx_config0, POST_KERNEL,
-		      CONFIG_PECI_INIT_PRIORITY, &peci_npcx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &peci_npcx_init, NULL, &peci_npcx_data0, &peci_npcx_config0, POST_KERNEL,
+		      &peci_npcx_driver_api);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one 'nuvoton_npcx_peci' compatible node can be supported");

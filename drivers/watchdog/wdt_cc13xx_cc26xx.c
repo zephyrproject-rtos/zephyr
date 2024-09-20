@@ -242,11 +242,10 @@ static const struct wdt_driver_api wdt_cc13xx_cc26xx_api = {
 		.irq_nmi = DT_INST_PROP(index, interrupt_nmi),			 \
 		.irq_cfg_func = wdt_cc13xx_cc26xx_irq_cfg_##index,		 \
 	};									 \
-	DEVICE_DT_INST_DEFINE(index,						 \
+	DEVICE_INSTANCE_FROM_DT_INST(index,					 \
 		wdt_cc13xx_cc26xx_init, NULL,					 \
 		&wdt_cc13xx_cc26xx_data_##index,				 \
 		&wdt_cc13xx_cc26xx_cfg_##index,					 \
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		 \
-		&wdt_cc13xx_cc26xx_api);
+		POST_KERNEL, &wdt_cc13xx_cc26xx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CC13XX_CC26XX_WDT_INIT)

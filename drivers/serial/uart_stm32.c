@@ -2448,12 +2448,11 @@ static struct uart_stm32_data uart_stm32_data_##index = {		\
 									\
 PM_DEVICE_DT_INST_DEFINE(index, uart_stm32_pm_action);			\
 									\
-DEVICE_DT_INST_DEFINE(index,						\
+DEVICE_INSTANCE_FROM_DT_INST(index,					\
 		    uart_stm32_init,					\
 		    PM_DEVICE_DT_INST_GET(index),			\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-		    &uart_stm32_driver_api);				\
+		    PRE_KERNEL_1, &uart_stm32_driver_api);		\
 									\
 STM32_UART_IRQ_HANDLER(index)						\
 									\

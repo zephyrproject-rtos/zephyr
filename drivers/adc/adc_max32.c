@@ -333,8 +333,7 @@ static const struct adc_driver_api adc_max32_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(max32_adc_data_##_num, ctx),                                 \
 		.resolution = DT_INST_PROP(_num, resolution),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, &adc_max32_init, NULL, &max32_adc_data_##_num,                 \
-			      &max32_adc_config_##_num, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,     \
-			      &adc_max32_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(_num, &adc_max32_init, NULL, &max32_adc_data_##_num,          \
+			      &max32_adc_config_##_num, POST_KERNEL, &adc_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_ADC_INIT)

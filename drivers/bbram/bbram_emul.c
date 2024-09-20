@@ -136,8 +136,7 @@ static const struct bbram_driver_api bbram_emul_driver_api = {
 	static struct bbram_emul_config bbram_emul_config_##inst = {                               \
 		.size = DT_INST_PROP(inst, size),                                                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bbram_emul_data_##inst,                           \
-			      &bbram_emul_config_##inst, PRE_KERNEL_1, CONFIG_BBRAM_INIT_PRIORITY, \
-			      &bbram_emul_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &bbram_emul_data_##inst,                    \
+			      &bbram_emul_config_##inst, PRE_KERNEL_1, &bbram_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_INIT);

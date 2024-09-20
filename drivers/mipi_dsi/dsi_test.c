@@ -50,7 +50,7 @@ static struct mipi_dsi_driver_api vnd_mipi_dsi_api = {
 };
 
 #define VND_MIPI_DSI_INIT(n)                                                                       \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,                              \
-			      CONFIG_MIPI_DSI_INIT_PRIORITY, &vnd_mipi_dsi_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, POST_KERNEL,                       \
+			      &vnd_mipi_dsi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_MIPI_DSI_INIT)

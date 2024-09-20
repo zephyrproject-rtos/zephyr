@@ -505,8 +505,8 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.PLLODF = DT_INST_PROP(inst, pll_odf),					\
 		},										\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &mipi_dsi_stm32_init, NULL,				\
 			      &stm32_dsi_data_##inst, &stm32_dsi_config_##inst,			\
-			      POST_KERNEL, CONFIG_MIPI_DSI_INIT_PRIORITY, &dsi_stm32_api);
+			      POST_KERNEL, &dsi_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_MIPI_DSI_DEVICE)

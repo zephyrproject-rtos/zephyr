@@ -427,6 +427,6 @@ static int entropy_smartbond_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, entropy_smartbond_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, entropy_smartbond_init, PM_DEVICE_DT_INST_GET(0),
+DEVICE_INSTANCE_FROM_DT_INST(0, entropy_smartbond_init, PM_DEVICE_DT_INST_GET(0),
 			&entropy_smartbond_data, NULL, PRE_KERNEL_1,
-			CONFIG_ENTROPY_INIT_PRIORITY, &entropy_smartbond_api_funcs);
+			&entropy_smartbond_api_funcs);

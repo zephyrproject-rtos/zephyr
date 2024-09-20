@@ -280,8 +280,8 @@ static const struct wdt_driver_api wdt_xilinx_api = {
 		.enable_once = DT_INST_PROP(inst, xlnx_wdt_enable_once),                           \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &wdt_xilinx_axi_init, NULL, &wdt_xilinx_axi_##inst##_dev_data, \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &wdt_xilinx_axi_init, NULL, &wdt_xilinx_axi_##inst##_dev_data,\
 			      &wdt_xilinx_axi_##inst##_cfg, PRE_KERNEL_1,                          \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_xilinx_api);
+			      &wdt_xilinx_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_XILINX_AXI_INIT)

@@ -353,13 +353,12 @@ static int display_mcux_mipi_dsi_init(const struct device *dev)
 		.phy_clock = DT_INST_PROP(id, phy_clock),					\
 	};											\
 	static struct display_mcux_mipi_dsi_data display_mcux_mipi_dsi_data_##id;		\
-	DEVICE_DT_INST_DEFINE(id,								\
+	DEVICE_INSTANCE_FROM_DT_INST(id,							\
 			    &display_mcux_mipi_dsi_init,					\
 			    NULL,								\
 			    &display_mcux_mipi_dsi_data_##id,					\
 			    &display_mcux_mipi_dsi_config_##id,					\
 			    POST_KERNEL,							\
-			    CONFIG_MIPI_DSI_INIT_PRIORITY,					\
 			    &dsi_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MIPI_DSI_DEVICE)

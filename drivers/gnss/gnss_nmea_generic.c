@@ -192,10 +192,10 @@ MODEM_CHAT_SCRIPT_EMPTY_DEFINE(gnss_nmea_generic_init_chat_script);
 											\
 	PM_DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_pm_action);                    \
                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, gnss_nmea_generic_init, PM_DEVICE_DT_INST_GET(inst),\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gnss_nmea_generic_init, PM_DEVICE_DT_INST_GET(inst),\
 			      &gnss_nmea_generic_data_##inst,				\
 			      &gnss_nmea_generic_cfg_##inst,				\
-			      POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
+			      POST_KERNEL, &gnss_api);
 
 #define DT_DRV_COMPAT gnss_nmea_generic
 DT_INST_FOREACH_STATUS_OKAY(GNSS_NMEA_GENERIC)

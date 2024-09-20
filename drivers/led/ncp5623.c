@@ -214,7 +214,7 @@ static const struct led_driver_api ncp5623_led_api = {
 		.num_leds = ARRAY_SIZE(ncp5623_leds_##id),                                         \
 		.leds_info = ncp5623_leds_##id,                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &ncp5623_led_init, NULL, NULL, &ncp5623_config_##id,             \
-			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &ncp5623_led_api);
+	DEVICE_INSTANCE_FROM_DT_INST(id, &ncp5623_led_init, NULL, NULL, &ncp5623_config_##id,      \
+			      POST_KERNEL, &ncp5623_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NCP5623_DEFINE)

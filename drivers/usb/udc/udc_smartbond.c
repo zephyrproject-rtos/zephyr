@@ -1773,8 +1773,8 @@ static const struct udc_api udc_smartbond_api = {
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, udc_smartbond_driver_preinit_##n, NULL, &udc_data_##n,            \
+	DEVICE_INSTANCE_FROM_DT_INST(n, udc_smartbond_driver_preinit_##n, NULL, &udc_data_##n,     \
 			      &udc_smartbond_cfg_##n, POST_KERNEL,                                 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_smartbond_api);
+			      &udc_smartbond_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_SMARTBOND_DEVICE_DEFINE)

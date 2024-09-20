@@ -325,9 +325,8 @@ static const struct fuel_gauge_driver_api sbs_gauge_driver_api = {
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
 		.cutoff_cfg = SBS_GAUGE_GET_BATTERY_CONFIG_NAME(index)};                           \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index,       \
-			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY,                        \
-			      &sbs_gauge_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, &sbs_gauge_init, NULL, NULL, &sbs_gauge_config_##index,\
+			      POST_KERNEL, &sbs_gauge_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_GAUGE_INIT)
 

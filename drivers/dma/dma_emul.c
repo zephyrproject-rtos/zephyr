@@ -610,8 +610,8 @@ static int dma_emul_init(const struct device *dev)
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(_inst, dma_emul_pm_device_pm_action);                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(_inst, dma_emul_init, PM_DEVICE_DT_INST_GET(_inst),                  \
+	DEVICE_INSTANCE_FROM_DT_INST(_inst, dma_emul_init, PM_DEVICE_DT_INST_GET(_inst),           \
 			      &dma_emul_data_##_inst, &dma_emul_config_##_inst, POST_KERNEL,       \
-			      CONFIG_DMA_INIT_PRIORITY, &dma_emul_driver_api);
+			      &dma_emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DMA_EMUL)

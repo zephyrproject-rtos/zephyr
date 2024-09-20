@@ -135,13 +135,12 @@ static int disk_sdmmc_init(const struct device *dev)
 		.disk_info = &sdmmc_disk_##n,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			&disk_sdmmc_init,					\
 			NULL,							\
 			&sdmmc_data_##n,					\
 			&sdmmc_config_##n,					\
 			POST_KERNEL,						\
-			CONFIG_SD_INIT_PRIORITY,				\
 			NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_SDMMC_INIT)

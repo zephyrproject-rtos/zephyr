@@ -521,7 +521,6 @@ static int video_mcux_csi_init_0(const struct device *dev)
 	return video_mcux_csi_init(dev);
 }
 
-DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
-		      &video_mcux_csi_config_0, POST_KERNEL, CONFIG_VIDEO_MCUX_CSI_INIT_PRIORITY,
-		      &video_mcux_csi_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
+		      &video_mcux_csi_config_0, POST_KERNEL, &video_mcux_csi_driver_api);
 #endif

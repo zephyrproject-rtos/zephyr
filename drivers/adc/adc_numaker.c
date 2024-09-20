@@ -396,10 +396,9 @@ done:
 		ADC_CONTEXT_INIT_LOCK(adc_numaker_data_##inst, ctx),			     \
 		ADC_CONTEXT_INIT_SYNC(adc_numaker_data_##inst, ctx),			     \
 	};									             \
-	DEVICE_DT_INST_DEFINE(inst,                                                          \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,                                                   \
 			      &adc_numaker_init, NULL,                                       \
 			      &adc_numaker_data_##inst, &adc_numaker_cfg_##inst,             \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			     \
-			      &adc_numaker_driver_api);
+			      POST_KERNEL, &adc_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_NUMAKER_INIT)

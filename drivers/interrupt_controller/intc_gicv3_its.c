@@ -673,11 +673,10 @@ struct its_driver_api gicv3_its_api = {
 		.cmd_queue = gicv3_its_cmd##n,				       \
 		.cmd_queue_size = sizeof(gicv3_its_cmd##n),		       \
 	};								       \
-	DEVICE_DT_INST_DEFINE(n, &gicv3_its_init, NULL,			       \
-			      &gicv3_its_data##n,			       \
-			      &gicv3_its_config##n,			       \
-			      PRE_KERNEL_1,				       \
-			      CONFIG_INTC_INIT_PRIORITY,		       \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &gicv3_its_init, NULL,			       \
+			      &gicv3_its_data##n,				       \
+			      &gicv3_its_config##n,				       \
+			      PRE_KERNEL_1,					       \
 			      &gicv3_its_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GICV3_ITS_INIT)

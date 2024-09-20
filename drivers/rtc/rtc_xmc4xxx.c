@@ -266,5 +266,5 @@ static int rtc_xmc4xxx_init(const struct device *dev)
 
 static struct rtc_xmc4xxx_data rtc_xmc4xxx_data_0;
 
-DEVICE_DT_INST_DEFINE(0, rtc_xmc4xxx_init, NULL, &rtc_xmc4xxx_data_0, NULL,
-		      POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, &rtc_xmc4xxx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, rtc_xmc4xxx_init, NULL, &rtc_xmc4xxx_data_0, NULL,
+		      POST_KERNEL, &rtc_xmc4xxx_driver_api);

@@ -228,9 +228,8 @@ static int gpio_ad559x_init(const struct device *dev)
 											\
 	static struct gpio_ad559x_data gpio_ad559x_data##inst;				\
 											\
-	DEVICE_DT_INST_DEFINE(inst, gpio_ad559x_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_ad559x_init, NULL,			\
 			      &gpio_ad559x_data##inst, &gpio_ad559x_config##inst,	\
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,			\
-			      &gpio_ad559x_api);
+			      POST_KERNEL, &gpio_ad559x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_AD559X_DEFINE)

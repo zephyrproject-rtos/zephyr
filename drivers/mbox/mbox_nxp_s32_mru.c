@@ -292,9 +292,8 @@ static const struct mbox_driver_api nxp_s32_mru_driver_api = {
 					  (NULL), (nxp_s32_mru_##n##_init_irq)),	\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n, nxp_s32_mru_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, nxp_s32_mru_init, NULL,				\
 			&nxp_s32_mru_##n##_data, &nxp_s32_mru_##n##_config,		\
-			POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,				\
-			&nxp_s32_mru_driver_api);
+			POST_KERNEL, &nxp_s32_mru_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MRU_INSTANCE_DEFINE)

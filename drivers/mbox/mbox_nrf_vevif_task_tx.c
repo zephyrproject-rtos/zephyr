@@ -72,7 +72,7 @@ static const struct mbox_driver_api vevif_task_tx_driver_api = {
 		.tasks_mask = DT_INST_PROP(inst, nordic_tasks_mask),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
-			      CONFIG_MBOX_INIT_PRIORITY, &vevif_task_tx_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,             \
+			      &vevif_task_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEVIF_TASK_TX_DEFINE)

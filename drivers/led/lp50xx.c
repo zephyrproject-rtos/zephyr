@@ -387,13 +387,12 @@ static const struct led_driver_api lp50xx_led_api = {
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);				\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			      lp50xx_init,					\
 			      PM_DEVICE_DT_INST_GET(n),				\
 			      &lp##id##_data_##n,				\
 			      &lp##id##_config_##n,				\
-			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
-			      &lp50xx_led_api);
+			      POST_KERNEL, &lp50xx_led_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5009

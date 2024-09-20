@@ -286,8 +286,8 @@ static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {		\
 	.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),	\
 };										\
 static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;			\
-DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL,				\
+DEVICE_INSTANCE_FROM_DT_INST(n, qspi_npcx_fiu_init, NULL,			\
 		      &npcx_qspi_fiu_data_##n, &npcx_qspi_fiu_config_##n,	\
-		      PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);
+		      PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_SPI_FIU_INIT)

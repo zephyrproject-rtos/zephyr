@@ -854,13 +854,12 @@ static const struct flash_driver_api flash_mspi_atxp032_api = {
 		.lock = Z_SEM_INITIALIZER(flash_mspi_atxp032_data_##n.lock, 0, 1),                \
 	};                                                                                        \
 	PM_DEVICE_DT_INST_DEFINE(n, flash_mspi_atxp032_pm_action);                                \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                           \
 			      flash_mspi_atxp032_init,                                            \
 			      PM_DEVICE_DT_INST_GET(n),                                           \
 			      &flash_mspi_atxp032_data_##n,                                       \
 			      &flash_mspi_atxp032_config_##n,                                     \
 			      POST_KERNEL,                                                        \
-			      CONFIG_FLASH_INIT_PRIORITY,                                         \
 			      &flash_mspi_atxp032_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_MSPI_ATXP032)

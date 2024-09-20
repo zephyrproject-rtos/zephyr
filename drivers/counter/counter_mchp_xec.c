@@ -332,13 +332,12 @@ static int counter_xec_init(const struct device *dev)
 		.girq_bit = DT_INST_PROP_BY_IDX(0, girqs, 1),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    counter_xec_init,				\
 			    NULL,					\
 			    &counter_xec_dev_data_##inst,		\
 			    &counter_xec_dev_config_##inst,		\
 			    POST_KERNEL,				\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &counter_xec_api);				\
 									\
 	static void counter_xec_irq_config_##inst(void)			\

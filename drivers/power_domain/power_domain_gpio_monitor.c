@@ -142,9 +142,9 @@ unconfigure_pin:
 	};											\
 	static struct pd_gpio_monitor_data pd_gpio_monitor_data_##inst;				\
 	PM_DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_pm_action);				\
-	DEVICE_DT_INST_DEFINE(inst, pd_gpio_monitor_init,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, pd_gpio_monitor_init,				\
 				PM_DEVICE_DT_INST_GET(inst), &pd_gpio_monitor_data_##inst,	\
 				&pd_gpio_monitor_config_##inst, POST_KERNEL,			\
-				CONFIG_POWER_DOMAIN_GPIO_MONITOR_INIT_PRIORITY, NULL);
+				NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(POWER_DOMAIN_DEVICE)

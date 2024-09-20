@@ -261,8 +261,7 @@ static const struct pwm_driver_api pwm_rcar_driver_api = {
 		.core_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                       \
 	};                                                                                         \
 	static struct pwm_rcar_data pwm_rcar_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, pwm_rcar_init, NULL, &pwm_rcar_data_##n, &pwm_rcar_cfg_##n,       \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,                               \
-			      &pwm_rcar_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, pwm_rcar_init, NULL, &pwm_rcar_data_##n, &pwm_rcar_cfg_##n,\
+			      POST_KERNEL, &pwm_rcar_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_RCAR_INIT)

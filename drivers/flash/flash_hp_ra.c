@@ -386,12 +386,11 @@ static struct flash_hp_ra_controller_config flash_hp_ra_controller_config = {
 			.erase_value = 0xff,                                                       \
 		}};                                                                                \
                                                                                                    \
-	DEVICE_DT_DEFINE(index, flash_ra_init, NULL, &flash_hp_ra_data_##index,                    \
-			 &flash_hp_ra_config_##index, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,     \
-			 &flash_ra_api);
+	DEVICE_INSTANCE(index, flash_ra_init, NULL, &flash_hp_ra_data_##index,                     \
+			 &flash_hp_ra_config_##index, POST_KERNEL, &flash_ra_api);
 
 DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(0), RA_FLASH_INIT);
 
 /* define the flash controller device just to run the init. */
-DEVICE_DT_DEFINE(DT_DRV_INST(0), flash_controller_ra_init, NULL, &flash_hp_ra_controller,
-		 &flash_hp_ra_controller_config, PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE(DT_DRV_INST(0), flash_controller_ra_init, NULL, &flash_hp_ra_controller,
+		 &flash_hp_ra_controller_config, PRE_KERNEL_1, NULL);

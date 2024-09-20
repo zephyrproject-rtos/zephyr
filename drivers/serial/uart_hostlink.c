@@ -399,5 +399,5 @@ static const struct uart_driver_api uart_hostlink_driver_api = {
 	.poll_out = uart_hostlink_poll_out,
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(hostlink), NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		 CONFIG_SERIAL_INIT_PRIORITY, &uart_hostlink_driver_api);
+DEVICE_INSTANCE(DT_NODELABEL(hostlink), NULL, NULL, NULL, NULL, PRE_KERNEL_1,
+		 &uart_hostlink_driver_api);

@@ -330,11 +330,10 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, spi_mcux_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, spi_mcux_init, NULL,		\
 			    &spi_mcux_data_##n,				\
 			    &spi_mcux_config_##n,			\
 			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_mcux_driver_api);			\
 									\
 	static void spi_mcux_config_func_##n(const struct device *dev)	\

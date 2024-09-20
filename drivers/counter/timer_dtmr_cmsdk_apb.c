@@ -198,12 +198,11 @@ static int dtmr_cmsdk_apb_init(const struct device *dev)
 		.load = UINT_MAX,					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    dtmr_cmsdk_apb_init,			\
-			    NULL,			\
+			    NULL,					\
 			    &dtmr_cmsdk_apb_dev_data_##inst,		\
 			    &dtmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &dtmr_cmsdk_apb_api);			\
 									\
 	static void dtimer_cmsdk_apb_config_##inst(const struct device *dev) \

@@ -367,14 +367,13 @@ static int gpio_atcgpio100_init(const struct device *port)
 			.cfg_func = gpio_atcgpio100_cfg_func_##n	\
 		};							\
 									\
-	DEVICE_DT_INST_DEFINE(n,			                \
-		gpio_atcgpio100_init,					\
-		NULL,							\
-		&gpio_atcgpio100_data_##n,				\
-		&gpio_atcgpio100_config_##n,				\
-		PRE_KERNEL_1,						\
-		CONFIG_GPIO_INIT_PRIORITY,				\
-		&gpio_atcgpio100_api);					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					                \
+		gpio_atcgpio100_init,					                \
+		NULL,							                \
+		&gpio_atcgpio100_data_##n,				                \
+		&gpio_atcgpio100_config_##n,				                \
+		PRE_KERNEL_1,						                \
+		&gpio_atcgpio100_api);					                \
 									\
 	static void gpio_atcgpio100_cfg_func_##n(void)			\
 	{								\

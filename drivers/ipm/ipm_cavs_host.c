@@ -208,5 +208,5 @@ static const struct ipm_driver_api api = {
 
 static struct ipm_cavs_host_data data;
 
-DEVICE_DEFINE(ipm_cavs_host, "ipm_cavs_host", init, NULL, &data, NULL,
-	      PRE_KERNEL_2, 1, &api);
+DEVICE_INSTANCE(ipm_cavs_host, init, NULL, &data, NULL,
+	      PRE_KERNEL_2, &api);

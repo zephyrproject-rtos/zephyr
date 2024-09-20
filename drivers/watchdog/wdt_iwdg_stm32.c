@@ -214,7 +214,6 @@ static struct iwdg_stm32_data iwdg_stm32_dev_data = {
 	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
 };
 
-DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, iwdg_stm32_init, NULL,
 		    &iwdg_stm32_dev_data, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &iwdg_stm32_api);
+		    POST_KERNEL, &iwdg_stm32_api);

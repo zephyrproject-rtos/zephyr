@@ -319,7 +319,7 @@ int mfd_npm1300_remove_callback(const struct device *dev, struct gpio_callback *
 		.lp_reset = DT_INST_ENUM_IDX_OR(inst, long_press_reset, 0),                        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,           \
-			      POST_KERNEL, CONFIG_MFD_NPM1300_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_npm1300_init, NULL, &data_##inst, &config##inst,    \
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM1300_DEFINE)

@@ -429,7 +429,7 @@ static const struct gpio_driver_api gpio_ra_driver_api = {
 		.irq_info_size = ARRAY_SIZE(gpio_ra_irq_info_##idx),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, &gpio_ra_data_##idx, &gpio_ra_config_##idx,         \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, NULL, NULL, &gpio_ra_data_##idx, &gpio_ra_config_##idx,  \
+			      PRE_KERNEL_1, &gpio_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RA_INIT)

@@ -425,13 +425,12 @@ static const struct adc_driver_api sdadc_smartbond_driver_api = {
 		ADC_CONTEXT_INIT_SYNC(sdadc_smartbond_data_##inst, ctx),	\
 	};									\
 	PM_DEVICE_DT_INST_DEFINE(inst, sdadc_smartbond_pm_action);	\
-	DEVICE_DT_INST_DEFINE(inst,						\
-			      sdadc_smartbond_init,  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					\
+			      sdadc_smartbond_init,				\
 				  PM_DEVICE_DT_INST_GET(inst),			\
 			      &sdadc_smartbond_data_##inst,			\
 			      &sdadc_smartbond_cfg_##inst,			\
 			      POST_KERNEL,					\
-			      CONFIG_ADC_INIT_PRIORITY,				\
 			      &sdadc_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDADC_INIT)

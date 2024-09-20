@@ -394,13 +394,12 @@ static int spi_nrfx_init(const struct device *dev)
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \
 		     !(DT_GPIO_FLAGS(SPIS(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
-	DEVICE_DT_DEFINE(SPIS(idx),					       \
-			    spi_nrfx_init,				       \
-			    NULL,					       \
-			    &spi_##idx##_data,				       \
-			    &spi_##idx##z_config,			       \
-			    POST_KERNEL,				       \
-			    CONFIG_SPI_INIT_PRIORITY,			       \
+	DEVICE_INSTANCE(SPIS(idx),						       \
+			    spi_nrfx_init,					       \
+			    NULL,						       \
+			    &spi_##idx##_data,					       \
+			    &spi_##idx##z_config,				       \
+			    POST_KERNEL,					       \
 			    &spi_nrfx_driver_api)
 
 /* Macro creates device instance if it is enabled in devicetree. */

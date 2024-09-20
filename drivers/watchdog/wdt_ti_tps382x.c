@@ -87,10 +87,9 @@ static const struct wdt_driver_api ti_tps382x_api = {
 		.timeout = DT_INST_PROP(n, timeout_period),                   \
 	};                                                                    \
                                                                               \
-	DEVICE_DT_INST_DEFINE(                                                \
+	DEVICE_INSTANCE_FROM_DT_INST(                                         \
 		n, ti_tps382x_init, NULL, NULL, &ti_tps382x_##n##config,      \
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,              \
-		&ti_tps382x_api                                               \
+		POST_KERNEL, &ti_tps382x_api                                  \
 	);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_TI_TPS382X_INIT);

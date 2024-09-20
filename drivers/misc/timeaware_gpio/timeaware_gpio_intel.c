@@ -220,12 +220,11 @@ static int tgpio_init(const struct device *dev)
 									       \
 	static struct tgpio_runtime tgpio_##n##_runtime;		       \
 									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
+	DEVICE_INSTANCE_FROM_DT_INST(n,					       \
 			      &tgpio_init,				       \
 			      NULL,					       \
 			      &tgpio_##n##_runtime,			       \
-			      &tgpio_##n##_cfg,			       \
-			      POST_KERNEL, CONFIG_TIMEAWARE_GPIO_INIT_PRIORITY,\
-			      &api_funcs);				       \
+			      &tgpio_##n##_cfg,				       \
+			      POST_KERNEL, &api_funcs);			       \
 
 DT_INST_FOREACH_STATUS_OKAY(TGPIO_INTEL_DEV_CFG_DATA)

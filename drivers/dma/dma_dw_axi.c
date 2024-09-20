@@ -896,12 +896,11 @@ static const struct dma_driver_api dma_dw_axi_driver_api = {
 		.irq_config = dw_dma_irq_config_##inst,					\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst,							\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,						\
 				&dma_dw_axi_init,					\
 				NULL,							\
 				&dma_dw_axi_data_##inst,				\
 				&dma_dw_axi_config_##inst, POST_KERNEL,			\
-				CONFIG_DMA_INIT_PRIORITY,				\
 				&dma_dw_axi_driver_api);				\
 											\
 	static void dw_dma_irq_config_##inst(void)					\

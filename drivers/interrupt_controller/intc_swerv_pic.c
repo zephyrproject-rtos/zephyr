@@ -238,5 +238,5 @@ int arch_irq_is_enabled(unsigned int irq)
 	return !!(mie & (1 << irq));
 }
 
-DEVICE_DT_INST_DEFINE(0, swerv_pic_init, NULL,  NULL,  NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, swerv_pic_init, NULL,  NULL,  NULL,
+		      PRE_KERNEL_1, NULL);

@@ -495,7 +495,7 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 
 #define LPC_CLOCK_INIT(n)                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, PRE_KERNEL_1,                             \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &mcux_lpc_syscon_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, PRE_KERNEL_1,                      \
+			      &mcux_lpc_syscon_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPC_CLOCK_INIT)

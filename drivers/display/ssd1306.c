@@ -524,8 +524,8 @@ static const struct display_driver_api ssd1306_driver_api = {
 			    (SSD1306_CONFIG_I2C(node_id)))                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,            \
-			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1306_driver_api);
+	DEVICE_INSTANCE(node_id, ssd1306_init, NULL, &data##node_id, &config##node_id,             \
+			 POST_KERNEL, &ssd1306_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1306fb, SSD1306_DEFINE)
 DT_FOREACH_STATUS_OKAY(sinowealth_sh1106, SSD1306_DEFINE)

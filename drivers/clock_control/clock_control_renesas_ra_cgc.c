@@ -95,12 +95,11 @@ static const struct clock_control_driver_api clock_control_reneas_ra_api = {
 				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(node_id))),                    \
 				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_PARENT(node_id))))),        \
 			     .clk_div = DT_PROP(node_id, div)};                          \
-		    DEVICE_DT_DEFINE(node_id, &clock_control_ra_init_pclk, NULL, NULL,             \
+		    DEVICE_INSTANCE(node_id, &clock_control_ra_init_pclk, NULL, NULL,              \
 				     &node_id##_cfg, PRE_KERNEL_1,                                 \
-				     CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,                          \
 				     &clock_control_reneas_ra_api)));
 
-DEVICE_DT_DEFINE(DT_NODELABEL(pclkblock), &clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(pclkblock), &clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		 NULL);
 
 DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(pclkblock), INIT_PCLK);

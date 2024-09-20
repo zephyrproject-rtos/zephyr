@@ -525,11 +525,10 @@ static const struct uart_driver_api ifx_cat1_uart_driver_api = {
 		.irq_priority = DT_INST_IRQ(n, priority)				     \
 	};										     \
 											     \
-	DEVICE_DT_INST_DEFINE(n,							     \
+	DEVICE_INSTANCE_FROM_DT_INST(n,							     \
 			      ifx_cat1_uart_init, NULL,					     \
 			      &ifx_cat1_uart##n##_data,					     \
 			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,			     \
-			      CONFIG_SERIAL_INIT_PRIORITY,				     \
 			      &ifx_cat1_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_UART_INIT)

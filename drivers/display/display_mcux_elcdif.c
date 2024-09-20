@@ -404,9 +404,8 @@ static const struct display_driver_api mcux_elcdif_api = {
 		.next_idx = 0,                                                                     \
 		.pixel_format = DT_INST_PROP(id, pixel_format),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, &mcux_elcdif_init, NULL, &mcux_elcdif_data_##id,                 \
-			      &mcux_elcdif_config_##id, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, \
-			      &mcux_elcdif_api);                                                   \
+	DEVICE_INSTANCE_FROM_DT_INST(id, &mcux_elcdif_init, NULL, &mcux_elcdif_data_##id,          \
+			      &mcux_elcdif_config_##id, POST_KERNEL, &mcux_elcdif_api);            \
 	static void mcux_elcdif_config_func_##id(const struct device *dev)                         \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), mcux_elcdif_isr,          \

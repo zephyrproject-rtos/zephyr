@@ -354,11 +354,10 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 									\
 	static struct mcux_pwt_data mcux_pwt_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_pwt_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_pwt_init,			\
 			NULL, &mcux_pwt_data_##n,			\
 			&mcux_pwt_config_##n,				\
 			POST_KERNEL,					\
-			CONFIG_PWM_INIT_PRIORITY,			\
 			&mcux_pwt_driver_api);				\
 									\
 	static void mcux_pwt_config_func_##n(const struct device *dev)	\

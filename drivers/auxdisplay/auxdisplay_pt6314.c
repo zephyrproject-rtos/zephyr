@@ -326,8 +326,8 @@ static const struct auxdisplay_driver_api auxdisplay_pt6314_auxdisplay_api = {
 		.cursor_y = 0,                                                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &auxdisplay_pt6314_init, NULL, &auxdisplay_pt6314_data_##n,       \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &auxdisplay_pt6314_init, NULL, &auxdisplay_pt6314_data_##n,\
 			      &auxdisplay_pt6314_config_##n, POST_KERNEL,                          \
-			      CONFIG_AUXDISPLAY_INIT_PRIORITY, &auxdisplay_pt6314_auxdisplay_api);
+			      &auxdisplay_pt6314_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_PT6314_INST)

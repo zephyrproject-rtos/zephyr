@@ -99,8 +99,8 @@ static int memc_smc_init(const struct device *dev)
 		.banks = smc_bank_config_##inst,					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};										\
-	DEVICE_DT_INST_DEFINE(inst, memc_smc_init, NULL, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, memc_smc_init, NULL, NULL,			\
 			      &smc_config_##inst, POST_KERNEL,				\
-			      CONFIG_MEMC_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_SMC_DEFINE)

@@ -1060,9 +1060,8 @@ static int can_renesas_ra_global_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_renesas_ra_global_init,
-		 NULL, NULL, &g_can_renesas_ra_global_cfg, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,
-		 NULL)
+DEVICE_INSTANCE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_ra_canfd_global), can_renesas_ra_global_init,
+		 NULL, NULL, &g_can_renesas_ra_global_cfg, PRE_KERNEL_2, NULL)
 
 #define _ELC_EVENT_CAN_COMFRX(channel) ELC_EVENT_CAN##channel##_COMFRX
 #define _ELC_EVENT_CAN_TX(channel)     ELC_EVENT_CAN##channel##_TX

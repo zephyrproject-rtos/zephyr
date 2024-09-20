@@ -410,10 +410,9 @@ static const struct adc_driver_api adc_sam_api = {
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
 		.dev = DEVICE_DT_INST_GET(n),				\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, adc_sam_init, NULL,		\
 			      &adc_sam_data_##n,			\
 			      &adc_sam_config_##n, POST_KERNEL,		\
-			      CONFIG_ADC_INIT_PRIORITY,			\
 			      &adc_sam_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_DEVICE)

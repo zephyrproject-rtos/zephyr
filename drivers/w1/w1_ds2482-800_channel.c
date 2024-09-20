@@ -169,8 +169,8 @@ static const struct w1_driver_api ds2482_driver_api = {
 		.reg_config = DT_INST_PROP(inst, active_pullup) << DEVICE_APU_pos,                 \
 	};                                                                                         \
 	static struct ds2482_data inst_##inst##_data = {0};                                        \
-	DEVICE_DT_INST_DEFINE(inst, ds2482_init, NULL, &inst_##inst##_data, &inst_##inst##_config, \
-			      POST_KERNEL, CONFIG_W1_INIT_PRIORITY, &ds2482_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, ds2482_init, NULL, &inst_##inst##_data, &inst_##inst##_config,\
+			      POST_KERNEL, &ds2482_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DS2482_CHANNEL_INIT)
 

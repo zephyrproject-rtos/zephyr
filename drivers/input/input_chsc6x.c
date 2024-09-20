@@ -132,8 +132,7 @@ static int chsc6x_init(const struct device *dev)
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                               \
 	};                                                                                         \
 	static struct chsc6x_data chsc6x_data_##index;                                             \
-	DEVICE_DT_INST_DEFINE(index, chsc6x_init, NULL, &chsc6x_data_##index,                      \
-			      &chsc6x_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,     \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(index, chsc6x_init, NULL, &chsc6x_data_##index,               \
+			      &chsc6x_config_##index, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CHSC6X_DEFINE)

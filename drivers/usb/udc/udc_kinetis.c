@@ -1196,9 +1196,8 @@ static const struct udc_api usbfsotg_api = {
 		.priv = &priv_data_##n,						\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, usbfsotg_driver_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, usbfsotg_driver_preinit, NULL,		\
 			      &udc_data_##n, &priv_config_##n,			\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &usbfsotg_api);
+			      POST_KERNEL, &usbfsotg_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBFSOTG_DEVICE_DEFINE)

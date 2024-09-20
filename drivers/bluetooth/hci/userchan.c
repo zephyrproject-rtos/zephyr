@@ -426,8 +426,8 @@ static int uc_init(const struct device *dev)
 	static struct uc_data uc_data_##inst = { \
 		.fd = -1, \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, uc_init, NULL, &uc_data_##inst, NULL,\
+			      POST_KERNEL, &uc_drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(UC_DEVICE_INIT)
 

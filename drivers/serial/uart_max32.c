@@ -448,8 +448,8 @@ static const struct uart_driver_api uart_max32_driver_api = {
 			   (.irq_config_func = uart_max32_irq_init_##_num,))};                     \
 	static struct max32_uart_data max32_uart_data##_num = {                                    \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,))};                          \
-	DEVICE_DT_INST_DEFINE(_num, uart_max32_init, NULL, &max32_uart_data##_num,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(_num, uart_max32_init, NULL, &max32_uart_data##_num,          \
 			      &max32_uart_config_##_num, PRE_KERNEL_1,                             \
-			      CONFIG_SERIAL_INIT_PRIORITY, (void *)&uart_max32_driver_api);
+			      (void *)&uart_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_UART_INIT)

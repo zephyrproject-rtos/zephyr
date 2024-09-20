@@ -85,5 +85,5 @@ static const struct max32_trng_config max32_trng_cfg = {
 	.perclk.bit = DT_INST_CLOCKS_CELL(0, bit),
 };
 
-DEVICE_DT_INST_DEFINE(0, entropy_max32_init, NULL, NULL, &max32_trng_cfg, PRE_KERNEL_1,
-		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_max32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, entropy_max32_init, NULL, NULL, &max32_trng_cfg, PRE_KERNEL_1,
+		      &entropy_max32_api);

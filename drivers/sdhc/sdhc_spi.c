@@ -837,13 +837,12 @@ static const struct sdhc_driver_api sdhc_spi_api = {
 				0),						\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			&sdhc_spi_init,						\
 			NULL,							\
 			&sdhc_spi_data_##n,					\
 			&sdhc_spi_config_##n,					\
 			POST_KERNEL,						\
-			CONFIG_SDHC_INIT_PRIORITY,				\
 			&sdhc_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_SPI_INIT)

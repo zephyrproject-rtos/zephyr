@@ -446,13 +446,12 @@ static void adc_nxp_s32_isr(const struct device *dev)
 		.pin_cfg = COND_CODE_1(DT_INST_NUM_PINCTRL_STATES(n),		\
 				(PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),	\
 	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			&adc_nxp_s32_init,					\
 			NULL,							\
 			&adc_nxp_s32_data_##n,					\
 			&adc_nxp_s32_config_##n,				\
 			POST_KERNEL,						\
-			CONFIG_ADC_INIT_PRIORITY,				\
 			&adc_nxp_s32_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_NXP_S32_INIT_DEVICE)

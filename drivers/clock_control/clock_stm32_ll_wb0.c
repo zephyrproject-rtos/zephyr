@@ -784,9 +784,8 @@ BUILD_ASSERT(IS_ENABLED(STM32_HSE_ENABLED),
  * Note that priority is intentionally set to 1,
  * so that RCC init runs just after SoC init.
  */
-DEVICE_DT_DEFINE(STM32_CLOCK_CONTROL_NODE,
+DEVICE_INSTANCE(STM32_CLOCK_CONTROL_NODE,
 		    &stm32_clock_control_init,
 		    NULL, NULL, NULL,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &stm32_clock_control_api);

@@ -1043,13 +1043,12 @@ static int rm68200_init(const struct device *dev)
 		.panel_height = DT_INST_PROP(id, height),			\
 		.channel = DT_INST_REG_ADDR(id),				\
 	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
+	DEVICE_INSTANCE_FROM_DT_INST(id,					\
 			    &rm68200_init,					\
 			    NULL,						\
 			    NULL,						\
 			    &rm68200_config_##id,				\
 			    POST_KERNEL,					\
-			    CONFIG_APPLICATION_INIT_PRIORITY,			\
 			    &rm68200_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RM68200_PANEL)

@@ -374,8 +374,8 @@ static const struct audio_codec_api codec_driver_api = {
 	static struct codec_driver_config codec_device_config_##n = {                              \
 		.bus = I2C_DT_SPEC_INST_GET(n), TAS6422DAC_MUTE_GPIO_INIT(n)};                     \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, codec_initialize, NULL, &codec_device_data_##n,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(n, codec_initialize, NULL, &codec_device_data_##n,            \
 			      &codec_device_config_##n, POST_KERNEL,                               \
-			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
+			      &codec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TAS6422DAC_INIT)

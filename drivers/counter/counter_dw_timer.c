@@ -385,11 +385,10 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 			(DW_SNPS_TIMER_SNPS_RESET_SPEC_INIT(inst)))		\
 		.irq_config = counter_dw_timer_irq_config_##inst,		\
 	};									\
-	DEVICE_DT_INST_DEFINE(inst,						\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 			counter_dw_timer_init,					\
 			NULL, &timer_data_##inst,				\
 			&timer_config_##inst, POST_KERNEL,			\
-			CONFIG_COUNTER_INIT_PRIORITY,				\
 			&dw_timer_driver_api);					\
 	static void counter_dw_timer_irq_config_##inst(void)			\
 	{									\

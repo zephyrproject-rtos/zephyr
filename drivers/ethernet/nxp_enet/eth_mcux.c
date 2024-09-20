@@ -1738,8 +1738,8 @@ static int ptp_mcux_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+DEVICE_INSTANCE(mcux_ptp_clock_0, ptp_mcux_init,
 		NULL, &ptp_mcux_0_context, NULL, POST_KERNEL,
-		CONFIG_ETH_MCUX_PTP_CLOCK_INIT_PRIO, &api);
+		&api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */

@@ -79,8 +79,8 @@ static const struct clock_control_driver_api clock_api = {.get_rate = clock_get_
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(_inst)),                                          \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(_inst, clock_init, NULL, &clock_control_data_##_inst,                \
+	DEVICE_INSTANCE_FROM_DT_INST(_inst, clock_init, NULL, &clock_control_data_##_inst,         \
 			      &clock_control_config_##_inst, PRE_KERNEL_1,                         \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_api);
+			      &clock_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_CONTROL_DEVICE)

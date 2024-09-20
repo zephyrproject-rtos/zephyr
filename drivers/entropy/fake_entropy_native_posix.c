@@ -84,11 +84,10 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    entropy_native_posix_init, NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_native_posix_api_funcs);
+		    PRE_KERNEL_1, &entropy_native_posix_api_funcs);
 
 static void seed_was_set(char *argv, int offset)
 {

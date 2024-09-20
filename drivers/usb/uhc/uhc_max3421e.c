@@ -1121,7 +1121,6 @@ static const struct max3421e_config max3421e_cfg = {
 	.dt_rst = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, {0}),
 };
 
-DEVICE_DT_INST_DEFINE(0, max3421e_driver_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, max3421e_driver_init, NULL,
 		      &max3421e_uhc_data, &max3421e_cfg,
-		      POST_KERNEL, 99,
-		      &max3421e_uhc_api);
+		      POST_KERNEL, &max3421e_uhc_api);

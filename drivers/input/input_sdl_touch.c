@@ -43,5 +43,5 @@ static int sdl_init(const struct device *dev)
 
 static struct sdl_input_data sdl_data_0;
 
-DEVICE_DT_INST_DEFINE(0, sdl_init, NULL, &sdl_data_0, NULL,
-		    POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, sdl_init, NULL, &sdl_data_0, NULL,
+		    POST_KERNEL, NULL);

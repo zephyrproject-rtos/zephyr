@@ -549,13 +549,12 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 	};											\
 												\
 	static struct mcux_mipi_dsi_data mipi_dsi_data_##id;					\
-	DEVICE_DT_INST_DEFINE(id,								\
+	DEVICE_INSTANCE_FROM_DT_INST(id,							\
 			    &mcux_mipi_dsi_init,						\
 			    NULL,								\
 			    &mipi_dsi_data_##id,						\
 			    &mipi_dsi_config_##id,						\
 			    POST_KERNEL,							\
-			    CONFIG_MIPI_DSI_INIT_PRIORITY,					\
 			    &dsi_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_MIPI_DSI_DEVICE)

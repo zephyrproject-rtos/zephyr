@@ -259,11 +259,10 @@ static const struct dac_driver_api dacx3608_driver_api = {
 		.bus = I2C_DT_SPEC_GET(INST_DT_DACX3608(n, t)), \
 		.resolution = res, \
 	}; \
-	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), \
+	DEVICE_INSTANCE(INST_DT_DACX3608(n, t), \
 				&dacx3608_init, NULL, \
 				&dac##t##_data_##n, \
 				&dac##t##_config_##n, POST_KERNEL, \
-				CONFIG_DAC_DACX3608_INIT_PRIORITY, \
 				&dacx3608_driver_api)
 
 /*

@@ -486,8 +486,7 @@ static const struct charger_driver_api bq24190_driver_api = {
 		.vreg_uv = DT_INST_PROP(inst, constant_charge_voltage_max_microvolt),              \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, bq24190_init, NULL, &bq24190_data_##inst,                      \
-			      &bq24190_config_##inst, POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY,   \
-			      &bq24190_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bq24190_init, NULL, &bq24190_data_##inst,               \
+			      &bq24190_config_##inst, POST_KERNEL, &bq24190_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BQ24190_INIT)

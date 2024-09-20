@@ -321,9 +321,9 @@ static const struct uart_driver_api uart_bcm2711_driver_api = {
                                                                                                    \
 	static const struct bcm2711_uart_config bcm2711_uart_##n##_config;                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &uart_bcm2711_init, NULL, &bcm2711_uart_##n##_data,               \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &uart_bcm2711_init, NULL, &bcm2711_uart_##n##_data,        \
 			      &bcm2711_uart_##n##_config, PRE_KERNEL_1,                            \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_bcm2711_driver_api);              \
+			      &uart_bcm2711_driver_api);                                           \
                                                                                                    \
 	UART_CONFIG_FUNC(n)                                                                        \
                                                                                                    \

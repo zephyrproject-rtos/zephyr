@@ -464,11 +464,10 @@ static int regulator_da1469x_pm_action(const struct device *dev,
 		.rail = rail_id,	\
 	};                                                                     \
 	PM_DEVICE_DT_DEFINE(node, regulator_da1469x_pm_action);                \
-	DEVICE_DT_DEFINE(node, regulator_da1469x_init,                         \
+	DEVICE_INSTANCE(node, regulator_da1469x_init,                          \
 			 PM_DEVICE_DT_GET(node),                               \
 			 &data_##id,                                           \
 			 &config_##id, PRE_KERNEL_1,                           \
-			 CONFIG_REGULATOR_DA1469X_INIT_PRIORITY,               \
 			 &regulator_da1469x_api);
 
 #define REGULATOR_DA1469X_DEFINE_COND(inst, child, source)                     \

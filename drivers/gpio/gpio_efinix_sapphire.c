@@ -221,14 +221,12 @@ static const struct gpio_driver_api gpio_efinix_sapphire_api = {
 		.n_gpios = DT_INST_PROP(n, ngpios), \
 }; \
 static struct gpio_efinix_sapphire_data gpio_efinix_sapphire_data_##n; \
-	DEVICE_DT_INST_DEFINE(n, \
-			    gpio_efinix_sapphire_init, \
-			    NULL, \
-			    &gpio_efinix_sapphire_data_##n, \
-			    &gpio_efinix_sapphire_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_GPIO_INIT_PRIORITY, \
-			    &gpio_efinix_sapphire_api \
-				); \
+	DEVICE_INSTANCE_FROM_DT_INST(n,\
+			    gpio_efinix_sapphire_init,\
+			    NULL,\
+			    &gpio_efinix_sapphire_data_##n,\
+			    &gpio_efinix_sapphire_cfg_##n,\
+			    POST_KERNEL,\
+			    &gpio_efinix_sapphire_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_EFINIX_SAPPHIRE_INIT)

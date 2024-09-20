@@ -637,8 +637,8 @@ static const struct haptics_driver_api drv2605_driver_api = {
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, drv2605_pm_action);                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, drv2605_init, PM_DEVICE_DT_INST_GET(inst),                     \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, drv2605_init, PM_DEVICE_DT_INST_GET(inst),              \
 			      &drv2605_data_##inst, &drv2605_config_##inst, POST_KERNEL,           \
-			      CONFIG_HAPTICS_INIT_PRIORITY, &drv2605_driver_api);
+			      &drv2605_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HAPTICS_DRV2605_DEFINE)

@@ -618,8 +618,7 @@ static int tle9104_init(const struct device *dev)
                                                                                                    \
 	static struct tle9104_data tle9104_##inst##_data;                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, tle9104_init, NULL, &tle9104_##inst##_data,                    \
-			      &tle9104_##inst##_config, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,     \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, tle9104_init, NULL, &tle9104_##inst##_data,             \
+			      &tle9104_##inst##_config, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(TLE9104_INIT);

@@ -334,11 +334,10 @@ static const struct mipi_dbi_driver_api mipi_dbi_spi_driver_api = {
 	};									\
 	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_spi_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, mipi_dbi_spi_init, NULL,		\
 			&mipi_dbi_spi_data_##n,					\
 			&mipi_dbi_spi_config_##n,				\
 			POST_KERNEL,						\
-			CONFIG_MIPI_DBI_INIT_PRIORITY,				\
 			&mipi_dbi_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_INIT)

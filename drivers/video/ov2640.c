@@ -1064,7 +1064,6 @@ static int ov2640_init_0(const struct device *dev)
 	return ov2640_init(dev);
 }
 
-DEVICE_DT_INST_DEFINE(0, &ov2640_init_0, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &ov2640_init_0, NULL,
 			&ov2640_data_0, &ov2640_cfg_0,
-			POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-			&ov2640_driver_api);
+			POST_KERNEL, &ov2640_driver_api);

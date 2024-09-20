@@ -433,7 +433,7 @@ static const struct display_driver_api nt35510_api = {
 	static struct nt35510_data nt35510_data_##n = {                                            \
 		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,      \
-			      POST_KERNEL, CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,\
+			      POST_KERNEL, &nt35510_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NT35510_DEFINE)

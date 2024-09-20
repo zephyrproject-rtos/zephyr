@@ -405,10 +405,9 @@ static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, uart_miv_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, uart_miv_init, NULL,
 		    &uart_miv_data_0, &uart_miv_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-		    (void *)&uart_miv_driver_api);
+		    PRE_KERNEL_1, (void *)&uart_miv_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_miv_irq_cfg_func_0(const struct device *dev)

@@ -578,11 +578,10 @@ static const struct uart_driver_api usart_sam_driver_api = {
 									\
 	static const struct usart_sam_dev_cfg usart##n##_sam_config;	\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    usart_sam_init, NULL,			\
 			    &usart##n##_sam_data,			\
 			    &usart##n##_sam_config, PRE_KERNEL_1,	\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &usart_sam_driver_api);			\
 									\
 	USART_SAM_CONFIG_FUNC(n)					\

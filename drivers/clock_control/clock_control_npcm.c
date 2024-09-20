@@ -361,5 +361,5 @@ const struct npcm_pcc_config pcc_config = {
 	.base_pmc = DT_INST_REG_ADDR_BY_NAME(0, pmc),
 };
 
-DEVICE_DT_INST_DEFINE(0, &npcm_clock_control_init, NULL, NULL, &pcc_config, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, &npcm_clock_control_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &npcm_clock_control_init, NULL, NULL, &pcc_config, PRE_KERNEL_1,
+		      &npcm_clock_control_api);

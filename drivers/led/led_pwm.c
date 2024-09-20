@@ -144,9 +144,9 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 								\
 PM_DEVICE_DT_INST_DEFINE(id, led_pwm_pm_action);		\
 								\
-DEVICE_DT_INST_DEFINE(id, &led_pwm_init,			\
+DEVICE_INSTANCE_FROM_DT_INST(id, &led_pwm_init,			\
 		      PM_DEVICE_DT_INST_GET(id), NULL,		\
 		      &led_pwm_config_##id, POST_KERNEL,	\
-		      CONFIG_LED_INIT_PRIORITY, &led_pwm_api);
+		      &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)

@@ -1094,13 +1094,12 @@ static const struct flash_driver_api nxp_s32_qspi_api = {
 		))								\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			nxp_s32_qspi_init,					\
 			NULL,							\
 			&nxp_s32_qspi_data_##n,					\
 			&nxp_s32_qspi_config_##n,				\
 			POST_KERNEL,						\
-			CONFIG_FLASH_INIT_PRIORITY,				\
 			&nxp_s32_qspi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_NXP_S32_QSPI_INIT_DEVICE)

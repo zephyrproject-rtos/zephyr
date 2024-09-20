@@ -759,11 +759,10 @@ static const struct counter_driver_api mcp7940n_api = {
 		.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {0}),		\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(index, mcp7940n_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(index, mcp7940n_init, NULL,			\
 		    &mcp7940n_data_##index,						\
 		    &mcp7940n_config_##index,						\
 		    POST_KERNEL,							\
-		    CONFIG_COUNTER_INIT_PRIORITY,					\
 		    &mcp7940n_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_MCP7904N);

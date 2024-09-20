@@ -220,8 +220,7 @@ static int wkpu_nxp_s32_init(const struct device *dev)
                                                                                                    \
 		return 0;                                                                          \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, wkpu_nxp_s32_init_##n, NULL, &wkpu_nxp_s32_data_##n,              \
-			      &wkpu_nxp_s32_conf_##n, PRE_KERNEL_2, CONFIG_INTC_INIT_PRIORITY,     \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(n, wkpu_nxp_s32_init_##n, NULL, &wkpu_nxp_s32_data_##n,       \
+			      &wkpu_nxp_s32_conf_##n, PRE_KERNEL_2, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(WKPU_NXP_S32_INIT_DEVICE)

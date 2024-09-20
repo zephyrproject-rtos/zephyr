@@ -338,8 +338,8 @@ static const struct counter_driver_api counter_max32_driver_api = {
 		.wakeup_source = DT_PROP(TIMER(_num), wakeup_source),                              \
 	};                                                                                         \
 	static struct max32_tmr_data max32_tmr_data##_num;                                         \
-	DEVICE_DT_INST_DEFINE(_num, &max32_counter_init, NULL, &max32_tmr_data##_num,              \
+	DEVICE_INSTANCE_FROM_DT_INST(_num, &max32_counter_init, NULL, &max32_tmr_data##_num,       \
 			      &max32_tmr_config_##_num, PRE_KERNEL_1,                              \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_max32_driver_api);
+			      &counter_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MAX32_DEFINE)

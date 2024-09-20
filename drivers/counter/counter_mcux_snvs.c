@@ -327,11 +327,10 @@ static struct mcux_snvs_config mcux_snvs_config_0 = {
 	.irq_config_func = mcux_snvs_irq_config_0,
 };
 
-DEVICE_DT_INST_DEFINE(0, &mcux_snvs_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &mcux_snvs_init, NULL,
 		      &mcux_snvs_data_0,
 		      &mcux_snvs_config_0,
-		      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		      &mcux_snvs_driver_api);
+		      POST_KERNEL, &mcux_snvs_driver_api);
 
 static void mcux_snvs_irq_config_0(const struct device *dev)
 {

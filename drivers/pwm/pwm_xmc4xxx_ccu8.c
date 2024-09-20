@@ -165,7 +165,7 @@ static const struct pwm_xmc4xxx_ccu8_config config##n = {                       
 	.deadtime_low_ns = DT_INST_PROP(n, channel_deadtime_low),                          \
 };                                                                                         \
 											   \
-DEVICE_DT_INST_DEFINE(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL,       \
-		      CONFIG_PWM_INIT_PRIORITY, &pwm_xmc4xxx_ccu8_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(n, pwm_xmc4xxx_ccu8_init, NULL, NULL, &config##n, POST_KERNEL,\
+		      &pwm_xmc4xxx_ccu8_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_XMC4XXX_CCU8_INIT)

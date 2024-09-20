@@ -701,7 +701,7 @@ static void *irq_handlers[] = {
 			},                                                                         \
 	};                                                                                         \
 												   \
-	DEVICE_DT_INST_DEFINE(idx, &dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,      \
-			      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_esp32_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &dma_esp32_init, NULL, &dma_data_##idx, &dma_config_##idx,\
+			      PRE_KERNEL_1, &dma_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_ESP32_INIT)

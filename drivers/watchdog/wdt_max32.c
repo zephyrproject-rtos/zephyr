@@ -264,8 +264,8 @@ static const struct wdt_driver_api max32_wdt_api = {.setup = wdt_max32_setup,
 		.perclk.bit = DT_INST_CLOCKS_CELL(_num, bit),                                      \
 		.irq_func = &wdt_max32_irq_init_##_num,                                            \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, wdt_max32_init, NULL, &max32_wdt_data##_num,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(_num, wdt_max32_init, NULL, &max32_wdt_data##_num,            \
 			      &max32_wdt_config##_num, POST_KERNEL,                                \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &max32_wdt_api);
+			      &max32_wdt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_WDT_INIT)

@@ -754,11 +754,10 @@ static int shim_nrf_comp_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, shim_nrf_comp_pm_callback);
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		      shim_nrf_comp_init,
 		      PM_DEVICE_DT_INST_GET(0),
 		      NULL,
 		      NULL,
 		      POST_KERNEL,
-		      CONFIG_COMPARATOR_INIT_PRIORITY,
 		      &shim_nrf_comp_api);

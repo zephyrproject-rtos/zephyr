@@ -260,12 +260,11 @@ static const struct pwm_driver_api pwm_mcux_sctimer_driver_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			      mcux_sctimer_pwm_init,					\
 			      NULL,							\
 			      &pwm_mcux_sctimer_data_##n,				\
 			      &pwm_mcux_sctimer_config_##n,				\
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,			\
-			      &pwm_mcux_sctimer_driver_api);
+			      POST_KERNEL, &pwm_mcux_sctimer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_SCTIMER_DEVICE_INIT_MCUX)

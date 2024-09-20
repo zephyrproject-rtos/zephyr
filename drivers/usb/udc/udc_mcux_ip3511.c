@@ -935,9 +935,8 @@ static usb_phy_config_struct_t phy_config_##n = {					\
 		.priv = &priv_data_##n,							\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n, udc_mcux_driver_preinit, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, udc_mcux_driver_preinit, NULL,			\
 			      &udc_data_##n, &priv_config_##n,				\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			      &udc_mcux_api);
+			      POST_KERNEL, &udc_mcux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USB_MCUX_IP3511_DEVICE_DEFINE)

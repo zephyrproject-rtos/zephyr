@@ -133,8 +133,8 @@ static const struct uart_driver_api usart_wch_driver_api = {
 		.clock_id = DT_INST_CLOCKS_CELL(idx, id),                                          \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, &usart_wch_init, NULL, &usart_wch_##idx##_data,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &usart_wch_init, NULL, &usart_wch_##idx##_data,          \
 			      &usart_wch_##idx##_config, PRE_KERNEL_1,                             \
-			      CONFIG_SERIAL_INIT_PRIORITY, &usart_wch_driver_api);
+			      &usart_wch_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USART_WCH_INIT)

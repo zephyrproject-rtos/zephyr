@@ -294,8 +294,7 @@ static const struct led_driver_api is31fl3733_api = {
 		.selected_page = CMD_SEL_LED,                                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &is31fl3733_init, NULL, &is31fl3733_data_##n,                     \
-			      &is31fl3733_config_##n, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,       \
-			      &is31fl3733_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &is31fl3733_init, NULL, &is31fl3733_data_##n,              \
+			      &is31fl3733_config_##n, POST_KERNEL, &is31fl3733_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IS31FL3733_DEVICE)

@@ -152,7 +152,7 @@ static const struct regulator_driver_api api = {
 		.brown_out_threshold = DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold),    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_rpi_pico_init, NULL, &data_##inst, &config_##inst,   \
-			      POST_KERNEL, CONFIG_REGULATOR_RPI_PICO_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_rpi_pico_init, NULL, &data_##inst, &config_##inst,\
+			      POST_KERNEL, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_RPI_PICO_DEFINE_ALL)

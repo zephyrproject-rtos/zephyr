@@ -412,13 +412,12 @@ static const struct counter_driver_api nxp_s32_sys_timer_driver_api = {
 		.irqn = DT_INST_IRQN(n),						\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			 nxp_s32_sys_timer_##n##_init,					\
 			 NULL,								\
 			 &nxp_s32_sys_timer_data_##n,					\
 			 &nxp_s32_sys_timer_config_##n,					\
 			 POST_KERNEL,							\
-			 CONFIG_COUNTER_INIT_PRIORITY,					\
 			 &nxp_s32_sys_timer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SYS_TIMER_INIT_DEVICE)

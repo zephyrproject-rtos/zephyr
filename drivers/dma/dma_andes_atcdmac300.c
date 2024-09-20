@@ -513,13 +513,12 @@ static const struct dma_driver_api dma_atcdmac300_api = {
 									\
 	static struct dma_atcdmac300_data dma_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(0,					\
+	DEVICE_INSTANCE_FROM_DT_INST(0,					\
 		dma_atcdmac300_init,					\
 		NULL,							\
 		&dma_data_##n,						\
 		&dma_config_##n,					\
 		POST_KERNEL,						\
-		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
 		&dma_atcdmac300_api);					\
 									\
 	static void dma_atcdmac300_irq_config_##n(void)			\

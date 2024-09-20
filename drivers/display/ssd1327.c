@@ -346,7 +346,7 @@ static struct display_driver_api ssd1327_driver_api = {
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, ssd1327_init, NULL, &data##node_id, &config##node_id,            \
-			 POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY, &ssd1327_driver_api);
+	DEVICE_INSTANCE(node_id, ssd1327_init, NULL, &data##node_id, &config##node_id,             \
+			 POST_KERNEL, &ssd1327_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1327fb, SSD1327_DEFINE)

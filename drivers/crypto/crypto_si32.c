@@ -1200,5 +1200,5 @@ static const struct crypto_driver_api crypto_si32_api = {
 	.cipher_free_session = crypto_si32_free_session,
 };
 
-DEVICE_DT_INST_DEFINE(0, crypto_si32_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_CRYPTO_INIT_PRIORITY, &crypto_si32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, crypto_si32_init, NULL, NULL, NULL, POST_KERNEL,
+		      &crypto_si32_api);

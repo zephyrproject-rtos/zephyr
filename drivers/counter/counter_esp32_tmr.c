@@ -291,8 +291,7 @@ static void counter_esp32_isr(void *arg)
 		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
 		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags)};                                   \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, counter_esp32_init, NULL, &counter_data_##idx,                  \
-			      &counter_config_##idx, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,   \
-			      &counter_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, counter_esp32_init, NULL, &counter_data_##idx,           \
+			      &counter_config_##idx, PRE_KERNEL_1, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_COUNTER_INIT);

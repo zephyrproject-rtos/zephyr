@@ -384,7 +384,7 @@ const adc_extended_cfg_t g_adc_cfg_extend = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, adc_ra_init, NULL, &adc_ra_data_##idx, &adc_ra_config_##idx,    \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_ra_api_##idx)
+	DEVICE_INSTANCE_FROM_DT_INST(idx, adc_ra_init, NULL, &adc_ra_data_##idx, &adc_ra_config_##idx,\
+			      POST_KERNEL, &adc_ra_api_##idx)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RA_INIT);

@@ -586,10 +586,9 @@ static int ivshmem_init(const struct device *dev)
 			{ FOR_EACH_FIXED_ARG(IVSHMEM_INTX_INFO, (,), n, 0, 1, 2, 3) } \
 		}; \
 	)); \
-	DEVICE_DT_INST_DEFINE(n, &ivshmem_init, NULL, \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &ivshmem_init, NULL, \
 			      &ivshmem_data_##n, \
 			      COND_CODE_1(CONFIG_IVSHMEM_V2, (&ivshmem_cfg_##n), (NULL)), \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &ivshmem_api);
+			      POST_KERNEL, &ivshmem_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IVSHMEM_DEVICE_INIT)

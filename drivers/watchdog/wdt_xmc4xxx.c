@@ -180,5 +180,5 @@ static int wdt_xmc4xxx_init(const struct device *dev)
 	return wdt_xmc4xxx_setup(dev, WDT_OPT_PAUSE_HALTED_BY_DBG);
 #endif
 }
-DEVICE_DT_INST_DEFINE(0, wdt_xmc4xxx_init, NULL, &wdt_xmc4xxx_data, NULL, PRE_KERNEL_1,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_xmc4xxx_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_xmc4xxx_init, NULL, &wdt_xmc4xxx_data, NULL, PRE_KERNEL_1,
+		      &wdt_xmc4xxx_api);

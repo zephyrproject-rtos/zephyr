@@ -167,8 +167,8 @@ static int ft8xx_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config,
-		      POST_KERNEL, CONFIG_FT800_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, ft8xx_init, NULL, &ft8xx_data, &ft8xx_config,
+		      POST_KERNEL, NULL);
 
 int ft8xx_get_touch_tag(void)
 {

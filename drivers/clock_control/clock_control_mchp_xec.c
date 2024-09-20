@@ -1089,10 +1089,9 @@ const struct xec_pcr_config pcr_xec_config = {
 	.dis_internal_osc = (uint8_t)DT_INST_PROP_OR(0, internal_osc_disable, 0),
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    xec_clock_control_init,
 		    NULL,
 		    NULL, &pcr_xec_config,
 		    PRE_KERNEL_1,
-		    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		    &xec_clock_control_api);

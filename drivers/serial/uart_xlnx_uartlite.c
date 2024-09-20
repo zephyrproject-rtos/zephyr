@@ -413,13 +413,12 @@ static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config = {	\
 									\
 	static const struct xlnx_uartlite_config xlnx_uartlite_##n##_config;\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    &xlnx_uartlite_init,			\
 			    NULL,					\
 			    &xlnx_uartlite_##n##_data,			\
 			    &xlnx_uartlite_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &xlnx_uartlite_driver_api);			\
 									\
 	XLNX_UARTLITE_CONFIG_FUNC(n)					\

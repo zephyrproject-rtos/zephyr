@@ -1155,9 +1155,8 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, uart_ra_sci_b_init_##index, NULL,                             \
+	DEVICE_INSTANCE_FROM_DT_INST(index, uart_ra_sci_b_init_##index, NULL,                      \
 			      &uart_ra_sci_b_data_##index, &uart_ra_sci_b_config_##index,          \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,                           \
-			      &uart_ra_sci_b_driver_api);
+			      PRE_KERNEL_1, &uart_ra_sci_b_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RA_SCI_B_INIT)

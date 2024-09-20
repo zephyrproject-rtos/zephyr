@@ -998,12 +998,11 @@ static int crypto_smartbond_init(const struct device *dev)
 	\
 	static struct crypto_smartbond_data crypto_smartbond_data_##inst;   \
 	\
-	DEVICE_DT_INST_DEFINE(0,                            \
-		crypto_smartbond_init,		                    \
-		PM_DEVICE_DT_INST_GET(inst),					\
-		&crypto_smartbond_data_##inst, NULL,            \
-		POST_KERNEL,                                    \
-		CONFIG_CRYPTO_INIT_PRIORITY,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(0,                     \
+		crypto_smartbond_init,			                            \
+		PM_DEVICE_DT_INST_GET(inst),		                            \
+		&crypto_smartbond_data_##inst, NULL,        \
+		POST_KERNEL,                                \
 		&crypto_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_CRYPTO_INIT)

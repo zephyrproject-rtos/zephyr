@@ -291,14 +291,13 @@ static const struct gpio_driver_api driver_api = {
 	};								\
 	static struct data data_##n;					\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    grgpio_init,				\
 			    NULL,					\
 			    &data_##n,					\
 			    &cfg_##n,					\
 			    POST_KERNEL,				\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
-			    &driver_api					\
+			    &driver_api,				\
 			   );
 
 DT_INST_FOREACH_STATUS_OKAY(GRGPIO_INIT)

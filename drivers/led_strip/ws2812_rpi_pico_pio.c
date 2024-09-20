@@ -198,9 +198,9 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 		.cycles_per_bit = CYCLES_PER_BIT(DT_PARENT(node)),                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node, &ws2812_led_strip_init, NULL, &ws2812_led_strip_##node##_data,      \
+	DEVICE_INSTANCE(node, &ws2812_led_strip_init, NULL, &ws2812_led_strip_##node##_data,       \
 			 &ws2812_led_strip_##node##_config, POST_KERNEL,                           \
-			 CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_led_strip_api);
+			 &ws2812_led_strip_api);
 
 #define SET_DELAY(op, inst, i)                                                                     \
 	(op | (((DT_INST_PROP_BY_IDX(inst, bit_waveform, i) - 1) & 0xF) << 8))
@@ -245,8 +245,8 @@ static int ws2812_rpi_pico_pio_init(const struct device *dev)
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &ws2812_rpi_pico_pio_init, NULL, NULL,                         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &ws2812_rpi_pico_pio_init, NULL, NULL,                  \
 			      &rpi_pico_pio_ws2812_##inst##_config, POST_KERNEL,                   \
-			      CONFIG_LED_STRIP_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_RPI_PICO_PIO_INIT)

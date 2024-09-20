@@ -301,9 +301,8 @@ static struct esp32_ipm_data esp32_ipm_device_data_##idx = {	\
 	.control = (struct esp32_ipm_control *)DT_INST_REG_ADDR(idx),	\
 };	\
 	\
-DEVICE_DT_INST_DEFINE(idx, &esp32_ipm_init, NULL,	\
-		    &esp32_ipm_device_data_##idx, &esp32_ipm_device_cfg_##idx,	\
-		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-		    &esp32_ipm_driver_api);	\
+DEVICE_INSTANCE_FROM_DT_INST(idx, &esp32_ipm_init, NULL,\
+		    &esp32_ipm_device_data_##idx, &esp32_ipm_device_cfg_##idx,\
+		    PRE_KERNEL_2, &esp32_ipm_driver_api);\
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_IPM_INIT);

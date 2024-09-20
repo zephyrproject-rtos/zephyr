@@ -330,13 +330,12 @@ static int gpio_sedi_init(const struct device *dev)
 		.irq_config = gpio_sedi_irq_config_##n,	               \
 	};							       \
 	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);               \
-	DEVICE_DT_INST_DEFINE(n,				       \
+	DEVICE_INSTANCE_FROM_DT_INST(n,				       \
 		      gpio_sedi_init,				       \
-		      PM_DEVICE_GET(gpio_##n),		               \
-		      &gpio##n##_data,			               \
+		      PM_DEVICE_GET(gpio_##n),			       \
+		      &gpio##n##_data,				       \
 		      &gpio##n##_config,			       \
 		      POST_KERNEL,				       \
-		      CONFIG_GPIO_INIT_PRIORITY,	               \
 		      &gpio_sedi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_SEDI)

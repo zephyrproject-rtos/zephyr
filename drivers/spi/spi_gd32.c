@@ -683,9 +683,8 @@ int spi_gd32_init(const struct device *dev)
 		IF_ENABLED(CONFIG_SPI_GD32_DMA, (.dma = DMAS_DECL(idx),))      \
 		IF_ENABLED(CONFIG_SPI_GD32_INTERRUPT,			       \
 			   (.irq_configure = spi_gd32_irq_configure_##idx)) }; \
-	DEVICE_DT_INST_DEFINE(idx, spi_gd32_init, NULL,			       \
-			      &spi_gd32_data_##idx, &spi_gd32_config_##idx,    \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
-			      &spi_gd32_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, spi_gd32_init, NULL,			       \
+			      &spi_gd32_data_##idx, &spi_gd32_config_##idx,	       \
+			      POST_KERNEL, &spi_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_SPI_INIT)

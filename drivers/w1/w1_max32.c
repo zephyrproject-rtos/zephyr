@@ -200,8 +200,7 @@ static const struct w1_driver_api w1_max32_driver_api = {
 		.long_line_mode = DT_INST_PROP(_num, long_line_mode),                              \
 	};                                                                                         \
 	static struct max32_w1_data max32_owm_data##_num;                                          \
-	DEVICE_DT_INST_DEFINE(_num, w1_max32_init, NULL, &max32_owm_data##_num,                    \
-			      &max32_w1_config_##_num, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,       \
-			      &w1_max32_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(_num, w1_max32_init, NULL, &max32_owm_data##_num,             \
+			      &max32_w1_config_##_num, POST_KERNEL, &w1_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_W1_INIT)

@@ -866,12 +866,11 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
 	))								\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(inst,						\
+DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 	gpio_pca95xx_init,						\
 	NULL,								\
 	&gpio_pca95xx_##inst##_drvdata,					\
 	&gpio_pca95xx_##inst##_cfg,					\
-	POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,			\
-	&gpio_pca95xx_drv_api_funcs);
+	POST_KERNEL, &gpio_pca95xx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCA95XX_DEVICE_INSTANCE)

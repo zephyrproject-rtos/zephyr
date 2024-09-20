@@ -866,10 +866,9 @@ static int adc_npcx_init(const struct device *dev)
 		ADC_CONTEXT_INIT_SYNC(adc_npcx_data_##n, ctx),			\
 		.threshold_data = &threshold_data_##n,				\
 	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			     adc_npcx_init, NULL,				\
 			     &adc_npcx_data_##n, &adc_npcx_cfg_##n,		\
-			     PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,		\
-			     &adc_npcx_driver_api_##n);
+			     PRE_KERNEL_1, &adc_npcx_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_ADC_INIT)

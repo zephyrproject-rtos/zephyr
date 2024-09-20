@@ -147,8 +147,8 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, clock_control_wch_rcc_init, NULL, NULL,                  \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_wch_rcc_api);
+			      &clock_control_wch_rcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_CONTROL_WCH_RCC_INIT)

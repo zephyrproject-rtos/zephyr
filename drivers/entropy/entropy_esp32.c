@@ -92,7 +92,6 @@ static const struct entropy_driver_api entropy_esp32_api_funcs = {
 	.get_entropy = entropy_esp32_get_entropy
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    entropy_esp32_init, NULL, NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_esp32_api_funcs);
+		    PRE_KERNEL_1, &entropy_esp32_api_funcs);

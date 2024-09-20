@@ -222,6 +222,6 @@ struct intc_xmc4xxx_config intc_xmc4xxx_config0 = {
 	},
 };
 
-DEVICE_DT_INST_DEFINE(0, intc_xmc4xxx_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, intc_xmc4xxx_init, NULL,
 		&intc_xmc4xxx_data0, &intc_xmc4xxx_config0, PRE_KERNEL_1,
-		CONFIG_INTC_INIT_PRIORITY, NULL);
+		NULL);

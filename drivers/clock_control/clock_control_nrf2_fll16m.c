@@ -256,7 +256,6 @@ static const struct fll16m_dev_config fll16m_config = {
 	.fixed_frequency = DT_INST_PROP(0, clock_frequency),
 };
 
-DEVICE_DT_INST_DEFINE(0, fll16m_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, fll16m_init, NULL,
 		      &fll16m_data, &fll16m_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &fll16m_drv_api);
+		      PRE_KERNEL_1, &fll16m_drv_api);

@@ -891,9 +891,8 @@ static int pinnacle_init(const struct device *dev)
 		.swap_xy = DT_INST_PROP(inst, swap_xy),                                            \
 	};                                                                                         \
 	static struct pinnacle_data pinnacle_data_##inst;                                          \
-	DEVICE_DT_INST_DEFINE(inst, pinnacle_init, NULL, &pinnacle_data_##inst,                    \
-			      &pinnacle_config_##inst, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
-			      NULL);                                                               \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, pinnacle_init, NULL, &pinnacle_data_##inst,             \
+			      &pinnacle_config_##inst, POST_KERNEL, NULL);                         \
 	BUILD_ASSERT(DT_INST_PROP(inst, active_range_x_min) <                                      \
 			     DT_INST_PROP(inst, active_range_x_max),                               \
 		     "active-range-x-min must be less than active-range-x-max");                   \

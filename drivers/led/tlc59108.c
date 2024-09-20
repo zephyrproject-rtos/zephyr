@@ -221,10 +221,9 @@ static const struct led_driver_api tlc59108_led_api = {
 	};								\
 	static struct tlc59108_data tlc59108_##id##_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(id, &tlc59108_led_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &tlc59108_led_init, NULL,	\
 			&tlc59108_##id##_data,				\
 			&tlc59108_##id##_cfg, POST_KERNEL,		\
-			CONFIG_LED_INIT_PRIORITY,			\
 			&tlc59108_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLC59108_DEVICE)

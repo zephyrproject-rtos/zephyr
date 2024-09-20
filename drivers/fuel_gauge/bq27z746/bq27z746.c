@@ -282,7 +282,7 @@ static const struct fuel_gauge_driver_api bq27z746_driver_api = {
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &bq27z746_init, NULL, NULL, &bq27z746_config_##index,         \
-			      POST_KERNEL, CONFIG_FUEL_GAUGE_INIT_PRIORITY, &bq27z746_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, &bq27z746_init, NULL, NULL, &bq27z746_config_##index,  \
+			      POST_KERNEL, &bq27z746_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BQ27Z746_INIT)

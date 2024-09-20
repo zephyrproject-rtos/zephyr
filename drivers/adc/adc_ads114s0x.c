@@ -1502,7 +1502,7 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.vbias_level = DT_INST_PROP(n, vbias_level),                                       \
 	};                                                                                         \
 	static struct ads114s0x_data data_##n;                                                     \
-	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \
-			      CONFIG_ADC_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL, \
+			      &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS114S0X_INST_DEFINE);

@@ -173,5 +173,5 @@ static int gd32_fwdgt_init(const struct device *dev)
 	return ret;
 }
 
-DEVICE_DT_INST_DEFINE(0, gd32_fwdgt_init, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &fwdgt_gd32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, gd32_fwdgt_init, NULL, NULL, NULL, POST_KERNEL,
+		      &fwdgt_gd32_api);

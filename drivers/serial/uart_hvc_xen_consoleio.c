@@ -52,6 +52,5 @@ static int xen_consoleio_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, xen_consoleio_init, NULL, NULL,
-		NULL, PRE_KERNEL_1, CONFIG_XEN_HVC_INIT_PRIORITY,
-		&xen_consoleio_hvc_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, xen_consoleio_init, NULL, NULL,
+		NULL, PRE_KERNEL_1, &xen_consoleio_hvc_api);

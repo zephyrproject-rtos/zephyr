@@ -218,13 +218,12 @@ static int psci_init(const struct device *dev)
 	static const struct psci_config_t psci_config_##inst##ver = {	\
 		.method = DT_PROP(DT_DRV_INST(inst), method)		\
 	};								\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			&psci_init,					\
 			NULL,						\
 			&psci_data,					\
-			&psci_config_##inst##ver,				\
+			&psci_config_##inst##ver,			\
 			PRE_KERNEL_1,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			NULL);
 
 #define PSCI_0_2_INIT(n) PSCI_DEFINE(n, PSCI_0_2)

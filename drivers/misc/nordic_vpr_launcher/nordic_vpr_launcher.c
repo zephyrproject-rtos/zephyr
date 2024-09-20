@@ -70,7 +70,7 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 			   (.src_addr = VPR_ADDR(DT_INST_PHANDLE(inst, source_memory)),            \
 			    .size = DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)),))};      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, nordic_vpr_launcher_init, NULL, NULL, &config##inst,           \
-			      POST_KERNEL, CONFIG_NORDIC_VPR_LAUNCHER_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, nordic_vpr_launcher_init, NULL, NULL, &config##inst,    \
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NORDIC_VPR_LAUNCHER_DEFINE)

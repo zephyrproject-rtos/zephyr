@@ -360,12 +360,11 @@ static const struct imx_mu_config imx_mu_b_config = {
 
 static struct imx_mu_data imx_mu_b_data;
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    &imx_mu_init,
 		    NULL,
 		    &imx_mu_b_data, &imx_mu_b_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &imx_mu_driver_api);
+		    PRE_KERNEL_1, &imx_mu_driver_api);
 
 static void imx_mu_config_func_b(const struct device *dev)
 {

@@ -1994,9 +1994,9 @@ static int numaker_udbd_init(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP(inst, num_bidir_endpoints) <= NUMAKER_USBD_EP_MAXNUM,            \
 		     "num_bidir_endpoints exceeds support limit by USBD driver");                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, numaker_udbd_init, NULL, &numaker_usbd_data_##inst,            \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, numaker_udbd_init, NULL, &numaker_usbd_data_##inst,     \
 			      &numaker_usbd_config_##inst, POST_KERNEL,                            \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+			      NULL);
 
 USB_DC_NUMAKER_INIT(0);
 

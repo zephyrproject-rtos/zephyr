@@ -59,7 +59,7 @@ static const struct reset_driver_api reset_nxp_syscon_driver_api = {
 	.line_toggle = reset_nxp_syscon_line_toggle,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL,
 			(void *)(DT_REG_ADDR(DT_INST_PARENT(0)) + 0x100),
-			PRE_KERNEL_1, CONFIG_RESET_INIT_PRIORITY,
+			PRE_KERNEL_1,
 			&reset_nxp_syscon_driver_api);

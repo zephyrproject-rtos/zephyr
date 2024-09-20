@@ -46,9 +46,8 @@ static const struct adc_driver_api vnd_adc_api = {
 };
 
 #define VND_ADC_INIT(n)						  \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL,	  \
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL,	  \
 			      POST_KERNEL,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			      &vnd_adc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_ADC_INIT)

@@ -407,9 +407,9 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 		.all_outputs = DT_INST_PROP_OR(n, xlnx_all_outputs_2, 0),                          \
 		.interrupts_available = DT_INST_NODE_HAS_PROP(n, interrupts)};                     \
                                                                                                    \
-	DEVICE_DT_DEFINE(DT_INST_CHILD(n, gpio2), &gpio_xlnx_axi_init, NULL,                       \
+	DEVICE_INSTANCE(DT_INST_CHILD(n, gpio2), &gpio_xlnx_axi_init, NULL,                       \
 			 &gpio_xlnx_axi_##n##_2_data, &gpio_xlnx_axi_##n##_2_config, PRE_KERNEL_1, \
-			 CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_axi_driver_api);
+			 &gpio_xlnx_axi_driver_api);
 
 #define GPIO_XLNX_AXI_INIT(n)                                                                      \
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, interrupts),                                           \
@@ -450,8 +450,8 @@ static const struct gpio_driver_api gpio_xlnx_axi_driver_api = {
 			   irq_enable(DT_INST_IRQN(n));                                            \
 		   }))                                                                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_xlnx_axi_init, NULL, &gpio_xlnx_axi_##n##_data,              \
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_xlnx_axi_init, NULL, &gpio_xlnx_axi_##n##_data,       \
 			      &gpio_xlnx_axi_##n##_config, PRE_KERNEL_1,                           \
-			      CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_axi_driver_api);
+			      &gpio_xlnx_axi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_XLNX_AXI_INIT)

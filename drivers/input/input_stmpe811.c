@@ -542,8 +542,7 @@ static int stmpe811_init(const struct device *dev)
 		.touch_average_control = DT_INST_ENUM_IDX(index, touch_average_control),           \
 		.tracking_index = DT_INST_ENUM_IDX(index, tracking_index)};                        \
 	static struct stmpe811_data stmpe811_data_##index;                                         \
-	DEVICE_DT_INST_DEFINE(index, stmpe811_init, NULL, &stmpe811_data_##index,                  \
-			      &stmpe811_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,   \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(index, stmpe811_init, NULL, &stmpe811_data_##index,           \
+			      &stmpe811_config_##index, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STMPE811_DEFINE)

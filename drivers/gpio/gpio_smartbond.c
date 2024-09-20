@@ -431,12 +431,11 @@ static const struct gpio_driver_api gpio_smartbond_drv_api_funcs = {
 	}										\
 											\
 	PM_DEVICE_DEFINE(id, gpio_smartbond_pm_action);					\
-	DEVICE_DT_INST_DEFINE(id, gpio_smartbond_init_##id,				\
+	DEVICE_INSTANCE_FROM_DT_INST(id, gpio_smartbond_init_##id,			\
 			      PM_DEVICE_GET(id),					\
 			      &gpio_smartbond_data_##id,				\
 			      &gpio_smartbond_config_##id,				\
 			      PRE_KERNEL_1,						\
-			      CONFIG_GPIO_INIT_PRIORITY,				\
 			      &gpio_smartbond_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SMARTBOND_DEVICE)

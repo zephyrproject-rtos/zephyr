@@ -221,5 +221,5 @@ static struct gd32_wwdgt_data wwdgt_data = {
 	.callback = NULL
 };
 
-DEVICE_DT_INST_DEFINE(0, gd32_wwdgt_init, NULL, &wwdgt_data, &wwdgt_cfg, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wwdgt_gd32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, gd32_wwdgt_init, NULL, &wwdgt_data, &wwdgt_cfg, POST_KERNEL,
+		      &wwdgt_gd32_api);

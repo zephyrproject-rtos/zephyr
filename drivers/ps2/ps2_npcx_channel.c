@@ -115,9 +115,8 @@ static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(inst, ps2_npcx_channel_init, NULL, NULL,         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, ps2_npcx_channel_init, NULL, NULL,  \
 			      &ps2_npcx_ch_cfg_##inst, POST_KERNEL,            \
-			      CONFIG_PS2_CHANNEL_INIT_PRIORITY,                \
 			      &ps2_channel_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_PS2_CHANNEL_INIT)

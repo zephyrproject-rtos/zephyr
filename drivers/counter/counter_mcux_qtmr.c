@@ -328,13 +328,12 @@ static const struct counter_driver_api mcux_qtmr_driver_api = {
 		.mode = DT_INST_ENUM_IDX(n, mode),						\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n,								\
+	DEVICE_INSTANCE_FROM_DT_INST(n,								\
 			    mcux_qtmr_init,							\
 			    NULL,								\
 			    &mcux_qtmr_data_ ## n,						\
 			    &mcux_qtmr_config_ ## n,						\
 			    POST_KERNEL,							\
-			    CONFIG_COUNTER_INIT_PRIORITY,					\
 			    &mcux_qtmr_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(TMR_DEVICE_INIT_MCUX)

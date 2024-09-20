@@ -797,11 +797,10 @@ static const struct display_driver_api uc81xx_driver_api = {
 									\
 	static struct uc81xx_data uc81xx_data_##n = {};			\
 									\
-	DEVICE_DT_DEFINE(n, uc81xx_init, NULL,				\
+	DEVICE_INSTANCE(n, uc81xx_init, NULL,				\
 			 &uc81xx_data_ ## n,				\
 			 &uc81xx_cfg_ ## n,				\
 			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
 			 &uc81xx_driver_api);
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE,

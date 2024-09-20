@@ -219,8 +219,8 @@ static int regulator_nxp_vref_init(const struct device *dev)
 				nxp_current_compensation_en),			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_nxp_vref_init, NULL, &data_##inst,\
 				&config_##inst, POST_KERNEL,			\
-				CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);	\
+				&api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)

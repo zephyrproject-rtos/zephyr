@@ -297,13 +297,12 @@ static const struct pwm_driver_api pwm_it8xxx2_api = {
 											\
 	static struct pwm_it8xxx2_data pwm_it8xxx2_data_##inst;                         \
 											\
-	DEVICE_DT_INST_DEFINE(inst,							\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,						\
 			      &pwm_it8xxx2_init,					\
 			      NULL,							\
 			      &pwm_it8xxx2_data_##inst,					\
 			      &pwm_it8xxx2_cfg_##inst,					\
 			      PRE_KERNEL_1,						\
-			      CONFIG_PWM_INIT_PRIORITY,					\
 			      &pwm_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_IT8XXX2_INIT)

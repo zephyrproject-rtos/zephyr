@@ -466,12 +466,11 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
 	CHECK_MAX_FREQ(idx);									\
-	DEVICE_DT_INST_DEFINE(idx,								\
+	DEVICE_INSTANCE_FROM_DT_INST(idx,							\
 			    counter_##idx##_init,						\
 			    NULL,								\
 			    &counter_##idx##_data,						\
 			    &nrfx_counter_##idx##_config.info,					\
-			    PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,				\
-			    &counter_nrfx_driver_api);
+			    PRE_KERNEL_1, &counter_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NRFX_TIMER_DEVICE)

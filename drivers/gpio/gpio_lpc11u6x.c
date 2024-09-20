@@ -581,13 +581,12 @@ static const struct gpio_lpc11u6x_config				\
 									\
 static struct gpio_lpc11u6x_data gpio_lpc11u6x_data_##id;		\
 									\
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id),				\
+DEVICE_INSTANCE(DT_NODELABEL(gpio##id),					\
 		    &gpio_lpc11u6x_init,				\
 		    NULL,						\
 		    &gpio_lpc11u6x_data_##id,				\
 		    &gpio_lpc11u6x_config_##id,				\
-		    PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY,		\
-		    &gpio_lpc11u6x_driver_api)
+		    PRE_KERNEL_2, &gpio_lpc11u6x_driver_api)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 GPIO_LPC11U6X_INIT(0);

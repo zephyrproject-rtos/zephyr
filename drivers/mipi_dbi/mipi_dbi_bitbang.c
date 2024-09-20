@@ -340,8 +340,8 @@ static const struct mipi_dbi_driver_api mipi_dbi_bitbang_driver_api = {
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, data_gpios) < MIPI_DBI_MAX_DATA_BUS_WIDTH,                \
 		     "Number of data GPIOs in DT exceeds MIPI_DBI_MAX_DATA_BUS_WIDTH");            \
 	static struct mipi_dbi_bitbang_data mipi_dbi_bitbang_data_##n;                             \
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_bitbang_init, NULL, &mipi_dbi_bitbang_data_##n,          \
+	DEVICE_INSTANCE_FROM_DT_INST(n, mipi_dbi_bitbang_init, NULL, &mipi_dbi_bitbang_data_##n,   \
 			      &mipi_dbi_bitbang_config_##n, POST_KERNEL,                           \
-			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_bitbang_driver_api);
+			      &mipi_dbi_bitbang_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_BITBANG_INIT)

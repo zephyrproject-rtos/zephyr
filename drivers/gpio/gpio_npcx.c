@@ -419,13 +419,12 @@ int gpio_npcx_init(const struct device *dev)
 									       \
 	static struct gpio_npcx_data gpio_npcx_data_##inst;	               \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			    gpio_npcx_init,                                    \
-			    NULL,					       \
-			    &gpio_npcx_data_##inst,                            \
-			    &gpio_npcx_cfg_##inst,                             \
-			    PRE_KERNEL_1,                                       \
-			    CONFIG_GPIO_INIT_PRIORITY,                         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					       \
+			    gpio_npcx_init,					       \
+			    NULL,						       \
+			    &gpio_npcx_data_##inst,				       \
+			    &gpio_npcx_cfg_##inst,				       \
+			    PRE_KERNEL_1,					       \
 			    &gpio_npcx_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)

@@ -461,8 +461,7 @@ static const struct adc_driver_api adc_b91_driver_api = {
 	.ref_internal = cfg_0.vref_internal_mv,
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_b91_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, adc_b91_init, NULL,
 		      &data_0,  &cfg_0,
 		      POST_KERNEL,
-		      CONFIG_ADC_INIT_PRIORITY,
 		      &adc_b91_driver_api);

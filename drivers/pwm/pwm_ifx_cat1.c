@@ -170,8 +170,7 @@ static const struct pwm_driver_api ifx_cat1_pwm_api = {
 		.divider_val = DT_INST_PROP(n, divider_val),                                       \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_pwm_init, NULL, &pwm_cat1_data_##n,                      \
-			      &pwm_cat1_config_##n, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,         \
-			      &ifx_cat1_pwm_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ifx_cat1_pwm_init, NULL, &pwm_cat1_data_##n,               \
+			      &pwm_cat1_config_##n, POST_KERNEL, &ifx_cat1_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_PWM_INIT)

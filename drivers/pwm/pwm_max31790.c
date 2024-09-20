@@ -348,8 +348,8 @@ static int max31790_pwm_init(const struct device *dev)
                                                                                                    \
 	static struct max31790_pwm_data max31790_pwm_##inst##_data;                                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, max31790_pwm_init, NULL, &max31790_pwm_##inst##_data,          \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, max31790_pwm_init, NULL, &max31790_pwm_##inst##_data,   \
 			      &max31790_pwm_##inst##_config, POST_KERNEL,                          \
-			      CONFIG_PWM_INIT_PRIORITY, &max31790_pwm_api);
+			      &max31790_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX31790_PWM_INIT);

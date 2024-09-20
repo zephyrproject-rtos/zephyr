@@ -2205,10 +2205,9 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1), \
 		.cache = (void *)gpio_##part_no##_##inst##_reg_cache, \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, gpio_pca_series_init, NULL, \
-		&gpio_##part_no##_##inst##_data, \
-		&gpio_##part_no##_##inst##_cfg, POST_KERNEL, \
-		CONFIG_GPIO_PCA_SERIES_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_pca_series_init, NULL,\
+		&gpio_##part_no##_##inst##_data,                \
+		&gpio_##part_no##_##inst##_cfg, POST_KERNEL,    \
 		GPIO_PCA_GET_API_BY_PART_NO(part_no));
 
 

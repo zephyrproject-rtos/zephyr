@@ -498,8 +498,7 @@ static const struct pcie_ep_driver_api iproc_pcie_ep_api = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &iproc_pcie_ep_init, NULL,
 		    &iproc_pcie_ep_ctx_0,
 		    &iproc_pcie_ep_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &iproc_pcie_ep_api);
+		    POST_KERNEL, &iproc_pcie_ep_api);

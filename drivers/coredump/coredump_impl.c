@@ -172,13 +172,12 @@ static const struct coredump_driver_api coredump_api = {
 			.length = 0,                                                         \
 		))                                                                       \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n,                                    \
-						  coredump_init,                        \
-						  NULL,                                 \
-						  &coredump_data_##n,                   \
-						  &coredump_config##n,                  \
-						  PRE_KERNEL_1,                         \
-						  CONFIG_COREDUMP_DEVICE_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                             \
+						  coredump_init,    \
+						  NULL,             \
+						  &coredump_data_##n,\
+						  &coredump_config##n,\
+						  PRE_KERNEL_1,     \
 						  &coredump_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_COREDUMP_DEVICE)

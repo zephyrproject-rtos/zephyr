@@ -799,9 +799,8 @@ static const struct adc_driver_api max1125x_api = {
 		ADC_CONTEXT_INIT_TIMER(max##t##_data_##n, ctx),                                    \
 		ADC_CONTEXT_INIT_SYNC(max##t##_data_##n, ctx),                                     \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_INST_MAX1125X(n, t), max1125x_init, NULL, &max##t##_data_##n,          \
-			 &max##t##_cfg_##n, POST_KERNEL, CONFIG_ADC_MAX1125X_INIT_PRIORITY,        \
-			 &max1125x_api);
+	DEVICE_INSTANCE(DT_INST_MAX1125X(n, t), max1125x_init, NULL, &max##t##_data_##n,           \
+			&max##t##_cfg_##n, POST_KERNEL, &max1125x_api);
 
 /* Each data register is a 16-bit read-only register. Any attempt to write
  * data to this location will have no effect. The data read from these

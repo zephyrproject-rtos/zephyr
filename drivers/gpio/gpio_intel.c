@@ -697,9 +697,8 @@ static int gpio_intel_dts_init(const struct device *dev)
 	GPIO_INIT_CONFIG(n);                                                                       \
 	static struct gpio_intel_data gpio_intel_data_##n;                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_intel_init##n, NULL, &gpio_intel_data_##n,                   \
-			      &gpio_intel_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
-			      &gpio_intel_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_intel_init##n, NULL, &gpio_intel_data_##n,            \
+			      &gpio_intel_cfg_##n, POST_KERNEL, &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_INTEL_DEV_CFG_DATA)

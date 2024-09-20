@@ -425,12 +425,11 @@ static const struct uart_driver_api uart0_api = {
 
 static struct lpc11u6x_uart0_data uart0_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(uart0),
+DEVICE_INSTANCE(DT_NODELABEL(uart0),
 		    &lpc11u6x_uart0_init,
 		    NULL,
 		    &uart0_data, &uart0_config,
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-		    &uart0_api);
+		    PRE_KERNEL_1, &uart0_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void lpc11u6x_uart0_isr_config(const struct device *dev)
@@ -870,11 +869,10 @@ static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 									      \
 static struct lpc11u6x_uartx_data uart_data_##idx;                            \
 									      \
-DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx), 				      \
-		    &lpc11u6x_uartx_init, NULL,				      \
-		    &uart_data_##idx, &uart_cfg_##idx,			      \
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		      \
-		    &uartx_api)
+DEVICE_INSTANCE(DT_NODELABEL(uart##idx),					       \
+		    &lpc11u6x_uartx_init, NULL,					       \
+		    &uart_data_##idx, &uart_cfg_##idx,				       \
+		    PRE_KERNEL_1, &uartx_api)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
 LPC11U6X_UARTX_INIT(1);

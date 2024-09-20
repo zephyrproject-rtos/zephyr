@@ -386,7 +386,7 @@ static struct display_driver_api ssd1322_driver_api = {
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, ssd1322_init, NULL, NULL, &config##node_id, POST_KERNEL,         \
-			 CONFIG_DISPLAY_INIT_PRIORITY, &ssd1322_driver_api);
+	DEVICE_INSTANCE(node_id, ssd1322_init, NULL, NULL, &config##node_id, POST_KERNEL,          \
+			 &ssd1322_driver_api);
 
 DT_FOREACH_STATUS_OKAY(solomon_ssd1322, SSD1322_DEFINE)

@@ -114,9 +114,9 @@ static const __unused struct regulator_driver_api api = {
 		.mode = GPIO_DT_SPEC_GET_OR(node_id, nordic_mode_gpios, {}),   \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_DEFINE(node_id, regulator_npm1100_init, NULL, &data_##id,    \
+	DEVICE_INSTANCE(node_id, regulator_npm1100_init, NULL, &data_##id,     \
 			 &config_##id, POST_KERNEL,                            \
-			 CONFIG_REGULATOR_NPM1100_INIT_PRIORITY, &api);
+			 &api);
 
 #define REGULATOR_NPM1100_DEFINE_BUCK_COND(inst)                               \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, buck)),                 \
@@ -129,9 +129,9 @@ static const __unused struct regulator_driver_api api = {
 		.iset = GPIO_DT_SPEC_INST_GET_OR(inst, nordic_iset_gpios, {}), \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, regulator_npm1100_common_init, NULL, NULL, \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_npm1100_common_init, NULL, NULL,\
 			      &config_##inst, POST_KERNEL,                     \
-			      CONFIG_REGULATOR_NPM1100_INIT_PRIORITY, NULL);   \
+			      NULL);                                           \
                                                                                \
 	REGULATOR_NPM1100_DEFINE_BUCK_COND(inst)
 

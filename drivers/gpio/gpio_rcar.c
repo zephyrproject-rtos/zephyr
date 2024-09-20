@@ -305,15 +305,13 @@ static const struct gpio_driver_api gpio_rcar_driver_api = {
 	};							      \
 	static struct gpio_rcar_data gpio_rcar_data_##n;	      \
 								      \
-	DEVICE_DT_INST_DEFINE(n,				      \
+	DEVICE_INSTANCE_FROM_DT_INST(n,				      \
 			      gpio_rcar_init,			      \
 			      NULL,				      \
 			      &gpio_rcar_data_##n,		      \
 			      &gpio_rcar_cfg_##n,		      \
 			      PRE_KERNEL_1,			      \
-			      CONFIG_GPIO_INIT_PRIORITY,	      \
-			      &gpio_rcar_driver_api		      \
-			      );				      \
+			      &gpio_rcar_driver_api);                 \
 	static void gpio_rcar_##n##_init(const struct device *dev)    \
 	{							      \
 		IRQ_CONNECT(DT_INST_IRQN(n),			      \

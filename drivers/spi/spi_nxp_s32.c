@@ -703,10 +703,9 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_nxp_s32_data_##n, ctx),			\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)			\
 	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			spi_nxp_s32_init, NULL,						\
 			&spi_nxp_s32_data_##n, &spi_nxp_s32_config_##n,			\
-			POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
-			&spi_nxp_s32_driver_api);
+			POST_KERNEL, &spi_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NXP_S32_DEVICE)

@@ -448,8 +448,8 @@ void wiced_bt_process_timer(void)
 #define CYW208XX_DEVICE_INIT(inst) \
 	static struct cyw208xx_data cyw208xx_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL,\
+			      POST_KERNEL, &drv)
 
 /* Only one instance supported */
 CYW208XX_DEVICE_INIT(0)

@@ -261,12 +261,11 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		  \
 	};								  \
 									  \
-	DEVICE_DT_INST_DEFINE(n,					  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,					  \
 			    pwm_mcux_init,				  \
 			    NULL,					  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
-			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	  \
-			    &pwm_mcux_driver_api);
+			    POST_KERNEL, &pwm_mcux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

@@ -437,13 +437,12 @@ static int flash_mspi_emul_device_init_stub(const struct device *dev)
 		.lock = Z_SEM_INITIALIZER(flash_mspi_emul_device_data_##n.lock, 0, 1),            \
 		.mem  = (uint8_t *)flash_mspi_emul_device_mem##n,                                 \
 	};                                                                                        \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                           \
 			      flash_mspi_emul_device_init_stub,                                   \
 			      NULL,                                                               \
 			      &flash_mspi_emul_device_data_##n,                                   \
 			      &flash_mspi_emul_device_config_##n,                                 \
 			      POST_KERNEL,                                                        \
-			      CONFIG_FLASH_INIT_PRIORITY,                                         \
 			      &flash_mspi_emul_device_api);
 
 #define EMUL_TEST(n)                                                                              \

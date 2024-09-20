@@ -322,9 +322,9 @@ static const struct ps2_npcx_ctrl_config ps2_npcx_ctrl_config_0 = {
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &ps2_npcx_ctrl_init, NULL, &ps2_npcx_ctrl_data_0,
+DEVICE_INSTANCE_FROM_DT_INST(0, &ps2_npcx_ctrl_init, NULL, &ps2_npcx_ctrl_data_0,
 		      &ps2_npcx_ctrl_config_0, POST_KERNEL,
-		      CONFIG_PS2_INIT_PRIORITY, NULL);
+		      NULL);
 
 static int ps2_npcx_ctrl_init(const struct device *dev)
 {

@@ -373,8 +373,8 @@ static const struct ambiq_rtc_config ambiq_rtc_config_##inst = {	\
 												\
 static struct ambiq_rtc_data ambiq_rtc_data##inst;	\
 												\
-DEVICE_DT_INST_DEFINE(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,    \
-				&ambiq_rtc_config_##inst, POST_KERNEL, \
-				CONFIG_RTC_INIT_PRIORITY, &ambiq_rtc_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(inst, &ambiq_rtc_init, NULL, &ambiq_rtc_data##inst,\
+				&ambiq_rtc_config_##inst, POST_KERNEL,       \
+				&ambiq_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_RTC_INIT)

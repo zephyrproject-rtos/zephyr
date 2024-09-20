@@ -261,8 +261,7 @@ static int gpio_max32_init(const struct device *dev)
 		.perclk.bus = DT_INST_PHA_BY_IDX_OR(_num, clocks, 0, offset, 0),                   \
 		.perclk.bit = DT_INST_PHA_BY_IDX_OR(_num, clocks, 1, bit, 0),                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, gpio_max32_init, NULL, &max32_gpio_data_##_num,                \
-			      &max32_gpio_config_##_num, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,  \
-			      (void *)&gpio_max32_driver);
+	DEVICE_INSTANCE_FROM_DT_INST(_num, gpio_max32_init, NULL, &max32_gpio_data_##_num,         \
+			      &max32_gpio_config_##_num, PRE_KERNEL_1, (void *)&gpio_max32_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX32_GPIO_INIT)

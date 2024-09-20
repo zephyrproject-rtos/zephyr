@@ -265,8 +265,7 @@ static void gpio_numaker_isr(const struct device *dev)
 		SYS_LockReg();                                                                     \
 		return err;                                                                        \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(n, gpio_numaker_init##n, NULL, &gpio_numaker_data##n,                \
-			      &gpio_numaker_config##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
-			      &gpio_numaker_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_numaker_init##n, NULL, &gpio_numaker_data##n,         \
+			      &gpio_numaker_config##n, PRE_KERNEL_1, &gpio_numaker_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NUMAKER_DEFINE)

@@ -520,8 +520,8 @@ static const struct counter_driver_api counter_api = {
 		.irqn = DT_INST_IRQN(n),                                                           \
 		.external_pin =                                                                    \
 			(cyhal_gpio_t)DT_INST_GET_CYHAL_GPIO_OR(n, external_trigger_gpios, NC)};   \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_counter_init, NULL, &ifx_cat1_counter##n##_data,         \
+	DEVICE_INSTANCE_FROM_DT_INST(n, ifx_cat1_counter_init, NULL, &ifx_cat1_counter##n##_data,  \
 			      &ifx_cat1_counter##n##_config, PRE_KERNEL_1,                         \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
+			      &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_COUNTER_INIT);

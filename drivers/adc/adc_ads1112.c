@@ -387,7 +387,7 @@ static const struct adc_driver_api api = {
 #define ADC_ADS1112_INST_DEFINE(n)                                                                 \
 	static const struct ads1112_config config_##n = {.bus = I2C_DT_SPEC_INST_GET(n)};  \
 	static struct ads1112_data data_##n;                                                       \
-	DEVICE_DT_INST_DEFINE(n, ads1112_init, NULL, &data_##n, &config_##n, POST_KERNEL,          \
-			      CONFIG_ADC_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ads1112_init, NULL, &data_##n, &config_##n, POST_KERNEL,   \
+			      &api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_ADS1112_INST_DEFINE);

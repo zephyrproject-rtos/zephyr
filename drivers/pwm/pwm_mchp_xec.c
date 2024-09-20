@@ -454,11 +454,10 @@ static int pwm_xec_init(const struct device *dev)
 									\
 	PM_DEVICE_DT_INST_DEFINE(index, pwm_xec_pm_action);		\
 									\
-	DEVICE_DT_INST_DEFINE(index, &pwm_xec_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(index, &pwm_xec_init,		\
 			      PM_DEVICE_DT_INST_GET(index),		\
 			      &pwm_xec_data_##index,			\
 			      &pwm_xec_config_##index, POST_KERNEL,	\
-			      CONFIG_PWM_INIT_PRIORITY,			\
 			      &pwm_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_PWM_DEVICE_INIT)

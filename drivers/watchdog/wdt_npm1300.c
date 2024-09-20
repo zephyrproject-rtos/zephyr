@@ -162,7 +162,7 @@ static int wdt_npm1300_init(const struct device *dev)
 		.reset_gpios = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &wdt_npm1300_init, NULL, &data##n, &config##n, POST_KERNEL,       \
-			      CONFIG_WDT_NPM1300_INIT_PRIORITY, &wdt_npm1300_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &wdt_npm1300_init, NULL, &data##n, &config##n, POST_KERNEL,\
+			      &wdt_npm1300_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_NPM1300_DEFINE)

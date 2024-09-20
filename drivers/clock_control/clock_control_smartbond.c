@@ -636,10 +636,9 @@ static int smartbond_clocks_pm_action(const struct device *dev, enum pm_device_a
 
 PM_DEVICE_DT_DEFINE(DT_NODELABEL(osc), smartbond_clocks_pm_action);
 
-DEVICE_DT_DEFINE(DT_NODELABEL(osc),
+DEVICE_INSTANCE(DT_NODELABEL(osc),
 		 smartbond_clocks_init,
 		 PM_DEVICE_DT_GET(DT_NODELABEL(osc)),
 		 NULL, NULL,
 		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &smartbond_clock_control_api);

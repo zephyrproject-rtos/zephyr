@@ -172,7 +172,6 @@ static const struct memc_stm32_nor_psram_config config = {
 	.banks_len = ARRAY_SIZE(bank_config),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_nor_psram_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, memc_stm32_nor_psram_init, NULL,
 		      NULL, &config,
-		      POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY,
-		      NULL);
+		      POST_KERNEL, NULL);

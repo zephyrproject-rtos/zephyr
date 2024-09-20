@@ -671,11 +671,10 @@ static const struct display_driver_api display_smartbond_driver_api = {
 	}; \
 							\
 							\
-	DEVICE_DT_INST_DEFINE(inst, display_smartbond_init, PM_DEVICE_DT_INST_GET(inst), \
-				&display_smartbond_data_## inst,	\
-				&display_smartbond_config_## inst,	\
-				POST_KERNEL,	\
-				CONFIG_DISPLAY_INIT_PRIORITY,	\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, display_smartbond_init, PM_DEVICE_DT_INST_GET(inst),\
+				&display_smartbond_data_## inst,			 \
+				&display_smartbond_config_## inst,			 \
+				POST_KERNEL,						 \
 				&display_smartbond_driver_api);
 
 SMARTBOND_DISPLAY_INIT(0);

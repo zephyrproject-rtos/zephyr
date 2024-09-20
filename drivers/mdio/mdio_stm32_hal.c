@@ -115,9 +115,8 @@ static const struct mdio_driver_api mdio_stm32_api = {
 	static struct mdio_stm32_config mdio_stm32_config_##inst = {				\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst, &mdio_stm32_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &mdio_stm32_init, NULL,				\
 				&mdio_stm32_data_##inst, &mdio_stm32_config_##inst,		\
-				POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,				\
-				&mdio_stm32_api);
+				POST_KERNEL, &mdio_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_STM32_HAL_DEVICE)

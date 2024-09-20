@@ -971,13 +971,12 @@ static int i2s_mcux_init(const struct device *dev)
 	static struct i2s_mcux_data i2s_mcux_data_##id = {		\
 		I2S_DMA_CHANNELS(id)					\
 	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
-			    &i2s_mcux_init,			\
-			    NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(id,				\
+			    &i2s_mcux_init,				\
+			    NULL,					\
 			    &i2s_mcux_data_##id,			\
 			    &i2s_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_I2S_INIT_PRIORITY,			\
 			    &i2s_mcux_driver_api);			\
 	static void i2s_mcux_config_func_##id(const struct device *dev)	\
 	{								\

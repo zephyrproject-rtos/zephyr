@@ -256,9 +256,9 @@ static int flash_cdns_nand_init(const struct device *nand_dev)
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (CDNS_NAND_RESET_SPEC_INIT(inst))) \
 			IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                             \
 				   (.irq_config = cdns_nand_irq_config_##inst,))};                 \
-	DEVICE_DT_INST_DEFINE(inst, flash_cdns_nand_init, NULL, &flash_cadence_nand_data_##inst,   \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, flash_cdns_nand_init, NULL, &flash_cadence_nand_data_##inst,\
 			      &flash_cadence_nand_config_##inst, POST_KERNEL,                      \
-			      CONFIG_FLASH_INIT_PRIORITY, &flash_cdns_nand_api);                   \
+			      &flash_cdns_nand_api);                                               \
 	IF_ENABLED(CONFIG_CDNS_NAND_INTERRUPT_SUPPORT,                                             \
 		   (static void cdns_nand_irq_config_##inst(void)                                  \
 		   {										   \

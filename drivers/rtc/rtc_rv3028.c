@@ -919,8 +919,7 @@ static const struct rtc_driver_api rv3028_driver_api = {
                                                                                                    \
 	static struct rv3028_data rv3028_data_##inst;                                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &rv3028_init, NULL, &rv3028_data_##inst,                       \
-			      &rv3028_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
-			      &rv3028_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &rv3028_init, NULL, &rv3028_data_##inst,                \
+			      &rv3028_config_##inst, POST_KERNEL, &rv3028_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RV3028_INIT)

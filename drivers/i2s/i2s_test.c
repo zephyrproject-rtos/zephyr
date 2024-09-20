@@ -49,7 +49,7 @@ static int vnd_i2s_init(const struct device *dev)
 }
 
 #define VND_I2S_INIT(index)                                                                        \
-	DEVICE_DT_INST_DEFINE(index, &vnd_i2s_init, NULL, NULL, NULL, POST_KERNEL,                 \
-			      CONFIG_I2S_INIT_PRIORITY, &vnd_i2s_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, &vnd_i2s_init, NULL, NULL, NULL, POST_KERNEL,          \
+			      &vnd_i2s_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I2S_INIT)

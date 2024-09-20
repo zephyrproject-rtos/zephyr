@@ -485,8 +485,8 @@ static const struct bt_hci_driver_api drv = {
 #define HCI_DEVICE_INIT(inst) \
 	static struct hci_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &hci_data_##inst, NULL,\
+			      POST_KERNEL, &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

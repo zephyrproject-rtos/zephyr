@@ -276,8 +276,8 @@ static void dw_wdt_isr(const struct device *dev)
 			(.clk_freq = DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency))))),   \
 	};											   \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &dw_wdt_init, NULL, &wdt_dw##inst##_data,                      \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &dw_wdt_init, NULL, &wdt_dw##inst##_data,               \
 			      &wdt_dw##inst##_config, POST_KERNEL,                                 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_wdt_api);
+			      &dw_wdt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DW_WDT_INIT)

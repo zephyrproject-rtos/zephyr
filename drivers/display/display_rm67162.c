@@ -600,13 +600,12 @@ static const struct display_driver_api rm67162_api = {
 		.pixel_format = DT_INST_PROP(id, pixel_format),			\
 	};									\
 	PM_DEVICE_DT_INST_DEFINE(id, rm67162_pm_action);			\
-	DEVICE_DT_INST_DEFINE(id,						\
+	DEVICE_INSTANCE_FROM_DT_INST(id,					\
 			    &rm67162_init,					\
 			    PM_DEVICE_DT_INST_GET(id),				\
 			    &rm67162_data_##id,					\
 			    &rm67162_config_##id,				\
 			    POST_KERNEL,					\
-			    CONFIG_APPLICATION_INIT_PRIORITY,			\
 			    &rm67162_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RM67162_PANEL)

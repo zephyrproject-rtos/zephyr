@@ -244,9 +244,9 @@ static struct xec_kbd_config xec_kbd_cfg_0 = {
 
 static struct xec_kbd_data kbd_data_0;
 
-DEVICE_DT_INST_DEFINE(0, xec_kbd_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, xec_kbd_init,
 		      PM_DEVICE_DT_INST_GET(0), &kbd_data_0, &xec_kbd_cfg_0,
-		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+		      POST_KERNEL, NULL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one microchip,xec-kbd compatible node can be supported");

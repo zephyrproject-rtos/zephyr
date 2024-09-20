@@ -660,13 +660,12 @@ COND_CODE_1(IS_EQ(DT_NUM_IRQS(DT_DRV_INST(inst)), 1),              \
 			.clear_bit_func = reg_clear_bit,                                    \
 			.test_bit_func = reg_test_bit,))                                    \
 	};                                                                                  \
-	DEVICE_DT_INST_DEFINE(inst,                                                         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,                                                  \
 		spi_dw_init,                                                                \
 		NULL,                                                                       \
 		&spi_dw_data_##inst,                                                        \
 		&spi_dw_config_##inst,                                                      \
 		POST_KERNEL,                                                                \
-		CONFIG_SPI_INIT_PRIORITY,                                                   \
 		&dw_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_DW_INIT)

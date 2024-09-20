@@ -1147,8 +1147,8 @@ static int uart_npcx_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(i, current_speed),                                       \
 	};                                                                                         \
 	                                                                                           \
-	DEVICE_DT_INST_DEFINE(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,    \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_npcx_driver_api);   \
+	DEVICE_INSTANCE_FROM_DT_INST(i, uart_npcx_init, NULL, &uart_npcx_data_##i, &uart_npcx_cfg_##i,\
+			      PRE_KERNEL_1, &uart_npcx_driver_api);                                \
 												   \
 	NPCX_UART_IRQ_CONFIG_FUNC(i)
 

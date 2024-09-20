@@ -263,8 +263,8 @@ static const struct mbox_driver_api esp32_mbox_driver_api = {
 				   ESP32_MBOX_SHM_SIZE_BY_IDX(idx) / 2,                            \
 		.control = (struct esp32_mbox_control *)DT_INST_REG_ADDR(idx),                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, &esp32_mbox_init, NULL, &esp32_mbox_device_data_##idx,          \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &esp32_mbox_init, NULL, &esp32_mbox_device_data_##idx,   \
 			      &esp32_mbox_device_cfg_##idx, PRE_KERNEL_2,                          \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &esp32_mbox_driver_api);
+			      &esp32_mbox_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MBOX_INIT);

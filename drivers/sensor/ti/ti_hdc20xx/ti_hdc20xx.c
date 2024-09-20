@@ -248,13 +248,12 @@ static int ti_hdc20xx_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_GET(DT_INST(inst, compat)),				\
 		.gpio_int = GPIO_DT_SPEC_GET_OR(DT_INST(inst, compat), int_gpios, {0}),	\
 	};										\
-	DEVICE_DT_DEFINE(DT_INST(inst, compat),						\
+	DEVICE_INSTANCE(DT_INST(inst, compat),						\
 			ti_hdc20xx_init,						\
 			NULL,								\
 			&ti_hdc20xx_data_##compat##inst,				\
 			&ti_hdc20xx_config_##compat##inst,				\
 			POST_KERNEL,							\
-			CONFIG_SENSOR_INIT_PRIORITY,					\
 			&ti_hdc20xx_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

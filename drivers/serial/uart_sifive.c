@@ -398,12 +398,11 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    uart_sifive_init,
 		    NULL,
 		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-		    (void *)&uart_sifive_driver_api);
+		    PRE_KERNEL_1, (void *)&uart_sifive_driver_api);
 
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -441,12 +440,11 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(1,
+DEVICE_INSTANCE_FROM_DT_INST(1,
 		    uart_sifive_init,
 		    NULL,
 		    &uart_sifive_data_1, &uart_sifive_dev_cfg_1,
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-		    (void *)&uart_sifive_driver_api);
+		    PRE_KERNEL_1, (void *)&uart_sifive_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_1(void)

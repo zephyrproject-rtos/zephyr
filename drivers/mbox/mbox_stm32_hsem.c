@@ -249,12 +249,11 @@ static const struct mbox_driver_api mbox_stm32_hsem_driver_api = {
 	.set_enabled = mbox_stm32_hsem_set_enabled,
 };
 
-DEVICE_DT_INST_DEFINE(
+DEVICE_INSTANCE_FROM_DT_INST(
 	0,
 	mbox_stm32_hsem_init,
 	NULL,
 	&stm32_hsem_mbox_data,
 	&stm32_hsem_mbox_conf,
 	POST_KERNEL,
-	CONFIG_MBOX_INIT_PRIORITY,
 	&mbox_stm32_hsem_driver_api);

@@ -978,10 +978,9 @@ static const struct i2s_driver_api i2s_nrf_drv_api = {
 				      hfclkaudio_frequency),		     \
 		"Clock source ACLK requires the hfclkaudio-frequency "	     \
 		"property to be defined in the nordic,nrf-clock node.");     \
-	DEVICE_DT_DEFINE(I2S(idx), i2s_nrfx_init##idx, NULL,		     \
-			 &i2s_nrfx_data##idx, &i2s_nrfx_cfg##idx,	     \
-			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		     \
-			 &i2s_nrf_drv_api);
+	DEVICE_INSTANCE(I2S(idx), i2s_nrfx_init##idx, NULL,			     \
+			 &i2s_nrfx_data##idx, &i2s_nrfx_cfg##idx,		     \
+			 POST_KERNEL, &i2s_nrf_drv_api);
 
 #ifdef CONFIG_HAS_HW_NRF_I2S0
 I2S_NRFX_DEVICE(0);

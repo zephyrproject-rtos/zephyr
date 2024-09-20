@@ -361,12 +361,11 @@ static const struct gpio_xec_config gpio_xec_port000_036_config = {
 
 static struct gpio_xec_data gpio_xec_port000_036_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_000_036),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_000_036),
 		    gpio_xec_port000_036_init,
 		    NULL,
 		    &gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port000_036_init(const struct device *dev)
 {
@@ -407,12 +406,11 @@ static const struct gpio_xec_config gpio_xec_port040_076_config = {
 
 static struct gpio_xec_data gpio_xec_port040_076_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_040_076),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_040_076),
 		    gpio_xec_port040_076_init,
 		    NULL,
 		    &gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port040_076_init(const struct device *dev)
 {
@@ -453,12 +451,11 @@ static const struct gpio_xec_config gpio_xec_port100_136_config = {
 
 static struct gpio_xec_data gpio_xec_port100_136_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_100_136),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_100_136),
 		    gpio_xec_port100_136_init,
 		    NULL,
 		    &gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port100_136_init(const struct device *dev)
 {
@@ -499,12 +496,11 @@ static const struct gpio_xec_config gpio_xec_port140_176_config = {
 
 static struct gpio_xec_data gpio_xec_port140_176_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_140_176),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_140_176),
 		    gpio_xec_port140_176_init,
 		    NULL,
 		    &gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port140_176_init(const struct device *dev)
 {
@@ -545,12 +541,11 @@ static const struct gpio_xec_config gpio_xec_port200_236_config = {
 
 static struct gpio_xec_data gpio_xec_port200_236_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_200_236),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_200_236),
 		    gpio_xec_port200_236_init,
 		    NULL,
 		    &gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port200_236_init(const struct device *dev)
 {
@@ -591,12 +586,11 @@ static const struct gpio_xec_config gpio_xec_port240_276_config = {
 
 static struct gpio_xec_data gpio_xec_port240_276_data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(gpio_240_276),
+DEVICE_INSTANCE(DT_NODELABEL(gpio_240_276),
 		    gpio_xec_port240_276_init,
 		    NULL,
 		    &gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_xec_driver_api);
+		    PRE_KERNEL_1, &gpio_xec_driver_api);
 
 static int gpio_xec_port240_276_init(const struct device *dev)
 {

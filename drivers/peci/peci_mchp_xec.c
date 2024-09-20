@@ -576,9 +576,8 @@ static const struct peci_xec_config peci_xec_config = {
 
 PM_DEVICE_DT_INST_DEFINE(0, peci_xec_pm_action);
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    &peci_xec_init,
 		    PM_DEVICE_DT_INST_GET(0),
 		    &peci_data, &peci_xec_config,
-		    POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,
-		    &peci_xec_driver_api);
+		    POST_KERNEL, &peci_xec_driver_api);

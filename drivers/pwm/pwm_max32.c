@@ -135,8 +135,7 @@ static int pwm_max32_init(const struct device *dev)
 		.perclk.clk_src = DT_PROP(DT_INST_PARENT(_num), clock_source),                     \
 		.prescaler = DT_PROP(DT_INST_PARENT(_num), prescaler),                             \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(_num, &pwm_max32_init, NULL, &max32_pwm_data_##_num,                 \
-			      &max32_pwm_config_##_num, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,     \
-			      &pwm_max32_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(_num, &pwm_max32_init, NULL, &max32_pwm_data_##_num,          \
+			      &max32_pwm_config_##_num, POST_KERNEL, &pwm_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MAX32_DEFINE)

@@ -230,10 +230,9 @@ static const struct led_driver_api pca9633_led_api = {
 	};								\
 	static struct pca9633_data pca9633_##id##_data;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, &pca9633_led_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &pca9633_led_init, NULL,	\
 			&pca9633_##id##_data,				\
 			&pca9633_##id##_cfg, POST_KERNEL,		\
-			CONFIG_LED_INIT_PRIORITY,			\
 			&pca9633_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCA9633_DEVICE)

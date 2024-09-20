@@ -503,8 +503,7 @@ static const struct ethphy_driver_api ar8031_driver_api = {
 #define AR8031_DEVICE(n)                                                                           \
 	AR8031_CONFIG(n);                                                                          \
 	static struct qc_ar8031_data qc_ar8031_data_##n;                                           \
-	DEVICE_DT_INST_DEFINE(n, &qc_ar8031_init, NULL, &qc_ar8031_data_##n,                       \
-			      &qc_ar8031_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,        \
-			      &ar8031_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &qc_ar8031_init, NULL, &qc_ar8031_data_##n,                \
+			      &qc_ar8031_config_##n, POST_KERNEL, &ar8031_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AR8031_DEVICE)

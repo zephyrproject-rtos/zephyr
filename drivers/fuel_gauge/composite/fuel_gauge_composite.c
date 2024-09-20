@@ -106,7 +106,7 @@ static const struct fuel_gauge_driver_api composite_api = {
 			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),               \
 		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &composite_##inst##_config, POST_KERNEL,     \
-			      CONFIG_SENSOR_INIT_PRIORITY, &composite_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, &composite_##inst##_config, POST_KERNEL,\
+			      &composite_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COMPOSITE_INIT)

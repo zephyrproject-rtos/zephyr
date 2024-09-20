@@ -392,7 +392,7 @@ static int bq25180_init(const struct device *dev)
 			DT_INST_PROP(inst, precharge_voltage_threshold_microvolt),                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, bq25180_init, NULL, NULL, &bq25180_config_##inst, POST_KERNEL, \
-			      CONFIG_CHARGER_INIT_PRIORITY, &bq25180_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bq25180_init, NULL, NULL, &bq25180_config_##inst, POST_KERNEL,\
+			      &bq25180_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CHARGER_BQ25180_INIT)

@@ -75,13 +75,12 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 		.reg_period = DT_INST_REG_ADDR_BY_NAME(n, period),	       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
+	DEVICE_INSTANCE_FROM_DT_INST(n,					       \
 			    pwm_litex_init,				       \
 			    NULL,					       \
 			    NULL,					       \
 			    &pwm_litex_cfg_##n,				       \
 			    POST_KERNEL,				       \
-			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
 			    &pwm_litex_driver_api			       \
 			   );
 

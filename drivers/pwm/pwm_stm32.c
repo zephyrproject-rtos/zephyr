@@ -899,10 +899,9 @@ static void pwm_stm32_irq_config_func_##index(const struct device *dev)		\
 		CAPTURE_INIT(index)					       \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &pwm_stm32_init, NULL,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(index, &pwm_stm32_init, NULL,             \
 			    &pwm_stm32_data_##index,                           \
 			    &pwm_stm32_config_##index, POST_KERNEL,            \
-			    CONFIG_PWM_INIT_PRIORITY,                          \
 			    &pwm_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT)

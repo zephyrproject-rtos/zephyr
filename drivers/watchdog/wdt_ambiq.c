@@ -187,8 +187,7 @@ static const struct wdt_driver_api wdt_ambiq_driver_api = {
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.cfg_func = ambiq_wdt_cfg_func_##n};                                               \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, wdt_ambiq_init, NULL, &wdt_ambiq_data##n, &wdt_ambiq_config##n,   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
-			      &wdt_ambiq_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, wdt_ambiq_init, NULL, &wdt_ambiq_data##n, &wdt_ambiq_config##n,\
+			      PRE_KERNEL_1, &wdt_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_WDT_INIT)

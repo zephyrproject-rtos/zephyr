@@ -156,7 +156,6 @@ static const struct led_strip_driver_api lpd880x_strip_api = {
 	.length = lpd880x_strip_length,
 };
 
-DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, lpd880x_strip_init, NULL,
 		      NULL, &lpd880x_config,
-		      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
-		      &lpd880x_strip_api);
+		      POST_KERNEL, &lpd880x_strip_api);

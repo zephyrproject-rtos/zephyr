@@ -276,8 +276,7 @@ static int led_strip_matrix_init(const struct device *dev)
 	BUILD_ASSERT((DT_INST_PROP(inst, height) % DT_INST_PROP(inst, vertical_modules)) == 0);    \
 	LISTIFY(DT_INST_PROP_LEN(inst, led_strips), VALIDATE_CHAIN_LENGTH, (;), inst);             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, led_strip_matrix_init, NULL, NULL, &dd_config_##inst,          \
-			      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,                       \
-			      &led_strip_matrix_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, led_strip_matrix_init, NULL, NULL, &dd_config_##inst,   \
+			      POST_KERNEL, &led_strip_matrix_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_STRIP_MATRIX_DEFINE)

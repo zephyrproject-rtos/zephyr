@@ -524,9 +524,8 @@ static const struct counter_driver_api counter_api = {
 		.get_irq_pending = get_irq_pending_##n,                        \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(n, counter_gd32_timer_init, NULL,                \
+	DEVICE_INSTANCE_FROM_DT_INST(n, counter_gd32_timer_init, NULL,         \
 			      &timer_data_##n, &timer_config_##n,              \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,      \
-			      &counter_api);
+			      PRE_KERNEL_1, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_TIMER_INIT);

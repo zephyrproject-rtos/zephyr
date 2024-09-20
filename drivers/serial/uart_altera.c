@@ -979,13 +979,12 @@ static const struct uart_altera_device_config uart_altera_dev_cfg_##n = { \
 	UART_ALTERA_IRQ_CONFIG_INIT(n)                                        \
 };                                                                        \
 	                                                                      \
-DEVICE_DT_INST_DEFINE(n,                                                  \
-			  uart_altera_init,                                           \
-			  NULL,                                                       \
-			  &uart_altera_dev_data_##n,                                  \
-			  &uart_altera_dev_cfg_##n,                                   \
-			  PRE_KERNEL_1,                                               \
-			  CONFIG_SERIAL_INIT_PRIORITY,                                \
+DEVICE_INSTANCE_FROM_DT_INST(n,                                           \
+			  uart_altera_init,                               \
+			  NULL,                                           \
+			  &uart_altera_dev_data_##n,                      \
+			  &uart_altera_dev_cfg_##n,                       \
+			  PRE_KERNEL_1,                                   \
 			  &uart_altera_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ALTERA_DEVICE_INIT)

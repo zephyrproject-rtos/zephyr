@@ -308,6 +308,5 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 	.set_rate = mcux_ccm_set_subsys_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
 		      &mcux_ccm_driver_api);

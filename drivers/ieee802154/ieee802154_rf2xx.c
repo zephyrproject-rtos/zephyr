@@ -1150,14 +1150,13 @@ static const struct ieee802154_radio_api rf2xx_radio_api = {
 	}
 
 #define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \
-	DEVICE_DT_INST_DEFINE(			   \
+	DEVICE_INSTANCE_FROM_DT_INST(		   \
 		n,				   \
 		&rf2xx_init,			   \
 		NULL,				   \
 		&rf2xx_ctx_data_##n,		   \
 		&rf2xx_ctx_config_##n,		   \
 		POST_KERNEL,			   \
-		CONFIG_IEEE802154_RF2XX_INIT_PRIO, \
 		&rf2xx_radio_api)
 
 #define IEEE802154_RF2XX_NET_DEVICE_INIT(n)	   \

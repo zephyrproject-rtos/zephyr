@@ -391,9 +391,8 @@ static struct pwm_ledc_esp32_data pwm_ledc_esp32_data = {
 	.cmd_sem = Z_SEM_INITIALIZER(pwm_ledc_esp32_data.cmd_sem, 1, 1),
 };
 
-DEVICE_DT_INST_DEFINE(0, &pwm_led_esp32_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &pwm_led_esp32_init, NULL,
 			&pwm_ledc_esp32_data,
 			&pwm_ledc_esp32_config,
 			POST_KERNEL,
-			CONFIG_PWM_INIT_PRIORITY,
 			&pwm_led_esp32_api);

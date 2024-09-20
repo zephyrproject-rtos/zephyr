@@ -93,8 +93,8 @@ static const struct mdio_driver_api nxp_imx_netc_mdio_api = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nxp_imx_netc_mdio_initialize, NULL,                              \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &nxp_imx_netc_mdio_initialize, NULL,                       \
 			      &nxp_imx_netc_mdio##n##_data, &nxp_imx_netc_mdio##n##_cfg,           \
-			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, &nxp_imx_netc_mdio_api);
+			      POST_KERNEL, &nxp_imx_netc_mdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_IMX_NETC_MDIO_INSTANCE_DEFINE)

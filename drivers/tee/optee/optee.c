@@ -1288,9 +1288,8 @@ static const struct tee_driver_api optee_driver_api = {
 		.notif_bitmap = &notif_bitmap_##inst			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst, optee_init, NULL, &optee_data_##inst, \
-			      &optee_config_##inst, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &optee_driver_api);			\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, optee_init, NULL, &optee_data_##inst,\
+			      &optee_config_##inst, POST_KERNEL,	 \
+			      &optee_driver_api);			 \
 
 DT_INST_FOREACH_STATUS_OKAY(OPTEE_DT_DEVICE_INIT)

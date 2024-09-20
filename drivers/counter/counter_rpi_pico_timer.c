@@ -234,8 +234,8 @@ static const struct counter_driver_api counter_rpi_pico_driver_api = {
 		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id),     \
 		.reset = RESET_DT_SPEC_INST_GET(inst),                                             \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, counter_rpi_pico_timer_init, NULL, &counter_##inst##_data,     \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, counter_rpi_pico_timer_init, NULL, &counter_##inst##_data,\
 			      &counter_##inst##_config, PRE_KERNEL_1,                              \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_rpi_pico_driver_api);
+			      &counter_rpi_pico_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_RPI_PICO_TIMER)

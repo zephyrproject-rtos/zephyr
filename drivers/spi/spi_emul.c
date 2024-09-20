@@ -151,7 +151,7 @@ static const struct spi_driver_api spi_emul_api = {
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \
 	};                                                                                         \
 	static struct spi_emul_data spi_emul_data_##n;                                             \
-	DEVICE_DT_INST_DEFINE(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,       \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY, &spi_emul_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, spi_emul_init, NULL, &spi_emul_data_##n, &spi_emul_cfg_##n,\
+			      POST_KERNEL, &spi_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_EMUL_INIT)

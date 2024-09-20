@@ -241,8 +241,8 @@ static int init_pwm(const struct device *dev)
                                                                                                    \
 	static struct pwm_cc13xx_cc26xx_data pwm_cc13xx_cc26xx_##idx##_data;                       \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, init_pwm, NULL, &pwm_cc13xx_cc26xx_##idx##_data,                \
+	DEVICE_INSTANCE_FROM_DT_INST(idx, init_pwm, NULL, &pwm_cc13xx_cc26xx_##idx##_data,         \
 			      &pwm_cc13xx_cc26xx_##idx##_config, POST_KERNEL,                      \
-			      CONFIG_PWM_INIT_PRIORITY, &pwm_driver_api)
+			      &pwm_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT);

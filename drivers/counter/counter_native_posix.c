@@ -245,6 +245,6 @@ static const struct counter_config_info ctr_config = {
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
 
-DEVICE_DT_INST_DEFINE(0, ctr_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, ctr_init,
 		    NULL, NULL, &ctr_config, PRE_KERNEL_1,
-		    CONFIG_COUNTER_INIT_PRIORITY, &ctr_api);
+		    &ctr_api);

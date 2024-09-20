@@ -40,9 +40,8 @@ static const struct stm32_clk_mux_config stm32_clk_mux_cfg_##id = {	\
 	.pclken = STM32_CLOCK_INFO(0, DT_DRV_INST(id))			\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(id, stm32_clk_mux_init, NULL,			\
+DEVICE_INSTANCE_FROM_DT_INST(id, stm32_clk_mux_init, NULL,		\
 		      NULL, &stm32_clk_mux_cfg_##id,			\
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,\
-		      NULL);
+		      PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_MUX_CLK_INIT)

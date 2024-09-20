@@ -215,13 +215,12 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 		.reset_delay = WS2812_RESET_DELAY(idx),			 \
 	};								 \
 									 \
-	DEVICE_DT_INST_DEFINE(idx,					 \
+	DEVICE_INSTANCE_FROM_DT_INST(idx,				 \
 			      ws2812_spi_init,				 \
 			      NULL,					 \
 			      NULL,					 \
 			      &ws2812_spi_##idx##_cfg,			 \
 			      POST_KERNEL,				 \
-			      CONFIG_LED_STRIP_INIT_PRIORITY,		 \
 			      &ws2812_spi_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_DEVICE)

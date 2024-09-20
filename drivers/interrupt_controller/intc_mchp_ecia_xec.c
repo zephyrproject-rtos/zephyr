@@ -572,10 +572,9 @@ static int xec_ecia_init(const struct device *dev)
 		DT_FOREACH_PROP_ELEM(n, sources, XEC_GIRQ_SOURCES2)	\
 	};								\
 									\
-	DEVICE_DT_DEFINE(n, xec_girq_init_##n,				\
+	DEVICE_INSTANCE(n, xec_girq_init_##n,				\
 		 NULL, &xec_data_girq_##n, &xec_config_girq_##n,	\
-		 PRE_KERNEL_1, CONFIG_XEC_GIRQ_INIT_PRIORITY,		\
-		 NULL);							\
+		 PRE_KERNEL_1, NULL);					\
 									\
 	static int xec_girq_init_##n(const struct device *dev)		\
 	{								\
@@ -610,10 +609,9 @@ static const struct xec_ecia_config xec_config_ecia = {
 	DT_FOREACH_CHILD_STATUS_OKAY(DT_NODELABEL(ecia), XEC_GIRQ_HANDLE)
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ecia), xec_ecia_init,
+DEVICE_INSTANCE(DT_NODELABEL(ecia), xec_ecia_init,
 		 NULL, NULL, &xec_config_ecia,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
+		 PRE_KERNEL_1, NULL);
 
 /* look up GIRQ node handle from ECIA configuration */
 static const struct device *get_girq_dev(int girq_num)

@@ -180,8 +180,7 @@ static const struct wdt_driver_api wdt_rpi_pico_driver_api = {
 			 RPI_PICO_WDT_TIME_MULTIPLICATION_FACTOR),                                 \
 		.enabled = false                                                                   \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,       \
-			 &wdt_##idx##_config, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,    \
-			 &wdt_rpi_pico_driver_api)
+	DEVICE_INSTANCE(DT_NODELABEL(wdt##idx), wdt_rpi_pico_init, NULL, &wdt_##idx##_data,        \
+			 &wdt_##idx##_config, PRE_KERNEL_1, &wdt_rpi_pico_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(WDT_RPI_PICO_WDT_DEVICE);

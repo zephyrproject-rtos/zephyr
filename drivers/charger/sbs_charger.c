@@ -169,7 +169,7 @@ static const struct charger_driver_api sbs_charger_driver_api = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &sbs_charger_init, NULL, NULL, &sbs_charger_config_##inst,     \
-			      POST_KERNEL, CONFIG_CHARGER_INIT_PRIORITY, &sbs_charger_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &sbs_charger_init, NULL, NULL, &sbs_charger_config_##inst,\
+			      POST_KERNEL, &sbs_charger_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_CHARGER_INIT)

@@ -450,8 +450,8 @@ static int nx20p3483_dev_init(const struct device *dev)
 	NX20P3483_DRIVER_CFG_ASSERTS(DT_DRV_INST(inst));                                           \
 	static struct nx20p3483_cfg drv_cfg_nx20p3483##inst =                                      \
 		NX20P3483_DRIVER_CFG_INIT(DT_DRV_INST(inst));                                      \
-	DEVICE_DT_INST_DEFINE(inst, &nx20p3483_dev_init, NULL, &drv_data_nx20p3483##inst,          \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &nx20p3483_dev_init, NULL, &drv_data_nx20p3483##inst,   \
 			      &drv_cfg_nx20p3483##inst, POST_KERNEL,                               \
-			      CONFIG_USBC_PPC_INIT_PRIORITY, &nx20p3483_driver_api);
+			      &nx20p3483_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NX20P3483_DRIVER_INIT)

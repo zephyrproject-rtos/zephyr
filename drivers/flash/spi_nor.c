@@ -1822,8 +1822,8 @@ static const struct flash_driver_api spi_nor_api = {
 	LOCK_DEFINE(idx)							\
 	GENERATE_CONFIG_STRUCT(idx)						\
 	static struct spi_nor_data spi_nor_##idx##_data;			\
-	DEVICE_DT_INST_DEFINE(idx, &spi_nor_init, PM_DEVICE_DT_INST_GET(idx),	\
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &spi_nor_init, PM_DEVICE_DT_INST_GET(idx),\
 			&spi_nor_##idx##_data, &spi_nor_##idx##_config,		\
-			POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY, &spi_nor_api);
+			POST_KERNEL, &spi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_NOR_INST)

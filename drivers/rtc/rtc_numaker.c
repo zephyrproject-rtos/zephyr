@@ -422,5 +422,5 @@ static const struct rtc_numaker_config rtc_config = {
 	.oscillator = DT_ENUM_IDX(DT_NODELABEL(rtc), oscillator),
 };
 
-DEVICE_DT_INST_DEFINE(0, &rtc_numaker_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
-		      CONFIG_RTC_INIT_PRIORITY, &rtc_numaker_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &rtc_numaker_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
+		      &rtc_numaker_driver_api);

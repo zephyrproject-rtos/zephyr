@@ -200,5 +200,5 @@ static const struct ifx_cat1_flash_config ifx_cat1_flash_config = {
 	.base_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE),
 	.max_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE) + DT_REG_SIZE(SOC_NV_FLASH_NODE)};
 
-DEVICE_DT_INST_DEFINE(0, ifx_cat1_flash_init, NULL, &flash_data, &ifx_cat1_flash_config,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &ifx_cat1_flash_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, ifx_cat1_flash_init, NULL, &flash_data, &ifx_cat1_flash_config,
+		      POST_KERNEL, &ifx_cat1_flash_driver_api);

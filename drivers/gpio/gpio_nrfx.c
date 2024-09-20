@@ -565,12 +565,11 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(id, gpio_nrfx_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(id, gpio_nrfx_init,		\
 			 NULL,						\
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\
 			 PRE_KERNEL_1,					\
-			 CONFIG_GPIO_INIT_PRIORITY,			\
 			 &gpio_nrfx_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NRF_DEVICE)

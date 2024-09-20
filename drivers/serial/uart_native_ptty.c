@@ -202,18 +202,16 @@ static int np_uart_tty_poll_in(const struct device *dev,
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 	    np_uart_0_init, NULL,
 	    (void *)&native_uart_status_0, NULL,
-	    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-	    &np_uart_driver_api_0);
+	    PRE_KERNEL_1, &np_uart_driver_api_0);
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
-DEVICE_DT_INST_DEFINE(1,
+DEVICE_INSTANCE_FROM_DT_INST(1,
 	    np_uart_1_init, NULL,
 	    (void *)&native_uart_status_1, NULL,
-	    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,
-	    &np_uart_driver_api_1);
+	    PRE_KERNEL_1, &np_uart_driver_api_1);
 #endif /* CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE */
 
 static void auto_attach_cmd_cb(char *argv, int offset)

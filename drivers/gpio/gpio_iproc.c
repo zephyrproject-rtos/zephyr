@@ -218,8 +218,7 @@ int gpio_iproc_init(const struct device *dev)
                                                                                                    \
 	static struct gpio_iproc_data gpio_port_data_##n;                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_iproc_init, NULL, &gpio_port_data_##n,                       \
-			      &gpio_port_config_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,       \
-			      &gpio_iproc_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_iproc_init, NULL, &gpio_port_data_##n,                \
+			      &gpio_port_config_##n, POST_KERNEL, &gpio_iproc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_IPROC_INIT)

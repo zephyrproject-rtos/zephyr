@@ -1139,10 +1139,9 @@ static int espi_saf_xec_init(const struct device *dev)
 		.irq_info_size = ARRAY_SIZE(espi_saf_xec_irq_info_##n),			\
 		.irq_info_list = espi_saf_xec_irq_info_##n,				\
 	};										\
-	DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(0, &espi_saf_xec_init, NULL,			\
 				  &espisaf_xec_data_##n,				\
 				  &espisaf_xec_config_##n, POST_KERNEL,			\
-				  CONFIG_ESPI_TAF_INIT_PRIORITY,			\
 				  &espi_saf_xec_driver_api);				\
 											\
 	static void espi_saf_xec_connect_irqs_##n(void)					\

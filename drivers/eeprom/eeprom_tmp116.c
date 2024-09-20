@@ -63,8 +63,8 @@ static const struct eeprom_driver_api eeprom_tmp116_api = {
 	static const struct eeprom_tmp116_config eeprom_tmp116_config##_num = { \
 		.parent =  DEVICE_DT_GET(DT_INST_BUS(_num))		       \
 	};								       \
-	DEVICE_DT_INST_DEFINE(_num, eeprom_tmp116_init, NULL,		       \
-			      NULL, &eeprom_tmp116_config##_num, POST_KERNEL,   \
-			      CONFIG_EEPROM_INIT_PRIORITY, &eeprom_tmp116_api);
+	DEVICE_INSTANCE_FROM_DT_INST(_num, eeprom_tmp116_init, NULL,		       \
+			      NULL, &eeprom_tmp116_config##_num, POST_KERNEL,	       \
+			      &eeprom_tmp116_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116);

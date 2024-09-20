@@ -169,5 +169,5 @@ static const struct wdt_kb1200_config wdt_kb1200_config = {
 
 static struct wdt_kb1200_data wdt_kb1200_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_kb1200_init, NULL, &wdt_kb1200_dev_data, &wdt_kb1200_config,
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_kb1200_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_kb1200_init, NULL, &wdt_kb1200_dev_data, &wdt_kb1200_config,
+		      PRE_KERNEL_1, &wdt_kb1200_api);

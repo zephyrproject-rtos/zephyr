@@ -73,8 +73,7 @@ static const struct clock_control_driver_api nxp_s32_clock_driver_api = {
 	.get_rate = nxp_s32_clock_get_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		      nxp_s32_clock_init,
 		      NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &nxp_s32_clock_driver_api);
+		      PRE_KERNEL_1, &nxp_s32_clock_driver_api);

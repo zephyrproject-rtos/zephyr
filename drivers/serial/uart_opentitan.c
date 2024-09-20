@@ -112,9 +112,8 @@ static const struct uart_driver_api uart_opentitan_driver_api = {
 			DT_INST_PROP(n, clock_frequency)), \
 	}; \
 	\
-	DEVICE_DT_INST_DEFINE(n, uart_opentitan_init, NULL, NULL, \
-				&uart_opentitan_config_##n, \
-				PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
-				&uart_opentitan_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_opentitan_init, NULL, NULL,\
+				&uart_opentitan_config_##n,       \
+				PRE_KERNEL_1, &uart_opentitan_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_OPENTITAN_INIT)

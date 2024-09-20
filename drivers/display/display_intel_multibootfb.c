@@ -155,6 +155,5 @@ static const struct framebuf_dev_config config = {
 
 static struct framebuf_dev_data data;
 
-DEVICE_DT_INST_DEFINE(0, multiboot_framebuf_init, NULL, &data, &config,
-		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &framebuf_display_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, multiboot_framebuf_init, NULL, &data, &config,
+		      PRE_KERNEL_1, &framebuf_display_api);

@@ -594,11 +594,10 @@ static const struct spi_driver_api mss_qspi_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(mss_qspi_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, mss_qspi_init,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, mss_qspi_init,			\
 			    NULL,					\
-			    &mss_qspi_data_##n,			\
-			    &mss_qspi_config_##n, POST_KERNEL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mss_qspi_data_##n,				\
+			    &mss_qspi_config_##n, POST_KERNEL,		\
 			    &mss_qspi_driver_api);			\
 									\
 	static void mss_qspi_config_func_##n(const struct device *dev)	\

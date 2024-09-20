@@ -278,11 +278,11 @@ struct counter_driver_api nxp_mrt_api = {
 
 /* Creates a device for a channel (needed for counter API) */
 #define NXP_MRT_CHANNEL_DEV_INIT(node, mrt_inst)				\
-	DEVICE_DT_DEFINE(node, NULL, NULL,					\
+	DEVICE_INSTANCE(node, NULL, NULL,					\
 			(void *)						\
 			&nxp_mrt_##mrt_inst##_channel_datas[DT_REG_ADDR(node)],	\
 			&nxp_mrt_##mrt_inst##_config,				\
-			POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
+			POST_KERNEL,						\
 			&nxp_mrt_api);						\
 
 /* Creates a data struct for a channel device */
@@ -349,9 +349,9 @@ struct counter_driver_api nxp_mrt_api = {
 	};									\
 										\
 	/* Init parent device in order to handle ISR and init. */		\
-	DEVICE_DT_INST_DEFINE(n, &nxp_mrt_init, NULL, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &nxp_mrt_init, NULL, NULL,		\
 				&nxp_mrt_##n##_config,				\
 				POST_KERNEL,					\
-				CONFIG_COUNTER_INIT_PRIORITY, NULL);
+				NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_MRT_INIT)

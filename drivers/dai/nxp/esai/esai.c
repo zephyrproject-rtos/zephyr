@@ -756,9 +756,8 @@ static struct esai_data esai_data_##inst = {				\
 	.cfg.dai_index = DT_INST_PROP_OR(inst, dai_index, 0),		\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(inst, &esai_init, NULL,				\
+DEVICE_INSTANCE_FROM_DT_INST(inst, &esai_init, NULL,			\
 		      &esai_data_##inst, &esai_config_##inst,		\
-		      POST_KERNEL, CONFIG_DAI_INIT_PRIORITY,		\
-		      &esai_api);					\
+		      POST_KERNEL, &esai_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(ESAI_INIT);

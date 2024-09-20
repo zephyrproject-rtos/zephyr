@@ -961,8 +961,8 @@ static const struct udc_api udc_ambiq_api = {
 		.priv = &udc_priv_##n,                                                             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, udc_ambiq_driver_init, NULL, &udc_data_##n,                       \
+	DEVICE_INSTANCE_FROM_DT_INST(n, udc_ambiq_driver_init, NULL, &udc_data_##n,                \
 			      &udc_ambiq_config_##n, POST_KERNEL,                                  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_ambiq_api);
+			      &udc_ambiq_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_AMBIQ_DEVICE_DEFINE)

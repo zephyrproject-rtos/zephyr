@@ -402,7 +402,7 @@ static const struct gpio_driver_api pcf857x_drv_api = {
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 		.num_bytes = DT_INST_ENUM_IDX(idx, ngpios) + 1,                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,      \
-			      POST_KERNEL, CONFIG_GPIO_PCF857X_INIT_PRIORITY, &pcf857x_drv_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,\
+			      POST_KERNEL, &pcf857x_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PCF857X_INST);

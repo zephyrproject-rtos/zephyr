@@ -515,8 +515,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &video_stm32_dcmi_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, &video_stm32_dcmi_init,
 		    NULL, &video_stm32_dcmi_data_0,
 		    &video_stm32_dcmi_config_0,
-		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-		    &video_stm32_dcmi_driver_api);
+		    POST_KERNEL, &video_stm32_dcmi_driver_api);

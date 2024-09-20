@@ -615,9 +615,8 @@ static const struct flash_npcx_nor_config flash_npcx_nor_config_##n = {		\
 		},))								\
 };										\
 static struct flash_npcx_nor_data flash_npcx_nor_data_##n;			\
-DEVICE_DT_INST_DEFINE(n, flash_npcx_nor_init, NULL,				\
+DEVICE_INSTANCE_FROM_DT_INST(n, flash_npcx_nor_init, NULL,			\
 		      &flash_npcx_nor_data_##n, &flash_npcx_nor_config_##n,	\
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,			\
-		      &flash_npcx_nor_driver_api);
+		      POST_KERNEL, &flash_npcx_nor_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_FLASH_NOR_INIT)

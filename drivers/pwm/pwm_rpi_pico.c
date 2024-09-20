@@ -220,7 +220,7 @@ static int pwm_rpi_init(const struct device *dev)
 		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),	   \
 	};											   \
 												   \
-	DEVICE_DT_INST_DEFINE(idx, pwm_rpi_init, NULL, NULL, &pwm_rpi_config_##idx, POST_KERNEL,   \
-			      CONFIG_PWM_INIT_PRIORITY, &pwm_rpi_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, pwm_rpi_init, NULL, NULL, &pwm_rpi_config_##idx, POST_KERNEL,\
+			      &pwm_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_RPI_INIT);

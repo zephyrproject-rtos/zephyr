@@ -280,9 +280,8 @@ XEC_BBLED_PINCTRL_DEF(i);						\
 									\
 XEC_BBLED_CONFIG(i);							\
 									\
-DEVICE_DT_INST_DEFINE(i, &xec_bbled_init, NULL,				\
+DEVICE_INSTANCE_FROM_DT_INST(i, &xec_bbled_init, NULL,			\
 		      NULL, &xec_bbled_config_##i,			\
-		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
-		      &xec_bbled_api);
+		      POST_KERNEL, &xec_bbled_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_BBLED_DEVICE)

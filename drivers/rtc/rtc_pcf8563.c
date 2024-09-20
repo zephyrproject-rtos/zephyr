@@ -499,8 +499,8 @@ int pcf8563_init(const struct device *dev)
                                                                                                    \
 	static struct pcf8563_data pcf8563_data_##inst;                                            \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &pcf8563_init, NULL,                                           \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &pcf8563_init, NULL,                                    \
 			      &pcf8563_data_##inst, &pcf8563_config_##inst, POST_KERNEL,           \
-			      CONFIG_RTC_INIT_PRIORITY, &pcf8563_driver_api);
+			      &pcf8563_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF8563_INIT)

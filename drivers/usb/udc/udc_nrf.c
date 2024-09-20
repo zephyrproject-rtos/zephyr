@@ -965,7 +965,6 @@ static const struct udc_api udc_nrf_api = {
 	.ep_dequeue = udc_nrf_ep_dequeue,
 };
 
-DEVICE_DT_INST_DEFINE(0, udc_nrf_driver_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, udc_nrf_driver_init, NULL,
 		      &udc_nrf_data, &udc_nrf_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &udc_nrf_api);
+		      POST_KERNEL, &udc_nrf_api);

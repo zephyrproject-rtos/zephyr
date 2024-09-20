@@ -537,5 +537,5 @@ static void IoApicRedUpdateLo(unsigned int irq,
 
 PM_DEVICE_DT_INST_DEFINE(0, ioapic_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, ioapic_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, ioapic_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
+		      PRE_KERNEL_1, NULL);

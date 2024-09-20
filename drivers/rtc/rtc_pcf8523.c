@@ -964,8 +964,8 @@ static const struct rtc_driver_api pcf8523_driver_api = {
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pcf8523_pm_action);                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &pcf8523_init, PM_DEVICE_DT_INST_GET(inst),                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &pcf8523_init, PM_DEVICE_DT_INST_GET(inst),             \
 			      &pcf8523_data_##inst, &pcf8523_config_##inst, POST_KERNEL,           \
-			      CONFIG_RTC_INIT_PRIORITY, &pcf8523_driver_api);
+			      &pcf8523_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCF8523_INIT)

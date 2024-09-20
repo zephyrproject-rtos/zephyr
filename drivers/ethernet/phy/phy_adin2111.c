@@ -649,9 +649,8 @@ static const struct ethphy_driver_api phy_adin2111_api = {
 	static struct phy_adin2111_data phy_adin2111_data_##n = {		\
 		.sem = Z_SEM_INITIALIZER(phy_adin2111_data_##n.sem, 1, 1),	\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, &phy_adin2111_init, NULL,			\
-			      &phy_adin2111_data_##n, &phy_adin2111_config_##n, \
-			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,		\
-			      &phy_adin2111_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &phy_adin2111_init, NULL,		\
+			      &phy_adin2111_data_##n, &phy_adin2111_config_##n,	\
+			      POST_KERNEL, &phy_adin2111_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_PHY_INITIALIZE)

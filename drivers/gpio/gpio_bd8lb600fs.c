@@ -198,8 +198,8 @@ static int bd8lb600fs_gpio_init(const struct device *dev)
 		.configured = 0x00,                                                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, bd8lb600fs_gpio_init, NULL, &bd8lb600fs_##inst##_data,         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bd8lb600fs_gpio_init, NULL, &bd8lb600fs_##inst##_data,  \
 			      &bd8lb600fs_##inst##_config, POST_KERNEL,                            \
-			      CONFIG_GPIO_BD8LB600FS_INIT_PRIORITY, &api_table);
+			      &api_table);
 
 DT_INST_FOREACH_STATUS_OKAY(BD8LB600FS_GPIO_INIT)

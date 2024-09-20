@@ -134,13 +134,12 @@ static int disk_mmc_init(const struct device *dev)
 		.disk_info = &mmc_disk_##n,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
-			&disk_mmc_init,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
+			&disk_mmc_init,						\
 			NULL,							\
-			&mmc_data_##n,					\
+			&mmc_data_##n,						\
 			&mmc_config_##n,					\
 			POST_KERNEL,						\
-			CONFIG_SD_INIT_PRIORITY,				\
 			NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DISK_ACCESS_MMC_INIT)

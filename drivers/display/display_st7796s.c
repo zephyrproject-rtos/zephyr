@@ -387,11 +387,10 @@ static const struct display_driver_api st7796s_api = {
 		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n, st7796s_init,				\
 			NULL,							\
 			NULL,							\
 			&st7796s_config_##n,					\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,		\
-			&st7796s_api);
+			POST_KERNEL, &st7796s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7796S_INIT)

@@ -1246,6 +1246,5 @@ static struct adc_stm32wb0_data adc_data = {
 
 PM_DEVICE_DT_DEFINE(ADC_NODE, adc_stm32wb0_pm_action);
 
-DEVICE_DT_DEFINE(ADC_NODE, &adc_stm32wb0_init, PM_DEVICE_DT_GET(ADC_NODE),
-	&adc_data, &adc_config, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,
-	&api_stm32wb0_driver_api);
+DEVICE_INSTANCE(ADC_NODE, &adc_stm32wb0_init, PM_DEVICE_DT_GET(ADC_NODE),
+	&adc_data, &adc_config, POST_KERNEL, &api_stm32wb0_driver_api);

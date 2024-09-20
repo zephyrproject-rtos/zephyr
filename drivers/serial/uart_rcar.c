@@ -589,13 +589,12 @@ static const struct uart_driver_api uart_rcar_driver_api = {
 										\
 	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n;		\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			      uart_rcar_init,					\
 			      NULL,						\
 			      &uart_rcar_data_##compat##n,			\
 			      &uart_rcar_cfg_##compat##n,			\
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,	\
-			      &uart_rcar_driver_api);				\
+			      PRE_KERNEL_1, &uart_rcar_driver_api);		\
 										\
 	UART_RCAR_CONFIG_FUNC(n, compat)					\
 										\

@@ -538,9 +538,8 @@ static const struct ethphy_driver_api mc_ksz8081_phy_api = {
 										\
 	static struct mc_ksz8081_data mc_ksz8081_##n##_data;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, &phy_mc_ksz8081_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &phy_mc_ksz8081_init, NULL,		\
 			&mc_ksz8081_##n##_data, &mc_ksz8081_##n##_config,	\
-			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
-			&mc_ksz8081_phy_api);
+			POST_KERNEL, &mc_ksz8081_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MICROCHIP_KSZ8081_INIT)

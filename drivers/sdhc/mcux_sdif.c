@@ -450,13 +450,12 @@ static const struct sdhc_driver_api sdif_api = {
 		MCUX_SDIF_DMA_DESCRIPTOR_INIT(n)				\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 		&mcux_sdif_init,						\
 		NULL,								\
 		&sdif_##n##_data,						\
 		&sdif_##n##_config,						\
 		POST_KERNEL,							\
-		CONFIG_SDHC_INIT_PRIORITY,					\
 		&sdif_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_SDIF_INIT)

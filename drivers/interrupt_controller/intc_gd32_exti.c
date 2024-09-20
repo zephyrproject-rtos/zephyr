@@ -194,5 +194,5 @@ static int gd32_exti_init(const struct device *dev)
 
 static struct gd32_exti_data data;
 
-DEVICE_DT_INST_DEFINE(0, gd32_exti_init, NULL, &data, NULL, PRE_KERNEL_1,
-		      CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, gd32_exti_init, NULL, &data, NULL, PRE_KERNEL_1,
+		      NULL);

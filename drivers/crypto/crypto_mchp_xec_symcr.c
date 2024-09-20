@@ -540,9 +540,8 @@ static const struct crypto_driver_api xec_symcr_api = {
 		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),			\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(inst, &xec_symcr_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &xec_symcr_init, NULL,			\
 			      &xec_symcr_data_##inst, &xec_symcr_cfg_##inst,		\
-			      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,			\
-			      &xec_symcr_api);
+			      POST_KERNEL, &xec_symcr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XEC_SYMCR_INIT)

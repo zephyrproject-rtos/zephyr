@@ -830,13 +830,12 @@ static const struct wdt_driver_api wdt_nxp_fs26_api = {
 		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios),			\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			      wdt_nxp_fs26_init,					\
 			      NULL,							\
 			      &wdt_nxp_fs26_data_##n,					\
 			      &wdt_nxp_fs26_config_##n,					\
 			      POST_KERNEL,						\
-			      CONFIG_WDT_NXP_FS26_INIT_PRIORITY,			\
 			      &wdt_nxp_fs26_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FS26_WDT_DEVICE_INIT)

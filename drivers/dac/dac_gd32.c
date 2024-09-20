@@ -181,6 +181,5 @@ static const struct dac_gd32_config dac_gd32_cfg_0 = {
 	.reset_val = DT_INST_PROP(0, reset_val),
 };
 
-DEVICE_DT_INST_DEFINE(0, &dac_gd32_init, NULL, &dac_gd32_data_0,
-		      &dac_gd32_cfg_0, POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,
-		      &dac_gd32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &dac_gd32_init, NULL, &dac_gd32_data_0,
+		      &dac_gd32_cfg_0, POST_KERNEL, &dac_gd32_driver_api);

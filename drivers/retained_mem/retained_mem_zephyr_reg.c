@@ -123,13 +123,12 @@ static const struct retained_mem_driver_api zephyr_retained_mem_reg_api = {
 		.address = (uint8_t *)DT_INST_REG_ADDR(inst),					\
 		.size = DT_INST_REG_SIZE(inst),							\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			      &zephyr_retained_mem_reg_init,					\
 			      NULL,								\
 			      &zephyr_retained_mem_reg_data_##inst,				\
 			      &zephyr_retained_mem_reg_config_##inst,				\
 			      POST_KERNEL,							\
-			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
 			      &zephyr_retained_mem_reg_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ZEPHYR_RETAINED_MEM_REG_DEVICE)

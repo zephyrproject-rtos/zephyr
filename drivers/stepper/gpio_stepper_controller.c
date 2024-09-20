@@ -380,8 +380,8 @@ static const struct stepper_driver_api gpio_stepper_api = {
 	};											\
 	BUILD_ASSERT(DT_INST_PROP(inst, micro_step_res) <= STEPPER_MICRO_STEP_2,		\
 		     "gpio_stepper_controller driver supports up to 2 micro steps");		\
-	DEVICE_DT_INST_DEFINE(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_stepper_init, NULL, &gpio_stepper_data_##inst,	\
 			      &gpio_stepper_config_##inst, POST_KERNEL,				\
-			      CONFIG_STEPPER_INIT_PRIORITY, &gpio_stepper_api);
+			      &gpio_stepper_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_STEPPER_DEFINE)

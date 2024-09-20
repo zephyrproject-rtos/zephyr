@@ -399,11 +399,10 @@ static const struct pcie_ctrl_driver_api pcie_ecam_api = {
 			DT_FOREACH_RANGE(DT_DRV_INST(n), PCIE_RANGE_FORMAT)	\
 		},								\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, &pcie_ecam_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &pcie_ecam_init, NULL,			\
 			      &pcie_ecam_data##n,				\
 			      &pcie_ecam_config##n,				\
 			      PRE_KERNEL_1,					\
-			      CONFIG_PCIE_INIT_PRIORITY,			\
 			      &pcie_ecam_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_ECAM_INIT)

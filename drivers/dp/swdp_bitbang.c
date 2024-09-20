@@ -734,9 +734,8 @@ static struct swdp_api swdp_bitbang_api = {
 											\
 	static struct sw_cfg_data sw_data_##n;						\
 											\
-	DEVICE_DT_INST_DEFINE(n, sw_gpio_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n, sw_gpio_init, NULL,				\
 			      &sw_data_##n, &sw_cfg_##n,				\
-			      POST_KERNEL, CONFIG_DP_DRIVER_INIT_PRIO,			\
-			      &swdp_bitbang_api);
+			      POST_KERNEL, &swdp_bitbang_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SW_DEVICE_DEFINE)

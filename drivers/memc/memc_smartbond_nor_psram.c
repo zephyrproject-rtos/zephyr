@@ -235,8 +235,8 @@ static int memc_smartbond_pm_action(const struct device *dev, enum pm_device_act
 			\
 	PM_DEVICE_DT_INST_DEFINE(inst, memc_smartbond_pm_action);	\
 			\
-	DEVICE_DT_INST_DEFINE(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),	\
-	NULL, NULL,	\
-	POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, memc_smartbond_init, PM_DEVICE_DT_INST_GET(inst),\
+	NULL, NULL,									\
+	POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_MEMC_INIT)

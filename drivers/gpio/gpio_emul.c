@@ -880,11 +880,10 @@ static int gpio_emul_pm_device_pm_action(const struct device *dev,
 									\
 	PM_DEVICE_DT_INST_DEFINE(_num, gpio_emul_pm_device_pm_action);	\
 									\
-	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(_num, gpio_emul_init,		\
 			    PM_DEVICE_DT_INST_GET(_num),		\
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
-			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_emul_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_EMUL)

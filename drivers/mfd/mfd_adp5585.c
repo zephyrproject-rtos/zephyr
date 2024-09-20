@@ -138,8 +138,8 @@ static int mfd_adp5585_init(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_adp5585_init, NULL, &mfd_adp5585_data_##inst,              \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_adp5585_init, NULL, &mfd_adp5585_data_##inst,       \
 			      &mfd_adp5585_config_##inst, POST_KERNEL,                             \
-			      CONFIG_MFD_ADP5585_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_ADP5585_DEFINE);

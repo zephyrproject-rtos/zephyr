@@ -321,7 +321,5 @@ static struct crypto_driver_api crypto_enc_funcs = {
 	.query_hw_caps = tc_query_caps,
 };
 
-DEVICE_DEFINE(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
-		    &tc_shim_init, NULL, NULL, NULL,
-		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		    (void *)&crypto_enc_funcs);
+DEVICE_INSTANCE(crypto_tinycrypt, &tc_shim_init, NULL, NULL, NULL,
+		    POST_KERNEL, (void *)&crypto_enc_funcs);

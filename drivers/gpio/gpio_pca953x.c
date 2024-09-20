@@ -495,13 +495,12 @@ static const struct gpio_driver_api api_table = {
 		.pin_state.dir = ALL_PINS,					\
 		.pin_state.output = ALL_PINS,					\
 	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 		gpio_pca953x_init,						\
 		NULL,								\
 		&pca953x_drvdata_##n,						\
 		&pca953x_cfg_##n,						\
 		POST_KERNEL,							\
-		CONFIG_GPIO_PCA953X_INIT_PRIORITY,				\
 		&api_table);
 
 #define DT_DRV_COMPAT ti_tca9538

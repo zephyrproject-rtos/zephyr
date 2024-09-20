@@ -575,8 +575,7 @@ static const struct pwm_driver_api mcpwm_esp32_api = {
 		.prescale_timer2 = DT_INST_PROP_OR(idx, prescale_timer2, 0),                       \
 		CAPTURE_INIT(idx)};                                                                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,               \
-			      &mcpwm_esp32_config_##idx, POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,    \
-			      &mcpwm_esp32_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, &mcpwm_esp32_init, NULL, &mcpwm_esp32_data_##idx,        \
+			      &mcpwm_esp32_config_##idx, POST_KERNEL, &mcpwm_esp32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_MCPWM_INIT)

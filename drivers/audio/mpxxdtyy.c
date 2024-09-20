@@ -180,6 +180,6 @@ static const struct mpxxdtyy_config mpxxdtyy_config = {
 
 static struct mpxxdtyy_data mpxxdtyy_data;
 
-DEVICE_DT_INST_DEFINE(0, mpxxdtyy_initialize, NULL, &mpxxdtyy_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, mpxxdtyy_initialize, NULL, &mpxxdtyy_data,
 		      &mpxxdtyy_config, POST_KERNEL,
-		      CONFIG_AUDIO_DMIC_INIT_PRIORITY, &mpxxdtyy_driver_api);
+		      &mpxxdtyy_driver_api);

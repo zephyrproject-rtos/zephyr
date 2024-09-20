@@ -280,10 +280,9 @@ static int pca9685_init(const struct device *dev)
                                                                         \
 	static struct pca9685_data pca9685_##inst##_data;               \
                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, pca9685_init, NULL,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, pca9685_init, NULL,          \
 			      &pca9685_##inst##_data,                   \
 			      &pca9685_##inst##_config, POST_KERNEL,    \
-			      CONFIG_PWM_INIT_PRIORITY,                 \
 			      &pca9685_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCA9685_INIT);

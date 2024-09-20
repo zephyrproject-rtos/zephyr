@@ -165,9 +165,8 @@ static const struct pwm_driver_api pwm_sam0_driver_api = {
 		PWM_SAM0_INIT_CLOCKS(inst),				       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(inst, &pwm_sam0_init, NULL,		       \
-			    NULL, &pwm_sam0_config_##inst,		       \
-			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	       \
-			    &pwm_sam0_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &pwm_sam0_init, NULL,		       \
+			    NULL, &pwm_sam0_config_##inst,			       \
+			    POST_KERNEL, &pwm_sam0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_SAM0_INIT)

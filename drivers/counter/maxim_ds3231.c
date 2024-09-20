@@ -1299,10 +1299,9 @@ static struct ds3231_data ds3231_0_data;
 #error CONFIG_COUNTER_INIT_PRIORITY must be greater than I2C_INIT_PRIORITY
 #endif
 
-DEVICE_DT_INST_DEFINE(0, ds3231_init, NULL, &ds3231_0_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, ds3231_init, NULL, &ds3231_0_data,
 		    &ds3231_0_config,
-		    POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,
-		    &ds3231_api);
+		    POST_KERNEL, &ds3231_api);
 
 #ifdef CONFIG_USERSPACE
 

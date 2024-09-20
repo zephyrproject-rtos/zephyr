@@ -62,9 +62,9 @@ static int pcie_ptm_root_init(const struct device *dev)
 	static const struct pcie_ptm_root_config ptm_config_##index = {	\
 		DEVICE_PCIE_INST_INIT(index, pcie),                     \
 	};								\
-	DEVICE_DT_INST_DEFINE(index, &pcie_ptm_root_init, NULL, NULL,	\
+	DEVICE_INSTANCE_FROM_DT_INST(index, &pcie_ptm_root_init, NULL, NULL,\
 			      &ptm_config_##index, PRE_KERNEL_1,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_PTM_ROOT_INIT)
 

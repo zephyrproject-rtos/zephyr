@@ -688,8 +688,8 @@ static const struct spi_driver_api spi_xmc4xxx_driver_api = {
 		XMC4XXX_IRQ_HANDLER_STRUCT_INIT(index)                                             \
 		XMC4XXX_IRQ_DMA_STRUCT_INIT(index)};                                               \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, spi_xmc4xxx_init, NULL, &xmc4xxx_data_##index,                \
+	DEVICE_INSTANCE_FROM_DT_INST(index, spi_xmc4xxx_init, NULL, &xmc4xxx_data_##index,         \
 			      &xmc4xxx_config_##index, POST_KERNEL,                                \
-			      CONFIG_SPI_INIT_PRIORITY, &spi_xmc4xxx_driver_api);
+			      &spi_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

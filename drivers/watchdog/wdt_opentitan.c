@@ -212,7 +212,6 @@ static const struct wdt_driver_api ot_aontimer_api = {
 	.feed = ot_aontimer_feed,
 };
 
-DEVICE_DT_INST_DEFINE(0, ot_aontimer_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, ot_aontimer_init, NULL,
 	&ot_aontimer_data, &ot_aontimer_cfg, PRE_KERNEL_1,
-	CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	&ot_aontimer_api);

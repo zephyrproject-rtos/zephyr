@@ -50,7 +50,7 @@ const struct i2c_dt_spec *mfd_nct38xx_get_i2c_dt_spec(const struct device *dev)
 		.i2c_dev = I2C_DT_SPEC_INST_GET(inst),                                             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_nct38xx_init, NULL, &nct38xx_data_##inst,                  \
-			      &nct38xx_cfg_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_nct38xx_init, NULL, &nct38xx_data_##inst,           \
+			      &nct38xx_cfg_##inst, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NCT38XX_DEFINE)

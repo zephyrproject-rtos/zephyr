@@ -190,7 +190,6 @@ static const struct dev_config_hfxo config_hfxo = {
 	.start_up_time = K_USEC(DT_INST_PROP(0, startup_time_us)),
 };
 
-DEVICE_DT_INST_DEFINE(0, init_hfxo, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, init_hfxo, NULL,
 		      &data_hfxo, &config_hfxo,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &drv_api_hfxo);
+		      PRE_KERNEL_1, &drv_api_hfxo);

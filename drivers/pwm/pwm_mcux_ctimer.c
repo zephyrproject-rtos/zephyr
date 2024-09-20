@@ -269,8 +269,8 @@ static const struct pwm_driver_api pwm_mcux_ctimer_driver_api = {
 		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name)),                \
 		PWM_MCUX_CTIMER_PINCTRL_INIT(n)};                                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,            \
+	DEVICE_INSTANCE_FROM_DT_INST(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,     \
 			      &pwm_mcux_ctimer_config_##n, POST_KERNEL,                            \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &pwm_mcux_ctimer_driver_api);
+			      &pwm_mcux_ctimer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_MCUX_CTIMER_DEVICE_INIT_MCUX)

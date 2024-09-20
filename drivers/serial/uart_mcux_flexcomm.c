@@ -1202,13 +1202,12 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {		\
 										\
 	static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config;	\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			    mcux_flexcomm_init,					\
 			    NULL,						\
 			    &mcux_flexcomm_##n##_data,				\
 			    &mcux_flexcomm_##n##_config,			\
 			    PRE_KERNEL_1,					\
-			    CONFIG_SERIAL_INIT_PRIORITY,			\
 			    &mcux_flexcomm_driver_api);				\
 										\
 	UART_MCUX_FLEXCOMM_IRQ_CFG_FUNC(n)					\

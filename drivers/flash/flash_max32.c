@@ -170,8 +170,8 @@ static const struct flash_driver_api flash_max32_driver_api = {
 			},                                                                         \
 		FLASH_MAX32_CONFIG_PAGE_LAYOUT(_num)};                                             \
 	static struct max32_flash_dev_data max32_flash_dev_data_##_num;                            \
-	DEVICE_DT_INST_DEFINE(_num, flash_max32_init, NULL, &max32_flash_dev_data_##_num,          \
+	DEVICE_INSTANCE_FROM_DT_INST(_num, flash_max32_init, NULL, &max32_flash_dev_data_##_num,   \
 			      &max32_flash_dev_cfg_##_num, POST_KERNEL,                            \
-			      CONFIG_FLASH_INIT_PRIORITY, &flash_max32_driver_api);
+			      &flash_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASH_MAX32)

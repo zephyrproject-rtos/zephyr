@@ -133,11 +133,10 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 		.divider = DT_INST_PROP(inst, divider),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    &sam_pwm_init, NULL,			\
 			    NULL, &sam_pwm_config_##inst,		\
 			    POST_KERNEL,				\
-			    CONFIG_PWM_INIT_PRIORITY,			\
 			    &sam_pwm_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)

@@ -203,7 +203,6 @@ static const struct wdt_xec_config wdt_xec_config_0 = {
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_xec_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_xec_init, NULL,
 		    &wdt_xec_dev_data, &wdt_xec_config_0,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &wdt_xec_api);
+		    PRE_KERNEL_1, &wdt_xec_api);

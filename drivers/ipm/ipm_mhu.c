@@ -183,12 +183,11 @@ static struct ipm_mhu_data ipm_mhu_data_0 = {
 	.user_data = NULL,
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 			&ipm_mhu_init,
 			NULL,
 			&ipm_mhu_data_0,
 			&ipm_mhu_cfg_0, PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);
 
 static void ipm_mhu_irq_config_func_0(const struct device *d)
@@ -214,12 +213,11 @@ static struct ipm_mhu_data ipm_mhu_data_1 = {
 	.user_data = NULL,
 };
 
-DEVICE_DT_INST_DEFINE(1,
+DEVICE_INSTANCE_FROM_DT_INST(1,
 			&ipm_mhu_init,
 			NULL,
 			&ipm_mhu_data_1,
 			&ipm_mhu_cfg_1, PRE_KERNEL_1,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);
 
 static void ipm_mhu_irq_config_func_1(const struct device *d)

@@ -258,7 +258,6 @@ static const struct lfclk_dev_config lfclk_config = {
 	.fixed_frequency = DT_INST_PROP(0, clock_frequency),
 };
 
-DEVICE_DT_INST_DEFINE(0, lfclk_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, lfclk_init, NULL,
 		      &lfclk_data, &lfclk_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &lfclk_drv_api);
+		      PRE_KERNEL_1, &lfclk_drv_api);

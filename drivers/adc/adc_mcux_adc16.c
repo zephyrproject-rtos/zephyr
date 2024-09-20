@@ -494,12 +494,11 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 		ADC16_MCUX_EDMA_DATA(n)					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,	\
-			      NULL,	\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_adc16_init,\
+			      NULL,			\
 			      &mcux_adc16_data_##n,	\
 			      &mcux_adc16_config_##n,	\
 			      POST_KERNEL,		\
-			      CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_adc16_driver_api);	\
 
 DT_INST_FOREACH_STATUS_OKAY(ACD16_MCUX_INIT)

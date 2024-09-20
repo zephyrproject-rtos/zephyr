@@ -3038,8 +3038,7 @@ static const struct i3c_driver_api npcx_i3c_driver_api = {
 		.config_target.max_write_len = DT_INST_PROP_OR(id, maximum_write, 0),              \
 		.config_target.supported_hdr = false,                                              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id, \
-			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                    \
-			      &npcx_i3c_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id,\
+			      POST_KERNEL, &npcx_i3c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I3C_NPCX_DEVICE)

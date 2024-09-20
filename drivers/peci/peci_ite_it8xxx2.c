@@ -340,10 +340,9 @@ static int peci_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 	&peci_it8xxx2_init,
 	NULL,
 	&peci_it8xxx2_data0,
 	&peci_it8xxx2_config0,
-	POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,
-	&peci_it8xxx2_driver_api);
+	POST_KERNEL, &peci_it8xxx2_driver_api);

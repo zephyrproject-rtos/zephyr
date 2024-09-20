@@ -62,5 +62,4 @@ static const struct mbox_driver_api vevif_event_tx_driver_api = {
 	.max_channels_get = vevif_event_tx_max_channels_get,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,
-		      &vevif_event_tx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, POST_KERNEL, &vevif_event_tx_driver_api);

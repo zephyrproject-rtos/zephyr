@@ -131,8 +131,7 @@ static const struct clock_control_driver_api ambiq_clock_driver_api = {
 	static const struct ambiq_clock_config ambiq_clock_config##n = {                           \
 		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)};                                        \
-	DEVICE_DT_INST_DEFINE(n, ambiq_clock_init, NULL, NULL, &ambiq_clock_config##n,             \
-			      POST_KERNEL, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                     \
-			      &ambiq_clock_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ambiq_clock_init, NULL, NULL, &ambiq_clock_config##n,      \
+			      POST_KERNEL, &ambiq_clock_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_CLOCK_INIT)

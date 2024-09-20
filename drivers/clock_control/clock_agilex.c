@@ -39,6 +39,5 @@ static const struct clock_control_driver_api clk_api = {
 	.get_rate = clk_get_rate
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock), NULL, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		 &clk_api);
+DEVICE_INSTANCE(DT_NODELABEL(clock), NULL, NULL, NULL, NULL,
+		 PRE_KERNEL_1, &clk_api);

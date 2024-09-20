@@ -191,9 +191,8 @@ static int gpio_si32_init(const struct device *dev)
 		.disable_pullups = DT_INST_PROP(inst, disable_pullups),                            \
 	};                                                                                         \
 	static struct gpio_si32_data gpio_si32_data_##inst;                                        \
-	DEVICE_DT_INST_DEFINE(inst, gpio_si32_init, NULL, &gpio_si32_data_##inst,                  \
-			      &gpio_si32_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
-			      &gpio_si32_driver);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_si32_init, NULL, &gpio_si32_data_##inst,           \
+			      &gpio_si32_cfg_##inst, PRE_KERNEL_1, &gpio_si32_driver);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT)
 

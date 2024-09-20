@@ -524,8 +524,8 @@ static const struct spi_driver_api spi_it8xxx2_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_it8xxx2_data_##n, ctx),                                  \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &spi_it8xxx2_init, NULL, &spi_it8xxx2_data_##n,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &spi_it8xxx2_init, NULL, &spi_it8xxx2_data_##n,            \
 			      &spi_it8xxx2_cfg_##n, POST_KERNEL,                                   \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_it8xxx2_driver_api);
+			      &spi_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_IT8XXX2_INIT)

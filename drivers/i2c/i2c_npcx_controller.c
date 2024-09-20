@@ -1327,12 +1327,11 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	static struct i2c_ctrl_data i2c_ctrl_data_##inst;                      \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,                                            \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,                                     \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
 			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \
-			    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,            \
-			    NULL);                                             \
+			    PRE_KERNEL_1, NULL);                               \
 									       \
 	NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)
 

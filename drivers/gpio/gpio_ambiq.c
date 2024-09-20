@@ -597,8 +597,7 @@ static const struct gpio_driver_api ambiq_gpio_drv_api = {
 		.irq_num = DT_INST_IRQN(n),                                                        \
 		.cfg_func = ambiq_gpio_cfg_func_##n};                                              \
 	AMBIQ_GPIO_CONFIG_FUNC(n)                                                                  \
-	DEVICE_DT_INST_DEFINE(n, ambiq_gpio_init, NULL, &ambiq_gpio_data_##n,                      \
-			      &ambiq_gpio_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,     \
-			      &ambiq_gpio_drv_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ambiq_gpio_init, NULL, &ambiq_gpio_data_##n,               \
+			      &ambiq_gpio_config_##n, PRE_KERNEL_1, &ambiq_gpio_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_GPIO_DEFINE)
