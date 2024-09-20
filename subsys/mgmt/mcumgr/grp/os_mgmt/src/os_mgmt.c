@@ -505,7 +505,7 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	} else
 #endif
 	{
-		return OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER;
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER);
 	}
 
 	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
