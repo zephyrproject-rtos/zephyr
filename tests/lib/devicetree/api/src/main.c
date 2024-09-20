@@ -366,6 +366,17 @@ ZTEST(devicetree_api, test_has_status)
 		      0, "");
 }
 
+ZTEST(devicetree_api, test_has_status_okay)
+{
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_gpio_1)), 1);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_no_status)), 1);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0);
+
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(reserved_gpio)), 0);
+}
+
 ZTEST(devicetree_api, test_bus)
 {
 	int pin, flags;
