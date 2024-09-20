@@ -574,11 +574,31 @@ static enum pufcc_status pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct
   enum pufcc_status status;
   struct pufs_crypto_hash hash;
 
-  // Calculate hash of the message: TODO update here
-  // if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
-  //     PUFCC_SUCCESS) {
-  //   return PUFCC_E_ERROR;
-  // }
+  struct hash_ctx lvHashCtx = {
+    .device = ctx->device,
+    .drv_sessn_state = NULL,
+    .hash_hndlr = NULL,
+    .started = false,
+    .flags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+  };
+
+  struct hash_pkt lvHashPkt = {
+    .in_buf = pkt->in_buf,
+    .in_hash = NULL,
+    .in_len = pkt->in_len,
+    .prev_len = &prev_len,
+    .out_buf = (uint8_t*)hash.val,
+    .out_len = 0,
+    .next = NULL,
+    .head = true,
+    .tail = true,
+    .ctx = &lvHashCtx
+  };
+
+  // Calculate hash of the message
+  if (pufcc_calc_sha256_hash_sg(&lvHashCtx, &lvHashPkt) != PUFCC_SUCCESS) {
+    return PUFCC_E_ERROR;
+  }
 
   // Set the EC NIST P256 parameters after reversing them
   reverse(pufcc_buffer, ecc_param_nistp256.prime, PUFCC_ECDSA_256_LEN);
