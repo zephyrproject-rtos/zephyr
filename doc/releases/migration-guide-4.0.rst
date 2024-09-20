@@ -213,6 +213,19 @@ Interrupt Controller
 LED Strip
 =========
 
+PWM
+===
+
+* The Raspberry Pi Pico PWM driver now configures frequency adaptively.
+  This has resulted in a change in how device tree parameters are handled.
+  If the :dtcompatible:`raspberry,pico-pwm`'s ``divider-int-0`` or variations
+  for each channel are specified, or if these are set to 0,
+  the driver dynamically configures the division ratio by specified cycles.
+  The driver will operate at the specified division ratio if a non-zero value is
+  specified for ``divider-int-0``.
+  This is unchanged from previous behavior.
+  Please specify ``divider-int-0`` explicitly to make the same behavior as before.
+
 SDHC
 ====
 
