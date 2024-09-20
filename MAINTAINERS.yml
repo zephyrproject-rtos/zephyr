@@ -3664,6 +3664,8 @@ NXP Platforms (MCU):
     - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
+  files-exclude:
+    - dts/arm/nxp/nxp_imx*
   files-regex-exclude:
     - .*s32.*
   labels:
@@ -3705,10 +3707,10 @@ NXP Platforms (MPU):
     - dbaluta
     - iuliana-prodan
     - danieldegrasse
-    - decsny
     - yvanderv
   files:
     - dts/arm64/nxp/
+    - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
   files-regex:
