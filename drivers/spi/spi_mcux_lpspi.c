@@ -527,20 +527,6 @@ out:
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 #ifdef CONFIG_SPI_RTIO
-static inline void spi_mcux_iodev_prepare_start(const struct device *dev)
-{
-	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-	struct spi_dt_spec *spi_dt_spec = rtio_ctx->txn_curr->sqe.iodev->data;
-	struct spi_config *spi_config = &spi_dt_spec->config;
-	int err;
-
-	err = spi_mcux_configure(dev, spi_config);
-	__ASSERT(!err, "%d", err);
-
-	spi_context_cs_control(&data->ctx, true);
-}
-
 static void spi_mcux_iodev_start(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -551,6 +537,12 @@ static void spi_mcux_iodev_start(const struct device *dev)
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	lpspi_transfer_t transfer;
 	status_t status;
+
+	status = spi_mcux_configure(dev, spi_cfg);
+	if (status) {
+		LOG_ERR("Error configuring lpspi");
+		return;
+	}
 
 	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(spi_cfg->slave);
 
@@ -583,6 +575,8 @@ static void spi_mcux_iodev_start(const struct device *dev)
 
 	data->transfer_len = transfer.dataSize;
 
+	spi_context_cs_control(&data->ctx, true);
+
 	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
@@ -605,7 +599,6 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 	spi_context_cs_control(&data->ctx, false);
 
 	if (spi_rtio_complete(rtio_ctx, status)) {
-		spi_mcux_iodev_prepare_start(dev);
 		spi_mcux_iodev_start(dev);
 	}
 }
@@ -616,7 +609,6 @@ static void spi_mcux_iodev_submit(const struct device *dev, struct rtio_iodev_sq
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
 	if (spi_rtio_submit(rtio_ctx, iodev_sqe)) {
-		spi_mcux_iodev_prepare_start(dev);
 		spi_mcux_iodev_start(dev);
 	}
 }
