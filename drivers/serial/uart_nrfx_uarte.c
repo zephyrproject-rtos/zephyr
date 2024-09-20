@@ -191,19 +191,16 @@ struct uarte_nrfx_data {
 #define UARTE_LOW_POWER_TX BIT(0)
 #define UARTE_LOW_POWER_RX BIT(1)
 
-/* If enabled, pins are managed when going to low power mode. */
-#define UARTE_CFG_FLAG_GPIO_MGMT   BIT(0)
-
 /* If enabled then ENDTX is PPI'ed to TXSTOP */
-#define UARTE_CFG_FLAG_PPI_ENDTX   BIT(1)
+#define UARTE_CFG_FLAG_PPI_ENDTX   BIT(0)
 
 /* If enabled then TIMER and PPI is used for byte counting. */
-#define UARTE_CFG_FLAG_HW_BYTE_COUNTING   BIT(2)
+#define UARTE_CFG_FLAG_HW_BYTE_COUNTING   BIT(1)
 
 /* If enabled then UARTE peripheral is disabled when not used. This allows
  * to achieve lowest power consumption in idle.
  */
-#define UARTE_CFG_FLAG_LOW_POWER   BIT(4)
+#define UARTE_CFG_FLAG_LOW_POWER   BIT(2)
 
 /* Macro for converting numerical baudrate to register value. It is convenient
  * to use this approach because for constant input it can calculate nrf setting
@@ -516,20 +513,6 @@ static int wait_tx_ready(const struct device *dev)
 	return key;
 }
 
-#if defined(UARTE_ANY_ASYNC) || defined(CONFIG_PM_DEVICE)
-static int pins_state_change(const struct device *dev, bool on)
-{
-	const struct uarte_nrfx_config *config = dev->config;
-
-	if (config->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
-		return pinctrl_apply_state(config->pcfg,
-				on ? PINCTRL_STATE_DEFAULT : PINCTRL_STATE_SLEEP);
-	}
-
-	return 0;
-}
-#endif
-
 #ifdef UARTE_ANY_ASYNC
 
 /* Using Macro instead of static inline function to handle NO_OPTIMIZATIONS case
@@ -551,7 +534,7 @@ static int uarte_enable(const struct device *dev, uint32_t mask)
 		int ret;
 
 		data->async->low_power_mask |= mask;
-		ret = pins_state_change(dev, true);
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1293,10 +1276,6 @@ static void async_uart_release(const struct device *dev, uint32_t dir_mask)
 		}
 
 		uart_disable(dev);
-		int err = pins_state_change(dev, false);
-
-		(void)err;
-		__ASSERT_NO_MSG(err == 0);
 	}
 
 	irq_unlock(key);
@@ -1924,8 +1903,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-
-		ret = pins_state_change(dev, true);
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1994,7 +1972,7 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		wait_for_tx_stopped(dev);
 		uart_disable(dev);
 
-		ret = pins_state_change(dev, false);
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
 			return ret;
 		}
@@ -2095,8 +2073,6 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(UARTE(idx)),		       \
 		.uarte_regs = _CONCAT(NRF_UARTE, idx),                         \
 		.flags =						       \
-			(IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT) ?     \
-				UARTE_CFG_FLAG_GPIO_MGMT : 0) |		       \
 			(IS_ENABLED(CONFIG_UART_##idx##_ENHANCED_POLL_OUT) ?   \
 				UARTE_CFG_FLAG_PPI_ENDTX : 0) |		       \
 			(IS_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC) ?        \
