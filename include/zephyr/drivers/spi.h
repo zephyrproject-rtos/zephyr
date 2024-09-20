@@ -211,7 +211,7 @@ struct spi_cs_control {
  */
 #define SPI_CS_GPIOS_DT_SPEC_GET(spi_dev)			\
 	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_BUS(spi_dev), cs_gpios,	\
-				   DT_REG_ADDR(spi_dev), {})
+				   DT_REG_ADDR_RAW(spi_dev), {})
 
 /**
  * @brief Get a <tt>struct gpio_dt_spec</tt> for a SPI device's chip select pin
