@@ -14,3 +14,11 @@ board:
     - name: 'fvp'
       variants:
       - name: 'ns'
+  - name: 'corstone310'
+    variants:
+    - name: 'an555'
+      variants:
+      - name: 'ns'
+    - name: 'fvp'
+      variants:
+      - name: 'ns'
