@@ -1,0 +1,192 @@
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# Mbed TLS's (D)TLS/X.509 options
+
+menu "TLS"
+
+config MBEDTLS_TLS_VERSION_1_2
+	bool "Support for TLS 1.2 (DTLS 1.2)"
+	select MBEDTLS_CIPHER
+	select MBEDTLS_MD
+
+if MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_DTLS
+	bool "Support for DTLS"
+
+endif # MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_TLS_VERSION_1_3
+	bool "Support for TLS 1.3"
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_TLS_SESSION_TICKETS
+	bool "Support for RFC 5077 session tickets in TLS 1.3"
+
+endif # MBEDTLS_TLS_VERSION_1_3
+
+if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_SSL_ALPN
+	bool "Support for setting the supported Application Layer Protocols"
+
+endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
+
+endmenu # TLS
+
+comment "Supported key exchange modes"
+
+config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
+	bool "All available ciphersuite modes"
+	select MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+config MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
+	bool "PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	bool "DHE-PSK based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "ECDHE-PSK based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	bool "RSA-PSK based ciphersuite modes"
+
+config MBEDTLS_PSK_MAX_LEN
+	int "Max size of TLS pre-shared keys"
+	default 32
+	help
+	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
+	  PSK key exchange is used.
+
+config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+	bool "RSA-only based ciphersuite modes"
+	default y if UOSCORE || UEDHOC
+	select MBEDTLS_MD
+	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE if PSA_CRYPTO_CLIENT
+
+config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	bool "DHE-RSA based ciphersuite modes"
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "ECDHE-RSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "ECDHE-ECDSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "ECDH-ECDSA based ciphersuite modes"
+	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
+
+config MBEDTLS_ECDSA_DETERMINISTIC
+	bool "Deterministic ECDSA (RFC 6979)"
+
+config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "ECDH-RSA based ciphersuite modes"
+	depends on MBEDTLS_ECDH_C
+
+config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "ECJPAKE based ciphersuite modes"
+	depends on MBEDTLS_ECJPAKE_C
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
+	bool "TLS 1.3 PSK key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+	bool "TLS 1.3 ephemeral key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+	bool "TLS 1.3 PSK ephemeral key exchange mode"
+
+endif # MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_SERVER_NAME_INDICATION
+	bool "Support for RFC 6066 server name indication (SNI) in SSL"
+	help
+	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
+	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
+
+config MBEDTLS_SSL_CACHE_C
+	bool "SSL session cache support"
+	help
+	  "This option enables simple SSL cache implementation (server side)."
+
+if MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
+	int "Default timeout for SSL cache entires"
+	default 86400
+
+config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
+	int "Maximum number of SSL cache entires"
+	default 5
+
+endif # MBEDTLS_SSL_CACHE_C
+
+config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	bool "(D)TLS Extended Master Secret extension"
+	depends on MBEDTLS_TLS_VERSION_1_2
+	help
+	  Enable support for the (D)TLS Extended Master Secret extension
+	  which ensures that master secrets are different for every
+	  connection and every session.
+
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "DTLS Connection ID extension"
+	depends on MBEDTLS_DTLS
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message"
+	default 1500
+	help
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+
+config MBEDTLS_X509_CRL_PARSE_C
+	bool "X.509 CRL parsing"
+	help
+	  Used by X.509 CRL parsing
+
+config MBEDTLS_X509_CSR_WRITE_C
+	bool "X.509 Certificate Signing Requests writing"
+	help
+	  For X.509 certificate request writing.
+
+config MBEDTLS_X509_CSR_PARSE_C
+	bool "X.509 Certificate Signing Request parsing"
+	help
+	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_WRITE_C
+	bool "X.509 certificate creation"

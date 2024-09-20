@@ -61,26 +61,29 @@ config MBEDTLS_CFG_FILE
 	  special TLS usage, use available Kconfig options, or select an
 	  alternative config.
 
-rsource "Kconfig.tls-generic"
-
-config MBEDTLS_SSL_MAX_CONTENT_LEN
-	int "Max payload size for TLS protocol message"
-	default 1500
-	depends on MBEDTLS_BUILTIN
+config MBEDTLS_USER_CONFIG_ENABLE
+	bool "User mbedTLS config file"
 	help
-	  The TLS standards mandate max payload size of 16384 bytes. So, for
-	  maximum operability and for general-purpose usage, that value must
-	  be used. For specific usages, that value can be largely decreased.
-	  E.g. for DTLS, payload size is limited by UDP datagram size, and
-	  even for HTTPS REST API, the payload can be limited to max size of
-	  (REST request, REST response, server certificate(s)).
-	  mbedTLS uses this value separate for input and output buffers, so
-	  twice this value will be allocated (on mbedTLS own heap, so the
-	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+	  Enable user mbedTLS config file that will be included at the end of
+	  the generic config file.
+
+config MBEDTLS_USER_CONFIG_FILE
+	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
+	help
+	  User config file that can contain mbedTLS configs that were not
+	  covered by the generic config file.
 
 module = MBEDTLS
 module-str = Log level mbedTLS library debug hook
 source "subsys/logging/Kconfig.template.log_config"
+
+menu "Mbed TLS configuration"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+
+rsource "Kconfig.crypto"
+rsource "Kconfig.tls-x509"
+
+endmenu
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
@@ -241,5 +244,15 @@ config APP_LINK_WITH_MBEDTLS
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "MbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
 
 endif # MBEDTLS
