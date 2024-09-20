@@ -255,12 +255,6 @@ void bt_hci_conn_complete(struct net_buf *buf)
 	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_FEATURES, buf, NULL);
 }
 
-struct discovery_priv {
-	uint16_t clock_offset;
-	uint8_t pscan_rep_mode;
-	uint8_t resolving;
-} __packed;
-
 static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
 {
 	struct bt_hci_cp_remote_name_request *cp;
@@ -336,9 +330,9 @@ static void report_discovery_results(void)
 	struct bt_br_discovery_cb *listener, *next;
 
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
 
-		priv = (struct discovery_priv *)&discovery_results[i]._priv;
+		priv = &discovery_results[i]._priv;
 
 		if (eir_has_name(discovery_results[i].eir)) {
 			continue;
@@ -439,7 +433,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
 		struct bt_br_discovery_result *result;
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
 		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
@@ -455,7 +449,7 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 			return;
 		}
 
-		priv = (struct discovery_priv *)&result->_priv;
+		priv = &result->_priv;
 		priv->pscan_rep_mode = evt->pscan_rep_mode;
 		priv->clock_offset = evt->clock_offset;
 
@@ -477,7 +471,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 {
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
-	struct discovery_priv *priv;
+	struct bt_br_discovery_priv *priv;
 	struct bt_br_discovery_cb *listener, *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
@@ -491,7 +485,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->_priv;
+	priv = &result->_priv;
 	priv->pscan_rep_mode = evt->pscan_rep_mode;
 	priv->clock_offset = evt->clock_offset;
 
@@ -510,7 +504,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_remote_name_req_complete *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
-	struct discovery_priv *priv;
+	struct bt_br_discovery_priv *priv;
 	int eir_len = 240;
 	uint8_t *eir;
 	int i;
@@ -521,7 +515,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 		return;
 	}
 
-	priv = (struct discovery_priv *)&result->_priv;
+	priv = &result->_priv;
 	priv->resolving = 0U;
 
 	if (evt->status) {
@@ -576,9 +570,9 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 check_names:
 	/* if still waiting for names */
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *dpriv;
+		struct bt_br_discovery_priv *dpriv;
 
-		dpriv = (struct discovery_priv *)&discovery_results[i]._priv;
+		dpriv = &discovery_results[i]._priv;
 
 		if (dpriv->resolving) {
 			return;
@@ -978,11 +972,11 @@ int bt_br_discovery_stop(void)
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
-		struct discovery_priv *priv;
+		struct bt_br_discovery_priv *priv;
 		struct bt_hci_cp_remote_name_cancel *cp;
 		struct net_buf *buf;
 
-		priv = (struct discovery_priv *)&discovery_results[i]._priv;
+		priv = &discovery_results[i]._priv;
 
 		if (!priv->resolving) {
 			continue;

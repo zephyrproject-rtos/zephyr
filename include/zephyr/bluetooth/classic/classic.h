@@ -38,10 +38,23 @@ extern "C" {
  * @{
  */
 
+/**
+ * @private
+ * @brief BR/EDR discovery private structure
+ */
+struct bt_br_discovery_priv {
+	/** Clock offset */
+	uint16_t clock_offset;
+	/** Page scan repetition mode */
+	uint8_t pscan_rep_mode;
+	/** Resolving remote name*/
+	uint8_t resolving;
+};
+
 /** @brief BR/EDR discovery result structure */
 struct bt_br_discovery_result {
-	/** private */
-	uint8_t _priv[4];
+	/** Private data */
+	struct bt_br_discovery_priv _priv;
 
 	/** Remote device address */
 	bt_addr_t addr;
