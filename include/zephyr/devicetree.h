@@ -2244,13 +2244,41 @@
 	IS_ENABLED(DT_CAT4(node_id, _REG_NAME_, name, _EXISTS))
 
 /**
+ * @brief Get the base raw address of the register block at index @p idx
+ *
+ * Get the base address of the register block at index @p idx without any
+ * type suffix. This can be used to index other devicetree properties, use the
+ * non _RAW macros for assigning values in actual code.
+ *
+ * @param node_id node identifier
+ * @param idx index of the register whose address to return
+ * @return address of the idx-th register block
+ */
+#define DT_REG_ADDR_BY_IDX_RAW(node_id, idx) \
+	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_ADDRESS)
+
+/**
+ * @brief Get a node's (only) register block raw address
+ *
+ * Get a node's only register block address without any type suffix. This can
+ * be used to index other devicetree properties, use the non _RAW macros for
+ * assigning values in actual code.
+ *
+ * Equivalent to DT_REG_ADDR_BY_IDX_RAW(node_id, 0).
+ * @param node_id node identifier
+ * @return node's register block address
+ */
+#define DT_REG_ADDR_RAW(node_id) \
+	DT_REG_ADDR_BY_IDX_RAW(node_id, 0)
+
+/**
  * @brief Get the base address of the register block at index @p idx
  * @param node_id node identifier
  * @param idx index of the register whose address to return
  * @return address of the idx-th register block
  */
 #define DT_REG_ADDR_BY_IDX(node_id, idx) \
-	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_ADDRESS)
+	DT_U32_C(DT_REG_ADDR_BY_IDX_RAW(node_id, idx))
 
 /**
  * @brief Get the size of the register block at index @p idx
@@ -2285,7 +2313,7 @@
  * @param node_id node identifier
  * @return node's register block address
  */
-#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR(node_id))
+#define DT_REG_ADDR_U64(node_id) DT_U64_C(DT_REG_ADDR_BY_IDX_RAW(node_id, 0))
 
 /**
  * @brief Get a node's (only) register block size
@@ -2303,7 +2331,7 @@
  * @return address of the register block specified by name
  */
 #define DT_REG_ADDR_BY_NAME(node_id, name) \
-	DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS)
+	DT_U32_C(DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS))
 
 /**
  * @brief Like DT_REG_ADDR_BY_NAME(), but with a fallback to @p default_value
@@ -2330,7 +2358,7 @@
  * @return address of the register block specified by name
  */
 #define DT_REG_ADDR_BY_NAME_U64(node_id, name) \
-	DT_U64_C(DT_REG_ADDR_BY_NAME(node_id, name))
+	DT_U64_C(DT_CAT4(node_id, _REG_NAME_, name, _VAL_ADDRESS))
 
 /**
  * @brief Get a register block's size by name
@@ -4136,6 +4164,14 @@
 #define DT_INST_REG_HAS_NAME(inst, name) DT_REG_HAS_NAME(DT_DRV_INST(inst), name)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT` instance's idx-th register block's raw address
+ * @param inst instance number
+ * @param idx index of the register whose address to return
+ * @return address of the instance's idx-th register block
+ */
+#define DT_INST_REG_ADDR_BY_IDX_RAW(inst, idx) DT_REG_ADDR_BY_IDX_RAW(DT_DRV_INST(inst), idx)
+
+/**
  * @brief Get a `DT_DRV_COMPAT` instance's idx-th register block's address
  * @param inst instance number
  * @param idx index of the register whose address to return
@@ -4185,7 +4221,7 @@
  * @return address of the register block with the given @p name
  */
 #define DT_INST_REG_ADDR_BY_NAME_U64(inst, name) \
-	DT_U64_C(DT_INST_REG_ADDR_BY_NAME(inst, name))
+	DT_REG_ADDR_BY_NAME_U64(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s register block size by name
@@ -4208,6 +4244,13 @@
 	DT_REG_SIZE_BY_NAME_OR(DT_DRV_INST(inst), name, default_value)
 
 /**
+ * @brief Get a `DT_DRV_COMPAT`'s (only) register block raw address
+ * @param inst instance number
+ * @return instance's register block address
+ */
+#define DT_INST_REG_ADDR_RAW(inst) DT_INST_REG_ADDR_BY_IDX_RAW(inst, 0)
+
+/**
  * @brief Get a `DT_DRV_COMPAT`'s (only) register block address
  * @param inst instance number
  * @return instance's register block address
@@ -4225,7 +4268,7 @@
  * @param inst instance number
  * @return instance's register block address
  */
-#define DT_INST_REG_ADDR_U64(inst) DT_U64_C(DT_INST_REG_ADDR(inst))
+#define DT_INST_REG_ADDR_U64(inst) DT_REG_ADDR_U64(DT_DRV_INST(inst))
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s (only) register block size
@@ -4886,6 +4929,16 @@
  */
 #define DT_COMPAT_NODE_HAS_PROP_AND_OR(inst, compat, prop) \
 	DT_NODE_HAS_PROP(DT_INST(inst, compat), prop) ||
+
+/**
+ * @def DT_U32_C
+ * @brief Macro to add 32bit unsigned postfix to the devicetree address constants
+ */
+#if defined(_LINKER) || defined(_ASMLANGUAGE)
+#define DT_U32_C(_v) (_v)
+#else
+#define DT_U32_C(_v) UINT32_C(_v)
+#endif
 
 /**
  * @def DT_U64_C

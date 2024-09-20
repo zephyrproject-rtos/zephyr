@@ -63,13 +63,13 @@ struct z_device_mmio_rom {
 
 #define Z_DEVICE_MMIO_ROM_INITIALIZER(node_id) \
 	{ \
-		.phys_addr = UINT32_C(DT_REG_ADDR(node_id)), \
+		.phys_addr = DT_REG_ADDR(node_id), \
 		.size = DT_REG_SIZE(node_id) \
 	}
 
 #define Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, node_id) \
 	{ \
-		.phys_addr = UINT32_C(DT_REG_ADDR_BY_NAME(node_id, name)), \
+		.phys_addr = DT_REG_ADDR_BY_NAME(node_id, name), \
 		.size = DT_REG_SIZE_BY_NAME(node_id, name) \
 	}
 

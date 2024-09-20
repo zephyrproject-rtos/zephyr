@@ -63,7 +63,7 @@ extern "C" {
 		.cs = {							\
 			.gpio = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_PHANDLE(DT_PARENT(node_id), \
 							   spi_dev), cs_gpios, \
-							   DT_REG_ADDR(node_id), \
+							   DT_REG_ADDR_RAW(node_id), \
 							   {}),		\
 			.delay = (delay_),				\
 		},							\
