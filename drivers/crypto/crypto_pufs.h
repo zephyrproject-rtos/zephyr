@@ -555,8 +555,6 @@ struct pufs_data {
 struct pufs_config {
 	void (*irq_init)(void);
 	uint32_t base;
-	uint32_t irq_num;
-  uint32_t irq_priority;
   const struct device *dev;
 };
 

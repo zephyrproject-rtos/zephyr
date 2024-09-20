@@ -76,24 +76,10 @@ struct sign_ctx {
 	struct sign_ops ops;
 
 	/** To be populated by the app before calling begin_session() */
-	union {
-		/* Cryptographic key to be used in this session */
-		const uint8_t *bit_stream;
-		/* For cases where  key is protected and is not
-		 * available to caller
-		 */
-		void *handle;
-	} pub_key;
+	const uint8_t *pub_key;
 
 	/** To be populated by the app before calling begin_session() */
-	union {
-		/* Signature to be used in this session */
-		const uint8_t *bit_stream;
-		/* For cases where signature is protected and is not
-		 * available to caller
-		 */
-		void *handle;
-	} signature;
+	const uint8_t *sig;
 
 	/** The device driver instance this crypto context relates to. Will be
 	 * populated by the begin_session() API.

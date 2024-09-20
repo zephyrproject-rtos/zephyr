@@ -113,6 +113,12 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
 enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
                                       enum pufcc_otp_lock *lock_val);
 
+static char *session_to_str(enum pufs_session_type inSession) {
+  return ((inSession ==  PUFS_SESSION_HASH_CALCULATION)?"Hash":\
+            ((inSession ==  PUFS_SESSION_DECRYPTION)?"Decryption":\
+            ((inSession ==  PUFS_SESSION_SIGN_VERIFICATION)?"Sign_Verification":"Unknown")));
+}                                      
+
 /*****************************************************************************
  * API functions
  ****************************************************************************/
@@ -560,9 +566,10 @@ static enum pufcc_status pufcc_rsa2048_sign_verify(
  * @param[in]  pub_key   ECDSA256 public key
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
-static enum pufcc_status pufcc_ecdsa256_sign_verify(
-    struct pufs_crypto_ec256_sig *sig, struct pufs_crypto_addr *msg_addr,
-    struct rs_crypto_ec256_puk *pub_key) {
+static enum pufcc_status pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt) {
+
+  struct pufs_crypto_ec256_sig *sig = (struct pufs_crypto_ec256_sig *)ctx->sig;
+  struct rs_crypto_ec256_puk *pub_key = (struct rs_crypto_ec256_puk *)ctx->pub_key;
   uint32_t temp32, prev_len = 0;
   enum pufcc_status status;
   struct pufs_crypto_hash hash;
@@ -1057,14 +1064,11 @@ static void pufs_irq_handler(const struct device *dev) { // TODO callback invoca
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
+  // TODO call callback function here
+
   // Clear and disable interrupt
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
   intrpt_reg_ptr->intrpt_en = 0;
-
-  // TODO call callback function here
-
-  // Disable IRQ as the next asynch callback registeration shall enable it again.
-  irq_disable(((struct pufs_config*)dev->config)->irq_num);
 }
 
 static void pufs_irq_Init(void) {
@@ -1075,13 +1079,9 @@ static void pufs_irq_Init(void) {
                   DEVICE_DT_INST_GET(0),
                   0
                 );	
-    /*
-     * The IRQs will only be enabled in
-     * xyz_async_callback_set interfaces
-     * Inside the IRQ Handler we will disable
-     * the IRQ since we support only single
-     * session at any moment.
-     */
+
+    // Enable IRQ.
+    irq_enable(DT_INST_IRQN(0));
 }
 
 /********************************************************
@@ -1187,9 +1187,6 @@ static int pufs_cipher_async_callback_set(const struct device *dev, cipher_compl
 
   ((struct pufs_data*)dev->data)->session_callback.cipher_cb = cb;
 
-  // Enable IRQ.
-  irq_enable(((struct pufs_config*)dev->config)->irq_num);
-
   return PUFCC_SUCCESS;
 }
 
@@ -1210,12 +1207,8 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 
   if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
 
-    LOG_ERR(
-            "%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
-            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_HASH_CALCULATION)?"Hash":\
-            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_DECRYPTION)?"Decryption":\
-            ((lvPufsData->pufs_session_type ==  PUFS_SESSION_SIGN_VERIFICATION)?"Sign_Verification":"Unknown")))
-           );
+    LOG_ERR("%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
 
     return -ENOTSUP;
   } else {
@@ -1230,6 +1223,8 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 /* Tear down an established hash session */
 static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx)
 {
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+
   ctx->device = NULL;
 
   ctx->started = false;
@@ -1237,6 +1232,17 @@ static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx
   ctx->flags = 0x00;
  
   ctx->hash_hndlr = NULL;  
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_HASH_CALCULATION) {
+    LOG_ERR("%s(%d) Cannot Free %s Session\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
+    return -ENOEXEC;
+  } else {
+    lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
+    lvPufsData->session_callback.hash_cb = NULL;
+    lvPufsData->pufs_ctx.hash_ctx = NULL;
+    lvPufsData->pufs_pkt.hash_pkt = NULL;
+  }
 
   return PUFCC_SUCCESS;
 }
@@ -1249,9 +1255,6 @@ static int pufs_hash_async_callback_set(const struct device *dev, hash_completio
   }
 
   ((struct pufs_data*)dev->data)->session_callback.hash_cb = cb;
-
-  // Enable IRQ.
-  irq_enable(((struct pufs_config*)dev->config)->irq_num);
 
   return PUFCC_SUCCESS;
 }
@@ -1278,9 +1281,6 @@ static int pufs_sign_async_callback_set(const struct device *dev, sign_completio
     
   ((struct pufs_data*)dev->data)->session_callback.sign_cb = cb;
 
-  // Enable IRQ.
-  irq_enable(((struct pufs_config*)dev->config)->irq_num);
-
   return PUFCC_SUCCESS;
 }
 
@@ -1299,14 +1299,14 @@ static struct crypto_driver_api s_crypto_funcs = {
 
 static struct pufs_data s_pufs_session_data = {
   .pufs_session_type = PUFS_SESSION_UNDEFINED,
-  .session_callback = {NULL}
+  .session_callback = {NULL},
+  .pufs_ctx = {NULL},
+  .pufs_pkt = {NULL}
 };
 
 static const struct pufs_config s_pufs_configuration = {
   .base = DT_INST_REG_ADDR(0),
-  .irq_num = DT_INST_IRQN(0),
   .irq_init = pufs_irq_Init,
-  .irq_priority = DT_INST_IRQ(0, priority),
   .dev = DEVICE_DT_INST_GET(0)
 };
 
