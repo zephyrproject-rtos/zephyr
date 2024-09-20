@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: nuwa
+      url-base: https://github.com/zjian-zhang
 
   group-filter: [-babblesim, -optional]
 
@@ -210,6 +212,12 @@ manifest:
     - name: hal_quicklogic
       revision: bad894440fe72c814864798c8e3a76d13edffb6c
       path: modules/hal/quicklogic
+      groups:
+        - hal
+    - name: hal_realtek
+      remote: nuwa
+      path: modules/hal/realtek
+      revision: b2eb1a2dc615512c64e9344bada7e2fec78c73dd
       groups:
         - hal
     - name: hal_renesas
