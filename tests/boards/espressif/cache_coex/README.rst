@@ -25,7 +25,7 @@ Make sure you have the target connected over USB port.
 
 .. code-block:: console
 
-   west build -b <board> tests/boards/espressif_esp32/cache_coex
+   west build -b <board> tests/boards/espressif/cache_coex
    west flash && west espressif monitor
 
 Sample Output
