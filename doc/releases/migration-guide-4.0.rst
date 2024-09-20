@@ -288,6 +288,17 @@ Bluetooth Audio
   is enabled and that all members are bonded, to comply with the requirements from the CSIP spec.
   (:github:`78877`)
 
+* The Broadcast Audio Scan Service (BASS) shall now be registered and unregistered dynamically
+  at runtime within the scan delegator. Two new APIs, :c:func:`bt_bap_scan_delegator_register()`
+  and :c:func:`bt_bap_scan_delegator_unregister()`, have been introduced to manage both BASS and
+  scan delegator registration and initialization dynamically. It should also be mentioned that
+  the previous callback registration function, :c:func:`bt_bap_scan_delegator_register_cb()` has
+  now been removed and merged with :c:func:`bt_bap_scan_delegator_register()`.
+  This change allows more flexibility when registering or unregistering scan delegator and BASS
+  related functionality without requiring build-time configuration. Existing need to be updated
+  to use these new APIs.
+  (:github:`78751`)
+
 Bluetooth Classic
 =================
 

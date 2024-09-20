@@ -731,6 +731,13 @@ int init_cap_acceptor_broadcast(void)
 			.recv = broadcast_scan_recv,
 		};
 
+		err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+		if (err != 0) {
+			LOG_ERR("Scan delegator register failed (err %d)", err);
+
+			return err;
+		}
+
 		err = bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 		if (err != 0) {
 			LOG_ERR("Failed to register BAP broadcast sink callbacks: %d", err);
@@ -739,7 +746,6 @@ int init_cap_acceptor_broadcast(void)
 		}
 
 		bt_cap_stream_ops_register(&broadcast_sink.broadcast_stream, &broadcast_stream_ops);
-		bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 		bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 
 		if (IS_ENABLED(CONFIG_SAMPLE_SCAN_SELF)) {

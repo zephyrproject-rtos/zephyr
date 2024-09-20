@@ -1033,7 +1033,10 @@ uint8_t btp_bap_broadcast_sink_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	/* For Scan Delegator role */
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
+	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	/* For Broadcast Sink role */
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);

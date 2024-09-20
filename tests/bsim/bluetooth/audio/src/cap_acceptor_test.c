@@ -774,10 +774,16 @@ static void init(void)
 			return;
 		}
 
+		err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+		if (err != 0) {
+			FAIL("Scan deligator register failed (err %d)\n", err);
+
+			return;
+		}
+
 		bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 		bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 		bt_le_scan_cb_register(&bap_scan_cb);
-		bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 
 		UNSET_FLAG(flag_broadcaster_found);
 		UNSET_FLAG(flag_broadcast_code);
