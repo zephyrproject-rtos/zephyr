@@ -25,20 +25,20 @@ Make sure you have the target connected over USB port.
 
 .. code-block:: console
 
-   west build -b <board> tests/boards/espressif_esp32/rtc_clk
+   west build -b <board> tests/boards/espressif/rtc_clk
    west flash && west espressif monitor
 
 To run the test with twister, use the following command:
 
 .. code-block:: console
 
-   west twister -p <board> --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif_esp32/rtc_clk
+   west twister -p <board> --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif/rtc_clk
 
 If the external 32K crystal is connect to pins 32K_XP and 32K_XN, the test can be run with ``external_xtal`` fixture enabled:
 
 .. code-block:: console
 
-	west twister -p esp32c3_devkitm --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif_esp32/rtc_clk -X external_xtal
+	west twister -p esp32c3_devkitm --device-testing --device-serial=/dev/ttyUSB0 -vv --flash-before -T tests/boards/espressif/rtc_clk -X external_xtal
 
 Sample Output
 =============

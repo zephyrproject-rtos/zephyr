@@ -3946,7 +3946,7 @@ Espressif Platforms:
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
-    - tests/boards/espressif_esp32/
+    - tests/boards/espressif/
     - drivers/*/*esp32*/
   labels:
     - "platform: ESP32"
