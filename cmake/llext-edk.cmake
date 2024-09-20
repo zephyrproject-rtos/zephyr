@@ -160,14 +160,18 @@ endif()
 # Generate the EDK flags files
 #
 
-set(edk_targets MAKEFILE CMAKE)
+set(edk_targets MAKEFILE CMAKE PYTHON)
 set(edk_file_MAKEFILE ${llext_edk}/Makefile.cflags)
 set(edk_file_CMAKE ${llext_edk}/cmake.cflags)
+set(edk_file_PYTHON ${llext_edk}/python.cflags)
 
 # Escape problematic characters in a string
 function(edk_escape target str_in str_out)
     string(REPLACE "\\" "\\\\" str_escaped "${str_in}")
     string(REPLACE "\"" "\\\"" str_escaped "${str_escaped}")
+    if(target STREQUAL "PYTHON")
+        string(REPLACE "{" "\\{" str_escaped "${str_escaped}")
+    endif()
     set(${str_out} "${str_escaped}" PARENT_SCOPE)
 endfunction()
 
@@ -206,6 +210,19 @@ function(edk_write_var target var_name var_value)
         # Each element of the list is wrapped in quotes and is separated by a space.
         list(JOIN exp_var_value "\" \"" exp_var_value_str)
         file(APPEND ${edk_file_${target}} "${var_name} = \"${exp_var_value_str}\"\n")
+    elseif(target STREQUAL "PYTHON")
+        # Python: export lists of f-strings of the form:
+        #
+        #   var = [f"value1", f"value2", ...]
+        #
+        edk_escape(${target} "${exp_var_value}" exp_var_value)
+        set(DASHIMACROS "-imacros{${install_dir_var}}/")
+        set(DASHI "-I{${install_dir_var}}/")
+        string(CONFIGURE "${var_value}" exp_var_value @ONLY)
+        # Each element of the list is wrapped in f-quotes and is separated by a
+        # space and a comma.
+        list(JOIN exp_var_value "\", f\"" exp_var_value_str)
+        file(APPEND ${edk_file_${target}} "${var_name} = [f\"${exp_var_value_str}\"]\n")
     endif()
 endfunction()
 
