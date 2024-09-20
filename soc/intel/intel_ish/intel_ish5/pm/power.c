@@ -69,10 +69,3 @@ void sys_arch_reboot(int type)
 	sedi_pm_reset();
 }
 #endif
-
-extern void sedi_pm_init(void);
-
-void soc_early_init_hook(void)
-{
-	sedi_pm_init();
-}
