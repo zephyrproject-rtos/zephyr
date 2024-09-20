@@ -88,9 +88,9 @@ static ALWAYS_INLINE void usbc_handler(void *port_dev)
 		.create_thread = create_thread_##inst,                                             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, &usbc_subsys_init, NULL, &usbc_port_data_##inst,               \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &usbc_subsys_init, NULL, &usbc_port_data_##inst,        \
 			      &usbc_port_config_##inst, POST_KERNEL,                               \
-			      CONFIG_USBC_STACK_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(USBC_SUBSYS_INIT)
 

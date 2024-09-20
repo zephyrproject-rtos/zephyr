@@ -59,5 +59,5 @@ int dev_test_init(const struct device *dev)
 
 static struct dev_test_data data;
 
-DEVICE_DEFINE(dev_test, "dev_test", &dev_test_init, NULL, &data, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dev_test_api);
+DEVICE_INSTANCE(dev_test, &dev_test_init, NULL, &data, NULL,
+	      POST_KERNEL, &dev_test_api);

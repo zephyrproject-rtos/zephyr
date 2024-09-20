@@ -517,5 +517,5 @@ int sensing_get_sensors(int *sensor_nums, const struct sensing_sensor_info **inf
 K_THREAD_DEFINE(sensing_runtime, CONFIG_SENSING_RUNTIME_THREAD_STACK_SIZE, sensing_runtime_thread,
 		&sensing_ctx, NULL, NULL, CONFIG_SENSING_RUNTIME_THREAD_PRIORITY, 0, 0);
 
-DEVICE_DT_INST_DEFINE(0, sensing_init, NULL, &sensing_ctx, NULL, POST_KERNEL,
-		      CONFIG_SENSOR_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, sensing_init, NULL, &sensing_ctx, NULL, POST_KERNEL,
+		      NULL);

@@ -119,7 +119,7 @@ static int double_tap_init(const struct device *dev)
 		.double_tap_delay_ms = DT_INST_PROP(inst, double_tap_delay_ms),                    \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, double_tap_init, NULL, NULL, &double_tap_config_##inst,        \
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, double_tap_init, NULL, NULL, &double_tap_config_##inst, \
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_DOUBLE_TAP_DEFINE)

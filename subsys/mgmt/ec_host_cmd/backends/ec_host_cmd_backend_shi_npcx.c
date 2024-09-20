@@ -1144,8 +1144,8 @@ static struct shi_npcx_data shi_data = {
 	.out_msg = shi_data.out_msg_padded + SHI_OUT_START_PAD - EC_SHI_FRAME_START_LENGTH,
 };
 
-DEVICE_DT_INST_DEFINE(0, shi_npcx_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ec_host_cmd_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, shi_npcx_init, PM_DEVICE_DT_INST_GET(0), &shi_data, &shi_cfg, POST_KERNEL,
+		      &ec_host_cmd_api);
 
 EC_HOST_CMD_SHI_NPCX_DEFINE(ec_host_cmd_shi_npcx);
 

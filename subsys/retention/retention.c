@@ -418,13 +418,12 @@ static const struct retention_api retention_api = {
 					  (DT_INST_PROP_LEN(inst, prefix)), (0)),		\
 		.prefix = DT_INST_PROP_OR(inst, prefix, {0}),					\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			      &retention_init,							\
 			      NULL,								\
 			      &retention_data_##inst,						\
 			      &retention_config_##inst,						\
 			      POST_KERNEL,							\
-			      CONFIG_RETENTION_INIT_PRIORITY,					\
 			      &retention_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RETENTION_DEVICE)

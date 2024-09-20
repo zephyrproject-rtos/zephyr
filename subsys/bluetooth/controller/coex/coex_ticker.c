@@ -202,5 +202,5 @@ static struct coex_ticker_config config = {
 };
 static struct coex_ticker_data data;
 
-DEVICE_DT_INST_DEFINE(0, &coex_ticker_init, NULL, &data, &config,
-		      POST_KERNEL, 90, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, &coex_ticker_init, NULL, &data, &config,
+		      POST_KERNEL, NULL);

@@ -145,8 +145,8 @@ static const struct rtio_iodev_api vnd_sensor_iodev_api = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, vnd_sensor_init, NULL, &vnd_sensor_data_##n,                      \
+	DEVICE_INSTANCE_FROM_DT_INST(n, vnd_sensor_init, NULL, &vnd_sensor_data_##n,               \
 			      &vnd_sensor_config_##n, POST_KERNEL,                                 \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SENSOR_INIT)

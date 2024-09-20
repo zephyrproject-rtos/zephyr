@@ -767,9 +767,8 @@ static const struct hid_device_driver_api hid_device_api = {
 										\
 	static struct hid_device_data hid_data_##n;				\
 										\
-	DEVICE_DT_INST_DEFINE(n, hid_device_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, hid_device_init, NULL,			\
 		&hid_data_##n, &hid_config_##n,					\
-		POST_KERNEL, CONFIG_USBD_HID_INIT_PRIORITY,			\
-		&hid_device_api);
+		POST_KERNEL, &hid_device_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_HID_INSTANCE_DEFINE);

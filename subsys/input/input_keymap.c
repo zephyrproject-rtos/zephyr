@@ -118,8 +118,8 @@ static int keymap_init(const struct device *dev)
 												\
 	static struct keymap_data keymap_data_##inst;						\
 												\
-	DEVICE_DT_INST_DEFINE(inst, keymap_init, NULL,						\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, keymap_init, NULL,					\
 			      &keymap_data_##inst, &keymap_config_##inst,			\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_KEYMAP_DEFINE)
