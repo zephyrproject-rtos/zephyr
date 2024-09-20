@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log_output_custom.h>
