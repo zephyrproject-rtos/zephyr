@@ -5173,7 +5173,19 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps,
 	enum ethernet_config_type config_type;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return true;
+		/* For VLANs, figure out the main Ethernet interface and
+		 * get the offloading capabilities from it.
+		 */
+		if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_interface(iface)) {
+			iface = net_eth_get_vlan_main(iface);
+			if (iface == NULL) {
+				return true;
+			}
+
+			NET_ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET));
+		} else {
+			return true;
+		}
 	}
 
 	if (!(net_eth_get_hw_capabilities(iface) & caps)) {
