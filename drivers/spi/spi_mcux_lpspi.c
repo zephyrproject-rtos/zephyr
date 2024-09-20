@@ -487,8 +487,9 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	/* DMA is fast enough watermarks are not required */
 	LPSPI_SetFifoWatermarks(base, 0U, 0U);
 
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
 	if (!asynchronous) {
-		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 		spi_context_cs_control(&data->ctx, true);
 
 		/* Send each spi buf via DMA, updating context as DMA completes */
@@ -710,9 +711,6 @@ static int spi_mcux_transceive(const struct device *dev, const struct spi_config
 	struct spi_mcux_data *data = dev->data;
 
 	if (lpspi_inst_has_dma(data)) {
-		if (async) {
-			spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-		}
 		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, async, cb, userdata);
 	}
 
