@@ -1086,12 +1086,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_DEFAULT);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
 		}
 
 		nrf_uart_enable(uart0_addr);
@@ -1102,13 +1099,9 @@ static int uart_nrfx_pm_action(const struct device *dev,
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		nrf_uart_disable(uart0_addr);
-
-		if (IS_ENABLED(CONFIG_UART_0_GPIO_MANAGEMENT)) {
-			ret = pinctrl_apply_state(config->pcfg,
-						  PINCTRL_STATE_SLEEP);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
 		}
 		break;
 	default:
