@@ -160,48 +160,24 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint32_t word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	lpspi_master_config_t master_config;
 	uint32_t clock_freq;
-	uint32_t word_size;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
 		return -ENOTSUP;
 	}
 
-	LPSPI_MasterGetDefaultConfig(&master_config);
-
 	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
 		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
 
-	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (word_size > MAX_DATA_WIDTH) {
 		LOG_ERR("Word size %d is greater than %d", word_size, MAX_DATA_WIDTH);
 		return -EINVAL;
 	}
-
-	master_config.bitsPerFrame = word_size;
-
-	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
-				     ? kLPSPI_ClockPolarityActiveLow
-				     : kLPSPI_ClockPolarityActiveHigh;
-
-	master_config.cpha = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
-				     ? kLPSPI_ClockPhaseSecondEdge
-				     : kLPSPI_ClockPhaseFirstEdge;
-
-	master_config.direction =
-		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kLPSPI_LsbFirst : kLPSPI_MsbFirst;
-
-	master_config.baudRate = spi_cfg->frequency;
-
-	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
-	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
-	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
-
-	master_config.pinCfg = config->data_pin_config;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -226,17 +202,32 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 		}
 	}
 
-	LPSPI_MasterInit(base, &master_config, clock_freq);
-
 	if (IS_ENABLED(CONFIG_DEBUG)) {
 		base->CR |= LPSPI_CR_DBGEN_MASK;
 	}
 
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
-
-	LPSPI_SetDummyData(base, 0);
-
 	data->ctx.config = spi_cfg;
+
+	LPSPI_MasterGetDefaultConfig(&master_config);
+
+	master_config.bitsPerFrame = word_size;
+	master_config.cpol = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+				     ? kLPSPI_ClockPolarityActiveLow
+				     : kLPSPI_ClockPolarityActiveHigh;
+	master_config.cpha = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+				     ? kLPSPI_ClockPhaseSecondEdge
+				     : kLPSPI_ClockPhaseFirstEdge;
+	master_config.direction =
+		(spi_cfg->operation & SPI_TRANSFER_LSB) ? kLPSPI_LsbFirst : kLPSPI_MsbFirst;
+	master_config.baudRate = spi_cfg->frequency;
+	master_config.pcsToSckDelayInNanoSec = config->pcs_sck_delay;
+	master_config.lastSckToPcsDelayInNanoSec = config->sck_pcs_delay;
+	master_config.betweenTransferDelayInNanoSec = config->transfer_delay;
+	master_config.pinCfg = config->data_pin_config;
+
+	LPSPI_MasterInit(base, &master_config, clock_freq);
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
+	LPSPI_SetDummyData(base, 0);
 
 	return 0;
 }
