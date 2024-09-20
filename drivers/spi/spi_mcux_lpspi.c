@@ -85,6 +85,13 @@ struct spi_mcux_data {
 #endif
 };
 
+#ifdef CONFIG_SPI_RTIO
+static void spi_mcux_iodev_complete(const struct device *dev, int status);
+static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs);
+#endif
+
 static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	/* const struct spi_mcux_config *config = dev->config; */
@@ -160,10 +167,6 @@ static void spi_mcux_isr(const struct device *dev)
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
 #endif
 }
-
-#ifdef CONFIG_SPI_RTIO
-static void spi_mcux_iodev_complete(const struct device *dev, int status);
-#endif
 
 static void spi_mcux_master_transfer_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
 					      status_t status, void *userData)
@@ -557,27 +560,6 @@ out:
 #define lpspi_inst_has_dma(arg) arg != arg
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-#ifdef CONFIG_SPI_RTIO
-
-static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
-				  const struct spi_buf_set *tx_bufs,
-				  const struct spi_buf_set *rx_bufs)
-{
-	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-	int ret;
-
-	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
-
-	ret = spi_rtio_transceive(rtio_ctx, spi_cfg, tx_bufs, rx_bufs);
-
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
-}
-
-#endif /* CONFIG_SPI_RTIO */
-
 static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, spi_callback_t cb, void *userdata)
@@ -614,7 +596,6 @@ static int spi_mcux_transceive(const struct device *dev, const struct spi_config
 #ifdef CONFIG_SPI_RTIO
 	return transceive_rtio(dev, spi_cfg, tx_bufs, rx_bufs);
 #endif /* CONFIG_SPI_RTIO */
-
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	const struct spi_mcux_data *data = dev->data;
 
@@ -656,6 +637,22 @@ static int spi_mcux_release(const struct device *dev, const struct spi_config *s
 }
 
 #ifdef CONFIG_SPI_RTIO
+static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	int ret;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
+
+	ret = spi_rtio_transceive(rtio_ctx, spi_cfg, tx_bufs, rx_bufs);
+
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
 
 static inline void spi_mcux_iodev_prepare_start(const struct device *dev)
 {
@@ -741,18 +738,18 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 	if (!status && rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) {
 		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
 		spi_mcux_iodev_start(dev);
-	} else {
-		/** De-assert CS-line to space from next transaction */
-		spi_context_cs_control(&data->ctx, false);
+		return;
+	}
 
-		if (spi_rtio_complete(rtio_ctx, status)) {
-			spi_mcux_iodev_prepare_start(dev);
-			spi_mcux_iodev_start(dev);
-		}
+	/** De-assert CS-line to space from next transaction */
+	spi_context_cs_control(&data->ctx, false);
+
+	if (spi_rtio_complete(rtio_ctx, status)) {
+		spi_mcux_iodev_prepare_start(dev);
+		spi_mcux_iodev_start(dev);
 	}
 }
-
-#endif
+#endif /* CONFIG_SPI_RTIO */
 
 #if defined(CONFIG_SPI_MCUX_LPSPI_DMA)
 static int lpspi_dma_dev_ready(const struct device *dma_dev)
