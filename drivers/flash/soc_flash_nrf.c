@@ -23,13 +23,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_nrf);
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf51_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf52_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf53_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf53_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf53_flash_controller
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf91_flash_controller), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf91_flash_controller))
 #define DT_DRV_COMPAT nordic_nrf91_flash_controller
 #else
 #error No matching compatible for soc_flash_nrf.c

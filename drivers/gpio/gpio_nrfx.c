@@ -446,7 +446,7 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 
 #define GPIOTE_CHECK(id)						       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, gpiote_instance),		       \
-		(BUILD_ASSERT(DT_NODE_HAS_STATUS(GPIOTE_PHANDLE(id), okay),    \
+		(BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(GPIOTE_PHANDLE(id)),    \
 			"Please enable GPIOTE instance for used GPIO port!")), \
 		())
 

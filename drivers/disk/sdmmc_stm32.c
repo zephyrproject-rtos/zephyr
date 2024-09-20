@@ -710,7 +710,7 @@ err_card_detect:
 	return err;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #if STM32_SDMMC_USE_DMA
 

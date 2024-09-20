@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_dma_v2bis
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 #if DT_INST_IRQ_HAS_IDX(0, 7)
 #define DMA_STM32_0_STREAM_COUNT 8
 #elif DT_INST_IRQ_HAS_IDX(0, 6)
@@ -41,9 +41,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #else
 #define DMA_STM32_0_STREAM_COUNT 3
 #endif
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 #if DT_INST_IRQ_HAS_IDX(1, 7)
 #define DMA_STM32_1_STREAM_COUNT 8
 #elif DT_INST_IRQ_HAS_IDX(1, 6)
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #else
 #define DMA_STM32_1_STREAM_COUNT 5
 #endif
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
@@ -755,7 +755,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 1);
@@ -803,10 +803,10 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 
 DMA_STM32_INIT_DEV(0);
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 1);
@@ -855,4 +855,4 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 
 DMA_STM32_INIT_DEV(1);
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */

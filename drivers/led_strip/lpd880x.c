@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, greeled_lpd8806), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, greeled_lpd8806))
 #define DT_DRV_COMPAT greeled_lpd8806
 #else
 #define DT_DRV_COMPAT greeled_lpd8803

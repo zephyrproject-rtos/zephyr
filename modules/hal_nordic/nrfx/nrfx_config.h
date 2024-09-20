@@ -1000,7 +1000,7 @@
 
 #define NRFX_IPCT_PUB_OR_SUB_MASK(inst_num) \
 	COND_CODE_1(IS_EMPTY(inst_num), \
-		(DT_NODE_HAS_STATUS(NRFX_CONFIG_IPCT_LOCAL_NODE, okay)), \
+		(DT_NODE_HAS_STATUS_OKAY(NRFX_CONFIG_IPCT_LOCAL_NODE)), \
 		(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(ipct, inst_num)), owned_channels)))
 
 /* Variables names generation. */

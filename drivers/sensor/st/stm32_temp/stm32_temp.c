@@ -188,7 +188,7 @@ static int stm32_temp_init(const struct device *dev)
  * this driver even if the ADC used for measurement is disabled. In such cases,
  * fail build with an explicit error message.
  */
-#if !DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(0), okay)
+#if !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0))
 
 /* Use BUILD_ASSERT to get preprocessing on the message */
 BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed by "
@@ -235,4 +235,4 @@ SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
 			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 			     &stm32_temp_driver_api);
 
-#endif /* !DT_NODE_HAS_STATUS(DT_INST_IO_CHANNELS_CTLR(0), okay) */
+#endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

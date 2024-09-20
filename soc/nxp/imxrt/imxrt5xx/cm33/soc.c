@@ -358,7 +358,7 @@ void __weak rt5xx_clock_init(void)
 	/* Switch CLKOUT to FRO_DIV2 */
 	CLOCK_AttachClk(kFRO_DIV2_to_CLKOUT);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
@@ -373,7 +373,7 @@ void __weak rt5xx_clock_init(void)
 	RESET_PeripheralReset(kSDIO0_RST_SHIFT_RSTn);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(smartdma), okay) && CONFIG_DMA_MCUX_SMARTDMA
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma)) && CONFIG_DMA_MCUX_SMARTDMA
 	/* Power up SMARTDMA ram */
 	POWER_DisablePD(kPDRUNCFG_APD_SMARTDMA_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_SMARTDMA_SRAM);

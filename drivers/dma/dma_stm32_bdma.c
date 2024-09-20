@@ -901,7 +901,7 @@ static void bdma_stm32_irq_##bdma##_##chan(const struct device *dev)	\
 	} while (false)
 
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #define BDMA_STM32_DEFINE_IRQ_HANDLER_GEN(i, _) \
 	BDMA_STM32_DEFINE_IRQ_HANDLER(0, i)
@@ -918,4 +918,4 @@ static void bdma_stm32_config_irq_0(const struct device *dev)
 
 BDMA_STM32_INIT_DEV(0);
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */

@@ -77,8 +77,8 @@ static void print_hex_number(const uint8_t *num, size_t len)
 #define SW1_NODE DT_ALIAS(sw1)
 #define SW2_NODE DT_ALIAS(sw2)
 #define SW3_NODE DT_ALIAS(sw3)
-#if !DT_NODE_HAS_STATUS(SW0_NODE, okay) || !DT_NODE_HAS_STATUS(SW1_NODE, okay) ||                  \
-	!DT_NODE_HAS_STATUS(SW2_NODE, okay) || !DT_NODE_HAS_STATUS(SW3_NODE, okay)
+#if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE) || !DT_NODE_HAS_STATUS_OKAY(SW1_NODE) ||                    \
+	!DT_NODE_HAS_STATUS_OKAY(SW2_NODE) || !DT_NODE_HAS_STATUS_OKAY(SW3_NODE)
 #error "Unsupported board: This sample need 4 buttons to run"
 #endif
 

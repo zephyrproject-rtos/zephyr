@@ -309,7 +309,7 @@ typedef int16_t device_handle_t;
  * @return a @ref device reference for the node identifier, which may be `NULL`.
  */
 #define DEVICE_DT_GET_OR_NULL(node_id)                                         \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),                         \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                          \
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
