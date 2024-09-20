@@ -113,6 +113,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| NETC      | on-chip    | ethernet, mdio                      |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`
@@ -149,6 +151,11 @@ Serial Port
 
 The MIMXRT1180 SoC has 12 UARTs. One is configured for the console and the
 remaining are not used.
+
+Ethernet
+========
+
+NETC driver supports to manage the Physical Station Interface (PSI).
 
 Programming and Debugging
 *************************
