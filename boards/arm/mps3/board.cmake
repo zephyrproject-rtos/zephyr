@@ -8,6 +8,7 @@
 # Default emulation:
 #     QEMU is used by default for corstone300/an547 and
 #     FVP  is used by default for corstone300/fvp.
+#     FVP  is used by default for corstone310/fvp.
 #
 
 
@@ -29,6 +30,15 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE300)
   string(REPLACE "mps3/corstone300;" "" board_targets "${board_targets}")
   string(REPLACE ";" "\n" board_targets "${board_targets}")
   message(FATAL_ERROR "Please use a target from the list below: \n${board_targets}\n")
+elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS)
+  set(SUPPORTED_EMU_PLATFORMS armfvp)
+  set(ARMFVP_BIN_NAME FVP_Corstone_SSE-310)
+  if(CONFIG_BOARD_MPS3_CORSTONE310_FVP)
+    set(ARMFVP_FLAGS
+      # default is '0x11000000' but should match cpu<i>.INITSVTOR which is 0.
+      -C mps3_board.sse300.iotss3_systemcontrol.INITSVTOR_RST=0
+    )
+  endif()
 endif()
 
 board_set_debugger_ifnset(qemu)

@@ -1,0 +1,18 @@
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_ARM_TRUSTZONE_M=y
+CONFIG_RUNTIME_NMI=y
+CONFIG_ARM_MPU=y
+
+# GPIOs
+CONFIG_GPIO=y
+
+# Serial
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y
+
+# Build a Non-secure firmware image
+CONFIG_TRUSTED_EXECUTION_SECURE=n
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
