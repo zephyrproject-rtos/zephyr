@@ -281,9 +281,8 @@ static const struct gpio_driver_api gpio_sc18im_driver_api = {
 		.conf2 = GPIO_SC18IM_DEFAULT_CONF,						\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, gpio_sc18im_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_sc18im_init, NULL,					\
 			      &gpio_sc18im_data_##n, &gpio_sc18im_config_##n,			\
-			      POST_KERNEL, CONFIG_GPIO_SC18IM704_INIT_PRIORITY,			\
-			      &gpio_sc18im_driver_api);
+			      POST_KERNEL, &gpio_sc18im_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_SC18IM704_DEFINE);

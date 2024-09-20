@@ -314,8 +314,7 @@ static const struct sensor_driver_api icp10125_api_funcs = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.ambient_temp_mode = DT_INST_ENUM_IDX(inst, temperature_measurement_mode),         \
 		.press_mode = DT_INST_ENUM_IDX(inst, pressure_measurement_mode)};                  \
-	DEVICE_DT_INST_DEFINE(inst, icp10125_init, NULL, &icp10125_drv_##inst,                     \
-			      &icp10125_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &icp10125_api_funcs);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, icp10125_init, NULL, &icp10125_drv_##inst,              \
+			      &icp10125_config_##inst, POST_KERNEL, &icp10125_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(ICP10125_DEFINE)

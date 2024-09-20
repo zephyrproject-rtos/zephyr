@@ -177,9 +177,9 @@ BUILD_ASSERT(CONFIG_DAC_AD56XX_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.channel_addresses = channels,                                                     \
 		.channel_count = channels_count,                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, ad56xx_init, NULL, &data_##name##_##index,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(index, ad56xx_init, NULL, &data_##name##_##index,             \
 			      &config_##name##_##index, POST_KERNEL,                               \
-			      CONFIG_DAC_AD56XX_INIT_PRIORITY, &ad56xx_driver_api);
+			      &ad56xx_driver_api);
 
 #define DT_DRV_COMPAT adi_ad5628
 #if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)

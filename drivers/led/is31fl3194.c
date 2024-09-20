@@ -352,8 +352,8 @@ static const struct led_driver_api is31fl3194_led_api = {
 		.led_infos = is31fl3194_leds_##id,				\
 		.current_limits = is31fl3194_currents_##id,			\
 	};									\
-	DEVICE_DT_INST_DEFINE(id, &is31fl3194_init, NULL, NULL,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(id, &is31fl3194_init, NULL, NULL,          \
 			      &is31fl3194_config_##id, POST_KERNEL,             \
-			      CONFIG_LED_INIT_PRIORITY, &is31fl3194_led_api);
+			      &is31fl3194_led_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IS31FL3194_DEFINE)

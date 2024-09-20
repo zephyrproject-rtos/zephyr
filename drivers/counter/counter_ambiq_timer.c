@@ -304,7 +304,6 @@ static void counter_ambiq_isr(void *arg)
 		.irq_config_func = counter_irq_config_func_##idx,                                  \
 	};                                                                                         \
 	AMBIQ_COUNTER_CONFIG_FUNC(idx)                                                             \
-	DEVICE_DT_INST_DEFINE(idx, counter_ambiq_init, NULL, &counter_data_##idx,                  \
-			      &counter_config_##idx, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,   \
-			      &counter_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, counter_ambiq_init, NULL, &counter_data_##idx,           \
+			      &counter_config_##idx, PRE_KERNEL_1, &counter_api);
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_COUNTER_INIT);

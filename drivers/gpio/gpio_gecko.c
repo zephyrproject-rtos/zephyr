@@ -383,11 +383,11 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_DT_DEFINE(DT_INST(0, silabs_gecko_gpio),
+DEVICE_INSTANCE(DT_INST(0, silabs_gecko_gpio),
 		    gpio_gecko_common_init,
 		    NULL,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
-		    PRE_KERNEL_1, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
+		    PRE_KERNEL_1,
 		    &gpio_gecko_common_driver_api);
 
 static int gpio_gecko_common_init(const struct device *dev)
@@ -424,13 +424,12 @@ static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 \
 static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
 \
-DEVICE_DT_INST_DEFINE(idx, \
-		    gpio_gecko_port##idx##_init, \
-		    NULL, \
-		    &gpio_gecko_port##idx##_data, \
-		    &gpio_gecko_port##idx##_config, \
-		    POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, \
-		    &gpio_gecko_driver_api); \
+DEVICE_INSTANCE_FROM_DT_INST(idx,\
+		    gpio_gecko_port##idx##_init,\
+		    NULL,  \
+		    &gpio_gecko_port##idx##_data,\
+		    &gpio_gecko_port##idx##_config,\
+		    POST_KERNEL, &gpio_gecko_driver_api);\
 \
 static int gpio_gecko_port##idx##_init(const struct device *dev) \
 { \

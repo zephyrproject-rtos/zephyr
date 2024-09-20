@@ -1072,12 +1072,11 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 		.resolution = res, \
 		.channels = ch, \
 	}; \
-	DEVICE_DT_DEFINE(DT_INST_LMP90XXX(n, t), \
-			 &lmp90xxx_init, NULL, \
-			 &lmp##t##_data_##n, \
-			 &lmp##t##_config_##n, POST_KERNEL, \
-			 CONFIG_ADC_INIT_PRIORITY, \
-			 &lmp90xxx_adc_api);
+	DEVICE_INSTANCE(DT_INST_LMP90XXX(n, t), \
+			&lmp90xxx_init, NULL, \
+			&lmp##t##_data_##n, \
+			&lmp##t##_config_##n, POST_KERNEL, \
+			&lmp90xxx_adc_api);
 
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents

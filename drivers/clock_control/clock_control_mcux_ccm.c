@@ -512,6 +512,5 @@ static int mcux_ccm_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, mcux_ccm_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		      &mcux_ccm_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, mcux_ccm_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, &mcux_ccm_driver_api);

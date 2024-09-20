@@ -734,13 +734,12 @@ static int gpio_stm32_init(const struct device *dev)
 	};								       \
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);		       \
-	DEVICE_DT_DEFINE(__node,					       \
+	DEVICE_INSTANCE(__node,						       \
 			    gpio_stm32_init,				       \
 			    PM_DEVICE_DT_GET(__node),			       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    PRE_KERNEL_1,				       \
-			    CONFIG_GPIO_INIT_PRIORITY,			       \
 			    &gpio_stm32_driver)
 
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\

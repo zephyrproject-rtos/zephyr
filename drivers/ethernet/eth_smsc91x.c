@@ -891,5 +891,5 @@ const struct mdio_smsc_config mdio_smsc_config_0 = {
 	.eth_dev = DEVICE_DT_GET(DT_CHILD(DT_INST_PARENT(0), ethernet)),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,
-		      CONFIG_MDIO_INIT_PRIORITY, &mdio_smsc_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &mdio_smsc_config_0, POST_KERNEL,
+		      &mdio_smsc_api);

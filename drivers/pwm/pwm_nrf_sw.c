@@ -425,11 +425,10 @@ static const struct pwm_config pwm_nrf_sw_0_config = {
 
 static struct pwm_data pwm_nrf_sw_0_data;
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    pwm_nrf_sw_init,
 		    NULL,
 		    &pwm_nrf_sw_0_data,
 		    &pwm_nrf_sw_0_config,
 		    POST_KERNEL,
-		    CONFIG_PWM_INIT_PRIORITY,
 		    &pwm_nrf_sw_drv_api_funcs);

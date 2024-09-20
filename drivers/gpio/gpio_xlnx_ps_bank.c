@@ -440,9 +440,9 @@ static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {\
 	.bank_index = idx,\
 };\
 static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data;\
-DEVICE_DT_INST_DEFINE(idx, gpio_xlnx_ps_bank_init, NULL,\
+DEVICE_INSTANCE_FROM_DT_INST(idx, gpio_xlnx_ps_bank_init, NULL,\
 	&gpio_xlnx_ps_bank##idx##_data, &gpio_xlnx_ps_bank##idx##_cfg,\
-	PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_xlnx_ps_bank_apis);
+	PRE_KERNEL_1, &gpio_xlnx_ps_bank_apis);
 
 /* Register & initialize all MIO / EMIO GPIO banks specified in the device tree. */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_XLNX_PS_BANK_INIT);

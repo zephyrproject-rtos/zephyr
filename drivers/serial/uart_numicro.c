@@ -199,12 +199,11 @@ static struct uart_numicro_data uart_numicro_data_##index = {		\
 	},								\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(index,						\
+DEVICE_INSTANCE_FROM_DT_INST(index,					\
 		    uart_numicro_init,					\
 		    NULL,						\
 		    &uart_numicro_data_##index,				\
 		    &uart_numicro_cfg_##index,				\
-		    PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,		\
-		    &uart_numicro_driver_api);
+		    PRE_KERNEL_1, &uart_numicro_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMICRO_INIT)

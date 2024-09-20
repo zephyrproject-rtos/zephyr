@@ -142,12 +142,11 @@ static uint32_t clocks[] = {};
 		.clock_num = ARRAY_SIZE(clocks),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    mcux_pcc_init,				\
 			    NULL,					\
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		\
 			    &mcux_pcc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_PCC_INIT)

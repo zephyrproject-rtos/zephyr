@@ -276,13 +276,12 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 										\
 	static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_port_##n##_data;	\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			    gpio_cmsdk_ahb_init,				\
 			    NULL,						\
 			    &gpio_cmsdk_port_##n##_data,			\
 			    &gpio_cmsdk_port_## n ##_config,			\
-			    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,	\
-			    &gpio_cmsdk_ahb_drv_api_funcs);			\
+			    PRE_KERNEL_1, &gpio_cmsdk_ahb_drv_api_funcs);	\
 										\
 	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev)	\
 	{									\

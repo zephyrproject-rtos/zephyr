@@ -56,12 +56,11 @@ static int pinctrl_rv32m1_init(const struct device *dev)
 		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    &pinctrl_rv32m1_init,			\
 			    NULL,					\
 			    NULL, &pinctrl_rv32m1_##n##_config,		\
 			    PRE_KERNEL_1,				\
-			    CONFIG_PINCTRL_RV32M1_INIT_PRIORITY,	\
 			    NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PINCTRL_RV32M1_INIT)

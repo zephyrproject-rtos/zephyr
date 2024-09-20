@@ -1122,13 +1122,12 @@ static const struct sdhc_driver_api usdhc_api = {
 		IMX_USDHC_DMA_BUFFER_INIT(n)					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			&imx_usdhc_init,					\
 			NULL,							\
 			&usdhc_##n##_data,					\
 			&usdhc_##n##_config,					\
 			POST_KERNEL,						\
-			CONFIG_SDHC_INIT_PRIORITY,				\
 			&usdhc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IMX_USDHC_INIT)

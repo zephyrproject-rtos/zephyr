@@ -591,11 +591,10 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	PINCTRL_DT_INST_DEFINE(n); \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
 	static const struct mcux_ftm_config mcux_ftm_config_##n; \
-	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init,		       \
-			    NULL, &mcux_ftm_data_##n, \
-			    &mcux_ftm_config_##n, \
-			    POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, \
-			    &mcux_ftm_driver_api); \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_ftm_init,		       \
+			    NULL, &mcux_ftm_data_##n,		       \
+			    &mcux_ftm_config_##n,		       \
+			    POST_KERNEL, &mcux_ftm_driver_api);	       \
 	FTM_CONFIG_FUNC(n) \
 	FTM_INIT_CFG(n);
 

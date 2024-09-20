@@ -285,6 +285,6 @@ static const struct glcd_config grove_lcd_config = {
 
 static struct glcd_data grove_lcd_data;
 
-DEVICE_DT_INST_DEFINE(0, glcd_initialize, NULL, &grove_lcd_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, glcd_initialize, NULL, &grove_lcd_data,
 		      &grove_lcd_config, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+		      NULL);

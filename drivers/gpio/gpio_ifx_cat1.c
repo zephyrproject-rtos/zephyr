@@ -259,8 +259,8 @@ static const struct gpio_driver_api gpio_cat1_api = {
                                                                                                    \
 	GPIO_CAT1_INIT_FUNC(n)                                                                     \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_cat1##n##_init, NULL, &_cat1_gpio##n##_data,                 \
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_cat1##n##_init, NULL, &_cat1_gpio##n##_data,          \
 			      &_cat1_gpio##n##_config, POST_KERNEL,                                \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_cat1_api);
+			      &gpio_cat1_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CAT1_INIT)

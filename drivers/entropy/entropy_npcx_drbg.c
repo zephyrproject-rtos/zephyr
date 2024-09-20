@@ -230,5 +230,5 @@ static struct entropy_npcx_drbg_dev_data entropy_npcx_drbg_data;
 
 PM_DEVICE_DT_INST_DEFINE(0, entropy_npcx_drbg_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, entropy_npcx_drbg_init, PM_DEVICE_DT_INST_GET(0), &entropy_npcx_drbg_data,
-		      NULL, PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY, &entropy_npcx_drbg_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, entropy_npcx_drbg_init, PM_DEVICE_DT_INST_GET(0), &entropy_npcx_drbg_data,
+		      NULL, PRE_KERNEL_1, &entropy_npcx_drbg_api);

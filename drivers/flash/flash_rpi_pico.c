@@ -316,5 +316,5 @@ static const struct flash_driver_api flash_rpi_driver_api = {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
-		      CONFIG_FLASH_INIT_PRIORITY, &flash_rpi_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, POST_KERNEL,
+		      &flash_rpi_driver_api);

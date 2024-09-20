@@ -205,13 +205,12 @@ static const struct wdt_driver_api wdt_api = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
 	};									   \
 										   \
-	DEVICE_DT_INST_DEFINE(idx,						   \
+	DEVICE_INSTANCE_FROM_DT_INST(idx,					   \
 			      wdt_esp32_init,					   \
 			      NULL,						   \
 			      &wdt##idx##_data,					   \
 			      &wdt_esp32_config##idx,				   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	   \
-			      &wdt_api)
+			      PRE_KERNEL_1, &wdt_api)
 
 static void wdt_esp32_isr(void *arg)
 {

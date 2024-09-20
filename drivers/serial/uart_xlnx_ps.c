@@ -1164,13 +1164,12 @@ static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 }
 
 #define UART_XLNX_PS_INIT(port) \
-DEVICE_DT_INST_DEFINE(port, \
-	uart_xlnx_ps_init, \
-	NULL, \
-	&uart_xlnx_ps_dev_data_##port, \
-	&uart_xlnx_ps_dev_cfg_##port, \
-	PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
-	&uart_xlnx_ps_driver_api)
+DEVICE_INSTANCE_FROM_DT_INST(port,\
+	uart_xlnx_ps_init,  \
+	NULL,               \
+	&uart_xlnx_ps_dev_data_##port,\
+	&uart_xlnx_ps_dev_cfg_##port,\
+	PRE_KERNEL_1, &uart_xlnx_ps_driver_api)
 
 #define UART_XLNX_INSTANTIATE(inst)		\
 	UART_XLNX_PS_PINCTRL_DEFINE(inst)	\

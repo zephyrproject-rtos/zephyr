@@ -121,9 +121,8 @@ static int bk_intel_init(const struct device *dev)
 	};								       \
 									       \
 	static struct bk_intel_runtime bk_rt_##n;			       \
-	DEVICE_DT_INST_DEFINE(n, &bk_intel_init, NULL,			       \
-			      &bk_rt_##n, &bk_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			      &api_funcs);				       \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &bk_intel_init, NULL,			       \
+			      &bk_rt_##n, &bk_cfg_##n,				       \
+			      POST_KERNEL, &api_funcs);				       \
 
 DT_INST_FOREACH_STATUS_OKAY(BK_INTEL_DEV_CFG)

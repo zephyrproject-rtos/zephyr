@@ -582,13 +582,12 @@ static const struct auxdisplay_driver_api auxdisplay_hd44780_auxdisplay_api = {
 		.clear_delay = DT_INST_PROP(inst, clear_command_delay_us),			\
 		.boot_delay = DT_INST_PROP(inst, boot_delay_ms),				\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			&auxdisplay_hd44780_init,						\
 			NULL,									\
 			&auxdisplay_hd44780_data_##inst,					\
 			&auxdisplay_hd44780_config_##inst,					\
 			POST_KERNEL,								\
-			CONFIG_AUXDISPLAY_INIT_PRIORITY,					\
 			&auxdisplay_hd44780_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_HD44780_DEVICE)

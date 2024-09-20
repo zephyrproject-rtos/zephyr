@@ -294,11 +294,10 @@ static const struct adc_driver_api cc13xx_cc26xx_driver_api = {
 		ADC_CONTEXT_INIT_LOCK(adc_cc13xx_cc26xx_data_##index, ctx),	 \
 		ADC_CONTEXT_INIT_SYNC(adc_cc13xx_cc26xx_data_##index, ctx),	 \
 	};									 \
-	DEVICE_DT_INST_DEFINE(index,						 \
+	DEVICE_INSTANCE_FROM_DT_INST(index,					 \
 		&adc_cc13xx_cc26xx_init, NULL,					 \
 		&adc_cc13xx_cc26xx_data_##index,				 \
 		&adc_cc13xx_cc26xx_cfg_##index, POST_KERNEL,			 \
-		CONFIG_ADC_INIT_PRIORITY,					 \
 		&cc13xx_cc26xx_driver_api);					 \
 										 \
 	static void adc_cc13xx_cc26xx_cfg_func_##index(void)			 \

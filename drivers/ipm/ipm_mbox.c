@@ -103,13 +103,12 @@ static const struct ipm_driver_api ipm_mbox_funcs = {
 		.mbox_tx = MBOX_DT_SPEC_INST_GET(n, tx),		\
 		.mbox_rx = MBOX_DT_SPEC_INST_GET(n, rx),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      &ipm_mbox_init,				\
 			      NULL,					\
 			      &ipm_mbox_data_##n,			\
 			      &ipm_mbox_config_##n,			\
 			      POST_KERNEL,				\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      &ipm_mbox_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_MBOX_DEV_DEFINE)

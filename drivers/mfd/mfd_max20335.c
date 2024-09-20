@@ -44,8 +44,8 @@ static int mfd_max20335_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(inst),			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst, mfd_max20335_init, NULL, NULL,	\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_max20335_init, NULL, NULL,\
 			      &mfd_max20335_config##inst, POST_KERNEL,	\
-			      CONFIG_MFD_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_MA20335_DEFINE)

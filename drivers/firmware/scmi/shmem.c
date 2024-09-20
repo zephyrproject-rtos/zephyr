@@ -192,10 +192,9 @@ static const struct scmi_shmem_config config_##inst = {		\
 								\
 static struct scmi_shmem_data data_##inst;			\
 								\
-DEVICE_DT_INST_DEFINE(inst, &scmi_shmem_init, NULL,		\
+DEVICE_INSTANCE_FROM_DT_INST(inst, &scmi_shmem_init, NULL,	\
 		      &data_##inst, &config_##inst,		\
 		      PRE_KERNEL_1,				\
-		      CONFIG_ARM_SCMI_SHMEM_INIT_PRIORITY,	\
 		      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SCMI_SHMEM_INIT);

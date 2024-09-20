@@ -791,13 +791,12 @@ static int hx8394_init(const struct device *dev)
 		.panel_height = DT_INST_PROP(id, height),			\
 		.channel = DT_INST_REG_ADDR(id),				\
 	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
+	DEVICE_INSTANCE_FROM_DT_INST(id,					\
 			    &hx8394_init,					\
 			    NULL,						\
 			    NULL,						\
 			    &hx8394_config_##id,				\
 			    POST_KERNEL,					\
-			    CONFIG_APPLICATION_INIT_PRIORITY,			\
 			    &hx8394_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HX8394_PANEL)

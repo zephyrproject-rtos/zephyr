@@ -195,10 +195,9 @@ static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 			GENMASK(DT_INST_PROP(n, xlnx_count_width) - 1, 0), \
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL,		\
 			    &xlnx_axi_timer_config_##n,			\
 			    POST_KERNEL,				\
-			    CONFIG_PWM_INIT_PRIORITY,			\
 			    &xlnx_axi_timer_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(XLNX_AXI_TIMER_INIT);

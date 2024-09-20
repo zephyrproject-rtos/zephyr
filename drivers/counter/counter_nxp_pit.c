@@ -247,11 +247,11 @@ static const struct counter_driver_api nxp_pit_driver_api = {
 
 /* Creates a device for a channel (needed for counter API) */
 #define NXP_PIT_CHANNEL_DEV_INIT(node, pit_inst)						\
-	DEVICE_DT_DEFINE(node, NULL, NULL,							\
+	DEVICE_INSTANCE(node, NULL, NULL,							\
 		(void *)									\
 		&nxp_pit_##pit_inst##_channel_datas[DT_REG_ADDR(node)],				\
 		&nxp_pit_##pit_inst##_config,							\
-		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,					\
+		POST_KERNEL,									\
 		&nxp_pit_driver_api);
 
 /* Creates a decleration for each pit channel */
@@ -366,9 +366,9 @@ static const struct counter_driver_api nxp_pit_driver_api = {
 	};											\
 												\
 	/* Init parent device in order to handle ISR and init. */				\
-	DEVICE_DT_INST_DEFINE(n, &nxp_pit_init, NULL,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &nxp_pit_init, NULL,					\
 			NULL, &nxp_pit_##n##_config, POST_KERNEL,				\
-			CONFIG_COUNTER_INIT_PRIORITY, NULL);
+			NULL);
 
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_NXP_PIT_DEVICE_INIT)

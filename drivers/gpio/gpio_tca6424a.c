@@ -570,7 +570,7 @@ static int tca6424a_init(const struct device *dev)
 		.work = Z_WORK_INITIALIZER(tca6424a_work_handler),                                 \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, tca6424a_init, NULL, &tca6424a_data##idx, &tca6424a_cfg##idx,   \
-			      POST_KERNEL, CONFIG_GPIO_TCA6424A_INIT_PRIORITY, &tca6424a_drv_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, tca6424a_init, NULL, &tca6424a_data##idx, &tca6424a_cfg##idx,\
+			      POST_KERNEL, &tca6424a_drv_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCA6424A_INST)

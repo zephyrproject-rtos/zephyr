@@ -1108,5 +1108,5 @@ static const struct rtc_stm32_config rtc_config = {
 
 static struct rtc_stm32_data rtc_data;
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
-		      CONFIG_RTC_INIT_PRIORITY, &rtc_stm32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &rtc_stm32_init, NULL, &rtc_data, &rtc_config, PRE_KERNEL_1,
+		      &rtc_stm32_driver_api);

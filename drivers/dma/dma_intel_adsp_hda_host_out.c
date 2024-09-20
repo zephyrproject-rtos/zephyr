@@ -39,12 +39,11 @@ static const struct dma_driver_api intel_adsp_hda_dma_host_out_api = {
 												   \
 	PM_DEVICE_DT_INST_DEFINE(inst, intel_adsp_hda_dma_pm_action);				   \
 												   \
-	DEVICE_DT_INST_DEFINE(inst, &intel_adsp_hda_dma_init,					   \
-			      PM_DEVICE_DT_INST_GET(inst),					   \
-			      &intel_adsp_hda_dma##inst##_data,                                    \
-			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,                     \
-			      CONFIG_DMA_INIT_PRIORITY,                                            \
-			      &intel_adsp_hda_dma_host_out_api);		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &intel_adsp_hda_dma_init,					   \
+			      PM_DEVICE_DT_INST_GET(inst),						   \
+			      &intel_adsp_hda_dma##inst##_data,						   \
+			      &intel_adsp_hda_dma##inst##_config, POST_KERNEL,				   \
+			      &intel_adsp_hda_dma_host_out_api);					   \
 									\
 	static void intel_adsp_hda_dma##inst##_irq_config(void)		\
 	{								\

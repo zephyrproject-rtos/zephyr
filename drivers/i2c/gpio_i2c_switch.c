@@ -91,8 +91,8 @@ static int gpio_i2c_switch_init(const struct device *dev)
 		.gpio = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), gpios),                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, gpio_i2c_switch_init, device_pm_control_nop,                   \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_i2c_switch_init, device_pm_control_nop,            \
 			      &gpio_i2c_switch_dev_data_##inst, &gpio_i2c_switch_dev_cfg_##inst,   \
-			      POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &gpio_i2c_switch_api_funcs);
+			      POST_KERNEL, &gpio_i2c_switch_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_GPIO_I2C_SWITCH)

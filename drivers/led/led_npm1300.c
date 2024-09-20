@@ -94,7 +94,7 @@ static int led_npm1300_init(const struct device *dev)
 			 DT_INST_ENUM_IDX(n, nordic_led1_mode),                                    \
 			 DT_INST_ENUM_IDX(n, nordic_led2_mode)}};                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &led_npm1300_init, NULL, NULL, &led_npm1300_config##n,            \
-			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY, &led_npm1300_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &led_npm1300_init, NULL, NULL, &led_npm1300_config##n,     \
+			      POST_KERNEL, &led_npm1300_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_NPM1300_DEFINE)

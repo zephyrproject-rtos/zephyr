@@ -606,13 +606,12 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 		},							\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      flash_flexspi_nor_init,			\
 			      NULL,					\
 			      &flash_flexspi_nor_data_##n,		\
 			      NULL,					\
 			      POST_KERNEL,				\
-			      CONFIG_FLASH_INIT_PRIORITY,		\
 			      &flash_flexspi_nor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_NOR)

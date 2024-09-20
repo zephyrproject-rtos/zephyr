@@ -118,7 +118,7 @@ static int bbram_stm32_init(const struct device *dev)
 		.base_addr = DT_REG_ADDR(DT_INST_PARENT(inst)) + STM32_BKP_REG_OFFSET,             \
 		.size = DT_INST_PROP(inst, st_backup_regs) * STM32_BKP_REG_BYTES,                  \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, bbram_stm32_init, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1, \
-			      CONFIG_BBRAM_INIT_PRIORITY, &bbram_stm32_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bbram_stm32_init, NULL, NULL, &bbram_cfg_##inst, PRE_KERNEL_1,\
+			      &bbram_stm32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_INIT);

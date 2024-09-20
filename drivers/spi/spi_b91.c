@@ -483,12 +483,11 @@ static const struct spi_driver_api spi_b91_api = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		  \
 	};								  \
 									  \
-	DEVICE_DT_INST_DEFINE(inst, spi_b91_init,			  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, spi_b91_init,		  \
 			      NULL,					  \
 			      &spi_b91_data_##inst,			  \
 			      &spi_b91_cfg_##inst,			  \
 			      POST_KERNEL,				  \
-			      CONFIG_SPI_INIT_PRIORITY,			  \
 			      &spi_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_B91_INIT)

@@ -337,10 +337,9 @@ static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_##idx = { \
 	.baud_rate = DT_INST_PROP(idx, current_speed), \
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.cb = NULL,)) \
 }; \
-DEVICE_DT_INST_DEFINE(idx, uart_cc32xx_init, \
-	NULL, &uart_cc32xx_dev_data_##idx, \
-	&uart_cc32xx_dev_cfg_##idx, \
-	PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
-	(void *)&uart_cc32xx_driver_api); \
+DEVICE_INSTANCE_FROM_DT_INST(idx, uart_cc32xx_init,\
+	NULL, &uart_cc32xx_dev_data_##idx,   \
+	&uart_cc32xx_dev_cfg_##idx,          \
+	PRE_KERNEL_1, (void *)&uart_cc32xx_driver_api);\
 
 DT_INST_FOREACH_STATUS_OKAY(UART_32XX_DEVICE);

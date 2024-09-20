@@ -156,7 +156,7 @@ static const struct clock_control_driver_api aspeed_clk_api = {
 	static const struct clock_aspeed_config clock_aspeed_cfg_##n = {                           \
 		.syscon = DEVICE_DT_GET(DT_NODELABEL(syscon)),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &clock_aspeed_cfg_##n, PRE_KERNEL_1,            \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &aspeed_clk_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, &clock_aspeed_cfg_##n, PRE_KERNEL_1,     \
+			      &aspeed_clk_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ASPEED_CLOCK_INIT)

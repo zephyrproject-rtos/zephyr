@@ -1191,5 +1191,5 @@ static int gc2145_init_0(const struct device *dev)
 	return gc2145_init(dev);
 }
 
-DEVICE_DT_INST_DEFINE(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
-		      CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &gc2145_init_0, NULL, &gc2145_data_0, &gc2145_cfg_0, POST_KERNEL,
+		      &gc2145_driver_api);

@@ -40,11 +40,10 @@ static int pinctrl_ti_k3_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(PINCTRL_NODE,
+DEVICE_INSTANCE(PINCTRL_NODE,
 		 pinctrl_ti_k3_init,
 		 NULL,
 		 &pinctrl_ti_k3_dev,
 		 &pinctrl_ti_k3_cfg,
 		 PRE_KERNEL_1,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		 NULL);

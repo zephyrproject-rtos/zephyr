@@ -134,8 +134,7 @@ int gpio_brcmstb_init(const struct device *port)
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_brcmstb_init, NULL, &gpio_brcmstb_data_##n,                  \
-			      &gpio_brcmstb_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
-			      &gpio_brcmstb_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_brcmstb_init, NULL, &gpio_brcmstb_data_##n,           \
+			      &gpio_brcmstb_cfg_##n, PRE_KERNEL_1, &gpio_brcmstb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_BRCMSTB_INIT)

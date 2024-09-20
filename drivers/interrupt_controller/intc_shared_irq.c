@@ -178,11 +178,10 @@ void shared_irq_config_func_##n(void)					\
 		.client_count = INST_SUPPORTS_DEP_ORDS_CNT(n),		\
 		.config = shared_irq_config_func_##n			\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, shared_irq_initialize,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, shared_irq_initialize,		\
 			      NULL,					\
 			      &shared_irq_data_##n,			\
 			      &shared_irq_config_##n, POST_KERNEL,	\
-			      CONFIG_SHARED_IRQ_INIT_PRIORITY,		\
 			      &api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SHARED_IRQ_INIT)

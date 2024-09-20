@@ -677,7 +677,7 @@ static const struct sdhc_driver_api hsmci_api = {
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(N),                                         \
 		.carrier_detect = GPIO_DT_SPEC_INST_GET_OR(N, cd_gpios, {0})};                     \
 	static struct sam_hsmci_data hsmci_##N##_data = {};                                        \
-	DEVICE_DT_INST_DEFINE(N, &sam_hsmci_init, NULL, &hsmci_##N##_data, &hsmci_##N##_config,    \
-			      POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY, &hsmci_api);
+	DEVICE_INSTANCE_FROM_DT_INST(N, &sam_hsmci_init, NULL, &hsmci_##N##_data, &hsmci_##N##_config,\
+			      POST_KERNEL, &hsmci_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAM_HSMCI_INIT)

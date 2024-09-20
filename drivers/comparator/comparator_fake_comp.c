@@ -53,13 +53,12 @@ static void fake_comp_reset_rule_before(const struct ztest_unit_test *test, void
 ZTEST_RULE(comp_fake_comp_reset_rule, fake_comp_reset_rule_before, NULL);
 #endif
 
-DEVICE_DT_INST_DEFINE(
+DEVICE_INSTANCE_FROM_DT_INST(
 	0,
 	NULL,
 	NULL,
 	NULL,
 	NULL,
 	POST_KERNEL,
-	CONFIG_COMPARATOR_INIT_PRIORITY,
 	&fake_comp_api
 );

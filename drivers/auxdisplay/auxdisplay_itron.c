@@ -435,13 +435,12 @@ static const struct auxdisplay_driver_api auxdisplay_itron_auxdisplay_api = {
 		.busy_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, busy_gpios, {0}),			\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),			\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			&auxdisplay_itron_init,							\
 			NULL,									\
 			&auxdisplay_itron_data_##inst,						\
 			&auxdisplay_itron_config_##inst,					\
 			POST_KERNEL,								\
-			CONFIG_AUXDISPLAY_INIT_PRIORITY,					\
 			&auxdisplay_itron_auxdisplay_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUXDISPLAY_ITRON_DEVICE)

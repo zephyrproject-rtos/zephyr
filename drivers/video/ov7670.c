@@ -571,7 +571,7 @@ static const struct video_driver_api ov7670_api = {
 								   OV7670_PWDN_GPIO(inst)};        \
 	struct ov7670_data ov7670_data_##inst;                                                     \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov7670_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, ov7670_init, NULL, &ov7670_data_##inst, &ov7670_config_##inst,\
+			      POST_KERNEL, &ov7670_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV7670_INIT)

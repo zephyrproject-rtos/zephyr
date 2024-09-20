@@ -236,13 +236,12 @@ static struct spi_driver_api api = {
 		SPI_CONTEXT_INIT_LOCK(data_##n, ctx),                   \
 		SPI_CONTEXT_INIT_SYNC(data_##n, ctx),                   \
 	};                                                              \
-	DEVICE_DT_INST_DEFINE(n,                                        \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                 \
 			init,                                           \
 			NULL,                                           \
 			&data_##n,                                      \
 			&cfg_##n,                                       \
 			POST_KERNEL,                                    \
-			CONFIG_SPI_INIT_PRIORITY,                       \
 			&api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

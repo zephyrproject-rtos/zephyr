@@ -221,5 +221,5 @@ static const struct crypto_driver_api it8xxx2_crypto_api = {
 	.query_hw_caps = it8xxx2_query_hw_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, &it8xxx2_sha_init, NULL, NULL, NULL, POST_KERNEL,
-			CONFIG_CRYPTO_INIT_PRIORITY, &it8xxx2_crypto_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &it8xxx2_sha_init, NULL, NULL, NULL, POST_KERNEL,
+			&it8xxx2_crypto_api);

@@ -618,11 +618,10 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		.fifo_depth = DT_PROP(DT_NODELABEL(i2s_##dir), fifo_depth),    \
 		.irq_config = i2s_litex_irq_config_func_##dir                  \
 	};                                                                     \
-	DEVICE_DT_DEFINE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize,        \
-				NULL, &i2s_litex_data_##dir,		       \
+	DEVICE_INSTANCE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize,         \
+				NULL, &i2s_litex_data_##dir,		        \
 				&i2s_litex_cfg_##dir, POST_KERNEL,             \
-				CONFIG_I2S_INIT_PRIORITY,		       \
-				&i2s_litex_driver_api);			       \
+				&i2s_litex_driver_api);			        \
 									       \
 	static void i2s_litex_irq_config_func_##dir(const struct device *dev)  \
 	{                                                                      \

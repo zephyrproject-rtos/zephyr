@@ -664,9 +664,8 @@ static const struct charger_driver_api max20335_driver_api = {
 		.therm_mon_mode = DT_INST_PROP(inst, thermistor_monitoring_mode),		\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &max20335_init, NULL, &charger_max20335_data_##inst,	\
 			      &charger_max20335_config_##inst,					\
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,				\
-			      &max20335_driver_api);
+			      POST_KERNEL, &max20335_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX20335_DEFINE)

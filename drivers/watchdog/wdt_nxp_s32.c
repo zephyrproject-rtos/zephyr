@@ -402,13 +402,12 @@ static const struct wdt_driver_api swt_nxp_s32_driver_api = {
 		return 0;								\
 	}										\
 											\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			 swt_nxp_s32_##n##_init,					\
 			 NULL,								\
 			 &swt_nxp_s32_data_##n,						\
 			 &swt_nxp_s32_config_##n,					\
 			 POST_KERNEL,							\
-			 CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
 			 &swt_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SWT_NXP_S32_DEVICE_INIT)

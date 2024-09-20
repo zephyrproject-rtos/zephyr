@@ -3067,9 +3067,8 @@ static const struct udc_api udc_dwc2_api = {
 		.priv = &udc_priv_##n,						\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, dwc2_driver_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, dwc2_driver_preinit, NULL,		\
 			      &udc_data_##n, &udc_dwc2_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &udc_dwc2_api);
+			      POST_KERNEL, &udc_dwc2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_DWC2_DEVICE_DEFINE)

@@ -190,12 +190,11 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 		.load = UINT32_MAX,					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			    tmr_cmsdk_apb_init,				\
-			    NULL,			\
+			    NULL,					\
 			    &tmr_cmsdk_apb_dev_data_##inst,		\
 			    &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
 			    &tmr_cmsdk_apb_api);			\
 									\
 	static void timer_cmsdk_apb_config_##inst(const struct device *dev) \

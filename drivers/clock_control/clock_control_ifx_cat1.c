@@ -714,22 +714,20 @@ static const struct clock_control_driver_api clock_control_infineon_cat1_api = {
 };
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_imo))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_imo),
+DEVICE_INSTANCE(DT_NODELABEL(clk_imo),
 		 clock_control_infineon_cat1_init,
 		 NULL,
 		 NULL,
 		 NULL,
 		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_iho))
-DEVICE_DT_DEFINE(DT_NODELABEL(clk_iho),
+DEVICE_INSTANCE(DT_NODELABEL(clk_iho),
 		 clock_control_infineon_cat1_init,
 		 NULL,
 		 NULL,
 		 NULL,
 		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_infineon_cat1_api);
 #endif

@@ -595,8 +595,7 @@ static const struct ethphy_driver_api ti_dp83825_phy_api = {
                                                                                                    \
 	static struct ti_dp83825_data ti_dp83825_##n##_data;                                       \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &phy_ti_dp83825_init, NULL, &ti_dp83825_##n##_data,               \
-			      &ti_dp83825_##n##_config, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,     \
-			      &ti_dp83825_phy_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &phy_ti_dp83825_init, NULL, &ti_dp83825_##n##_data,        \
+			      &ti_dp83825_##n##_config, POST_KERNEL, &ti_dp83825_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_DP83825_INIT)

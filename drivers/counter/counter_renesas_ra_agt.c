@@ -586,8 +586,7 @@ static const struct counter_driver_api ra_agt_driver_api = {
 		return counter_ra_agt_init(dev);                                                   \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, counter_ra_agt_##n##_init, NULL, &counter_ra_agt_data_##n,        \
-			      &ra_agt_config_##n, POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,       \
-			      &ra_agt_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, counter_ra_agt_##n##_init, NULL, &counter_ra_agt_data_##n, \
+			      &ra_agt_config_##n, POST_KERNEL, &ra_agt_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AGT_DEVICE_INIT_RA)

@@ -153,10 +153,9 @@ static const struct reset_driver_api reset_rpi_driver_api = {
 		.base_address = DT_INST_REG_ADDR(idx),				\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(idx, reset_rpi_init,				\
+	DEVICE_INSTANCE_FROM_DT_INST(idx, reset_rpi_init,			\
 			      NULL, NULL,					\
 			      &reset_rpi_config_##idx, PRE_KERNEL_1,		\
-			      CONFIG_RESET_INIT_PRIORITY,			\
 			      &reset_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_RESET_INIT);

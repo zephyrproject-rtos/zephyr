@@ -171,8 +171,8 @@ static const struct mdio_driver_api mdio_gpio_driver_api = {
 #define MDIO_GPIO_DEVICE(inst)                                                                     \
 	MDIO_GPIO_CONFIG(inst);                                                                    \
 	static struct mdio_gpio_data mdio_gpio_dev_data_##inst;                                    \
-	DEVICE_DT_INST_DEFINE(inst, &mdio_gpio_initialize, NULL, &mdio_gpio_dev_data_##inst,       \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &mdio_gpio_initialize, NULL, &mdio_gpio_dev_data_##inst,\
 			      &mdio_gpio_dev_config_##inst, POST_KERNEL,                           \
-			      CONFIG_MDIO_INIT_PRIORITY, &mdio_gpio_driver_api);
+			      &mdio_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_GPIO_DEVICE)

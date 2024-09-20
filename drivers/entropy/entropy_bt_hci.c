@@ -34,10 +34,9 @@ static const struct entropy_driver_api entropy_bt_api = {
 };
 
 #define ENTROPY_BT_HCI_INIT(inst)				  \
-	DEVICE_DT_INST_DEFINE(inst, entropy_bt_init,		  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, entropy_bt_init,	  \
 			      NULL, NULL, NULL,			  \
 			      PRE_KERNEL_1,			  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			      &entropy_bt_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ENTROPY_BT_HCI_INIT)

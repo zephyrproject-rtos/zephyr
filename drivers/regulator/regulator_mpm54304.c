@@ -77,9 +77,9 @@ static const struct regulator_driver_api mpm54304_api = {
 	};                                                                                         \
                                                                                                    \
 	static struct regulator_mpm54304_data regulator_mpm54304_data_##id;                        \
-	DEVICE_DT_DEFINE(node_id, regulator_mpm54304_init, NULL, &regulator_mpm54304_data_##id,    \
+	DEVICE_INSTANCE(node_id, regulator_mpm54304_init, NULL, &regulator_mpm54304_data_##id,     \
 			 &regulator_mpm54304_config_##id, POST_KERNEL,                             \
-			 CONFIG_REGULATOR_MPM54304_INIT_PRIORITY, &mpm54304_api);
+			 &mpm54304_api);
 
 #define REGULATOR_MPM54304_DEFINE_COND(inst, child, child_name)                                    \
 	IF_ENABLED(                                                                                \

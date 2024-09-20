@@ -141,8 +141,7 @@ static int clock_control_nrf_auxpll_init(const struct device *dev)
 		.out_div = DT_INST_PROP(n, nordic_out_div),                                        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, clock_control_nrf_auxpll_init, NULL, NULL, &config##n,            \
-			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                    \
-			      &clock_control_nrf_auxpll_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, clock_control_nrf_auxpll_init, NULL, NULL, &config##n,     \
+			      PRE_KERNEL_1, &clock_control_nrf_auxpll_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CLOCK_CONTROL_NRF_AUXPLL_DEFINE)

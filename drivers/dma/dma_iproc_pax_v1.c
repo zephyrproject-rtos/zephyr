@@ -981,11 +981,10 @@ static const struct dma_iproc_pax_cfg pax_dma_cfg = {
 	.pcie_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, pcie_ep)),
 };
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    &dma_iproc_pax_init,
 		    NULL,
 		    &pax_dma_data,
 		    &pax_dma_cfg,
 		    POST_KERNEL,
-		    CONFIG_DMA_INIT_PRIORITY,
 		    &pax_dma_driver_api);

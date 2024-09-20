@@ -219,6 +219,6 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 
 static struct flash_gecko_data flash_gecko_0_data;
 
-DEVICE_DT_INST_DEFINE(0, flash_gecko_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_gecko_init, NULL,
 		    &flash_gecko_0_data, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_gecko_driver_api);
+		    &flash_gecko_driver_api);

@@ -112,10 +112,9 @@ static int nxp_gau_dac_init(const struct device *dev)
 	};									\
 										\
 										\
-	DEVICE_DT_INST_DEFINE(inst, &nxp_gau_dac_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &nxp_gau_dac_init, NULL,		\
 				NULL,						\
 				&nxp_gau_dac_##inst##_config,			\
-				POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
-				&nxp_gau_dac_driver_api);
+				POST_KERNEL, &nxp_gau_dac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_GAU_DAC_INIT)

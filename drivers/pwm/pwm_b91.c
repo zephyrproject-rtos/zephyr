@@ -132,9 +132,8 @@ static const struct pwm_driver_api pwm_b91_driver_api = {
 			 (DT_INST_PROP(n, clk32k_ch5_enable) << 5U)),	       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(n, pwm_b91_init,				       \
-			      NULL, NULL, &config##n,			       \
-			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,	       \
-			      &pwm_b91_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, pwm_b91_init,				       \
+			      NULL, NULL, &config##n,				       \
+			      POST_KERNEL, &pwm_b91_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_B91_INIT)

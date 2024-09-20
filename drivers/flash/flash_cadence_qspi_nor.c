@@ -156,13 +156,12 @@ static int flash_cad_init(const struct device *dev)
 				qspi_data, DT_DRV_INST(inst)),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			flash_cad_init,					\
 			NULL,						\
 			&flash_cad_priv_##inst,				\
 			&flash_cad_config_##inst,			\
 			POST_KERNEL,					\
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			&flash_cad_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CREATE_FLASH_CADENCE_QSPI_DEVICE)

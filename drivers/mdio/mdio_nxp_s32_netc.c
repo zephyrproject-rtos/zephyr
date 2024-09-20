@@ -85,13 +85,12 @@ static const struct mdio_driver_api nxp_s32_mdio_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 		.instance = NXP_S32_MDIO_HW_INSTANCE(n),			\
 	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			      &nxp_s32_mdio_initialize,				\
 			      NULL,						\
 			      &nxp_s32_mdio##n##_data,				\
 			      &nxp_s32_mdio##n##_cfg,				\
 			      POST_KERNEL,					\
-			      CONFIG_MDIO_INIT_PRIORITY,			\
 			      &nxp_s32_mdio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_S32_MDIO_INSTANCE_DEFINE)

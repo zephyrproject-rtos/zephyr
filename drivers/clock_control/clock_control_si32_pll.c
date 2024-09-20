@@ -135,5 +135,5 @@ static struct clock_control_si32_pll_data data = {
 	.freq = 0,
 };
 
-DEVICE_DT_INST_DEFINE(0, clock_control_si32_pll_init, NULL, &data, &config, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_control_si32_pll_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, clock_control_si32_pll_init, NULL, &data, &config, PRE_KERNEL_1,
+		      &clock_control_si32_pll_api);

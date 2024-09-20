@@ -53,8 +53,7 @@ static int entropy_mcux_trng_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    entropy_mcux_trng_init, NULL, NULL,
 		    &entropy_mcux_config,
-		    PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		    &entropy_mcux_trng_api_funcs);
+		    PRE_KERNEL_1, &entropy_mcux_trng_api_funcs);

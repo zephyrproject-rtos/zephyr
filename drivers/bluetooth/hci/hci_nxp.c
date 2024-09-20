@@ -573,8 +573,8 @@ static int bt_nxp_init(const struct device *dev)
 #define HCI_DEVICE_INIT(inst) \
 	static struct bt_nxp_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &drv)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL,\
+			      POST_KERNEL, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

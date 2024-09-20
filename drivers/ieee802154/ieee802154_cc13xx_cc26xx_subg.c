@@ -1060,8 +1060,7 @@ NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
 			  IEEE802154_L2, NET_L2_GET_CTX_TYPE(IEEE802154_L2),
 			  IEEE802154_MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, ieee802154_cc13xx_cc26xx_subg_init, NULL,
 		      &ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
-		      CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		      &ieee802154_cc13xx_cc26xx_subg_radio_api);
 #endif

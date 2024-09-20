@@ -39,6 +39,5 @@ static const struct counter_driver_api ace_v1x_rtc_counter_apis = {
 	.get_value_64 = counter_ace_v1x_rtc_get_value
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ace_rtc_counter), counter_ace_v1x_rtc_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		 &ace_v1x_rtc_counter_apis);
+DEVICE_INSTANCE(DT_NODELABEL(ace_rtc_counter), counter_ace_v1x_rtc_init, NULL, NULL, NULL,
+		 PRE_KERNEL_1, &ace_v1x_rtc_counter_apis);

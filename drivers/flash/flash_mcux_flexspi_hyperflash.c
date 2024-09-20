@@ -695,13 +695,12 @@ static const struct flash_driver_api flash_flexspi_hyperflash_api = {
 		},							\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      flash_flexspi_hyperflash_init,		\
 			      NULL,					\
 			      &flash_flexspi_hyperflash_data_##n,	\
 			      &flash_flexspi_hyperflash_config_##n,	\
 			      POST_KERNEL,				\
-			      CONFIG_FLASH_INIT_PRIORITY,		\
 			      &flash_flexspi_hyperflash_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FLASH_FLEXSPI_HYPERFLASH)

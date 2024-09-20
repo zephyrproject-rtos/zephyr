@@ -245,10 +245,9 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 		.wakeup_source = DT_INST_PROP(id, wakeup_source)	\
 	};								\
 	static struct mcux_lpc_rtc_data mcux_lpc_rtc_data_##id;		\
-	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_init, NULL,		\
-				&mcux_lpc_rtc_data_##id, &mcux_lpc_rtc_config_##id.info,	\
-				POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,		\
-				&mcux_rtc_driver_api);					\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &mcux_lpc_rtc_init, NULL,	\
+				&mcux_lpc_rtc_data_##id, &mcux_lpc_rtc_config_##id.info,\
+				POST_KERNEL, &mcux_rtc_driver_api);	\
 	static void mcux_lpc_rtc_irq_config_##id(const struct device *dev)	\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(id),					\
@@ -450,11 +449,10 @@ static const struct counter_driver_api mcux_rtc_highres_driver_api = {
 		.wakeup_source = DT_INST_PROP(id, wakeup_source)				\
 	};											\
 	static struct mcux_lpc_rtc_data mcux_lpc_rtc_highres_data_##id;				\
-	DEVICE_DT_INST_DEFINE(id, &mcux_lpc_rtc_highres_init, NULL,				\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &mcux_lpc_rtc_highres_init, NULL,			\
 				&mcux_lpc_rtc_highres_data_##id,				\
 				&mcux_lpc_rtc_highres_config_##id.info,				\
-				POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
-				&mcux_rtc_highres_driver_api);					\
+				POST_KERNEL, &mcux_rtc_highres_driver_api);			\
 	static void mcux_lpc_rtc_highres_irq_config_##id(const struct device *dev)		\
 	{											\
 		COND_CODE_1(IS_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(nxp_lpc_rtc)),			\

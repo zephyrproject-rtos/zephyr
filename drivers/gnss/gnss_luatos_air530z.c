@@ -355,10 +355,10 @@ static const struct gnss_driver_api gnss_api = {
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, luatos_air530z_pm_action);				\
 												\
-	DEVICE_DT_INST_DEFINE(inst, gnss_luatos_air530z_init,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gnss_luatos_air530z_init,				\
 		PM_DEVICE_DT_INST_GET(inst),							\
 		&gnss_luatos_air530z_data_##inst,						\
 		&gnss_luatos_air530z_cfg_##inst,						\
-		POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &gnss_api);
+		POST_KERNEL, &gnss_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LUATOS_AIR530Z)

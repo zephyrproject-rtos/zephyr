@@ -195,5 +195,5 @@ static struct flash_xmc4xxx_config flash_xmc4xxx_cfg_0 = {
 	.size = DT_REG_SIZE(DT_INST(0, infineon_xmc4xxx_nv_flash)),
 	.parameters = {.write_block_size = FLASH_WRITE_BLK_SZ, .erase_value = 0}};
 
-DEVICE_DT_INST_DEFINE(0, flash_xmc4xxx_init, NULL, &flash_xmc4xxx_data_0, &flash_xmc4xxx_cfg_0,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_xmc4xxx_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_xmc4xxx_init, NULL, &flash_xmc4xxx_data_0, &flash_xmc4xxx_cfg_0,
+		      POST_KERNEL, &flash_xmc4xxx_api);

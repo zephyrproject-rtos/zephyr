@@ -306,10 +306,9 @@ static const struct adc_driver_api api_gecko_adc_driver_api = {
 			    adc_gecko_isr, DEVICE_DT_INST_GET(n), 0);	\
 		irq_enable(DT_INST_IRQN(n));	\
 	}; \
-	DEVICE_DT_INST_DEFINE(n,					 \
+	DEVICE_INSTANCE_FROM_DT_INST(n,					 \
 			      &adc_gecko_init, NULL,			 \
-			      &adc_gecko_data_##n, &adc_gecko_config_##n,\
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	 \
-			      &api_gecko_adc_driver_api);
+			      &adc_gecko_data_##n, &adc_gecko_config_##n, \
+			      POST_KERNEL, &api_gecko_adc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_ADC_INIT)

@@ -142,8 +142,7 @@ static const struct stepper_driver_api fake_stepper_driver_api = {
                                                                                                    \
 	static struct fake_stepper_data fake_stepper_data_##inst;                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, fake_stepper_init, NULL, &fake_stepper_data_##inst, NULL,      \
-			      POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,                           \
-			      &fake_stepper_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, fake_stepper_init, NULL, &fake_stepper_data_##inst, NULL,\
+			      POST_KERNEL, &fake_stepper_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_INIT)

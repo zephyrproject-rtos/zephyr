@@ -430,10 +430,10 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &ht16k33_init, NULL,		\
 			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
-			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+			    &ht16k33_leds_api)
 
 #ifdef CONFIG_HT16K33_KEYSCAN
 #define HT16K33_DEVICE_WITH_IRQ(id)					\
@@ -445,10 +445,10 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(id, &ht16k33_init, NULL,		\
 			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
-			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+			    &ht16k33_leds_api)
 #else /* ! CONFIG_HT16K33_KEYSCAN */
 #define HT16K33_DEVICE_WITH_IRQ(id) HT16K33_DEVICE(id)
 #endif /* ! CONFIG_HT16K33_KEYSCAN */

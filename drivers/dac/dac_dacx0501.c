@@ -189,8 +189,7 @@ static const struct dac_driver_api dacx0501_driver_api = {
 			_CONCAT(REF_, DT_STRING_UPPER_TOKEN(DT_DRV_INST(n), voltage_reference)),   \
 		.output_gain = _CONCAT(VM_, DT_STRING_UPPER_TOKEN(DT_DRV_INST(n), output_gain)),   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &dacx0501_init, NULL, &dacx0501_data_##n, &dacx0501_config_##n,   \
-			      POST_KERNEL, CONFIG_DAC_DACX0501_INIT_PRIORITY,                      \
-			      &dacx0501_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &dacx0501_init, NULL, &dacx0501_data_##n, &dacx0501_config_##n,\
+			      POST_KERNEL, &dacx0501_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DACX0501_DEFINE)

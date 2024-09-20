@@ -498,10 +498,9 @@ static void adc_gd32_global_irq_cfg(void)
 		.irq_config_func = adc_gd32_global_irq_cfg,					\
 		ADC_CLOCK_SOURCE(n)								\
 	};											\
-	DEVICE_DT_INST_DEFINE(n,								\
+	DEVICE_INSTANCE_FROM_DT_INST(n,								\
 			      &adc_gd32_init, NULL,						\
 			      &adc_gd32_data_##n, &adc_gd32_config_##n,				\
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,				\
-			      &adc_gd32_driver_api);						\
+			      POST_KERNEL, &adc_gd32_driver_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_GD32_INIT)

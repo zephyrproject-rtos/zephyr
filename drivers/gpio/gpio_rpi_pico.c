@@ -233,10 +233,9 @@ static int gpio_rpi_bank_init(const struct device *dev)
 										\
 	static struct gpio_rpi_data gpio_rpi_##idx##_data;			\
 										\
-	DEVICE_DT_INST_DEFINE(idx, gpio_rpi_bank_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(idx, gpio_rpi_bank_init, NULL,		\
 				&gpio_rpi_##idx##_data,				\
 				&gpio_rpi_##idx##_config,			\
-				POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,		\
-				&gpio_rpi_driver_api);
+				POST_KERNEL, &gpio_rpi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RPI_INIT)

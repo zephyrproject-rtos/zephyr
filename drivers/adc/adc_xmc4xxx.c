@@ -333,10 +333,9 @@ static struct adc_xmc4xxx_data adc_xmc4xxx_data_##index = {			\
 	ADC_CONTEXT_INIT_SYNC(adc_xmc4xxx_data_##index, ctx),			\
 };										\
 										\
-DEVICE_DT_INST_DEFINE(index,							\
+DEVICE_INSTANCE_FROM_DT_INST(index,						\
 		    &adc_xmc4xxx_init, NULL,					\
 		    &adc_xmc4xxx_data_##index, &adc_xmc4xxx_cfg_##index,	\
-		    POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,			\
-		    &api_xmc4xxx_driver_api);
+		    POST_KERNEL, &api_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_XMC4XXX_INIT)

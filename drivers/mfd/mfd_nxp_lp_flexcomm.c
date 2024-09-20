@@ -150,13 +150,12 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		.num_children = ARRAY_SIZE(nxp_lp_flexcomm_children_##n),	\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 			    &nxp_lp_flexcomm_init,				\
 			    NULL,						\
 			    &nxp_lp_flexcomm_data_##n,				\
 			    &nxp_lp_flexcomm_config_##n,			\
 			    PRE_KERNEL_1,					\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
 			    NULL);						\
 										\
 	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev)	\

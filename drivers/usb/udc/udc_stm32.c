@@ -1231,6 +1231,5 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, udc_stm32_driver_init0, NULL, &udc0_data, &udc0_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &udc_stm32_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, udc_stm32_driver_init0, NULL, &udc0_data, &udc0_cfg,
+		      POST_KERNEL, &udc_stm32_api);

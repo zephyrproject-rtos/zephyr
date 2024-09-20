@@ -200,9 +200,8 @@ static const struct mdio_driver_api mdio_adin2111_api = {
 	static const struct mdio_adin2111_config mdio_adin2111_config_##n = {	\
 		.adin = DEVICE_DT_GET(DT_INST_BUS(n)),				\
 	};									\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL,				\
 			      NULL, &mdio_adin2111_config_##n,			\
-			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY,		\
-			      &mdio_adin2111_api);
+			      POST_KERNEL, &mdio_adin2111_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADIN2111_MDIO_INIT)

@@ -510,12 +510,11 @@ static const struct uart_driver_api neorv32_uart_driver_api = {
 									\
 	PM_DEVICE_DT_DEFINE(node_id, neorv32_uart_pm_action);		\
 									\
-	DEVICE_DT_DEFINE(node_id, &neorv32_uart_init,			\
+	DEVICE_INSTANCE(node_id, &neorv32_uart_init,			\
 			 PM_DEVICE_DT_GET(node_id),			\
 			 &neorv32_uart_##n##_data,			\
 			 &neorv32_uart_##n##_config,			\
 			 PRE_KERNEL_1,					\
-			 CONFIG_SERIAL_INIT_PRIORITY,			\
 			 &neorv32_uart_driver_api)
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(uart0), DT_DRV_COMPAT, okay)

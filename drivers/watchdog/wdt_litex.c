@@ -225,8 +225,8 @@ static const struct wdt_driver_api wdt_api = {
 		.irq_cfg_func = wdt_litex_cfg_func_##n,                                            \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, wdt_litex_init, NULL, &wdt_litex_data##n, &wdt_litex_config##n,   \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_api)          \
+	DEVICE_INSTANCE_FROM_DT_INST(n, wdt_litex_init, NULL, &wdt_litex_data##n, &wdt_litex_config##n,\
+			      PRE_KERNEL_1, &wdt_api,                                              \
                                                                                                    \
 	static void wdt_litex_cfg_func_##n(void)                                                   \
 	{                                                                                          \

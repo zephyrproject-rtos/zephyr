@@ -365,12 +365,11 @@ static const struct gpio_sifive_config gpio_sifive_config0 = {
 
 static struct gpio_sifive_data gpio_sifive_data0;
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    gpio_sifive_init,
 		    NULL,
 		    &gpio_sifive_data0, &gpio_sifive_config0,
-		    PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,
-		    &gpio_sifive_driver);
+		    PRE_KERNEL_1, &gpio_sifive_driver);
 
 #define		IRQ_INIT(n)					\
 IRQ_CONNECT(DT_INST_IRQN_BY_IDX(0, n),				\

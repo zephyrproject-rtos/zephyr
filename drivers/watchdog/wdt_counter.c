@@ -172,8 +172,7 @@ static int wdt_counter_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_WDT_COUNTER, wdt_counter_init, NULL,
+DEVICE_INSTANCE(DT_WDT_COUNTER, wdt_counter_init, NULL,
 		 &wdt_data, &wdt_counter_config,
 		 POST_KERNEL,
-		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		 &wdt_counter_driver_api);

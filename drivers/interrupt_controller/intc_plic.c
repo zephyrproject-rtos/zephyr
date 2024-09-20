@@ -921,9 +921,8 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 		DT_INST_INTC_GET_AGGREGATOR_LEVEL(n));                                             \
 	PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_DATA_INIT(n)                                                                     \
-	DEVICE_DT_INST_DEFINE(n, &plic_init, NULL,                                                 \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &plic_init, NULL,                                          \
 			      &plic_data_##n, &plic_config_##n,                                    \
-			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,                             \
-			      NULL);
+			      PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PLIC_INTC_DEVICE_INIT)

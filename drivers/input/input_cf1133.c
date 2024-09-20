@@ -327,8 +327,8 @@ static int cf1133_init(const struct device *dev)
 		};									\
 	static struct cf1133_data cf1133_data_##index;					\
 											\
-	DEVICE_DT_INST_DEFINE(index, cf1133_init, NULL, &cf1133_data_##index,		\
+	DEVICE_INSTANCE_FROM_DT_INST(index, cf1133_init, NULL, &cf1133_data_##index,	\
 			      &cf1133_config_##index, POST_KERNEL,			\
-			      CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CF1133_INIT);

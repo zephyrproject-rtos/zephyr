@@ -448,13 +448,12 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		.lock = Z_SEM_INITIALIZER(memc_mspi_aps6404l_data_##n.lock, 0, 1),                \
 	};                                                                                        \
 	PM_DEVICE_DT_INST_DEFINE(n, memc_mspi_aps6404l_pm_action);                                \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                           \
 			      memc_mspi_aps6404l_init,                                            \
 			      PM_DEVICE_DT_INST_GET(n),                                           \
 			      &memc_mspi_aps6404l_data_##n,                                       \
 			      &memc_mspi_aps6404l_config_##n,                                     \
 			      POST_KERNEL,                                                        \
-			      CONFIG_MEMC_INIT_PRIORITY,                                          \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_MSPI_APS6404L)

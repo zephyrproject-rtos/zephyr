@@ -123,5 +123,5 @@ static const struct silabs_clock_control_config silabs_clock_control_config = {
 	.cmu = (CMU_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, silabs_clock_control_init, NULL, NULL, &silabs_clock_control_config,
-		      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &silabs_clock_control_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, silabs_clock_control_init, NULL, NULL, &silabs_clock_control_config,
+		      PRE_KERNEL_1, &silabs_clock_control_api);

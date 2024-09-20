@@ -176,5 +176,4 @@ static const struct flash_driver_api nrf_mram_api = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &nrf_mram_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, POST_KERNEL, &nrf_mram_api);

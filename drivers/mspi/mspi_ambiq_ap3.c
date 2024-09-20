@@ -1431,13 +1431,12 @@ static struct mspi_driver_api mspi_ambiq_driver_api = {
 		LOG_INSTANCE_PTR_INIT(log, DT_DRV_INST(n), mspi##n)                              \
 	};                                                                                       \
 	PM_DEVICE_DT_INST_DEFINE(n, mspi_ambiq_pm_action);                                       \
-	DEVICE_DT_INST_DEFINE(n,                                                                 \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                          \
 			      mspi_ambiq_init,                                                   \
 			      PM_DEVICE_DT_INST_GET(n),                                          \
 			      &mspi_ambiq_data##n,                                               \
 			      &mspi_ambiq_config##n,                                             \
 			      POST_KERNEL,                                                       \
-			      CONFIG_MSPI_INIT_PRIORITY,                                         \
 			      &mspi_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_MSPI_DEFINE)

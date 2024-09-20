@@ -584,8 +584,7 @@ static int fpga_ice40_init(const struct device *dev)
 		.load = FPGA_ICE40_LOAD_FUNC(inst),                                                \
 		FPGA_ICE40_PINCTRL_CONFIG(inst)};                                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,                \
-			      &fpga_ice40_config_##inst, POST_KERNEL, CONFIG_FPGA_INIT_PRIORITY,   \
-			      &fpga_ice40_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, fpga_ice40_init, NULL, &fpga_ice40_data_##inst,         \
+			      &fpga_ice40_config_##inst, POST_KERNEL, &fpga_ice40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FPGA_ICE40_DEFINE)

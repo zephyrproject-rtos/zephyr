@@ -226,7 +226,7 @@ static int adc_keys_init(const struct device *dev)
 		.key_cnt = ARRAY_SIZE(adc_keys_key_code_##n),                                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, adc_keys_init, NULL, &adc_keys_data_##n, &adc_keys_cfg_##n,       \
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(n, adc_keys_init, NULL, &adc_keys_data_##n, &adc_keys_cfg_##n,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_KEYS_INST)

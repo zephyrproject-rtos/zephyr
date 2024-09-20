@@ -2551,8 +2551,8 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
                                                                                                    \
 	static struct numaker_tcpc_data numaker_tcpc_data_##inst;                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, numaker_tcpc_init_startup, NULL, &numaker_tcpc_data_##inst,    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, numaker_tcpc_init_startup, NULL, &numaker_tcpc_data_##inst,\
 			      &numaker_tcpc_config_##inst, POST_KERNEL,                            \
-			      CONFIG_USBC_TCPC_INIT_PRIORITY, &numaker_tcpc_driver_api);
+			      &numaker_tcpc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_TCPC_INIT);

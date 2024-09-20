@@ -203,12 +203,11 @@ static const struct mcux_mailbox_config mcux_mailbox_0_config = {
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		    &mcux_mailbox_init,
 		    NULL,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &mcux_mailbox_driver_api);
+		    PRE_KERNEL_1, &mcux_mailbox_driver_api);
 
 
 static void mcux_mailbox_config_func_0(const struct device *dev)

@@ -589,7 +589,7 @@ static const struct bt_hci_driver_api h4_driver_api = {
 			.fifo = Z_FIFO_INITIALIZER(h4_data_##inst.tx.fifo), \
 		}, \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &h4_driver_api)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &h4_data_##inst, &h4_config_##inst,\
+			      POST_KERNEL, &h4_driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(BT_UART_DEVICE_INIT)

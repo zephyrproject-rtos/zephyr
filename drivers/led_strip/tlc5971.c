@@ -345,8 +345,8 @@ static const struct led_strip_driver_api tlc5971_api = {
 		.gbc_color_2 = TLC5971_GLOBAL_BRIGHTNESS_CONTROL_MAX,                              \
 		.gbc_color_3 = TLC5971_GLOBAL_BRIGHTNESS_CONTROL_MAX,                              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, tlc5971_init, NULL, &tlc5971_##inst##_data,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, tlc5971_init, NULL, &tlc5971_##inst##_data,             \
 			      &tlc5971_##inst##_config, POST_KERNEL,                               \
-			      CONFIG_LED_STRIP_INIT_PRIORITY, &tlc5971_api);
+			      &tlc5971_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLC5971_DEVICE)

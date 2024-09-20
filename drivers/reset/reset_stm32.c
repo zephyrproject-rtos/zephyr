@@ -74,5 +74,5 @@ static const struct reset_stm32_config reset_stm32_config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &reset_stm32_config, PRE_KERNEL_1,
-		      CONFIG_RESET_INIT_PRIORITY, &reset_stm32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &reset_stm32_config, PRE_KERNEL_1,
+		      &reset_stm32_driver_api);

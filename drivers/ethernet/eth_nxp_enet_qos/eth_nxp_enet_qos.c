@@ -38,7 +38,7 @@ int nxp_enet_qos_init(const struct device *dev)
 	};										\
 											\
 	/* Init the module before any enet device inits so priority 0 */		\
-	DEVICE_DT_INST_DEFINE(n, nxp_enet_qos_init, NULL, NULL,				\
-			      &enet_qos_##n##_config, POST_KERNEL, 0, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(n, nxp_enet_qos_init, NULL, NULL,			\
+			      &enet_qos_##n##_config, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_INIT)

@@ -305,5 +305,5 @@ static int clock_control_ra_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &ra_clock_control_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, clock_control_ra_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      &ra_clock_control_driver_api);

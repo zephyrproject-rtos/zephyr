@@ -193,8 +193,8 @@ static int gpio_sn74hc595_init(const struct device *dev)
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(n, reset_gpios),				\
 	};											\
 												\
-	DEVICE_DT_DEFINE(DT_DRV_INST(n), &gpio_sn74hc595_init, NULL,				\
+	DEVICE_INSTANCE(DT_DRV_INST(n), &gpio_sn74hc595_init, NULL,				\
 			 &sn74hc595_data_##n, &sn74hc595_config_##n, POST_KERNEL,		\
-			 CONFIG_GPIO_SN74HC595_INIT_PRIORITY, &gpio_sn74hc595_drv_api_funcs);
+			 &gpio_sn74hc595_drv_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(SN74HC595_INIT)

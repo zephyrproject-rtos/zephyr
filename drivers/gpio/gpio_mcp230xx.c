@@ -98,9 +98,9 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 		.write_fn = mcp230xx_write_port_regs,                                              \
 		.bus_fn = mcp230xx_bus_is_ready,                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, gpio_mcp23xxx_init, NULL, &mcp230xx_##inst##_drvdata,          \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, gpio_mcp23xxx_init, NULL, &mcp230xx_##inst##_drvdata,   \
 		&mcp230xx_##inst##_config, POST_KERNEL,                                            \
-		CONFIG_GPIO_MCP230XX_INIT_PRIORITY, &gpio_mcp23xxx_api_table);
+		&gpio_mcp23xxx_api_table);
 
 #define DT_DRV_COMPAT microchip_mcp23008
 DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_MCP230XX_DEVICE, 8, false)

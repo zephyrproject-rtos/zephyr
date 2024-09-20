@@ -675,7 +675,7 @@ static const struct audio_codec_api wm8904_driver_api = {
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
 		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n,        \
-			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, &wm8904_device_config_##n, \
+			      POST_KERNEL, &wm8904_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WM8904_INIT)

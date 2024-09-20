@@ -280,8 +280,8 @@ static const struct w1_serial_config w1_serial_cfg_##inst = {		   \
 	.master_config.slave_count = W1_INST_SLAVE_COUNT(inst)		   \
 };									   \
 static struct w1_serial_data w1_serial_data_##inst = {};		   \
-DEVICE_DT_INST_DEFINE(inst, &w1_serial_init, NULL, &w1_serial_data_##inst, \
-		      &w1_serial_cfg_##inst, POST_KERNEL,		   \
-		      CONFIG_W1_INIT_PRIORITY, &w1_serial_driver_api);	   \
+DEVICE_INSTANCE_FROM_DT_INST(inst, &w1_serial_init, NULL, &w1_serial_data_##inst,\
+		      &w1_serial_cfg_##inst, POST_KERNEL,		 \
+		      &w1_serial_driver_api);				 \
 
 DT_INST_FOREACH_STATUS_OKAY(W1_ZEPHYR_SERIAL_INIT)

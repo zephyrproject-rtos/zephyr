@@ -153,8 +153,7 @@ static int ds1307_init(const struct device *dev)
 	static const struct ds1307_config ds1307_config_##inst = {                                 \
 		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, &ds1307_init, NULL, &ds1307_data_##inst,                       \
-			      &ds1307_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
-			      &ds1307_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &ds1307_init, NULL, &ds1307_data_##inst,                \
+			      &ds1307_config_##inst, POST_KERNEL, &ds1307_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DS1307_DEFINE)

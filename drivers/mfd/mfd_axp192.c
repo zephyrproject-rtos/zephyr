@@ -614,7 +614,7 @@ int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t 
                                                                                                    \
 	static struct mfd_axp192_data data##inst;                                                  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_axp192_init, NULL, &data##inst, &config##inst,             \
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_axp192_init, NULL, &data##inst, &config##inst,      \
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_AXP192_DEFINE);

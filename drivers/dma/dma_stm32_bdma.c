@@ -882,12 +882,11 @@ const struct bdma_stm32_config bdma_stm32_config_##index = {		\
 static struct bdma_stm32_data bdma_stm32_data_##index = {		\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(index,							\
+DEVICE_INSTANCE_FROM_DT_INST(index,						\
 		    &bdma_stm32_init,						\
 		    NULL,							\
 		    &bdma_stm32_data_##index, &bdma_stm32_config_##index,	\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
-		    &dma_funcs)
+		    PRE_KERNEL_1, &dma_funcs)
 
 #define BDMA_STM32_DEFINE_IRQ_HANDLER(bdma, chan)			\
 static void bdma_stm32_irq_##bdma##_##chan(const struct device *dev)	\

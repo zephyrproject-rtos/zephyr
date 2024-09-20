@@ -801,11 +801,10 @@ static const struct esp32_clock_config esp32_clock_config0 = {
 	.rtc = esp32_rtc_clock_config0
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(rtc),
+DEVICE_INSTANCE(DT_NODELABEL(rtc),
 		 clock_control_esp32_init,
 		 NULL,
 		 NULL,
 		 &esp32_clock_config0,
 		 PRE_KERNEL_1,
-		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		 &clock_control_esp32_api);

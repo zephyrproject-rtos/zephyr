@@ -523,12 +523,11 @@ void counter_smartbond_irq_handler(const struct device *dev)
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(idx, counter_smartbond_pm_action);	\
-	DEVICE_DT_INST_DEFINE(idx,						\
+	DEVICE_INSTANCE_FROM_DT_INST(idx,					\
 			      counter_smartbond_init_timer,			\
-			      PM_DEVICE_DT_INST_GET(idx),	\
+			      PM_DEVICE_DT_INST_GET(idx),			\
 			      &counter##idx##_data,				\
 			      &counter##idx##_config,				\
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,	\
-			      &counter_smartbond_driver_api);
+			      PRE_KERNEL_1, &counter_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_DEVICE_INIT)

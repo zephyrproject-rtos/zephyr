@@ -109,9 +109,8 @@ static const struct clock_control_driver_api mcux_sim_driver_api = {
 	.get_rate = mcux_sim_get_subsys_rate,
 };
 
-DEVICE_DT_DEFINE(NXP_KINETIS_SIM_NODE,
+DEVICE_INSTANCE(NXP_KINETIS_SIM_NODE,
 		    mcux_sim_init,
 		    NULL,
 		    NULL, NULL,
-		    PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		    &mcux_sim_driver_api);
+		    PRE_KERNEL_1, &mcux_sim_driver_api);

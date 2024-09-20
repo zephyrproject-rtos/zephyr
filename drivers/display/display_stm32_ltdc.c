@@ -615,13 +615,12 @@ static const struct display_driver_api stm32_ltdc_display_api = {
 		.display_controller = DEVICE_DT_GET_OR_NULL(					\
 			DT_INST_PHANDLE(inst, display_controller)),				\
 	};											\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			&stm32_ltdc_init,							\
 			PM_DEVICE_DT_INST_GET(inst),						\
 			&stm32_ltdc_data_##inst,						\
 			&stm32_ltdc_config_##inst,						\
 			POST_KERNEL,								\
-			CONFIG_DISPLAY_INIT_PRIORITY,						\
 			&stm32_ltdc_display_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_LTDC_DEVICE)

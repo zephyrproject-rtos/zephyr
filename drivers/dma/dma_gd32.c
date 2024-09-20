@@ -696,9 +696,9 @@ static const struct dma_driver_api dma_gd32_driver_api = {
 		.channels = dma_gd32##inst##_channels,                         \
 	};                                                                     \
                                                                                \
-	DEVICE_DT_INST_DEFINE(inst, &dma_gd32_init, NULL,                      \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &dma_gd32_init, NULL,               \
 			      &dma_gd32##inst##_data,                          \
 			      &dma_gd32##inst##_config, POST_KERNEL,           \
-			      CONFIG_DMA_INIT_PRIORITY, &dma_gd32_driver_api);
+			      &dma_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GD32_DMA_INIT)

@@ -518,11 +518,10 @@ static const struct display_driver_api sdl_display_api = {
 		.read_buf = sdl_read_buf_##n,				\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &sdl_display_init, NULL,		\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &sdl_display_init, NULL,	\
 			      &sdl_data_##n,				\
 			      &sdl_config_##n,				\
 			      POST_KERNEL,				\
-			      CONFIG_DISPLAY_INIT_PRIORITY,		\
 			      &sdl_display_api);			\
 									\
 	static void sdl_display_cleanup_##n(void)			\

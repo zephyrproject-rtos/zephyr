@@ -688,13 +688,12 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #define SAADC_INIT(inst)						\
 	BUILD_ASSERT((inst) == 0,					\
 		     "multiple instances not supported");		\
-	DEVICE_DT_INST_DEFINE(0,					\
+	DEVICE_INSTANCE_FROM_DT_INST(0,					\
 			    init_saadc,					\
 			    NULL,					\
 			    NULL,					\
 			    NULL,					\
 			    POST_KERNEL,				\
-			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &adc_nrfx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)
