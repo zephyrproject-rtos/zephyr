@@ -122,7 +122,6 @@ static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *ha
 
 static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
-	/* const struct spi_mcux_config *config = dev->config; */
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct spi_context *ctx = &data->ctx;
@@ -324,7 +323,6 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 
 static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
-	/* const struct spi_mcux_config *cfg = dev->config; */
 	struct spi_mcux_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -365,7 +363,6 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 
 static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
-	/*const struct spi_mcux_config *cfg = dev->config; */
 	struct spi_mcux_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -462,7 +459,6 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 			  const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
 			  bool asynchronous, spi_callback_t cb, void *userdata)
 {
-	/* const struct spi_mcux_config *config = dev->config; */
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	int ret;
