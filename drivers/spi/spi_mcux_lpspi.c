@@ -6,35 +6,52 @@
 
 #define DT_DRV_COMPAT nxp_imx_lpspi
 
-#include <errno.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/clock_control.h>
-#include <fsl_lpspi.h>
-#if CONFIG_NXP_LP_FLEXCOMM
-#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
-#endif
-#include <zephyr/logging/log.h>
-#include <zephyr/irq.h>
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#include <zephyr/drivers/dma.h>
-#endif
 #include <zephyr/drivers/pinctrl.h>
-#ifdef CONFIG_SPI_RTIO
-#include <zephyr/rtio/rtio.h>
-#include <zephyr/drivers/spi/rtio.h>
-#include <zephyr/spinlock.h>
-#endif
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/irq.h>
 
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
+
+#ifdef CONFIG_SPI_RTIO
+#include <zephyr/drivers/spi/rtio.h>
+#endif
 
 #include "spi_context.h"
 
+#if CONFIG_NXP_LP_FLEXCOMM
+#include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
+#endif
+
+#include <fsl_lpspi.h>
+
+/* If any hardware revisions change this, make it into a DT property.
+ * DONT'T make #ifdefs here by platform.
+ */
 #define CHIP_SELECT_COUNT 4
 #define MAX_DATA_WIDTH    4096
 
 /* Required by DEVICE_MMIO_NAMED_* macros */
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
+
+#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
+#include <zephyr/drivers/dma.h>
+
+/* These flags are arbitrary */
+#define LPSPI_DMA_ERROR_FLAG   BIT(0)
+#define LPSPI_DMA_RX_DONE_FLAG BIT(1)
+#define LPSPI_DMA_TX_DONE_FLAG BIT(2)
+#define LPSPI_DMA_DONE_FLAG    (LPSPI_DMA_RX_DONE_FLAG | LPSPI_DMA_TX_DONE_FLAG)
+
+struct spi_dma_stream {
+	const struct device *dma_dev;
+	uint32_t channel; /* stores the channel for dma */
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
+};
+#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 struct spi_mcux_config {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
@@ -51,36 +68,19 @@ struct spi_mcux_config {
 	lpspi_pin_config_t data_pin_config;
 };
 
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-#define SPI_MCUX_LPSPI_DMA_ERROR_FLAG   0x01
-#define SPI_MCUX_LPSPI_DMA_RX_DONE_FLAG 0x02
-#define SPI_MCUX_LPSPI_DMA_TX_DONE_FLAG 0x04
-#define SPI_MCUX_LPSPI_DMA_DONE_FLAG                                                               \
-	(SPI_MCUX_LPSPI_DMA_RX_DONE_FLAG | SPI_MCUX_LPSPI_DMA_TX_DONE_FLAG)
-
-struct stream {
-	const struct device *dma_dev;
-	uint32_t channel; /* stores the channel for dma */
-	struct dma_config dma_cfg;
-	struct dma_block_config dma_blk_cfg;
-};
-#endif
-
 struct spi_mcux_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	const struct device *dev;
 	lpspi_master_handle_t handle;
 	struct spi_context ctx;
 	size_t transfer_len;
-
 #ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx;
 #endif
-
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	volatile uint32_t status_flags;
-	struct stream dma_rx;
-	struct stream dma_tx;
+	struct spi_dma_stream dma_rx;
+	struct spi_dma_stream dma_tx;
 	/* dummy value used for transferring NOP when tx buf is null */
 	uint32_t dummy_tx_buffer;
 	/* dummy value used to read RX data into when rx buf is null */
@@ -286,25 +286,25 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
-		data->status_flags |= SPI_MCUX_LPSPI_DMA_ERROR_FLAG;
+		data->status_flags |= LPSPI_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
 		if (channel == data->dma_tx.channel) {
 			/* this part of the transfer ends */
-			data->status_flags |= SPI_MCUX_LPSPI_DMA_TX_DONE_FLAG;
+			data->status_flags |= LPSPI_DMA_TX_DONE_FLAG;
 			LOG_DBG("DMA TX Block Complete");
 		} else if (channel == data->dma_rx.channel) {
 			/* this part of the transfer ends */
-			data->status_flags |= SPI_MCUX_LPSPI_DMA_RX_DONE_FLAG;
+			data->status_flags |= LPSPI_DMA_RX_DONE_FLAG;
 			LOG_DBG("DMA RX Block Complete");
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.", channel);
-			data->status_flags |= SPI_MCUX_LPSPI_DMA_ERROR_FLAG;
+			data->status_flags |= LPSPI_DMA_ERROR_FLAG;
 		}
 	}
 #if CONFIG_SPI_ASYNC
 	if (data->ctx.asynchronous &&
-	    ((data->status_flags & SPI_MCUX_LPSPI_DMA_DONE_FLAG) == SPI_MCUX_LPSPI_DMA_DONE_FLAG)) {
+	    ((data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG)) {
 		/* Load dma blocks of equal length */
 		size_t dma_size = MIN(data->ctx.tx_len, data->ctx.rx_len);
 
@@ -332,7 +332,7 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, si
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	/* remember active TX DMA channel (used in callback) */
-	struct stream *stream = &data->dma_tx;
+	struct spi_dma_stream *stream = &data->dma_tx;
 
 	blk_cfg = &stream->dma_blk_cfg;
 
@@ -373,7 +373,7 @@ static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t l
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	/* retrieve active RX DMA channel (used in callback) */
-	struct stream *stream = &data->dma_rx;
+	struct spi_dma_stream *stream = &data->dma_rx;
 
 	blk_cfg = &stream->dma_blk_cfg;
 
@@ -416,12 +416,11 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			LOG_DBG("Timed out waiting for SPI context to complete");
 			return ret;
 		}
-		if (data->status_flags & SPI_MCUX_LPSPI_DMA_ERROR_FLAG) {
+		if (data->status_flags & LPSPI_DMA_ERROR_FLAG) {
 			return -EIO;
 		}
 
-		if ((data->status_flags & SPI_MCUX_LPSPI_DMA_DONE_FLAG) ==
-		    SPI_MCUX_LPSPI_DMA_DONE_FLAG) {
+		if ((data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG) {
 			LOG_DBG("DMA block completed");
 			return 0;
 		}
