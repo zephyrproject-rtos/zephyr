@@ -216,13 +216,12 @@ static int i3g4250d_init(const struct device *dev)
 					SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,      \
 					0),                                                      \
 	};                                                                       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,                                            \
 				i3g4250d_init,                                               \
 				NULL,                                                        \
 				&i3g4250d_data_##inst,                                       \
 				&i3g4250d_config_##inst,                                     \
 				POST_KERNEL,                                                 \
-				CONFIG_SENSOR_INIT_PRIORITY,                                 \
 				&i3g4250d_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I3G4250D_DEVICE_INIT)

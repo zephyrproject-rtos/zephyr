@@ -652,9 +652,8 @@ static const struct sensor_driver_api npm1300_charger_battery_driver_api = {
 				    DT_INST_PROP_OR(n, thermistor_warm_millidegrees, INT32_MAX),   \
 				    DT_INST_PROP_OR(n, thermistor_hot_millidegrees, INT32_MAX)}};  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,    \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &npm1300_charger_init, NULL, &npm1300_charger_data_##n,\
 				     &npm1300_charger_config_##n, POST_KERNEL,                     \
-				     CONFIG_SENSOR_INIT_PRIORITY,                                  \
 				     &npm1300_charger_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPM1300_CHARGER_INIT)

@@ -215,9 +215,9 @@ static const struct sensor_driver_api lps2xdf_driver_api = {
 			     (LPS2XDF_CONFIG_I3C_OR_I2C(inst, name)),                        \
 			     (LPS2XDF_CONFIG_I2C(inst, name)))));                            \
 											     \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst, \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, name##_init, NULL, &lps2xdf_data_##name##_##inst,\
 				     &lps2xdf_config_##name##_##inst, POST_KERNEL,           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &lps2xdf_driver_api);
+				     &lps2xdf_driver_api);
 
 #define DT_DRV_COMPAT st_ilps22qs
 DT_INST_FOREACH_STATUS_OKAY_VARGS(LPS2XDF_DEFINE, DT_DRV_COMPAT)

@@ -433,13 +433,12 @@ static int bme280_pm_action(const struct device *dev,
 									\
 	PM_DEVICE_DT_INST_DEFINE(inst, bme280_pm_action);		\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			 bme280_chip_init,				\
 			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme280_data_##inst,				\
 			 &bme280_config_##inst,				\
 			 POST_KERNEL,					\
-			 CONFIG_SENSOR_INIT_PRIORITY,			\
 			 &bme280_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

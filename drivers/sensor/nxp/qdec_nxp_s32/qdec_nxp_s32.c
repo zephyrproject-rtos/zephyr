@@ -444,8 +444,8 @@ static int qdec_s32_initialize(const struct device *dev)
 		.emios_ccw_overflow_cb = &qdec##n##_emios_overflow_count_ccw_callback,		\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,	\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, qdec_s32_initialize, NULL, &qdec_s32_##n##_data,	\
 				     &qdec_s32_##n##_config, POST_KERNEL,			\
-				     CONFIG_SENSOR_INIT_PRIORITY, &qdec_s32_api);
+				     &qdec_s32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_NXP_S32_INIT)

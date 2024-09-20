@@ -296,9 +296,8 @@ static int tcs3400_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(n), \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(n, int_gpios), \
 	}; \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcs3400_init, NULL, \
-				     &tcs3400_data_##n, &tcs3400_config_##n, \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
-				     &tcs3400_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &tcs3400_init, NULL,\
+				     &tcs3400_data_##n, &tcs3400_config_##n,\
+				     POST_KERNEL, &tcs3400_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCS3400_INIT)

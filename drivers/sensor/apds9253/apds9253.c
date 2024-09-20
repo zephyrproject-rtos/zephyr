@@ -246,8 +246,8 @@ static const struct sensor_driver_api apds9253_driver_api = {
 		.ls_gain = DT_INST_PROP(n, gain),                                                  \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, apds9253_init, NULL, &apds9253_data_##n,                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, apds9253_init, NULL, &apds9253_data_##n,            \
 				     &apds9253_config_##n, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &apds9253_driver_api);
+				     &apds9253_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APDS9253_INIT)

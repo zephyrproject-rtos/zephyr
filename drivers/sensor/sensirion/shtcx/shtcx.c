@@ -252,13 +252,12 @@ static int shtcx_init(const struct device *dev)
 	static struct shtcx_data shtcx_data_##inst;			\
 	static struct shtcx_config shtcx_config_##inst =		\
 		SHTCX_CONFIG(inst);					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			      shtcx_init,				\
 			      NULL,					\
 			      &shtcx_data_##inst,			\
 			      &shtcx_config_##inst,			\
 			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &shtcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHTCX_DEFINE)

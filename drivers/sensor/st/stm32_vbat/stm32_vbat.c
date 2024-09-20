@@ -148,9 +148,8 @@ static int stm32_vbat_init(const struct device *dev)
 		.ratio = DT_INST_PROP(inst, ratio),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stm32_vbat_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, stm32_vbat_init, NULL,			\
 			      &stm32_vbat_dev_data_##inst, &stm32_vbat_dev_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &stm32_vbat_driver_api);
+			      POST_KERNEL, &stm32_vbat_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_VBAT_DEFINE)

@@ -185,8 +185,8 @@ static int voltage_init(const struct device *dev)
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),             \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &voltage_init, PM_DEVICE_DT_INST_GET(inst),      \
 			      &voltage_##inst##_data, &voltage_##inst##_config, POST_KERNEL,       \
-			      CONFIG_SENSOR_INIT_PRIORITY, &voltage_api);
+			      &voltage_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VOLTAGE_INIT)

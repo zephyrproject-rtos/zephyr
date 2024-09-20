@@ -240,9 +240,9 @@ static int hids_2525020210002_init(const struct device *dev)
 		.precision = (hids_2525020210002_precision_t)(DT_INST_ENUM_IDX(inst, precision)),  \
 		.heater = (hids_2525020210002_heater_t)(DT_INST_ENUM_IDX(inst, heater)),           \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, hids_2525020210002_init, NULL,                          \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, hids_2525020210002_init, NULL,                   \
 				     &hids_2525020210002_data_##inst,                              \
 				     &hids_2525020210002_config_##inst, POST_KERNEL,               \
-				     CONFIG_SENSOR_INIT_PRIORITY, &hids_2525020210002_driver_api);
+				     &hids_2525020210002_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HIDS_2525020210002_DEFINE)

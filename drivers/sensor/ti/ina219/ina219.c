@@ -302,13 +302,12 @@ static const struct sensor_driver_api ina219_api = {
 								\
 	PM_DEVICE_DT_INST_DEFINE(n, ina219_pm_action);		\
 								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,			\
 			      ina219_init,			\
 			      PM_DEVICE_DT_INST_GET(n),		\
 			      &ina219_data_##n,			\
 			      &ina219_config_##n,		\
 			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
 			      &ina219_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA219_INIT)

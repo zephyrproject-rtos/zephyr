@@ -473,9 +473,9 @@ static const struct sensor_driver_api mmc56x3_api_funcs = {
 	MMC56X3_DATA_INIT(inst);                                                                   \
 	const static struct mmc56x3_dev_config mmc56x3_dev_config_##inst =  \
 		MMC56X3_DT_DEV_CONFIG_INIT(inst);                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, mmc56x3_chip_init, NULL, &mmc56x3_data_##inst,          \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, mmc56x3_chip_init, NULL, &mmc56x3_data_##inst,   \
 				     &mmc56x3_dev_config_##inst, POST_KERNEL,                      \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mmc56x3_api_funcs);
+				     &mmc56x3_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(MMC56X3_DEFINE)

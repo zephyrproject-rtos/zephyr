@@ -324,13 +324,12 @@ static int iis2mdc_init(const struct device *dev)
  */
 
 #define IIS2MDC_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    iis2mdc_init,				\
 			    NULL,					\
 			    &iis2mdc_data_##inst,			\
 			    &iis2mdc_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &iis2mdc_driver_api);
 
 /*

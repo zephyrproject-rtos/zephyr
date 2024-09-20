@@ -509,13 +509,12 @@ static const struct sensor_driver_api bme680_api_funcs = {
 			    (BME680_CONFIG_SPI(inst)),			\
 			    (BME680_CONFIG_I2C(inst)));			\
 	PM_DEVICE_DT_INST_DEFINE(inst, bme680_pm_control);              \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			 bme680_init,					\
 			 PM_DEVICE_DT_INST_GET(inst),			\
 			 &bme680_data_##inst,				\
 			 &bme680_config_##inst,				\
 			 POST_KERNEL,					\
-			 CONFIG_SENSOR_INIT_PRIORITY,			\
 			 &bme680_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

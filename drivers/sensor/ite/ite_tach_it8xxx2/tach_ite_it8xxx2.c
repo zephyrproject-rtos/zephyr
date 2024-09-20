@@ -234,13 +234,12 @@ static const struct sensor_driver_api tach_it8xxx2_driver_api = {
 									       \
 	static struct tach_it8xxx2_data tach_it8xxx2_data_##inst;	       \
 									       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				       \
-			      tach_it8xxx2_init,			       \
-			      NULL,					       \
-			      &tach_it8xxx2_data_##inst,		       \
-			      &tach_it8xxx2_cfg_##inst,			       \
-			      POST_KERNEL,				       \
-			      CONFIG_SENSOR_INIT_PRIORITY,		       \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,				       \
+			      tach_it8xxx2_init,				       \
+			      NULL,						       \
+			      &tach_it8xxx2_data_##inst,			       \
+			      &tach_it8xxx2_cfg_##inst,				       \
+			      POST_KERNEL,					       \
 			      &tach_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_IT8XXX2_INIT)

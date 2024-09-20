@@ -588,9 +588,9 @@ static int bmp388_init(const struct device *dev)
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),\
 	};\
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bmp388_init, PM_DEVICE_DT_INST_GET(inst),\
 				    &bmp388_data_##inst##chipid, &bmp388_config_##inst##chipid,\
-					POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmp388_api);
+					POST_KERNEL, &bmp388_api);
 
 #define DT_DRV_COMPAT bosch_bmp388
 DT_INST_FOREACH_STATUS_OKAY_VARGS(BMP3XX_INST, BMP388_ID)

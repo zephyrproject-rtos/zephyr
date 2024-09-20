@@ -285,13 +285,12 @@ static int qdec_nrfx_init(const struct device *dev)
 		.steps = QDEC_PROP(idx, steps),						     \
 	};										     \
 	PM_DEVICE_DT_DEFINE(QDEC(idx), qdec_nrfx_pm_action, PM_DEVICE_ISR_SAFE);	     \
-	SENSOR_DEVICE_DT_DEFINE(QDEC(idx),						     \
+	SENSOR_DEVICE_INSTANCE(QDEC(idx),						     \
 				qdec_nrfx_init,						     \
 				PM_DEVICE_DT_GET(QDEC(idx)),				     \
 				&qdec_##idx##_data,					     \
 				&qdec_##idx##_config,					     \
 				POST_KERNEL,						     \
-				CONFIG_SENSOR_INIT_PRIORITY,				     \
 				&qdec_nrfx_driver_api)
 
 #ifdef CONFIG_HAS_HW_NRF_QDEC0

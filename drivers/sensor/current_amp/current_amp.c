@@ -165,8 +165,8 @@ static int current_init(const struct device *dev)
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),             \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &current_init, PM_DEVICE_DT_INST_GET(inst),      \
 				     &current_amp_##inst##_data, &current_amp_##inst##_config,     \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &current_api);
+				     POST_KERNEL, &current_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CURRENT_SENSE_AMPLIFIER_INIT)

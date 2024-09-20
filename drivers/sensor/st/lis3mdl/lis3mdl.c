@@ -171,8 +171,8 @@ int lis3mdl_init(const struct device *dev)
 			   (.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis3mdl_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lis3mdl_init, NULL,				\
 			      &lis3mdl_data_##inst, &lis3mdl_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);		\
+			      &lis3mdl_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(LIS3MDL_DEFINE)

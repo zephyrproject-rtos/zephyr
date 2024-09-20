@@ -121,8 +121,8 @@ static int gls_init(const struct device *dev)
 		.adc_channel = DT_INST_IO_CHANNELS_INPUT(inst),			\
 	};									\
 										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &gls_init, NULL,			\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &gls_init, NULL,		\
 			      &gls_data_##inst, &gls_cfg_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &gls_api);		\
+			      &gls_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(GLS_DEFINE)

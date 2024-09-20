@@ -90,7 +90,7 @@ static const struct sensor_driver_api api = {
 };
 
 #define VND_SENSOR_INIT(n)                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, init, NULL, NULL, NULL, POST_KERNEL,                       \
-				     CONFIG_SENSOR_INIT_PRIORITY, &api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, init, NULL, NULL, NULL, POST_KERNEL,                \
+				     &api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_SENSOR_INIT)
