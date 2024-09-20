@@ -548,7 +548,6 @@ static void spi_mcux_iodev_start(const struct device *dev)
 	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
 	struct spi_dt_spec *spi_dt_spec = sqe->iodev->data;
 	struct spi_config *spi_cfg = &spi_dt_spec->config;
-
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	lpspi_transfer_t transfer;
 	status_t status;
@@ -586,7 +585,7 @@ static void spi_mcux_iodev_start(const struct device *dev)
 
 	status = LPSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
 	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
+		LOG_ERR("Transfer could not start on %s: %d", dev->name, status);
 		spi_mcux_iodev_complete(dev, -EIO);
 	}
 }
