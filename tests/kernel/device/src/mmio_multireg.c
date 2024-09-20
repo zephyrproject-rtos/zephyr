@@ -44,10 +44,9 @@ int foo_multireg_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DEFINE(foo_multireg, "foo_multireg", foo_multireg_init, NULL,
+DEVICE_INSTANCE(foo_multireg, foo_multireg_init, NULL,
 		&foo_multireg_data, &foo_multireg_config,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		(void *)0xDEADBEEF);
+		POST_KERNEL, (void *)0xDEADBEEF);
 /**
  * @brief Test DEVICE_MMIO_NAMED_* macros
  *

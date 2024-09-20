@@ -1928,13 +1928,12 @@ static const struct gpio_driver_api test_api;
 		.reg_addr = DT_INST_REG_ADDR(num),		\
 		.reg_len = DT_INST_REG_SIZE(num),		\
 	};							\
-	DEVICE_DT_INST_DEFINE(num,				\
+	DEVICE_INSTANCE_FROM_DT_INST(num,			\
 			      test_gpio_init,			\
 			      NULL,				\
 			      &gpio_data_##num,			\
 			      &gpio_info_##num,			\
 			      POST_KERNEL,			\
-			      CONFIG_APPLICATION_INIT_PRIORITY,	\
 			      &test_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
@@ -2941,10 +2940,10 @@ ZTEST(devicetree_api, test_pinctrl)
 	zassert_equal(DT_INST_PINCTRL_HAS_NAME(0, f_o_o2), 0, "");
 }
 
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
-		 90, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
-		 POST_KERNEL, 90, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(test_mbox), NULL, NULL, NULL, NULL, POST_KERNEL,
+		 NULL);
+DEVICE_INSTANCE(DT_NODELABEL(test_mbox_zero_cell), NULL, NULL, NULL, NULL,
+		 POST_KERNEL, NULL);
 
 ZTEST(devicetree_api, test_mbox)
 {

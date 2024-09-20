@@ -245,9 +245,9 @@ static int ptp_test_1_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(ptp_clock_1, PTP_VIRT_CLOCK_NAME, ptp_test_1_init,
+DEVICE_INSTANCE(ptp_clock_1, ptp_test_1_init,
 		NULL, &ptp_test_1_context, NULL,
-		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
+		POST_KERNEL, &api);
 
 static int ptp_test_2_init(const struct device *port)
 {
@@ -261,9 +261,9 @@ static int ptp_test_2_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(ptp_clock_2, PTP_VIRT_CLOCK_NAME, ptp_test_2_init,
+DEVICE_INSTANCE(ptp_clock_2, ptp_test_2_init,
 		NULL, &ptp_test_2_context, NULL,
-		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
+		POST_KERNEL, &api);
 
 struct user_data {
 	int eth_if_count;

@@ -10,17 +10,17 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/ztest.h>
 
-DEVICE_DEFINE(device_0, "device@0", NULL, NULL,
+DEVICE_INSTANCE(device_0, NULL, NULL,
 	      NULL, NULL,
-	      POST_KERNEL, 0, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_1, "device@1", NULL, NULL,
+DEVICE_INSTANCE(device_1, NULL, NULL,
 	      NULL, NULL,
-	      POST_KERNEL, 1, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_2, "xx_device@2", NULL, NULL,
+DEVICE_INSTANCE(device_2, NULL, NULL,
 	      NULL, NULL,
-	      POST_KERNEL, 2, NULL);
+	      POST_KERNEL, NULL);
 
 static const struct device *d0 = &DEVICE_NAME_GET(device_0);
 static const struct device *d1 = &DEVICE_NAME_GET(device_1);

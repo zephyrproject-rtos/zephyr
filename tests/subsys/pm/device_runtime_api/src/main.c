@@ -261,8 +261,8 @@ ZTEST(device_runtime_api, test_api)
 	zassert_equal(pm_device_runtime_usage(test_dev), -ENOTSUP);
 }
 
-DEVICE_DEFINE(pm_unsupported_device, "PM Unsupported", NULL, NULL, NULL, NULL,
-	      POST_KERNEL, 0, NULL);
+DEVICE_INSTANCE(pm_unsupported_device, NULL, NULL, NULL, NULL,
+	      POST_KERNEL, NULL);
 
 ZTEST(device_runtime_api, test_unsupported)
 {
@@ -285,8 +285,8 @@ int dev_pm_control(const struct device *dev, enum pm_device_action action)
 }
 
 PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), NULL, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
-		 NULL, NULL, POST_KERNEL, 80, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(test_dev), NULL, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
+		 NULL, NULL, POST_KERNEL, NULL);
 
 ZTEST(device_runtime_api, test_pm_device_runtime_auto)
 {

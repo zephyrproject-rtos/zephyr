@@ -222,7 +222,6 @@ static int i2c_virtual_init(const struct device *dev)
 
 static struct i2c_virtual_data i2c_virtual_dev_data_0;
 
-DEVICE_DEFINE(i2c_virtual_0, CONFIG_I2C_VIRTUAL_NAME, &i2c_virtual_init,
+DEVICE_INSTANCE(i2c_virtual_0, &i2c_virtual_init,
 		NULL, &i2c_virtual_dev_data_0, NULL,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		&api_funcs);
+		POST_KERNEL, &api_funcs);
