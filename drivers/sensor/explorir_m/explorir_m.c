@@ -381,8 +381,8 @@ static int explorir_m_init(const struct device *dev)
 		.cb = explorir_m_uart_isr,                                                         \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, explorir_m_init, NULL, &explorir_m_data_##n,               \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, explorir_m_init, NULL, &explorir_m_data_##n,        \
 				     &explorir_m_cfg_##n, POST_KERNEL,                             \
-				     CONFIG_SENSOR_INIT_PRIORITY, &explorir_m_api_funcs);
+				     &explorir_m_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(EXPLORIR_M_INIT)

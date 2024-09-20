@@ -133,9 +133,8 @@ static int lsm303dlhc_magn_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm303dlhc_magn_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lsm303dlhc_magn_init, NULL,			\
 			      &lsm303dlhc_magn_data_##inst, &lsm303dlhc_magn_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &lsm303dlhc_magn_driver_api);					\
+			      POST_KERNEL, &lsm303dlhc_magn_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(LSM303DLHC_MAGN_DEFINE)

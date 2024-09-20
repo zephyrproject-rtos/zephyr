@@ -476,9 +476,9 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_pm_action);                                     \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_gyro_init, PM_DEVICE_DT_INST_GET(inst),          \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bmi08x_gyro_init, PM_DEVICE_DT_INST_GET(inst),   \
 				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,       \
-				     CONFIG_SENSOR_INIT_PRIORITY, &bmi08x_api);
+				     &bmi08x_api);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(BMI08X_CREATE_INST)

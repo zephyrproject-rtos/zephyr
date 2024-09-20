@@ -166,8 +166,8 @@ int opt3001_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, opt3001_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, opt3001_init, NULL,				\
 			      &opt3001_data_##inst, &opt3001_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);		\
+			      &opt3001_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(OPT3001_DEFINE)

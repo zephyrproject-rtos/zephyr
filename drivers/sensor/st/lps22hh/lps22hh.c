@@ -351,8 +351,8 @@ static int lps22hh_init(const struct device *dev)
 		    (COND_CODE_1(DT_INST_ON_BUS(inst, i3c),			\
 				 (LPS22HH_CONFIG_I3C_OR_I2C(inst)),		\
 				 (LPS22HH_CONFIG_I2C(inst)))));			\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps22hh_init, NULL, &lps22hh_data_##inst,	\
-			      &lps22hh_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lps22hh_init, NULL, &lps22hh_data_##inst,\
+			      &lps22hh_config_##inst, POST_KERNEL,			\
+			      &lps22hh_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LPS22HH_DEFINE)

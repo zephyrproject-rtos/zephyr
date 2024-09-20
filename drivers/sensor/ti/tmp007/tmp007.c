@@ -134,8 +134,8 @@ int tmp007_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp007_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, tmp007_init, NULL,				\
 			      &tmp007_data_##inst, &tmp007_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY, &tmp007_driver_api);			\
+			      &tmp007_driver_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(TMP007_DEFINE)

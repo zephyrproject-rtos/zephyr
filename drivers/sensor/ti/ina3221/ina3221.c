@@ -284,8 +284,7 @@ static const struct sensor_driver_api ina3221_api = {
 	};                                                                                         \
 	static struct ina3221_data ina3221_data_##index;                                           \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(index, ina3221_init, NULL, &ina3221_data_##index,             \
-			      &ina3221_config_##index, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-			      &ina3221_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(index, ina3221_init, NULL, &ina3221_data_##index,      \
+			      &ina3221_config_##index, POST_KERNEL, &ina3221_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INST_DT_INA3221);

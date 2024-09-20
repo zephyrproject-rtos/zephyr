@@ -332,8 +332,8 @@ void icm42688_unlock(const struct device *dev)
 		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm42688_init, NULL, &icm42688_driver_##inst,           \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, icm42688_init, NULL, &icm42688_driver_##inst,    \
 				     &icm42688_cfg_##inst, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &icm42688_driver_api);
+				     &icm42688_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ICM42688_INIT)

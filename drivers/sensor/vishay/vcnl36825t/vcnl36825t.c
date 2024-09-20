@@ -572,10 +572,10 @@ static const struct sensor_driver_api vcnl36825t_driver_api = {
 			    .int_proximity_count = DT_INST_PROP(inst, int_proximity_count),        \
 			    .int_smart_persistence = DT_INST_PROP(inst, int_smart_persistence)))}; \
 	IF_ENABLED(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_DEFINE(inst, vcnl36825t_pm_action)));      \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(                                                       \
 		inst, vcnl36825t_init,                                                             \
 		COND_CODE_1(CONFIG_PM_DEVICE, (PM_DEVICE_DT_INST_GET(inst)), (NULL)),              \
 		&vcnl36825t_data_##inst, &vcnl36825t_config_##inst, POST_KERNEL,                   \
-		CONFIG_SENSOR_INIT_PRIORITY, &vcnl36825t_driver_api);
+		&vcnl36825t_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCNL36825T_DEFINE)

@@ -109,6 +109,5 @@ static const struct nxp_tempmon_config nxp_tempmon_dev_config = {
 	.base = (TEMPMON_Type *)DT_INST_REG_ADDR(0),
 };
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, nxp_tempmon_init, NULL, &nxp_tempmon_dev_data,
-			     &nxp_tempmon_dev_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-			     &nxp_tempmon_driver_api);
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(0, nxp_tempmon_init, NULL, &nxp_tempmon_dev_data,
+			     &nxp_tempmon_dev_config, POST_KERNEL, &nxp_tempmon_driver_api);

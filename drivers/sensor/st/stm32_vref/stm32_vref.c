@@ -180,7 +180,7 @@ static const struct stm32_vref_config stm32_vref_dev_config = {
 	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),
 };
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_vref_init, NULL, &stm32_vref_dev_data, &stm32_vref_dev_config,
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &stm32_vref_driver_api);
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(0, stm32_vref_init, NULL, &stm32_vref_dev_data, &stm32_vref_dev_config,
+			     POST_KERNEL, &stm32_vref_driver_api);
 
 #endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

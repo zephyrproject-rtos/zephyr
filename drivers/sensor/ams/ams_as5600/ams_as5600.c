@@ -92,9 +92,8 @@ static const struct sensor_driver_api as5600_driver_api = {
 		.i2c_port = I2C_DT_SPEC_INST_GET(n)	\
 	};	\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, as5600_initialize, NULL,	\
-			    &as5600_data##n, &as5600_cfg##n, \
-			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			    &as5600_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, as5600_initialize, NULL,	\
+			    &as5600_data##n, &as5600_cfg##n,		\
+			    POST_KERNEL, &as5600_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AS5600_INIT)

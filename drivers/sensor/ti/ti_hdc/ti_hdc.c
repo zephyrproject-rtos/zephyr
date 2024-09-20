@@ -175,8 +175,8 @@ static int ti_hdc_init(const struct device *dev)
 		.drdy = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),		\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ti_hdc_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ti_hdc_init, NULL,			\
 			      &ti_hdc_data_##inst, &ti_hdc_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ti_hdc_driver_api);		\
+			      &ti_hdc_driver_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(TI_HDC_DEFINE)

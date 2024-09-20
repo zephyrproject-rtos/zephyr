@@ -129,7 +129,7 @@ static int tcn75a_init(const struct device *dev)
 		.oneshot_mode = DT_INST_PROP(n, oneshot_mode),					   \
 		TCN75A_TRIGGER(n)								   \
 	};											   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &tcn75a_init, NULL, &tcn75a_data_##n, &tcn75a_config_##n,  \
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tcn75a_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &tcn75a_init, NULL, &tcn75a_data_##n, &tcn75a_config_##n,\
+			      POST_KERNEL, &tcn75a_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TCN75A_INIT)

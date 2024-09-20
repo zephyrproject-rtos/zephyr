@@ -216,13 +216,12 @@ static const struct sensor_driver_api sht4x_api = {
 		.repeatability = DT_INST_PROP(n, repeatability)	\
 	};							\
 								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,			\
 			      sht4x_init,			\
 			      NULL,				\
 			      &sht4x_data_##n,			\
 			      &sht4x_config_##n,		\
 			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
 			      &sht4x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHT4X_INIT)

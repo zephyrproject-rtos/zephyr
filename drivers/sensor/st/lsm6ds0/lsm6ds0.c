@@ -486,8 +486,8 @@ static int lsm6ds0_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lsm6ds0_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lsm6ds0_init, NULL,			\
 			      &lsm6ds0_data_##inst, &lsm6ds0_config_##inst, POST_KERNEL,\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);		\
+			      &lsm6ds0_api_funcs);					\
 
 DT_INST_FOREACH_STATUS_OKAY(LSM6DS0_DEFINE)

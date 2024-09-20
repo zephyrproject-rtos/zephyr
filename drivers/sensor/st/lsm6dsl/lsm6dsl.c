@@ -892,13 +892,12 @@ static int lsm6dsl_pm_action(const struct device *dev,
 
 #define LSM6DSL_DEVICE_INIT(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(inst, lsm6dsl_pm_action);		\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lsm6dsl_init,				\
 			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lsm6dsl_data_##inst,			\
 			    &lsm6dsl_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lsm6dsl_driver_api);
 
 /*

@@ -440,9 +440,9 @@ static const struct sensor_driver_api mcux_lpcmp_driver_api = {
 	static struct mcux_lpcmp_data mcux_lpcmp_data_##n;                                         \
 	static const struct mcux_lpcmp_config mcux_lpcmp_config_##n;                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &mcux_lpcmp_init, NULL, &mcux_lpcmp_data_##n,              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_lpcmp_init, NULL, &mcux_lpcmp_data_##n,       \
 				     &mcux_lpcmp_config_##n, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mcux_lpcmp_driver_api);         \
+				     &mcux_lpcmp_driver_api);                                      \
 	MCUX_LPCMP_CONFIG_FUNC(n)                                                                  \
 	MCUX_LPCMP_INIT_CONFIG(n);
 

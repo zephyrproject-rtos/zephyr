@@ -310,8 +310,8 @@ static const struct sensor_driver_api mc3419_api = {
 		.decimation_rate = DT_INST_PROP(idx, decimation_rate),                             \
 		MC3419_CFG_IRQ(idx)};                                                              \
 	static struct mc3419_driver_data mc3419_data_##idx;                                        \
-	SENSOR_DEVICE_DT_INST_DEFINE(idx, mc3419_init, NULL, &mc3419_data_##idx,                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(idx, mc3419_init, NULL, &mc3419_data_##idx,            \
 				     &mc3419_config_##idx, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mc3419_api);
+				     &mc3419_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MC3419_DEFINE)

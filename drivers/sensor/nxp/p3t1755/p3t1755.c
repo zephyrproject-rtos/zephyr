@@ -184,8 +184,8 @@ static const struct sensor_driver_api p3t1755_driver_api = {
 		.oneshot_mode = DT_INST_PROP(n, oneshot_mode),                                     \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, p3t1755_init, NULL, &p3t1755_data_##n,                     \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, p3t1755_init, NULL, &p3t1755_data_##n,              \
 				     &p3t1755_config_##n, POST_KERNEL,                             \
-				     CONFIG_SENSOR_INIT_PRIORITY, &p3t1755_driver_api);
+				     &p3t1755_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(P3T1755_INIT)

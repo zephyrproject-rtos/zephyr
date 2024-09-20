@@ -374,8 +374,8 @@ static int ms5837_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5837_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ms5837_init, NULL,			\
 			      &ms5837_data_##inst, &ms5837_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);		\
+			      &ms5837_api_funcs);					\
 
 DT_INST_FOREACH_STATUS_OKAY(MS5837_DEFINE)

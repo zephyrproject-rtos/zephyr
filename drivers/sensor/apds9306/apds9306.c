@@ -364,8 +364,8 @@ static const struct sensor_driver_api apds9306_driver_api = {
 		.frequency = DT_INST_PROP(inst, frequency),                                        \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, apds9306_init, NULL, &apds9306_data_##inst,             \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, apds9306_init, NULL, &apds9306_data_##inst,      \
 				     &apds9306_config_##inst, POST_KERNEL,                         \
-				     CONFIG_SENSOR_INIT_PRIORITY, &apds9306_driver_api);
+				     &apds9306_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APDS9306)

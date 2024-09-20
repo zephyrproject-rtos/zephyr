@@ -135,8 +135,8 @@ static int si7060_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7060_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, si7060_init, NULL,			\
 			      &si7060_data_##inst, &si7060_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);		\
+			      &si7060_api);						\
 
 DT_INST_FOREACH_STATUS_OKAY(SI7060_DEFINE)

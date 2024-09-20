@@ -151,8 +151,8 @@ static int lps22hb_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps22hb_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lps22hb_init, NULL,				\
 			      &lps22hb_data_##inst, &lps22hb_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);			\
+			      &lps22hb_api_funcs);						\
 
 DT_INST_FOREACH_STATUS_OKAY(LPS22HB_DEFINE)

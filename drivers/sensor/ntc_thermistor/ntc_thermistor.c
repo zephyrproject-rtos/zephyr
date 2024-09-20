@@ -156,10 +156,10 @@ static int ntc_thermistor_pm_action(const struct device *dev, enum pm_device_act
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, ntc_thermistor_pm_action);                                  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(                                                       \
 		inst, ntc_thermistor_init, PM_DEVICE_DT_INST_GET(inst),                            \
 		&ntc_thermistor_driver_##id##inst, &ntc_thermistor_cfg_##id##inst, POST_KERNEL,    \
-		CONFIG_SENSOR_INIT_PRIORITY, &ntc_thermistor_driver_api);
+		&ntc_thermistor_driver_api);
 
 #define NTC_THERMISTOR_DEFINE(inst, id, comp) \
 	NTC_THERMISTOR_DEFINE0(inst, id, comp, ARRAY_SIZE(comp))

@@ -407,13 +407,12 @@ SYS_INIT(vcmp_it8xxx2_init_work_q, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
 		.adc_ch_cfg.channel_id = (uint8_t)DT_INST_IO_CHANNELS_INPUT(inst),	\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 			      vcmp_it8xxx2_init,					\
 			      NULL,							\
 			      &vcmp_it8xxx2_data_##inst,				\
 			      &vcmp_it8xxx2_cfg_##inst,					\
 			      POST_KERNEL,						\
-			      CONFIG_VCMP_IT8XXX2_INIT_PRIORITY,			\
 			      &vcmp_ite_it8xxx2_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VCMP_IT8XXX2_INIT)

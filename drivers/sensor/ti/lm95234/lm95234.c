@@ -313,12 +313,11 @@ static const struct lm95234_config lm95234_config_##inst = {   \
 	.i2c = I2C_DT_SPEC_INST_GET(inst),                     \
 };                                                             \
 PM_DEVICE_DT_INST_DEFINE(inst, lm95234_pm_action);	       \
-SENSOR_DEVICE_DT_INST_DEFINE(inst, lm95234_init,               \
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lm95234_init,        \
 			     PM_DEVICE_DT_INST_GET(inst),      \
-			     &lm95234_data_##inst,	       \
+			     &lm95234_data_##inst,	               \
 			     &lm95234_config_##inst,           \
 			     POST_KERNEL,                      \
-			     CONFIG_SENSOR_INIT_PRIORITY,      \
 			     &lm95234_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM95234_INST)

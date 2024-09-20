@@ -323,13 +323,12 @@ static const struct sensor_driver_api ina226_driver_api = {
 			(DT_INST_ENUM_IDX(inst, vshunt_conversion_time_us) << 3) |	\
 			DT_INST_ENUM_IDX(inst, operating_mode),				\
 	};										\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 				     &ina226_init,					\
 				     NULL,						\
 				     &ina226_data_##inst,				\
 				     &ina226_config_##inst,				\
 				     POST_KERNEL,					\
-				     CONFIG_SENSOR_INIT_PRIORITY,			\
 				     &ina226_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA226_DRIVER_INIT)

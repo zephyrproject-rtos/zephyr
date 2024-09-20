@@ -627,13 +627,12 @@ static int iis2iclx_init(const struct device *dev)
  */
 
 #define IIS2ICLX_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    iis2iclx_init,				\
 			    NULL,					\
 			    &iis2iclx_data_##inst,			\
 			    &iis2iclx_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &iis2iclx_driver_api);
 
 /*

@@ -133,8 +133,8 @@ static int mcp9600_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(id),                                                   \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(id, mcp9600_init, NULL, &mcp9600_data_##id,                   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(id, mcp9600_init, NULL, &mcp9600_data_##id,            \
 				     &mcp9600_config_##id, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &mcp9600_api);
+				     &mcp9600_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP9600_DEFINE)

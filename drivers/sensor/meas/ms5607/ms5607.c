@@ -345,13 +345,12 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (MS5607_CONFIG_SPI(inst)),			\
 			    (MS5607_CONFIG_I2C(inst)));			\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			ms5607_init,					\
 			NULL,						\
 			&ms5607_data_##inst,				\
 			&ms5607_config_##inst,				\
 			POST_KERNEL,					\
-			CONFIG_SENSOR_INIT_PRIORITY,			\
 			&ms5607_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

@@ -113,8 +113,8 @@ static int nct75_init(const struct device *dev)
                                                                                                    \
 	static struct nct75_data nct75_##inst##_data;                                              \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, nct75_init, NULL, &nct75_##inst##_data,                 \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, nct75_init, NULL, &nct75_##inst##_data,          \
 				     &nct75_##inst##_config, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &nct75_api);
+				     &nct75_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NCT75_INIT);

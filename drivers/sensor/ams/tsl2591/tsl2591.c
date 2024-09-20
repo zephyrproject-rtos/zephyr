@@ -528,8 +528,8 @@ static int tsl2591_pm_action(const struct device *dev, enum pm_device_action act
 		IF_ENABLED(CONFIG_TSL2591_TRIGGER,                                                 \
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}),))};           \
 	PM_DEVICE_DT_INST_DEFINE(n, tsl2591_pm_action);                                            \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, tsl2591_init, PM_DEVICE_DT_INST_GET(n), &tsl2591_data_##n, \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, tsl2591_init, PM_DEVICE_DT_INST_GET(n), &tsl2591_data_##n,\
 				     &tsl2591_config_##n, POST_KERNEL,                             \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tsl2591_driver_api);
+				     &tsl2591_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2591_INIT_INST)

@@ -103,7 +103,7 @@ static int lm35_init(const struct device *dev)
 			.channel_id = DT_INST_IO_CHANNELS_INPUT(inst),                             \
 		}};                                                                                \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lm35_init, NULL, &lm35_data_##inst, &lm35_cfg_##inst,   \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &lm35_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lm35_init, NULL, &lm35_data_##inst, &lm35_cfg_##inst,\
+				     POST_KERNEL, &lm35_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM35_INST)

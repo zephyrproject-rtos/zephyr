@@ -284,11 +284,10 @@ static const struct stm32_digi_temp_config stm32_digi_temp_dev_config_##index = 
 											\
 PM_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_pm_action);				\
 											\
-SENSOR_DEVICE_DT_INST_DEFINE(index, stm32_digi_temp_init,				\
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(index, stm32_digi_temp_init,			\
 			     PM_DEVICE_DT_INST_GET(index),				\
 			     &stm32_digi_temp_dev_data_##index,				\
 			     &stm32_digi_temp_dev_config_##index,			\
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-			     &stm32_digi_temp_driver_api);				\
+			     POST_KERNEL, &stm32_digi_temp_driver_api);			\
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_DIGI_TEMP_INIT)

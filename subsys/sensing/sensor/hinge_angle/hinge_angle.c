@@ -159,11 +159,11 @@ static void hinge_reporter_on_data_event(sensing_sensor_handle_t handle,
 		.on_data_event = hinge_reporter_on_data_event,			\
 		.context = &_CONCAT(hinge_ctx, _inst),				\
 	};									\
-	SENSING_SENSORS_DT_INST_DEFINE(_inst, &hinge_reg,			\
+	SENSING_SENSORS_INSTANCE_FROM_DT_INST(_inst, &hinge_reg,		\
 		&_CONCAT(hinge_cb, _inst),					\
 		&hinge_init, NULL,						\
 		&_CONCAT(hinge_ctx, _inst), NULL,				\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+		POST_KERNEL, 							\
 		&hinge_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SENSING_HINGE_ANGLE_DT_DEFINE);

@@ -421,9 +421,8 @@ static struct pcnt_esp32_data pcnt_esp32_data = {
 #endif /* CONFIG_PCNT_ESP32_TRIGGER */
 };
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, &pcnt_esp32_init, NULL,
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(0, &pcnt_esp32_init, NULL,
 			&pcnt_esp32_data,
 			&pcnt_esp32_config,
 			POST_KERNEL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&pcnt_esp32_api);

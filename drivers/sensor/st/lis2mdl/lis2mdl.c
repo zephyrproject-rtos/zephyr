@@ -490,13 +490,12 @@ static int lis2mdl_pm_action(const struct device *dev,
 #define LIS2MDL_DEVICE_INIT(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(inst, lis2mdl_pm_action);		\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lis2mdl_init,				\
 			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2mdl_data_##inst,			\
 			    &lis2mdl_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2mdl_driver_api);
 
 /*

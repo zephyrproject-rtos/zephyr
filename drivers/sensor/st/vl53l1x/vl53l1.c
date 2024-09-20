@@ -472,13 +472,12 @@ static int vl53l1x_init(const struct device *dev)
 	\
 	static struct vl53l1x_data vl53l1x_data_##i; \
 	\
-	SENSOR_DEVICE_DT_INST_DEFINE(i, \
-				     vl53l1x_init, \
-				     NULL, \
-				     &vl53l1x_data_##i, \
-				     &vl53l1x_config_##i, \
-				     POST_KERNEL, \
-				     CONFIG_SENSOR_INIT_PRIORITY, \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(i,\
+				     vl53l1x_init,\
+				     NULL,\
+				     &vl53l1x_data_##i,\
+				     &vl53l1x_config_##i,\
+				     POST_KERNEL,\
 				     &vl53l1x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VL53L1X_INIT)

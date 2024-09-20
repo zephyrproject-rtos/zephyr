@@ -125,9 +125,8 @@ static int rpi_pico_temp_init(const struct device *dev)
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, rpi_pico_temp_init, NULL,                               \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, rpi_pico_temp_init, NULL,                        \
 				     &rpi_pico_temp_dev_data_##inst, &rpi_pico_temp_config_##inst, \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
-				     &rpi_pico_temp_driver_api);
+				     POST_KERNEL, &rpi_pico_temp_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RPI_PICO_TEMP_DEFINE)

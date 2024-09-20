@@ -222,8 +222,8 @@ static int adt7420_init(const struct device *dev)
 		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))	\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,	\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, adt7420_init, NULL, &adt7420_data_##inst,\
 			      &adt7420_config_##inst, POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);	\
+			      &adt7420_driver_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)

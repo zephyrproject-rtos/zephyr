@@ -132,8 +132,8 @@ int jc42_init(const struct device *dev)
 		IF_ENABLED(CONFIG_JC42_TRIGGER,                                                    \
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),))};        \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, jc42_init, NULL, &jc42_data_##inst,                     \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, jc42_init, NULL, &jc42_data_##inst,              \
 				     &jc42_config_##inst, POST_KERNEL,                             \
-				     CONFIG_SENSOR_INIT_PRIORITY, &jc42_api_funcs);
+				     &jc42_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(JC42_DEFINE)

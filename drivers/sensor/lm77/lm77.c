@@ -413,11 +413,10 @@ static int lm77_pm_action(const struct device *dev,
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, lm77_pm_action);			\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, lm77_init,			\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, lm77_init,		\
 			      PM_DEVICE_DT_INST_GET(n),			\
 			      &lm77_data_##n,				\
 			      &lm77_config_##n, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &lm77_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LM77_INIT)

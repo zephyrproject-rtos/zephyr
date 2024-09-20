@@ -414,13 +414,12 @@ static int iis2dlpc_init(const struct device *dev)
  */
 
 #define IIS2DLPC_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    iis2dlpc_init,				\
 			    NULL,					\
 			    &iis2dlpc_data_##inst,			\
 			    &iis2dlpc_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &iis2dlpc_driver_api);
 
 /*

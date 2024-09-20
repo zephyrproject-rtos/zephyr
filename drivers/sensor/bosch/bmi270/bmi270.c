@@ -828,13 +828,12 @@ static const struct bmi270_feature_config bmi270_feature_base = {
 		BMI270_CONFIG_INT(inst)					\
 	};								\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			      bmi270_init,				\
 			      NULL,					\
 			      &bmi270_drv_##inst,			\
 			      &bmi270_config_##inst,			\
 			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &bmi270_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMI270_CREATE_INST);

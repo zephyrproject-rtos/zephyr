@@ -388,12 +388,11 @@ static int vl53l0x_pm_action(const struct device *dev,
 									 \
 	PM_DEVICE_DT_INST_DEFINE(inst, vl53l0x_pm_action);		 \
 									 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, vl53l0x_init,		 \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, vl53l0x_init,		 \
 			      PM_DEVICE_DT_INST_GET(inst),		 \
 			      &vl53l0x_##inst##_driver,			 \
 			      &vl53l0x_##inst##_config,			 \
 			      POST_KERNEL,				 \
-			      CONFIG_SENSOR_INIT_PRIORITY,		 \
 			      &vl53l0x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VL53L0X_INIT)

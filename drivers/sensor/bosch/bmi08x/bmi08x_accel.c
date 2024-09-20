@@ -804,9 +804,9 @@ int bmi08x_accel_init(const struct device *dev)
 		.accel_fs = DT_INST_PROP(inst, accel_fs), BMI08X_DATA_SYNC_REG(inst)};             \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_pm_action);                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),         \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bmi08x_accel_init, PM_DEVICE_DT_INST_GET(inst),  \
 				     &bmi08x_drv_##inst, &bmi08x_config_##inst, POST_KERNEL,       \
-				     CONFIG_SENSOR_INIT_PRIORITY, &bmi08x_api);
+				     &bmi08x_api);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(BMI08X_CREATE_INST)

@@ -246,9 +246,9 @@ static int tmp1075_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmp1075_init, NULL, &tmp1075_data_##inst,               \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, tmp1075_init, NULL, &tmp1075_data_##inst,        \
                                                                                                    \
 				     &tmp1075_config_##inst, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tmp1075_driver_api);
+				     &tmp1075_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMP1075_INST)

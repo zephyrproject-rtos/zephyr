@@ -204,13 +204,12 @@ int hts221_init(const struct device *dev)
  */
 
 #define HTS221_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			      hts221_init,				\
 			      NULL,					\
 			      &hts221_data_##inst,			\
 			      &hts221_config_##inst,			\
 			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &hts221_driver_api);
 
 /*

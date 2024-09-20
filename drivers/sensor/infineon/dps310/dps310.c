@@ -721,8 +721,8 @@ static const struct sensor_driver_api dps310_api_funcs = {
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, dps310_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, dps310_init, NULL,			\
 			      &dps310_data_##inst, &dps310_cfg_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);		\
+			      &dps310_api_funcs);					\
 
 DT_INST_FOREACH_STATUS_OKAY(DPS310_DEFINE)

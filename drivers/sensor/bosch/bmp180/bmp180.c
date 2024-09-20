@@ -467,9 +467,8 @@ static int bmp180_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),\
 	};\
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp180_pm_action);\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bmp180_init, PM_DEVICE_DT_INST_GET(inst),\
-				    &bmp180_data_##inst, &bmp180_config_##inst,\
-				    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,\
-				    &bmp180_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bmp180_init, PM_DEVICE_DT_INST_GET(inst),\
+				    &bmp180_data_##inst, &bmp180_config_##inst,     \
+				    POST_KERNEL, &bmp180_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMP180_INST)

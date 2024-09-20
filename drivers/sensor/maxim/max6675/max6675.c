@@ -107,9 +107,8 @@ static int max6675_init(const struct device *dev)
 					    SPI_WORD_SET(8U),		\
 					    0U),			\
 	};								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, &max6675_init, NULL,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, &max6675_init, NULL,	\
 			      &max6675_data_##n, &max6675_config_##n,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
-			      &max6675_api);
+			      POST_KERNEL, &max6675_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX6675_INIT)

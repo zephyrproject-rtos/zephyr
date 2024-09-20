@@ -1018,13 +1018,12 @@ static int fdc2x1x_init(const struct device *dev)
 									   \
 	PM_DEVICE_DT_INST_DEFINE(n, fdc2x1x_device_pm_action);		   \
 									   \
-	SENSOR_DEVICE_DT_INST_DEFINE(n,					   \
-			      fdc2x1x_init,				   \
-			      PM_DEVICE_DT_INST_GET(n),			   \
-			      &fdc2x1x_data_##n,			   \
-			      &fdc2x1x_config_##n,			   \
-			      POST_KERNEL,				   \
-			      CONFIG_SENSOR_INIT_PRIORITY,		   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,					   \
+			      fdc2x1x_init,					   \
+			      PM_DEVICE_DT_INST_GET(n),				   \
+			      &fdc2x1x_data_##n,				   \
+			      &fdc2x1x_config_##n,				   \
+			      POST_KERNEL,					   \
 			      &fdc2x1x_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(FDC2X1X_INIT)

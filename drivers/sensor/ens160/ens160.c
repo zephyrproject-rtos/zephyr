@@ -323,8 +323,8 @@ static int ens160_pm_action(const struct device *dev, enum pm_device_action acti
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, ens160_pm_action);                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ens160_init, PM_DEVICE_DT_INST_GET(inst),               \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ens160_init, PM_DEVICE_DT_INST_GET(inst),        \
 				     &ens160_data_##inst, &ens160_config_##inst, POST_KERNEL,      \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ens160_driver_api);
+				     &ens160_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ENS160_DEFINE)

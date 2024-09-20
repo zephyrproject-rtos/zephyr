@@ -767,13 +767,12 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 									\
 	static struct fxos8700_data fxos8700_data_##n;			\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,				\
 				     fxos8700_init,			\
 				     NULL,				\
 				     &fxos8700_data_##n,		\
 				     &fxos8700_config_##n,		\
 				     POST_KERNEL,			\
-				     CONFIG_SENSOR_INIT_PRIORITY,	\
 				     &fxos8700_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FXOS8700_INIT)

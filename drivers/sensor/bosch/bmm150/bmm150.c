@@ -730,13 +730,12 @@ static int bmm150_init(const struct device *dev)
 									\
 	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);			\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 				     bmm150_init,			\
 				     PM_DEVICE_DT_INST_GET(inst),	\
 				     &bmm150_data_##inst,		\
 				     &bmm150_config_##inst,		\
 				     POST_KERNEL,			\
-				     CONFIG_SENSOR_INIT_PRIORITY,	\
 				     &bmm150_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */

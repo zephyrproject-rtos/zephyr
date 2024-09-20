@@ -717,8 +717,8 @@ static const struct sensor_driver_api bma4xx_driver_api = {
 	static const struct bma4xx_config bma4xx_config_##inst = COND_CODE_1(                      \
 		DT_INST_ON_BUS(inst, spi), (BMA4XX_CONFIG_SPI(inst)), (BMA4XX_CONFIG_I2C(inst)));  \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,            \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, bma4xx_chip_init, NULL, &bma4xx_data_##inst,     \
 				     &bma4xx_config_##inst, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &bma4xx_driver_api);
+				     &bma4xx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMA4XX_DEFINE)

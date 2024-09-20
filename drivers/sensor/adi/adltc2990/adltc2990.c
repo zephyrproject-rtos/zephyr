@@ -530,8 +530,8 @@ static const struct sensor_driver_api adltc2990_driver_api = {
 		.pins_v3_v4.voltage_divider_resistors.v4_r1_r2 =                                   \
 			DT_INST_PROP_OR(inst, pin_v4_voltage_divider_resistors, NULL)};            \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adltc2990_init, NULL, &adltc2990_data_##inst,           \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, adltc2990_init, NULL, &adltc2990_data_##inst,    \
 				     &adltc2990_config_##inst, POST_KERNEL,                        \
-				     CONFIG_SENSOR_INIT_PRIORITY, &adltc2990_driver_api);
+				     &adltc2990_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADLTC2990_DEFINE)

@@ -490,13 +490,12 @@ static int lis2dh_pm_action(const struct device *dev,
 
 #define LIS2DH_DEVICE_INIT(inst)					\
 	PM_DEVICE_DT_INST_DEFINE(inst, lis2dh_pm_action);		\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lis2dh_init,				\
 			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2dh_data_##inst,			\
 			    &lis2dh_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2dh_driver_api);
 
 #define IS_LSM303AGR_DEV(inst) \

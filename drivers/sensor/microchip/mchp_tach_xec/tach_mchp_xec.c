@@ -201,13 +201,12 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 									\
 	PM_DEVICE_DT_INST_DEFINE(id, tach_xec_pm_action);		\
 									\
-	SENSOR_DEVICE_DT_INST_DEFINE(id,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(id,				\
 			    tach_xec_init,				\
 			    PM_DEVICE_DT_INST_GET(id),			\
 			    &tach_xec_data_##id,			\
 			    &tach_xec_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &tach_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)

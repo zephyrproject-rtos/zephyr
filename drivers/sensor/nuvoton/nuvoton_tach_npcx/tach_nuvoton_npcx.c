@@ -382,13 +382,12 @@ static const struct sensor_driver_api tach_npcx_driver_api = {
 									       \
 	static struct tach_npcx_data tach_data_##inst;                         \
 									       \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                     \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,                              \
 			      tach_npcx_init,                                  \
 			      NULL,                                            \
 			      &tach_data_##inst,                               \
 			      &tach_cfg_##inst,                                \
 			      POST_KERNEL,                                     \
-			      CONFIG_SENSOR_INIT_PRIORITY,                     \
 			      &tach_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_TACH_INIT)

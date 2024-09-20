@@ -339,8 +339,8 @@ static int tsl2561_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.integration_time = DT_INST_PROP(n, integration_time),                             \
 		.gain = DT_INST_PROP(n, gain)};                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, tsl2561_init, NULL, &tsl2561_data_##n,                     \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, tsl2561_init, NULL, &tsl2561_data_##n,              \
 				     &tsl2561_config_##n, POST_KERNEL,                             \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tsl2561_driver_api);
+				     &tsl2561_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2561_INIT_INST)

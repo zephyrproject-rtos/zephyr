@@ -301,8 +301,8 @@ static const struct sensor_driver_api s11059_driver_api = {
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.gain = DT_INST_PROP(inst, high_gain),                                             \
 		.integration_time = DT_INST_PROP(inst, integration_time)};                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, s11059_init, NULL, &s11059_data_##inst,                 \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, s11059_init, NULL, &s11059_data_##inst,          \
 				     &s11059_config_##inst, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &s11059_driver_api);
+				     &s11059_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(S11059_INST)

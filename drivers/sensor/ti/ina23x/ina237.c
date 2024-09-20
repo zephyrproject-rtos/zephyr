@@ -418,8 +418,8 @@ static const struct sensor_driver_api ina237_driver_api = {
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),                         \
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL, &ina237_data_##inst,                \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &ina237_init, NULL, &ina237_data_##inst,         \
 				     &ina237_config_##inst, POST_KERNEL,                           \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);             \
+				     &ina237_driver_api);                                          \
 
 DT_INST_FOREACH_STATUS_OKAY(INA237_DRIVER_INIT)

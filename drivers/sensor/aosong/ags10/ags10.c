@@ -128,7 +128,7 @@ static const struct sensor_driver_api ags10_api = {.sample_fetch = ags10_sample_
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, ags10_init, NULL, &ags10_data_##n, &ags10_config_##n,      \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &ags10_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, ags10_init, NULL, &ags10_data_##n, &ags10_config_##n,\
+				     POST_KERNEL, &ags10_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AGS10_INIT)

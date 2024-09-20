@@ -382,8 +382,8 @@ static int tsl2540_pm_action(const struct device *dev, enum pm_device_action act
 		TSL2540_GLASS_ATTEN(inst)							\
 	};											\
 	PM_DEVICE_DT_INST_DEFINE(inst, tsl2540_pm_action);					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst),		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &tsl2540_init, PM_DEVICE_DT_INST_GET(inst),	\
 				&tsl2540_prv_data_##inst, &tsl2540_config_##inst, POST_KERNEL,	\
-				CONFIG_SENSOR_INIT_PRIORITY, &tsl2540_driver_api);
+				&tsl2540_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TSL2540_DEFINE)

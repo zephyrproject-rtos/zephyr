@@ -210,8 +210,7 @@ static int veaa_x_3_init(const struct device *dev)
 		.dac_resolution = DT_INST_PROP(n, dac_resolution),                                 \
 		VEAA_X_3_TYPE_INIT(n)};                                                            \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, veaa_x_3_init, NULL, &veaa_x_3_data_##n,                   \
-				     &veaa_x_3_cfg_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,  \
-				     &veaa_x_3_api_funcs);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, veaa_x_3_init, NULL, &veaa_x_3_data_##n,            \
+				     &veaa_x_3_cfg_##n, POST_KERNEL, &veaa_x_3_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(VEAA_X_3_INIT)

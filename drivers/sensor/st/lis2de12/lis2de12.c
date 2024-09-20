@@ -394,13 +394,12 @@ static int lis2de12_init(const struct device *dev)
  */
 
 #define LIS2DE12_DEVICE_INIT(inst)					\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			    lis2de12_init,				\
 			    NULL,					\
 			    &lis2de12_data_##inst,			\
 			    &lis2de12_config_##inst,			\
 			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &lis2de12_driver_api);
 
 /*
