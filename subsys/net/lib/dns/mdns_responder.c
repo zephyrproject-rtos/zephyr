@@ -722,17 +722,15 @@ static int init_listener(void)
 	NET_DBG("Setting %s listener to %d interface%s", "mDNS", iface_count,
 		iface_count > 1 ? "s" : "");
 
-	if ((iface_count > MAX_IPV6_IFACE_COUNT && MAX_IPV6_IFACE_COUNT > 0) ||
-	    (iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
-		NET_WARN("You have %d interfaces configured but there "
-			 "are %d network interfaces in the system.",
-			 MAX(MAX_IPV4_IFACE_COUNT,
-			     MAX_IPV6_IFACE_COUNT), iface_count);
-	}
-
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6;
 	int v6;
+
+	if ((iface_count > MAX_IPV6_IFACE_COUNT && MAX_IPV6_IFACE_COUNT > 0)) {
+		NET_WARN("You have %d %s interfaces configured but there "
+			 "are %d network interfaces in the system.",
+			 MAX_IPV6_IFACE_COUNT, "IPv6", iface_count);
+	}
 
 	setup_ipv6_addr(&local_addr6);
 
@@ -810,6 +808,12 @@ static int init_listener(void)
 #if defined(CONFIG_NET_IPV4)
 	struct sockaddr_in local_addr4;
 	int v4;
+
+	if ((iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
+		NET_WARN("You have %d %s interfaces configured but there "
+			 "are %d network interfaces in the system.",
+			 MAX_IPV4_IFACE_COUNT, "IPv4", iface_count);
+	}
 
 	setup_ipv4_addr(&local_addr4);
 
