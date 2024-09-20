@@ -24,3 +24,10 @@ tests:
       - CONFIG_LOG_TIMESTAMP_64BIT=n
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
+  logging.output.net.gmtime_r:
+    tags:
+      - log_output
+      - logging
+    extra_configs:
+      - CONFIG_LOG_TIMESTAMP_64BIT=n
+      - CONFIG_POSIX_C_LANG_SUPPORT_R=y
