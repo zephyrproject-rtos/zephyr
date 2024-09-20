@@ -553,56 +553,10 @@ out:
 }
 #else
 #define lpspi_inst_has_dma(arg) arg != arg
+#define transceive_dma(...)     0
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
-		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, spi_callback_t cb, void *userdata)
-{
-	struct spi_mcux_data *data = dev->data;
-	int ret;
-
-	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
-
-	ret = spi_mcux_configure(dev, spi_cfg);
-	if (ret) {
-		goto out;
-	}
-
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-
-	spi_context_cs_control(&data->ctx, true);
-
-	ret = spi_mcux_transfer_next_packet(dev);
-	if (ret) {
-		goto out;
-	}
-
-	ret = spi_context_wait_for_completion(&data->ctx);
-out:
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
-}
-
 #ifdef CONFIG_SPI_RTIO
-static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
-				  const struct spi_buf_set *tx_bufs,
-				  const struct spi_buf_set *rx_bufs)
-{
-	struct spi_mcux_data *data = dev->data;
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-	int ret;
-
-	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
-
-	ret = spi_rtio_transceive(rtio_ctx, spi_cfg, tx_bufs, rx_bufs);
-
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
-}
-
 static inline void spi_mcux_iodev_prepare_start(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
@@ -699,23 +653,81 @@ static void spi_mcux_iodev_submit(const struct device *dev, struct rtio_iodev_sq
 	}
 }
 
+static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+	int ret;
+
+	spi_context_lock(&data->ctx, false, NULL, NULL, spi_cfg);
+
+	ret = spi_rtio_transceive(rtio_ctx, spi_cfg, tx_bufs, rx_bufs);
+
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
+#else
+#define transceive_rtio(...) 0
 #endif /* CONFIG_SPI_RTIO */
+
+static int transceive(const struct device *dev, const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+		      bool asynchronous, spi_callback_t cb, void *userdata)
+{
+	struct spi_mcux_data *data = dev->data;
+	int ret;
+
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
+
+	ret = spi_mcux_configure(dev, spi_cfg);
+	if (ret) {
+		goto out;
+	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	spi_context_cs_control(&data->ctx, true);
+
+	ret = spi_mcux_transfer_next_packet(dev);
+	if (ret) {
+		goto out;
+	}
+
+	ret = spi_context_wait_for_completion(&data->ctx);
+out:
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
 
 static int spi_mcux_transceive(const struct device *dev, const struct spi_config *spi_cfg,
-			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
+			       const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
+			       spi_callback_t cb, void *userdata, bool async)
 {
-#ifdef CONFIG_SPI_RTIO
-	return transceive_rtio(dev, spi_cfg, tx_bufs, rx_bufs);
-#endif /* CONFIG_SPI_RTIO */
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	const struct spi_mcux_data *data = dev->data;
+	struct spi_mcux_data *data = dev->data;
 
 	if (lpspi_inst_has_dma(data)) {
-		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+		if (async) {
+			spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+		}
+		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, async, cb, userdata);
 	}
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
+	if (IS_ENABLED(CONFIG_SPI_RTIO)) {
+		return transceive_rtio(dev, spi_cfg, tx_bufs, rx_bufs);
+	}
+
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, async, cb, userdata);
+}
+
+static int spi_mcux_transceive_sync(const struct device *dev, const struct spi_config *spi_cfg,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	return spi_mcux_transceive(dev, spi_cfg, tx_bufs, rx_bufs, NULL, NULL, false);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -724,17 +736,7 @@ static int spi_mcux_transceive_async(const struct device *dev, const struct spi_
 				     const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				     void *userdata)
 {
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	struct spi_mcux_data *data = dev->data;
-
-	if (lpspi_inst_has_dma(data)) {
-		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
-	}
-
-	return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
-#else
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, cb, userdata);
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
+	return spi_mcux_transceive(dev, spi_cfg, tx_bufs, rx_bufs, cb, userdata, true);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -748,7 +750,7 @@ static int spi_mcux_release(const struct device *dev, const struct spi_config *s
 }
 
 static const struct spi_driver_api spi_mcux_driver_api = {
-	.transceive = spi_mcux_transceive,
+	.transceive = spi_mcux_transceive_sync,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_mcux_transceive_async,
 #endif
