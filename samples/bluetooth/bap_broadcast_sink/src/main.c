@@ -1308,8 +1308,13 @@ static int init(void)
 		return err;
 	}
 
+	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+	if (err) {
+		printk("Scan delegator register failed (err %d)\n", err);
+		return err;
+	}
+
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	bt_le_scan_cb_register(&bap_scan_cb);
 

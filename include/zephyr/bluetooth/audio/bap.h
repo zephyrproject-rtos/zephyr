@@ -318,7 +318,7 @@ struct bt_bap_scan_delegator_recv_state {
 /**
  * @brief Struct to hold the Basic Audio Profile Scan Delegator callbacks
  *
- * These can be registered for usage with bt_bap_scan_delegator_register_cb().
+ * These can be registered for usage with bt_bap_scan_delegator_register().
  */
 struct bt_bap_scan_delegator_cb {
 	/**
@@ -2048,14 +2048,29 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
 /** @} */ /* End of group bt_bap_broadcast_sink */
 
 /**
- * @brief Register the callbacks for the Basic Audio Profile Scan Delegator
+ * @brief Register the Basic Audio Profile Scan Delegator and BASS.
+ *
+ * Register the scan deligator and Broadcast Audio Scan Service (BASS)
+ * dynamically at runtime.
  *
  * Only one set of callbacks can be registered at any one time, and calling this function multiple
  * times will override any previously registered callbacks.
  *
  * @param cb Pointer to the callback struct
+ *
+ * @return 0 in case of success or negative value in case of error.
  */
-void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb);
+int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
+
+/**
+ * @brief unregister the Basic Audio Profile Scan Delegator and BASS.
+ *
+ * Unregister the scan deligator and Broadcast Audio Scan Service (BASS)
+ * dynamically at runtime.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ */
+int bt_bap_scan_delegator_unregister(void);
 
 /**
  * @brief Set the periodic advertising sync state to syncing
