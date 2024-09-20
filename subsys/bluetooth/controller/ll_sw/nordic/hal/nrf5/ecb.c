@@ -50,47 +50,47 @@ struct ecb_param {
 #endif /* NRF54L_SERIES */
 } __packed;
 
-static void do_ecb(struct ecb_param *ecb)
+static void do_ecb(struct ecb_param *ep)
 {
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
 #if defined(NRF54L_SERIES)
-		NRF_ECB->KEY.VALUE[3] = ((uint32_t)ecb->key[0] << 24) |
-					((uint32_t)ecb->key[1] << 16) |
-					((uint32_t)ecb->key[2] << 8) |
-					(uint32_t)ecb->key[3];
-		NRF_ECB->KEY.VALUE[2] = ((uint32_t)ecb->key[4] << 24) |
-					((uint32_t)ecb->key[5] << 16) |
-					((uint32_t)ecb->key[6] << 8) |
-					(uint32_t)ecb->key[7];
-		NRF_ECB->KEY.VALUE[1] = ((uint32_t)ecb->key[8] << 24) |
-					((uint32_t)ecb->key[9] << 16) |
-					((uint32_t)ecb->key[10] << 8) |
-					(uint32_t)ecb->key[11];
-		NRF_ECB->KEY.VALUE[0] = ((uint32_t)ecb->key[12] << 24) |
-					((uint32_t)ecb->key[13] << 16) |
-					((uint32_t)ecb->key[14] << 8) |
-					(uint32_t)ecb->key[15];
+		NRF_ECB->KEY.VALUE[3] = ((uint32_t)ep->key[0] << 24) |
+					((uint32_t)ep->key[1] << 16) |
+					((uint32_t)ep->key[2] << 8) |
+					(uint32_t)ep->key[3];
+		NRF_ECB->KEY.VALUE[2] = ((uint32_t)ep->key[4] << 24) |
+					((uint32_t)ep->key[5] << 16) |
+					((uint32_t)ep->key[6] << 8) |
+					(uint32_t)ep->key[7];
+		NRF_ECB->KEY.VALUE[1] = ((uint32_t)ep->key[8] << 24) |
+					((uint32_t)ep->key[9] << 16) |
+					((uint32_t)ep->key[10] << 8) |
+					(uint32_t)ep->key[11];
+		NRF_ECB->KEY.VALUE[0] = ((uint32_t)ep->key[12] << 24) |
+					((uint32_t)ep->key[13] << 16) |
+					((uint32_t)ep->key[14] << 8) |
+					(uint32_t)ep->key[15];
 
-		ecb->in[0].ptr = ecb->clear_text;
-		ecb->in[0].length = sizeof(ecb->clear_text);
-		ecb->in[0].attribute = 7U;
-		ecb->in[1].ptr = NULL;
-		ecb->in[1].length = 0U;
-		ecb->in[1].attribute = 0U;
+		ep->in[0].ptr = ep->clear_text;
+		ep->in[0].length = sizeof(ep->clear_text);
+		ep->in[0].attribute = 7U;
+		ep->in[1].ptr = NULL;
+		ep->in[1].length = 0U;
+		ep->in[1].attribute = 0U;
 
-		ecb->out[0].ptr = ecb->cipher_text;
-		ecb->out[0].length = sizeof(ecb->cipher_text);
-		ecb->out[0].attribute = 7U;
-		ecb->out[1].ptr = NULL;
-		ecb->out[1].length = 0U;
-		ecb->out[1].attribute = 0U;
+		ep->out[0].ptr = ep->cipher_text;
+		ep->out[0].length = sizeof(ep->cipher_text);
+		ep->out[0].attribute = 7U;
+		ep->out[1].ptr = NULL;
+		ep->out[1].length = 0U;
+		ep->out[1].attribute = 0U;
 
-		NRF_ECB->IN.PTR = (uint32_t)ecb->in;
-		NRF_ECB->OUT.PTR = (uint32_t)ecb->out;
+		NRF_ECB->IN.PTR = (uint32_t)ep->in;
+		NRF_ECB->OUT.PTR = (uint32_t)ep->out;
 #else /* !NRF54L_SERIES */
-		NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+		NRF_ECB->ECBDATAPTR = (uint32_t)ep;
 #endif /* !NRF54L_SERIES */
 
 		NRF_ECB->EVENTS_ENDECB = 0;
@@ -148,50 +148,48 @@ void ecb_encrypt(uint8_t const *const key_le, uint8_t const *const clear_text_le
 	}
 }
 
-void ecb_encrypt_nonblocking(struct ecb *ecb)
+void ecb_encrypt_nonblocking(struct ecb *e)
 {
 	/* prepare to be used in a BE AES h/w */
-	if (ecb->in_key_le) {
-		mem_rcopy(&ecb->in_key_be[0], ecb->in_key_le,
-			  sizeof(ecb->in_key_be));
+	if (e->in_key_le) {
+		mem_rcopy(&e->in_key_be[0], e->in_key_le, sizeof(e->in_key_be));
 	}
-	if (ecb->in_clear_text_le) {
-		mem_rcopy(&ecb->in_clear_text_be[0],
-			  ecb->in_clear_text_le,
-			  sizeof(ecb->in_clear_text_be));
+	if (e->in_clear_text_le) {
+		mem_rcopy(&e->in_clear_text_be[0], e->in_clear_text_le,
+			  sizeof(e->in_clear_text_be));
 	}
 
 	/* setup the encryption h/w */
 #if defined(NRF54L_SERIES)
-	NRF_ECB->KEY.VALUE[3] = ((uint32_t)ecb->in_key_be[0] << 24) |
-				((uint32_t)ecb->in_key_be[1] << 16) |
-				((uint32_t)ecb->in_key_be[2] << 8) |
-				(uint32_t)ecb->in_key_be[3];
-	NRF_ECB->KEY.VALUE[2] = ((uint32_t)ecb->in_key_be[4] << 24) |
-				((uint32_t)ecb->in_key_be[5] << 16) |
-				((uint32_t)ecb->in_key_be[6] << 8) |
-				(uint32_t)ecb->in_key_be[7];
-	NRF_ECB->KEY.VALUE[1] = ((uint32_t)ecb->in_key_be[8] << 24) |
-				((uint32_t)ecb->in_key_be[9] << 16) |
-				((uint32_t)ecb->in_key_be[10] << 8) |
-				(uint32_t)ecb->in_key_be[11];
-	NRF_ECB->KEY.VALUE[0] = ((uint32_t)ecb->in_key_be[12] << 24) |
-				((uint32_t)ecb->in_key_be[13] << 16) |
-				((uint32_t)ecb->in_key_be[14] << 8) |
-				(uint32_t)ecb->in_key_be[15];
+	NRF_ECB->KEY.VALUE[3] = ((uint32_t)e->in_key_be[0] << 24) |
+				((uint32_t)e->in_key_be[1] << 16) |
+				((uint32_t)e->in_key_be[2] << 8) |
+				(uint32_t)e->in_key_be[3];
+	NRF_ECB->KEY.VALUE[2] = ((uint32_t)e->in_key_be[4] << 24) |
+				((uint32_t)e->in_key_be[5] << 16) |
+				((uint32_t)e->in_key_be[6] << 8) |
+				(uint32_t)e->in_key_be[7];
+	NRF_ECB->KEY.VALUE[1] = ((uint32_t)e->in_key_be[8] << 24) |
+				((uint32_t)e->in_key_be[9] << 16) |
+				((uint32_t)e->in_key_be[10] << 8) |
+				(uint32_t)e->in_key_be[11];
+	NRF_ECB->KEY.VALUE[0] = ((uint32_t)e->in_key_be[12] << 24) |
+				((uint32_t)e->in_key_be[13] << 16) |
+				((uint32_t)e->in_key_be[14] << 8) |
+				(uint32_t)e->in_key_be[15];
 
-	struct ecb_job_ptr *in = (void *)((uint8_t *)ecb + sizeof(*ecb));
+	struct ecb_job_ptr *in = (void *)((uint8_t *)e + sizeof(*e));
 	struct ecb_job_ptr *out = (void *)((uint8_t *)in + 16U);
 
-	in[0].ptr = ecb->in_clear_text_be;
-	in[0].length = sizeof(ecb->in_clear_text_be);
+	in[0].ptr = e->in_clear_text_be;
+	in[0].length = sizeof(e->in_clear_text_be);
 	in[0].attribute = 7U;
 	in[1].ptr = NULL;
 	in[1].length = 0U;
 	in[1].attribute = 0U;
 
-	out[0].ptr = ecb->out_cipher_text_be;
-	out[0].length = sizeof(ecb->out_cipher_text_be);
+	out[0].ptr = e->out_cipher_text_be;
+	out[0].length = sizeof(e->out_cipher_text_be);
 	out[0].attribute = 7U;
 	out[1].ptr = NULL;
 	out[1].length = 0U;
@@ -200,7 +198,7 @@ void ecb_encrypt_nonblocking(struct ecb *ecb)
 	NRF_ECB->IN.PTR = (uint32_t)in;
 	NRF_ECB->OUT.PTR = (uint32_t)out;
 #else /* !NRF54L_SERIES */
-	NRF_ECB->ECBDATAPTR = (uint32_t)ecb;
+	NRF_ECB->ECBDATAPTR = (uint32_t)e;
 #endif /* !NRF54L_SERIES */
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
@@ -221,10 +219,10 @@ static void isr_ecb(const void *arg)
 
 	if (NRF_ECB->EVENTS_ERRORECB) {
 #if defined(NRF54L_SERIES)
-		struct ecb *ecb = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
-					   sizeof(struct ecb));
+		struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
+					 sizeof(struct ecb));
 #else /* !NRF54L_SERIES */
-		struct ecb *ecb = (struct ecb *)NRF_ECB->ECBDATAPTR;
+		struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
 #endif /* !NRF54L_SERIES */
 
 		NRF_ECB->EVENTS_ERRORECB = 0U;
@@ -235,15 +233,15 @@ static void isr_ecb(const void *arg)
 		/* cleanup interrupt */
 		irq_disable(ECB_IRQn);
 
-		ecb->fp_ecb(1, NULL, ecb->context);
+		e->fp_ecb(1, NULL, e->context);
 	}
 
 	else if (NRF_ECB->EVENTS_ENDECB) {
 #if defined(NRF54L_SERIES)
-		struct ecb *ecb = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
-					   sizeof(struct ecb));
+		struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
+					 sizeof(struct ecb));
 #else /* !NRF54L_SERIES */
-		struct ecb *ecb = (struct ecb *)NRF_ECB->ECBDATAPTR;
+		struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
 #endif /* !NRF54L_SERIES */
 
 		NRF_ECB->EVENTS_ENDECB = 0U;
@@ -254,8 +252,8 @@ static void isr_ecb(const void *arg)
 		/* cleanup interrupt */
 		irq_disable(ECB_IRQn);
 
-		ecb->fp_ecb(0, &ecb->out_cipher_text_be[0],
-			      ecb->context);
+		e->fp_ecb(0, &e->out_cipher_text_be[0],
+			      e->context);
 	}
 
 	else {
@@ -315,15 +313,15 @@ int ecb_ut(void)
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	uint8_t ecb_mem[sizeof(struct ecb) + 32U];
-	struct ecb *ecb = (void *)ecb_mem;
+	struct ecb *e = (void *)ecb_mem;
 	struct ecb_ut_context context;
 
 	(void)memset(&context, 0, sizeof(context));
-	ecb->in_key_le = key;
-	ecb->in_clear_text_le = clear_text;
-	ecb->fp_ecb = ecb_cb;
-	ecb->context = &context;
-	ecb_encrypt_nonblocking(ecb);
+	e->in_key_le = key;
+	e->in_clear_text_le = clear_text;
+	e->fp_ecb = ecb_cb;
+	e->context = &context;
+	ecb_encrypt_nonblocking(e);
 	do {
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 		k_busy_wait(10);
