@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include "test_gpio.h"
 
 static struct drv_data cb_data[2];
@@ -34,7 +33,7 @@ static void callback_remove_self(const struct device *dev,
 }
 
 static int init_callback(const struct device *dev_in, const struct device *dev_out,
-			gpio_callback_handler_t handler_1, gpio_callback_handler_t handler_2)
+			 gpio_callback_handler_t handler_1, gpio_callback_handler_t handler_2)
 {
 	int rc = gpio_pin_interrupt_configure(dev_in, PIN_IN, GPIO_INT_DISABLE);
 
@@ -65,7 +64,7 @@ static int init_callback(const struct device *dev_in, const struct device *dev_o
 }
 
 static void trigger_callback(const struct device *dev_in, const struct device *dev_out,
-			    int enable_cb)
+			     int enable_cb)
 {
 	gpio_pin_set(dev_out, PIN_OUT, 0);
 	k_sleep(K_MSEC(100));
