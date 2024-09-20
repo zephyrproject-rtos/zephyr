@@ -66,7 +66,7 @@
 #define DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
 		    (extern struct scmi_channel					\
-		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR(node_id), 0);),	\
+		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0);),	\
 		    (extern struct scmi_channel					\
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
 
@@ -110,7 +110,7 @@
  */
 #define DT_SCMI_TRANSPORT_TX_CHAN(node_id)					\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
-		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR(node_id), 0)),	\
+		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0)),	\
 		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)))
 
 /**
@@ -211,9 +211,9 @@
 #define DT_SCMI_PROTOCOL_DEFINE(node_id, init_fn, pm, data, config,		\
 				level, prio, api)				\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR(node_id), data);	\
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data);	\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm,					\
-			 &SCMI_PROTOCOL_NAME(DT_REG_ADDR(node_id)),		\
+			 &SCMI_PROTOCOL_NAME(DT_REG_ADDR_RAW(node_id)),		\
 					     config, level, prio, api)
 
 /**
@@ -247,7 +247,7 @@
  */
 #define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data)				\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
-	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR(node_id), data)
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data)
 
 /**
  * @brief Create an SCMI message field

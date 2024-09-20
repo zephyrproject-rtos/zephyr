@@ -37,6 +37,13 @@ Boards
 
 * Board ``qemu_xtensa`` is deprecated. Use ``qemu_xtensa/dc233c`` instead.
 
+Devicetree
+**********
+
+* The :c:macro:`DT_REG_ADDR` macro and its variants are now expanding into an
+  unsigned literals (i.e. with a ``U`` suffix). To use addresses as devicetree
+  indexes use the :c:macro:`DT_REG_ADDR_RAW` variants.
+
 STM32
 =====
 
