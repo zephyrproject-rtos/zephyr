@@ -650,53 +650,6 @@ static int spi_mcux_release(const struct device *dev, const struct spi_config *s
 	return 0;
 }
 
-static int spi_mcux_init(const struct device *dev)
-{
-	int err;
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
-
-	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-
-	config->irq_config_func(dev);
-
-	err = spi_context_cs_configure_all(&data->ctx);
-	if (err < 0) {
-		return err;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
-
-	data->dev = dev;
-
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	if (data->dma_tx.dma_dev && data->dma_rx.dma_dev) {
-		if (!device_is_ready(data->dma_tx.dma_dev)) {
-			LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
-			return -ENODEV;
-		}
-
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
-			LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
-			return -ENODEV;
-		}
-	}
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
-
-#ifdef CONFIG_SPI_RTIO
-	spi_rtio_init(data->rtio_ctx, dev);
-#endif
-
-	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-	if (err) {
-		return err;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
-
-	return 0;
-}
-
 #ifdef CONFIG_SPI_RTIO
 
 static inline void spi_mcux_iodev_prepare_start(const struct device *dev)
@@ -795,6 +748,53 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 }
 
 #endif
+
+static int spi_mcux_init(const struct device *dev)
+{
+	int err;
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	config->irq_config_func(dev);
+
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	data->dev = dev;
+
+#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
+	if (data->dma_tx.dma_dev && data->dma_rx.dma_dev) {
+		if (!device_is_ready(data->dma_tx.dma_dev)) {
+			LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
+			return -ENODEV;
+		}
+
+		if (!device_is_ready(data->dma_rx.dma_dev)) {
+			LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
+			return -ENODEV;
+		}
+	}
+#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
+
+#ifdef CONFIG_SPI_RTIO
+	spi_rtio_init(data->rtio_ctx, dev);
+#endif
+
+	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (err) {
+		return err;
+	}
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	return 0;
+}
 
 static const struct spi_driver_api spi_mcux_driver_api = {
 	.transceive = spi_mcux_transceive,
