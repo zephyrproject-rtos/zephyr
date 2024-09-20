@@ -224,15 +224,16 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 
 	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf,
 			     total_len, RING_ID, frame_is_timestamped, pkt);
-	if (ret == kStatus_Success) {
+
+	if (ret != kStatus_Success) {
+		LOG_ERR("ENET_SendFrame error: %d", ret);
+		ENET_ReclaimTxDescriptor(data->base, &data->enet_handle, RING_ID);
+		ret = -EIO;
 		goto exit;
 	}
 
 	if (frame_is_timestamped) {
 		eth_wait_for_ptp_ts(dev, pkt);
-	} else {
-		LOG_ERR("ENET_SendFrame error: %d", ret);
-		ENET_ReclaimTxDescriptor(data->base, &data->enet_handle, RING_ID);
 	}
 
 exit:
