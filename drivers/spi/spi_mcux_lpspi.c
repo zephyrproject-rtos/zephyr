@@ -751,20 +751,11 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 
 static int spi_mcux_init(const struct device *dev)
 {
-	int err;
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
+	int err;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-
-	config->irq_config_func(dev);
-
-	err = spi_context_cs_configure_all(&data->ctx);
-	if (err < 0) {
-		return err;
-	}
-
-	spi_context_unlock_unconditionally(&data->ctx);
 
 	data->dev = dev;
 
@@ -782,15 +773,21 @@ static int spi_mcux_init(const struct device *dev)
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
-#ifdef CONFIG_SPI_RTIO
-	spi_rtio_init(data->rtio_ctx, dev);
-#endif
+	err = spi_context_cs_configure_all(&data->ctx);
+	if (err < 0) {
+		return err;
+	}
 
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
 
+	config->irq_config_func(dev);
+
+#ifdef CONFIG_SPI_RTIO
+	spi_rtio_init(data->rtio_ctx, dev);
+#endif
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
