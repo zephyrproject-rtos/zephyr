@@ -15,4 +15,5 @@ supported:
   - uart
   - i2c
   - spi
+  - clock_control
 vendor: silabs
