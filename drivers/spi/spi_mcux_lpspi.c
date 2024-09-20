@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 #define DEV_CFG(_dev)  ((const struct spi_mcux_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct spi_mcux_data *)(_dev)->data)
 
+/* Argument to MCUX SDK IRQ handler */
+#define LPSPI_IRQ_HANDLE_ARG COND_CODE_1(CONFIG_NXP_LP_FLEXCOMM, (LPSPI_GetInstance(base)), (base))
+
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
 
@@ -85,12 +88,40 @@ struct spi_mcux_data {
 #endif
 };
 
+static int spi_mcux_transfer_next_packet(const struct device *dev);
 #ifdef CONFIG_SPI_RTIO
 static void spi_mcux_iodev_complete(const struct device *dev, int status);
 static inline int transceive_rtio(const struct device *dev, const struct spi_config *spi_cfg,
 				  const struct spi_buf_set *tx_bufs,
 				  const struct spi_buf_set *rx_bufs);
 #endif
+
+static void spi_mcux_isr(const struct device *dev)
+{
+	struct spi_mcux_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	LPSPI_MasterTransferHandleIRQ(LPSPI_IRQ_HANDLE_ARG, &data->handle);
+}
+
+static void spi_mcux_master_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
+				     status_t status, void *userData)
+{
+	struct spi_mcux_data *data = userData;
+
+#ifdef CONFIG_SPI_RTIO
+	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+
+	if (rtio_ctx->txn_head != NULL) {
+		spi_mcux_iodev_complete(data->dev, status);
+		return;
+	}
+#endif
+	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
+	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
+
+	spi_mcux_transfer_next_packet(data->dev);
+}
 
 static int spi_mcux_transfer_next_packet(const struct device *dev)
 {
@@ -153,38 +184,6 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 	}
 
 	return 0;
-}
-
-static void spi_mcux_isr(const struct device *dev)
-{
-	/* const struct spi_mcux_config *config = dev->config; */
-	struct spi_mcux_data *data = dev->data;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
-#if CONFIG_NXP_LP_FLEXCOMM
-	LPSPI_MasterTransferHandleIRQ(LPSPI_GetInstance(base), &data->handle);
-#else
-	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
-#endif
-}
-
-static void spi_mcux_master_transfer_callback(LPSPI_Type *base, lpspi_master_handle_t *handle,
-					      status_t status, void *userData)
-{
-	struct spi_mcux_data *data = userData;
-
-#ifdef CONFIG_SPI_RTIO
-	struct spi_rtio *rtio_ctx = data->rtio_ctx;
-
-	if (rtio_ctx->txn_head != NULL) {
-		spi_mcux_iodev_complete(data->dev, status);
-		return;
-	}
-#endif
-	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
-	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
-
-	spi_mcux_transfer_next_packet(data->dev);
 }
 
 static int spi_mcux_configure(const struct device *dev, const struct spi_config *spi_cfg)
@@ -264,8 +263,7 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 		base->CR |= LPSPI_CR_DBGEN_MASK;
 	}
 
-	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_transfer_callback,
-					 data);
+	LPSPI_MasterTransferCreateHandle(base, &data->handle, spi_mcux_master_callback, data);
 
 	LPSPI_SetDummyData(base, 0);
 
