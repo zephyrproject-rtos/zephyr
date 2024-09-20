@@ -16,7 +16,7 @@
  */
 #define SW0_NODE	DT_ALIAS(sw0)
 
-#if !DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#if !DT_NODE_HAS_STATUS_OKAY(SW0_NODE)
 #error "unsupported board: sw0 devicetree alias is not defined"
 #endif
 

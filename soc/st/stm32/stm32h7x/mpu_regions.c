@@ -21,8 +21,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 					REGION_512K |
 					MPU_RASR_XN_Msk | P_RW_U_NA_Msk) }),
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(mac), okay)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mac))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram3))
 	MPU_REGION_ENTRY("SRAM3_ETH_BUF",
 					 DT_REG_ADDR(DT_NODELABEL(sram3)),
 					 REGION_RAM_NOCACHE_ATTR(REGION_16K)),

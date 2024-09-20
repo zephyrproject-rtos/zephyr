@@ -702,7 +702,7 @@ static int gpio_stm32_init(const struct device *dev)
 	}
 
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
-	DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	/* Port G[15:2] requires external power supply */
 	/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
@@ -752,7 +752,7 @@ static int gpio_stm32_init(const struct device *dev)
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
 
 #define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio##__suffix), okay), \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)), \
 		    (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)), \
 		    ())
 

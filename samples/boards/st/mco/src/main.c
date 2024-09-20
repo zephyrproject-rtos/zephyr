@@ -25,7 +25,7 @@ int main(void)
 		return -1;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(mco2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mco2))
 	dev = DEVICE_DT_GET(DT_NODELABEL(mco2));
 	if (device_is_ready(dev)) {
 		printk("MCO2 device successfully configured\n");

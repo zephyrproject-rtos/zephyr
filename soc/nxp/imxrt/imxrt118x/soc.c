@@ -208,16 +208,16 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_UART_MCUX_LPUART) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart2), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart1)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart2)))
 	/* Configure LPUART0102 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_LPUART0102_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 10;
 #endif
 
 #if defined(CONFIG_I2C_MCUX_LPI2C) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c2), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c2)))
 	/* Configure LPI2C0102 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_LPI2C0102_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 4;
@@ -225,8 +225,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_I2C_MCUX_LPI2C) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c4), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c3)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c4)))
 	/* Configure LPI2C0304 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_LPI2C0304_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 4;
@@ -234,8 +234,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_I2C_MCUX_LPI2C) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c5), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c6), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c5)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c6)))
 	/* Configure LPI2C0506 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_LPI2C0506_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 4;
@@ -243,8 +243,8 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_SPI_MCUX_LPSPI) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi2), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi2)))
 	/* Configure LPSPI0102 using SYS_PLL3_PFD1_CLK */
 	rootCfg.mux = kCLOCK_LPSPI0102_ClockRoot_MuxSysPll3Pfd1;
 	rootCfg.div = 2;
@@ -253,28 +253,28 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if defined(CONFIG_COUNTER_MCUX_GPT)
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(gpt1), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpt1)))
 	/* Configure GPT1 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpt1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpt1)) */
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(gpt2), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpt2)))
 	/* Configure GPT2 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_GPT2_ClockRoot_MuxSysPll3Div2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt2, &rootCfg);
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpt2), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpt2)) */
 
 #endif /* CONFIG_COUNTER_MCUX_GPT */
 
 #ifdef CONFIG_MCUX_ACMP
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(acmp1), okay)  \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp2), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp3), okay) \
-	|| DT_NODE_HAS_STATUS(DT_NODELABEL(acmp4), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))  \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp2)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp3)) \
+	|| DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp4)))
 	/* Configure ACMP using MuxSysPll3Out */
 	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxSysPll3Out;
 	rootCfg.div = 2;

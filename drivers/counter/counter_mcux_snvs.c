@@ -311,7 +311,7 @@ static const struct counter_driver_api mcux_snvs_driver_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported snvs instance");
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 static struct mcux_snvs_data mcux_snvs_data_0;
 
 static void mcux_snvs_irq_config_0(const struct device *dev);
@@ -339,4 +339,4 @@ static void mcux_snvs_irq_config_0(const struct device *dev)
 		    mcux_snvs_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif  /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif  /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */

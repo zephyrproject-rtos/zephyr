@@ -88,84 +88,84 @@ static int frdm_mcxn236_init(void)
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm3))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom3Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm5))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom5Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer0Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer1Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer2Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer3Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif

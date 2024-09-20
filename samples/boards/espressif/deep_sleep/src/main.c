@@ -17,7 +17,7 @@
 #endif
 
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
-#if !DT_NODE_HAS_STATUS(DT_ALIAS(wakeup_button), okay)
+#if !DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(wakeup_button))
 #error "Unsupported: wakeup-button alias is not defined"
 #else
 static const struct gpio_dt_spec wakeup_button = GPIO_DT_SPEC_GET(DT_ALIAS(wakeup_button), gpios);

@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(lora_shell, CONFIG_LORA_LOG_LEVEL);
 
 #define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DEFAULT_RADIO_NODE, okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DEFAULT_RADIO_NODE),
 	     "No default LoRa radio specified in DT");
 
 static struct lora_modem_config modem_config = {

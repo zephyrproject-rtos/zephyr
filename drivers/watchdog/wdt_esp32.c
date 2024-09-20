@@ -226,10 +226,10 @@ static void wdt_esp32_isr(void *arg)
 }
 
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wdt0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt0))
 ESP32_WDT_INIT(0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wdt1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wdt1))
 ESP32_WDT_INIT(1);
 #endif
