@@ -91,7 +91,6 @@ static void print_phy_link_state(const struct shell *sh, const struct device *ph
 }
 #endif
 
-#if defined(CONFIG_NET_NATIVE)
 static const char *iface_flags2str(struct net_if *iface)
 {
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
@@ -148,17 +147,17 @@ static const char *iface_flags2str(struct net_if *iface)
 
 	return str;
 }
-#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
-#if defined(CONFIG_NET_NATIVE)
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_router *router;
+#endif
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -393,6 +392,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("\t<none>\n");
 	}
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
 	count = 0;
 
 	PR("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
@@ -421,6 +421,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 skip_ipv6:
 
@@ -532,12 +533,6 @@ skip_ipv4:
 		   iface->config.dhcpv4.attempts);
 	}
 #endif /* CONFIG_NET_DHCPV4 */
-
-#else
-	ARG_UNUSED(iface);
-	ARG_UNUSED(user_data);
-
-#endif /* CONFIG_NET_NATIVE */
 }
 
 static int cmd_net_set_mac(const struct shell *sh, size_t argc, char *argv[])
