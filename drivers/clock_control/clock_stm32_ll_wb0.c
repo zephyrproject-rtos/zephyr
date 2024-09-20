@@ -39,7 +39,7 @@
 
 #if DT_NODE_HAS_PROP(STM32_CLOCK_CONTROL_NODE, slow_clock)
 
-#	if !DT_NODE_HAS_STATUS(DT_RCC_SLOWCLK_NODE, okay)
+#	if !DT_NODE_HAS_STATUS_OKAY(DT_RCC_SLOWCLK_NODE)
 #		error slow-clock source is not enabled
 #	endif
 

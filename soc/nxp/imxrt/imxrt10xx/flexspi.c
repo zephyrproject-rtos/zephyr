@@ -28,7 +28,7 @@ uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate)
 		div_sel = kCLOCK_FlexspiDiv;
 		clk_name = kCLOCK_FlexSpi;
 		break;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
 	case IMX_CCM_FLEXSPI2_CLK:
 		/* Get clock root frequency */
 		root_rate = CLOCK_GetClockRootFreq(kCLOCK_Flexspi2ClkRoot) *

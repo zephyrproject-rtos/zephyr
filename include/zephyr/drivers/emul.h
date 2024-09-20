@@ -195,7 +195,7 @@ struct emul {
  * @return a @ref emul reference for the node identifier, which may be `NULL`.
  */
 #define EMUL_DT_GET_OR_NULL(node_id)                                                               \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), (EMUL_DT_GET(node_id)), (NULL))
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (EMUL_DT_GET(node_id)), (NULL))
 
 /**
  * @brief Set up a list of emulators

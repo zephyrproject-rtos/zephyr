@@ -97,7 +97,7 @@ void SEGGER_SYSVIEW_Conf(void)
 	SEGGER_SYSVIEW_Init(sys_clock_hw_cycles_per_sec(),
 			    sys_clock_hw_cycles_per_sec(),
 			    &SYSVIEW_X_OS_TraceAPI, cbSendSystemDesc);
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_sram), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_sram))
 	SEGGER_SYSVIEW_SetRAMBase(DT_REG_ADDR(DT_CHOSEN(zephyr_sram)));
 #else
 	/* Setting RAMBase is just an optimization: this value is subtracted

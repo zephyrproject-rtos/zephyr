@@ -519,7 +519,7 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 			DT_NODE_HAS_PROP(DT_DRV_INST(n), interrupts)),		\
 			"interrupts and interrupt-parent must be set when "	\
 			"using external interrupts");				\
-	IF_ENABLED(DT_NODE_HAS_STATUS(GPIO_NXP_S32_EIRQ_NODE(n), okay), (	\
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_EIRQ_NODE(n)), (	\
 		static uint8_t gpio_nxp_s32_eirq_data_##n[] = {			\
 			LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),			\
 				GPIO_NXP_S32_EIRQ_PIN_LINE, (,), n)		\
@@ -533,7 +533,7 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	))
 
 #define GPIO_NXP_S32_GET_EIRQ_INFO(n)						\
-	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS(GPIO_NXP_S32_EIRQ_NODE(n), okay),\
+	.eirq_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_EIRQ_NODE(n)),\
 				&gpio_nxp_s32_eirq_##n),
 #else
 #define GPIO_NXP_S32_SET_EIRQ_INFO(n)
@@ -547,7 +547,7 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	BUILD_ASSERT((DT_INST_NODE_HAS_PROP(n, nxp_wkpu) ==			\
 			DT_INST_NODE_HAS_PROP(n, nxp_wkpu_interrupts)),		\
 			"nxp,wkpu and nxp,wkpu-interrupts must be provided");	\
-	IF_ENABLED(DT_NODE_HAS_STATUS(GPIO_NXP_S32_WKPU_NODE(n), okay), (	\
+	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_WKPU_NODE(n)), (	\
 		static uint8_t gpio_nxp_s32_wkpu_data_##n[] =			\
 			DT_INST_PROP(n, nxp_wkpu_interrupts);			\
 		static struct gpio_nxp_s32_irq_config gpio_nxp_s32_wkpu_##n = {	\
@@ -560,7 +560,7 @@ static const struct gpio_driver_api gpio_nxp_s32_driver_api = {
 	))
 
 #define GPIO_NXP_S32_GET_WKPU_INFO(n)						\
-	.wkpu_info = UTIL_AND(DT_NODE_HAS_STATUS(GPIO_NXP_S32_WKPU_NODE(n), okay),\
+	.wkpu_info = UTIL_AND(DT_NODE_HAS_STATUS_OKAY(GPIO_NXP_S32_WKPU_NODE(n)),\
 				&gpio_nxp_s32_wkpu_##n)
 #else
 #define GPIO_NXP_S32_SET_WKPU_INFO(n)

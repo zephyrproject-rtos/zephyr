@@ -445,7 +445,7 @@ int mchp_ecia_info_unset_callback(int ecia_info)
  * Leaving a node disabled also allows another driver/application to take over
  * aggregation by managing the GIRQ itself.
  */
-#define XEC_CHK_REQ_AGGR(n) DT_NODE_HAS_STATUS(n, okay) |
+#define XEC_CHK_REQ_AGGR(n) DT_NODE_HAS_STATUS_OKAY(n) |
 
 #define XEC_ECIA_REQUIRE_AGGR_ISR					\
 	(								\

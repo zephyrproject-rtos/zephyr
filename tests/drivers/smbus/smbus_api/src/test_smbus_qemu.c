@@ -16,7 +16,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/smbus.h>
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(smbus0), okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smbus0)),
 	     "SMBus node is disabled!");
 
 /* Qemu q35 has default emulated EEPROM-like devices */

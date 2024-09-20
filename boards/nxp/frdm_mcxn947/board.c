@@ -127,7 +127,7 @@ static int frdm_mcxn947_init(void)
 
 	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
 	/* Set up PLL1 for 80 MHz FlexCAN clock */
 	const pll_setup_t pll1Setup = {
 		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(27U) |
@@ -146,50 +146,50 @@ static int frdm_mcxn947_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm1))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom1Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm2))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom2Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm4))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcom4Clk, 1u);
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(os_timer), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	CLOCK_EnableClock(kCLOCK_Gpio0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
 	CLOCK_SetClkDiv(kCLOCK_DivDac0Clk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_DAC0);
@@ -197,7 +197,7 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Dac0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac1))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac1);
 	CLOCK_SetClkDiv(kCLOCK_DivDac1Clk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_DAC1);
@@ -205,7 +205,7 @@ static int frdm_mcxn947_init(void)
 	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 	CLOCK_EnableClock(kCLOCK_Enet);
 	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
@@ -214,41 +214,41 @@ static int frdm_mcxn947_init(void)
 	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(wwdt0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
 	CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, 1u);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer0Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer1))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer1Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer2))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer2Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER2);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer3))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer3Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER3);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ctimer4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
 	CLOCK_SetClkDiv(kCLOCK_DivCtimer4Clk, 1U);
 	CLOCK_AttachClk(kPLL0_to_CTIMER4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexcan0Clk, 1U);
 	CLOCK_AttachClk(kPLL1_CLK0_to_FLEXCAN0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0))
 	CLOCK_SetClkDiv(kCLOCK_DivUSdhcClk, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_USDHC);
 #endif
@@ -260,17 +260,17 @@ static int frdm_mcxn947_init(void)
 	enable_cache64();
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(vref), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vref))
 	CLOCK_EnableClock(kCLOCK_Vref);
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlVref);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpadc0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
 	CLOCK_SetClkDiv(kCLOCK_DivAdc0Clk, 1U);
 	CLOCK_AttachClk(kFRO_HF_to_ADC0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
 		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
 	};
@@ -312,13 +312,13 @@ static int frdm_mcxn947_init(void)
 	USB_EhciPhyInit(kUSB_ControllerEhci0, BOARD_XTAL0_CLK_HZ, &usbPhyConfig);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpcmp0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
 	CLOCK_SetClkDiv(kCLOCK_DivCmp0FClk, 1U);
 	CLOCK_AttachClk(kFRO12M_to_CMP0F);
 	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
 
 /*
  * Clock Select Decides what input source the lptmr will clock from
@@ -340,9 +340,9 @@ static int frdm_mcxn947_init(void)
 	CLOCK_SetupClockCtrl(kCLOCK_CLKIN_ENA_FM_USBH_LPT);
 #endif /* DT_PROP(DT_NODELABEL(lptmr0), clk_source) */
 
-#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(lptmr0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0)) */
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 1u);
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
 #endif

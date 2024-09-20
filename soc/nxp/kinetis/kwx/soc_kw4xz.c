@@ -67,14 +67,14 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 
 #if defined(CONFIG_PWM) && \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay) || \
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay) || \
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm0)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm1)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm2)))
 	CLOCK_SetTpmClock(TPMSRC_MCGPLLCLK);
 #endif
 }

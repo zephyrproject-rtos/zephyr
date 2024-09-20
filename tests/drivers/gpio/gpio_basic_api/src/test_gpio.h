@@ -12,7 +12,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, test_gpio_basic_api))
 
 /* Execution of the test requires hardware configuration described in
  * devicetree.  See the test,gpio_basic_api binding local to this test
@@ -29,11 +29,11 @@
 #define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
 #define PIN_IN_FLAGS DT_GPIO_FLAGS(DT_INST(0, test_gpio_basic_api), in_gpios)
 
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_0), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_0))
 #define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_0))
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_1), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_1))
 #define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_1))
-#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_3), okay)
+#elif DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(gpio_3))
 #define DEV DT_GPIO_CTLR(DT_ALIAS(gpio_3))
 #else
 #error Unsupported board

@@ -32,23 +32,23 @@ static void test_ram_rw(uint32_t *mem, size_t size)
 	}
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram1))
 BUF_DEF(sdram1);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram2))
 BUF_DEF(sdram2);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
 BUF_DEF(sram1);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
 BUF_DEF(sram2);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 BUF_DEF(psram);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ram0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
 #define RAM_SIZE DT_REG_SIZE(DT_NODELABEL(ram0))
 static uint32_t *buf_ram0 = (uint32_t *)DT_REG_ADDR(DT_NODELABEL(ram0));
 #endif
@@ -57,7 +57,7 @@ ZTEST_SUITE(test_ram, NULL, NULL, NULL, NULL, NULL);
 
 ZTEST(test_ram, test_sdram1)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram1))
 	test_ram_rw(buf_sdram1, BUF_SIZE);
 #else
 	ztest_test_skip();
@@ -66,7 +66,7 @@ ZTEST(test_ram, test_sdram1)
 
 ZTEST(test_ram, test_ram0)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ram0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ram0))
 	test_ram_rw(buf_ram0, RAM_SIZE);
 #else
 	ztest_test_skip();
@@ -75,7 +75,7 @@ ZTEST(test_ram, test_ram0)
 
 ZTEST(test_ram, test_sdram2)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sdram2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sdram2))
 	test_ram_rw(buf_sdram2, BUF_SIZE);
 #else
 	ztest_test_skip();
@@ -84,7 +84,7 @@ ZTEST(test_ram, test_sdram2)
 
 ZTEST(test_ram, test_sram1)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram1))
 	test_ram_rw(buf_sram1, BUF_SIZE);
 #else
 	ztest_test_skip();
@@ -93,7 +93,7 @@ ZTEST(test_ram, test_sram1)
 
 ZTEST(test_ram, test_sram2)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(sram2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sram2))
 	test_ram_rw(buf_sram2, BUF_SIZE);
 #else
 	ztest_test_skip();
@@ -102,7 +102,7 @@ ZTEST(test_ram, test_sram2)
 
 ZTEST(test_ram, test_psram)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(memc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(memc))
 	test_ram_rw(buf_psram, BUF_SIZE);
 #else
 	ztest_test_skip();

@@ -366,7 +366,7 @@ static int pinctrl_it8xxx2_init(const struct device *dev)
 	gpio_base->GPIO_GCR &= ~IT8XXX2_GPIO_LPCRSTEN;
 
 #ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
-#if defined(CONFIG_I2C_ITE_ENHANCE) && DT_NODE_HAS_STATUS(DT_NODELABEL(i2c5), okay)
+#if defined(CONFIG_I2C_ITE_ENHANCE) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c5))
 	const struct gpio_dt_spec scl_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), scl_gpios);
 	const struct gpio_dt_spec sda_gpios = GPIO_DT_SPEC_GET(DT_NODELABEL(i2c5), sda_gpios);
 
