@@ -1070,11 +1070,6 @@ static void dwc2_exit_hibernation(const struct device *dev)
 	sys_set_bits((mem_addr_t)&base->dctl, USB_DWC2_DCTL_PWRONPRGDONE);
 	k_msleep(1);
 	sys_write32(0xFFFFFFFFUL, (mem_addr_t)&base->gintsts);
-
-	dwc2_restore_device_registers(dev);
-
-	priv->hibernated = 0;
-	LOG_DBG("Hibernation exit complete");
 }
 
 static void cancel_hibernation_request(struct udc_dwc2_data *const priv)
@@ -1971,6 +1966,7 @@ static int udc_dwc2_enable(const struct device *dev)
 static int udc_dwc2_disable(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
 	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
 	mem_addr_t dctl_reg = (mem_addr_t)&base->dctl;
 	int err;
@@ -1990,6 +1986,12 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	config->irq_disable_func(dev);
+
+	if (priv->hibernated) {
+		dwc2_exit_hibernation(dev);
+		priv->hibernated = 0;
+	}
+
 	sys_clear_bits((mem_addr_t)&base->gahbcfg, USB_DWC2_GAHBCFG_GLBINTRMASK);
 
 	err = dwc2_quirk_disable(dev);
@@ -2707,6 +2709,10 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 	struct udc_dwc2_data *const priv = udc_get_private(dev);
 
 	dwc2_exit_hibernation(dev);
+	dwc2_restore_device_registers(dev);
+
+	priv->hibernated = 0;
+	LOG_DBG("Hibernation exit complete");
 
 	/* Let stack know we are no longer suspended */
 	udc_set_suspended(dev, false);
