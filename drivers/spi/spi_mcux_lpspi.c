@@ -272,7 +272,10 @@ static int spi_mcux_configure(const struct device *dev, const struct spi_config 
 }
 
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-static int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_size);
+static bool lpspi_inst_has_dma(const struct spi_mcux_data *data)
+{
+	return (data->dma_tx.dma_dev && data->dma_rx.dma_dev);
+}
 
 /* This function is executed in the interrupt context */
 static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
@@ -550,7 +553,9 @@ out:
 
 	return ret;
 }
-#endif
+#else
+#define lpspi_inst_has_dma(arg) arg != arg
+#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
 
 #ifdef CONFIG_SPI_RTIO
 
@@ -613,7 +618,7 @@ static int spi_mcux_transceive(const struct device *dev, const struct spi_config
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	const struct spi_mcux_data *data = dev->data;
 
-	if (data->dma_rx.dma_dev && data->dma_tx.dma_dev) {
+	if (lpspi_inst_has_dma(data)) {
 		return transceive_dma(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL, NULL);
 	}
 #endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
@@ -630,7 +635,7 @@ static int spi_mcux_transceive_async(const struct device *dev, const struct spi_
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 	struct spi_mcux_data *data = dev->data;
 
-	if (data->dma_rx.dma_dev && data->dma_tx.dma_dev) {
+	if (lpspi_inst_has_dma(data)) {
 		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 	}
 
@@ -749,29 +754,42 @@ static void spi_mcux_iodev_complete(const struct device *dev, int status)
 
 #endif
 
+#if defined(CONFIG_SPI_MCUX_LPSPI_DMA)
+static int lpspi_dma_dev_ready(const struct device *dma_dev)
+{
+	if (!device_is_ready(dma_dev)) {
+		LOG_ERR("%s device is not ready", dma_dev->name);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static int lpspi_dma_devs_ready(struct spi_mcux_data *data)
+{
+	return lpspi_dma_dev_ready(data->dma_tx.dma_dev) |
+	       lpspi_dma_dev_ready(data->dma_rx.dma_dev);
+}
+#else
+#define lpspi_dma_devs_ready(...) 0
+#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
+
 static int spi_mcux_init(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
-	int err;
+	int err = 0;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	data->dev = dev;
 
-#ifdef CONFIG_SPI_MCUX_LPSPI_DMA
-	if (data->dma_tx.dma_dev && data->dma_rx.dma_dev) {
-		if (!device_is_ready(data->dma_tx.dma_dev)) {
-			LOG_ERR("%s device is not ready", data->dma_tx.dma_dev->name);
-			return -ENODEV;
-		}
-
-		if (!device_is_ready(data->dma_rx.dma_dev)) {
-			LOG_ERR("%s device is not ready", data->dma_rx.dma_dev->name);
-			return -ENODEV;
-		}
+	if (IS_ENABLED(CONFIG_SPI_MCUX_LPSPI_DMA) && lpspi_inst_has_dma(data)) {
+		err = lpspi_dma_devs_ready(data);
 	}
-#endif /* CONFIG_SPI_MCUX_LPSPI_DMA */
+	if (err < 0) {
+		return err;
+	}
 
 	err = spi_context_cs_configure_all(&data->ctx);
 	if (err < 0) {
