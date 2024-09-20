@@ -208,6 +208,8 @@ Drivers and Sensors
 
 * PWM
 
+  * rpi_pico: The driver now configures the divide ratio adaptively.
+
 * Regulators
 
 * Reset
