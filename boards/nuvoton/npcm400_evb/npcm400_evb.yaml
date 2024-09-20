@@ -14,3 +14,5 @@ toolchain:
 ram: 768
 flash: 1024
 vendor: nuvoton
+supported:
+  - clock
