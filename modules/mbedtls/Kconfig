@@ -42,6 +42,16 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
+config MBEDTLS_INSTALL_PATH
+	string "mbedTLS install path"
+	depends on MBEDTLS_LIBRARY
+	help
+	  This option holds the path where the mbedTLS external libraries
+	  and headers are installed. Make sure this option is properly set
+	  when MBEDTLS_LIBRARY is enabled otherwise the build will fail.
+
+if MBEDTLS_BUILTIN
+
 config CUSTOM_MBEDTLS_CFG_FILE
 	bool "Custom mbed TLS configuration file"
 	help
@@ -50,8 +60,7 @@ config CUSTOM_MBEDTLS_CFG_FILE
 	  MBEDTLS_CFG_FILE setting.
 
 config MBEDTLS_CFG_FILE
-	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
-	depends on MBEDTLS_BUILTIN
+	string "Mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
 	default "config-tls-generic.h"
 	help
 	  Use a specific mbedTLS configuration file. The default config file
@@ -68,7 +77,8 @@ config MBEDTLS_USER_CONFIG_ENABLE
 	  the generic config file.
 
 config MBEDTLS_USER_CONFIG_FILE
-	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
+	string "User configuration file for mbed TLS"
+	depends on MBEDTLS_USER_CONFIG_ENABLE
 	help
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
@@ -78,12 +88,36 @@ module-str = Log level mbedTLS library debug hook
 source "subsys/logging/Kconfig.template.log_config"
 
 menu "Mbed TLS configuration"
-	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+	depends on MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
 rsource "Kconfig.crypto"
 rsource "Kconfig.tls-x509"
 
-endmenu
+endmenu # "Mbed TLS configuration"
+
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
+config MBEDTLS_TEST
+	bool "Compile internal self test functions"
+	help
+	  Enable self test function for the crypto algorithms
+
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "MbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
+
+endif # MBEDTLS_BUILTIN
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
@@ -159,28 +193,6 @@ config MBEDTLS_DEBUG_STRIP_NEWLINE
 
 endif # MBEDTLS_DEBUG
 
-config MBEDTLS_MEMORY_DEBUG
-	bool "mbed TLS memory debug activation"
-	depends on MBEDTLS_BUILTIN
-	help
-	  Enable debugging of buffer allocator memory issues. Automatically
-	  prints (to stderr) all (fatal) messages on memory allocation
-	  issues. Enables function for 'debug output' of allocated memory.
-
-config MBEDTLS_TEST
-	bool "Compile internal self test functions"
-	depends on MBEDTLS_BUILTIN
-	help
-	  Enable self test function for the crypto algorithms
-
-config MBEDTLS_INSTALL_PATH
-	string "mbedTLS install path"
-	depends on MBEDTLS_LIBRARY
-	help
-	  This option holds the path where the mbedTLS libraries and headers are
-	  installed. Make sure this option is properly set when MBEDTLS_LIBRARY
-	  is enabled otherwise the build will fail.
-
 config MBEDTLS_ENABLE_HEAP
 	bool "Global heap for mbed TLS"
 	help
@@ -244,15 +256,5 @@ config APP_LINK_WITH_MBEDTLS
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
-
-config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
-	bool "MbedTLS optimizations for OpenThread"
-	depends on NET_L2_OPENTHREAD
-	default y if !NET_SOCKETS_SOCKOPT_TLS
-	help
-	  Enable some OpenThread specific mbedTLS optimizations that allows to
-	  save some RAM/ROM when OpenThread is used. Note, that when application
-	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
-	  sockets), it's advised to disable this option.
 
 endif # MBEDTLS

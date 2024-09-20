@@ -34,9 +34,7 @@ config MBEDTLS_SSL_ALPN
 
 endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
 
-endmenu # TLS
-
-comment "Supported key exchange modes"
+menu "Ciphersuites"
 
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
@@ -120,6 +118,8 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 
 endif # MBEDTLS_TLS_VERSION_1_3
 
+endmenu # Ciphersuites
+
 config MBEDTLS_SERVER_NAME_INDICATION
 	bool "Support for RFC 6066 server name indication (SNI) in SSL"
 	help
@@ -134,11 +134,11 @@ config MBEDTLS_SSL_CACHE_C
 if MBEDTLS_SSL_CACHE_C
 
 config MBEDTLS_SSL_CACHE_DEFAULT_TIMEOUT
-	int "Default timeout for SSL cache entires"
+	int "Default timeout for SSL cache entries"
 	default 86400
 
 config MBEDTLS_SSL_CACHE_DEFAULT_MAX_ENTRIES
-	int "Maximum number of SSL cache entires"
+	int "Maximum number of SSL cache entries"
 	default 5
 
 endif # MBEDTLS_SSL_CACHE_C
@@ -173,6 +173,10 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 	  twice this value will be allocated (on mbedTLS own heap, so the
 	  value of MBEDTLS_HEAP_SIZE should accommodate that).
 
+endmenu # TLS
+
+menu "X.509"
+
 config MBEDTLS_X509_CRL_PARSE_C
 	bool "X.509 CRL parsing"
 	help
@@ -190,3 +194,5 @@ config MBEDTLS_X509_CSR_PARSE_C
 
 config MBEDTLS_X509_CRT_WRITE_C
 	bool "X.509 certificate creation"
+
+endmenu # X.509
