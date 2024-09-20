@@ -31,6 +31,8 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_SETUP,
 	/* Transaction on endpoint is finished */
 	DWC2_DRV_EVT_EP_FINISHED,
+	/* Core should enter hibernation */
+	DWC2_DRV_EVT_ENTER_HIBERNATION,
 	/* Core should exit hibernation due to bus reset */
 	DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET,
 	/* Core should exit hibernation due to host resume */
@@ -1073,6 +1075,18 @@ static void dwc2_exit_hibernation(const struct device *dev)
 
 	priv->hibernated = 0;
 	LOG_DBG("Hibernation exit complete");
+}
+
+static void cancel_hibernation_request(struct udc_dwc2_data *const priv)
+{
+	k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
+}
+
+static void request_hibernation(struct udc_dwc2_data *const priv)
+{
+	if (priv->suspend_type == DWC2_SUSPEND_HIBERNATION) {
+		k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
+	}
 }
 
 static void dwc2_unset_unused_fifo(const struct device *dev)
@@ -2624,6 +2638,8 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			sys_write32(USB_DWC2_GINTSTS_USBRST, gintsts_reg);
 			dwc2_on_bus_reset(dev);
 			LOG_DBG("USB Reset interrupt");
+
+			cancel_hibernation_request(priv);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_ENUMDONE) {
@@ -2638,6 +2654,8 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			sys_write32(USB_DWC2_GINTSTS_WKUPINT, gintsts_reg);
 			udc_set_suspended(dev, false);
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
+			cancel_hibernation_request(priv);
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_IEPINT) {
@@ -2664,9 +2682,11 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 		}
 
 		if (int_status & USB_DWC2_GINTSTS_USBSUSP) {
+			/* Clear USB Suspend interrupt. */
+			sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
+
 			if (!priv->enumdone) {
-				/* Clear stale suspend interrupt */
-				sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
+				/* Ignore stale suspend interrupt */
 				continue;
 			}
 
@@ -2674,18 +2694,39 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			udc_set_suspended(dev, true);
 			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 
-			if (priv->suspend_type == DWC2_SUSPEND_HIBERNATION) {
-				dwc2_enter_hibernation(dev);
-				/* Next interrupt will be from PMU */
-				break;
-			}
-
-			/* Clear USB Suspend interrupt. */
-			sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
+			request_hibernation(priv);
 		}
 	}
 
 	(void)dwc2_quirk_irq_clear(dev);
+}
+
+static void dwc2_handle_hibernation_exit(const struct device *dev,
+					 bool bus_reset)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	dwc2_exit_hibernation(dev);
+
+	/* Let stack know we are no longer suspended */
+	udc_set_suspended(dev, false);
+	udc_submit_event(dev, UDC_EVT_RESUME, 0);
+
+	if (bus_reset) {
+		/* Clear all pending transfers */
+		k_event_clear(&priv->xfer_new, UINT32_MAX);
+		k_event_clear(&priv->xfer_finished, UINT32_MAX);
+		dwc2_on_bus_reset(dev);
+	} else {
+		/* Resume any pending transfer handling */
+		if (k_event_test(&priv->xfer_new, UINT32_MAX)) {
+			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
+		}
+
+		if (k_event_test(&priv->xfer_finished, UINT32_MAX)) {
+			k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
+		}
+	}
 }
 
 static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
@@ -2727,9 +2768,14 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	if (evt & BIT(DWC2_DRV_EVT_XFER)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
 
-		LOG_DBG("New transfer(s) in the queue");
-		eps = k_event_test(&priv->xfer_new, UINT32_MAX);
-		k_event_clear(&priv->xfer_new, eps);
+		if (!priv->hibernated) {
+			LOG_DBG("New transfer(s) in the queue");
+			eps = k_event_test(&priv->xfer_new, UINT32_MAX);
+			k_event_clear(&priv->xfer_new, eps);
+		} else {
+			/* Events will be handled after hibernation exit */
+			eps = 0;
+		}
 
 		while (eps) {
 			ep = pull_next_ep_from_bitmap(&eps);
@@ -2746,8 +2792,13 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 	if (evt & BIT(DWC2_DRV_EVT_EP_FINISHED)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_EP_FINISHED));
 
-		eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
-		k_event_clear(&priv->xfer_finished, eps);
+		if (!priv->hibernated) {
+			eps = k_event_test(&priv->xfer_finished, UINT32_MAX);
+			k_event_clear(&priv->xfer_finished, eps);
+		} else {
+			/* Events will be handled after hibernation exit */
+			eps = 0;
+		}
 
 		while (eps) {
 			ep = pull_next_ep_from_bitmap(&eps);
@@ -2776,22 +2827,30 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 		dwc2_handle_evt_setup(dev);
 	}
 
+	if (evt & BIT(DWC2_DRV_EVT_ENTER_HIBERNATION)) {
+		config->irq_disable_func(dev);
+
+		prev = k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENTER_HIBERNATION));
+
+		/* Only enter hibernation if IRQ did not cancel the request */
+		if (prev & BIT(DWC2_DRV_EVT_ENTER_HIBERNATION)) {
+			dwc2_enter_hibernation(dev);
+		}
+
+		config->irq_enable_func(dev);
+	}
+
 	if (evt & hibernation_exit_events) {
+		bool bus_reset;
+
 		LOG_DBG("Hibernation exit event");
 		config->irq_disable_func(dev);
 
 		prev = k_event_clear(&priv->drv_evt, hibernation_exit_events);
+		bus_reset = prev & BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET);
 
 		if (priv->hibernated) {
-			dwc2_exit_hibernation(dev);
-
-			/* Let stack know we are no longer suspended */
-			udc_set_suspended(dev, false);
-			udc_submit_event(dev, UDC_EVT_RESUME, 0);
-
-			if (prev & BIT(DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET)) {
-				dwc2_on_bus_reset(dev);
-			}
+			dwc2_handle_hibernation_exit(dev, bus_reset);
 		}
 
 		config->irq_enable_func(dev);
