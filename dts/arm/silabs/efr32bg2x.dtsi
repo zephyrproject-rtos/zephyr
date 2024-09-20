@@ -93,6 +93,14 @@
 	};
 
 	soc {
+		cmu: clock@50008000 {
+			compatible = "silabs,series-clock";
+			reg = <0x50008000 0x4000>;
+			interrupt-names = "cmu";
+			status = "okay";
+			#clock-cells = <2>;
+		};
+
 		msc: flash-controller@50030000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x50030000 0xC69>;

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SILABS_SERIES
+	bool "Silicon Labs Series 2+ clock control driver"
+	default y
+	depends on DT_HAS_SILABS_SERIES_CLOCK_ENABLED
+	help
+	  Enable Silicon Labs Series 2+ Clock Management Unit clock control driver.
