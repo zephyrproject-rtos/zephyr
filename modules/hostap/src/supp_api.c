@@ -1410,6 +1410,57 @@ int hapd_config_network(struct hostapd_iface *iface,
 out:
 	return ret;
 }
+
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+{
+	struct hostapd_iface *iface;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+	int ret = 0;
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
+		if (!wifi_mgmt_api || !wifi_mgmt_api->ap_config_params) {
+			wpa_printf(MSG_ERROR, "ap_config_params not supported");
+			return -ENOTSUP;
+		}
+
+		ret = wifi_mgmt_api->ap_config_params(dev, params);
+		if (ret) {
+			wpa_printf(MSG_ERROR,
+				   "Failed to set maximum inactivity duration for stations");
+		} else {
+			wpa_printf(MSG_INFO, "Set maximum inactivity duration for stations: %d (s)",
+				   params->max_inactivity);
+		}
+	}
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+		iface = get_hostapd_handle(dev);
+		if (!iface) {
+			ret = -ENOENT;
+			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+			goto out;
+		}
+
+		if (iface->state > HAPD_IFACE_DISABLED) {
+			ret = -EBUSY;
+			wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
+			goto out;
+		}
+
+		if (!hostapd_cli_cmd_v("set max_num_sta %d", params->max_num_sta)) {
+			ret = -EINVAL;
+			wpa_printf(MSG_ERROR, "Failed to set maximum number of stations");
+			goto out;
+		}
+		wpa_printf(MSG_INFO, "Set maximum number of stations: %d", params->max_num_sta);
+
+out:
+		k_mutex_unlock(&wpa_supplicant_mutex);
+	}
+
+	return ret;
+}
 #endif
 
 int supplicant_ap_enable(const struct device *dev,
