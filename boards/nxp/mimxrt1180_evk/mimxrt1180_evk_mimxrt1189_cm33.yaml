@@ -20,4 +20,5 @@ supported:
   - i2c
   - counter
   - adc
+  - netif:eth
 vendor: nxp
