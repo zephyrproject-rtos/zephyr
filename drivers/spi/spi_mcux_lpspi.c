@@ -39,6 +39,10 @@ LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 /* Argument to MCUX SDK IRQ handler */
 #define LPSPI_IRQ_HANDLE_ARG COND_CODE_1(CONFIG_NXP_LP_FLEXCOMM, (LPSPI_GetInstance(base)), (base))
 
+/* flag for SDK API for master transfers */
+#define LPSPI_MASTER_XFER_CFG_FLAGS(slave)                                                         \
+	kLPSPI_MasterPcsContinuous | (slave << LPSPI_MASTER_PCS_SHIFT)
+
 #ifdef CONFIG_SPI_MCUX_LPSPI_DMA
 #include <zephyr/drivers/dma.h>
 
@@ -137,8 +141,7 @@ static int spi_mcux_transfer_next_packet(const struct device *dev)
 
 	data->transfer_len = max_chunk;
 
-	transfer.configFlags =
-		kLPSPI_MasterPcsContinuous | (ctx->config->slave << LPSPI_MASTER_PCS_SHIFT);
+	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(ctx->config->slave);
 	transfer.txData = (ctx->tx_len == 0 ? NULL : ctx->tx_buf);
 	transfer.rxData = (ctx->rx_len == 0 ? NULL : ctx->rx_buf);
 	transfer.dataSize = max_chunk;
@@ -550,8 +553,7 @@ static void spi_mcux_iodev_start(const struct device *dev)
 	lpspi_transfer_t transfer;
 	status_t status;
 
-	transfer.configFlags =
-		kLPSPI_MasterPcsContinuous | (spi_cfg->slave << LPSPI_MASTER_PCS_SHIFT);
+	transfer.configFlags = LPSPI_MASTER_XFER_CFG_FLAGS(spi_cfg->slave);
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
