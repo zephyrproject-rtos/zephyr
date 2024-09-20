@@ -255,13 +255,12 @@ static int timestamp_print(const struct log_output *output,
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
 #if defined(CONFIG_REQUIRES_FULL_LIBC)
 			char time_str[sizeof("1970-01-01T00:00:00")];
-			struct tm *tm;
-			time_t time;
+			struct tm tm_timestamp = {0};
+			time_t time_seconds = total_seconds;
 
-			time = total_seconds;
-			tm = gmtime(&time);
+			gmtime_r(&time_seconds, &tm_timestamp);
 
-			strftime(time_str, sizeof(time_str), "%FT%T", tm);
+			strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
 
 			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
@@ -289,12 +288,12 @@ static int timestamp_print(const struct log_output *output,
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
 #if defined(CONFIG_REQUIRES_FULL_LIBC)
 				char time_str[sizeof("1970-01-01 00:00:00")];
-				struct tm *tm_timestamp;
+				struct tm tm_timestamp = {0};
 				time_t time_seconds = total_seconds;
 
-				tm_timestamp = gmtime(&time_seconds);
+				gmtime_r(&time_seconds, &tm_timestamp);
 
-				strftime(time_str, sizeof(time_str), "%F %T", tm_timestamp);
+				strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
 
 				length = print_formatted(output, "[%s.%03u,%03u] ", time_str, ms,
 							 us);
@@ -311,12 +310,12 @@ static int timestamp_print(const struct log_output *output,
 			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
 #if defined(CONFIG_REQUIRES_FULL_LIBC)
 				char time_str[sizeof("1970-01-01T00:00:00")];
-				struct tm *tm_timestamp;
+				struct tm tm_timestamp = {0};
 				time_t time_seconds = total_seconds;
 
-				tm_timestamp = gmtime(&time_seconds);
+				gmtime_r(&time_seconds, &tm_timestamp);
 
-				strftime(time_str, sizeof(time_str), "%FT%T", tm_timestamp);
+				strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
 
 				length = print_formatted(output, "[%s,%06uZ] ", time_str,
 							 ms * 1000U + us);
