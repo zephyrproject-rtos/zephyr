@@ -80,6 +80,6 @@ PM_DEVICE_DEFINE(test_driver, test_driver_action, PM_DEVICE_TYPE);
 
 static struct test_driver_data data;
 
-DEVICE_DEFINE(test_driver, "test_driver", &test_driver_init,
+DEVICE_INSTANCE(test_driver, &test_driver_init,
 	      PM_DEVICE_GET(test_driver), &data, NULL, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+	      NULL);

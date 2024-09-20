@@ -97,9 +97,9 @@ static struct pch_config pch_config_data = {
 	.pcie = &pcie_params,
 };
 
-DEVICE_DEFINE(dummy_driver, SMBUS_EMUL, &pch_smbus_init,
+DEVICE_INSTANCE(dummy_driver, &pch_smbus_init,
 	      NULL, &smbus_data, &pch_config_data, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+	      &funcs);
 
 ZTEST(test_smbus_emul, test_byte)
 {

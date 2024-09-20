@@ -26,8 +26,8 @@ int dev_pm_control(const struct device *dev, enum pm_device_action action)
 }
 
 PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_pm_control);
-DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), dev_init, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
-		 NULL, NULL, POST_KERNEL, 80, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(test_dev), dev_init, PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)),
+		 NULL, NULL, POST_KERNEL, NULL);
 
 ZTEST(device_power_domain, test_device_power_domain)
 {

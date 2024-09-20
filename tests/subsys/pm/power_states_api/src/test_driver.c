@@ -65,6 +65,6 @@ PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), test_driver_action);
 
 static struct test_driver_data data;
 
-DEVICE_DT_DEFINE(DT_NODELABEL(test_dev), test_driver_init,
+DEVICE_INSTANCE(DT_NODELABEL(test_dev), test_driver_init,
 	      PM_DEVICE_DT_GET(DT_NODELABEL(test_dev)), &data, NULL, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+	      NULL);

@@ -43,8 +43,8 @@ static const struct bt_hci_driver_api driver_api = {
 #define TEST_DEVICE_INIT(inst) \
 	static struct driver_data driver_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &driver_data_##inst, NULL,\
+			      POST_KERNEL, &driver_api)
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 

@@ -51,8 +51,8 @@ static int drv_init(const struct device *dev)
 #define TEST_DEVICE_INIT(inst) \
 	static struct drv_data drv_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, drv_init, NULL, &drv_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv_api)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, drv_init, NULL, &drv_data_##inst, NULL,\
+			      POST_KERNEL, &drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
 

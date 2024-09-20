@@ -53,15 +53,13 @@ static struct subsystem_api my_driver_B_api_funcs = {
 /**
  * @cond INTERNAL_HIDDEN
  */
-DEVICE_DEFINE(my_driver_A, MY_DRIVER_A, &common_driver_init,
+DEVICE_INSTANCE(my_driver_A, &common_driver_init,
 		NULL, NULL, NULL,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&my_driver_A_api_funcs);
+		POST_KERNEL, &my_driver_A_api_funcs);
 
-DEVICE_DEFINE(my_driver_B, MY_DRIVER_B, &common_driver_init,
+DEVICE_INSTANCE(my_driver_B, &common_driver_init,
 		NULL, NULL, NULL,
-		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&my_driver_B_api_funcs);
+		POST_KERNEL, &my_driver_B_api_funcs);
 
 /**
  * @endcond

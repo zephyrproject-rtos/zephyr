@@ -24,25 +24,25 @@ PM_DEVICE_DEFINE(dummy_pm_driver_3, dummy_device_pm_action);
 PM_DEVICE_DEFINE(dummy_pm_driver_4, dummy_device_pm_action);
 #endif
 
-DEVICE_DEFINE(device_0, "device@0", NULL, NULL,
+DEVICE_INSTANCE(device_0, NULL, NULL,
 	      NULL, NULL,
-	      POST_KERNEL, 0, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_1, "device@1", NULL, PM_DEVICE_GET(dummy_pm_driver_1),
+DEVICE_INSTANCE(device_1, NULL, PM_DEVICE_GET(dummy_pm_driver_1),
 	      NULL, NULL,
-	      POST_KERNEL, 1, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_2, "device@2", NULL, PM_DEVICE_GET(dummy_pm_driver_2),
+DEVICE_INSTANCE(device_2, NULL, PM_DEVICE_GET(dummy_pm_driver_2),
 	      NULL, NULL,
-	      POST_KERNEL, 2, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_3, "device@3", NULL, PM_DEVICE_GET(dummy_pm_driver_3),
+DEVICE_INSTANCE(device_3, NULL, PM_DEVICE_GET(dummy_pm_driver_3),
 	      NULL, NULL,
-	      POST_KERNEL, 3, NULL);
+	      POST_KERNEL, NULL);
 
-DEVICE_DEFINE(device_4, "device@4", NULL, PM_DEVICE_GET(dummy_pm_driver_4),
+DEVICE_INSTANCE(device_4, NULL, PM_DEVICE_GET(dummy_pm_driver_4),
 	      NULL, NULL,
-	      POST_KERNEL, 4, NULL);
+	      POST_KERNEL, NULL);
 
 #ifdef CONFIG_PM_DEVICE
 static const struct device *d2 = &DEVICE_NAME_GET(device_2);

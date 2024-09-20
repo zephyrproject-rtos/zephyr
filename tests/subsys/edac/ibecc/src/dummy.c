@@ -16,10 +16,9 @@
 
 static const struct edac_driver_api edac_dummy_api = { 0 };
 
-DEVICE_DEFINE(dummy_edac, "dummy_edac", NULL, NULL,
+DEVICE_INSTANCE(dummy_edac, NULL, NULL,
 	      NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-	      &edac_dummy_api);
+	      POST_KERNEL, &edac_dummy_api);
 
 ZTEST(ibecc, test_edac_dummy_api)
 {

@@ -34,30 +34,30 @@ static int dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(TEST_GPIO, dev_init, NULL,
-		 NULL, NULL, PRE_KERNEL_1, 90, NULL);
-DEVICE_DT_DEFINE(TEST_I2C, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 10, NULL);
-DEVICE_DT_DEFINE(TEST_DEVA, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 20, NULL);
+DEVICE_INSTANCE(TEST_GPIO, dev_init, NULL,
+		 NULL, NULL, PRE_KERNEL_1, NULL);
+DEVICE_INSTANCE(TEST_I2C, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_DEVA, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* NB: Intentional init devb before required gpiox */
-DEVICE_DT_DEFINE(TEST_DEVB, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 30, NULL);
-DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 40, NULL);
-DEVICE_DT_DEFINE(TEST_DEVC, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 50, NULL);
-DEVICE_DT_DEFINE(TEST_PARTITION, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 60, NULL);
+DEVICE_INSTANCE(TEST_DEVB, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_GPIOX, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_DEVC, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_PARTITION, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* Device with both an existing and missing injected dependency */
 DEVICE_DT_DEFINE(TEST_GPIO_INJECTED, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 70, NULL, DT_DEP_ORD(TEST_DEVB), 999);
 /* Manually specified device */
-DEVICE_DEFINE(manual_dev, "Manual Device", dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 80, NULL);
+DEVICE_INSTANCE(manual_dev, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* Device with no nodelabel */
-DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
+DEVICE_INSTANCE(TEST_NOLABEL, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
