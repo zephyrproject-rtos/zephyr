@@ -1267,10 +1267,9 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 		.hs_desc = cdc_acm_hs_desc_##n,					\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, usbd_cdc_acm_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, usbd_cdc_acm_preinit, NULL,		\
 		&uart_data_##n, NULL,						\
-		PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,			\
-		&cdc_acm_uart_api);
+		PRE_KERNEL_1, &cdc_acm_uart_api);
 
 DT_INST_FOREACH_STATUS_OKAY(USBD_CDC_ACM_DT_DEVICE_DEFINE);
 

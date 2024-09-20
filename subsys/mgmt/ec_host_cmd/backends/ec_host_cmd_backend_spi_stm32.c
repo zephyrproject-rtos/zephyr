@@ -848,11 +848,11 @@ static int ec_host_cmd_spi_stm32_pm_action(const struct device *dev,
 
 PM_DEVICE_DT_DEFINE(DT_CHOSEN(zephyr_host_cmd_spi_backend), ec_host_cmd_spi_stm32_pm_action);
 
-DEVICE_DT_DEFINE(DT_CHOSEN(zephyr_host_cmd_spi_backend),
+DEVICE_INSTANCE(DT_CHOSEN(zephyr_host_cmd_spi_backend),
 		 NULL,
 		 PM_DEVICE_DT_GET(DT_CHOSEN(zephyr_host_cmd_spi_backend)),
 		 &ec_host_cmd_spi, NULL,
-		 PRE_KERNEL_1, CONFIG_EC_HOST_CMD_INIT_PRIORITY, NULL);
+		 PRE_KERNEL_1, NULL);
 
 #ifdef CONFIG_EC_HOST_CMD_INITIALIZE_AT_BOOT
 static int host_cmd_init(void)

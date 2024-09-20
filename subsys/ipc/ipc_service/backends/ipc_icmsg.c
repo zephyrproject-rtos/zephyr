@@ -74,13 +74,12 @@ static int backend_init(const struct device *instance)
 		.rx_pb = &rx_pb_##i,					\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(i,					\
+	DEVICE_INSTANCE_FROM_DT_INST(i,					\
 			 &backend_init,					\
 			 NULL,						\
 			 &backend_data_##i,				\
 			 &backend_config_##i,				\
 			 POST_KERNEL,					\
-			 CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY,	\
 			 &backend_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BACKEND_DEVICE)

@@ -733,13 +733,11 @@ static int usb_hid_device_init(const struct device *dev)
 	struct hid_device_info usb_hid_dev_data_##x
 
 #define DEFINE_HID_DEVICE(x, _)						\
-	DEVICE_DEFINE(usb_hid_device_##x,				\
-			    CONFIG_USB_HID_DEVICE_NAME "_" #x,		\
+	DEVICE_INSTANCE(usb_hid_device_##x,				\
 			    &usb_hid_device_init,			\
 			    NULL,					\
 			    &usb_hid_dev_data_##x,			\
 			    &hid_config_##x, POST_KERNEL,		\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &hid_api)
 
 LISTIFY(CONFIG_USB_HID_DEVICE_COUNT, DEFINE_HID_DESCR, (;), _);

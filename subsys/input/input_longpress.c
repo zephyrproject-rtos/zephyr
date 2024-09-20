@@ -136,8 +136,8 @@ static int longpress_init(const struct device *dev)
 		.long_delays_ms = DT_INST_PROP(inst, long_delay_ms),                               \
 	};                                                                                         \
 	                                                                                           \
-	DEVICE_DT_INST_DEFINE(inst, longpress_init, NULL,                                          \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, longpress_init, NULL,                                   \
 			      NULL, &longpress_config_##inst,                                      \
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_LONGPRESS_DEFINE)
