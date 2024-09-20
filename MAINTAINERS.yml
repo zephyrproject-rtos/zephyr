@@ -2079,6 +2079,7 @@ Release Notes:
   collaborators:
     - loicpoulain
     - josuah
+    - ngphibang
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
