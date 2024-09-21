@@ -2579,24 +2579,27 @@ static int cmd_wifi_dpp_ap_qr_code(const struct shell *sh, size_t argc, char *ar
 
 static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *argv[])
 {
-	int ret = 0;
-	struct net_if *iface = net_if_get_wifi_sap();
-	struct wifi_dpp_params params = {0};
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"peer", required_argument, 0, 'p'}, {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"peer", required_argument, 0, 'p'},
+		{0, 0, 0, 0}};
+	int ret = 0;
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_dpp_params params = {0};
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = getopt_long(argc, argv, "p:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "p:",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'p':
-			params.auth_init.peer = shell_strtol(optarg, 10, &ret);
+			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
