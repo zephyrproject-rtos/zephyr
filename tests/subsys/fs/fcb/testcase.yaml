@@ -4,8 +4,6 @@ tests:
       - nrf52840dk/nrf52840
       - nrf52dk/nrf52832
       - nrf51dk/nrf51822
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
