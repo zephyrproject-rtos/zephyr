@@ -3505,6 +3505,19 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+Bouffalolab Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - boards/bouffalolab/
+    - drivers/*/*bflb*
+    - dts/riscv/bouffalolab/
+    - dts/bindings/*/bflb,*
+    - soc/bouffalolab/
+  labels:
+    - "platform: bouffalolab"
+
 Broadcom Platforms:
   status: odd fixes
   files:
@@ -4935,6 +4948,15 @@ West:
     - modules/Kconfig.atmel
   labels:
     - "platform: Microchip SAM"
+
+"West project: hal_bouffalolab":
+  status: maintained
+  maintainers:
+    - nandojve
+  files:
+    - modules/hal_bouffalolab/
+  labels:
+    - "platform: Bouffalo Lab"
 
 "West project: hal_cypress":
   status: maintained
