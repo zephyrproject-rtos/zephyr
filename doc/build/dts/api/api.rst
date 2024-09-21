@@ -429,6 +429,13 @@ device.
    * - zephyr,log-uart
      - Sets the UART device(s) used by the logging subsystem's UART backend.
        If defined, the UART log backend would output to the devices listed in this node.
+   * - zephyr,nocache-ram
+     - Passes the phandle of a memory region node, that is defined as uncached in
+       devicetree using the ``zephyr,memory-attr`` property and that has the compatible
+       :dtcompatible:`zephyr,memory-region`, to the linker so that uncached symbols are
+       automatically placed in it.
+       Note that this property is actually used by the linker only when
+       :kconfig:option:`CONFIG_NOCACHE_MEMORY` is set.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
    * - zephyr,osdp-uart
