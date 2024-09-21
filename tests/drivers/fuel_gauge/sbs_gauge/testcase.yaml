@@ -53,6 +53,5 @@ tests:
       - CONFIG_TEST_SBS_CUTOFF_EXTENSION=y
       - CONFIG_USERSPACE=y
     platform_allow:
-      - native_posix
       - native_sim
       - qemu_x86
