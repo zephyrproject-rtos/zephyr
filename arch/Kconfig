@@ -414,6 +414,9 @@ config NOCACHE_MEMORY
 	  not be cached. This memory section can be used to perform DMA
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
+	  When a custom uncached memory region is provided by the user,
+	  using the 'zephyr,nocache-ram' chosen property, the linker will
+	  use that memory region instead for uncached symbols.
 
 config FRAME_POINTER
 	bool "Compile the kernel with frame pointers"
