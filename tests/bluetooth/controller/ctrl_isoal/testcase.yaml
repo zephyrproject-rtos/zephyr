@@ -3,7 +3,6 @@ common:
 tests:
   bluetooth.isoal.test:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim
