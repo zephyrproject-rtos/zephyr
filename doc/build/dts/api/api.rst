@@ -423,6 +423,9 @@ device.
        interprocess-communication (IPC)
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,led-strip
+     - A LED-strip node which is used to determine the timings of the
+       WS2812 GPIO driver
    * - zephyr,log-uart
      - Sets the UART device(s) used by the logging subsystem's UART backend.
        If defined, the UART log backend would output to the devices listed in this node.
@@ -453,6 +456,3 @@ device.
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS
-   * - zephyr,led-strip
-     - A LED-strip node which is used to determine the timings of the
-       WS2812 GPIO driver
