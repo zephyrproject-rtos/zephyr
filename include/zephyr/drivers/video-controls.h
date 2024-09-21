@@ -52,41 +52,55 @@ extern "C" {
  */
 
 /**
- * @name Generic class control IDs
+ * @name Base class control IDs
  * @{
  */
-/** Mirror the picture horizontally */
+#define VIDEO_CID_CAMERA_BRIGHTNESS	(VIDEO_CID_BASE + 0)
+#define VIDEO_CID_CAMERA_CONTRAST	(VIDEO_CID_BASE + 1)
+#define VIDEO_CID_CAMERA_SATURATION	(VIDEO_CID_BASE + 2)
+#define VIDEO_CID_CAMERA_HUE		(VIDEO_CID_BASE + 3)
+#define VIDEO_CID_CAMERA_EXPOSURE	(VIDEO_CID_BASE + 17)
+#define VIDEO_CID_CAMERA_GAIN		(VIDEO_CID_BASE + 19)
 #define VIDEO_CID_HFLIP			(VIDEO_CID_BASE + 20)
-/** Mirror the picture vertically */
 #define VIDEO_CID_VFLIP			(VIDEO_CID_BASE + 21)
 /** Power line frequency (enum) filter to avoid flicker */
 #define VIDEO_CID_POWER_LINE_FREQUENCY	(VIDEO_CID_BASE + 24)
-/** Pixel rate (pixels/second) in the device's pixel array. This control is read-only. */
-#define VIDEO_CID_PIXEL_RATE		(VIDEO_CID_IMAGE_PROC_CLASS_BASE + 2)
 enum video_power_line_frequency {
 	VIDEO_CID_POWER_LINE_FREQUENCY_DISABLED = 0,
 	VIDEO_CID_POWER_LINE_FREQUENCY_50HZ = 1,
 	VIDEO_CID_POWER_LINE_FREQUENCY_60HZ = 2,
 	VIDEO_CID_POWER_LINE_FREQUENCY_AUTO = 3,
 };
+#define VIDEO_CID_CAMERA_WHITE_BAL	(VIDEO_CID_BASE + 26)
 /**
  * @}
  */
 
 /**
- * @name Camera class control IDs
+ * @name Camera class controls IDs
  * @{
  */
-#define VIDEO_CID_CAMERA_EXPOSURE	(VIDEO_CID_BASE + 17)
-#define VIDEO_CID_CAMERA_GAIN		(VIDEO_CID_BASE + 19)
 #define VIDEO_CID_CAMERA_ZOOM		(VIDEO_CID_CAMERA_CLASS_BASE + 13)
-#define VIDEO_CID_CAMERA_BRIGHTNESS	(VIDEO_CID_BASE + 0)
-#define VIDEO_CID_CAMERA_SATURATION	(VIDEO_CID_BASE + 2)
-#define VIDEO_CID_CAMERA_WHITE_BAL	(VIDEO_CID_BASE + 26)
-#define VIDEO_CID_CAMERA_CONTRAST	(VIDEO_CID_BASE + 1)
-#define VIDEO_CID_CAMERA_COLORBAR	(VIDEO_CID_IMAGE_PROC_CLASS_BASE + 3)
-#define VIDEO_CID_CAMERA_HUE		(VIDEO_CID_BASE + 3)
+/**
+ * @}
+ */
+
+/**
+ * @name JPEG class control IDs
+ * @{
+ */
 #define VIDEO_CID_CAMERA_QUALITY	(VIDEO_CID_JPEG_CLASS_BASE + 3)
+/**
+ * @}
+ */
+
+/**
+ * @name Image Processing class control IDs
+ * @{
+ */
+/** Pixel rate (pixels/second) in the device's pixel array. This control is read-only. */
+#define VIDEO_CID_PIXEL_RATE		(VIDEO_CID_IMAGE_PROC_CLASS_BASE + 2)
+#define VIDEO_CID_CAMERA_COLORBAR	(VIDEO_CID_IMAGE_PROC_CLASS_BASE + 3)
 /**
  * @}
  */
