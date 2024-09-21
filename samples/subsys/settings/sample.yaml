@@ -7,8 +7,6 @@ tests:
     timeout: 10
     platform_allow:
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
