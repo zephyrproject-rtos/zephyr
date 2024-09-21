@@ -56,6 +56,8 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
 	EC(ETHERNET_DSA_SLAVE_PORT,       "DSA slave port"),
 	EC(ETHERNET_DSA_MASTER_PORT,      "DSA master port"),
+	EC(ETHERNET_TXTIME,               "TXTIME supported"),
+	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
 };
 
 static void print_supported_ethernet_capabilities(
