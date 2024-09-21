@@ -5,14 +5,12 @@ tests:
   sample.bluetooth.hap_ha.monaural:
     harness: bluetooth
     platform_allow:
-      - native_posix
       - native_sim
     tags: bluetooth
     build_only: true
   sample.bluetooth.hap_ha.monaural_no_presets:
     harness: bluetooth
     platform_allow:
-      - native_posix
       - native_sim
     tags: bluetooth
     build_only: true
@@ -21,7 +19,6 @@ tests:
   sample.bluetooth.hap_ha.banded:
     harness: bluetooth
     platform_allow:
-      - native_posix
       - native_sim
     tags: bluetooth
     extra_args: OVERLAY_CONFIG="banded.conf"
@@ -29,7 +26,6 @@ tests:
   sample.bluetooth.hap_ha.binaural:
     harness: bluetooth
     platform_allow:
-      - native_posix
       - native_sim
     tags: bluetooth
     extra_args: OVERLAY_CONFIG="binaural.conf"
