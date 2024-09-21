@@ -1,7 +1,6 @@
 common:
   # Default platform_allow & integration_platforms for the tests below, which a few override
   platform_allow:
-    - native_posix
     - native_sim
   integration_platforms:
     - native_sim
@@ -11,8 +10,6 @@ tests:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     platform_allow:
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - nrf52840dk/nrf52840
@@ -26,29 +23,21 @@ tests:
     extra_configs:
       - CONFIG_BT_TRANSMIT_POWER_CONTROL=y
       - CONFIG_BT_CTLR=n
-    platform_allow:
-      - native_sim
     build_only: true
   bluetooth.shell.path_loss_monitoring:
     extra_configs:
       - CONFIG_BT_PATH_LOSS_MONITORING=y
       - CONFIG_BT_CTLR=n
-    platform_allow:
-      - native_posix
     build_only: true
   bluetooth.shell.subrating:
     extra_configs:
       - CONFIG_BT_SUBRATING=y
       - CONFIG_BT_CTLR=n
-    platform_allow:
-      - native_sim
     build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
       - CONFIG_BT_CTLR=n
-    platform_allow:
-      - native_sim
     build_only: true
   bluetooth.shell.cdc_acm:
     extra_args:
@@ -56,13 +45,9 @@ tests:
       - DTC_OVERLAY_FILE="usb.overlay"
     depends_on: usb_device
     platform_allow:
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - nrf52840dk/nrf52840
-    integration_platforms:
-      - native_sim
     platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
@@ -74,12 +59,8 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
-    integration_platforms:
-      - native_sim
     platform_exclude: nrf52dk/nrf52810
     tags: bluetooth
     harness: keyboard
@@ -382,19 +363,16 @@ tests:
   bluetooth.audio_shell.no_gmap:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_GMAP=n
   bluetooth.audio_shell.no_cap_commander:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_CAP_COMMANDER=n
   bluetooth.audio_shell.only_cap_commander:
     extra_args: CONF_FILE="audio.conf"
     build_only: true
-    platform_allow: native_sim
     extra_configs:
       - CONFIG_BT_BAP_UNICAST_CLIENT=n
       - CONFIG_BT_CAP_ACCEPTOR=n
