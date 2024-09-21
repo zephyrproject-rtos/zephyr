@@ -7,8 +7,6 @@ tests:
   drivers.eeprom.api:
     # Tests overwrite EEPROM content, only run on select boards
     platform_allow:
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - qemu_x86
@@ -22,8 +20,6 @@ tests:
       - DTC_OVERLAY_FILE=at2x_emul.overlay
       - OVERLAY_CONFIG=at2x_emul.conf
     platform_allow:
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
     integration_platforms:
