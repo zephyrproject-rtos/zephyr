@@ -254,6 +254,23 @@ static inline unsigned int irq_get_intc_irq(unsigned int irq)
 			      (level == 3 ? CONFIG_2ND_LEVEL_INTERRUPT_BITS : 0));
 }
 
+/**
+ * @brief Increment a multilevel IRQ
+ *
+ * @param irq IRQ number to increment
+ * @param inc Amount to increment
+ *
+ * @return @a irq incremented by @a inc
+ */
+static inline uint32_t irq_increment(uint32_t irq, uint32_t inc)
+{
+	unsigned int level = irq_get_level(irq);
+	uint32_t local_irq = irq_from_level(irq, level);
+	uint32_t parent_irq = irq_get_intc_irq(irq);
+
+	return irq_to_level(local_irq + inc, level) | parent_irq;
+}
+
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 #ifdef __cplusplus
 }
