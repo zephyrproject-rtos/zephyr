@@ -15,7 +15,6 @@ tests:
       - mimxrt1060_evk
       - mimxrt1064_evk
       - qemu_x86
-      - native_posix
       - native_sim
       - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
