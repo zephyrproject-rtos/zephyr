@@ -244,44 +244,46 @@ static void spi_mcux_dma_callback(const struct device *dev, void *arg, uint32_t 
 	/* arg directly holds the spi device */
 	const struct device *spi_dev = arg;
 	struct spi_mcux_data *data = (struct spi_mcux_data *)spi_dev->data;
+	char debug_char;
 
 	if (status < 0) {
-		LOG_ERR("DMA callback error with channel %d.", channel);
-		data->status_flags |= LPSPI_DMA_ERROR_FLAG;
-	} else {
-		/* identify the origin of this callback */
-		if (channel == data->dma_tx.channel) {
-			/* this part of the transfer ends */
-			data->status_flags |= LPSPI_DMA_TX_DONE_FLAG;
-			LOG_DBG("DMA TX Block Complete");
-		} else if (channel == data->dma_rx.channel) {
-			/* this part of the transfer ends */
-			data->status_flags |= LPSPI_DMA_RX_DONE_FLAG;
-			LOG_DBG("DMA RX Block Complete");
-		} else {
-			LOG_ERR("DMA callback channel %d is not valid.", channel);
-			data->status_flags |= LPSPI_DMA_ERROR_FLAG;
-		}
+		goto error;
 	}
-#if CONFIG_SPI_ASYNC
-	if (data->ctx.asynchronous &&
-	    ((data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG)) {
-		/* Load dma blocks of equal length */
-		size_t dma_size = MIN(data->ctx.tx_len, data->ctx.rx_len);
 
-		if (dma_size == 0) {
-			dma_size = MAX(data->ctx.tx_len, data->ctx.rx_len);
+	/* identify the origin of this callback */
+	if (channel == data->dma_tx.channel) {
+		/* this part of the transfer ends */
+		data->status_flags |= LPSPI_DMA_TX_DONE_FLAG;
+		debug_char = 'T';
+	} else if (channel == data->dma_rx.channel) {
+		/* this part of the transfer ends */
+		data->status_flags |= LPSPI_DMA_RX_DONE_FLAG;
+		debug_char = 'R';
+	} else {
+		goto error;
+	}
+
+	LOG_DBG("DMA %cX Block Complete", debug_char);
+
+#if CONFIG_SPI_ASYNC
+	if (data->ctx.asynchronous && (data->status_flags & LPSPI_DMA_DONE_FLAG)) {
+		/* Load dma blocks of equal length */
+		size_t dma_size = spi_context_max_continuous_chunk(data->ctx);
+
+		if (dma_size != 0) {
+			return;
 		}
 
 		spi_context_update_tx(&data->ctx, 1, dma_size);
 		spi_context_update_rx(&data->ctx, 1, dma_size);
-
-		if (data->ctx.tx_len == 0 && data->ctx.rx_len == 0) {
-			spi_context_complete(&data->ctx, spi_dev, 0);
-		}
-		return;
 	}
 #endif
+
+	goto done;
+error:
+	LOG_ERR("DMA callback error with channel %d.", channel);
+	data->status_flags |= LPSPI_DMA_ERROR_FLAG;
+done:
 	spi_context_complete(&data->ctx, spi_dev, 0);
 }
 
