@@ -11,8 +11,6 @@ tests:
     platform_allow:
       - frdm_k64f
       - sam_e70_xplained/same70q21
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - nucleo_f767zi
