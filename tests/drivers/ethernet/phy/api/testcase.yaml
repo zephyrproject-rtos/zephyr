@@ -1,0 +1,5 @@
+tests:
+  drivers.ethernet.phy.api:
+    tags:
+      - drivers
+      - api
