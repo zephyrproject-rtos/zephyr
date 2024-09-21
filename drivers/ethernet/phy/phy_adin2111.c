@@ -146,7 +146,7 @@ static int phy_adin2111_c45_setup_dev_reg(const struct device *dev, uint16_t dev
 	return mdio_write(cfg->mdio, cfg->phy_addr, ADIN1100_MMD_ACCESS_CNTRL, devad | BIT(14));
 }
 
-static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_read(const struct device *dev, uint8_t devad,
 				 uint16_t reg, uint16_t *val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
@@ -165,7 +165,7 @@ static int phy_adin2111_c45_read(const struct device *dev, uint16_t devad,
 	return mdio_read_c45(cfg->mdio, cfg->phy_addr, devad, reg, val);
 }
 
-static int phy_adin2111_c45_write(const struct device *dev, uint16_t devad,
+static int phy_adin2111_c45_write(const struct device *dev, uint8_t devad,
 				  uint16_t reg, uint16_t val)
 {
 	const struct phy_adin2111_config *cfg = dev->config;
@@ -208,6 +208,36 @@ static int phy_adin2111_reg_write(const struct device *dev, uint16_t reg_addr,
 	mdio_bus_enable(cfg->mdio);
 
 	ret = phy_adin2111_c22_write(dev, reg_addr, (uint16_t) data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
+}
+
+static int phy_adin2111_reg_read_mmd(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+				     uint32_t *data)
+{
+	const struct phy_adin2111_config *cfg = dev->config;
+	int ret;
+
+	mdio_bus_enable(cfg->mdio);
+
+	ret = phy_adin2111_c45_read(dev, dev_addr, reg_addr, (uint16_t *)data);
+
+	mdio_bus_disable(cfg->mdio);
+
+	return ret;
+}
+
+static int phy_adin2111_reg_write_mmd(const struct device *dev, uint8_t dev_addr, uint16_t reg_addr,
+				      uint32_t data)
+{
+	const struct phy_adin2111_config *cfg = dev->config;
+	int ret;
+
+	mdio_bus_enable(cfg->mdio);
+
+	ret = phy_adin2111_c45_write(dev, dev_addr, reg_addr, (uint16_t)data);
 
 	mdio_bus_disable(cfg->mdio);
 
@@ -634,6 +664,8 @@ static const struct ethphy_driver_api phy_adin2111_api = {
 	.link_cb_set = phy_adin2111_link_cb_set,
 	.read = phy_adin2111_reg_read,
 	.write = phy_adin2111_reg_write,
+	.read_mmd = phy_adin2111_reg_read_mmd,
+	.write_mmd = phy_adin2111_reg_write_mmd,
 };
 
 #define ADIN2111_PHY_INITIALIZE(n)						\
