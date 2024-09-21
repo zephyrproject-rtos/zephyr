@@ -6,7 +6,6 @@ common:
 tests:
   drivers.video.build:
     platform_allow:
-      - native_posix
       - native_sim
     min_ram: 32
     depends_on:
