@@ -86,9 +86,7 @@ struct spi_mcux_data {
 	struct spi_dma_stream dma_rx;
 	struct spi_dma_stream dma_tx;
 	/* dummy value used for transferring NOP when tx buf is null */
-	uint32_t dummy_tx_buffer;
-	/* dummy value used to read RX data into when rx buf is null */
-	uint32_t dummy_rx_buffer;
+	uint32_t dummy_buffer;
 #endif
 };
 
@@ -287,138 +285,206 @@ done:
 	spi_context_complete(&data->ctx, spi_dev, 0);
 }
 
-static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
+static struct dma_block_config *spi_mcux_dma_common_load(struct spi_dma_stream *stream,
+							 const struct device *dev,
+							 const uint8_t *buf, size_t len)
 {
 	struct spi_mcux_data *data = dev->data;
-	struct dma_block_config *blk_cfg;
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
-	/* remember active TX DMA channel (used in callback) */
-	struct spi_dma_stream *stream = &data->dma_tx;
-
-	blk_cfg = &stream->dma_blk_cfg;
+	struct dma_block_config *blk_cfg = &stream->dma_blk_cfg;
 
 	/* prepare the block for this TX DMA channel */
 	memset(blk_cfg, 0, sizeof(struct dma_block_config));
 
+	blk_cfg->block_size = len;
+
 	if (buf == NULL) {
-		/* Treat the transfer as a peripheral to peripheral one, so that DMA
-		 * reads from this address each time
-		 */
-		blk_cfg->source_address = (uint32_t)&data->dummy_tx_buffer;
+		blk_cfg->source_address = (uint32_t)&data->dummy_buffer;
+		blk_cfg->dest_address = (uint32_t)&data->dummy_buffer;
+		/* pretend it is peripheral xfer so DMA just xfer to dummy buf */
 		stream->dma_cfg.channel_direction = PERIPHERAL_TO_PERIPHERAL;
 	} else {
-		/* tx direction has memory as source and periph as dest. */
 		blk_cfg->source_address = (uint32_t)buf;
-		stream->dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		blk_cfg->dest_address = (uint32_t)buf;
 	}
-	/* Enable scatter/gather */
-	blk_cfg->source_gather_en = 1;
-	/* Dest is LPSPI tx fifo */
-	blk_cfg->dest_address = LPSPI_GetTxRegisterAddress(base);
-	blk_cfg->block_size = len;
+
 	/* Transfer 1 byte each DMA loop */
 	stream->dma_cfg.source_burst_length = 1;
+	stream->dma_cfg.user_data = (void *)dev;
+	stream->dma_cfg.head_block = blk_cfg;
 
-	stream->dma_cfg.head_block = &stream->dma_blk_cfg;
+	return blk_cfg;
+}
+
+static int spi_mcux_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	struct spi_mcux_data *data = dev->data;
+	/* remember active TX DMA channel (used in callback) */
+	struct spi_dma_stream *stream = &data->dma_tx;
+	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
+
+	if (buf != NULL) {
+		/* tx direction has memory as source and periph as dest. */
+		stream->dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	}
+
+	/* Dest is LPSPI tx fifo */
+	blk_cfg->dest_address = LPSPI_GetTxRegisterAddress(base);
+
 	/* give the client dev as arg, as the callback comes from the dma */
-	stream->dma_cfg.user_data = (struct device *)dev;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
-	return dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &stream->dma_cfg);
+	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
 static int spi_mcux_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
-	struct spi_mcux_data *data = dev->data;
-	struct dma_block_config *blk_cfg;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-
+	struct spi_mcux_data *data = dev->data;
 	/* retrieve active RX DMA channel (used in callback) */
 	struct spi_dma_stream *stream = &data->dma_rx;
+	struct dma_block_config *blk_cfg = spi_mcux_dma_common_load(stream, dev, buf, len);
 
-	blk_cfg = &stream->dma_blk_cfg;
-
-	/* prepare the block for this RX DMA channel */
-	memset(blk_cfg, 0, sizeof(struct dma_block_config));
-
-	if (buf == NULL) {
-		/* Treat the transfer as a peripheral to peripheral one, so that DMA
-		 * reads from this address each time
-		 */
-		blk_cfg->dest_address = (uint32_t)&data->dummy_rx_buffer;
-		stream->dma_cfg.channel_direction = PERIPHERAL_TO_PERIPHERAL;
-	} else {
+	if (buf != NULL) {
 		/* rx direction has periph as source and mem as dest. */
-		blk_cfg->dest_address = (uint32_t)buf;
 		stream->dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	}
-	blk_cfg->block_size = len;
-	/* Enable scatter/gather */
-	blk_cfg->dest_scatter_en = 1;
+
 	/* Source is LPSPI rx fifo */
 	blk_cfg->source_address = LPSPI_GetRxRegisterAddress(base);
-	stream->dma_cfg.source_burst_length = 1;
-
-	stream->dma_cfg.head_block = blk_cfg;
-	stream->dma_cfg.user_data = (struct device *)dev;
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
-	return dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &stream->dma_cfg);
+	return dma_config(stream->dma_dev, stream->channel, &stream->dma_cfg);
 }
 
 static int wait_dma_rx_tx_done(const struct device *dev)
 {
 	struct spi_mcux_data *data = dev->data;
-	int ret = -1;
+	int ret;
 
-	while (1) {
+	do {
 		ret = spi_context_wait_for_completion(&data->ctx);
 		if (ret) {
 			LOG_DBG("Timed out waiting for SPI context to complete");
 			return ret;
-		}
-		if (data->status_flags & LPSPI_DMA_ERROR_FLAG) {
+		} else if (data->status_flags & LPSPI_DMA_ERROR_FLAG) {
 			return -EIO;
 		}
+	} while (!((data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG));
 
-		if ((data->status_flags & LPSPI_DMA_DONE_FLAG) == LPSPI_DMA_DONE_FLAG) {
-			LOG_DBG("DMA block completed");
-			return 0;
-		}
-	}
+	LOG_DBG("DMA block completed");
+	return 0;
 }
 
 static inline int spi_mcux_dma_rxtx_load(const struct device *dev, size_t *dma_size)
 {
-	struct spi_mcux_data *lpspi_data = dev->data;
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	int ret = 0;
 
 	/* Clear status flags */
-	lpspi_data->status_flags = 0U;
-	/* Load dma blocks of equal length */
-	*dma_size = MIN(lpspi_data->ctx.tx_len, lpspi_data->ctx.rx_len);
-	if (*dma_size == 0) {
-		*dma_size = MAX(lpspi_data->ctx.tx_len, lpspi_data->ctx.rx_len);
-	}
+	data->status_flags = 0U;
 
-	ret = spi_mcux_dma_tx_load(dev, lpspi_data->ctx.tx_buf, *dma_size);
+	/* Load dma blocks of equal length */
+	*dma_size = spi_context_max_continuous_chunk(ctx);
+
+	ret = spi_mcux_dma_tx_load(dev, ctx->tx_buf, *dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = spi_mcux_dma_rx_load(dev, lpspi_data->ctx.rx_buf, *dma_size);
+	ret = spi_mcux_dma_rx_load(dev, ctx->rx_buf, *dma_size);
 	if (ret != 0) {
 		return ret;
 	}
 
 	/* Start DMA */
-	ret = dma_start(lpspi_data->dma_tx.dma_dev, lpspi_data->dma_tx.channel);
+	ret = dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = dma_start(lpspi_data->dma_rx.dma_dev, lpspi_data->dma_rx.channel);
+	ret = dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
 	return ret;
+}
+
+#ifdef CONFIG_SPI_ASYNC
+static int transceive_dma_async(const struct device *dev, spi_callback_t cb, void *userdata)
+{
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t dma_size;
+	int ret;
+
+	ctx->asynchronous = true;
+	ctx->callback = cb;
+	ctx->callback_data = userdata;
+
+	ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
+	if (ret) {
+		return ret;
+	}
+
+	/* Enable DMA Requests */
+	LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+
+	return 0;
+}
+#else
+#define transceive_dma_async(...) 0
+#endif /* CONFIG_SPI_ASYNC */
+
+static int transceive_dma_sync(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	size_t dma_size;
+	int ret;
+
+	spi_context_cs_control(ctx, true);
+
+	/* Send each spi buf via DMA, updating context as DMA completes */
+	while (ctx->rx_len > 0 || ctx->tx_len > 0) {
+		/* Load dma block */
+		ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
+		if (ret) {
+			return ret;
+		}
+
+#ifdef CONFIG_SOC_SERIES_MCXN
+		while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
+			/* wait until previous tx finished */
+		}
+#endif
+
+		/* Enable DMA Requests */
+		LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+
+		/* Wait for DMA to finish */
+		ret = wait_dma_rx_tx_done(dev);
+		if (ret) {
+			return ret;
+		}
+
+#ifndef CONFIG_SOC_SERIES_MCXN
+		while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
+			/* wait until module is idle */
+		}
+#endif
+
+		/* Disable DMA */
+		LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
+
+		/* Update SPI contexts with amount of data we just sent */
+		spi_context_update_tx(ctx, 1, dma_size);
+		spi_context_update_rx(ctx, 1, dma_size);
+	}
+
+	spi_context_cs_control(ctx, false);
+
+	base->TCR = 0;
+
+	return 0;
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -428,17 +494,15 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	int ret;
-	size_t dma_size;
 
 	if (!asynchronous) {
 		spi_context_lock(&data->ctx, asynchronous, cb, userdata, spi_cfg);
 	}
 
 	ret = spi_mcux_configure(dev, spi_cfg);
-	if (ret) {
-		if (!asynchronous) {
-			spi_context_release(&data->ctx, ret);
-		}
+	if (ret && !asynchronous) {
+		goto out;
+	} else if (ret) {
 		return ret;
 	}
 
@@ -451,67 +515,14 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-	if (!asynchronous) {
-		spi_context_cs_control(&data->ctx, true);
-
-		/* Send each spi buf via DMA, updating context as DMA completes */
-		while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
-			/* Load dma block */
-			ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
-			if (ret != 0) {
-				goto out;
-			}
-
-#ifdef CONFIG_SOC_SERIES_MCXN
-			while (!(LPSPI_GetStatusFlags(base) & kLPSPI_TxDataRequestFlag)) {
-				/* wait until previous tx finished */
-			}
-#endif
-
-			/* Enable DMA Requests */
-			LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-
-			/* Wait for DMA to finish */
-			ret = wait_dma_rx_tx_done(dev);
-			if (ret != 0) {
-				goto out;
-			}
-
-#ifndef CONFIG_SOC_SERIES_MCXN
-			while ((LPSPI_GetStatusFlags(base) & kLPSPI_ModuleBusyFlag)) {
-				/* wait until module is idle */
-			}
-#endif
-
-			/* Disable DMA */
-			LPSPI_DisableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-
-			/* Update SPI contexts with amount of data we just sent */
-			spi_context_update_tx(&data->ctx, 1, dma_size);
-			spi_context_update_rx(&data->ctx, 1, dma_size);
-		}
-		spi_context_cs_control(&data->ctx, false);
-		base->TCR = 0;
+	if (asynchronous) {
+		ret = transceive_dma_async(dev, cb, userdata);
+	} else {
+		ret = transceive_dma_sync(dev);
+	}
 
 out:
-		spi_context_release(&data->ctx, ret);
-	}
-#if CONFIG_SPI_ASYNC
-	else {
-		data->ctx.asynchronous = asynchronous;
-		data->ctx.callback = cb;
-		data->ctx.callback_data = userdata;
-
-		ret = spi_mcux_dma_rxtx_load(dev, &dma_size);
-		if (ret != 0) {
-			goto out;
-		}
-
-		/* Enable DMA Requests */
-		LPSPI_EnableDMA(base, kLPSPI_TxDmaEnable | kLPSPI_RxDmaEnable);
-	}
-#endif
-
+	spi_context_release(&data->ctx, ret);
 	return ret;
 }
 #else
