@@ -208,3 +208,23 @@
 &ieee802154g {
 	status = "okay";
 };
+
+&gpt0 {
+	status = "okay";
+};
+
+&gpt1 {
+	status = "okay";
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+};
