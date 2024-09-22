@@ -1257,6 +1257,18 @@ enum i3c_ccc_rstact_defining_byte {
 
 	/** Virtual Target Detect. */
 	I3C_CCC_RSTACT_VIRTUAL_TARGET_DETECT = 0x04U,
+
+	/** Return Time to Reset Peripheral */
+	I3C_CCC_RSTACT_RETURN_TIME_TO_RESET_PERIPHERAL = 0x81U,
+
+	/** Return Time to Reset Whole Target */
+	I3C_CCC_RSTACT_RETURN_TIME_TO_WHOLE_TARGET = 0x82U,
+
+	/** Return Time for Debug Network Adapter Reset */
+	I3C_CCC_RSTACT_RETURN_TIME_FOR_DEBUG_NETWORK_ADAPTER_RESET = 0x83U,
+
+	/** Return Virtual Target Indication */
+	I3C_CCC_RSTACT_RETURN_VIRTUAL_TARGET_INDICATION = 0x84U,
 };
 
 /**
@@ -1317,10 +1329,10 @@ int i3c_ccc_do_getpid(struct i3c_device_desc *target,
 		      struct i3c_ccc_getpid *pid);
 
 /**
- * @brief Broadcast RSTACT to reset I3C Peripheral.
+ * @brief Broadcast RSTACT to reset I3C Peripheral (Format 1).
  *
  * Helper function to broadcast Target Reset Action (RSTACT) to
- * all connected targets to Reset the I3C Peripheral Only (0x01).
+ * all connected targets.
  *
  * @param[in] controller Pointer to the controller device driver instance.
  * @param[in] action What reset action to perform.
@@ -1329,6 +1341,60 @@ int i3c_ccc_do_getpid(struct i3c_device_desc *target,
  */
 int i3c_ccc_do_rstact_all(const struct device *controller,
 			  enum i3c_ccc_rstact_defining_byte action);
+
+/**
+ * @brief Single target RSTACT to reset I3C Peripheral.
+ *
+ * Helper function to do Target Reset Action (RSTACT) to
+ * one target.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] action What reset action to perform.
+ * @param[in] get True if a get, False if set
+ * @param[out] data Pointer to RSTACT payload received.
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_rstact(const struct i3c_device_desc *target,
+			  enum i3c_ccc_rstact_defining_byte action,
+			  bool get,
+			  uint8_t *data);
+
+/**
+ * @brief Single target RSTACT to reset I3C Peripheral (Format 2).
+ *
+ * Helper function to do Target Reset Action (RSTACT, format 2) to
+ * one target. This is a Direct Write.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] action What reset action to perform.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_rstact_fmt2(const struct i3c_device_desc *target,
+			  enum i3c_ccc_rstact_defining_byte action)
+{
+	return i3c_ccc_do_rstact(target, action, false, NULL);
+}
+
+/**
+ * @brief Single target RSTACT to reset I3C Peripheral (Format 3).
+ *
+ * Helper function to do Target Reset Action (RSTACT, format 3) to
+ * one target. This is a Direct Read.
+ *
+ * @param[in] target Pointer to the target device descriptor.
+ * @param[in] action What reset action to perform.
+ * @param[out] data Pointer to RSTACT payload received.
+ *
+ * @return @see i3c_do_ccc
+ */
+static inline int i3c_ccc_do_rstact_fmt3(const struct i3c_device_desc *target,
+			  enum i3c_ccc_rstact_defining_byte action,
+			  uint8_t *data)
+{
+	return i3c_ccc_do_rstact(target, action, true, data);
+}
 
 /**
  * @brief Broadcast RSTDAA to reset dynamic addresses for all targets.
