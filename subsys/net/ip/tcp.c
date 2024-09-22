@@ -261,7 +261,7 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 				       sizeof(struct in_addr));
 				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
 				net_sin(local)->sin_family = AF_INET;
-			} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET6) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == AF_INET6) {
 				memcpy(&net_sin6(local)->sin6_addr,
 				       net_sin6_ptr(&ctx->local)->sin6_addr,
 				       sizeof(struct in6_addr));
