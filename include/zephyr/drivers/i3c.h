@@ -1207,6 +1207,28 @@ struct i3c_driver_data {
 };
 
 /**
+ * @brief iterate over all I3C devices present on the bus
+ *
+ * @param bus: the I3C bus device pointer
+ * @param desc: an I3C device descriptor pointer updated to point to the current slot
+ *	 at each iteration of the loop
+ */
+#define I3C_BUS_FOR_EACH_I3CDEV(bus, desc)                                                         \
+	SYS_SLIST_FOR_EACH_CONTAINER(                                                              \
+		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i3c, desc, node)
+
+/**
+ * @brief iterate over all I2C devices present on the bus
+ *
+ * @param bus: the I3C bus device pointer
+ * @param desc: an I2C device descriptor pointer updated to point to the current slot
+ *	 at each iteration of the loop
+ */
+#define I3C_BUS_FOR_EACH_I2CDEV(bus, desc)                                                         \
+	SYS_SLIST_FOR_EACH_CONTAINER(                                                              \
+		&((struct i3c_driver_data *)(bus->data))->attached_dev.devices.i2c, desc, node)
+
+/**
  * @brief Find a I3C target device descriptor by ID.
  *
  * This finds the I3C target device descriptor in the device list
@@ -1227,13 +1249,13 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
  * This finds the I3C target device descriptor in the attached
  * device list matching the dynamic address (@p addr)
  *
- * @param dev_list Pointer to the device list struct.
+ * @param dev Pointer to controller device driver instance.
  * @param addr Dynamic address to be matched.
  *
  * @return Pointer to the I3C target device descriptor, or
  *         `NULL` if none is found.
  */
-struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 						   uint8_t addr);
 
 /**
@@ -1242,13 +1264,13 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list 
  * This finds the I2C target device descriptor in the attached
  * device list matching the address (@p addr)
  *
- * @param dev_list Pointer to the device list struct.
+ * @param dev Pointer to controller device driver instance.
  * @param addr Address to be matched.
  *
  * @return Pointer to the I2C target device descriptor, or
  *         `NULL` if none is found.
  */
-struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr);
 
 /**
