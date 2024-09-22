@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Abderrahmane JARMOUNI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Arduino Header pins: Tx:D1, Rx:D0 */
+dut: &lpuart1 {
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
