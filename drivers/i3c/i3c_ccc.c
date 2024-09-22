@@ -102,6 +102,41 @@ int i3c_ccc_do_rstact_all(const struct device *controller,
 	return i3c_do_ccc(controller, &ccc_payload);
 }
 
+int i3c_ccc_do_rstact(const struct i3c_device_desc *target,
+			  enum i3c_ccc_rstact_defining_byte action,
+			  bool get,
+			  uint8_t *data)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	uint8_t def_byte;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	if (get) {
+		__ASSERT_NO_MSG(data != NULL);
+
+		ccc_tgt_payload.rnw = 1;
+		ccc_tgt_payload.data = data;
+		ccc_tgt_payload.data_len = sizeof(*data);
+	} else {
+		ccc_tgt_payload.rnw = 0;
+	}
+
+	ccc_payload.ccc.id = I3C_CCC_RSTACT(false);
+	def_byte = (uint8_t)action;
+	ccc_payload.ccc.data = &def_byte;
+	ccc_payload.ccc.data_len = 1U;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	return i3c_do_ccc(target->bus, &ccc_payload);
+}
+
 int i3c_ccc_do_rstdaa_all(const struct device *controller)
 {
 	struct i3c_ccc_payload ccc_payload;
