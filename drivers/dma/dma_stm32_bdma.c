@@ -806,20 +806,20 @@ static int bdma_stm32_init(const struct device *dev)
 	((struct bdma_stm32_data *)dev->data)->dma_ctx.dma_channels = 0;
 	((struct bdma_stm32_data *)dev->data)->dma_ctx.atomic = 0;
 
-	/* The BDMA can only access SRAM4 and assumes it's nocachable
-	 * This check verifies that the non-cachable flag is set in the DTS.
+	/* The BDMA can only access SRAM4 and assumes it's uncached
+	 * This check verifies that the nocache memory attribute is set in the devicetree.
 	 * For example:
 	 *	&sram4 {
-	 *		zephyr,memory-attr = "RAM_NOCACHE";
+	 *		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
 	 *	};
 	 */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(sram4), zephyr_memory_attr)
 	if ((DT_PROP(DT_NODELABEL(sram4), zephyr_memory_attr) & DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
-		LOG_ERR("SRAM4 is not set as non-cachable.");
+		LOG_ERR("SRAM4 is not set as uncached.");
 		return -EIO;
 	}
 #else
-#error "BDMA driver expects SRAM4 to be set as RAM_NOCACHE in DTS"
+#error "BDMA driver expects SRAM4 to be set as uncached in devicetree"
 #endif
 
 	return 0;
