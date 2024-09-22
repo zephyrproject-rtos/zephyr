@@ -76,6 +76,8 @@ static struct bt_conn_auth_info_cb auth_info_cb;
  */
 #define HCI_CMD_MAX_PARAM 65
 
+#define DEFAULT_SCAN_TIMEOUT_SEC 10
+
 #if defined(CONFIG_BT_BROADCASTER)
 enum {
 	SHELL_ADV_OPT_CONNECTABLE,
@@ -218,9 +220,31 @@ static struct bt_auto_connect {
 	bool addr_set;
 	bool connect_name;
 } auto_connect;
-#endif
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_OBSERVER)
+static void active_scan_timeout(struct k_work *work)
+{
+	int err;
+
+	shell_print(ctx_shell, "Scan timeout");
+
+	err = bt_le_scan_stop();
+	if (err) {
+		shell_error(ctx_shell, "Failed to stop scan (err %d)", err);
+	}
+
+#if defined(CONFIG_BT_CENTRAL)
+	if (auto_connect.connect_name) {
+		auto_connect.connect_name = false;
+		/* "name" is what would be in argv[0] normally */
+		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
+	}
+#endif /* CONFIG_BT_CENTRAL */
+}
+
+static K_WORK_DELAYABLE_DEFINE(active_scan_timeout_work, active_scan_timeout);
+
 static struct bt_scan_filter {
 	char name[NAME_LEN];
 	bool name_set;
@@ -591,14 +615,6 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 static void scan_timeout(void)
 {
 	shell_print(ctx_shell, "Scan timeout");
-
-#if defined(CONFIG_BT_CENTRAL)
-	if (auto_connect.connect_name) {
-		auto_connect.connect_name = false;
-		/* "name" is what would be in argv[0] normally */
-		cmd_scan_filter_clear_name(ctx_shell, 1, (char *[]){ "name" });
-	}
-#endif /* CONFIG_BT_CENTRAL */
 }
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -1542,7 +1558,7 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 			.options    = BT_LE_SCAN_OPT_NONE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 			.window     = BT_GAP_SCAN_FAST_WINDOW,
-			.timeout    = timeout, };
+			.timeout    = 0, };
 
 	param.options |= options;
 
@@ -1553,6 +1569,11 @@ static int cmd_active_scan_on(const struct shell *sh, uint32_t options,
 		return err;
 	} else {
 		shell_print(sh, "Bluetooth active scan enabled");
+	}
+
+	if (timeout != 0) {
+		/* Schedule the k_work to act as a timeout */
+		(void)k_work_reschedule(&active_scan_timeout_work, K_SECONDS(timeout));
 	}
 
 	return 0;
@@ -1586,6 +1607,9 @@ static int cmd_passive_scan_on(const struct shell *sh, uint32_t options,
 static int cmd_scan_off(const struct shell *sh)
 {
 	int err;
+
+	/* Cancel the potentially pending scan timeout work */
+	(void)k_work_cancel_delayable(&active_scan_timeout_work);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -3267,13 +3291,12 @@ static int cmd_auto_conn(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_connect_le_name(const struct shell *sh, size_t argc, char *argv[])
 {
-	const uint16_t timeout_seconds = 10;
 	const struct bt_le_scan_param param = {
 		.type       = BT_LE_SCAN_TYPE_ACTIVE,
 		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = BT_GAP_SCAN_FAST_INTERVAL,
 		.window     = BT_GAP_SCAN_FAST_WINDOW,
-		.timeout    = timeout_seconds * 100, /* 10ms units */
+		.timeout    = 0,
 	};
 	int err;
 
@@ -3298,6 +3321,9 @@ static int cmd_connect_le_name(const struct shell *sh, size_t argc, char *argv[]
 
 	/* Set boolean to tell the scan callback to connect to this name */
 	auto_connect.connect_name = true;
+
+	/* Schedule the k_work to act as a timeout */
+	(void)k_work_reschedule(&active_scan_timeout_work, K_SECONDS(DEFAULT_SCAN_TIMEOUT_SEC));
 
 	return 0;
 }
