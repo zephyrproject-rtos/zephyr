@@ -2294,8 +2294,6 @@ static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *bu
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 {
 	const struct cdns_i3c_config *config = dev->config;
-	struct cdns_i3c_data *data = dev->data;
-
 	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
 
 	/* The slave ID returned here is the device ID in the SIR map NOT the device ID
@@ -2310,8 +2308,7 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 
 	uint32_t dev_id_rr0 = sys_read32(config->base + DEV_ID_RR0(slave_id + 1));
 	uint8_t dyn_addr = DEV_ID_RR0_GET_DEV_ADDR(dev_id_rr0);
-	struct i3c_device_desc *desc =
-		i3c_dev_list_i3c_addr_find(&data->common.attached_dev, dyn_addr);
+	struct i3c_device_desc *desc = i3c_dev_list_i3c_addr_find(dev, dyn_addr);
 
 	/*
 	 * Check for NAK or error conditions.
@@ -2989,9 +2986,7 @@ static struct i3c_device_desc *cdns_i3c_device_find(const struct device *dev,
  */
 static struct i3c_i2c_device_desc *cdns_i3c_i2c_device_find(const struct device *dev, uint16_t addr)
 {
-	struct cdns_i3c_data *data = dev->data;
-
-	return i3c_dev_list_i2c_addr_find(&data->common.attached_dev, addr);
+	return i3c_dev_list_i2c_addr_find(dev, addr);
 }
 
 /**

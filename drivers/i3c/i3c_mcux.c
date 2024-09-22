@@ -1459,7 +1459,6 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct mcux_i3c_config *config = dev->config;
 	struct mcux_i3c_data *data = dev->data;
-	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	I3C_Type *base = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t mstatus, ibitype, ibiaddr;
@@ -1517,7 +1516,7 @@ static void mcux_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case I3C_MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
+		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			ret = mcux_i3c_do_one_xfer_read(base, &payload[0],
 							sizeof(payload), true);
