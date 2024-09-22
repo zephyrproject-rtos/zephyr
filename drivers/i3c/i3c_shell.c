@@ -1203,6 +1203,56 @@ static int cmd_i3c_ccc_rstact_bc(const struct shell *sh, size_t argc, char **arg
 	return ret;
 }
 
+/* i3c ccc rstact <device> <target> <defining byte> */
+static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	enum i3c_ccc_rstact_defining_byte action;
+	int ret;
+	uint8_t data;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
+	if (!desc) {
+		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
+		return -ENODEV;
+	}
+
+	action = strtol(argv[5], NULL, 16);
+
+	if (strcmp(argv[4], "get") == 0) {
+		ret = i3c_ccc_do_rstact_fmt3(tdev, action, &data);
+	} else if (strcmp(argv[4], "set") == 0) {
+		ret = i3c_ccc_do_rstact_fmt2(tdev, action);
+	} else {
+		shell_error(sh, "I3C: invalid parameter");
+		return -EINVAL;
+	}
+
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC RSTACT BC.");
+		return ret;
+	}
+
+	if (action >= 0x80) {
+		shell_print("RSTACT Returned Data: 0x%02x", data);
+	}
+
+	return ret;
+}
+
+
 /* i3c ccc enec_bc <device> <defining byte> */
 static int cmd_i3c_ccc_enec_bc(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2369,6 +2419,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC ENTTM\n"
 		      "Usage: ccc enttm <device> <defining byte>",
 		      cmd_i3c_ccc_enttm, 3, 0),
+	SHELL_CMD_ARG(rstact, &dsub_i3c_device_attached_name,
+		      "Send CCC RSTACT\n"
+		      "Usage: ccc rstact <device> <target> <\"set\"/\"get\"> <defining byte>",
+		      cmd_i3c_ccc_rstact, 5, 0),
 	SHELL_CMD_ARG(rstact_bc, &dsub_i3c_device_name,
 		      "Send CCC RSTACT BC\n"
 		      "Usage: ccc rstact_bc <device> <defining byte>",
