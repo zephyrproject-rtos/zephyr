@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2024 Abderrahmane JARMOUNI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,nocache-ram = &sram4;
+	};
+};
+
+&sram4 {
+	zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+	zephyr,memory-region = "SRAM4";
+	status = "okay";
+};
+
+/* Arduino Header pins: Tx:D1, Rx:D0 */
+dut: &lpuart1 {
+	dmas = <&dmamux2 1 10 STM32_DMA_PERIPH_TX>,
+		<&dmamux2 0 9 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* dmamux2 uses both dma2 & bdma1 depending on the memory being accessed */
+&dma2 {
+	status = "okay";
+};
+
+&bdma1 {
+	status = "okay";
+};
+
+&dmamux2 {
+	status = "okay";
+};
