@@ -198,17 +198,15 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 	return ret;
 }
 
-struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 						   uint8_t addr)
 {
-	sys_snode_t *node;
 	struct i3c_device_desc *ret = NULL;
+	struct i3c_device_desc *desc;
 
-	__ASSERT_NO_MSG(dev_list != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i3c, node) {
-		struct i3c_device_desc *desc = (void *)node;
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
 		if (desc->dynamic_addr == addr) {
 			ret = desc;
 			break;
@@ -218,17 +216,15 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list 
 	return ret;
 }
 
-struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr)
 {
-	sys_snode_t *node;
 	struct i3c_i2c_device_desc *ret = NULL;
+	struct i3c_i2c_device_desc *desc;
 
-	__ASSERT_NO_MSG(dev_list != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i2c, node) {
-		struct i3c_i2c_device_desc *desc = (void *)node;
-
+	I3C_BUS_FOR_EACH_I2CDEV(dev, desc) {
 		if (desc->addr == addr) {
 			ret = desc;
 			break;
@@ -664,12 +660,9 @@ static int i3c_bus_setdasa(const struct device *dev,
 
 bool i3c_bus_has_sec_controller(const struct device *dev)
 {
-	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
-	sys_snode_t *node;
+	struct i3c_device_desc *i3c_desc;
 
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
-		struct i3c_device_desc *i3c_desc = CONTAINER_OF(node, struct i3c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
 		if (i3c_device_is_controller_capable(i3c_desc)) {
 			return true;
 		}
@@ -683,7 +676,8 @@ int i3c_bus_deftgts(const struct device *dev)
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
 	struct i3c_config_target config_target;
 	struct i3c_ccc_deftgts *deftgts;
-	sys_snode_t *node;
+	struct i3c_device_desc *i3c_desc;
+	struct i3c_i2c_device_desc *i3c_i2c_desc;
 	int ret;
 	uint8_t n = 0;
 	size_t num_of_targets = sys_slist_len(&data->attached_dev.devices.i3c) +
@@ -723,9 +717,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	/*
 	 * Loop through each attached I3C device and add it to the payload
 	 */
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
-		struct i3c_device_desc *i3c_desc = CONTAINER_OF(node, struct i3c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
 		deftgts->targets[n].addr = i3c_desc->dynamic_addr << 1;
 		deftgts->targets[n].dcr = i3c_desc->dcr;
 		deftgts->targets[n].bcr = i3c_desc->bcr;
@@ -736,10 +728,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	/*
 	 * Loop through each attached I2C device and add it to the payload
 	 */
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i2c, node) {
-		struct i3c_i2c_device_desc *i3c_i2c_desc =
-			CONTAINER_OF(node, struct i3c_i2c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I2CDEV(dev, i3c_i2c_desc) {
 		deftgts->targets[n].addr = 0;
 		deftgts->targets[n].lvr = i3c_i2c_desc->lvr;
 		deftgts->targets[n].bcr = 0;
