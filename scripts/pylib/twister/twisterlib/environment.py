@@ -25,6 +25,7 @@ from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.log_helper import log_command
+from twisterlib.statuses import TwisterStatus
 
 logger = logging.getLogger('twister')
 
@@ -92,6 +93,64 @@ Artificially long but functional example:
         title="Test plan reporting",
         description="Report the composed test plan details and exit (dry-run)."
     )
+
+    test_plan_filter = parser.add_argument_group(
+        title="Test plan filtering (experimental)",
+        description="Use test plan or report file(s) to filter tests out from the current scope.\n"
+                    "The files should be of 'twister.json' or 'testplan.json' schema.\n"
+                    "These files must be composed with the same `detailed-test-id` parameters\n"
+                    "to have compatible test names: either long, or short names in all of them.\n"
+                    "Each parameter from this group can be present several times and they can be\n"
+                    "combined with the precedence effective as listed below, although \n"
+                    "the resulting logic might become quite complex."
+    )
+
+    test_plan_filter.add_argument(
+        "--exclude-plan-exact", metavar="FILENAME", action="append", default=[],
+        help="Test plan file to EXCLUDE tests with exact match by name, platform, "
+             "and 'runnable' status. "
+             "It allows to cover gaps in a test scope executions, for example "
+             "to compose a test plan with only new test suites since the previous "
+             "execution(s), or with test suites now runnable in the scope.")
+
+    test_plan_filter.add_argument(
+        "--exclude-plan-platform", metavar="FILENAME", action="append", default=[],
+        help="Test plan file to EXCLUDE tests with exact match on test name and "
+             "platform ignoring 'runnable' status, for example "
+             "to exclude tests using a testplan composed on a build host where the boards "
+             "in scope were not connected.")
+
+    test_plan_filter.add_argument(
+        "--exclude-plan-run", metavar="FILENAME", action="append", default=[],
+        help="Test plan file to EXCLUDE tests with exact match on test name and "
+             "its 'runnable' status ignoring platform name. It allows, for example, "
+             "to select only these tests in the current scope which were not runnable "
+             "the same way (eihter build only, or executed) on any platform from "
+             "the exclusion plan scope(s) given, i.e. if a test was ever built, "
+             "then it will not be built on all of the platforms in the current scope; "
+             "same for executed tests. "
+             "Note: this rule doesn't exclude a 'build only' tests in the current scope "
+             "which were 'runnable' before (use --exclude-plan-name option for that).")
+
+    test_plan_filter.add_argument(
+        "--exclude-plan-name", metavar="FILENAME", action="append", default=[],
+        help="Test plan file to EXCLUDE tests only by name from the current run. "
+             "It allows to chain a hierarchy of test executions on different platforms, "
+             "for example to build test plan for most of the tests on the platform's "
+             "simulator, and additional test plans where the real hardware is needed.")
+
+    test_plan_filter.add_argument(
+        "--exclude-plan-status", metavar="TWISTER_STATUS", action="append", default=[],
+        choices=[str(TwisterStatus.PASS), str(TwisterStatus.SKIP), str(TwisterStatus.FAIL),
+                 str(TwisterStatus.ERROR),str(TwisterStatus.FILTER)],
+        help="Extended condition for '--exclude-plan' commands to take into account test "
+             "instance statuses as well, and with all of the testplan filters currently given. "
+             "It is effective only with 'twister.json' filters. "
+             "For example, 'passed' with '--exclude-plan-run' will filter out from the current "
+             "scope these tests which were previously 'passed' at the same running state "
+             "(either build, or execution) matched at any of the exclusion plan filters given; "
+             "whereas 'passed' with '--exclude-plan-exact' is extended '--only-failed'. "
+             "Allowed values: {%(choices)s}")
 
     test_plan_report_xor = test_plan_report.add_mutually_exclusive_group()
 
