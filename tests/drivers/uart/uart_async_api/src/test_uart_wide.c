@@ -100,13 +100,15 @@ static void *single_read_setup_wide(void)
 ZTEST_USER(uart_async_single_read_wide, test_single_read_wide)
 {
 #if NOCACHE_MEM
-	static __aligned(32) uint16_t rx_buf[10] __nocache = {0};
+	static __aligned(32) uint16_t rx_buf[10] __nocache;
 #else
-	uint16_t rx_buf[10] = {0};
+	uint16_t rx_buf[10];
 #endif /* NOCACHE_MEM */
 
 	/* Check also if sending from read only memory (e.g. flash) works. */
 	static const uint16_t tx_buf[5] = {0x74, 0x65, 0x73, 0x74, 0x0D};
+
+	memset(rx_buf, 0, sizeof(rx_buf));
 
 	zassert_not_equal(memcmp(tx_buf, rx_buf, 5), 0,
 			  "Initial buffer check failed");
