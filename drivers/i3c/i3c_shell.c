@@ -142,6 +142,28 @@ static struct i3c_device_desc *get_i3c_attached_desc_from_dev_name(const struct 
 	return NULL;
 }
 
+static int i3c_parse_args(const struct shell *sh, char **argv, const struct device **dev,
+			  const struct device **tdev, struct i3c_device_desc **desc)
+{
+	*dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+	*tdev = device_get_binding(argv[ARGV_TDEV]);
+	if (!tdev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
+		return -ENODEV;
+	}
+	*desc = get_i3c_attached_desc_from_dev_name(*dev, (*tdev)->name);
+	if (!*desc) {
+		shell_error(sh, "I3C: Device %s not attached to bus.", (*tdev)->name);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 /* i3c info <device> [<target>] */
 static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 {
@@ -482,20 +504,9 @@ static int cmd_i3c_hdr_ddr_write(const struct shell *sh, size_t argc, char **arg
 	uint8_t i;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	cmd = strtol(argv[3], NULL, 16);
@@ -528,20 +539,9 @@ static int cmd_i3c_hdr_ddr_read(const struct shell *sh, size_t argc, char **argv
 	uint8_t cmd;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	cmd = strtol(argv[3], NULL, 16);
@@ -645,20 +645,9 @@ static int cmd_i3c_ccc_setdasa(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_setdasa(desc);
@@ -690,20 +679,9 @@ static int cmd_i3c_ccc_setnewda(const struct shell *sh, size_t argc, char **argv
 	uint8_t old_da;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	data = (struct i3c_driver_data *)dev->data;
@@ -740,20 +718,9 @@ static int cmd_i3c_ccc_getbcr(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_getbcr bcr;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_getbcr(desc, &bcr);
@@ -776,20 +743,9 @@ static int cmd_i3c_ccc_getdcr(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_getdcr dcr;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_getdcr(desc, &dcr);
@@ -812,20 +768,9 @@ static int cmd_i3c_ccc_getpid(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_getpid pid;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_getpid(desc, &pid);
@@ -847,20 +792,9 @@ static int cmd_i3c_ccc_getmrl(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_mrl mrl;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_getmrl(desc, &mrl);
@@ -889,20 +823,9 @@ static int cmd_i3c_ccc_getmwl(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_mwl mwl;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_getmwl(desc, &mwl);
@@ -925,20 +848,9 @@ static int cmd_i3c_ccc_setmrl(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_mrl mrl;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* IBI length is required if the ibi payload bit is set */
@@ -974,20 +886,9 @@ static int cmd_i3c_ccc_setmwl(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_mwl mwl;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	mwl.len = strtol(argv[3], NULL, 16);
@@ -1247,20 +1148,9 @@ static int cmd_i3c_ccc_enec(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_events events;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	events.events = strtol(argv[3], NULL, 16);
@@ -1282,20 +1172,9 @@ static int cmd_i3c_ccc_disec(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_ccc_events events;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	events.events = strtol(argv[3], NULL, 16);
@@ -1408,20 +1287,9 @@ static int cmd_i3c_ccc_entas0(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_entas0(desc);
@@ -1440,20 +1308,9 @@ static int cmd_i3c_ccc_entas1(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_entas1(desc);
@@ -1472,20 +1329,9 @@ static int cmd_i3c_ccc_entas2(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_entas2(desc);
@@ -1504,20 +1350,9 @@ static int cmd_i3c_ccc_entas3(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_ccc_do_entas3(desc);
@@ -1539,20 +1374,9 @@ static int cmd_i3c_ccc_getstatus(const struct shell *sh, size_t argc, char **arg
 	enum i3c_ccc_getstatus_defbyte defbyte = GETSTATUS_FORMAT_2_INVALID;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* If there is a defining byte, then it is assumed to be Format 2*/
@@ -1596,20 +1420,9 @@ static int cmd_i3c_ccc_getcaps(const struct shell *sh, size_t argc, char **argv)
 	enum i3c_ccc_getcaps_defbyte defbyte = GETCAPS_FORMAT_2_INVALID;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* If there is a defining byte, then it is assumed to be Format 2 */
@@ -1806,20 +1619,9 @@ static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 	enum i3c_ccc_getmxds_defbyte defbyte = GETMXDS_FORMAT_3_INVALID;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (!(desc->bcr & I3C_BCR_MAX_DATA_SPEED_LIMIT)) {
@@ -1907,20 +1709,9 @@ static int cmd_i3c_reattach(const struct shell *sh, size_t argc, char **argv)
 	uint8_t old_dyn_addr = 0;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (argc > 2) {
@@ -1941,20 +1732,9 @@ static int cmd_i3c_detach(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_device_desc *desc;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
-		return -ENODEV;
-	}
-	tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
-		return -ENODEV;
-	}
-	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
-	if (!desc) {
-		shell_error(sh, "I3C: Device %s not attached to bus.", tdev->name);
-		return -ENODEV;
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = i3c_detach_i3c_device(desc);
