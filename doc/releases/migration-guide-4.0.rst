@@ -241,6 +241,11 @@ Sensors
   to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
   :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808`` string.
 
+* The ``nxp,`` prefixed properties in :dtcompatible:`nxp,kinetis-acmp` have been deprecated in favor
+  of properties without the prefix. The sensor based driver for the :dtcompatible:`nxp,kinetis-acmp`
+  has been updated to support both the new and deprecated property names. Uses of the deprecated
+  property names should be updated to the new property names.
+
 Serial
 ======
 
