@@ -173,6 +173,14 @@ Drivers and Sensors
 
 * Clock control
 
+* Comparator
+
+  * Introduced comparator device driver subsystem selected with :kconfig:option:`CONFIG_COMPARATOR`
+  * Introduced comparator shell commands selected with :kconfig:option:`CONFIG_COMPARATOR_SHELL`
+  * Added support for Nordic nRF COMP (:dtcompatible:`nordic,nrf-comp`)
+  * Added support for Nordic nRF LPCOMP (:dtcompatible:`nordic,nrf-lpcomp`)
+  * Added support for NXP Kinetis ACMP (:dtcompatible:`nxp,kinetis-acmp`)
+
 * Counter
 
 * DAC
