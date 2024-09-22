@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Abderrahmane JARMOUNI
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "UART Async Test"
+
+source "Kconfig.zephyr"
+
+config UART_ASYNC_RELOCATE_SECTION
+	string "The memory section label."
+	depends on CODE_DATA_RELOCATION
+	default "RAM"
