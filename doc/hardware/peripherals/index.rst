@@ -18,6 +18,7 @@ Peripherals
    clock_control.rst
    can/index.rst
    charger.rst
+   comparator.rst
    coredump.rst
    counter.rst
    dac.rst
