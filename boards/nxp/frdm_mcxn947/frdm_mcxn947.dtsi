@@ -209,7 +209,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-names = "default";
 };
 
-nxp_flexio_lcd: &flexio0_lcd {
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	/* DMA channels 0, muxed to FlexIO TX */
 	dmas = <&edma0 0 61>;
 	dma-names = "tx";
