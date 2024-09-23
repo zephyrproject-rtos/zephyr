@@ -508,6 +508,7 @@ Bluetooth ISO:
     - Thalley
   collaborators:
     - jhedberg
+    - kruithofa
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
