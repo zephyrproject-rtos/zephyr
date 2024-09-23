@@ -537,6 +537,12 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.connrst));
 	PR("TCP pkt drop   %d\n", GET_STAT(iface, tcp.drop));
 #endif
+#if defined(CONFIG_NET_STATISTICS_DNS)
+	PR("DNS recv       %d\tsent\t%d\tdrop\t%d\n",
+	   GET_STAT(iface, dns.recv),
+	   GET_STAT(iface, dns.sent),
+	   GET_STAT(iface, dns.drop));
+#endif /* CONFIG_NET_STATISTICS_DNS */
 
 	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
 	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));

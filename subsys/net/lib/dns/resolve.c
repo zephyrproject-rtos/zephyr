@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include "dns_pack.h"
 #include "dns_internal.h"
 #include "dns_cache.h"
+#include "../../ip/net_stats.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
@@ -1041,6 +1042,20 @@ static int dns_write(struct dns_resolve_context *ctx,
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", -errno);
 		return ret;
+	} else {
+		if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
+			struct net_if *iface = NULL;
+
+			if (IS_ENABLED(CONFIG_NET_IPV6) && server->sa_family == AF_INET6) {
+				iface = net_if_ipv6_select_src_iface(&net_sin6(server)->sin6_addr);
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) && server->sa_family == AF_INET) {
+				iface = net_if_ipv4_select_src_iface(&net_sin(server)->sin_addr);
+			}
+
+			if (iface != NULL) {
+				net_stats_update_dns_sent(iface);
+			}
+		}
 	}
 
 	return 0;

@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include "dns_sd.h"
 #include "dns_pack.h"
 #include "ipv6.h"
+#include "../../ip/net_stats.h"
 
 #include "net_private.h"
 
@@ -336,6 +337,8 @@ static int send_response(int sock,
 			   (struct sockaddr *)&dst, dst_len);
 	if (ret < 0) {
 		NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
+	} else {
+		net_stats_update_dns_sent(iface);
 	}
 
 	return ret;
@@ -496,6 +499,8 @@ static void send_sd_response(int sock,
 			if (ret < 0) {
 				NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
 				continue;
+			} else {
+				net_stats_update_dns_sent(iface);
 			}
 		}
 	}

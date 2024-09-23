@@ -11,9 +11,11 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/net/net_if.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 
+#include "../../ip/net_stats.h"
 #include "dns_pack.h"
 
 static K_MUTEX_DEFINE(lock);
@@ -95,6 +97,24 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 	}
 
 done:
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_DNS)) {
+		struct net_if *iface = NULL;
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(&net_sin6(addr)->sin6_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == AF_INET) {
+			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
+		}
+
+		if (iface != NULL) {
+			if (ret < 0) {
+				net_stats_update_dns_drop(iface);
+			} else {
+				net_stats_update_dns_recv(iface);
+			}
+		}
+	}
+
 	return ret;
 }
 
