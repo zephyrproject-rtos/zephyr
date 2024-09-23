@@ -732,7 +732,6 @@ static void pwm_stm32_isr(const struct device *dev)
 	}
 
 	if (cpt->overflows) {
-		LOG_ERR("counter overflow during PWM capture");
 		status = -ERANGE;
 	}
 
