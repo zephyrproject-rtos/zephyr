@@ -138,6 +138,7 @@ choice BT_LL_CHOICE
 
 config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
+	depends on DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 

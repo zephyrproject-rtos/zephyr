@@ -43,5 +43,7 @@ config ENTROPY_NRF_FORCE_ALT
 config ENTROPY_NRF5_RNG
 	default n
 
+source "tests/bluetooth/controller/common/Kconfig"
+
 # Include Zephyr's Kconfig
 source "Kconfig"
