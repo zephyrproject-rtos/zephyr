@@ -1139,35 +1139,6 @@ static inline void net_pkt_set_create_time(struct net_pkt *pkt,
 	* CONFIG_TRACING_NET_CORE
 	*/
 
-/**
- * @deprecated Use @ref net_pkt_timestamp or @ref net_pkt_timestamp_ns instead.
- */
-static inline uint64_t net_pkt_txtime(struct net_pkt *pkt)
-{
-#if defined(CONFIG_NET_PKT_TXTIME)
-	return pkt->timestamp.second * NSEC_PER_SEC + pkt->timestamp.nanosecond;
-#else
-	ARG_UNUSED(pkt);
-
-	return 0;
-#endif /* CONFIG_NET_PKT_TXTIME */
-}
-
-/**
- * @deprecated Use @ref net_pkt_set_timestamp or @ref net_pkt_set_timestamp_ns
- * instead.
- */
-static inline void net_pkt_set_txtime(struct net_pkt *pkt, uint64_t txtime)
-{
-#if defined(CONFIG_NET_PKT_TXTIME)
-	pkt->timestamp.second = txtime / NSEC_PER_SEC;
-	pkt->timestamp.nanosecond = txtime % NSEC_PER_SEC;
-#else
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(txtime);
-#endif /* CONFIG_NET_PKT_TXTIME */
-}
-
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
 	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 static inline uint32_t *net_pkt_stats_tick(struct net_pkt *pkt)
