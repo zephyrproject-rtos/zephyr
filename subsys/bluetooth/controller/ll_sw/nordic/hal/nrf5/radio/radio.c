@@ -7,6 +7,7 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
 #include <nrfx_gpiote.h>
@@ -2057,7 +2058,33 @@ void radio_gpio_pa_lna_disable(void)
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN || HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+struct ccm_job_ptr {
+	void *ptr;
+	struct {
+		uint32_t length:24;
+		uint32_t attribute:8;
+	} __packed;
+} __packed;
+
+#define CCM_JOB_PTR_ATTRIBUTE_ALEN  11U
+#define CCM_JOB_PTR_ATTRIBUTE_MLEN  12U
+#define CCM_JOB_PTR_ATTRIBUTE_ADATA 13U
+#define CCM_JOB_PTR_ATTRIBUTE_MDATA 14U
+
+static struct {
+	uint16_t in_alen;
+	uint16_t in_mlen;
+	uint8_t  in_mlen_msb;
+	uint8_t  out_mlen_msb;
+	uint16_t out_alen;
+	struct ccm_job_ptr in[6];
+	struct ccm_job_ptr out[6];
+} ccm_job;
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
@@ -2066,21 +2093,34 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
+
 	mode = (CCM_MODE_MODE_Decryption << CCM_MODE_MODE_Pos) &
 	       CCM_MODE_MODE_Msk;
 
-#if !defined(CONFIG_SOC_SERIES_NRF51X)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Enable CCM Protocol Mode BLE */
+	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
+		CCM_MODE_PROTOCOL_Msk;
+
+	/* Enable CCM MAC Length 4 bytes */
+	mode |= (CCM_MODE_MACLEN_M4 << CCM_MODE_MACLEN_Pos) &
+		CCM_MODE_MACLEN_Msk;
+
+#elif !defined(CONFIG_SOC_SERIES_NRF51X)
 	/* Enable CCM support for 8-bit length field PDUs. */
 	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
 		CCM_MODE_LENGTH_Msk;
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 	/* Select CCM data rate based on current PHY in use. */
 	switch (phy) {
 	default:
 	case PHY_1M:
+#if !defined(CONFIG_SOC_SERIES_NRF51X)
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 		if (false) {
 
@@ -2103,9 +2143,11 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 		break;
 
 	case PHY_2M:
+#if !defined(CONFIG_SOC_SERIES_NRF51X)
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
+#endif /* !CONFIG_SOC_SERIES_NRF51X */
 
 		hal_trigger_crypt_ppi_config();
 		hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
@@ -2136,47 +2178,131 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
-#if !defined(CONFIG_SOC_NRF52832) && \
+	NRF_CCM->MODE = mode;
+
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK) || \
+	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+#define ADATAMASK HEADERMASK
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+	switch (pdu_type) {
+	case RADIO_PKT_CONF_PDU_TYPE_BIS:
+		NRF_CCM->ADATAMASK = 0xC3; /* mask CSSN and CSTF */
+		break;
+	case RADIO_PKT_CONF_PDU_TYPE_CIS:
+		NRF_CCM->ADATAMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
+		break;
+	default:
+		/* Using default reset value of ADATAMASK */
+		NRF_CCM->ADATAMASK = 0xE3; /* mask SN, NESN and MD */
+		break;
+	}
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+#undef ADATAMASK
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
+	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	*/
+
+#if !defined(CONFIG_SOC_SERIES_NRF51X) && \
+	!defined(CONFIG_SOC_NRF52832) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
-	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
-			RADIO_PCNF1_MAXLEN_Pos;
+	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
 	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
 
-#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
-	switch (pdu_type) {
-	case RADIO_PKT_CONF_PDU_TYPE_BIS:
-		NRF_CCM->HEADERMASK = 0xC3; /* mask CSSN and CSTF */
-		break;
-	case RADIO_PKT_CONF_PDU_TYPE_CIS:
-		NRF_CCM->HEADERMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
-		break;
-	default:
-		/* Using default reset value of HEADERMASK */
-		NRF_CCM->HEADERMASK = 0xE3; /* mask SN, NESN and MD */
-		break;
-	}
-#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Configure the CCM key, nonce and pointers */
+	NRF_CCM->KEY.VALUE[3] = sys_get_be32(&cnf->key[0]);
+	NRF_CCM->KEY.VALUE[2] = sys_get_be32(&cnf->key[4]);
+	NRF_CCM->KEY.VALUE[1] = sys_get_be32(&cnf->key[8]);
+	NRF_CCM->KEY.VALUE[0] = sys_get_be32(&cnf->key[12]);
 
-#else /* CONFIG_SOC_SERIES_NRF51X */
-	hal_trigger_crypt_ppi_config();
-	hal_radio_nrf_ppi_channels_enable(BIT(HAL_TRIGGER_CRYPT_PPI));
-#endif /* CONFIG_SOC_SERIES_NRF51X */
+	NRF_CCM->NONCE.VALUE[3] = ((uint8_t *)&cnf->counter)[0];
+	NRF_CCM->NONCE.VALUE[2] = sys_get_be32(&((uint8_t *)&cnf->counter)[1]) |
+				  (cnf->direction << 7);
+	NRF_CCM->NONCE.VALUE[1] = sys_get_be32(&cnf->iv[0]);
+	NRF_CCM->NONCE.VALUE[0] = sys_get_be32(&cnf->iv[4]);
 
-	NRF_CCM->MODE = mode;
+	const uint8_t mlen = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+			     RADIO_PCNF1_MAXLEN_Pos;
+
+	const uint8_t alen = sizeof(uint8_t);
+
+	ccm_job.in_alen = alen;
+	ccm_job.in[0].ptr = &ccm_job.in_alen;
+	ccm_job.in[0].length = sizeof(ccm_job.in_alen);
+	ccm_job.in[0].attribute = CCM_JOB_PTR_ATTRIBUTE_ALEN;
+
+	ccm_job.in[1].ptr = (void *)((uint8_t *)_pkt_scratch + 1U);
+	ccm_job.in[1].length = sizeof(uint8_t);
+	ccm_job.in[1].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.in_mlen_msb = 0U;
+	ccm_job.in[2].ptr = &ccm_job.in_mlen_msb;
+	ccm_job.in[2].length = sizeof(ccm_job.in_mlen_msb);
+	ccm_job.in[2].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.in[3].ptr = (void *)((uint8_t *)_pkt_scratch + 0U);
+	ccm_job.in[3].length = sizeof(uint8_t);
+	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
+
+	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
+	ccm_job.in[4].length = mlen;
+	ccm_job.in[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
+
+	ccm_job.in[5].ptr = NULL;
+	ccm_job.in[5].length = 0U;
+	ccm_job.in[5].attribute = 0U;
+
+	ccm_job.out[0].ptr = &ccm_job.out_alen;
+	ccm_job.out[0].length = sizeof(ccm_job.out_alen);
+	ccm_job.out[0].attribute = CCM_JOB_PTR_ATTRIBUTE_ALEN;
+
+	ccm_job.out[1].ptr = (void *)((uint8_t *)pkt + 1U);
+	ccm_job.out[1].length = sizeof(uint8_t);
+	ccm_job.out[1].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.out[2].ptr = &ccm_job.out_mlen_msb;
+	ccm_job.out[2].length = sizeof(ccm_job.out_mlen_msb);
+	ccm_job.out[2].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.out[3].ptr = (void *)((uint8_t *)pkt + 0U);
+	ccm_job.out[3].length = sizeof(uint8_t);
+	ccm_job.out[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
+
+	ccm_job.out[4].ptr = (void *)((uint8_t *)pkt + 3U);
+	ccm_job.out[4].length = mlen - sizeof(uint32_t);
+	ccm_job.out[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
+
+	ccm_job.out[5].ptr = NULL;
+	ccm_job.out[5].length = 0U;
+	ccm_job.out[5].attribute = 0U;
+
+	NRF_CCM->IN.PTR = (uint32_t)ccm_job.in;
+	NRF_CCM->OUT.PTR = (uint32_t)ccm_job.out;
+
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
+
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 	return _pkt_scratch;
 }
@@ -2199,11 +2325,12 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
+
 	mode = (CCM_MODE_MODE_Encryption << CCM_MODE_MODE_Pos) &
 	       CCM_MODE_MODE_Msk;
+
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
-	defined(CONFIG_SOC_COMPATIBLE_NRF53X) || \
-	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	defined(CONFIG_SOC_COMPATIBLE_NRF53X)
 	/* Enable CCM support for 8-bit length field PDUs. */
 	mode |= (CCM_MODE_LENGTH_Extended << CCM_MODE_LENGTH_Pos) &
 		CCM_MODE_LENGTH_Msk;
@@ -2213,45 +2340,145 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	 */
 	mode |= (CCM_MODE_DATARATE_2Mbit << CCM_MODE_DATARATE_Pos) &
 		CCM_MODE_DATARATE_Msk;
+
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Enable CCM Protocol Mode BLE */
+	mode |= (CCM_MODE_PROTOCOL_Ble << CCM_MODE_PROTOCOL_Pos) &
+		CCM_MODE_PROTOCOL_Msk;
+
+	/* NOTE: use fastest data rate as tx data needs to be prepared before
+	 * radio Tx on any PHY.
+	 */
+	mode |= (CCM_MODE_DATARATE_4Mbit << CCM_MODE_DATARATE_Pos) &
+		CCM_MODE_DATARATE_Msk;
+
+	/* Enable CCM MAC Length 4 bytes */
+	mode |= (CCM_MODE_MACLEN_M4 << CCM_MODE_MACLEN_Pos) &
+		CCM_MODE_MACLEN_Msk;
 #endif
+
+	NRF_CCM->MODE = mode;
+
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK) || \
+	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+#define ADATAMASK HEADERMASK
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+	switch (pdu_type) {
+	case RADIO_PKT_CONF_PDU_TYPE_BIS:
+		NRF_CCM->ADATAMASK = 0xC3; /* mask CSSN and CSTF */
+		break;
+	case RADIO_PKT_CONF_PDU_TYPE_CIS:
+		NRF_CCM->ADATAMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
+		break;
+	default:
+		/* Using default reset value of ADATAMASK */
+		NRF_CCM->ADATAMASK = 0xE3; /* mask SN, NESN and MD */
+		break;
+	}
+#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
+#undef ADATAMASK
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
+	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	*/
 
 #if !defined(CONFIG_SOC_SERIES_NRF51X) && \
 	!defined(CONFIG_SOC_NRF52832) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
-	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4)))
-	uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
-			RADIO_PCNF1_MAXLEN_Pos;
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
+	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
+				RADIO_PCNF1_MAXLEN_Pos;
 
 	/* MAXPACKETSIZE value 0x001B (27) - 0x00FB (251) bytes */
 	NRF_CCM->MAXPACKETSIZE = max_len - 4U;
 #endif
 
-#if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
-	switch (pdu_type) {
-	case RADIO_PKT_CONF_PDU_TYPE_BIS:
-		NRF_CCM->HEADERMASK = 0xC3; /* mask CSSN and CSTF */
-		break;
-	case RADIO_PKT_CONF_PDU_TYPE_CIS:
-		NRF_CCM->HEADERMASK = 0xA3; /* mask SN, NESN, CIE and NPI */
-		break;
-	default:
-		/* Using default reset value of HEADERMASK */
-		NRF_CCM->HEADERMASK = 0xE3; /* mask SN, NESN and MD */
-		break;
-	}
-#endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	/* Configure the CCM key, nonce and pointers */
+	NRF_CCM->KEY.VALUE[3] = sys_get_be32(&cnf->key[0]);
+	NRF_CCM->KEY.VALUE[2] = sys_get_be32(&cnf->key[4]);
+	NRF_CCM->KEY.VALUE[1] = sys_get_be32(&cnf->key[8]);
+	NRF_CCM->KEY.VALUE[0] = sys_get_be32(&cnf->key[12]);
 
-	NRF_CCM->MODE = mode;
+	NRF_CCM->NONCE.VALUE[3] = ((uint8_t *)&cnf->counter)[0];
+	NRF_CCM->NONCE.VALUE[2] = sys_get_be32(&((uint8_t *)&cnf->counter)[1]) |
+				  (cnf->direction << 7);
+	NRF_CCM->NONCE.VALUE[1] = sys_get_be32(&cnf->iv[0]);
+	NRF_CCM->NONCE.VALUE[0] = sys_get_be32(&cnf->iv[4]);
+
+	const uint8_t alen = sizeof(uint8_t);
+
+	ccm_job.in_alen = alen;
+	ccm_job.in[0].ptr = &ccm_job.in_alen;
+	ccm_job.in[0].length = sizeof(ccm_job.in_alen);
+	ccm_job.in[0].attribute = CCM_JOB_PTR_ATTRIBUTE_ALEN;
+
+	const uint8_t mlen = *((uint8_t *)pkt + 1U);
+
+	ccm_job.in_mlen = mlen;
+	ccm_job.in[1].ptr = &ccm_job.in_mlen;
+	ccm_job.in[1].length = sizeof(ccm_job.in_mlen);
+	ccm_job.in[1].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.in[2].ptr = (void *)((uint8_t *)pkt + 0U);
+	ccm_job.in[2].length = alen;
+	ccm_job.in[2].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
+
+	ccm_job.in[3].ptr = (void *)((uint8_t *)pkt + 3U);
+	ccm_job.in[3].length = mlen;
+	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
+
+	ccm_job.in[4].ptr = NULL;
+	ccm_job.in[4].length = 0U;
+	ccm_job.in[4].attribute = 0U;
+
+	ccm_job.out[0].ptr = &ccm_job.out_alen;
+	ccm_job.out[0].length = sizeof(ccm_job.out_alen);
+	ccm_job.out[0].attribute = CCM_JOB_PTR_ATTRIBUTE_ALEN;
+
+	ccm_job.out[1].ptr = (void *)((uint8_t *)_pkt_scratch + 1U);
+	ccm_job.out[1].length = sizeof(uint8_t);
+	ccm_job.out[1].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.out[2].ptr = &ccm_job.out_mlen_msb;
+	ccm_job.out[2].length = sizeof(ccm_job.out_mlen_msb);
+	ccm_job.out[2].attribute = CCM_JOB_PTR_ATTRIBUTE_MLEN;
+
+	ccm_job.out[3].ptr = (void *)((uint8_t *)_pkt_scratch + 0U);
+	ccm_job.out[3].length = sizeof(uint8_t);
+	ccm_job.out[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
+
+	ccm_job.out[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
+	ccm_job.out[4].length = mlen + sizeof(uint32_t);
+	ccm_job.out[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
+
+	ccm_job.out[5].ptr = NULL;
+	ccm_job.out[5].length = 0U;
+	ccm_job.out[5].attribute = 0U;
+
+	NRF_CCM->IN.PTR = (uint32_t)ccm_job.in;
+	NRF_CCM->OUT.PTR = (uint32_t)ccm_job.out;
+
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
+
+	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_START);
+
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)pkt;
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
+
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
 
 	return _pkt_scratch;
 }
