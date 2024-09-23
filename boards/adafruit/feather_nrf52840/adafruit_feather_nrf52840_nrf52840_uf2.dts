@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include "adafruit_feather_nrf52840_common.dtsi"
-#include "adafruit_feather_nrf52840_flash_uf2.dtsi"
+#include <nordic/nrf52840_partition_uf2_sdv6.dtsi>
 
 / {
 	model = "Adafruit Feather nRF52840 Express";
