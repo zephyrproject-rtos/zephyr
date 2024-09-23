@@ -108,11 +108,11 @@ void soc_mp_init(void)
 	soc_cpus_active[0] = true;
 }
 
-static int host_runtime_get(void)
+void soc_late_init_hook(void)
 {
-	return pm_device_runtime_get(INTEL_ADSP_HST_DOMAIN_DEV);
+	pm_device_runtime_get(INTEL_ADSP_HST_DOMAIN_DEV);
 }
-SYS_INIT(host_runtime_get, POST_KERNEL, 99);
+
 
 #ifdef CONFIG_ADSP_IMR_CONTEXT_SAVE
 /*

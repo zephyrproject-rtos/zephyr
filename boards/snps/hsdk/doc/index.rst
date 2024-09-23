@@ -387,9 +387,9 @@ Set up Zephyr Software
 Building Sample Applications
 ==============================
 
-You can try many of the :ref:`sample applications and demos
-<samples-and-demos>`.  We'll use :ref:`hello_world`, found in
-:zephyr_file:`samples/hello_world` as an example.
+You can try many of the :zephyr:code-sample-category:`sample applications and demos <samples>`.
+We'll use :zephyr:code-sample:`hello_world`, found in :zephyr_file:`samples/hello_world` as an
+example.
 
 Configuring
 -----------
@@ -410,7 +410,7 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :board: hsdk

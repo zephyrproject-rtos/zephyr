@@ -272,8 +272,8 @@ Legend:
 
    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to
    the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the
-   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-
-   soldering them to positions R12 / R24.
+   oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering
+   them to positions R12 / R24.
 
 SPI Flash / JP2
 ***************
@@ -598,7 +598,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp_wrover_kit`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -634,7 +634,7 @@ headers are on the right side of the board as viewed from the power
 switch, next to similar headers for SPI and UART.  See
 `ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -642,7 +642,7 @@ Here is an example for building the :ref:`hello_world` application.
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

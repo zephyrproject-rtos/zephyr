@@ -206,10 +206,16 @@ enum os_mgmt_group_events {
 	MGMT_EVT_OP_OS_MGMT_INFO_APPEND		= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 2),
 
 	/** Callback when a datetime get command has been received. */
-	MGMT_EVT_OP_OS_MGMT_DATETIME_GET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
+	MGMT_EVT_OP_OS_MGMT_DATETIME_GET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 3),
 
 	/** Callback when a datetime set command has been received, data is struct rtc_time(). */
-	MGMT_EVT_OP_OS_MGMT_DATETIME_SET        = MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
+	MGMT_EVT_OP_OS_MGMT_DATETIME_SET	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 4),
+
+	/**
+	 * Callback when a bootloader info command has been received, data is
+	 * os_mgmt_bootloader_info_data.
+	 */
+	MGMT_EVT_OP_OS_MGMT_BOOTLOADER_INFO	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_OS, 5),
 
 	/** Used to enable all os_mgmt_group events. */
 	MGMT_EVT_OP_OS_MGMT_ALL			= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_OS),

@@ -9,12 +9,8 @@
 #include <zephyr/init.h>
 #include <soc.h>
 
-static int ti_msp432p4xx_init(void)
+void soc_early_init_hook(void)
 {
 
 	SystemInit();
-
-	return 0;
 }
-
-SYS_INIT(ti_msp432p4xx_init, PRE_KERNEL_1, 0);

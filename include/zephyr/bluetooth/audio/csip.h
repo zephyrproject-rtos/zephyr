@@ -15,7 +15,7 @@
 /**
  * @brief Coordinated Set Identification Profile (CSIP)
  *
- * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
+ * @defgroup bt_csip Coordinated Set Identification Profile (CSIP)
  *
  * @since 3.0
  * @version 0.8.0

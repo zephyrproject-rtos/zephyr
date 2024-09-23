@@ -64,6 +64,7 @@
 		led0 = &green_led;
 		led1 = &red_led;
 		sw0 = &user_button;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -230,5 +231,15 @@
 &rtc {
 	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&adc3 {
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
 	status = "okay";
 };

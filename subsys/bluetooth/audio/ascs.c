@@ -1631,6 +1631,16 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 					      BT_BAP_ASCS_REASON_NONE);
 		}
 
+		if (err == 0 && !bt_audio_valid_qos_pref(&ase->ep.qos_pref)) {
+			LOG_ERR("Invalid QoS preferences");
+
+			/* If the upper layers provide an invalid QoS preferences we reject the
+			 * request from the client, as it would not be able to parse the result
+			 * as valid anyways
+			 */
+			err = -EINVAL;
+		}
+
 		if (err) {
 			ascs_app_rsp_warn_valid(&rsp);
 
@@ -1660,6 +1670,16 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 			err = -ENOTSUP;
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 					      BT_BAP_ASCS_REASON_NONE);
+		}
+
+		if (err == 0 && !bt_audio_valid_qos_pref(&ase->ep.qos_pref)) {
+			LOG_ERR("Invalid QoS preferences");
+
+			/* If the upper layers provide an invalid QoS preferences we reject the
+			 * request from the client, as it would not be able to parse the result
+			 * as valid anyways
+			 */
+			err = -EINVAL;
 		}
 
 		if (err || stream == NULL) {

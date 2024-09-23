@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXW
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select ARMV8_M_DSP
+	select HAS_MCUX
+	select PLATFORM_SPECIFIC_INIT
+	select CLOCK_CONTROL

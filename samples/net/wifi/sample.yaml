@@ -62,3 +62,11 @@ tests:
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nucleo_h723zg
+  sample.net.wifi.nrf7002eb:
+    extra_args:
+      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - SHIELD=nrf7002eb
+    platform_allow:
+      - thingy53/nrf5340/cpuapp
+    integration_platforms:
+      - thingy53/nrf5340/cpuapp

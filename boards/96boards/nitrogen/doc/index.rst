@@ -273,7 +273,7 @@ and install a more recent version of pyOCD.
 Flashing an Application to 96Boards Nitrogen
 ============================================
 
-Here is an example for the :ref:`hello_world` application. This
+Here is an example for the :zephyr:code-sample:`hello_world` application. This
 requires installing the :ref:`pyocd-debug-host-tools`.
 
 .. zephyr-app-commands::
@@ -302,7 +302,7 @@ Debugging with GDB
 ==================
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application. This also requires pyOCD.
+:zephyr:code-sample:`hello_world` application. This also requires pyOCD.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

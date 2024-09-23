@@ -1,10 +1,5 @@
-.. _phytec_samples:
+.. zephyr:code-sample-category:: phytec
+   :name: PHYTEC
+   :show-listing:
 
-PHYTEC
-======
-
-.. toctree::
-   :titlesonly:
-   :glob:
-
-   **/*
+   These samples showcase the use of PHYTEC boards in Zephyr.

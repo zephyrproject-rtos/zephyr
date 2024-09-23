@@ -213,7 +213,7 @@ format. Other binary formats, disassembly, and map files may be present
 depending on your board.
 
 The other sample applications in the :zephyr_file:`samples` folder are
-documented in :ref:`samples-and-demos`.
+documented in :zephyr:code-sample-category:`samples`.
 
 .. note:: If you want to reuse an
    existing build directory for another board or application, you need to
@@ -286,7 +286,7 @@ To enable QEMU in Test Runner (Twister) on Windows,
 :ref:`set the environment variable <env_vars>`
 ``QEMU_BIN_PATH`` to the path of QEMU installation folder.
 
-For example, you can build and run the :ref:`hello_world` sample using
+For example, you can build and run the :zephyr:code-sample:`hello_world` sample using
 the x86 emulation board configuration (``qemu_x86``), with:
 
 .. zephyr-app-commands::

@@ -17,3 +17,4 @@ config SOC_SERIES_SAMV71
 	select HAS_SWO
 	select XIP
 	select HAS_POWEROFF
+	select SOC_EARLY_INIT_HOOK

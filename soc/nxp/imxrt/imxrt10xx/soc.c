@@ -332,25 +332,29 @@ void imxrt_audio_codec_pll_init(uint32_t clock_name, uint32_t clk_src,
 }
 #endif
 
+extern void rt10xx_power_init(void);
+extern void imxrt_lpm_init(void);
+
 /**
  *
  * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
-
-static int imxrt_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
 
 	/* Initialize system clock */
 	clock_init();
-
-	return 0;
+#ifdef CONFIG_PM
+#ifdef CONFIG_SOC_MIMXRT1064
+	imxrt_lpm_init();
+#endif
+	rt10xx_power_init();
+#endif
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -365,5 +369,3 @@ void soc_reset_hook(void)
 #endif
 }
 #endif
-
-SYS_INIT(imxrt_init, PRE_KERNEL_1, 0);

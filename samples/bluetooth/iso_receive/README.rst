@@ -30,4 +30,4 @@ another board that will start periodic advertising, create BIG to which this
 sample will establish periodic advertising synchronization and synchronize to
 the Broadcast Isochronous Stream.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

@@ -98,6 +98,18 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
@@ -599,6 +611,15 @@
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x01000000>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			status = "disabled";
+		};
+
+		digi_die_temp: digi_dietemp@40008c00 {
+			compatible = "st,stm32-digi-temp";
+			reg = <0x40008c00 0x400>;
+			interrupts = <113 0>;
+			interrupt-names = "digi_temp";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000008>;
 			status = "disabled";
 		};
 	};

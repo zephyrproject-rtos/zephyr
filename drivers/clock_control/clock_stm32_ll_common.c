@@ -113,8 +113,7 @@ static uint32_t get_msi_frequency(void)
 }
 
 /** @brief Verifies clock is part of active clock configuration */
-__unused
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 	int r = 0;
 
@@ -132,6 +131,13 @@ static int enabled_clock(uint32_t src_clk)
 		if (!IS_ENABLED(STM32_HSE_ENABLED)) {
 			r = -ENOTSUP;
 		}
+		break;
+#endif /* STM32_SRC_HSE */
+#if defined(STM32_SRC_EXT_HSE)
+	case STM32_SRC_EXT_HSE:
+		/* EXT_HSE is the raw OSC_IN signal, so it is always
+		 * available, regardless of the clocks configuration.
+		 */
 		break;
 #endif /* STM32_SRC_HSE */
 #if defined(STM32_SRC_HSI)
@@ -211,6 +217,20 @@ static int enabled_clock(uint32_t src_clk)
 		}
 		break;
 #endif /* STM32_SRC_PLLI2S_R */
+#if defined(STM32_SRC_PLL2CLK)
+	case STM32_SRC_PLL2CLK:
+		if (!IS_ENABLED(STM32_PLL2_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif
+#if defined(STM32_SRC_PLL3CLK)
+	case STM32_SRC_PLL3CLK:
+		if (!IS_ENABLED(STM32_PLL3_ENABLED)) {
+			r = -ENOTSUP;
+		}
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}

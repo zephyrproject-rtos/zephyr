@@ -82,6 +82,14 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
+/**
+ * @brief Reset Wi-Fi statistics
+ *
+ * @param dev Wi-Fi interface name to use
+ *
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_reset_stats(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
 /** Flush PMKSA cache entries
@@ -253,12 +261,22 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 #endif /* CONFIG_AP */
 
 /**
- * @brief Dispatch DPP operations
+ * @brief Dispatch DPP operations for STA
  *
  * @param dev Wi-Fi interface name to use
  * @param dpp_params DPP action enum and params in string
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_dpp_dispatch(const struct device *dev,
-			    struct wifi_dpp_params *params);
+int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Dispatch DPP operations for AP
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param dpp_params DPP action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+#endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
 #endif /* ZEPHYR_SUPP_MGMT_H */

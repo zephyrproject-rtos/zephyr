@@ -417,7 +417,8 @@ static void shi_npcx_handle_host_package(const struct device *dev)
 
 	/* Read remaining bytes from input buffer */
 	if (!shi_npcx_read_inbuf_wait(dev, remain_bytes)) {
-		return shi_npcx_bad_received_data(dev);
+		shi_npcx_bad_received_data(dev);
+		return;
 	}
 
 	/* Move to processing state */
@@ -464,7 +465,8 @@ static void shi_npcx_parse_header(const struct device *dev)
 
 	/* Wait for version, command, length bytes */
 	if (!shi_npcx_read_inbuf_wait(dev, 3)) {
-		return shi_npcx_bad_received_data(dev);
+		shi_npcx_bad_received_data(dev);
+		return;
 	}
 
 	if (data->in_msg[0] == EC_HOST_REQUEST_VERSION) {
@@ -480,13 +482,15 @@ static void shi_npcx_parse_header(const struct device *dev)
 
 		/* Wait for the rest of the command header */
 		if (!shi_npcx_read_inbuf_wait(dev, sizeof(*r) - 3)) {
-			return shi_npcx_bad_received_data(dev);
+			shi_npcx_bad_received_data(dev);
+			return;
 		}
 
 		/* Check how big the packet should be */
 		pkt_size = shi_npcx_host_request_expected_size(r);
 		if (pkt_size == 0 || pkt_size > sizeof(data->in_msg)) {
-			return shi_npcx_bad_received_data(dev);
+			shi_npcx_bad_received_data(dev);
+			return;
 		}
 
 		/* Computing total bytes need to receive */
@@ -495,7 +499,8 @@ static void shi_npcx_parse_header(const struct device *dev)
 		shi_npcx_handle_host_package(dev);
 	} else {
 		/* Invalid version number */
-		return shi_npcx_bad_received_data(dev);
+		shi_npcx_bad_received_data(dev);
+		return;
 	}
 }
 
@@ -632,7 +637,8 @@ static void shi_npcx_handle_input_buf_half_full(const struct device *dev)
 	if (data->state == SHI_STATE_RECEIVING) {
 		/* Read data from input to msg buffer */
 		shi_npcx_read_half_inbuf(dev);
-		return shi_npcx_handle_host_package(dev);
+		shi_npcx_handle_host_package(dev);
+		return;
 	} else if (data->state == SHI_STATE_SENDING) {
 		/* Write data from msg buffer to output buffer */
 		if (data->tx_buf == inst->OBUF + SHI_OBUF_FULL_SIZE) {
@@ -658,7 +664,8 @@ static void shi_npcx_handle_input_buf_full(const struct device *dev)
 		shi_npcx_read_half_inbuf(dev);
 		/* Read to bottom address again */
 		data->rx_buf = inst->IBUF;
-		return shi_npcx_handle_host_package(dev);
+		shi_npcx_handle_host_package(dev);
+		return;
 	} else if (data->state == SHI_STATE_SENDING) {
 		/* Write data from msg buffer to output buffer */
 		if (data->tx_buf == inst->OBUF + SHI_OBUF_HALF_SIZE) {
@@ -729,7 +736,8 @@ static void shi_npcx_isr(const struct device *dev)
 		 * Mark not ready to abort next transaction
 		 */
 		LOG_DBG("CSH-");
-		return shi_npcx_handle_cs_deassert(dev);
+		shi_npcx_handle_cs_deassert(dev);
+		return;
 	}
 #endif
 
@@ -752,7 +760,8 @@ static void shi_npcx_isr(const struct device *dev)
 	 * Transaction is processing.
 	 */
 	if (IS_BIT_SET(stat, NPCX_EVSTAT_IBHF)) {
-		return shi_npcx_handle_input_buf_half_full(dev);
+		shi_npcx_handle_input_buf_half_full(dev);
+		return;
 	}
 
 	/*
@@ -760,7 +769,8 @@ static void shi_npcx_isr(const struct device *dev)
 	 * Transaction is processing.
 	 */
 	if (IS_BIT_SET(stat, NPCX_EVSTAT_IBF)) {
-		return shi_npcx_handle_input_buf_full(dev);
+		shi_npcx_handle_input_buf_full(dev);
+		return;
 	}
 }
 

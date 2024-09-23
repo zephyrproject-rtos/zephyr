@@ -5,10 +5,10 @@
 
 config POSIX_C_LANG_SUPPORT_R
 	bool "Thread-Safe General ISO C Library"
-	select COMMON_LIBC_ASCTIME_R
-	select COMMON_LIBC_CTIME_R
-	select COMMON_LIBC_GMTIME_R
-	select COMMON_LIBC_LOCALTIME_R_UTC
+	select COMMON_LIBC_ASCTIME_R if ! TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	select COMMON_LIBC_CTIME_R if ! TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	select COMMON_LIBC_GMTIME_R if ! TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	select COMMON_LIBC_LOCALTIME_R_UTC if ! TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
 	help
 	  Select 'y' here and Zephyr will provide an implementation of the POSIX_C_LANG_SUPPORT_R
 	  Option Group, consisting of asctime_r(), ctime_r(), gmtime_r(), localtime_r(), rand_r(),

@@ -8,3 +8,6 @@ tests:
     depends_on:
       - gpio
       - spi
+  drivers.led_strip.build.rpi_pico_pio:
+    build_only: true
+    platform_allow: rpi_pico

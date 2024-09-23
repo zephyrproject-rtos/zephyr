@@ -317,7 +317,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay) && CONFIG_INIT_AUDIO_PLL
 	/* Using the Audio PLL as input clock leads to better clock dividers
 	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
 	 */
@@ -360,11 +360,9 @@ void imxrt_usdhc_dat3_pull(bool pullup)
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
 
-static int nxp_rt600_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize clock */
 	clock_init();
@@ -372,8 +370,6 @@ static int nxp_rt600_init(void)
 #ifndef CONFIG_IMXRT6XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64);
 #endif
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -400,5 +396,3 @@ void soc_reset_hook(void)
 }
 
 #endif
-
-SYS_INIT(nxp_rt600_init, PRE_KERNEL_1, 0);

@@ -717,8 +717,16 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--verbose",
         action="count",
         default=0,
-        help="Emit debugging information, call multiple times to increase "
-             "verbosity.")
+        help="Call multiple times to increase verbosity.")
+
+    parser.add_argument(
+        "-ll",
+        "--log-level",
+        type=str.upper,
+        default='INFO',
+        choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help="Select the threshold event severity for which you'd like to receive logs in console."
+             " Default is INFO.")
 
     parser.add_argument("-W", "--disable-warnings-as-errors", action="store_true",
                         help="Do not treat warning conditions as errors.")

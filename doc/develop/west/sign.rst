@@ -22,7 +22,7 @@ If you use this feature, you don't need to run ``west sign`` yourself; the
 build system will do it for you.
 
 Here is an example workflow, which builds and flashes MCUboot, as well as the
-:ref:`hello_world` application for chain-loading by MCUboot. Run these commands
+:zephyr:code-sample:`hello_world` application for chain-loading by MCUboot. Run these commands
 from the :file:`zephyrproject` workspace you created in the
 :ref:`getting_started`.
 

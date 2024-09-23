@@ -214,7 +214,7 @@ the ``--runner`` (or ``-r``) option:
 Flashing an application to B-L072Z-LRWAN1 Discovery board
 ---------------------------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the B-L072Z-LRWAN1 Discovery board to a STLinkV2 to your host computer using the USB port, then
 run a serial host program to connect with your board. For example:
@@ -240,7 +240,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

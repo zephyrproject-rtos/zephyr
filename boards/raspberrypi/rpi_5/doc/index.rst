@@ -126,7 +126,7 @@ config.txt
 zephyr.bin
 ----------
 
-Build an app, for example :ref:`hello_world`:
+Build an app, for example :zephyr:code-sample:`hello_world`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

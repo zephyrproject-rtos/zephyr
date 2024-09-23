@@ -146,7 +146,7 @@ program to connect with your ADI board. For example:
    $ minicom -D /dev/serial/by-id/usb-ADI_EVAL-ADIN2111EBZ_XXXXXX-12-if00-port0
 
 where XXXXXX is the serial number of the connected device.
-Then, build and flash in the usual way. Here is an example for the :ref:`hello_world` application.
+Then, build and flash in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -162,7 +162,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the :ref:`hello_world`
+You can debug an application in the usual way.  Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

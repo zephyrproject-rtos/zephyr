@@ -662,7 +662,7 @@ static int hci_set_ad_ext(struct bt_le_ext_adv *adv, uint16_t hci_op,
 	}
 
 	if (total_len_bytes > bt_dev.le.max_adv_data_len) {
-		LOG_WRN("adv or scan rsp data too large (%d > max %d)", total_len_bytes,
+		LOG_WRN("adv or scan rsp data too large (%zu > max %u)", total_len_bytes,
 			bt_dev.le.max_adv_data_len);
 		return -EDOM;
 	}

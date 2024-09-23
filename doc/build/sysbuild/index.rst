@@ -157,7 +157,7 @@ To handle this, sysbuild has namespaces for configuration variables. You can use
 namespaces to direct settings either to sysbuild itself or to a specific Zephyr
 application managed by sysbuild using the information in these sections.
 
-The following example shows how to build :ref:`hello_world` with MCUboot enabled,
+The following example shows how to build :zephyr:code-sample:`hello_world` with MCUboot enabled,
 applying to both images debug optimizations:
 
 .. tabs::

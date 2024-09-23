@@ -16,6 +16,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -260,6 +261,69 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		return false;
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
+
+	return true;
+}
+
+bool bt_audio_valid_qos_pref(const struct bt_audio_codec_qos_pref *qos_pref)
+{
+	const uint8_t phy_mask = BT_GAP_LE_PHY_1M | BT_GAP_LE_PHY_2M | BT_GAP_LE_PHY_CODED;
+
+	if ((qos_pref->phy & (~phy_mask)) != 0U) {
+		LOG_DBG("Invalid phy: %u", qos_pref->phy);
+
+		return false;
+	}
+
+	if (!IN_RANGE(qos_pref->latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
+		LOG_DBG("Invalid latency: %u", qos_pref->latency);
+
+		return false;
+	}
+
+	if (qos_pref->pd_min > BT_AUDIO_PD_MAX) {
+		LOG_DBG("Invalid pd_min: %u", qos_pref->pd_min);
+
+		return false;
+	}
+
+	if (qos_pref->pd_max > BT_AUDIO_PD_MAX) {
+		LOG_DBG("Invalid pd_min: %u", qos_pref->pd_min);
+
+		return false;
+	}
+
+	if (qos_pref->pd_max < qos_pref->pd_min) {
+		LOG_DBG("Invalid combination of pd_min %u and pd_max: %u", qos_pref->pd_min,
+			qos_pref->pd_max);
+
+		return false;
+	}
+
+	/* The absolute minimum and maximum values of pref_pd_min and pref_pd_max are implicitly
+	 * checked using the bounds of pd_min and pd_max, so we can just compare the preferences
+	 * to the min and max values that have been bound checked already
+	 */
+	if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
+
+		return false;
+	}
+
+	if (qos_pref->pref_pd_max < qos_pref->pref_pd_min) {
+		LOG_DBG("Invalid combination of pref_pd_min %u and pref_pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pref_pd_max);
+
+		return false;
+	}
+
+	if (!IN_RANGE(qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_max %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max);
+
+		return false;
+	}
 
 	return true;
 }

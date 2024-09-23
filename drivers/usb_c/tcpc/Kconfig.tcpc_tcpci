@@ -1,0 +1,25 @@
+# USB-C TCPCI-compliant devices configuration options
+
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_TCPCI
+	bool
+	select I2C
+	help
+	  Enable support for Type-C Port Controller Interface.
+	  This symbol should be selected by TCPCI-compliant drivers to allow the use of generic
+	  TCPCI functions for registers operations.
+
+if USBC_TCPC_TCPCI
+
+config USBC_TCPC_TCPCI_I2C_RETRIES
+	int "I2C communication retries"
+	default 2
+	help
+	  Number of I2C transaction tries that will be performed for each request.
+	  Some TCPCs are going into deep sleep mode when no charger is connected and won't respond
+	  to the i2c address immediately. If device won't respond after retries, it means that
+	  it is not responsible or is not connected.
+
+endif

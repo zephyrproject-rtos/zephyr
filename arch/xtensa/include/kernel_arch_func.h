@@ -32,7 +32,7 @@ void xtensa_switch(void *switch_to, void **switched_from);
 
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
-	return xtensa_switch(switch_to, switched_from);
+	xtensa_switch(switch_to, switched_from);
 }
 
 #ifdef CONFIG_KERNEL_COHERENCE

@@ -32,6 +32,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream);
 
 enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos);
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg);
+bool bt_audio_valid_qos_pref(const struct bt_audio_codec_qos_pref *qos_pref);
 bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream);
 
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,

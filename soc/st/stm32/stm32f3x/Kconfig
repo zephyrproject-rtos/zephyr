@@ -10,3 +10,4 @@ config SOC_SERIES_STM32F3X
 	select CPU_HAS_FPU
 	select HAS_STM32CUBE
 	select HAS_SWO
+	select SOC_EARLY_INIT_HOOK

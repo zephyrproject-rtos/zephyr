@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common eSPI Virtual Wire (VW) mapping configurations in npcx family */
+
+#include <nuvoton/npcx/npcx-espi-vws-map.dtsi>
+
+/*
+ *                Nuvoton NPCX eSPI Virtual Wires Mapping Table
+ * |--------------------------------------------------------------------------|
+ * | VW idx | SLV reg | Wire Bit 3   | Wire Bit 2   | Wire Bit 1| Wire Bit 0  |
+ * |--------------------------------------------------------------------------|
+ * |                 Input (Master-to-Slave) Virtual Wires                    |
+ * |--------------------------------------------------------------------------|
+ * | 4Ah[P] | VWEVMS6 | Reserved     | Reserved     | DnX_WARN  | Reserved    |
+ * |--------------------------------------------------------------------------|
+ * |                Output (Slave-to-Master) Virtual Wires                    |
+ * |--------------------------------------------------------------------------|
+ * | 40h[P] | VWEVSM3 | Reserved     | Reserved     | DNX_ACK   | SUS_ACK#    |
+ * |--------------------------------------------------------------------------|
+ *  [S] System-/[P] Platform-Specific Virtual Wires
+ */
+
+&espi0 {
+	vw-index-extend-set = < ESPI_NPCX_VW_EX_VAL(1, 6, 0x4A) >;
+};
+
+/ {
+	npcx-espi-vws-map {
+		/* eSPI Virtual Vire (VW) input configuration */
+		/* index 4Ah (In) */
+		vw-dnx-warn {
+			vw-reg = <NPCX_VWEVMS6 0x02>;
+			vw-wui = <&wui_vw_dnx_warn>;
+		};
+
+		/* eSPI Virtual Vire (VW) output configuration */
+		/* index 40h (Out) */
+		vw-dnx-ack {
+			vw-reg = <NPCX_VWEVSM3 0x02>;
+		};
+	};
+};

@@ -35,6 +35,18 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 
 #include "net_private.h"
 
+/*
+ * GCC complains about struct sockaddr accesses due to the various
+ * address-family-specific variants being of differing sizes. Let's not
+ * mess with code (which looks correct), just silence the compiler.
+ */
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+
 extern void dns_dispatcher_svc_handler(struct k_work *work);
 
 #define MDNS_LISTEN_PORT 5353

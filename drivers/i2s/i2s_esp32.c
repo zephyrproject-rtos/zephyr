@@ -323,7 +323,6 @@ static void i2s_esp32_rx_callback(const struct device *dma_dev, void *arg, uint3
 				  int status)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	struct i2s_esp32_data *const dev_data = dev->data;
 	struct i2s_esp32_stream *stream = &dev_data->rx;
 	int err;
@@ -381,7 +380,6 @@ static void i2s_esp32_tx_callback(const struct device *dma_dev, void *arg, uint3
 				  int status)
 {
 	const struct device *dev = (const struct device *)arg;
-	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	struct i2s_esp32_data *const dev_data = dev->data;
 	struct i2s_esp32_stream *stream = &dev_data->tx;
 	struct queue_item item;

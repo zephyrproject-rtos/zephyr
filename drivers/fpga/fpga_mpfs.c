@@ -58,7 +58,7 @@ static inline uint32_t scb_read(mm_reg_t add, mm_reg_t offset)
 
 static inline void scb_write(mm_reg_t add, mm_reg_t offset, uint32_t val)
 {
-	return sys_write32(val, add + offset);
+	sys_write32(val, add + offset);
 }
 
 /*This function add the index of new image into the spi directory at offset 0x004.

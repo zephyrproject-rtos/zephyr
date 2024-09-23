@@ -15,7 +15,7 @@
  *     1. 9 write clocks per byte, final bit is command/data selection bit
  *     2. Same as above, but 16 write clocks per byte
  *     3. 8 write clocks per byte. Command/data selected via GPIO pin
- * The current driver interface only supports type C modes 1 and 3
+ * The current driver interface does not support type C with 16 write clocks (option 2).
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DBI_H_
@@ -118,7 +118,7 @@ extern "C" {
  * Configuration for MIPI DBI controller write
  */
 struct mipi_dbi_config {
-	/** MIPI DBI mode (SPI 3 wire or 4 wire) */
+	/** MIPI DBI mode */
 	uint8_t mode;
 	/** SPI configuration */
 	struct spi_config config;

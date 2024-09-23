@@ -20,7 +20,7 @@
 #include <hal/cam_ll.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_esp32_lcd_cam, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
 
@@ -194,6 +194,10 @@ static int video_esp32_stream_start(const struct device *dev)
 
 	cam_hal_start_streaming(&data->hal);
 
+	if (video_stream_start(cfg->source_dev)) {
+		return -EIO;
+	}
+
 	data->is_streaming = true;
 
 	return 0;
@@ -206,6 +210,10 @@ static int video_esp32_stream_stop(const struct device *dev)
 	int ret = 0;
 
 	LOG_DBG("Stop streaming");
+
+	if (video_stream_stop(cfg->source_dev)) {
+		return -EIO;
+	}
 
 	data->is_streaming = false;
 	ret = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);

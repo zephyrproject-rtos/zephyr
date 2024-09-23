@@ -12,10 +12,21 @@ dcnf: dcnf@0 {
 	status = "okay";
 };
 
-oscillators: oscillator@4000 {
-	compatible = "nordic,nrf-oscillators";
+oscillators: clock-controller@4000 {
+	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
-	status = "okay";
+
+	lfxo: lfxo {
+		compatible = "nordic,nrf53-lfxo";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
+
+	hfxo: hfxo {
+		compatible = "nordic,nrf53-hfxo";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(32)>;
+	};
 };
 
 regulators: regulator@4000 {

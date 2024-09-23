@@ -177,7 +177,8 @@ static void udc_event_xfer_in(const struct device *dev,
 
 		udc_ep_set_busy(dev, ep, false);
 		if (ep == USB_CONTROL_EP_IN) {
-			return udc_event_xfer_ctrl_in(dev, buf);
+			udc_event_xfer_ctrl_in(dev, buf);
+			return;
 		}
 
 		udc_submit_ep_event(dev, buf, 0);

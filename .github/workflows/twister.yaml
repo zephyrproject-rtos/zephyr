@@ -77,6 +77,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -185,9 +186,11 @@ jobs:
             git config --global user.name "Zephyr Builder"
             rm -fr ".git/rebase-apply"
             git rebase origin/${BASE_REF}
+            git clean -f -d
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -201,6 +204,8 @@ jobs:
         run: |
           cmake --version
           gcc --version
+          cargo --version
+          rustup target list --installed
           ls -la
           echo "github.ref: ${{ github.ref }}"
           echo "github.base_ref: ${{ github.base_ref }}"

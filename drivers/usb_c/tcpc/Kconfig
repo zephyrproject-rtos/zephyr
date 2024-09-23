@@ -27,6 +27,8 @@ config USBC_TCPC_SHELL
 
 source "drivers/usb_c/tcpc/Kconfig.tcpc_stm32"
 source "drivers/usb_c/tcpc/Kconfig.tcpc_numaker"
+source "drivers/usb_c/tcpc/Kconfig.tcpc_tcpci"
+source "drivers/usb_c/tcpc/Kconfig.tcpc_ps8xxx"
 
 module = USBC
 module-str = usbc

@@ -189,7 +189,7 @@ and scan response data.
 More Examples
 *************
 
-More :ref:`sample Bluetooth applications <bluetooth-samples>` are available in
+More :zephyr:code-sample-category:`sample Bluetooth applications <bluetooth>` are available in
 ``samples/bluetooth/``.
 
 .. _BabbleSim: https://babblesim.github.io/

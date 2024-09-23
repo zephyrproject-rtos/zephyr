@@ -3643,8 +3643,7 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED ||
-	    ctx_val > BT_AUDIO_CONTEXT_TYPE_ANY) {
+	if (ctx_val > BT_AUDIO_CONTEXT_TYPE_ANY) {
 		shell_error(sh, "Invalid context: %lu", ctx_val);
 
 		return -ENOEXEC;
@@ -3653,6 +3652,12 @@ static int cmd_context(const struct shell *sh, size_t argc, char *argv[])
 	ctx = ctx_val;
 
 	if (!strcmp(argv[3], "supported")) {
+		if (ctx_val == BT_AUDIO_CONTEXT_TYPE_PROHIBITED) {
+			shell_error(sh, "Invalid context: %lu", ctx_val);
+
+			return -ENOEXEC;
+		}
+
 		err = bt_pacs_set_supported_contexts(dir, ctx);
 		if (err) {
 			shell_error(ctx_shell, "Set supported contexts err %d", err);
@@ -4136,8 +4141,8 @@ static ssize_t connectable_ad_data_add(struct bt_data *data_array,
 		IF_ENABLED(CONFIG_BT_ASCS, (BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),))
 		IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR, (BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),))
 		IF_ENABLED(CONFIG_BT_PACS, (BT_UUID_16_ENCODE(BT_UUID_PACS_VAL),))
-		IF_ENABLED(CONFIG_BT_GTBS, (BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL),))
-		IF_ENABLED(CONFIG_BT_TBS, (BT_UUID_16_ENCODE(BT_UUID_TBS_VAL),))
+		IF_ENABLED(CONFIG_BT_TBS, (BT_UUID_16_ENCODE(BT_UUID_GTBS_VAL),))
+		IF_ENABLED(CONFIG_BT_TBS_BEARER_COUNT, (BT_UUID_16_ENCODE(BT_UUID_TBS_VAL),))
 		IF_ENABLED(CONFIG_BT_VCP_VOL_REND, (BT_UUID_16_ENCODE(BT_UUID_VCS_VAL),))
 		IF_ENABLED(CONFIG_BT_HAS, (BT_UUID_16_ENCODE(BT_UUID_HAS_VAL),)) /* Shall be last */
 	};

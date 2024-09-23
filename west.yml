@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: aa6a967d1ab4077691aa046229a782102960218a
+      revision: 0bd00ce82fcf48281c9206fc28bd39785f059d64
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: f91541b8a4c39395a4ab9445fee69eeeaa050d6c
+      revision: f4e26fad2cfd8b8e8988e835a28667573ed072cf
       path: modules/hal/nxp
       groups:
         - hal
@@ -233,7 +233,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 1e6116bd2a36db976d955ee772d21f329e529873
+      revision: 1ff820533c1b1c17f1a4d7d28ab99a94a234883b
       path: modules/hal/stm32
       groups:
         - hal
@@ -259,7 +259,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7761b17eea9a2442af6ea9df830904fa4ba7bbca
+      revision: cbae0170437dbe196d436b2b53d7aefb97044b0c
     - name: libmetal
       revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
       path: modules/hal/libmetal
@@ -315,7 +315,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 764ef4e401a8f4c6a86ab723533841f072885a5b
+      revision: 06bde1fd7531b1f788f6e42b6f7b358c0fe4f814
     - name: segger
       revision: b011c45b585e097d95d9cf93edf4f2e01588d3cd
       path: modules/debug/segger

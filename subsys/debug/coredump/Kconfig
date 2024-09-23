@@ -107,4 +107,15 @@ config DEBUG_COREDUMP_THREADS_METADATA
 	  Core dump will contain the threads metadata section containing
 	  any necessary data to enable debugging threads
 
+config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
+	bool "Dump privilege stack of user threads"
+	default y
+	depends on ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	depends on USERSPACE
+	help
+	  Dump the privilege stack of user threads.
+
+	  Say n to conserve space on coredump backend or if you will never
+	  need to look into the privilege stacks.
+
 endif # DEBUG_COREDUMP

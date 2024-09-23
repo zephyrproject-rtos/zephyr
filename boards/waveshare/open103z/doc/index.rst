@@ -55,7 +55,7 @@ Flashing
 ========
 
 Build and flash applications as usual. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -66,7 +66,7 @@ Debugging
 =========
 
 Debug applications as usual. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

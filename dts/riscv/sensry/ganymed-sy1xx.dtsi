@@ -1,0 +1,91 @@
+/* Copyright (c) 2024 sensry.io */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "sensry,sy1xx", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imc_zicsr";
+			status = "okay";
+		};
+
+	};
+
+	l2_ram_text: memory@1c010200 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "mmio-sram";
+		reg = <0x1c010200 0x5fe00>;
+		status = "okay";
+	};
+
+	l2_ram_data: memory@1c070000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "mmio-sram";
+		reg = <0x1c070000 0x200000>;
+		status = "okay";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		event0: interrupt-controller@1000 {
+			compatible = "sensry,sy1xx-event-unit";
+			reg = <0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+		};
+
+		systick: timer@1a10b040 {
+			compatible = "sensry,sy1xx-sys-timer";
+			reg = <0x1a10b040>;
+			interrupt-parent = <&event0>;
+			interrupts = <10 0>;
+			ticks_us = <1000>;
+		};
+
+		timer1: timer@1a10b044 {
+			compatible = "sensry,sy1xx-sys-timer";
+			reg = <0x1a10b044>;
+			interrupt-parent = <&event0>;
+			interrupts = <11 0>;
+			ticks_us = <1000>;
+		};
+
+		uart0: uart@1a102000 {
+			compatible = "sensry,sy1xx-uart";
+			reg = <0x1a102000>;
+			instance = <0>;
+			current-speed = <1000000>;
+			status = "okay";
+		};
+
+		uart1: uart@1a102080 {
+			compatible = "sensry,sy1xx-uart";
+			reg = <0x1a102080>;
+			instance = <1>;
+			current-speed = <1000000>;
+			status = "okay";
+		};
+
+		uart2: uart@1a102100 {
+			compatible = "sensry,sy1xx-uart";
+			reg = <0x1a102100>;
+			instance = <2>;
+			current-speed = <1000000>;
+			status = "okay";
+		};
+
+	};
+};

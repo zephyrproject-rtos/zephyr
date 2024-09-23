@@ -69,14 +69,3 @@ void sys_arch_reboot(int type)
 	sedi_pm_reset();
 }
 #endif
-
-extern void sedi_pm_init(void);
-
-static int ish_sedi_pm_init(void)
-{
-	sedi_pm_init();
-
-	return 0;
-}
-
-SYS_INIT(ish_sedi_pm_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

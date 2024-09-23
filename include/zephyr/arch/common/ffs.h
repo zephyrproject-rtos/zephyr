@@ -57,26 +57,13 @@ static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 
 #else
 	/*
-	 * Toolchain does not have __builtin_ffs().
-	 * Need to do this manually.
+	 * Toolchain does not have __builtin_ffs(). Leverage find_lsb_set()
+	 * by first clearing all but the lowest set bit.
 	 */
-	int bit;
 
-	if (op == 0) {
-		return 0;
-	}
+	op = op ^ (op & (op - 1));
 
-	for (bit = 0; bit < 32; bit++) {
-		if ((op & (1 << bit)) != 0) {
-			return (bit + 1);
-		}
-	}
-
-	/*
-	 * This should never happen but we need to keep
-	 * compiler happy.
-	 */
-	return 0;
+	return find_msb_set(op);
 #endif /* CONFIG_TOOLCHAIN_HAS_BUILTIN_FFS */
 }
 

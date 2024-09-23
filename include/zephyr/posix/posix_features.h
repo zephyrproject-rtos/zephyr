@@ -331,7 +331,9 @@
 #define SYMLOOP_MAX         _POSIX_SYMLOOP_MAX
 #define TIMER_MAX           _POSIX_TIMER_MAX
 #define TTY_NAME_MAX        _POSIX_TTY_NAME_MAX
+#ifndef TZNAME_MAX
 #define TZNAME_MAX          _POSIX_TZNAME_MAX
+#endif
 
 /* Pathname variable values */
 #define FILESIZEBITS             (32)

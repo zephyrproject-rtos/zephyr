@@ -28,7 +28,8 @@ properties:
       PRECHARGE: (also called BYPASS)
         - SMPS converter enabled - clock disabled
         - LDOs supply voltage: VDD (though SMPS)
-          - Supplied current limitation can be programmed
+          - Current supplied to LDOs can be limited
+            (feature only supported on STM32WB05 / STM32WB09)
 
       RUN: (also called ON)
         - SMPS converter enabled - clock enabled
@@ -97,8 +98,12 @@ properties:
     description: |
       SMPS output current limit (in mA)
 
-      The default value corresponds to the hardware reset
-      configuration of 20 mA output current limit.
+      The default value of 20 mA corresponds to the maximal
+      output current allowed for the SMPS, and is also equal
+      to the hardware reset configuration.
+
+      On STM32WB06 and STM32WB07, this property is ignored as
+      the output current limitation feature is not available.
 
       This property is only used if `smps-mode` is "PRECHARGE".
     enum:

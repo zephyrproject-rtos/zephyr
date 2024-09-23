@@ -39,11 +39,8 @@ static void clock_init(void)
 	}
 }
 
-static int kb1200_init(void)
+void soc_early_init_hook(void)
 {
 	clock_init();
 	pmu_init();
-	return 0;
 }
-
-SYS_INIT(kb1200_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -567,6 +567,7 @@ static int ieee802154_associate(uint32_t mgmt_request, struct net_if *iface,
 	if (ieee802154_radio_send(iface, pkt, pkt->buffer)) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
+		k_sem_give(&ctx->scan_ctx_lock);
 		NET_ERR("Could not associate: cannot send association request");
 		goto out;
 	}

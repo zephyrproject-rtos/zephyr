@@ -11,7 +11,7 @@ if (WIN32)
   set(ENV{PYTHONIOENCODING} "utf-8")
 endif()
 
-set(PYTHON_MINIMUM_REQUIRED 3.8)
+set(PYTHON_MINIMUM_REQUIRED 3.10)
 
 find_package(Deprecated COMPONENTS PYTHON_PREFER)
 

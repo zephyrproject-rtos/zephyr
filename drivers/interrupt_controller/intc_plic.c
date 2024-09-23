@@ -64,9 +64,11 @@
 
 #ifdef CONFIG_TEST_INTC_PLIC
 #define INTC_PLIC_STATIC
+#define INTC_PLIC_STATIC_INLINE
 #else
-#define INTC_PLIC_STATIC static inline
-#endif
+#define INTC_PLIC_STATIC static
+#define INTC_PLIC_STATIC_INLINE static inline
+#endif /* CONFIG_TEST_INTC_PLIC */
 
 typedef void (*riscv_plic_irq_config_func_t)(void);
 struct plic_config {
@@ -78,6 +80,7 @@ struct plic_config {
 	uint32_t num_irqs;
 	riscv_plic_irq_config_func_t irq_config_func;
 	struct _isr_table_entry *isr_table;
+	const uint32_t *const hart_context;
 };
 
 struct plic_stats {
@@ -92,12 +95,12 @@ struct plic_data {
 static uint32_t save_irq;
 static const struct device *save_dev;
 
-INTC_PLIC_STATIC uint32_t local_irq_to_reg_index(uint32_t local_irq)
+INTC_PLIC_STATIC_INLINE uint32_t local_irq_to_reg_index(uint32_t local_irq)
 {
 	return local_irq >> LOG2(PLIC_REG_SIZE);
 }
 
-INTC_PLIC_STATIC uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+INTC_PLIC_STATIC_INLINE uint32_t local_irq_to_reg_offset(uint32_t local_irq)
 {
 	return local_irq_to_reg_index(local_irq) * sizeof(uint32_t);
 }
@@ -109,9 +112,11 @@ static inline uint32_t get_plic_enabled_size(const struct device *dev)
 	return local_irq_to_reg_index(config->num_irqs) + 1;
 }
 
-static inline uint32_t get_first_context(uint32_t hartid)
+static ALWAYS_INLINE uint32_t get_hart_context(const struct device *dev, uint32_t hartid)
 {
-	return hartid == 0 ? 0 : (hartid * 2) - 1;
+	const struct plic_config *config = dev->config;
+
+	return config->hart_context[hartid];
 }
 
 static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t cpu_num)
@@ -120,17 +125,13 @@ static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t 
 	uint32_t hartid;
 	/*
 	 * We want to return the irq_en address for the context of given hart.
-	 * If hartid is 0, we return the devices irq_en property, job done. If it is
-	 * greater than zero, we assume that there are two context's associated with
-	 * each hart: M mode enable, followed by S mode enable. We return the M mode
-	 * enable address.
 	 */
 #if CONFIG_SMP
 	hartid = _kernel.cpus[cpu_num].arch.hartid;
 #else
 	hartid = arch_proc_id();
 #endif
-	return  config->irq_en + get_first_context(hartid) * CONTEXT_ENABLE_SIZE;
+	return  config->irq_en + get_hart_context(dev, hartid) * CONTEXT_ENABLE_SIZE;
 }
 
 static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
@@ -139,14 +140,9 @@ static inline mem_addr_t get_claim_complete_addr(const struct device *dev)
 
 	/*
 	 * We want to return the claim complete addr for the hart's context.
-	 * We are making a few assumptions here:
-	 * 1. for hart 0, return the first context claim complete.
-	 * 2. for any other hart, we assume they have two privileged mode contexts
-	 * which are contiguous, where the m mode context is first.
-	 * We return the m mode context.
 	 */
 
-	return config->reg + get_first_context(arch_proc_id()) * CONTEXT_SIZE +
+	return config->reg + get_hart_context(dev, arch_proc_id()) * CONTEXT_SIZE +
 	       CONTEXT_CLAIM;
 }
 
@@ -162,7 +158,7 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	hartid = arch_proc_id();
 #endif
 
-	return config->reg + (get_first_context(hartid) * CONTEXT_SIZE);
+	return config->reg + (get_hart_context(dev, hartid) * CONTEXT_SIZE);
 }
 
 /**
@@ -571,8 +567,14 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
+#define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), DT_INST_IRQN(n)), (i,))
+#define PLIC_HART_CONTEXT_DECLARE(n)                                                               \
+	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = {    \
+		LISTIFY(DT_INST_NUM_IRQS(n), HART_CONTEXTS, (), n)}
+
 #define PLIC_INTC_CONFIG_INIT(n)                                                                   \
 	PLIC_INTC_IRQ_FUNC_DECLARE(n);                                                             \
+	PLIC_HART_CONTEXT_DECLARE(n);                                                              \
 	static const struct plic_config plic_config_##n = {                                        \
 		.prio = PLIC_BASE_ADDR(n),                                                         \
 		.irq_en = PLIC_BASE_ADDR(n) + CONTEXT_ENABLE_BASE,                                 \
@@ -583,6 +585,7 @@ SHELL_CMD_ARG_REGISTER(plic, &plic_cmds, "PLIC shell commands",
 		.num_irqs = DT_INST_PROP(n, riscv_ndev),                                           \
 		.irq_config_func = plic_irq_config_func_##n,                                       \
 		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
+		.hart_context = plic_hart_contexts_##n,                                            \
 	};                                                                                         \
 	PLIC_INTC_IRQ_FUNC_DEFINE(n)
 

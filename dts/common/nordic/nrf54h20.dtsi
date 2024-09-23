@@ -626,6 +626,7 @@
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hsfll120>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			spi121: spi@8e7000 {
@@ -935,6 +936,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -976,6 +978,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -1054,6 +1057,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -1095,6 +1099,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1173,6 +1178,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1214,6 +1220,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1292,6 +1299,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1333,6 +1341,7 @@
 				clocks = <&fll16m>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
 				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 		};
 	};

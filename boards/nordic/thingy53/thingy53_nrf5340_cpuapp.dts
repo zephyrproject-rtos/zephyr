@@ -36,3 +36,8 @@
 &vregh {
 	status = "okay";
 };
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
+};

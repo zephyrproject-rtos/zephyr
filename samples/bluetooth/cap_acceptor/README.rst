@@ -9,10 +9,11 @@ Overview
 
 Application demonstrating the CAP Acceptor functionality.
 Starts by advertising for a CAP Initiator to connect and set up available streams.
+It can also be configured to start scanning for broadcast audio streams by itself.
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_acceptor` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************

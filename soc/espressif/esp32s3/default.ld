@@ -101,7 +101,7 @@ MEMORY
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 /* Used as a pointer to the heap end */
-_heap_sentry = DRAM_BUFFERS_START;
+_heap_sentry = DRAM_RESERVED_START;
 
 SECTIONS
 {
@@ -689,14 +689,6 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  .dram0.noinit (NOLOAD):
-  {
-    . = ALIGN(4);
-    *(.noinit)
-    *(.noinit.*)
-    . = ALIGN(4) ;
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
@@ -729,18 +721,19 @@ SECTIONS
     __bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  .dram0.heap_start (NOLOAD) :
+  .dram0.noinit (NOLOAD):
   {
-    . = ALIGN (8);
-    /* Lowest possible start address for the heap */
-    _heap_start = ABSOLUTE(.);
+    . = ALIGN(4);
+    *(.noinit)
+    *(.noinit.*)
+    . = ALIGN(4) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
 
   /* --- END OF DRAM --- */
 
@@ -906,6 +899,7 @@ SECTIONS
 
 #endif /* CONFIG_ESP_SPIRAM */
 
+  /* --- XTENSA GLUE AND DEBUG BEGIN --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
@@ -949,11 +943,7 @@ SECTIONS
 
 }
 
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
-
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
-          "DRAM segment data does not fit.")
+  /* --- XTENSA GLUE AND DEBUG END --- */
 
 #if defined(CONFIG_ESP_SPIRAM)
 ASSERT(((_ext_ram_bss_end - _ext_ram_bss_start) <= CONFIG_ESP_SPIRAM_SIZE),

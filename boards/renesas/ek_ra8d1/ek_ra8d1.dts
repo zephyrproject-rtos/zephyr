@@ -69,8 +69,8 @@
 };
 
 &sciclk {
-	clk_src = <RA_CLOCK_SOURCE_PLL1P>;
-	clk_div = <RA_SCI_CLOCK_DIV_4>;
+	clk-src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk-div = <RA_SCI_CLOCK_DIV_4>;
 	status = "okay";
 };
 

@@ -11,6 +11,7 @@ config SOC_SERIES_MEC172X
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
 	select HAS_PM
+	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_MEC172X
 

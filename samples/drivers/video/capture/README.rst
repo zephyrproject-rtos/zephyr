@@ -24,6 +24,9 @@ Supported camera modules on some i.MX RT boards can be found below.
 - :ref:`mimxrt1170_evk`
 - `OV5640 camera module`_
 
+Also :ref:`arduino_nicla_vision_board` can be used in this sample as capture device, in that case
+The user can transfer the captured frames through on board USB.
+
 Wiring
 ******
 
@@ -34,6 +37,8 @@ USB debug connector (J41) in order to get console output via the freelink interf
 On :ref:`mimxrt1170_evk`, the OV5640 camera module should be plugged into the
 J2 camera connector. A USB cable should be connected from a host to the micro
 USB debug connector (J11) in order to get console output via the daplink interface.
+
+For :ref:`arduino_nicla_vision_board` there is no extra wiring required.
 
 Building and Running
 ********************
@@ -50,9 +55,17 @@ For :ref:`mimxrt1064_evk`, build this sample application with the following comm
 For :ref:`mimxrt1170_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/video/capture
+   :zephyr-app: samples/drivers/video/capture
    :board: mimxrt1170_evk/mimxrt1176/cm7
    :shield: nxp_btb44_ov5640,rk055hdmipi4ma0
+   :goals: build
+   :compact:
+
+For :ref:`arduino_nicla_vision_board`, build this sample application with the following commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/capture
+   :board: arduino_nicla_vision/stm32h747xx/m7
    :goals: build
    :compact:
 

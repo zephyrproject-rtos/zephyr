@@ -30,6 +30,10 @@ zephyr_library_sources_ifdef(
   iso.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CHANNEL_SOUNDING
+  cs.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_IAS
   ias.c
   )

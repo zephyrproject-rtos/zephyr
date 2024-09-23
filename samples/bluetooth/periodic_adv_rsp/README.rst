@@ -36,4 +36,4 @@ the Zephyr tree.
 Use the sample found under :zephyr_file:`samples/bluetooth/periodic_sync_rsp` in the
 Zephyr tree that will synchronize and respond to this sample.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

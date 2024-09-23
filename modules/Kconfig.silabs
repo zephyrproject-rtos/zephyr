@@ -3,6 +3,12 @@
 # Copyright (c) 2017, Christian Taedcke
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_SILABS_MODULE
+	bool
+
+config ZEPHYR_HAL_SILABS_MODULE_BLOBS
+	bool
+
 config HAS_SILABS_GECKO
 	bool
 	select HAS_CMSIS_CORE

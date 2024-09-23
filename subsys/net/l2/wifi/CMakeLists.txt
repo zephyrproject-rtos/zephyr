@@ -26,6 +26,8 @@ endif()
 # Wi-Fi Enterprise test certificates handling
 set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
 set(gen_dir ${gen_inc_dir}/wifi_enterprise_test_certs)
+# Create output directory for test certs
+file(MAKE_DIRECTORY ${gen_dir})
 
 # convert .pem files to array data at build time
 zephyr_include_directories(${gen_inc_dir})

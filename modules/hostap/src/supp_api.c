@@ -1057,6 +1057,18 @@ int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats)
 
 	return wifi_mgmt_api->get_stats(dev, stats);
 }
+
+int supplicant_reset_stats(const struct device *dev)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->reset_stats) {
+		wpa_printf(MSG_WARNING, "Reset stats not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->reset_stats(dev);
+}
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 
 int supplicant_pmksa_flush(const struct device *dev)
@@ -1361,6 +1373,25 @@ int hapd_config_network(struct hostapd_iface *iface,
 				goto out;
 			}
 			iface->bss[0]->conf->sae_pwe = 2;
+		} else if (params->security == WIFI_SECURITY_TYPE_DPP) {
+			if (!hostapd_cli_cmd_v("set wpa 2")) {
+				goto out;
+			}
+			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK DPP")) {
+				goto out;
+			}
+			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
+				goto out;
+			}
+			if (!hostapd_cli_cmd_v("set wpa_pairwise CCMP")) {
+				goto out;
+			}
+			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
+				goto out;
+			}
+			if (!hostapd_cli_cmd_v("set dpp_configurator_connectivity 1")) {
+				goto out;
+			}
 		}
 	} else {
 		if (!hostapd_cli_cmd_v("set wpa 0")) {
@@ -1664,16 +1695,10 @@ static void dpp_ssid_bin2str(char *dst, uint8_t *src, int max_len)
 #define SUPPLICANT_DPP_CMD_BUF_SIZE 384
 #define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
 
-int supplicant_dpp_dispatch(const struct device *dev,
-			    struct wifi_dpp_params *params)
+static int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
 {
-	char *pos;
-	static char dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE] = {0};
-	char *end = &dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE - 2];
-
-	memset(dpp_cmd_buf, 0x0, SUPPLICANT_DPP_CMD_BUF_SIZE);
-
-	pos = &dpp_cmd_buf[0];
+	char *pos = cmd;
+	char *end = cmd + max_len;
 
 	switch (params->action) {
 	case WIFI_DPP_CONFIGURATOR_ADD:
@@ -1849,14 +1874,77 @@ int supplicant_dpp_dispatch(const struct device *dev,
 		snprintf(pos, end - pos, "SET dpp_resp_wait_time %d",
 			 params->dpp_resp_wait_time);
 		break;
+	case WIFI_DPP_RECONFIG:
+		snprintf(pos, end - pos, "DPP_RECONFIG %d", params->network_id);
+		break;
 	default:
 		wpa_printf(MSG_ERROR, "Unknown DPP action");
-		return -1;
+		return -EINVAL;
 	}
 
-	wpa_printf(MSG_DEBUG, "%s", dpp_cmd_buf);
-	if (zephyr_wpa_cli_cmd_resp(dpp_cmd_buf, params->resp)) {
-		return -1;
-	}
 	return 0;
 }
+
+int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)
+{
+	int ret;
+	char *cmd = NULL;
+
+	if (params == NULL) {
+		return -EINVAL;
+	}
+
+	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
+	if (cmd == NULL) {
+		return -ENOMEM;
+	}
+
+	/* leave one byte always be 0 */
+	ret = dpp_params_to_cmd(params, cmd, SUPPLICANT_DPP_CMD_BUF_SIZE - 2);
+	if (ret) {
+		os_free(cmd);
+		return ret;
+	}
+
+	wpa_printf(MSG_DEBUG, "wpa_cli %s", cmd);
+	if (zephyr_wpa_cli_cmd_resp(cmd, params->resp)) {
+		os_free(cmd);
+		return -ENOEXEC;
+	}
+
+	os_free(cmd);
+	return 0;
+}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)
+{
+	int ret;
+	char *cmd = NULL;
+
+	if (params == NULL) {
+		return -EINVAL;
+	}
+
+	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
+	if (cmd == NULL) {
+		return -ENOMEM;
+	}
+
+	/* leave one byte always be 0 */
+	ret = dpp_params_to_cmd(params, cmd, SUPPLICANT_DPP_CMD_BUF_SIZE - 2);
+	if (ret) {
+		os_free(cmd);
+		return ret;
+	}
+
+	wpa_printf(MSG_DEBUG, "hostapd_cli %s", cmd);
+	if (zephyr_hostapd_cli_cmd_resp(cmd, params->resp)) {
+		os_free(cmd);
+		return -ENOEXEC;
+	}
+
+	os_free(cmd);
+	return 0;
+}
+#endif /* CONFIG_WIFI_NM_HOSTAPD_AP */

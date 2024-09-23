@@ -140,7 +140,11 @@ The Zephyr _nucleo_u031r8_ board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -160,6 +164,7 @@ For more details please refer to `STM32U031 User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- DAC1_OUT1 : PA4
 - LD1 : PA5
 - UART_1_TX : PA9
 - UART_1_RX : PA10
@@ -211,7 +216,7 @@ Flashing an application to Nucleo U031R8
 
 Connect the Nucleo U031R8 to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

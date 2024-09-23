@@ -504,18 +504,18 @@ static const struct i2c_driver_api i2c_ra_iic_driver_api = {
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, eri, irq)] =                               \
 			ELC_EVENT_IIC_ERI(DT_INST_PROP(index, channel));                           \
                                                                                                    \
-		IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                           \
-				   DT_INST_IRQ_BY_NAME(index, rxi, priority), iic_master_rxi_isr,  \
-				   0);                                                             \
-		IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                           \
-				   DT_INST_IRQ_BY_NAME(index, txi, priority), iic_master_txi_isr,  \
-				   0);                                                             \
-		IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                           \
-				   DT_INST_IRQ_BY_NAME(index, tei, priority), iic_master_tei_isr,  \
-				   0);                                                             \
-		IRQ_DIRECT_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                           \
-				   DT_INST_IRQ_BY_NAME(index, eri, priority), iic_master_eri_isr,  \
-				   0);                                                             \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, rxi, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(index, rxi, priority), iic_master_rxi_isr,         \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, txi, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(index, txi, priority), iic_master_txi_isr,         \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, tei, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(index, tei, priority), iic_master_tei_isr,         \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, eri, irq),                                  \
+			    DT_INST_IRQ_BY_NAME(index, eri, priority), iic_master_eri_isr,         \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
                                                                                                    \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, rxi, irq));                                  \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, txi, irq));                                  \

@@ -44,6 +44,11 @@ static int mcux_dac32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	DAC32_GetDefaultConfig(&dac32_config);
 	dac32_config.enableLowPowerMode = config->low_power;
 	dac32_config.referenceVoltageSource = config->reference;

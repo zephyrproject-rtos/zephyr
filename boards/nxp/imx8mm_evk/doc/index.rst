@@ -222,7 +222,7 @@ MIMX8MM EVK board can be debugged by connecting an external JLink
 JTAG debugger to the J902 debug connector and to the PC. Then
 the application can be debugged using the usual way.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -480,7 +480,8 @@ static void telnet_server_cb(struct k_work *work)
 		NET_ERR("Telnet socket %d error (%d)", evt->event.fd, sock_error);
 
 		if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-			return telnet_end_client_connection();
+			telnet_end_client_connection();
+			return;
 		}
 
 		goto error;
@@ -491,11 +492,14 @@ static void telnet_server_cb(struct k_work *work)
 	}
 
 	if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV4_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV4_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_IPV6_LISTEN].fd) {
-		return telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		telnet_accept(&sh_telnet->fds[SOCK_ID_IPV6_LISTEN]);
+		return;
 	} else if (evt->event.fd == sh_telnet->fds[SOCK_ID_CLIENT].fd) {
-		return telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		telnet_recv(&sh_telnet->fds[SOCK_ID_CLIENT]);
+		return;
 	}
 
 	NET_ERR("Unexpected FD received for telnet, restarting service.");

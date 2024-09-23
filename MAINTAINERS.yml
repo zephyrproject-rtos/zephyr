@@ -416,6 +416,8 @@ Bluetooth Host:
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
+    - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/shell/mesh.conf
     - tests/bluetooth/tester/
     - tests/bsim/bluetooth/audio/
     - tests/bsim/bluetooth/audio_samples/
@@ -446,6 +448,7 @@ Bluetooth Mesh:
     - samples/bluetooth/mesh*/
     - subsys/bluetooth/mesh/
     - tests/bluetooth/mesh*/
+    - tests/bluetooth/shell/mesh.conf
     - tests/bsim/bluetooth/mesh/
   labels:
     - "area: Bluetooth Mesh"
@@ -3610,8 +3613,8 @@ NXP Drivers:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - decsny
     - manuargue
@@ -3647,8 +3650,8 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - DerekSnell
     - yvanderv
@@ -4686,8 +4689,8 @@ West:
   status: maintained
   maintainers:
     - dleach02
-  collaborators:
     - mmahadevan108
+  collaborators:
     - danieldegrasse
     - manuargue
     - PetervdPerk-NXP

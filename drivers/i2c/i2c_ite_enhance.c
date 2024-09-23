@@ -73,6 +73,7 @@ struct i2c_enhance_config {
 	uint8_t prescale_scl_low;
 	uint8_t data_hold_time;
 	uint32_t clock_gate_offset;
+	int transfer_timeout_ms;
 	bool target_enable;
 	bool target_pio_mode;
 	bool push_pull_recovery;
@@ -626,8 +627,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 			irq_enable(config->i2c_irq_base);
 		}
 		/* Wait for the transfer to complete */
-		/* TODO: the timeout should be adjustable */
-		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+		res = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
 		/*
 		 * The irq will be enabled at the condition of start or
 		 * repeat start of I2C. If timeout occurs without being
@@ -838,7 +838,7 @@ static int i2c_enhance_cq_transfer(const struct device *dev,
 		irq_enable(config->i2c_irq_base);
 	}
 	/* Wait for the transfer to complete */
-	res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+	res = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
 
 	irq_disable(config->i2c_irq_base);
 
@@ -1495,6 +1495,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 		.prescale_scl_low = DT_INST_PROP_OR(inst, prescale_scl_low, 0), \
 		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),     \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
+		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
 		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),         \

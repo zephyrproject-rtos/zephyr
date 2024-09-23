@@ -157,6 +157,12 @@ endif    # XTENSA_CPU_HAS_HIFI
 
 endmenu  # Xtensa HiFi Options
 
+config XTENSA_INTERRUPT_NONPREEMPTABLE
+	bool "Xtensa exceptions and interrupts cannot be pre-empted"
+	help
+	  Allow use of medium and high priority interrupts without
+	  pre-empting low priority interrupts and exceptions.
+
 if CPU_HAS_MMU
 
 config XTENSA_MMU

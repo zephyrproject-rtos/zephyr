@@ -14,7 +14,7 @@ Requirements
 ************
 
 The SoC should support MCO functionality and use a pin that has the MCO alternate function.
-To support another board, add an overlay in boards folder.
+To support another board, add a dts overlay file in boards folder.
 Make sure that the output clock is enabled in dts overlay file.
 
 

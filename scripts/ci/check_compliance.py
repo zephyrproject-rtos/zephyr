@@ -387,6 +387,11 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
+        if self.no_modules:
+            with open(modules_file, 'w') as fp_module_file:
+                fp_module_file.write("# Empty\n")
+            return
+
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
         zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
@@ -413,18 +418,6 @@ class KconfigCheck(ComplianceTest):
                     modules_dir + '/' + module + '/Kconfig'
                 ))
             fp_module_file.write(content)
-
-        if self.no_modules:
-            module_define_content = ""
-            module_definition = re.compile('config ZEPHYR_.*_MODULE.*').search
-            with open(modules_file, 'r+') as fp_module_file:
-                for line in fp_module_file:
-                    if module_definition(line):
-                        module_define_content += line
-                        module_define_content += "\tbool\n"
-                fp_module_file.seek(0)
-                fp_module_file.write(module_define_content)
-                fp_module_file.truncate()
 
     def get_module_setting_root(self, root, settings_file):
         """
@@ -550,7 +543,7 @@ class KconfigCheck(ComplianceTest):
         kconfig_soc_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc')
         kconfig_file = os.path.join(kconfig_dir, 'soc', 'Kconfig')
 
-        root_args = argparse.Namespace(**{'soc_roots': [Path(ZEPHYR_BASE)]})
+        root_args = argparse.Namespace(**{'soc_roots': soc_roots})
         v2_systems = list_hardware.find_v2_systems(root_args)
 
         soc_folders = {soc.folder for soc in v2_systems.get_socs()}

@@ -17,7 +17,11 @@
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE)
+#include <zephyr/dt-bindings/clock/stm32f10x_clock.h>
+#else
 #include <zephyr/dt-bindings/clock/stm32f1_clock.h>
+#endif
 #elif defined(CONFIG_SOC_SERIES_STM32F3X)
 #include <zephyr/dt-bindings/clock/stm32f3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
@@ -488,6 +492,38 @@ struct stm32_pclken {
  */
 #define STM32_CLOCK_VAL_GET(clock) \
 	(((clock) >> STM32_CLOCK_VAL_SHIFT) & STM32_CLOCK_VAL_MASK)
+
+/**
+ * @brief Obtain register field from MCO configuration.
+ *
+ * @param mco_cfgr MCO configuration bit field value.
+ */
+#define STM32_MCO_CFGR_REG_GET(mco_cfgr) \
+	(((mco_cfgr) >> STM32_MCO_CFGR_REG_SHIFT) & STM32_MCO_CFGR_REG_MASK)
+
+/**
+ * @brief Obtain position field from MCO configuration.
+ *
+ * @param mco_cfgr MCO configuration bit field value.
+ */
+#define STM32_MCO_CFGR_SHIFT_GET(mco_cfgr) \
+	(((mco_cfgr) >> STM32_MCO_CFGR_SHIFT_SHIFT) & STM32_MCO_CFGR_SHIFT_MASK)
+
+/**
+ * @brief Obtain mask field from MCO configuration.
+ *
+ * @param mco_cfgr MCO configuration bit field value.
+ */
+#define STM32_MCO_CFGR_MASK_GET(mco_cfgr) \
+	(((mco_cfgr) >> STM32_MCO_CFGR_MASK_SHIFT) & STM32_MCO_CFGR_MASK_MASK)
+
+/**
+ * @brief Obtain value field from MCO configuration.
+ *
+ * @param mco_cfgr MCO configuration bit field value.
+ */
+#define STM32_MCO_CFGR_VAL_GET(mco_cfgr) \
+	(((mco_cfgr) >> STM32_MCO_CFGR_VAL_SHIFT) & STM32_MCO_CFGR_VAL_MASK)
 
 #if defined(STM32_HSE_CSS)
 /**
