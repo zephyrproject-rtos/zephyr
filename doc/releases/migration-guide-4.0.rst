@@ -278,6 +278,11 @@ Bluetooth Audio
   :c:func:`bt_bap_unicast_server_unregister` has been called.
   (:github:`76632`)
 
+* The Coordinated Set Coordinator functions :c:func:`bt_csip_set_coordinator_lock` and
+  :c:func:`bt_csip_set_coordinator_release` now require that :kconfig:option:`CONFIG_BT_BONDABLE`
+  is enabled and that all members are bonded, to comply with the requirements from the CSIP spec.
+  (:github:`78877`)
+
 Bluetooth Classic
 =================
 
