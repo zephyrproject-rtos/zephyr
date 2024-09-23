@@ -36,11 +36,11 @@ static inline unsigned int irq_get_level(unsigned int irq)
 	const uint32_t mask3 = BIT_MASK(CONFIG_3RD_LEVEL_INTERRUPT_BITS) <<
 		(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
 
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS) && (irq & mask3) != 0) {
+	if ((irq & mask3) != 0) {
 		return 3;
 	}
 
-	if (IS_ENABLED(CONFIG_2ND_LEVEL_INTERRUPTS) && (irq & mask2) != 0) {
+	if ((irq & mask2) != 0) {
 		return 2;
 	}
 
@@ -59,7 +59,9 @@ static inline unsigned int irq_get_level(unsigned int irq)
  */
 static inline unsigned int irq_from_level_2(unsigned int irq)
 {
-	if (IS_ENABLED(CONFIG_3RD_LEVEL_INTERRUPTS)) {
+	unsigned int level = irq_get_level(irq);
+
+	if (level == 3) {
 		return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
 			BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) - 1;
 	} else {
@@ -249,10 +251,14 @@ static inline unsigned int irq_get_intc_irq(unsigned int irq)
 {
 	const unsigned int level = irq_get_level(irq);
 
-	__ASSERT_NO_MSG(level > 1 && level <= 3);
-
-	return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS +
-			      (level == 3 ? CONFIG_2ND_LEVEL_INTERRUPT_BITS : 0));
+	if (level == 3) {
+		return irq &
+		       BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS + CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	} else if (level == 2) {
+		return irq & BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	} else {
+		return irq;
+	}
 }
 
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
