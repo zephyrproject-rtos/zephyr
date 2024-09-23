@@ -99,6 +99,9 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+#ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+	.enterprise_creds = supplicant_add_enterprise_creds,
+#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);
