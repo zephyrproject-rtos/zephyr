@@ -187,7 +187,7 @@ static inline int32_t sensor_ms2_to_mg(const struct sensor_value *ms2)
 	}
 }
 
-#if CONFIG_LIS2DW12_THRESHOLD
+#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
 
 /* Converts a lis2dw12_fs_t range to its value in milli-g
  * Range can be 2/4/8/16G
@@ -290,27 +290,50 @@ static int lis2dw12_attr_set_ff_dur(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_LIS2DW12_SLEEP
+static int lis2dw12_attr_set_act_mode(const struct device *dev,
+					enum sensor_channel chan,
+					enum sensor_attribute attr,
+					const struct sensor_value *val)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2dw12_sleep_on_t sleep_val = val->val1 & 0x03U;
+
+	/* can only be set for all directions at once */
+	if (chan != SENSOR_CHAN_ACCEL_XYZ) {
+		return -EINVAL;
+	}
+
+	return lis2dw12_act_mode_set(ctx, sleep_val);
+}
+#endif
+
 static int lis2dw12_attr_set(const struct device *dev,
 			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val)
 {
-#if CONFIG_LIS2DW12_THRESHOLD
 	switch (attr) {
+#if (CONFIG_LIS2DW12_SLEEP || CONFIG_LIS2DW12_WAKEUP)
 	case SENSOR_ATTR_UPPER_THRESH:
 	case SENSOR_ATTR_LOWER_THRESH:
 		return lis2dw12_attr_set_thresh(dev, chan, attr, val);
+#endif
+#ifdef CONFIG_LIS2DW12_FREEFALL
+	case SENSOR_ATTR_FF_DUR:
+		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
+#endif
+#ifdef CONFIG_LIS2DW12_SLEEP
+	case SENSOR_ATTR_FEATURE_MASK:
+		return lis2dw12_attr_set_act_mode(dev, chan, attr, val);
+#endif
 	default:
 		/* Do nothing */
 		break;
 	}
-#endif
 
-#ifdef CONFIG_LIS2DW12_FREEFALL
-	if (attr == SENSOR_ATTR_FF_DUR) {
-		return lis2dw12_attr_set_ff_dur(dev, chan, attr, val);
-	}
-#endif
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -527,13 +550,20 @@ static int lis2dw12_init(const struct device *dev)
 		return ret;
 	}
 
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	ret = lis2dw12_wkup_dur_set(ctx, cfg->wakeup_duration);
 	if (ret < 0) {
 		LOG_ERR("wakeup duration config error %d", ret);
 		return ret;
 	}
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#endif /* CONFIG_LIS2DW12_WAKEUP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	ret = lis2dw12_act_sleep_dur_set(ctx, cfg->sleep_duration);
+	if (ret < 0) {
+		LOG_ERR("sleep duration config error %d", ret);
+		return ret;
+	}
+#endif /* CONFIG_LIS2DW12_SLEEP */
 
 	return 0;
 }
@@ -580,11 +610,18 @@ static int lis2dw12_init(const struct device *dev)
 #define LIS2DW12_CONFIG_FREEFALL(inst)
 #endif /* CONFIG_LIS2DW12_FREEFALL */
 
-#ifdef CONFIG_LIS2DW12_THRESHOLD
-#define LIS2DW12_CONFIG_THRESHOLD(inst)					\
+#ifdef CONFIG_LIS2DW12_WAKEUP
+#define LIS2DW12_CONFIG_WAKEUP(inst)					\
 	.wakeup_duration = DT_INST_PROP(inst, wakeup_duration),
 #else
-#define LIS2DW12_CONFIG_THRESHOLD(inst)
+#define LIS2DW12_CONFIG_WAKEUP(inst)
+#endif
+
+#ifdef CONFIG_LIS2DW12_SLEEP
+#define LIS2DW12_CONFIG_SLEEP(inst) \
+	.sleep_duration = DT_INST_PROP(inst, sleep_duration),
+#else
+#define LIS2DW12_CONFIG_SLEEP(inst)
 #endif
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
@@ -606,7 +643,8 @@ static int lis2dw12_init(const struct device *dev)
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),			\
 	LIS2DW12_CONFIG_TAP(inst)					\
 	LIS2DW12_CONFIG_FREEFALL(inst)					\
-	LIS2DW12_CONFIG_THRESHOLD(inst)					\
+	LIS2DW12_CONFIG_WAKEUP(inst)					\
+	LIS2DW12_CONFIG_SLEEP(inst)					\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\
 			(LIS2DW12_CFG_IRQ(inst)), ())
 

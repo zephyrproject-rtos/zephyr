@@ -97,13 +97,16 @@ struct lis2dw12_device_config {
 	uint8_t tap_latency;
 	uint8_t tap_quiet;
 #endif /* CONFIG_LIS2DW12_TAP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	uint8_t sleep_duration;
+#endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	uint8_t freefall_duration;
 	uint8_t freefall_threshold;
 #endif /* CONFIG_LIS2DW12_FREEFALL */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
+#ifdef CONFIG_LIS2DW12_WAKEUP
 	uint8_t wakeup_duration;
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#endif /* CONFIG_LIS2DW12_WAKEUP */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
@@ -131,10 +134,14 @@ struct lis2dw12_data {
 	sensor_trigger_handler_t double_tap_handler;
 	const struct sensor_trigger *double_tap_trig;
 #endif /* CONFIG_LIS2DW12_TAP */
-#ifdef CONFIG_LIS2DW12_THRESHOLD
-	sensor_trigger_handler_t threshold_handler;
-	const struct sensor_trigger *threshold_trig;
-#endif /* CONFIG_LIS2DW12_THRESHOLD */
+#ifdef CONFIG_LIS2DW12_WAKEUP
+	sensor_trigger_handler_t motion_handler;
+	const struct sensor_trigger *motion_trig;
+#endif /* CONFIG_LIS2DW12_WAKEUP */
+#ifdef CONFIG_LIS2DW12_SLEEP
+	sensor_trigger_handler_t stationary_handler;
+	const struct sensor_trigger *stationary_trig;
+#endif
 #ifdef CONFIG_LIS2DW12_FREEFALL
 	sensor_trigger_handler_t freefall_handler;
 	const struct sensor_trigger *freefall_trig;
