@@ -163,8 +163,9 @@ static inline unsigned int irq_to_level_3(unsigned int irq)
  */
 static inline unsigned int irq_parent_level_3(unsigned int irq)
 {
-	return (irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
-		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS);
+	return ((irq >> CONFIG_1ST_LEVEL_INTERRUPT_BITS) &
+		BIT_MASK(CONFIG_2ND_LEVEL_INTERRUPT_BITS)) -
+	       1;
 }
 
 /**
