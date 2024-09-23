@@ -449,7 +449,8 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, uint16_t *src_id)
 
 	qdcount = dns_unpack_header_qdcount(dns_header);
 	if (qdcount < 1) {
-		return -EINVAL;
+		/* Discard the message if query count is 0. RFC 6804 ch. 2 */
+		return -ENOENT;
 	}
 
 	if (src_id) {
