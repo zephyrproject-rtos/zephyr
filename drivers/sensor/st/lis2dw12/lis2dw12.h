@@ -163,4 +163,9 @@ int lis2dw12_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler);
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
+/* LIS2DW12 specific channels */
+enum sensor_channel_lis2dw12 {
+	SENSOR_CHAN_LIS2DW12_INT_STATUS = SENSOR_CHAN_PRIV_START,
+};
+
 #endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DW12_LIS2DW12_H_ */
