@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import re
 import subprocess
 from docutils import nodes
+from sphinx.util import logging
 
 try:
     import west.manifest
@@ -19,6 +20,9 @@ try:
         west_manifest = None
 except ImportError:
     west_manifest = None
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_github_rev():
@@ -88,9 +92,7 @@ def modulelink(default_module=None, format="blob"):
             )
         # Invalid module provided
         elif module != config.link_roles_manifest_project:
-            raise ModuleNotFoundError(
-                f"Module {module} not found in the west manifest\n\t{trace}"
-            )
+            logger.debug(f"Module {module} not found in the west manifest")
         # Baseurl for manifest project not set
         elif baseurl is None:
             raise ValueError(
