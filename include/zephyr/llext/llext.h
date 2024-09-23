@@ -293,7 +293,7 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
  * @param[in] domain Memory domain to add partitions to
  *
  * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS @kconfig{CONFIG_USERSPACE} is not enabled or supported
+ * @retval -ENOSYS Option @kconfig{CONFIG_USERSPACE} is not enabled or supported
  */
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 
