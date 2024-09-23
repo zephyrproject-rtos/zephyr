@@ -385,6 +385,19 @@
 #define HAL_RADIO_RESET_VALUE_CTEINLINECONF 0x00002800UL
 #define HAL_RADIO_RESET_VALUE_DATAWHITE     0x00890040UL
 
+/* HAL abstraction of CCM h/w */
+#define NRF_CCM                               NRF_CCM00
+#define NRF_CCM_TASK_CRYPT                    NRF_CCM_TASK_START
+#define EVENTS_ENDCRYPT                       EVENTS_END
+#define INPTR                                 IN.PTR
+#define OUTPTR                                OUT.PTR
+#define MICSTATUS                             MACSTATUS
+#define CCM_INTENSET_ENDCRYPT_Msk             CCM_INTENSET_END_Msk
+#define CCM_INTENCLR_ENDCRYPT_Msk             CCM_INTENCLR_END_Msk
+#define CCM_MODE_DATARATE_125Kbps             CCM_MODE_DATARATE_125Kbit
+#define CCM_MODE_DATARATE_500Kbps             CCM_MODE_DATARATE_500Kbit
+#define CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbit
+
 static inline void hal_radio_reset(void)
 {
 	/* TODO: Add any required setup for each radio event
