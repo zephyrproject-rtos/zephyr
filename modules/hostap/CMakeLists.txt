@@ -46,6 +46,7 @@ zephyr_library_compile_definitions(
 	CONFIG_SHA512
 	CONFIG_CTRL_IFACE_ZEPHYR
 	CONFIG_SUITEB192
+	CONFIG_SUITEB
 )
 
 
@@ -328,6 +329,7 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/eap_peer/eap_tls_common.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_common.c
 
+	${HOSTAP_SRC_BASE}/eap_peer/eap_gtc.c
 	${HOSTAP_SRC_BASE}/eap_peer/eap_peap.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_peap_common.c
 	${HOSTAP_SRC_BASE}/eap_peer/eap_ttls.c
@@ -374,6 +376,7 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_EN
 	EAP_TLS
 	IEEE8021X_EAPOL
 	EAP_PEAP
+	EAP_GTC
 	EAP_TTLS
 	EAP_MD5
 	EAP_MSCHAPv2

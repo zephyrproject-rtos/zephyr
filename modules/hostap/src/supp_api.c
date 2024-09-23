@@ -432,6 +432,31 @@ static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8
 }
 #endif
 
+static const struct wifi_cipher_desc ciphers[] = {
+	{ WPA_CAPA_ENC_CCMP_256, "CCMP-256" },
+	{ WPA_CAPA_ENC_GCMP_256, "GCMP-256" },
+	{ WPA_CAPA_ENC_CCMP, "CCMP" },
+	{ WPA_CAPA_ENC_GCMP, "GCMP" },
+	{ WPA_CAPA_ENC_TKIP, "TKIP" },
+	{ WPA_CAPA_ENC_WEP104, "WEP104" },
+	{ WPA_CAPA_ENC_WEP40, "WEP40" }
+};
+
+static const struct wifi_cipher_desc ciphers_group_mgmt[] = {
+	{ WPA_CAPA_ENC_BIP, "AES-128-CMAC" },
+	{ WPA_CAPA_ENC_BIP_GMAC_128, "BIP-GMAC-128" },
+	{ WPA_CAPA_ENC_BIP_GMAC_256, "BIP-GMAC-256" },
+	{ WPA_CAPA_ENC_BIP_CMAC_256, "BIP-CMAC-256" },
+};
+
+static struct wifi_eap_config eap_config[] = {
+	{ WIFI_SECURITY_TYPE_EAP_TLS, "TLS", NULL },
+	{ WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2, "PEAP", "auth=MSCHAPV2" },
+	{ WIFI_SECURITY_TYPE_EAP_PEAP_GTC, "PEAP", "auth=GTC" },
+	{ WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2, "TTLS", "auth=MSCHAPV2" },
+	{ WIFI_SECURITY_TYPE_EAP_PEAP_TLS, "PEAP", "auth=TLS" },
+};
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -443,6 +468,19 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
 	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	char *key_mgmt;
+	char *openssl_ciphers = "DEFAULT:!EXP:!LOW";
+	char *group_ciphers = "CCMP";
+	char *pairwise_cipher = "CCMP";
+	char *group_mgmt_cipher = "AES-128-CMAC";
+	char *method;
+	unsigned int cipher_capa;
+	unsigned int gropu_mgmt_cipher_capa;
+	char phase1[256] = {0};
+	char *phase2 = NULL;
+	unsigned int index;
+#endif
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		goto out;
@@ -503,6 +541,46 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			k_free(chan_list);
 		}
 	}
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	if (params->suiteb_type == WIFI_SUITEB) {
+		cipher_capa = WPA_CAPA_ENC_CCMP_256;
+		gropu_mgmt_cipher_capa =WPA_CAPA_ENC_BIP_CMAC_256;
+	} else if (params->suiteb_type == WIFI_SUITEB_192){
+		cipher_capa = WPA_CAPA_ENC_GCMP_256;
+		gropu_mgmt_cipher_capa =WPA_CAPA_ENC_BIP_GMAC_256;
+	} else {
+		cipher_capa = WPA_CAPA_ENC_CCMP;
+		gropu_mgmt_cipher_capa =WPA_CAPA_ENC_BIP;
+	}
+
+	for(index = 0; index < sizeof(ciphers)/sizeof(ciphers[0]); index++)
+	{
+		if(cipher_capa == ciphers[index].capa){
+			group_ciphers = ciphers[index].name;
+			pairwise_cipher = ciphers[index].name;
+			break;
+		}
+	}
+
+	if(index == sizeof(ciphers)/sizeof(ciphers[0])) {
+		wpa_printf(MSG_ERROR, "Get ciphers error");
+		goto out;
+	}
+
+	for(index = 0; index < sizeof(ciphers_group_mgmt)/sizeof(ciphers_group_mgmt[0]); index++)
+	{
+		if(gropu_mgmt_cipher_capa == ciphers_group_mgmt[index].capa){
+			group_mgmt_cipher = ciphers_group_mgmt[index].name;
+			break;
+		}
+	}
+
+	if(index == sizeof(ciphers_group_mgmt)/sizeof(ciphers_group_mgmt[0])) {
+		wpa_printf(MSG_ERROR, "Get group mgmt ciphers error");
+		goto out;
+	}
+#endif
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->sae_password) {
@@ -600,20 +678,88 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-EAP",
-					   resp.network_id)) {
+		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS ||
+			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+			params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ) {
+
+			for (index = 0; index < sizeof(eap_config)/sizeof(eap_config[0]); index++)
+			{
+				if(params->security == eap_config[index].type){
+					method = eap_config[index].method;
+					phase2 = eap_config[index].phase2;
+					break;
+				}
+			}
+
+			if (index == sizeof(eap_config)/sizeof(eap_config[0])) {
+				wpa_printf(MSG_ERROR, "Get eap method error with security type: %d",
+					params->security);
 				goto out;
 			}
+
+			if (params->suiteb_type == WIFI_SUITEB) {
+				key_mgmt = "WPA-EAP-SUITE-B";
+				openssl_ciphers = "SUITEB128";
+
+			} else if (params->suiteb_type == WIFI_SUITEB_192){
+				key_mgmt = "WPA-EAP-SUITE-B-192";
+				openssl_ciphers = "SUITEB192";
+
+			} else {
+				key_mgmt = "WPA-EAP";
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id, key_mgmt))
+				goto out;
+
+			if (!wpa_cli_cmd_v("set openssl_ciphers %s", openssl_ciphers))
+				goto out;
+
+			if (!wpa_cli_cmd_v("set_network %d group %s", resp.network_id, group_ciphers))
+				goto out;
+
+			if (!wpa_cli_cmd_v("set_network %d pairwise %s", resp.network_id, pairwise_cipher))
+				goto out;
+
+			if (!wpa_cli_cmd_v("set_network %d group_mgmt %s", resp.network_id, group_mgmt_cipher))
+				goto out;
 
 			if (!wpa_cli_cmd_v("set_network %d proto RSN",
 					   resp.network_id)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d eap TLS",
-					   resp.network_id)) {
+			if (!wpa_cli_cmd_v("set_network %d eap %s", resp.network_id, method)) {
 				goto out;
+			}
+
+			if (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
+				snprintf(phase1, sizeof(phase1), "peapver=%d peaplabel=0 crypto_binding=0",
+					    params->eap_ver);
+
+				if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"", resp.network_id, &phase1[0]))
+					goto out;
+			}
+
+			if (phase2 != NULL) {
+				if (!wpa_cli_cmd_v("set_network %d phase2 \"%s\"", resp.network_id, phase2))
+					goto out;
+			}
+
+			if (params->eap_id_length > 0) {
+				if (!wpa_cli_cmd_v("set_network %d identity \"%s\"", resp.network_id,
+					    params->eap_identity))
+					goto out;
+			}
+
+			if (params->eap_passwd_length > 0) {
+				if (!wpa_cli_cmd_v("set_network %d password \"%s\"", resp.network_id,
+					    params->eap_password))
+					goto out;
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d anonymous_identity \"%s\"",
@@ -657,6 +803,56 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
 					   resp.network_id, params->key_passwd)) {
 				goto out;
+			}
+
+			if (enterprise_creds.ca_cert2_len) {
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert2", enterprise_creds.ca_cert2,
+					    enterprise_creds.ca_cert2_len))
+					goto out;
+
+				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"", resp.network_id))
+					goto out;
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert\"", resp.network_id))
+					goto out;
+			}
+
+			if (enterprise_creds.client_cert2_len) {
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
+					    enterprise_creds.client_cert2,
+					    enterprise_creds.client_cert2_len))
+					goto out;
+
+				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
+					    resp.network_id))
+					goto out;
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert\"",
+					    resp.network_id))
+					goto out;
+			}
+
+			if (enterprise_creds.client_key2_len){
+				if (wpas_config_process_blob(wpa_s->conf, "private_key2",
+					    enterprise_creds.client_key2,
+					    enterprise_creds.client_key2_len))
+					goto out;
+
+				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
+					    resp.network_id))
+					goto out;
+
+				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"", resp.network_id,
+					    params->key2_passwd))
+					goto out;
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key\"",
+					    resp.network_id))
+					goto out;
+
+				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"", resp.network_id,
+					    params->key_passwd))
+					goto out;
 			}
 #endif
 		} else {

@@ -68,12 +68,59 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
 	/** DPP security */
 	WIFI_SECURITY_TYPE_DPP,
+	/** EAP PEAP MSCHAPV2 security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2,
+	/** EAP PEAP GTC security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_PEAP_GTC,
+	/** EAP TTLS MSCHAPV2 security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2,
+	/** EAP PEAP TLS security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_PEAP_TLS,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
 	WIFI_SECURITY_TYPE_MAX = __WIFI_SECURITY_TYPE_AFTER_LAST - 1,
 	WIFI_SECURITY_TYPE_UNKNOWN
 	/** @endcond */
+};
+
+/** suiteb types. */
+enum wifi_suiteb_type {
+	/** suiteb. */
+	WIFI_SUITEB = 1,
+	/** suiteb-192. */
+	WIFI_SUITEB_192,
+};
+
+/** gropu cipher and pairwise cipher types. */
+enum wifi_cipher_type {
+	WPA_CAPA_ENC_WEP40,
+	WPA_CAPA_ENC_WEP104,
+	WPA_CAPA_ENC_TKIP,
+	WPA_CAPA_ENC_CCMP,
+	WPA_CAPA_ENC_WEP128,
+	WPA_CAPA_ENC_GCMP,
+	WPA_CAPA_ENC_GCMP_256,
+	WPA_CAPA_ENC_CCMP_256,
+};
+
+/** gropu mgmt cipher types. */
+enum wifi_group_mgmt_cipher_type {
+	WPA_CAPA_ENC_BIP,
+	WPA_CAPA_ENC_BIP_GMAC_128,
+	WPA_CAPA_ENC_BIP_GMAC_256,
+	WPA_CAPA_ENC_BIP_CMAC_256,
+};
+
+struct wifi_cipher_desc {
+	unsigned int capa;
+	char *name;
+};
+
+struct wifi_eap_config {
+	unsigned int type;
+	char *method;
+	char *phase2;
 };
 
 /** Helper function to get user-friendly security type name. */
