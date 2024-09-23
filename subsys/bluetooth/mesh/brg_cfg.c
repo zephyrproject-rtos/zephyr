@@ -43,7 +43,7 @@ static void brg_tbl_compact(void)
 			j++;
 		}
 	}
-	memset(&brg_tbl[j], 0, sizeof(brg_tbl[j]));
+
 	bt_mesh_brg_cfg_row_cnt--;
 }
 
@@ -171,7 +171,7 @@ static void brg_tbl_netkey_removed_evt(struct bt_mesh_subnet *sub, enum bt_mesh_
 		return;
 	}
 
-	for (int i = 0; i < CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX; i++) {
+	for (int i = 0; i < bt_mesh_brg_cfg_row_cnt; i++) {
 		if (brg_tbl[i].direction &&
 		    (brg_tbl[i].net_idx1 == sub->net_idx || brg_tbl[i].net_idx2 == sub->net_idx)) {
 			memset(&brg_tbl[i], 0, sizeof(brg_tbl[i]));
