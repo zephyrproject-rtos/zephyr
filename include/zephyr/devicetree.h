@@ -4490,6 +4490,7 @@
  * @brief Check if any device node with status `okay` has a given
  *        property.
  *
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param prop lowercase-and-underscores property name
  *
  * Example devicetree overlay:
