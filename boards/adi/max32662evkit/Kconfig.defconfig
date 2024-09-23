@@ -1,0 +1,29 @@
+# MAX32662EVKIT boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MAX32662EVKIT
+
+if DISPLAY
+
+config MIPI_DBI_SPI_3WIRE
+	default y
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16  # 16 bit per pixel
+endchoice
+
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_MAX32662EVKIT
