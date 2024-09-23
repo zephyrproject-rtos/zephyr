@@ -135,6 +135,18 @@ static inline void lis2dw12_channel_get_acc(const struct device *dev,
 	}
 }
 
+static inline void lis2dw12_channel_get_status(const struct device *dev,
+					     struct sensor_value *val)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	lis2dw12_status_t status;
+
+	/* fetch manually the interrupt status reg */
+	lis2dw12_status_reg_get(ctx, &status);
+	val->val1 = (int32_t)*(uint8_t *)&status;
+}
+
 static int lis2dw12_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val)
@@ -148,6 +160,9 @@ static int lis2dw12_channel_get(const struct device *dev,
 		return 0;
 	case SENSOR_CHAN_DIE_TEMP:
 		lis2dw12_channel_get_temp(dev, val);
+		return 0;
+	case SENSOR_CHAN_LIS2DW12_INT_STATUS:
+		lis2dw12_channel_get_status(dev, val);
 		return 0;
 	default:
 		LOG_DBG("Channel not supported");
