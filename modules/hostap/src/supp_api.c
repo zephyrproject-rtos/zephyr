@@ -348,6 +348,10 @@ static inline int chan_to_freq(int chan)
 static inline enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_band band)
 {
 	switch (band) {
+	case WPA_KEY_MGMT_IEEE8021X:
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B:
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
+		return WIFI_SECURITY_TYPE_EAP_TLS;
 	case BAND_2_4_GHZ:
 		return WIFI_FREQ_BAND_2_4_GHZ;
 	case BAND_5_GHZ:
