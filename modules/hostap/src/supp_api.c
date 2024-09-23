@@ -58,7 +58,8 @@ enum status_thread_state {
 
 #define DISCONNECT_TIMEOUT_MS 5000
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 static struct wifi_enterprise_creds_params enterprise_creds;
 #endif
 
@@ -488,7 +489,86 @@ static struct wifi_eap_config eap_config[] = {
 	"TTLS", "auth=MSCHAPV2"},
 	{ WIFI_SECURITY_TYPE_EAP_PEAP_TLS,      WIFI_EAP_TYPE_PEAP, WIFI_EAP_TYPE_TLS,
 	"PEAP", "auth=TLS"},
+	{ WIFI_SECURITY_TYPE_EAP_TLS_SHA256,    WIFI_EAP_TYPE_TLS,  WIFI_EAP_TYPE_NONE,
+	"TLS",  NULL},
 };
+#endif
+
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+int process_cipher_config(struct wifi_connect_req_params *params,
+	    struct wifi_eap_cipher_config *cipher_config)
+{
+	unsigned int cipher_capa;
+	unsigned int gropu_mgmt_cipher_capa;
+	unsigned int index;
+
+	if (params->suiteb_type == WIFI_SUITEB) {
+		cipher_capa = WPA_CAPA_ENC_GCMP;
+		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
+		cipher_config->key_mgmt = "WPA-EAP-SUITE-B";
+		cipher_config->openssl_ciphers = "SUITEB128";
+		cipher_config->tls_flags = "[SUITEB]";
+	} else if (params->suiteb_type == WIFI_SUITEB_192) {
+		cipher_capa = WPA_CAPA_ENC_GCMP_256;
+		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
+		cipher_config->key_mgmt = (params->ft_used ?
+					"FT-EAP-SHA384" :
+					"WPA-EAP-SUITE-B-192");
+		cipher_config->openssl_ciphers = "SUITEB192";
+		cipher_config->tls_flags = "[SUITEB]";
+	} else {
+		cipher_capa = WPA_CAPA_ENC_CCMP;
+		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
+		cipher_config->key_mgmt = (params->ft_used ? "FT-EAP" : "WPA-EAP");
+	}
+
+	if (params->security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256)
+		cipher_config->key_mgmt = "WPA-EAP-SHA256";
+
+	for (index = 0; index < ARRAY_SIZE(ciphers); index++) {
+		if (cipher_capa == ciphers[index].capa) {
+			cipher_config->group_cipher = ciphers[index].name;
+			cipher_config->pairwise_cipher = ciphers[index].name;
+			break;
+		}
+	}
+
+	if (index == ARRAY_SIZE(ciphers)) {
+		wpa_printf(MSG_ERROR, "Get ciphers error");
+		goto out;
+	}
+
+	for (index = 0; index < ARRAY_SIZE(ciphers_group_mgmt); index++) {
+		if (gropu_mgmt_cipher_capa == ciphers_group_mgmt[index].capa) {
+			cipher_config->group_mgmt_cipher = ciphers_group_mgmt[index].name;
+			break;
+		}
+	}
+
+	if (index == ARRAY_SIZE(ciphers_group_mgmt)) {
+		wpa_printf(MSG_ERROR, "Get group mgmt ciphers error");
+		goto out;
+	}
+
+	return 0;
+out:
+	return -EINVAL;
+}
+
+static int is_eap_valid_security(int security)
+{
+	if (security == WIFI_SECURITY_TYPE_EAP_TLS ||
+	    security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+	    security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+	    security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+	    security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
+	    security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
+		return 1;
+	}
+
+	return 0;
+}
 #endif
 
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
@@ -499,14 +579,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char *chan_list = NULL;
 	struct net_eth_addr mac = {0};
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	char *key_mgmt;
-	char *openssl_ciphers = "DEFAULT:!EXP:!LOW";
-	char *group_ciphers = "CCMP";
-	char *pairwise_cipher = "CCMP";
-	char *group_mgmt_cipher = "AES-128-CMAC";
+	struct wifi_eap_cipher_config cipher_config = {NULL,
+	    "DEFAULT:!EXP:!LOW", "CCMP", "CCMP", "AES-128-CMAC", NULL};
 	char *method = NULL;
-	unsigned int cipher_capa;
-	unsigned int gropu_mgmt_cipher_capa;
 	char phase1[256] = {0};
 	char *phase2 = NULL;
 	unsigned int index;
@@ -564,44 +639,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			k_free(chan_list);
 		}
 	}
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	if (params->suiteb_type == WIFI_SUITEB) {
-		cipher_capa = WPA_CAPA_ENC_GCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
-	} else if (params->suiteb_type == WIFI_SUITEB_192) {
-		cipher_capa = WPA_CAPA_ENC_GCMP_256;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
-	} else {
-		cipher_capa = WPA_CAPA_ENC_CCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers); index++) {
-		if (cipher_capa == ciphers[index].capa) {
-			group_ciphers = ciphers[index].name;
-			pairwise_cipher = ciphers[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers)) {
-		wpa_printf(MSG_ERROR, "Get ciphers error");
-		goto out;
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers_group_mgmt); index++) {
-		if (gropu_mgmt_cipher_capa == ciphers_group_mgmt[index].capa) {
-			group_mgmt_cipher = ciphers_group_mgmt[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers_group_mgmt)) {
-		wpa_printf(MSG_ERROR, "Get group mgmt ciphers error");
-		goto out;
-	}
-#endif
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		/* SAP - only open and WPA2-PSK are supported for now */
@@ -705,11 +742,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS ||
-			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
-			params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-			params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
+		} else if (is_eap_valid_security(params->security)) {
+			if (process_cipher_config(params, &cipher_config))
+				goto out;
 
 			for (index = 0; index < ARRAY_SIZE(eap_config); index++) {
 				if (params->security == eap_config[index].type) {
@@ -725,51 +760,41 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (params->suiteb_type == WIFI_SUITEB) {
-				key_mgmt = "WPA-EAP-SUITE-B";
-				openssl_ciphers = "SUITEB128";
-
-			} else if (params->suiteb_type == WIFI_SUITEB_192) {
-				key_mgmt = (params->ft_used ?
-					"FT-EAP-SHA384" :
-					"WPA-EAP-SUITE-B-192");
-				openssl_ciphers = "SUITEB192";
+			if (params->suiteb_type == WIFI_SUITEB_192) {
 				if (params->TLS_cipher == WIFI_EAP_TLS_ECC_P384) {
 					if (!wpa_cli_cmd_v("set_network %d openssl_ciphers \"%s\"",
-							resp.network_id, openssl_ciphers))
+					    resp.network_id, cipher_config.openssl_ciphers))
 						goto out;
 				} else if (params->TLS_cipher == WIFI_EAP_TLS_RSA_3K) {
 					snprintf(phase1, sizeof(phase1), "tls_suiteb=1");
 					if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"",
-							resp.network_id, &phase1[0]))
+					    resp.network_id, &phase1[0]))
 						goto out;
 				}
-
-			} else {
-				key_mgmt = (params->ft_used ? "FT-EAP" : "WPA-EAP");
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id,
-					   key_mgmt)) {
+				    cipher_config.key_mgmt)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set openssl_ciphers \"%s\"", openssl_ciphers)) {
+			if (!wpa_cli_cmd_v("set openssl_ciphers \"%s\"",
+				    cipher_config.openssl_ciphers)) {
 				goto out;
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d group %s", resp.network_id,
-					   group_ciphers)) {
+				    cipher_config.group_cipher)) {
 				goto out;
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d pairwise %s", resp.network_id,
-					   pairwise_cipher)) {
+				    cipher_config.pairwise_cipher)) {
 				goto out;
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d group_mgmt %s", resp.network_id,
-					   group_mgmt_cipher)) {
+				    cipher_config.group_mgmt_cipher)) {
 				goto out;
 			}
 
@@ -1816,67 +1841,6 @@ out:
 }
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-int process_suiteb_config(struct wifi_connect_req_params *params, char **group_ciphers,
-	char **pairwise_cipher, char **group_mgmt_cipher, char **key_mgmt,
-	char **openssl_ciphers, char **tls_flags)
-{
-	unsigned int cipher_capa;
-	unsigned int gropu_mgmt_cipher_capa;
-	unsigned int index;
-
-	*group_ciphers = "CCMP";
-	*pairwise_cipher = "CCMP";
-	*group_mgmt_cipher = "AES-128-CMAC";
-	*tls_flags = NULL;
-
-	if (params->suiteb_type == WIFI_SUITEB) {
-		cipher_capa = WPA_CAPA_ENC_GCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
-		*key_mgmt = "WPA-EAP-SUITE-B";
-		*openssl_ciphers = "SUITEB128";
-		*tls_flags = "[SUITEB]";
-	} else if (params->suiteb_type == WIFI_SUITEB_192) {
-		cipher_capa = WPA_CAPA_ENC_GCMP_256;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
-		*key_mgmt = "WPA-EAP-SUITE-B-192";
-		*openssl_ciphers = "SUITEB192";
-		*tls_flags = "[SUITEB]";
-	} else {
-		cipher_capa = WPA_CAPA_ENC_CCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
-		*key_mgmt = "WPA-EAP";
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers); index++) {
-		if (cipher_capa == ciphers[index].capa) {
-			*group_ciphers = ciphers[index].name;
-			*pairwise_cipher = ciphers[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers)) {
-		wpa_printf(MSG_ERROR, "Get ciphers error");
-		goto out;
-	}
-
-	for (index = 0; index < ARRAY_SIZE(ciphers_group_mgmt); index++) {
-		if (gropu_mgmt_cipher_capa == ciphers_group_mgmt[index].capa) {
-			*group_mgmt_cipher = ciphers_group_mgmt[index].name;
-			break;
-		}
-	}
-
-	if (index == ARRAY_SIZE(ciphers_group_mgmt)) {
-		wpa_printf(MSG_ERROR, "Get group mgmt ciphers error");
-		goto out;
-	}
-
-	return 0;
-out:
-	return -EINVAL;
-}
-
 static int hapd_process_cert_data(struct hostapd_bss_config *conf,
 	char *type, uint8_t *data, uint32_t data_len)
 {
@@ -2056,38 +2020,33 @@ failed:
 int hapd_process_enterprise_config(struct hostapd_iface *iface,
 	struct wifi_connect_req_params *params)
 {
-	char *key_mgmt = NULL;
-	char *openssl_ciphers = "DEFAULT:!EXP:!LOW";
-	char *group_cipher = "CCMP";
-	char *pairwise_cipher = "CCMP";
-	char *group_mgmt_cipher = "AES-128-CMAC";
-	char *tls_flags = NULL;
+	struct wifi_eap_cipher_config cipher_config = {NULL,
+	    "DEFAULT:!EXP:!LOW", "CCMP", "CCMP", "AES-128-CMAC", NULL};
 	int ret = 0;
 
-	if (process_suiteb_config(params, &group_cipher, &pairwise_cipher,
-		&group_mgmt_cipher, &key_mgmt, &openssl_ciphers, &tls_flags))
+	if (process_cipher_config(params, &cipher_config))
 		goto out;
 
 	if (!hostapd_cli_cmd_v("set wpa %d", WPA_PROTO_RSN))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set wpa_key_mgmt %s", key_mgmt))
+	if (!hostapd_cli_cmd_v("set wpa_key_mgmt %s", cipher_config.key_mgmt))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set rsn_pairwise %s", pairwise_cipher))
+	if (!hostapd_cli_cmd_v("set rsn_pairwise %s", cipher_config.pairwise_cipher))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set wpa_pairwise %s", pairwise_cipher))
+	if (!hostapd_cli_cmd_v("set wpa_pairwise %s", cipher_config.pairwise_cipher))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set group_cipher %s", group_cipher))
+	if (!hostapd_cli_cmd_v("set group_cipher %s", cipher_config.group_cipher))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set group_mgmt_cipher %s", group_mgmt_cipher))
+	if (!hostapd_cli_cmd_v("set group_mgmt_cipher %s", cipher_config.group_mgmt_cipher))
 		goto out;
 
-	if (tls_flags != NULL) {
-		if (!hostapd_cli_cmd_v("set tls_flags %s", tls_flags))
+	if (cipher_config.tls_flags != NULL) {
+		if (!hostapd_cli_cmd_v("set tls_flags %s", cipher_config.tls_flags))
 			goto out;
 	}
 
@@ -2255,11 +2214,7 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			}
 #ifdef CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS ||
-				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
-				params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
-				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
+		} else if (is_eap_valid_security(params->security)) {
 			if (hapd_process_enterprise_config(iface, params))
 				goto out;
 #endif
