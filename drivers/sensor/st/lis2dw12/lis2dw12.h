@@ -58,6 +58,11 @@
 #define LIS2DW12_SHIFT_PM1		4
 #define LIS2DW12_SHIFT_PMOTHER		2
 
+/* shift value for 12 bit resolution */
+#define LIS2DW12_SHIFT_TEMP        4
+/* Temperature 12 bit scale factor in uC = 1000000/16 as 1 LSB = C/16 */
+#define LIS2DW12_TEMP_SCALE_FACTOR 62500
+
 /**
  * struct lis2dw12_device_config - lis2dw12 hw configuration
  * @bus_name: Pointer to bus master identifier.
@@ -104,6 +109,9 @@ struct lis2dw12_device_config {
 
 /* sensor data */
 struct lis2dw12_data {
+	/* temperature raw data */
+	int16_t temp;
+	/* accelerometer raw data */
 	int16_t acc[3];
 
 	 /* save sensitivity */

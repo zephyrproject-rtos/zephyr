@@ -92,6 +92,20 @@ static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
+static inline void lis2dw12_channel_get_temp(const struct device *dev, struct sensor_value *val)
+{
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	int64_t dval_uc;
+
+	/* The calcul is in micro Celcius to keep it efficient */
+	dval_uc = ((lis2dw12->temp >> LIS2DW12_SHIFT_TEMP) * LIS2DW12_TEMP_SCALE_FACTOR);
+	dval_uc += 25000000;
+
+	/* switch to Celcius when we split the integer and fractional parts of the value */
+	val->val1 = dval_uc / 1000000LL;
+	val->val2 = dval_uc % 1000000LL;
+}
+
 static inline void lis2dw12_channel_get_acc(const struct device *dev,
 					     enum sensor_channel chan,
 					     struct sensor_value *val)
@@ -131,6 +145,9 @@ static int lis2dw12_channel_get(const struct device *dev,
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
 		lis2dw12_channel_get_acc(dev, chan, val);
+		return 0;
+	case SENSOR_CHAN_DIE_TEMP:
+		lis2dw12_channel_get_temp(dev, val);
 		return 0;
 	default:
 		LOG_DBG("Channel not supported");
@@ -309,8 +326,7 @@ static int lis2dw12_attr_set(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int lis2dw12_sample_fetch(const struct device *dev,
-				 enum sensor_channel chan)
+static int lis2dw12_sample_fetch_accel(const struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
@@ -318,9 +334,9 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	uint8_t shift;
 	int16_t buf[3];
 
-	/* fetch raw data sample */
+	/* fetch acceleration raw data sample */
 	if (lis2dw12_acceleration_raw_get(ctx, buf) < 0) {
-		LOG_DBG("Failed to fetch raw data sample");
+		LOG_DBG("Failed to fetch acceleration raw data sample");
 		return -EIO;
 	}
 
@@ -334,6 +350,42 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 	lis2dw12->acc[0] = buf[0] >> shift;
 	lis2dw12->acc[1] = buf[1] >> shift;
 	lis2dw12->acc[2] = buf[2] >> shift;
+
+	return 0;
+}
+
+static int lis2dw12_sample_fetch_temp(const struct device *dev)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lis2dw12_data *data = dev->data;
+
+	/* fetch temperature raw data sample */
+	if (lis2dw12_temperature_raw_get(ctx, &data->temp) < 0) {
+		LOG_DBG("Failed to fetch temperature raw data sample");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int lis2dw12_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_X:
+	case SENSOR_CHAN_ACCEL_Y:
+	case SENSOR_CHAN_ACCEL_Z:
+	case SENSOR_CHAN_ACCEL_XYZ:
+		lis2dw12_sample_fetch_accel(dev);
+		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		lis2dw12_sample_fetch_temp(dev);
+		break;
+	default:
+		LOG_DBG("Channel not supported");
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
