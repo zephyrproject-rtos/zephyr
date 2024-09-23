@@ -76,6 +76,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2,
 	/** EAP PEAP TLS security - Enterprise. */
 	WIFI_SECURITY_TYPE_EAP_PEAP_TLS,
+	/** EAP TLS SHA256 security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS_SHA256,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -145,6 +147,15 @@ enum wifi_group_mgmt_cipher_type {
 struct wifi_cipher_desc {
 	unsigned int capa;
 	char *name;
+};
+
+struct wifi_eap_cipher_config {
+	char *key_mgmt;
+	char *openssl_ciphers;
+	char *group_cipher;
+	char *pairwise_cipher;
+	char *group_mgmt_cipher;
+	char *tls_flags;
 };
 
 struct wifi_eap_config {
