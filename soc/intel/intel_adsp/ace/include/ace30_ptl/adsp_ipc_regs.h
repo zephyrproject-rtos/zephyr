@@ -44,8 +44,8 @@ struct intel_adsp_ipc {
  * This clears BUSY on the other side of the connection in IDR register.
  */
 #define INTEL_ADSP_IPC_ACE1X_TDA_DONE 0
-#define INTEL_ADSP_IPC_BUSY BIT(31)
-#define INTEL_ADSP_IPC_DONE BIT(31)
+#define INTEL_ADSP_IPC_BUSY           BIT(31)
+#define INTEL_ADSP_IPC_DONE           BIT(31)
 
 #define INTEL_ADSP_IPC_CTL_TBIE BIT(0)
 #define INTEL_ADSP_IPC_CTL_IDIE BIT(1)
