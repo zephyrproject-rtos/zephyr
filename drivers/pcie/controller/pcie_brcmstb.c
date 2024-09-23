@@ -453,7 +453,6 @@ static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win,
 	tmp2 = (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
 	tmp2 &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
 	tmp |= tmp2;
-	tmp |= (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
 	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
 
 	cpu_addr_mb_high = cpu_addr_mb >> HIGH_ADDR_SHIFT;
