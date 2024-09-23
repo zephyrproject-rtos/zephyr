@@ -533,7 +533,6 @@ static int dns_read(int sock,
 
 	ret = mdns_unpack_query_header(&dns_msg, NULL);
 	if (ret < 0) {
-		ret = -EINVAL;
 		goto quit;
 	}
 
@@ -670,7 +669,7 @@ static int dispatcher_cb(void *my_ctx, int sock,
 	ARG_UNUSED(my_ctx);
 
 	ret = dns_read(sock, dns_data, len, addr, addrlen);
-	if (ret < 0 && ret != -EINVAL) {
+	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
 
