@@ -10,6 +10,7 @@
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
@@ -298,10 +299,17 @@ int can_mcan_start(const struct device *dev)
 		return -EALREADY;
 	}
 
+	err = pm_device_runtime_get(dev);
+	if (err != 0) {
+		LOG_ERR("failed to get device (err %d)", err);
+		return err;
+	}
+
 	if (config->common.phy != NULL) {
 		err = can_transceiver_enable(config->common.phy, data->common.mode);
 		if (err != 0) {
 			LOG_ERR("failed to enable CAN transceiver (err %d)", err);
+			(void)pm_device_runtime_put(dev);
 			return err;
 		}
 	}
@@ -316,6 +324,7 @@ int can_mcan_start(const struct device *dev)
 		if (config->common.phy != NULL) {
 			/* Attempt to disable the CAN transceiver in case of error */
 			(void)can_transceiver_disable(config->common.phy);
+			(void)pm_device_runtime_put(dev);
 		}
 
 		return -EIO;
@@ -344,6 +353,12 @@ int can_mcan_stop(const struct device *dev)
 	if (err != 0) {
 		LOG_ERR("Failed to enter init mode");
 		return -EIO;
+	}
+
+	err = pm_device_runtime_put(dev);
+	if (err != 0) {
+		LOG_ERR("failed to put device (err %d)", err);
+		return err;
 	}
 
 	if (config->common.phy != NULL) {
