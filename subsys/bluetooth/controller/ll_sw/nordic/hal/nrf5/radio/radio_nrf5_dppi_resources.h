@@ -55,8 +55,18 @@
  *
  * Note: we do not need an additional PPI, since we have already set up
  * a PPI to publish RADIO ADDRESS event.
+ * Note: For nRF54L, CCM is started on RADIO PAYLOAD, hence need an explicit
+ * PPI channel.
  */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define HAL_TRIGGER_CRYPT_PPI 7
+#else /* CONFIG_SOC_COMPATIBLE_NRF54LX */
 #define HAL_TRIGGER_CRYPT_PPI HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+#define HAL_PPIB_SEND_TRIGGER_CRYPT_PPI \
+	_CONCAT(NRF_PPIB_TASK_SEND_, HAL_TRIGGER_CRYPT_PPI)
+#define HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI \
+	_CONCAT(NRF_PPIB_EVENT_RECEIVE_, HAL_TRIGGER_CRYPT_PPI)
 
 /*******************************************************************************
  * Trigger automatic address resolution on Bit counter match:
