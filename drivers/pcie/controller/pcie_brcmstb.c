@@ -444,8 +444,8 @@ static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win,
 	limit_addr_mb = (cpu_addr + size - 1) / SZ_1M;
 
 	tmp = sys_read32(data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
-	tmp &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK;
-	tmp &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
+	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK;
+	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
 	tmp |= (cpu_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB);
 	tmp |= (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
 	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
@@ -535,7 +535,7 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	sys_write16(tmp16, data->cfg_addr + BRCM_PCIE_CAP_REGS + PCI_EXP_LNKCTL2);
 
 	tmp = sys_read32(data->cfg_addr + PCIE_RC_CFG_PRIV1_ID_VAL3);
-	tmp &= PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE_MASK;
+	tmp &= ~PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE_MASK;
 	tmp |= BCM2712_PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE;
 	sys_write32(tmp, data->cfg_addr + PCIE_RC_CFG_PRIV1_ID_VAL3);
 
