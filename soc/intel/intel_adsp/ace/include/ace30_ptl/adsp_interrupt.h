@@ -7,35 +7,35 @@
 #define ZEPHYR_SOC_INTEL_ADSP_INTERRUPT_H_
 
 /* Low priority interrupt indices */
-#define ACE_INTL_HIPC	  0
-#define ACE_INTL_SBIPC	  1
-#define ACE_INTL_ML	  2
-#define ACE_INTL_IDCA	  3
-#define ACE_INTL_LPVML	  4
-#define ACE_INTL_SHA	  5
-#define ACE_INTL_L1L2M	  6
-#define ACE_INTL_I2S	  7
-#define ACE_INTL_DMIC	  8
-#define ACE_INTL_SNDW	  9
-#define ACE_INTL_TTS	  10
-#define ACE_INTL_WDT	  11
+#define ACE_INTL_HIPC     0
+#define ACE_INTL_SBIPC    1
+#define ACE_INTL_ML       2
+#define ACE_INTL_IDCA     3
+#define ACE_INTL_LPVML    4
+#define ACE_INTL_SHA      5
+#define ACE_INTL_L1L2M    6
+#define ACE_INTL_I2S      7
+#define ACE_INTL_DMIC     8
+#define ACE_INTL_SNDW     9
+#define ACE_INTL_TTS      10
+#define ACE_INTL_WDT      11
 #define ACE_INTL_HDAHIDMA 12
 #define ACE_INTL_HDAHODMA 13
 #define ACE_INTL_HDALIDMA 14
 #define ACE_INTL_HDALODMA 15
-#define ACE_INTL_I3C	  16
-#define ACE_INTL_GPDMA	  17
-#define ACE_INTL_PWM	  18
-#define ACE_INTL_I2C	  19
-#define ACE_INTL_SPI	  20
-#define ACE_INTL_UART	  21
-#define ACE_INTL_GPIO	  22
-#define ACE_INTL_UAOL	  23
-#define ACE_INTL_IDCB	  24
-#define ACE_INTL_DCW	  25
-#define ACE_INTL_DTF	  26
-#define ACE_INTL_FLV	  27
-#define ACE_INTL_DPDMA	  28
+#define ACE_INTL_I3C      16
+#define ACE_INTL_GPDMA    17
+#define ACE_INTL_PWM      18
+#define ACE_INTL_I2C      19
+#define ACE_INTL_SPI      20
+#define ACE_INTL_UART     21
+#define ACE_INTL_GPIO     22
+#define ACE_INTL_UAOL     23
+#define ACE_INTL_IDCB     24
+#define ACE_INTL_DCW      25
+#define ACE_INTL_DTF      26
+#define ACE_INTL_FLV      27
+#define ACE_INTL_DPDMA    28
 
 /* Device interrupt control for the low priority interrupts.  It
  * provides per-core masking and status checking: ACE_DINT is an array
@@ -71,14 +71,14 @@ struct ace_dint {
  */
 #define DXHIPCIE_REG 0x91040
 
-#define ACE_DINT	     ((volatile struct ace_dint *)DXHIPCIE_REG)
+#define ACE_DINT             ((volatile struct ace_dint *)DXHIPCIE_REG)
 #define XTENSA_IRQ_NUM_MASK  0xff
 #define XTENSA_IRQ_NUM_SHIFT 0
 
-#define XTENSA_IRQ_NUMBER(_irq)	  ((_irq >> XTENSA_IRQ_NUM_SHIFT) & XTENSA_IRQ_NUM_MASK)
+#define XTENSA_IRQ_NUMBER(_irq)   ((_irq >> XTENSA_IRQ_NUM_SHIFT) & XTENSA_IRQ_NUM_MASK)
 /* Convert between IRQ_CONNECT() numbers and ACE_INTL_* interrupts */
-#define ACE_IRQ_NUM_SHIFT	  8
-#define ACE_IRQ_NUM_MASK	  0xFFU
+#define ACE_IRQ_NUM_SHIFT         8
+#define ACE_IRQ_NUM_MASK          0xFFU
 #define ACE_IRQ_FROM_ZEPHYR(_irq) (((_irq >> ACE_IRQ_NUM_SHIFT) & ACE_IRQ_NUM_MASK) - 1)
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
