@@ -1,4 +1,4 @@
-identifier: intel_adsp/ace30_ptl/sim
+identifier: intel_adsp/ace30/ptl/sim
 name: ACE 3.0 Panther Lake Audio DSP
 type: sim
 simulation: custom
