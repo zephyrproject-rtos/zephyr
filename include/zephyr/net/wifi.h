@@ -66,6 +66,12 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WPA_PSK,
 	/** WPA/WPA2/WPA3 PSK security with hunting-and-pecking loop. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+	/** WPA/WPA2/WPA3 PSK security with hash-to-element. */
+	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E,
+	/** WPA/WPA2/WPA3 PSK security with both hunting-and-pecking
+	 *  loop and hash-to-element enabled.
+	 */
+	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO,
 	/** DPP security */
 	WIFI_SECURITY_TYPE_DPP,
 	/** EAP PEAP MSCHAPV2 security - Enterprise. */
@@ -84,12 +90,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP,
 	/** FT-EAP-SHA384 security */
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
-	/** WPA/WPA2/WPA3 PSK security with hash-to-element. */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E,
-	/** WPA/WPA2/WPA3 PSK security with both hunting-and-pecking
-	 *  loop and hash-to-element enabled.
-	 */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO,
+	/** EAP TLS SHA256 security - Enterprise. */
+	WIFI_SECURITY_TYPE_EAP_TLS_SHA256,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -168,6 +170,15 @@ enum wifi_group_mgmt_cipher_type {
 struct wifi_cipher_desc {
 	unsigned int capa;
 	char *name;
+};
+
+struct wifi_eap_cipher_config {
+	char *key_mgmt;
+	char *openssl_ciphers;
+	char *group_cipher;
+	char *pairwise_cipher;
+	char *group_mgmt_cipher;
+	char *tls_flags;
 };
 
 struct wifi_eap_config {
