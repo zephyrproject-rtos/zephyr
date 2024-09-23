@@ -227,6 +227,20 @@ struct net_stats_ipv4_igmp {
 };
 
 /**
+ * @brief DNS statistics
+ */
+struct net_stats_dns {
+	/** Number of received DNS queries */
+	net_stats_t recv;
+
+	/** Number of sent DNS responses */
+	net_stats_t sent;
+
+	/** Number of dropped DNS packets */
+	net_stats_t drop;
+};
+
+/**
  * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
@@ -373,6 +387,11 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_IGMP)
 	/** IPv4 IGMP statistics */
 	struct net_stats_ipv4_igmp ipv4_igmp;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_DNS)
+	/** DNS statistics */
+	struct net_stats_dns dns;
 #endif
 
 #if NET_TC_COUNT > 1
