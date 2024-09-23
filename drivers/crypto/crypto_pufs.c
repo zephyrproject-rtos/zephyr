@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(crypto_puf_security);
   #error No PUF Security HW Crypto Accelerator in device tree
 #endif
 
+#define PUFS_HW_CAP (CAP_RAW_KEY | CAP_INPLACE_OPS | \
+                     CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS | \
+                     CAP_NO_IV_PREFIX | CAP_NO_ENCRYPTION | CAP_NO_SIGNING)
+
 /*****************************************************************************
  * Macros
  ****************************************************************************/
@@ -951,11 +955,33 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
     return PUFCC_E_VERFAIL;
   }
 
-  // Calculate hash of the message: TODO Update here
-  // if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
-  //     PUFCC_SUCCESS) {
-  //   return PUFCC_E_ERROR;
-  // }
+  // Calculate hash of the message
+
+    struct hash_ctx lvHashCtx = {
+    .device = NULL,
+    .drv_sessn_state = NULL,
+    .hash_hndlr = NULL,
+    .started = false,
+    .flags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+  };
+
+  struct hash_pkt lvHashPkt = {
+    .in_buf = msg_addr->read_addr,
+    .in_hash = NULL,
+    .in_len = msg_addr->len,
+    .prev_len = &prev_len,
+    .out_buf = (uint8_t*)hash.val,
+    .out_len = 0,
+    .next = NULL,
+    .head = true,
+    .tail = true,
+    .ctx = &lvHashCtx
+  };
+
+  if (pufcc_calc_sha256_hash_sg(&lvHashCtx, &lvHashPkt) !=
+      PUFCC_SUCCESS) {
+    return PUFCC_E_ERROR;
+  }
 
   if (memcmp(dec_msg + i + 19, hash.val, hash.len) != 0) {
     return PUFCC_E_VERFAIL;
@@ -1089,6 +1115,8 @@ static void pufs_irq_handler(const struct device *dev) { // TODO callback invoca
   // Clear and disable interrupt
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
   intrpt_reg_ptr->intrpt_en = 0;
+
+  irq_disable(((struct pufs_config *)dev->config)->irq_num);
 }
 
 static void pufs_irq_Init(void) {
@@ -1100,8 +1128,13 @@ static void pufs_irq_Init(void) {
                   0
                 );	
 
-    // Enable IRQ.
-    irq_enable(DT_INST_IRQN(0));
+    /**
+     * IRQ for PUFcc will be abled inside the
+     * interfaces which enable asynch operation
+     * callback registeration. When the IRQ is
+     * received, then that will be disabled inside
+     * the pufs_irq_hander.
+     */
 }
 
 /********************************************************
@@ -1177,11 +1210,7 @@ static int pufs_ecdsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
 /* Query the driver capabilities */
 static int pufs_query_hw_caps(const struct device *dev)
 {
-  return (
-            CAP_RAW_KEY | CAP_INPLACE_OPS | \
-            CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS | \
-            CAP_NO_IV_PREFIX | CAP_NO_ENCRYPTION | CAP_NO_SIGNING
-         );
+  return PUFS_HW_CAP;
 }
 
 /* Setup a crypto session */
@@ -1195,7 +1224,37 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
 /* Tear down an established session */
 static int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx *ctx)
 {
-  return -ENOTSUP;
+    struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+
+  ctx->device = NULL;
+
+  ctx->flags = 0x00;
+
+  ctx->ops.block_crypt_hndlr = NULL;
+  ctx->ops.cbc_crypt_hndlr = NULL;
+  ctx->ops.ctr_crypt_hndlr = NULL;
+  ctx->ops.ccm_crypt_hndlr = NULL;
+  ctx->ops.gcm_crypt_hndlr = NULL;
+ 
+  ctx->key.bit_stream = NULL;
+  ctx->key.handle = NULL;
+
+  ctx->drv_sessn_state = NULL;
+
+  ctx->app_sessn_state = NULL;
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_DECRYPTION) {
+    LOG_ERR("%s(%d) Cannot Free %s Session\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
+    return -ENOEXEC;
+  } else {
+    lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
+    lvPufsData->session_callback.cipher_cb = NULL;
+    lvPufsData->pufs_ctx.cipher_ctx = NULL;
+    lvPufsData->pufs_pkt.cipher_pkt = NULL;
+  }
+
+  return PUFCC_SUCCESS;
 }
 
 /* Register async crypto op completion callback with the driver */
@@ -1206,6 +1265,8 @@ static int pufs_cipher_async_callback_set(const struct device *dev, cipher_compl
   }
 
   ((struct pufs_data*)dev->data)->session_callback.cipher_cb = cb;
+
+  irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
   return PUFCC_SUCCESS;
 }
@@ -1276,6 +1337,8 @@ static int pufs_hash_async_callback_set(const struct device *dev, hash_completio
 
   ((struct pufs_data*)dev->data)->session_callback.hash_cb = cb;
 
+  irq_enable(((struct pufs_config *)dev->config)->irq_num);
+
   return PUFCC_SUCCESS;
 }
 
@@ -1289,7 +1352,36 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
 /* Tear down an established signature session */
 static int pufs_sign_free_session(const struct device *dev, struct sign_ctx *ctx)
 {
-  return -ENOTSUP;
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+
+  ctx->device = NULL;
+
+  ctx->flags = 0x00;
+
+  ctx->ops.rsa_crypt_hndlr = NULL;
+
+  ctx->ops.ecdsa_crypt_hndlr = NULL;
+ 
+  ctx->pub_key = NULL;
+
+  ctx->sig = NULL;
+
+  ctx->drv_sessn_state = NULL;
+
+  ctx->app_sessn_state = NULL;
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_SIGN_VERIFICATION) {
+    LOG_ERR("%s(%d) Cannot Free %s Session\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
+    return -ENOEXEC;
+  } else {
+    lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
+    lvPufsData->session_callback.sign_cb = NULL;
+    lvPufsData->pufs_ctx.sign_ctx = NULL;
+    lvPufsData->pufs_pkt.sign_pkt = NULL;
+  }
+
+  return PUFCC_SUCCESS;
 }
 
 /* Register async signature op completion callback with the driver */
@@ -1300,6 +1392,8 @@ static int pufs_sign_async_callback_set(const struct device *dev, sign_completio
   }
     
   ((struct pufs_data*)dev->data)->session_callback.sign_cb = cb;
+
+  irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
   return PUFCC_SUCCESS;
 }
@@ -1327,6 +1421,7 @@ static struct pufs_data s_pufs_session_data = {
 static const struct pufs_config s_pufs_configuration = {
   .base = DT_INST_REG_ADDR(0),
   .irq_init = pufs_irq_Init,
+  .irq_num = DT_INST_IRQN(0),
   .dev = DEVICE_DT_INST_GET(0)
 };
 
