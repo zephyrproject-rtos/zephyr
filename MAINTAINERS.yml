@@ -305,7 +305,6 @@ Bluetooth HCI:
   status: maintained
   maintainers:
     - jhedberg
-    - jori-nordic
   collaborators:
     - hermabe
     - alwa-nordic
@@ -356,7 +355,6 @@ Bluetooth controller:
 Bluetooth Host:
   status: maintained
   maintainers:
-    - jori-nordic
     - jhedberg
   collaborators:
     - hermabe
