@@ -435,7 +435,7 @@ static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win,
 	struct pcie_brcmstb_data *data = dev->data;
 	uint32_t cpu_addr_mb_high, limit_addr_mb_high;
 	uintptr_t cpu_addr_mb, limit_addr_mb;
-	uint32_t tmp;
+	uint32_t tmp, tmp2;
 
 	sys_write32(lower_32_bits(pcie_addr), data->cfg_addr + PCIE_MEM_WIN0_LO(win));
 	sys_write32(upper_32_bits(pcie_addr), data->cfg_addr + PCIE_MEM_WIN0_HI(win));
@@ -446,7 +446,12 @@ static void pcie_brcmstb_set_outbound_win(const struct device *dev, uint8_t win,
 	tmp = sys_read32(data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
 	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK;
 	tmp &= ~PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
-	tmp |= (cpu_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB);
+	tmp2 = (cpu_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB);
+	tmp2 &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK;
+	tmp |= tmp2;
+	tmp2 = (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
+	tmp2 &= PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK;
+	tmp |= tmp2;
 	tmp |= (limit_addr_mb << PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_LSB);
 	sys_write32(tmp, data->cfg_addr + PCIE_MEM_WIN0_BASE_LIMIT(win));
 
