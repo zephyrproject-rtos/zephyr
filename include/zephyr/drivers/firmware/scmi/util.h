@@ -221,7 +221,13 @@
  * of a `DT_DRV_COMPAT` compatible instead of a node identifier
  *
  * @param inst instance number
- * @param ... other parameters as expected by DT_SCMI_PROTOCOL_DEFINE()
+ * @param init_fn pointer to protocol's initialization function
+ * @param api pointer to protocol's subsystem API
+ * @param pm pointer to the protocol's power management resources
+ * @param data pointer to protocol's private data
+ * @param config pointer to protocol's private constant data
+ * @param level protocol initialization level
+ * @param prio protocol's priority within its initialization level
  */
 #define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,		\
 				     level, prio, api)				\
