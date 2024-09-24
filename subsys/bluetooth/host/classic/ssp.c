@@ -693,7 +693,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 		auth = ssp_get_auth(conn);
 	}
 
-	if (!bt_get_bondable()) {
+	if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
 		/* If bondable is false, clear bonding flag. */
 		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
