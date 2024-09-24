@@ -49,3 +49,21 @@ generate_inc_file_for_target(
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/ca.pem
     ${gen_dir}/ca.pem.inc
     )
+
+generate_inc_file_for_target(
+    app
+    ${ZEPHYR_BASE}/samples/net/wifi/test_certs/client2.pem
+    ${gen_dir}/client2.pem.inc
+    )
+
+generate_inc_file_for_target(
+    app
+    ${ZEPHYR_BASE}/samples/net/wifi/test_certs/client-key2.pem
+    ${gen_dir}/client-key2.pem.inc
+    )
+
+generate_inc_file_for_target(
+    app
+    ${ZEPHYR_BASE}/samples/net/wifi/test_certs/ca2.pem
+    ${gen_dir}/ca2.pem.inc
+    )
