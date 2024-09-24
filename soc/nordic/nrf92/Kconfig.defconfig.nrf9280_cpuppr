@@ -12,4 +12,8 @@ config SYS_CLOCK_TICKS_PER_SEC
 config RV_BOOT_HART
 	default 13 if SOC_NRF9230_ENGB
 
+# As FLPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n
+
 endif # SOC_NRF9280_CPUPPR
