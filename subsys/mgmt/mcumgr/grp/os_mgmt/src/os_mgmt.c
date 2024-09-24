@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  * Copyright (c) 2022 Laird Connectivity
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -451,6 +451,7 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	struct zcbor_string query = { 0 };
 	size_t decoded;
 	bool ok;
+	bool has_output = false;
 
 #if defined(CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK)
 	enum mgmt_cb_return status;
@@ -459,7 +460,8 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 	struct os_mgmt_bootloader_info_data bootloader_info_data = {
 		.zse = zse,
 		.decoded = &decoded,
-		.query = &query
+		.query = &query,
+		.has_output = &has_output
 	};
 #endif
 
@@ -487,24 +489,29 @@ os_mgmt_bootloader_info(struct smp_streamer *ctxt)
 #endif
 
 	/* If no parameter is recognized then just introduce the bootloader. */
+	if (!has_output) {
 #if defined(CONFIG_BOOTLOADER_MCUBOOT)
-	if (decoded == 0) {
-		ok = zcbor_tstr_put_lit(zse, "bootloader") &&
-		     zcbor_tstr_put_lit(zse, "MCUboot");
-	} else if (zcbor_map_decode_bulk_key_found(bootloader_info, ARRAY_SIZE(bootloader_info),
-		   "query") &&
-		   (sizeof("mode") - 1) == query.len &&
-		   memcmp("mode", query.value, query.len) == 0) {
+		if (decoded == 0) {
+			ok = zcbor_tstr_put_lit(zse, "bootloader") &&
+			     zcbor_tstr_put_lit(zse, "MCUboot");
+			has_output = true;
+		} else if (zcbor_map_decode_bulk_key_found(bootloader_info,
+							   ARRAY_SIZE(bootloader_info),
+			   "query") && (sizeof("mode") - 1) == query.len &&
+			   memcmp("mode", query.value, query.len) == 0) {
 
-		ok = zcbor_tstr_put_lit(zse, "mode") &&
-		     zcbor_int32_put(zse, BOOTLOADER_MODE);
+			ok = zcbor_tstr_put_lit(zse, "mode") &&
+			     zcbor_int32_put(zse, BOOTLOADER_MODE);
 #ifdef CONFIG_MCUBOOT_BOOTLOADER_NO_DOWNGRADE
-		ok = ok && zcbor_tstr_put_lit(zse, "no-downgrade") &&
-		     zcbor_bool_encode(zse, &(bool){true});
+			ok = ok && zcbor_tstr_put_lit(zse, "no-downgrade") &&
+			     zcbor_bool_encode(zse, &(bool){true});
 #endif
-	} else
+			has_output = true;
+		}
 #endif
-	{
+	}
+
+	if (!has_output) {
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_OS, OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER);
 	}
 
