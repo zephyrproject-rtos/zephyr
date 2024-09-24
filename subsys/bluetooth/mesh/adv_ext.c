@@ -69,6 +69,14 @@ struct bt_mesh_ext_adv {
 static void send_pending_adv(struct k_work *work);
 static bool schedule_send(struct bt_mesh_ext_adv *ext_adv);
 
+#if defined(CONFIG_BT_MESH_WORKQ_MESH)
+static struct k_work_q bt_mesh_workq;
+#define MESH_WORKQ &bt_mesh_workq
+static K_KERNEL_STACK_DEFINE(thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE);
+#else /* CONFIG_BT_MESH_WORKQ_SYS */
+#define MESH_WORKQ &k_sys_work_q
+#endif /* CONFIG_BT_MESH_WORKQ_MESH */
+
 static struct bt_mesh_ext_adv advs[] = {
 	[0] = {
 		.tags = (
@@ -335,7 +343,7 @@ static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 	}
 
 	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
-	k_work_submit(&ext_adv->work);
+	bt_mesh_wq_submit(&ext_adv->work);
 
 	return true;
 }
@@ -402,7 +410,7 @@ int bt_mesh_adv_terminate(struct bt_mesh_adv *adv)
 
 		atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
 
-		k_work_submit(&ext_adv->work);
+		bt_mesh_wq_submit(&ext_adv->work);
 
 		return 0;
 	}
@@ -424,6 +432,13 @@ void bt_mesh_adv_init(void)
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
 		(void)memcpy(&advs[i].adv_param, &adv_param, sizeof(adv_param));
 	}
+
+#if defined(CONFIG_BT_MESH_WORKQ_MESH)
+	k_work_queue_init(&bt_mesh_workq);
+	k_work_queue_start(&bt_mesh_workq, thread_stack, CONFIG_BT_MESH_ADV_STACK_SIZE,
+			   K_PRIO_COOP(CONFIG_BT_MESH_ADV_PRIO), NULL);
+	k_thread_name_set(&bt_mesh_workq.thread, "BT MESH WQ");
+#endif
 }
 
 static struct bt_mesh_ext_adv *adv_instance_find(struct bt_le_ext_adv *instance)
@@ -453,7 +468,7 @@ static void adv_sent(struct bt_le_ext_adv *instance,
 
 	atomic_set_bit(ext_adv->flags, ADV_FLAG_SENT);
 
-	k_work_submit(&ext_adv->work);
+	bt_mesh_wq_submit(&ext_adv->work);
 }
 
 #if defined(CONFIG_BT_MESH_GATT_SERVER)
@@ -498,14 +513,14 @@ int bt_mesh_adv_enable(void)
 
 int bt_mesh_adv_disable(void)
 {
-	int err;
 	struct k_work_sync sync;
+	int err;
 
 	for (int i = 0; i < ARRAY_SIZE(advs); i++) {
 		atomic_set_bit(advs[i].flags, ADV_FLAG_SUSPENDING);
 
-		if (k_current_get() != &k_sys_work_q.thread ||
-		    (k_work_busy_get(&advs[i].work) & K_WORK_RUNNING) == 0) {
+		if ((k_current_get() != k_work_queue_thread_get(MESH_WORKQ)) ||
+		    !(k_work_busy_get(&advs[i].work) & K_WORK_RUNNING)) {
 			k_work_flush(&advs[i].work, &sync);
 		}
 
@@ -556,4 +571,9 @@ int bt_mesh_adv_bt_data_send(uint8_t num_events, uint16_t adv_interval,
 			     const struct bt_data *ad, size_t ad_len)
 {
 	return bt_data_send(advs, num_events, adv_interval, ad, ad_len);
+}
+
+int bt_mesh_wq_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(MESH_WORKQ, work);
 }
