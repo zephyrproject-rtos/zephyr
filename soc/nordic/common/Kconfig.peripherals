@@ -198,6 +198,9 @@ config HAS_HW_NRF_RADIO_BLE_2M
 config HAS_HW_NRF_RADIO_BLE_CODED
 	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
 
+config HAS_HW_NRF_RADIO_CS
+	def_bool $(dt_nodelabel_bool_prop,radio,cs-supported)
+
 config HAS_HW_NRF_RADIO_DFE
 	def_bool $(dt_nodelabel_bool_prop,radio,dfe-supported)
 
