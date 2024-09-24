@@ -1142,8 +1142,8 @@ static struct bt_conn_cb conn_callbacks = {
 	.subrate_changed = subrate_changed,
 #endif
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
-	.remote_cs_capabilities_available = print_remote_cs_capabilities,
-	.remote_cs_fae_table_available = print_remote_cs_fae_table,
+	.le_cs_remote_capabilities_available = print_remote_cs_capabilities,
+	.le_cs_remote_fae_table_available = print_remote_cs_fae_table,
 	.le_cs_config_created = le_cs_config_created,
 	.le_cs_config_removed = le_cs_config_removed,
 #endif

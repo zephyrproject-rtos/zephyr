@@ -36,7 +36,7 @@ void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10])
 	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 79, 0);
 }
 
-int bt_cs_read_remote_supported_capabilities(struct bt_conn *conn)
+int bt_le_cs_read_remote_supported_capabilities(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_read_remote_supported_capabilities *cp;
 	struct net_buf *buf;
@@ -168,8 +168,8 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 	bt_conn_unref(conn);
 }
 
-int bt_cs_set_default_settings(struct bt_conn *conn,
-			       const struct bt_cs_set_default_settings_param *params)
+int bt_le_cs_set_default_settings(struct bt_conn *conn,
+				  const struct bt_le_cs_set_default_settings_param *params)
 {
 	struct bt_hci_cp_le_cs_set_default_settings *cp;
 	struct net_buf *buf;
@@ -196,7 +196,7 @@ int bt_cs_set_default_settings(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_SET_DEFAULT_SETTINGS, buf, NULL);
 }
 
-int bt_cs_read_remote_fae_table(struct bt_conn *conn)
+int bt_le_cs_read_remote_fae_table(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_read_remote_fae_table *cp;
 	struct net_buf *buf;
@@ -241,7 +241,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-int bt_cs_start_test(const struct bt_cs_test_param *params)
+int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 {
 	struct bt_hci_op_le_cs_test *cp;
 	struct net_buf *buf;
