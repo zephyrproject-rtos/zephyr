@@ -1644,6 +1644,9 @@ enum {
 	BT_GATT_DISCOVER_STD_CHAR_DESC,
 };
 
+/** Handle value to denote that the CCC will be automatically discovered */
+#define BT_GATT_AUTO_DISCOVER_CCC_HANDLE 0x0000U
+
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
 	/** Discover UUID type */
@@ -2049,7 +2052,7 @@ struct bt_gatt_subscribe_params {
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Subscribe End handle (for automatic discovery) */
 	uint16_t end_handle;
-	/** Discover parameters used when ccc_handle = 0 */
+	/** Discover parameters used when ccc_handle = @ref BT_GATT_AUTO_DISCOVER_CCC_HANDLE */
 	struct bt_gatt_discover_params *disc_params;
 #endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */

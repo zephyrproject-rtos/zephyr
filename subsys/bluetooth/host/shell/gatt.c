@@ -591,7 +591,7 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 	SET_CHAN_OPT_ANY(subscribe_params);
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
-	if (subscribe_params.ccc_handle == 0) {
+	if (subscribe_params.ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
 		static struct bt_gatt_discover_params disc_params;
 
 		subscribe_params.disc_params = &disc_params;

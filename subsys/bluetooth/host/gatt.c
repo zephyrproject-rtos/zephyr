@@ -5486,7 +5486,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		int err;
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
-		if (!params->ccc_handle) {
+		if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
 			return gatt_ccc_discover(conn, params);
 		}
 #endif

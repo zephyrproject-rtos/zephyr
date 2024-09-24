@@ -159,8 +159,7 @@ static void gatt_subscribe(void)
 	subscribe_params.notify = notify_cb;
 	subscribe_params.subscribe = subscribed_cb;
 
-	/* Use the BT_GATT_AUTO_DISCOVER_CCC feature */
-	subscribe_params.ccc_handle = 0;
+	subscribe_params.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	subscribe_params.disc_params = &disc_params,
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
