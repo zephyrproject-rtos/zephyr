@@ -1191,9 +1191,13 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
   ((struct pufs_data*)ctx->device->data)->pufs_pkt.cipher_pkt = pkt;
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.cipher_ctx = ctx;
 
-  return 0; // TODO Continue
-  // return pufcc_decrypt_aes()
-
+  return pufcc_decrypt_aes(
+                            (uint32_t)pkt->out_buf, (uint32_t)pkt->in_buf,
+                            (uint32_t)pkt->in_len, pkt->prev_len, ctx->key_source,
+                            (uint32_t)ctx->key.bit_stream, ctx->keylen, (uint32_t)ctr,
+                            (uint32_t)ctx->mode_params.ctr_info.ctr_len, 
+                            pkt->auto_increment, ctx->mode_params.ctr_info.readback_ctr
+                          );
 }
 
 /* TODO Setup a crypto session */
@@ -1234,6 +1238,14 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
   if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
     LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
     return -ENOTSUP;
+  }
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
+    LOG_ERR("%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
+    return -ENOTSUP;
+  } else {
+    lvPufsData->pufs_session_type = PUFS_SESSION_DECRYPTION;
   }
 
   ctx->ops.cipher_mode = mode; 
