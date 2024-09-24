@@ -45,7 +45,7 @@ config SPI_NOR_SFDP_RUNTIME
 endchoice
 
 config SPI_NOR_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 80
 	help
 	  Device driver initialization priority.
