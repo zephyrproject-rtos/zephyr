@@ -141,14 +141,11 @@ struct uarte_nrfx_data {
 };
 BUILD_ASSERT(offsetof(struct uarte_nrfx_data, a2i_data) == 0);
 
-/* If set then pins are managed when going to low power mode. */
-#define UARTE_CFG_FLAG_GPIO_MGMT		BIT(0)
-
 /* If set then receiver is not used. */
-#define UARTE_CFG_FLAG_NO_RX			BIT(1)
+#define UARTE_CFG_FLAG_NO_RX			BIT(0)
 
 /* If set then instance is using interrupt driven API. */
-#define UARTE_CFG_FLAG_INTERRUPT_DRIVEN_API	BIT(2)
+#define UARTE_CFG_FLAG_INTERRUPT_DRIVEN_API	BIT(1)
 
 /**
  * @brief Structure for UARTE configuration.
@@ -917,11 +914,9 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (cfg->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
-			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
 		}
 		if (!IS_ASYNC_API(dev) && !(cfg->flags & UARTE_CFG_FLAG_NO_RX)) {
 			return start_rx(dev);
@@ -933,11 +928,9 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 			stop_rx(dev);
 		}
 
-		if (cfg->flags & UARTE_CFG_FLAG_GPIO_MGMT) {
-			ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
-			if (ret < 0) {
-				return ret;
-			}
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			return ret;
 		}
 
 		break;
@@ -1032,8 +1025,6 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 		},										\
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(UARTE(idx)),					\
 		.flags = (UARTE_PROP(idx, disable_rx) ? UARTE_CFG_FLAG_NO_RX : 0) |		\
-			(IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT) ?			\
-				UARTE_CFG_FLAG_GPIO_MGMT : 0) |					\
 			(IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN) ?			\
 				UARTE_CFG_FLAG_INTERRUPT_DRIVEN_API : 0),			\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
