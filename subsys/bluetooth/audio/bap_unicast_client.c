@@ -66,6 +66,7 @@ BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT == 0 ||
 LOG_MODULE_REGISTER(bt_bap_unicast_client, CONFIG_BT_BAP_UNICAST_CLIENT_LOG_LEVEL);
 
 #define PAC_DIR_UNUSED(dir) ((dir) != BT_AUDIO_DIR_SINK && (dir) != BT_AUDIO_DIR_SOURCE)
+#define BAP_HANDLE_UNUSED   0x0000U
 struct bt_bap_unicast_client_ep {
 	uint16_t handle;
 	uint16_t cp_handle;
@@ -1521,7 +1522,7 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 
 	if (!data) {
 		LOG_DBG("Unsubscribed");
-		params->value_handle = 0x0000;
+		params->value_handle = BAP_HANDLE_UNUSED;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -1760,7 +1761,7 @@ static uint8_t unicast_client_ep_notify(struct bt_conn *conn,
 
 	if (!data) {
 		LOG_DBG("Unsubscribed");
-		params->value_handle = 0x0000;
+		params->value_handle = BAP_HANDLE_UNUSED;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -2231,8 +2232,8 @@ static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason)
 	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
 	(void)memset(ep, 0, sizeof(*ep));
 
-	client_ep->cp_handle = 0U;
-	client_ep->handle = 0U;
+	client_ep->cp_handle = BAP_HANDLE_UNUSED;
+	client_ep->handle = BAP_HANDLE_UNUSED;
 	(void)memset(&client_ep->discover, 0, sizeof(client_ep->discover));
 	client_ep->release_requested = false;
 	client_ep->cp_ntf_pending = false;
@@ -3694,6 +3695,27 @@ fail:
 	return BT_GATT_ITER_STOP;
 }
 
+static bool any_ases_found(const struct unicast_client *client)
+{
+	/* We always allocate ases from 0 to X, so to verify if any sink or source ASEs have been
+	 * found we can just check the first index
+	 */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	if (client->dir == BT_AUDIO_DIR_SINK && client->snks[0].handle == BAP_HANDLE_UNUSED) {
+		LOG_DBG("No sink ASEs found");
+		return false;
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	if (client->dir == BT_AUDIO_DIR_SOURCE && client->srcs[0].handle == BAP_HANDLE_UNUSED) {
+		LOG_DBG("No source ASEs found");
+		return false;
+	}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+
+	return true;
+}
+
 static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 					      const struct bt_gatt_attr *attr,
 					      struct bt_gatt_discover_params *discover)
@@ -3703,12 +3725,18 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	uint16_t value_handle;
 	int err;
 
-	if (attr == NULL) {
-		err = unicast_client_ase_cp_discover(conn);
-		if (err != 0) {
-			LOG_ERR("Unable to discover ASE Control Point");
+	client = &uni_cli_insts[bt_conn_index(conn)];
 
-			unicast_client_discover_complete(conn, err);
+	if (attr == NULL) {
+		if (!any_ases_found(client)) {
+			unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+		} else {
+			err = unicast_client_ase_cp_discover(conn);
+			if (err != 0) {
+				LOG_ERR("Unable to discover ASE Control Point");
+
+				unicast_client_discover_complete(conn, err);
+			}
 		}
 
 		return BT_GATT_ITER_STOP;
@@ -3717,8 +3745,6 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn,
 	chrc = attr->user_data;
 	value_handle = chrc->value_handle;
 	memset(discover, 0, sizeof(*discover));
-
-	client = &uni_cli_insts[bt_conn_index(conn)];
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
 		bt_audio_dir_str(client->dir));
@@ -3814,7 +3840,7 @@ static uint8_t unicast_client_pacs_avail_ctx_notify_cb(struct bt_conn *conn,
 
 	if (!data) {
 		LOG_DBG("Unsubscribed");
-		params->value_handle = 0x0000;
+		params->value_handle = BAP_HANDLE_UNUSED;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -3990,7 +4016,7 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 
 	if (!data) {
 		LOG_DBG("Unsubscribed");
-		params->value_handle = 0x0000;
+		params->value_handle = BAP_HANDLE_UNUSED;
 		return BT_GATT_ITER_STOP;
 	}
 
