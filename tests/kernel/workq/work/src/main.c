@@ -1038,7 +1038,7 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 	 */
 	if (atomic_dec(&resubmits_left) > 0) {
 		/* Schedule again on current queue */
-		state->schedule_res = k_work_schedule_for_queue(NULL, one_dwork,
+		state->schedule_res = k_work_schedule_for_queue(one_dwork->work.queue, one_dwork,
 								K_MSEC(DELAY_MS));
 	} else {
 		/* Flag that it didn't schedule */

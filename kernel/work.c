@@ -867,6 +867,8 @@ static inline int work_delayable_busy_get_locked(const struct k_work_delayable *
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
 {
+	__ASSERT_NO_MSG(dwork != NULL);
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	int ret = work_delayable_busy_get_locked(dwork);
 
@@ -968,6 +970,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
 			       struct k_work_delayable *dwork,
 			       k_timeout_t delay)
 {
+	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, schedule_for_queue, queue, dwork, delay);
@@ -1004,6 +1007,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
 				 struct k_work_delayable *dwork,
 				 k_timeout_t delay)
 {
+	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, reschedule_for_queue, queue, dwork, delay);
