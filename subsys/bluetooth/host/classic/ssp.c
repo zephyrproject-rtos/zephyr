@@ -236,8 +236,8 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
 						  next, node) {
-			if (listener->pairing_complete) {
-				listener->pairing_complete(conn, status);
+			if (listener->pairing_failed) {
+				listener->pairing_failed(conn, status);
 			}
 		}
 	}
