@@ -237,7 +237,7 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 
 	/* Send body data if provided */
 	if (rsp->body != NULL && rsp->body_len > 0) {
-		ret = snprintk(tmp, sizeof(tmp), "%x\r\n", rsp->body_len);
+		ret = snprintk(tmp, sizeof(tmp), "%zx\r\n", rsp->body_len);
 		ret = http_server_sendall(client, tmp, ret);
 		if (ret < 0) {
 			return ret;
