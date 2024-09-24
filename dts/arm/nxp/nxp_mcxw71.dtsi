@@ -223,6 +223,28 @@
 		clk-divider = <256>;
 		status = "disabled";
 	};
+
+	lptmr0: timer@2d000 {
+		compatible = "nxp,lptmr";
+		reg = <0x2d000 0x10>;
+		interrupts = <34 0>;
+		clock-frequency = <32000>;
+		clk-source = <2>;
+		prescaler = <1>;
+		resolution = <32>;
+		status = "disabled";
+	};
+
+	lptmr1: timer@2e000 {
+		compatible = "nxp,lptmr";
+		reg = <0x2e000 0x10>;
+		interrupts = <35 0>;
+		clock-frequency = <32000>;
+		clk-source = <2>;
+		prescaler = <1>;
+		resolution = <32>;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {
