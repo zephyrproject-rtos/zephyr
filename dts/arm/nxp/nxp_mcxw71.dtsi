@@ -181,6 +181,24 @@
 		reg = <0x2b000 0x400>;
 		interrupts = <74 0>;
 	};
+
+	tpm0: pwm@31000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x31000 0x100>;
+		interrupts = <37 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xc4>;
+		status = "disabled";
+		#pwm-cells = <3>;
+	};
+
+	tpm1: pwm@32000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x32000 0x100>;
+		interrupts = <38 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xc8>;
+		status = "disabled";
+		#pwm-cells = <3>;
+	};
 };
 
 &fast_peripheral0 {
