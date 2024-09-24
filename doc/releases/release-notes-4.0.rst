@@ -132,6 +132,11 @@ Bluetooth
 
 * HCI Drivers
 
+* Mesh
+
+  * Introduced a mesh-specific workqueue to increase reliability of the mesh messages
+    transmission. To get the old behavior enable :kconfig:option:`CONFIG_BT_MESH_WORKQ_SYS`.
+
 Boards & SoC Support
 ********************
 

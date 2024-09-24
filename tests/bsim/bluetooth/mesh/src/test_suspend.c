@@ -295,6 +295,9 @@ static void dut_pub_common(bool disable_bt)
 		ASSERT_OK_MSG(k_sem_take(&publish_sem, K_SECONDS(30)), "Pub timed out");
 	}
 
+	/* Allow publishing to finish before suspending. */
+	k_sleep(K_MSEC(100));
+
 	ASSERT_OK_MSG(bt_mesh_suspend(), "Failed to suspend Mesh.");
 
 	if (disable_bt) {
