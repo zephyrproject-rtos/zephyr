@@ -321,7 +321,7 @@ static int lp5562_set_led_source(const struct device *dev,
 	if (i2c_reg_update_byte_dt(&config->bus, LP5562_LED_MAP,
 				   LP5562_CHANNEL_MASK(channel),
 				   source << (channel << 1))) {
-		LOG_ERR("LED reg update failed.");
+		LOG_ERR("Failed to set LED[%d] source=%d.", channel, source);
 		return -EIO;
 	}
 
@@ -346,6 +346,7 @@ static int lp5562_get_led_source(const struct device *dev,
 	uint8_t led_map;
 
 	if (i2c_reg_read_byte_dt(&config->bus, LP5562_LED_MAP, &led_map)) {
+		LOG_ERR("Failed to get LED[%d] source.", channel);
 		return -EIO;
 	}
 
@@ -534,6 +535,57 @@ static inline int lp5562_stop_program_exec(const struct device *dev,
 					    LP5562_ENGINE_MODE_HOLD);
 }
 
+static int lp5562_enter_pwm_mode(const struct device *dev, uint32_t led)
+{
+	int ret;
+	enum lp5562_led_sources source;
+
+	/* query current led source */
+	ret = lp5562_get_led_source(dev, led, &source);
+	if (ret) {
+		return ret;
+	}
+
+	/* if source is linked to engine stop it, and switch to PWM */
+	if (source != LP5562_SOURCE_PWM) {
+		ret = lp5562_stop_program_exec(dev, source);
+		if (ret) {
+			LOG_ERR("Failed to stop engine=%d.", source);
+			return ret;
+		}
+		ret = lp5562_set_led_source(dev, led, LP5562_SOURCE_PWM);
+		if (ret) {
+			return ret;
+		}
+	}
+	return 0;
+}
+
+static int lp5562_enter_engine_mode(const struct device *dev, uint32_t led,
+				    enum lp5562_led_sources *engine)
+{
+	int ret;
+
+	/* query current led source */
+	ret = lp5562_get_led_source(dev, led, engine);
+	if (ret) {
+		return ret;
+	}
+
+	/* if source is PWM, and identify available engine and link it */
+	if (*engine == LP5562_SOURCE_PWM) {
+		ret = lp5562_get_available_engine(dev, engine);
+		if (ret) {
+			return ret;
+		}
+		ret = lp5562_set_led_source(dev, led, *engine);
+		if (ret) {
+			return ret;
+		}
+	}
+	return 0;
+}
+
 /*
  * @brief Program a command to the memory of the given execution engine.
  *
@@ -700,6 +752,27 @@ static inline int lp5562_program_go_to_start(const struct device *dev,
 	return lp5562_program_command(dev, engine, command_index, 0x00, 0x00);
 }
 
+static int lp5562_led_set_pwm_brightness(const struct device *dev, uint32_t led,
+					 uint8_t value)
+{
+	const struct lp5562_config *config = dev->config;
+	uint8_t val, reg;
+	int ret;
+
+	val = (value * 0xFF) / LP5562_MAX_BRIGHTNESS;
+	ret = lp5562_get_pwm_reg(led, &reg);
+	if (ret) {
+		return ret;
+	}
+
+	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
+		LOG_ERR("LED PWM write failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 /*
  * @brief Change the brightness of a running blink program.
  *
@@ -761,27 +834,9 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	enum lp5562_led_sources engine;
 	uint8_t command_index = 0U;
 
-	/*
-	 * Read current "led" source setting. This is to check
-	 * whether the "led" is in PWM mode or using an Engine.
-	 */
-	ret = lp5562_get_led_source(dev, led, &engine);
+	ret = lp5562_enter_engine_mode(dev, led, &engine);
 	if (ret) {
 		return ret;
-	}
-
-	/* Find and assign new engine only if the "led" is not using any. */
-	if (engine == LP5562_SOURCE_PWM) {
-		ret = lp5562_get_available_engine(dev, &engine);
-		if (ret) {
-			return ret;
-		}
-
-		ret = lp5562_set_led_source(dev, led, engine);
-		if (ret) {
-			LOG_ERR("Failed to set LED source.");
-			return ret;
-		}
 	}
 
 	ret = lp5562_set_engine_op_mode(dev, engine, LP5562_OP_MODE_LOAD);
@@ -828,9 +883,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 				     uint8_t value)
 {
-	const struct lp5562_config *config = dev->config;
 	int ret;
-	uint8_t val, reg;
 	enum lp5562_led_sources current_source;
 
 	if ((value < LP5562_MIN_BRIGHTNESS) ||
@@ -843,60 +896,31 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 		return ret;
 	}
 
-	if (current_source != LP5562_SOURCE_PWM) {
-		if (lp5562_is_engine_executing(dev, current_source)) {
-			/*
-			 * LED is blinking currently. Restart the blinking with
-			 * the passed brightness.
-			 */
-			return lp5562_update_blinking_brightness(dev,
-					current_source, value);
-		}
-
-		ret = lp5562_set_led_source(dev, led, LP5562_SOURCE_PWM);
-		if (ret) {
-			return ret;
-		}
+	if (current_source == LP5562_SOURCE_PWM) {
+		return lp5562_led_set_pwm_brightness(dev, led, value);
+	} else {
+		return lp5562_update_blinking_brightness(dev, current_source, value);
 	}
-
-	val = (value * 0xFF) / LP5562_MAX_BRIGHTNESS;
-
-	ret = lp5562_get_pwm_reg(led, &reg);
-	if (ret) {
-		return ret;
-	}
-
-	if (i2c_reg_write_byte_dt(&config->bus, reg, val)) {
-		LOG_ERR("LED write failed");
-		return -EIO;
-	}
-
-	return 0;
 }
 
 static inline int lp5562_led_on(const struct device *dev, uint32_t led)
 {
-	return lp5562_led_set_brightness(dev, led, LP5562_MAX_BRIGHTNESS);
+	int ret = lp5562_enter_pwm_mode(dev, led);
+
+	if (ret) {
+		return ret;
+	}
+	return lp5562_led_set_pwm_brightness(dev, led, LP5562_MAX_BRIGHTNESS);
 }
 
 static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 {
-	int ret;
-	enum lp5562_led_sources current_source;
+	int ret = lp5562_enter_pwm_mode(dev, led);
 
-	ret = lp5562_get_led_source(dev, led, &current_source);
 	if (ret) {
 		return ret;
 	}
-
-	if (current_source != LP5562_SOURCE_PWM) {
-		ret = lp5562_stop_program_exec(dev, current_source);
-		if (ret) {
-			return ret;
-		}
-	}
-
-	return lp5562_led_set_brightness(dev, led, LP5562_MIN_BRIGHTNESS);
+	return lp5562_led_set_pwm_brightness(dev, led, LP5562_MIN_BRIGHTNESS);
 }
 
 static int lp5562_led_update_current(const struct device *dev)
