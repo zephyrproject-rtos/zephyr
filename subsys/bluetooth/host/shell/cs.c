@@ -28,11 +28,12 @@
 
 static int check_cs_sync_antenna_selection_input(uint16_t input)
 {
-	if (input != BT_CS_ANTENNA_SELECTION_OPT_ONE && input != BT_CS_ANTENNA_SELECTION_OPT_TWO &&
-	    input != BT_CS_ANTENNA_SELECTION_OPT_THREE &&
-	    input != BT_CS_ANTENNA_SELECTION_OPT_FOUR &&
-	    input != BT_CS_ANTENNA_SELECTION_OPT_REPETITIVE &&
-	    input != BT_CS_ANTENNA_SELECTION_OPT_NO_RECOMMENDATION) {
+	if (input != BT_LE_CS_ANTENNA_SELECTION_OPT_ONE &&
+	    input != BT_LE_CS_ANTENNA_SELECTION_OPT_TWO &&
+	    input != BT_LE_CS_ANTENNA_SELECTION_OPT_THREE &&
+	    input != BT_LE_CS_ANTENNA_SELECTION_OPT_FOUR &&
+	    input != BT_LE_CS_ANTENNA_SELECTION_OPT_REPETITIVE &&
+	    input != BT_LE_CS_ANTENNA_SELECTION_OPT_NO_RECOMMENDATION) {
 		return -EINVAL;
 	}
 
@@ -48,9 +49,10 @@ static int cmd_read_remote_supported_capabilities(const struct shell *sh, size_t
 		return -ENOEXEC;
 	}
 
-	err = bt_cs_read_remote_supported_capabilities(default_conn);
+	err = bt_le_cs_read_remote_supported_capabilities(default_conn);
 	if (err) {
-		shell_error(sh, "bt_cs_read_remote_supported_capabilities returned error %d", err);
+		shell_error(sh, "bt_le_cs_read_remote_supported_capabilities returned error %d",
+			    err);
 		return -ENOEXEC;
 	}
 
@@ -60,7 +62,7 @@ static int cmd_read_remote_supported_capabilities(const struct shell *sh, size_t
 static int cmd_set_default_settings(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	struct bt_cs_set_default_settings_param params;
+	struct bt_le_cs_set_default_settings_param params;
 	uint16_t antenna_input;
 	int16_t tx_power_input;
 
@@ -107,9 +109,9 @@ static int cmd_set_default_settings(const struct shell *sh, size_t argc, char *a
 	params.cs_sync_antenna_selection = antenna_input;
 	params.max_tx_power = tx_power_input;
 
-	err = bt_cs_set_default_settings(default_conn, &params);
+	err = bt_le_cs_set_default_settings(default_conn, &params);
 	if (err) {
-		shell_error(sh, "bt_cs_set_default_settings returned error %d", err);
+		shell_error(sh, "bt_le_cs_set_default_settings returned error %d", err);
 		return -ENOEXEC;
 	}
 
@@ -125,9 +127,9 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 		return -ENOEXEC;
 	}
 
-	err = bt_cs_read_remote_fae_table(default_conn);
+	err = bt_le_cs_read_remote_fae_table(default_conn);
 	if (err) {
-		shell_error(sh, "bt_cs_read_remote_fae_table returned error %d", err);
+		shell_error(sh, "bt_le_cs_read_remote_fae_table returned error %d", err);
 		return -ENOEXEC;
 	}
 
@@ -137,7 +139,7 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	struct bt_cs_test_param params;
+	struct bt_le_cs_test_param params;
 
 	params.main_mode = BT_CONN_LE_CS_MAIN_MODE_1;
 	params.sub_mode = BT_CONN_LE_CS_SUB_MODE_UNUSED;
@@ -161,7 +163,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 
 	params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY;
 	params.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY;
-	params.cs_sync_antenna_selection = BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_ONE;
+	params.cs_sync_antenna_selection = BT_LE_CS_TEST_CS_SYNC_ANTENNA_SELECTION_ONE;
 	params.subevent_len = 10000;
 	params.subevent_interval = 0;
 	params.max_num_subevents = 0;
@@ -171,9 +173,9 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.t_fcs_time = 120;
 	params.t_pm_time = 20;
 	params.t_sw_time = 0;
-	params.tone_antenna_config_selection = BT_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
-	params.initiator_snr_control = BT_CS_TEST_INITIATOR_SNR_CONTROL_NOT_USED;
-	params.reflector_snr_control = BT_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED;
+	params.tone_antenna_config_selection = BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.initiator_snr_control = BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_NOT_USED;
+	params.reflector_snr_control = BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED;
 	params.drbg_nonce = 0x1234;
 	params.override_config = 0;
 	params.override_config_0.channel_map_repetition = 1;
@@ -184,9 +186,9 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.override_config_0.not_set.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT;
 	params.override_config_0.not_set.ch3c_jump = 0x2;
 
-	err = bt_cs_start_test(&params);
+	err = bt_le_cs_start_test(&params);
 	if (err) {
-		shell_error(sh, "bt_cs_start_test returned error %d", err);
+		shell_error(sh, "bt_le_cs_start_test returned error %d", err);
 		return -ENOEXEC;
 	}
 
@@ -206,7 +208,7 @@ static int cmd_remove_config(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_cs_remove_config(default_conn, config_id);
 	if (err) {
-		shell_error(sh, "bt_cs_remove_config returned error %d", err);
+		shell_error(sh, "bt_le_cs_remove_config returned error %d", err);
 		return -ENOEXEC;
 	}
 
@@ -361,7 +363,7 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_le_cs_create_config(default_conn, &params, context);
 	if (err) {
-		shell_error(sh, "bt_cs_create_config returned error %d", err);
+		shell_error(sh, "bt_le_cs_create_config returned error %d", err);
 		return -ENOEXEC;
 	}
 

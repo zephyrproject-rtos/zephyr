@@ -1644,8 +1644,8 @@ struct bt_conn_cb {
 	 *  @param conn Connection object.
 	 *  @param remote_cs_capabilities Remote Channel Sounding Capabilities.
 	 */
-	void (*remote_cs_capabilities_available)(struct bt_conn *conn,
-						 struct bt_conn_le_cs_capabilities *params);
+	void (*le_cs_remote_capabilities_available)(struct bt_conn *conn,
+						    struct bt_conn_le_cs_capabilities *params);
 
 	/** @brief LE CS Read Remote FAE Table Complete event.
 	 *
@@ -1655,8 +1655,8 @@ struct bt_conn_cb {
 	 *  @param conn Connection object.
 	 *  @param params FAE Table.
 	 */
-	void (*remote_cs_fae_table_available)(struct bt_conn *conn,
-					      struct bt_conn_le_cs_fae_table *params);
+	void (*le_cs_remote_fae_table_available)(struct bt_conn *conn,
+						 struct bt_conn_le_cs_fae_table *params);
 
 	/** @brief LE CS Config created.
 	 *
