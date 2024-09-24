@@ -816,6 +816,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 				int32_t timeout)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 	const struct uarte_nrfx_config *cfg = dev->config;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	int ret = 0;
@@ -829,24 +830,24 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	 * for the RXTO event after a call to uart_rx_disable() to discard
 	 * data from the UARTE internal RX FIFO.
 	 */
-	if (data->async->rx.enabled || data->async->rx.discard_fifo) {
+	if (async_rx->enabled || async_rx->discard_fifo) {
 		return -EBUSY;
 	}
 
-	data->async->rx.timeout = timeout;
-	data->async->rx.timeout_slab = timeout / RX_TIMEOUT_DIV;
+	async_rx->timeout = timeout;
+	async_rx->timeout_slab = timeout / RX_TIMEOUT_DIV;
 
-	data->async->rx.buf = buf;
-	data->async->rx.buf_len = len;
-	data->async->rx.offset = 0;
-	data->async->rx.next_buf = NULL;
-	data->async->rx.next_buf_len = 0;
+	async_rx->buf = buf;
+	async_rx->buf_len = len;
+	async_rx->offset = 0;
+	async_rx->next_buf = NULL;
+	async_rx->next_buf_len = 0;
 
 	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
-		if (data->async->rx.flush_cnt) {
-			int cpy_len = MIN(len, data->async->rx.flush_cnt);
+		if (async_rx->flush_cnt) {
+			int cpy_len = MIN(len, async_rx->flush_cnt);
 
-			memcpy(buf, data->async->rx.flush_buffer, cpy_len);
+			memcpy(buf, async_rx->flush_buffer, cpy_len);
 			buf += cpy_len;
 			len -= cpy_len;
 
@@ -854,9 +855,9 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 			 * request and indicate rx being disabled.
 			 */
 			if (!len) {
-				data->async->rx.flush_cnt -= cpy_len;
+				async_rx->flush_cnt -= cpy_len;
 				notify_uart_rx_rdy(dev, cpy_len);
-				rx_buf_release(dev, &data->async->rx.buf);
+				rx_buf_release(dev, &async_rx->buf);
 				notify_rx_disable(dev);
 				return 0;
 			}
@@ -868,7 +869,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 
-	data->async->rx.enabled = true;
+	async_rx->enabled = true;
 	if (cfg->flags & UARTE_CFG_FLAG_LOW_POWER) {
 		unsigned int key = irq_lock();
 
@@ -885,15 +886,16 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 				 size_t len)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 	int err;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	unsigned int key = irq_lock();
 
-	if (data->async->rx.buf == NULL) {
+	if (async_rx->buf == NULL) {
 		err = -EACCES;
-	} else if (data->async->rx.next_buf == NULL) {
-		data->async->rx.next_buf = buf;
-		data->async->rx.next_buf_len = len;
+	} else if (async_rx->next_buf == NULL) {
+		async_rx->next_buf = buf;
+		async_rx->next_buf_len = len;
 		nrf_uarte_rx_buffer_set(uarte, buf, len);
 		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 		err = 0;
@@ -925,19 +927,20 @@ static int uarte_nrfx_callback_set(const struct device *dev,
 static int uarte_nrfx_rx_disable(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	if (data->async->rx.buf == NULL) {
+	if (async_rx->buf == NULL) {
 		return -EFAULT;
 	}
-	if (data->async->rx.next_buf != NULL) {
+	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 	}
 
-	k_timer_stop(&data->async->rx.timer);
-	data->async->rx.enabled = false;
-	data->async->rx.discard_fifo = true;
+	k_timer_stop(&async_rx->timer);
+	async_rx->enabled = false;
+	async_rx->discard_fifo = true;
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
 
@@ -961,11 +964,12 @@ static void tx_timeout(struct k_timer *timer)
 static void rx_timeout(struct k_timer *timer)
 {
 	struct uarte_nrfx_data *data = k_timer_user_data_get(timer);
+	struct uarte_async_rx *async_rx = &data->async->rx;
 	const struct device *dev = data->dev;
 	const struct uarte_nrfx_config *cfg = dev->config;
 	uint32_t read;
 
-	if (data->async->rx.is_in_irq) {
+	if (async_rx->is_in_irq) {
 		return;
 	}
 
@@ -978,21 +982,20 @@ static void rx_timeout(struct k_timer *timer)
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
 		read = nrfx_timer_capture(&cfg->timer, 0);
 	} else {
-		read = data->async->rx.cnt.cnt;
+		read = async_rx->cnt.cnt;
 	}
 
 	/* Check if data was received since last function call */
-	if (read != data->async->rx.total_byte_cnt) {
-		data->async->rx.total_byte_cnt = read;
-		data->async->rx.timeout_left = data->async->rx.timeout;
+	if (read != async_rx->total_byte_cnt) {
+		async_rx->total_byte_cnt = read;
+		async_rx->timeout_left = async_rx->timeout;
 	}
 
 	/* Check if there is data that was not sent to user yet
 	 * Note though that 'len' is a count of data bytes received, but not
 	 * necessarily the amount available in the current buffer
 	 */
-	int32_t len = data->async->rx.total_byte_cnt
-		    - data->async->rx.total_user_byte_cnt;
+	int32_t len = async_rx->total_byte_cnt - async_rx->total_user_byte_cnt;
 
 	if (!HW_RX_COUNTING_ENABLED(cfg) &&
 	    (len < 0)) {
@@ -1001,7 +1004,7 @@ static void rx_timeout(struct k_timer *timer)
 		 * At this point, the number of received bytes is at least
 		 * equal to what was reported to the user.
 		 */
-		data->async->rx.cnt.cnt = data->async->rx.total_user_byte_cnt;
+		async_rx->cnt.cnt = async_rx->total_user_byte_cnt;
 		len = 0;
 	}
 
@@ -1013,31 +1016,28 @@ static void rx_timeout(struct k_timer *timer)
 	 */
 	bool clipped = false;
 
-	if (len + data->async->rx.offset > data->async->rx.buf_len) {
-		len = data->async->rx.buf_len - data->async->rx.offset;
+	if (len + async_rx->offset > async_rx->buf_len) {
+		len = async_rx->buf_len - async_rx->offset;
 		clipped = true;
 	}
 
 	if (len > 0) {
-		if (clipped ||
-			(data->async->rx.timeout_left
-				< data->async->rx.timeout_slab)) {
+		if (clipped || (async_rx->timeout_left < async_rx->timeout_slab)) {
 			/* rx_timeout us elapsed since last receiving */
-			if (data->async->rx.buf != NULL) {
+			if (async_rx->buf != NULL) {
 				notify_uart_rx_rdy(dev, len);
-				data->async->rx.offset += len;
-				data->async->rx.total_user_byte_cnt += len;
+				async_rx->offset += len;
+				async_rx->total_user_byte_cnt += len;
 			}
 		} else {
-			data->async->rx.timeout_left -=
-				data->async->rx.timeout_slab;
+			async_rx->timeout_left -= async_rx->timeout_slab;
 		}
 
 		/* If there's nothing left to report until the buffers are
 		 * switched then the timer can be stopped
 		 */
 		if (clipped) {
-			k_timer_stop(&data->async->rx.timer);
+			k_timer_stop(&async_rx->timer);
 		}
 	}
 
@@ -1083,22 +1083,23 @@ static void rxstarted_isr(const struct device *dev)
 static void endrx_isr(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
-	data->async->rx.is_in_irq = true;
+	async_rx->is_in_irq = true;
 
 	/* ensure rx timer is stopped - it will be restarted in RXSTARTED
 	 * handler if needed
 	 */
-	k_timer_stop(&data->async->rx.timer);
+	k_timer_stop(&async_rx->timer);
 
 	/* this is the amount that the EasyDMA controller has copied into the
 	 * buffer
 	 */
 	const int rx_amount = nrf_uarte_rx_amount_get(uarte) +
-				data->async->rx.flush_cnt;
+				async_rx->flush_cnt;
 
-	data->async->rx.flush_cnt = 0;
+	async_rx->flush_cnt = 0;
 
 	/* The 'rx_offset' can be bigger than 'rx_amount', so it the length
 	 * of data we report back the user may need to be clipped.
@@ -1107,25 +1108,25 @@ static void endrx_isr(const struct device *dev)
 	 * here to handle this buffer. (The next buffer is now already active
 	 * because of the ENDRX_STARTRX shortcut)
 	 */
-	int rx_len = rx_amount - data->async->rx.offset;
+	int rx_len = rx_amount - async_rx->offset;
 
 	if (rx_len < 0) {
 		rx_len = 0;
 	}
 
-	data->async->rx.total_user_byte_cnt += rx_len;
+	async_rx->total_user_byte_cnt += rx_len;
 
 	/* Only send the RX_RDY event if there is something to send */
 	if (rx_len > 0) {
 		notify_uart_rx_rdy(dev, rx_len);
 	}
 
-	if (!data->async->rx.enabled) {
-		data->async->rx.is_in_irq = false;
+	if (!async_rx->enabled) {
+		async_rx->is_in_irq = false;
 		return;
 	}
 
-	rx_buf_release(dev, &data->async->rx.buf);
+	rx_buf_release(dev, &async_rx->buf);
 
 	/* If there is a next buffer, then STARTRX will have already been
 	 * invoked by the short (the next buffer will be filling up already)
@@ -1134,13 +1135,13 @@ static void endrx_isr(const struct device *dev)
 	 */
 	unsigned int key = irq_lock();
 
-	if (data->async->rx.next_buf) {
-		data->async->rx.buf = data->async->rx.next_buf;
-		data->async->rx.buf_len = data->async->rx.next_buf_len;
-		data->async->rx.next_buf = NULL;
-		data->async->rx.next_buf_len = 0;
+	if (async_rx->next_buf) {
+		async_rx->buf = async_rx->next_buf;
+		async_rx->buf_len = async_rx->next_buf_len;
+		async_rx->next_buf = NULL;
+		async_rx->next_buf_len = 0;
 
-		data->async->rx.offset = 0;
+		async_rx->offset = 0;
 		/* Check is based on assumption that ISR handler handles
 		 * ENDRX before RXSTARTED so if short was set on time, RXSTARTED
 		 * event will be set.
@@ -1156,7 +1157,7 @@ static void endrx_isr(const struct device *dev)
 
 	irq_unlock(key);
 
-	data->async->rx.is_in_irq = false;
+	async_rx->is_in_irq = false;
 }
 
 /* Function for flushing internal RX fifo. Function can be called in case
@@ -1253,9 +1254,10 @@ static void rxto_isr(const struct device *dev)
 {
 	const struct uarte_nrfx_config *config = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 
-	rx_buf_release(dev, &data->async->rx.buf);
-	rx_buf_release(dev, &data->async->rx.next_buf);
+	rx_buf_release(dev, &async_rx->buf);
+	rx_buf_release(dev, &async_rx->next_buf);
 
 	/* This point can be reached in two cases:
 	 * 1. RX is disabled because all provided RX buffers have been filled.
@@ -1265,17 +1267,17 @@ static void rxto_isr(const struct device *dev)
 	 * In the second case, additionally, data from the UARTE internal RX
 	 * FIFO need to be discarded.
 	 */
-	data->async->rx.enabled = false;
-	if (data->async->rx.discard_fifo) {
+	async_rx->enabled = false;
+	if (async_rx->discard_fifo) {
 		uint8_t flushed;
 
-		data->async->rx.discard_fifo = false;
+		async_rx->discard_fifo = false;
 		flushed = rx_flush(dev, NULL, 0);
 		if (HW_RX_COUNTING_ENABLED(config)) {
 			/* It need to be included because TIMER+PPI got RXDRDY events
 			 * and counted those flushed bytes.
 			 */
-			data->async->rx.total_user_byte_cnt += flushed;
+			async_rx->total_user_byte_cnt += flushed;
 		}
 	}
 
