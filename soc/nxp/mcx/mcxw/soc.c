@@ -154,6 +154,10 @@ static ALWAYS_INLINE void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpspi1), nxp_imx_lpspi, okay)) {
 		CLOCK_EnableClock(kCLOCK_Lpspi1);
 	}
+
+	if (IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN)) {
+		CLOCK_EnableClock(kCLOCK_Can0);
+	}
 }
 
 static void vbat_init(void)
