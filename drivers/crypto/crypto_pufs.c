@@ -1180,7 +1180,12 @@ static void pufs_irq_Init(void) {
  * various crypto related operations.
 *********************************************************/
 
-/* Query the driver capabilities */
+/**
+ * Query the driver capabilities
+ * Not all the Modules of PUFs support all flags.
+ * Please Check individual cipher/hash/sign_begin_session
+ * interfaces to get the information of supported flags. 
+ * */ 
 static int pufs_query_hw_caps(const struct device *dev)
 {
   return PUFS_HW_CAP;
@@ -1200,7 +1205,31 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
                           );
 }
 
-/* TODO Setup a crypto session */
+/* Following cipher operations (block, cbc, ccm and gcm) are not supported yet.
+ */
+__unused static int pufs_block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
+}
+
 static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
                               enum cipher_algo algo, enum cipher_mode mode,
                               enum cipher_op op_type)
@@ -1224,10 +1253,14 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
   }
 
   if(mode != CRYPTO_CIPHER_MODE_CTR) {
-    LOG_ERR("%s(%d) UnSupported Algo Only CRT128 Supported\n", __func__, __LINE__);
+    LOG_ERR("%s(%d) UnSupported Algo. Only CTR Mode Supported\n", __func__, __LINE__);
     return -ENOTSUP;
   } else {
     ctx->ops.ctr_crypt_hndlr = pufs_ctr_op;
+    ctx->ops.block_crypt_hndlr = pufs_block_op;
+    ctx->ops.cbc_crypt_hndlr = pufs_cbc_op;
+    ctx->ops.ccm_crypt_hndlr = pufs_ccm_op;
+    ctx->ops.gcm_crypt_hndlr = pufs_gcm_op;
   }
 
   if(op_type != CRYPTO_CIPHER_OP_DECRYPT) {
@@ -1498,31 +1531,6 @@ static int pufs_sign_async_callback_set(const struct device *dev, sign_completio
   irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
   return PUFCC_SUCCESS;
-}
-
-/* Following cipher operations are not supported yet.
- */
-__unused static int block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
-{
-  return -ENOTSUP;
-}
-
-__unused static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *iv)
-{
-  return -ENOTSUP;
-}
-
-__unused static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOTSUP;
-}
-
-__unused static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOTSUP;
 }
 
 static struct crypto_driver_api s_crypto_funcs = {
