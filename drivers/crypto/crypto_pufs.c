@@ -1117,14 +1117,29 @@ static int crypto_pufs_init(const struct device *dev) {
   return status;
 }
 
-static void pufs_irq_handler(const struct device *dev) { // TODO callback invocation in it
-  // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -ECANCELED : 0);
+static void pufs_irq_handler(const struct device *dev) {
+
+  int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -ECANCELED : PUFCC_SUCCESS);
+
   struct pufcc_intrpt_reg *intrpt_reg_ptr =
       (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
 
-  // struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  // TODO call callback function here
+  switch(lvPufsData->pufs_session_type) {
+    case(PUFS_SESSION_SIGN_VERIFICATION): {
+      lvPufsData->session_callback.sign_cb(lvPufsData->pufs_pkt.sign_pkt, status);
+    } break;
+    case(PUFS_SESSION_HASH_CALCULATION): {
+      lvPufsData->session_callback.hash_cb(lvPufsData->pufs_pkt.hash_pkt, status);
+    } break;
+    case(PUFS_SESSION_DECRYPTION): {
+      lvPufsData->session_callback.cipher_cb(lvPufsData->pufs_pkt.cipher_pkt, status);
+    } break;
+    case(PUFS_SESSION_UNDEFINED): {
+      LOG_ERR("%s(%d) Unsupported Session %d\n", __func__, __LINE__, lvPufsData->pufs_session_type);
+    } break;
+  }
 
   // Clear and disable interrupt
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
