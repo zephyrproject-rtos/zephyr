@@ -77,6 +77,8 @@
 			reg = <0x40034000 0x52>;
 			interrupts = <11 0>;
 			clocks = <&sysclk>;
+			dmas = <&dma 2 6>, <&dma 3 7>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 
