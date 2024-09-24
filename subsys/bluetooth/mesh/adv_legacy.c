@@ -277,3 +277,8 @@ int bt_mesh_adv_gatt_start(const struct bt_le_adv_param *param, int32_t duration
 	adv_timeout = duration;
 	return bt_le_adv_start(param, ad, ad_len, sd, sd_len);
 }
+
+int bt_mesh_wq_submit(struct k_work *work)
+{
+	return k_work_submit(work);
+}
