@@ -102,6 +102,19 @@ class ConvertCodeSampleNode(SphinxTransform):
             new_section = nodes.section(ids=[node["id"]])
             new_section += nodes.title(text=node["name"])
 
+            gh_link = gh_link_get_url(self.app, self.env.docname)
+            gh_link_button = nodes.raw(
+                "",
+                f"""
+                <a href="{gh_link}/.." class="btn btn-info fa fa-github"
+                    target="_blank" style="text-align: center;">
+                    Browse source code on GitHub
+                </a>
+                """,
+                format="html",
+            )
+            new_section += nodes.paragraph("", "", gh_link_button)
+
             # Move the sibling nodes under the new section
             new_section.extend(siblings_to_move)
 
