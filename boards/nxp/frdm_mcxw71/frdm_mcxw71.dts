@@ -25,6 +25,7 @@
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart0;
 	};
 
 	user_led {
@@ -50,6 +51,13 @@
 
 &gpioc {
 	status = "okay";
+};
+
+&lpuart0 {
+	current-speed = <115200>;
+	status =  "okay";
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
 };
 
 &lpuart1 {
