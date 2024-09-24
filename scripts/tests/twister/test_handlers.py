@@ -297,17 +297,19 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
 
 TESTDATA_3 = [
     (
-        [b'This\\r\\n', b'is\r', b'a short', b'file.'],
+        [b'This\\r\\n\n', b'is\r', b'some \x1B[31mANSI\x1B[39m in\n', b'a short\n', b'file.'],
         mock.Mock(status=TwisterStatus.NONE, capture_coverage=False),
         [
-            mock.call('This\\r\\n'),
+            mock.call('This\\r\\n\n'),
             mock.call('is\r'),
-            mock.call('a short'),
+            mock.call('some ANSI in\n'),
+            mock.call('a short\n'),
             mock.call('file.')
         ],
         [
             mock.call('This'),
             mock.call('is'),
+            mock.call('some \x1B[31mANSI\x1B[39m in'),
             mock.call('a short'),
             mock.call('file.')
         ],
