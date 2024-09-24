@@ -113,6 +113,15 @@ Drivers and Sensors
 
 * GPIO
 
+  * pca_series: modified ``pca_series`` driver to unify support to tca and pca series I2C-based
+    gpio expanders.
+
+  * pca953x: removed and replaced with an API equivalent driver ``pca_series``.
+
+  * pca95xx: removed and replaced with an API equivalent driver ``pca_series``.
+
+  * pcal64xxa: removed and replaced with an API equivalent driver ``pca_series``.
+
 * Hardware info
 
 * I2C
