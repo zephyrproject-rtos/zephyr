@@ -423,8 +423,7 @@ static uint8_t micp_discover_func(struct bt_conn *conn,
 		if (sub_params != NULL) {
 			int err;
 
-			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->ccc_handle = 0;
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = mic_ctlr->end_handle;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;

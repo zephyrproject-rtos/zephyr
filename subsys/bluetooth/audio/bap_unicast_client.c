@@ -1656,7 +1656,7 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 	}
 
 	client_ep->subscribe.value_handle = client_ep->handle;
-	client_ep->subscribe.ccc_handle = 0x0000;
+	client_ep->subscribe.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	client_ep->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	client_ep->subscribe.disc_params = &client_ep->discover;
 	client_ep->subscribe.notify = unicast_client_ep_notify;
@@ -1749,7 +1749,7 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		int err;
 
 		client->cp_subscribe.value_handle = handle;
-		client->cp_subscribe.ccc_handle = 0x0000;
+		client->cp_subscribe.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		client->cp_subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		client->cp_subscribe.disc_params = &client->disc_params;
 		client->cp_subscribe.notify = unicast_client_cp_notify;
@@ -3777,7 +3777,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		if (sub_params->value_handle == 0) {
 			LOG_DBG("Subscribing to handle %u", value_handle);
 			sub_params->value_handle = value_handle;
-			sub_params->ccc_handle = 0x0000; /* auto discover ccc */
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 			sub_params->disc_params = &uni_cli_insts[index].avail_ctx_cc_disc;
 			sub_params->notify = unicast_client_pacs_avail_ctx_notify_cb;
@@ -3976,7 +3976,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		}
 
 		sub_params->value_handle = value_handle;
-		sub_params->ccc_handle = 0x0000; /* auto discover ccc */
+		sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		sub_params->disc_params = &uni_cli_insts[index].loc_cc_disc;
 		sub_params->notify = unicast_client_pacs_location_notify_cb;

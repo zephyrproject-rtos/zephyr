@@ -701,9 +701,8 @@ static uint8_t char_discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			/* With ccc_handle == 0 it will use auto discovery */
 			sub_params->end_handle = inst->end_handle;
-			sub_params->ccc_handle = 0;
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = attr->handle + 1;
 			sub_params->notify = notify_handler;
