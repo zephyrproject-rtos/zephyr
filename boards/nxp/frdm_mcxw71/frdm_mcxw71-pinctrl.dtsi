@@ -50,4 +50,12 @@
 			drive-strength = "low";
 		};
 	};
+
+	pinmux_flexcan: pinmux_flexcan {
+		group0 {
+			pinmux = <CAN0_RX_PTC5>, <CAN0_TX_PTC4>;
+			slew-rate = "slow";
+			drive-strength = "low";
+		};
+	};
 };

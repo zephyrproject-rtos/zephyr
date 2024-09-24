@@ -69,6 +69,8 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 +-----------+------------+-------------------------------------+
 | BLE       | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
+| FLEXCAN   | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
 
 Fetch Binary Blobs
 ******************
