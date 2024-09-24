@@ -190,6 +190,7 @@ family:
     socs:
     - name: stm32u5a5xx
     - name: stm32u5a9xx
+    - name: stm32u545xx
     - name: stm32u575xx
     - name: stm32u585xx
     - name: stm32u595xx
