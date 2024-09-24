@@ -498,6 +498,10 @@ void notify_remote_cs_capabilities(struct bt_conn *conn,
 void notify_remote_cs_fae_table(struct bt_conn *conn,
 			   struct bt_conn_le_cs_fae_table params);
 
+void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params);
+
+void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
+
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */
 bool bt_conn_ltk_present(const struct bt_conn *conn);

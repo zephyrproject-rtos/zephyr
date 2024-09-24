@@ -18,6 +18,24 @@
 LOG_MODULE_REGISTER(bt_cs);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
+
+void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10])
+{
+	memset(channel_map, 0xFF, 10);
+
+	/** Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
+	 *  Channel 79 is reserved for future use and shall be set to zero.
+	 */
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 0, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 1, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 23, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 24, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 25, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 77, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 78, 0);
+	BT_LE_CS_CHANNEL_BIT_SET_VAL(channel_map, 79, 0);
+}
+
 int bt_cs_read_remote_supported_capabilities(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_read_remote_supported_capabilities *cp;
@@ -326,4 +344,107 @@ int bt_cs_start_test(const struct bt_cs_test_param *params)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
 }
 
+void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_cs_config_complete *evt;
+	struct bt_conn_le_cs_config config;
+	struct bt_conn *conn;
+
+	if (buf->len < sizeof(*evt)) {
+		LOG_ERR("Unexpected end of buffer");
+		return;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	if (evt->status) {
+		LOG_INF("CS Config failed (status 0x%02X)", evt->status);
+		return;
+	}
+
+	conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->handle), BT_CONN_TYPE_LE);
+	if (!conn) {
+		LOG_ERR("Could not lookup connection handle when reading CS configuration");
+		return;
+	}
+
+	if (evt->action == BT_HCI_LE_CS_CONFIG_ACTION_REMOVED) {
+		notify_cs_config_removed(conn, evt->config_id);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	config.id = evt->config_id;
+	config.main_mode_type = evt->main_mode_type;
+	config.sub_mode_type = evt->sub_mode_type;
+	config.min_main_mode_steps = evt->min_main_mode_steps;
+	config.max_main_mode_steps = evt->max_main_mode_steps;
+	config.main_mode_repetition = evt->main_mode_repetition;
+	config.mode_0_steps = evt->mode_0_steps;
+	config.role = evt->role;
+	config.rtt_type = evt->rtt_type;
+	config.cs_sync_phy = evt->cs_sync_phy;
+	config.channel_map_repetition = evt->channel_map_repetition;
+	config.channel_selection_type = evt->channel_selection_type;
+	config.ch3c_shape = evt->ch3c_shape;
+	config.ch3c_jump = evt->ch3c_jump;
+	config.t_ip1_time_us = evt->t_ip1_time;
+	config.t_ip2_time_us = evt->t_ip2_time;
+	config.t_fcs_time_us = evt->t_fcs_time;
+	config.t_pm_time_us = evt->t_pm_time;
+	memcpy(config.channel_map, evt->channel_map, ARRAY_SIZE(config.channel_map));
+
+	notify_cs_config_created(conn, &config);
+	bt_conn_unref(conn);
+}
+
+int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_params *params,
+			   enum bt_le_cs_create_config_context context)
+{
+	struct bt_hci_cp_le_cs_create_config *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CS_CREATE_CONFIG, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->config_id = params->id;
+	cp->create_context = context;
+	cp->main_mode_type = params->main_mode_type;
+	cp->sub_mode_type = params->sub_mode_type;
+	cp->min_main_mode_steps = params->min_main_mode_steps;
+	cp->max_main_mode_steps = params->max_main_mode_steps;
+	cp->main_mode_repetition = params->main_mode_repetition;
+	cp->mode_0_steps = params->mode_0_steps;
+	cp->role = params->role;
+	cp->rtt_type = params->rtt_type;
+	cp->cs_sync_phy = params->cs_sync_phy;
+	cp->channel_map_repetition = params->channel_map_repetition;
+	cp->channel_selection_type = params->channel_selection_type;
+	cp->ch3c_shape = params->ch3c_shape;
+	cp->ch3c_jump = params->ch3c_jump;
+	cp->reserved = 0;
+	memcpy(cp->channel_map, params->channel_map, ARRAY_SIZE(cp->channel_map));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_CREATE_CONFIG, buf, NULL);
+}
+
+int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id)
+{
+	struct bt_hci_cp_le_cs_remove_config *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CS_REMOVE_CONFIG, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->config_id = config_id;
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_REMOVE_CONFIG, buf, NULL);
+}
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
