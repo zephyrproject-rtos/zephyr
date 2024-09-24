@@ -24,21 +24,6 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 
 #include <zephyr/drivers/pinctrl.h>
 
-/* Generalize PPI or DPPI channel management */
-#if defined(PPI_PRESENT)
-#include <nrfx_ppi.h>
-#define gppi_channel_t nrf_ppi_channel_t
-#define gppi_channel_alloc nrfx_ppi_channel_alloc
-#define gppi_channel_enable nrfx_ppi_channel_enable
-#elif defined(DPPI_PRESENT)
-#include <nrfx_dppi.h>
-#define gppi_channel_t uint8_t
-#define gppi_channel_alloc nrfx_dppi_channel_alloc
-#define gppi_channel_enable nrfx_dppi_channel_enable
-#else
-#error "No PPI or DPPI"
-#endif
-
 #define UARTE(idx)                DT_NODELABEL(uart##idx)
 #define UARTE_HAS_PROP(idx, prop) DT_NODE_HAS_PROP(UARTE(idx), prop)
 #define UARTE_PROP(idx, prop)     DT_PROP(UARTE(idx), prop)
@@ -185,7 +170,7 @@ struct uarte_nrfx_data {
 	atomic_val_t poll_out_lock;
 	uint8_t *char_out;
 	uint8_t *rx_data;
-	gppi_channel_t ppi_ch_endtx;
+	uint8_t ppi_ch_endtx;
 };
 
 #define UARTE_LOW_POWER_TX BIT(0)
@@ -618,6 +603,8 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 	if (HW_RX_COUNTING_ENABLED(cfg)) {
 		nrfx_timer_config_t tmr_config = NRFX_TIMER_DEFAULT_CONFIG(
 						NRF_TIMER_BASE_FREQUENCY_GET(cfg->timer.p_reg));
+		uint32_t evt_addr = nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_RXDRDY);
+		uint32_t tsk_addr = nrfx_timer_task_address_get(&cfg->timer, NRF_TIMER_TASK_COUNT);
 
 		tmr_config.mode = NRF_TIMER_MODE_COUNTER;
 		tmr_config.bit_width = NRF_TIMER_BIT_WIDTH_32;
@@ -632,37 +619,15 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 			nrfx_timer_clear(&cfg->timer);
 		}
 
-		ret = gppi_channel_alloc(&data->async->rx.cnt.ppi);
+		ret = nrfx_gppi_channel_alloc(&data->async->rx.cnt.ppi);
 		if (ret != NRFX_SUCCESS) {
 			LOG_ERR("Failed to allocate PPI Channel");
 			nrfx_timer_uninit(&cfg->timer);
 			return -EINVAL;
 		}
 
-#if CONFIG_HAS_HW_NRF_PPI
-		ret = nrfx_ppi_channel_assign(
-			data->async->rx.cnt.ppi,
-			nrf_uarte_event_address_get(uarte,
-						    NRF_UARTE_EVENT_RXDRDY),
-			nrfx_timer_task_address_get(&cfg->timer,
-						    NRF_TIMER_TASK_COUNT));
-
-		if (ret != NRFX_SUCCESS) {
-			return -EIO;
-		}
-#else
-		nrf_uarte_publish_set(uarte,
-				      NRF_UARTE_EVENT_RXDRDY,
-				      data->async->rx.cnt.ppi);
-		nrf_timer_subscribe_set(cfg->timer.p_reg,
-					NRF_TIMER_TASK_COUNT,
-					data->async->rx.cnt.ppi);
-
-#endif
-		ret = gppi_channel_enable(data->async->rx.cnt.ppi);
-		if (ret != NRFX_SUCCESS) {
-			return -EIO;
-		}
+		nrfx_gppi_channel_endpoints_setup(data->async->rx.cnt.ppi, evt_addr, tsk_addr);
+		nrfx_gppi_channels_enable(BIT(data->async->rx.cnt.ppi));
 	} else {
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_RXDRDY_MASK);
 	}
@@ -1745,7 +1710,7 @@ static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 {
 	nrfx_err_t ret;
 
-	ret = gppi_channel_alloc(&data->ppi_ch_endtx);
+	ret = nrfx_gppi_channel_alloc(&data->ppi_ch_endtx);
 	if (ret != NRFX_SUCCESS) {
 		LOG_ERR("Failed to allocate PPI Channel");
 		return -EIO;
