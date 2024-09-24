@@ -240,6 +240,8 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
+	atomic_set_bit_to(conn->flags, BT_CONN_BR_BONDABLE, bt_get_bondable());
+
 	bt_conn_connected(conn);
 
 	bt_conn_unref(conn);
