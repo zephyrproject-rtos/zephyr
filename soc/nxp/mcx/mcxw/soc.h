@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,5 +9,7 @@
 #include <fsl_port.h>
 
 #define PORT_MUX_GPIO kPORT_MuxAsGpio
+
+#define ble_hci_handler RF_IMU0_IRQHandler
 
 #endif /* _SOC__H_ */
