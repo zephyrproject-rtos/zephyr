@@ -41,7 +41,8 @@ struct sign_ctx;
 struct sign_pkt;
 
 /* Function signatures for sign verification using standard signing algorithms
- * like  RSA2048, ECDSA256.
+ * like  RSA2048, ECDSA256. These will be filled up by the driver for later
+ * calls as per the algorithm type.
  */
 typedef int (*rsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt);
 typedef int (*ecdsa_op_t)(struct sign_ctx *ctx, struct sign_pkt *pkt);			

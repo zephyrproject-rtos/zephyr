@@ -100,7 +100,7 @@ struct hash_pkt {
 	size_t  in_len;
 
 	/** Bytes previously operated upon */
-	size_t  *prev_len;
+	uint32_t  *prev_len;
 
 	/**
 	 * Start of the output buffer, to be allocated by

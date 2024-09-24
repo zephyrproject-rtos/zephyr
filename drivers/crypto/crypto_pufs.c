@@ -130,9 +130,9 @@ static char *session_to_str(enum pufs_session_type inSession) {
  * @fn    pufcc_calc_sha256_hash
  * @brief Calculates SHA256 hash
  *
- * @param[in]  ctx    Context of the hash computation session.
- * @param[in]  pkt    Input and output data related parameters for hash calculation.
- * @return            PUFCC_SUCCESS on success, otherwise an error code.
+ * @param[in]     ctx    Context of the ecdsa hash calculation.
+ * @param[inout]  pkt    Input and output data related parameters for hash calculation.
+ * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
 static enum pufcc_status pufcc_calc_sha256_hash(struct hash_ctx *ctx, 
                                                 struct hash_pkt *pkt) 
@@ -234,9 +234,9 @@ static enum pufcc_status pufcc_calc_sha256_hash(struct hash_ctx *ctx,
  *        or as partial linked lists using multiple invocations the sizes of all
  *        chunks must be multiples of 64 bytes except the last chunk.
  *
- * @param[in]  ctx    Context of the hash computation session.
- * @param[in]  pkt    Input and output data related parameters for hash calculation.
- * @return            PUFCC_SUCCESS on success, otherwise an error code.
+ * @param[in]     ctx    Context of the scatter gather hash calculation.
+ * @param[inout]  pkt    Input and output data related parameters for hash calculation.
+ * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
 static enum pufcc_status pufcc_calc_sha256_hash_sg(struct hash_ctx *ctx, 
                                                    struct hash_pkt *pkt) {
@@ -493,17 +493,21 @@ static enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
  * @fn    pufcc_rsa2048_sign_verify
  * @brief Verify RSA2048 signature of the input message data
  *
- * @param[in]  sig       Address of the message signature
- * @param[in]  msg_addr  Address of the message data
- * @param[in]  pub_key   RSA2048 public key
+ * @param[in]     ctx    Context of the ecdsa sign verification.
+ * @param[inout]  pkt    Input and output data related parameters for sign verification.
  * @return               PUFCC_SUCCESS on success, otherwise an error code.
  */
-static enum pufcc_status pufcc_rsa2048_sign_verify(
-    uint8_t *sig, struct pufs_crypto_addr *msg_addr,
-    struct pufs_crypto_rsa2048_puk *pub_key) {
+static int pufcc_rsa2048_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt) {
   enum pufcc_status status = PUFCC_SUCCESS;
   uint32_t temp32;
   uint8_t dec_msg[PUFCC_RSA_2048_LEN];
+  const uint8_t *sig = ctx->sig;  
+  struct pufs_crypto_rsa2048_puk *pub_key = (struct pufs_crypto_rsa2048_puk *)ctx->pub_key;
+
+  struct pufs_crypto_addr msg_addr = {
+    .read_addr = (uint32_t)pkt->in_buf,
+    .len = pkt->in_len
+  };
 
   // Configure signature scheme
   temp32 = 0;
@@ -547,7 +551,8 @@ static enum pufcc_status pufcc_rsa2048_sign_verify(
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
   if (status != PUFCC_SUCCESS) {
-    return status;
+    LOG_ERR("%s(%d) PUFs Error:%d\n", __func__, __LINE__, (int)status);
+    return -ECANCELED;
   }
 
   // Read decrypted message from proper offset in ECP data field and reverse it
@@ -556,21 +561,25 @@ static enum pufcc_status pufcc_rsa2048_sign_verify(
          PUFCC_RSA_2048_LEN);
   reverse(dec_msg, pufcc_buffer, PUFCC_RSA_2048_LEN);
 
-  status = rsa_p1v15_verify(dec_msg, msg_addr);
+  status = rsa_p1v15_verify(dec_msg, &msg_addr);
 
-  return status;
+  if (status != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Verification Error:%d\n", __func__, __LINE__, (int)status);
+    return -ECANCELED;
+  }  
+  
+  return PUFCC_SUCCESS;
 }
 
 /**
  * @fn    pufcc_ecdsa256_sign_verify
  * @brief Verify ECDSA256 signature of the input message data
  *
- * @param[in]  sig       Address of the message signature
- * @param[in]  msg_addr  Address of the message data
- * @param[in]  pub_key   ECDSA256 public key
- * @return               PUFCC_SUCCESS on success, otherwise an error code.
+ * @param[in]  ctx    Context of the ecdsa sign verification.
+ * @param[in]  pkt    Input and output data related parameters for sign verification.
+ * @return            PUFCC_SUCCESS on success, otherwise an error code.
  */
-static enum pufcc_status pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt) {
+static int pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt) {
 
   struct pufs_crypto_ec256_sig *sig = (struct pufs_crypto_ec256_sig *)ctx->sig;
   struct rs_crypto_ec256_puk *pub_key = (struct rs_crypto_ec256_puk *)ctx->pub_key;
@@ -676,7 +685,12 @@ static enum pufcc_status pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct
   // Poll on busy status
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
-  return status;
+  if (status != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Verification Error:%d\n", __func__, __LINE__, (int)status);
+    return -ECANCELED;
+  }  
+
+  return PUFCC_SUCCESS;
 }
 
 /**
@@ -966,11 +980,11 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
   };
 
   struct hash_pkt lvHashPkt = {
-    .in_buf = msg_addr->read_addr,
+    .in_buf = (uint8_t *)msg_addr->read_addr,
     .in_hash = NULL,
     .in_len = msg_addr->len,
     .prev_len = &prev_len,
-    .out_buf = (uint8_t*)hash.val,
+    .out_buf = (uint8_t*)hash.val, /*hash.val is an array*/
     .out_len = 0,
     .next = NULL,
     .head = true,
@@ -1104,11 +1118,11 @@ static int crypto_pufs_init(const struct device *dev) {
 }
 
 static void pufs_irq_handler(const struct device *dev) { // TODO callback invocation in it
-  int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -ECANCELED : 0);
+  // int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -ECANCELED : 0);
   struct pufcc_intrpt_reg *intrpt_reg_ptr =
       (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
 
-  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+  // struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
   // TODO call callback function here
 
@@ -1144,18 +1158,10 @@ static void pufs_irq_Init(void) {
  * various crypto related operations.
 *********************************************************/
 
-static int block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+/* Query the driver capabilities */
+static int pufs_query_hw_caps(const struct device *dev)
 {
-  return -ENOTSUP;
-}
-
-/* Function signatures for encryption/ decryption using standard cipher modes
- * like  CBC, CTR, CCM.
- */
-static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *iv)
-{
-  return -ENOTSUP;
+  return PUFS_HW_CAP;
 }
 
 static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr)
@@ -1164,56 +1170,7 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
   // return pufcc_decrypt_aes(...);
 }
 
-static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOTSUP;
-}
-
-static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOTSUP;
-}
-
-static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
-{
-  enum pufcc_status lvStatus = PUFCC_SUCCESS;
-
-  ((struct pufs_data*)ctx->device->data)->pufs_pkt.hash_pkt = pkt;
-  ((struct pufs_data*)ctx->device->data)->pufs_ctx.hash_ctx = ctx;
-
-  if(!ctx->started) {    
-    lvStatus = pufcc_calc_sha256_hash(ctx, pkt);
-  } else {
-    lvStatus = pufcc_calc_sha256_hash_sg(ctx, pkt);
-  }
-
-  if(lvStatus != PUFCC_SUCCESS) {
-    LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
-    return -ECANCELED;
-  }
-
-  return PUFCC_SUCCESS;
-}
-
-static int pufs_rsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
-{
-  return -ENOTSUP; // TODO replace with rsa sign verify call
-}
-
-static int pufs_ecdsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
-{
-  return -ENOTSUP; // TODO replace with ecdsa sign verify call
-}
-
-/* Query the driver capabilities */
-static int pufs_query_hw_caps(const struct device *dev)
-{
-  return PUFS_HW_CAP;
-}
-
-/* Setup a crypto session */
+/* TODO Setup a crypto session */
 static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
                               enum cipher_algo algo, enum cipher_mode mode,
                               enum cipher_op op_type)
@@ -1271,9 +1228,34 @@ static int pufs_cipher_async_callback_set(const struct device *dev, cipher_compl
   return PUFCC_SUCCESS;
 }
 
+static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
+{
+  enum pufcc_status lvStatus = PUFCC_SUCCESS;
+
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.hash_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.hash_ctx = ctx;
+
+  if(!ctx->started) {    // started flag indicates if chunkwise hash calculation was started
+    lvStatus = pufcc_calc_sha256_hash(ctx, pkt);
+  } else {
+    lvStatus = pufcc_calc_sha256_hash_sg(ctx, pkt);
+  }
+
+  if(lvStatus != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
+    return -ECANCELED;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
 /* Setup a hash session */
 static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ctx, enum hash_algo algo)
 {
+  ctx->device = dev;
+
+  ((struct pufs_data *)dev->data)->pufs_ctx.hash_ctx = ctx;
+
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
   uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
@@ -1346,7 +1328,47 @@ static int pufs_hash_async_callback_set(const struct device *dev, hash_completio
 static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ctx,
                                    enum sign_algo algo)
 {
-  return -ENOTSUP;
+  ctx->device = dev;
+
+  ((struct pufs_data *)dev->data)->pufs_ctx.sign_ctx = ctx;
+
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+
+  uint16_t lvHashFlags = (CAP_INPLACE_OPS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  
+  if((algo != CRYPTO_SIGN_ALGO_ECDSA256) || (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
+    return -ENOTSUP;
+  } else {
+    if(algo == CRYPTO_SIGN_ALGO_ECDSA256) {
+      ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_ECDSA256;      
+    } else {
+      ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_RSA2048;
+    }
+  }
+
+  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
+    return -ENOTSUP;
+  }
+
+  if(ctx->ops.signing_mode != CRYPTO_SIGN_VERIFY) {
+    return -ENOTSUP;
+  }
+
+  if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
+
+    LOG_ERR("%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
+            session_to_str(lvPufsData->pufs_session_type));
+
+    return -ENOTSUP;
+  } else {
+    lvPufsData->pufs_session_type = PUFS_SESSION_SIGN_VERIFICATION;
+  }
+
+  ctx->ops.rsa_crypt_hndlr = pufcc_rsa2048_sign_verify;
+
+  ctx->ops.ecdsa_crypt_hndlr = pufcc_ecdsa256_sign_verify;
+
+  return PUFCC_SUCCESS;
 }
 
 /* Tear down an established signature session */
@@ -1396,6 +1418,31 @@ static int pufs_sign_async_callback_set(const struct device *dev, sign_completio
   irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
   return PUFCC_SUCCESS;
+}
+
+/* Following cipher operations are not supported yet.
+ */
+__unused static int block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
+			uint8_t *iv)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
+}
+
+__unused static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
+			 uint8_t *nonce)
+{
+  return -ENOTSUP;
 }
 
 static struct crypto_driver_api s_crypto_funcs = {
