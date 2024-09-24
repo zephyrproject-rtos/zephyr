@@ -40,5 +40,31 @@
 			interrupt-parent = <&test_l2_irq>;
 			interrupt-names = "test";
 		};
+
+		test_l1_irq_inc: interrupt-controller@bbbbdccc  {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdccc 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <12 0>; /* +1 */
+			interrupt-parent = <&test_cpu_intc>;
+		};
+
+		test_l2_irq_inc: interrupt-controller@bbbbdcdc  {
+			compatible = "vnd,intc";
+			reg = <0xbbbbdcdc 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <14 0>; /* +2 */
+			interrupt-parent = <&test_l1_irq>;
+		};
+
+		test_l3_irq_inc: interrupt-holder-inc {
+			compatible = "vnd,interrupt-holder";
+			status = "okay";
+			interrupts = <16 3>; /* +3 */
+			interrupt-parent = <&test_l2_irq>;
+			interrupt-names = "test";
+		};
 	};
 };

@@ -71,6 +71,17 @@ ZTEST(interrupt_feature, test_multi_level_api)
 	zassert_equal(irq_get_intc_irq(irqn_l3), irqn_l2);
 	zassert_equal(irq_get_intc_irq(irqn_l2), irqn_l1);
 	zassert_equal(irq_get_intc_irq(irqn_l1), irqn_l1);
+
+	const uint32_t irqn_l3_inc = DT_IRQN(DT_NODELABEL(test_l3_irq_inc));
+	const uint32_t irqn_l2_inc = DT_IRQN(DT_NODELABEL(test_l2_irq_inc));
+	const uint32_t irqn_l1_inc = DT_IRQN(DT_NODELABEL(test_l1_irq_inc));
+
+	/**
+	 * - irq_increment()
+	 */
+	zassert_equal(irq_increment(irqn_l1, 1), irqn_l1_inc);
+	zassert_equal(irq_increment(irqn_l2, 2), irqn_l2_inc);
+	zassert_equal(irq_increment(irqn_l3, 3), irqn_l3_inc);
 }
 
 ZTEST_SUITE(gen_isr_table_multilevel, NULL, NULL, NULL, NULL, NULL);
