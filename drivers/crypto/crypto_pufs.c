@@ -504,6 +504,9 @@ static int pufcc_rsa2048_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt)
   const uint8_t *sig = ctx->sig;  
   struct pufs_crypto_rsa2048_puk *pub_key = (struct pufs_crypto_rsa2048_puk *)ctx->pub_key;
 
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx;
+
   struct pufs_crypto_addr msg_addr = {
     .read_addr = (uint32_t)pkt->in_buf,
     .len = pkt->in_len
@@ -586,6 +589,9 @@ static int pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt
   uint32_t temp32, prev_len = 0;
   enum pufcc_status status;
   struct pufs_crypto_hash hash;
+
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx;
 
   struct hash_ctx lvHashCtx = {
     .device = ctx->device,
@@ -1128,13 +1134,13 @@ static void pufs_irq_handler(const struct device *dev) {
 
   switch(lvPufsData->pufs_session_type) {
     case(PUFS_SESSION_SIGN_VERIFICATION): {
-      lvPufsData->session_callback.sign_cb(lvPufsData->pufs_pkt.sign_pkt, status);
+      lvPufsData->pufs_session_callback.sign_cb(lvPufsData->pufs_pkt.sign_pkt, status);
     } break;
     case(PUFS_SESSION_HASH_CALCULATION): {
-      lvPufsData->session_callback.hash_cb(lvPufsData->pufs_pkt.hash_pkt, status);
+      lvPufsData->pufs_session_callback.hash_cb(lvPufsData->pufs_pkt.hash_pkt, status);
     } break;
     case(PUFS_SESSION_DECRYPTION): {
-      lvPufsData->session_callback.cipher_cb(lvPufsData->pufs_pkt.cipher_pkt, status);
+      lvPufsData->pufs_session_callback.cipher_cb(lvPufsData->pufs_pkt.cipher_pkt, status);
     } break;
     case(PUFS_SESSION_UNDEFINED): {
       LOG_ERR("%s(%d) Unsupported Session %d\n", __func__, __LINE__, lvPufsData->pufs_session_type);
@@ -1145,6 +1151,7 @@ static void pufs_irq_handler(const struct device *dev) {
   intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
   intrpt_reg_ptr->intrpt_en = 0;
 
+  // After execution of a callback, the irq is disabled.
   irq_disable(((struct pufs_config *)dev->config)->irq_num);
 }
 
@@ -1181,8 +1188,12 @@ static int pufs_query_hw_caps(const struct device *dev)
 
 static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr)
 {
-  return -ENOTSUP; // TODO replace with the following
-  // return pufcc_decrypt_aes(...);
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.cipher_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.cipher_ctx = ctx;
+
+  return 0; // TODO Continue
+  // return pufcc_decrypt_aes()
+
 }
 
 /* TODO Setup a crypto session */
@@ -1190,7 +1201,44 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
                               enum cipher_algo algo, enum cipher_mode mode,
                               enum cipher_op op_type)
 {
-  return -ENOTSUP;
+  ctx->device = dev;
+
+  ((struct pufs_data *)dev->data)->pufs_ctx.cipher_ctx = ctx;
+
+  struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
+
+  uint16_t lvHashFlags = (
+                            CAP_NO_ENCRYPTION | CAP_SYNC_OPS | 
+                            CAP_ASYNC_OPS | CAP_NO_IV_PREFIX |
+                            CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS
+                         ), \
+       lvHashFlagsMask = 0xFFFF;
+  
+  if(algo != CRYPTO_CIPHER_ALGO_AES) {
+    LOG_ERR("%s(%d) UnSupported Algo. Only AES Supported\n", __func__, __LINE__);
+    return -ENOTSUP;
+  }
+
+  if(mode != CRYPTO_CIPHER_MODE_CTR) {
+    LOG_ERR("%s(%d) UnSupported Algo Only CRT128 Supported\n", __func__, __LINE__);
+    return -ENOTSUP;
+  } else {
+    ctx->ops.ctr_crypt_hndlr = pufs_ctr_op;
+  }
+
+  if(op_type != CRYPTO_CIPHER_OP_DECRYPT) {
+    LOG_ERR("%s(%d) UnSupported Operation. Only Decryption Supported\n", __func__, __LINE__);
+    return -ENOTSUP;    
+  }
+
+  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
+    return -ENOTSUP;
+  }
+
+  ctx->ops.cipher_mode = mode; 
+
+  return PUFCC_SUCCESS;
 }
 
 /* Tear down an established session */
@@ -1221,7 +1269,7 @@ static int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx 
     return -ENOEXEC;
   } else {
     lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
-    lvPufsData->session_callback.cipher_cb = NULL;
+    lvPufsData->pufs_session_callback.cipher_cb = NULL;
     lvPufsData->pufs_ctx.cipher_ctx = NULL;
     lvPufsData->pufs_pkt.cipher_pkt = NULL;
   }
@@ -1233,10 +1281,12 @@ static int pufs_cipher_free_session(const struct device *dev, struct cipher_ctx 
 static int pufs_cipher_async_callback_set(const struct device *dev, cipher_completion_cb cb)
 {
   if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    LOG_ERR("%s(%d) Session:%s Does not Support Async Ops\n", __func__, __LINE__, \
+    session_to_str(((struct pufs_data *)dev->data)->pufs_session_type));
     return -ENOTSUP;
   }
 
-  ((struct pufs_data*)dev->data)->session_callback.cipher_cb = cb;
+  ((struct pufs_data*)dev->data)->pufs_session_callback.cipher_cb = cb;
 
   irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
@@ -1276,18 +1326,18 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
   uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
   
   if(algo != CRYPTO_HASH_ALGO_SHA256) {
+    LOG_ERR("%s(%d) UnSupported Hash Algo. Only SHA256 Supported\n", __func__, __LINE__);
     return -ENOTSUP;
   }
 
   if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
     return -ENOTSUP;
   }
 
   if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
-
     LOG_ERR("%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
             session_to_str(lvPufsData->pufs_session_type));
-
     return -ENOTSUP;
   } else {
     lvPufsData->pufs_session_type = PUFS_SESSION_HASH_CALCULATION;
@@ -1317,7 +1367,7 @@ static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx
     return -ENOEXEC;
   } else {
     lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
-    lvPufsData->session_callback.hash_cb = NULL;
+    lvPufsData->pufs_session_callback.hash_cb = NULL;
     lvPufsData->pufs_ctx.hash_ctx = NULL;
     lvPufsData->pufs_pkt.hash_pkt = NULL;
   }
@@ -1329,10 +1379,12 @@ static int pufs_hash_free_session(const struct device *dev, struct hash_ctx *ctx
 static int pufs_hash_async_callback_set(const struct device *dev, hash_completion_cb cb)
 {
   if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    LOG_ERR("%s(%d) Session:%s Does not Support Async Ops\n", __func__, __LINE__, \
+    session_to_str(((struct pufs_data *)dev->data)->pufs_session_type));
     return -ENOTSUP;
   }
 
-  ((struct pufs_data*)dev->data)->session_callback.hash_cb = cb;
+  ((struct pufs_data*)dev->data)->pufs_session_callback.hash_cb = cb;
 
   irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
@@ -1352,36 +1404,35 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
   uint16_t lvHashFlags = (CAP_INPLACE_OPS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
   
   if((algo != CRYPTO_SIGN_ALGO_ECDSA256) || (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
+    LOG_ERR("%s(%d) Unupported Algo:%d. Supported Algo <ECDSA256, RSA2048>\n", __func__, __LINE__, algo);
     return -ENOTSUP;
   } else {
     if(algo == CRYPTO_SIGN_ALGO_ECDSA256) {
-      ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_ECDSA256;      
+      ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_ECDSA256;
+      ctx->ops.ecdsa_crypt_hndlr = pufcc_ecdsa256_sign_verify;
     } else {
       ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_RSA2048;
+      ctx->ops.rsa_crypt_hndlr = pufcc_rsa2048_sign_verify;
     }
   }
 
   if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
     return -ENOTSUP;
   }
 
   if(ctx->ops.signing_mode != CRYPTO_SIGN_VERIFY) {
+    LOG_ERR("%s(%d) UnSupported Signing Action. Only Sign Verification Supported\n", __func__, __LINE__);
     return -ENOTSUP;
   }
 
   if(lvPufsData->pufs_session_type !=  PUFS_SESSION_UNDEFINED) {
-
     LOG_ERR("%s(%d) An Existing %s Session in Progress\n", __func__, __LINE__, \
             session_to_str(lvPufsData->pufs_session_type));
-
     return -ENOTSUP;
   } else {
     lvPufsData->pufs_session_type = PUFS_SESSION_SIGN_VERIFICATION;
   }
-
-  ctx->ops.rsa_crypt_hndlr = pufcc_rsa2048_sign_verify;
-
-  ctx->ops.ecdsa_crypt_hndlr = pufcc_ecdsa256_sign_verify;
 
   return PUFCC_SUCCESS;
 }
@@ -1413,7 +1464,7 @@ static int pufs_sign_free_session(const struct device *dev, struct sign_ctx *ctx
     return -ENOEXEC;
   } else {
     lvPufsData->pufs_session_type =  PUFS_SESSION_UNDEFINED;
-    lvPufsData->session_callback.sign_cb = NULL;
+    lvPufsData->pufs_session_callback.sign_cb = NULL;
     lvPufsData->pufs_ctx.sign_ctx = NULL;
     lvPufsData->pufs_pkt.sign_pkt = NULL;
   }
@@ -1425,10 +1476,12 @@ static int pufs_sign_free_session(const struct device *dev, struct sign_ctx *ctx
 static int pufs_sign_async_callback_set(const struct device *dev, sign_completion_cb cb)
 {
   if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) != CAP_ASYNC_OPS) {
+    LOG_ERR("%s(%d) Session:%s Does not Support Async Ops\n", __func__, __LINE__, \
+    session_to_str(((struct pufs_data *)dev->data)->pufs_session_type));
     return -ENOTSUP;
   }
     
-  ((struct pufs_data*)dev->data)->session_callback.sign_cb = cb;
+  ((struct pufs_data*)dev->data)->pufs_session_callback.sign_cb = cb;
 
   irq_enable(((struct pufs_config *)dev->config)->irq_num);
 
@@ -1475,7 +1528,7 @@ static struct crypto_driver_api s_crypto_funcs = {
 
 static struct pufs_data s_pufs_session_data = {
   .pufs_session_type = PUFS_SESSION_UNDEFINED,
-  .session_callback = {NULL},
+  .pufs_session_callback = {NULL},
   .pufs_ctx = {NULL},
   .pufs_pkt = {NULL}
 };

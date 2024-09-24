@@ -546,7 +546,7 @@ struct pufs_crypto_pkt {
 /* Device constant configuration parameters */
 struct pufs_data {
 	enum pufs_session_type pufs_session_type;
-  struct crypto_callbacks session_callback;
+  struct crypto_callbacks pufs_session_callback;
   struct pufs_crypto_ctx pufs_ctx;
   struct pufs_crypto_pkt pufs_pkt;
 };
