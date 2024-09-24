@@ -31,3 +31,20 @@ properties:
     description: |
       Sets the number of data bits. Defaults to standard of 8 if not specified.
     default: 8
+
+  dmas:
+    description: |
+      Optional TX & RX DMA specifiers. Each specifier will have a phandle
+      reference to the DMA controller, the channel number, and the peripheral
+      trigger source.
+
+      Example for channels 2/3 with uart0txtrg/uart0rxtrg trigger sources:
+        dmas = <&dma 2 6>, <&dma 3 7>;
+
+  dma-names:
+    description: |
+      Required if the dmas property exists. This should be "tx" and "rx"
+      to match the dmas property.
+
+      Example:
+        dma-names = "tx", "rx";
