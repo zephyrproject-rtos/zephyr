@@ -5447,6 +5447,16 @@ int bt_conn_set_bondable(struct bt_conn *conn, bool enable)
 {
 	struct bt_smp *smp;
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && (conn->type == BT_CONN_TYPE_BR)) {
+		if (enable && atomic_test_and_set_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+			return -EALREADY;
+		}
+		if (!enable && !atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+			return -EALREADY;
+		}
+		return 0;
+	}
+
 	smp = smp_chan_get(conn);
 	if (!smp) {
 		return -EINVAL;
