@@ -52,7 +52,7 @@
 #include "ssp_regs_v1.h"
 #elif defined(CONFIG_SOC_INTEL_ACE20_LNL)
 #include "ssp_regs_v2.h"
-#elif defined(CONFIG_SOC_INTEL_ACE30)
+#elif defined(CONFIG_SOC_INTEL_ACE30_PTL)
 #include "ssp_regs_v3.h"
 #else
 #error "Missing ssp definitions"
@@ -116,7 +116,7 @@ struct dai_intel_ssp_plat_data {
 	uint32_t base;
 	uint32_t ip_base;
 	uint32_t shim_base;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	uint32_t hdamlssp_base;
 	uint32_t i2svss_base;
 #endif

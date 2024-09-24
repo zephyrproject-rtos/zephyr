@@ -235,7 +235,7 @@ int intel_adsp_hda_dma_status(const struct device *dev, uint32_t channel,
 	stat->pending_length = used;
 	stat->free = unused;
 
-#if CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30
+#if CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL
 	/* Linear Link Position via HDA-DMA is only supported on ACE2 or newer */
 	if (cfg->direction == MEMORY_TO_PERIPHERAL || cfg->direction == PERIPHERAL_TO_MEMORY) {
 		uint32_t tmp;

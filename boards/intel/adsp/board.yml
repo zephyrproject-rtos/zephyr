@@ -11,8 +11,6 @@ boards:
       - name: ace20_lnl
         variants:
           - name: 'sim'
-      - name: ace30
+      - name: ace30_ptl
         variants:
-          - name: 'ptl'
-            variants:
-              - name: 'sim'
+          - name: 'sim'

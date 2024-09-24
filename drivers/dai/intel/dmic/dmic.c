@@ -160,7 +160,7 @@ static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 
 static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	return dmic->hdamldmic_base;
 #else
 	return dmic->shim_base;
@@ -173,7 +173,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
@@ -287,7 +287,7 @@ static void dai_dmic_irq_handler(const void *data)
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
-#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30)
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) | DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
@@ -299,7 +299,7 @@ static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Enable DMIC clock gating */
-#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30)
+#if (CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30_PTL)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) & ~DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else /* All other CAVS and ACE platforms */
@@ -313,7 +313,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 						const struct dai_config *cfg,
 						uint32_t index)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	uint16_t pcmsycm = cfg->link_config;
 	uint32_t reg_add = dmic->shim_base + DMICXPCMSyCM_OFFSET + 0x0004*index;
 
@@ -322,7 +322,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 	ARG_UNUSED(dmic);
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(index);
-#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) */
+#endif /* defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL) */
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
@@ -332,7 +332,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			base + DMICLCTL_OFFSET);
 
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30)
+#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30_PTL)
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
 		k_sleep(K_USEC(100));
 	}
