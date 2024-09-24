@@ -3354,6 +3354,40 @@ void notify_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_t
 		}
 	}
 }
+
+void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_config_created) {
+			callback->le_cs_config_created(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_config_created) {
+			cb->le_cs_config_created(conn, params);
+		}
+	}
+}
+
+void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_config_removed) {
+			callback->le_cs_config_removed(conn, config_id);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_config_removed) {
+			cb->le_cs_config_removed(conn, config_id);
+		}
+	}
+}
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
 
 int bt_conn_le_param_update(struct bt_conn *conn,

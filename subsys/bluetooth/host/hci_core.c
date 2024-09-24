@@ -2828,6 +2828,8 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE,
 		      bt_hci_le_cs_read_remote_fae_table_complete,
 		      sizeof(struct bt_hci_evt_le_cs_read_remote_fae_table_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_CONFIG_COMPLETE, bt_hci_le_cs_config_complete_event,
+		      sizeof(struct bt_hci_evt_le_cs_config_complete)),
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
 
 };
@@ -3404,6 +3406,7 @@ static int le_set_event_mask(void)
 	    BT_FEAT_LE_CHANNEL_SOUNDING(bt_dev.le.features)) {
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_CONFIG_COMPLETE;
 	}
 
 	sys_put_le64(mask, cp_mask->events);

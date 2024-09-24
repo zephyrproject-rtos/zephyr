@@ -2582,6 +2582,36 @@ struct bt_hci_op_le_cs_test {
 	uint8_t override_parameters_data[];
 } __packed;
 
+#define BT_HCI_OP_LE_CS_CREATE_CONFIG BT_OP(BT_OGF_LE, 0x0090) /* 0x2090 */
+
+struct bt_hci_cp_le_cs_create_config {
+	uint16_t handle;
+	uint8_t config_id;
+	uint8_t create_context;
+	uint8_t main_mode_type;
+	uint8_t sub_mode_type;
+	uint8_t min_main_mode_steps;
+	uint8_t max_main_mode_steps;
+	uint8_t main_mode_repetition;
+	uint8_t mode_0_steps;
+	uint8_t role;
+	uint8_t rtt_type;
+	uint8_t cs_sync_phy;
+	uint8_t channel_map[10];
+	uint8_t channel_map_repetition;
+	uint8_t channel_selection_type;
+	uint8_t ch3c_shape;
+	uint8_t ch3c_jump;
+	uint8_t reserved;
+} __packed;
+
+#define BT_HCI_OP_LE_CS_REMOVE_CONFIG BT_OP(BT_OGF_LE, 0x0091) /* 0x2091 */
+
+struct bt_hci_cp_le_cs_remove_config {
+	uint16_t handle;
+	uint8_t config_id;
+} __packed;
+
 /* Event definitions */
 
 #define BT_HCI_EVT_UNKNOWN                      0x00
@@ -3403,6 +3433,36 @@ struct bt_hci_evt_le_cs_read_remote_fae_table_complete {
 	uint8_t remote_fae_table[72];
 } __packed;
 
+#define BT_HCI_LE_CS_CONFIG_ACTION_REMOVED 0x00
+#define BT_HCI_LE_CS_CONFIG_ACTION_CREATED 0x01
+
+#define BT_HCI_EVT_LE_CS_CONFIG_COMPLETE 0x2F
+struct bt_hci_evt_le_cs_config_complete {
+	uint8_t status;
+	uint16_t handle;
+	uint8_t config_id;
+	uint8_t action;
+	uint8_t main_mode_type;
+	uint8_t sub_mode_type;
+	uint8_t min_main_mode_steps;
+	uint8_t max_main_mode_steps;
+	uint8_t main_mode_repetition;
+	uint8_t mode_0_steps;
+	uint8_t role;
+	uint8_t rtt_type;
+	uint8_t cs_sync_phy;
+	uint8_t channel_map[10];
+	uint8_t channel_map_repetition;
+	uint8_t channel_selection_type;
+	uint8_t ch3c_shape;
+	uint8_t ch3c_jump;
+	uint8_t reserved;
+	uint8_t t_ip1_time;
+	uint8_t t_ip2_time;
+	uint8_t t_fcs_time;
+	uint8_t t_pm_time;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT(n) (1ULL << (n))
@@ -3494,6 +3554,7 @@ struct bt_hci_evt_le_cs_read_remote_fae_table_complete {
 
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE BT_EVT_BIT(43)
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE              BT_EVT_BIT(44)
+#define BT_EVT_MASK_LE_CS_CONFIG_COMPLETE                             BT_EVT_BIT(46)
 
 /** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00

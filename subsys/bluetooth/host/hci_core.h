@@ -541,6 +541,7 @@ void bt_hci_le_past_received_v2(struct net_buf *buf);
 /* CS HCI event handlers */
 void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *buf);
 void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf);
+void bt_hci_le_cs_config_complete_event(struct net_buf *buf);
 
 /* Adv HCI event handlers */
 void bt_hci_le_adv_set_terminated(struct net_buf *buf);

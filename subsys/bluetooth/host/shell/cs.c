@@ -139,8 +139,8 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	struct bt_cs_test_param params;
 
-	params.main_mode = BT_CS_TEST_MAIN_MODE_1;
-	params.sub_mode = BT_CS_TEST_SUB_MODE_UNUSED;
+	params.main_mode = BT_CONN_LE_CS_MAIN_MODE_1;
+	params.sub_mode = BT_CONN_LE_CS_SUB_MODE_UNUSED;
 	params.main_mode_repetition = 0;
 	params.mode_0_steps = 0x1;
 
@@ -152,14 +152,15 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	if (params.role != BT_CS_TEST_ROLE_INITIATOR && params.role != BT_CS_TEST_ROLE_REFLECTOR) {
+	if (params.role != BT_CONN_LE_CS_ROLE_INITIATOR &&
+	    params.role != BT_CONN_LE_CS_ROLE_REFLECTOR) {
 		shell_help(sh);
 		shell_error(sh, "Role selection input invalid");
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	params.rtt_type = BT_CS_TEST_RTT_AA_ONLY;
-	params.cs_sync_phy = BT_CS_TEST_CS_SYNC_LE_1M_PHY;
+	params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY;
+	params.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY;
 	params.cs_sync_antenna_selection = BT_CS_TEST_CS_SYNC_ANTENNA_SELECTION_ONE;
 	params.subevent_len = 10000;
 	params.subevent_interval = 0;
@@ -177,12 +178,10 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.override_config = 0;
 	params.override_config_0.channel_map_repetition = 1;
 	memset(params.override_config_0.not_set.channel_map, 0,
-		sizeof(params.override_config_0.not_set.channel_map));
+	       sizeof(params.override_config_0.not_set.channel_map));
 	params.override_config_0.not_set.channel_map[1] = 0xFF;
-	params.override_config_0.not_set.channel_selection_type =
-		BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3B;
-	params.override_config_0.not_set.ch3c_shape =
-		BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C_HAT_SHAPE;
+	params.override_config_0.not_set.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B;
+	params.override_config_0.not_set.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT;
 	params.override_config_0.not_set.ch3c_jump = 0x2;
 
 	err = bt_cs_start_test(&params);
@@ -194,26 +193,202 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_remove_config(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	uint8_t config_id = strtoul(argv[1], NULL, 10);
+
+	err = bt_le_cs_remove_config(default_conn, config_id);
+	if (err) {
+		shell_error(sh, "bt_cs_remove_config returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	enum bt_le_cs_create_config_context context;
+	struct bt_le_cs_create_config_params params;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	params.id = strtoul(argv[1], NULL, 10);
+	if (!strcmp(argv[2], "local-only")) {
+		context = BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_ONLY;
+	} else if (!strcmp(argv[2], "local-only")) {
+		context = BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_AND_REMOTE;
+	} else {
+		shell_error(sh, "Invalid context: %s", argv[2]);
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	if (!strcmp(argv[3], "initiator")) {
+		params.role = BT_CONN_LE_CS_ROLE_INITIATOR;
+	} else if (!strcmp(argv[3], "reflector")) {
+		params.role = BT_CONN_LE_CS_ROLE_REFLECTOR;
+	} else {
+		shell_error(sh, "Invalid role: %s", argv[3]);
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	/* Set the default values */
+	params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
+	params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+	params.min_main_mode_steps = 0x05;
+	params.max_main_mode_steps = 0x0A;
+	params.main_mode_repetition = 0;
+	params.mode_0_steps = 1;
+	params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY;
+	params.cs_sync_phy = BT_CONN_LE_CS_SYNC_2M_PHY;
+	params.channel_map_repetition = 1;
+	params.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B;
+	params.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT;
+	params.ch3c_jump = 2;
+
+	bt_le_cs_set_valid_chmap_bits(params.channel_map);
+
+	for (int j = 4; j < argc; j++) {
+		if (!strcmp(argv[j], "rtt-none")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_1;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+		} else if (!strcmp(argv[j], "pbr-none")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+		} else if (!strcmp(argv[j], "both-none")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_UNUSED;
+		} else if (!strcmp(argv[j], "pbr-rtt")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_1;
+		} else if (!strcmp(argv[j], "pbr-both")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_2;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_3;
+		} else if (!strcmp(argv[j], "both-pbr")) {
+			params.main_mode_type = BT_CONN_LE_CS_MAIN_MODE_3;
+			params.sub_mode_type = BT_CONN_LE_CS_SUB_MODE_2;
+		} else if (!strcmp(argv[j], "steps")) {
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			params.min_main_mode_steps = strtoul(argv[j], NULL, 10);
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			params.max_main_mode_steps = strtoul(argv[j], NULL, 10);
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			params.mode_0_steps = strtoul(argv[j], NULL, 10);
+		} else if (!strcmp(argv[j], "aa-only")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY;
+		} else if (!strcmp(argv[j], "32b-sound")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_32_BIT_SOUNDING;
+		} else if (!strcmp(argv[j], "96b-sound")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_96_BIT_SOUNDING;
+		} else if (!strcmp(argv[j], "32b-rand")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_32_BIT_RANDOM;
+		} else if (!strcmp(argv[j], "64b-rand")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_64_BIT_RANDOM;
+		} else if (!strcmp(argv[j], "96b-rand")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_96_BIT_RANDOM;
+		} else if (!strcmp(argv[j], "128b-rand")) {
+			params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_128_BIT_RANDOM;
+		} else if (!strcmp(argv[j], "phy-1m")) {
+			params.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY;
+		} else if (!strcmp(argv[j], "phy-2m")) {
+			params.cs_sync_phy = BT_CONN_LE_CS_SYNC_2M_PHY;
+		} else if (!strcmp(argv[j], "phy-2m-2b")) {
+			params.cs_sync_phy = BT_CONN_LE_CS_SYNC_2M_2BT_PHY;
+		} else if (!strcmp(argv[j], "chmap-rep")) {
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			params.channel_map_repetition = strtoul(argv[j], NULL, 10);
+		} else if (!strcmp(argv[j], "hat-shape")) {
+			params.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT;
+		} else if (!strcmp(argv[j], "x-shape")) {
+			params.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_X;
+		} else if (!strcmp(argv[j], "chsel-3b")) {
+			params.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B;
+		} else if (!strcmp(argv[j], "chsel-3c")) {
+			params.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3C;
+		} else if (!strcmp(argv[j], "ch3c-jump")) {
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			params.ch3c_jump = strtoul(argv[j], NULL, 10);
+		} else if (!strcmp(argv[j], "chmap")) {
+			if (++j == argc) {
+				shell_help(sh);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			if (hex2bin(argv[j], strlen(argv[j]), params.channel_map, 10) == 0) {
+				shell_error(sh, "Invalid channel map");
+				return -ENOEXEC;
+			}
+
+			sys_mem_swap(params.channel_map, 10);
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_le_cs_create_config(default_conn, &params, context);
+	if (err) {
+		shell_error(sh, "bt_cs_create_config returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cs_cmds,
-	SHELL_CMD_ARG(
-		read_remote_supported_capabilities, NULL,
-		"<None>",
-		cmd_read_remote_supported_capabilities, 1, 0),
+	SHELL_CMD_ARG(read_remote_supported_capabilities, NULL, "<None>",
+		      cmd_read_remote_supported_capabilities, 1, 0),
 	SHELL_CMD_ARG(
 		set_default_settings, NULL,
 		"<Enable initiator role: true, false> <Enable reflector role: true, false> "
 		" <CS_SYNC antenna selection: 0x01 - 0x04, 0xFE, 0xFF> <Max TX power: -127 - 20>",
 		cmd_set_default_settings, 5, 0),
+	SHELL_CMD_ARG(read_remote_fae_table, NULL, "<None>", cmd_read_remote_fae_table, 1, 0),
+	SHELL_CMD_ARG(start_simple_cs_test, NULL, "<Role selection (initiator, reflector): 0, 1>",
+		      cmd_cs_test_simple, 2, 0),
 	SHELL_CMD_ARG(
-		read_remote_fae_table, NULL,
-		"<None>",
-		cmd_read_remote_fae_table, 1, 0),
-	SHELL_CMD_ARG(
-		start_simple_cs_test, NULL,
-		"<Role selection (initiator, reflector): 0, 1>",
-		cmd_cs_test_simple, 2, 0),
-	SHELL_SUBCMD_SET_END);
+		create_config, NULL,
+		"<id> <context: local-only, local-remote> <role: initiator, reflector> "
+		"[rtt-none, pbr-none, both-none, pbr-rtt, pbr-both, both-pbr] [steps <min> "
+		"<max> <mode-0>] [aa-only, 32b-sound, 96b-sound, 32b-rand, 64b-rand, 96b-rand, "
+		"128b-rand] [phy-1m, phy-2m, phy-2m-2b] [chmap-rep <rep>] [hat-shape, x-shape] "
+		"[ch3c-jump <jump>] [chmap <XXXXXXXXXXXXXXXX>] (78-0) [chsel-3b, chsel-3c]",
+		cmd_create_config, 4, 15),
+	SHELL_CMD_ARG(remove_config, NULL, "<id>", cmd_remove_config, 2, 0), SHELL_SUBCMD_SET_END);
 
 static int cmd_cs(const struct shell *sh, size_t argc, char **argv)
 {

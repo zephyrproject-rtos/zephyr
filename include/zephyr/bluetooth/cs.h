@@ -27,6 +27,26 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Macro for getting a specific channel bit in CS channel map
+ *
+ * @param[in] chmap Channel map array
+ * @param[in] bit   Bit number to be accessed
+ *
+ * @return Bit value, either 1 or 0
+ */
+#define BT_LE_CS_CHANNEL_BIT_GET(chmap, bit) (((chmap)[(bit) / 8] >> ((bit) % 8)) & 1)
+
+/**
+ * @brief Macro for setting a specific channel bit value in CS channel map
+ *
+ * @param[in] chmap Channel map array
+ * @param[in] bit   Bit number to be accessed
+ * @param[in] val   Bit value to be set, either 1 or 0
+ */
+#define BT_LE_CS_CHANNEL_BIT_SET_VAL(chmap, bit, val)                                              \
+	((chmap)[(bit) / 8] = ((chmap)[(bit) / 8] & ~BIT((bit) % 8)) | ((val) << ((bit) % 8)))
+
 enum bt_cs_sync_antenna_selection_opt {
 	/** Use antenna identifier 1 for CS_SYNC packets. */
 	BT_CS_ANTENNA_SELECTION_OPT_ONE = BT_HCI_OP_LE_CS_ANTENNA_SEL_ONE,
@@ -58,59 +78,6 @@ struct bt_cs_set_default_settings_param {
 	 *  @ref BT_HCI_OP_LE_CS_MAX_MAX_TX_POWER.
 	 */
 	int8_t max_tx_power;
-};
-
-/** CS Test Main Mode */
-enum bt_cs_test_main_mode {
-	/** CS Test Mode-1 */
-	BT_CS_TEST_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
-	/** CS Test Mode-2 */
-	BT_CS_TEST_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
-	/** CS Test Mode-3 */
-	BT_CS_TEST_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
-};
-
-/** CS Test Sub-Mode */
-enum bt_cs_test_sub_mode {
-	/** CS Test sub-mode-1 */
-	BT_CS_TEST_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
-	/** CS Test sub-mode-2 */
-	BT_CS_TEST_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
-	/** CS Test sub-mode-3 */
-	BT_CS_TEST_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
-	/** No CS Test sub-mode. */
-	BT_CS_TEST_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
-};
-
-/** CS Test Role */
-enum bt_cs_test_role {
-	BT_CS_TEST_ROLE_INITIATOR = BT_HCI_OP_LE_CS_INITIATOR_ROLE,
-	BT_CS_TEST_ROLE_REFLECTOR = BT_HCI_OP_LE_CS_REFLECTOR_ROLE,
-};
-
-/** CS Test RTT type */
-enum bt_cs_test_rtt_type {
-	/** RTT AA Only */
-	BT_CS_TEST_RTT_AA_ONLY = BT_HCI_OP_LE_CS_RTT_TYPE_AA_ONLY,
-	/** RTT with 32-bit sounding sequence */
-	BT_CS_TEST_RTT_32_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_SOUND,
-	/** RTT with 96-bit sounding sequence */
-	BT_CS_TEST_RTT_96_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_SOUND,
-	/** RTT with 32-bit random sequence */
-	BT_CS_TEST_RTT_32_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_RAND,
-	/** RTT with 64-bit random sequence */
-	BT_CS_TEST_RTT_64_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_64BIT_RAND,
-	/** RTT with 96-bit random sequence */
-	BT_CS_TEST_RTT_96_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_RAND,
-	/** RTT with 128-bit random sequence */
-	BT_CS_TEST_RTT_128_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_128BIT_RAND,
-};
-
-/** CS Test CS_SYNC PHY */
-enum bt_cs_test_cs_sync_phy {
-	BT_CS_TEST_CS_SYNC_LE_1M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_1M,
-	BT_CS_TEST_CS_SYNC_LE_2M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M,
-	BT_CS_TEST_CS_SYNC_LE_2M_2BT_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT,
 };
 
 /** CS Test CS_SYNC Antenna Identifier */
@@ -177,18 +144,6 @@ enum bt_cs_test_reflector_snr_control {
 	BT_CS_TEST_REFLECTOR_SNR_CONTROL_27dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_27,
 	BT_CS_TEST_REFLECTOR_SNR_CONTROL_30dB = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_30,
 	BT_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED = BT_HCI_OP_LE_CS_TEST_REFLECTOR_SNR_NOT_USED,
-};
-
-/** CS Test Override 0 channel selection algorithm selection */
-enum bt_cs_test_override_0_chsel_alg {
-	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3B = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3B,
-	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3C,
-};
-
-/** CS Test Override 0 chsel #3c shape */
-enum bt_cs_test_override_0_ch3c_shape {
-	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C_HAT_SHAPE = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_HAT,
-	BT_CS_TEST_OVERRIDE_0_CHSEL_ALG_3C_X_SHAPE = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_X,
 };
 
 /** CS Test Override 3 T_PM Tone Extension */
@@ -336,9 +291,9 @@ enum bt_cs_test_override_8_cs_sync_payload_pattern {
 /** CS Test parameters */
 struct bt_cs_test_param {
 	/** CS mode to be used during the CS procedure. */
-	enum bt_cs_test_main_mode main_mode;
+	enum bt_conn_le_cs_main_mode main_mode;
 	/** CS sub-mode to be used during the CS procedure. */
-	enum bt_cs_test_sub_mode sub_mode;
+	enum bt_conn_le_cs_sub_mode sub_mode;
 	/** Number of main mode steps taken from the end of the last CS subevent
 	 * to be repeated at the beginning of the current CS subevent directly
 	 * after the last mode-0 step of that event.
@@ -347,11 +302,11 @@ struct bt_cs_test_param {
 	/** Number of CS mode-0 steps at the beginning of the test CS subevent. */
 	uint8_t mode_0_steps;
 	/** CS Test role */
-	enum bt_cs_test_role role;
+	enum bt_conn_le_cs_role role;
 	/** RTT variant */
-	enum bt_cs_test_rtt_type rtt_type;
+	enum bt_conn_le_cs_rtt_type rtt_type;
 	/** CS_SYNC PHY */
-	enum bt_cs_test_cs_sync_phy cs_sync_phy;
+	enum bt_conn_le_cs_sync_phy cs_sync_phy;
 	/** Antenna identifier to be used for CS_SYNC packets. */
 	enum bt_cs_test_cs_sync_antenna_selection cs_sync_antenna_selection;
 	/** CS subevent length in microseconds.
@@ -436,8 +391,8 @@ struct bt_cs_test_param {
 			} set;
 			struct {
 				uint8_t channel_map[10];
-				enum bt_cs_test_override_0_chsel_alg channel_selection_type;
-				enum bt_cs_test_override_0_ch3c_shape ch3c_shape;
+				enum bt_conn_le_cs_chsel_type channel_selection_type;
+				enum bt_conn_le_cs_ch3c_shape ch3c_shape;
 				uint8_t ch3c_jump;
 			} not_set;
 		};
@@ -470,12 +425,13 @@ struct bt_cs_test_param {
 	struct {
 		/** Bit number where the first marker in the channel sounding sequence starts.
 		 *
-		 *  Must be between 0 and 28 when using @ref BT_CS_TEST_RTT_32_BIT_SOUNDING.
+		 *  Must be between 0 and 28 when using @ref BT_CONN_LE_CS_RTT_TYPE_32_BIT_SOUNDING.
 		 */
 		uint8_t ss_marker1_position;
 		/** Bit number where the second marker in the channel sounding sequence starts.
 		 *
-		 *  Must be between 67 and 92 when using @ref BT_CS_TEST_RTT_96_BIT_SOUNDING.
+		 *  Must be between 67 and 92 when using @ref
+		 * BT_CONN_LE_CS_RTT_TYPE_96_BIT_SOUNDING.
 		 *
 		 *  A value of @ref BT_HCI_OP_LE_CS_TEST_SS_MARKER_2_POSITION_NOT_PRESENT
 		 *  indicates that this sounding sequence or marker is not present.
@@ -505,6 +461,68 @@ struct bt_cs_test_param {
 		uint8_t cs_sync_user_payload[16];
 	} override_config_8;
 };
+
+/** CS config creation context */
+enum bt_le_cs_create_config_context {
+	/** Write CS configuration in local Controller only  */
+	BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_ONLY,
+	/** Write CS configuration in both local and remote Controller using Channel Sounding
+	 * Configuration procedure
+	 */
+	BT_LE_CS_CREATE_CONFIG_CONTEXT_LOCAL_AND_REMOTE
+};
+
+/** CS Create Config params */
+struct bt_le_cs_create_config_params {
+	/** CS configuration ID */
+	uint8_t id;
+	/** Main CS mode type */
+	enum bt_conn_le_cs_main_mode main_mode_type;
+	/** Sub CS mode type */
+	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t min_main_mode_steps;
+	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t max_main_mode_steps;
+	/** Number of main mode steps taken from the end of the last CS subevent to be repeated
+	 * at the beginning of the current CS subevent directly after the last mode-0 step of that
+	 * event
+	 */
+	uint8_t main_mode_repetition;
+	/** Number of CS mode-0 steps to be included at the beginning of each CS subevent */
+	uint8_t mode_0_steps;
+	/** CS role */
+	enum bt_conn_le_cs_role role;
+	/** RTT type */
+	enum bt_conn_le_cs_rtt_type rtt_type;
+	/** CS Sync PHY */
+	enum bt_conn_le_cs_sync_phy cs_sync_phy;
+	/** The number of times the Channel_Map field will be cycled through for non-mode-0 steps
+	 * within a CS procedure
+	 */
+	uint8_t channel_map_repetition;
+	/** Channel selection type */
+	enum bt_conn_le_cs_chsel_type channel_selection_type;
+	/** User-specified channel sequence shape */
+	enum bt_conn_le_cs_ch3c_shape ch3c_shape;
+	/** Number of channels skipped in each rising and falling sequence  */
+	uint8_t ch3c_jump;
+	/** Channel map used for CS procedure
+	 *  Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
+	 *  Channel 79 is reserved for future use and shall be set to zero.
+	 *  At least 15 channels shall be enabled.
+	 */
+	uint8_t channel_map[10];
+};
+
+/** @brief Set all valid channel map bits
+ *
+ * This command is used to enable all valid channels in a
+ * given CS channel map
+ *
+ * @param channel_map  Chanel map
+ */
+void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10]);
 
 /** @brief Read Remote Supported Capabilities
  *
@@ -568,6 +586,37 @@ int bt_cs_read_remote_fae_table(struct bt_conn *conn);
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_cs_start_test(const struct bt_cs_test_param *params);
+
+/** @brief Create CS configuration
+ *
+ * This command is used to create a new CS configuration or update an
+ * existing one with the config id specified.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn    Connection Object.
+ * @param params  CS Create Config parameters
+ * @param context Controls whether the configuration is written to the local controller or
+ *                both the local and the remote controller
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_params *params,
+			   enum bt_le_cs_create_config_context context);
+
+/** @brief Create CS configuration
+ *
+ * This command is used to remove a CS configuration from the local controller
+ * identified by the config_id
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn      Connection Object.
+ * @param config_id CS Config ID
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
 
 #ifdef __cplusplus
 }
