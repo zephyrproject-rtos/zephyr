@@ -5,61 +5,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <airoc_wifi.h>
+#include "airoc_wifi.h"
+#include "airoc_whd_hal_common.h"
 
 #include <bus_protocols/whd_bus_sdio_protocol.h>
 #include <bus_protocols/whd_bus.h>
 #include <bus_protocols/whd_sdio.h>
 #include <zephyr/sd/sd.h>
-#include <cy_utils.h>
 
-#define DT_DRV_COMPAT infineon_airoc_wifi
-
-LOG_MODULE_REGISTER(infineon_airoc, CONFIG_WIFI_LOG_LEVEL);
+LOG_MODULE_DECLARE(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** Defines the amount of stack memory available for the wifi thread. */
-#if !defined(CY_WIFI_THREAD_STACK_SIZE)
-#define CY_WIFI_THREAD_STACK_SIZE (5120)
-#endif
-
-/** Defines the priority of the thread that services wifi packets. Legal values are defined by the
- *  RTOS being used.
- */
-#if !defined(CY_WIFI_THREAD_PRIORITY)
-#define CY_WIFI_THREAD_PRIORITY (CY_RTOS_PRIORITY_HIGH)
-#endif
-
-/** Defines the country this will operate in for wifi initialization parameters. See the
- *  wifi-host-driver's whd_country_code_t for legal options.
- */
-#if !defined(CY_WIFI_COUNTRY)
-#define CY_WIFI_COUNTRY (WHD_COUNTRY_AUSTRALIA)
-#endif
-
-/** Defines the priority of the interrupt that handles out-of-band notifications from the wifi
- *  chip. Legal values are defined by the MCU running this code.
- */
-#if !defined(CY_WIFI_OOB_INTR_PRIORITY)
-#define CY_WIFI_OOB_INTR_PRIORITY (2)
-#endif
-
-/** Defines whether to use the out-of-band pin to allow the WIFI chip to wake up the MCU. */
-#if defined(CY_WIFI_HOST_WAKE_SW_FORCE)
-#define CY_USE_OOB_INTR (CY_WIFI_HOST_WAKE_SW_FORCE)
-#else
-#define CY_USE_OOB_INTR (1u)
-#endif /* defined(CY_WIFI_HOST_WAKE_SW_FORCE) */
-
-#define CY_WIFI_HOST_WAKE_IRQ_EVENT GPIO_INT_TRIG_LOW
-#define DEFAULT_OOB_PIN             (0)
-#define WLAN_POWER_UP_DELAY_MS      (250)
-#define WLAN_CBUCK_DISCHARGE_MS     (10)
-
-extern whd_resource_source_t resource_ops;
 
 struct whd_bus_priv {
 	whd_sdio_config_t sdio_config;
@@ -67,55 +25,15 @@ struct whd_bus_priv {
 	whd_sdio_t sdio_obj;
 };
 
-static whd_init_config_t init_config_default = {
-	.thread_stack_size = CY_WIFI_THREAD_STACK_SIZE,
-	.thread_stack_start = NULL,
-	.thread_priority = (uint32_t)CY_WIFI_THREAD_PRIORITY,
-	.country = CY_WIFI_COUNTRY
-};
+static whd_init_config_t init_config_default = {.thread_stack_size = CY_WIFI_THREAD_STACK_SIZE,
+						.thread_stack_start = NULL,
+						.thread_priority =
+							(uint32_t)CY_WIFI_THREAD_PRIORITY,
+						.country = CY_WIFI_COUNTRY};
 
 /******************************************************
  *                 Function
  ******************************************************/
-
-int airoc_wifi_power_on(const struct device *dev)
-{
-#if DT_INST_NODE_HAS_PROP(0, wifi_reg_on_gpios)
-	int ret;
-	const struct airoc_wifi_config *config = dev->config;
-
-	/* Check WIFI REG_ON gpio instance */
-	if (!device_is_ready(config->wifi_reg_on_gpio.port)) {
-		LOG_ERR("Error: failed to configure wifi_reg_on %s pin %d",
-			config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
-		return -EIO;
-	}
-
-	/* Configure wifi_reg_on as output  */
-	ret = gpio_pin_configure_dt(&config->wifi_reg_on_gpio, GPIO_OUTPUT);
-	if (ret) {
-		LOG_ERR("Error %d: failed to configure wifi_reg_on %s pin %d", ret,
-			config->wifi_reg_on_gpio.port->name, config->wifi_reg_on_gpio.pin);
-		return ret;
-	}
-	ret = gpio_pin_set_dt(&config->wifi_reg_on_gpio, 0);
-	if (ret) {
-		return ret;
-	}
-
-	/* Allow CBUCK regulator to discharge */
-	(void)k_msleep(WLAN_CBUCK_DISCHARGE_MS);
-
-	/* WIFI power on */
-	ret = gpio_pin_set_dt(&config->wifi_reg_on_gpio, 1);
-	if (ret) {
-		return ret;
-	}
-	(void)k_msleep(WLAN_POWER_UP_DELAY_MS);
-#endif /* DT_INST_NODE_HAS_PROP(0, reg_on_gpios) */
-
-	return 0;
-}
 
 int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface,
 			    whd_netif_funcs_t *netif_funcs, whd_buffer_funcs_t *buffer_if)
@@ -144,12 +62,12 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(config->sdhc_dev)) {
+	if (!device_is_ready(config->bus_dev.bus_sdio)) {
 		LOG_ERR("SDHC device is not ready");
 		return -ENODEV;
 	}
 
-	ret = sd_init(config->sdhc_dev, &data->card);
+	ret = sd_init(config->bus_dev.bus_sdio, &data->card);
 	if (ret) {
 		return ret;
 	}
@@ -413,25 +331,6 @@ whd_result_t whd_bus_sdio_enable_oob_intr(whd_driver_t whd_driver, whd_bool_t en
 	}
 #endif /* DT_INST_NODE_HAS_PROP(0, wifi_host_wake_gpios) */
 	return WHD_SUCCESS;
-}
-
-/*
- * Implement WHD memory wrappers
- */
-
-void *whd_mem_malloc(size_t size)
-{
-	return k_malloc(size);
-}
-
-void *whd_mem_calloc(size_t nitems, size_t size)
-{
-	return k_calloc(nitems, size);
-}
-
-void whd_mem_free(void *ptr)
-{
-	k_free(ptr);
 }
 
 #ifdef __cplusplus
