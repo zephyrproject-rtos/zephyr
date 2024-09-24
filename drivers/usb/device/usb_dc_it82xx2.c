@@ -208,6 +208,18 @@ static void it82xx2_enable_sof_int(bool enable)
 	}
 }
 
+static void it82xx2_enable_resume_int(bool enable)
+{
+	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
+
+	usb_regs->dc_interrupt_status = DC_RESUME_INT;
+	if (enable) {
+		usb_regs->dc_interrupt_mask |= DC_RESUME_INT;
+	} else {
+		usb_regs->dc_interrupt_mask &= ~DC_RESUME_INT;
+	}
+}
+
 /* Standby(deep doze) mode enable/disable */
 static void it82xx2_enable_standby_state(bool enable)
 {
@@ -886,12 +898,13 @@ static void it82xx2_usb_dc_isr(void)
 	/* sof received */
 	if (status & DC_SOF_RECEIVED) {
 		it82xx2_enable_sof_int(false);
+		it82xx2_enable_resume_int(false);
 		emit_resume_event();
 		k_work_reschedule(&udata0.check_suspended_work, K_MSEC(5));
 	}
 	/* resume received */
 	if (status & DC_RESUME_INT) {
-		usb_regs->dc_interrupt_status = DC_RESUME_INT;
+		it82xx2_enable_resume_int(false);
 		emit_resume_event();
 	}
 	/* transaction done */
@@ -911,6 +924,7 @@ static void suspended_check_handler(struct k_work *item)
 		CONTAINER_OF(dwork, struct usb_it82xx2_data, check_suspended_work);
 
 	struct usb_it82xx2_regs *const usb_regs = it82xx2_get_usb_regs();
+	unsigned int key;
 
 	if (usb_regs->dc_interrupt_status & DC_SOF_RECEIVED) {
 		usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
@@ -918,8 +932,7 @@ static void suspended_check_handler(struct k_work *item)
 		return;
 	}
 
-	it82xx2_enable_sof_int(true);
-
+	key = irq_lock();
 	if (!udata->suspended) {
 		if (udata->usb_status_cb) {
 			(*(udata->usb_status_cb))(USB_DC_SUSPEND, NULL);
@@ -930,6 +943,11 @@ static void suspended_check_handler(struct k_work *item)
 
 		k_sem_reset(&udata->suspended_sem);
 	}
+
+	it82xx2_enable_resume_int(true);
+	it82xx2_enable_sof_int(true);
+
+	irq_unlock(key);
 }
 
 /*
