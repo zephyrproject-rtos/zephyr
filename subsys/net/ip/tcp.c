@@ -836,17 +836,6 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
-
-#if !defined(CONFIG_NET_TEST_PROTOCOL)
-	if (conn->in_connect) {
-		conn->in_connect = false;
-		k_sem_reset(&conn->connect_sem);
-	}
-#endif /* CONFIG_NET_TEST_PROTOCOL */
-
-	k_mutex_unlock(&conn->lock);
-
 	ref_count = atomic_dec(&conn->ref_count) - 1;
 	if (ref_count != 0) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
@@ -888,6 +877,9 @@ static int tcp_conn_close(struct tcp *conn, int status)
 			/* Make sure the connect_cb is only called once. */
 			conn->connect_cb = NULL;
 		}
+
+		conn->in_connect = false;
+		k_sem_reset(&conn->connect_sem);
 	} else if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 				       status, conn->recv_user_data);
@@ -3680,6 +3672,7 @@ int net_tcp_put(struct net_context *context)
 		}
 	} else if (conn && conn->in_connect) {
 		conn->in_connect = false;
+		k_sem_reset(&conn->connect_sem);
 	}
 
 	k_mutex_unlock(&conn->lock);
