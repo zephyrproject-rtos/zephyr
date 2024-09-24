@@ -333,6 +333,31 @@ static inline unsigned int irq_get_intc_irq(unsigned int irq)
 	}
 }
 
+/**
+ * @brief Increments the multilevel-encoded @a irq by @a val
+ *
+ * @param irq IRQ number in its zephyr format
+ * @param val Amount to increment
+ *
+ * @return @a irq incremented by @a val
+ */
+static inline unsigned int irq_increment(unsigned int irq, unsigned int val)
+{
+	_z_irq_t z_irq = {
+		.irq = irq,
+	};
+
+	if (z_irq.bits.l3 != 0) {
+		z_irq.bits.l3 += val;
+	} else if (z_irq.bits.l2 != 0) {
+		z_irq.bits.l2 += val;
+	} else {
+		z_irq.bits.l1 += val;
+	}
+
+	return z_irq.irq;
+}
+
 #endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
 #ifdef __cplusplus
 }
