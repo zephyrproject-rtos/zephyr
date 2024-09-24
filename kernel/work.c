@@ -188,19 +188,9 @@ static void queue_flusher_locked(struct k_work_q *queue,
 				 struct k_work *work,
 				 struct z_work_flusher *flusher)
 {
-	bool in_list = false;
-	struct k_work *wn;
-
-	/* Determine whether the work item is still queued. */
-	SYS_SLIST_FOR_EACH_CONTAINER(&queue->pending, wn, node) {
-		if (wn == work) {
-			in_list = true;
-			break;
-		}
-	}
-
 	init_flusher(flusher);
-	if (in_list) {
+
+	if ((flags_get(&work->flags) & K_WORK_QUEUED) != 0U) {
 		sys_slist_insert(&queue->pending, &work->node,
 				 &flusher->work.node);
 	} else {
