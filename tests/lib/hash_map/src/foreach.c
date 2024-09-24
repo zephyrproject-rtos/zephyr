@@ -24,7 +24,7 @@ ZTEST(hash_map, test_foreach)
 	zassert_true(sys_hashmap_is_empty(&map));
 
 	for (size_t i = 0; i < ARRAY_SIZE(called); ++i) {
-		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL));
+		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL, NULL));
 	}
 
 	zassert_equal(ARRAY_SIZE(called), sys_hashmap_size(&map));

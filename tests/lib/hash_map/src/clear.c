@@ -15,7 +15,7 @@ ZTEST(hash_map, test_clear_no_callback)
 
 	zassert_true(sys_hashmap_is_empty(&map));
 	for (size_t i = 0; i < N; ++i) {
-		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL));
+		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL, NULL));
 	}
 
 	zassert_equal(N, sys_hashmap_size(&map));
@@ -38,7 +38,7 @@ ZTEST(hash_map, test_clear_callback)
 
 	zassert_true(sys_hashmap_is_empty(&map));
 	for (size_t i = 0; i < ARRAY_SIZE(cleared); ++i) {
-		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL));
+		zassert_equal(1, sys_hashmap_insert(&map, i, i, NULL, NULL));
 	}
 
 	zassert_equal(ARRAY_SIZE(cleared), sys_hashmap_size(&map));

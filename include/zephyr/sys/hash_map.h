@@ -41,10 +41,11 @@ extern "C" {
  * @param _config_type Variant of @ref sys_hashmap_config.
  * @param _data_type Variant of @ref sys_hashmap_data.
  * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _eq_func Equality function to compare hashmap keys @ref sys_hashmap_equal_t.
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Variant-specific details for @p _config_type.
  */
-#define SYS_HASHMAP_DEFINE_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,             \
+#define SYS_HASHMAP_DEFINE_ADVANCED(_name, _api, _config_type, _data_type, _hash_func, _eq_func,   \
 				    _alloc_func, ...)                                              \
 	const struct _config_type _name##_config = __VA_ARGS__;                                    \
 	struct _data_type _name##_data;                                                            \
@@ -52,6 +53,7 @@ extern "C" {
 		.api = (const struct sys_hashmap_api *)(_api),                                     \
 		.config = (const struct sys_hashmap_config *)&_name##_config,                      \
 		.data = (struct sys_hashmap_data *)&_name##_data,                                  \
+		.eq_func = (_eq_func),                                                             \
 		.hash_func = (_hash_func),                                                         \
 		.alloc_func = (_alloc_func),                                                       \
 	}
@@ -69,17 +71,19 @@ extern "C" {
  * @param _config_type Variant of @ref sys_hashmap_config.
  * @param _data_type Variant of @ref sys_hashmap_data.
  * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _eq_func Equality function to compare hashmap keys @ref sys_hashmap_equal_t.
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Variant-specific details for @p _config_type.
  */
 #define SYS_HASHMAP_DEFINE_STATIC_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,      \
-					   _alloc_func, ...)                                       \
+					   _eq_funct, _alloc_func, ...)                            \
 	static const struct _config_type _name##_config = __VA_ARGS__;                             \
 	static struct _data_type _name##_data;                                                     \
 	static struct sys_hashmap _name = {                                                        \
 		.api = (const struct sys_hashmap_api *)(_api),                                     \
 		.config = (const struct sys_hashmap_config *)&_name##_config,                      \
 		.data = (struct sys_hashmap_data *)&_name##_data,                                  \
+		.eq_func = (_eq_func),                                                             \
 		.hash_func = (_hash_func),                                                         \
 		.alloc_func = (_alloc_func),                                                       \
 	}
@@ -101,6 +105,17 @@ extern "C" {
  * @param _name Name of the Hashmap.
  */
 #define SYS_HASHMAP_DEFINE_STATIC(_name) SYS_HASHMAP_DEFAULT_DEFINE_STATIC(_name)
+
+/*
+ * Default equality function used by the hash map implementations
+ */
+static inline bool sys_hashmap_default_equal(uint64_t left, uint64_t right)
+{
+	return left == right;
+}
+
+/** @brief The default Hashmap equality function */
+#define SYS_HASHMAP_DEFAULT_EQUALITY_FUNCTION sys_hashmap_default_equal
 
 /*
  * A safe wrapper for realloc(), invariant of which libc provides it.
@@ -131,6 +146,8 @@ struct sys_hashmap {
 	struct sys_hashmap_data *data;
 	/** Hash function */
 	sys_hash_func32_t hash_func;
+	/** Equality function */
+	sys_hashmap_equal_t eq_func;
 	/** Allocator */
 	sys_hashmap_allocator_t alloc_func;
 };
@@ -171,12 +188,15 @@ static inline void sys_hashmap_clear(struct sys_hashmap *map, sys_hashmap_callba
 /**
  * @brief Insert a new entry into a @ref sys_hashmap
  *
- * Insert a new @p key - @p value pair into @p map.
+ * Insert a new @p key - @p value pair into @p map. And possibly replaces an old entry
+ * with the same key hash and an equal key checked using @p map `eq_func`.
  *
  * @param map Hashmap to insert into
  * @param key Key to associate with @p value
  * @param value Value to associate with @p key
  * @param old_value Location to store the value previously associated with @p key or `NULL`
+ * @param old_key Location to store a potential key that has the same hash
+ * and is equal to the key passed when checked using @ref sys_hashmap `eq_func`
  *
  * @retval 0 if @p value was inserted for an existing key, in which case @p old_value will contain
  * the previous value
@@ -185,9 +205,9 @@ static inline void sys_hashmap_clear(struct sys_hashmap *map, sys_hashmap_callba
  * @retval -ENOSPC if the size limit has been reached
  */
 static inline int sys_hashmap_insert(struct sys_hashmap *map, uint64_t key, uint64_t value,
-				     uint64_t *old_value)
+				     uint64_t *old_value, uint64_t *old_key)
 {
-	return map->api->insert(map, key, value, old_value);
+	return map->api->insert(map, key, value, old_value, old_key);
 }
 
 /**
@@ -198,13 +218,15 @@ static inline int sys_hashmap_insert(struct sys_hashmap *map, uint64_t key, uint
  * @param map Hashmap to remove from
  * @param key Key to remove from @p map
  * @param value Location to store a potential value associated with @p key or `NULL`
+ * @param old_key Location to store a potential old key equal to @p key or `NULL`
  *
  * @retval true if @p map was modified as a result of this operation.
  * @retval false if @p map does not contain a value associated with @p key.
  */
-static inline bool sys_hashmap_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value)
+static inline bool sys_hashmap_remove(struct sys_hashmap *map, uint64_t key, uint64_t *value,
+				      uint64_t *old_key)
 {
-	return map->api->remove(map, key, value);
+	return map->api->remove(map, key, value, old_key);
 }
 
 /**

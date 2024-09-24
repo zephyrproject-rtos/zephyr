@@ -15,13 +15,13 @@ ZTEST(hash_map, test_get_true)
 	uint64_t value = 0x42;
 
 	zassert_true(sys_hashmap_is_empty(&map));
-	zassert_equal(1, sys_hashmap_insert(&map, 0, 0, NULL));
+	zassert_equal(1, sys_hashmap_insert(&map, 0, 0, NULL, NULL));
 	zassert_true(sys_hashmap_get(&map, 0, NULL));
 	zassert_true(sys_hashmap_get(&map, 0, &value));
 	zassert_equal(0, value);
 
 	for (size_t i = 1; i < MANY; ++i) {
-		ret = sys_hashmap_insert(&map, i, i, NULL);
+		ret = sys_hashmap_insert(&map, i, i, NULL, NULL);
 		zassert_equal(1, ret, "failed to insert (%zu, %zu): %d", i, i, ret);
 	}
 
@@ -41,7 +41,7 @@ ZTEST(hash_map, test_get_false)
 	zassert_equal(value, 0x42);
 
 	for (size_t i = 0; i < MANY; ++i) {
-		ret = sys_hashmap_insert(&map, i, i, NULL);
+		ret = sys_hashmap_insert(&map, i, i, NULL, NULL);
 		zassert_equal(1, ret, "failed to insert (%zu, %zu): %d", i, i, ret);
 	}
 

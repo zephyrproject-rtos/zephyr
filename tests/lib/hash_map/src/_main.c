@@ -12,7 +12,9 @@
 #include "_main.h"
 
 SYS_HASHMAP_DEFINE(map);
-SYS_HASHMAP_DEFAULT_DEFINE_ADVANCED(custom_load_factor_map, sys_hash32, realloc,
+SYS_HASHMAP_DEFAULT_DEFINE_ADVANCED(custom_load_factor_map, sys_hash32,
+				    SYS_HASHMAP_DEFAULT_EQUALITY_FUNCTION,
+				    SYS_HASHMAP_DEFAULT_ALLOCATOR,
 				    SYS_HASHMAP_CONFIG(SIZE_MAX, CUSTOM_LOAD_FACTOR));
 
 static void *setup(void)
