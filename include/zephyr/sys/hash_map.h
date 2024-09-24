@@ -33,7 +33,7 @@ extern "C" {
  *
  * Declare a Hashmap with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
@@ -61,7 +61,7 @@ extern "C" {
  *
  * Declare a Hashmap statically with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
@@ -177,6 +177,7 @@ static inline void sys_hashmap_clear(struct sys_hashmap *map, sys_hashmap_callba
  * @param key Key to associate with @p value
  * @param value Value to associate with @p key
  * @param old_value Location to store the value previously associated with @p key or `NULL`
+ *
  * @retval 0 if @p value was inserted for an existing key, in which case @p old_value will contain
  * the previous value
  * @retval 1 if a new entry was inserted for the @p key - @p value pair
@@ -285,6 +286,7 @@ static inline uint8_t sys_hashmap_load_factor(const struct sys_hashmap *map)
  * @brief Query the number of buckets used in @p map
  *
  * @param map Hashmap to query
+ *
  * @return Number of buckets used in @p map
  */
 static inline size_t sys_hashmap_num_buckets(const struct sys_hashmap *map)
@@ -310,6 +312,7 @@ static inline size_t sys_hashmap_num_buckets(const struct sys_hashmap *map)
  * @param grow true if an entry is to be added. false if an entry has been removed
  * @param num_reserved the number of reserved entries
  * @param[out] new_num_buckets variable Hashmap size
+ *
  * @return true if the Hashmap should be rehashed
  * @return false if the Hashmap should not be rehashed
  */

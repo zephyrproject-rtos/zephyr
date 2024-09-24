@@ -62,6 +62,7 @@ struct sys_hashmap_iterator {
  * @brief Check if a Hashmap iterator has a next entry
  *
  * @param it Hashmap iterator
+ *
  * @return true if there is a next entry
  * @return false if there is no next entry
  */
@@ -126,6 +127,7 @@ typedef void (*sys_hashmap_clear_t)(struct sys_hashmap *map, sys_hashmap_callbac
  * @param key Key to associate with @p value
  * @param value Value to associate with @p key
  * @param old_value Location to store the value previously associated with @p key or `NULL`
+ *
  * @retval 0 if @p value was inserted for an existing key, in which case @p old_value will contain
  * the previous value
  * @retval 1 if a new entry was inserted for the @p key - @p value pair

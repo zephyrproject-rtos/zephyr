@@ -36,7 +36,7 @@ extern "C" {
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
- * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t. Currently ignored.
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Variant-specific details for @ref sys_hashmap_config.
  */
@@ -53,7 +53,7 @@ extern "C" {
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
- * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t.
+ * @param _hash_func Hash function pointer of type @ref sys_hash_func32_t. Currently ignored.
  * @param _alloc_func Allocator function pointer of type @ref sys_hashmap_allocator_t.
  * @param ... Details for @ref sys_hashmap_config.
  */
