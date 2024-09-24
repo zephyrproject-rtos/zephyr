@@ -3948,16 +3948,21 @@ int net_tcp_connect(struct net_context *context,
 	 * a TCP connection to be established
 	 */
 	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
+
+	/* The ref will make sure that if the connection is closed in tcp_in(),
+	 * we do not access already freed connection.
+	 */
+	tcp_conn_ref(conn);
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
 		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
-			ret = -errno;
-			goto out;
+			ret = -ENOTCONN;
+			goto out_unref;
 		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
 			   conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
-			goto out;
+			goto out_unref;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
 			   conn->state != TCP_ESTABLISHED) {
 			if (conn->in_connect) {
@@ -3966,11 +3971,15 @@ int net_tcp_connect(struct net_context *context,
 			}
 
 			ret = -ETIMEDOUT;
-			goto out;
+			goto out_unref;
 		}
 		conn->in_connect = false;
 	}
- out:
+
+out_unref:
+	tcp_conn_unref(conn);
+
+out:
 	NET_DBG("conn: %p, ret=%d", conn, ret);
 
 	return ret;
