@@ -83,6 +83,15 @@ typedef status_t (*hal_cryp_aes_op_func_t)(CRYP_HandleTypeDef *hcryp, uint8_t *i
 #define hal_ctr_decrypt_op hal_decrypt
 #endif
 
+/* L4 HAL driver uses uint8_t pointers for input/output data while the generic HAL driver uses
+ * uint32_t pointers.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
+#define CAST_VEC(x) (uint8_t *)(x)
+#else
+#define CAST_VEC(x) (uint32_t *)(x)
+#endif
+
 static int copy_words_adjust_endianness(uint8_t *dst_buf, int dst_len, const uint8_t *src_buf,
 					int src_len)
 {
@@ -207,7 +216,7 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
-	session->config.pInitVect = vec;
+	session->config.pInitVect = CAST_VEC(vec);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
 		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
@@ -234,7 +243,7 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 
 	(void)copy_words_adjust_endianness((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 
-	session->config.pInitVect = vec;
+	session->config.pInitVect = CAST_VEC(vec);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
 		in_offset = 16;
@@ -261,7 +270,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	session->config.pInitVect = ctr;
+	session->config.pInitVect = CAST_VEC(ctr);
 
 	ret = do_aes(ctx, hal_ctr_encrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
@@ -284,7 +293,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	session->config.pInitVect = ctr;
+	session->config.pInitVect = CAST_VEC(ctr);
 
 	ret = do_aes(ctx, hal_ctr_decrypt_op, pkt->in_buf, pkt->in_len, pkt->out_buf);
 	if (ret == 0) {
@@ -450,7 +459,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		return -EIO;
 	}
 
-	session->config.pKey = session->key;
+	session->config.pKey = CAST_VEC(session->key);
 	session->config.DataType = CRYP_DATATYPE_8B;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
