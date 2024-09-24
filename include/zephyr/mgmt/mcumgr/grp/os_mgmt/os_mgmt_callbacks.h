@@ -44,6 +44,12 @@ struct os_mgmt_bootloader_info_data {
 
 	/** Contains the value of the query parameter. */
 	struct zcbor_string *query;
+
+	/**
+	 * Must be set to true to indicate a response has been added, otherwise will return the
+	 * #OS_MGMT_ERR_QUERY_YIELDS_NO_ANSWER error.
+	 */
+	bool *has_output;
 };
 
 /**
