@@ -466,12 +466,28 @@ struct wifi_connect_req_params {
 	int timeout;
 	/** anonymous identity */
 	const uint8_t *anon_id;
-	/** anon_id length */
-	uint8_t aid_length; /* Max 64 */
+	/** anon_id length, max 64 */
+	uint8_t aid_length;
 	/** Private key passwd for enterprise mode */
 	const uint8_t *key_passwd;
-	/** Private key passwd length */
-	uint8_t key_passwd_length; /* Max 128 */
+	/** Private key passwd length, max 128 */
+	uint8_t key_passwd_length;
+	/** private key2 passwd */
+	const uint8_t *key2_passwd;
+	/** key2 passwd length, max 128 */
+	uint8_t key2_passwd_length;
+	/** suiteb or suiteb-192 */
+	uint8_t suiteb_type;
+	/** eap version */
+	uint8_t eap_ver;
+	/** Identity for EAP */
+	const uint8_t *eap_identity;
+	/** eap identity length, max 64 */
+	uint8_t eap_id_length;
+	/** Password string for EAP. */
+	const uint8_t *eap_password;
+	/** eap passwd length, max 128 */
+	uint8_t eap_passwd_length;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -711,6 +727,18 @@ struct wifi_enterprise_creds_params {
 	uint8_t *client_key;
 	/** Client key length */
 	uint32_t client_key_len;
+	/** CA certification of phase2*/
+	uint8_t *ca_cert2;
+	/** Phase2 CA certification length */
+	uint32_t ca_cert2_len;
+	/** Client certification of phase2*/
+	uint8_t *client_cert2;
+	/** Phase2 Client certification length */
+	uint32_t client_cert2_len;
+	/** Client key of phase2*/
+	uint8_t *client_key2;
+	/** Phase2 Client key length */
+	uint32_t client_key2_len;
 };
 
 /** @brief Wi-Fi power save configuration */
