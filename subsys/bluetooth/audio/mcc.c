@@ -1439,8 +1439,7 @@ static uint8_t discover_otc_char_func(struct bt_conn *conn,
 		}
 
 		if (sub_params) {
-			/* With ccc_handle == 0 it will use auto discovery */
-			sub_params->ccc_handle = 0;
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = mcs_inst->otc.end_handle;
 			sub_params->value = BT_GATT_CCC_INDICATE;
 			sub_params->value_handle = chrc->value_handle;
@@ -1605,8 +1604,7 @@ static int do_subscribe(struct mcs_instance_t *mcs_inst, struct bt_conn *conn,
 			uint16_t handle,
 			struct bt_gatt_subscribe_params *sub_params)
 {
-	/* With ccc_handle == 0 it will use auto discovery */
-	sub_params->ccc_handle = 0;
+	sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	sub_params->end_handle = mcs_inst->end_handle;
 	sub_params->value_handle = handle;
 	sub_params->notify = mcs_notify_handler;

@@ -480,7 +480,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 		if (sub_params != NULL) {
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
-			sub_params->ccc_handle = 0;
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = vol_ctlr->end_handle;
 			sub_params->notify = vcp_vol_ctlr_notify_handler;
 			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);

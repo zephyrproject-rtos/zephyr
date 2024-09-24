@@ -206,8 +206,7 @@ void gatt_subscribe_to_service_changed(bool subscribe)
 	subscribe_params.subscribe = sc_subscribed;
 
 	if (subscribe) {
-		/* Use the BT_GATT_AUTO_DISCOVER_CCC feature */
-		subscribe_params.ccc_handle = 0;
+		subscribe_params.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		subscribe_params.disc_params = &disc_params,
 		subscribe_params.value = BT_GATT_CCC_INDICATE;
 		subscribe_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;

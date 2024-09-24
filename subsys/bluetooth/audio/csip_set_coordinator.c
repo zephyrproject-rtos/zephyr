@@ -764,8 +764,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			if (sub_params->value != 0) {
 				int err;
 
-				/* With ccc_handle == 0 it will use auto discovery */
-				sub_params->ccc_handle = 0;
+				sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 				sub_params->end_handle = client->cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
