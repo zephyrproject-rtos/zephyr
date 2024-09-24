@@ -85,6 +85,7 @@ CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
 CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
+CREATE_FLAG(flag_start_failed);
 CREATE_FLAG(flag_start_timeout);
 CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_stopped);
@@ -237,7 +238,8 @@ static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 	if (err == -ECANCELED) {
 		SET_FLAG(flag_start_timeout);
 	} else if (err != 0) {
-		FAIL("Failed to start (failing conn %p): %d", conn, err);
+		printk("Failed to start (failing conn %p): %d\n", conn, err);
+		SET_FLAG(flag_start_failed);
 	} else {
 		SET_FLAG(flag_started);
 	}
@@ -694,6 +696,7 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 
 	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
+	printk("Stopping without relasing\n");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -714,6 +717,7 @@ static void unicast_audio_stop(struct bt_bap_unicast_group *unicast_group)
 	/* Stop with release first to verify that we enter the idle state */
 	UNSET_FLAG(flag_stopped);
 	param.release = true;
+	printk("Relasing\n");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -791,9 +795,12 @@ static void test_main_cap_initiator_unicast(void)
 	discover_source(default_conn);
 
 	for (size_t i = 0U; i < iterations; i++) {
+		printk("\nRunning iteration i=%zu\n\n", i);
 		unicast_group_create(&unicast_group);
 
 		for (size_t j = 0U; j < iterations; j++) {
+			printk("\nRunning iteration j=%zu\n\n", i);
+
 			unicast_audio_start(unicast_group, true);
 
 			unicast_audio_update();
@@ -843,7 +850,7 @@ static void test_main_cap_initiator_unicast_inval(void)
 static void test_cap_initiator_unicast_timeout(void)
 {
 	struct bt_bap_unicast_group *unicast_group;
-	const k_timeout_t timeout = K_SECONDS(1);
+	const k_timeout_t timeout = K_SECONDS(10);
 	const size_t iterations = 2;
 
 	init();
@@ -860,6 +867,7 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group_create(&unicast_group);
 
 	for (size_t j = 0U; j < iterations; j++) {
+		printk("\nRunning iteration #%zu\n\n", j);
 		unicast_audio_start(unicast_group, false);
 
 		k_sleep(timeout);
@@ -878,6 +886,67 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group = NULL;
 
 	PASS("CAP initiator unicast timeout passed\n");
+}
+
+static void set_invalid_metadata_type(uint8_t type)
+{
+	const uint8_t val = 0xFF;
+	int err;
+
+	err = bt_audio_codec_cfg_meta_set_val(&unicast_preset_16_2_1.codec_cfg, type, &val,
+					      sizeof(val));
+	if (err < 0) {
+		FAIL("Failed to set invalid metadata type: %d\n", err);
+		return;
+	}
+}
+
+static void unset_invalid_metadata_type(uint8_t type)
+{
+	int err;
+
+	err = bt_audio_codec_cfg_meta_unset_val(&unicast_preset_16_2_1.codec_cfg, type);
+	if (err < 0) {
+		FAIL("Failed to unset invalid metadata type: %d\n", err);
+		return;
+	}
+}
+
+static void test_cap_initiator_unicast_ase_error(void)
+{
+	struct bt_bap_unicast_group *unicast_group;
+	const uint8_t inval_type = 0xFD;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	discover_cas(default_conn);
+	discover_sink(default_conn);
+	discover_source(default_conn);
+
+	unicast_group_create(&unicast_group);
+
+	set_invalid_metadata_type(inval_type);
+
+	/* With invalid metadata type, start should fail */
+	unicast_audio_start(unicast_group, false);
+	WAIT_FOR_FLAG(flag_start_failed);
+
+	/* Remove invalid type and retry */
+	unset_invalid_metadata_type(inval_type);
+
+	/* Without invalid metadata type, start should pass */
+	unicast_audio_start(unicast_group, true);
+
+	unicast_audio_stop(unicast_group);
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast ASE error passed\n");
 }
 
 static const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
@@ -1562,6 +1631,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_timeout,
+	},
+	{
+		.test_id = "cap_initiator_unicast_ase_error",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_ase_error,
 	},
 	{
 		.test_id = "cap_initiator_unicast_inval",
