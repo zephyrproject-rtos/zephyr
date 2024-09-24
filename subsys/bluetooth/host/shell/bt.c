@@ -3902,6 +3902,35 @@ static int cmd_bondable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_BONDABLE_PER_CONNECTION)
+static int cmd_conn_bondable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bool enable;
+
+	if (!default_conn) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	enable = shell_strtobool(argv[1], 0, &err);
+	if (err) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	shell_print(sh, "[%p] set conn bondable %s", default_conn, argv[1]);
+
+	err = bt_conn_set_bondable(default_conn, enable);
+	if (err) {
+		shell_error(sh, "Set conn bondable failed: err %d", err);
+		return -ENOEXEC;
+	}
+	shell_print(sh, "Set conn bondable done");
+	return 0;
+}
+#endif /* CONFIG_BT_BONDABLE_PER_CONNECTION */
+
 static void bond_info(const struct bt_bond_info *info, void *user_data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -5079,6 +5108,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_security, 1, 2),
 	SHELL_CMD_ARG(bondable, NULL, HELP_ONOFF, cmd_bondable,
 		      2, 0),
+#if defined(CONFIG_BT_BONDABLE_PER_CONNECTION)
+	SHELL_CMD_ARG(conn-bondable, NULL, HELP_ONOFF, cmd_conn_bondable, 2, 0),
+#endif /* CONFIG_BT_BONDABLE_PER_CONNECTION */
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
 	SHELL_CMD_ARG(connections, NULL, HELP_NONE, cmd_connections, 1, 0),
 	SHELL_CMD_ARG(auth, NULL,
