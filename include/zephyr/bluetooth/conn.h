@@ -413,6 +413,131 @@ struct bt_conn_le_cs_fae_table {
 	uint8_t *remote_fae_table;
 };
 
+/** Channel sounding main mode */
+enum bt_conn_le_cs_main_mode {
+	/** Mode-1 (RTT) */
+	BT_CONN_LE_CS_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** Mode-2 (PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** Mode-3 (RTT and PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+};
+
+/** Channel sounding sub mode */
+enum bt_conn_le_cs_sub_mode {
+	/** Unused */
+	BT_CONN_LE_CS_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
+	/** Mode-1 (RTT) */
+	BT_CONN_LE_CS_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
+	/** Mode-2 (PBR) */
+	BT_CONN_LE_CS_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
+	/** Mode-3 (RTT and PBR) */
+	BT_CONN_LE_CS_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+};
+
+/** Channel sounding role */
+enum bt_conn_le_cs_role {
+	/** CS initiator role */
+	BT_CONN_LE_CS_ROLE_INITIATOR,
+	/** CS reflector role */
+	BT_CONN_LE_CS_ROLE_REFLECTOR,
+};
+
+/** Channel sounding RTT type */
+enum bt_conn_le_cs_rtt_type {
+	/** RTT AA only */
+	BT_CONN_LE_CS_RTT_TYPE_AA_ONLY = BT_HCI_OP_LE_CS_RTT_TYPE_AA_ONLY,
+	/** RTT with 32-bit sounding sequence */
+	BT_CONN_LE_CS_RTT_TYPE_32_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_SOUND,
+	/** RTT with 96-bit sounding sequence */
+	BT_CONN_LE_CS_RTT_TYPE_96_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_SOUND,
+	/** RTT with 32-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_32_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_RAND,
+	/** RTT with 64-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_64_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_64BIT_RAND,
+	/** RTT with 96-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_96_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_RAND,
+	/** RTT with 128-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_128_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_128BIT_RAND,
+};
+
+/** Channel sounding PHY used for CS sync */
+enum bt_conn_le_cs_sync_phy {
+	/** LE 1M PHY */
+	BT_CONN_LE_CS_SYNC_1M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_1M,
+	/** LE 2M PHY */
+	BT_CONN_LE_CS_SYNC_2M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M,
+	/** LE 2M 2BT PHY */
+	BT_CONN_LE_CS_SYNC_2M_2BT_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT,
+};
+
+/** Channel sounding channel selection type */
+enum bt_conn_le_cs_chsel_type {
+	/** Use Channel Selection Algorithm #3b for non-mode-0 CS steps */
+	BT_CONN_LE_CS_CHSEL_TYPE_3B = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3B,
+	/** Use Channel Selection Algorithm #3c for non-mode-0 CS steps */
+	BT_CONN_LE_CS_CHSEL_TYPE_3C = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3C,
+};
+
+/** Channel sounding channel sequence shape */
+enum bt_conn_le_cs_ch3c_shape {
+	/** Use Hat shape for user-specified channel sequence */
+	BT_CONN_LE_CS_CH3C_SHAPE_HAT = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_HAT,
+	/** Use X shape for user-specified channel sequence */
+	BT_CONN_LE_CS_CH3C_SHAPE_X = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_X,
+};
+
+/** Channel sounding configuration */
+struct bt_conn_le_cs_config {
+	/** CS configuration ID */
+	uint8_t id;
+	/** Main CS mode type */
+	enum bt_conn_le_cs_main_mode main_mode_type;
+	/** Sub CS mode type */
+	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t min_main_mode_steps;
+	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t max_main_mode_steps;
+	/** Number of main mode steps taken from the end of the last CS subevent to be repeated
+	 *  at the beginning of the current CS subevent directly after the last mode-0 step of that
+	 *  event
+	 */
+	uint8_t main_mode_repetition;
+	/** Number of CS mode-0 steps to be included at the beginning of each CS subevent */
+	uint8_t mode_0_steps;
+	/** CS role */
+	enum bt_conn_le_cs_role role;
+	/** RTT type */
+	enum bt_conn_le_cs_rtt_type rtt_type;
+	/** CS Sync PHY */
+	enum bt_conn_le_cs_sync_phy cs_sync_phy;
+	/** The number of times the Channel_Map field will be cycled through for non-mode-0 steps
+	 *  within a CS procedure
+	 */
+	uint8_t channel_map_repetition;
+	/** Channel selection type */
+	enum bt_conn_le_cs_chsel_type channel_selection_type;
+	/** User-specified channel sequence shape */
+	enum bt_conn_le_cs_ch3c_shape ch3c_shape;
+	/** Number of channels skipped in each rising and falling sequence  */
+	uint8_t ch3c_jump;
+	/** Interlude time in microseconds between the RTT packets */
+	uint8_t t_ip1_time_us;
+	/** Interlude time in microseconds between the CS tones */
+	uint8_t t_ip2_time_us;
+	/** Time in microseconds for frequency changes */
+	uint8_t t_fcs_time_us;
+	/** Time in microseconds for the phase measurement period of the CS tones */
+	uint8_t t_pm_time_us;
+	/** Channel map used for CS procedure
+	 *  Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
+	 *  Channel 79 is reserved for future use and shall be set to zero.
+	 *  At least 15 channels shall be enabled.
+	 */
+	uint8_t channel_map[10];
+};
+
 /** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
@@ -1532,6 +1657,26 @@ struct bt_conn_cb {
 	 */
 	void (*remote_cs_fae_table_available)(struct bt_conn *conn,
 					      struct bt_conn_le_cs_fae_table *params);
+
+	/** @brief LE CS Config created.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Configuration procedure has completed and a new CS config is created
+	 *
+	 *  @param conn Connection object.
+	 *  @param config CS configuration.
+	 */
+	void (*le_cs_config_created)(struct bt_conn *conn, struct bt_conn_le_cs_config *config);
+
+	/** @brief LE CS Config removed.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Configuration procedure has completed and a CS config is removed
+	 *
+	 *  @param conn Connection object.
+	 *  @param config_id ID of the CS configuration that was removed.
+	 */
+	void (*le_cs_config_removed)(struct bt_conn *conn, uint8_t config_id);
 #endif
 
 	/** @internal Internally used field for list handling */
