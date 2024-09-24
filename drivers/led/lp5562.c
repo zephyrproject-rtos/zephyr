@@ -41,8 +41,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
-#include "led_context.h"
-
 /* Registers */
 #define LP5562_ENABLE             0x00
 #define LP5562_OP_MODE            0x01
@@ -174,10 +172,6 @@ struct lp5562_config {
 	struct gpio_dt_spec enable_gpio;
 };
 
-struct lp5562_data {
-	struct led_data dev_data;
-};
-
 /*
  * @brief Get the register for the given LED channel used to directly write a
  *	brightness value instead of using the execution engines.
@@ -279,12 +273,11 @@ static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
  * This function expects the given time in milliseconds to be in the allowed
  * range the device can handle (0ms to 1000ms).
  *
- * @param data      Capabilities of the driver.
  * @param ms        Time to be converted in milliseconds [0..1000].
  * @param prescale  Pointer to the prescale value.
  * @param step_time Pointer to the step_time value.
  */
-static void lp5562_ms_to_prescale_and_step(struct led_data *data, uint32_t ms,
+static void lp5562_ms_to_prescale_and_step(uint32_t ms,
 					   uint8_t *prescale, uint8_t *step_time)
 {
 	/*
@@ -609,16 +602,14 @@ static int lp5562_program_set_brightness(const struct device *dev,
 					 uint8_t command_index,
 					 uint8_t brightness)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t val;
 
-	if ((brightness < dev_data->min_brightness) ||
-			(brightness > dev_data->max_brightness)) {
+	if ((brightness < LP5562_MIN_BRIGHTNESS) ||
+			(brightness > LP5562_MAX_BRIGHTNESS)) {
 		return -EINVAL;
 	}
 
-	val = (brightness * 0xFF) / dev_data->max_brightness;
+	val = (brightness * 0xFF) / LP5562_MAX_BRIGHTNESS;
 
 	return lp5562_program_command(dev, engine, command_index,
 			LP5562_PROG_COMMAND_SET_PWM, val);
@@ -648,16 +639,14 @@ static int lp5562_program_ramp(const struct device *dev,
 			       uint8_t step_count,
 			       enum lp5562_engine_fade_dirs fade_dir)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	uint8_t prescale, step_time;
 
-	if ((time_per_step < dev_data->min_period) ||
-			(time_per_step > dev_data->max_period)) {
+	if ((time_per_step < LP5562_MIN_BLINK_PERIOD) ||
+			(time_per_step > LP5562_MAX_BLINK_PERIOD)) {
 		return -EINVAL;
 	}
 
-	lp5562_ms_to_prescale_and_step(dev_data, time_per_step,
+	lp5562_ms_to_prescale_and_step(time_per_step,
 			&prescale, &step_time);
 
 	return lp5562_program_command(dev, engine, command_index,
@@ -768,8 +757,6 @@ static int lp5562_update_blinking_brightness(const struct device *dev,
 static int lp5562_led_blink(const struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	enum lp5562_led_sources engine;
 	uint8_t command_index = 0U;
@@ -803,7 +790,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, command_index,
-			dev_data->max_brightness);
+			LP5562_MAX_BRIGHTNESS);
 	if (ret) {
 		return ret;
 	}
@@ -814,7 +801,7 @@ static int lp5562_led_blink(const struct device *dev, uint32_t led,
 	}
 
 	ret = lp5562_program_set_brightness(dev, engine, ++command_index,
-			dev_data->min_brightness);
+			LP5562_MIN_BRIGHTNESS);
 	if (ret) {
 		return ret;
 	}
@@ -842,14 +829,12 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 				     uint8_t value)
 {
 	const struct lp5562_config *config = dev->config;
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	uint8_t val, reg;
 	enum lp5562_led_sources current_source;
 
-	if ((value < dev_data->min_brightness) ||
-			(value > dev_data->max_brightness)) {
+	if ((value < LP5562_MIN_BRIGHTNESS) ||
+			(value > LP5562_MAX_BRIGHTNESS)) {
 		return -EINVAL;
 	}
 
@@ -874,7 +859,7 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 		}
 	}
 
-	val = (value * 0xFF) / dev_data->max_brightness;
+	val = (value * 0xFF) / LP5562_MAX_BRIGHTNESS;
 
 	ret = lp5562_get_pwm_reg(led, &reg);
 	if (ret) {
@@ -891,17 +876,11 @@ static int lp5562_led_set_brightness(const struct device *dev, uint32_t led,
 
 static inline int lp5562_led_on(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
-
-	return lp5562_led_set_brightness(dev, led, dev_data->max_brightness);
+	return lp5562_led_set_brightness(dev, led, LP5562_MAX_BRIGHTNESS);
 }
 
 static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 {
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
-
 	int ret;
 	enum lp5562_led_sources current_source;
 
@@ -917,7 +896,7 @@ static inline int lp5562_led_off(const struct device *dev, uint32_t led)
 		}
 	}
 
-	return lp5562_led_set_brightness(dev, led, dev_data->min_brightness);
+	return lp5562_led_set_brightness(dev, led, LP5562_MIN_BRIGHTNESS);
 }
 
 static int lp5562_led_update_current(const struct device *dev)
@@ -1010,8 +989,6 @@ static int lp5562_disable(const struct device *dev)
 static int lp5562_led_init(const struct device *dev)
 {
 	const struct lp5562_config *config = dev->config;
-	struct lp5562_data *data = dev->data;
-	struct led_data *dev_data = &data->dev_data;
 	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
 	int ret;
 
@@ -1035,12 +1012,6 @@ static int lp5562_led_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
-
-	/* Hardware specific limits */
-	dev_data->min_period = LP5562_MIN_BLINK_PERIOD;
-	dev_data->max_period = LP5562_MAX_BLINK_PERIOD;
-	dev_data->min_brightness = LP5562_MIN_BRIGHTNESS;
-	dev_data->max_brightness = LP5562_MAX_BRIGHTNESS;
 
 	ret = lp5562_led_update_current(dev);
 	if (ret) {
@@ -1109,9 +1080,8 @@ static int lp5562_pm_action(const struct device *dev, enum pm_device_action acti
 									\
 	PM_DEVICE_DT_INST_DEFINE(id, lp5562_pm_action);			\
 									\
-	struct lp5562_data lp5562_data_##id;				\
 	DEVICE_DT_INST_DEFINE(id, &lp5562_led_init, PM_DEVICE_DT_INST_GET(id),	\
-			&lp5562_data_##id,				\
+			NULL,						\
 			&lp5562_config_##id, POST_KERNEL,		\
 			CONFIG_LED_INIT_PRIORITY,			\
 			&lp5562_led_api);				\
