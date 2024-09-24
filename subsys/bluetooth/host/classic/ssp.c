@@ -479,11 +479,6 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P192:
-		/* Mark no-bond so that link-key is removed on disconnection */
-		if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
-			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
-		}
-
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P256:
@@ -491,11 +486,6 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P256:
 		conn->br.link_key->flags |= BT_LINK_KEY_SC;
-
-		/* Mark no-bond so that link-key is removed on disconnection */
-		if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
-			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
-		}
 
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
@@ -718,6 +708,11 @@ void bt_hci_ssp_complete(struct net_buf *buf)
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
+	}
+
+	/* Mark no-bond so that link-key will be removed on disconnection */
+	if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
+		atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 	}
 
 	ssp_pairing_complete(conn, bt_security_err_get(evt->status));
