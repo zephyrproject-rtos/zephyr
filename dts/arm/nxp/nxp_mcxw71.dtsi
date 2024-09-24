@@ -66,23 +66,44 @@
 
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-			fmu: memory-controller@20000 {
-				ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+			pbridge2: pbridge2@0 {
+				ranges = <>;
+				reg = <0x0 0x4b000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				compatible = "nxp,iap-msf1";
-				reg = <0x20000 0x1000>;
-				interrupts = <27 0>;
-				status = "disabled";
+				fmu: memory-controller@20000 {
+					ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
 
-				flash: flash@0 {
-					reg = <0x0 DT_SIZE_M(1)>;
-					compatible = "soc-nv-flash";
-					write-block-size = <16>;
-					erase-block-size = <8192>;
+					compatible = "nxp,iap-msf1";
+					reg = <0x20000 0x1000>;
+					interrupts = <27 0>;
+					status = "disabled";
+
+					flash: flash@0 {
+						reg = <0x0 DT_SIZE_M(1)>;
+						compatible = "soc-nv-flash";
+						write-block-size = <16>;
+						erase-block-size = <8192>;
+					};
 				};
+			};
+
+			fast_peripheral0: fast_peripherals0@8000000 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x8000000 0x40000>;
+			};
+
+			fast_peripheral1: fast_peripherals1@8800000 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x8800000 0x210000>;
 			};
 		};
 	};
@@ -96,7 +117,7 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
-&peripheral {
+&pbridge2 {
 	#address-cells = <1>;
 	#size-cells = <1>;
 
@@ -146,6 +167,23 @@
 		status = "disabled";
 	};
 
+	gpiod: gpio@46000{
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portd>;
+		reg = <0x46000 0x128>;
+		interrupts = <65 0>, <66 0>;
+	};
+
+	vbat: vbat@2b000 {
+		reg = <0x2b000 0x400>;
+		interrupts = <74 0>;
+	};
+};
+
+&fast_peripheral0 {
 	gpioa: gpio@10000{
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
@@ -174,20 +212,5 @@
 		nxp,kinetis-port = <&portc>;
 		reg = <0x30000 0x128>;
 		interrupts = <63 0>, <64 0>;
-	};
-
-	gpiod: gpio@46000{
-		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
-		gpio-controller;
-		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portd>;
-		reg = <0x46000 0x128>;
-		interrupts = <65 0>, <66 0>;
-	};
-
-	vbat: vbat@2b000 {
-		reg = <0x2b000 0x400>;
-		interrupts = <74 0>;
 	};
 };
