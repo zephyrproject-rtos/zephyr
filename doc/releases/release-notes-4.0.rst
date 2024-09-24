@@ -388,6 +388,8 @@ Libraries / Subsystems
     L1 ``kernel thread`` shell command as ``kernel thread list`` & ``kernel thread stacks``
   * Added multiple shell command to configure the CPU mask affinity / pinning a thread in
     runtime, do ``kernel thread -h`` for more info.
+  * ``kernel reboot`` shell command without any additional arguments will now do a cold reboot
+    instead of requiring you to type ``kernel reboot cold``.
 
 * State Machine Framework
 
