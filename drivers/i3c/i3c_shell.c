@@ -1991,6 +1991,48 @@ static void cmd_i3c_ibi_tir(const struct shell *sh, size_t argc, char **argv)
 
 	shell_print(sh, "I3C: Issued IBI TIR");
 }
+
+/* i3c ibi enable <device> <target> */
+static void cmd_i3c_ibi_enable(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = i3c_ibi_enable(desc);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to enable IBI");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Enabled IBI");
+}
+
+/* i3c ibi disable <device> <target> */
+static void cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev, *tdev;
+	struct i3c_device_desc *desc;
+	int ret;
+
+	ret = i3c_parse_args(sh, argv, &dev, &tdev, &desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = i3c_ibi_disable(desc);
+	if (ret != 0) {
+		shell_error(sh, "I3C: Unable to disable IBI");
+		return ret;
+	}
+
+	shell_print(sh, "I3C: Disabled IBI");
+}
 #endif
 
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
@@ -2051,6 +2093,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send IBI CR\n"
 		      "Usage: ibi cr <device>",
 		      cmd_i3c_ibi_cr, 2, 0),
+	SHELL_CMD_ARG(enable, &dsub_i3c_device_attached_name,
+		      "Enable receiving IBI from target\n"
+		      "Usage: ibi enable <device> <target>",
+		      cmd_i3c_ibi_enable, 3, 0),
+	SHELL_CMD_ARG(disable, &dsub_i3c_device_attached_name,
+		      "Disable receiving IBI from target\n"
+		      "Usage: ibi disable <device> <target>",
+		      cmd_i3c_ibi_disable, 3, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 #endif
