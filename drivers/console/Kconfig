@@ -167,12 +167,14 @@ endif
 
 config IPM_CONSOLE_SENDER
 	bool "Inter-processor Mailbox console sender"
+	depends on IPM
 	select CONSOLE_HAS_DRIVER
 	help
 	  Enable the sending side of IPM console
 
 config IPM_CONSOLE_RECEIVER
 	bool "Inter-processor Mailbox console receiver"
+	depends on IPM
 	select RING_BUFFER
 	help
 	  Enable the receiving side of IPM console
