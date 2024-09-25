@@ -60,13 +60,13 @@ static int cmd_auth_pincode(const struct shell *sh,
 
 	if (!conn) {
 		shell_print(sh, "Not connected");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	if (strlen(argv[1]) > max) {
 		shell_print(sh, "PIN code value invalid - enter max %u "
 			    "digits", max);
-		return 0;
+		return -ENOEXEC;
 	}
 
 	shell_print(sh, "PIN code \"%s\" applied", argv[1]);
@@ -91,6 +91,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	conn = bt_conn_create_br(&addr, BT_BR_CONN_PARAM_DEFAULT);
 	if (!conn) {
 		shell_print(sh, "Connection failed");
+		return -ENOEXEC;
 	} else {
 
 		shell_print(sh, "Connection pending");
@@ -197,14 +198,14 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 		if (bt_br_discovery_start(&param, br_discovery_results,
 					  ARRAY_SIZE(br_discovery_results)) < 0) {
 			shell_print(sh, "Failed to start discovery");
-			return 0;
+			return -ENOEXEC;
 		}
 
 		shell_print(sh, "Discovery started");
 	} else if (!strcmp(action, "off")) {
 		if (bt_br_discovery_stop()) {
 			shell_print(sh, "Failed to stop discovery");
-			return 0;
+			return -ENOEXEC;
 		}
 
 		shell_print(sh, "Discovery stopped");
@@ -278,7 +279,7 @@ static int cmd_l2cap_register(const struct shell *sh,
 {
 	if (br_server.psm) {
 		shell_print(sh, "Already registered");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	br_server.psm = strtoul(argv[1], NULL, 16);
@@ -515,7 +516,7 @@ static int cmd_sdp_find_record(const struct shell *sh,
 
 	if (!default_conn) {
 		shell_print(sh, "Not connected");
-		return 0;
+		return -ENOEXEC;
 	}
 
 	action = argv[1];
