@@ -4,6 +4,8 @@
 
 source "share/sysbuild/Kconfig"
 
-config RAD_CORE_BOARD
-string
-	default "nrf54h20dk/nrf54h20/cpurad" if $(BOARD) = "nrf54h20dk"
+config APP_CPUPPR_RUN
+	bool "Use PPR"
+
+config APP_CPUFLPR_RUN
+	bool "Use FLPR"
