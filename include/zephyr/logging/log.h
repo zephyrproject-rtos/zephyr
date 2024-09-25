@@ -18,6 +18,8 @@ extern "C" {
 /**
  * @brief Logging
  * @defgroup logging Logging
+ * @since 1.13
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  * @}
@@ -71,6 +73,24 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_DBG(...)    Z_LOG(LOG_LEVEL_DBG, __VA_ARGS__)
+
+/**
+ * @brief Writes a WARNING level message to the log on the first execution only.
+ *
+ * @details It's meant for situations that warrant investigation but could clutter
+ * the logs if output on every execution.
+ *
+ * @param ... A string optionally containing printk valid conversion specifier,
+ * followed by as many values as specifiers.
+ */
+#define LOG_WRN_ONCE(...)					\
+	do {							\
+		static uint8_t __warned;			\
+		if (unlikely(__warned == 0)) {			\
+			Z_LOG(LOG_LEVEL_WRN, __VA_ARGS__);	\
+			__warned = 1;				\
+		}						\
+	} while (0)
 
 /**
  * @brief Unconditionally print raw log message.
@@ -165,7 +185,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_ERR(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_ERR, _data, _length, (_str))
 
 /**
  * @brief Writes a WARNING level message to the log.
@@ -178,7 +198,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_WRN(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_WRN, _data, _length, (_str))
 
 /**
  * @brief Writes an INFO level message to the log.
@@ -190,7 +210,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_INF(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_INF, _data, _length, (_str))
 
 /**
  * @brief Writes a DEBUG level message to the log.
@@ -202,7 +222,7 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) \
-	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, _str)
+	Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, (_str))
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -298,14 +318,20 @@ void z_log_vprintk(const char *fmt, va_list ap);
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
-#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			       \
-	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))				       \
-	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const,		       \
-		log_source_const_data,					       \
-		Z_LOG_ITEM_CONST_DATA(_name)) =				       \
-	{								       \
-		.name = STRINGIFY(_name),				       \
-		.level = _level						       \
+#define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)						\
+	IF_ENABLED(CONFIG_LOG_FMT_SECTION, (							\
+		static const char UTIL_CAT(_name, _str)[]					\
+		     __in_section(_log_strings, static, _CONCAT(_name, _)) __used __noasan =	\
+		     STRINGIFY(_name);))							\
+	IF_ENABLED(LOG_IN_CPLUSPLUS, (extern))							\
+	const STRUCT_SECTION_ITERABLE_ALTERNATE(log_const,					\
+		log_source_const_data,								\
+		Z_LOG_ITEM_CONST_DATA(_name)) =							\
+	{											\
+		.name = IS_ENABLED(CONFIG_LOG_FMT_SECTION_STRIP) ? NULL :			\
+			COND_CODE_1(CONFIG_LOG_FMT_SECTION,					\
+				(UTIL_CAT(_name, _str)), (STRINGIFY(_name))),			\
+		.level = (_level)								\
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)					\

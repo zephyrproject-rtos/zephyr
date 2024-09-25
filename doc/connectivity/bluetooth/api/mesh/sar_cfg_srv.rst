@@ -3,13 +3,13 @@
 SAR Configuration Server
 ########################
 
-The SAR Configuration Server model is a foundation model defined by the Bluetooth mesh
+The SAR Configuration Server model is a foundation model defined by the Bluetooth Mesh
 specification. It is an optional model, enabled with the
 :kconfig:option:`CONFIG_BT_MESH_SAR_CFG_SRV` configuration option.
 
 The SAR Configuration Server model is introduced in the Bluetooth Mesh Protocol Specification
 version 1.1, and it supports the configuration of the
-:ref:`segmentation and reassembly (SAR) <bluetooth_mesh_sar_cfg>` behavior of a Bluetooth mesh node.
+:ref:`segmentation and reassembly (SAR) <bluetooth_mesh_sar_cfg>` behavior of a Bluetooth Mesh node.
 The model defines a set of states and messages for the SAR configuration.
 
 The SAR Configuration Server model defines two states, SAR Transmitter state and SAR Receiver state.

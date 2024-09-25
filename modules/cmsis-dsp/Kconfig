@@ -11,6 +11,250 @@ menuconfig CMSIS_DSP
 
 if CMSIS_DSP
 
+comment "Components"
+config CMSIS_DSP_BASICMATH
+	bool "Basic Math Functions"
+	help
+	  This option enables the Basic Math Functions, which support the
+	  following operations:
+
+	  * Elementwise Clipping
+	  * Vector Absolute Value
+	  * Vector Addition
+	  * Vector Subtraction
+	  * Vector Multiplication
+	  * Vector Dot Product
+	  * Vector Absolute Value
+	  * Vector Negate
+	  * Vector Offset
+	  * Vector Scale
+	  * Vector Shift
+	  * Vector Bitwise AND
+	  * Vector Bitwise OR
+	  * Vector Bitwise Exclusive OR
+	  * Vector Bitwise NOT
+
+config CMSIS_DSP_COMPLEXMATH
+	bool "Complex Math Functions"
+	imply CMSIS_DSP_FASTMATH
+	help
+	  This option enables the Complex Math Functions, which support the
+	  following operations:
+
+	  * Complex-by-Complex Multiplication
+	  * Complex-by-Real Multiplication
+	  * Complex Dot Product
+	  * Complex Magnitude
+	  * Complex Magnitude Squared
+	  * Complex Conjugate
+
+config CMSIS_DSP_CONTROLLER
+	bool "Controller Functions"
+	help
+	  This option enables the Controller Functions, which support the
+	  following operations:
+
+	  * PID Control
+	  * Vector Clarke Transform
+	  * Vector Inverse Clarke Transform
+	  * Vector Park Transform
+	  * Vector Inverse Park Transform
+	  * Sine-Cosine
+
+	  These functions can be used to implement a generic PID controller, as
+	  well as field oriented motor control using Space Vector Modulation
+	  algorithm.
+
+config CMSIS_DSP_FASTMATH
+	bool "Fast Math Functions"
+	imply CMSIS_DSP_BASICMATH
+	help
+	  This option enables the Fast Math Functions, which support the
+	  following operations:
+
+	  * Fixed-Point Division
+	  * Sine
+	  * Cosine
+	  * Square Root
+
+config CMSIS_DSP_FILTERING
+	bool "Filtering Functions"
+	imply CMSIS_DSP_BASICMATH
+	imply CMSIS_DSP_FASTMATH
+	imply CMSIS_DSP_SUPPORT
+	help
+	  This option enables the Filtering Functions, which support the
+	  following operations:
+
+	  * Convolution
+	  * Partial Convolution
+	  * Correlation
+	  * Levinson-Durbin Algorithm
+
+	  The following filter types are supported:
+
+	  * FIR (finite impulse response) Filter
+	  * FIR Lattice Filter
+	  * FIR Sparse Filter
+	  * FIR Filter with Decimator
+	  * FIR Filter with Interpolator
+	  * IIR (infinite impulse response) Lattice Filter
+	  * Biquad Cascade IIR Filter, Direct Form I Structure
+	  * Biquad Cascade IIR Filter, Direct Form II Transposed Structure
+	  * High Precision Q31 Biquad Cascade Filter
+	  * LMS (least mean square) Filter
+	  * Normalized LMS Filter
+
+config CMSIS_DSP_INTERPOLATION
+	bool "Interpolation Functions"
+	help
+	  This option enables the Interpolation Functions, which support the
+	  following operations:
+
+	  * Bilinear Interpolation
+	  * Linear Interpolation
+	  * Cubic Spline Interpolation
+
+config CMSIS_DSP_MATRIX
+	bool "Matrix Functions"
+	help
+	  This option enables the Matrix Functions, which support the following
+	  operations:
+
+	  * Matrix Initialization
+	  * Matrix Addition
+	  * Matrix Subtraction
+	  * Matrix Multiplication
+	  * Complex Matrix Multiplication
+	  * Matrix Vector Multiplication
+	  * Matrix Inverse
+	  * Matrix Scale
+	  * Matrix Transpose
+	  * Complex Matrix Transpose
+	  * Cholesky and LDLT Decompositions
+
+config CMSIS_DSP_QUATERNIONMATH
+	bool "Quaternion Math Functions"
+	help
+	  This option enables the Quaternion Math Functions, which support the
+	  following operations:
+
+	  * Quaternion Conversions
+	  * Quaternion Conjugate
+	  * Quaternion Inverse
+	  * Quaternion Norm
+	  * Quaternion Normalization
+	  * Quaternion Product
+
+config CMSIS_DSP_STATISTICS
+	bool "Statistics Functions"
+	imply CMSIS_DSP_BASICMATH
+	imply CMSIS_DSP_FASTMATH
+	help
+	  This option enables the Statistics Functions, which support the
+	  following operations:
+
+	  * Minimum
+	  * Absolute Minimum
+	  * Maximum
+	  * Absolute Maximum
+	  * Mean
+	  * Root Mean Square (RMS)
+	  * Variance
+	  * Standard Deviation
+	  * Power
+	  * Entropy
+	  * Kullback-Leibler Divergence
+	  * LogSumExp (LSE)
+
+config CMSIS_DSP_SUPPORT
+	bool "Support Functions"
+	help
+	  This option enables the Support Functions, which support the
+	  following operations:
+
+	  * Vector 8-bit Integer Value Conversion
+	  * Vector 16-bit Integer Value Conversion
+	  * Vector 32-bit Integer Value Conversion
+	  * Vector 16-bit Floating-Point Value Conversion
+	  * Vector 32-bit Floating-Point Value Conversion
+	  * Vector Copy
+	  * Vector Fill
+	  * Vector Sorting
+	  * Weighted Sum
+	  * Barycenter
+
+config CMSIS_DSP_TRANSFORM
+	bool "Transform Functions"
+	imply CMSIS_DSP_BASICMATH
+	help
+	  This option enables the Transform Functions, which support the
+	  following transformations:
+
+	  * Real Fast Fourier Transform (RFFT)
+	  * Complex Fast Fourier Transform (CFFT)
+	  * Type IV Discrete Cosine Transform (DCT4)
+
+config CMSIS_DSP_SVM
+	bool "Support Vector Machine Functions"
+	help
+	  This option enables the Support Vector Machine Functions, which
+	  support the following algorithms:
+
+	  * Linear
+	  * Polynomial
+	  * Sigmoid
+	  * Radial Basis Function (RBF)
+
+config CMSIS_DSP_BAYES
+	bool "Bayesian Estimators"
+	imply CMSIS_DSP_STATISTICS
+	help
+	  This option enables the Bayesian Estimator Functions, which
+	  implements the naive gaussian Bayes estimator.
+
+config CMSIS_DSP_DISTANCE
+	bool "Distance Functions"
+	imply CMSIS_DSP_STATISTICS
+	help
+	  This option enables the Distance Functions, which support the
+	  following distance computation algorithms:
+
+	  * Boolean Vectors
+	    * Hamming
+	    * Jaccard
+	    * Kulsinski
+	    * Rogers-Tanimoto
+	    * Russell-Rao
+	    * Sokal-Michener
+	    * Sokal-Sneath
+	    * Yule
+	    * Dice
+
+	  * Floating-Point Vectors
+	    * Canberra
+	    * Chebyshev
+	    * Cityblock
+	    * Correlation
+	    * Cosine
+	    * Euclidean
+	    * Jensen-Shannon
+	    * Minkowski
+	    * Bray-Curtis
+
+config CMSIS_DSP_WINDOW
+	bool "Windowing Functions"
+	help
+	  This option enabled the Window Functions, which support the
+	  following windowing functions:
+
+	  * Bartlett
+	  * Hamming
+	  * Hanning
+	  * Nuttall
+	  * Blackman Harris
+	  * HFT
+
 comment "Instruction Set"
 # NOTE: These configurations should eventually be derived from the arch ISA and
 #       FP support configurations.

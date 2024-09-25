@@ -2,6 +2,7 @@
  * Copyright (c) 2022 Vestas Wind Systems A/S
  * Copyright (c) 2021 Alexander Wachter
  * Copyright (c) 2022 Kamil Serwus
+ * Copyright (c) 2023 Sebastian Schlupp
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,7 +96,13 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_sam0_config *sam_cfg = mcan_cfg->custom;
 
+#if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
+	/*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
+	*rate = SOC_ATMEL_SAM0_DFLL48_FREQ_HZ / (sam_cfg->divider);
+#elif defined(CONFIG_SOC_SERIES_SAMC21)
+	/*OSC48M has to be used as clock source for the ATSAMC21 family of SoCs*/
 	*rate = SOC_ATMEL_SAM0_OSC48M_FREQ_HZ / (sam_cfg->divider);
+#endif
 
 	return 0;
 }
@@ -103,9 +110,17 @@ static int can_sam0_get_core_clock(const struct device *dev, uint32_t *rate)
 static void can_sam0_clock_enable(const struct can_sam0_config *cfg)
 {
 	/* Enable the GLCK7 with DIV*/
+#if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
+	/*DFFL has to be used as clock source for the ATSAME51/54 family of SoCs*/
+	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_DFLL)
+			     | GCLK_GENCTRL_DIV(cfg->divider)
+			     | GCLK_GENCTRL_GENEN;
+#elif defined(CONFIG_SOC_SERIES_SAMC21)
+	/*OSC48M has to be used as clock source for the ATSAMC21 family of SoCs*/
 	GCLK->GENCTRL[7].reg = GCLK_GENCTRL_SRC(GCLK_GENCTRL_SRC_OSC48M)
 			     | GCLK_GENCTRL_DIV(cfg->divider)
 			     | GCLK_GENCTRL_GENEN;
+#endif
 
 	/* Route channel */
 	GCLK->PCHCTRL[cfg->gclk_core_id].reg = GCLK_PCHCTRL_GEN_GCLK7
@@ -156,12 +171,11 @@ static const struct can_driver_api can_sam0_driver_api = {
 	.add_rx_filter = can_mcan_add_rx_filter,
 	.remove_rx_filter = can_mcan_remove_rx_filter,
 	.get_state = can_mcan_get_state,
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = can_mcan_recover,
-#endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_core_clock = can_sam0_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
-	.get_max_bitrate = can_mcan_get_max_bitrate,
 	.set_state_change_callback =  can_mcan_set_state_change_callback,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
 	.timing_max = CAN_MCAN_TIMING_MAX_INITIALIZER,
@@ -184,10 +198,10 @@ static const struct can_mcan_ops can_sam0_ops = {
 static void config_can_##inst##_irq(void)						\
 {											\
 	LOG_DBG("Enable CAN##inst## IRQ");						\
-	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, line_0, irq),				\
-		    DT_INST_IRQ_BY_NAME(inst, line_0, priority), can_sam0_line_x_isr,	\
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, int0, irq),				\
+		    DT_INST_IRQ_BY_NAME(inst, int0, priority), can_sam0_line_x_isr,	\
 					DEVICE_DT_INST_GET(inst), 0);			\
-	irq_enable(DT_INST_IRQ_BY_NAME(inst, line_0, irq));				\
+	irq_enable(DT_INST_IRQ_BY_NAME(inst, int0, irq));				\
 }
 
 #define CAN_SAM0_CFG_INST(inst)								\

@@ -9,8 +9,11 @@ Protocols
 
    coap
    coap_client
-   http
+   coap_server
+   http_client
+   http_server
    lwm2m
    mqtt
    mqtt_sn
+   ptp
    tftp

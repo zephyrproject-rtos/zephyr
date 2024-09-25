@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_LIB_HELPERS_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_LIB_HELPERS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_LIB_HELPERS_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_LIB_HELPERS_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -72,6 +72,7 @@ MAKE_REG_HELPER(mair0,       0, 10, 2, 0);
 MAKE_REG_HELPER(vbar,        0, 12, 0, 0);
 MAKE_REG_HELPER(cntv_ctl,    0, 14,  3, 1);
 MAKE_REG_HELPER(ctr,         0, 0, 0, 1);
+MAKE_REG_HELPER(tpidruro,    0, 13, 0, 3);
 MAKE_REG64_HELPER(ICC_SGI1R, 0, 12);
 MAKE_REG64_HELPER(cntvct,    1, 14);
 MAKE_REG64_HELPER(cntv_cval, 3, 14);
@@ -98,5 +99,8 @@ MAKE_REG_HELPER(ICC_IGRPEN1_EL1, 0, 12, 12, 7);
 #define write_sysreg(val, reg) write_##reg(val)
 #define read_sysreg(reg) read_##reg()
 
+#define sev()	__asm__ volatile("sev" : : : "memory")
+#define wfe()	__asm__ volatile("wfe" : : : "memory")
+
 #endif /* !_ASMLANGUAGE */
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_LIB_HELPERS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_LIB_HELPERS_H_ */

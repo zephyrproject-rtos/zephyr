@@ -295,8 +295,12 @@ static int tx(struct net_pkt *pkt)
 	return ret;
 }
 
-static void tx_thread(void)
+static void tx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	LOG_DBG("Tx thread started");
 
 	while (1) {
@@ -353,7 +357,7 @@ static void init_tx_queue(void)
 
 	k_thread_create(&tx_thread_data, tx_stack,
 			K_THREAD_STACK_SIZEOF(tx_stack),
-			(k_thread_entry_t)tx_thread,
+			tx_thread,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 }
 

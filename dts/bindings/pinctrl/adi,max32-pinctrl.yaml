@@ -1,0 +1,90 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MAX32 Pin controller Node
+  Based on pincfg-node.yaml binding.
+
+  Note: `bias-disable`  are default pin configurations.
+
+compatible: "adi,max32-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+
+child-binding:
+  description: |
+    Base binding configuration for ADI MAX32xxx MCUs
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - output-low
+        - output-high
+        - input-enable
+        - output-enable
+        - power-source
+        - drive-strength
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Integer array, represents gpio pin number and mux setting.
+        These defines are calculated as: (pin<<8 | port<<4 | function<<0)
+        With:
+        - port: The gpio port index (0, 1, ...)
+        - pin: The pin offset within the port (0, 1, 2, ...)
+        - function: The function number, can be:
+        * 0 : GPIO
+        * 1 : Alternate Function 1
+        * 2 : Alternate Function 2
+        * 3 : Alternate Function 3
+        * 4 : Alternate Function 4
+        In case selected pin function is GPIO, pin is statically configured as
+        a plain input/output GPIO. Default configuration is input. Output value
+        can be configured by adding 'ouptut-low' or 'output-high' properties
+        to the pin configuration.
+
+        To simplify the usage, macro is available to generate "pinmux" field.
+        This macro is available here:
+          -include/zephyr/dt-bindings/pinctrl/max32-pinctrl.h
+        Some examples of macro usage:
+        P0.9 set as alernate function 1
+        {
+          pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+        };
+        P0.9 set as alernate function 2
+        {
+          pinmux = <MAX32_PINMUX(0, 9, AF2)>;
+        };
+        P0.9 set as GPIO output high
+        {
+          pinmux = <MAX32_PINMUX(0, 9, GPIO)>;
+          output-high;
+        };
+    power-source:
+      enum: [0, 1]
+      description: |
+        GPIO Supply Voltage Select, Selects the voltage rail used for the pin.
+        0 or MAX32_VSEL_VDDIO
+        1 or MAX32_VSEL_VDDIOH
+    drive-strength:
+      default: 0
+      enum: [0, 1, 2, 3]
+      description: |
+        There are 4 drive strength mode.
+        Mode 0: 1mA
+        Mode 1: 2mA
+        Mode 2: 4mA
+        Mode 3: 8mA
+        Default GPIO output drive strength is mode 0 for MAX32 MCUs.
+        For more information please take a look device user guide, datasheet.

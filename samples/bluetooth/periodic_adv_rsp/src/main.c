@@ -266,7 +266,7 @@ int main(void)
 		return 0;
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
+	/* Create a non-connectable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &adv_cb, &pawr_adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
@@ -295,7 +295,8 @@ int main(void)
 	}
 
 	while (num_synced < MAX_SYNCS) {
-		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+		/* Enable continuous scanning */
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_CONTINUOUS, device_found);
 		if (err) {
 			printk("Scanning failed to start (err %d)\n", err);
 			return 0;

@@ -15,6 +15,29 @@ static struct sdhc_io io;
 
 #define SDHC_FREQUENCY_SLIP 10000000
 
+K_SEM_DEFINE(card_sem, 0, 1);
+
+/* Prepare IO settings for card */
+static void *sdhc_power_on(void)
+{
+	int ret;
+
+	ret = sdhc_get_host_props(sdhc_dev, &props);
+	zassert_equal(ret, 0, "SDHC host props api call failed");
+
+	io.clock = props.f_min;
+	io.bus_mode = SDHC_BUSMODE_PUSHPULL;
+	io.power_mode = SDHC_POWER_ON;
+	io.bus_width = SDHC_BUS_WIDTH1BIT;
+	io.timing = SDHC_TIMING_LEGACY;
+	io.signal_voltage = SD_VOL_3_3_V;
+
+	ret = sdhc_set_io(sdhc_dev, &io);
+	zassert_equal(ret, 0, "Setting io configuration failed");
+	k_msleep(props.power_delay);
+	return NULL;
+}
+
 /* Resets SD host controller, verifies API */
 ZTEST(sdhc, test_reset)
 {
@@ -30,6 +53,8 @@ ZTEST(sdhc, test_reset)
 ZTEST(sdhc, test_host_props)
 {
 	int ret;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	/* Set all host properties to 0xFF */
 	props.f_max = 0xFF;
@@ -54,6 +79,8 @@ ZTEST(sdhc, test_set_io)
 {
 	int ret;
 
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
+
 	io.clock = props.f_min;
 	io.bus_mode = SDHC_BUSMODE_PUSHPULL;
 	io.power_mode = SDHC_POWER_ON;
@@ -73,18 +100,40 @@ ZTEST(sdhc, test_set_io)
 	zassert_not_equal(ret, 0, "Invalid io configuration should not succeed");
 }
 
+void sdhc_interrupt_cb(const struct device *dev, int source, const void *data)
+{
+	ARG_UNUSED(data);
 
-/* Verify that the driver can detect a present SD card */
+	/* Check that the device pointer is correct */
+	zassert_equal(dev, sdhc_dev, "Incorrect device pointer in interrupt callback");
+	zassert_equal(source, SDHC_INT_INSERTED, "Got unexpected SDHC interrupt");
+	k_sem_give(&card_sem);
+}
+
+
+/*
+ * Verify that the driver can detect a present SD card
+ */
 ZTEST(sdhc, test_card_presence)
 {
 	int ret;
 
-	io.clock = props.f_min;
-	ret = sdhc_set_io(sdhc_dev, &io);
-	zassert_equal(ret, 0, "Setting io configuration failed");
-	k_msleep(props.power_delay);
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	ret = sdhc_card_present(sdhc_dev);
+	if (ret == 0) {
+		/* Card not in slot, test card insertion interrupt */
+		TC_PRINT("Waiting for card to be present in slot\n");
+		ret = sdhc_enable_interrupt(sdhc_dev, sdhc_interrupt_cb,
+					SDHC_INT_INSERTED, NULL);
+		zassert_equal(ret, 0, "Could not install card insertion interrupt");
+		/* Wait for card insertion */
+		ret = k_sem_take(&card_sem, K_FOREVER);
+		/* Delay now that card is in slot */
+		k_msleep(props.power_delay);
+		zassert_equal(ret, 0, "Card insertion interrupt did not fire");
+		ret = sdhc_card_present(sdhc_dev);
+	}
 	zassert_equal(ret, 1, "Card is not reported as present, is one connected?");
 }
 
@@ -97,6 +146,8 @@ ZTEST(sdhc, test_card_if_cond)
 	struct sdhc_command cmd;
 	int ret, resp;
 	int check_pattern = SD_IF_COND_CHECK;
+
+	zassert_true(device_is_ready(sdhc_dev), "SDHC device is not ready");
 
 	/* Toggle power to card, to clear state */
 	io.power_mode = SDHC_POWER_OFF;
@@ -144,4 +195,4 @@ ZTEST(sdhc, test_card_if_cond)
 	}
 }
 
-ZTEST_SUITE(sdhc, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(sdhc, NULL, sdhc_power_on, NULL, NULL, NULL);

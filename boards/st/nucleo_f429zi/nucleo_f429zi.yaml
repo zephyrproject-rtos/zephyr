@@ -1,0 +1,29 @@
+identifier: nucleo_f429zi
+name: ST Nucleo F429ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 2048
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - netif:eth
+  - i2c
+  - spi
+  - gpio
+  - pwm
+  - counter
+  - usb_device
+  - watchdog
+  - adc
+  - dac
+  - dma
+  - nvs
+  - rtc
+  - usbd
+vendor: st

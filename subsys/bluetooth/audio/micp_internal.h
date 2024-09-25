@@ -12,7 +12,11 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_INTERNAL_
 
-#include <zephyr/types.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 
 struct bt_micp_mic_ctlr {
@@ -29,8 +33,10 @@ struct bt_micp_mic_ctlr {
 	struct bt_gatt_discover_params discover_params;
 	struct bt_conn *conn;
 
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_AICS_CLIENT_MAX_INSTANCE_COUNT];
+	struct bt_aics *aics[CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST];
+#endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 };
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_INTERNAL_ */

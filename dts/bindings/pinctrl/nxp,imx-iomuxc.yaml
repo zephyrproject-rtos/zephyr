@@ -28,7 +28,7 @@ child-binding:
       description: |
         An array of values defining the pin mux selection, in the following format:
         <mux_register, mux_val, input_reg, daisy_val, cfg_reg>
-        mux_register: register that will be written to to make mux selection
+        mux_register: register that will be written to make mux selection
         mux_val: value to write to mux_register
         input_reg: peripheral register that will direct peripheral signal to pin
         daisy_val: value to write to input_reg

@@ -6,4 +6,5 @@ syntax = "proto3";
 message SimpleMessage {
     int32 lucky_number = 1;
     bytes buffer = 2;
+    int32 unlucky_number = 3;
 }

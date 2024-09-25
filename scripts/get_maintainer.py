@@ -175,12 +175,12 @@ class Maintainers:
             the top-level directory of the Git repository is used, and must
             exist.
         """
-        self._toplevel = pathlib.Path(_git("rev-parse", "--show-toplevel"))
-
-        if filename is None:
-            self.filename = self._toplevel / "MAINTAINERS.yml"
-        else:
+        if (filename is not None) and (pathlib.Path(filename).exists()):
             self.filename = pathlib.Path(filename)
+            self._toplevel = self.filename.parent
+        else:
+            self._toplevel = pathlib.Path(_git("rev-parse", "--show-toplevel"))
+            self.filename = self._toplevel / "MAINTAINERS.yml"
 
         self.areas = {}
         for area_name, area_dict in _load_maintainers(self.filename).items():
@@ -191,6 +191,8 @@ class Maintainers:
             area.collaborators = area_dict.get("collaborators", [])
             area.inform = area_dict.get("inform", [])
             area.labels = area_dict.get("labels", [])
+            area.tests = area_dict.get("tests", [])
+            area.tags = area_dict.get("tags", [])
             area.description = area_dict.get("description")
 
             # area._match_fn(path) tests if the path matches files and/or
@@ -403,12 +405,16 @@ def _print_areas(areas):
 \tcollaborators: {}
 \tinform: {}
 \tlabels: {}
+\ttests: {}
+\ttags: {}
 \tdescription: {}""".format(area.name,
                             area.status,
                             ", ".join(area.maintainers),
                             ", ".join(area.collaborators),
                             ", ".join(area.inform),
                             ", ".join(area.labels),
+                            ", ".join(area.tests),
+                            ", ".join(area.tags),
                             area.description or ""))
 
 
@@ -479,7 +485,7 @@ def _check_maintainers(maints_path, yaml):
 
     ok_keys = {"status", "maintainers", "collaborators", "inform", "files",
                "files-exclude", "files-regex", "files-regex-exclude",
-               "labels", "description"}
+               "labels", "description", "tests", "tags"}
 
     ok_status = {"maintained", "odd fixes", "unmaintained", "obsolete"}
     ok_status_s = ", ".join('"' + s + '"' for s in ok_status)  # For messages
@@ -503,8 +509,11 @@ def _check_maintainers(maints_path, yaml):
             ferr("either 'files' or 'files-regex' (or both) must be specified "
                  "for area '{}'".format(area_name))
 
+        if not area_dict.get("maintainers") and area_dict.get("status") == "maintained":
+            ferr("maintained area '{}' with no maintainers".format(area_name))
+
         for list_name in "maintainers", "collaborators", "inform", "files", \
-                         "files-regex", "labels":
+                         "files-regex", "labels", "tags", "tests":
             if list_name in area_dict:
                 lst = area_dict[list_name]
                 if not (isinstance(lst, list) and

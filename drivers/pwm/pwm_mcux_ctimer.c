@@ -266,8 +266,7 @@ static const struct pwm_driver_api pwm_mcux_ctimer_driver_api = {
 		.base = (CTIMER_Type *)DT_INST_REG_ADDR(n),                                        \
 		.prescale = DT_INST_PROP(n, prescaler),                                            \
 		.clock_control = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
-		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name) +                \
-						     MCUX_CTIMER_CLK_OFFSET),                      \
+		.clock_id = (clock_control_subsys_t)(DT_INST_CLOCKS_CELL(n, name)),                \
 		PWM_MCUX_CTIMER_PINCTRL_INIT(n)};                                                  \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_ctimer_pwm_init, NULL, &pwm_mcux_ctimer_data_##n,            \

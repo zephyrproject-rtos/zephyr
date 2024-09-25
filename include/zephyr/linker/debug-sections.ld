@@ -39,9 +39,12 @@
 	/* DWARF 3 */
 	SECTION_PROLOGUE(.debug_pubtypes, 0,)  { *(.debug_pubtypes) }
 	SECTION_PROLOGUE(.debug_ranges, 0,)    { *(.debug_ranges) }
-	/* DWARF Extension. */
-	SECTION_PROLOGUE(.debug_macro, 0,)     { *(.debug_macro) }
 	/* DWARF 5 */
+	SECTION_PROLOGUE(.debug_addr, 0,)      { *(.debug_addr) }
 	SECTION_PROLOGUE(.debug_line_str, 0,)  { *(.debug_line_str) }
 	SECTION_PROLOGUE(.debug_loclists, 0,)  { *(.debug_loclists) }
+	SECTION_PROLOGUE(.debug_macro, 0,)     { *(.debug_macro) }
+	SECTION_PROLOGUE(.debug_names, 0,)     { *(.debug_names) }
 	SECTION_PROLOGUE(.debug_rnglists, 0,)  { *(.debug_rnglists) }
+	SECTION_PROLOGUE(.debug_str_offsets, 0,) { *(.debug_str_offsets) }
+	SECTION_PROLOGUE(.debug_sup, 0,)       { *(.debug_sup) }

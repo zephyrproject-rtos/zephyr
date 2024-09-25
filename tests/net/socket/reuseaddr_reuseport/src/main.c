@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
 
 #include "../../socket_helpers.h"
 
@@ -36,13 +37,15 @@ static void test_add_local_ip_address(sa_family_t family, const char *ip)
 {
 	if (family == AF_INET) {
 		struct sockaddr_in addr;
+		struct net_if_addr *ifaddr;
 
 		zsock_inet_pton(AF_INET, ip, &addr.sin_addr);
 
-		zassert_not_null(net_if_ipv4_addr_add(net_if_get_default(),
-						      &addr.sin_addr,
-						      NET_ADDR_MANUAL,
-						      0),
+		ifaddr = net_if_ipv4_addr_add(net_if_get_default(),
+					      &addr.sin_addr,
+					      NET_ADDR_MANUAL,
+					      0);
+		zassert_not_null(ifaddr,
 				 "Cannot add IPv4 address %s", ip);
 	} else if (family == AF_INET6) {
 		struct sockaddr_in6 addr;
@@ -102,16 +105,18 @@ static inline void prepare_sock_udp(sa_family_t family, const char *ip, uint16_t
 
 static void test_getsocketopt_reuseaddr(int sock, void *optval, socklen_t *optlen)
 {
-	zassert_equal(getsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen),
-		      0,
-		      "getsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
 static void test_setsocketopt_reuseaddr(int sock, void *optval, socklen_t optlen)
 {
-	zassert_equal(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen),
-		      0,
-		      "setsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, optval, optlen);
+	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
 static void test_enable_reuseaddr(int sock)
@@ -123,16 +128,18 @@ static void test_enable_reuseaddr(int sock)
 
 static void test_getsocketopt_reuseport(int sock, void *optval, socklen_t *optlen)
 {
-	zassert_equal(getsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen),
-		      0,
-		      "getsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_getsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	zassert_equal(ret, 0, "getsocketopt() failed with error %d", errno);
 }
 
 static void test_setsocketopt_reuseport(int sock, void *optval, socklen_t optlen)
 {
-	zassert_equal(setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen),
-		      0,
-		      "setsocketopt() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, optval, optlen);
+	zassert_equal(ret, 0, "setsocketopt() failed with error %d", errno);
 }
 
 static void test_enable_reuseport(int sock)
@@ -144,32 +151,35 @@ static void test_enable_reuseport(int sock)
 
 static void test_bind_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(bind(sock, addr, addrlen),
-		      0,
-		      "bind() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_bind(sock, addr, addrlen);
+	zassert_equal(ret, 0, "bind() failed with error %d", errno);
 }
 
 static void test_bind_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(bind(sock, addr, addrlen),
-		      -1,
-		      "bind() succeeded incorrectly");
+	int ret;
+
+	ret = zsock_bind(sock, addr, addrlen);
+	zassert_equal(ret, -1, "bind() succeeded incorrectly");
 
 	zassert_equal(errno, EADDRINUSE, "bind() returned unexpected errno (%d)", errno);
 }
 
 static void test_listen(int sock)
 {
-	zassert_equal(listen(sock, 0),
+	zassert_equal(zsock_listen(sock, 0),
 		      0,
 		      "listen() failed with error %d", errno);
 }
 
 static void test_connect_success(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(connect(sock, addr, addrlen),
-		      0,
-		      "connect() failed with error %d", errno);
+	int ret;
+
+	ret = zsock_connect(sock, addr, addrlen);
+	zassert_equal(ret, 0, "connect() failed with error %d", errno);
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the connection proceed */
@@ -179,16 +189,17 @@ static void test_connect_success(int sock, const struct sockaddr *addr, socklen_
 
 static void test_connect_fail(int sock, const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(connect(sock, addr, addrlen),
-		      -1,
-		      "connect() succeeded incorrectly");
+	int ret;
+
+	ret = zsock_connect(sock, addr, addrlen);
+	zassert_equal(ret, -1, "connect() succeeded incorrectly");
 
 	zassert_equal(errno, EADDRINUSE, "connect() returned unexpected errno (%d)", errno);
 }
 
 static int test_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 {
-	int new_sock = accept(sock, addr, addrlen);
+	int new_sock = zsock_accept(sock, addr, addrlen);
 
 	zassert_not_equal(new_sock, -1, "accept() failed with error %d", errno);
 
@@ -198,43 +209,48 @@ static int test_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
 		       const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	zassert_equal(sendto(sock, buf, len, flags, dest_addr, addrlen),
-		      len,
-		      "sendto failed with error %d", errno);
+	int ret;
+
+	ret = zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+	zassert_equal(ret, len, "sendto failed with error %d", errno);
 }
 
 static void test_recvfrom_success(int sock, void *buf, size_t max_len, int flags,
 			 struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	zassert_equal(recvfrom(sock, buf, max_len, flags, src_addr, addrlen),
-		      max_len,
-		      "recvfrom failed with error %d", errno);
+	int ret;
+
+	ret = zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+	zassert_equal(ret, max_len, "recvfrom failed with error %d", errno);
 }
 
 static void test_recvfrom_fail(int sock, void *buf, size_t max_len, int flags,
 			 struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	zassert_equal(recvfrom(sock, buf, max_len, flags, src_addr, addrlen),
-		      -1,
-		      "recvfrom succeeded incorrectly");
+	int ret;
+
+	ret = zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+	zassert_equal(ret, -1, "recvfrom succeeded incorrectly");
 
 	zassert_equal(errno, EAGAIN, "recvfrom() returned unexpected errno (%d)", errno);
 }
 
 static void test_recv_success(int sock, void *buf, size_t max_len, int flags)
 {
-	zassert_equal(recv(sock, buf, max_len, flags),
-		      max_len,
-		      "recv failed with error %d", errno);
+	int ret;
+
+	ret = zsock_recv(sock, buf, max_len, flags);
+	zassert_equal(ret, max_len, "recv failed with error %d", errno);
 }
 
 static void test_recv_fail(int sock, void *buf, size_t max_len, int flags)
 {
-	zassert_equal(recv(sock, buf, max_len, flags),
-		      -1,
-		      "recvfrom succeeded incorrectly");
+	int ret;
 
-	zassert_equal(errno, EAGAIN, "recvfrom() returned unexpected errno (%d)", errno);
+	ret = zsock_recv(sock, buf, max_len, flags);
+	zassert_equal(ret, -1, "recvfrom succeeded incorrectly");
+
+	zassert_equal(errno, EAGAIN, "recv() returned unexpected errno (%d)", errno);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
@@ -275,7 +291,7 @@ ZTEST_USER(socket_reuseaddr_test_suite, test_enable_disable)
 	test_getsocketopt_reuseaddr(server_sock, (void *)&value, &value_size);
 	zassert_equal(value, (int) true, "SO_REUSEADDR not correctly set, returned %d", value);
 
-	close(server_sock);
+	zsock_close(server_sock);
 }
 
 
@@ -310,8 +326,8 @@ static void test_reuseaddr_unspecified_specified_common(sa_family_t family,
 		test_bind_fail(server_sock2, &bind_addr2, sizeof(bind_addr2));
 	}
 
-	close(server_sock1);
-	close(server_sock2);
+	zsock_close(server_sock1);
+	zsock_close(server_sock2);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_first_unspecified)
@@ -389,8 +405,8 @@ static void test_reuseaddr_tcp_listening_common(sa_family_t family,
 	/* Try to bind the second socket, should fail */
 	test_bind_fail(server_sock2, (struct sockaddr *) &bind_addr2, sizeof(bind_addr2));
 
-	close(server_sock1);
-	close(server_sock2);
+	zsock_close(server_sock1);
+	zsock_close(server_sock2);
 }
 
 ZTEST_USER(socket_reuseaddr_test_suite, test_ipv4_tcp_unspecified_listening)
@@ -452,10 +468,10 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 	accept_sock = test_accept(server_sock, &accept_addr, &accept_addrlen);
 
 	/* Close the server socket */
-	close(server_sock);
+	zsock_close(server_sock);
 
 	/* Close the accepted socket */
-	close(accept_sock);
+	zsock_close(accept_sock);
 
 	/* Wait a short time for the accept socket to enter TIME_WAIT state*/
 	k_msleep(50);
@@ -472,8 +488,8 @@ static void test_reuseaddr_tcp_tcp_time_wait_common(sa_family_t family,
 	/* Try to bind the new server socket again, should work now */
 	test_bind_success(server_sock, (struct sockaddr *) &bind_addr, sizeof(bind_addr));
 
-	close(client_sock);
-	close(server_sock);
+	zsock_close(client_sock);
+	zsock_close(server_sock);
 
 	/* Connection is in TIME_WAIT state, context will be released
 	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
@@ -552,7 +568,7 @@ ZTEST_USER(socket_reuseport_test_suite, test_enable_disable)
 	test_getsocketopt_reuseport(server_sock, (void *)&value, &value_size);
 	zassert_equal(value, (int) true, "SO_REUSEPORT not correctly set, returned %d", value);
 
-	close(server_sock);
+	zsock_close(server_sock);
 }
 
 
@@ -592,8 +608,8 @@ static void test_reuseport_unspecified_specified_common(sa_family_t family,
 		test_bind_fail(server_sock2, &bind_addr2, sizeof(bind_addr2));
 	}
 
-	close(server_sock1);
-	close(server_sock2);
+	zsock_close(server_sock1);
+	zsock_close(server_sock2);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_both_unspecified_bad)
@@ -772,12 +788,12 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 
 	/* Receive data from the client */
 	rx_buf = 0;
-	test_recvfrom_success(server_sock, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT,
+	test_recvfrom_success(server_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
 		       &accept_addr, &accept_addr_len);
 	zassert_equal(rx_buf, tx_buf, "wrong data");
 
 	/* Create a more specific socket to have a direct connection to the new client */
-	accept_sock = socket(family, SOCK_DGRAM, IPPROTO_UDP);
+	accept_sock = zsock_socket(family, SOCK_DGRAM, IPPROTO_UDP);
 	zassert_true(accept_sock >= 0, "socket open failed");
 
 	/* Make sure we can bind to the address:port */
@@ -809,24 +825,24 @@ static void test_reuseport_udp_server_client_common(sa_family_t family,
 	if (setup == BOTH_SET) {
 		/* We should receive data on the new specific socket, not on the general one */
 		rx_buf = 0;
-		test_recvfrom_fail(server_sock, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT,
+		test_recvfrom_fail(server_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
 			&accept_addr, &accept_addr_len);
 
 		rx_buf = 0;
-		test_recv_success(accept_sock, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+		test_recv_success(accept_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	} else {
 		/* We should receive data on the general server socket */
 		rx_buf = 0;
-		test_recvfrom_success(server_sock, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT,
+		test_recvfrom_success(server_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT,
 			&accept_addr, &accept_addr_len);
 
 		rx_buf = 0;
-		test_recv_fail(accept_sock, &rx_buf, sizeof(rx_buf), MSG_DONTWAIT);
+		test_recv_fail(accept_sock, &rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	}
 
-	close(accept_sock);
-	close(client_sock);
-	close(server_sock);
+	zsock_close(accept_sock);
+	zsock_close(client_sock);
+	zsock_close(server_sock);
 }
 
 ZTEST_USER(socket_reuseport_test_suite, test_ipv4_udp_bad_both_not_set)
@@ -931,10 +947,10 @@ static void test_reuseport_tcp_identical_clients_common(sa_family_t family,
 	/* Connect the second client, should fail */
 	test_connect_fail(client_sock2, (struct sockaddr *)&connect_addr, sizeof(connect_addr));
 
-	close(accept_sock);
-	close(client_sock1);
-	close(client_sock2);
-	close(server_sock);
+	zsock_close(accept_sock);
+	zsock_close(client_sock1);
+	zsock_close(client_sock2);
+	zsock_close(server_sock);
 
 	/* Connection is in TIME_WAIT state, context will be released
 	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.

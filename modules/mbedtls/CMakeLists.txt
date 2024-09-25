@@ -16,6 +16,12 @@ zephyr_interface_library_named(mbedTLS)
         MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
     )
 
+    if (CONFIG_BUILD_WITH_TFM)
+      target_include_directories(mbedTLS INTERFACE
+        $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
+      )
+    endif()
+
     # Add regular includes
     target_include_directories(mbedTLS INTERFACE
         ${ZEPHYR_CURRENT_MODULE_DIR}/include
@@ -23,35 +29,36 @@ zephyr_interface_library_named(mbedTLS)
         include
     )
 
+    if (CONFIG_MBEDTLS_PSA_P256M_DRIVER_RAW)
+      target_include_directories(mbedTLS INTERFACE
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m
+      )
+    endif()
+
     # Add base library with files required by all drivers/backends.
     zephyr_library_named(mbedTLSBase)
 
     # Base mbed TLS files
     list(APPEND mbedtls_base_src
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1parse.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1write.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/base64.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/nist_kw.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/oid.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/padlock.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform_util.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/constant_time.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aes.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aesni.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/aria.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1parse.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/asn1write.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/base64.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_core.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod_raw.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum_mod.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/block_cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/camellia.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ccm.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chacha20.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/chachapoly.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher_wrap.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/cipher.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/cmac.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/constant_time.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ctr_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/debug.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/des.c
@@ -59,22 +66,27 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdh.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecdsa.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecjpake.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp_curves_new.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp_curves.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/ecp.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy_poll.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/entropy.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/error.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/gcm.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/hash_info.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hkdf.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/hmac_drbg.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/lmots.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/lms.c
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/md5.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/md.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/md5.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/memory_buffer_alloc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_reader.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/mps_trace.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/nist_kw.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/oid.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/padlock.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform_util.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/platform.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/poly1305.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_util.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/ripemd160.c
@@ -83,9 +95,11 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha1.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha256.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha512.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/sha3.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/threading.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/timing.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/version_features.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/version.c
       zephyr_init.c
     )
 
@@ -107,27 +121,31 @@ zephyr_interface_library_named(mbedTLS)
 
     zephyr_library_named(mbedTLSCrypto)
 
-    if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
+    if (CONFIG_MBEDTLS_PSA_CRYPTO_C AND NOT CONFIG_BUILD_WITH_TFM)
       list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_aead.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_cipher.c
-        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_driver_wrappers.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_driver_wrappers_no_static.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ecp.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_ffdh.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_hash.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_mac.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_rsa.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_se.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_storage.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_its_file.c
-      )
-    endif()
-
-    if (NOT CONFIG_BUILD_WITH_TFM)
-      list(APPEND crypto_source
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_client.c
         ${ZEPHYR_CURRENT_MODULE_DIR}/library/psa_crypto_slot_management.c
       )
+    endif()
+
+    if(CONFIG_MBEDTLS_PSA_P256M_DRIVER_ENABLED)
+      list(APPEND crypto_source
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m_driver_entrypoints.c
+        ${ZEPHYR_CURRENT_MODULE_DIR}/3rdparty/p256-m/p256-m/p256-m.c
+      )
+      zephyr_library_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/library)
     endif()
 
     list(APPEND crypto_source
@@ -137,6 +155,7 @@ zephyr_interface_library_named(mbedTLS)
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkparse.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pkwrite.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_ecc.c
       ${ZEPHYR_CURRENT_MODULE_DIR}/library/pk_wrap.c
     )
 

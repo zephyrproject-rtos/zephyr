@@ -65,7 +65,6 @@
 #define LOAPIC_SSPND_BITS_PER_IRQ  1  /* Just the one for enable disable*/
 #define LOAPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOAPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_PM_DEVICE
-#include <zephyr/pm/device.h>
 __pinned_bss
 uint32_t loapic_suspend_buf[LOAPIC_SUSPEND_BITS_REQD / 32] = {0};
 #endif
@@ -201,7 +200,7 @@ uint32_t z_loapic_irq_base(void)
  *
  * This associates an IRQ with the desired vector in the IDT.
  */
-__boot_func
+__pinned_func
 void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )

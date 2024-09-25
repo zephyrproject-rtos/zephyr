@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 IoT.bzh
+ * Copyright (c) 2021-2023 IoT.bzh
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,10 @@
  * @param func the 4 bits encoded alternate function.
  *
  * Function code    [ 0 : 3 ]
- * Function shift   [ 4 : 9 ]
- * IPSR bank        [ 10 : 13 ]
+ * Function shift   [ 4 : 8 ]
+ * Empty            [ 9 ]
+ * IPSR bank        [ 10 : 14 ]
+ * Register index   [ 15 : 17 ] (S4 only)
  */
 #define IPSR(bank, shift, func) (((bank) << 10U) | ((shift) << 4U) | (func))
 
@@ -39,5 +41,61 @@
  * @param pin the encoded pin number
  */
 #define RCAR_NOGP_PIN(pin)         (PIN_NOGPSR_START + pin)
+
+/* Renesas Gen4 has IPSR registers at different base address
+ * reg is here an index for the base address.
+ * Each base address has 4 IPSR banks.
+ */
+#define IPnSR(bank, reg, shift, func) \
+	IPSR(((reg) << 5U) | (bank), shift, func)
+
+#define IP0SR0(shift, func) IPnSR(0, 0, shift, func)
+#define IP1SR0(shift, func) IPnSR(1, 0, shift, func)
+#define IP2SR0(shift, func) IPnSR(2, 0, shift, func)
+#define IP3SR0(shift, func) IPnSR(3, 0, shift, func)
+#define IP0SR1(shift, func) IPnSR(0, 1, shift, func)
+#define IP1SR1(shift, func) IPnSR(1, 1, shift, func)
+#define IP2SR1(shift, func) IPnSR(2, 1, shift, func)
+#define IP3SR1(shift, func) IPnSR(3, 1, shift, func)
+#define IP0SR2(shift, func) IPnSR(0, 2, shift, func)
+#define IP1SR2(shift, func) IPnSR(1, 2, shift, func)
+#define IP2SR2(shift, func) IPnSR(2, 2, shift, func)
+#define IP3SR2(shift, func) IPnSR(3, 2, shift, func)
+#define IP0SR3(shift, func) IPnSR(0, 3, shift, func)
+#define IP1SR3(shift, func) IPnSR(1, 3, shift, func)
+#define IP2SR3(shift, func) IPnSR(2, 3, shift, func)
+#define IP3SR3(shift, func) IPnSR(3, 3, shift, func)
+#define IP0SR4(shift, func) IPnSR(0, 4, shift, func)
+#define IP1SR4(shift, func) IPnSR(1, 4, shift, func)
+#define IP2SR4(shift, func) IPnSR(2, 4, shift, func)
+#define IP3SR4(shift, func) IPnSR(3, 4, shift, func)
+#define IP0SR5(shift, func) IPnSR(0, 5, shift, func)
+#define IP1SR5(shift, func) IPnSR(1, 5, shift, func)
+#define IP2SR5(shift, func) IPnSR(2, 5, shift, func)
+#define IP3SR5(shift, func) IPnSR(3, 5, shift, func)
+#define IP0SR6(shift, func) IPnSR(0, 6, shift, func)
+#define IP1SR6(shift, func) IPnSR(1, 6, shift, func)
+#define IP2SR6(shift, func) IPnSR(2, 6, shift, func)
+#define IP3SR6(shift, func) IPnSR(3, 6, shift, func)
+#define IP0SR7(shift, func) IPnSR(0, 7, shift, func)
+#define IP1SR7(shift, func) IPnSR(1, 7, shift, func)
+#define IP2SR7(shift, func) IPnSR(2, 7, shift, func)
+#define IP3SR7(shift, func) IPnSR(3, 7, shift, func)
+
+/**
+ * @brief Macro to define a dummy IPSR flag for a pin
+ *
+ * This macro is used to define a dummy IPSR flag for a pin in the R-Car PFC
+ * driver. It is intended for pins that do not have a specific function
+ * defined in IPSR but always act as a peripheral. The dummy IPSR flag ensures
+ * that the driver sets the 'peripheral' bit for such pins.
+ *
+ * @see RCAR_PIN_FLAGS_FUNC_DUMMY
+ */
+#define IPSR_DUMMY IPnSR(0x1f, 7, 0x1f, 0xf)
+
+#define PIN_VOLTAGE_NONE 0
+#define PIN_VOLTAGE_1P8V 1
+#define PIN_VOLTAGE_3P3V 2
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RCAR_COMMON_H_ */

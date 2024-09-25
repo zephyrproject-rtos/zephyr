@@ -60,6 +60,19 @@ int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 
+	context->dev_config = dev_config;
+
+	return 0;
+}
+
+int i2c_bitbang_get_config(struct i2c_bitbang *context, uint32_t *config)
+{
+	if (context->dev_config == 0) {
+		return -EIO;
+	}
+
+	*config = context->dev_config;
+
 	return 0;
 }
 

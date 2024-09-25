@@ -5,7 +5,7 @@ Binary Descriptors
 
 Binary Descriptors are constant data objects storing information about the binary executable.
 Unlike "regular" constants, binary descriptors are linked to a known offset in the binary, making
-them accesible to other programs, such as a different image running on the same device or a host tool.
+them accessible to other programs, such as a different image running on the same device or a host tool.
 A few examples of constants that would make useful binary descriptors are: kernel version, app version,
 build time, compiler version, environment variables, compiling host name, etc.
 
@@ -105,7 +105,7 @@ configs should be enabled:
    CONFIG_BINDESC_DEFINE_BUILD_TIME=y
    CONFIG_BINDESC_BUILD_DATE_TIME_STRING=y
 
-To avoid collisions with user defined descriptors, the standard descriptors were alloted
+To avoid collisions with user defined descriptors, the standard descriptors were allotted
 the range between ``0x800-0xfff``. This leaves ``0x000-0x7ff`` to users.
 For more information read the ``help`` sections of these Kconfig symbols.
 By convention, each Kconfig symbol corresponds to a binary descriptor whose

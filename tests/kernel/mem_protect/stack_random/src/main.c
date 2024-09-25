@@ -24,8 +24,12 @@ volatile unsigned int changed;
 #pragma GCC diagnostic ignored "-Wdangling-pointer"
 #endif
 
-void alternate_thread(void)
+void alternate_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	int i;
 	void *sp_val;
 
@@ -68,7 +72,7 @@ ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 	/* Start thread */
 	for (i = 0; i < THREAD_COUNT; i++) {
 		k_thread_create(&alt_thread_data, alt_thread_stack_area,
-				STACKSIZE, (k_thread_entry_t)alternate_thread,
+				STACKSIZE, alternate_thread,
 				NULL, NULL, NULL, K_HIGHEST_THREAD_PRIO, 0,
 				K_NO_WAIT);
 		k_sleep(K_MSEC(10));

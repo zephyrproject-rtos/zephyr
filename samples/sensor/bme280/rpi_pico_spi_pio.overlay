@@ -22,7 +22,7 @@
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		clocks = < &system_clk >;
+		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
 		miso-gpios = <&gpio0 12 0>;
 		cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;

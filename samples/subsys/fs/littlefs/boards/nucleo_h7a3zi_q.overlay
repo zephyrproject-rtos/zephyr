@@ -16,7 +16,7 @@
 			block-cycles = <512>;
 			partition = <&lfs1_partition>;
 			mount-point = "/lfs1";
-    };
+		};
 	};
 };
 
@@ -29,7 +29,7 @@
 		/* Use second half of flash for the filesystem. */
 		lfs1_partition: partition@100000 {
 			label = "storage";
-			reg = <0x10000 DT_SIZE_K(1024)>;
+			reg = <0x100000 DT_SIZE_K(1024)>;
 		};
 	};
 };

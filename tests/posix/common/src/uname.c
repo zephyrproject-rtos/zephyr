@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/ztest.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 
-ZTEST(posix_apis, test_uname)
+#include <zephyr/ztest.h>
+
+ZTEST(uname, test_uname)
 {
 	struct utsname info;
 
@@ -15,3 +17,5 @@ ZTEST(posix_apis, test_uname)
 	zassert_ok(strncmp(info.sysname, "Zephyr", sizeof(info.sysname)));
 	zassert_ok(strncmp(info.machine, CONFIG_ARCH, sizeof(info.machine)));
 }
+
+ZTEST_SUITE(uname, NULL, NULL, NULL, NULL, NULL);

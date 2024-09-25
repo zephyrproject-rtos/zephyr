@@ -1,0 +1,10 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_GD_GD32
+	bool
+
+config SOC_FAMILY
+	default "gd_gd32" if SOC_FAMILY_GD_GD32
+
+rsource "*/Kconfig.soc"

@@ -19,6 +19,10 @@ static const struct device *const reg1 = DEVICE_DT_GET(DT_NODELABEL(reg1));
 static const struct device *const reg2 = DEVICE_DT_GET(DT_NODELABEL(reg2));
 /* REG3: regulator-max/min-microvolt/microamp, regulator-allowed-modes */
 static const struct device *const reg3 = DEVICE_DT_GET(DT_NODELABEL(reg3));
+/* REG4: regulator-boot-off */
+static const struct device *const reg4 = DEVICE_DT_GET(DT_NODELABEL(reg4));
+/* REG5: regulator-boot-off and is_enabled */
+static const struct device *const reg5 = DEVICE_DT_GET(DT_NODELABEL(reg5));
 
 ZTEST(regulator_api, test_parent_dvs_state_set_not_implemented)
 {
@@ -108,15 +112,16 @@ ZTEST(regulator_api, test_common_config)
 	zassert_equal(config->max_ua, INT32_MAX);
 	zassert_equal(config->allowed_modes_cnt, 0U);
 	zassert_equal(config->initial_mode, REGULATOR_INITIAL_MODE_UNKNOWN);
-	zassert_equal(config->flags, 0U);
+	zassert_equal(REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags),
+	    REGULATOR_ACTIVE_DISCHARGE_DEFAULT);
 
 	/* reg1: regulator-always-on */
 	config = reg1->config;
-	zassert_equal(config->flags, REGULATOR_ALWAYS_ON);
+	zassert_equal(config->flags & REGULATOR_ALWAYS_ON, REGULATOR_ALWAYS_ON);
 
 	/* reg2: regulator-boot-on */
 	config = reg2->config;
-	zassert_equal(config->flags, REGULATOR_BOOT_ON);
+	zassert_equal(config->flags & REGULATOR_BOOT_ON, REGULATOR_BOOT_ON);
 
 	/* reg3: regulator-min/max-microvolt/microamp */
 	config = reg3->config;
@@ -127,6 +132,11 @@ ZTEST(regulator_api, test_common_config)
 	zassert_equal(config->allowed_modes[0], 1U);
 	zassert_equal(config->allowed_modes[1], 10U);
 	zassert_equal(config->allowed_modes_cnt, 2U);
+	zassert_equal(REGULATOR_ACTIVE_DISCHARGE_GET_BITS(config->flags), 1U);
+
+	/* reg4: regulator-boot-off */
+	config = reg4->config;
+	zassert_equal(config->flags & REGULATOR_BOOT_OFF, REGULATOR_BOOT_OFF);
 }
 
 ZTEST(regulator_api, test_common_is_init_enabled)
@@ -135,6 +145,8 @@ ZTEST(regulator_api, test_common_is_init_enabled)
 	zassert_true(regulator_common_is_init_enabled(reg1));
 	zassert_true(regulator_common_is_init_enabled(reg2));
 	zassert_false(regulator_common_is_init_enabled(reg3));
+	zassert_false(regulator_common_is_init_enabled(reg4));
+	zassert_false(regulator_common_is_init_enabled(reg5));
 }
 
 ZTEST(regulator_api, test_enable_disable)
@@ -169,6 +181,16 @@ ZTEST(regulator_api, test_enable_disable)
 	zassert_equal(regulator_disable(reg0), 0);
 	zassert_equal(regulator_fake_disable_fake.arg0_val, reg0);
 	zassert_equal(regulator_fake_disable_fake.call_count, 2U);
+
+	/* REG5: disabled at boot, can be enabled again */
+	zassert_equal(regulator_enable(reg5), 0);
+	zassert_equal(regulator_fake_enable_fake.call_count, 3U);
+
+	/* REG5: disable */
+	zassert_equal(regulator_disable(reg5), 0);
+	zassert_equal(regulator_fake_disable_fake.call_count, 3U);
+
+
 }
 
 ZTEST(regulator_api, test_count_voltages_not_implemented)
@@ -611,6 +633,58 @@ ZTEST(regulator_api, test_get_mode_not_implemented)
 	zassert_equal(ret, -ENOSYS);
 }
 
+ZTEST(regulator_api, test_set_active_discharge_not_implemented)
+{
+	int ret;
+	struct regulator_driver_api *api =
+		(struct regulator_driver_api *)reg0->api;
+	regulator_set_active_discharge_t set_active_discharge = api->set_active_discharge;
+
+	api->set_active_discharge = NULL;
+	ret = regulator_set_active_discharge(reg0, false);
+	api->set_active_discharge = set_active_discharge;
+
+	zassert_equal(ret, -ENOSYS);
+}
+
+static int get_active_discharge_ok(const struct device *dev, bool *active_discharge)
+{
+	ARG_UNUSED(dev);
+
+	*active_discharge = true;
+
+	return 0;
+}
+
+ZTEST(regulator_api, test_get_active_discharge_ok)
+{
+	bool active_discharge;
+
+	RESET_FAKE(regulator_fake_get_active_discharge);
+
+	regulator_fake_get_active_discharge_fake.custom_fake = get_active_discharge_ok;
+
+	zassert_equal(regulator_get_active_discharge(reg0, &active_discharge), false);
+	zassert_equal(active_discharge, true);
+	zassert_equal(regulator_fake_get_active_discharge_fake.call_count, 1U);
+	zassert_equal(regulator_fake_get_active_discharge_fake.arg0_val, reg0);
+	zassert_equal(regulator_fake_get_active_discharge_fake.arg1_val, &active_discharge);
+}
+
+ZTEST(regulator_api, test_get_active_discharge_not_implemented)
+{
+	int ret;
+	struct regulator_driver_api *api =
+		(struct regulator_driver_api *)reg0->api;
+	regulator_get_active_discharge_t get_active_discharge = api->get_active_discharge;
+
+	api->get_active_discharge = NULL;
+	ret = regulator_get_active_discharge(reg0, NULL);
+	api->get_active_discharge = get_active_discharge;
+
+	zassert_equal(ret, -ENOSYS);
+}
+
 static int get_mode_ok(const struct device *dev, regulator_mode_t *mode)
 {
 	ARG_UNUSED(dev);
@@ -722,6 +796,8 @@ void *setup(void)
 	zassert_true(device_is_ready(reg1));
 	zassert_true(device_is_ready(reg2));
 	zassert_true(device_is_ready(reg3));
+	zassert_true(device_is_ready(reg4));
+	zassert_true(device_is_ready(reg5));
 
 	/* REG1, REG2 initialized at init time (always-on/boot-on) */
 	zassert_equal(regulator_fake_enable_fake.call_count, 2U);
@@ -730,6 +806,13 @@ void *setup(void)
 
 	/* REG3 mode set at init time (initial-mode) */
 	zassert_equal(regulator_fake_set_mode_fake.call_count, 1U);
+
+	/* REG4 already disabled at init time (boot-off) */
+	zassert_false(regulator_is_enabled(reg4));
+
+	/* REG5 explicitly disabled at init time (boot-off) */
+	zassert_equal(regulator_fake_disable_fake.call_count, 1U);
+	zassert_false(regulator_is_enabled(reg5));
 
 	return NULL;
 }

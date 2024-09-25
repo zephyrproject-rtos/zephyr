@@ -10,19 +10,19 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 
-#include "../common_defs.h"
+#include <testlib/att_read.h>
+#include <testlib/conn.h>
+#include <testlib/scan.h>
+#include <testlib/security.h>
 
-#include "../testlib/att_read.h"
-#include "../testlib/bs_macro.h"
-#include "../testlib/connect.h"
-#include "../testlib/scan.h"
-#include "../testlib/security.h"
+#include "../bs_macro.h"
+#include "../common_defs.h"
 
 LOG_MODULE_REGISTER(client, LOG_LEVEL_DBG);
 
 #define BT_LOCAL_ATT_MTU_EATT MIN(BT_L2CAP_SDU_RX_MTU, BT_L2CAP_SDU_TX_MTU)
 #define BT_LOCAL_ATT_MTU_UATT MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU)
-#define BT_ATT_BUF_SIZE	      MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
+#define BT_ATT_BUF_SIZE       MAX(BT_LOCAL_ATT_MTU_UATT, BT_LOCAL_ATT_MTU_EATT)
 
 void test_long_read(struct bt_conn *conn, enum bt_att_chan_opt bearer)
 {
@@ -43,20 +43,20 @@ void test_long_read(struct bt_conn *conn, enum bt_att_chan_opt bearer)
 			LOG_INF("ATT_READ_BY_TYPE");
 			/* Aka. "read by uuid". */
 			err = bt_testlib_att_read_by_type_sync(&attr_value, &actual_read_len,
-							       &handle, conn, bearer,
+							       &handle, NULL, conn, bearer,
 							       MTU_VALIDATION_CHRC, 1, 0xffff);
 			break;
 		case 1:
 			LOG_INF("ATT_READ");
 			/* Arg `offset == 0`: the stack should choose ATT_READ PDU. */
 			err = bt_testlib_att_read_by_handle_sync(&attr_value, &actual_read_len,
-								 conn, bearer, handle, 0);
+								 NULL, conn, bearer, handle, 0);
 			break;
 		case 2:
 			LOG_INF("ATT_READ_BLOB");
 			/* Arg `offset != 0`: the stack should choose ATT_READ_BLOB PDU. */
 			err = bt_testlib_att_read_by_handle_sync(&attr_value, &actual_read_len,
-								 conn, bearer, handle, 1);
+								 NULL, conn, bearer, handle, 1);
 			break;
 		}
 

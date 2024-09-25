@@ -1,0 +1,295 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+ #include <st/u5/stm32u585Xi.dtsi>
+ #include <st/u5/stm32u585aiixq-pinctrl.dtsi>
+ #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STEVAL-STWINBX1 Development kit";
+	compatible = "st,steval_stwinbx1";
+
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+
+		zephyr,bt-hci = &hci_spi;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
+			label = "LED_1";
+		};
+		orange_led: led_2 {
+			gpios = <&gpioh 10 GPIO_ACTIVE_HIGH>;
+			label = "LED_2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm5 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "LED_1 - PWM5";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &orange_led;
+		pwm-led0 = &green_pwm_led;
+		sw0 = &user_button;
+		mcuboot-led0 = &green_led;
+		mcuboot-button0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref1;
+		volt-sensor1 = &vbat4;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_msis {
+	status = "okay";
+	msi-range = <4>;
+	msi-pll-mode;
+};
+
+&pll1 {
+	div-m = <1>;
+	mul-n = <10>;
+	div-q = <2>;
+	div-r = <1>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <2>;
+	mul-n = <48>;
+	div-p = <2>;
+	div-q = <7>;
+	div-r = <25>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll3 {
+	div-m = <2>;
+	mul-n = <48>;
+	div-p = <2>;
+	div-q = <25>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll1>;
+	clock-frequency = <DT_FREQ_M(160)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&gpioe {
+	status = "okay";
+
+	/* Enable 2.7V Analog LDO */
+	ldo-enable-gpios {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+stm32_lp_tick_source: &lptim1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>,
+		<&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_miso_pb4 &spi3_mosi_pb5>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
+	hci_spi: bluenrg-2@0 {
+		compatible = "st,hci-spi-v2";
+		reg = <0>;
+		reset-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpiof 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		spi-cpha; /* CPHA=1 */
+		spi-hold-cs;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		reset-assert-duration-ms = <6>;
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stts22h@3f {
+		compatible = "st,stts22h";
+		reg = <0x3f>;
+		int-gpios = <&gpiof 5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&timers5 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm5: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim5_ch3_ph12>;
+		pinctrl-names = "default";
+	};
+};
+
+
+&aes {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	vref-mv = <2750>;
+	status = "okay";
+};
+
+&adc4 {
+	pinctrl-0 = <&adc4_in3_pc2>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <ASYNC>;
+	st,adc-prescaler = <4>;
+	vref-mv = <2750>;
+	status = "okay";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&vref1 {
+	status = "okay";
+};
+
+&vbat4 {
+	status = "okay";
+};
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		&sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		&sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiog 1 GPIO_ACTIVE_LOW>;
+	bus-width = <4>;
+	clk-div = <4>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Following flash partition is dedicated to the use of steval_stwinbx1
+		 * with TZEN=0 (so w/o TFM).
+		 * Set the partitions with first MB to make use of the whole Bank1
+		 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(416)>;
+		};
+		slot1_partition: partition@78000 {
+			label = "image-1";
+			reg = <0x00078000 DT_SIZE_K(416)>;
+		};
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 DT_SIZE_K(64)>;
+		};
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 DT_SIZE_K(64)>;
+		};
+
+	};
+};
+
+&gpdma1 {
+	status = "okay";
+};

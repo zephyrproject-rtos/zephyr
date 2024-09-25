@@ -97,6 +97,22 @@ This section shows additional configuration options that can be set in
      zephyr_code_relocate(FILES ${sources} LOCATION SRAM)
      zephyr_code_relocate(FILES $<TARGET_PROPERTY:my_tgt,SOURCES> LOCATION SRAM)
 
+NOKEEP flag
+===========
+
+By default, all relocated functions and variables will be marked with ``KEEP()``
+when generating ``linker_relocate.ld``.  Therefore, if any input file happens to
+contain unused symbols, then they will not be discarded by the linker, even when
+it is invoked with ``--gc-sections``. If you'd like to override this behavior,
+you can pass ``NOKEEP`` to your ``zephyr_code_relocate()`` call.
+
+  .. code-block:: none
+
+     zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_TEXT NOKEEP)
+
+The example above will help ensure that any unused code found in the .text
+sections of ``file1.c`` will not stick to SRAM2.
+
 NOCOPY flag
 ===========
 
@@ -119,12 +135,20 @@ Relocating libraries
 
 Libraries can be relocated using the LIBRARY argument to
 ``zephyr_code_relocation()`` with the library name. For example, the following
-snippet will relocate kernel code to ITCM and serial drivers to SRAM2:
+snippet will relocate serial drivers to SRAM2:
 
   .. code-block:: none
 
-    zephyr_code_relocate(LIBRARY kernel LOCATION ITCM_TEXT)
     zephyr_code_relocate(LIBRARY drivers__serial LOCATION SRAM2)
+
+Tips
+====
+
+Take care if relocating kernel/arch files, some contain early initialization
+code that executes before code relocation takes place.
+
+Additional MPU/MMU configuration may be required to ensure that the
+destination memory region is configured to allow code execution.
 
 Samples/ Tests
 ==============

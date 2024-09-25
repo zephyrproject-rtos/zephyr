@@ -1,0 +1,12 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	msm261d3526hicpm-c-en {
+		regulator-boot-on;
+	};
+};
+
+dmic_dev: &pdm0 {
+	status = "okay";
+};

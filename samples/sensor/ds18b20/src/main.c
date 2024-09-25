@@ -37,19 +37,30 @@ static const struct device *get_ds18b20_device(void)
 int main(void)
 {
 	const struct device *dev = get_ds18b20_device();
+	int res;
 
 	if (dev == NULL) {
 		return 0;
 	}
 
-	while (1) {
+	while (true) {
 		struct sensor_value temp;
 
-		sensor_sample_fetch(dev);
-		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+		res = sensor_sample_fetch(dev);
+		if (res != 0) {
+			printk("sample_fetch() failed: %d\n", res);
+			return res;
+		}
+
+		res = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+		if (res != 0) {
+			printk("channel_get() failed: %d\n", res);
+			return res;
+		}
 
 		printk("Temp: %d.%06d\n", temp.val1, temp.val2);
 		k_sleep(K_MSEC(2000));
 	}
+
 	return 0;
 }

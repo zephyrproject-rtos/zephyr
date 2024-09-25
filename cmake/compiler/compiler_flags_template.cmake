@@ -13,6 +13,8 @@ set_compiler_property(PROPERTY optimization_speed)
 
 set_compiler_property(PROPERTY optimization_size)
 
+set_compiler_property(PROPERTY optimization_size_aggressive)
+
 #######################################################
 # This section covers flags related to warning levels #
 #######################################################
@@ -51,7 +53,7 @@ set_compiler_property(PROPERTY nostdinc)
 set_compiler_property(PROPERTY nostdinc_include)
 
 # Compiler flags for disabling C++ standard include.
-set_compiler_property(TARGET compiler-cpp PROPERTY nostdincxx)
+set_property(TARGET compiler-cpp PROPERTY nostdincxx)
 
 # Required C++ flags when compiling C++ code
 set_property(TARGET compiler-cpp PROPERTY required)
@@ -133,3 +135,7 @@ set_compiler_property(PROPERTY no_global_merge)
 
 # Compiler flag for warning about shadow variables
 set_compiler_property(PROPERTY warning_shadow_variables)
+
+# Compiler flags to avoid recognizing built-in functions
+set_compiler_property(PROPERTY no_builtin)
+set_compiler_property(PROPERTY no_builtin_malloc)

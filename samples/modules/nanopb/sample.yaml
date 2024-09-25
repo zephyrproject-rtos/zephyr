@@ -15,5 +15,5 @@ tests:
       - samples
       - nanopb
     integration_platforms:
-      - native_posix
-      - native_posix_64
+      - native_sim
+      - native_sim/native/64

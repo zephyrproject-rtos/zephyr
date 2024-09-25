@@ -11,7 +11,7 @@ This sample is a simple UDP sender/receiver which will set the
 SO_TXTIME socket option and expects the Ethernet driver to send
 the data when the TX time is expected. The application requires
 that the board has PTP clock support. A simulated PTP clock is
-provided for qemu_x86 board. Also frdm_k64f and sam_e70_xplained boards
+provided for qemu_x86 board. Also frdm_k64f and sam_e70_xplained/same70q21 boards
 are supported. Other mcux or gmac Ethernet driver based boards should
 work too.
 User can control how long the application should wait between packets sent by

@@ -8,21 +8,58 @@
 #include <zephyr/sensing/sensing.h>
 #include <zephyr/sensing/sensing_sensor.h>
 #include <zephyr/sys/__assert.h>
-
 #include <zephyr/logging/log.h>
+#include "sensor_mgmt.h"
+
 LOG_MODULE_DECLARE(sensing, CONFIG_SENSING_LOG_LEVEL);
 
-int sensing_sensor_notify_data_ready(const struct device *dev)
+static void sensing_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
-	return -ENOTSUP;
+	struct sensing_sensor *sensor = (struct sensing_sensor *)iodev_sqe->sqe.userdata;
+	const struct device *dev = sensor->dev;
+	const struct sensor_driver_api *api = dev->api;
+
+	if (api->submit != NULL) {
+		api->submit(dev, iodev_sqe);
+	} else {
+		LOG_ERR("submit function not supported for device %p %s!\n", dev, dev->name);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOTSUP);
+	}
 }
 
-int sensing_sensor_set_data_ready(const struct device *dev, bool data_ready)
+const struct rtio_iodev_api __sensing_iodev_api = {
+	.submit = sensing_iodev_submit,
+};
+
+int sensing_sensor_get_reporters(const struct device *dev, int type,
+		sensing_sensor_handle_t *reporter_handles,
+		int max_handles)
 {
-	return -ENOTSUP;
+	struct sensing_sensor *sensor = get_sensor_by_dev(dev);
+	int i, num = 0;
+
+	for (i = 0; i < sensor->reporter_num && num < max_handles; ++i) {
+		if (type == sensor->conns[i].source->info->type
+				|| type == SENSING_SENSOR_TYPE_ALL) {
+			reporter_handles[num] = &sensor->conns[i];
+			num++;
+		}
+	}
+
+	return num;
 }
 
-int sensing_sensor_post_data(const struct device *dev, void *buf, int size)
+int sensing_sensor_get_reporters_count(const struct device *dev, int type)
 {
-	return -ENOTSUP;
+	struct sensing_sensor *sensor = get_sensor_by_dev(dev);
+	int i, num = 0;
+
+	for (i = 0; i < sensor->reporter_num; ++i) {
+		if (type == sensor->conns[i].source->info->type
+				|| type == SENSING_SENSOR_TYPE_ALL) {
+			num++;
+		}
+	}
+
+	return num;
 }

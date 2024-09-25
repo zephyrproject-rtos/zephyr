@@ -3,7 +3,6 @@
 
 config WDT_SHELL
 	bool "Watchdog (WDT) shell"
-	default y
 	depends on SHELL
 	help
 	  Enable WDT shell.

@@ -1,9 +1,0 @@
-# Copyright (c) 2021 Teslabs Engineering S.L.
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_GD32F450I_EVAL
-
-config BOARD
-	default "gd32f450i_eval"
-
-endif # BOARD_GD32F450I_EVAL

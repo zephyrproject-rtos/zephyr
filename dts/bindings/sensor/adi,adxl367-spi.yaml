@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADXL367 3-axis nanopower accelerometer, accessed through SPI bus
+
+compatible: "adi,adxl367"
+
+include: ["spi-device.yaml", "adi,adxl367-common.yaml"]

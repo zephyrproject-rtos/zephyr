@@ -1,4 +1,4 @@
-.. _st_b_lcd40_dsi1_mb1166_shield:
+.. _st_b_lcd40_dsi1_mb1166:
 
 ST B-LCD40-DSI1
 ###############
@@ -9,6 +9,12 @@ Overview
 The B-LCD40-DSI1 shield provides a 4-inch WVGA TFT LCD with MIPI DSI interface
 and capacitive touch screen.
 
+.. note::
+   The shield comes in different hardware revisions, the MB1166-A09
+   is utilizing a NT35510 panel controller and shall specifically
+   use ``st_b_lcd40_dsi1_mb1166_a09`` as SHIELD when building
+   Prior versions are utilizing an OTM8009a controller and shall
+   use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``
 
 .. figure:: image.jpg
    :alt: B-LCD40-DSI1 MB1166 Image
@@ -98,13 +104,14 @@ Usage
 *****
 
 The shield can be used in any application by setting ``SHIELD`` to
-``st_b_lcd40_dsi1_mb1166`` and adding the necessary device tree properties.
+``st_b_lcd40_dsi1_mb1166`` or ``st_b_lcd40_dsi1_mb1166_a09`` and adding
+the necessary device tree properties.
 
-Set ``-DSHIELD="st_b_lcd40_dsi1_mb1166"`` when you invoke ``west build``. For example:
+Set ``--shield "st_b_lcd40_dsi1_mb1166"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/display
-   :board: stm32h747i_disco_m7
+   :board: stm32h747i_disco/stm32h747xx/m7
    :shield: st_b_lcd40_dsi1_mb1166
    :goals: build
 

@@ -19,13 +19,8 @@
 
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
-#ifdef CONFIG_SETTINGS_FS
-#define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FS_MAX_LINES
-#define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FS_FILE
-#else
 #define SETTINGS_FILE_MAX_LINES		CONFIG_SETTINGS_FILE_MAX_LINES
 #define SETTINGS_FILE_PATH		CONFIG_SETTINGS_FILE_PATH
-#endif
 
 int settings_backend_init(void);
 
@@ -351,7 +346,7 @@ static int settings_file_save_and_compress(struct settings_file *cf,
 
 	rc = fs_close(&wf);
 	rc2 = fs_close(&rf);
-	if (rc == 0 && rc2 == 0 && fs_unlink(cf->cf_name) == 0) {
+	if (rc == 0 && rc2 == 0) {
 		if (fs_rename(tmp_file, cf->cf_name)) {
 			return -ENOENT;
 		}

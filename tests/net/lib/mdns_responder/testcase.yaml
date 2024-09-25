@@ -1,0 +1,12 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+  platform_exclude:
+    - native_posix/native/64
+    - native_posix
+tests:
+  net.mdns:
+    min_ram: 21
+    timeout: 600

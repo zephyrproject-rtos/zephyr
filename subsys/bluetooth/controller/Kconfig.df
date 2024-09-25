@@ -312,24 +312,22 @@ endchoice
 
 config BT_CTLR_DF_VS_CL_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connectionless IQ reports"
-	depends on BT_CTLR_DF_SCAN_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_CTLR_DF_SCAN_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connectionless IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.21. This option enables a vendor specific
-	  extenstion to HCI layer, so that connectionless IQ reports store samples in 16 bit signed
+	  extension to HCI layer, so that connectionless IQ reports store samples in 16 bit signed
 	  integer format.
 
 config BT_CTLR_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES
 	bool "Use 16 bits signed integer IQ samples in connection IQ reports"
-	depends on BT_CTLR_DF_CONN_CTE_RX && BT_HCI_VS_EXT
-	select BT_HCI_VS_EVT
+	depends on BT_CTLR_DF_CONN_CTE_RX && BT_HCI_VS
 	help
 	  Direction Finging connection IQ reports provide a set of IQ samples collected during
 	  sampling of CTE. Bluetooth 5.3 Core Specification defines IQ samples to be 8 bits signed
 	  integer, see Vol 4, Part E section 7.7.65.22. This option enables a vendor specific
-	  extenstion to HCI layer, so that connection IQ reports store samples in 16 bit signed
+	  extension to HCI layer, so that connection IQ reports store samples in 16 bit signed
 	  integer format.
 
 endif # BT_LL_SW_SPLIT

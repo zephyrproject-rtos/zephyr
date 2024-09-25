@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <stdlib.h>
 
 #include <zephyr/logging/log_backend.h>
+#include <zephyr/logging/log_backend_net.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
@@ -28,9 +29,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_config.h>
 
 #include "ieee802154_settings.h"
-#include "bt_settings.h"
 
-extern const struct log_backend *log_backend_net_get(void);
 extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
@@ -52,66 +51,72 @@ static inline bool services_are_ready(int flags)
 	return (atomic_get(&services_flags) & flags) == flags;
 }
 
-#if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_NATIVE_IPV4)
+
+#if defined(CONFIG_NET_DHCPV4)
+
+static void setup_dhcpv4(struct net_if *iface)
+{
+	NET_INFO("Running dhcpv4 client...");
+
+	net_dhcpv4_start(iface);
+}
+
+static void print_dhcpv4_info(struct net_if *iface)
+{
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
+	char hr_addr[NET_IPV4_ADDR_LEN];
+#endif
+	ARRAY_FOR_EACH(iface->config.ip.ipv4->unicast, i) {
+		struct net_if_addr *if_addr =
+					&iface->config.ip.ipv4->unicast[i].ipv4;
+
+		if (if_addr->addr_type != NET_ADDR_DHCP ||
+		    !if_addr->is_used) {
+			continue;
+		}
+
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
+		NET_INFO("IPv4 address: %s",
+			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
+				       hr_addr, sizeof(hr_addr)));
+		NET_INFO("Lease time: %u seconds",
+			 iface->config.dhcpv4.lease_time);
+		NET_INFO("Subnet: %s",
+			 net_addr_ntop(AF_INET,
+				       &iface->config.ip.ipv4->unicast[i].netmask,
+				       hr_addr, sizeof(hr_addr)));
+		NET_INFO("Router: %s",
+			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
+				       hr_addr, sizeof(hr_addr)));
+#endif
+		break;
+	}
+}
+
+#else
+#define setup_dhcpv4(...)
+#define print_dhcpv4_info(...)
+#endif /* CONFIG_NET_DHCPV4 */
+
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
-#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
-	char hr_addr[NET_IPV4_ADDR_LEN];
-#endif
-	int i;
+	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
+		print_dhcpv4_info(iface);
 
-	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
-		return;
-	}
-
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *if_addr =
-					&iface->config.ip.ipv4->unicast[i];
-
-		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
-			continue;
+		if (!IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+			services_notify_ready(NET_CONFIG_NEED_IPV4);
 		}
-
-#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
-		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET,
-					&if_addr->address.in_addr,
-					hr_addr, sizeof(hr_addr)));
-		NET_INFO("Lease time: %u seconds",
-			 iface->config.dhcpv4.lease_time);
-		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET,
-				       &iface->config.ip.ipv4->netmask,
-				       hr_addr, sizeof(hr_addr)));
-		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET,
-					&iface->config.ip.ipv4->gw,
-					hr_addr, sizeof(hr_addr)));
-#endif
-		break;
 	}
 
-	services_notify_ready(NET_CONFIG_NEED_IPV4);
+	if (mgmt_event == NET_EVENT_IPV4_ACD_SUCCEED) {
+		services_notify_ready(NET_CONFIG_NEED_IPV4);
+	}
 }
-
-static void setup_dhcpv4(struct net_if *iface)
-{
-	NET_INFO("Running dhcpv4 client...");
-
-	net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
-				     NET_EVENT_IPV4_ADDR_ADD);
-	net_mgmt_add_event_callback(&mgmt4_cb);
-
-	net_dhcpv4_start(iface);
-}
-
-#else
-#define setup_dhcpv4(...)
-#endif /* CONFIG_NET_DHCPV4 */
 
 #if defined(CONFIG_NET_VLAN) && (CONFIG_NET_CONFIG_MY_VLAN_ID > 0)
 
@@ -134,14 +139,19 @@ static void setup_vlan(struct net_if *iface)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
 
-#if defined(CONFIG_NET_NATIVE_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
-
 static void setup_ipv4(struct net_if *iface)
 {
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
-	struct in_addr addr;
+	struct in_addr addr, netmask;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD) || IS_ENABLED(CONFIG_NET_DHCPV4)) {
+		net_mgmt_init_event_callback(&mgmt4_cb, ipv4_addr_add_handler,
+					     NET_EVENT_IPV4_ADDR_ADD |
+					     NET_EVENT_IPV4_ACD_SUCCEED);
+		net_mgmt_add_event_callback(&mgmt4_cb);
+	}
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -177,11 +187,11 @@ static void setup_ipv4(struct net_if *iface)
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV4_NETMASK) > 1) {
 		/* If not empty */
 		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
-				  &addr)) {
+				  &netmask)) {
 			NET_ERR("Invalid netmask: %s",
 				CONFIG_NET_CONFIG_MY_IPV4_NETMASK);
 		} else {
-			net_if_ipv4_set_netmask(iface, &addr);
+			net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
 		}
 	}
 
@@ -196,12 +206,16 @@ static void setup_ipv4(struct net_if *iface)
 		}
 	}
 
-	services_notify_ready(NET_CONFIG_NEED_IPV4);
+	if (!IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		services_notify_ready(NET_CONFIG_NEED_IPV4);
+	}
 }
 
 #else
 #define setup_ipv4(...)
-#endif /* CONFIG_NET_IPV4 && !CONFIG_NET_DHCPV4 */
+#define setup_dhcpv4(...)
+#define setup_vlan(...)
+#endif /* CONFIG_NET_NATIVE_IPV4*/
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
@@ -298,9 +312,6 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	struct net_if_addr *ifaddr;
 	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
-	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
-	net_mgmt_add_event_callback(&mgmt6_cb);
-
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
 		goto exit;
@@ -315,6 +326,9 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 	if (flags & NET_CONFIG_NEED_ROUTER) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
+
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	/*
 	 * check for CMD_ADDR_ADD bit here, NET_EVENT_IPV6_ADDR_ADD is
@@ -501,14 +515,6 @@ int net_config_init_app(const struct device *dev, const char *app_info)
 	if (ret < 0) {
 		NET_ERR("Cannot setup IEEE 802.15.4 interface (%d)", ret);
 	}
-
-#if defined(CONFIG_NET_IPV6)
-	/* Bluetooth is only usable if IPv6 is enabled */
-	ret = z_net_config_bt_setup();
-	if (ret < 0) {
-		NET_ERR("Cannot setup Bluetooth interface (%d)", ret);
-	}
-#endif
 
 	/* Only try to use a network interface that is auto started */
 	if (iface == NULL) {

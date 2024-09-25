@@ -31,6 +31,7 @@ struct spi_nrfx_config {
 	void (*irq_connect)(void);
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t wake_pin;
+	nrfx_gpiote_t wake_gpiote;
 };
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context);
@@ -160,8 +161,6 @@ static void finish_transaction(const struct device *dev, int error)
 	struct spi_nrfx_data *dev_data = dev->data;
 	struct spi_context *ctx = &dev_data->ctx;
 
-	spi_context_cs_control(ctx, false);
-
 	LOG_DBG("Transaction finished with status %d", error);
 
 	spi_context_complete(ctx, dev, error);
@@ -237,7 +236,8 @@ static int transceive(const struct device *dev,
 		dev_data->busy = true;
 
 		if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-			error = spi_nrfx_wake_request(dev_config->wake_pin);
+			error = spi_nrfx_wake_request(&dev_config->wake_gpiote,
+						      dev_config->wake_pin);
 			if (error == -ETIMEDOUT) {
 				LOG_WRN("Waiting for WAKE acknowledgment timed out");
 				/* If timeout occurs, try to perform the transfer
@@ -275,6 +275,8 @@ static int transceive(const struct device *dev,
 			/* Clean up the driver state. */
 			k_sem_reset(&dev_data->ctx.sync);
 		}
+
+		spi_context_cs_control(&dev_data->ctx, false);
 	}
 
 	spi_context_release(&dev_data->ctx, error);
@@ -381,7 +383,7 @@ static int spi_nrfx_init(const struct device *dev)
 	}
 
 	if (dev_config->wake_pin != WAKE_PIN_NOT_USED) {
-		err = spi_nrfx_wake_init(dev_config->wake_pin);
+		err = spi_nrfx_wake_init(&dev_config->wake_gpiote, dev_config->wake_pin);
 		if (err == -ENODEV) {
 			LOG_ERR("Failed to allocate GPIOTE channel for WAKE");
 			return err;
@@ -444,6 +446,7 @@ static int spi_nrfx_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPI(idx)),		       \
 		.wake_pin = NRF_DT_GPIOS_TO_PSEL_OR(SPI(idx), wake_gpios,      \
 						    WAKE_PIN_NOT_USED),	       \
+		.wake_gpiote = WAKE_GPIOTE_INSTANCE(SPI(idx)),		       \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPI(idx), wake_gpios) ||		       \
 		     !(DT_GPIO_FLAGS(SPI(idx), wake_gpios) & GPIO_ACTIVE_LOW), \

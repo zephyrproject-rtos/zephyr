@@ -16,25 +16,25 @@ ZTEST_USER_F(net_socketpair, test_unsupported_calls)
 
 	for (size_t i = 0; i < 2; ++i) {
 
-		res = bind(fixture->sv[i], (struct sockaddr *)&addr, len);
+		res = zsock_bind(fixture->sv[i], (struct sockaddr *)&addr, len);
 		zassert_equal(res, -1,
 			"bind should fail on a socketpair endpoint");
 		zassert_equal(errno, EISCONN,
 			"bind should set errno to EISCONN");
 
-		res = connect(fixture->sv[i], (struct sockaddr *)&addr, len);
+		res = zsock_connect(fixture->sv[i], (struct sockaddr *)&addr, len);
 		zassert_equal(res, -1,
 			"connect should fail on a socketpair endpoint");
 		zassert_equal(errno, EISCONN,
 			"connect should set errno to EISCONN");
 
-		res = listen(fixture->sv[i], 1);
+		res = zsock_listen(fixture->sv[i], 1);
 		zassert_equal(res, -1,
 			"listen should fail on a socketpair endpoint");
 		zassert_equal(errno, EINVAL,
 			"listen should set errno to EINVAL");
 
-		res = accept(fixture->sv[i], (struct sockaddr *)&addr, &len);
+		res = zsock_accept(fixture->sv[i], (struct sockaddr *)&addr, &len);
 		zassert_equal(res, -1,
 			"accept should fail on a socketpair endpoint");
 		zassert_equal(errno, EOPNOTSUPP,

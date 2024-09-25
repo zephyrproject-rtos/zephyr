@@ -1,0 +1,101 @@
+/**
+ * Copyright (c) 2023, Benjamin Cabé <benjamin@zephyrproject.org>.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Custom stylesheet for Google Programmable Search Engine results.
+ */
+
+.gs-webResult .gs-snippet,
+.gs-fileFormatType,
+.gs-spelling,
+.gsc-refinementHeader,
+.gsc-result-info,
+.gsc-orderby-label {
+  color: var(--body-color) !important;
+}
+
+.gsc-control-cse {
+  width: 100%;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  background-color: inherit !important;
+  border: none !important;
+  font-size: inherit !important;
+}
+
+.gsc-completion-container {
+  font-family: inherit !important;
+}
+
+.gs-result .gs-title, .gs-result .gs-title * {
+  color: var(--link-color) !important;
+  background-color: var(--content-background-color) !important;
+}
+
+.gs-result .gs-title:visited, .gs-result .gs-title:visited * {
+  color: var(--link-color-visited) !important;
+}
+
+.gsc-results .gsc-cursor-box .gsc-cursor-page,
+.gsc-results .gsc-cursor-box .gsc-cursor-current-page {
+  background-color: var(--content-background-color) !important;
+  color: var(--link-color) !important;
+}
+
+.gs-result .gs-image, .gs-result .gs-promotion-image {
+  border: none !important;
+  padding-right: .5em;
+}
+
+.gsc-table-result {
+  font-family: inherit !important;
+  padding-top: .5em !important;
+  font-size: inherit !important;
+}
+
+.gsc-tabHeader.gsc-tabhActive, .gsc-refinementHeader.gsc-refinementhActive,
+.gsc-tabHeader.gsc-tabhInactive, .gsc-refinementHeader.gsc-refinementhInactive {
+  background-color: inherit !important;
+}
+
+.gs-no-results-result .gs-snippet, .gs-error-result .gs-snippet {
+  color: var(--admonition-attention-title-color) !important;
+  background-color: var(--admonition-attention-title-background-color) !important;
+}
+
+.gsc-webResult .gsc-result {
+  background-color: inherit !important;
+  margin: 0;
+  padding: .5em 0;
+  border: none !important;
+  border-bottom: 1px solid var(--hr-color) !important;
+}
+
+.gs-webResult div.gs-per-result-labels {
+  margin-top: 1.3em;
+  margin-bottom: 0.3em;
+  font-size:0.8em;
+}
+
+.gs-webResult div.gs-per-result-labels span {
+  display: none;
+}
+
+.gs-webResult div.gs-per-result-labels a.gs-label {
+  text-decoration: none !important;
+  cursor: pointer;
+  padding: 0.4em 0.6em;
+  margin-left: .5em;
+  color: var(--admonition-tip-title-color) !important;
+  background-color: var(--admonition-tip-title-background-color) !important;
+  border-radius: 50px;
+}
+
+.gcsc-find-more-on-google {
+  color: var(--link-color) !important;
+}
+
+.gcsc-find-more-on-google-magnifier {
+  fill: var(--link-color) !important;
+}

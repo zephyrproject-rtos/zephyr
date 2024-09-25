@@ -1,0 +1,33 @@
+# Copyright  2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP USB high speed phy that is used on NXP RTxxxx, RTxxx, MCX, LPC and Kinetis
+  platforms if high speed usb is supported on these platforms.
+  Note: Only some LPC plafforms use it (like: LPC55S69, LPC55S28 and LPC55S16 etc).
+
+compatible: "nxp,usbphy"
+
+include: base.yaml
+
+properties:
+  tx-d-cal:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.
+
+  tx-cal-45-dp-ohms:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.
+
+  tx-cal-45-dm-ohms:
+    type: int
+    required: true
+    description: |
+      It is board level's value that is used to trim the nominal 17.78mA
+      current source for the High Speed TX drivers on USB_DP and USB_DM.

@@ -122,7 +122,7 @@ struct uart_cdns_regs {
 	volatile uint32_t flow_ctrl_delay;	 /* Flow Control Delay Register */
 	volatile uint32_t rpwr;			 /* IR Minimum Received Pulse Register */
 	volatile uint32_t tpwr;			 /* IR TRansmitted Pulse Width Register */
-	volatile uint32_t tx_fifo_trigger_level; /* Transmiter FIFO trigger level */
+	volatile uint32_t tx_fifo_trigger_level; /* Transmitter FIFO trigger level */
 	volatile uint32_t rbrs;			 /* RX FIFO Byte Status Register */
 };
 

@@ -1,5 +1,6 @@
 common:
-  platform_exclude: m2gl025_miv
+  # renode causes timeouts unfortunately
+  platform_exclude: m2gl025_miv m5stack_core2 hifive1
   platform_key:
     - arch
     - simulation
@@ -8,18 +9,20 @@ tests:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     integration_platforms:
-      - native_posix
+      - native_sim
   rtio.api.submit_sem:
     filter: not CONFIG_ARCH_HAS_USERSPACE
     tags: rtio
     extra_configs:
       - CONFIG_RTIO_SUBMIT_SEM=y
     integration_platforms:
-      - native_posix
+      - native_sim
   rtio.api.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
+    arch_exclude:
+      - posix
     tags:
       - rtio
       - userspace
@@ -30,6 +33,8 @@ tests:
     extra_configs:
       - CONFIG_USERSPACE=y
       - CONFIG_RTIO_SUBMIT_SEM=y
+    arch_exclude:
+      - posix
     tags:
       - rtio
       - userspace

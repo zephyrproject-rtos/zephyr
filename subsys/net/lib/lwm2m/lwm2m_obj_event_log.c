@@ -103,4 +103,4 @@ static int lwm2m_event_log_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_event_log_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(lwm2m_event_log_init);

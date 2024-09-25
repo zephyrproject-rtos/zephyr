@@ -12,7 +12,7 @@ properties:
     type: boolean
     description: |
       When set, TCXO is selected as external source clock for HSE.
-      Otherwise, external cyrstal is selected as HSE source clock.
+      Otherwise, external crystal is selected as HSE source clock.
 
   hse-div2:
     type: boolean

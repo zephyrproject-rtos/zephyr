@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2023 TiaC Systems
+ * Copyright 2019,2023-2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1010.dtsi>
+#include "mimxrt1010_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP MIMXRT1010-EVK board";
+	compatible = "nxp,mimxrt1010";
+
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,sram = &ocram;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,flash = &at25sf128a;
+		zephyr,flash-controller = &at25sf128a;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW4";
+			gpios = <&gpio2 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 21 0>,	/* A0 */
+			   <1 0 &gpio1 23 0>,	/* A1 */
+			   <2 0 &gpio1 24 0>,	/* A2 */
+			   <3 0 &gpio1 28 0>,	/* A3 */
+			   <4 0 &gpio1 15 0>,	/* A4 (shared with D6) */
+			   <5 0 &gpio1 16 0>,	/* A5 (shared with D7) */
+			   <6 0 &gpio1 9 0>,	/* D0 */
+			   <7 0 &gpio1 10 0>,	/* D1 */
+			   <8 0 &gpio1 19 0>,	/* D2 (shared with D10) */
+			   <9 0 &gpio1 20 0>,	/* D3 (shared with D13) */
+			   /* R800 not populated,  D4 */
+			   /* R793 not populated,  D5 (shared with D14) */
+			   <12 0 &gpio1 15 0>,	/* D6 (shared with A4) */
+			   <13 0 &gpio1 16 0>,	/* D7 (shared with A5) */
+			   <14 0 &gpio2 2 0>,	/* D8 */
+			   /* R795 not populated,  D9 */
+			   <16 0 &gpio1 19 0>,	/* D10 (shared with D2) */
+			   <17 0 &gpio1 18 0>,	/* D11 */
+			   <18 0 &gpio1 17 0>,	/* D12 */
+			   <19 0 &gpio1 20 0>,	/* D13 (shared with D3) */
+			   <20 0 &gpio1 1 0>,	/* D14 */
+			   <21 0 &gpio1 2 0>;	/* D15 */
+	};
+};
+
+arduino_serial: &lpuart1 {};
+
+&lpuart4 {
+	pinctrl-0 = <&pinmux_lpuart4>;
+	pinctrl-1 = <&pinmux_lpuart4_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flexspi {
+	status = "okay";
+	reg = <0x400a0000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
+	at25sf128a: at25sf128a@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(16 * 8)>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [1f 89 01];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* The MCUBoot swap-move algorithm uses the last 3 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 (DT_SIZE_M(7) + DT_SIZE_K(12))>;
+			};
+			slot1_partition: partition@723000 {
+				label = "image-1";
+				reg = <0x00723000 DT_SIZE_M(7)>;
+			};
+			storage_partition: partition@E23000 {
+				label = "storage";
+				reg = <0x00E23000 (DT_SIZE_M(2) - DT_SIZE_K(140))>;
+			};
+		};
+	};
+};
+
+arduino_i2c: &lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &lpspi1 {
+	status = "okay";
+	/* DMA channels 0 and 1, muxed to LPSPI1 RX and TX */
+	dmas = <&edma0 0 13>, <&edma0 1 14>;
+	dma-names = "rx", "tx";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&pit0 {
+	status = "okay";
+};

@@ -33,7 +33,7 @@
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
-			compatible = "sifive,e51";
+			compatible = "sifive,e51", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv64imac_zicsr_zifencei";
@@ -51,7 +51,7 @@
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
+		compatible = "fu540-soc", "sifive-soc", "simple-bus";
 		ranges;
 
 		modeselect: rom@1000 {
@@ -179,6 +179,7 @@
 		gpio0: gpio@10060000 {
 			compatible = "sifive,gpio0";
 			gpio-controller;
+			ngpios = <16>;
 			interrupt-parent = <&plic>;
 			interrupts = <7 1>, <8 1>, <9 1>, <10 1>,
 				<11 1>, <12 1>, <13 1>, <14 1>,

@@ -142,6 +142,8 @@ config MODEM_CMD_HANDLER_MAX_PARAM_COUNT
 	  of the match_buf (match_buf_len) field as it needs to be large
 	  enough to hold a single line of data (ending with /r).
 
+endif # MODEM_CONTEXT
+
 config MODEM_SOCKET
 	bool "Generic modem socket support layer"
 	help
@@ -153,7 +155,7 @@ config MODEM_SOCKET
 	  modem_socket_init().
 	  Note that the modem socket uses runtime allocated file descriptors
 	  reserved from the fdtable, for which the max count is set using the
-	  Kconfig option POSIX_MAX_FDS. Make sure to update this value as both
+	  Kconfig option ZVFS_OPEN_MAX. Make sure to update this value as both
 	  the modem sockets and the POSIX_API, if used, share them.
 
 config MODEM_SOCKET_PACKET_COUNT
@@ -164,8 +166,6 @@ config MODEM_SOCKET_PACKET_COUNT
 	  As the modem indicates more data is available to be received,
 	  these values are organized into "packets".  This setting limits
 	  the maximum number of packet sizes the socket can keep track of.
-
-endif # MODEM_CONTEXT
 
 config MODEM_SHELL
 	bool "Modem shell utilities"
@@ -189,8 +189,8 @@ config MODEM_CELL_INFO
 source "drivers/modem/Kconfig.ublox-sara-r4"
 source "drivers/modem/Kconfig.quectel-bg9x"
 source "drivers/modem/Kconfig.wncm14a2a"
-source "drivers/modem/Kconfig.gsm"
 source "drivers/modem/Kconfig.cellular"
+source "drivers/modem/Kconfig.at_shell"
 
 source "drivers/modem/Kconfig.hl7800"
 source "drivers/modem/Kconfig.simcom-sim7080"

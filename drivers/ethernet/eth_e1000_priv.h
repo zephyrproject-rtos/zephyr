@@ -92,7 +92,7 @@ struct e1000_dev {
 	uint8_t rxb[NET_ETH_MTU];
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	const struct device *ptp_clock;
-	float clk_ratio;
+	double clk_ratio;
 #endif
 };
 

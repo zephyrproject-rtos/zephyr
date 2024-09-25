@@ -5,7 +5,6 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys/arch_interface.h>
 
 #define NUM_THREADS 3
 #define TCOUNT 10

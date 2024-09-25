@@ -7,8 +7,6 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 #define ZEPHYR_INCLUDE_POSIX_PTHREAD_H_
 
-#include "pthread_key.h"
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,27 +19,43 @@
 extern "C" {
 #endif
 
-/* Pthread detach/joinable */
-#define PTHREAD_CREATE_DETACHED 0
-#define PTHREAD_CREATE_JOINABLE 1
+/*
+ * Pthread detach/joinable
+ * Undefine possibly predefined values by external toolchain headers
+ */
+#undef PTHREAD_CREATE_DETACHED
+#define PTHREAD_CREATE_DETACHED 1
+#undef PTHREAD_CREATE_JOINABLE
+#define PTHREAD_CREATE_JOINABLE 0
 
 /* Pthread resource visibility */
 #define PTHREAD_PROCESS_PRIVATE 0
 #define PTHREAD_PROCESS_SHARED  1
 
 /* Pthread cancellation */
-#define _PTHREAD_CANCEL_POS	0
-#define PTHREAD_CANCEL_ENABLE	(0U << _PTHREAD_CANCEL_POS)
-#define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCELED       ((void *)-1)
+#define PTHREAD_CANCEL_ENABLE  0
+#define PTHREAD_CANCEL_DISABLE 1
+#define PTHREAD_CANCEL_DEFERRED     0
+#define PTHREAD_CANCEL_ASYNCHRONOUS 1
+
+/* Pthread scope */
+#undef PTHREAD_SCOPE_PROCESS
+#define PTHREAD_SCOPE_PROCESS    1
+#undef PTHREAD_SCOPE_SYSTEM
+#define PTHREAD_SCOPE_SYSTEM     0
+
+/* Pthread inherit scheduler */
+#undef PTHREAD_INHERIT_SCHED
+#define PTHREAD_INHERIT_SCHED  0
+#undef PTHREAD_EXPLICIT_SCHED
+#define PTHREAD_EXPLICIT_SCHED 1
 
 /* Passed to pthread_once */
-#define PTHREAD_ONCE_INIT                                                                          \
-	{                                                                                          \
-		1, 0                                                                               \
-	}
+#define PTHREAD_ONCE_INIT {0}
 
 /* The minimum allowable stack size */
-#define PTHREAD_STACK_MIN Z_KERNEL_STACK_SIZE_ADJUST(0)
+#define PTHREAD_STACK_MIN K_KERNEL_STACK_LEN(0)
 
 /**
  * @brief Declare a condition variable as initialized
@@ -49,18 +63,6 @@ extern "C" {
  * Initialize a condition variable with the default condition variable attributes.
  */
 #define PTHREAD_COND_INITIALIZER (-1)
-
-/**
- * @brief Declare a pthread condition variable
- *
- * Declaration API for a pthread condition variable.  This is not a
- * POSIX API, it's provided to better conform with Zephyr's allocation
- * strategies for kernel objects.
- *
- * @param name Symbol name of the condition variable
- * @deprecated Use @c PTHREAD_COND_INITIALIZER instead.
- */
-#define PTHREAD_COND_DEFINE(name) pthread_cond_t name = PTHREAD_COND_INITIALIZER
 
 /**
  * @brief POSIX threading compatibility API
@@ -122,7 +124,7 @@ int pthread_condattr_init(pthread_condattr_t *att);
 int pthread_condattr_destroy(pthread_condattr_t *att);
 
 /**
- * @brief POSIX threading comatibility API
+ * @brief POSIX threading compatibility API
  *
  * See IEEE 1003.1
  *
@@ -147,16 +149,11 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
 #define PTHREAD_MUTEX_INITIALIZER (-1)
 
 /**
- * @brief Declare a pthread mutex
+ * @brief Declare a rwlock as initialized
  *
- * Declaration API for a pthread mutex.  This is not a POSIX API, it's
- * provided to better conform with Zephyr's allocation strategies for
- * kernel objects.
- *
- * @param name Symbol name of the mutex
- * @deprecated Use @c PTHREAD_MUTEX_INITIALIZER instead.
+ * Initialize a rwlock with the default rwlock attributes.
  */
-#define PTHREAD_MUTEX_DEFINE(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER
+#define PTHREAD_RWLOCK_INITIALIZER (-1)
 
 /*
  *  Mutex attributes - type
@@ -268,12 +265,7 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
  *
  * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_mutexattr_init(pthread_mutexattr_t *m)
-{
-	ARG_UNUSED(m);
-
-	return 0;
-}
+int pthread_mutexattr_init(pthread_mutexattr_t *attr);
 
 /**
  * @brief POSIX threading compatibility API
@@ -282,26 +274,7 @@ static inline int pthread_mutexattr_init(pthread_mutexattr_t *m)
  *
  * Note that pthread attribute structs are currently noops in Zephyr.
  */
-static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
-{
-	ARG_UNUSED(m);
-
-	return 0;
-}
-
-/**
- * @brief Declare a pthread barrier
- *
- * Declaration API for a pthread barrier.  This is not a
- * POSIX API, it's provided to better conform with Zephyr's allocation
- * strategies for kernel objects.
- *
- * @param name Symbol name of the barrier
- * @param count Thread count, same as the "count" argument to
- *             pthread_barrier_init()
- * @deprecated Use @ref pthread_barrier_init instead.
- */
-#define PTHREAD_BARRIER_DEFINE(name, count) pthread_barrier_t name = -1 __DEPRECATED_MACRO
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
 #define PTHREAD_BARRIER_SERIAL_THREAD 1
 
@@ -409,24 +382,22 @@ int pthread_equal(pthread_t pt1, pthread_t pt2);
  *
  * See IEEE 1003.1
  */
-static inline int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
-{
-	ARG_UNUSED(attr);
-	return 0;
-}
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
 
 /**
  * @brief initialize the read-write lock attributes object.
  *
  * See IEEE 1003.1
  */
-static inline int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
-{
-	ARG_UNUSED(attr);
-	return 0;
-}
+int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
 
+int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
+				  int *ZRESTRICT pshared);
+int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
+
+int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRESTRICT guardsize);
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
+int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
@@ -442,18 +413,27 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
+int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
+int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
+int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
+#ifdef CONFIG_POSIX_THREADS
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
-void pthread_exit(void *retval);
+#endif
+FUNC_NORETURN void pthread_exit(void *retval);
 int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
 int pthread_detach(pthread_t thread);
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg);
 int pthread_setcancelstate(int state, int *oldstate);
+int pthread_setcanceltype(int type, int *oldtype);
+void pthread_testcancel(void);
 int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
+int pthread_setschedprio(pthread_t thread, int prio);
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 			const pthread_rwlockattr_t *attr);
@@ -471,6 +451,21 @@ int pthread_key_create(pthread_key_t *key,
 int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
+int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
+int pthread_getconcurrency(void);
+int pthread_setconcurrency(int new_level);
+
+void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void *arg);
+void __z_pthread_cleanup_pop(int execute);
+
+#define pthread_cleanup_push(_rtn, _arg)                                                           \
+	do /* enforce '{'-like behaviour */ {                                                      \
+		void *_z_pthread_cleanup[3];                                                       \
+		__z_pthread_cleanup_push(_z_pthread_cleanup, _rtn, _arg)
+
+#define pthread_cleanup_pop(_ex)                                                                   \
+		__z_pthread_cleanup_pop(_ex);                                                      \
+	} /* enforce '}'-like behaviour */ while (0)
 
 /* Glibc / Oracle Extension Functions */
 
@@ -507,7 +502,7 @@ int pthread_setname_np(pthread_t thread, const char *name);
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
 
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_THREADS
 
 /**
  * @brief Destroy a pthread_spinlock_t.

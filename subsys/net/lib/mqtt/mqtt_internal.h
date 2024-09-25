@@ -115,14 +115,14 @@ extern "C" {
 		if ((param) == NULL) { \
 			return -EINVAL; \
 		} \
-	} while (0)
+	} while (false)
 
 #define NULL_PARAM_CHECK_VOID(param) \
 	do { \
 		if ((param) == NULL) { \
 			return; \
 		} \
-	} while (0)
+	} while (false)
 
 /** Buffer context to iterate over buffer. */
 struct buf_ctx {

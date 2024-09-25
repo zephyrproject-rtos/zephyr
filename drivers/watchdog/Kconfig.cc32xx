@@ -5,6 +5,7 @@ config WDT_CC32XX
 	bool "Watchdog Driver for cc32xx family of MCUs"
 	default y
 	depends on DT_HAS_TI_CC32XX_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Watchdog for cc32xx family of MCUs
 

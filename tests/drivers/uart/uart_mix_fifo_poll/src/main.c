@@ -19,11 +19,11 @@
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dut))
 #define UART_NODE DT_NODELABEL(dut)
-#elif defined(CONFIG_BOARD_ATSAMD21_XPRO)
+#elif defined(CONFIG_BOARD_SAMD21_XPRO)
 #define UART_NODE DT_NODELABEL(sercom1)
-#elif defined(CONFIG_BOARD_ATSAMR21_XPRO)
+#elif defined(CONFIG_BOARD_SAMR21_XPRO)
 #define UART_NODE DT_NODELABEL(sercom3)
-#elif defined(CONFIG_BOARD_ATSAME54_XPRO)
+#elif defined(CONFIG_BOARD_SAME54_XPRO)
 #define UART_NODE DT_NODELABEL(sercom1)
 #else
 #define UART_NODE DT_CHOSEN(zephyr_console)
@@ -264,6 +264,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 
 			int idx = data->cnt & 0xF;
 			size_t len = (idx < BUF_SIZE / 2) ? 5 : 1; /* Try various lengths */
+			len = MIN(len, data->max - data->cnt);
 
 			data->cnt += len;
 			err = uart_tx(uart_dev, &int_async_data.buf[idx],
@@ -293,7 +294,7 @@ static void poll_out_timer_handler(struct k_timer *timer)
 		k_timer_stop(timer);
 		k_sem_give(&data->sem);
 	} else {
-		k_timer_start(timer, K_USEC(250 + (sys_rand32_get() % 800)),
+		k_timer_start(timer, K_USEC(250 + (sys_rand16_get() % 800)),
 				K_NO_WAIT);
 	}
 }
@@ -317,7 +318,7 @@ static void init_test_data(struct test_data *data, const uint8_t *buf, int repea
 
 ZTEST(uart_mix_fifo_poll, test_mixed_uart_access)
 {
-	int repeat = 10000;
+	int repeat = CONFIG_STRESS_TEST_REPS;
 	int err;
 	int num_of_contexts = ARRAY_SIZE(test_data);
 

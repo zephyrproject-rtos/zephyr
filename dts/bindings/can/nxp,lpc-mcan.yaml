@@ -1,14 +1,17 @@
-description: NXP LPC SoC series MCAN CAN-FD controller
+description: NXP LPC SoC series MCAN CAN FD controller
 
 compatible: "nxp,lpc-mcan"
 
-include: ["bosch,m_can-base.yaml", pinctrl-device.yaml]
+include: ["bosch,m_can-base.yaml", pinctrl-device.yaml, "reset-device.yaml"]
 
 properties:
   reg:
     required: true
 
   interrupts:
+    required: true
+
+  interrupt-names:
     required: true
 
   clocks:

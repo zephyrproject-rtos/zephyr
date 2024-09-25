@@ -122,6 +122,9 @@ void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);
 extern struct lll_conn_iso_stream *
 ull_conn_iso_lll_stream_get_by_group(struct lll_conn_iso_group *cig_lll,
 				     uint16_t *handle_iter);
+extern struct lll_conn_iso_stream *
+ull_conn_iso_lll_stream_sorted_get_by_group(struct lll_conn_iso_group *cig_lll,
+					    uint16_t *handle_iter);
 extern struct lll_conn_iso_group *
 ull_conn_iso_lll_group_get_by_stream(struct lll_conn_iso_stream *cis_lll);
 extern struct lll_conn_iso_stream *ull_conn_iso_lll_stream_get(uint16_t handle);

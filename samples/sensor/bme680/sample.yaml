@@ -7,7 +7,7 @@ tests:
       - samples
       - sensor
     integration_platforms:
-      - nrf52840dk_nrf52840
+      - nrf52840dk/nrf52840
     platform_allow:
-      - nrf52840dk_nrf52840
-      - adafruit_feather_nrf52840
+      - nrf52840dk/nrf52840
+      - adafruit_feather/nrf52840

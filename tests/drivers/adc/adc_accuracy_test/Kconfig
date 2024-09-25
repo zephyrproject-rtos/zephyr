@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ADC accuracy test"
+
+source "Kconfig.zephyr"
+
+# Workaround to have commas on function arguments
+ZEPHYR_USER := zephyr,user
+
+config DAC_SOURCE_TEST
+	bool
+	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
+
+config REFERENCE_VOLTAGE_TEST
+	bool
+	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),reference_mv)
+
+config NUMBER_OF_PASSES
+	int "Number of passes"
+	default 5

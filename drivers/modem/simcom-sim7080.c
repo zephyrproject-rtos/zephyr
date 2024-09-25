@@ -576,7 +576,7 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 		}
 
 		/* If vtable matches, then it's modem socket. */
-		obj = z_get_fd_obj(fds[i].fd,
+		obj = zvfs_get_fd_obj(fds[i].fd,
 				   (const struct fd_op_vtable *)&offload_socket_fd_op_vtable,
 				   EINVAL);
 		if (obj == NULL) {
@@ -750,7 +750,7 @@ static int offload_getaddrinfo(const char *node, const char *service,
 static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	/* No need to free static memory. */
-	res = NULL;
+	ARG_UNUSED(res);
 }
 
 /*
@@ -802,8 +802,12 @@ static int offload_socket(int family, int type, int proto)
 /*
  * Process all messages received from the modem.
  */
-static void modem_rx(void)
+static void modem_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		/* Wait for incoming data */
 		modem_iface_uart_rx_wait(&mctx.iface, K_FOREVER);
@@ -1462,7 +1466,7 @@ static int parse_cgnsinf(char *gps_buf)
 	gnss_data.run_status = 1;
 	gnss_data.fix_status = 1;
 
-	strncpy(gnss_data.utc, utc, sizeof(gnss_data.utc));
+	strncpy(gnss_data.utc, utc, sizeof(gnss_data.utc) - 1);
 
 	ret = gnss_split_on_dot(lat, &number, &fraction);
 	if (ret != 0) {
@@ -2414,7 +2418,7 @@ static int modem_init(const struct device *dev)
 	}
 
 	k_thread_create(&modem_rx_thread, modem_rx_stack, K_KERNEL_STACK_SIZEOF(modem_rx_stack),
-			(k_thread_entry_t)modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			modem_rx, NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */
 	k_work_init_delayable(&mdata.rssi_query_work, modem_rssi_query_work);

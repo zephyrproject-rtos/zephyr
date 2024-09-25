@@ -1,0 +1,21 @@
+common:
+  tags:
+    - lorawan
+tests:
+  lorawan.frag_decoder.semtech:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_SEMTECH=y
+  lorawan.frag_decoder.lowmem.high_redundancy:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM=y
+      - CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY=80
+  lorawan.frag_decoder.lowmem.low_redundancy:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM=y
+      - CONFIG_LORAWAN_FRAG_TRANSPORT_MAX_REDUNDANCY=10

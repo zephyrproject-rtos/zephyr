@@ -75,7 +75,7 @@ ZTEST(test_timestamp, test_custom_timestamp)
 			   package, NULL, 0, flags);
 
 	mock_buffer[mock_len] = '\0';
-	zassert_equal(strcmp(exp_str, mock_buffer), 0);
+	zassert_str_equal(exp_str, mock_buffer);
 }
 
 static void before(void *notused)

@@ -30,6 +30,12 @@
 #define STATE_BUSY	(1)
 #define STATE_INITED	(2)
 
+#if defined(CONFIG_THREAD_MAX_NAME_LEN)
+#define THREAD_MAX_NAME_LEN CONFIG_THREAD_MAX_NAME_LEN
+#else
+#define THREAD_MAX_NAME_LEN 1
+#endif
+
 K_THREAD_STACK_ARRAY_DEFINE(mbox_stack, NUM_INSTANCES, WQ_STACK_SIZE);
 
 struct backend_data_t {
@@ -55,8 +61,8 @@ struct backend_config_t {
 	unsigned int role;
 	uintptr_t shm_addr;
 	size_t shm_size;
-	struct mbox_channel mbox_tx;
-	struct mbox_channel mbox_rx;
+	struct mbox_dt_spec mbox_tx;
+	struct mbox_dt_spec mbox_rx;
 	unsigned int wq_prio_type;
 	unsigned int wq_prio;
 	unsigned int id;
@@ -292,7 +298,7 @@ static void virtio_notify_cb(struct virtqueue *vq, void *priv)
 	struct backend_config_t *conf = priv;
 
 	if (conf->mbox_tx.dev) {
-		mbox_send(&conf->mbox_tx, NULL);
+		mbox_send_dt(&conf->mbox_tx, NULL);
 	}
 }
 
@@ -319,22 +325,30 @@ static int mbox_init(const struct device *instance)
 {
 	const struct backend_config_t *conf = instance->config;
 	struct backend_data_t *data = instance->data;
+	struct k_work_queue_config wq_cfg = {.name = instance->name};
 	int prio, err;
 
 	prio = (conf->wq_prio_type == PRIO_COOP) ? K_PRIO_COOP(conf->wq_prio) :
 						   K_PRIO_PREEMPT(conf->wq_prio);
 
 	k_work_queue_init(&data->mbox_wq);
-	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, NULL);
+	k_work_queue_start(&data->mbox_wq, mbox_stack[conf->id], WQ_STACK_SIZE, prio, &wq_cfg);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		char name[THREAD_MAX_NAME_LEN];
+
+		snprintk(name, sizeof(name), "mbox_wq #%d", conf->id);
+		k_thread_name_set(&data->mbox_wq.thread, name);
+	}
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
 
-	err = mbox_register_callback(&conf->mbox_rx, mbox_callback, data);
+	err = mbox_register_callback_dt(&conf->mbox_rx, mbox_callback, data);
 	if (err != 0) {
 		return err;
 	}
 
-	return mbox_set_enabled(&conf->mbox_rx, 1);
+	return mbox_set_enabled_dt(&conf->mbox_rx, 1);
 }
 
 static int mbox_deinit(const struct device *instance)
@@ -344,7 +358,7 @@ static int mbox_deinit(const struct device *instance)
 	k_tid_t wq_thread;
 	int err;
 
-	err = mbox_set_enabled(&conf->mbox_rx, 0);
+	err = mbox_set_enabled_dt(&conf->mbox_rx, 0);
 	if (err != 0) {
 		return err;
 	}
@@ -456,6 +470,7 @@ static int deregister_ept(const struct device *instance, void *token)
 {
 	struct backend_data_t *data = instance->data;
 	struct ipc_rpmsg_ept *rpmsg_ept;
+	static struct k_work_sync sync;
 
 	/* Instance is not ready */
 	if (atomic_get(&data->state) != STATE_INITED) {
@@ -468,6 +483,13 @@ static int deregister_ept(const struct device *instance, void *token)
 	if (!rpmsg_ept) {
 		return -ENOENT;
 	}
+
+	/* Drain pending work items before tearing down channel.
+	 *
+	 * Note: `k_work_flush` Faults on Cortex-M33 with "illegal use of EPSR"
+	 * if `sync` is not declared static.
+	 */
+	k_work_flush(&data->mbox_work, &sync);
 
 	rpmsg_destroy_ept(&rpmsg_ept->ep);
 
@@ -555,6 +577,7 @@ static int open(const struct device *instance)
 
 	data->vr.notify_cb = virtio_notify_cb;
 	data->vr.priv = (void *) conf;
+	data->vr.shm_device.name = instance->name;
 
 	err = ipc_static_vrings_init(&data->vr, conf->role);
 	if (err != 0) {
@@ -774,13 +797,23 @@ static int backend_init(const struct device *instance)
 	return 0;
 }
 
+
+#if defined(CONFIG_ARCH_POSIX)
+#define BACKEND_PRE(i) extern char IPC##i##_shm_buffer[];
+#define BACKEND_SHM_ADDR(i) (const uintptr_t)IPC##i##_shm_buffer
+#else
+#define BACKEND_PRE(i)
+#define BACKEND_SHM_ADDR(i) DT_REG_ADDR(DT_INST_PHANDLE(i, memory_region))
+#endif /* defined(CONFIG_ARCH_POSIX) */
+
 #define DEFINE_BACKEND_DEVICE(i)							\
+	BACKEND_PRE(i)									\
 	static struct backend_config_t backend_config_##i = {				\
 		.role = DT_ENUM_IDX_OR(DT_DRV_INST(i), role, ROLE_HOST),		\
 		.shm_size = DT_REG_SIZE(DT_INST_PHANDLE(i, memory_region)),		\
-		.shm_addr = DT_REG_ADDR(DT_INST_PHANDLE(i, memory_region)),		\
-		.mbox_tx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), tx),			\
-		.mbox_rx = MBOX_DT_CHANNEL_GET(DT_DRV_INST(i), rx),			\
+		.shm_addr = BACKEND_SHM_ADDR(i),					\
+		.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),				\
+		.mbox_rx = MBOX_DT_SPEC_INST_GET(i, rx),				\
 		.wq_prio = COND_CODE_1(DT_INST_NODE_HAS_PROP(i, zephyr_priority),	\
 			   (DT_INST_PROP_BY_IDX(i, zephyr_priority, 0)),		\
 			   (0)),							\

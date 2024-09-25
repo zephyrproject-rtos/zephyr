@@ -314,7 +314,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 		}
 
 		for (i = 0; i < data->data_len; i += sizeof(uint16_t)) {
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 			struct bt_le_conn_param *param;
 			uint16_t u16;
 			int err;
@@ -480,14 +480,14 @@ static const struct bst_test_instance test_connect[] = {
 			      "peripheral device can be found. The test will "
 			      "pass if it can connect to it, and receive a "
 			      "notification in less than 5 seconds.",
-		.test_post_init_f = test_con1_init,
+		.test_pre_init_f = test_con1_init,
 		.test_tick_f = test_con1_tick,
 		.test_main_f = test_con1_main
 	},
 	{
 		.test_id = "central_encrypted",
 		.test_descr = "Same as central but with an encrypted link",
-		.test_post_init_f = test_con_encrypted_init,
+		.test_pre_init_f = test_con_encrypted_init,
 		.test_tick_f = test_con1_tick,
 		.test_main_f = test_con1_main
 	},
@@ -497,7 +497,7 @@ static const struct bst_test_instance test_connect[] = {
 			      "peripheral device can be found. The test will "
 			      "pass if it can connect to it 20 times, in less than 22 seconds."
 			      "Disconnect and re-connect 20 times",
-		.test_post_init_f = test_con20_init,
+		.test_pre_init_f = test_con20_init,
 		.test_tick_f = test_con20_tick,
 		.test_main_f = test_con20_main
 	},

@@ -1,0 +1,5 @@
+# Copyright (c) 2021-2023 Atmosic
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ATMEVK_3325_QK_5
+	select SOC_ATM33XX_5

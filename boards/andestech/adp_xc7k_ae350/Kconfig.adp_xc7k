@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Andes Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADP_XC7K
+	select SOC_ANDES_AE350 if BOARD_ADP_XC7K_AE350

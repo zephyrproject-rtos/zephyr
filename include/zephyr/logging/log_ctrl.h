@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief Logger
  * @defgroup logger Logger system
+ * @since 1.13
  * @ingroup logging
  * @{
  * @}
@@ -26,6 +27,7 @@ extern "C" {
 /**
  * @brief Logger control API
  * @defgroup log_ctrl Logger control API
+ * @since 1.13
  * @ingroup logger
  * @{
  */
@@ -44,6 +46,12 @@ void log_core_init(void);
  *
  */
 void log_init(void);
+
+/** @brief Trigger the log processing thread to process logs immediately.
+ *
+ *  @note Function  has no effect when CONFIG_LOG_MODE_IMMEDIATE is set.
+ */
+void log_thread_trigger(void);
 
 /**
  * @brief Function for providing thread which is processing logs.
@@ -82,7 +90,7 @@ __syscall void log_panic(void);
 /**
  * @brief Process one pending log message.
  *
- * @retval true There is more messages pending to be processed.
+ * @retval true There are more messages pending to be processed.
  * @retval false No messages pending.
  */
 __syscall bool log_process(void);
@@ -156,7 +164,7 @@ uint32_t log_filter_get(struct log_backend const *const backend,
 /**
  * @brief Set filter on given source for the provided backend.
  *
- * @param backend	Backend instance. NULL for all backends.
+ * @param backend	Backend instance. NULL for all backends (and frontend).
  * @param domain_id	ID of the domain.
  * @param source_id	Source (module or instance) ID.
  * @param level		Severity level.
@@ -167,6 +175,26 @@ uint32_t log_filter_get(struct log_backend const *const backend,
 __syscall uint32_t log_filter_set(struct log_backend const *const backend,
 				  uint32_t domain_id, int16_t source_id,
 				  uint32_t level);
+
+/**
+ * @brief Get source filter for the frontend.
+ *
+ * @param source_id	Source (module or instance) ID.
+ * @param runtime	True for runtime filter or false for compiled in.
+ *
+ * @return		Severity level.
+ */
+uint32_t log_frontend_filter_get(int16_t source_id, bool runtime);
+
+/**
+ * @brief Set filter on given source for the frontend.
+ *
+ * @param source_id	Source (module or instance) ID.
+ * @param level		Severity level.
+ *
+ * @return Actual level set which may be limited by compiled level.
+ */
+__syscall uint32_t log_frontend_filter_set(int16_t source_id, uint32_t level);
 
 /**
  *
@@ -273,7 +301,7 @@ int log_mem_get_max_usage(uint32_t *max);
 #define LOG_PROCESS() false
 #endif
 
-#include <syscalls/log_ctrl.h>
+#include <zephyr/syscalls/log_ctrl.h>
 
 /**
  * @}

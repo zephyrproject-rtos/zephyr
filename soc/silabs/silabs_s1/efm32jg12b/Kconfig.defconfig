@@ -1,0 +1,12 @@
+# EFM32JG12B series configuration options
+
+# Copyright (c) 2019 Lemonbeat GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFM32JG12B
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 50
+
+endif # SOC_SERIES_EFM32JG12B

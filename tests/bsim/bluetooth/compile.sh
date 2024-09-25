@@ -6,15 +6,7 @@
 
 #set -x #uncomment this line for debugging
 set -ue
-: "${BSIM_COMPONENTS_PATH:?BSIM_COMPONENTS_PATH must be defined}"
-: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root\
- directory}"
-
-WORK_DIR="${WORK_DIR:-${ZEPHYR_BASE}/bsim_out}"
-
-BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
-
-mkdir -p ${WORK_DIR}
+: "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root directory}"
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
@@ -24,8 +16,13 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # On the other hand the audio compile script, only builds one image. So we parallelize it with
 # the rest to save a couple of seconds.
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
+${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
+${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
+if [ ${BOARD} == "nrf52_bsim" ]; then
+	${ZEPHYR_BASE}/tests/bsim/bluetooth/hci_uart/compile.sh
+fi
 
 wait_for_background_jobs

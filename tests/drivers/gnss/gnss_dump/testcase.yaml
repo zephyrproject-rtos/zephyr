@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  gnss.gnss_dump:
+    tags: gnss
+    platform_allow:
+      - native_posix
+      - native_posix/native/64
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "gnss_dev: gnss_info: {satellites_cnt: 0, hdop: 0.0, \
+           fix_status: NO_FIX, fix_quality: INVALID}"
+        - "gnss_dev: navigation_data: {latitude: 0.000000000, longitude : 0.000000000, \
+           bearing 0.000, speed 0.000, altitude: 0.000}"
+        - "gnss_dev: gnss_time: {hour: 0, minute: 0, millisecond 0, month_day 0, month: 0, \
+           century_year: 0}"
+        - "gnss_dev: gnss_info: {satellites_cnt: 6, hdop: 0.7, \
+           fix_status: GNSS_FIX, fix_quality: GNSS_PPS}"
+        - "gnss_dev: navigation_data: {latitude: 10.000000001, longitude : 20.000000002, \
+           bearing 3.003, speed 4.004, altitude: 5.005}"
+        - "gnss_dev: gnss_time: {hour: 1, minute: 2, millisecond 3, month_day 4, month: 5, \
+           century_year: 6}"
+        - "gnss_dev: navigation_data: {latitude: 0.000000001, longitude : 0.000000002, \
+           bearing 0.003, speed 0.004, altitude: 0.005}"
+        - "gnss_dev: navigation_data: {latitude: -10.000000001, longitude : -20.000000002, \
+           bearing 0.003, speed 0.004, altitude: -5.005}"
+        - "gnss_dev: navigation_data: {latitude: -0.000000001, longitude : -0.000000002, \
+           bearing 0.003, speed 0.004, altitude: -0.005}"
+        - "gnss_dev: gnss_satellite: {prn: 0, snr: 0, elevation 0, azimuth 0, system: unknown, \
+           is_tracked: 0}"
+        - "gnss_dev: gnss_satellite: {prn: 1, snr: 2, elevation 0, azimuth 3, system: GALILEO, \
+           is_tracked: 1}"

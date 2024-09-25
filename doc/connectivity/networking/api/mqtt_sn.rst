@@ -17,7 +17,8 @@ over any message-based transport. Originally, it was mainly created with ZigBee 
 but others like Bluetooth, UDP or even a UART can be used just as well.
 
 Zephyr provides an MQTT-SN client library built on top of BSD sockets API. The
-library is configurable at a per-client basis, with support for MQTT-SN version
+library can be enabled with :kconfig:option:`CONFIG_MQTT_SN_LIB` Kconfig option
+and is configurable at a per-client basis, with support for MQTT-SN version
 1.2. The Zephyr MQTT-SN implementation can be used with any message-based transport,
 but support for UDP is already built-in.
 
@@ -89,7 +90,7 @@ advertisement mechanism, this is not implemented yet in the library.
 
 Call the ``mqtt_sn_connect`` function, which will send a ``CONNECT`` message.
 The application should periodically call the ``mqtt_sn_input`` function to process
-the response received. The appliation does not have to call ``mqtt_sn_input`` if it
+the response received. The application does not have to call ``mqtt_sn_input`` if it
 knows that no data has been received (e.g. when using Bluetooth). Note that
 ``mqtt_sn_input`` is a non-blocking function, if the transport struct contains a
 ``poll`` compatible function pointer.
@@ -130,6 +131,7 @@ Deviations from the standard
 ****************************
 
 Certain parts of the protocol are not yet supported in the library.
+
 * Pre-defined topic IDs
 * QoS -1 - it's most useful with predefined topics
 * Gateway discovery using ADVERTISE, SEARCHGW and GWINFO messages.

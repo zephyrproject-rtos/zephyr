@@ -1,9 +1,0 @@
-# STM32 Nucleo-32 development board with STM32F031K6 MCU configuration
-
-# Copyright (c) 2023 STMicroelectronics
-
-# SPDX -License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_F042K6
-	bool "NUCLEO-32 F042K6 Development Board"
-	depends on SOC_STM32F042X6

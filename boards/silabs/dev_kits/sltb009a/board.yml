@@ -1,0 +1,5 @@
+board:
+  name: sltb009a
+  vendor: silabs
+  socs:
+  - name: efm32gg12b810f1024gm64

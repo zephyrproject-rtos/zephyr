@@ -17,7 +17,7 @@ config OPENTHREAD_THREAD_VERSION_1_3
 	bool "Version 1.3"
 config OPENTHREAD_THREAD_VERSION_1_3_1
 	bool "Version 1.3.1"
-endchoice
+endchoice # OPENTHREAD_STACK_VERSION
 
 config OPENTHREAD_THREAD_VERSION
 	string
@@ -39,8 +39,15 @@ config OPENTHREAD_BACKBONE_ROUTER_DUA_NDPROXYING
 config OPENTHREAD_BACKBONE_ROUTER_MULTICAST_ROUTING
 	bool "BBR MR support"
 
+config OPENTHREAD_BLE_TCAT
+	bool "BLE TCAT support"
+	select EXPERIMENTAL
+
 config OPENTHREAD_BORDER_AGENT
 	bool "Border Agent support"
+
+config OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
+	bool "Border agent ephemeral PSKc"
 
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
@@ -60,6 +67,9 @@ config OPENTHREAD_CHANNEL_MONITOR
 config OPENTHREAD_CHANNEL_MANAGER
 	bool "Channel manager support"
 	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHANNEL_MANAGER_CSL
+	bool "Channel manager for CSL channel"
 
 config OPENTHREAD_COAP
 	bool "OpenThread CoAP support"
@@ -91,6 +101,13 @@ config OPENTHREAD_CSL_RECEIVER
 	bool "CSL Receiver support"
 	help
 	  Enable CSL Receiver support for Thread 1.2
+
+config OPENTHREAD_CSL_RECEIVER_LOCAL_TIME_SYNC
+	bool "Use local time for CSL synchronization"
+	help
+	  Use host time rather than radio platform time to track elapsed time
+	  since last CSL synchronization. This reduces the usage of radio API
+	  calls, and it is useful for platforms in which those are costly.
 
 config OPENTHREAD_DEVICE_PROP_LEADER_WEIGHT
 	bool "Device props for leader weight"
@@ -181,11 +198,17 @@ config OPENTHREAD_LINK_METRICS_MANAGER
 config OPENTHREAD_LINK_METRICS_SUBJECT
 	bool "Link Metrics subject"
 
+config OPENTHREAD_PLATFORM_LOG_CRASH_DUMP
+	bool "Platform log crash dump"
+
 config OPENTHREAD_LOG_LEVEL_DYNAMIC
 	bool "Dynamic log level control"
 
 config OPENTHREAD_MAC_FILTER
 	bool "MAC filter support"
+
+config OPENTHREAD_MULTICAST_DNS
+	bool "Multicast DNS (mDNS)"
 
 config OPENTHREAD_MESH_DIAG
 	bool "Mesh Diagnostics"
@@ -206,6 +229,9 @@ config OPENTHREAD_MLR
 	bool "Multicast Listener Registration support"
 	help
 	  Enable Multicast Listener Registration support for Thread 1.2
+
+config OPENTHREAD_MULTIPAN_RCP
+	bool "OpenThread multipan rcp"
 
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "OpenThread multiple instances"
@@ -235,6 +261,31 @@ config OPENTHREAD_OTNS
 config OPENTHREAD_PING_SENDER
 	bool "Ping sender support"
 
+config OPENTHREAD_PLATFORM_KEY_REF
+	bool "Platform cryptographic key reference support"
+	help
+	  Enable usage of cryptographic key references instead of literal keys.
+	  This requires a crypto backend library that supports key references.
+
+choice OPENTHREAD_PLATFORM_BOOTLOADER_MODE_CHOICE
+	prompt "Platform bootloader mode configuration"
+	optional
+
+config OPENTHREAD_PLATFORM_BOOTLOADER_MODE_RETENTION
+	bool "Bootloader mode support with boot mode retention API"
+	depends on RETENTION_BOOT_MODE && REBOOT
+	select OPENTHREAD_PLATFORM_BOOTLOADER_MODE
+
+config OPENTHREAD_PLATFORM_BOOTLOADER_MODE_GPIO
+	bool "Bootloader mode support with GPIO pin trigger"
+	select OPENTHREAD_PLATFORM_BOOTLOADER_MODE
+endchoice # OPENTHREAD_PLATFORM_BOOTLOADER_MODE
+
+config OPENTHREAD_PLATFORM_BOOTLOADER_MODE
+	bool
+	help
+	  Platform bootloader mode support
+
 config OPENTHREAD_PLATFORM_NETIF
 	bool "Platform netif support"
 
@@ -256,7 +307,7 @@ config OPENTHREAD_POWER_SUPPLY_EXTERNAL_STABLE
 
 config OPENTHREAD_POWER_SUPPLY_EXTERNAL_UNSTABLE
 	bool "OT_POWER_SUPPLY_EXTERNAL_UNSTABLE"
-endchoice
+endchoice # OPENTHREAD_POWER_SUPPLY_CHOICE
 
 config OPENTHREAD_POWER_SUPPLY
 	string
@@ -287,6 +338,11 @@ config OPENTHREAD_SLAAC
 config OPENTHREAD_SNTP_CLIENT
 	bool "SNTP Client support"
 
+config OPENTHREAD_SRP_ADV_PROXY
+	bool "SRP Server Advertising Proxy support"
+	depends on OPENTHREAD_SRP_SERVER
+	depends on OPENTHREAD_BORDER_ROUTING
+
 config OPENTHREAD_SRP_CLIENT
 	bool "SRP Client support"
 	select OPENTHREAD_ECDSA
@@ -297,7 +353,8 @@ config OPENTHREAD_SRP_SERVER
 	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_TIME_SYNC
-	bool "The time synchronization service feature"
+	bool "The time synchronization service feature [EXPERIMENTAL]"
+	select EXPERIMENTAL
 
 config OPENTHREAD_TREL
 	bool "TREL radio link for Thread over Infrastructure feature"
@@ -314,3 +371,6 @@ config OPENTHREAD_UDP_FORWARD
 config OPENTHREAD_UPTIME
 	bool "Openthread uptime counter"
 	default y if OPENTHREAD_FTD
+
+config OPENTHREAD_VERHOEFF_CHECKSUM
+	bool "Verhoeff checksum"

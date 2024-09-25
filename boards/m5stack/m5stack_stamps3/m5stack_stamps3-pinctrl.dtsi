@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2023 Martin Kiepfer <mrmarteng@teleschirm.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+ #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+ #include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		 group1 {
+			 pinmux = <UART0_TX_GPIO43>;
+			 output-high;
+		 };
+		 group2 {
+			 pinmux = <UART0_RX_GPIO44>;
+			 bias-pull-up;
+		 };
+	 };
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO13>,
+				 <I2C0_SCL_GPIO15>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO11>,
+				 <I2C1_SCL_GPIO12>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO6>,
+				 <SPIM2_CSEL_GPIO7>;
+		};
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO5>;
+			output-low;
+		};
+
+	};
+
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MOSI_GPIO21>;
+			output-low;
+		};
+
+	};
+
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO9>; /* lcd backlight */
+			output-enable;
+		};
+		group2 {
+			pinmux = <LEDC_CH1_GPIO3>; /* beeper */
+			output-enable;
+		};
+	};
+
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO9>; /* lcd backlight */
+			output-enable;
+		};
+		group2 {
+			pinmux = <MCPWM0_OUT1A_GPIO3>;
+			output-enable;
+		};
+	};
+};

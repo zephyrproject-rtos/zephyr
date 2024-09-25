@@ -29,7 +29,7 @@ if (CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
   if (CONFIG_BUILD_WITH_TFM)
     zephyr_library_include_directories(
-      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/install/interface/include
+      $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
     )
   endif()
 

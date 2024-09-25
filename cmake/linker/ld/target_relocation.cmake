@@ -32,7 +32,7 @@ macro(toolchain_ld_relocation)
     -b ${MEM_RELOCATION_SRAM_BSS_LD}
     -c ${MEM_RELOCATION_CODE}
     --default_ram_region ${MEM_REGION_DEFAULT_RAM}
-    DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
+    DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY} ${DICT_FILE}
     )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})

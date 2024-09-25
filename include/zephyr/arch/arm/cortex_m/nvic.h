@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_NVIC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_NVIC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NVIC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NVIC_H_
 
 #include <zephyr/devicetree.h>
 
@@ -25,4 +25,4 @@
 
 #define NUM_IRQ_PRIO_BITS DT_PROP(NVIC_NODEID, arm_num_irq_priority_bits)
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_NVIC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_NVIC_H_ */

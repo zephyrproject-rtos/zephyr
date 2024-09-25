@@ -1,0 +1,5 @@
+board:
+  name: disco_l475_iot1
+  vendor: st
+  socs:
+    - name: stm32l475xx

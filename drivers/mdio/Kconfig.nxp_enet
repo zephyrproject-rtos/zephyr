@@ -1,0 +1,21 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NXP_ENET
+	bool "NXP ENET MDIO Driver"
+	default y
+	depends on DT_HAS_NXP_ENET_MDIO_ENABLED
+	help
+	  Enable NXP ENET MDIO Driver. This Kconfig can be disabled manually
+	  if all ethernet PHYs being used with ENET are not managed by MDIO bus.
+
+if MDIO_NXP_ENET
+
+config MDIO_NXP_ENET_TIMEOUT
+	int "NXP ENET MDIO Timeout time"
+	default 250
+	help
+	  Time in microseconds before an MDIO transaction that has not
+	  finished is considered to have timed out.
+
+endif # MDIO_NXP_ENET

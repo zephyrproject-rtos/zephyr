@@ -51,7 +51,7 @@
 
 /* LLCP Local Procedure PHY Update FSM states */
 enum {
-	LP_PU_STATE_IDLE,
+	LP_PU_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_PU_STATE_WAIT_TX_PHY_REQ,
 	LP_PU_STATE_WAIT_TX_ACK_PHY_REQ,
 	LP_PU_STATE_WAIT_RX_PHY_RSP,
@@ -89,7 +89,7 @@ enum {
 
 /* LLCP Remote Procedure PHY Update FSM states */
 enum {
-	RP_PU_STATE_IDLE,
+	RP_PU_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_PU_STATE_WAIT_RX_PHY_REQ,
 	RP_PU_STATE_WAIT_TX_PHY_RSP,
 	RP_PU_STATE_WAIT_TX_ACK_PHY_RSP,
@@ -433,6 +433,7 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Piggy-back on stored RX node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	if (ctx->data.pu.ntf_pu) {
@@ -449,15 +450,9 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	/* Enqueue notification towards LL */
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	/* only 'put' as the 'sched' is handled when handling DLE ntf */
-	ll_rx_put(ntf->hdr.link, ntf);
-#else
 	ll_rx_put_sched(ntf->hdr.link, ntf);
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	ctx->data.pu.ntf_pu = 0;
-	ctx->node_ref.rx = NULL;
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -618,6 +613,7 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
+		llcp_tx_resume_data(conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
 		break;
 	default:
 		/* Ignore other evts */
@@ -716,6 +712,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_PERIPHERAL);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 
@@ -901,11 +898,6 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		ctx->state = LP_PU_STATE_IDLE;
 		break;
 	}
-}
-
-void llcp_lp_pu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_PU_STATE_IDLE;
 }
 
 void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
@@ -1319,11 +1311,6 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		ctx->state = RP_PU_STATE_IDLE;
 		break;
 	}
-}
-
-void llcp_rp_pu_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_PU_STATE_IDLE;
 }
 
 void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

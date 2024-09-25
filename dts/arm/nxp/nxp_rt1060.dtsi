@@ -6,14 +6,33 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
-/* i.MX rt1060 has two continuous on-chip RAM, one is part of the
- * FlexRAM mapped at 0x20280000 (vs 0x20280000 on rt1050) and is
- * configurable (256KB by defaults), the other one is dedicated 512KB
- * ram (OCRAM2) mapped at 0x20200000. In order to have a continuous
- * region, we describe them in one 768Kb unique node.
- */
-&ocram {
-	reg = <0x20200000 DT_SIZE_K(768)>;
+&flexram {
+	/* FlexRAM OCRAM is at a different address on RT1060 */
+	/delete-node/ ocram@20200000;
+	ocram: ocram@20280000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20280000 DT_SIZE_K(256)>;
+		zephyr,memory-region = "OCRAM";
+	};
+
+	flexram,num-ram-banks = <16>;
+	/* default fuse */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_ITCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>;
 };
 
 &ccm {
@@ -26,21 +45,57 @@
 	};
 };
 
-/* i.MX rt1060 has a second Ethernet controller. */
 / {
 	soc {
+		/* i.MX rt1060 has a second Ethernet controller. */
 		enet2: ethernet@402d4000 {
-			compatible = "nxp,kinetis-ethernet";
-			reg = <0x402D4000 0x628>;
-			interrupts = <152 0>;
-			interrupt-names = "COMMON";
-			status = "disabled";
-			ptp {
-				compatible = "nxp,kinetis-ptp";
+			compatible = "nxp,enet";
+			reg = <0x402d4000 0x628>;
+			clocks = <&ccm IMX_CCM_ENET_CLK 0 0>;
+			enet2_mac: ethernet {
+				compatible = "nxp,enet-mac";
+				interrupts = <152 0>;
+				interrupt-names = "COMMON";
+				nxp,mdio = <&enet2_mdio>;
+				nxp,ptp-clock = <&enet_ptp_clock>;
+				status = "disabled";
+			};
+			enet2_mdio: mdio {
+				compatible = "nxp,enet-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+			enet2_ptp_clock: ptp_clock {
+				compatible = "nxp,enet-ptp-clock";
 				status = "disabled";
 				interrupts = <153 0>;
 				interrupt-names = "IEEE1588_TMR";
+				clocks = <&ccm IMX_CCM_ENET_PLL 0 0>;
 			};
+		};
+
+		/* RT1060 has a dedicated OCRAM region */
+		ocram2: ocram@20200000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20200000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "OCRAM2";
+		};
+
+		flexio2: flexio@401b0000 {
+			compatible = "nxp,flexio";
+			reg = <0x401b0000 0x4000>;
+			status = "disabled";
+			interrupts = <91 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
+		};
+
+		flexio3: flexio@42020000 {
+			compatible = "nxp,flexio";
+			reg = <0x42020000 0x4000>;
+			status = "disabled";
+			interrupts = <156 0>;
+			clocks = <&ccm IMX_CCM_FLEXIO2_3_CLK 0 0>;
 		};
 	};
 };

@@ -36,15 +36,15 @@ static ssize_t recv(struct bt_conn *conn,
 		    uint16_t len, uint16_t offset, uint8_t flags);
 
 /* ST Custom Service  */
-static struct bt_uuid_128 st_service_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 st_service_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x0000fe40, 0xcc7a, 0x482a, 0x984a, 0x7f2ed5b3e58f));
 
 /* ST LED service */
-static struct bt_uuid_128 led_char_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 led_char_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x0000fe41, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
 /* ST Notify button service */
-static struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x0000fe42, 0x8e22, 0x4541, 0x9d4c, 0x21edae82ed19));
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
@@ -142,7 +142,7 @@ static void bt_ready(int err)
 	}
 	LOG_INF("Bluetooth initialized");
 	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		LOG_ERR("Advertising failed to start (err %d)", err);
 		return;

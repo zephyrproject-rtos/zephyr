@@ -20,7 +20,7 @@
 
 &sramx {
 	compatible = "zephyr,memory-region", "mmio-sram";
-	reg = <0x40000000 DT_SIZE_K(16)>;
+	reg = <0x04000000 DT_SIZE_K(16)>;
 	zephyr,memory-region = "SRAMX";
 };
 

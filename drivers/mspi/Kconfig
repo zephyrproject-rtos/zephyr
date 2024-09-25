@@ -1,0 +1,65 @@
+# MSPI driver configuration options
+
+# Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# MSPI Drivers
+#
+menuconfig MSPI
+	bool "Multi-bit Serial Peripheral Interface (MSPI) bus drivers"
+	help
+	  Enable support for the MSPI hardware bus.
+
+if MSPI
+
+config MSPI_ASYNC
+	bool "Asynchronous call support"
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
+config MSPI_PERIPHERAL
+	bool "Peripheral support"
+	help
+	  Enables Driver MSPI peripheral mode operations. Peripheral mode
+	  support depends on the driver and the hardware it runs on.
+
+config MSPI_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+config MSPI_COMPLETION_TIMEOUT_TOLERANCE
+	int "Completion timeout tolerance (ms)"
+	default 200
+	help
+	  The tolerance value in ms for the MSPI completion timeout logic.
+
+config MSPI_XIP
+	bool "XIP eXecute In Place"
+	help
+	  Describes controller hardware XIP capability and
+	  enables mspi_xip_config calls in device drivers.
+
+config MSPI_SCRAMBLE
+	bool "Scrambling support"
+	help
+	  Describes controller hardware scrambling capability and
+	  enables mspi_scramble_config calls in device drivers.
+
+config MSPI_TIMING
+	bool "Timing support"
+	help
+	  Enables mspi_timing_config calls in device drivers for those
+	  controllers that need this to proper function at high frequencies.
+
+module = MSPI
+module-str = mspi
+source "subsys/logging/Kconfig.template.log_config"
+
+source "drivers/mspi/Kconfig.ambiq"
+source "drivers/mspi/Kconfig.mspi_emul"
+
+endif # MSPI

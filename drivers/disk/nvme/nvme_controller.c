@@ -1,7 +1,9 @@
 /*
  * Copyright (c) 2022 Intel Corporation
- *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Derived from FreeBSD original driver made by Jim Harris
+ * with contributions from Alexander Motin, Wojciech Macek, and Warner Losh
  */
 
 #define DT_DRV_COMPAT nvme_controller

@@ -49,10 +49,6 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
 
 endchoice
 
-config NET_L2_IEEE802154_ACK_REPLY
-	bool
-	select DEPRECATED
-
 choice
 	prompt "Device features level support"
 	default NET_L2_IEEE802154_RFD

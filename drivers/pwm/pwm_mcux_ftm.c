@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2024 NXP
  * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -76,6 +76,11 @@ static int mcux_ftm_set_cycles(const struct device *dev, uint32_t channel,
 	if (period_cycles == 0U) {
 		LOG_ERR("Channel can not be set to inactive level");
 		return -ENOTSUP;
+	}
+
+	if (period_cycles > UINT16_MAX) {
+		LOG_ERR("Period cycles must be less or equal than %u", UINT16_MAX);
+		return -EINVAL;
 	}
 
 	if (channel >= config->channel_count) {
@@ -378,11 +383,24 @@ static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t chan
 	}
 }
 
-static void mcux_ftm_isr(const struct device *dev)
+static bool mcux_ftm_handle_overflow(const struct device *dev)
 {
 	const struct mcux_ftm_config *config = dev->config;
 	struct mcux_ftm_data *data = dev->data;
-	bool overflow = false;
+
+	if (FTM_GetStatusFlags(config->base) & kFTM_TimeOverflowFlag) {
+		data->overflows++;
+		FTM_ClearStatusFlags(config->base, kFTM_TimeOverflowFlag);
+		return true;
+	}
+
+	return false;
+}
+
+static void mcux_ftm_irq_handler(const struct device *dev, uint32_t chan_start, uint32_t chan_end)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	bool overflow;
 	uint32_t flags;
 	uint32_t irqs;
 	uint16_t cnt;
@@ -392,13 +410,9 @@ static void mcux_ftm_isr(const struct device *dev)
 	irqs = FTM_GetEnabledInterrupts(config->base);
 	cnt = config->base->CNT;
 
-	if (flags & kFTM_TimeOverflowFlag) {
-		data->overflows++;
-		overflow = true;
-		FTM_ClearStatusFlags(config->base, kFTM_TimeOverflowFlag);
-	}
+	overflow = mcux_ftm_handle_overflow(dev);
 
-	for (ch = 0; ch < MAX_CHANNELS; ch++) {
+	for (ch = chan_start; ch < chan_end; ch++) {
 		if ((flags & BIT(ch)) && (irqs & BIT(ch))) {
 			if (ch & 1) {
 				mcux_ftm_capture_second_edge(dev, ch, cnt, overflow);
@@ -491,6 +505,14 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 #define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
 
 #ifdef CONFIG_PWM_CAPTURE
+#if IS_EQ(DT_NUM_IRQS(DT_DRV_INST(0)), 1)
+static void mcux_ftm_isr(const struct device *dev)
+{
+	const struct mcux_ftm_config *cfg = dev->config;
+
+	mcux_ftm_irq_handler(dev, 0, cfg->channel_count);
+}
+
 #define FTM_CONFIG_FUNC(n) \
 static void mcux_ftm_config_func_##n(const struct device *dev) \
 { \
@@ -498,6 +520,49 @@ static void mcux_ftm_config_func_##n(const struct device *dev) \
 		    mcux_ftm_isr, DEVICE_DT_INST_GET(n), 0); \
 	irq_enable(DT_INST_IRQN(n)); \
 }
+#else /* Multiple interrupts */
+#define FTM_ISR_FUNC_NAME(suffix) _DO_CONCAT(mcux_ftm_isr_, suffix)
+#define FTM_ISR_FUNC(chan_start, chan_end) \
+static void mcux_ftm_isr_##chan_start##_##chan_end(const struct device *dev) \
+{ \
+	mcux_ftm_irq_handler(dev, chan_start, chan_end + 1); \
+}
+
+#define FTM_ISR_CONFIG(node_id, prop, idx) \
+do { \
+	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), \
+		    DT_IRQ_BY_IDX(node_id, idx, priority), \
+		    FTM_ISR_FUNC_NAME(DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)), \
+		    DEVICE_DT_GET(node_id), \
+		    0); \
+	irq_enable(DT_IRQ_BY_IDX(node_id, idx, irq)); \
+} while (false);
+
+#define FTM_CONFIG_FUNC(n) \
+static void mcux_ftm_config_func_##n(const struct device *dev) \
+{ \
+	DT_INST_FOREACH_PROP_ELEM(n, interrupt_names, FTM_ISR_CONFIG) \
+}
+
+#if DT_INST_IRQ_HAS_NAME(0, overflow)
+static void mcux_ftm_isr_overflow(const struct device *dev)
+{
+	mcux_ftm_handle_overflow(dev);
+}
+#endif
+#if DT_INST_IRQ_HAS_NAME(0, 0_1)
+FTM_ISR_FUNC(0, 1)
+#endif
+#if DT_INST_IRQ_HAS_NAME(0, 2_3)
+FTM_ISR_FUNC(2, 3)
+#endif
+#if DT_INST_IRQ_HAS_NAME(0, 4_5)
+FTM_ISR_FUNC(4, 5)
+#endif
+#if DT_INST_IRQ_HAS_NAME(0, 6_7)
+FTM_ISR_FUNC(6, 7)
+#endif
+#endif /* IS_EQ(DT_NUM_IRQS(DT_DRV_INST(0)), 1) */
 #define FTM_CFG_CAPTURE_INIT(n) \
 	.irq_config_func = mcux_ftm_config_func_##n
 #define FTM_INIT_CFG(n)	FTM_DECLARE_CFG(n, FTM_CFG_CAPTURE_INIT(n))
@@ -513,7 +578,7 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
 	.clock_subsys = (clock_control_subsys_t) \
 		DT_INST_CLOCKS_CELL(n, name), \
-	.ftm_clock_source = kFTM_FixedClock, \
+	.ftm_clock_source = (ftm_clock_source_t)(DT_INST_ENUM_IDX(n, clock_source) + 1U), \
 	.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
 	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
 		DT_INST_REG_ADDR(n)), \

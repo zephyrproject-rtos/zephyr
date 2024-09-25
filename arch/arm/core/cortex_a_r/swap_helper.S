@@ -20,6 +20,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/syscall.h>
 #include <zephyr/kernel.h>
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
@@ -49,9 +50,9 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
     pop {r0, lr}
 #endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
-    /* load _kernel into r1 and current k_thread into r2 */
-    ldr r1, =_kernel
-    ldr r2, [r1, #_kernel_offset_to_current]
+    /* load current _cpu into r1 and current k_thread into r2 */
+    get_cpu r1
+    ldr r2, [r1, #___cpu_t_current_OFFSET]
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
     /* Store LSB of LR (EXC_RETURN) to the thread's 'mode' word. */
@@ -81,7 +82,7 @@ SECTION_FUNC(TEXT, z_arm_do_swap)
      * float registers have not been saved away, so write them to the
      * exception stack frame.
      */
-    ldr r0, [r1, #_kernel_offset_to_fp_ctx]
+    ldr r0, [r1, #___cpu_t_fp_ctx_OFFSET]
     cmp r0, #0
     beq out_store_thread_context
 
@@ -106,13 +107,14 @@ out_fp_inactive:
      * frame, so zero out the global pointer to note this.
      */
     mov r0, #0
-    str r0, [r1, #_kernel_offset_to_fp_ctx]
+    str r0, [r1, #___cpu_t_fp_ctx_OFFSET]
 #endif /* CONFIG_FPU_SHARING */
 
     /* fetch the thread to run from the ready queue cache */
-    ldr r2, [r1, #_kernel_offset_to_ready_q_cache]
+    ldr r3, =_kernel
+    ldr r2, [r3, #_kernel_offset_to_ready_q_cache]
 
-    str r2, [r1, #_kernel_offset_to_current]
+    str r2, [r1, #___cpu_t_current_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
     /* Grab the TLS pointer */
@@ -121,10 +123,10 @@ out_fp_inactive:
     ldr r0, [r4]
 
     /* Store TLS pointer in the "Process ID" register.
-     * This register is used as a base pointer to all
+     * TPIDRURW is used as a base pointer to all
      * thread variables with offsets added by toolchain.
      */
-    mcr 15, 0, r0, cr13, cr0, 3
+    mcr 15, 0, r0, c13, c0, 2
 #endif
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
@@ -138,11 +140,6 @@ out_fp_inactive:
     ldr r0, [r2, #_thread_offset_to_basepri]
     movs r3, #0
     str r3, [r2, #_thread_offset_to_basepri]
-
-_thread_irq_disabled:
-    /* load _kernel into r1 and current k_thread into r2 */
-    ldr r1, =_kernel
-    ldr r2, [r1, #_kernel_offset_to_current]
 
     /* addr of callee-saved regs in thread in r0 */
     ldr r0, =_thread_offset_to_callee_saved
@@ -175,9 +172,9 @@ in_fp_inactive:
     /* r2 contains k_thread */
     mov r0, r2
     /* Re-program dynamic memory map */
-    push {r2, lr}
+    push {r0, lr}
     bl z_arm_configure_dynamic_mpu_regions
-    pop {r2, lr}
+    pop {r0, lr}
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
@@ -217,8 +214,8 @@ SECTION_FUNC(TEXT, z_arm_svc)
     cmp r0, #MODE_USR
     bne svc_system_thread
 
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+    get_cpu r0
+    ldr r0, [r0, #___cpu_t_current_OFFSET]
 
     /* Save away user stack pointer */
     cps #MODE_SYS
@@ -265,10 +262,10 @@ _vfp_not_enabled:
      * Mark where to store the floating context for the undefined
      * instruction handler
      */
-    ldr r2, =_kernel
-    ldr r0, [r2, #_kernel_offset_to_fp_ctx]
+    get_cpu r2
+    ldr r0, [r2, #___cpu_t_fp_ctx_OFFSET]
     cmp r0, #0
-    streq sp, [r2, #_kernel_offset_to_fp_ctx]
+    streq sp, [r2, #___cpu_t_fp_ctx_OFFSET]
 #endif /* CONFIG_FPU_SHARING */
 
     mov ip, sp
@@ -282,15 +279,16 @@ _vfp_not_enabled:
     push {lr}
 
     /* Align stack at double-word boundary */
+    /* TODO: Question, why push {r2, r3} here */
     and r3, sp, #4
     sub sp, sp, r3
     push {r2, r3}
 
     /* Increment interrupt nesting count */
-    ldr r2, =_kernel
-    ldr r0, [r2, #_kernel_offset_to_nested]
+    get_cpu r2
+    ldr r0, [r2, #___cpu_t_nested_OFFSET]
     add r0, r0, #1
-    str r0, [r2, #_kernel_offset_to_nested]
+    str r0, [r2, #___cpu_t_nested_OFFSET]
 
     /* Get SVC number */
     mrs r0, spsr
@@ -403,8 +401,8 @@ _do_syscall:
     ldr r6, =K_SYSCALL_BAD
 
 valid_syscall_id:
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
+    get_cpu r0
+    ldr r0, [r0, #___cpu_t_current_OFFSET]
     ldr r1, [r0, #_thread_offset_to_mode]
     bic r1, #1
     /* Store (privileged) mode in thread's mode state variable */

@@ -1,0 +1,19 @@
+#
+# Copyright 2022 Huawei France Technologies SASU
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_RK3399
+
+config NUM_IRQS
+	int
+	default 240
+
+config FLASH_SIZE
+	default 0
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+endif

@@ -38,7 +38,9 @@
 #define HAL_OSPI_Transmit_DMA HAL_XSPI_Transmit_DMA
 #define HAL_OSPI_Transmit_IT HAL_XSPI_Transmit_IT
 #define HAL_OSPI_AutoPolling HAL_XSPI_AutoPolling
+#define HAL_OSPI_AutoPolling_IT HAL_XSPI_AutoPolling_IT
 #define HAL_OSPI_IRQHandler HAL_XSPI_IRQHandler
+#define HAL_OSPI_Abort HAL_XSPI_Abort
 
 #define HAL_OSPI_ErrorCallback HAL_XSPI_ErrorCallback
 #define HAL_OSPI_CmdCpltCallback HAL_XSPI_CmdCpltCallback

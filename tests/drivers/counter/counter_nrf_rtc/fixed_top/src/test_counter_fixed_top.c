@@ -55,6 +55,7 @@ static void counter_tear_down_instance(const struct device *dev)
 
 static void test_all_instances(counter_test_func_t func)
 {
+	zassert_true(ARRAY_SIZE(devices) > 0);
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
 		func(i);
@@ -99,6 +100,12 @@ static void test_top_handler_on_instance(int idx)
 		.callback = top_handler,
 		.flags = 0
 	};
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	/* For simulated devices we need to convert the hardcoded DT address from the real
+	 * peripheral into the correct one for simulation
+	 */
+	reg = nhw_convert_periph_base_addr(reg);
+#endif
 
 	top_cfg.ticks = counter_get_max_top_value(dev);
 

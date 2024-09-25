@@ -71,7 +71,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         parser.add_argument(
             '--esp-tool',
             help='''if given, complete path to espidf. default is to search for
-            it in [ESP_IDF_PATH]/components/esptool_py/esptool/esptool.py''')
+            it in [ESP_IDF_PATH]/tools/esptool_py/esptool.py''')
         parser.add_argument('--esp-flash-bootloader',
                             help='Bootloader image to flash')
         parser.add_argument('--esp-flash-partition_table',
@@ -86,8 +86,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         if args.esp_tool:
             espidf = args.esp_tool
         else:
-            espidf = path.join(args.esp_idf_path, 'components', 'esptool_py',
-                               'esptool', 'esptool.py')
+            espidf = path.join(args.esp_idf_path, 'tools', 'esptool_py',
+                               'esptool.py')
 
         return Esp32BinaryRunner(
             cfg, args.esp_device, boot_address=args.esp_boot_address,

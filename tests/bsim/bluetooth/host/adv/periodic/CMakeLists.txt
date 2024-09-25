@@ -9,7 +9,7 @@ target_sources(app PRIVATE
     src/common.c
     src/main.c
     src/per_adv_advertiser.c
-    src/per_adv_syncer.c
+    src/per_adv_sync.c
 )
 
 zephyr_include_directories(

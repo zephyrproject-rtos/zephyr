@@ -6,15 +6,15 @@
 
 /** @file mqtt_sn.h
  *
- * @defgroup mqtt_sn_socket MQTT-SN Client library
- * @ingroup networking
- * @{
  * @brief MQTT-SN Client Implementation
  *
  * @details
  * MQTT-SN Client's Application interface is defined in this header.
  * Targets protocol version 1.2.
  *
+ * @defgroup mqtt_sn_socket MQTT-SN Client library
+ * @ingroup networking
+ * @{
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_MQTT_SN_H_
@@ -396,6 +396,19 @@ int mqtt_sn_publish(struct mqtt_sn_client *client, enum mqtt_sn_qos qos,
  * @return 0 or a negative error code (errno.h) indicating reason of failure.
  */
 int mqtt_sn_input(struct mqtt_sn_client *client);
+
+/**
+ * @brief Get topic name by topic ID.
+ *
+ * @param[in] client The MQTT-SN client that uses this topic.
+ * @param[in] id Topic identifier.
+ * @param[out] topic_name Will be assigned to topic name.
+ *
+ * @return 0 on success, -ENOENT if topic ID doesn't exist,
+ * or -EINVAL on invalid arguments.
+ */
+int mqtt_sn_get_topic_name(struct mqtt_sn_client *client, uint16_t id,
+			   struct mqtt_sn_data *topic_name);
 
 #ifdef __cplusplus
 }

@@ -123,7 +123,7 @@ child-binding:
         configured as an output.
           2: min 2 mA (SoC default)
           4: min 4 mA
-          8: min 8 mA for for double drive strength IOs, min 4 mA for normal IOs
+          8: min 8 mA for double drive strength IOs, min 4 mA for normal IOs
 
     ti,input-edge-detect:
       type: int

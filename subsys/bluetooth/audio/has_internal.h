@@ -8,6 +8,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
+
 /* Control Point opcodes */
 #define BT_HAS_OP_READ_PRESET_REQ        0x01
 #define BT_HAS_OP_READ_PRESET_RSP        0x02
@@ -77,6 +86,7 @@ struct bt_has_cp_read_preset_rsp {
 struct bt_has_cp_preset_changed {
 	uint8_t change_id;
 	uint8_t is_last;
+	uint8_t additional_params[0];
 } __packed;
 
 struct bt_has_cp_generic_update {
@@ -138,3 +148,37 @@ static inline const char *bt_has_change_id_str(uint8_t change_id)
 		return "Unknown changeId";
 	}
 }
+
+enum has_client_flags {
+	HAS_CLIENT_DISCOVER_IN_PROGRESS,
+	HAS_CLIENT_CP_OPERATION_IN_PROGRESS,
+
+	HAS_CLIENT_NUM_FLAGS, /* keep as last */
+};
+
+struct bt_has_client {
+	/** Common profile reference object */
+	struct bt_has has;
+
+	/** Profile connection reference */
+	struct bt_conn *conn;
+
+	/** Internal flags */
+	ATOMIC_DEFINE(flags, HAS_CLIENT_NUM_FLAGS);
+
+	/* GATT procedure parameters */
+	union {
+		struct {
+			struct bt_uuid_16 uuid;
+			union {
+				struct bt_gatt_read_params read;
+				struct bt_gatt_discover_params discover;
+			};
+		};
+		struct bt_gatt_write_params write;
+	} params;
+
+	struct bt_gatt_subscribe_params features_subscription;
+	struct bt_gatt_subscribe_params control_point_subscription;
+	struct bt_gatt_subscribe_params active_index_subscription;
+};

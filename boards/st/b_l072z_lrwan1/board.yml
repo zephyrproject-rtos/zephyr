@@ -1,0 +1,5 @@
+board:
+  name: b_l072z_lrwan1
+  vendor: st
+  socs:
+    - name: stm32l072xx

@@ -25,7 +25,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(kscan_atm, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(kscan_atm, CONFIG_KSCAN_LOG_LEVEL);
 
 #include "arch.h"
 #include "at_wrpr.h"

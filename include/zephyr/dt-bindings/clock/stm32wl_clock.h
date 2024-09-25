@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_
 
+#include "stm32_common_clocks.h"
+
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x048
 #define STM32_CLOCK_BUS_AHB2    0x04c
@@ -21,19 +23,20 @@
 /** Domain clocks */
 /* RM0461, §6.4.29 Clock configuration register (RCC_CFGR3) */
 
-/** Fixed clocks  */
-#define STM32_SRC_HSI		0x001
-#define STM32_SRC_LSE		0x002
-#define STM32_SRC_LSI		0x003
-/* #define STM32_SRC_HSI48	0x004 */
+
 /** System clock */
-#define STM32_SRC_SYSCLK	0x005
+/* defined in stm32_common_clocks.h */
+/** Fixed clocks  */
+/* Low speed clocks defined in stm32_common_clocks.h */
+#define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_MSI		(STM32_SRC_HSI + 1)
+/* #define STM32_SRC_HSI48	TBD */
 /** Bus clock */
-#define STM32_SRC_PCLK		0x006
+#define STM32_SRC_PCLK		(STM32_SRC_MSI + 1)
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		0x007
-#define STM32_SRC_PLL_Q		0x008
-#define STM32_SRC_PLL_R		0x009
+#define STM32_SRC_PLL_P		(STM32_SRC_PCLK + 1)
+#define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
+#define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 
 #define STM32_CLOCK_REG_MASK    0xFFU
 #define STM32_CLOCK_REG_SHIFT   0U
@@ -85,7 +88,5 @@
 #define RNG_SEL(val)		STM32_CLOCK(val, 3, 30, CCIPR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
-/** Dummy: Add a specificier when no selection is possible */
-#define NO_SEL			0xFF
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WL_CLOCK_H_ */

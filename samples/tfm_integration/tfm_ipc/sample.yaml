@@ -9,16 +9,16 @@ tests:
       - trusted-firmware-m
       - mcuboot
     platform_allow:
-      - mps2_an521_ns
-      - nrf5340dk_nrf5340_cpuapp_ns
-      - nrf9160dk_nrf9160_ns
-      - nucleo_l552ze_q_ns
-      - stm32l562e_dk_ns
-      - v2m_musca_s1_ns
-      - bl5340_dvk_cpuapp_ns
-      - b_u585i_iot02a_ns
+      - mps2/an521/cpu0/ns
+      - nrf5340dk/nrf5340/cpuapp/ns
+      - nrf9160dk/nrf9160/ns
+      - nucleo_l552ze_q/stm32l552xx/ns
+      - stm32l562e_dk/stm32l562xx/ns
+      - v2m_musca_s1/musca_s1/ns
+      - bl5340_dvk/nrf5340/cpuapp/ns
+      - b_u585i_iot02a/stm32u585xx/ns
     integration_platforms:
-      - mps2_an521_ns
+      - mps2/an521/cpu0/ns
     harness: console
     harness_config:
       type: multi_line
@@ -31,7 +31,7 @@ tests:
     tags:
       - introduction
       - trusted-firmware-m
-    platform_allow: mps2_an521_ns
+    platform_allow: mps2/an521/cpu0/ns
     extra_configs:
       - CONFIG_TFM_BL2=n
     harness: console

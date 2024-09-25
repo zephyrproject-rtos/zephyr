@@ -33,16 +33,8 @@
 
 #define TRANSFER_LOOPS (4)
 
-#if CONFIG_NOCACHE_MEMORY
-static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION)));
-static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used
-	__attribute__((__section__(CONFIG_DMA_LOOP_TRANSFER_SRAM_SECTION".dma")));
-#else
-/* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
-static __aligned(16) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
-#endif
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
+static __aligned(32) uint8_t rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;
@@ -63,12 +55,10 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
 
-		zassert_false(dma_config(dev, id, &dma_cfg),
-					"Not able to config transfer %d",
-					transfer_count + 1);
-		zassert_false(dma_start(dev, id),
-					"Not able to start next transfer %d",
-					transfer_count + 1);
+		zassert_ok(dma_config(dev, id, &dma_cfg), "Not able to config transfer %d",
+			   transfer_count + 1);
+		zassert_ok(dma_start(dev, id), "Not able to start next transfer %d",
+			   transfer_count + 1);
 	}
 }
 
@@ -262,7 +252,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 			done = 1;
 			TC_PRINT("suspend not supported\n");
 			dma_stop(dma, chan_id);
-			return TC_PASS;
+			ztest_test_skip();
+			return TC_SKIP;
 		}
 		tc = transfer_count;
 		irq_unlock(irq_key);
@@ -480,7 +471,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _)	test_dma ## i
+#define DMA_NAME(i, _)	tst_dma ## i
 #define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
 
 #define TEST_LOOP(dma_name)                                                                        \

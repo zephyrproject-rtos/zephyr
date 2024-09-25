@@ -297,14 +297,15 @@ int eth_ivshmem_initialize(const struct device *dev)
 	}
 	dev_data->peer_id = (id == 0) ? 1 : 0;
 
-	bool tx_buffer_first = id == 0;
-	uintptr_t output_section_addr;
+	uintptr_t output_sections[2];
 	size_t output_section_size = ivshmem_get_output_mem_section(
-		cfg_data->ivshmem, 0, &output_section_addr);
+		cfg_data->ivshmem, 0, &output_sections[0]);
+	ivshmem_get_output_mem_section(
+		cfg_data->ivshmem, 1, &output_sections[1]);
 
 	res = eth_ivshmem_queue_init(
-		&dev_data->ivshmem_queue, output_section_addr,
-		output_section_size, tx_buffer_first);
+		&dev_data->ivshmem_queue, output_sections[id],
+		output_sections[dev_data->peer_id], output_section_size);
 	if (res != 0) {
 		LOG_ERR("Failed to init ivshmem queue");
 		return res;
@@ -389,10 +390,7 @@ static const struct ethernet_api eth_ivshmem_api = {
 #define ETH_IVSHMEM_RANDOM_MAC_ADDR(inst)						\
 	static void generate_mac_addr_##inst(uint8_t mac_addr[6])			\
 	{										\
-		uint32_t entropy = sys_rand32_get();					\
-		mac_addr[0] = (entropy >> 16) & 0xff;					\
-		mac_addr[1] = (entropy >>  8) & 0xff;					\
-		mac_addr[2] = (entropy >>  0) & 0xff;					\
+		sys_rand_get(mac_addr, 3U);						\
 		/* Clear multicast bit */						\
 		mac_addr[0] &= 0xFE;							\
 		gen_random_mac(mac_addr, mac_addr[0], mac_addr[1], mac_addr[2]);	\

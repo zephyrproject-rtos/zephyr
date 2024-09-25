@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Google LLC
+# Copyright (c) 2024 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config AKM09918C
+	bool "AKM09918C Magnetometer"
+	default y
+	depends on DT_HAS_ASAHI_KASEI_AKM09918C_ENABLED
+	select I2C
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for AK8975 magnetometer.
+
+config EMUL_AKM09918C
+	bool "Emulator for AKM09918C"
+	default y
+	depends on AKM09918C
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the AKM09918C. Doing so allows exercising
+	  sensor APIs for this magnetometer in native_sim and qemu.

@@ -7,6 +7,7 @@
 #   elfconvert_flag_final         : empty
 #   elfconvert_flag_strip_all     : -S
 #   elfconvert_flag_strip_debug   : -g
+#   elfconvert_flag_compress_debug_sections: --compress-debug-sections
 #   elfconvert_flag_intarget      : --input-target=
 #   elfconvert_flag_outtarget     : --output-target=
 #   elfconvert_flag_section_remove: --remove-section=
@@ -33,6 +34,8 @@ set_property(TARGET bintools PROPERTY elfconvert_flag_final "")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_all "-S")
 set_property(TARGET bintools PROPERTY elfconvert_flag_strip_debug "-g")
+
+set_property(TARGET bintools PROPERTY elfconvert_flag_compress_debug_sections "--compress-debug-sections")
 
 set_property(TARGET bintools PROPERTY elfconvert_flag_intarget "--input-target=")
 set_property(TARGET bintools PROPERTY elfconvert_flag_outtarget "--output-target=")

@@ -19,13 +19,16 @@
 #include <zephyr/sys/crc.h>
 
 static const char *const crc_types[] = {
+	[CRC4] = "4",
+	[CRC4_TI] = "4_ti",
 	[CRC7_BE] = "7_be",
 	[CRC8] = "8",
-	[CRC8_CCITT] "8_ccitt",
+	[CRC8_CCITT] = "8_ccitt",
 	[CRC16] = "16",
 	[CRC16_ANSI] = "16_ansi",
 	[CRC16_CCITT] = "16_ccitt",
 	[CRC16_ITU_T] = "16_itu_t",
+	[CRC24_PGP] = "24_pgp",
 	[CRC32_C] = "32_c",
 	[CRC32_IEEE] = "32_ieee",
 };

@@ -48,7 +48,7 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 						   ~_internal_.value);		\
 		}								\
 		_ret_ = (_internal_.flags._flag_ != 0);				\
-	} while (0)
+	} while (false)
 
 static inline bool z_flag_insert_mode_get(const struct shell *sh)
 {
@@ -218,6 +218,19 @@ static inline bool z_flag_sync_mode_set(const struct shell *sh, bool val)
 	bool ret;
 
 	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, sync_mode, val, ret);
+	return ret;
+}
+
+static inline bool z_flag_handle_log_get(const struct shell *sh)
+{
+	return sh->ctx->ctx.flags.handle_log == 1;
+}
+
+static inline bool z_flag_handle_log_set(const struct shell *sh, bool val)
+{
+	bool ret;
+
+	Z_SHELL_SET_FLAG_ATOMIC(sh, ctx, handle_log, val, ret);
 	return ret;
 }
 

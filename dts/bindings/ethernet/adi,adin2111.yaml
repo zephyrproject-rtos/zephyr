@@ -53,6 +53,12 @@ properties:
   reset-gpios:
     type: phandle-array
     description: The reset pin of ADIN2111.
+  spi-oa:
+    type: boolean
+    description: Enables Open Alliance SPI protocol.
+  spi-oa-protection:
+    type: boolean
+    description: Enables Open Alliance SPI protocol protection.
 
 child-binding:
   description: Port properties

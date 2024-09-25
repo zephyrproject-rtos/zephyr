@@ -8,9 +8,6 @@ compatible: "nxp,pcf8563"
 include:
   - name: rtc-device.yaml
   - name: i2c-device.yaml
-  - name: pm.yaml
-    property-allowlist:
-      - wakeup-source
 
 properties:
   int1-gpios:

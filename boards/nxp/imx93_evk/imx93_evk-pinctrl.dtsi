@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2022, NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/mimx9352cvuxk-pinctrl.dtsi>
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group0 {
+			pinmux = <&iomuxc1_uart1_rxd_lpuart_rx_lpuart1_rx>,
+				<&iomuxc1_uart1_txd_lpuart_tx_lpuart1_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <&iomuxc1_uart2_rxd_lpuart_rx_lpuart2_rx>,
+				<&iomuxc1_uart2_txd_lpuart_tx_lpuart2_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group0 {
+			pinmux = <&iomuxc1_i2c1_scl_lpi2c_scl_lpi2c1_scl>,
+				<&iomuxc1_i2c1_sda_lpi2c_sda_lpi2c1_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c2_default: i2c2_default {
+		group0 {
+			pinmux = <&iomuxc1_i2c2_scl_lpi2c_scl_lpi2c2_scl>,
+				<&iomuxc1_i2c2_sda_lpi2c_sda_lpi2c2_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c3_default: i2c3_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io01_lpi2c_scl_lpi2c3_scl>,
+				<&iomuxc1_gpio_io00_lpi2c_sda_lpi2c3_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	i2c4_default: i2c4_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io03_lpi2c_scl_lpi2c4_scl>,
+				<&iomuxc1_gpio_io02_lpi2c_sda_lpi2c4_sda>;
+			drive-strength = "x5";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	spi3_default: spi3_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io07_lpspi_pcs_lpspi3_pcs1>,
+				<&iomuxc1_gpio_io08_lpspi_pcs_lpspi3_pcs0>,
+				<&iomuxc1_gpio_io09_lpspi_sin_lpspi3_sin>,
+				<&iomuxc1_gpio_io10_lpspi_sout_lpspi3_sout>,
+				<&iomuxc1_gpio_io11_lpspi_sck_lpspi3_sck>;
+			slew-rate = "fast";
+			drive-strength = "x5";
+		};
+	};
+
+};

@@ -4,21 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-#include <stdlib.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/types.h>
 
 #include "audio_internal.h"
-#include <zephyr/bluetooth/audio/tmap.h>
-#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bt_tmap, CONFIG_BT_TMAP_LOG_LEVEL);
 
@@ -57,7 +63,7 @@ uint8_t tmap_char_read(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	/* Extract the TMAP role of the peer and inform application fo the value found */
+	/* Extract the TMAP role of the peer and inform application of the value found */
 	peer_role = sys_get_le16(data);
 
 	if ((peer_role > 0U) && (peer_role <= TMAP_ALL_ROLES)) {
@@ -116,7 +122,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		/* Discovered TMAP Role characteristic - read value */
 		err = bt_gatt_read(conn, &read_params[0]);
 		if (err != 0) {
-			printk("Could not read peer TMAP Role\n");
+			LOG_DBG("Could not read peer TMAP Role");
 		}
 	} else {
 		return BT_GATT_ITER_CONTINUE;

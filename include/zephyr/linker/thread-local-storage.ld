@@ -24,14 +24,14 @@
 #else
 	PROVIDE(__tdata_start = ADDR(tdata));
 #endif
-	PROVIDE(__tdata_size = SIZEOF(tdata));
-	PROVIDE(__tdata_end = __tdata_start + __tdata_size);
 	PROVIDE(__tdata_align = ALIGNOF(tdata));
+	PROVIDE(__tdata_size = (SIZEOF(tdata) + __tdata_align - 1) & ~(__tdata_align - 1));
+	PROVIDE(__tdata_end = __tdata_start + __tdata_size);
 
-	PROVIDE(__tbss_start = ADDR(tbss));
-	PROVIDE(__tbss_size = SIZEOF(tbss));
-	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
 	PROVIDE(__tbss_align = ALIGNOF(tbss));
+	PROVIDE(__tbss_start = ADDR(tbss));
+	PROVIDE(__tbss_size = (SIZEOF(tbss) + __tbss_align - 1) & ~(__tbss_align - 1));
+	PROVIDE(__tbss_end = __tbss_start + __tbss_size);
 
 	PROVIDE(__tls_start = __tdata_start);
 	PROVIDE(__tls_end = __tbss_end);

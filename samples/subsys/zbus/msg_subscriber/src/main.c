@@ -26,14 +26,14 @@ void on_heap_free(uintptr_t heap_id, void *mem, size_t bytes)
 		(unsigned int)total_allocated);
 }
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
 HEAP_LISTENER_ALLOC_DEFINE(my_heap_listener_alloc, HEAP_ID_FROM_POINTER(&_system_heap),
 			   on_heap_alloc);
 
 HEAP_LISTENER_FREE_DEFINE(my_heap_listener_free, HEAP_ID_FROM_POINTER(&_system_heap), on_heap_free);
 
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 struct acc_msg {
 	int x;
 	int y;
@@ -154,9 +154,9 @@ static void subscriber_task(void *sub)
 }
 
 K_THREAD_DEFINE(subscriber_task_id17, CONFIG_MAIN_STACK_SIZE, subscriber_task, &bar_sub1, NULL,
-		NULL, 3, 0, 0);
+		NULL, 2, 0, 0);
 K_THREAD_DEFINE(subscriber_task_id18, CONFIG_MAIN_STACK_SIZE, subscriber_task, &bar_sub2, NULL,
-		NULL, 3, 0, 0);
+		NULL, 4, 0, 0);
 
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_sub2, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub10, 3);
@@ -167,26 +167,42 @@ ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub14, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub15, 3);
 ZBUS_CHAN_ADD_OBS(acc_data_chan, bar_msg_sub16, 3);
 
+static struct acc_msg acc = {.x = 1, .y = 10, .z = 100};
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
+#include <zephyr/net/buf.h>
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
+NET_BUF_POOL_HEAP_DEFINE(isolated_pool, (CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE),
+			 (sizeof(struct zbus_channel *)), NULL);
+#else
+NET_BUF_POOL_FIXED_DEFINE(isolated_pool, (CONFIG_ZBUS_MSG_SUBSCRIBER_SAMPLE_ISOLATED_BUF_POOL_SIZE),
+			  (CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE),
+			  sizeof(struct zbus_channel *), NULL);
+#endif
+#endif
+
 int main(void)
 {
-	struct acc_msg acc = {.x = 1, .y = 10, .z = 100};
 
 	total_allocated = 0;
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
+	zbus_chan_set_msg_sub_pool(&acc_data_chan, &isolated_pool);
+#endif
 
-#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC)
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
 	heap_listener_register(&my_heap_listener_alloc);
 	heap_listener_register(&my_heap_listener_free);
 
-#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_DYNAMIC */
+#endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 
 	while (1) {
 		LOG_INF("----> Publishing to %s channel", zbus_chan_name(&acc_data_chan));
-		zbus_chan_pub(&acc_data_chan, &acc, K_SECONDS(1));
+		zbus_chan_pub(&acc_data_chan, &acc, K_NO_WAIT);
 		acc.x += 1;
 		acc.y += 10;
 		acc.z += 100;
-
 		k_msleep(1000);
 	}
 

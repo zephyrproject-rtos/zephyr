@@ -1,0 +1,13 @@
+family:
+  - name: atmosic
+    series:
+      - name: ATMx2
+        socs:
+          - name: ATMx2xx-x1x
+      - name: ATM33
+        socs:
+          - name: ATM33xx-5
+      - name: ATM34
+        socs:
+          - name: ATM34xx-2
+          - name: ATM34xx-5

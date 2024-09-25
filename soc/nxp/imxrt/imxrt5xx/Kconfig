@@ -1,0 +1,85 @@
+# Copyright 2024 NXP
+# Copyright (c) 2023 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT595S_CM33
+	select CPU_CORTEX_M33
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M_HAS_DWT
+	select ARM
+	select HAS_PM
+	select HAS_POWEROFF
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select PLATFORM_SPECIFIC_INIT
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_FLEXSPI
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_LPC_DMA
+	select HAS_MCUX_LPADC
+	select HAS_MCUX_OS_TIMER
+	select HAS_MCUX_LPC_RTC
+	select HAS_MCUX_TRNG
+	select HAS_MCUX_SCTIMER
+	select HAS_MCUX_USDHC1
+	select HAS_MCUX_USDHC2
+	select HAS_MCUX_USB_LPCIP3511
+	select HAS_MCUX_CTIMER
+
+config SOC_MIMXRT595S_F1
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+
+if SOC_SERIES_IMXRT5XX
+
+if NXP_IMXRT_BOOT_HEADER
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	default 0x1000
+
+endif # NXP_IMXRT_BOOT_HEADER
+
+config IMXRT5XX_CODE_CACHE
+	bool "Code cache"
+	default y
+	help
+	  Enable code cache for FlexSPI region at boot. If this Kconfig is
+	  cleared, the CACHE64 controller will be disabled during SOC init
+
+choice FLEXCOMM0_CLK_SRC
+	prompt "Clock source for Flexcomm0"
+	default FLEXCOMM0_CLK_SRC_FRG
+
+config FLEXCOMM0_CLK_SRC_FRG
+	bool "FRG is source of Flexcomm0 clock"
+
+config FLEXCOMM0_CLK_SRC_FRO
+	bool "FRO_DIV4 is source of Flexcomm0 clock"
+
+endchoice
+
+choice MIPI_DPHY_CLK_SRC
+	prompt "Clock source for MIPI DPHY"
+	default MIPI_DPHY_CLK_SRC_AUX1_PLL
+
+config MIPI_DPHY_CLK_SRC_AUX1_PLL
+	bool "AUX1_PLL is source of MIPI_DPHY clock"
+
+config MIPI_DPHY_CLK_SRC_FRO
+	bool "FRO 192/96M is source of MIPI_DPHY clock"
+
+endchoice
+
+config MCUX_CORE_SUFFIX
+	default "_cm33" if SOC_MIMXRT595S_CM33
+	default "_dsp" if SOC_MIMXRT595S_F1
+
+endif # SOC_SERIES_IMXRT5XX

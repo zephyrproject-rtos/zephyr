@@ -1,6 +1,4 @@
 tests:
   arch.riscv.fpu_sharing:
-    arch_allow:
-      - riscv32
-      - riscv64
+    arch_allow: riscv
     filter: CONFIG_CPU_HAS_FPU

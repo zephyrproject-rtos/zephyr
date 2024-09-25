@@ -1,0 +1,15 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET IP Module
+
+compatible: "nxp,enet"
+
+include: ["base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

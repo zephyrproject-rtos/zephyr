@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2023 Andreas Sandberg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g4/stm32g431Xb.dtsi>
+#include <st/g4/stm32g431c(6-8-b)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/usb-c/pd.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WeAct Studio STM32G431 Core Board";
+	compatible = "weact,stm32g431-core";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &led_0;
+		mcuboot-button0 = &button_0;
+		mcuboot-led0 = &led_0;
+		sw0 = &button_0;
+		sw1 = &button_1;
+		usbc-port0 = &usbc1;
+		watchdog0 = &iwdg;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led0 {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button_0: button0 {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button_1: button1 {
+			label = "Boot0";
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	vbus1: vbus {
+		compatible = "zephyr,usb-c-vbus-adc";
+		status = "disabled";
+		io-channels = <&adc2 12>;
+		output-ohms = <10000>;
+		full-ohms = <(100000 + 10000)>;
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usbc1: usbc-port@1 {
+			compatible = "usb-c-connector";
+			status = "disabled";
+			reg = <1>;
+			tcpc = <&ucpd1>;
+			vbus = <&vbus1>;
+			data-role = "device";
+			power-role = "sink";
+			sink-pdos = <PDO_FIXED(5000, 100, PDO_FIXED_USB_COMM)>;
+		};
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(144)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+&pll {
+	status = "okay";
+	div-m = <2>;
+	mul-n = <72>;
+	div-p = <2>;
+	div-q = <6>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+};
+
+&rtc {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000400>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+};
+
+stm32_lp_tick_source: &lptim1 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 4KiB of storage at the end of the 128KiB FLASH */
+		storage_partition: partition@1f000 {
+			label = "storage";
+			reg = <0x0001f000 DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+
+	current-speed = <115200>;
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_in12_pb2>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@c {
+		reg = <12>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&ucpd1 {
+	psc-ucpdclk = <1>;
+	hbitclkdiv = <27>;
+	pinctrl-0 = <&ucpd1_cc1_pb6 &ucpd1_cc2_pb4>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+		 <&rcc STM32_SRC_PLL_Q CLK48_SEL(2)>;
+	status = "okay";
+};

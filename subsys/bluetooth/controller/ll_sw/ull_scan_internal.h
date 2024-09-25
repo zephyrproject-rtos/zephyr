@@ -76,7 +76,7 @@ int ull_scan_aux_init(void);
 int ull_scan_aux_reset(void);
 
 /* Helper to setup scanning on auxiliary channel */
-void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx);
+void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx);
 
 /* Helper to clean up auxiliary channel scanning */
 void ull_scan_aux_done(struct node_rx_event_done *done);
@@ -88,7 +88,7 @@ struct ll_scan_aux_set *ull_scan_aux_set_get(uint8_t handle);
 struct ll_scan_aux_set *ull_scan_aux_is_valid_get(struct ll_scan_aux_set *aux);
 
 /* Helper function to flush and release incomplete auxiliary PDU chaining */
-void ull_scan_aux_release(memq_link_t *link, struct node_rx_hdr *rx);
+void ull_scan_aux_release(memq_link_t *link, struct node_rx_pdu *rx);
 
 /* Helper function to stop auxiliary scan context */
 int ull_scan_aux_stop(struct ll_scan_aux_set *aux);

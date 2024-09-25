@@ -41,7 +41,9 @@ static uint8_t generic_buf[BUF_LEN];
 static uint8_t read_buf[TESTBUF_SIZE];
 const static uint8_t write_buf[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
 static uint8_t written_pattern[TESTBUF_SIZE] = {[0 ... TESTBUF_SIZE - 1] = 0xaa};
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 static uint8_t erased_pattern[TESTBUF_SIZE]  = {[0 ... TESTBUF_SIZE - 1] = 0xff};
+#endif
 
 #define VERIFY_BUF(start, size, buf) \
 do { \
@@ -51,7 +53,11 @@ do { \
 } while (0)
 
 #define VERIFY_WRITTEN(start, size) VERIFY_BUF(start, size, written_pattern)
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 #define VERIFY_ERASED(start, size) VERIFY_BUF(start, size, erased_pattern)
+#else
+#define VERIFY_ERASED(start, size)
+#endif
 
 int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 {
@@ -66,7 +72,15 @@ int stream_flash_callback(uint8_t *buf, size_t len, size_t offset)
 
 static void erase_flash(void)
 {
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
+
+	if (!(flash_params_get_erase_cap(fparam) & FLASH_ERASE_C_EXPLICIT)) {
+		return;
+	}
+#endif
 
 	for (int i = 0; i < MAX_NUM_PAGES; i++) {
 		rc = flash_erase(fdev,
@@ -74,6 +88,7 @@ static void erase_flash(void)
 				 layout->pages_size);
 		zassert_equal(rc, 0, "should succeed");
 	}
+#endif
 }
 
 
@@ -419,14 +434,14 @@ ZTEST(lib_stream_flash, test_stream_flash_erase_page)
 
 	init_target();
 
-	/* Write out one buf */
-	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN, false);
+	/* Write something to make page dirty */
+	rc = flash_write(ctx.fdev, FLASH_BASE, write_buf, BUF_LEN);
 	zassert_equal(rc, 0, "expected success");
 
 	rc = stream_flash_erase_page(&ctx, FLASH_BASE);
 	zassert_equal(rc, 0, "expected success");
 
-	VERIFY_ERASED(FLASH_BASE, page_size);
+	VERIFY_ERASED(0, page_size);
 
 	/*
 	 * Test failure in erase does not change context.
@@ -588,7 +603,7 @@ ZTEST(lib_stream_flash, test_stream_flash_progress_resume)
 	bytes_written = load_progress(progress_key);
 	zassert_equal(bytes_written, bytes_written_old,
 		      "expected bytes_written to be loaded");
-#ifdef CONFIG_STREAM_FLASH_ERASE
+#if defined(CONFIG_STREAM_FLASH_ERASE)
 	zassert_equal(erase_offset_old, ctx.last_erased_page_start_offset,
 		      "expected last erased page offset to be loaded");
 #endif

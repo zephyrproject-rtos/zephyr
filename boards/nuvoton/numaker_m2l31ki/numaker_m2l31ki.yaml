@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_m2l31ki
+name: NUVOTON NUMAKER-M2L31KI Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 168
+flash: 512
+supported:
+  - gpio
+vendor: nuvoton

@@ -1,0 +1,17 @@
+:name: RISCV32-Virtual
+:description: This script is prepared to run Zephyr on a Renode RISCV32 board.
+
+$name?="RISCV32-Virtual"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription $ORIGIN/riscv32_virtual.repl
+
+showAnalyzer uart0
+cpu PerformanceInMips 4
+
+macro reset
+"""
+    sysbus LoadELF $elf
+"""
+runMacro $reset

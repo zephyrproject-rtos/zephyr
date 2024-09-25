@@ -1,9 +1,0 @@
-# Copyright (c) 2023 Efinix Inc.
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_TITANIUM_TI60_F225
-
-config BOARD
-	default "titanium_ti60_f225"
-
-endif # BOARD_TITANIUM_TI60_F225

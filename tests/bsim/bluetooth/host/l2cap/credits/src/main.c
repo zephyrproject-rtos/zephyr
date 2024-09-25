@@ -23,7 +23,8 @@ CREATE_FLAG(flag_l2cap_connected);
 #define L2CAP_MTU       (2 * SDU_LEN)
 
 /* Only one SDU transmitted or received at a time */
-NET_BUF_POOL_DEFINE(sdu_pool, 1, L2CAP_MTU, 8, NULL);
+NET_BUF_POOL_DEFINE(sdu_pool, 1, BT_L2CAP_SDU_BUF_SIZE(L2CAP_MTU),
+		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static uint8_t tx_data[SDU_LEN];
 static uint16_t rx_cnt;
@@ -209,15 +210,10 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	WAIT_FOR_FLAG_UNSET(is_connected);
 }
 
-#define BT_LE_ADV_CONN_NAME_OT BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					    BT_LE_ADV_OPT_USE_NAME |	\
-					    BT_LE_ADV_OPT_ONE_TIME,	\
-					    BT_GAP_ADV_FAST_INT_MIN_2, \
-					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
-
-static const struct bt_data ad[] = {
-	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-};
+#define BT_LE_ADV_CONN_OT BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
+					  BT_LE_ADV_OPT_ONE_TIME,	\
+					  BT_GAP_ADV_FAST_INT_MIN_2, \
+					  BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 static void test_peripheral_main(void)
 {
@@ -237,7 +233,7 @@ static void test_peripheral_main(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized.");
 	LOG_DBG("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME_OT, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_OT, NULL, 0, NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -396,14 +392,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral L2CAP CREDITS",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main
 	},
 	{
 		.test_id = "central",
 		.test_descr = "Central L2CAP CREDITS",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},

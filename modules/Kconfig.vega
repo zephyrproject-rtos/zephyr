@@ -3,7 +3,7 @@
 
 config VEGA_SDK_HAL
 	bool "RV32M1 VEGA SDK support"
-	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on SOC_OPENISA_RV32M1
 
 config HAS_RV32M1_LPUART
 	bool

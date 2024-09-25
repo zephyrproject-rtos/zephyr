@@ -65,7 +65,6 @@
 			compatible = "atmosic,ble";
 			reg = <0x30000000 0x10000>;
 			interrupts = <IRQ_BLE 3>;
-			label = "BLE";
 			status = "okay";
 		};
 
@@ -324,6 +323,10 @@
 			interrupts = <IRQ_SPI0 3>;
 			status = "okay";
 		};
+	};
+
+	chosen {
+		zephyr,bt-hci = &ble;
 	};
 };
 

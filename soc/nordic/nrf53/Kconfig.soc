@@ -1,0 +1,29 @@
+# Nordic Semiconductor nRF52 MCU line, Zephyr hw model v2 compliant
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_NRF53X
+	bool
+	select SOC_FAMILY_NORDIC_NRF
+	help
+	 Enable support for NRF53 MCU series
+
+config SOC_NRF5340_CPUAPP
+	bool
+	select SOC_SERIES_NRF53X
+
+config SOC_NRF5340_CPUNET
+	bool
+	select SOC_SERIES_NRF53X
+
+config SOC_NRF5340_CPUAPP_QKAA
+	bool
+	select SOC_NRF5340_CPUAPP
+
+config SOC_NRF5340_CPUNET_QKAA
+	bool
+	select SOC_NRF5340_CPUNET
+
+config SOC
+	default "nrf5340" if SOC_NRF5340_CPUAPP_QKAA || SOC_NRF5340_CPUNET_QKAA

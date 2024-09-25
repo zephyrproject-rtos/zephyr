@@ -8,6 +8,7 @@
 #include <ctype.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/llext/symbol.h>
 
 #define HEXDUMP_BYTES_IN_LINE 8U
 
@@ -19,6 +20,7 @@ void z_log_minimal_printk(const char *fmt, ...)
 	vprintk(fmt, ap);
 	va_end(ap);
 }
+EXPORT_SYMBOL(z_log_minimal_printk);
 
 void z_log_minimal_vprintk(const char *fmt, va_list ap)
 {
@@ -41,7 +43,7 @@ static void minimal_hexdump_line_print(const char *data, size_t length)
 		if (i < length) {
 			unsigned char c = data[i];
 
-			printk("%c", isprint((int)c) != 0 ? c : '.');
+			printk("%c", (isprint((int)c) != 0) ? c : '.');
 		} else {
 			printk(" ");
 		}

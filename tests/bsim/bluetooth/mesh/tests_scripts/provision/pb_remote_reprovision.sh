@@ -12,13 +12,11 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 5. The provisioner configures the health server on the recently provisioned device and sends Node
 #   Reset;
 # 6. Repeat steps 3-5 multiple times.
-conf=prj_mesh1d1_conf
 RunTest mesh_prov_pb_remote_reprovision \
 	prov_provisioner_pb_remote_client_reprovision \
 	prov_device_pb_remote_server_unproved \
 	prov_device_pb_adv_reprovision
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest mesh_prov_pb_remote_reprovision_psa \
 	prov_provisioner_pb_remote_client_reprovision \

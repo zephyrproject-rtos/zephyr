@@ -82,12 +82,6 @@ source "drivers/ieee802154/Kconfig.uart_pipe"
 
 source "drivers/ieee802154/Kconfig.atm"
 
-config IEEE802154_2015
-	bool "Support for IEEE 802.15.4-2015 frames (DEPRECATED)"
-	select DEPRECATED
-	help
-	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
-
 config IEEE802154_CSL_ENDPOINT
 	bool "Support for CSL Endpoint"
 	help
@@ -99,11 +93,6 @@ config IEEE802154_CSL_DEBUG
 	depends on IEEE802154_CSL_ENDPOINT
 	help
 	  Enable support for CSL debugging by avoiding sleep state in favor of receive state.
-
-config IEEE802154_SELECTIVE_TXPOWER
-	bool "Support selective TX power setting"
-	help
-	  Enable support for selectively setting TX power for every transmission request.
 
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver

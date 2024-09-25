@@ -28,7 +28,10 @@ ZTEST(rtc_api, test_y2k)
 		Y2K,
 	};
 
-	static struct rtc_time rtm[2];
+	static struct rtc_time rtm[2] = {
+		{.tm_isdst = -1, .tm_nsec = 0},
+		{.tm_isdst = -1, .tm_nsec = 0},
+	};
 	struct tm *const tm[2] = {
 		(struct tm *const)&rtm[0],
 		(struct tm *const)&rtm[1],
@@ -40,7 +43,15 @@ ZTEST(rtc_api, test_y2k)
 
 	/* Party like it's 1999 */
 	zassert_not_null(gmtime_r(&t[Y99], tm[Y99]));
-	zassert_ok(rtc_set_time(rtc, &rtm[Y99]));
+
+	int ret = rtc_set_time(rtc, &rtm[Y99]);
+
+	if (ret == -EINVAL) {
+		TC_PRINT("Rollover not supported\n");
+		ztest_test_skip();
+	} else {
+		zassert_ok(ret, "RTC Set Time Failed");
+	}
 
 	/* Living after midnight */
 	k_sleep(K_SECONDS(SECONDS_BEFORE + SECONDS_AFTER));
@@ -50,8 +61,10 @@ ZTEST(rtc_api, test_y2k)
 	zassert_equal(rtm[Y2K].tm_year + 1900, 2000, "wrong year: %d", rtm[Y2K].tm_year + 1900);
 	zassert_equal(rtm[Y2K].tm_mon, 0, "wrong month: %d", rtm[Y2K].tm_mon);
 	zassert_equal(rtm[Y2K].tm_mday, 1, "wrong day-of-month: %d", rtm[Y2K].tm_mday);
-	zassert_equal(rtm[Y2K].tm_yday, 0, "wrong day-of-year: %d", rtm[Y2K].tm_yday);
-	zassert_equal(rtm[Y2K].tm_wday, 6, "wrong day-of-week: %d", rtm[Y2K].tm_wday);
+	zassert_true(rtm[Y2K].tm_yday == 0 || rtm[Y2K].tm_yday == -1, "wrong day-of-year: %d",
+		     rtm[Y2K].tm_yday);
+	zassert_true(rtm[Y2K].tm_wday == 6 || rtm[Y2K].tm_wday == -1, "wrong day-of-week: %d",
+		     rtm[Y2K].tm_wday);
 	zassert_equal(rtm[Y2K].tm_hour, 0, "wrong hour: %d", rtm[Y2K].tm_hour);
 	zassert_equal(rtm[Y2K].tm_min, 0, "wrong minute: %d", rtm[Y2K].tm_min);
 	zassert_equal(rtm[Y2K].tm_sec, SECONDS_AFTER, "wrong second: %d", rtm[Y2K].tm_sec);

@@ -1,0 +1,23 @@
+# Pinnacle(TM) 100 DVK board configuration
+
+# Copyright (c) 2019 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PINNACLE_100_DVK
+
+config MODEM
+	default NETWORKING
+
+config MODEM_HL7800
+	default NETWORKING
+
+config NORDIC_QSPI_NOR
+	default BOOTLOADER_MCUBOOT
+
+config NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if NORDIC_QSPI_NOR
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_PINNACLE_100_DVK

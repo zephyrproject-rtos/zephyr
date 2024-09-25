@@ -1,0 +1,9 @@
+boards:
+  - name: intel_rpl_p_crb
+    vendor: intel
+    socs:
+      - name: raptor_lake
+  - name: intel_rpl_s_crb
+    vendor: intel
+    socs:
+      - name: raptor_lake

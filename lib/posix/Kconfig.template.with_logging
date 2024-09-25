@@ -1,7 +1,0 @@
-# Copyright (c) 2023 Meta
-#
-# SPDX-License-Identifier: Apache-2.0
-
-module = $(TYPE)
-module-str = $(TYPE) logging
-source "subsys/logging/Kconfig.template.log_config"

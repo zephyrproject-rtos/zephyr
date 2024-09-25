@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024, Eve Redero
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+
+/ {
+	pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&stmpe811>;
+		invert-y;
+	};
+
+	keypad {
+		compatible = "zephyr,lvgl-keypad-input";
+		input = <&buttons>;
+		input-codes = <INPUT_KEY_RIGHT INPUT_KEY_LEFT INPUT_KEY_UP INPUT_KEY_DOWN INPUT_KEY_ENTER INPUT_KEY_0>;
+		lvgl-codes =  <LV_KEY_RIGHT LV_KEY_LEFT LV_KEY_UP LV_KEY_DOWN LV_KEY_ENTER LV_KEY_ESC>;
+	};
+};

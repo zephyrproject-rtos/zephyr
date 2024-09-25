@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config TSIC_XX6
+	bool "TSic xx6 driver"
+	default y
+	depends on DT_HAS_IST_TSIC_XX6_ENABLED
+	select PWM
+	select PWM_CAPTURE
+	help
+	  Enable driver for TSic 206/306/316/506F/516/716.

@@ -99,6 +99,8 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG_STOP);
 #else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 #endif
@@ -190,8 +192,9 @@ static int iwdg_stm32_init(const struct device *dev)
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
 	};
-
+	/* Watchdog should be configured and started by `wdt_setup`*/
 	iwdg_stm32_install_timeout(dev, &config);
+	iwdg_stm32_setup(dev, 0); /* no option specified */
 #endif
 
 	/*

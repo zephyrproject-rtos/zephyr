@@ -286,6 +286,7 @@ ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "isr_ok=\htmlonly isr-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_isr-ok`</verbatim> \endxmlonly" \
                          "pre_kernel_ok=\htmlonly pre-kernel-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_pre-kernel-ok`</verbatim> \endxmlonly" \
                          "async=\htmlonly async \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_async`</verbatim> \endxmlonly" \
+                         "atomic_api=As for all atomic APIs, includes a full/sequentially-consistent memory barrier (where applicable)." \
                          "supervisor=\htmlonly supervisor \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_supervisor`</verbatim> \endxmlonly"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
@@ -923,6 +924,8 @@ WARN_LOGFILE           =
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
+                         @ZEPHYR_BASE@/include/zephyr/arch/cache.h \
+                         @ZEPHYR_BASE@/include/zephyr/sys/atomic.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
@@ -1102,7 +1105,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = mainpage.md
+USE_MDFILE_AS_MAINPAGE = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md
 
 # The Fortran standard specifies that for fixed formatted Fortran code all
 # characters from position 72 are to be considered as comment. A common
@@ -1368,7 +1371,7 @@ HTML_EXTRA_FILES       = @ZEPHYR_BASE@/doc/_doxygen/doxygen-awesome-darkmode-tog
 # The default value is: AUTO_LIGHT.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_COLORSTYLE        = AUTO_LIGHT
+HTML_COLORSTYLE        = LIGHT
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to
@@ -2348,7 +2351,7 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = __DOXYGEN__ \
                          CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT \
                          CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN \
-                         CONFIG_BT_BREDR \
+                         CONFIG_BT_CLASSIC \
                          CONFIG_BT_EATT \
                          CONFIG_BT_L2CAP_SEG_RECV \
                          CONFIG_BT_MESH_MODEL_EXTENSIONS \
@@ -2395,14 +2398,20 @@ PREDEFINED             = __DOXYGEN__ \
 			 XEN_GUEST_HANDLE_64(x)= \
                          _LINKER \
                          __deprecated= \
+			 __sparse_cache= \
                          __packed= \
                          __aligned(x)= \
+                         __attribute_nonnull(...)= \
                          "__printf_like(x, y)=" \
                          __attribute__(x)= \
                          __syscall= \
                          __syscall_always_inline= \
                          __must_check= \
-                         "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]"
+                         "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]" \
+                         "ZTEST(suite, fn)=void fn(void)" \
+                         "ZTEST_USER(suite, fn)=void fn(void)" \
+                         "ZTEST_USER_F(suite, fn)=void fn(void)" \
+                         "ZTEST_F(suite, fn)=void fn(void)"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
@@ -2806,3 +2815,5 @@ GENERATE_LEGEND        = YES
 # The default value is: YES.
 
 DOT_CLEANUP            = YES
+
+@INCLUDE_CUSTOM_FILE@

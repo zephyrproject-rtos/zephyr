@@ -22,15 +22,15 @@ ZTEST(posix_headers, test_semaphore_h)
 	/* zassert_not_equal(SEM_FAILED, (sem_t *)42); */ /* not implemented */
 
 	if (IS_ENABLED(CONFIG_POSIX_API)) {
-		/* zassert_not_null(sem_close); */ /* not implemented */
+		zassert_not_null(sem_close);
 		zassert_not_null(sem_destroy);
 		zassert_not_null(sem_getvalue);
 		zassert_not_null(sem_init);
-		/* zassert_not_null(sem_open); */ /* not implemented */
+		zassert_not_null(sem_open);
 		zassert_not_null(sem_post);
 		zassert_not_null(sem_timedwait);
 		zassert_not_null(sem_trywait);
-		/* zassert_not_null(sem_unlink); */ /* not implemented */
+		zassert_not_null(sem_unlink);
 		zassert_not_null(sem_wait);
 	}
 }

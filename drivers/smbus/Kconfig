@@ -12,7 +12,6 @@ if SMBUS
 
 config SMBUS_SHELL
 	bool "SMBus Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable SMBus Shell.
@@ -77,5 +76,23 @@ config SMBUS_INTEL_PCH_SMBALERT
 	  Support SMBALERT signal from peripheral devices.
 
 endif # SMBUS_INTEL_PCH
+
+config SMBUS_STM32
+	bool "STM32 SMBus driver"
+	default y
+	depends on DT_HAS_ST_STM32_SMBUS_ENABLED
+	depends on I2C_STM32
+	help
+	  Enable STM32 SMBus driver.
+
+if SMBUS_STM32
+
+config SMBUS_STM32_SMBALERT
+	bool "SMBus STM32 SMBALERT signal support"
+	default y
+	help
+	  Support SMBALERT signal from peripheral devices.
+
+endif # SMBUS_STM32
 
 endif # SMBUS

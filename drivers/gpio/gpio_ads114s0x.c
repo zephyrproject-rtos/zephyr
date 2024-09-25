@@ -138,7 +138,7 @@ BUILD_ASSERT(CONFIG_GPIO_ADS114S0X_INIT_PRIORITY > CONFIG_ADC_INIT_PRIORITY,
                                                                                                    \
 	static struct gpio_ads114s0x_data gpio_ads114s0x_##id##_data;                              \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(id, &gpio_ads114s0x_init, NULL, &gpio_ads114s0x_##id##_data,         \
+	DEVICE_DT_INST_DEFINE(id, gpio_ads114s0x_init, NULL, &gpio_ads114s0x_##id##_data,          \
 			      &gpio_ads114s0x_##id##_cfg, POST_KERNEL,                             \
 			      CONFIG_GPIO_ADS114S0X_INIT_PRIORITY, &gpio_ads114s0x_api);
 

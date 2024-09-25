@@ -1,0 +1,22 @@
+identifier: bt610
+name: BT610
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+  - sm351lt
+  - qspi
+vendor: ezurio

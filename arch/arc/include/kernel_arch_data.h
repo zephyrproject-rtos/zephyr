@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
-struct _irq_stack_frame {
+struct arch_esf {
 #ifdef CONFIG_ARC_HAS_ZOL
 	uintptr_t lp_end;
 	uintptr_t lp_start;
@@ -72,7 +72,7 @@ struct _irq_stack_frame {
 	uintptr_t status32;
 };
 #else
-struct _irq_stack_frame {
+struct arch_esf {
 	uintptr_t r0;
 	uintptr_t r1;
 	uintptr_t r2;
@@ -108,7 +108,7 @@ struct _irq_stack_frame {
 };
 #endif
 
-typedef struct _irq_stack_frame _isf_t;
+typedef struct arch_esf _isf_t;
 
 
 
@@ -160,7 +160,7 @@ struct _callee_saved_stack {
 #endif
 #endif
 
-#ifdef CONFIG_ARC_DSP_SHARING
+#ifdef CONFIG_DSP_SHARING
 #ifdef CONFIG_ARC_DSP_BFLY_SHARING
 	uintptr_t dsp_fft_ctrl;
 	uintptr_t dsp_bfly0;

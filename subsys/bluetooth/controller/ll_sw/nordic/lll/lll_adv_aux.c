@@ -49,6 +49,9 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void isr_early_abort(void *param);
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 static void isr_done(void *param);
 #if defined(CONFIG_BT_CTLR_ADV_AUX_PDU_BACK2BACK)
 static void isr_tx_chain(void *param);
@@ -188,7 +191,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Abort if no aux_ptr filled */
 	if (unlikely(!pri_hdr->aux_ptr || !PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr))) {
-		radio_isr_set(lll_isr_early_abort, lll);
+		radio_isr_set(isr_early_abort, lll);
 		radio_disable();
 
 		return 0;
@@ -325,7 +328,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
 
-		radio_isr_set(lll_isr_abort, lll);
+		radio_isr_set(isr_done, lll);
 		radio_disable();
 
 		return -ECANCELED;
@@ -346,6 +349,33 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	return 0;
 }
+
+#if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+static void isr_race(void *param)
+{
+	radio_status_reset();
+}
+
+static void isr_early_abort(void *param)
+{
+	struct event_done_extra *extra;
+	int err;
+
+	/* Generate auxiliary radio event done */
+	extra = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV_AUX);
+	LL_ASSERT(extra);
+
+	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	lll_done(NULL);
+}
+#endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 static void isr_done(void *param)
 {
@@ -479,9 +509,10 @@ static void isr_tx_rx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
-	       (EVENT_CLOCK_JITTER_US << 1U) + 1U;
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 	hcto += radio_rx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_s);
 	hcto -= radio_tx_chain_delay_get(lll->phy_s, PHY_FLAGS_S8);
@@ -757,7 +788,7 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux, uint8_t phy_flags_rx,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
@@ -831,7 +862,7 @@ static void isr_tx_connect_rsp(void *param)
 	bool is_done;
 
 	rx = param;
-	ftr = &(rx->hdr.rx_ftr);
+	ftr = &(rx->rx_ftr);
 	lll = ftr->param;
 
 	is_done = radio_is_done();

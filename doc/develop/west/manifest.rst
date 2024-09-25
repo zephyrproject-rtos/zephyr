@@ -174,9 +174,13 @@ Here is an example. We'll assume the ``remotes`` given above.
      # [... same remotes as above...]
      projects:
        - name: proj1
+         description: the first example project
          remote: remote1
          path: extra/project-1
        - name: proj2
+         description: |
+           A multi-line description of the second example
+           project.
          repo-path: my-path
          remote: remote2
          revision: v1.3
@@ -229,6 +233,10 @@ next.
        reserved values "west" or "manifest". The name must be unique in the
        manifest file.
 
+   * - ``description``
+     - Optional, an informational description of the project. Added in
+       west v1.2.0.
+
    * - ``remote``, ``url``
      - Mandatory (one of the two, but not both).
 
@@ -240,7 +248,7 @@ next.
        remote Git repository.
 
        If the project has neither, the ``defaults`` section must specify a
-       ``remote``, which will be used as the the project's remote. Otherwise,
+       ``remote``, which will be used as the project's remote. Otherwise,
        the manifest is invalid.
 
    * - ``repo-path``
@@ -331,9 +339,13 @@ so far using ``defaults`` is:
 
      projects:
        - name: proj1
+         description: the first example project
          path: extra/project-1
          revision: master
        - name: proj2
+         description: |
+           A multi-line description of the second example
+           project.
          repo-path: my-path
          remote: remote2
        - name: proj3
@@ -486,6 +498,10 @@ about the manifest file features that were introduced in that version.
    * - ``"1.0"``
      - Identical to ``"0.13"``, but available for use by users that
        do not wish to use a ``"0.x"`` version field.
+
+   * - ``"1.2"``
+     - Support for ``description:`` in ``projects:``
+       (:ref:`west-manifests-projects`)
 
 .. note::
 
@@ -1108,7 +1124,7 @@ recursively update the project's Git submodules whenever it updates the project
 itself. If it's ``false`` or missing, it has no effect.
 
 For example, let's say you have a source code repository ``foo``, which has
-some submodules, and you want ``west update`` to keep all of them them in sync,
+some submodules, and you want ``west update`` to keep all of them in sync,
 along with another project named ``bar`` in the same workspace.
 
 You can do that with this manifest file:
@@ -2033,8 +2049,8 @@ The ultimate outcomes of resolving manifest imports are:
 - a ``projects`` list, which is produced by combining the ``projects`` defined
   in the top-level file with those defined in imported files
 
-- a set of extension commands, which are drawn from the the ``west-commands``
-  keys in in the top-level file and any imported files
+- a set of extension commands, which are drawn from the ``west-commands``
+  keys in the top-level file and any imported files
 
 - a ``group-filter`` list, which is produced by combining the top-level and any
   imported filters

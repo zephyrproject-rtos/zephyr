@@ -4,43 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <arm/atmosic/ATM34xx_partition_defs.h>
+
 &rram0 {
 	partitions {
 		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		spe_partition: partition@ATM_SPE_NODE_ID {
+			label = "spe_partition";
+			secure;
+			reg = <ATM_SPE_OFFSET ATM_SPE_SIZE>;
+		};
 #ifndef RUN_IN_FLASH
-		spe_partition: partition@0 {
-			label = "spe_partition";
-			secure;
-			reg = <0x00000 0x5800>;
-		};
-		nspe_partition: partition@5800 {
+		nspe_partition: partition@ATM_NSPE_NODE_ID {
 			label = "nspe_partition";
-			reg = <0x5800 0x76000>;
+			reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
 		};
-#elif (RUN_IN_FLASH == 2)
-		spe_partition: partition@0 {
-			label = "spe_partition";
-			secure;
-			reg = <0x00000 0x10000>;
-		};
-		fast_code_partition: partition@10000 {
+#elif ATM_FAST_CODE_SIZE
+		fast_code_partition: partition@ATM_FAST_CODE_NODE_ID {
 			label = "fast_code_partition";
-			reg = <0x10000 0x6b800>;
-		};
-#else
-		spe_partition: partition@0 {
-			label = "spe_partition";
-			secure;
-			reg = <0x00000 0x7b800>;
+			reg = <ATM_FAST_CODE_OFFSET ATM_FAST_CODE_SIZE>;
 		};
 #endif
-		storage_partition: partition@7b800 {
-			label = "storage";
-			reg = <0x7b800 0x4000>;
+#if ATM_FACTORY_SIZE
+		factory_partition: partition@ATM_FACTORY_NODE_ID {
+			label = "factory";
+			reg = <ATM_FACTORY_OFFSET ATM_FACTORY_SIZE>;
 		};
+#endif
+#if ATM_STORAGE_SIZE
+		storage_partition: partition@ATM_STORAGE_NODE_ID {
+			label = "storage";
+			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
+		};
+#endif
 	};
 };
 
@@ -50,10 +49,9 @@
 		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		nspe_partition: partition@0 {
+		nspe_partition: partition@ATM_NSPE_NODE_ID {
 			label = "nspe_partition";
-			reg = <0x0 FLASH_SIZE>;
+			reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
 		};
 	};
 };

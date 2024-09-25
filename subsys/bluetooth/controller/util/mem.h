@@ -18,7 +18,7 @@
  * @brief Round up to nearest multiple of 4, for unsigned integers
  * @details
  *   The addition of 3 forces x into the next multiple of 4. This is responsible
- *   for the rounding in the the next step, to be Up.
+ *   for the rounding in the next step, to be Up.
  *   For ANDing of ~3: We observe y & (~3) == (y>>2)<<2, and we recognize
  *   (y>>2) as a floored division, which is almost undone by the left-shift. The
  *   flooring can't be undone so have achieved a rounding.
@@ -63,7 +63,5 @@ uint16_t mem_index_get(const void *mem, const void *mem_pool, uint16_t mem_size)
 
 void mem_rcopy(uint8_t *dst, uint8_t const *src, uint16_t len);
 uint8_t mem_nz(uint8_t *src, uint16_t len);
-void mem_xor_n(uint8_t *dst, uint8_t *src1, uint8_t *src2, uint16_t len);
-void mem_xor_32(uint8_t *dst, uint8_t *src1, uint8_t *src2);
 
 uint32_t mem_ut(void);

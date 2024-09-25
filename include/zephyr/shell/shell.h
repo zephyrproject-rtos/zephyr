@@ -26,6 +26,10 @@
 extern "C" {
 #endif
 
+#ifndef CONFIG_SHELL_PROMPT_BUFF_SIZE
+#define CONFIG_SHELL_PROMPT_BUFF_SIZE 0
+#endif
+
 #ifndef CONFIG_SHELL_CMD_BUFF_SIZE
 #define CONFIG_SHELL_CMD_BUFF_SIZE 0
 #endif
@@ -69,6 +73,8 @@ extern "C" {
 /**
  * @brief Shell API
  * @defgroup shell_api Shell API
+ * @since 1.14
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -124,6 +130,34 @@ struct shell_static_args {
  */
 const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
+
+/**
+ * @brief Filter callback type, for use with shell_device_lookup_filter
+ *
+ * This is used as an argument of shell_device_lookup_filter to only return
+ * devices that match a specific condition, implemented by the filter.
+ *
+ * @param dev pointer to a struct device.
+ *
+ * @return bool, true if the filter matches the device type.
+ */
+typedef bool (*shell_device_filter_t)(const struct device *dev);
+
+/**
+ * @brief Get a device by index and filter.
+ *
+ * This can be used to return devices matching a specific type.
+ *
+ * Devices that the filter returns false for, failed to initialize or do not
+ * have a non-empty name are excluded from the candidates for a match.
+ *
+ * @param idx the device number starting from zero.
+ *
+ * @param filter a pointer to a shell_device_filter_t function that returns
+ * true if the device matches the filter.
+ */
+const struct device *shell_device_filter(size_t idx,
+					 shell_device_filter_t filter);
 
 /**
  * @brief Shell command handler prototype.
@@ -350,8 +384,8 @@ struct shell_static_entry {
 			SHELL_EXPR_CMD_ARG(1, _syntax, _subcmd, _help, \
 					   _handler, _mand, _opt)\
 		), \
-		(static shell_cmd_handler dummy_##syntax##_handler __unused = _handler;\
-		 static const union shell_cmd_entry dummy_subcmd_##syntax __unused = { \
+		(static shell_cmd_handler dummy_handler_##_syntax __unused = _handler;\
+		 static const union shell_cmd_entry dummy_subcmd_##_syntax __unused = { \
 			.entry = (const struct shell_static_entry *)_subcmd\
 		 } \
 		) \
@@ -743,6 +777,7 @@ struct shell_backend_ctx_flags {
 	uint32_t cmd_ctx      :1; /*!< Shell is executing command */
 	uint32_t print_noinit :1; /*!< Print request from not initialized shell */
 	uint32_t sync_mode    :1; /*!< Shell in synchronous mode */
+	uint32_t handle_log   :1; /*!< Shell is handling logger backend */
 };
 
 BUILD_ASSERT((sizeof(struct shell_backend_ctx_flags) == sizeof(uint32_t)),
@@ -776,7 +811,11 @@ enum shell_signal {
  * @brief Shell instance context.
  */
 struct shell_ctx {
-	const char *prompt; /*!< shell current prompt. */
+#if defined(CONFIG_SHELL_PROMPT_CHANGE) && CONFIG_SHELL_PROMPT_CHANGE
+	char prompt[CONFIG_SHELL_PROMPT_BUFF_SIZE]; /*!< shell current prompt. */
+#else
+	const char *prompt;
+#endif
 
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/
@@ -797,6 +836,9 @@ struct shell_ctx {
 
 	/** When bypass is set, all incoming data is passed to the callback. */
 	shell_bypass_cb_t bypass;
+
+	/*!< Logging level for a backend. */
+	uint32_t log_level;
 
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
@@ -863,7 +905,7 @@ struct shell {
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 
-	const char *thread_name;
+	const char *name;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
 };
@@ -910,7 +952,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.thread_name = STRINGIFY(_name),			      \
+		.name = STRINGIFY(_name),				      \
 		.thread = &_name##_thread,				      \
 		.stack = _name##_stack					      \
 	}
@@ -994,9 +1036,10 @@ int shell_stop(const struct shell *sh);
  * @param[in] fmt	Format string.
  * @param[in] ...	List of parameters to print.
  */
-void __printf_like(3, 4) shell_fprintf(const struct shell *sh,
-				       enum shell_vt100_color color,
-				       const char *fmt, ...);
+void __printf_like(3, 4) shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
+					    const char *fmt, ...);
+
+#define shell_fprintf(sh, color, fmt, ...) shell_fprintf_impl(sh, color, fmt, ##__VA_ARGS__)
 
 /**
  * @brief vprintf-like function which sends formatted data stream to the shell.
@@ -1261,6 +1304,11 @@ int shell_get_return_value(const struct shell *sh);
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef CONFIG_SHELL_CUSTOM_HEADER
+/* This include must always be at the end of shell.h */
+#include <zephyr_custom_shell.h>
 #endif
 
 #endif /* SHELL_H__ */

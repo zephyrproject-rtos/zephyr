@@ -97,6 +97,15 @@ int flash_area_cond_erase(const struct flash_area *fa, off_t off, size_t len, bo
 }
 #endif
 
+int flash_area_flatten(const struct flash_area *fa, off_t off, size_t len)
+{
+	if (!is_in_flash_area_bounds(fa, off, len)) {
+		return -EINVAL;
+	}
+
+	return flash_flatten(fa->fa_dev, fa->fa_off + off, len);
+}
+
 uint32_t flash_area_align(const struct flash_area *fa)
 {
 	return flash_get_write_block_size(fa->fa_dev);

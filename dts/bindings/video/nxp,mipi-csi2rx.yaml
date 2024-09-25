@@ -1,0 +1,17 @@
+#
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP MIPI CSI-2 Rx interface
+
+compatible: "nxp,mipi-csi2rx"
+
+include: [base.yaml]
+
+properties:
+  sensor:
+    required: true
+    type: phandle
+    description: the connected camera sensor

@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: Apache-2.0
-# Copyright 2023 NXP
-
-config BOARD_MIMXRT1062_FMURT6
-	bool "NXP MIMXRT1062-FMURT6"
-	depends on SOC_SERIES_IMX_RT
-	select SOC_PART_NUMBER_MIMXRT1062DVL6A

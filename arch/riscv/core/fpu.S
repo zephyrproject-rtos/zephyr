@@ -7,7 +7,7 @@
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define LOAD	fld

@@ -24,6 +24,7 @@
 #include <stm32_ll_rtc.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/timeutil.h>
+#include <zephyr/pm/device.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -184,11 +185,22 @@ static void rtc_stm32_irq_config(const struct device *dev);
 
 static int rtc_stm32_start(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	/* Enable RTC bus clock */
+	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("RTC clock enabling failed\n");
+		return -EIO;
+	}
+#else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	LL_RCC_EnableRTC();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif
 
 	return 0;
 }
@@ -196,11 +208,22 @@ static int rtc_stm32_start(const struct device *dev)
 
 static int rtc_stm32_stop(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || defined(CONFIG_SOC_SERIES_STM32U5X)
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	/* Disable RTC bus clock */
+	if (clock_control_off(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+		LOG_ERR("RTC clock disabling failed\n");
+		return -EIO;
+	}
+#else
 	ARG_UNUSED(dev);
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	LL_RCC_DisableRTC();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif
 
 	return 0;
 }
@@ -216,6 +239,12 @@ tick_t rtc_stm32_read(const struct device *dev)
 	uint32_t rtc_subseconds;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	ARG_UNUSED(dev);
+
+	/* Enable Backup access */
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
+	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	/* Read time and date registers. Make sure value of the previous register
 	 * hasn't been changed while reading the next one.
@@ -271,6 +300,12 @@ tick_t rtc_stm32_read(const struct device *dev)
 	uint32_t rtc_time, ticks;
 
 	ARG_UNUSED(dev);
+
+	/* Enable Backup access */
+#if defined(PWR_CR_DBP) || defined(PWR_CR1_DBP) || \
+	defined(PWR_DBPCR_DBP) || defined(PWR_DBPR_DBP)
+	LL_PWR_EnableBkUpAccess();
+#endif /* PWR_CR_DBP || PWR_CR1_DBP || PWR_DBPR_DBP */
 
 	rtc_time = LL_RTC_TIME_Get(RTC);
 
@@ -504,7 +539,7 @@ void rtc_stm32_isr(const struct device *dev)
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 family RTC is not connected to EXTI */
 #else
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
@@ -546,7 +581,9 @@ static int rtc_stm32_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_RCC_EnableRTC();
+#endif
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
@@ -570,7 +607,7 @@ static int rtc_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* in STM32U5 family RTC is not connected to EXTI */
 #else
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
@@ -584,21 +621,7 @@ static int rtc_stm32_init(const struct device *dev)
 
 static struct rtc_stm32_data rtc_data;
 
-#if DT_INST_NUM_CLOCKS(0) == 1
-#warning STM32 RTC needs a kernel source clock. Please define it in dts file
-static const struct stm32_pclken rtc_clk[] = {
-	STM32_CLOCK_INFO(0, DT_DRV_INST(0)),
-	/* Use Kconfig to configure source clocks fields (Deprecated) */
-	/* Fortunately, values are consistent across enabled series */
-#ifdef CONFIG_COUNTER_RTC_STM32_CLOCK_LSE
-	{.bus = STM32_SRC_LSE, .enr = RTC_SEL(1)}
-#else
-	{.bus = STM32_SRC_LSI, .enr = RTC_SEL(2)}
-#endif
-};
-#else
 static const struct stm32_pclken rtc_clk[] = STM32_DT_INST_CLOCKS(0);
-#endif
 
 static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
@@ -624,6 +647,30 @@ static const struct rtc_stm32_config rtc_config = {
 	.pclken = rtc_clk,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int rtc_stm32_pm_action(const struct device *dev,
+			       enum pm_device_action action)
+{
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct rtc_stm32_config *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Enable RTC bus clock */
+		if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken[0]) != 0) {
+			LOG_ERR("clock op failed\n");
+			return -EIO;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct counter_driver_api rtc_stm32_driver_api = {
 	.start = rtc_stm32_start,
@@ -639,7 +686,9 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 	.get_top_value = rtc_stm32_get_top_value,
 };
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL,
+PM_DEVICE_DT_INST_DEFINE(0, rtc_stm32_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, PM_DEVICE_DT_INST_GET(0),
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_COUNTER_INIT_PRIORITY, &rtc_stm32_driver_api);
 

@@ -14,7 +14,6 @@
 #include "settings.h"
 #include "heartbeat.h"
 #include "friend.h"
-#include "adv.h"
 #include "cfg.h"
 #include "od_priv_proxy.h"
 #include "priv_beacon.h"
@@ -138,7 +137,7 @@ uint8_t bt_mesh_priv_beacon_update_interval_get(void)
 
 int bt_mesh_od_priv_proxy_get(void)
 {
-#if IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+#if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	return bt_mesh.on_demand_state;
 #else
 	return -ENOTSUP;
@@ -147,7 +146,7 @@ int bt_mesh_od_priv_proxy_get(void)
 
 int bt_mesh_od_priv_proxy_set(uint8_t on_demand_proxy)
 {
-#if !IS_ENABLED(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
+#if !defined(CONFIG_BT_MESH_OD_PRIV_PROXY_SRV)
 	return -ENOTSUP;
 #else
 

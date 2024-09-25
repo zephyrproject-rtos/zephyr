@@ -1,0 +1,22 @@
+# STM32 DCMI driver configuration options
+
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_DCMI_HAS_DMA := $(dt_nodelabel_has_prop,dcmi,dmas)
+
+config VIDEO_STM32_DCMI
+	bool "STM32 Digital camera interface (DCMI) driver"
+	default y
+	depends on DT_HAS_ST_STM32_DCMI_ENABLED
+	select USE_STM32_HAL_DCMI
+	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
+	select DMA if $(DT_STM32_DCMI_HAS_DMA)
+	select USE_STM32_HAL_DMA if $(DT_STM32_DCMI_HAS_DMA)
+	select USE_STM32_HAL_DMA_EX if $(DT_STM32_DCMI_HAS_DMA)
+	help
+	  Enable driver for STM32 Digital camera interface periheral.
+
+module = STM32_DCMI
+module-str = stm32_dcmi
+source "subsys/logging/Kconfig.template.log_config"

@@ -3,9 +3,11 @@ sample:
   name: posix uname
 common:
   tags: posix
-  filter: not CONFIG_ARCH_POSIX
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
   integration_platforms:
-    - native_posix_64
+    - native_sim
     - qemu_riscv64
   harness: console
   harness_config:

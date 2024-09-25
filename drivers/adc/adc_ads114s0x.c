@@ -23,15 +23,17 @@
 
 LOG_MODULE_REGISTER(ads114s0x, CONFIG_ADC_LOG_LEVEL);
 
-#define ADS114S0X_CLK_FREQ_IN_KHZ			    4096
-#define ADS114S0X_RESET_LOW_TIME_IN_CLOCK_CYCLES	    4
+#define ADS114S0X_CLK_FREQ_IN_KHZ                           4096
+#define ADS114S0X_RESET_LOW_TIME_IN_CLOCK_CYCLES            4
 #define ADS114S0X_START_SYNC_PULSE_DURATION_IN_CLOCK_CYCLES 4
-#define ADS114S0X_SETUP_TIME_IN_CLOCK_CYCLES		    32
-#define ADS114S0X_INPUT_SELECTION_AINCOM		    12
-#define ADS114S0X_RESOLUTION				    16
-#define ADS114S0X_REF_INTERNAL				    2500
-#define ADS114S0X_GPIO_MAX				    3
-#define ADS114S0X_POWER_ON_RESET_TIME_IN_US		    2200
+#define ADS114S0X_SETUP_TIME_IN_CLOCK_CYCLES                32
+#define ADS114S0X_INPUT_SELECTION_AINCOM                    12
+#define ADS114S0X_RESOLUTION                                16
+#define ADS114S0X_REF_INTERNAL                              2500
+#define ADS114S0X_GPIO_MAX                                  3
+#define ADS114S0X_POWER_ON_RESET_TIME_IN_US                 2200
+#define ADS114S0X_VBIAS_PIN_MAX                             7
+#define ADS114S0X_VBIAS_PIN_MIN                             0
 
 /* Not mentioned in the datasheet, but instead determined experimentally. */
 #define ADS114S0X_RESET_DELAY_TIME_SAFETY_MARGIN_IN_US 1000
@@ -94,7 +96,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_ID_DEV_ID_POS,              \
 				     ADS114S0X_REGISTER_ID_DEV_ID_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_POR_POS	7
+#define ADS114S0X_REGISTER_STATUS_FL_POR_POS    7
 #define ADS114S0X_REGISTER_STATUS_FL_POR_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,                  \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
@@ -102,7 +104,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_POR_POS,          \
 				     ADS114S0X_REGISTER_STATUS_FL_POR_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_NOT_RDY_POS	 6
+#define ADS114S0X_REGISTER_STATUS_NOT_RDY_POS    6
 #define ADS114S0X_REGISTER_STATUS_NOT_RDY_GET(value)                                               \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_NOT_RDY_POS,                 \
 				     ADS114S0X_REGISTER_STATUS_NOT_RDY_LENGTH)
@@ -142,7 +144,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_N_RAILN_POS,      \
 				     ADS114S0X_REGISTER_STATUS_FL_N_RAILN_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS	   1
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS    1
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L1_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,               \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
@@ -150,7 +152,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_STATUS_FL_REF_L1_POS,       \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L1_LENGTH)
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH 1
-#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS	   0
+#define ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS    0
 #define ADS114S0X_REGISTER_STATUS_FL_REF_L0_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_STATUS_FL_REF_L0_POS,               \
 				     ADS114S0X_REGISTER_STATUS_FL_REF_L0_LENGTH)
@@ -190,7 +192,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_PGA_EN_POS,             \
 				     ADS114S0X_REGISTER_PGA_PGA_EN_LENGTH)
 #define ADS114S0X_REGISTER_PGA_GAIN_LENGTH 3
-#define ADS114S0X_REGISTER_PGA_GAIN_POS	   0
+#define ADS114S0X_REGISTER_PGA_GAIN_POS    0
 #define ADS114S0X_REGISTER_PGA_GAIN_GET(value)                                                     \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_PGA_GAIN_POS,                       \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
@@ -198,7 +200,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_PGA_GAIN_POS,               \
 				     ADS114S0X_REGISTER_PGA_GAIN_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_G_CHOP_POS	  7
+#define ADS114S0X_REGISTER_DATARATE_G_CHOP_POS    7
 #define ADS114S0X_REGISTER_DATARATE_G_CHOP_GET(value)                                              \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_G_CHOP_POS,                \
 				     ADS114S0X_REGISTER_DATARATE_G_CHOP_LENGTH)
@@ -214,7 +216,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_CLK_POS,           \
 				     ADS114S0X_REGISTER_DATARATE_CLK_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_MODE_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_MODE_POS	5
+#define ADS114S0X_REGISTER_DATARATE_MODE_POS    5
 #define ADS114S0X_REGISTER_DATARATE_MODE_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_MODE_POS,                  \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
@@ -222,7 +224,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_MODE_POS,          \
 				     ADS114S0X_REGISTER_DATARATE_MODE_LENGTH)
 #define ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH 1
-#define ADS114S0X_REGISTER_DATARATE_FILTER_POS	  4
+#define ADS114S0X_REGISTER_DATARATE_FILTER_POS    4
 #define ADS114S0X_REGISTER_DATARATE_FILTER_GET(value)                                              \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_DATARATE_FILTER_POS,                \
 				     ADS114S0X_REGISTER_DATARATE_FILTER_LENGTH)
@@ -238,7 +240,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_DATARATE_DR_POS,            \
 				     ADS114S0X_REGISTER_DATARATE_DR_LENGTH)
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH 2
-#define ADS114S0X_REGISTER_REF_FL_REF_EN_POS	6
+#define ADS114S0X_REGISTER_REF_FL_REF_EN_POS    6
 #define ADS114S0X_REGISTER_REF_FL_REF_EN_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,                  \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
@@ -246,7 +248,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_FL_REF_EN_POS,          \
 				     ADS114S0X_REGISTER_REF_FL_REF_EN_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH 1
-#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS	   5
+#define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS    5
 #define ADS114S0X_REGISTER_REF_NOT_REFP_BUF_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,               \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
@@ -254,7 +256,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_REF_NOT_REFP_BUF_POS,       \
 				     ADS114S0X_REGISTER_REF_NOT_REFP_BUF_LENGTH)
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH 1
-#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS	   4
+#define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS    4
 #define ADS114S0X_REGISTER_REF_NOT_REFN_BUF_GET(value)                                             \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_REF_NOT_REFN_BUF_POS,               \
 				     ADS114S0X_REGISTER_REF_NOT_REFN_BUF_LENGTH)
@@ -302,7 +304,7 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMAG_IMAG_POS,           \
 				     ADS114S0X_REGISTER_IDACMAG_IMAG_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH 4
-#define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS	4
+#define ADS114S0X_REGISTER_IDACMUX_I2MUX_POS    4
 #define ADS114S0X_REGISTER_IDACMUX_I2MUX_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,                  \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
@@ -310,13 +312,21 @@ enum ads114s0x_register {
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I2MUX_POS,          \
 				     ADS114S0X_REGISTER_IDACMUX_I2MUX_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH 4
-#define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS	0
+#define ADS114S0X_REGISTER_IDACMUX_I1MUX_POS    0
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_GET(value)                                                \
 	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,                  \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
 #define ADS114S0X_REGISTER_IDACMUX_I1MUX_SET(target, value)                                        \
 	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_IDACMUX_I1MUX_POS,          \
 				     ADS114S0X_REGISTER_IDACMUX_I1MUX_LENGTH)
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH 1
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS    7
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_GET(value)                                               \
+	ADS114S0X_REGISTER_GET_VALUE(value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,                 \
+				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
+#define ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(target, value)                                       \
+	ADS114S0X_REGISTER_SET_VALUE(target, value, ADS114S0X_REGISTER_VBIAS_VB_LEVEL_POS,         \
+				     ADS114S0X_REGISTER_VBIAS_VB_LEVEL_LENGTH)
 #define ADS114S0X_REGISTER_GPIODAT_DIR_LENGTH 4
 #define ADS114S0X_REGISTER_GPIODAT_DIR_POS    4
 #define ADS114S0X_REGISTER_GPIODAT_DIR_GET(value)                                                  \
@@ -410,6 +420,7 @@ struct ads114s0x_config {
 	const struct gpio_dt_spec gpio_data_ready;
 	const struct gpio_dt_spec gpio_start_sync;
 	int idac_current;
+	uint8_t vbias_level;
 };
 
 struct ads114s0x_data {
@@ -424,10 +435,10 @@ struct ads114s0x_data {
 	int16_t *buffer_ptr;
 #if CONFIG_ADC_ADS114S0X_GPIO
 	struct k_mutex gpio_lock;
-	uint8_t gpio_enabled;	/* one bit per GPIO, 1 = enabled */
+	uint8_t gpio_enabled;   /* one bit per GPIO, 1 = enabled */
 	uint8_t gpio_direction; /* one bit per GPIO, 1 = input */
-	uint8_t gpio_value;	/* one bit per GPIO, 1 = high */
-#endif				/* CONFIG_ADC_ADS114S0X_GPIO */
+	uint8_t gpio_value;     /* one bit per GPIO, 1 = high */
+#endif                          /* CONFIG_ADC_ADS114S0X_GPIO */
 };
 
 static void ads114s0x_data_ready_handler(const struct device *dev, struct gpio_callback *gpio_cb,
@@ -442,9 +453,10 @@ static void ads114s0x_data_ready_handler(const struct device *dev, struct gpio_c
 	k_sem_give(&data->data_ready_signal);
 }
 
-static int ads114s0x_read_register(const struct spi_dt_spec *bus,
+static int ads114s0x_read_register(const struct device *dev,
 				   enum ads114s0x_register register_address, uint8_t *value)
 {
+	const struct ads114s0x_config *config = dev->config;
 	uint8_t buffer_tx[3];
 	uint8_t buffer_rx[ARRAY_SIZE(buffer_tx)];
 	const struct spi_buf tx_buf[] = {{
@@ -468,22 +480,23 @@ static int ads114s0x_read_register(const struct spi_dt_spec *bus,
 	/* read one register */
 	buffer_tx[1] = 0x00;
 
-	int result = spi_transceive_dt(bus, &tx, &rx);
+	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
 		return result;
 	}
 
 	*value = buffer_rx[2];
-	LOG_DBG("read from register 0x%02X value 0x%02X", register_address, *value);
+	LOG_DBG("%s: read from register 0x%02X value 0x%02X", dev->name, register_address, *value);
 
 	return 0;
 }
 
-static int ads114s0x_write_register(const struct spi_dt_spec *bus,
+static int ads114s0x_write_register(const struct device *dev,
 				    enum ads114s0x_register register_address, uint8_t value)
 {
+	const struct ads114s0x_config *config = dev->config;
 	uint8_t buffer_tx[3];
 	const struct spi_buf tx_buf[] = {{
 		.buf = buffer_tx,
@@ -499,21 +512,22 @@ static int ads114s0x_write_register(const struct spi_dt_spec *bus,
 	buffer_tx[1] = 0x00;
 	buffer_tx[2] = value;
 
-	LOG_DBG("writing to register 0x%02X value 0x%02X", register_address, value);
-	int result = spi_write_dt(bus, &tx);
+	LOG_DBG("%s: writing to register 0x%02X value 0x%02X", dev->name, register_address, value);
+	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("spi_write failed with error %i", result);
+		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
 	return 0;
 }
 
-static int ads114s0x_write_multiple_registers(const struct spi_dt_spec *bus,
+static int ads114s0x_write_multiple_registers(const struct device *dev,
 					      enum ads114s0x_register *register_addresses,
 					      uint8_t *values, size_t count)
 {
+	const struct ads114s0x_config *config = dev->config;
 	uint8_t buffer_tx[2];
 	const struct spi_buf tx_buf[] = {
 		{
@@ -531,7 +545,7 @@ static int ads114s0x_write_multiple_registers(const struct spi_dt_spec *bus,
 	};
 
 	if (count == 0) {
-		LOG_WRN("ignoring the command to write 0 registers");
+		LOG_WRN("%s: ignoring the command to write 0 registers", dev->name);
 		return -EINVAL;
 	}
 
@@ -547,18 +561,19 @@ static int ads114s0x_write_multiple_registers(const struct spi_dt_spec *bus,
 			 "register addresses are not consecutive");
 	}
 
-	int result = spi_write_dt(bus, &tx);
+	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("spi_write failed with error %i", result);
+		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
 	return 0;
 }
 
-static int ads114s0x_send_command(const struct spi_dt_spec *bus, enum ads114s0x_command command)
+static int ads114s0x_send_command(const struct device *dev, enum ads114s0x_command command)
 {
+	const struct ads114s0x_config *config = dev->config;
 	uint8_t buffer_tx[1];
 	const struct spi_buf tx_buf[] = {{
 		.buf = buffer_tx,
@@ -571,11 +586,11 @@ static int ads114s0x_send_command(const struct spi_dt_spec *bus, enum ads114s0x_
 
 	buffer_tx[0] = (uint8_t)command;
 
-	LOG_DBG("sending command 0x%02X", command);
-	int result = spi_write_dt(bus, &tx);
+	LOG_DBG("%s: sending command 0x%02X", dev->name, command);
+	int result = spi_write_dt(&config->bus, &tx);
 
 	if (result != 0) {
-		LOG_ERR("spi_write failed with error %i", result);
+		LOG_ERR("%s: spi_write failed with error %i", dev->name, result);
 		return result;
 	}
 
@@ -593,9 +608,10 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	uint8_t idac_magnitude = 0;
 	uint8_t idac_mux = 0;
 	uint8_t pin_selections[4];
+	uint8_t vbias = 0;
 	size_t pin_selections_size;
 	int result;
-	enum ads114s0x_register register_addresses[6];
+	enum ads114s0x_register register_addresses[7];
 	uint8_t values[ARRAY_SIZE(register_addresses)];
 	uint16_t acquisition_time_value = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 	uint16_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(channel_cfg->acquisition_time);
@@ -608,7 +624,7 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	ADS114S0X_REGISTER_IDACMUX_SET_DEFAULTS(idac_mux);
 
 	if (channel_cfg->channel_id != 0) {
-		LOG_ERR("only one channel is supported");
+		LOG_ERR("%s: only one channel is supported", dev->name);
 		return -EINVAL;
 	}
 
@@ -619,7 +635,8 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	 */
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT &&
 	    acquisition_time_unit != ADC_ACQ_TIME_TICKS) {
-		LOG_ERR("invalid acquisition time %i", channel_cfg->acquisition_time);
+		LOG_ERR("%s: invalid acquisition time %i", dev->name,
+			channel_cfg->acquisition_time);
 		return -EINVAL;
 	}
 
@@ -655,25 +672,29 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		ADS114S0X_REGISTER_REF_REFSEL_SET(reference_control, 0b01);
 		break;
 	default:
-		LOG_ERR("reference %i is not supported", channel_cfg->reference);
+		LOG_ERR("%s: reference %i is not supported", dev->name, channel_cfg->reference);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
+		LOG_DBG("%s: configuring channel for a differential measurement from the pins (p, "
+			"n) (%i, %i)",
+			dev->name, channel_cfg->input_positive, channel_cfg->input_negative);
 		if (channel_cfg->input_positive >= ADS114S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("positive channel input %i is invalid",
+			LOG_ERR("%s: positive channel input %i is invalid", dev->name,
 				channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->input_negative >= ADS114S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("negative channel input %i is invalid",
+			LOG_ERR("%s: negative channel input %i is invalid", dev->name,
 				channel_cfg->input_negative);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->input_positive == channel_cfg->input_negative) {
-			LOG_ERR("negative and positive channel inputs must be different");
+			LOG_ERR("%s: negative and positive channel inputs must be different",
+				dev->name);
 			return -EINVAL;
 		}
 
@@ -682,8 +703,11 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		pin_selections[0] = channel_cfg->input_positive;
 		pin_selections[1] = channel_cfg->input_negative;
 	} else {
+		LOG_DBG("%s: configuring channel for single ended measurement from input %i",
+			dev->name, channel_cfg->input_positive);
 		if (channel_cfg->input_positive >= ADS114S0X_INPUT_SELECTION_AINCOM) {
-			LOG_ERR("channel input %i is invalid", channel_cfg->input_positive);
+			LOG_ERR("%s: channel input %i is invalid", dev->name,
+				channel_cfg->input_positive);
 			return -EINVAL;
 		}
 
@@ -720,7 +744,7 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		ADS114S0X_REGISTER_PGA_GAIN_SET(gain, 0b111);
 		break;
 	default:
-		LOG_ERR("gain value %i not supported", channel_cfg->gain);
+		LOG_ERR("%s: gain value %i not supported", dev->name, channel_cfg->gain);
 		return -EINVAL;
 	}
 
@@ -761,19 +785,21 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		ADS114S0X_REGISTER_IDACMAG_IMAG_SET(idac_magnitude, 0b1001);
 		break;
 	default:
-		LOG_ERR("IDAC magnitude %i not supported", config->idac_current);
+		LOG_ERR("%s: IDAC magnitude %i not supported", dev->name, config->idac_current);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->current_source_pin_set) {
+		LOG_DBG("%s: current source pin set to %i and %i", dev->name,
+			channel_cfg->current_source_pin[0], channel_cfg->current_source_pin[1]);
 		if (channel_cfg->current_source_pin[0] > 0b1111) {
-			LOG_ERR("invalid selection %i for I1MUX",
+			LOG_ERR("%s: invalid selection %i for I1MUX", dev->name,
 				channel_cfg->current_source_pin[0]);
 			return -EINVAL;
 		}
 
 		if (channel_cfg->current_source_pin[1] > 0b1111) {
-			LOG_ERR("invalid selection %i for I2MUX",
+			LOG_ERR("%s: invalid selection %i for I2MUX", dev->name,
 				channel_cfg->current_source_pin[1]);
 			return -EINVAL;
 		}
@@ -784,6 +810,7 @@ static int ads114s0x_channel_setup(const struct device *dev,
 		pin_selections[3] = channel_cfg->current_source_pin[1];
 		pin_selections_size = 4;
 	} else {
+		LOG_DBG("%s: current source pins not set", dev->name);
 		pin_selections_size = 2;
 	}
 
@@ -798,11 +825,23 @@ static int ads114s0x_channel_setup(const struct device *dev,
 			}
 
 			if (pin_selections[i] == pin_selections[j]) {
-				LOG_ERR("pins for inputs and current sources must be different");
+				LOG_ERR("%s: pins for inputs and current sources must be different",
+					dev->name);
 				return -EINVAL;
 			}
 		}
 	}
+
+	ADS114S0X_REGISTER_VBIAS_VB_LEVEL_SET(vbias, config->vbias_level);
+
+	if ((channel_cfg->vbias_pins &
+	     ~GENMASK(ADS114S0X_VBIAS_PIN_MAX, ADS114S0X_VBIAS_PIN_MIN)) != 0) {
+		LOG_ERR("%s: invalid VBIAS pin selection 0x%08X", dev->name,
+			channel_cfg->vbias_pins);
+		return -EINVAL;
+	}
+
+	vbias |= channel_cfg->vbias_pins;
 
 	register_addresses[0] = ADS114S0X_REGISTER_INPMUX;
 	register_addresses[1] = ADS114S0X_REGISTER_PGA;
@@ -810,20 +849,22 @@ static int ads114s0x_channel_setup(const struct device *dev,
 	register_addresses[3] = ADS114S0X_REGISTER_REF;
 	register_addresses[4] = ADS114S0X_REGISTER_IDACMAG;
 	register_addresses[5] = ADS114S0X_REGISTER_IDACMUX;
-	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 6);
+	register_addresses[6] = ADS114S0X_REGISTER_VBIAS;
+	BUILD_ASSERT(ARRAY_SIZE(register_addresses) == 7);
 	values[0] = input_mux;
 	values[1] = gain;
 	values[2] = data_rate;
 	values[3] = reference_control;
 	values[4] = idac_magnitude;
 	values[5] = idac_mux;
-	BUILD_ASSERT(ARRAY_SIZE(values) == 6);
+	values[6] = vbias;
+	BUILD_ASSERT(ARRAY_SIZE(values) == 7);
 
-	result = ads114s0x_write_multiple_registers(&config->bus, register_addresses, values,
+	result = ads114s0x_write_multiple_registers(dev, register_addresses, values,
 						    ARRAY_SIZE(values));
 
 	if (result != 0) {
-		LOG_ERR("unable to configure registers");
+		LOG_ERR("%s: unable to configure registers", dev->name);
 		return result;
 	}
 
@@ -849,17 +890,17 @@ static int ads114s0x_validate_sequence(const struct device *dev,
 				       const struct adc_sequence *sequence)
 {
 	if (sequence->resolution != ADS114S0X_RESOLUTION) {
-		LOG_ERR("invalid resolution");
+		LOG_ERR("%s: invalid resolution", dev->name);
 		return -EINVAL;
 	}
 
 	if (sequence->channels != BIT(0)) {
-		LOG_ERR("invalid channel");
+		LOG_ERR("%s: invalid channel", dev->name);
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling) {
-		LOG_ERR("oversampling is not supported");
+		LOG_ERR("%s: oversampling is not supported", dev->name);
 		return -EINVAL;
 	}
 
@@ -892,7 +933,7 @@ static int ads114s0x_adc_start_read(const struct device *dev, const struct adc_s
 	result = ads114s0x_validate_sequence(dev, sequence);
 
 	if (result != 0) {
-		LOG_ERR("sequence validation failed");
+		LOG_ERR("%s: sequence validation failed", dev->name);
 		return result;
 	}
 
@@ -913,16 +954,16 @@ static int ads114s0x_send_start_read(const struct device *dev)
 	int result;
 
 	if (config->gpio_start_sync.port == 0) {
-		result = ads114s0x_send_command(&config->bus, ADS114S0X_COMMAND_START);
+		result = ads114s0x_send_command(dev, ADS114S0X_COMMAND_START);
 		if (result != 0) {
-			LOG_ERR("unable to send START/SYNC command");
+			LOG_ERR("%s: unable to send START/SYNC command", dev->name);
 			return result;
 		}
 	} else {
 		result = gpio_pin_set_dt(&config->gpio_start_sync, 1);
 
 		if (result != 0) {
-			LOG_ERR("unable to start ADC operation");
+			LOG_ERR("%s: unable to start ADC operation", dev->name);
 			return result;
 		}
 
@@ -932,7 +973,7 @@ static int ads114s0x_send_start_read(const struct device *dev)
 		result = gpio_pin_set_dt(&config->gpio_start_sync, 0);
 
 		if (result != 0) {
-			LOG_ERR("unable to start ADC operation");
+			LOG_ERR("%s: unable to start ADC operation", dev->name);
 			return result;
 		}
 	}
@@ -974,11 +1015,12 @@ static int ads114s0x_read_sample(const struct device *dev, uint16_t *buffer)
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("spi_transceive failed with error %i", result);
+		LOG_ERR("%s: spi_transceive failed with error %i", dev->name, result);
 		return result;
 	}
 
 	*buffer = sys_get_be16(buffer_rx + 1);
+	LOG_DBG("%s: read ADC sample %i", dev->name, *buffer);
 
 	return 0;
 }
@@ -989,24 +1031,25 @@ static int ads114s0x_adc_perform_read(const struct device *dev)
 	struct ads114s0x_data *data = dev->data;
 
 	k_sem_take(&data->acquire_signal, K_FOREVER);
+	k_sem_reset(&data->data_ready_signal);
 
 	result = ads114s0x_send_start_read(dev);
 	if (result != 0) {
-		LOG_ERR("unable to start ADC conversion");
+		LOG_ERR("%s: unable to start ADC conversion", dev->name);
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
 
 	result = ads114s0x_wait_data_ready(dev);
 	if (result != 0) {
-		LOG_ERR("waiting for data to be ready failed");
+		LOG_ERR("%s: waiting for data to be ready failed", dev->name);
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
 
 	result = ads114s0x_read_sample(dev, data->buffer);
 	if (result != 0) {
-		LOG_ERR("reading sample failed");
+		LOG_ERR("%s: reading sample failed", dev->name);
 		adc_context_complete(&data->ctx, result);
 		return result;
 	}
@@ -1063,8 +1106,12 @@ static int ads114s0x_read(const struct device *dev, const struct adc_sequence *s
 #endif
 
 #if CONFIG_ADC_ASYNC
-static void ads114s0x_acquisition_thread(struct device *dev)
+static void ads114s0x_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	while (true) {
 		ads114s0x_adc_perform_read(dev);
 	}
@@ -1075,8 +1122,7 @@ static void ads114s0x_acquisition_thread(struct device *dev)
 static int ads114s0x_gpio_write_config(const struct device *dev)
 {
 	struct ads114s0x_data *data = dev->data;
-	const struct ads114s0x_config *config = dev->config;
-	uint8_t register_addresses[2];
+	enum ads114s0x_register register_addresses[2];
 	uint8_t register_values[ARRAY_SIZE(register_addresses)];
 	uint8_t gpio_dat = 0;
 	uint8_t gpio_con = 0;
@@ -1089,20 +1135,19 @@ static int ads114s0x_gpio_write_config(const struct device *dev)
 	register_values[1] = gpio_con;
 	register_addresses[0] = ADS114S0X_REGISTER_GPIODAT;
 	register_addresses[1] = ADS114S0X_REGISTER_GPIOCON;
-	return ads114s0x_write_multiple_registers(&config->bus, register_addresses, register_values,
+	return ads114s0x_write_multiple_registers(dev, register_addresses, register_values,
 						  ARRAY_SIZE(register_values));
 }
 
 static int ads114s0x_gpio_write_value(const struct device *dev)
 {
 	struct ads114s0x_data *data = dev->data;
-	const struct ads114s0x_config *config = dev->config;
 	uint8_t gpio_dat = 0;
 
 	ADS114S0X_REGISTER_GPIODAT_DAT_SET(gpio_dat, data->gpio_value);
 	ADS114S0X_REGISTER_GPIODAT_DIR_SET(gpio_dat, data->gpio_direction);
 
-	return ads114s0x_write_register(&config->bus, ADS114S0X_REGISTER_GPIODAT, gpio_dat);
+	return ads114s0x_write_register(dev, ADS114S0X_REGISTER_GPIODAT, gpio_dat);
 }
 
 int ads114s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initial_value)
@@ -1111,7 +1156,7 @@ int ads114s0x_gpio_set_output(const struct device *dev, uint8_t pin, bool initia
 	int result = 0;
 
 	if (pin > ADS114S0X_GPIO_MAX) {
-		LOG_ERR("invalid pin %i", pin);
+		LOG_ERR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1139,7 +1184,7 @@ int ads114s0x_gpio_set_input(const struct device *dev, uint8_t pin)
 	int result = 0;
 
 	if (pin > ADS114S0X_GPIO_MAX) {
-		LOG_ERR("invalid pin %i", pin);
+		LOG_ERR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1162,7 +1207,7 @@ int ads114s0x_gpio_deconfigure(const struct device *dev, uint8_t pin)
 	int result = 0;
 
 	if (pin > ADS114S0X_GPIO_MAX) {
-		LOG_ERR("invalid pin %i", pin);
+		LOG_ERR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
@@ -1185,17 +1230,17 @@ int ads114s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool val
 	int result = 0;
 
 	if (pin > ADS114S0X_GPIO_MAX) {
-		LOG_ERR("invalid pin %i", pin);
+		LOG_ERR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->gpio_lock, K_FOREVER);
 
 	if ((BIT(pin) & data->gpio_enabled) == 0) {
-		LOG_ERR("gpio pin %i not configured", pin);
+		LOG_ERR("%s: gpio pin %i not configured", dev->name, pin);
 		result = -EINVAL;
 	} else if ((BIT(pin) & data->gpio_direction) != 0) {
-		LOG_ERR("gpio pin %i not configured as output", pin);
+		LOG_ERR("%s: gpio pin %i not configured as output", dev->name, pin);
 		result = -EINVAL;
 	} else {
 		data->gpio_value |= BIT(pin);
@@ -1211,26 +1256,24 @@ int ads114s0x_gpio_set_pin_value(const struct device *dev, uint8_t pin, bool val
 int ads114s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin, bool *value)
 {
 	struct ads114s0x_data *data = dev->data;
-	const struct ads114s0x_config *config = dev->config;
 	int result = 0;
 	uint8_t gpio_dat;
 
 	if (pin > ADS114S0X_GPIO_MAX) {
-		LOG_ERR("invalid pin %i", pin);
+		LOG_ERR("%s: invalid pin %i", dev->name, pin);
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->gpio_lock, K_FOREVER);
 
 	if ((BIT(pin) & data->gpio_enabled) == 0) {
-		LOG_ERR("gpio pin %i not configured", pin);
+		LOG_ERR("%s: gpio pin %i not configured", dev->name, pin);
 		result = -EINVAL;
 	} else if ((BIT(pin) & data->gpio_direction) == 0) {
-		LOG_ERR("gpio pin %i not configured as input", pin);
+		LOG_ERR("%s: gpio pin %i not configured as input", dev->name, pin);
 		result = -EINVAL;
 	} else {
-		result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_GPIODAT,
-						 &gpio_dat);
+		result = ads114s0x_read_register(dev, ADS114S0X_REGISTER_GPIODAT, &gpio_dat);
 		data->gpio_value = ADS114S0X_REGISTER_GPIODAT_DAT_GET(gpio_dat);
 		*value = (BIT(pin) & data->gpio_value) != 0;
 	}
@@ -1243,13 +1286,12 @@ int ads114s0x_gpio_get_pin_value(const struct device *dev, uint8_t pin, bool *va
 int ads114s0x_gpio_port_get_raw(const struct device *dev, gpio_port_value_t *value)
 {
 	struct ads114s0x_data *data = dev->data;
-	const struct ads114s0x_config *config = dev->config;
 	int result = 0;
 	uint8_t gpio_dat;
 
 	k_mutex_lock(&data->gpio_lock, K_FOREVER);
 
-	result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_GPIODAT, &gpio_dat);
+	result = ads114s0x_read_register(dev, ADS114S0X_REGISTER_GPIODAT, &gpio_dat);
 	data->gpio_value = ADS114S0X_REGISTER_GPIODAT_DAT_GET(gpio_dat);
 	*value = data->gpio_value;
 
@@ -1311,14 +1353,14 @@ static int ads114s0x_init(const struct device *dev)
 #endif /* CONFIG_ADC_ADS114S0X_GPIO */
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_ERR("SPI device is not ready");
+		LOG_ERR("%s: SPI device is not ready", dev->name);
 		return -ENODEV;
 	}
 
 	if (config->gpio_reset.port != NULL) {
 		result = gpio_pin_configure_dt(&config->gpio_reset, GPIO_OUTPUT_ACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize GPIO for reset");
+			LOG_ERR("%s: failed to initialize GPIO for reset", dev->name);
 			return result;
 		}
 	}
@@ -1326,20 +1368,20 @@ static int ads114s0x_init(const struct device *dev)
 	if (config->gpio_start_sync.port != NULL) {
 		result = gpio_pin_configure_dt(&config->gpio_start_sync, GPIO_OUTPUT_INACTIVE);
 		if (result != 0) {
-			LOG_ERR("failed to initialize GPIO for start/sync");
+			LOG_ERR("%s: failed to initialize GPIO for start/sync", dev->name);
 			return result;
 		}
 	}
 
 	result = gpio_pin_configure_dt(&config->gpio_data_ready, GPIO_INPUT);
 	if (result != 0) {
-		LOG_ERR("failed to initialize GPIO for data ready");
+		LOG_ERR("%s: failed to initialize GPIO for data ready", dev->name);
 		return result;
 	}
 
 	result = gpio_pin_interrupt_configure_dt(&config->gpio_data_ready, GPIO_INT_EDGE_TO_ACTIVE);
 	if (result != 0) {
-		LOG_ERR("failed to configure data ready interrupt");
+		LOG_ERR("%s: failed to configure data ready interrupt", dev->name);
 		return -EIO;
 	}
 
@@ -1347,24 +1389,24 @@ static int ads114s0x_init(const struct device *dev)
 			   BIT(config->gpio_data_ready.pin));
 	result = gpio_add_callback(config->gpio_data_ready.port, &data->callback_data_ready);
 	if (result != 0) {
-		LOG_ERR("failed to add data ready callback");
+		LOG_ERR("%s: failed to add data ready callback", dev->name);
 		return -EIO;
 	}
 
 #if CONFIG_ADC_ASYNC
-	const k_tid_t tid = k_thread_create(
-		&data->thread, config->stack, CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
-		(k_thread_entry_t)ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
-		CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
+	k_tid_t tid = k_thread_create(&data->thread, config->stack,
+				      CONFIG_ADC_ADS114S0X_ACQUISITION_THREAD_STACK_SIZE,
+				      ads114s0x_acquisition_thread, (void *)dev, NULL, NULL,
+				      CONFIG_ADC_ADS114S0X_ASYNC_THREAD_INIT_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads114s0x");
 #endif
 
 	k_busy_wait(ADS114S0X_POWER_ON_RESET_TIME_IN_US);
 
 	if (config->gpio_reset.port == NULL) {
-		result = ads114s0x_send_command(&config->bus, ADS114S0X_COMMAND_RESET);
+		result = ads114s0x_send_command(dev, ADS114S0X_COMMAND_RESET);
 		if (result != 0) {
-			LOG_ERR("unable to send RESET command");
+			LOG_ERR("%s: unable to send RESET command", dev->name);
 			return result;
 		}
 	} else {
@@ -1374,14 +1416,14 @@ static int ads114s0x_init(const struct device *dev)
 
 	k_busy_wait(ADS114S0X_RESET_DELAY_TIME_IN_US);
 
-	result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_STATUS, &status);
+	result = ads114s0x_read_register(dev, ADS114S0X_REGISTER_STATUS, &status);
 	if (result != 0) {
-		LOG_ERR("unable to read status register");
+		LOG_ERR("%s: unable to read status register", dev->name);
 		return result;
 	}
 
 	if (ADS114S0X_REGISTER_STATUS_NOT_RDY_GET(status) == 0x01) {
-		LOG_ERR("ADS114 is not yet ready");
+		LOG_ERR("%s: ADS114 is not yet ready", dev->name);
 		return -EBUSY;
 	}
 
@@ -1391,24 +1433,24 @@ static int ads114s0x_init(const struct device *dev)
 	 */
 	ADS114S0X_REGISTER_REF_SET_DEFAULTS(reference_control);
 
-	result = ads114s0x_write_register(&config->bus, ADS114S0X_REGISTER_REF, reference_control);
+	result = ads114s0x_write_register(dev, ADS114S0X_REGISTER_REF, reference_control);
 	if (result != 0) {
-		LOG_ERR("unable to set default reference control values");
+		LOG_ERR("%s: unable to set default reference control values", dev->name);
 		return result;
 	}
 
 	/*
 	 * Ensure that the internal voltage reference is active.
 	 */
-	result = ads114s0x_read_register(&config->bus, ADS114S0X_REGISTER_REF,
-					 &reference_control_read);
+	result = ads114s0x_read_register(dev, ADS114S0X_REGISTER_REF, &reference_control_read);
 	if (result != 0) {
-		LOG_ERR("unable to read reference control values");
+		LOG_ERR("%s: unable to read reference control values", dev->name);
 		return result;
 	}
 
 	if (reference_control != reference_control_read) {
-		LOG_ERR("reference control register is incorrect: 0x%02X", reference_control_read);
+		LOG_ERR("%s: reference control register is incorrect: 0x%02X", dev->name,
+			reference_control_read);
 		return -EIO;
 	}
 
@@ -1420,7 +1462,7 @@ static int ads114s0x_init(const struct device *dev)
 	result = ads114s0x_gpio_write_config(dev);
 
 	if (result != 0) {
-		LOG_ERR("unable to configure defaults for GPIOs");
+		LOG_ERR("%s: unable to configure defaults for GPIOs", dev->name);
 		return result;
 	}
 #endif
@@ -1456,7 +1498,8 @@ BUILD_ASSERT(CONFIG_ADC_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
 		.gpio_start_sync = GPIO_DT_SPEC_INST_GET_OR(n, start_sync_gpios, {0}),             \
-		.idac_current = DT_INST_PROP(n,	idac_current),                                     \
+		.idac_current = DT_INST_PROP(n, idac_current),                                     \
+		.vbias_level = DT_INST_PROP(n, vbias_level),                                       \
 	};                                                                                         \
 	static struct ads114s0x_data data_##n;                                                     \
 	DEVICE_DT_INST_DEFINE(n, ads114s0x_init, NULL, &data_##n, &config_##n, POST_KERNEL,        \

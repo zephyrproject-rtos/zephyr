@@ -1,7 +1,7 @@
 .. _bluetooth-ctlr-arch:
 
-Bluetooth Low Energy Controller
-###############################
+LE Controller
+#############
 
 Overview
 ********

@@ -294,7 +294,7 @@ static int dma_xmc4xxx_config(const struct device *dev, uint32_t channel, struct
 		XMC_DMA_CH_EnableEvent(dma, channel, XMC_DMA_CH_EVENT_BLOCK_TRANSFER_COMPLETE);
 	}
 
-	if (config->error_callback_en) {
+	if (!config->error_callback_dis) {
 		XMC_DMA_CH_EnableEvent(dma, channel, XMC_DMA_CH_EVENT_ERROR);
 	}
 
@@ -393,7 +393,7 @@ static int dma_xmc4xxx_get_status(const struct device *dev, uint32_t channel,
 
 	stat->pending_length  = dma_channel->block_ts - XMC_DMA_CH_GetTransferredData(dma, channel);
 	stat->pending_length *= dma_channel->source_data_size;
-	/* stat->dir and other remaining fields are not set. They are are not */
+	/* stat->dir and other remaining fields are not set. They are not */
 	/* useful for xmc4xxx peripheral drivers. */
 
 	return 0;

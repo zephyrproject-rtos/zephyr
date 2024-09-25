@@ -84,6 +84,12 @@ __subsystem struct ivshmem_driver_api {
 /**
  * @brief Get the inter-VM shared memory
  *
+ * Note: This API is not supported for ivshmem-v2, as
+ * the R/W and R/O areas may not be mapped contiguously.
+ * For ivshmem-v2, use the ivshmem_get_rw_mem_section,
+ * ivshmem_get_output_mem_section and ivshmem_get_state
+ * APIs to access the shared memory.
+ *
  * @param dev Pointer to the device structure for the driver instance
  * @param memmap A pointer to fill in with the memory address
  *
@@ -334,6 +340,6 @@ static inline int z_impl_ivshmem_enable_interrupts(const struct device *dev,
  * @}
  */
 
-#include <syscalls/ivshmem.h>
+#include <zephyr/syscalls/ivshmem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTUALIZATION_IVSHMEM_H_ */

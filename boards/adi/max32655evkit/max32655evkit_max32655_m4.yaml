@@ -1,0 +1,14 @@
+identifier: max32655evkit/max32655/m4
+name: max32655evkit m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+ram: 128
+flash: 512

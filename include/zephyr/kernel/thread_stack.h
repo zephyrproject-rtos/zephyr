@@ -18,8 +18,8 @@
  * @}
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
-#define ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
+#ifndef ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H
+#define ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/arch/cpu.h>
@@ -92,7 +92,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
 #else
 #define K_KERNEL_STACK_RESERVED	((size_t)0)
-#endif
+#endif /* ARCH_KERNEL_STACK_RESERVED */
 
 #define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
 						   ARCH_STACK_PTR_ALIGN) + \
@@ -102,9 +102,9 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_KERNEL_STACK_OBJ_ALIGN
 #else
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
-#endif
+#endif /* ARCH_KERNEL_STACK_OBJ_ALIGN */
 
-#define Z_KERNEL_STACK_LEN(size) \
+#define K_KERNEL_STACK_LEN(size) \
 	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
 
 /**
@@ -123,7 +123,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_STACK_DECLARE(sym, size) \
 	extern struct z_thread_stack_element \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+		sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -137,7 +137,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_STACK_ARRAY_DECLARE(sym, nmemb, size) \
 	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a pinned thread stack array
@@ -151,7 +151,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_KERNEL_PINNED_STACK_ARRAY_DECLARE(sym, nmemb, size) \
 	extern struct z_thread_stack_element \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region in specified section
@@ -175,7 +175,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_DEFINE_IN(sym, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+		sym[K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions in specified section
@@ -188,7 +188,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+		sym[nmemb][K_KERNEL_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel kernel stack memory region
@@ -232,7 +232,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #else
 #define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define a toplevel array of kernel stack memory regions
@@ -265,7 +265,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #else
 #define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define an embedded stack memory region
@@ -283,18 +283,18 @@ static inline char *z_stack_ptr_align(char *ptr)
 
 /** @} */
 
-static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *K_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_KERNEL_STACK_RESERVED;
 }
 #ifndef CONFIG_USERSPACE
 #define K_THREAD_STACK_RESERVED		K_KERNEL_STACK_RESERVED
 #define K_THREAD_STACK_SIZEOF		K_KERNEL_STACK_SIZEOF
-#define K_THREAD_STACK_LEN		Z_KERNEL_STACK_LEN
+#define K_THREAD_STACK_LEN		K_KERNEL_STACK_LEN
 #define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
 #define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
 #define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
-#define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_BUFFER		K_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_DECLARE		K_KERNEL_STACK_DECLARE
 #define K_THREAD_STACK_ARRAY_DECLARE	K_KERNEL_STACK_ARRAY_DECLARE
 #define K_THREAD_PINNED_STACK_DEFINE	K_KERNEL_PINNED_STACK_DEFINE
@@ -320,7 +320,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_RESERVED		((size_t)(ARCH_THREAD_STACK_RESERVED))
 #else
 #define K_THREAD_STACK_RESERVED		((size_t)0U)
-#endif
+#endif /* ARCH_THREAD_STACK_RESERVED */
 
 /**
  * @brief Properly align the lowest address of a stack object
@@ -404,7 +404,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_DECLARE(sym, size) \
 	extern struct z_thread_stack_element \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+		sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare a reference to a thread stack array
@@ -467,7 +467,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define Z_THREAD_STACK_DEFINE_IN(sym, size, lsect) \
 	struct z_thread_stack_element lsect \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+		sym[K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Define a toplevel array of thread stack memory regions in specified region
@@ -553,7 +553,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #else
 #define K_THREAD_PINNED_STACK_DEFINE(sym, size) \
 	K_THREAD_STACK_DEFINE(sym, size)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -611,7 +611,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #else
 #define K_THREAD_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
-#endif
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 /**
  * @brief Define an embedded stack memory region
@@ -650,7 +650,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym defined stack symbol name
  * @return The buffer itself, a char *
  */
-static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
@@ -662,4 +662,4 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #endif
 
 #endif /* _ASMLANGUAGE */
-#endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */
+#endif /* ZEPHYR_INCLUDE_KERNEL_THREAD_STACK_H */

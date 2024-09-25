@@ -1,0 +1,18 @@
+# iMX7 core series
+
+# Copyright 2017,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMX7D
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 127
+
+config PINCTRL_IMX
+	default y if HAS_IMX_IOMUXC
+	depends on PINCTRL
+
+rsource "Kconfig.defconfig.*"
+
+endif # SOC_SERIES_IMX7D

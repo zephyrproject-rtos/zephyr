@@ -8,9 +8,33 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/http/server.h>
 
-#define DETAIL(n) (void *)((0xde7a11 * 10) + (n))
-#define RES(n)	  (void *)((0x2e5 * 10) + (n))
+static struct http_resource_detail detail[] = {
+	{
+			.type = HTTP_RESOURCE_TYPE_STATIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	{
+			.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	{
+			.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	{
+			.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	{
+			.type = HTTP_RESOURCE_TYPE_STATIC,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+};
+
+#define DETAIL(n) &detail[n]
+#define RES(n) &detail[n]
 
 /*
  * Two separate HTTP server instances (A and B), each with different static
@@ -39,6 +63,16 @@ HTTP_RESOURCE_DEFINE(resource_3, service_B, "/bar/baz.php", RES(3));
  */
 static const uint16_t service_C_port = 5959;
 HTTP_SERVICE_DEFINE_EMPTY(service_C, "192.168.1.1", &service_C_port, 5, 9, DETAIL(2));
+
+/* Wildcard resources */
+static uint16_t service_D_port = service_A_port + 1;
+HTTP_SERVICE_DEFINE(service_D, "2001:db8::1", &service_D_port, 7, 3, DETAIL(3));
+HTTP_RESOURCE_DEFINE(resource_4, service_D, "/foo1.htm*", RES(0));
+HTTP_RESOURCE_DEFINE(resource_5, service_D, "/fo*", RES(1));
+HTTP_RESOURCE_DEFINE(resource_6, service_D, "/f[ob]o3.html", RES(1));
+HTTP_RESOURCE_DEFINE(resource_7, service_D, "/fb?3.htm", RES(0));
+HTTP_RESOURCE_DEFINE(resource_8, service_D, "/f*4.html", RES(3));
+
 
 ZTEST(http_service, test_HTTP_SERVICE_DEFINE)
 {
@@ -72,7 +106,7 @@ ZTEST(http_service, test_HTTP_SERVICE_COUNT)
 
 	n_svc = 4273;
 	HTTP_SERVICE_COUNT(&n_svc);
-	zassert_equal(n_svc, 3);
+	zassert_equal(n_svc, 4);
 }
 
 ZTEST(http_service, test_HTTP_SERVICE_RESOURCE_COUNT)
@@ -88,6 +122,7 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 	size_t have_service_A = 0;
 	size_t have_service_B = 0;
 	size_t have_service_C = 0;
+	size_t have_service_D = 0;
 
 	HTTP_SERVICE_FOREACH(svc) {
 		if (svc == &service_A) {
@@ -96,6 +131,8 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 			have_service_B = 1;
 		} else if (svc == &service_C) {
 			have_service_C = 1;
+		} else if (svc == &service_D) {
+			have_service_D = 1;
 		} else {
 			zassert_unreachable("svc (%p) not equal to &service_A (%p), &service_B "
 					    "(%p), or &service_C (%p)",
@@ -105,8 +142,8 @@ ZTEST(http_service, test_HTTP_SERVICE_FOREACH)
 		n_svc++;
 	}
 
-	zassert_equal(n_svc, 3);
-	zassert_equal(have_service_A + have_service_B + have_service_C, n_svc);
+	zassert_equal(n_svc, 4);
+	zassert_equal(have_service_A + have_service_B + have_service_C + have_service_D, n_svc);
 }
 
 ZTEST(http_service, test_HTTP_RESOURCE_FOREACH)
@@ -244,6 +281,52 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFINE)
 				&resource_2, &resource_3);
 		}
 	}
+}
+
+extern struct http_resource_detail *get_resource_detail(const char *path,
+							int *path_len,
+							bool is_websocket);
+
+#define CHECK_PATH(path, len) ({ *len = 0; get_resource_detail(path, len, false); })
+
+ZTEST(http_service, test_HTTP_RESOURCE_WILDCARD)
+{
+	struct http_resource_detail *res;
+	int len;
+
+	res = CHECK_PATH("/", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(0), "Resource mismatch");
+
+	res = CHECK_PATH("/f", &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	res = CHECK_PATH("/foo1.html", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(0), "Resource mismatch");
+
+	res = CHECK_PATH("/foo2222.html", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(1), "Resource mismatch");
+
+	res = CHECK_PATH("/fbo3.html", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(1), "Resource mismatch");
+
+	res = CHECK_PATH("/fbo3.htm", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(0), "Resource mismatch");
+
+	res = CHECK_PATH("/fbo4.html", &len);
+	zassert_not_null(res, "Cannot find resource");
+	zassert_true(len > 0, "Length not set");
+	zassert_equal(res, RES(3), "Resource mismatch");
 }
 
 ZTEST_SUITE(http_service, NULL, NULL, NULL, NULL, NULL);

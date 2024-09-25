@@ -129,6 +129,43 @@ def test_if_get_command_returns_proper_string_8(patched_which, device: HardwareA
 
 
 @mock.patch('shutil.which', return_value='west')
+def test_if_get_command_returns_proper_string_with_runner_params_1(patched_which, device: HardwareAdapter) -> None:
+    device.device_config.build_dir = Path('build')
+    device.device_config.runner_params = ['--runner-param1', 'runner-param2']
+    device.generate_command()
+    assert isinstance(device.command, list)
+    assert device.command == [
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'build',
+        '--runner', 'runner', '--', '--runner-param1', 'runner-param2'
+    ]
+
+
+@mock.patch('shutil.which', return_value='west')
+def test_if_get_command_returns_proper_string_with_runner_params_2(patched_which, device: HardwareAdapter) -> None:
+    device.device_config.build_dir = Path('build')
+    device.device_config.runner = 'openocd'
+    device.device_config.runner_params = [
+        '--cmd-pre-init', 'adapter serial FT1LRSRD',
+        '--cmd-pre-init', 'source [find interface/ftdi/jtag-lock-pick_tiny_2.cfg]',
+        '--cmd-pre-init', 'transport select swd',
+        '--cmd-pre-init', 'source [find target/nrf52.cfg]',
+        '--cmd-pre-init', 'adapter speed 10000',
+    ]
+    device.device_config.product = 'JTAG-lock-pick Tiny 2'
+    device.generate_command()
+    assert isinstance(device.command, list)
+    assert device.command == [
+        'west', 'flash', '--skip-rebuild', '--build-dir', 'build',
+        '--runner', 'openocd', '--',
+        '--cmd-pre-init', 'adapter serial FT1LRSRD',
+        '--cmd-pre-init', 'source [find interface/ftdi/jtag-lock-pick_tiny_2.cfg]',
+        '--cmd-pre-init', 'transport select swd',
+        '--cmd-pre-init', 'source [find target/nrf52.cfg]',
+        '--cmd-pre-init', 'adapter speed 10000',
+    ]
+
+
+@mock.patch('shutil.which', return_value='west')
 def test_if_get_command_returns_proper_string_with_west_flash_extra_args(
     patched_which, device: HardwareAdapter
 ) -> None:

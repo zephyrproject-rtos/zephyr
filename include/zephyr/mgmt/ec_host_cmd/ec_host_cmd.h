@@ -10,6 +10,8 @@
 /**
  * @brief EC Host Command Interface
  * @defgroup ec_host_cmd_interface EC Host Command Interface
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -78,7 +80,15 @@ enum ec_host_cmd_log_level {
 	EC_HOST_CMD_DEBUG_MODES /* Number of host command debug modes */
 };
 
+enum ec_host_cmd_state {
+	EC_HOST_CMD_STATE_DISABLED = 0,
+	EC_HOST_CMD_STATE_RECEIVING,
+	EC_HOST_CMD_STATE_PROCESSING,
+	EC_HOST_CMD_STATE_SENDING,
+};
+
 typedef void (*ec_host_cmd_user_cb_t)(const struct ec_host_cmd_rx_ctx *rx_ctx, void *user_data);
+typedef enum ec_host_cmd_status (*ec_host_cmd_in_progress_cb_t)(void *user_data);
 
 struct ec_host_cmd {
 	struct ec_host_cmd_rx_ctx rx_ctx;
@@ -97,6 +107,7 @@ struct ec_host_cmd {
 	 */
 	ec_host_cmd_user_cb_t user_cb;
 	void *user_data;
+	enum ec_host_cmd_state state;
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 	struct k_thread thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
@@ -281,7 +292,7 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
  * @retval 0 if successful.
  */
 int ec_host_cmd_send_response(enum ec_host_cmd_status status,
-		const struct ec_host_cmd_handler_args *args);
+			      const struct ec_host_cmd_handler_args *args);
 
 /**
  * @brief Signal a new host command
@@ -338,7 +349,7 @@ bool ec_host_cmd_send_in_progress_ended(void);
  * @brief Get final result of a last Host Command that has sent EC_HOST_CMD_IN_PROGRESS status.
  *
  * A Host Command that sends EC_HOST_CMD_IN_PROGRESS status doesn't send a final result.
- * Get the saved status with this function. The status can be get only once. Futher calls return
+ * Get the saved status with this function. The status can be get only once. Further calls return
  * EC_HOST_CMD_UNAVAILABLE.
  *
  * Saving status of Host Commands that send response data is not supported.
@@ -346,6 +357,23 @@ bool ec_host_cmd_send_in_progress_ended(void);
  * @retval The final status or EC_HOST_CMD_UNAVAILABLE if not available.
  */
 enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void);
+
+/**
+ * @brief Continue processing a handler in callback after returning EC_HOST_CMD_IN_PROGRESS.
+ *
+ * A Host Command handler may return the EC_HOST_CMD_IN_PROGRESS, but needs to continue work.
+ * This function should be called before returning EC_HOST_CMD_IN_PROGRESS with a callback that
+ * will be executed. The return status of the callback will be stored and can be get with the
+ * ec_host_cmd_send_in_progress_status function. The ec_host_cmd_send_in_progress_ended function
+ * can be used to check if the callback has ended.
+ *
+ * @param[in] cb          A callback to be called after returning from a command handler.
+ * @param[in] user_data   User data to be passed to the callback.
+ *
+ * @retval EC_HOST_CMD_BUSY if any command is already in progress, EC_HOST_CMD_SUCCESS otherwise
+ */
+enum ec_host_cmd_status ec_host_cmd_send_in_progress_continue(ec_host_cmd_in_progress_cb_t cb,
+							      void *user_data);
 #endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
 /**

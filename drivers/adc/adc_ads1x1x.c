@@ -537,8 +537,12 @@ static int ads1x1x_read(const struct device *dev, const struct adc_sequence *seq
 	return ads1x1x_adc_read_async(dev, sequence, NULL);
 }
 
-static void ads1x1x_acquisition_thread(const struct device *dev)
+static void ads1x1x_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct ads1x1x_data *data = dev->data;
 	int rc;
 
@@ -570,9 +574,9 @@ static int ads1x1x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	const k_tid_t tid =
+	k_tid_t tid =
 		k_thread_create(&data->thread, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
-				(k_thread_entry_t)ads1x1x_acquisition_thread, (void *)dev, NULL,
+				ads1x1x_acquisition_thread, (void *)dev, NULL,
 				NULL, CONFIG_ADC_ADS1X1X_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(tid, "adc_ads1x1x");
 
@@ -612,7 +616,7 @@ static const struct adc_driver_api ads1x1x_api = {
 /* The ADS111X provides 16 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFFh and a
  * negative full-scale (–FS) input produces an output code of 8000h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 0000h to 7FFFh
  */
 #define ADS111X_RESOLUTION 16
@@ -655,7 +659,7 @@ DT_INST_FOREACH_STATUS_OKAY(ADS1113_INIT)
 /* The ADS101X provides 12 bits of data in binary two's complement format
  * A positive full-scale (+FS) input produces an output code of 7FFh and a
  * negative full-scale (–FS) input produces an output code of 800h. Single
- * ended signal measurements only only use the positive code range from
+ * ended signal measurements only use the positive code range from
  * 000h to 7FFh
  */
 #define ADS101X_RESOLUTION 12

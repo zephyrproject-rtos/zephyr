@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Andrew Featherstone
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.rtc.rtc_utils:
+    tags:
+      - drivers
+      - rtc
+    depends_on: rtc

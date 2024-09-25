@@ -69,7 +69,7 @@ struct bt_mesh_large_comp_data_cli_cb {
 /** Large Composition Data Client model context */
 struct bt_mesh_large_comp_data_cli {
 	/** Model entry pointer. */
-	struct bt_mesh_model *model;
+	const struct bt_mesh_model *model;
 
 	/** Internal parameters for tracking message responses. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;

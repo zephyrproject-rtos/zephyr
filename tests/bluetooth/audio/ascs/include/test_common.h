@@ -66,3 +66,6 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 				   bool source);
 void test_preamble_state_disabling(struct bt_conn *conn, uint8_t ase_id,
 				   struct bt_bap_stream *stream, struct bt_iso_chan **chan);
+void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
+				   struct bt_bap_stream *stream, struct bt_iso_chan **chan,
+				   bool source);

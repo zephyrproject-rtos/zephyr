@@ -8,5 +8,6 @@ config SPI_PSOC6
 	default y
 	depends on DT_HAS_CYPRESS_PSOC6_SPI_ENABLED
 	select USE_INFINEON_SPI
+	select PINCTRL
 	help
 	  This option enables the SCB[SPI] driver for PSoC-6 SoC family.

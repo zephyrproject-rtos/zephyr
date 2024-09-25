@@ -11,6 +11,14 @@
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
 #define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
+
 /* VCS opcodes */
 #define BT_VCP_OPCODE_REL_VOL_DOWN                      0x00
 #define BT_VCP_OPCODE_REL_VOL_UP                        0x01
@@ -59,10 +67,14 @@ struct bt_vcp_vol_ctlr {
 	struct bt_uuid_16 uuid;
 	struct bt_conn *conn;
 
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VOCS_CLIENT_MAX_INSTANCE_COUNT];
+	struct bt_vocs *vocs[CONFIG_BT_VCP_VOL_CTLR_MAX_VOCS_INST];
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
 	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_AICS_CLIENT_MAX_INSTANCE_COUNT];
+	struct bt_aics *aics[CONFIG_BT_VCP_VOL_CTLR_MAX_AICS_INST];
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 };
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_INTERNAL_*/

@@ -84,6 +84,9 @@ def analyze_headers(include_dir, scan_dir, file_list):
     if scan_dir:
         multiple_directories |= set(scan_dir)
 
+    # Convert to a list to keep the output deterministic
+    multiple_directories = sorted(multiple_directories)
+
     # Look for source files under various directories.
     # Due to "syscalls/*.h" being included unconditionally in various
     # other header files. We must generate the associated syscall

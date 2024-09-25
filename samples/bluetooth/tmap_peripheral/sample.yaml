@@ -4,13 +4,19 @@ sample:
 tests:
   sample.bluetooth.tmap_peripheral:
     harness: bluetooth
-    platform_allow: qemu_cortex_m3 qemu_x86
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3
   sample.bluetooth.tmap_peripheral.duo:
     harness: bluetooth
-    platform_allow: qemu_cortex_m3 qemu_x86
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
     tags: bluetooth
     extra_args: OVERLAY_CONFIG="duo.conf"
     extra_configs:

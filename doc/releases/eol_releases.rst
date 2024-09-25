@@ -11,4 +11,4 @@ Release notes for end-of-life releases of Zephyr RTOS are kept here for historic
    release-notes-1.?
    release-notes-1.*
    release-notes-2.[0-6]
-   release-notes-3.[0-2]
+   release-notes-3.[0-4]

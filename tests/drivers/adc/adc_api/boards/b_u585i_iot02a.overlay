@@ -12,6 +12,9 @@
 };
 
 &adc1 {
+	dmas = <&gpdma1 0 0 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS | STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "gpdma";
+
 	pinctrl-0 = <&adc1_in15_pb0 &adc1_in16_pb1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -35,4 +38,8 @@
 
 &adc4 {
 	status = "disabled";
+};
+
+&gpdma1 {
+	status = "okay";
 };

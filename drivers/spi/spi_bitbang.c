@@ -177,21 +177,21 @@ static int spi_bitbang_transceive(const struct device *dev,
 
 			k_busy_wait(wait_us);
 
-			/* first clock edge */
-			gpio_pin_set_dt(&info->clk_gpio, !clock_state);
-
 			if (!loop && do_read && !cpha) {
 				b = gpio_pin_get_dt(miso);
 			}
 
-			k_busy_wait(wait_us);
+			/* first (leading) clock edge */
+			gpio_pin_set_dt(&info->clk_gpio, !clock_state);
 
-			/* second clock edge */
-			gpio_pin_set_dt(&info->clk_gpio, clock_state);
+			k_busy_wait(wait_us);
 
 			if (!loop && do_read && cpha) {
 				b = gpio_pin_get_dt(miso);
 			}
+
+			/* second (trailing) clock edge */
+			gpio_pin_set_dt(&info->clk_gpio, clock_state);
 
 			if (loop) {
 				b = d;
@@ -247,7 +247,7 @@ int spi_bitbang_release(const struct device *dev,
 	return 0;
 }
 
-static struct spi_driver_api spi_bitbang_api = {
+static const struct spi_driver_api spi_bitbang_api = {
 	.transceive = spi_bitbang_transceive,
 	.release = spi_bitbang_release,
 #ifdef CONFIG_SPI_ASYNC

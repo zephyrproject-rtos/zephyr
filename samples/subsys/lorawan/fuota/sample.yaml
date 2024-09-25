@@ -1,0 +1,21 @@
+sample:
+  description: Demonstration of LoRaWAN Firmware Upgrade Over The Air
+  name: LoRaWAN FUOTA
+common:
+  depends_on: lora
+  tags: lorawan
+  filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions")
+    and dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+    and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> lorawan_fuota: Joining network over OTAA"
+tests:
+  sample.lorawan.fuota:
+    integration_platforms:
+      - nucleo_wl55jc
+    # only allow selected boards which are known to have sufficient RAM for the given settings
+    platform_allow:
+      - nucleo_wl55jc

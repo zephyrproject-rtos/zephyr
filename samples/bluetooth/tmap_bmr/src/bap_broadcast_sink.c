@@ -15,7 +15,7 @@
 
 #define SEM_TIMEOUT K_SECONDS(10)
 #define PA_SYNC_SKIP         5
-#define SYNC_RETRY_COUNT     6 /* similar to retries for connections */
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define INVALID_BROADCAST_ID 0xFFFFFFFF
 
 static bool tmap_bms_found;
@@ -56,8 +56,8 @@ static struct bt_bap_stream streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 struct bt_bap_stream *streams_p[ARRAY_SIZE(streams)];
 
 static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_LC3_FREQ_48KHZ, BT_AUDIO_CODEC_LC3_DURATION_10,
-	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u, (BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	BT_AUDIO_CODEC_CAP_FREQ_48KHZ, BT_AUDIO_CODEC_CAP_DURATION_10,
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u, 1u, (BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -102,20 +102,16 @@ static struct bt_pacs_cap cap = {
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
 	uint32_t interval_ms;
-	uint16_t timeout;
-
-	/* Ensure that the following calculation does not overflow silently */
-	__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
+	uint32_t timeout;
 
 	/* Add retries and convert to unit in 10's of ms */
 	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * SYNC_RETRY_COUNT) / 10;
+	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
-			BT_GAP_PER_ADV_MAX_TIMEOUT);
+	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 
-	return timeout;
+	return (uint16_t)timeout;
 }
 
 static void sync_broadcast_pa(const struct bt_le_scan_recv_info *info,
@@ -215,27 +211,18 @@ static void broadcast_scan_timeout(void)
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
 	uint32_t base_bis_index_bitfield = 0U;
-	struct bt_bap_base base = { 0 };
+	int err;
 
-	if (data->type != BT_DATA_SVC_DATA16) {
+	/* Base is NULL if the data does not contain a valid BASE */
+	if (base == NULL) {
 		return true;
 	}
 
-	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
-		return true;
-	}
-
-	if (bt_bap_decode_base(data, &base) != 0) {
+	err = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
+	if (err != 0) {
 		return false;
-	}
-
-	for (size_t i = 0U; i < base.subgroup_count; i++) {
-		for (size_t j = 0U; j < base.subgroups[i].bis_count; j++) {
-			const uint8_t index = base.subgroups[i].bis_data[j].index;
-
-			base_bis_index_bitfield |= BIT(index);
-		}
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
@@ -251,12 +238,13 @@ static void broadcast_pa_recv(struct bt_le_per_adv_sync *sync,
 	bt_data_parse(buf, pa_decode_base, NULL);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	k_sem_give(&sem_syncable);
 }
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
 {
 	k_sem_give(&sem_base_received);
 }

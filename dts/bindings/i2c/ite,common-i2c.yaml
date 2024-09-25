@@ -30,6 +30,54 @@ properties:
       4 = I2C_CHANNEL_E,
       5 = I2C_CHANNEL_F,
 
+  channel-switch-sel:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    description: |
+      The default setting is as described below
+      0 = I2C_CHA_LOCATE: Channel A is located at SMCLK0/SMDAT0
+      1 = I2C_CHB_LOCATE: Channel B is located at SMCLK1/SMDAT1
+      2 = I2C_CHC_LOCATE: Channel C is located at SMCLK2/SMDAT2
+      3 = I2C_CHD_LOCATE: Channel D is located at SMCLK3/SMDAT3
+      4 = I2C_CHE_LOCATE: Channel E is located at SMCLK4/SMDAT4
+      5 = I2C_CHF_LOCATE: Channel F is located at SMCLK5/SMDAT5
+
+      The following is an example of the 'channel-switch-sel' property
+      being swapped between node &i2c0 and &i2c2 in the application:
+      Note: The property of 'port-num' cannot be changed in the
+            application.
+
+      Channel C is located at SMCLK0/SMDAT0:
+      &i2c0 {
+             channel-switch-sel = <I2C_CHC_LOCATE>;
+             pinctrl-0 = <&i2c2_clk_gpf6_default
+                          &i2c2_data_gpf7_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpiof 6 0>;
+             sda-gpios = <&gpiof 7 0>;
+      };
+
+      Channel A is located at SMCLK2/SMDAT2:
+      &i2c2 {
+             channel-switch-sel = <I2C_CHA_LOCATE>;
+             pinctrl-0 = <&i2c0_clk_gpb3_default
+                          &i2c0_data_gpb4_default>;
+             pinctrl-names = "default";
+             scl-gpios = <&gpiob 3 0>;
+             sda-gpios = <&gpiob 4 0>;
+      };
+
+      If the property of 'channel-switch-sel' is changed, the pinctrl
+      setting and recovery pin in &i2c0 and &i2c2 nodes must also be
+      modified accordingly.
+
   scl-gpios:
     type: phandle-array
     required: true
@@ -54,3 +102,9 @@ properties:
 
   pinctrl-names:
     required: true
+
+  push-pull-recovery:
+    type: boolean
+    description: |
+      This property is enabled when selecting the push-pull GPIO output
+      type to drive the I2C recovery. The default is open-drain.

@@ -11,8 +11,12 @@ menuconfig WATCHDOG
 
 if WATCHDOG
 
+config HAS_WDT_DISABLE_AT_BOOT
+	bool
+
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
+	depends on HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Disable watchdog at Zephyr system startup.
 
@@ -119,5 +123,11 @@ source "drivers/watchdog/Kconfig.nxp_fs26"
 source "drivers/watchdog/Kconfig.ambiq"
 
 source "drivers/watchdog/Kconfig.shell"
+
+source "drivers/watchdog/Kconfig.xmc4xxx"
+
+source "drivers/watchdog/Kconfig.numaker"
+
+source "drivers/watchdog/Kconfig.ene"
 
 endif # WATCHDOG

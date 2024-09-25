@@ -1,0 +1,135 @@
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Reset and Clock controller node for STM32H7RS devices
+  This node is in charge of system clock ('SYSCLK') source selection and
+  System Clock Generation.
+
+  Configuring STM32 Reset and Clock controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hse, clk_csi', 'pll', ...).
+  As part of this node configuration, SYSCLK frequency should also be defined, using
+  "clock-frequency" property.
+  Last, bus clocks (typically HCLK, PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+           clocks = <&pll>;  /* Set pll as SYSCLK source */
+           clock-frequency = <DT_FREQ_M(280)>; /* SYSCLK runs at 280MHz */
+           dcpre = <1>;
+           hpre = <1>;
+           ppre1 = <1>;
+           ppre2 = <1>;
+           ppre4 = <1>;
+           ppre5 = <1>;
+  }
+
+  Confere st,stm32-rcc binding for information about domain clocks configuration.
+
+compatible: "st,stm32h7rs-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      default frequency in Hz for clock output
+
+  dcpre:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+        CPU clock prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
+        lower than SYSCLK frequency (actual core frequency).
+        Zephyr doesn't make a difference today between these two clocks.
+        Changing this prescaler is not allowed until it is made possible to
+        use them independently in Zephyr clock subsystem.
+
+  hpre:
+    type: int
+    required: true
+    description: |
+        peripheral clock to the Bus Matrix APB (1/2/4/5) and AHB(1/2/3/4/5) peripheral
+        divider of the CPU clock by this  prescaler (BMPRE register)
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+
+  ppre1:
+    type: int
+    required: true
+    description: |
+        APB1 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  ppre2:
+    type: int
+    required: true
+    description: |
+        APB2 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  ppre4:
+    type: int
+    required: true
+    description: |
+        APB4 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  ppre5:
+    type: int
+    required: true
+    description: |
+        APB5 peripheral prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+clock-cells:
+  - bus
+  - bits

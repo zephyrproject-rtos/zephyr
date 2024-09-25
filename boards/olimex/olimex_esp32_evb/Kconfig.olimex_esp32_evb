@@ -1,0 +1,9 @@
+# Olimex ESP32-EVB board configuration
+
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_ESP32_EVB
+	select SOC_ESP32_WROVER_E_N8R2
+	select SOC_ESP32_PROCPU if BOARD_OLIMEX_ESP32_EVB_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_OLIMEX_ESP32_EVB_ESP32_APPCPU

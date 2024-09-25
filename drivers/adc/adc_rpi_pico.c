@@ -8,6 +8,9 @@
 #define DT_DRV_COMPAT raspberrypi_pico_adc
 
 #include <zephyr/drivers/adc.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 
 #include <hardware/adc.h>
@@ -31,8 +34,16 @@ LOG_MODULE_REGISTER(adc_rpi, CONFIG_ADC_LOG_LEVEL);
 struct adc_rpi_config {
 	/** Number of supported channels */
 	uint8_t num_channels;
+	/** pinctrl configs */
+	const struct pinctrl_dev_config *pcfg;
 	/** function pointer to irq setup */
 	void (*irq_configure)(void);
+	/** Pointer to clock controller device */
+	const struct device *clk_dev;
+	/** Clock id of ADC clock */
+	clock_control_subsys_t clk_id;
+	/** Reset controller config */
+	const struct reset_dt_spec reset;
 };
 
 /**
@@ -289,6 +300,22 @@ static int adc_rpi_init(const struct device *dev)
 {
 	const struct adc_rpi_config *config = dev->config;
 	struct adc_rpi_data *data = dev->data;
+	int ret;
+
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_on(config->clk_dev, config->clk_id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = reset_line_toggle_dt(&config->reset);
+	if (ret < 0) {
+		return ret;
+	}
 
 	config->irq_configure();
 
@@ -323,29 +350,34 @@ static int adc_rpi_init(const struct device *dev)
 
 #define IRQ_CONFIGURE_DEFINE(idx) .irq_configure = adc_rpi_configure_func_##idx
 
-#define ADC_RPI_INIT(idx)							   \
-	IRQ_CONFIGURE_FUNC(idx)							   \
-	static struct adc_driver_api adc_rpi_api_##idx = {			   \
-		.channel_setup = adc_rpi_channel_setup,				   \
-		.read = adc_rpi_read,						   \
-		.ref_internal = DT_INST_PROP(idx, vref_mv),			   \
-		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_rpi_read_async,))  \
-	};									   \
-	static const struct adc_rpi_config adc_rpi_config_##idx = {		   \
-		.num_channels = ADC_RPI_CHANNEL_NUM,				   \
-		IRQ_CONFIGURE_DEFINE(idx),					   \
-	};									   \
-	static struct adc_rpi_data adc_rpi_data_##idx = {			   \
-		ADC_CONTEXT_INIT_TIMER(adc_rpi_data_##idx, ctx),		   \
-		ADC_CONTEXT_INIT_LOCK(adc_rpi_data_##idx, ctx),			   \
-		ADC_CONTEXT_INIT_SYNC(adc_rpi_data_##idx, ctx),			   \
-		.dev = DEVICE_DT_INST_GET(idx),					   \
-	};									   \
-										   \
-	DEVICE_DT_INST_DEFINE(idx, adc_rpi_init, NULL,				   \
-			      &adc_rpi_data_##idx,				   \
-			      &adc_rpi_config_##idx, POST_KERNEL,		   \
-			      CONFIG_ADC_INIT_PRIORITY,				   \
+#define ADC_RPI_INIT(idx)                                                                          \
+	IRQ_CONFIGURE_FUNC(idx)                                                                    \
+	PINCTRL_DT_INST_DEFINE(idx);                                                               \
+	static struct adc_driver_api adc_rpi_api_##idx = {                                         \
+		.channel_setup = adc_rpi_channel_setup,                                            \
+		.read = adc_rpi_read,                                                              \
+		.ref_internal = DT_INST_PROP(idx, vref_mv),                                        \
+		IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_rpi_read_async,))                  \
+	};                                                                                         \
+	static const struct adc_rpi_config adc_rpi_config_##idx = {                                \
+		.num_channels = ADC_RPI_CHANNEL_NUM,                                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
+		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(idx, clocks, 0, clk_id),      \
+		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
+		IRQ_CONFIGURE_DEFINE(idx),                                                         \
+	};                                                                                         \
+	static struct adc_rpi_data adc_rpi_data_##idx = {                                          \
+		ADC_CONTEXT_INIT_TIMER(adc_rpi_data_##idx, ctx),                                   \
+		ADC_CONTEXT_INIT_LOCK(adc_rpi_data_##idx, ctx),                                    \
+		ADC_CONTEXT_INIT_SYNC(adc_rpi_data_##idx, ctx),                                    \
+		.dev = DEVICE_DT_INST_GET(idx),                                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, adc_rpi_init, NULL,                                             \
+			      &adc_rpi_data_##idx,                                                 \
+			      &adc_rpi_config_##idx, POST_KERNEL,                                  \
+			      CONFIG_ADC_INIT_PRIORITY,                                            \
 			      &adc_rpi_api_##idx)
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_RPI_INIT);

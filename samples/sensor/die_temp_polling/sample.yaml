@@ -8,6 +8,7 @@ tests:
     filter: dt_alias_exists("die-temp0")
     integration_platforms:
       - stm32f3_disco
+      - nucleo_h7a3zi_q
     harness: console
     harness_config:
       type: one_line

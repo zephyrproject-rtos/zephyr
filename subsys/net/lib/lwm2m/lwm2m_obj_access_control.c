@@ -335,8 +335,10 @@ static void add_existing_objects(void)
 	}
 }
 
-static int write_validate_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
-			     uint8_t *data, uint16_t data_len, bool last_block, size_t total_size)
+static int write_validate_cb(uint16_t obj_inst_id, uint16_t res_id,
+			     uint16_t res_inst_id, uint8_t *data,
+			     uint16_t data_len, bool last_block,
+			     size_t total_size, size_t offset)
 {
 	/* validates and removes acl instances for non-existing servers */
 
@@ -439,4 +441,4 @@ static int ac_control_init(void)
 	return 0;
 }
 
-SYS_INIT(ac_control_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(ac_control_init);

@@ -1,0 +1,11 @@
+boards:
+  - name: mimxrt1060_evk
+    vendor: nxp
+    socs:
+      - name: mimxrt1062
+    revision:
+      format: "custom"
+  - name: mimxrt1060_evkb
+    vendor: nxp
+    socs:
+      - name: mimxrt1062

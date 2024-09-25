@@ -4,12 +4,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
-#ifdef CONFIG_BT_VCP_VOL_REND
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_VCP_VOL_REND
 extern enum bst_result_t bst_result;
 
 #if defined(CONFIG_BT_VOCS)
@@ -621,14 +632,6 @@ static void test_vocs_location_set(void)
 		return;
 	}
 
-	invalid_location = BT_AUDIO_LOCATION_PROHIBITED;
-
-	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
-	if (err == 0) {
-		FAIL("bt_vocs_location_set with location 0x%08X did not fail", invalid_location);
-		return;
-	}
-
 	invalid_location = BT_AUDIO_LOCATION_ANY + 1;
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], invalid_location);
@@ -1040,7 +1043,7 @@ static void test_main(void)
 
 	printk("VCP initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -1056,13 +1059,13 @@ static void test_main(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "vcp_vol_rend_standalone",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_standalone
 	},
 	{
 		.test_id = "vcp_vol_rend",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

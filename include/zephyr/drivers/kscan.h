@@ -28,6 +28,8 @@ extern "C" {
 /**
  * @brief KSCAN APIs
  * @defgroup kscan_interface Keyboard Scan Driver APIs
+ * @since 2.1
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -70,7 +72,7 @@ __subsystem struct kscan_driver_api {
  * @brief Configure a Keyboard scan instance.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param callback called when keyboard devices reply to to a keyboard
+ * @param callback called when keyboard devices reply to a keyboard
  * event such as key pressed/released.
  *
  * @retval 0 If successful.
@@ -137,6 +139,6 @@ static inline int z_impl_kscan_disable_callback(const struct device *dev)
  * @}
  */
 
-#include <syscalls/kscan.h>
+#include <zephyr/syscalls/kscan.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_KB_SCAN_H_ */

@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_NPM1300
 	bool "nPM1300 PMIC regulator driver"
@@ -14,14 +14,14 @@ if REGULATOR_NPM1300
 
 config REGULATOR_NPM1300_COMMON_INIT_PRIORITY
 	int "nPM1300 regulator driver init priority (common part)"
-	default 75
+	default 85
 	help
 	  Init priority for the Nordic nPM1300 regulator driver (common part).
 	  It must be greater than I2C init priority.
 
 config REGULATOR_NPM1300_INIT_PRIORITY
 	int "nPM1300 regulator driver init priority"
-	default 76
+	default 86
 	help
 	  Init priority for the Nordic nPM1300 regulator driver. It must be
 	  greater than REGULATOR_NPM1300_COMMON_INIT_PRIORITY.

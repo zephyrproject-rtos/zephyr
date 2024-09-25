@@ -16,7 +16,7 @@ if("${ARCH}" STREQUAL "arm")
   elseif(DEFINED CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     # ARMV7_M_ARMV8_M_MAINLINE means that ARMv7-M or backward compatible ARMv8-M
     # processor is used.
-    set(triple armv7m-cros-eabi)
+    set(triple armv7m-none-eabi)
   elseif(DEFINED CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     # ARMV6_M_ARMV8_M_BASELINE means that ARMv6-M or ARMv8-M supporting the
     # Baseline implementation processor is used.
@@ -25,13 +25,19 @@ if("${ARCH}" STREQUAL "arm")
     # Default ARM target supported by all processors.
     set(triple arm-none-eabi)
   endif()
-
-  set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
+elseif("${ARCH}" STREQUAL "arm64")
+  set(triple aarch64-none-elf)
 elseif("${ARCH}" STREQUAL "x86")
   if(CONFIG_64BIT)
     set(triple x86_64-pc-none-elf)
   else()
     set(triple i686-pc-none-elf)
+  endif()
+elseif("${ARCH}" STREQUAL "riscv")
+  if(CONFIG_64BIT)
+    set(triple riscv64-unknown-elf)
+  else()
+    set(triple riscv32-unknown-elf)
   endif()
 endif()
 

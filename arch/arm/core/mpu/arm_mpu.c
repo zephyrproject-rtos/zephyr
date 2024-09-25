@@ -30,10 +30,6 @@ LOG_MODULE_DECLARE(mpu);
 #define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
 #endif
 
-#if DT_NODE_HAS_PROP(MPU_NODEID, arm_num_mpu_regions)
-#define NUM_MPU_REGIONS   DT_PROP(MPU_NODEID, arm_num_mpu_regions)
-#endif
-
 #define NODE_HAS_PROP_AND_OR(node_id, prop) \
 	DT_NODE_HAS_PROP(node_id, prop) ||
 
@@ -58,6 +54,7 @@ static uint8_t static_regions_num;
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
 	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85) || \
 	defined(CONFIG_AARCH32_ARMV8_R)
 #include "arm_mpu_v8_internal.h"
 #else
@@ -134,12 +131,10 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			break;
 #endif
 		default:
-			/* Either the specified `ATTR_MPU_*` attribute does not
-			 * exists or the `REGION_*_ATTR` macro is not defined
-			 * for that attribute.
+			/* Attribute other than ARM-specific is set.
+			 * This region should not be configured in MPU.
 			 */
-			LOG_ERR("Invalid attribute for the region\n");
-			return -EINVAL;
+			continue;
 		}
 #if defined(CONFIG_ARMV7_R)
 		region_conf.size = size_to_mpu_rasr_size(region[idx].dt_size);
@@ -345,7 +340,7 @@ int arm_core_mpu_get_max_available_dyn_regions(void)
  *
  * Presumes the background mapping is NOT user accessible.
  */
-int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+int arm_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	return mpu_buffer_validate(addr, size, write);
 }
@@ -463,6 +458,11 @@ int z_arm_mpu_init(void)
 		return -EINVAL;
 	}
 
+	/* Clear all regions before enabling MPU */
+	for (int i = static_regions_num; i < get_num_regions(); i++) {
+		mpu_clear_region(i);
+	}
+
 	arm_core_mpu_enable();
 
 	/* Program additional fixed flash region for null-pointer
@@ -526,11 +526,6 @@ int z_arm_mpu_init(void)
 	defined(CONFIG_CPU_CORTEX_M4)
 	__ASSERT(
 		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
-		"Invalid number of MPU regions\n");
-#elif defined(NUM_MPU_REGIONS)
-	__ASSERT(
-		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos ==
-		NUM_MPU_REGIONS,
 		"Invalid number of MPU regions\n");
 #endif /* CORTEX_M0PLUS || CPU_CORTEX_M3 || CPU_CORTEX_M4 */
 

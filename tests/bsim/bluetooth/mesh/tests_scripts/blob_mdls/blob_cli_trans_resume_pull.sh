@@ -5,11 +5,9 @@
 source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 
 # Test that BLOB Client can resume a suspended BLOB Transfer in Pull mode
-conf=prj_mesh1d1_conf
 RunTest blob_resume_pull \
     blob_cli_trans_resume blob_srv_trans_resume -- -argstest use-pull-mode=1
 
-conf=prj_mesh1d1_conf
 overlay=overlay_psa_conf
 RunTest blob_resume_pull_psa \
     blob_cli_trans_resume blob_srv_trans_resume -- -argstest use-pull-mode=1

@@ -1,8 +1,0 @@
-# STM32H753ZI Nucleo board configuration
-
-# Copyright (c) 2021 Blue Clover Devices
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NUCLEO_H753ZI
-	bool "Nucleo H753ZI Development Board"
-	depends on SOC_STM32H753XX

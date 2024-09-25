@@ -50,8 +50,9 @@ typedef void (*nxp_pint_cb_t) (uint8_t pin, void *user);
  * @param pin: pin to use as interrupt source
  *     0-64, corresponding to GPIO0 pin 1 - GPIO1 pin 31)
  * @param trigger: one of nxp_pint_trigger flags
+ * @param wake: indicates if the pin should wakeup the system
  */
-int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger);
+int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake);
 
 
 /**

@@ -14,12 +14,11 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
-#define MAGIC (0xDABBAD00)
-
 _ASM_FILE_PROLOGUE
 
+GTEXT(pm_s2ram_mark_set)
+GTEXT(pm_s2ram_mark_check_and_clear)
 GDATA(_cpu_context)
-GDATA(marker)
 
 SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	/*
@@ -64,11 +63,9 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	str	r2, [r1, #___cpu_context_t_control_OFFSET]
 
 	/*
-	 * Set the marker to MAGIC value
+	 * Mark entering suspend to RAM.
 	 */
-	ldr	r1, =marker
-	ldr	r2, =MAGIC
-	str	r2, [r1]
+	bl pm_s2ram_mark_set
 
 	/*
 	 * Call the system_off function passed as parameter. This should never
@@ -82,35 +79,29 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	 */
 
 	/*
-	 * Reset the marker
+	 * Reset the marking of suspend to RAM, return is ignored.
 	 */
-	ldr	r1, =marker
-	mov	r2, #0x0
-	str	r2, [r1]
+	push	{r0}
+	bl pm_s2ram_mark_check_and_clear
+	pop	{r0}
 
 	pop	{r4-r12, lr}
 	bx	lr
 
+
 GTEXT(arch_pm_s2ram_resume)
 SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	/*
-	 * Check if the marker is set
+	 * Check if reset occurred after suspending to RAM.
 	 */
-	ldr	r0, =marker
-	ldr	r0, [r0]
-	ldr	r1, =MAGIC
-	cmp	r0, r1
+	push    {lr}
+	bl      pm_s2ram_mark_check_and_clear
+	cmp	r0, #0x1
+	pop     {lr}
 	beq	resume
 	bx	lr
 
 resume:
-	/*
-	 * Reset the marker
-	 */
-	ldr	r0, =marker
-	mov	r1, #0x0
-	str	r1, [r0]
-
 	/*
 	 * Restore the CPU context
 	 */

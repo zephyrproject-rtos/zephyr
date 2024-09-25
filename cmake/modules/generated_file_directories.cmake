@@ -7,7 +7,7 @@ include_guard(GLOBAL)
 #
 # Outcome:
 # - BINARY_DIR_INCLUDE is set to ${PROJECT_BINARY_DIR}/include
-# - BINARY_DIR_INCLUDE_GENERATED is set to ${BINARY_DIR_INCLUDE}/generated
+# - BINARY_DIR_INCLUDE_GENERATED is set to ${BINARY_DIR_INCLUDE}/generated/zephyr
 # - BINARY_DIR_INCLUDE_GENERATED is a directory
 #
 # Required variables:
@@ -19,6 +19,6 @@ include_guard(GLOBAL)
 # Optional environment variables:
 # None
 
-set(BINARY_DIR_INCLUDE ${PROJECT_BINARY_DIR}/include/generated)
-set(BINARY_DIR_INCLUDE_GENERATED ${PROJECT_BINARY_DIR}/include/generated)
+set(BINARY_DIR_INCLUDE ${PROJECT_BINARY_DIR}/include)
+set(BINARY_DIR_INCLUDE_GENERATED ${BINARY_DIR_INCLUDE}/generated/zephyr)
 file(MAKE_DIRECTORY ${BINARY_DIR_INCLUDE_GENERATED})

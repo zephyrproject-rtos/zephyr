@@ -9,8 +9,6 @@
 #include "receiver.h"
 #include "master.h"
 
-#ifdef MAILBOX_BENCH
-
 /*
  * Function prototypes.
  */
@@ -26,9 +24,7 @@ void mailbox_get(struct k_mbox *mailbox,
 /* mailbox transfer speed test */
 
 /**
- *
  * @brief Receive task
- *
  */
 void mailrecvtask(void)
 {
@@ -59,7 +55,6 @@ void mailrecvtask(void)
 
 
 /**
- *
  * @brief Receive data portions from the specified mailbox
  *
  * @return 0
@@ -75,7 +70,8 @@ void mailbox_get(struct k_mbox *mailbox,
 		 unsigned int *time)
 {
 	int i;
-	unsigned int t;
+	timing_t  start;
+	timing_t  end;
 	int32_t return_value = 0;
 	struct k_mbox_msg Message;
 
@@ -84,22 +80,17 @@ void mailbox_get(struct k_mbox *mailbox,
 
 	/* sync with the sender */
 	k_sem_take(&SEM0, K_FOREVER);
-	t = BENCH_START();
+	start = timing_timestamp_get();
 	for (i = 0; i < count; i++) {
 		return_value |= k_mbox_get(mailbox,
 					  &Message,
 					  &data_recv,
 					  K_FOREVER);
 	}
+	end = timing_timestamp_get();
+	*time = timing_cycles_get(&start, &end);
 
-	t = TIME_STAMP_DELTA_GET(t);
-	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);
-	if (bench_test_end() < 0) {
-		PRINT_OVERFLOW_ERROR();
-	}
 	if (return_value != 0) {
 		k_panic();
 	}
 }
-
-#endif /* MAILBOX_BENCH */

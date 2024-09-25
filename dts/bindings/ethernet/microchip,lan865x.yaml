@@ -1,0 +1,46 @@
+# Copyright (c) 2023 DENX Software Engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LAN865x standalone 10BASE-T1L Ethernet controller with SPI interface.
+
+compatible: "microchip,lan865x"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  tx-cut-through-mode:
+    type: boolean
+    description: Enable TX cut through mode
+  rx-cut-through-mode:
+    type: boolean
+    description: Enable RX cut through mode
+  plca-enable:
+    type: boolean
+    description: Enable or disable PLCA support
+  plca-node-id:
+    type: int
+    description: Specify the PLCA node ID number
+  plca-node-count:
+    type: int
+    description: Specify the PLCA node count
+  plca-burst-count:
+    type: int
+    description: Specify the PLCA burst count
+  plca-burst-timer:
+    type: int
+    description: Specify the PLCA burst timer value
+  plca-to-timer:
+    type: int
+    description: Specify the PLCA to timer value
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt pin of LAN865X is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  rst-gpios:
+    type: phandle-array
+    required: true
+    description: The reset pin of LAN865X.

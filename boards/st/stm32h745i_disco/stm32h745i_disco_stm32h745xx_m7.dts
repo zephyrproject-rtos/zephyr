@@ -1,0 +1,282 @@
+/*
+ * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h745Xi_m7.dtsi>
+#include "stm32h745i_disco.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32H745I-DISCO board";
+	compatible = "st,stm32h745i-disco";
+
+	/* HW resources belonging to CM7 */
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &mt25ql512ab1;
+		zephyr,canbus = &fdcan1;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm11 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "User LD8 - PWM11";
+		};
+	};
+
+	/* RM0455 - 23.6 External device address mapping */
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(16)>; /* 128Mbit */
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_IO) )>;
+	};
+
+	aliases {
+		led0 = &green_led;
+		pwm-led0 = &green_pwm_led;
+		sw0 = &user_button;
+		spi-flash0 = &mt25ql512ab1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>; /* X1: 25MHz */
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <15>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <12>;
+	div-r = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <57600>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm11: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&mac {
+	status = "okay";
+	/* MII */
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_rxd2_pb0
+		     &eth_rxd3_pb1
+		     &eth_txd2_pc2
+		     &eth_tx_clk_pc3
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_txd3_pe2
+		     &eth_tx_en_pg11
+		     &eth_txd1_pg12
+		     &eth_txd0_pg13
+		     &eth_rx_er_pi10>;
+	pinctrl-names = "default";
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		status = "okay";
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <
+		&quadspi_bk1_io0_pd11
+		&quadspi_bk1_io3_pf6
+		&quadspi_bk1_io2_pf7
+		&quadspi_bk1_io1_pf9
+		&quadspi_clk_pf10
+		&quadspi_bk1_ncs_pg6
+		&quadspi_bk2_io2_pg9
+		&quadspi_bk2_io3_pg14
+		&quadspi_bk2_io0_ph2
+		&quadspi_bk2_io1_ph3
+		>;
+	dual-flash;
+	status = "okay";
+
+	mt25ql512ab1: qspi-nor-flash-1@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		qspi-max-frequency = <72000000>;
+		spi-bus-width = <4>;
+		status = "okay";
+
+		partitions {
+			   compatible = "fixed-partitions";
+			   #address-cells = <1>;
+			   #size-cells = <1>;
+
+			   storage_partition: partition@0 {
+			       reg = <0x0 DT_SIZE_M(64)>;
+			   };
+		};
+	};
+
+	mt25ql512ab2: qspi-nor-flash-2@90000000 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0x90000000 DT_SIZE_M(64)>; /* 512 Mbits */
+		qspi-max-frequency = <72000000>;
+		status = "okay";
+	};
+};
+
+&i2c4 {
+	status = "okay";
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pd13>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_nss_pb4 &spi2_mosi_pb15 &spi2_miso_pi2 &spi2_sck_pd3>;
+	pinctrl-names = "default";
+};
+
+&fdcan1 {
+	status = "okay";
+	pinctrl-0 = <&fdcan1_tx_ph13 &fdcan1_rx_ph14>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	sample-point = <875>;
+	sample-point-data = <875>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&fdcan2 {
+	status = "okay";
+	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	sample-point = <875>;
+	sample-point-data = <875>;
+
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1
+		&fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
+		&fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		&fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		&fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		&fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1
+		&fmc_a14_pg4 &fmc_a15_pg5 &fmc_d0_pd14 &fmc_d1_pd15
+		&fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		&fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		&fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		&fmc_d15_pd10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdram {
+		status = "okay";
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x220>;
+		refresh-rate = <0x603>;
+		bank@1 {
+			reg = <1>;
+			st,sdram-control = <STM32_FMC_SDRAM_NC_8
+				STM32_FMC_SDRAM_NR_12
+				STM32_FMC_SDRAM_MWID_16
+				STM32_FMC_SDRAM_NB_4
+				STM32_FMC_SDRAM_CAS_2
+				STM32_FMC_SDRAM_SDCLK_PERIOD_2
+				STM32_FMC_SDRAM_RBURST_ENABLE
+				STM32_FMC_SDRAM_RPIPE_0>;
+			st,sdram-timing = <2 7 4 7 2 2 2>;
+		};
+	};
+};

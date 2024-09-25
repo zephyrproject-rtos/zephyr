@@ -1,0 +1,33 @@
+# Copyright (c) 2023, Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic Device Multiplexer
+
+compatible: "zephyr,devmux"
+
+include: [base.yaml, mutable.yaml]
+
+properties:
+
+  devices:
+    type: phandles
+    required: true
+    description: |
+      Devices to be multiplexed.
+
+  selected:
+    type: int
+    default: 0
+    description: |
+      Initial multiplexer selection.
+
+      This must be in the range [0, N-1], where N is the length of the
+      'devices' phandle list.
+
+      If unspecified, the default selection is zero in order to ensure that
+      the multiplexer is ready for use (i.e. one of the [0, N-1] multiplexed
+      devices is selected). Zero is, necessarily, the only possible valid
+      default value since the phandle list must have length >= 1.
+
+      Note: Specifying a value of 'selected' outside the range [0, N-1]
+      results in a compile-time error.

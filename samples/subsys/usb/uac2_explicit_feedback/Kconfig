@@ -1,0 +1,19 @@
+# Copyright (c) 2023-2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "UAC2 external feedback sample options"
+
+config APP_USE_I2S_LRCLK_EDGES_COUNTER
+	bool "Measure I2S LRCLK edges directly"
+	help
+	  Use this to use I2S LRCLK edge counting for calculating feedback.
+	  On nRF53 this option requires externally connecting I2S LRCLK back to
+	  separate GPIOTE input pin (P1.09).
+endmenu
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

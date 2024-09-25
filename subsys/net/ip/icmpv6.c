@@ -57,7 +57,7 @@ const char *net_icmpv6_type2str(int icmpv6_type)
 	return "?";
 }
 
-int net_icmpv6_finalize(struct net_pkt *pkt)
+int net_icmpv6_finalize(struct net_pkt *pkt, bool force_chksum)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
@@ -69,8 +69,10 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 	}
 
 	icmp_hdr->chksum = 0U;
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
+		force_chksum) {
 		icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
+		net_pkt_set_chksum_done(pkt, true);
 	}
 
 	return net_pkt_set_data(pkt, &icmp_access);
@@ -129,7 +131,12 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)ip_hdr->dst)) {
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						  (struct in6_addr *)ip_hdr->dst);
+						  (struct in6_addr *)ip_hdr->src);
+
+		if (net_ipv6_is_addr_unspecified(src)) {
+			NET_DBG("DROP: No src address match");
+			goto drop;
+		}
 	} else {
 		src = (struct in6_addr *)ip_hdr->dst;
 	}
@@ -341,7 +348,8 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	}
 
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV6_ICMP) ||
+	    net_pkt_is_ip_reassembled(pkt)) {
 		if (net_calc_chksum_icmpv6(pkt) != 0U) {
 			NET_DBG("DROP: invalid checksum");
 			goto drop;
@@ -357,7 +365,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	ret = net_icmp_call_ipv6_handlers(pkt, ip_hdr, icmp_hdr);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		NET_ERR("ICMPv6 handling failure (%d)", ret);
 	}
 

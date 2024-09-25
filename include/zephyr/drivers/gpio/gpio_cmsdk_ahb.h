@@ -18,7 +18,7 @@ struct gpio_cmsdk_ahb {
 	volatile uint32_t data;
 	/* Offset: 0x004 (r/w) data output latch register */
 	volatile uint32_t dataout;
-#ifdef CONFIG_SOC_SERIES_ATMx2
+#ifdef CONFIG_SOC_SERIES_ATMX2
 	volatile uint32_t pullup_enable_set;
 	volatile uint32_t pullup_enable_clr;
 #endif
@@ -55,7 +55,7 @@ struct gpio_cmsdk_ahb {
 		volatile uint32_t  intclear;
 	};
 #ifdef CONFIG_SOC_FAMILY_ATM
-#ifdef CONFIG_SOC_SERIES_ATMx2
+#ifdef CONFIG_SOC_SERIES_ATMX2
 	volatile uint32_t reserved1[239];
 #else
 	volatile uint32_t reserved0[8];

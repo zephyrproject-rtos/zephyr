@@ -67,6 +67,7 @@ config X86_STACK_PROTECTION
 	select SET_GDT
 	select GDT_DYNAMIC
 	select X86_ENABLE_TSS
+	imply THREAD_STACK_MEM_MAPPED if !DEMAND_PAGING
 	help
 	  This option leverages the MMU to cause a system fatal error if the
 	  bounds of the current process stack are overflowed. This is done
@@ -165,7 +166,9 @@ endmenu
 config X86_EXCEPTION_STACK_TRACE
 	bool
 	default y
-	depends on EXCEPTION_STACK_TRACE
+	select DEBUG_INFO
+	select THREAD_STACK_INFO
+	depends on !OMIT_FRAME_POINTER
 	help
 	  Internal config to enable runtime stack traces on fatal exceptions.
 

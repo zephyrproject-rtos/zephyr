@@ -754,8 +754,8 @@ ZTEST(sprintf, test_sprintf_string)
 		     "Expected 'short string', got '%s'\n", buffer);
 
 	sprintf(buffer, "%s", REALLY_LONG_STRING);
-	zassert_true((strcmp(buffer, REALLY_LONG_STRING) == 0),
-		     "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
+	zassert_str_equal(buffer, REALLY_LONG_STRING,
+			  "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
 }
 
 
@@ -909,10 +909,10 @@ ZTEST(sprintf, test_fwrite)
 	ret = fwrite("This 3", 0, 4, stdout);
 	zassert_equal(ret, 0, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdout);
+	ret = fwrite("This 3", 1, 4, stdout);
 	zassert_equal(ret, 4, "fwrite failed!");
 
-	ret = fwrite("This 3", 4, 4, stdin);
+	ret = fwrite("This 3", 1, 4, stdin);
 	zassert_equal(ret, 0, "fwrite failed!");
 }
 

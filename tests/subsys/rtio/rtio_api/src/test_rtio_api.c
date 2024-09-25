@@ -365,24 +365,46 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 	struct rtio_sqe *handle;
 
 	/* Prepare the chain */
-	TC_PRINT("1\n");
-	k_msleep(20);
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
 	rtio_sqe_prep_nop(&sqe[1], (struct rtio_iodev *)&iodev_test_simple, NULL);
 	sqe[0].flags |= RTIO_SQE_CHAINED;
 
 	/* Copy the chain */
-	TC_PRINT("2\n");
-	k_msleep(20);
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
-	TC_PRINT("3\n");
-	k_msleep(20);
 	rtio_sqe_cancel(handle);
-	TC_PRINT("Submitting 2 to RTIO\n");
 	k_msleep(20);
 	rtio_submit(r, 0);
 
-	/* Check that we don't get a CQE */
+	/* Check that we don't get cancelled completion notifications */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+
+	/* Check that the SQE pool is empty by filling it all the way */
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		rtio_sqe_prep_nop(&sqe[i], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	}
+	zassert_ok(rtio_sqe_copy_in(r, sqe, SQE_POOL_SIZE));
+
+	/* Since there's no good way to just reset the RTIO context, wait for the nops to finish */
+	rtio_submit(r, SQE_POOL_SIZE);
+	for (int i = 0; i < SQE_POOL_SIZE; ++i) {
+		zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	}
+
+	/* Try cancelling the middle sqe in a chain */
+	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_prep_nop(&sqe[1], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	rtio_sqe_prep_nop(&sqe[2], (struct rtio_iodev *)&iodev_test_simple, NULL);
+	sqe[0].flags |= RTIO_SQE_CHAINED;
+	sqe[1].flags |= RTIO_SQE_CHAINED | RTIO_SQE_CANCELED;
+
+	/* Copy in the first non cancelled sqe */
+	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 3);
+	rtio_submit(r, 1);
+
+	/* Check that we get one completion no cancellation notifications */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
+
+	/* Check that we get no more completions for the cancelled submissions */
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)));
 
 	/* Check that the SQE pool is empty by filling it all the way */
@@ -488,7 +510,7 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 
 	TC_PRINT("Waiting for next cqe\n");
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
-	zassert_equal(1, cqe.result, "Result should be ok but got %d", cqe.result);
+	zassert_ok(cqe.result, "Result should be ok but got %d", cqe.result);
 	zassert_equal_ptr(cqe.userdata, mempool_data, "Expected userdata back");
 	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
 	rtio_release_buffer(r, buffer, buffer_len);
@@ -538,9 +560,7 @@ void test_rtio_transaction_(struct rtio *r)
 
 	sqe = rtio_sqe_acquire(r);
 	zassert_not_null(sqe, "Expected a valid sqe");
-	rtio_sqe_prep_nop(sqe, NULL,
-			  &userdata[0]);
-
+	rtio_sqe_prep_nop(sqe, NULL, &userdata[0]);
 
 	sqe = rtio_sqe_acquire(r);
 	zassert_not_null(sqe, "Expected a valid sqe");
@@ -632,6 +652,85 @@ ZTEST(rtio_api, test_rtio_throughput)
 	_test_rtio_throughput(&r_throughput);
 }
 
+RTIO_DEFINE(r_callback_chaining, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_IODEV_TEST_DEFINE(iodev_test_callback_chaining0);
+
+/**
+ * Callback for testing with
+ */
+void rtio_callback_chaining_cb(struct rtio *r, const struct rtio_sqe *sqe, void *arg0)
+{
+	TC_PRINT("chaining callback with userdata %p\n", arg0);
+}
+
+/**
+ * @brief Test callback chaining requests
+ *
+ * Ensures that we can setup an RTIO context, enqueue a transaction of requests,
+ * receive completion events, and catch a callback at the end  in the correct
+ * order
+ */
+void test_rtio_callback_chaining_(struct rtio *r)
+{
+	int res;
+	int32_t userdata[4] = {0, 1, 2, 3};
+	int32_t ordering[4] = { -1, -1, -1, -1};
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+	uintptr_t cq_count = atomic_get(&r->cq_count);
+
+	rtio_iodev_test_init(&iodev_test_callback_chaining0);
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_callback(sqe, &rtio_callback_chaining_cb, sqe, &userdata[0]);
+	sqe->flags |= RTIO_SQE_CHAINED;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_callback_chaining0, &userdata[1]);
+	sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_nop(sqe, &iodev_test_callback_chaining0, &userdata[2]);
+	sqe->flags |= RTIO_SQE_CHAINED;
+
+	sqe = rtio_sqe_acquire(r);
+	zassert_not_null(sqe, "Expected a valid sqe");
+	rtio_sqe_prep_callback(sqe, &rtio_callback_chaining_cb, sqe, &userdata[3]);
+
+	TC_PRINT("submitting\n");
+	res = rtio_submit(r, 4);
+	TC_PRINT("checking cq, completions available, count at start %lu, current count %lu\n",
+		 cq_count, atomic_get(&r->cq_count));
+	zassert_ok(res, "Should return ok from rtio_execute");
+	zassert_equal(atomic_get(&r->cq_count) - cq_count, 4, "Should have 4 pending completions");
+
+	for (int i = 0; i < 4; i++) {
+		TC_PRINT("consume %d\n", i);
+		cqe = rtio_cqe_consume(r);
+		zassert_not_null(cqe, "Expected a valid cqe");
+		zassert_ok(cqe->result, "Result should be ok");
+
+		int32_t idx = *(int32_t *)cqe->userdata;
+
+		TC_PRINT("userdata is %p, value %d\n", cqe->userdata, idx);
+		ordering[idx] = i;
+
+		rtio_cqe_release(r, cqe);
+	}
+
+	for (int i = 0; i < 4; i++) {
+		zassert_equal(ordering[i], i,
+			      "Execpted ordering of completions to match submissions");
+	}
+}
+
+ZTEST(rtio_api, test_rtio_callback_chaining)
+{
+	test_rtio_callback_chaining_(&r_callback_chaining);
+}
 
 static void *rtio_api_setup(void)
 {

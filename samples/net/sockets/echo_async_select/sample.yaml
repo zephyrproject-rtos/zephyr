@@ -7,12 +7,8 @@ common:
   tags:
     - net
     - socket
-  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
 tests:
   sample.net.sockets.echo_async_select:
     extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=y
-  sample.net.sockets.echo_async_select.posix:
-    extra_configs:
-      - CONFIG_NET_SOCKETS_POSIX_NAMES=n
       - CONFIG_POSIX_API=y

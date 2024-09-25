@@ -1,0 +1,5 @@
+board:
+  name: mr_canhubk3
+  vendor: nxp
+  socs:
+    - name: s32k344

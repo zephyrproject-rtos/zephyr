@@ -6,7 +6,7 @@ Bluetooth: Mesh OnOff Model
 Overview
 ********
 
-This is a simple application demonstrating a Bluetooth mesh multi-element node.
+This is a simple application demonstrating a Bluetooth Mesh multi-element node.
 Each element has a mesh onoff client and server
 model which controls one of the 4 sets of buttons and LEDs .
 
@@ -38,7 +38,7 @@ Requirements
 ************
 
 This sample has been tested on the Nordic nRF52840-PDK board, but would
-likely also run on the nrf52dk_nrf52832 board.
+likely also run on the nrf52dk/nrf52832 board.
 
 Building and Running
 ********************
@@ -50,7 +50,7 @@ The following commands build the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/mesh/onoff-app
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

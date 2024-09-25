@@ -34,6 +34,11 @@
 #define BOOT_HEADER_MAGIC_V1 0x96f3b83d
 #define BOOT_HEADER_SIZE_V1 32
 
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+/* Get active partition. zephyr,code-partition chosen node must be defined */
+#define ACTIVE_SLOT_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
+#endif // CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+
 /*
  * Raw (on-flash) representation of the v1 image header.
  */
@@ -213,14 +218,27 @@ bool boot_is_img_confirmed(void)
 
 int boot_write_img_confirmed(void)
 {
-	int rc;
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	const struct flash_area *fa;
+#endif // CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	int rc = 0;
 
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	if (flash_area_open(ACTIVE_SLOT_FLASH_AREA_ID, &fa) != 0) {
+#else
 	rc = boot_set_confirmed();
 	if (rc) {
+#endif // CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
 		return -EIO;
 	}
 
-	return 0;
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+	rc = boot_set_next(fa, true, true);
+
+	flash_area_close(fa);
+#endif // CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+
+	return rc;
 }
 
 int boot_write_img_confirmed_multi(int image_index)
@@ -245,7 +263,7 @@ int boot_erase_img_bank(uint8_t area_id)
 		return rc;
 	}
 
-	rc = flash_area_erase(fa, 0, fa->fa_size);
+	rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 	flash_area_close(fa);
 

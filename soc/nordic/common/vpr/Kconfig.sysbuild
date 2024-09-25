@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config VPR_LAUNCHER
+	bool "VPR launcher"
+	default y
+	depends on (SOC_NRF54H20_CPUPPR || SOC_NRF54L15_ENGA_CPUFLPR)
+	help
+	  Include VPR launcher in build.
+	  VPR launcher is a minimal sample built for an ARM core that starts given VPR core.
+	  It is based on samples/basic/minimal with an appropriate snippet.

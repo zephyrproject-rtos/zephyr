@@ -93,7 +93,8 @@ void read_sensors(void)
 	printk("I: %s%d.%04d ", ((current.val1 < 0) || (current.val2 < 0)) ? "-" : "",
 	       abs(current.val1), abs(current.val2) / 100);
 
-	printk("T: %d.%02d\n", temp.val1, temp.val2 / 10000);
+	printk("T: %s%d.%02d\n", ((temp.val1 < 0) || (temp.val2 < 0)) ? "-" : "", abs(temp.val1),
+	       abs(temp.val2) / 10000);
 
 	printk("Charger Status: %d, Error: %d\n", status.val1, error.val1);
 }

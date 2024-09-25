@@ -10,7 +10,7 @@
 	status = "disabled";
 };
 
-/* The mx25, on nrf52840dk_nrf52840, uses pins for spi0, spi1, spi2 and spi3
+/* The mx25, on nrf52840dk/nrf52840, uses pins for spi0, spi1, spi2 and spi3
  * to provide quad-spi feature. In individual specifications each of the spi
  * notes define own clock source (SCK), but spi2 shares the same clock source
  * as qspi configuration, which is pin (0,19). That is why spi2 is used here

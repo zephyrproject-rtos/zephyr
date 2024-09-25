@@ -7,6 +7,8 @@
 #ifndef NSI_COMMON_SRC_INCL_NSI_MAIN_H
 #define NSI_COMMON_SRC_INCL_NSI_MAIN_H
 
+#include "nsi_utils.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,7 +33,7 @@ int nsi_exit_inner(int exit_code);
  *            Note that other components may have requested a different
  *            exit code which may have precedence if it was !=0
  */
-void nsi_exit(int exit_code);
+NSI_FUNC_NORETURN void nsi_exit(int exit_code);
 
 #ifdef __cplusplus
 }

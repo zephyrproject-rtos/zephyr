@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ambiq_header: connector {
+		compatible = "ambiq-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffff80>;
+		gpio-map-pass-thru = <0 0x7f>;
+		gpio-map = <0 0 &gpio0_31 0 0>, /* IOS_SPI_SCK, IOS_I2C_SCL, MSPI2_CE0  */
+			<1 0 &gpio0_31 1 0>, /* IOS_SPI_MOSI, IOS_I2C_SDA, MSPI0_CE0 */
+			<2 0 &gpio0_31 2 0>, /* IOS_SPI_MISO */
+			<3 0 &gpio0_31 3 0>, /* IOS_CE */
+			<4 0 &gpio0_31 4 0>, /* IOS_INT */
+			<5 0 &gpio0_31 5 0>, /* IOM0_SPI_SCK, IOM0_I2C_SCL */
+			<6 0 &gpio0_31 6 0>, /* IOM0_SPI_MOSI, IOM0_I2C_SDA */
+			<7 0 &gpio0_31 7 0>, /* See am_hal_pins.h file for further info */
+			<8 0 &gpio0_31 8 0>, /* IOM1_SPI_SCK, IOM1_I2C_SCL */
+			<9 0 &gpio0_31 9 0>, /* IOM1_SPI_MOSI, IOM1_I2C_SDA */
+			<10 0 &gpio0_31 10 0>, /* IOM1_SPI_MISO */
+			<11 0 &gpio0_31 11 0>, /* UART2_RX, IOM1_CS, I2S0_CLK */
+			<12 0 &gpio0_31 12 0>, /* ADCSE7, UART1_TX, I2S0_DATA, I2S0_SDOUT */
+			<13 0 &gpio0_31 13 0>, /* ADCSE6, UART2_TX, I2S0_WS */
+			<14 0 &gpio0_31 14 0>, /* ADCSE5, UART1_RX, I2S0_SDIN */
+			<15 0 &gpio0_31 15 0>, /* ADCSE4 */
+			<16 0 &gpio0_31 16 0>, /* ADCSE3, I2S1_CLK */
+			<17 0 &gpio0_31 17 0>, /* ADCSE2, UART3_RTS, I2S1_DATA */
+			<18 0 &gpio0_31 18 0>, /* BUTTON0, ADCSE1, I2S1_WS */
+			<19 0 &gpio0_31 19 0>, /* BUTTON1, ADCSE0, UART3_CTS, I2S1_SDIN */
+			<20 0 &gpio0_31 19 0>, /* SWDCK */
+			<21 0 &gpio0_31 19 0>, /* SWDIO */
+			<22 0 &gpio0_31 22 0>, /* IOM7_SPI_SCK, IOM7_I2C_SCL */
+			<23 0 &gpio0_31 23 0>, /* IOM7_SPI_MOSI, IOM7_I2C_SDA */
+			<24 0 &gpio0_31 24 0>, /* IOM7_SPI_MISO */
+			<25 0 &gpio0_31 25 0>, /* IOM2_SPI_SCK, IOM2_I2C_SCL */
+			<26 0 &gpio0_31 26 0>, /* IOM2_SPI_MOSI, IOM2_I2C_SDA */
+			<27 0 &gpio0_31 27 0>, /* IOM2_SPI_MISO */
+			<28 0 &gpio0_31 28 0>, /* ITM_SWO */
+			<29 0 &gpio0_31 29 0>, /* See am_hal_pins.h file for further info */
+			<30 0 &gpio0_31 30 0>, /* LED1, IOM6_CS */
+			<31 0 &gpio0_31 31 0>, /* IOM3_SPI_SCK, IOM3_I2C_SCL */
+			<32 0 &gpio32_63 0 0>, /* IOM3_SPI_MOSI, IOM3_I2C_SDA */
+			<33 0 &gpio32_63 1 0>, /* IOM3_SPI_MISO */
+			<34 0 &gpio32_63 2 0>, /* IOM4_SPI_SCK, IOM4_I2C_SCL */
+			<35 0 &gpio32_63 3 0>, /* IOM4_SPI_MOSI, IOM4_I2C_SDA */
+			<36 0 &gpio32_63 4 0>, /* IOM4_SPI_MISO */
+			<37 0 &gpio32_63 5 0>, /* IOM2_CS, MSPI1_D0, X16SPI_D8 */
+			<38 0 &gpio32_63 6 0>, /* MSPI1_D1, X16SPI_D9 */
+			<39 0 &gpio32_63 7 0>, /* MSPI1_D2, X16SPI_D10 */
+			<40 0 &gpio32_63 8 0>, /* MSPI1_D3, X16SPI_D11 */
+			<41 0 &gpio32_63 9 0>, /* MSPI1_D4, X16SPI_D12 */
+			<42 0 &gpio32_63 10 0>, /* MSPI1_D5, X16SPI_D13  */
+			<43 0 &gpio32_63 11 0>, /* MSPI1_D6, X16SPI_D14 */
+			<44 0 &gpio32_63 12 0>, /* MSPI1_D7, X16SPI_D15 */
+			<45 0 &gpio32_63 13 0>, /* MSPI1_SCK, X16SPI_DQS1DM1 */
+			<46 0 &gpio32_63 14 0>, /* MSPI1_DQSDM */
+			<47 0 &gpio32_63 15 0>, /* COM_UART_RX, IOM5_SPI_SCK, IOM5_I2C_SCL */
+			<48 0 &gpio32_63 16 0>, /* IOM5_SPI_MOSI, IOM5_I2C_SDA */
+			<49 0 &gpio32_63 17 0>, /* UART1_RTS, IOM5_SPI_MISO */
+			<50 0 &gpio32_63 18 0>, /* UART2_RTS, ETM_TRACECLK, PDM0_CLK */
+			<51 0 &gpio32_63 19 0>, /* UART1_CTS, EMT_TRACE0, PDM0_DATA */
+			<52 0 &gpio32_63 20 0>, /* UART2_CTS, MSPI0_CE1, ETM_TRACE1, PDM1_CLK */
+			<53 0 &gpio32_63 21 0>, /* ETM_TRACE2, PDM1_DATA */
+			<54 0 &gpio32_63 22 0>, /* ETM_TRACE3, PDM2_CLK */
+			<55 0 &gpio32_63 23 0>, /* ETM_TRACECTL, PDM2_DATA */
+			<56 0 &gpio32_63 24 0>, /* PDM3_CLK */
+			<57 0 &gpio32_63 25 0>, /* PDM3_DATA */
+			<58 0 &gpio32_63 26 0>, /* COM_UART_RTS, UART0_RTS */
+			<59 0 &gpio32_63 27 0>, /* COM_UART_CTS, UART0_CTS */
+			<60 0 &gpio32_63 28 0>, /* COM_UART_TX, UART0_TX, IOM5_CS */
+			<61 0 &gpio32_63 29 0>, /* UART3_TX, IOM6_SPI_SCK, IOM6_I2C_SCL */
+			<62 0 &gpio32_63 30 0>, /* IOM6_SPI_MOSI, IOM6_I2C_SDA */
+			<63 0 &gpio32_63 31 0>, /* UART3_RX, IOM6_SPI_MISO */
+			<64 0 &gpio64_95 0 0>, /* MSPI0_D0, X16SPI_D0 */
+			<65 0 &gpio64_95 1 0>, /* MSPI0_D1, X16SPI_D1 */
+			<66 0 &gpio64_95 2 0>, /* MSPI0_D2, X16SPI_D2 */
+			<67 0 &gpio64_95 3 0>, /* MSPI0_D3, X16SPI_D3 */
+			<68 0 &gpio64_95 4 0>, /* MSPI0_D4, X16SPI_D4 */
+			<69 0 &gpio64_95 5 0>, /* MSPI0_D5, X16SPI_D5 */
+			<70 0 &gpio64_95 6 0>, /* MSPI0_D6, X16SPI_D6 */
+			<71 0 &gpio64_95 7 0>, /* MSPI0_D7, X16SPI_D7 */
+			<72 0 &gpio64_95 8 0>, /* IOM0_CS, MSPI0_SCK, X16SPI_SCK */
+			<73 0 &gpio64_95 9 0>, /* MSPI0_DQSDM, X16SPI_DQSDM */
+			<74 0 &gpio64_95 10 0>, /* MSPI2_D0 */
+			<75 0 &gpio64_95 11 0>, /* MSPI2_D1 */
+			<76 0 &gpio64_95 12 0>, /* MSPI2_D2 */
+			<77 0 &gpio64_95 13 0>, /* MSPI2_D3 */
+			<78 0 &gpio64_95 14 0>, /* MSPI2_D4 */
+			<79 0 &gpio64_95 15 0>, /* IOM4_CS, MSPI2_D5, SDIF_DAT4 */
+			<80 0 &gpio64_95 16 0>, /* MSPI2_D6, SDIF_DAT5 */
+			<81 0 &gpio64_95 17 0>, /* MSPI2_D7, SDIF_DAT6 */
+			<82 0 &gpio64_95 18 0>, /* MSPI2_D8, SDIF_DAT7 */
+			<83 0 &gpio64_95 19 0>, /* MSPI2_DQSDM, SDIF_CMD   */
+			<84 0 &gpio64_95 20 0>, /* SDIF_DAT0 */
+			<85 0 &gpio64_95 21 0>, /* IOM3_CS, SDIF_DAT1 */
+			<86 0 &gpio64_95 22 0>, /* MSPI2_CE1, SDIF_DAT2 */
+			<87 0 &gpio64_95 23 0>, /* SDIF_DAT3 */
+			<88 0 &gpio64_95 24 0>, /* IOM7_CS, SDIF_CLKOUT */
+			<89 0 &gpio64_95 25 0>, /* MSPI1_CE0, X16SPI_CE0, X16SPI_CE1 */
+			<90 0 &gpio64_95 26 0>, /* LED0 */
+			<91 0 &gpio64_95 27 0>, /* MSPI1_CE1,  */
+			<92 0 &gpio64_95 28 0>, /* See am_hal_pins.h file for further info */
+			<93 0 &gpio64_95 29 0>, /* See am_hal_pins.h file for further info */
+			<94 0 &gpio64_95 30 0>, /* See am_hal_pins.h file for further info */
+			<95 0 &gpio64_95 31 0>, /* See am_hal_pins.h file for further info */
+			<96 0 &gpio96_127 0 0>, /* See am_hal_pins.h file for further info */
+			<97 0 &gpio96_127 1 0>, /* See am_hal_pins.h file for further info */
+			<98 0 &gpio96_127 2 0>, /* See am_hal_pins.h file for further info */
+			<99 0 &gpio96_127 3 0>, /* See am_hal_pins.h file for further info */
+			<100 0 &gpio96_127 4 0>, /* See am_hal_pins.h file for further info */
+			<101 0 &gpio96_127 5 0>, /* VDDUSB0P9_SWITCH */
+			<102 0 &gpio96_127 6 0>, /* See am_hal_pins.h file for further info */
+			<103 0 &gpio96_127 7 0>, /* VDDUSB33_SWITCH */
+			<104 0 &gpio96_127 8 0>; /* VDD18_SWITCH */
+	};
+};
+
+spi1: &iom1_spi {};

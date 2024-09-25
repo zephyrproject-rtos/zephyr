@@ -27,10 +27,9 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/speculation.h>
 #include <zephyr/irq.h>
-
+#include <zephyr/dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <zephyr/acpi/acpi.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
-
-BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 
 #define REG_MISCCFG			0x0010
 #define MISCCFG_IRQ_ROUTE_POS		3
@@ -99,9 +98,11 @@ struct gpio_intel_config {
 
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 
-	uint8_t	pin_offset;
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+	uint8_t pin_offset;
 	uint8_t group_index;
-	uint8_t	num_pins;
+	uint8_t num_pins;
+#endif
 };
 
 struct gpio_intel_data {
@@ -114,17 +115,64 @@ struct gpio_intel_data {
 	uint32_t pad_base;
 
 	sys_slist_t cb;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+	uint32_t num_pins;
+	uint32_t pad_owner_reg;
+	uint32_t host_owner_reg;
+	uint32_t intr_stat_reg;
+	uint32_t base_num;
+#endif
 };
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+#define GPIO_REG_BASE_GET(dev) DEVICE_MMIO_NAMED_GET(dev, reg_base)
+
+#define REG_GPI_INT_STS_BASE_GET(data) (data)->intr_stat_reg
+
+#define REG_GPI_INT_EN_BASE_GET(data) (data)->intr_stat_reg + 0x20
+
+#define PIN_OFFSET_GET(dev) (0)
+
+#define GPIO_PAD_OWNERSHIP_GET(data, pin, offset) (data)->pad_owner_reg + (((pin) / 8) * 0x4)
+
+#define REG_PAD_HOST_SW_OWNER_GET(data) (data)->host_owner_reg
+
+#define GPIO_BASE_GET(cdf) (0)
+
+#define GPIO_INTERRUPT_BASE_GET(cfg) (0)
+
+#define GPIO_GET_PIN_MAX(dev) ((struct gpio_intel_data *)(dev)->data)->num_pins
+#else /* Non-ACPI */
+#define GPIO_REG_BASE_GET(dev) GPIO_REG_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base))
+
+#define REG_GPI_INT_STS_BASE_GET(data) REG_GPI_INT_STS_BASE
+
+#define REG_GPI_INT_EN_BASE_GET(data) REG_GPI_INT_EN_BASE
+
+#define PIN_OFFSET_GET(dev) ((const struct gpio_intel_config *)(dev)->config)->pin_offset
+
+#define GPIO_PAD_OWNERSHIP_GET(data, pin, offset) GPIO_PAD_OWNERSHIP(pin, offset)
+
+#define REG_PAD_HOST_SW_OWNER_GET(data) REG_PAD_HOST_SW_OWNER
+
+#define GPIO_BASE_GET(cdf) GPIO_BASE(((const struct gpio_intel_config *)(dev)->config))
+
+#define GPIO_INTERRUPT_BASE_GET(cfg) GPIO_INTERRUPT_BASE(cfg)
+
+#define GPIO_GET_PIN_MAX(dev) ((const struct gpio_intel_config *)(dev)->config)->num_pins
+#endif
 
 static inline mm_reg_t regs(const struct device *dev)
 {
-	return GPIO_REG_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base));
+	return GPIO_REG_BASE_GET(dev);
 }
 
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
 static inline mm_reg_t pad_base(const struct device *dev)
 {
 	return GPIO_PAD_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base));
 }
+#endif
 
 #ifdef CONFIG_GPIO_INTEL_CHECK_PERMS
 /**
@@ -138,14 +186,14 @@ static inline mm_reg_t pad_base(const struct device *dev)
 static bool check_perm(const struct device *dev, uint32_t raw_pin)
 {
 	struct gpio_intel_data *data = dev->data;
-	const struct gpio_intel_config *cfg = dev->config;
 	uint32_t offset, val, pin_offset;
 
-	pin_offset = cfg->pin_offset;
+	pin_offset = PIN_OFFSET_GET(dev);
 	/* First is to establish that host software owns the pin */
 
 	/* read the Pad Ownership register related to the pin */
-	offset = GPIO_PAD_OWNERSHIP(raw_pin, pin_offset);
+	offset = GPIO_PAD_OWNERSHIP_GET(data, raw_pin, pin_offset);
+
 	val = sys_read32(regs(dev) + offset);
 
 	/* get the bits about ownership */
@@ -175,9 +223,7 @@ static bool check_perm(const struct device *dev, uint32_t raw_pin)
  * to the list of devices to check at ISR time.
  */
 
-static int nr_isr_devs;
-
-static const struct device *isr_devs[GPIO_INTEL_NR_SUBDEVS];
+static bool first_inst = true;
 
 static void gpio_intel_isr(const struct device *dev)
 {
@@ -185,36 +231,30 @@ static void gpio_intel_isr(const struct device *dev)
 	struct gpio_intel_data *data;
 	struct gpio_callback *cb, *tmp;
 	uint32_t reg, int_sts, cur_mask, acc_mask;
-	int isr_dev;
 
-	for (isr_dev = 0; isr_dev < nr_isr_devs; ++isr_dev) {
-		dev = isr_devs[isr_dev];
-		cfg = dev->config;
-		data = dev->data;
+	cfg = dev->config;
+	data = dev->data;
 
-		reg = regs(dev) + REG_GPI_INT_STS_BASE
-		      + GPIO_INTERRUPT_BASE(cfg);
-		int_sts = sys_read32(reg);
-		acc_mask = 0U;
+	reg = regs(dev) + REG_GPI_INT_STS_BASE_GET(data) + GPIO_INTERRUPT_BASE_GET(cfg);
+	int_sts = sys_read32(reg);
+	acc_mask = 0U;
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
-			cur_mask = int_sts & cb->pin_mask;
-			acc_mask |= cur_mask;
-			if (cur_mask) {
-				__ASSERT(cb->handler, "No callback handler!");
-				cb->handler(dev, cb, cur_mask);
-			}
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
+		cur_mask = int_sts & cb->pin_mask;
+		acc_mask |= cur_mask;
+		if (cur_mask) {
+			__ASSERT(cb->handler, "No callback handler!");
+			cb->handler(dev, cb, cur_mask);
 		}
-
-		/* clear handled interrupt bits */
-		sys_write32(acc_mask, reg);
 	}
+
+	/* clear handled interrupt bits */
+	sys_write32(acc_mask, reg);
 }
 
 static int gpio_intel_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
 	uint32_t raw_pin, reg, cfg0, cfg1;
 
@@ -223,9 +263,9 @@ static int gpio_intel_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
+	pin = k_array_index_sanitize(pin, GPIO_GET_PIN_MAX(dev) + 1);
 
-	raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
+	raw_pin = GPIO_RAW_PIN(pin, PIN_OFFSET_GET(dev));
 
 	if (!check_perm(dev, raw_pin)) {
 		return -EINVAL;
@@ -290,7 +330,6 @@ static int gpio_intel_pin_interrupt_configure(const struct device *dev,
 					      enum gpio_int_mode mode,
 					      enum gpio_int_trig trig)
 {
-	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
 	uint32_t raw_pin, cfg0, cfg1;
 	uint32_t reg, reg_en, reg_sts;
@@ -300,30 +339,32 @@ static int gpio_intel_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
+	pin = k_array_index_sanitize(pin, GPIO_GET_PIN_MAX(dev) + 1);
 
-	raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
+	raw_pin = GPIO_RAW_PIN(pin, PIN_OFFSET_GET(dev));
 
 	if (!check_perm(dev, raw_pin)) {
 		return -EINVAL;
 	}
 
 	/* set owner to GPIO driver mode for legacy interrupt mode */
-	reg = regs(dev) + REG_PAD_HOST_SW_OWNER + GPIO_BASE(cfg);
+	reg = regs(dev) + REG_PAD_HOST_SW_OWNER_GET(data) + GPIO_BASE_GET(dev);
+
 	sys_bitfield_set_bit(reg, raw_pin);
 
 	/* read in pad configuration register */
 	reg = regs(dev) + data->pad_base + (raw_pin * PIN_OFFSET);
+
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
-	reg_en = regs(dev) + REG_GPI_INT_EN_BASE + GPIO_BASE(cfg);
+	reg_en = regs(dev) + REG_GPI_INT_EN_BASE_GET(data) + GPIO_BASE_GET(dev);
 
 	/* disable interrupt bit first before setup */
 	sys_bitfield_clear_bit(reg_en, raw_pin);
 
 	/* clear (by setting) interrupt status bit */
-	reg_sts = regs(dev) + REG_GPI_INT_STS_BASE + GPIO_BASE(cfg);
+	reg_sts = regs(dev) + REG_GPI_INT_STS_BASE_GET(data) + GPIO_BASE_GET(dev);
 	sys_bitfield_set_bit(reg_sts, raw_pin);
 
 	/* clear level/edge configuration bits */
@@ -390,7 +431,6 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 			uint32_t *value,
 			bool read_tx)
 {
-	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
 	uint32_t pin, raw_pin, reg_addr, reg_val, cmp;
 
@@ -404,13 +444,13 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 	while (mask != 0U) {
 		pin = find_lsb_set(mask) - 1;
 
-		if (pin >= cfg->num_pins) {
+		if (pin >= GPIO_GET_PIN_MAX(dev)) {
 			break;
 		}
 
 		mask &= ~BIT(pin);
 
-		raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
+		raw_pin = GPIO_RAW_PIN(pin, PIN_OFFSET_GET(dev));
 
 		if (!check_perm(dev, raw_pin)) {
 			continue;
@@ -430,20 +470,19 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 static int port_set_raw(const struct device *dev, uint32_t mask,
 			uint32_t value)
 {
-	const struct gpio_intel_config *cfg = dev->config;
 	struct gpio_intel_data *data = dev->data;
 	uint32_t pin, raw_pin, reg_addr, reg_val;
 
 	while (mask != 0) {
 		pin = find_lsb_set(mask) - 1;
 
-		if (pin >= cfg->num_pins) {
+		if (pin >= GPIO_GET_PIN_MAX(dev)) {
 			break;
 		}
 
 		mask &= ~BIT(pin);
 
-		raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
+		raw_pin = GPIO_RAW_PIN(pin, PIN_OFFSET_GET(dev));
 
 		if (!check_perm(dev, raw_pin)) {
 			continue;
@@ -522,7 +561,66 @@ static const struct gpio_driver_api gpio_intel_api = {
 	.pin_interrupt_configure = gpio_intel_pin_interrupt_configure,
 };
 
-int gpio_intel_init(const struct device *dev)
+/* We need support either DTS or ACPI base resource enumeration at time.*/
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(acpi_hid)
+
+static int gpio_intel_acpi_enum(const struct device *dev, int bank_idx, char *hid, char *uid)
+{
+	int ret;
+	struct gpio_acpi_res res;
+	struct gpio_intel_data *data = dev->data;
+
+	ret = soc_acpi_gpio_resource_get(bank_idx, hid, uid, &res);
+	if (ret) {
+		return ret;
+	}
+
+	device_map(&data->reg_base, res.reg_base, res.len, K_MEM_CACHE_NONE);
+
+	data->num_pins = res.num_pins;
+	data->pad_owner_reg = res.pad_owner_reg;
+	data->host_owner_reg = res.host_owner_reg;
+	data->intr_stat_reg = res.intr_stat_reg;
+	data->base_num = res.base_num;
+	data->pad_base = res.pad_base;
+
+	/* Note that all controllers are using the same IRQ line.
+	 * So we can just use the values from the first instance.
+	 */
+	if (first_inst) {
+		irq_connect_dynamic(res.irq, DT_INST_IRQ(0, priority),
+				    (void (*)(const void *))gpio_intel_isr, dev, res.irq_flags);
+		irq_enable(res.irq);
+		first_inst = false;
+	}
+
+	if (IS_ENABLED(CONFIG_SOC_APOLLO_LAKE)) {
+		/* route to IRQ 14 */
+		sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG, MISCCFG_IRQ_ROUTE_POS);
+	}
+
+	return 0;
+}
+
+#define GPIO_INIT_FN_DEFINE(n)                                                                     \
+	static int gpio_intel_init##n(const struct device *dev)                                    \
+	{                                                                                          \
+		return gpio_intel_acpi_enum(dev, DT_INST_PROP(n, group_index),	\
+			ACPI_DT_HID(DT_DRV_INST(n)),  ACPI_DT_UID(DT_DRV_INST(n)));   \
+	}
+
+#define GPIO_MMIO_ROM_INIT(n)
+
+#define GPIO_INIT_CONFIG(n)                                                                        \
+	static const struct gpio_intel_config gpio_intel_cfg_##n = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+	}
+#else
+
+static int gpio_intel_dts_init(const struct device *dev)
 {
 	struct gpio_intel_data *data = dev->data;
 
@@ -551,21 +649,19 @@ int gpio_intel_init(const struct device *dev)
 #endif
 	data->pad_base = pad_base(dev);
 
-	__ASSERT(nr_isr_devs < GPIO_INTEL_NR_SUBDEVS, "too many subdevs");
-
-	if (nr_isr_devs == 0) {
+	if (first_inst) {
 		/* Note that all controllers are using the same IRQ line.
 		 * So we can just use the values from the first instance.
 		 */
 		IRQ_CONNECT(DT_INST_IRQN(0),
 			    DT_INST_IRQ(0, priority),
-			    gpio_intel_isr, NULL,
+			    gpio_intel_isr, dev,
 			    DT_INST_IRQ(0, sense));
 
 		irq_enable(DT_INST_IRQN(0));
-	}
 
-	isr_devs[nr_isr_devs++] = dev;
+		first_inst = false;
+	}
 
 	if (IS_ENABLED(CONFIG_SOC_APOLLO_LAKE)) {
 		/* route to IRQ 14 */
@@ -575,26 +671,34 @@ int gpio_intel_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_INTEL_DEV_CFG_DATA(n)					       \
-	static const struct gpio_intel_config				       \
-		gpio_intel_cfg_##n = {					       \
-		.common = {						       \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
-		},							       \
-		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	       \
-		.pin_offset = DT_INST_PROP(n, pin_offset),		       \
-		.group_index = DT_INST_PROP_OR(n, group_index, 0),	       \
-		.num_pins = DT_INST_PROP(n, ngpios),			       \
-	};								       \
-									       \
-	static struct gpio_intel_data gpio_intel_data_##n;		       \
-									       \
-	DEVICE_DT_INST_DEFINE(n,					       \
-			      gpio_intel_init,				       \
-			      NULL,					       \
-			      &gpio_intel_data_##n,			       \
-			      &gpio_intel_cfg_##n,			       \
-			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,	       \
+#define GPIO_INIT_FN_DEFINE(n)                                                                     \
+	static int gpio_intel_init##n(const struct device *dev)                                    \
+	{                                                                                          \
+		return gpio_intel_dts_init(dev);                                                   \
+	}
+
+#define GPIO_MMIO_ROM_INIT(n) DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),
+
+#define GPIO_INIT_CONFIG(n)                                                                        \
+	static const struct gpio_intel_config gpio_intel_cfg_##n = {                               \
+		.common =                                                                          \
+			{                                                                          \
+				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
+			},                                                                         \
+		GPIO_MMIO_ROM_INIT(n).pin_offset = DT_INST_PROP(n, pin_offset),                    \
+		.group_index = DT_INST_PROP_OR(n, group_index, 0),                                 \
+		.num_pins = DT_INST_PROP(n, ngpios),                                               \
+	}
+
+#endif
+
+#define GPIO_INTEL_DEV_CFG_DATA(n)                                                                 \
+	GPIO_INIT_FN_DEFINE(n)                                                                     \
+	GPIO_INIT_CONFIG(n);                                                                       \
+	static struct gpio_intel_data gpio_intel_data_##n;                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_intel_init##n, NULL, &gpio_intel_data_##n,                   \
+			      &gpio_intel_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
 			      &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */

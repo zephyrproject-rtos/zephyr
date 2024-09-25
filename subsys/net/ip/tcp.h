@@ -31,6 +31,7 @@
 extern "C" {
 #endif
 
+#include <errno.h>
 #include <sys/types.h>
 
 /**
@@ -72,18 +73,7 @@ int net_tcp_listen(struct net_context *context);
  */
 int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 			void *user_data);
-/**
- * @brief Enqueue data for transmission
- *
- * @param context	Network context
- * @param buf		Pointer to the data
- * @param len		Number of bytes
- * @param msghdr	Data for a vector array operation
- *
- * @return 0 if ok, < 0 if error
- */
-int net_tcp_queue(struct net_context *context, const void *buf, size_t len,
-		  const struct msghdr *msghdr);
+
 /* TODO: split into 2 functions, conn -> context, queue -> send? */
 
 /* The following functions are provided solely for the compatibility
@@ -112,8 +102,7 @@ void net_tcp_init(void);
 #define net_tcp_init(...)
 #endif
 int net_tcp_update_recv_wnd(struct net_context *context, int32_t delta);
-int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt);
-int net_tcp_finalize(struct net_pkt *pkt);
+int net_tcp_finalize(struct net_pkt *pkt, bool force_chksum);
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
 /**

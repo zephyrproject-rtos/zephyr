@@ -447,6 +447,23 @@ int usb_wakeup_request(void);
 bool usb_get_remote_wakeup_status(void);
 
 /**
+ * @brief Helper macro to place the BOS compatibility descriptor
+ *        in the right memory section.
+ */
+#define USB_DEVICE_BOS_DESC_DEFINE_CAP \
+	static __in_section(usb, bos_desc_area, 1) __aligned(1) __used
+
+/**
+ * @brief Register BOS capability descriptor
+ *
+ * This function should be used by the application to register BOS capability
+ * descriptors before the USB device stack is enabled.
+ *
+ * @param[in] hdr Pointer to BOS capability descriptor
+ */
+void usb_bos_register_cap(void *hdr);
+
+/**
  * @}
  */
 

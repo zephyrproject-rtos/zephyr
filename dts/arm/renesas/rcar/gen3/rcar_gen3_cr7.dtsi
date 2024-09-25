@@ -94,7 +94,6 @@
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 

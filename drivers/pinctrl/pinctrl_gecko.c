@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Silicon Labs
+ * Copyright (c) 2024 Capgemini
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +13,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 {
 	USART_TypeDef *base = (USART_TypeDef *)reg;
 	uint8_t loc;
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 	LEUART_TypeDef *lebase = (LEUART_TypeDef *)reg;
 #else
 	int usart_num = USART_NUM(base);
+#endif
+
+#ifdef CONFIG_I2C_GECKO
+	I2C_TypeDef *i2c_base = (I2C_TypeDef *)reg;
 #endif
 
 #ifdef CONFIG_UART_GECKO
@@ -50,7 +55,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 					txpin.out);
 			break;
 
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_UART_RTS:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -100,7 +105,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			lebase->ROUTELOC0 &= ~_LEUART_ROUTELOC0_TXLOC_MASK;
 			lebase->ROUTELOC0 |= (loc << _LEUART_ROUTELOC0_TXLOC_SHIFT);
 			break;
-#else /* CONFIG_SOC_GECKO_SERIES1 */
+#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
 		case GECKO_FUN_UART_LOC:
 #ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 			/* For SOCs with configurable pin_cfg locations (set in SOC Kconfig) */
@@ -156,11 +161,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 #endif /* UART_GECKO_HW_FLOW_CONTROL */
 			break;
-#endif /* CONFIG_SOC_GECKO_SERIES1 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_UART_GECKO */
 
 #ifdef CONFIG_SPI_GECKO
-#ifdef CONFIG_SOC_GECKO_SERIES1
+#ifdef CONFIG_SOC_FAMILY_SILABS_S1
 		case GECKO_FUN_SPIM_SCK:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -241,7 +246,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			base->ROUTELOC0 |= (loc << _USART_ROUTELOC0_CSLOC_SHIFT);
 			break;
 
-#else /* CONFIG_SOC_GECKO_SERIES1 */
+#else /* CONFIG_SOC_FAMILY_SILABS_S1 */
 		case GECKO_FUN_SPI_SCK:
 			pin_config.mode = gpioModePushPull;
 			pin_config.out = 1;
@@ -274,8 +279,59 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
 					pin_config.out);
 			break;
-#endif /* CONFIG_SOC_GECKO_SERIES1 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S1 */
 #endif /* CONFIG_SPI_GECKO */
+
+#ifdef CONFIG_I2C_GECKO
+		case GECKO_FUN_I2C_SDA:
+			pin_config.mode = gpioModeWiredAnd;
+			pin_config.out = 1;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+				pin_config.out);
+
+#if defined(GPIO_I2C_ROUTEEN_SDAPEN)
+			GPIO->I2CROUTE[I2C_NUM(i2c_base)].SDAROUTE =
+				(pin_config.pin << _GPIO_I2C_SDAROUTE_PIN_SHIFT) |
+				(pin_config.port << _GPIO_I2C_SDAROUTE_PORT_SHIFT);
+			GPIO->I2CROUTE[I2C_NUM(i2c_base)].ROUTEEN |= GPIO_I2C_ROUTEEN_SDAPEN;
+#endif
+			break;
+
+		case GECKO_FUN_I2C_SCL:
+			pin_config.mode = gpioModeWiredAnd;
+			pin_config.out = 1;
+			GPIO_PinModeSet(pin_config.port, pin_config.pin, pin_config.mode,
+				pin_config.out);
+
+#if defined(GPIO_I2C_ROUTEEN_SCLPEN)
+			GPIO->I2CROUTE[I2C_NUM(i2c_base)].SCLROUTE =
+				(pin_config.pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT) |
+				(pin_config.port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
+			GPIO->I2CROUTE[I2C_NUM(i2c_base)].ROUTEEN |= GPIO_I2C_ROUTEEN_SCLPEN;
+#endif
+			break;
+
+		case GECKO_FUN_I2C_SDA_LOC:
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+			i2c_base->ROUTEPEN |= I2C_ROUTEPEN_SDAPEN;
+			i2c_base->ROUTELOC0 &= ~_I2C_ROUTELOC0_SDALOC_MASK;
+			i2c_base->ROUTELOC0 |= (loc << _I2C_ROUTELOC0_SDALOC_SHIFT);
+#elif defined(I2C_ROUTE_SDAPEN)
+			i2c_base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
+#endif
+			break;
+
+		case GECKO_FUN_I2C_SCL_LOC:
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+			i2c_base->ROUTEPEN |= I2C_ROUTEPEN_SCLPEN;
+			i2c_base->ROUTELOC0 &= ~_I2C_ROUTELOC0_SCLLOC_MASK;
+			i2c_base->ROUTELOC0 |= (loc << _I2C_ROUTELOC0_SCLLOC_SHIFT);
+#elif defined(I2C_ROUTE_SCLPEN)
+			i2c_base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
+#endif
+			break;
+
+#endif /* CONFIG_I2C_GECKO */
 
 		default:
 			return -ENOTSUP;

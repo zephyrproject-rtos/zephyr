@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define TEST_VND_MODEL_ID_1 0x3a3a
 
 #define TEST_MODEL_DECLARE(number)                                                                 \
-	static int model_##number##_init(struct bt_mesh_model *model);                             \
+	static int model_##number##_init(const struct bt_mesh_model *model);			   \
 	static const struct bt_mesh_model_cb test_model_##number##_cb = {                          \
 		.init = model_##number##_init,                                                     \
 	};                                                                                         \
@@ -56,7 +56,7 @@ static const struct bt_mesh_test_cfg node_1_cfg = {
 static struct bt_mesh_prov prov;
 static struct bt_mesh_cfg_cli cfg_cli;
 
-static struct bt_mesh_model models_1[] = {
+static const struct bt_mesh_model models_1[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_1, model_op_1, NULL, NULL, &test_model_1_cb),
@@ -64,24 +64,24 @@ static struct bt_mesh_model models_1[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_3, model_op_3, NULL, NULL, &test_model_3_cb),
 };
 
-static struct bt_mesh_model models_2[] = {
+static const struct bt_mesh_model models_2[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_4, model_op_4, NULL, NULL, &test_model_4_cb),
 };
 
-static struct bt_mesh_model models_3[] = {
+static const struct bt_mesh_model models_3[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_op_5, NULL, NULL, &test_model_5_cb),
 };
 
-static struct bt_mesh_model models_4[] = {
+static const struct bt_mesh_model models_4[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_6, model_op_6, NULL, NULL, &test_model_6_cb),
 };
 
-static struct bt_mesh_model models_vnd1[] = {
+static const struct bt_mesh_model models_vnd1[] = {
 	BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MODEL_ID_1, model_op_vnd1, NULL, NULL,
 			     &test_model_vnd1_cb),
 };
 
-static struct bt_mesh_elem elems[] = {
+static const struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models_1, models_vnd1),
 	BT_MESH_ELEM(1, models_2, BT_MESH_MODEL_NONE),
 	BT_MESH_ELEM(2, models_3, BT_MESH_MODEL_NONE),
@@ -106,41 +106,41 @@ static const struct bt_mesh_comp comp = {
  * M2 on E0 and M4 on E1 corresponds.
  * M6 on E4 extends M1 on E0
  */
-static int model_1_init(struct bt_mesh_model *model)
+static int model_1_init(const struct bt_mesh_model *model)
 {
 	return 0;
 }
 
-static int model_2_init(struct bt_mesh_model *model)
+static int model_2_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, bt_mesh_model_find(&elems[0], TEST_MODEL_ID_1)));
 	return 0;
 }
 
-static int model_3_init(struct bt_mesh_model *model)
+static int model_3_init(const struct bt_mesh_model *model)
 {
 	return 0;
 }
 
-static int model_4_init(struct bt_mesh_model *model)
+static int model_4_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(bt_mesh_model_find(&elems[0], TEST_MODEL_ID_3), model));
 	ASSERT_OK(bt_mesh_model_correspond(model, bt_mesh_model_find(&elems[0], TEST_MODEL_ID_2)));
 	return 0;
 }
 
-static int model_5_init(struct bt_mesh_model *model)
+static int model_5_init(const struct bt_mesh_model *model)
 {
 	return 0;
 }
 
-static int model_6_init(struct bt_mesh_model *model)
+static int model_6_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, bt_mesh_model_find(&elems[0], TEST_MODEL_ID_1)));
 	return 0;
 }
 
-static int model_vnd1_init(struct bt_mesh_model *model)
+static int model_vnd1_init(const struct bt_mesh_model *model)
 {
 	ASSERT_OK(bt_mesh_model_extend(model, bt_mesh_model_find(&elems[0], TEST_MODEL_ID_1)));
 	ASSERT_OK(bt_mesh_model_correspond(model, bt_mesh_model_find(&elems[0], TEST_MODEL_ID_3)));

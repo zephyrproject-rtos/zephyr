@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_CORE_NORDIC_VPR
+	bool "RISC-V Nordic VPR core"
+	default y
+	depends on DT_HAS_NORDIC_VPR_ENABLED
+	select ATOMIC_OPERATIONS_C
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_VECTORED_MODE
+	select RISCV_ISA_RV32E
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_SOC_HAS_ISR_STACKING
+	select RISCV_HAS_CLIC
+	select RISCV_SOC_CONTEXT_SAVE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_CPU_IDLE_CUSTOM
+	select INCLUDE_RESET_VECTOR
+	help
+	  Enable support for the RISC-V Nordic VPR core.

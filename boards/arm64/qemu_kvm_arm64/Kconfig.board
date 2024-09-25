@@ -1,8 +1,0 @@
-# Copyright (c) 2022 Huawei France Technologies SASU
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_QEMU_KVM_ARM64
-	bool "Cortex AArch64 KVM Virt Emulation (QEMU)"
-	depends on SOC_QEMU_VIRT_ARM64
-	select ARM64
-	select QEMU_TARGET

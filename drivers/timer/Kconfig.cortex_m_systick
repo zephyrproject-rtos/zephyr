@@ -3,6 +3,8 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_IDLE_TIMER := zephyr,cortex-m-idle-timer
+
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
@@ -49,3 +51,21 @@ config CORTEX_M_SYSTICK_EXTERNAL_REF
 	  Selects the SysTick timer clock source. When set to n, the processor
 	  clock is selected, and when set to y, the external reference clock
 	  is selected.
+
+config CORTEX_M_SYSTICK_IDLE_TIMER
+	bool "Use an additional timer while entering IDLE"
+	default $(dt_chosen_enabled,$(DT_CHOSEN_IDLE_TIMER))
+	depends on COUNTER
+	depends on TICKLESS_KERNEL
+	depends on PM
+	help
+	  There are chips e.g. STMFX family that use SysTick as a system timer,
+	  but SysTick is not clocked in low power mode. These chips usually have
+	  another timer that is not stopped, but it has lower frequency e.g.
+	  RTC, thus it can't be used as a main system timer.
+
+	  Use the IDLE timer for timeout (wakeup) when the system is entering
+	  IDLE state.
+
+	  The chosen IDLE timer node has to support setting alarm from the
+	  counter API.

@@ -446,7 +446,7 @@ static void increment_msgid_counter(const struct device *dev)
 /**
  * @brief Get the SOP* header for the current received message
  */
-static uint32_t get_sop_star_header(const struct device *dev)
+static uint16_t get_sop_star_header(const struct device *dev)
 {
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
@@ -1177,7 +1177,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	uint8_t power_role;
 
 	/* Get the message */
-	if (tcpc_receive_data(tcpc, rx_emsg) <= 0) {
+	if (tcpc_get_rx_pending_msg(tcpc, rx_emsg) <= 0) {
 		/* No pending message or problem getting the message */
 		return;
 	}
@@ -1265,14 +1265,17 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		prl_tx_phy_layer_reset_entry,
 		NULL,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_TX_WAIT_FOR_MESSAGE_REQUEST] = SMF_CREATE_STATE(
 		prl_tx_wait_for_message_request_entry,
 		prl_tx_wait_for_message_request_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_TX_LAYER_RESET_FOR_TRANSMIT] = SMF_CREATE_STATE(
 		prl_tx_layer_reset_for_transmit_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -1280,10 +1283,12 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		prl_tx_wait_for_phy_response_entry,
 		prl_tx_wait_for_phy_response_run,
 		prl_tx_wait_for_phy_response_exit,
+		NULL,
 		NULL),
 	[PRL_TX_SUSPEND] = SMF_CREATE_STATE(
 		prl_tx_suspend_entry,
 		prl_tx_suspend_run,
+		NULL,
 		NULL,
 		NULL),
 #ifdef CONFIG_USBC_CSM_SINK_ONLY
@@ -1291,10 +1296,12 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		prl_tx_snk_start_ams_entry,
 		prl_tx_snk_start_ams_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_TX_SNK_PENDING] = SMF_CREATE_STATE(
 		prl_tx_snk_pending_entry,
 		prl_tx_snk_pending_run,
+		NULL,
 		NULL,
 		NULL),
 #endif
@@ -1303,11 +1310,13 @@ static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT] = {
 		prl_tx_src_source_tx_entry,
 		prl_tx_src_source_tx_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_TX_SRC_PENDING] = SMF_CREATE_STATE(
 		prl_tx_src_pending_entry,
 		prl_tx_src_pending_run,
 		prl_tx_src_pending_exit,
+		NULL,
 		NULL),
 #endif
 };
@@ -1321,9 +1330,11 @@ static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 		prl_hr_wait_for_request_entry,
 		prl_hr_wait_for_request_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_HR_RESET_LAYER] = SMF_CREATE_STATE(
 		prl_hr_reset_layer_entry,
+		NULL,
 		NULL,
 		NULL,
 		NULL),
@@ -1331,15 +1342,18 @@ static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT] = {
 		prl_hr_wait_for_phy_hard_reset_complete_entry,
 		prl_hr_wait_for_phy_hard_reset_complete_run,
 		prl_hr_wait_for_phy_hard_reset_complete_exit,
+		NULL,
 		NULL),
 	[PRL_HR_WAIT_FOR_PE_HARD_RESET_COMPLETE] = SMF_CREATE_STATE(
 		prl_hr_wait_for_pe_hard_reset_complete_entry,
 		prl_hr_wait_for_pe_hard_reset_complete_run,
 		NULL,
+		NULL,
 		NULL),
 	[PRL_HR_SUSPEND] = SMF_CREATE_STATE(
 		prl_hr_suspend_entry,
 		prl_hr_suspend_run,
+		NULL,
 		NULL,
 		NULL),
 };

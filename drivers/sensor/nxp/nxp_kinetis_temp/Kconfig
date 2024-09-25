@@ -1,0 +1,40 @@
+# NXP Kinetis temperature sensor configuration options
+
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_KINETIS
+	bool "NXP Kinetis Temperature Sensor"
+	default y
+	depends on DT_HAS_NXP_KINETIS_TEMPERATURE_ENABLED
+	depends on SOC_FAMILY_KINETIS
+	select ADC
+	help
+	  Enable driver for NXP Kinetis temperature sensor.
+
+if TEMP_KINETIS
+
+config TEMP_KINETIS_RESOLUTION
+	int "ADC resolution"
+	default 16 if HAS_MCUX_ADC16
+	default 12 if HAS_MCUX_ADC12
+	help
+	  ADC resolution to use for the temperature sensor and bandgap
+	  voltage readings.
+
+config TEMP_KINETIS_OVERSAMPLING
+	int "ADC oversampling"
+	default 0
+	range 0 5
+	help
+	  ADC oversampling to use for the temperature sensor and
+	  bandgap voltage readings. Oversampling can help in providing
+	  more stable readings.
+
+config TEMP_KINETIS_FILTER
+	bool "Digital filtering of ADC readings"
+	help
+	  Enable weighted average digital filtering of the ADC
+	  readings as per NXP AN3031.
+
+endif # TEMP_KINETIS

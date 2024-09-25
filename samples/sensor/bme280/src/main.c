@@ -9,15 +9,25 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_data_types.h>
+#include <zephyr/rtio/rtio.h>
+#include <zephyr/dsp/print_format.h>
 
 /*
  * Get a device structure from a devicetree node with compatible
  * "bosch,bme280". (If there are multiple, just pick one.)
  */
-static const struct device *get_bme280_device(void)
-{
-	const struct device *const dev = DEVICE_DT_GET_ANY(bosch_bme280);
+const struct device *const dev = DEVICE_DT_GET_ANY(bosch_bme280);
 
+SENSOR_DT_READ_IODEV(iodev, DT_COMPAT_GET_ANY_STATUS_OKAY(bosch_bme280),
+		{SENSOR_CHAN_AMBIENT_TEMP, 0},
+		{SENSOR_CHAN_HUMIDITY, 0},
+		{SENSOR_CHAN_PRESS, 0});
+
+RTIO_DEFINE(ctx, 1, 1);
+
+static const struct device *check_bme280_device(void)
+{
 	if (dev == NULL) {
 		/* No such node, or the node does not have status "okay". */
 		printk("\nError: no device found.\n");
@@ -37,23 +47,56 @@ static const struct device *get_bme280_device(void)
 
 int main(void)
 {
-	const struct device *dev = get_bme280_device();
+	const struct device *dev = check_bme280_device();
 
 	if (dev == NULL) {
 		return 0;
 	}
 
 	while (1) {
-		struct sensor_value temp, press, humidity;
+		uint8_t buf[128];
 
-		sensor_sample_fetch(dev);
-		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
-		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
-		sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &humidity);
+		int rc = sensor_read(&iodev, &ctx, buf, 128);
 
-		printk("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d\n",
-		      temp.val1, temp.val2, press.val1, press.val2,
-		      humidity.val1, humidity.val2);
+		if (rc != 0) {
+			printk("%s: sensor_read() failed: %d\n", dev->name, rc);
+			return rc;
+		}
+
+		const struct sensor_decoder_api *decoder;
+
+		rc = sensor_get_decoder(dev, &decoder);
+
+		if (rc != 0) {
+			printk("%s: sensor_get_decode() failed: %d\n", dev->name, rc);
+			return rc;
+		}
+
+		uint32_t temp_fit = 0;
+		struct sensor_q31_data temp_data = {0};
+
+		decoder->decode(buf,
+			(struct sensor_chan_spec) {SENSOR_CHAN_AMBIENT_TEMP, 0},
+			&temp_fit, 1, &temp_data);
+
+		uint32_t press_fit = 0;
+		struct sensor_q31_data press_data = {0};
+
+		decoder->decode(buf,
+				(struct sensor_chan_spec) {SENSOR_CHAN_PRESS, 0},
+				&press_fit, 1, &press_data);
+
+		uint32_t hum_fit = 0;
+		struct sensor_q31_data hum_data = {0};
+
+		decoder->decode(buf,
+				(struct sensor_chan_spec) {SENSOR_CHAN_HUMIDITY, 0},
+				&hum_fit, 1, &hum_data);
+
+		printk("temp: %s%d.%d; press: %s%d.%d; humidity: %s%d.%d\n",
+			PRIq_arg(temp_data.readings[0].temperature, 6, temp_data.shift),
+			PRIq_arg(press_data.readings[0].pressure, 6, press_data.shift),
+			PRIq_arg(hum_data.readings[0].humidity, 6, hum_data.shift));
 
 		k_sleep(K_MSEC(1000));
 	}

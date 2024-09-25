@@ -210,7 +210,7 @@ struct bt_mesh_dfd_srv_cb {
 /** Firmware Distribution Server instance. */
 struct bt_mesh_dfd_srv {
 	const struct bt_mesh_dfd_srv_cb *cb;
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	struct bt_mesh_dfu_cli dfu;
 	struct bt_mesh_dfu_target targets[CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX];
 	struct bt_mesh_blob_target_pull pull_ctxs[CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX];
@@ -254,7 +254,7 @@ struct bt_mesh_dfd_srv {
  *  callback has completed or failed. The @p status param should be set to one of the following
  *  values:
  *
- *  * @c BT_MESH_DFD_SUCCESS if the check was succesfull and a new firmware ID was found.
+ *  * @c BT_MESH_DFD_SUCCESS if the check was successful and a new firmware ID was found.
  *  * @c BT_MESH_DFD_ERR_URI_MALFORMED if the URI is not formatted correctly.
  *  * @c BT_MESH_DFD_ERR_URI_NOT_SUPPORTED if the URI scheme is not supported by the node.
  *  * @c BT_MESH_DFD_ERR_URI_UNREACHABLE if the URI can't be reached.
@@ -279,7 +279,7 @@ int bt_mesh_dfd_srv_oob_check_complete(struct bt_mesh_dfd_srv *srv,
 
 /** @brief Call when an OOB store has completed or failed
  *
- *  This should be called by the application after an OOB store started after a succesfull call to
+ *  This should be called by the application after an OOB store started after a successful call to
  *  @c bt_mesh_dfd_srv_oob_check_complete has completed successfully or failed.
  *
  *  @param srv          Firmware Distribution Server model instance.

@@ -5,16 +5,26 @@
  */
 
 #include <arm/armv8-m.dtsi>
-#include <arm/silabs/gpio_gecko.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
+#include <freq.h>
 
 / {
 	chosen {
 		zephyr,flash-controller = &msc;
 		zephyr,entropy = &trng;
+	};
+
+	clocks {
+		clk_hfxo: clk-hfxo {
+			#clock-cells = <0>;
+			compatible = "silabs,hfxo";
+			clock-frequency = <DT_FREQ_K(38400)>;
+			ctune = <120>;
+			precision = <50>;
+		};
 	};
 
 	cpus {
@@ -213,6 +223,11 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+	};
+
+	bt_hci_silabs: bt_hci_silabs {
+		compatible = "silabs,bt-hci";
+		status = "disabled";
 	};
 };
 

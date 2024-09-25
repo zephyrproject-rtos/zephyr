@@ -113,10 +113,11 @@ bool i3c_addr_slots_is_free(struct i3c_addr_slots *slots,
  * assigned to a new device.
  *
  * @param slots Pointer to the address slots structure.
+ * @param start_addr Where to start searching
  *
  * @return The next free address, or 0 if none found.
  */
-uint8_t i3c_addr_slots_next_free_find(struct i3c_addr_slots *slots);
+uint8_t i3c_addr_slots_next_free_find(struct i3c_addr_slots *slots, uint8_t start_addr);
 
 /**
  * @brief Mark the address as free (not used) in device list.

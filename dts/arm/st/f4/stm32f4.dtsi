@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019 Centaur Analytics, Inc
  * Copyright (c) 2022 Valerio Setti <vsetti@baylibre.com>
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,16 +23,33 @@
 / {
 	chosen {
 		zephyr,flash-controller = &flash;
+		zephyr,cortex-m-idle-timer = &rtc;
 	};
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			cpu-power-states = <&stop>;
+		};
+
+		power-states {
+			stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* It is really hard to establish these numbers precisely.
+				 * We are basing on RTC as a wakeup source with 62,5us tick.
+				 * It requires a proper margin. Additionally, sys_clock_announce
+				 * works within system tick boundaries (100us by default),
+				 * which also introduces some shift.
+				 */
+				min-residency-us = <400>;
+				exit-latency-us = <300>;
+			};
 		};
 	};
 
@@ -84,7 +102,8 @@
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
-				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				compatible = "st,stm32f4-nv-flash", "st,stm32-nv-flash",
+					     "soc-nv-flash";
 
 				write-block-size = <1>;
 				/* maximum erase time (ms) for a 128K sector */
@@ -497,6 +516,8 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 
 			bbram: backup_regs {
@@ -581,6 +602,30 @@
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
 	};
 };
 

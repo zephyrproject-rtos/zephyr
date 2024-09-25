@@ -153,10 +153,10 @@ extern "C" {
 /** Message uses extended (29-bit) CAN ID */
 #define ISOTP_MSG_IDE BIT(2)
 
-/** Message uses CAN-FD format (FDF) */
+/** Message uses CAN FD format (FDF) */
 #define ISOTP_MSG_FDF BIT(3)
 
-/** Message uses CAN-FD Baud Rate Switch (BRS). Only valid in combination with ``ISOTP_MSG_FDF``. */
+/** Message uses CAN FD Baud Rate Switch (BRS). Only valid in combination with ``ISOTP_MSG_FDF``. */
 #define ISOTP_MSG_BRS BIT(4)
 
 /** @} */
@@ -182,7 +182,7 @@ struct isotp_msg_id {
 	/**
 	 * ISO-TP frame data length (TX_DL for TX address or RX_DL for RX address).
 	 *
-	 * Valid values are 8 for classical CAN or 8, 12, 16, 20, 24, 32, 48 and 64 for CAN-FD.
+	 * Valid values are 8 for classical CAN or 8, 12, 16, 20, 24, 32, 48 and 64 for CAN FD.
 	 *
 	 * 0 will be interpreted as 8 or 64 (if ISOTP_MSG_FDF is set).
 	 *

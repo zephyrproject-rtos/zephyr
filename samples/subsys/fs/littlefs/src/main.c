@@ -252,7 +252,7 @@ static int littlefs_flash_erase(unsigned int id)
 
 	/* Optional wipe flash contents */
 	if (IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
-		rc = flash_area_erase(pfa, 0, pfa->fa_size);
+		rc = flash_area_flatten(pfa, 0, pfa->fa_size);
 		LOG_ERR("Erasing flash area ... %d", rc);
 	}
 
@@ -312,7 +312,7 @@ static int littlefs_mount(struct fs_mount_t *mp)
 
 #if defined(CONFIG_DISK_DRIVER_SDMMC)
 #define DISK_NAME CONFIG_SDMMC_VOLUME_NAME
-#elif IS_ENABLED(CONFIG_DISK_DRIVER_MMC)
+#elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME CONFIG_MMC_VOLUME_NAME
 #else
 #error "No disk device defined, is your board supported?"

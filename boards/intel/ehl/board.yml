@@ -1,0 +1,7 @@
+board:
+  name: intel_ehl_crb
+  vendor: intel
+  socs:
+    - name: elkhart_lake
+      variants:
+        - name: 'sbl'

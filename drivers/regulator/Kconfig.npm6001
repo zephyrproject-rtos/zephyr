@@ -1,5 +1,5 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_NPM6001
 	bool "nPM6001 PMIC regulator driver"
@@ -12,7 +12,7 @@ config REGULATOR_NPM6001
 
 config REGULATOR_NPM6001_INIT_PRIORITY
 	int "nPM6001 regulator driver init priority"
-	default 76
+	default 86
 	depends on REGULATOR_NPM6001
 	help
 	  Init priority for the Nordic nPM6001 regulator driver.

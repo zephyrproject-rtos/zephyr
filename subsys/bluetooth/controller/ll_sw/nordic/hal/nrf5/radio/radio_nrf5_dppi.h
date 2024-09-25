@@ -5,6 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#define NRF_DPPIC NRF_DPPIC10
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
 	nrf_dppi_channels_enable(NRF_DPPIC, mask);
@@ -96,7 +100,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
  */
 static inline void hal_event_timer_start_ppi_config(void)
 {
-	nrf_rtc_publish_set(NRF_RTC0, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
+	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
 	nrf_timer_subscribe_set(EVENT_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
 }
 
@@ -113,6 +117,7 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 				NRF_TIMER_TASK_CAPTURE0, HAL_RADIO_READY_TIME_CAPTURE_PPI);
 }
 
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
 /*******************************************************************************
  * Trigger encryption task upon address reception:
  * wire the RADIO EVENTS_ADDRESS event to the CCM TASKS_CRYPT task.
@@ -134,6 +139,28 @@ static inline void hal_trigger_crypt_ppi_disable(void)
 {
 	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_CRYPT);
 }
+
+/*******************************************************************************
+ * Trigger automatic address resolution on Bit counter match:
+ * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
+ */
+static inline void hal_trigger_aar_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
+	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
+}
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED) && defined(CONFIG_HAS_HW_NRF_RADIO_BLE_CODED)
+/*******************************************************************************
+ * Trigger Radio Rate override upon Rateboost event.
+ */
+static inline void hal_trigger_rateoverride_ppi_config(void)
+{
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST, HAL_TRIGGER_RATEOVERRIDE_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_RATEOVERRIDE, HAL_TRIGGER_RATEOVERRIDE_PPI);
+}
+#endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 /*******************************************************************************
@@ -160,116 +187,6 @@ static inline void hal_trigger_crypt_by_bcmatch_ppi_config(void)
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_TRIGGER_CRYPT_DELAY_PPI);
 }
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RX */
-
-/*******************************************************************************
- * Trigger automatic address resolution on Bit counter match:
- * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
- */
-static inline void hal_trigger_aar_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
-	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
-}
-
-/*******************************************************************************
- * Trigger Radio Rate override upon Rateboost event.
- */
-static inline void hal_trigger_rateoverride_ppi_config(void)
-{
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_RATEBOOST, HAL_TRIGGER_RATEOVERRIDE_PPI);
-	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_RATEOVERRIDE, HAL_TRIGGER_RATEOVERRIDE_PPI);
-}
-
-/******************************************************************************/
-#if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
-static inline void hal_palna_ppi_setup(void)
-{
-	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE2,
-			      HAL_ENABLE_PALNA_PPI);
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
-			      HAL_DISABLE_PALNA_PPI);
-
-#if !defined(HAL_RADIO_FEM_IS_NRF21540)
-	nrf_gpiote_task_t task;
-
-	task = nrf_gpiote_out_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#endif
-}
-#endif /* defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN) */
-
-/******************************************************************************/
-#if defined(HAL_RADIO_FEM_IS_NRF21540)
-
-static inline void hal_pa_ppi_setup(void)
-{
-	nrf_gpiote_task_t task;
-
-#if defined(HAL_RADIO_GPIO_PA_POL_INV)
-	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
-	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#else /* !HAL_RADIO_GPIO_PA_POL_INV */
-	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
-	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#endif /* !HAL_RADIO_GPIO_PA_POL_INV */
-}
-
-static inline void hal_lna_ppi_setup(void)
-{
-	nrf_gpiote_task_t task;
-
-#if defined(HAL_RADIO_GPIO_LNA_POL_INV)
-	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
-	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#else /* !HAL_RADIO_GPIO_LNA_POL_INV */
-	task = nrf_gpiote_set_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
-	task = nrf_gpiote_clr_task_get(HAL_PALNA_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
-#endif /* !HAL_RADIO_GPIO_LNA_POL_INV */
-}
-
-static inline void hal_fem_ppi_setup(void)
-{
-	nrf_gpiote_task_t task;
-
-	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE3,
-			      HAL_ENABLE_FEM_PPI);
-	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
-			      HAL_DISABLE_FEM_PPI);
-
-#if defined(HAL_RADIO_GPIO_NRF21540_PDN_POL_INV)
-	task = nrf_gpiote_clr_task_get(HAL_PDN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
-	task = nrf_gpiote_set_task_get(HAL_PDN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#else /* !HAL_RADIO_GPIO_NRF21540_PDN_POL_INV */
-	task = nrf_gpiote_set_task_get(HAL_PDN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
-	task = nrf_gpiote_clr_task_get(HAL_PDN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#endif /* !HAL_RADIO_GPIO_NRF21540_PDN_POL_INV */
-
-#if defined(HAL_RADIO_GPIO_NRF21540_CSN_POL_INV)
-	task = nrf_gpiote_clr_task_get(HAL_CSN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
-	task = nrf_gpiote_set_task_get(HAL_CSN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#else /* !HAL_RADIO_GPIO_NRF21540_CSN_POL_INV */
-	task = nrf_gpiote_set_task_get(HAL_CSN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
-	task = nrf_gpiote_clr_task_get(HAL_CSN_GPIOTE_CHAN);
-	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
-#endif /* !HAL_RADIO_GPIO_NRF21540_CSN_POL_INV */
-}
-
-#endif /* HAL_RADIO_FEM_IS_NRF21540 */
 
 /******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
@@ -413,13 +330,6 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	& RADIO_PUBLISH_RATEBOOST_EN_Msk))
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(cc_reg) \
 	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK \
-	(((HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI << \
-		TIMER_SUBSCRIBE_CAPTURE_CHIDX_Pos) \
-		& TIMER_SUBSCRIBE_CAPTURE_CHIDX_Msk) | \
-	((TIMER_SUBSCRIBE_CAPTURE_EN_Enabled << \
-		TIMER_SUBSCRIBE_CAPTURE_EN_Pos) \
-		& TIMER_SUBSCRIBE_CAPTURE_EN_Msk))
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing PHYEND delay compensation
@@ -442,9 +352,6 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	  RADIO_PUBLISH_CTEPRESENT_CHIDX_Msk) | \
 	 ((RADIO_PUBLISH_CTEPRESENT_EN_Enabled << RADIO_PUBLISH_CTEPRESENT_EN_Pos) & \
 	  RADIO_PUBLISH_CTEPRESENT_EN_Msk))
-
-#define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(cc_reg) \
-	SW_SWITCH_TIMER->SUBSCRIBE_CAPTURE[cc_reg]
 
 #define HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK \
 	(((HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI \
@@ -606,9 +513,9 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 	 */
 	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_TASK(
-		SW_SWITCH_TIMER_EVTS_COMP(group_index)) =
-		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
+				nrf_timer_capture_task_get(SW_SWITCH_TIMER_EVTS_COMP(group_index)),
+				HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI);
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
 				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
@@ -731,9 +638,9 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
  * Radio peripheral. The EVENTS_CTEPRESENT event is wired to cancel EVENTS_COMPARE setup for
  * handling delayed EVENTS_PHYEND.
  *
- * Disable of the group of PPIs responsbile for handling of software based switch is done by
+ * Disable of the group of PPIs responsible for handling of software based switch is done by
  * timeout of regular EVENTS_PHYEND event. The EVENTS_PHYEND delay is short enough (16 us) that
- * the same EVENT COMPARE may be used to trigger disable task for the sotfware switch group.
+ * the same EVENT COMPARE may be used to trigger disable task for the software switch group.
  * In case the EVENTS_COMPARE for delayed EVENTS_PHYEND event timeouts, the group will be disabled
  * within the Radio TX rampup period.
  *
@@ -759,8 +666,9 @@ hal_radio_sw_switch_phyend_delay_compensation_config_set(uint8_t radio_enable_pp
 	/* Wire Radio CTEPRESENT event to cancel EVENTS_COMPARE[<cc_offs>] timer */
 	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_EVT;
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
-		HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_TASK;
+	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
+				nrf_timer_capture_task_get(phyend_delay_cc),
+				HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI);
 
 	/*  Enable CTEPRESENT event to disable EVENTS_COMPARE[<cc_offs>] PPI channel */
 	nrf_dppi_channels_enable(NRF_DPPIC,
@@ -787,8 +695,8 @@ hal_radio_sw_switch_phyend_delay_compensation_config_clear(uint8_t radio_enable_
 	 */
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(phyend_delay_cc) = NRF_PPI_NONE;
 
-	HAL_SW_SWITCH_TIMER_PHYEND_DELAY_COMPENSATION_DISABLE_PPI_REGISTER_TASK(phyend_delay_cc) =
-		NRF_PPI_NONE;
+	nrf_timer_subscribe_clear(SW_SWITCH_TIMER,
+				  nrf_timer_capture_task_get(phyend_delay_cc));
 
 	/* Disable CTEPRESENT event to disable EVENTS_COMPARE[<phyend_delay_cc_offs>] PPI channel */
 	nrf_dppi_channels_disable(NRF_DPPIC,

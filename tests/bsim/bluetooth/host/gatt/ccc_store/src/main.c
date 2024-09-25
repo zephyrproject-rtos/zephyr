@@ -30,17 +30,19 @@ extern enum bst_result_t bst_result;
 #define WAIT_TIME_S 60
 #define WAIT_TIME   (WAIT_TIME_S * 1e6)
 
-extern void run_peripheral(void);
-extern void run_central(void);
+static int n_times;
+
+extern void run_peripheral(int times);
+extern void run_central(int times);
 
 static void central_main(void)
 {
-	run_central();
+	run_central(n_times);
 }
 
 static void peripheral_main(void)
 {
-	run_peripheral();
+	run_peripheral(n_times);
 }
 
 void test_tick(bs_time_t HW_device_time)
@@ -52,6 +54,13 @@ void test_tick(bs_time_t HW_device_time)
 	}
 }
 
+static void test_args(int argc, char **argv)
+{
+	__ASSERT(argc == 1, "Please specify only 1 test argument\n");
+
+	n_times = atol(argv[0]);
+}
+
 static void test_ccc_store_init(void)
 {
 	bst_ticker_set_next_tick_absolute(WAIT_TIME);
@@ -61,16 +70,18 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "central",
 		.test_descr = "Central device",
-		.test_post_init_f = test_ccc_store_init,
+		.test_pre_init_f = test_ccc_store_init,
 		.test_tick_f = test_tick,
 		.test_main_f = central_main,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral device",
-		.test_post_init_f = test_ccc_store_init,
+		.test_pre_init_f = test_ccc_store_init,
 		.test_tick_f = test_tick,
 		.test_main_f = peripheral_main,
+		.test_args_f = test_args,
 	},
 	BSTEST_END_MARKER};
 

@@ -12,4 +12,4 @@
 #include "cmsis_core_a_r.h"
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_CMSIS_H_ */
+#endif /* ZEPHYR_MODULES_CMSIS_CMSIS_H_ */

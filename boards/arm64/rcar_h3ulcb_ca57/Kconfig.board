@@ -1,6 +1,0 @@
-# Copyright (c) 2023 EPAM Systems
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_RCAR_H3ULCB_CA57
-	bool "Renesas H3ULCB"
-	depends on SOC_ARM64_R8A77951

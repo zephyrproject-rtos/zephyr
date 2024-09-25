@@ -10,7 +10,7 @@
  *
  */
 .macro _save_dsp_regs
-#ifdef CONFIG_ARC_DSP_SHARING
+#ifdef CONFIG_DSP_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	bbit0 r13, K_DSP_IDX, dsp_skip_save
 	lr r13, [_ARC_V2_DSP_CTRL]
@@ -136,7 +136,7 @@ agu_skip_save :
 .endm
 
 .macro _load_dsp_regs
-#ifdef CONFIG_ARC_DSP_SHARING
+#ifdef CONFIG_DSP_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	bbit0 r13, K_DSP_IDX, dsp_skip_load
 	ld_s r13, [sp, ___callee_saved_stack_t_dsp_ctrl_OFFSET]

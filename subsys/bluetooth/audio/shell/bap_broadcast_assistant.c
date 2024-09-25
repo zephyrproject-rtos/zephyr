@@ -7,18 +7,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/kernel.h>
-#include <zephyr/types.h>
-#include <zephyr/shell/shell.h>
-#include <stdlib.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/types.h>
 
 #include "shell/bt.h"
 #include "../../host/hci_core.h"
@@ -26,43 +38,47 @@
 
 #define INVALID_BROADCAST_ID 0xFFFFFFFFU
 
-static struct bt_bap_base received_base;
+static uint8_t received_base[UINT8_MAX];
+static size_t received_base_size;
 
 static struct bt_auto_scan {
 	uint32_t broadcast_id;
+	char broadcast_name[BT_AUDIO_BROADCAST_NAME_LEN_MAX + 1];
 	bool pa_sync;
-	struct bt_bap_scan_delegator_subgroup subgroup;
+	struct bt_bap_bass_subgroup subgroup;
 } auto_scan = {
 	.broadcast_id = INVALID_BROADCAST_ID,
 };
 
+struct bt_scan_recv_info {
+	uint32_t broadcast_id;
+	char broadcast_name[BT_AUDIO_BROADCAST_NAME_LEN_MAX + 1];
+};
+
 static bool pa_decode_base(struct bt_data *data, void *user_data)
 {
-	struct bt_bap_base base = { 0 };
-	int err;
+	const struct bt_bap_base *base = bt_bap_base_get_base_from_ad(data);
+	int base_size;
 
-	if (data->type != BT_DATA_SVC_DATA16) {
+	/* Base is NULL if the data does not contain a valid BASE */
+	if (base == NULL) {
 		return true;
 	}
 
-	if (data->data_len < BT_BAP_BASE_MIN_SIZE) {
+	base_size = bt_bap_base_get_size(base);
+	if (base_size < 0) {
+		shell_error(ctx_shell, "BASE get size failed (%d)", base_size);
+
 		return true;
-	}
-
-	err = bt_bap_decode_base(data, &base);
-	if (err != 0 && err != -ENOMSG) {
-		shell_error(ctx_shell, "Failed to decode BASE: %d", err);
-
-		return false;
 	}
 
 	/* Compare BASE and print if different */
-	if (memcmp(&base, &received_base, sizeof(base)) != 0) {
-		(void)memcpy(&received_base, &base, sizeof(base));
+	if ((size_t)base_size != received_base_size ||
+	    memcmp(base, received_base, (size_t)base_size) != 0) {
+		(void)memcpy(received_base, base, base_size);
+		received_base_size = (size_t)base_size;
 
-#if BROADCAST_SNK_SUBGROUP_CNT > 0
-		print_base(ctx_shell, &received_base);
-#endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
+		print_base((const struct bt_bap_base *)received_base);
 	}
 
 	return false;
@@ -129,14 +145,15 @@ static void bap_broadcast_assistant_recv_state_cb(
 		bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
-	shell_print(
-		ctx_shell,
-		"BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s",
-		state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
-		is_bad_code ? ", bad code" : "", is_bad_code ? bad_code : "");
+	shell_print(ctx_shell,
+		    "BASS recv state: src_id %u, addr %s, sid %u, broadcast_id 0x%06X, sync_state "
+		    "%u, encrypt_state %u%s%s",
+		    state->src_id, le_addr, state->adv_sid, state->broadcast_id,
+		    state->pa_sync_state, state->encrypt_state, is_bad_code ? ", bad code" : "",
+		    is_bad_code ? bad_code : "");
 
 	for (int i = 0; i < state->num_subgroups; i++) {
-		const struct bt_bap_scan_delegator_subgroup *subgroup = &state->subgroups[i];
+		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
 		shell_print(ctx_shell, "\t[%d]: BIS sync 0x%04X, metadata_len %zu", i,
@@ -153,15 +170,16 @@ static void bap_broadcast_assistant_recv_state_cb(
 		struct bt_le_ext_adv *ext_adv = NULL;
 
 		/* Lookup matching PA sync */
-		for (int i = 0; i < ARRAY_SIZE(per_adv_syncs); i++) {
-			if (per_adv_syncs[i] &&
+		for (size_t i = 0U; i < ARRAY_SIZE(per_adv_syncs); i++) {
+			if (per_adv_syncs[i] != NULL &&
 			    bt_addr_le_eq(&per_adv_syncs[i]->addr, &state->addr)) {
 				per_adv_sync = per_adv_syncs[i];
+				shell_print(ctx_shell, "Found matching PA sync [%zu]", i);
 				break;
 			}
 		}
 
-		if (per_adv_sync) {
+		if (per_adv_sync && IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
 			shell_print(ctx_shell, "Sending PAST");
 
 			err = bt_le_per_adv_sync_transfer(per_adv_sync,
@@ -200,7 +218,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 			}
 		}
 
-		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV)) {
+		if (ext_adv != NULL && IS_ENABLED(CONFIG_BT_PER_ADV) &&
+		    IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)) {
 			shell_print(ctx_shell, "Sending local PAST");
 
 			err = bt_le_per_adv_set_info_transfer(ext_adv, conn,
@@ -218,16 +237,9 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 }
 
-static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn,
-							  int err,
-							  uint8_t src_id)
+static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	if (err != 0) {
-		shell_error(ctx_shell, "BASS recv state removed failed (%d)",
-			    err);
-	} else {
-		shell_print(ctx_shell, "BASS recv state %u removed", src_id);
-	}
+	shell_print(ctx_shell, "BASS recv state %u removed", src_id);
 }
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
@@ -298,32 +310,6 @@ static struct bt_bap_broadcast_assistant_cb cbs = {
 	.rem_src = bap_broadcast_assistant_rem_src_cb,
 };
 
-static int cmd_bap_broadcast_assistant_discover(const struct shell *sh,
-						size_t argc, char **argv)
-{
-	static bool registered;
-	int result;
-
-	if (!registered) {
-		static struct bt_le_per_adv_sync_cb cb = {
-			.recv = pa_recv,
-		};
-
-		bt_le_per_adv_sync_cb_register(&cb);
-
-		bt_bap_broadcast_assistant_register_cb(&cbs);
-
-		registered = true;
-	}
-
-	result = bt_bap_broadcast_assistant_discover(default_conn);
-	if (result) {
-		shell_print(sh, "Fail: %d", result);
-	}
-
-	return result;
-}
-
 static int cmd_bap_broadcast_assistant_scan_start(const struct shell *sh,
 						  size_t argc, char **argv)
 {
@@ -368,7 +354,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 					       size_t argc, char **argv)
 {
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 	unsigned long broadcast_id;
 	unsigned long adv_sid;
 	int result;
@@ -453,7 +439,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (bis_sync > UINT32_MAX) {
+		if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -493,70 +479,49 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 
 static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
-	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
-	const struct bt_le_scan_recv_info *info = user_data;
-	char addr_str[BT_ADDR_LE_STR_LEN];
+	struct bt_scan_recv_info *sr_info = (struct bt_scan_recv_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
-	uint32_t broadcast_id;
-	int err;
 
-	/* Verify that it is a BAP broadcaster*/
+	switch (data->type) {
+	case BT_DATA_SVC_DATA16:
+		if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
+			return true;
+		}
 
-	if (data->type != BT_DATA_SVC_DATA16) {
+		if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+			return true;
+		}
+
+		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
+			return true;
+		}
+
+		sr_info->broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+		return true;
+	case BT_DATA_BROADCAST_NAME:
+		if (!IN_RANGE(data->data_len, BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		    BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+			return true;
+		}
+
+		utf8_lcpy(sr_info->broadcast_name, data->data, (data->data_len) + 1);
+		return true;
+	default:
 		return true;
 	}
-
-	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
-		return true;
-	}
-
-	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
-		return true;
-	}
-
-	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
-		return true;
-	}
-
-	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-
-	if (broadcast_id != auto_scan.broadcast_id) {
-		/* Not the one we want */
-		return false;
-	}
-
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-	shell_print(ctx_shell, "Found BAP broadcast source with address %s and ID 0x%06X\n",
-		    addr_str, broadcast_id);
-
-	err = bt_le_scan_stop();
-	if (err) {
-		shell_error(ctx_shell, "Failed to stop scan: %d", err);
-	}
-
-	bt_addr_le_copy(&param.addr, info->addr);
-	param.adv_sid = info->sid;
-	param.pa_interval = info->interval;
-	param.broadcast_id = broadcast_id;
-	param.pa_sync = auto_scan.pa_sync;
-	param.num_subgroups = 1;
-	param.subgroups = &auto_scan.subgroup;
-
-	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
-	if (err) {
-		shell_print(ctx_shell, "Failed to add source: %d", err);
-	}
-
-	memset(&auto_scan, 0, sizeof(auto_scan));
-	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
-
-	return false;
 }
 
 static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 struct net_buf_simple *ad)
 {
-	if (auto_scan.broadcast_id == INVALID_BROADCAST_ID) {
+	struct bt_scan_recv_info sr_info = { 0 };
+	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
+	int err;
+
+	sr_info.broadcast_id = INVALID_BROADCAST_ID;
+
+	if ((auto_scan.broadcast_id == INVALID_BROADCAST_ID) &&
+	    (strlen(auto_scan.broadcast_name) == 0U)) {
 		/* no op */
 		return;
 	}
@@ -571,17 +536,62 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	bt_data_parse(ad, broadcast_source_found, (void *)info);
+	bt_data_parse(ad, broadcast_source_found, (void *)&sr_info);
+
+	/* Verify that it is a BAP broadcaster*/
+	if (sr_info.broadcast_id != INVALID_BROADCAST_ID) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+		bool identified_broadcast = false;
+
+		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+
+		if (sr_info.broadcast_id == auto_scan.broadcast_id) {
+			identified_broadcast = true;
+		}
+
+		if ((strlen(auto_scan.broadcast_name) != 0U) &&
+		    is_substring(auto_scan.broadcast_name, sr_info.broadcast_name)) {
+			identified_broadcast = true;
+
+			shell_print(ctx_shell, "Found matched broadcast name '%s' with address %s",
+				    sr_info.broadcast_name, addr_str);
+		}
+
+		if (identified_broadcast) {
+			shell_print(ctx_shell,
+				    "Found BAP broadcast source with address %s and ID 0x%06X\n",
+				    addr_str, sr_info.broadcast_id);
+
+			err = bt_le_scan_stop();
+			if (err) {
+				shell_error(ctx_shell, "Failed to stop scan: %d", err);
+			}
+
+			bt_addr_le_copy(&param.addr, info->addr);
+			param.adv_sid = info->sid;
+			param.pa_interval = info->interval;
+			param.broadcast_id = sr_info.broadcast_id;
+			param.pa_sync = auto_scan.pa_sync;
+			param.num_subgroups = 1;
+			param.subgroups = &auto_scan.subgroup;
+
+			err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
+			if (err) {
+				shell_print(ctx_shell, "Failed to add source: %d", err);
+			}
+
+			memset(&auto_scan, 0, sizeof(auto_scan));
+			auto_scan.broadcast_id = INVALID_BROADCAST_ID;
+		}
+	}
 }
 
 static void scan_timeout_cb(void)
 {
 	shell_print(ctx_shell, "Scan timeout");
 
-	if (auto_scan.broadcast_id != INVALID_BROADCAST_ID) {
-		memset(&auto_scan, 0, sizeof(auto_scan));
-		auto_scan.broadcast_id = INVALID_BROADCAST_ID;
-	}
+	memset(&auto_scan, 0, sizeof(auto_scan));
+	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
 }
 
 static struct bt_le_scan_cb scan_callbacks = {
@@ -589,20 +599,41 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.timeout = scan_timeout_cb,
 };
 
+static int cmd_bap_broadcast_assistant_discover(const struct shell *sh,
+						size_t argc, char **argv)
+{
+	static bool registered;
+	int result;
+
+	if (!registered) {
+		static struct bt_le_per_adv_sync_cb cb = {
+			.recv = pa_recv,
+		};
+
+		bt_le_per_adv_sync_cb_register(&cb);
+
+		bt_bap_broadcast_assistant_register_cb(&cbs);
+
+		bt_le_scan_cb_register(&scan_callbacks);
+
+		registered = true;
+	}
+
+	result = bt_bap_broadcast_assistant_discover(default_conn);
+	if (result) {
+		shell_print(sh, "Fail: %d", result);
+	}
+
+	return result;
+}
+
 static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 							size_t argc,
 							char **argv)
 {
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
-	static bool scan_cbs_registered;
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 	unsigned long broadcast_id;
-	unsigned long pa_sync;
 	int err = 0;
-
-	if (!scan_cbs_registered) {
-		bt_le_scan_cb_register(&scan_callbacks);
-		scan_cbs_registered = true;
-	}
 
 	if (auto_scan.broadcast_id != INVALID_BROADCAST_ID) {
 		shell_info(sh, "Already scanning, wait for sync or timeout");
@@ -621,13 +652,9 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	pa_sync = shell_strtoul(argv[2], 0, &err);
+	auto_scan.pa_sync = shell_strtobool(argv[2], 0, &err);
 	if (err != 0) {
-		shell_error(sh, "failed to parse pa_sync: %d", err);
-
-		return -ENOEXEC;
-	} else if (pa_sync != 0U && pa_sync != 1U) {
-		shell_error(sh, "pa_sync shall be boolean: %lu", pa_sync);
+		shell_error(sh, "Could not parse pa_sync: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -640,7 +667,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (bis_sync > UINT32_MAX) {
+		} else if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -669,7 +696,75 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 
 	/* Store results in the `auto_scan` struct */
 	auto_scan.broadcast_id = broadcast_id;
-	auto_scan.pa_sync = pa_sync;
+	memcpy(&auto_scan.subgroup, &subgroup, sizeof(subgroup));
+	memset(auto_scan.broadcast_name, 0, sizeof(auto_scan.broadcast_name));
+
+	return 0;
+}
+
+static int cmd_bap_broadcast_assistant_add_broadcast_name(const struct shell *sh,
+							  size_t argc, char **argv)
+{
+	struct bt_bap_bass_subgroup subgroup = { 0 };
+	char *broadcast_name;
+	int err = 0;
+
+	broadcast_name = argv[1];
+	if (!IN_RANGE(strlen(broadcast_name), BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+	    BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+
+		shell_error(sh, "Broadcast name should be minimum %d "
+			    "and maximum %d characters", BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+			    BT_AUDIO_BROADCAST_NAME_LEN_MAX);
+
+		return -ENOEXEC;
+	}
+
+	auto_scan.pa_sync = shell_strtobool(argv[2], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse pa_sync: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	/* TODO: Support multiple subgroups */
+	if (argc > 3) {
+		const unsigned long bis_sync = shell_strtoul(argv[3], 0, &err);
+
+		if (err != 0) {
+			shell_error(sh, "failed to parse bis_sync: %d", err);
+
+			return -ENOEXEC;
+		} else if (!VALID_BIS_SYNC(bis_sync)) {
+			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
+
+			return -ENOEXEC;
+		}
+
+		subgroup.bis_sync = bis_sync;
+	}
+
+	if (argc > 4) {
+		subgroup.metadata_len = hex2bin(argv[4], strlen(argv[4]), subgroup.metadata,
+						sizeof(subgroup.metadata));
+
+		if (subgroup.metadata_len == 0U) {
+			shell_error(sh, "Could not parse metadata");
+
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err) {
+		shell_print(sh, "Fail to start scanning: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	/* Store results in the `auto_scan` struct */
+	utf8_lcpy(auto_scan.broadcast_name, broadcast_name, strlen(broadcast_name) + 1);
+	auto_scan.broadcast_id = INVALID_BROADCAST_ID;
 	memcpy(&auto_scan.subgroup, &subgroup, sizeof(subgroup));
 
 	return 0;
@@ -679,7 +774,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 					       size_t argc, char **argv)
 {
 	struct bt_bap_broadcast_assistant_mod_src_param param = { 0 };
-	struct bt_bap_scan_delegator_subgroup subgroup = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
 	unsigned long src_id;
 	int result = 0;
 
@@ -705,24 +800,27 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	}
 
 	if (argc > 3) {
-		unsigned long pa_interval;
+		if (strcmp(argv[3], "unknown") == 0) {
+			param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
+		} else {
+			unsigned long pa_interval;
 
-		pa_interval = shell_strtoul(argv[3], 0, &result);
-		if (result) {
-			shell_error(sh, "Could not parse pa_interval: %d", result);
+			pa_interval = shell_strtoul(argv[3], 0, &result);
+			if (result) {
+				shell_error(sh, "Could not parse pa_interval: %d", result);
 
-			return -ENOEXEC;
+				return -ENOEXEC;
+			}
+
+			if (!IN_RANGE(pa_interval, BT_GAP_PER_ADV_MIN_INTERVAL,
+				      BT_GAP_PER_ADV_MAX_INTERVAL)) {
+				shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
+
+				return -ENOEXEC;
+			}
+
+			param.pa_interval = pa_interval;
 		}
-
-		if (!IN_RANGE(pa_interval,
-			      BT_GAP_PER_ADV_MIN_INTERVAL,
-			      BT_GAP_PER_ADV_MAX_INTERVAL)) {
-			shell_error(sh, "Invalid pa_interval: %lu", pa_interval);
-
-			return -ENOEXEC;
-		}
-
-		param.pa_interval = pa_interval;
 	} else {
 		param.pa_interval = BT_BAP_PA_INTERVAL_UNKNOWN;
 	}
@@ -738,7 +836,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (bis_sync > UINT32_MAX) {
+		if (!VALID_BIS_SYNC(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -776,16 +874,67 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 	return result;
 }
 
+static inline bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
+						    void *user_data)
+{
+	struct bt_bap_bass_subgroup *subgroup_param = user_data;
+
+	subgroup_param->bis_sync |= BIT(bis->index);
+
+	return true;
+}
+
+static inline bool add_pa_sync_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
+						void *user_data)
+{
+	struct bt_bap_broadcast_assistant_add_src_param *param = user_data;
+	struct bt_bap_bass_subgroup *subgroup_param;
+	uint8_t *data;
+	int ret;
+
+	if (param->num_subgroups == CONFIG_BT_BAP_BASS_MAX_SUBGROUPS) {
+		shell_warn(ctx_shell, "Cannot fit all subgroups param with size %d",
+			   CONFIG_BT_BAP_BASS_MAX_SUBGROUPS);
+
+		return true; /* return true to avoid returning -ECANCELED as this is OK */
+	}
+
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &data);
+	if (ret < 0) {
+		return false;
+	}
+
+	subgroup_param = &param->subgroups[param->num_subgroups];
+
+	if (ret > ARRAY_SIZE(subgroup_param->metadata)) {
+		shell_info(ctx_shell, "Cannot fit %d octets into subgroup param with size %zu", ret,
+			   ARRAY_SIZE(subgroup_param->metadata));
+		return false;
+	}
+
+	ret = bt_bap_base_subgroup_foreach_bis(subgroup, add_pa_sync_base_subgroup_bis_cb,
+					       subgroup_param);
+
+	if (ret < 0) {
+		return false;
+	}
+
+	param->num_subgroups++;
+
+	return true;
+}
+
 static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 						   size_t argc, char **argv)
 {
+	struct bt_bap_bass_subgroup subgroup_params[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS];
 	struct bt_bap_broadcast_assistant_add_src_param param = { 0 };
 	/* TODO: Add support to select which PA sync to BIG sync to */
 	struct bt_le_per_adv_sync *pa_sync = per_adv_syncs[0];
 	struct bt_le_per_adv_sync_info pa_info;
 	unsigned long broadcast_id;
-	unsigned long pa_sync_req;
 	uint32_t bis_bitfield_req;
+	uint32_t subgroups_bis_sync;
 	int err;
 
 	if (pa_sync == NULL) {
@@ -805,18 +954,14 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	param.adv_sid = pa_info.sid;
 	param.pa_interval = pa_info.interval;
 
-	pa_sync_req = shell_strtoul(argv[1], 0, &err);
-	if (err != 0) {
-		shell_error(sh, "failed to parse pa_sync: %d", err);
+	memset(&subgroup_params, 0, sizeof(subgroup_params));
 
-		return -ENOEXEC;
-	} else if (pa_sync_req != 0U && pa_sync_req != 1U) {
-		shell_error(sh, "pa_sync_req shall be boolean: %lu", pa_sync_req);
+	param.pa_sync = shell_strtobool(argv[1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse pa_sync: %d", err);
 
 		return -ENOEXEC;
 	}
-
-	param.pa_sync = (bool)pa_sync_req;
 
 	broadcast_id = shell_strtoul(argv[2], 0, &err);
 	if (err != 0) {
@@ -833,6 +978,7 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 	param.broadcast_id = broadcast_id;
 
 	bis_bitfield_req = 0U;
+	subgroups_bis_sync = 0U;
 	for (size_t i = 3U; i < argc; i++) {
 		const unsigned long index = shell_strtoul(argv[i], 16, &err);
 
@@ -852,45 +998,37 @@ static int cmd_bap_broadcast_assistant_add_pa_sync(const struct shell *sh,
 		bis_bitfield_req |= BIT(index);
 	}
 
-	/* The MIN is used to handle `array-bounds` error on some compilers */
-	param.num_subgroups = MIN(received_base.subgroup_count, BROADCAST_SNK_SUBGROUP_CNT);
-#if BROADCAST_SNK_SUBGROUP_CNT > 0
-	struct bt_bap_scan_delegator_subgroup subgroup_params[BROADCAST_SNK_SUBGROUP_CNT] = {0};
-
 	param.subgroups = subgroup_params;
-	for (size_t i = 0; i < param.num_subgroups; i++) {
-		struct bt_bap_scan_delegator_subgroup *subgroup_param = &subgroup_params[i];
-		const struct bt_bap_base_subgroup *subgroup = &received_base.subgroups[i];
-		uint32_t subgroup_bis_indexes = 0U;
-		ssize_t metadata_len;
-
-		for (size_t j = 0U; j < MIN(subgroup->bis_count, ARRAY_SIZE(subgroup->bis_data));
-		     j++) {
-			const struct bt_bap_base_bis_data *bis_data = &subgroup->bis_data[j];
-
-			subgroup_bis_indexes |= BIT(bis_data->index);
-		}
-
-		subgroup_param->bis_sync = subgroup_bis_indexes & bis_bitfield_req;
-
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
-		metadata_len = subgroup->codec_cfg.meta_len;
-		if (metadata_len > sizeof(subgroup_param->metadata)) {
-			shell_error(sh,
-				    "Could not set %zu octets of metadata for subgroup_param of "
-				    "size %zu",
-				    metadata_len, sizeof(subgroup_param->metadata));
+	if (received_base_size > 0) {
+		err = bt_bap_base_foreach_subgroup((const struct bt_bap_base *)received_base,
+						   add_pa_sync_base_subgroup_cb, &param);
+		if (err < 0) {
+			shell_error(ctx_shell, "Could not add BASE to params %d", err);
 
 			return -ENOEXEC;
 		}
-
-		memcpy(subgroup_param->metadata, subgroup->codec_cfg.meta, metadata_len);
-#else
-		metadata_len = 0U;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
-		subgroup_param->metadata_len = metadata_len;
 	}
-#endif /* BROADCAST_SNK_SUBGROUP_CNT > 0 */
+
+	/* use the BASE to verify the BIS indexes set by command */
+	for (size_t j = 0U; j < param.num_subgroups; j++) {
+		if (bis_bitfield_req == 0) {
+			/* Request a PA sync without BIS sync */
+			subgroup_params[j].bis_sync = 0;
+		} else {
+			subgroups_bis_sync |= subgroup_params[j].bis_sync;
+			/* only set the BIS index field as optional parameters */
+			/* not to whatever is in the BASE */
+			subgroup_params[j].bis_sync &= bis_bitfield_req;
+		}
+	}
+
+	if ((subgroups_bis_sync & bis_bitfield_req) != bis_bitfield_req) {
+		/* bis_sync of all subgroups should contain at least all the bits in request */
+		/* Otherwise Command will be rejected */
+		shell_error(ctx_shell, "Cannot set BIS index 0x%06X when BASE subgroups only "
+			    "supports %d", bis_bitfield_req, subgroups_bis_sync);
+		return -ENOEXEC;
+	}
 
 	err = bt_bap_broadcast_assistant_add_src(default_conn, &param);
 	if (err != 0) {
@@ -1030,16 +1168,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Add a source by broadcast ID <broadcast_id> <sync_pa> "
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_add_broadcast_id, 3, 2),
+	SHELL_CMD_ARG(add_broadcast_name, NULL,
+		      "Add a source by broadcast name <broadcast_name> <sync_pa> "
+		      "[<sync_bis>] [<metadata>]",
+		      cmd_bap_broadcast_assistant_add_broadcast_name, 3, 2),
 	SHELL_CMD_ARG(add_pa_sync, NULL,
 		      "Add a PA sync as a source <sync_pa> <broadcast_id> "
 		      "[bis_index [bis_index [bix_index [...]]]]>",
 		      cmd_bap_broadcast_assistant_add_pa_sync, 3, BT_ISO_MAX_GROUP_ISO_COUNT),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
+		      "Set sync <src_id> <sync_pa> [<pa_interval> | \"unknown\"] "
 		      "[<sync_bis>] [<metadata>]",
 		      cmd_bap_broadcast_assistant_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
-		      "Send a space separated broadcast code of up to 16 bytes "
+		      "Send a string-based broadcast code of up to 16 bytes "
 		      "<src_id> <broadcast code>",
 		      cmd_bap_broadcast_assistant_broadcast_code, 3, 0),
 	SHELL_CMD_ARG(rem_src, NULL, "Remove a source <src_id>",

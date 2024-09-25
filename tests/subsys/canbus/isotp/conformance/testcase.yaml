@@ -5,11 +5,11 @@
 # +--------+------------------------+----------------------+----------------+
 # |    1   | Classical CAN only     | CONFIG_CAN_FD_MODE=n | nucleo_f072    |
 # |    2   | Classical CAN only     | CONFIG_CAN_FD_MODE=y | nucleo_f072    |
-# |    3   | Classical CAN + CAN-FD | CONFIG_CAN_FD_MODE=n | native_posix   |
-# |    4   | Classical CAN + CAN-FD | CONFIG_CAN_FD_MODE=y | native_posix   |
+# |    3   | Classical CAN + CAN FD | CONFIG_CAN_FD_MODE=n | native_sim     |
+# |    4   | Classical CAN + CAN FD | CONFIG_CAN_FD_MODE=y | native_sim     |
 #
 # The test-specific CONFIG_TEST_USE_CAN_FD_MODE is used to decide if the test should use
-# CAN-FD independent of CONFIG_CAN_FD_MODE configuration.
+# CAN FD independent of CONFIG_CAN_FD_MODE configuration.
 #
 
 tests:

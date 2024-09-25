@@ -11,9 +11,9 @@ the head, tail or any internal node).  To do this, the list stores two
 pointers per node, and thus has somewhat higher runtime code and
 memory space needs.
 
-A :c:struct:`sys_dlist_t` struct may be instantiated by the user in any
+A :c:type:`sys_dlist_t` struct may be instantiated by the user in any
 accessible memory.  It must be initialized with :c:func:`sys_dlist_init`
-or :c:macro:`SYS_DLIST_STATIC_INIT` before use.  The :c:struct:`sys_dnode_t` struct
+or :c:macro:`SYS_DLIST_STATIC_INIT` before use.  The :c:type:`sys_dnode_t` struct
 is expected to be provided by the user for any nodes added to the
 list (typically embedded within the struct to be tracked, as described
 above).  It must be initialized in zeroed/bss memory or with
@@ -50,8 +50,8 @@ implementation that has zero overhead vs. the normal list processing).
 Double-linked List Internals
 ----------------------------
 
-Internally, the dlist implementation is minimal: the :c:struct:`sys_dlist_t`
-struct contains "head" and "tail" pointer fields, the :c:struct:`sys_dnode_t`
+Internally, the dlist implementation is minimal: the :c:type:`sys_dlist_t`
+struct contains "head" and "tail" pointer fields, the :c:type:`sys_dnode_t`
 contains "prev" and "next" pointers, and no other data is stored.  But
 in practice the two structs are internally identical, and the list
 struct is inserted as a node into the list itself.  This allows for a

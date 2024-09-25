@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2020 Peter Bigot Consulting, LLC
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,10 +22,10 @@
 LOG_MODULE_REGISTER(fs);
 
 /* list of mounted file systems */
-static sys_dlist_t fs_mnt_list;
+static sys_dlist_t fs_mnt_list = SYS_DLIST_STATIC_INIT(&fs_mnt_list);
 
 /* lock to protect mount list operations */
-static struct k_mutex mutex;
+static K_MUTEX_DEFINE(mutex);
 
 /* Maps an identifier used in mount points to the file system
  * implementation.
@@ -134,6 +134,7 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 {
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
+	bool truncate_file = false;
 
 	if ((file_name == NULL) ||
 			(strlen(file_name) <= 1) || (file_name[0] != '/')) {
@@ -160,6 +161,19 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		return -ENOTSUP;
 	}
 
+	if ((flags & FS_O_TRUNC) != 0) {
+		if ((flags & FS_O_WRITE) == 0) {
+			/** Truncate not allowed when file is not opened for write */
+			LOG_ERR("file should be opened for write to truncate!!");
+			return -EACCES;
+		}
+		CHECKIF(mp->fs->truncate == NULL) {
+			LOG_ERR("file truncation not supported!!");
+			return -ENOTSUP;
+		}
+		truncate_file = true;
+	}
+
 	zfp->mp = mp;
 	rc = mp->fs->open(zfp, file_name, flags);
 	if (rc < 0) {
@@ -170,6 +184,16 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 
 	/* Copy flags to zfp for use with other fs_ API calls */
 	zfp->flags = flags;
+
+	if (truncate_file) {
+		/* Truncate the opened file to 0 length */
+		rc = mp->fs->truncate(zfp, 0);
+		if (rc < 0) {
+			LOG_ERR("file truncation failed (%d)", rc);
+			zfp->mp = NULL;
+			return rc;
+		}
+	}
 
 	return rc;
 }
@@ -875,12 +899,3 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
 }
-
-static int fs_init(void)
-{
-	k_mutex_init(&mutex);
-	sys_dlist_init(&fs_mnt_list);
-	return 0;
-}
-
-SYS_INIT(fs_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

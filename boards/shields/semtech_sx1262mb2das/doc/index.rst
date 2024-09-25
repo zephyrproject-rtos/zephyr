@@ -47,7 +47,7 @@ for Arduino connectors (see :ref:`shields` for more details).
 Programming
 ***********
 
-Set ``-DSHIELD=semtech_sx1262mb2das`` when you invoke ``west build``. For
+Set ``--shield semtech_sx1262mb2das`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

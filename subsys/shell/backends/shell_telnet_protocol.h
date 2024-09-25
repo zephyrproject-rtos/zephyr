@@ -43,9 +43,9 @@
 #define NVT_CMD_GA			249
 #define NVT_CMD_SB			250
 #define NVT_CMD_WILL			251
-#define NVT_CMD_WONT			252
+#define NVT_CMD_WILL_NOT		252
 #define NVT_CMD_DO			253
-#define NVT_CMD_DONT			254
+#define NVT_CMD_DO_NOT			254
 #define NVT_CMD_IAC			255
 
 /* Telnet options */

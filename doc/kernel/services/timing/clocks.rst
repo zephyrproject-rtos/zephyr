@@ -98,7 +98,7 @@ For example:
 * The kernel :c:struct:`k_work_delayable` API provides a timeout parameter
   indicating when a work queue item will be added to the system queue.
 
-All these values are specified using a :c:struct:`k_timeout_t` value.  This is
+All these values are specified using a :c:type:`k_timeout_t` value.  This is
 an opaque struct type that must be initialized using one of a family
 of kernel timeout macros.  The most common, :c:macro:`K_MSEC`, defines
 a time in milliseconds after the current time.
@@ -123,7 +123,7 @@ described above: :c:macro:`K_NSEC()`, :c:macro:`K_USEC`, :c:macro:`K_TICKS` and
 :c:macro:`K_CYC()` specify timeout values that will expire after specified
 numbers of nanoseconds, microseconds, ticks and cycles, respectively.
 
-Precision of :c:struct:`k_timeout_t` values is configurable, with the default
+Precision of :c:type:`k_timeout_t` values is configurable, with the default
 being 32 bits.  Large uptime counts in non-tick units will experience
 complicated rollover semantics, so it is expected that
 timing-sensitive applications with long uptimes will be configured to
@@ -141,16 +141,16 @@ Timing Internals
 Timeout Queue
 -------------
 
-All Zephyr :c:struct:`k_timeout_t` events specified using the API above are
+All Zephyr :c:type:`k_timeout_t` events specified using the API above are
 managed in a single, global queue of events.  Each event is stored in
 a double-linked list, with an attendant delta count in ticks from the
 previous event.  The action to take on an event is specified as a
 callback function pointer provided by the subsystem requesting the
 event, along with a :c:struct:`_timeout` tracking struct that is
 expected to be embedded within subsystem-defined data structures (for
-example: a :c:struct:`wait_q` struct, or a :c:struct:`k_tid_t` thread struct).
+example: a :c:struct:`wait_q` struct, or a :c:type:`k_tid_t` thread struct).
 
-Note that all variant units passed via a :c:struct:`k_timeout_t` are converted
+Note that all variant units passed via a :c:type:`k_timeout_t` are converted
 to ticks once on insertion into the list.  There no
 multiple-conversion steps internal to the kernel, so precision is
 guaranteed at the tick level no matter how many events exist or how

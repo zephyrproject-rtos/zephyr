@@ -414,11 +414,13 @@ static int spi_gd32_transceive_impl(const struct device *dev,
 
 #ifdef CONFIG_SPI_GD32_DMA
 dma_error:
+	SPI_CTL1(cfg->reg) &=
+		~(SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
 #endif
 	spi_context_cs_control(&data->ctx, false);
 
 	SPI_CTL0(cfg->reg) &=
-		~(SPI_CTL0_SPIEN | SPI_CTL1_DMATEN | SPI_CTL1_DMAREN);
+		~(SPI_CTL0_SPIEN);
 
 error:
 	spi_context_release(&data->ctx, ret);
@@ -567,7 +569,7 @@ static int spi_gd32_release(const struct device *dev,
 	return 0;
 }
 
-static struct spi_driver_api spi_gd32_driver_api = {
+static const struct spi_driver_api spi_gd32_driver_api = {
 	.transceive = spi_gd32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_gd32_transceive_async,

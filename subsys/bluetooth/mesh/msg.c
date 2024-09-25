@@ -87,7 +87,7 @@ bool bt_mesh_msg_ack_ctx_match(const struct bt_mesh_msg_ack_ctx *ack,
 	return true;
 }
 
-int bt_mesh_msg_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_msg_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
 	if (!ctx && !model->pub) {
@@ -104,7 +104,7 @@ int bt_mesh_msg_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return bt_mesh_model_publish(model);
 }
 
-int bt_mesh_msg_ackd_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+int bt_mesh_msg_ackd_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf, const struct bt_mesh_msg_rsp_ctx *rsp)
 {
 	int err;

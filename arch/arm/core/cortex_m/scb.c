@@ -21,6 +21,7 @@
 #include <cmsis_core.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
+#include <zephyr/arch/cache.h>
 
 #if defined(CONFIG_CPU_HAS_NXP_MPU)
 #include <fsl_sysmpu.h>
@@ -120,15 +121,27 @@ void z_arm_init_arch_hw_at_boot(void)
 	 * reset it to a known clean state.
 	 */
 	if (SCB->CCR & SCB_CCR_DC_Msk) {
-		sys_cache_data_disable();
+		/*
+		 * Do not use sys_cache_data_disable at this point, but instead
+		 * the architecture specific function. This ensures that the
+		 * cache is disabled although CONFIG_CACHE_MANAGEMENT might be
+		 * disabled.
+		 */
+		SCB_DisableDCache();
 	} else {
-		sys_cache_data_invd_all();
+		SCB_InvalidateDCache();
 	}
 #endif /* CONFIG_DCACHE */
 
 #if defined(CONFIG_ICACHE)
-	/* Reset I-Cache settings. */
-	sys_cache_instr_disable();
+	/*
+	 * Reset I-Cache settings.
+	 * Do not use sys_cache_data_disable at this point, but instead
+	 * the architecture specific function. This ensures that the
+	 * cache is disabled although CONFIG_CACHE_MANAGEMENT might be
+	 * disabled.
+	 */
+	SCB_DisableICache();
 #endif /* CONFIG_ICACHE */
 #endif /* CONFIG_ARCH_CACHE */
 

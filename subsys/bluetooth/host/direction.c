@@ -1144,7 +1144,7 @@ static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_CTE_RX_PARAMS_SET)) {
-		LOG_ERR("Can't start CTE requres procedure before CTE RX params setup");
+		LOG_ERR("Can't start CTE request procedure before CTE RX params setup");
 		return -EINVAL;
 	}
 

@@ -9,15 +9,10 @@ include:
   - name: ethernet-controller.yaml
 
 properties:
-  phy-connection-type:
-    type: string
-    enum:
-      - "rmii"
-      - "mii"
-    default: "rmii"
-    description: |
-      Phy connection type define the physical interface connection between
-      PHY and MAC.  The default value uses Reduced Media-Independent
-      Interface (RMII) mode.
   phy-handle:
     required: true
+
+  ref-clk-output-gpios:
+    type: phandle-array
+    description: |
+      GPIO to output RMII Clock.

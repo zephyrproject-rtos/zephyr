@@ -67,8 +67,8 @@
 };
 
 &i2c_sda_p3_15_u1c1 {
-    /delete-property/ drive-open-drain;
-    bias-pull-up;
+	/delete-property/ drive-open-drain;
+	bias-pull-up;
 };
 
 &i2c_sda_dout0_p1_9_u1c1 {

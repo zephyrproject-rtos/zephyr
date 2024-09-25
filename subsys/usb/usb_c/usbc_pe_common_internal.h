@@ -370,7 +370,7 @@ bool policy_check(const struct device *dev, const enum usbc_policy_check_t pc);
  * @brief Notify the DPM of a policy change
  *
  * @param dev Pointer to the device structure for the driver instance
- * @param notify The notification to send the the DPM
+ * @param notify The notification to send the DPM
  */
 void policy_notify(const struct device *dev, const enum usbc_policy_notify_t notify);
 
@@ -574,7 +574,7 @@ bool pe_is_explicit_contract(const struct device *dev);
 void pe_invalidate_explicit_contract(const struct device *dev);
 
 /**
- * @brief Return true if the PE is is within an atomic messaging sequence
+ * @brief Return true if the PE is within an atomic messaging sequence
  *	  that it initiated with a SOP* port partner.
  *
  * @note The PRL layer polls this instead of using AMS_START and AMS_END

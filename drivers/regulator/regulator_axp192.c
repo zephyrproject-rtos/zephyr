@@ -84,9 +84,9 @@ static const struct linear_range dcdc2_ranges[] = {
 };
 
 static const struct regulator_axp192_desc dcdc2_desc = {
-	.enable_reg = AXP192_REG_DCDC123_LDO23_CONTROL,
-	.enable_mask = 0x10U,
-	.enable_val = 0x10U,
+	.enable_reg = AXP192_REG_EXTEN_DCDC2_CONTROL,
+	.enable_mask = 0x01U,
+	.enable_val = 0x01U,
 	.vsel_reg = AXP192_REG_DCDC2_VOLTAGE,
 	.vsel_mask = 0x3FU,
 	.vsel_bitpos = 0U,

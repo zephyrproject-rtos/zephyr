@@ -10,3 +10,12 @@ include: i2c-device.yaml
 properties:
   reg:
     required: true
+
+  vbusen-disable:
+    type: boolean
+    description: |
+      This option will disable VBUS power control via N_VBUSEN.
+      By default VBUS power supply is chosen via N_VBUSEN pin.
+      When disabled, VBUS can by chosen automatically by the pmic
+      and there is no need by the host to control N_VBUSEN pin.
+      Please refer to datasheet for details (pin state (REG10H[7] = 1).

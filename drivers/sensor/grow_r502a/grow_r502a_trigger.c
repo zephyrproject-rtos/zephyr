@@ -71,8 +71,13 @@ static void grow_r502a_gpio_callback(const struct device *dev,
 }
 
 #if defined(CONFIG_GROW_R502A_TRIGGER_OWN_THREAD)
-static void grow_r502a_thread(struct grow_r502a_data *drv_data)
+static void grow_r502a_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct grow_r502a_data *drv_data = p1;
+
 	while (true) {
 		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
 		process_int(drv_data->gpio_dev);
@@ -111,7 +116,7 @@ int grow_r502a_init_interrupt(const struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_GROW_R502A_THREAD_STACK_SIZE,
-			(k_thread_entry_t)grow_r502a_thread, drv_data, NULL,
+			grow_r502a_thread, drv_data, NULL,
 			NULL, K_PRIO_COOP(CONFIG_GROW_R502A_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 #elif defined(CONFIG_GROW_R502A_TRIGGER_GLOBAL_THREAD)

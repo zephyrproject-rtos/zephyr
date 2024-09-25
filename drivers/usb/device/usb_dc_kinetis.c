@@ -354,7 +354,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	(void)memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
 	(void)memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps * 2U, K_MSEC(10));
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps * 2U, K_NO_WAIT);
 	if (block->data != NULL) {
 		(void)memset(block->data, 0, cfg->ep_mps * 2U);
 	} else {

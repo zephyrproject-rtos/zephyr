@@ -80,7 +80,7 @@ static int dummy_sensor_init(const struct device *dev)
 	const struct device *i2c = device_get_binding(config->i2c_name);
 
 	/* Bus and address should be configured. */
-	zassert_equal(strcmp(config->i2c_name, "dummy I2C"), 0);
+	zassert_str_equal(config->i2c_name, "dummy I2C");
 	zassert_equal(config->i2c_address, 123);
 
 	if (i2c != NULL) {

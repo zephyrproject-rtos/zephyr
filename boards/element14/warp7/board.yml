@@ -1,0 +1,5 @@
+board:
+  name: warp7
+  vendor: element14
+  socs:
+    - name: mcimx7d

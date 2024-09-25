@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POSIX_MULTI_PROCESS
+	bool "POSIX multi-process support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Support for multi-processing.
+
+	  Note: Currently Zephyr does not support multiple processes and therefore much of this option
+	  group is not implemented and is considered undefined behaviour.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_MULTI_PROCESS
+
+# These options are intended to be used for compatibility with external POSIX
+# implementations such as those in Newlib or Picolibc.
+
+config POSIX_MULTI_PROCESS_ALIAS_GETPID
+	bool
+	default y
+	help
+	  Select 'y' here and Zephyr will provide an alias for getpid() as _getpid().
+
+endif # POSIX_MULTI_PROCESS

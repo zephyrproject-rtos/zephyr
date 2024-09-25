@@ -82,6 +82,10 @@ static struct bt_iso_big_create_param big_create_param = {
 	.framing = 0, /* 0 - unframed, 1 - framed */
 };
 
+static const struct bt_data ad[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	uint32_t timeout_counter = INITIAL_TIMEOUT_COUNTER;
@@ -101,10 +105,17 @@ int main(void)
 		return 0;
 	}
 
-	/* Create a non-connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL, &adv);
+	/* Create a non-connectable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
 	if (err) {
 		printk("Failed to create advertising set (err %d)\n", err);
+		return 0;
+	}
+
+	/* Set advertising data to have complete local name set */
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err) {
+		printk("Failed to set advertising data (err %d)\n", err);
 		return 0;
 	}
 
@@ -171,8 +182,7 @@ int main(void)
 			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 			sys_put_le32(iso_send_count, iso_data);
 			net_buf_add_mem(buf, iso_data, sizeof(iso_data));
-			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf,
-					       seq_num, BT_ISO_TIMESTAMP_NONE);
+			ret = bt_iso_chan_send(&bis_iso_chan[chan], buf, seq_num);
 			if (ret < 0) {
 				printk("Unable to broadcast data on channel %u"
 				       " : %d", chan, ret);

@@ -1,0 +1,21 @@
+# Copyright (c) 2021-2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ATM34
+	bool
+	select SOC_FAMILY_ATM
+
+config SOC_SERIES
+	default "ATM34" if SOC_SERIES_ATM34
+
+config SOC_ATM34XX_2
+	bool
+	select SOC_SERIES_ATM34
+
+config SOC_ATM34XX_5
+	bool
+	select SOC_SERIES_ATM34
+
+config SOC
+	default "ATM34xx" if (SOC_ATM34XX_2 || SOC_ATM34XX_5)

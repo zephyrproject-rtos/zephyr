@@ -14,6 +14,7 @@
 
 static bool         per_adv_found;
 static bt_addr_le_t per_addr;
+static uint32_t     per_adv_interval_ms;
 static uint8_t      per_sid;
 
 static K_SEM_DEFINE(sem_per_adv, 0, 1);
@@ -78,6 +79,10 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(buf, data_cb, name);
 
+	if (strlen(CONFIG_PER_ADV_NAME) > 0 && strcmp(name, CONFIG_PER_ADV_NAME) != 0) {
+		return;
+	}
+
 	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
@@ -93,6 +98,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	if (!per_adv_found && info->interval) {
 		per_adv_found = true;
+		per_adv_interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval);
 
 		per_sid = info->sid;
 		bt_addr_le_copy(&per_addr, info->addr);
@@ -229,7 +235,7 @@ int main(void)
 		sync_create_param.options = 0;
 		sync_create_param.sid = per_sid;
 		sync_create_param.skip = 0;
-		sync_create_param.timeout = 0xaa;
+		sync_create_param.timeout = per_adv_interval_ms * 10 / 10; /* 10 attempts */
 		err = bt_le_per_adv_sync_create(&sync_create_param, &sync);
 		if (err) {
 			printk("failed (err %d)\n", err);

@@ -18,22 +18,31 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_mesh_op_agg_cli);
 
+NET_BUF_SIMPLE_DEFINE_STATIC(srcs, BT_MESH_TX_SDU_MAX);
+NET_BUF_SIMPLE_DEFINE_STATIC(sdu, BT_MESH_TX_SDU_MAX);
+
 /** Mesh Opcodes Aggregator Client Model Context */
 static struct bt_mesh_op_agg_cli {
 	/** Composition data model entry pointer. */
-	struct bt_mesh_model *model;
-
-	/* Internal parameters for tracking message responses. */
+	const struct bt_mesh_model *model;
+	/** Acknowledge context. */
 	struct bt_mesh_msg_ack_ctx ack_ctx;
-} cli;
+	/** List of source element addresses.
+	 * Used by Client to match aggregated responses
+	 * with local source client models.
+	 */
+	struct net_buf_simple *srcs;
+	/** Aggregator context. */
+	struct op_agg_ctx ctx;
+
+} cli = {.srcs = &srcs, .ctx.sdu = &sdu};
 
 static int32_t msg_timeout;
 
-static int handle_status(struct bt_mesh_model *model,
+static int handle_status(const struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
 	struct net_buf_simple msg;
 	uint8_t status;
 	uint16_t elem_addr, addr;
@@ -57,17 +66,17 @@ static int handle_status(struct bt_mesh_model *model,
 		err = bt_mesh_op_agg_decode_msg(&msg, buf);
 		if (err) {
 			LOG_ERR("Cannot decode aggregated message %d", err);
-			bt_mesh_op_agg_ctx_reinit();
+			cli.ctx.initialized = true;
 			return -EINVAL;
 		}
 
-		if (agg->srcs->len < 2) {
+		if (cli.srcs->len < 2) {
 			LOG_ERR("Mismatch in sources address buffer");
-			bt_mesh_op_agg_ctx_reinit();
+			cli.ctx.initialized = true;
 			return -ENOENT;
 		}
 
-		addr = net_buf_simple_pull_le16(agg->srcs);
+		addr = net_buf_simple_pull_le16(cli.srcs);
 
 		/* Empty item means unacked msg. */
 		if (!msg.len) {
@@ -78,7 +87,7 @@ static int handle_status(struct bt_mesh_model *model,
 		err = bt_mesh_model_recv(ctx, &msg);
 		if (err) {
 			LOG_ERR("Opcodes Aggregator receive error %d", err);
-			bt_mesh_op_agg_ctx_reinit();
+			cli.ctx.initialized = true;
 			return err;
 		}
 	}
@@ -93,7 +102,7 @@ const struct bt_mesh_model_op _bt_mesh_op_agg_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int op_agg_cli_init(struct bt_mesh_model *model)
+static int op_agg_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Opcodes Aggregator Client only allowed in primary element");
@@ -115,56 +124,51 @@ static int op_agg_cli_init(struct bt_mesh_model *model)
 int bt_mesh_op_agg_cli_seq_start(uint16_t net_idx, uint16_t app_idx, uint16_t dst,
 				 uint16_t elem_addr)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
-
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		LOG_ERR("Element address shall be a unicast address");
 		return -EINVAL;
 	}
 
-	if (agg->initialized) {
+	if (cli.ctx.initialized) {
 		LOG_ERR("Opcodes Aggregator is already configured");
 		return -EALREADY;
 	}
 
-	agg->net_idx = net_idx;
-	agg->app_idx = app_idx;
-	agg->addr = dst;
-	agg->ack = false;
-	agg->rsp_err = 0;
-	agg->initialized = true;
+	cli.ctx.net_idx = net_idx;
+	cli.ctx.app_idx = app_idx;
+	cli.ctx.addr = dst;
+	cli.ctx.initialized = true;
 
-	net_buf_simple_init(agg->srcs, 0);
-	bt_mesh_model_msg_init(agg->sdu, OP_OPCODES_AGGREGATOR_SEQUENCE);
-	net_buf_simple_add_le16(agg->sdu, elem_addr);
+	net_buf_simple_init(cli.srcs, 0);
+	bt_mesh_model_msg_init(cli.ctx.sdu, OP_OPCODES_AGGREGATOR_SEQUENCE);
+	net_buf_simple_add_le16(cli.ctx.sdu, elem_addr);
 
 	return 0;
 }
 
 int bt_mesh_op_agg_cli_seq_send(void)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = agg->net_idx,
-		.app_idx = agg->app_idx,
-		.addr = agg->addr,
+		.net_idx = cli.ctx.net_idx,
+		.app_idx = cli.ctx.app_idx,
+		.addr = cli.ctx.addr,
 	};
 	int err;
 
-	if (!agg->initialized) {
+	if (!cli.ctx.initialized) {
 		LOG_ERR("Opcodes Aggregator not initialized");
 		return -EINVAL;
 	}
 
-	err = bt_mesh_msg_ack_ctx_prepare(&cli.ack_ctx, OP_OPCODES_AGGREGATOR_STATUS, agg->addr,
-					  NULL);
+	err = bt_mesh_msg_ack_ctx_prepare(&cli.ack_ctx, OP_OPCODES_AGGREGATOR_STATUS,
+					  cli.ctx.addr, NULL);
 	if (err) {
 		return err;
 	}
 
-	agg->initialized = false;
+	cli.ctx.initialized = false;
 
-	err = bt_mesh_model_send(cli.model, &ctx, agg->sdu, NULL, NULL);
+	err = bt_mesh_model_send(cli.model, &ctx, cli.ctx.sdu, NULL, NULL);
 	if (err) {
 		LOG_ERR("model_send() failed (err %d)", err);
 		bt_mesh_msg_ack_ctx_clear(&cli.ack_ctx);
@@ -176,23 +180,17 @@ int bt_mesh_op_agg_cli_seq_send(void)
 
 void bt_mesh_op_agg_cli_seq_abort(void)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
-
-	agg->initialized = false;
+	cli.ctx.initialized = false;
 }
 
 bool bt_mesh_op_agg_cli_seq_is_started(void)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
-
-	return agg->initialized;
+	return cli.ctx.initialized;
 }
 
 size_t bt_mesh_op_agg_cli_seq_tailroom(void)
 {
-	struct op_agg_ctx *agg = bt_mesh_op_agg_ctx_get();
-
-	return net_buf_simple_tailroom(agg->sdu);
+	return net_buf_simple_tailroom(cli.ctx.sdu);
 }
 
 int32_t bt_mesh_op_agg_cli_timeout_get(void)
@@ -203,6 +201,26 @@ int32_t bt_mesh_op_agg_cli_timeout_get(void)
 void bt_mesh_op_agg_cli_timeout_set(int32_t timeout)
 {
 	msg_timeout = timeout;
+}
+
+int bt_mesh_op_agg_cli_send(const struct bt_mesh_model *model, struct net_buf_simple *msg)
+{
+	uint16_t src = bt_mesh_model_elem(model)->rt->addr;
+
+	if (net_buf_simple_tailroom(&srcs) < 2) {
+		return -ENOMEM;
+	}
+
+	net_buf_simple_add_le16(&srcs, src);
+	return bt_mesh_op_agg_encode_msg(msg, cli.ctx.sdu);
+}
+
+int bt_mesh_op_agg_cli_accept(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+{
+
+	return cli.ctx.initialized && (ctx->net_idx == cli.ctx.net_idx) &&
+	       (ctx->addr == cli.ctx.addr) && (ctx->app_idx == cli.ctx.app_idx) &&
+	       !bt_mesh_op_agg_is_op_agg_msg(buf);
 }
 
 const struct bt_mesh_model_cb _bt_mesh_op_agg_cli_cb = {

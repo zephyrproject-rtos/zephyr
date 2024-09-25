@@ -25,10 +25,20 @@ struct sbs_charger_emul_cfg {
 	uint16_t addr;
 };
 
+/** Run-time data used by the emulator */
+struct sbs_charger_emul_data {
+	uint16_t reg_charger_mode;
+};
+
 static int emul_sbs_charger_reg_write(const struct emul *target, int reg, int val)
 {
+	struct sbs_charger_emul_data *data = target->data;
+
 	LOG_INF("write %x = %x", reg, val);
 	switch (reg) {
+	case SBS_CHARGER_REG_CHARGER_MODE:
+		data->reg_charger_mode = val;
+		break;
 	default:
 		LOG_ERR("Unknown write %x", reg);
 		return -EIO;
@@ -132,10 +142,12 @@ static int emul_sbs_sbs_charger_init(const struct emul *target, const struct dev
  * Main instantiation macro. SBS Charger Emulator only implemented for I2C
  */
 #define SBS_CHARGER_EMUL(n)                                                                        \
+	static struct sbs_charger_emul_data sbs_charger_emul_data_##n;                             \
+                                                                                                   \
 	static const struct sbs_charger_emul_cfg sbs_charger_emul_cfg_##n = {                      \
 		.addr = DT_INST_REG_ADDR(n),                                                       \
 	};                                                                                         \
-	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_charger_init, NULL, &sbs_charger_emul_cfg_##n,         \
-			    &sbs_charger_emul_api_i2c, NULL)
+	EMUL_DT_INST_DEFINE(n, emul_sbs_sbs_charger_init, &sbs_charger_emul_data_##n,              \
+			    &sbs_charger_emul_cfg_##n, &sbs_charger_emul_api_i2c, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(SBS_CHARGER_EMUL)

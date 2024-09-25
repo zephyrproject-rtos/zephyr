@@ -97,7 +97,7 @@ ZTEST(fs_mgmt_hash_supported, test_supported)
 
 	/* Search expected type array for this type and update details */
 	zcbor_new_decode_state(state, 10, &nb->data[sizeof(struct smp_hdr)],
-			       (nb->len - sizeof(struct smp_hdr)), 1);
+			       (nb->len - sizeof(struct smp_hdr)), 1, NULL, 0);
 
 	ok = zcbor_map_start_decode(state);
 

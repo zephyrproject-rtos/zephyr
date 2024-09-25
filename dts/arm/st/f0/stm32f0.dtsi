@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,7 +27,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m0";
 			reg = <0>;
@@ -210,6 +211,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			interrupts = <2 0>;
 			prescaler = <32768>;
+			alarms-count = <1>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
@@ -362,6 +365,14 @@
 		vrefint-cal-addr = <0x1FFFF7BA>;
 		vrefint-cal-mv = <3300>;
 		io-channels = <&adc1 17>;
+		status = "disabled";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
 		status = "disabled";
 	};
 };

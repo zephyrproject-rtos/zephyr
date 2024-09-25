@@ -42,7 +42,7 @@ uint8_t bt_mesh_va_del(const uint8_t *uuid);
  */
 const struct bt_mesh_va *bt_mesh_va_find(const uint8_t *uuid);
 
-/** @brief Check if there are more than one Label UUID which hash has the specificed virtual
+/** @brief Check if there are more than one Label UUID which hash has the specified virtual
  * address.
  *
  * @param addr Virtual address to check

@@ -1,0 +1,7 @@
+# NINA-B4 EVK board configuration
+#
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UBX_EVKNINAB4
+	select SOC_NRF52833_QIAA

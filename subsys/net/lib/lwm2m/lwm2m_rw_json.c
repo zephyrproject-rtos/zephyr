@@ -123,7 +123,7 @@ struct json_obj_struct {
 	bool val_bool;
 };
 
-/* Decode description structure for parsing LwM2m JSON Arrary object*/
+/* Decode description structure for parsing LwM2m JSON Array object*/
 static const struct json_obj_descr json_obj_descr[] = {
 	JSON_OBJ_DESCR_PRIM_NAMED(struct json_obj_struct, "n",
 				  name, JSON_TOK_STRING),

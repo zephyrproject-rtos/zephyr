@@ -21,3 +21,12 @@ properties:
     type: boolean
     description: |
       Optional feature flag - Enables full duplex reception and transmission.
+
+  hw-rx-filter:
+    type: int
+    description: |
+      Byte value written to the device's
+      ERXFCON: ETHERNET RECEIVE FILTER CONTROL REGISTER
+      Sets the devices receive packet filter, optional
+      If not set in device tree `0xA3` is used, uni, multi and broadcast
+      packets with valid CRC are accepted.

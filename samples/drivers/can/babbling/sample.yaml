@@ -6,7 +6,7 @@ tests:
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus")
     integration_platforms:
-      - native_posix
+      - native_sim
     harness: console
     harness_config:
       type: one_line

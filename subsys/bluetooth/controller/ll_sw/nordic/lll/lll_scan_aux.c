@@ -227,7 +227,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 	LL_ASSERT(node_rx);
 
 	/* Store the lll context, aux_ptr and start of PDU in footer */
-	ftr = &(node_rx->hdr.rx_ftr);
+	ftr = &(node_rx->rx_ftr);
 	ftr->param = param;
 	ftr->aux_ptr = aux_ptr;
 	ftr->radio_end_us = radio_tmr_end_get() -
@@ -258,7 +258,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	lll_isr_status_reset();
 
 	node_rx = param;
-	ftr = &node_rx->hdr.rx_ftr;
+	ftr = &node_rx->rx_ftr;
 	aux_ptr = ftr->aux_ptr;
 	phy_aux = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	ftr->aux_phy = phy_aux;
@@ -632,6 +632,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct event_done_extra *e;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
@@ -650,6 +651,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
+
+	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
+	LL_ASSERT(e);
 
 	lll_done(param);
 }
@@ -679,8 +683,8 @@ static void isr_done(void *param)
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->hdr.rx_ftr.param = lll;
-		node_rx->hdr.rx_ftr.aux_failed = 1U;
+		node_rx->rx_ftr.param = lll;
+		node_rx->rx_ftr.aux_failed = 1U;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 
@@ -712,8 +716,8 @@ static void isr_rx_lll_schedule(void *param)
 	uint8_t phy_aux;
 
 	node_rx = param;
-	lll = node_rx->hdr.rx_ftr.param;
-	phy_aux = node_rx->hdr.rx_ftr.aux_phy; /* PHY remembered in node rx */
+	lll = node_rx->rx_ftr.param;
+	phy_aux = node_rx->rx_ftr.aux_phy; /* PHY remembered in node rx */
 
 	/* scan context has used LLL scheduling for aux reception */
 	if (lll->is_aux_sched) {
@@ -862,7 +866,7 @@ isr_rx_do_close:
 			 * under race, if ULL execution did assign one, it will
 			 * free it.
 			 */
-			node_rx2->hdr.rx_ftr.param = lll;
+			node_rx2->rx_ftr.param = lll;
 
 			ull_rx_put_sched(node_rx2->hdr.link, node_rx2);
 		}
@@ -1057,7 +1061,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		pdu = (void *)rx->pdu;
 		pdu->chan_sel = 1;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = conn_space_us;
@@ -1173,7 +1177,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
-		ftr = &(node_rx->hdr.rx_ftr);
+		ftr = &(node_rx->rx_ftr);
 		if (lll_aux) {
 			ftr->param = lll_aux;
 			radio_isr_set(isr_tx_scan_req_ull_schedule,
@@ -1227,7 +1231,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 					   &dir_report)) {
 #endif /* !CONFIG_BT_CENTRAL */
 
-		ftr = &(node_rx->hdr.rx_ftr);
+		ftr = &(node_rx->rx_ftr);
 		if (lll_aux) {
 			ftr->param = lll_aux;
 			ftr->scan_rsp = lll_aux->state;
@@ -1346,9 +1350,10 @@ static void isr_tx(struct lll_scan_aux *lll_aux, void *pdu_rx,
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
-	       (EVENT_CLOCK_JITTER_US << 1U) + RANGE_DELAY_US + 1U;
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 	hcto += radio_rx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll_aux->phy);
 	hcto -= radio_tx_chain_delay_get(lll_aux->phy, PHY_FLAGS_S8);
@@ -1404,7 +1409,7 @@ static void isr_tx_scan_req_lll_schedule(void *param)
 	struct node_rx_pdu *node_rx;
 	struct lll_scan *lll;
 
-	lll = node_rx_adv->hdr.rx_ftr.param;
+	lll = node_rx_adv->rx_ftr.param;
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
 	LL_ASSERT(node_rx);
@@ -1426,6 +1431,7 @@ static void isr_tx_connect_req(void *param)
 static void isr_rx_connect_rsp(void *param)
 {
 	struct lll_scan_aux *lll_aux;
+	uint8_t phy_aux_flags_rx;
 	struct pdu_adv *pdu_rx;
 	struct node_rx_pdu *rx;
 	struct lll_scan *lll;
@@ -1450,8 +1456,9 @@ static void isr_rx_connect_rsp(void *param)
 			irkmatch_ok = 0U;
 			irkmatch_id = FILTER_IDX_NONE;
 		}
+		phy_aux_flags_rx = radio_phy_flags_rx_get();
 	} else {
-		crc_ok = irkmatch_ok = 0U;
+		crc_ok = irkmatch_ok = phy_aux_flags_rx = 0U;
 		irkmatch_id = FILTER_IDX_NONE;
 	}
 
@@ -1503,7 +1510,7 @@ static void isr_rx_connect_rsp(void *param)
 		/* Dont stop initiating events on primary channels */
 		lll->is_stop = 0U;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 		ull_rx_put(rx->hdr.link, rx);
@@ -1530,6 +1537,7 @@ static void isr_rx_connect_rsp(void *param)
 
 	conn_lll->phy_tx = lll_aux->phy;
 	conn_lll->phy_tx_time = lll_aux->phy;
+	conn_lll->phy_flags = phy_aux_flags_rx;
 	conn_lll->phy_rx = lll_aux->phy;
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -1543,7 +1551,7 @@ static void isr_rx_connect_rsp(void *param)
 		(void)memcpy(pdu->connect_ind.adv_addr,
 			     &pdu_rx->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
 			     BDADDR_SIZE);
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 		ftr->rl_idx = rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -1564,7 +1572,7 @@ isr_rx_connect_rsp_do_close:
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_RELEASE;
 
-		node_rx->hdr.rx_ftr.param = lll->lll_aux;
+		node_rx->rx_ftr.param = lll->lll_aux;
 
 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 

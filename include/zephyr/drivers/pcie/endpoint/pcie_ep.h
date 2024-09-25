@@ -56,7 +56,7 @@ enum pcie_reset {
 
 typedef void (*pcie_ep_reset_callback_t)(void *arg);
 
-struct pcie_ep_driver_api {
+__subsystem struct pcie_ep_driver_api {
 	int (*conf_read)(const struct device *dev, uint32_t offset,
 			 uint32_t *data);
 	void (*conf_write)(const struct device *dev, uint32_t offset,
@@ -133,7 +133,7 @@ static inline void pcie_ep_conf_write(const struct device *dev,
  *		      lowmem outbound region
  *
  * @return Mapped size : If mapped size is less than requested size,
- *	   then requestor has to call the same API again to map
+ *	   then requester has to call the same API again to map
  *	   the unmapped host buffer after data transfer is done with
  *	   mapped size. This situation may arise because of the
  *	   mapping alignment requirements.

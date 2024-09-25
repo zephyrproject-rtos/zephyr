@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-cdc-acm-composite
    :name: USB CDC-ACM composite
-   :relevant-api: usbd_api
+   :relevant-api: _usb_device_core_api
 
    Implement a composite USB device exposing two serial ports using USB CDC-ACM driver.
 

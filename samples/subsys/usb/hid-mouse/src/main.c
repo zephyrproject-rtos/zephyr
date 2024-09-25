@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sample_usbd.h>
+
 #include <string.h>
 
 #include <zephyr/kernel.h>
@@ -14,6 +16,7 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/usbd.h>
 #include <zephyr/usb/class/usb_hid.h>
 
 #include <zephyr/logging/log.h>
@@ -34,10 +37,10 @@ enum mouse_report_idx {
 	MOUSE_REPORT_COUNT = 4,
 };
 
-static uint8_t report[MOUSE_REPORT_COUNT];
-static K_SEM_DEFINE(report_sem, 0, 1);
+K_MSGQ_DEFINE(mouse_msgq, MOUSE_REPORT_COUNT, 2, 1);
+static K_SEM_DEFINE(ep_write_sem, 0, 1);
 
-static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
+static inline void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	usb_status = status;
 }
@@ -54,9 +57,7 @@ static ALWAYS_INLINE void rwup_if_suspended(void)
 
 static void input_cb(struct input_event *evt)
 {
-	uint8_t tmp[MOUSE_REPORT_COUNT];
-
-	(void)memcpy(tmp, report, sizeof(tmp));
+	static uint8_t tmp[MOUSE_REPORT_COUNT];
 
 	switch (evt->code) {
 	case INPUT_KEY_0:
@@ -85,13 +86,50 @@ static void input_cb(struct input_event *evt)
 		return;
 	}
 
-	if (memcmp(tmp, report, sizeof(tmp))) {
-		memcpy(report, tmp, sizeof(report));
-		k_sem_give(&report_sem);
+	if (k_msgq_put(&mouse_msgq, tmp, K_NO_WAIT) != 0) {
+		LOG_ERR("Failed to put new input event");
 	}
+
+	tmp[MOUSE_X_REPORT_IDX] = 0U;
+	tmp[MOUSE_Y_REPORT_IDX] = 0U;
+
 }
 
 INPUT_CALLBACK_DEFINE(NULL, input_cb);
+
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+static int enable_usb_device_next(void)
+{
+	struct usbd_context *sample_usbd;
+	int err;
+
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		LOG_ERR("Failed to initialize USB device");
+		return -ENODEV;
+	}
+
+	err = usbd_enable(sample_usbd);
+	if (err) {
+		LOG_ERR("Failed to enable device support");
+		return err;
+	}
+
+	LOG_DBG("USB device support enabled");
+
+	return 0;
+}
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
+
+static void int_in_ready_cb(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	k_sem_give(&ep_write_sem);
+}
+
+static const struct hid_ops ops = {
+	.int_in_ready = int_in_ready_cb,
+};
 
 int main(void)
 {
@@ -103,7 +141,11 @@ int main(void)
 		return 0;
 	}
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	hid_dev = DEVICE_DT_GET_ONE(zephyr_hid_device);
+#else
 	hid_dev = device_get_binding("HID_0");
+#endif
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return 0;
@@ -117,30 +159,32 @@ int main(void)
 
 	usb_hid_register_device(hid_dev,
 				hid_report_desc, sizeof(hid_report_desc),
-				NULL);
+				&ops);
 
 	usb_hid_init(hid_dev);
 
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
+	ret = enable_usb_device_next();
+#else
 	ret = usb_enable(status_cb);
+#endif
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
 		return 0;
 	}
 
 	while (true) {
-		k_sem_take(&report_sem, K_FOREVER);
+		uint8_t __aligned(sizeof(void *)) report[MOUSE_REPORT_COUNT];
+
+		k_msgq_get(&mouse_msgq, &report, K_FOREVER);
 
 		ret = hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
-		report[MOUSE_X_REPORT_IDX] = 0U;
-		report[MOUSE_Y_REPORT_IDX] = 0U;
 		if (ret) {
 			LOG_ERR("HID write error, %d", ret);
-		}
-
-		/* Toggle LED on sent report */
-		ret = gpio_pin_toggle(led0.port, led0.pin);
-		if (ret < 0) {
-			LOG_ERR("Failed to toggle the LED pin, error: %d", ret);
+		} else {
+			k_sem_take(&ep_write_sem, K_FOREVER);
+			/* Toggle LED on sent report */
+			(void)gpio_pin_toggle(led0.port, led0.pin);
 		}
 	}
 	return 0;

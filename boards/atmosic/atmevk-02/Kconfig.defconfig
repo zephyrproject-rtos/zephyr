@@ -1,0 +1,37 @@
+# Copyright (c) 2021-2023 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ATMX2XX_X1X
+
+if BT
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config BT_AUTO_PHY_UPDATE
+	default n
+	# To avoid procedure collision.
+
+endif # BT
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+if BATTERY_UPD
+
+choice BATTERY_TYPE
+	prompt "Battery type"
+	default BATTERY_TYPE_COIN
+
+config BATTERY_TYPE_COIN
+	bool "Battery is coin"
+endchoice
+
+endif # BATTERY_UPD
+
+endif # SOC_ATMX2XX_X1X

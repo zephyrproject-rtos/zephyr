@@ -3,8 +3,10 @@
 
 config GROVE_LCD_RGB
 	bool "Seeed Grove LCD RGB Backlight"
+	default y
+	depends on DT_HAS_SEEED_GROVE_LCD_RGB_ENABLED
 	help
-	  Setting this value will enable driver support for the Groove-LCD RGB
+	  Setting this value will enable driver support for the Grove-LCD RGB
 	  Backlight.
 
 if GROVE_LCD_RGB

@@ -32,11 +32,26 @@ zephyr_library_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_library_sources_ifdef(CONFIG_VEXRISCV_LITEX_IRQ      intc_vexriscv_litex.c)
 zephyr_library_sources_ifdef(CONFIG_VIM                     intc_vim.c)
 zephyr_library_sources_ifdef(CONFIG_NUCLEI_ECLIC            intc_nuclei_eclic.c)
+zephyr_library_sources_ifdef(CONFIG_NUCLEI_ECLIC            intc_nuclei_eclic.S)
+zephyr_library_sources_ifdef(CONFIG_NRFX_CLIC               intc_nrfx_clic.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_CLIC               intc_nrfx_clic.S)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_EIRQ            intc_eirq_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_S32_WKPU            intc_wkpu_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_XMC4XXX_INTC            intc_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_PINT                intc_nxp_pint.c)
+zephyr_library_sources_ifdef(CONFIG_RENESAS_RA_ICU          intc_renesas_ra_icu.c)
+zephyr_library_sources_ifdef(CONFIG_NXP_IRQSTEER            intc_nxp_irqsteer.c)
+zephyr_library_sources_ifdef(CONFIG_INTC_MTK_ADSP           intc_mtk_adsp.c)
 
 if(CONFIG_INTEL_VTD_ICTL)
   zephyr_library_include_directories(${ZEPHYR_BASE}/arch/x86/include)
 endif()
+
+if(CONFIG_PLIC_SHELL)
+  message(WARNING "
+      WARNING:  `CONFIG_PLIC_SHELL` is enabled.
+      This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t))"
+  )
+endif()
+
+zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)

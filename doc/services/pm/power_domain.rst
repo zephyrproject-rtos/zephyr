@@ -178,3 +178,11 @@ They can safely be ignored though.
 
    It is responsibility of driver or the application to set the domain as
    "wakeup" source if a device depending on it is used as "wakeup" source.
+
+Examples
+********
+
+Some helpful examples showing power domain features:
+
+* :zephyr_file:`tests/subsys/pm/device_power_domains/`
+* :zephyr_file:`tests/subsys/pm/power_domain/`

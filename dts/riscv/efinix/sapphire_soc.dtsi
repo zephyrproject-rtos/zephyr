@@ -27,12 +27,11 @@
 		#size-cells = <0>;
 		cpu@0 {
 			clock-frequency = <100000000>;
-			compatible = "riscv";
+			compatible = "efinix,vexriscv-sapphire", "riscv";
 			device_type = "cpu";
 			reg = <0>;
 			riscv,isa = "rv32ima_zicsr_zifencei";
 			status = "okay";
-			timebase-frequency = <100000000>;
 
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -55,7 +54,7 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xf8c00000 0x04000000>;
+			reg = <0xf8c00000 0x0400000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <32>;
 		};

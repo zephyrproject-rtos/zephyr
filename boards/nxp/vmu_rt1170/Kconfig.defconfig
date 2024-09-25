@@ -1,0 +1,35 @@
+# VMU_RT1170 board
+
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_VMU_RT1170
+
+if DISK_DRIVERS
+
+config IMX_USDHC_DAT3_PWR_TOGGLE
+	default y
+
+endif # DISK_DRIVERS
+
+if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM if CPU_CORTEX_M7
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM if CPU_CORTEX_M4
+endchoice
+
+endif # FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if CPU_CORTEX_M7 # No cache memory support is required for driver
+
+config ETH_MCUX_RMII_EXT_CLK
+	default y
+
+endif # NETWORKING
+
+
+endif # BOARD_VMU_RT1170

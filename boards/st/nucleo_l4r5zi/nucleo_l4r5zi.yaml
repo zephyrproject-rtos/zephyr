@@ -1,0 +1,24 @@
+identifier: nucleo_l4r5zi
+name: ST Nucleo L4R5ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
+  - pwm
+  - spi
+  - i2c
+  - gpio
+  - usb device
+  - nvs
+  - counter
+  - adc
+  - rtc
+ram: 640
+flash: 2048
+vendor: st

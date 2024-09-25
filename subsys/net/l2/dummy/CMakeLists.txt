@@ -6,3 +6,7 @@ zephyr_library_compile_definitions_ifdef(
   )
 
 zephyr_library_sources_ifdef(CONFIG_NET_L2_DUMMY    dummy.c)
+
+if(CONFIG_NET_PSEUDO_IFACE)
+  add_subdirectory(any)
+endif()

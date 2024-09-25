@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_ARCH_ARM_INCLUDE_OFFSETS_SHORT_ARCH_H_
 #define ZEPHYR_ARCH_ARM_INCLUDE_OFFSETS_SHORT_ARCH_H_
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 /* kernel */
 
@@ -22,6 +22,14 @@
 
 #define _thread_offset_to_preempt_float \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
+
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#define _thread_offset_to_exception_depth \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_exception_depth_OFFSET)
+
+#define _cpu_offset_to_exc_depth \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_exc_depth_OFFSET)
+#endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 #define _thread_offset_to_mode \

@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
-#include <version.h>
+#include <zephyr/version.h>
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <zephyr/drivers/uart.h>

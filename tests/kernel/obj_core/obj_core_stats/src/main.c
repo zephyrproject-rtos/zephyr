@@ -13,7 +13,8 @@ K_MEM_SLAB_DEFINE(mem_slab, 32, 4, 16);       /* Four 32 byte blocks */
 
 #if !defined(CONFIG_ARCH_POSIX) && !defined(CONFIG_SPARC) && !defined(CONFIG_MIPS)
 static void test_thread_entry(void *, void *, void *);
-K_THREAD_DEFINE(test_thread, 1024, test_thread_entry, NULL, NULL, NULL,
+K_THREAD_DEFINE(test_thread, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE,
+		test_thread_entry, NULL, NULL, NULL,
 		K_HIGHEST_THREAD_PRIO, 0, 0);
 
 K_SEM_DEFINE(wake_main_thread, 0, 1);
@@ -21,7 +22,8 @@ K_SEM_DEFINE(wake_test_thread, 0, 1);
 #endif /* !CONFIG_ARCH_POSIX && !CONFIG_SPARC && !CONFIG_MIPS */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stack, CONFIG_MP_MAX_NUM_CPUS - 1, 512);
+K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stack, CONFIG_MP_MAX_NUM_CPUS - 1,
+			    512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 struct k_thread busy_thread[CONFIG_MP_MAX_NUM_CPUS - 1];
 
@@ -75,7 +77,7 @@ ZTEST(obj_core_stats_system, test_obj_core_stats_system)
 
 	/*
 	 * Not much can be predicted for the raw stats aside from the
-	 * the contents of the CPU sampling to be at least as large as
+	 * contents of the CPU sampling to be at least as large as
 	 * kernel sampling. The same goes for the query stats.
 	 */
 

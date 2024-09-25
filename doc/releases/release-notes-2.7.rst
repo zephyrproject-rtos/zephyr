@@ -730,7 +730,7 @@ USB
 
 * Added new header file where all defines and structures from Chapter 9
   (USB Device Framework) should be included.
-* Revised configuraiton of USB device support.
+* Revised configuration of USB device support.
   Removed Kconfig option ``CONFIG_USB`` and introduced Kconfig option
   ``CONFIG_USB_DEVICE_DRIVER`` to enable USB device controller drivers,
   which is selected when option ``CONFIG_USB_DEVICE_STACK`` is enabled.

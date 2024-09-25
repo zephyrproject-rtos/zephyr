@@ -16,6 +16,8 @@
 /**
  * @brief Counter Interface
  * @defgroup counter_interface Counter Interface
+ * @since 1.14
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -676,6 +678,6 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
  * @}
  */
 
-#include <syscalls/counter.h>
+#include <zephyr/syscalls/counter.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_COUNTER_H_ */

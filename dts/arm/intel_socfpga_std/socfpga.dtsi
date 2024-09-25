@@ -227,6 +227,11 @@
 			reg = <0xffb30000 0xffff>;
 			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
 			status = "disabled";
 			};
 
@@ -235,6 +240,11 @@
 			reg = <0xffb40000 0xffff>;
 			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
 			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
 			status = "okay";
 			};
 
@@ -244,6 +254,7 @@
 			#size-cells = <0>;
 			reg = <0xfff00000 0x1000>;
 			fifo-depth = <256>;
+			max-xfer-size = <32>;
 			interrupts = <0 154 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "okay";
@@ -255,6 +266,7 @@
 			#size-cells = <0>;
 			reg = <0xfff01000 0x1000>;
 			fifo-depth = <256>;
+			max-xfer-size = <32>;
 			interrupts = <0 155 4 IRQ_DEFAULT_PRIORITY>;
 			clock-frequency = <200000000>;
 			status = "disabled";

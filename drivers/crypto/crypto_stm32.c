@@ -43,15 +43,20 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_CRYP_RELEASE_RESET
 #define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+#define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_AES1_FORCE_RESET
+#define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_AES1_RELEASE_RESET
+#else
 #define STM32_RCC_CRYPTO_FORCE_RESET    __HAL_RCC_AES_FORCE_RESET
 #define STM32_RCC_CRYPTO_RELEASE_RESET  __HAL_RCC_AES_RELEASE_RESET
+#endif
 #define STM32_CRYPTO_TYPEDEF            AES_TypeDef
 #endif
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
 static int copy_reverse_words(uint8_t *dst_buf, int dst_len,
-			      uint8_t *src_buf, int src_len)
+			      const uint8_t *src_buf, int src_len)
 {
 	int i;
 
@@ -229,7 +234,7 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
@@ -252,7 +257,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
-	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
+	int ivlen = BLOCK_LEN_BYTES - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
@@ -502,7 +507,7 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 	}
 };
 
-static struct crypto_stm32_config crypto_stm32_dev_config = {
+static const struct crypto_stm32_config crypto_stm32_dev_config = {
 	.pclken = {
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
 		.bus = DT_INST_CLOCKS_CELL(0, bus)

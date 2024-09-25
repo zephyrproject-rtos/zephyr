@@ -5,6 +5,7 @@
 '''Runner for debugging with J-Link.'''
 
 import argparse
+import ipaddress
 import logging
 import os
 from pathlib import Path
@@ -24,6 +25,13 @@ except ImportError:
 
 DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
+
+def is_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return True
 
 class ToggleAction(argparse.Action):
 
@@ -80,7 +88,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def dev_id_help(cls) -> str:
         return '''Device identifier. Use it to select the J-Link Serial Number
-                  of the device connected over USB.'''
+                  of the device connected over USB. If the J-Link is connected over ip,
+                  the Device identifier is the ip.'''
 
     @classmethod
     def tool_opt_help(cls) -> str:
@@ -224,16 +233,18 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         rtos = self.thread_info_enabled and self.supports_thread_info
         plugin_dir = os.fspath(Path(self.commander).parent / 'GDBServer' /
                                'RTOSPlugin_Zephyr')
+        big_endian = self.build_conf.getboolean('CONFIG_BIG_ENDIAN')
 
         server_cmd = ([self.gdbserver] +
-                       # only USB connections supported
-                      ['-select', 'usb' + (f'={self.dev_id}'
-                                           if self.dev_id else ''),
+                      ['-select',
+                                           ('ip' if is_ip(self.dev_id) else 'usb') +
+                                           (f'={self.dev_id}' if self.dev_id else ''),
                        '-port', str(self.gdb_port),
                        '-if', self.iface,
                        '-speed', self.speed,
                        '-device', self.device,
                        '-silent',
+                       '-endian', 'big' if big_endian else 'little',
                        '-singlerun'] +
                       (['-nogui'] if self.supports_nogui else []) +
                       (['-rtos', plugin_dir] if rtos else []) +
@@ -281,6 +292,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines = [
             'ExitOnError 1',  # Treat any command-error as fatal
             'r',  # Reset and halt the target
+            'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE'
         ]
 
         if self.erase:
@@ -355,8 +367,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 loader_details = "?" + self.loader
 
             cmd = ([self.commander] +
-                    # only USB connections supported
-                   (['-USB', f'{self.dev_id}'] if self.dev_id else []) +
+                   (['-IP', f'{self.dev_id}'] if is_ip(self.dev_id) else (['-USB', f'{self.dev_id}'] if self.dev_id else [])) +
                    (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,

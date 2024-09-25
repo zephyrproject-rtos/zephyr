@@ -44,5 +44,7 @@ int main(void)
 	/* Dump any queued log messages, and wait for system events. */
 	al_dump_log();
 
+	LOG_INF("Done.");
+
 	return 0;
 }

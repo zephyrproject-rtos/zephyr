@@ -591,7 +591,7 @@ static void isr_abort(void *param)
 static void isr_cleanup(void *param)
 {
 	struct lll_scan *lll = param;
-	struct node_rx_hdr *node_rx;
+	struct node_rx_pdu *node_rx;
 	int err;
 
 	if (lll_is_done(param)) {
@@ -617,9 +617,9 @@ static void isr_cleanup(void *param)
 		ull_pdu_rx_alloc();
 
 		/* TODO: add other info by defining a payload struct */
-		node_rx->type = NODE_RX_TYPE_SCAN_INDICATION;
+		node_rx->hdr.type = NODE_RX_TYPE_SCAN_INDICATION;
 
-		ull_rx_put_sched(node_rx->link, node_rx);
+		ull_rx_put_sched(node_rx->hdr.link, node_rx);
 	}
 #else /* !CONFIG_BT_CTLR_SCAN_INDICATION */
 	ARG_UNUSED(node_rx);
@@ -843,7 +843,7 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 		pdu_adv_rx = (void *)rx->pdu;
 		pdu_adv_rx->chan_sel = pdu_adv_rx_chan_sel;
 
-		ftr = &(rx->hdr.rx_ftr);
+		ftr = &(rx->rx_ftr);
 
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
@@ -1121,22 +1121,22 @@ static uint32_t isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 
 	pdu_adv_rx = (void *)node_rx->pdu;
 
-	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ?
+	node_rx->rx_ftr.rssi = (rssi_ready) ?
 				   (radio_rssi_get() & 0x7f)
 				   : 0x7f;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* save the resolving list index. */
-	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
+	node_rx->rx_ftr.rl_idx = rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
-	node_rx->hdr.rx_ftr.direct = dir_report;
+	node_rx->rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
 		/* save channel and anchor point ticks. */
-		node_rx->hdr.rx_ftr.chan = _radio.scanner.chan - 1;
-		node_rx->hdr.rx_ftr.ticks_anchor = _radio.ticks_anchor;
+		node_rx->rx_ftr.chan = _radio.scanner.chan - 1;
+		node_rx->rx_ftr.ticks_anchor = _radio.ticks_anchor;
 	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 

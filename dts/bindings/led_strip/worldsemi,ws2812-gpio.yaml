@@ -11,12 +11,4 @@ description: |
 
 compatible: "worldsemi,ws2812-gpio"
 
-include: [base.yaml, ws2812.yaml]
-
-properties:
-  in-gpios:
-    type: phandle-array
-    required: true
-    description: |
-      GPIO phandle and specifier for the pin connected to the daisy
-      chain's input pin. Exactly one pin should be given.
+include: [base.yaml, ws2812-gpio.yaml]

@@ -1,0 +1,5 @@
+board:
+  name: pico_pi
+  vendor: technexion
+  socs:
+    - name: mcimx7d

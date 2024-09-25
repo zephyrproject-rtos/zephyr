@@ -1,0 +1,35 @@
+# ST Microelectronics IIS328DQ 3-axis accelerometer driver
+
+# Copyright (c) 2020 STMicroelectronics
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IIS328DQ
+	bool "IIS328DQ I2C/SPI accelerometer sensor driver"
+	default y
+	depends on DT_HAS_ST_IIS328DQ_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS328DQ),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS328DQ),spi)
+	select HAS_STMEMSC
+	select USE_STDC_IIS328DQ
+	help
+	  Enable driver for IIS328DQ accelerometer sensor driver
+
+if IIS328DQ
+
+module = IIS328DQ
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+if IIS328DQ_TRIGGER
+
+config IIS328DQ_THRESHOLD
+	bool "Threshold detection"
+	help
+	  Enable threshold interrupts
+
+endif # IIS328DQ_TRIGGER
+
+endif # IIS328DQ

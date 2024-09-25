@@ -1,6 +1,0 @@
-/*
- * Copyright (c) 2023 MUNIC SA
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-#include "native_posix.overlay"

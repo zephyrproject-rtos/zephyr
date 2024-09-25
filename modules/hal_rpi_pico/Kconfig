@@ -49,3 +49,8 @@ config PICOSDK_USE_TIMER
 	bool
 	help
 	  Use the TIMER driver from pico-sdk
+
+config PICOSDK_USE_RTC
+	bool
+	help
+	  Use the RTC driver from pico-sdk

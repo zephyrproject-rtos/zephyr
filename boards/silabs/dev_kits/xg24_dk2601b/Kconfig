@@ -1,0 +1,12 @@
+# EFR32XG24 DK2601B board
+
+# Copyright (c) 2022, Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XG24_DK2601B
+
+module = BOARD_EFR32MG24
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_XG24_DK2601B

@@ -34,3 +34,5 @@ if(DEFINED CONFIG_RTC_CALIBRATION)
 endif()
 
 target_include_directories(app PRIVATE inc)
+
+target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)

@@ -7,6 +7,18 @@
 
 #include <nxp/nxp_rt10xx.dtsi>
 
+&flexram {
+	flexram,num-ram-banks = <5>;
+	/* Note: RT1015 has five flexram banks, but only 4 of the 5 can
+	 * be used at the same time, for a total of 128KB of RAM.
+	 */
+	flexram,bank-spec = <FLEXRAM_OCRAM>,
+			     <FLEXRAM_OCRAM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_DTCM>,
+			     <FLEXRAM_ITCM>;
+};
+
 &sysclk {
 	clock-frequency = <500000000>;
 };
@@ -16,7 +28,7 @@
 };
 
 &dtcm {
-	reg = <0x20000000 DT_SIZE_K(32)>;
+	reg = <0x20000000 DT_SIZE_K(64)>;
 };
 
 &ocram {
@@ -49,6 +61,8 @@
 		/delete-node/ gpio@4200c000;
 		/* RT1015 has only one flexSPI controller */
 		/delete-node/ spi@402a4000;
+		/* Remove Ethernet, it doesn't exist on RT1015 */
+		/delete-node/ enet@402d8000;
 	};
 };
 

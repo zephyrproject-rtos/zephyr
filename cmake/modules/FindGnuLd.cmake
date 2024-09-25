@@ -48,6 +48,7 @@ execute_process(COMMAND ${CMAKE_C_COMPILER} --print-prog-name=ld.bfd
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 if(EXISTS "${GNULD_LINKER}")
+  cmake_path(NORMAL_PATH GNULD_LINKER)
   set(GNULD_LINKER_IS_BFD ON CACHE BOOL "Linker BFD compatibility (compiler reported)" FORCE)
 else()
   # Need to clear it or else find_program() won't replace the value.

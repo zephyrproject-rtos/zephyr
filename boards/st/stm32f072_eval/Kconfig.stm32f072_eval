@@ -1,0 +1,5 @@
+# Copyright (c) 2017 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32F072_EVAL
+	select SOC_STM32F072XB

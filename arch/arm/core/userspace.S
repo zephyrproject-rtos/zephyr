@@ -12,7 +12,7 @@
 #include <offsets_short.h>
 #include <zephyr/syscall.h>
 
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 #include <zephyr/arch/cpu.h>

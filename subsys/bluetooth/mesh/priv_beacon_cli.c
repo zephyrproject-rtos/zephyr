@@ -18,7 +18,7 @@ static struct bt_mesh_priv_beacon_cli *cli;
 
 static int32_t msg_timeout;
 
-static int handle_beacon_status(struct bt_mesh_model *model,
+static int handle_beacon_status(const struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
@@ -56,7 +56,7 @@ static int handle_beacon_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int handle_gatt_proxy_status(struct bt_mesh_model *model,
+static int handle_gatt_proxy_status(const struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
@@ -86,7 +86,7 @@ static int handle_gatt_proxy_status(struct bt_mesh_model *model,
 	return 0;
 }
 
-static int handle_node_id_status(struct bt_mesh_model *model,
+static int handle_node_id_status(const struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
@@ -134,18 +134,18 @@ const struct bt_mesh_model_op bt_mesh_priv_beacon_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int priv_beacon_cli_init(struct bt_mesh_model *model)
+static int priv_beacon_cli_init(const struct bt_mesh_model *model)
 {
 	if (!bt_mesh_model_in_primary(model)) {
 		LOG_ERR("Private Beacon Client only allowed in primary element");
 		return -EINVAL;
 	}
 
-	cli = model->user_data;
+	cli = model->rt->user_data;
 	cli->model = model;
 	msg_timeout = 2 * MSEC_PER_SEC;
 	model->keys[0] = BT_MESH_KEY_DEV_ANY;
-	model->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	model->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	bt_mesh_msg_ack_ctx_init(&cli->ack_ctx);
 
@@ -156,13 +156,14 @@ const struct bt_mesh_model_cb bt_mesh_priv_beacon_cli_cb = {
 	.init = priv_beacon_cli_init,
 };
 
-int bt_mesh_priv_beacon_cli_set(uint16_t net_idx, uint16_t addr, struct bt_mesh_priv_beacon *val)
+int bt_mesh_priv_beacon_cli_set(uint16_t net_idx, uint16_t addr, struct bt_mesh_priv_beacon *val,
+				struct bt_mesh_priv_beacon *rsp)
 {
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
 	const struct bt_mesh_msg_rsp_ctx rsp_ctx = {
 		.ack = &cli->ack_ctx,
 		.op = OP_PRIV_BEACON_STATUS,
-		.user_data = val,
+		.user_data = rsp,
 		.timeout = msg_timeout,
 	};
 
@@ -174,7 +175,7 @@ int bt_mesh_priv_beacon_cli_set(uint16_t net_idx, uint16_t addr, struct bt_mesh_
 		net_buf_simple_add_u8(&buf, val->rand_interval);
 	}
 
-	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
+	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, rsp ? &rsp_ctx : NULL);
 }
 
 int bt_mesh_priv_beacon_cli_get(uint16_t net_idx, uint16_t addr, struct bt_mesh_priv_beacon *val)
@@ -193,27 +194,28 @@ int bt_mesh_priv_beacon_cli_get(uint16_t net_idx, uint16_t addr, struct bt_mesh_
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
 }
 
-int bt_mesh_priv_beacon_cli_gatt_proxy_set(uint16_t net_idx, uint16_t addr, uint8_t *val)
+int bt_mesh_priv_beacon_cli_gatt_proxy_set(uint16_t net_idx, uint16_t addr, uint8_t val,
+					   uint8_t *rsp)
 {
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
 	const struct bt_mesh_msg_rsp_ctx rsp_ctx = {
 		.ack = &cli->ack_ctx,
 		.op = OP_PRIV_GATT_PROXY_STATUS,
-		.user_data = val,
+		.user_data = rsp,
 		.timeout = msg_timeout,
 	};
 
-	if (!val || (*val != BT_MESH_GATT_PROXY_DISABLED &&
-		     *val != BT_MESH_GATT_PROXY_ENABLED)) {
+	if ((val != BT_MESH_GATT_PROXY_DISABLED &&
+	     val != BT_MESH_GATT_PROXY_ENABLED)) {
 		return -EINVAL;
 	}
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, OP_PRIV_GATT_PROXY_SET, 1);
 	bt_mesh_model_msg_init(&buf, OP_PRIV_GATT_PROXY_SET);
 
-	net_buf_simple_add_u8(&buf, *val);
+	net_buf_simple_add_u8(&buf, val);
 
-	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
+	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, rsp ? &rsp_ctx : NULL);
 }
 
 int bt_mesh_priv_beacon_cli_gatt_proxy_get(uint16_t net_idx, uint16_t addr, uint8_t *val)
@@ -233,17 +235,18 @@ int bt_mesh_priv_beacon_cli_gatt_proxy_get(uint16_t net_idx, uint16_t addr, uint
 }
 
 int bt_mesh_priv_beacon_cli_node_id_set(uint16_t net_idx, uint16_t addr,
-					struct bt_mesh_priv_node_id *val)
+					struct bt_mesh_priv_node_id *val,
+					struct bt_mesh_priv_node_id *rsp)
 {
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
 	const struct bt_mesh_msg_rsp_ctx rsp_ctx = {
 		.ack = &cli->ack_ctx,
 		.op = OP_PRIV_NODE_ID_STATUS,
-		.user_data = val,
+		.user_data = rsp,
 		.timeout = msg_timeout,
 	};
 
-	if (!val || val->net_idx > 0xfff ||
+	if (val->net_idx > 0xfff ||
 	    (val->state != BT_MESH_NODE_IDENTITY_STOPPED &&
 	     val->state != BT_MESH_NODE_IDENTITY_RUNNING)) {
 		return -EINVAL;
@@ -255,7 +258,7 @@ int bt_mesh_priv_beacon_cli_node_id_set(uint16_t net_idx, uint16_t addr,
 	net_buf_simple_add_le16(&buf, val->net_idx);
 	net_buf_simple_add_u8(&buf, val->state);
 
-	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, val ? &rsp_ctx : NULL);
+	return bt_mesh_msg_ackd_send(cli->model, &ctx, &buf, rsp ? &rsp_ctx : NULL);
 }
 
 int bt_mesh_priv_beacon_cli_node_id_get(uint16_t net_idx, uint16_t addr, uint16_t key_net_idx,

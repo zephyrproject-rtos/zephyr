@@ -59,17 +59,14 @@ static struct lwm2m_engine_obj_field fields[] = {
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][PORTFOLIO_MAX_ID];
 static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
-static char identity[MAX_INSTANCE_COUNT*PORTFOLIO_IDENTITY_MAX][DEFAULT_IDENTITY_BUFFER_LENGTH];
+static char identity[MAX_INSTANCE_COUNT][PORTFOLIO_IDENTITY_MAX][DEFAULT_IDENTITY_BUFFER_LENGTH];
 
 static struct lwm2m_engine_obj_inst *portfolio_create(uint16_t obj_inst_id)
 {
-	int index, avail = -1, i = 0, j = 0, indentity_buffer_start = 0;
+	int index, avail = -1, i = 0, j = 0;
 
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < ARRAY_SIZE(inst); index++) {
-		if (index) {
-			indentity_buffer_start += PORTFOLIO_IDENTITY_MAX;
-		}
 		if (inst[index].obj && inst[index].obj_inst_id == obj_inst_id) {
 			LOG_ERR("Can not create instance - "
 				"already existing: %u",
@@ -95,7 +92,7 @@ static struct lwm2m_engine_obj_inst *portfolio_create(uint16_t obj_inst_id)
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES_MULTI_DATA_LEN(PORTFOLIO_IDENTITY_ID, res[avail], i, res_inst[avail], j,
-				    PORTFOLIO_IDENTITY_MAX, false, identity[indentity_buffer_start],
+				    PORTFOLIO_IDENTITY_MAX, false, identity[avail],
 				    DEFAULT_IDENTITY_BUFFER_LENGTH, 0);
 	INIT_OBJ_RES_EXECUTE(PORTFOLIO_GET_AUTH_DATA_ID, res[avail], i, NULL);
 	INIT_OBJ_RES_MULTI_OPTDATA(PORTFOLIO_AUTH_DATA_ID, res[avail], i, res_inst[avail], j,
@@ -125,4 +122,4 @@ static int lwm2m_portfolio_init(void)
 	return 0;
 }
 
-SYS_INIT(lwm2m_portfolio_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(lwm2m_portfolio_init);

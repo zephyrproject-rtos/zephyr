@@ -35,6 +35,8 @@
  * @anchor INPUT_KEY_CODES
  * @{
  */
+#define INPUT_KEY_RESERVED 0            /**< Reserved, do not use */
+
 #define INPUT_KEY_0 11                  /**< 0 Key */
 #define INPUT_KEY_1 2                   /**< 1 Key */
 #define INPUT_KEY_2 3                   /**< 2 Key */
@@ -117,10 +119,12 @@
 #define INPUT_KEY_KPASTERISK 55         /**< Keypad Asterisk Key */
 #define INPUT_KEY_KPCOMMA 121           /**< Keypad Comma Key */
 #define INPUT_KEY_KPDOT 83              /**< Keypad Dot Key */
+#define INPUT_KEY_KPENTER 96            /**< Keypad Enter Key */
 #define INPUT_KEY_KPEQUAL 117           /**< Keypad Equal Key */
 #define INPUT_KEY_KPMINUS 74            /**< Keypad Minus Key */
 #define INPUT_KEY_KPPLUS 78             /**< Keypad Plus Key */
 #define INPUT_KEY_KPPLUSMINUS 118       /**< Keypad Plus Key */
+#define INPUT_KEY_KPSLASH 98            /**< Keypad Slash Key */
 #define INPUT_KEY_L 38                  /**< L Key */
 #define INPUT_KEY_LEFT 105              /**< Left Key */
 #define INPUT_KEY_LEFTALT 56            /**< Left Alt Key */
@@ -145,7 +149,9 @@
 #define INPUT_KEY_Q 16                  /**< Q Key */
 #define INPUT_KEY_R 19                  /**< R Key */
 #define INPUT_KEY_RIGHT 106             /**< Right Key */
+#define INPUT_KEY_RIGHTALT 100          /**< Right Alt Key */
 #define INPUT_KEY_RIGHTBRACE 27         /**< Right Brace Key */
+#define INPUT_KEY_RIGHTCTRL 97          /**< Right Ctrl Key */
 #define INPUT_KEY_RIGHTMETA 126         /**< Right Meta Key */
 #define INPUT_KEY_RIGHTSHIFT 54         /**< Right Shift Key */
 #define INPUT_KEY_S 31                  /**< S Key */
@@ -155,6 +161,7 @@
 #define INPUT_KEY_SLASH 53              /**< Slash Key */
 #define INPUT_KEY_SLEEP 142             /**< System Sleep Key */
 #define INPUT_KEY_SPACE 57              /**< Space Key */
+#define INPUT_KEY_SYSRQ 99              /**< SysReq Key */
 #define INPUT_KEY_T 20                  /**< T Key */
 #define INPUT_KEY_TAB 15                /**< Tab Key*/
 #define INPUT_KEY_U 22                  /**< U Key */
@@ -189,12 +196,15 @@
 #define INPUT_BTN_9 0x109               /**< 9 button */
 #define INPUT_BTN_A BTN_SOUTH           /**< A button */
 #define INPUT_BTN_B BTN_EAST            /**< B button */
+#define INPUT_BTN_BACK 0x116		/**< Back button */
 #define INPUT_BTN_C 0x132               /**< C button */
 #define INPUT_BTN_DPAD_DOWN 0x221       /**< Directional pad Down */
 #define INPUT_BTN_DPAD_LEFT 0x222       /**< Directional pad Left */
 #define INPUT_BTN_DPAD_RIGHT 0x223      /**< Directional pad Right */
 #define INPUT_BTN_DPAD_UP 0x220         /**< Directional pad Up */
 #define INPUT_BTN_EAST 0x131            /**< East button */
+#define INPUT_BTN_EXTRA 0x114		/**< Extra button */
+#define INPUT_BTN_FORWARD 0x115		/**< Forward button */
 #define INPUT_BTN_GEAR_DOWN 0x150       /**< Gear Up button */
 #define INPUT_BTN_GEAR_UP 0x151         /**< Gear Down button */
 #define INPUT_BTN_LEFT 0x110            /**< Left button */
@@ -203,8 +213,10 @@
 #define INPUT_BTN_NORTH 0x133           /**< North button */
 #define INPUT_BTN_RIGHT 0x111           /**< Right button */
 #define INPUT_BTN_SELECT 0x13a          /**< Select button */
+#define INPUT_BTN_SIDE 0x113		/**< Side button */
 #define INPUT_BTN_SOUTH 0x130           /**< South button */
 #define INPUT_BTN_START 0x13b           /**< Start button */
+#define INPUT_BTN_TASK 0x117		/**< Task button */
 #define INPUT_BTN_THUMBL 0x13d          /**< Left thumbstick button */
 #define INPUT_BTN_THUMBR 0x13e          /**< Right thumbstick button */
 #define INPUT_BTN_TL 0x136              /**< Left trigger (L1) */
@@ -225,6 +237,7 @@
  */
 #define INPUT_ABS_BRAKE 0x0a            /**< Absolute brake position */
 #define INPUT_ABS_GAS 0x09              /**< Absolute gas position */
+#define INPUT_ABS_MT_SLOT 0x2f          /**< Absolute multitouch slot identifier */
 #define INPUT_ABS_RUDDER 0x07           /**< Absolute rudder position */
 #define INPUT_ABS_RX 0x03               /**< Absolute rotation around X axis */
 #define INPUT_ABS_RY 0x04               /**< Absolute rotation around Y axis */

@@ -1,0 +1,9 @@
+# STM32H745XI DISCOVERY board configuration
+
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H745I_DISCO
+	select SOC_STM32H745XX_M7 if BOARD_STM32H745I_DISCO_STM32H745XX_M7
+	select SOC_STM32H745XX_M4 if BOARD_STM32H745I_DISCO_STM32H745XX_M4

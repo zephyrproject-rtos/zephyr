@@ -81,6 +81,12 @@ void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx_header = llcp_lr_peek(conn);
 		LL_ASSERT(ctx_header == ctx);
 
+		/* If we have a node rx it must not be marked RETAIN as
+		 * the memory referenced would leak
+		 */
+		LL_ASSERT(ctx->node_ref.rx == NULL ||
+			  ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN);
+
 		lr_dequeue(conn);
 
 		llcp_proc_ctx_release(ctx);
@@ -310,6 +316,11 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 		/* Unknown procedure */
 		LL_ASSERT(0);
 		break;
+	}
+
+	/* If rx node was not retained clear reference */
+	if (ctx->node_ref.rx && ctx->node_ref.rx->hdr.type != NODE_RX_TYPE_RETAIN) {
+		ctx->node_ref.rx = NULL;
 	}
 
 	llcp_lr_check_done(conn, ctx);

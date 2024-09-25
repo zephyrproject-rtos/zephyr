@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_STORED_COREDUMP
+	bool "Expected backend has coredump storage."
+	help
+	  Set if the test expects coredump backend with storage.
+
+config TEST_STORED_DUMP_SIZE
+	int "Expected backend's coredump storage size."
+	default 0
+	help
+	  Test expects coredump backend storage with the size given.
+	  If zero, then it is ignored and not compared with the actual size.

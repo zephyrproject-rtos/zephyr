@@ -363,7 +363,7 @@ static void test_net_mgmt_setup(void)
 	net_if_foreach(iface_cb, &default_iface);
 	zassert_not_null(default_iface, "Cannot find test interface");
 
-	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
+	fd = zsock_socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
 	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
 
 #ifdef CONFIG_USERSPACE
@@ -385,7 +385,7 @@ static void test_net_mgmt_setup(void)
 			   NET_EVENT_IPV6_ADDR_ADD |
 			   NET_EVENT_IPV6_ADDR_DEL;
 
-	ret = bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
+	ret = zsock_bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
 	zassert_false(ret < 0, "Cannot bind net_mgmt socket (%d)", errno);
 
 	k_thread_start(trigger_events_thread_id);
@@ -406,9 +406,9 @@ static void test_net_mgmt_catch_events(void)
 		memset(buf, 0, sizeof(buf));
 		event_addr_len = sizeof(event_addr);
 
-		ret = recvfrom(fd, buf, sizeof(buf), 0,
-			       (struct sockaddr *)&event_addr,
-			       &event_addr_len);
+		ret = zsock_recvfrom(fd, buf, sizeof(buf), 0,
+				     (struct sockaddr *)&event_addr,
+				     &event_addr_len);
 		if (ret < 0) {
 			continue;
 		}
@@ -468,9 +468,9 @@ static void test_net_mgmt_catch_events_failure(void)
 	memset(buf, 0, sizeof(buf));
 	event_addr_len = sizeof(event_addr);
 
-	ret = recvfrom(fd, buf, sizeof(buf), 0,
-		       (struct sockaddr *)&event_addr,
-		       &event_addr_len);
+	ret = zsock_recvfrom(fd, buf, sizeof(buf), 0,
+			     (struct sockaddr *)&event_addr,
+			     &event_addr_len);
 	zassert_equal(ret, -1, "Msg check failed, %d", errno);
 	zassert_equal(errno, EMSGSIZE, "Msg check failed, errno %d", errno);
 }
@@ -501,9 +501,9 @@ static void test_ethernet_set_qav(void)
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
 	params.qav_param.enabled = true;
 
-	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
-			 NET_REQUEST_ETHERNET_SET_QAV_PARAM,
-			 &params, sizeof(params));
+	ret = zsock_setsockopt(fd, SOL_NET_MGMT_RAW,
+			       NET_REQUEST_ETHERNET_SET_QAV_PARAM,
+			       &params, sizeof(params));
 	zassert_equal(ret, 0, "Cannot set Qav parameters");
 }
 
@@ -528,9 +528,9 @@ static void test_ethernet_get_qav(void)
 	params.qav_param.queue_id = 1;
 	params.qav_param.type = ETHERNET_QAV_PARAM_TYPE_STATUS;
 
-	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
-			 NET_REQUEST_ETHERNET_GET_QAV_PARAM,
-			 &params, &optlen);
+	ret = zsock_getsockopt(fd, SOL_NET_MGMT_RAW,
+			       NET_REQUEST_ETHERNET_GET_QAV_PARAM,
+			       &params, &optlen);
 	zassert_equal(ret, 0, "Cannot get Qav parameters (%d)", ret);
 	zassert_equal(optlen, sizeof(params), "Invalid optlen (%d)", optlen);
 
@@ -555,9 +555,9 @@ static void test_ethernet_get_unknown_option(void)
 
 	memset(&params, 0, sizeof(params));
 
-	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
-			 NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
-			 &params, &optlen);
+	ret = zsock_getsockopt(fd, SOL_NET_MGMT_RAW,
+			       NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+			       &params, &optlen);
 	zassert_equal(ret, -1, "Could get prio queue parameters (%d)", errno);
 	zassert_equal(errno, EINVAL, "prio queue get parameters");
 }
@@ -580,9 +580,9 @@ static void test_ethernet_set_unknown_option(void)
 
 	memset(&params, 0, sizeof(params));
 
-	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
-			 NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
-			 &params, optlen);
+	ret = zsock_setsockopt(fd, SOL_NET_MGMT_RAW,
+			       NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
+			       &params, optlen);
 	zassert_equal(ret, -1, "Could set promisc_mode parameters (%d)", errno);
 	zassert_equal(errno, EINVAL, "promisc_mode set parameters");
 }

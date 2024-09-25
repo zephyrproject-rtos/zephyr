@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2023 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/rcar/gen4/rcar_gen4_cr52.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/r8a779f0_cpg_mssr.h>
+
+/ {
+	soc {
+		/* The last four registers of this controller are
+		 * located in the control domain
+		 * A custom G4MH/RH850 µC firmware has to be flashed to access them
+		 */
+		pfc: pin-controller@e6050000 {
+			compatible = "renesas,rcar-pfc";
+			reg = <0xe6050000 0x16c>, <0xe6050800 0x16c>,
+				  <0xe6051000 0x16c>, <0xe6051800 0x16c>,
+				  <0xdfd90000 0x16c>, <0xdfd90800 0x16c>,
+				  <0xdfd91000 0x16c>, <0xdfd91800 0x16c>;
+		};
+
+		/* Clock controller
+		 * Using domain 0 as Linux
+		 */
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,r8a779f0-cpg-mssr";
+			reg = <0xe6150000 0x4000>;
+			#clock-cells = <2>;
+		};
+
+		gpio0: gpio@e6050180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6050180 0x54>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupts = <GIC_SPI 822 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 915>;
+			status = "disabled";
+		};
+
+		/*
+		 * Control domain security has to be released to access gpio4 controller
+		 * A custom G4MH/RH850 µC firmware has to be flashed to do that
+		 */
+		gpio4: gpio@dfd90180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xdfd90180 0x54>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupts = <GIC_SPI 826 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 915>;
+			status = "disabled";
+		};
+
+		/* Zephyr console */
+		scif0: serial@e6e60000 {
+			interrupts = <GIC_SPI 249 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 702>, <&cpg CPG_CORE R8A779F0_CLK_S0D12_PER>;
+		};
+
+		/* Linux console */
+		scif3: serial@e6c50000 {
+			interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 704>, <&cpg CPG_CORE R8A779F0_CLK_S0D12_PER>;
+		};
+	};
+};

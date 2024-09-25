@@ -33,9 +33,9 @@ void radio_df_cte_tx_aod_2us_set(uint8_t cte_len);
 void radio_df_cte_tx_aod_4us_set(uint8_t cte_len);
 /* Configure CTE transmission with for AoA. */
 void radio_df_cte_tx_aoa_set(uint8_t cte_len);
-/* Configure CTE reception with optionall AoA mode and 2us antenna switching. */
+/* Configure CTE reception with optional AoA mode and 2us antenna switching. */
 void radio_df_cte_rx_2us_switching(bool cte_info_in_s1, uint8_t phy);
-/* Configure CTE reception with optionall AoA mode and 4us antenna switching. */
+/* Configure CTE reception with optional AoA mode and 4us antenna switching. */
 void radio_df_cte_rx_4us_switching(bool cte_info_in_s1, uint8_t phy);
 
 /* Clears antenna switch pattern. */

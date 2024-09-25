@@ -20,7 +20,7 @@ static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
 static uint16_t csf_handle;
-static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 static void exchange_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
 {
@@ -365,7 +365,7 @@ static void test_main(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main,
 	},

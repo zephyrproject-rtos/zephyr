@@ -28,6 +28,7 @@ struct mcux_mipi_dsi_config {
 	MIPI_DSI_HOST_Type *base;
 	dsi_dpi_config_t dpi_config;
 	bool auto_insert_eotp;
+	bool noncontinuous_hs_clk;
 	const struct device *bit_clk_dev;
 	clock_control_subsys_t bit_clk_subsys;
 	const struct device *esc_clk_dev;
@@ -45,6 +46,9 @@ struct mcux_mipi_dsi_config {
 struct mcux_mipi_dsi_data {
 	dsi_handle_t mipi_handle;
 	struct k_sem transfer_sem;
+#ifdef CONFIG_MIPI_DSI_MCUX_2L_SMARTDMA
+	uint8_t dma_slot;
+#endif
 };
 
 
@@ -82,7 +86,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	 * Color streams are a special case for this DSI peripheral, because
 	 * the SMARTDMA peripheral (if enabled) can be used to accelerate
 	 * the transfer of data to the DSI. The SMARTDMA has the additional
-	 * advantage over traditional DMA of being able to to automatically
+	 * advantage over traditional DMA of being able to automatically
 	 * byte swap color data. This is advantageous, as most graphical
 	 * frameworks store RGB data in little endian format, but many
 	 * MIPI displays expect color data in big endian format.
@@ -105,11 +109,7 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 	dma_cfg.user_data = (struct device *)dev;
 	dma_cfg.head_block = &block;
 	dma_cfg.block_count = 1;
-	if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
-		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
-	} else {
-		dma_cfg.dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
-	}
+	dma_cfg.dma_slot = data->dma_slot;
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	ret = dma_config(config->smart_dma, 0, &dma_cfg);
 	if (ret < 0) {
@@ -163,7 +163,8 @@ static int dsi_mcux_tx_color(const struct device *dev, uint8_t channel,
 		.sendDscCmd = true,
 		.dscCmd = msg->cmd,
 		.txDataType = kDSI_TxDataDcsLongWr,
-		.flags = kDSI_TransferUseHighSpeed,
+		/* default to high speed unless told to use low power */
+		.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed,
 	};
 
 	/*
@@ -224,6 +225,9 @@ static int dsi_mcux_attach(const struct device *dev,
 	DSI_GetDefaultConfig(&dsi_config);
 	dsi_config.numLanes = mdev->data_lanes;
 	dsi_config.autoInsertEoTp = config->auto_insert_eotp;
+	dsi_config.enableNonContinuousHsClk = config->noncontinuous_hs_clk;
+
+	imxrt_pre_init_display_interface();
 
 	/* Init the DSI module. */
 	DSI_Init(config->base, &dsi_config);
@@ -239,6 +243,25 @@ static int dsi_mcux_attach(const struct device *dev,
 	INPUTMUX_Deinit(INPUTMUX);
 
 	if (!device_is_ready(config->smart_dma)) {
+		return -ENODEV;
+	}
+
+	struct mcux_mipi_dsi_data *data = dev->data;
+
+	switch (mdev->pixfmt) {
+	case MIPI_DSI_PIXFMT_RGB888:
+		data->dma_slot = DMA_SMARTDMA_MIPI_RGB888_DMA;
+		break;
+	case MIPI_DSI_PIXFMT_RGB565:
+		if (IS_ENABLED(CONFIG_MIPI_DSI_MCUX_2L_SWAP16)) {
+			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA_SWAP;
+		} else {
+			data->dma_slot = DMA_SMARTDMA_MIPI_RGB565_DMA;
+		}
+		break;
+	default:
+		LOG_ERR("SMARTDMA does not support pixel_format %u",
+			mdev->pixfmt);
 		return -ENODEV;
 	}
 #else
@@ -323,6 +346,24 @@ static int dsi_mcux_attach(const struct device *dev,
 	return 0;
 }
 
+static int dsi_mcux_detach(const struct device *dev, uint8_t channel,
+			   const struct mipi_dsi_device *mdev)
+{
+	const struct mcux_mipi_dsi_config *config = dev->config;
+
+	/* Enable DPHY auto power down */
+	DSI_DeinitDphy(config->base);
+	/* Fully power off DPHY */
+	config->base->PD_DPHY = 0x1;
+	/* Deinit MIPI */
+	DSI_Deinit(config->base);
+	/* Call IMX RT clock function to gate clocks and power at SOC level */
+	imxrt_deinit_display_interface();
+	return 0;
+}
+
+
+
 static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 				 struct mipi_dsi_msg *msg)
 {
@@ -336,6 +377,8 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 	dsi_xfer.txData = msg->tx_buf;
 	dsi_xfer.rxDataSize = msg->rx_len;
 	dsi_xfer.rxData = msg->rx_buf;
+	/* default to high speed unless told to use low power */
+	dsi_xfer.flags = (msg->flags & MIPI_DSI_MSG_USE_LPM) ? 0 : kDSI_TransferUseHighSpeed;
 
 	switch (msg->type) {
 	case MIPI_DSI_DCS_READ:
@@ -355,7 +398,6 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 		dsi_xfer.sendDscCmd = true;
 		dsi_xfer.dscCmd = msg->cmd;
 		dsi_xfer.txDataType = kDSI_TxDataDcsLongWr;
-		dsi_xfer.flags = kDSI_TransferUseHighSpeed;
 		if (msg->flags & MCUX_DSI_2L_FB_DATA) {
 			/*
 			 * Special case- transfer framebuffer data using
@@ -412,6 +454,7 @@ static ssize_t dsi_mcux_transfer(const struct device *dev, uint8_t channel,
 
 static struct mipi_dsi_driver_api dsi_mcux_api = {
 	.attach = dsi_mcux_attach,
+	.detach = dsi_mcux_detach,
 	.transfer = dsi_mcux_transfer,
 };
 
@@ -426,8 +469,6 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 #endif
 
 	k_sem_init(&data->transfer_sem, 0, 1);
-
-	imxrt_pre_init_display_interface();
 
 	if (!device_is_ready(config->bit_clk_dev) ||
 			!device_is_ready(config->esc_clk_dev) ||
@@ -482,6 +523,7 @@ static int mcux_mipi_dsi_init(const struct device *dev)
 		(.irq_config_func = mipi_dsi_##n##_irq_config_func,))				\
 		.base = (MIPI_DSI_HOST_Type *)DT_INST_REG_ADDR(id),				\
 		.auto_insert_eotp = DT_INST_PROP(id, autoinsert_eotp),				\
+		.noncontinuous_hs_clk = DT_INST_PROP(id, noncontinuous_hs_clk),			\
 		.dphy_ref_freq = DT_INST_PROP_OR(id, dphy_ref_frequency, 0),			\
 		.bit_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, dphy)),		\
 		.bit_clk_subsys =								\

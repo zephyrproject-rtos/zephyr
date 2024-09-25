@@ -433,8 +433,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		key = irq_lock();
 	}
 
+	/* Clock FlexSPI at 84 MHZ (42MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MEMC_FLEXSPI_CLOCK_42M);
+					data->port, MHZ(84));
 
 	while (len) {
 		/* Writing between two page sizes crashes the platform so we
@@ -477,8 +478,9 @@ static int flash_flexspi_hyperflash_write(const struct device *dev, off_t offset
 		len -= i;
 	}
 
+	/* Clock FlexSPI at 332 MHZ (166 MHz SCLK in DDR mode) */
 	(void)memc_flexspi_update_clock(&data->controller, &data->config,
-					data->port, MEMC_FLEXSPI_CLOCK_166M);
+					data->port, MHZ(332));
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 	DCACHE_InvalidateByRange((uint32_t) dst, size);
@@ -596,7 +598,6 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 {
 	const struct flash_flexspi_hyperflash_config *config = dev->config;
 	struct flash_flexspi_hyperflash_data *data = dev->data;
-	uint32_t temp_lut[sizeof(flash_flexspi_hyperflash_lut) / sizeof(uint32_t)];
 
 	/* Since the controller variable may be used in critical sections,
 	 * copy the device pointer into a variable stored in RAM
@@ -610,27 +611,15 @@ static int flash_flexspi_hyperflash_init(const struct device *dev)
 
 	memc_flexspi_wait_bus_idle(&data->controller);
 
-	if (!memc_flexspi_is_running_xip(&data->controller) &&
-	    memc_flexspi_set_device_config(&data->controller, &data->config,
-				data->port)) {
-		LOG_ERR("Could not set device configuration");
-		return -EINVAL;
+	if (memc_flexspi_is_running_xip(&data->controller)) {
+		/* Wait for bus idle before configuring */
+		memc_flexspi_wait_bus_idle(&data->controller);
 	}
-
-	/*
-	 * Using the LUT stored in the FlexSPI directly when updating
-	 * the FlexSPI can result in an invalid LUT entry being stored,
-	 * as the LUT itself describes how the FlexSPI should access the flash.
-	 * To resolve this, copy the LUT to a array placed in RAM before
-	 * updating the FlexSPI.
-	 */
-	memcpy(temp_lut, flash_flexspi_hyperflash_lut,
-		sizeof(flash_flexspi_hyperflash_lut));
-
-	if (memc_flexspi_update_lut(&data->controller, 0,
-				(const uint32_t *) temp_lut,
-				sizeof(temp_lut) / sizeof(uint32_t))) {
-		LOG_ERR("Could not update lut");
+	if (memc_flexspi_set_device_config(&data->controller, &data->config,
+	    (const uint32_t *)flash_flexspi_hyperflash_lut,
+	    sizeof(flash_flexspi_hyperflash_lut) / MEMC_FLEXSPI_CMD_SIZE,
+	    data->port)) {
+		LOG_ERR("Could not set device configuration");
 		return -EINVAL;
 	}
 

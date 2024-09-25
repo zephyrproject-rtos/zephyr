@@ -93,7 +93,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* resource state variables */
 static int8_t net_bearer;
 static int16_t rss;
-static uint8_t link_quality;
+static int16_t link_quality;
 static uint32_t cellid;
 static uint16_t mnc;
 static uint16_t mcc;
@@ -113,7 +113,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(CONNMON_NETWORK_BEARER_ID, R, U8),
 	OBJ_FIELD_DATA(CONNMON_AVAIL_NETWORK_BEARER_ID, R, U8),
 	OBJ_FIELD_DATA(CONNMON_RADIO_SIGNAL_STRENGTH, R, S16),
-	OBJ_FIELD_DATA(CONNMON_LINK_QUALITY, R, U8),
+	OBJ_FIELD_DATA(CONNMON_LINK_QUALITY, R, S16),
 	OBJ_FIELD_DATA(CONNMON_IP_ADDRESSES, R, STRING),
 	OBJ_FIELD_DATA(CONNMON_ROUTER_IP_ADDRESSES, R_OPT, STRING),
 	OBJ_FIELD_DATA(CONNMON_LINK_UTILIZATION, R_OPT, U8),
@@ -222,4 +222,4 @@ static int lwm2m_connmon_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_connmon_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_connmon_init);

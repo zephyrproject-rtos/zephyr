@@ -200,9 +200,10 @@ static void *cumulative_time_read_cb(uint16_t obj_inst_id,
 }
 
 static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -215,10 +216,10 @@ static int cumulative_time_post_write_cb(uint16_t obj_inst_id,
 	return 0;
 }
 
-static int enabled_post_write_cb(uint16_t obj_inst_id,
-				 uint16_t res_id, uint16_t res_inst_id,
-				 uint8_t *data, uint16_t data_len,
-				 bool last_block, size_t total_size)
+static int enabled_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+				 uint16_t res_inst_id, uint8_t *data,
+				 uint16_t data_len, bool last_block,
+				 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -236,9 +237,10 @@ static int enabled_post_write_cb(uint16_t obj_inst_id,
 }
 
 static int trigger_counter_post_write_cb(uint16_t obj_inst_id,
-					 uint16_t res_id, uint16_t res_inst_id,
-					 uint8_t *data, uint16_t data_len,
-					 bool last_block, size_t total_size)
+					 uint16_t res_id,
+					 uint16_t res_inst_id, uint8_t *data,
+					 uint16_t data_len, bool last_block,
+					 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -366,4 +368,4 @@ static int ipso_timer_init(void)
 	return 0;
 }
 
-SYS_INIT(ipso_timer_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_timer_init);

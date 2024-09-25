@@ -19,7 +19,7 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(obs != NULL, "obs is required");
 
-	err = k_mutex_lock(&chan->data->mutex, timeout);
+	err = k_sem_take(&chan->data->sem, timeout);
 	if (err) {
 		return err;
 	}
@@ -31,7 +31,7 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
 		__ASSERT(observation != NULL, "observation must be not NULL");
 
 		if (observation->obs == obs) {
-			k_mutex_unlock(&chan->data->mutex);
+			k_sem_give(&chan->data->sem);
 
 			return -EEXIST;
 		}
@@ -40,7 +40,7 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
 	/* Check if the observer is already a runtime observer */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&chan->data->observers, obs_nd, tmp, node) {
 		if (obs_nd->obs == obs) {
-			k_mutex_unlock(&chan->data->mutex);
+			k_sem_give(&chan->data->sem);
 
 			return -EALREADY;
 		}
@@ -51,7 +51,7 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
 	if (new_obs_nd == NULL) {
 		LOG_ERR("Could not allocate observer node the heap is full!");
 
-		k_mutex_unlock(&chan->data->mutex);
+		k_sem_give(&chan->data->sem);
 
 		return -ENOMEM;
 	}
@@ -60,7 +60,7 @@ int zbus_chan_add_obs(const struct zbus_channel *chan, const struct zbus_observe
 
 	sys_slist_append(&chan->data->observers, &new_obs_nd->node);
 
-	k_mutex_unlock(&chan->data->mutex);
+	k_sem_give(&chan->data->sem);
 
 	return 0;
 }
@@ -76,7 +76,7 @@ int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer
 	_ZBUS_ASSERT(chan != NULL, "chan is required");
 	_ZBUS_ASSERT(obs != NULL, "obs is required");
 
-	err = k_mutex_lock(&chan->data->mutex, timeout);
+	err = k_sem_take(&chan->data->sem, timeout);
 	if (err) {
 		return err;
 	}
@@ -87,7 +87,7 @@ int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer
 
 			k_free(obs_nd);
 
-			k_mutex_unlock(&chan->data->mutex);
+			k_sem_give(&chan->data->sem);
 
 			return 0;
 		}
@@ -95,7 +95,7 @@ int zbus_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer
 		prev_obs_nd = obs_nd;
 	}
 
-	k_mutex_unlock(&chan->data->mutex);
+	k_sem_give(&chan->data->sem);
 
 	return -ENODATA;
 }

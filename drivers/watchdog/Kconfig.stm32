@@ -9,6 +9,7 @@ config IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
 	default y
 	depends on DT_HAS_ST_STM32_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 

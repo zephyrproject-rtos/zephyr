@@ -1,0 +1,62 @@
+# Copyright (c) 2021 - 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 XSPI Flash controller supporting the JEDEC CFI interface
+
+    Representation of a serial flash on a xspi bus:
+
+        mx25lm51245: xspi-nor-flash@70000000 {
+                compatible = "st,stm32-xspi-nor";
+                reg = <0x70000000 DT_SIZE_M(64)>; /* 512 Mbits */
+                data-mode = <XSPI_OCTO_MODE>; /* access on 8 data lines */
+                data-rate = <XSPI_DTR_TRANSFER>; /* access in DTR */
+                ospi-max-frequency = <DT_FREQ_M(50)>;
+                status = "okay";
+        };
+
+compatible: "st,stm32-xspi-nor"
+
+include:
+  - name: st,stm32-ospi-nor.yaml
+    property-blocklist:
+      - spi-bus-width
+      - data-rate
+properties:
+  spi-bus-width:
+    type: int
+    required: true
+    description: |
+     The width of XSPI bus to which flash memory is connected.
+
+     Possible values are :
+      - XSPI_SPI_MODE  <1> = SPI mode on 1 data line
+      - XSPI_DUAL_MODE <2> = Dual mode on 2 data lines
+      - XSPI_QUAD_MODE <4> = Quad mode on 4 data lines
+      - XSPI_OCTO_MODE <8> = Octo mode on 8 data lines
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+  data-rate:
+    type: int
+    required: true
+    description: |
+     The SPI data Rate is STR or DTR
+
+     Possible values are :
+      - XSPI_STR_TRANSFER <1> = Single Rate Transfer
+      - XSPI_DTR_TRANSFER <2> = Dual Rate Transfer (only with XSPI_OCTO_MODE)
+    enum:
+      - 1
+      - 2
+
+  ncs-line:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Specifies which nCS line of the XSPI IO Manager is connected to the Flash.

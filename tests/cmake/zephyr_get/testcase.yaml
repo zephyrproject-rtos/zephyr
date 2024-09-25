@@ -1,7 +1,7 @@
 common:
   tags: cmake
   build_only: true
-  platform_allow: native_posix
+  platform_allow: native_sim
 tests:
   buildsystem.extensions.zephyr_get.no_sysbuild:
     sysbuild: false

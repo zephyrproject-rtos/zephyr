@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <zephyr/drivers/uart.h>
-#if defined(CONFIG_SOC_SERIES_ESP32C3)
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
 #else
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
@@ -22,7 +22,7 @@
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t
@@ -142,7 +142,9 @@ static void serial_esp32_usb_irq_tx_enable(const struct device *dev)
 	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
 
 	if (data->irq_cb != NULL) {
+		unsigned int key = irq_lock();
 		data->irq_cb(dev, data->irq_cb_data);
+		arch_irq_unlock(key);
 	}
 }
 
@@ -220,8 +222,8 @@ static void serial_esp32_usb_irq_callback_set(const struct device *dev,
 {
 	struct serial_esp32_usb_data *data = dev->data;
 
-	data->irq_cb = cb;
 	data->irq_cb_data = cb_data;
+	data->irq_cb = cb;
 }
 
 static void serial_esp32_usb_isr(void *arg)

@@ -26,20 +26,37 @@
 
 int main(void)
 {
-	int serv;
-	struct sockaddr_in bind_addr;
+	int opt;
+	socklen_t optlen = sizeof(int);
+	int serv, ret;
+	struct sockaddr_in6 bind_addr = {
+		.sin6_family = AF_INET6,
+		.sin6_addr = IN6ADDR_ANY_INIT,
+		.sin6_port = htons(BIND_PORT),
+	};
 	static int counter;
 
-	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	serv = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
 	if (serv < 0) {
 		printf("error: socket: %d\n", errno);
 		exit(1);
 	}
 
-	bind_addr.sin_family = AF_INET;
-	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind_addr.sin_port = htons(BIND_PORT);
+	ret = getsockopt(serv, IPPROTO_IPV6, IPV6_V6ONLY, &opt, &optlen);
+	if (ret == 0) {
+		if (opt) {
+			printf("IPV6_V6ONLY option is on, turning it off.\n");
+
+			opt = 0;
+			ret = setsockopt(serv, IPPROTO_IPV6, IPV6_V6ONLY,
+					 &opt, optlen);
+			if (ret < 0) {
+				printf("Cannot turn off IPV6_V6ONLY option\n");
+			} else {
+				printf("Sharing same socket between IPv6 and IPv4\n");
+			}
+		}
+	}
 
 	if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
 		printf("error: bind: %d\n", errno);
@@ -55,7 +72,7 @@ int main(void)
 	       "port %d...\n", BIND_PORT);
 
 	while (1) {
-		struct sockaddr_in client_addr;
+		struct sockaddr_in6 client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 		char addr_str[32];
 		int client = accept(serv, (struct sockaddr *)&client_addr,
@@ -66,7 +83,7 @@ int main(void)
 			continue;
 		}
 
-		inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
+		inet_ntop(client_addr.sin6_family, &client_addr.sin6_addr,
 			  addr_str, sizeof(addr_str));
 		printf("Connection #%d from %s\n", counter++, addr_str);
 

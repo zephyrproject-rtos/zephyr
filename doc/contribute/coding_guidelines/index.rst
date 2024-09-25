@@ -6,9 +6,9 @@ Coding Guidelines
 The project TSC and the Safety Committee of the project agreed to implement
 a staged and incremental approach for complying with a set of coding rules (AKA
 Coding Guidelines) to improve quality and consistency of the code base. Below
-are the agreed upon stages and the approximate timelines:
+are the agreed upon stages:
 
-Stage I
+Stage I (COMPLETED)
   Coding guideline rules are available to be followed and referenced,
   but not enforced. Rules are not yet enforced in CI and pull-requests cannot be
   blocked by reviewers/approvers due to violations.
@@ -32,6 +32,13 @@ Stage IV
 
     Coding guideline rules may be removed/changed at any time by filing a
     GH issue/RFC.
+
+.. important::
+
+    **Current stage:**
+    The prerequisites for entering **Stage II** are currently being looked at:
+    The tooling is in evaluation, CI setup and `enforcement strategy
+    <https://github.com/zephyrproject-rtos/zephyr/issues/58903>`__ is being worked on.
 
 Main rules
 **********
@@ -1212,8 +1219,8 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
      -
 
    * - eSPI
-     - * ``master / slave`` => TBD
-     -
+     - * ``master / slave`` => ``controller / target``
+     - Refer to `eSPI Specification`_ for new terminology
 
    * - gPTP
      - * ``master / slave`` => TBD
@@ -1250,10 +1257,11 @@ Related GitHub Issues and Pull Requests are tagged with the `Inclusive Language 
 
 .. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
 .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
-.. _Bluetooth Appropriate Language Mapping Tables: https://btprodspecificationrefs.blob.core.windows.net/language-mapping/Appropriate_Language_Mapping_Table.pdf
+.. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
 .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
 .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
 .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
+.. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf
 
 
 Rule A.3: Macro name collisions
@@ -1441,9 +1449,12 @@ shall be limited to the functions, excluding the Annex K "Bounds-checking
 interfaces", from the ISO/IEC 9899:2011 standard, also known as C11, unless
 exempted by this rule.
 
-The "Zephyr codebase" in this context refers to all source code files committed
+The "Zephyr codebase" in this context refers to all embedded source code files committed
 to the `main Zephyr repository`_, except the Zephyr kernel as defined by the
 :ref:`coding_guideline_libc_usage_restrictions_in_zephyr_kernel`.
+With embedded source code we refer to code which is meant to be executed in embedded
+targets, and therefore excludes host tooling, and code specific for the
+:ref:`native <boards_posix>` test targets.
 
 The following non-ISO 9899:2011, hereinafter referred to as non-standard,
 functions and macros are exempt from this rule and allowed to be used in the
@@ -1453,6 +1464,7 @@ Zephyr codebase:
    :header: Function,Source
    :widths: auto
 
+   `gmtime_r()`_,POSIX.1-2001
    `strnlen()`_,POSIX.1-2008
    `strtok_r()`_,POSIX.1-2001
 
@@ -1479,104 +1491,6 @@ these functions can lead to compatibility issues with the third-party
 toolchains that come with their own C standard libraries.
 
 .. _main Zephyr repository: https://github.com/zephyrproject-rtos/zephyr
+.. _gmtime_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/gmtime_r.html
 .. _strnlen(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strlen.html
 .. _strtok_r(): https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtok.html
-
-Parasoft Codescan Tool
-**********************
-
-Parasoft Codescan is an official static code analysis tool used by the Zephyr
-project. It is used to automate compliance with a range of coding and security
-standards.
-The tool is currently set to the MISRA-C:2012 Coding Standard because the Zephyr
-:ref:`coding_guidelines` are based on that standard.
-It is used together with the Coverity Scan tool to achieve the best code health
-and precision in bug findings.
-
-Violations fixing process
-=========================
-
-Step 1
-  Any Zephyr Project member, company or a developer can request access
-  to the Parasoft reporting centre if they wish to get involved in fixing
-  violations by submitting issues.
-
-Step 2
-  A developer starts to review violations.
-
-Step 3
-  A developer submits a Github PR with the fix. Commit messages should follow
-  the same guidelines as other PRs in the Zephyr project. Please add a comment
-  that your fix was found by a static coding scanning tool.
-  Developers should follow and refer to the Zephyr :ref:`coding_guidelines`
-  as basic rules for coding. These rules are based on the MISRA-C standard.
-
-  Below you can find an example of a recommended commit message::
-
-     lib: os: add braces to 'if' statements
-
-     An 'if' (expression) construct shall be followed by a compound statement.
-     Add braces to improve readability and maintainability.
-
-     Found as a coding guideline violation (Rule 15.6) by static
-     coding scanning tool.
-
-     Signed-off-by: Johnny Developer <johnny.developer@company.com>
-
-Step 4
-  If a violation is a false positive, the developer should mark it for the Codescan
-  tool just like they would do for the Coverity tool.
-  The developer should also add a comment to the code explaining that
-  the violation raised by the static code analysis tool should be considered a
-  false positive.
-
-Step 5
-  If the developer has found a real violation that the community decided to ignore,
-  the developer must submit a PR with a suppression tag
-  and a comment explaining why the violation has been deviated.
-  The template structure of the comment and tag in the code should be::
-
-     /* Explain why that part of the code doesn't follow the standard,
-      * explain why it is a deliberate deviation from the standard.
-      * Don't refer to the Parasoft tool here, just mention that static code
-      * analysis tool raised a violation in the line below.
-      */
-     code_line_with_a_violation /* parasoft-suppress Rule ID */
-
-  Below you can find an example of a recommended commit message::
-
-     testsuite: suppress usage of setjmp in a testcode (rule 21.4)
-
-     According to the Rule 21.4 the standard header file <setjmp.h> shall not
-     be used. We will suppress this violation because it is in
-     test code. Tag suppresses reporting of the violation for the
-     line where the violation is located.
-     This is a deliberate deviation.
-
-     Found as a coding guideline violation (Rule 21.4) by static coding
-     scanning tool.
-
-     Signed-off-by: Johnny Developer <johnny.developer@company.com>
-
-  The example below demonstrates how deviations can be suppressed in the code::
-
-     /* Static code analysis tool can raise a violation that the standard
-      * header <setjmp.h> shall not be used.
-      * Since this violation is in test code, we will suppress it.
-      * Deliberate deviation.
-      */
-     #include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b */
-
-  This variant above suppresses item ``MISRAC2012-RULE_21_4-a`` and ``MISRAC2012-RULE_21_4-b``
-  on the line with "setjump" header include. You can add as many rules to suppress you want -
-  just make sure to keep the Parasoft tag on one line and separate rules with a space.
-  To read more about suppressing findings in the Parasoft tool, refer to the
-  official Parasoft `documentation`_
-
-  .. _documentation: https://docs.parasoft.com/display/CPPTEST1031/Suppressing+Findings
-
-Step 6
-  After a PR is submitted, the developer should add the ``Coding guidelines``
-  and ``MISRA-C`` Github labels so their PR can be easily tracked by maintainers.
-  If you have any concerns about what your PR should look like, you can search
-  on Github using those tags and refer to similar PRs that have already been merged.

@@ -1,0 +1,5 @@
+board:
+  name: adi_eval_adin1110ebz
+  vendor: adi
+  socs:
+    - name: stm32l4s5xx

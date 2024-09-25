@@ -3,32 +3,32 @@
 Bluetooth Mesh Shell
 ####################
 
-The Bluetooth mesh shell subsystem provides a set of Bluetooth mesh shell commands for the
-:ref:`shell_api` module. It allows for testing and exploring the Bluetooth mesh API through an
+The Bluetooth Mesh shell subsystem provides a set of Bluetooth Mesh shell commands for the
+:ref:`shell_api` module. It allows for testing and exploring the Bluetooth Mesh API through an
 interactive interface, without having to write an application.
 
-The Bluetooth mesh shell interface provides access to most Bluetooth mesh features, including
+The Bluetooth Mesh shell interface provides access to most Bluetooth Mesh features, including
 provisioning, configuration, and message sending.
 
 Prerequisites
 *************
 
-The Bluetooth mesh shell subsystem depends on the application to create the composition data and do
+The Bluetooth Mesh shell subsystem depends on the application to create the composition data and do
 the mesh initialization.
 
 Application
 ***********
 
-The Bluetooth mesh shell subsystem is most easily used through the Bluetooth mesh shell application
+The Bluetooth Mesh shell subsystem is most easily used through the Bluetooth Mesh shell application
 under ``tests/bluetooth/mesh_shell``. See :ref:`shell_api` for information on how to connect and
-interact with the Bluetooth mesh shell application.
+interact with the Bluetooth Mesh shell application.
 
 Basic usage
 ***********
 
-The Bluetooth mesh shell subsystem adds a single ``mesh`` command, which holds a set of
+The Bluetooth Mesh shell subsystem adds a single ``mesh`` command, which holds a set of
 sub-commands. Every time the device boots up, make sure to call ``mesh init`` before any of the
-other Bluetooth mesh shell commands can be called::
+other Bluetooth Mesh shell commands can be called::
 
 	uart:~$ mesh init
 
@@ -82,7 +82,7 @@ Message sending
 ===============
 
 With an application key added (see above), the mesh node's transition parameters are all valid, and
-the Bluetooth mesh shell can send raw mesh messages through the network.
+the Bluetooth Mesh shell can send raw mesh messages through the network.
 
 For example, to send a Generic OnOff Set message, call::
 
@@ -107,7 +107,7 @@ configured network and application keys will receive and process the messages we
 
 Sending raw mesh packets is a good way to test model message handler implementations during
 development, as it can be done without having to implement the sending model. By default, only the
-reception of the model messages can be tested this way, as the Bluetooth mesh shell only includes
+reception of the model messages can be tested this way, as the Bluetooth Mesh shell only includes
 the foundation models. To receive a packet in the mesh node, you have to add a model with a valid
 opcode handler list to the composition data in ``subsys/bluetooth/mesh/shell.c``, and print the
 incoming message to the shell in the handler callback.
@@ -115,7 +115,7 @@ incoming message to the shell in the handler callback.
 Parameter formats
 *****************
 
-The Bluetooth mesh shell commands are parsed with a variety of formats:
+The Bluetooth Mesh shell commands are parsed with a variety of formats:
 
 .. list-table:: Parameter formats
 	:widths: 1 4 2
@@ -139,12 +139,12 @@ The Bluetooth mesh shell commands are parsed with a variety of formats:
 Commands
 ********
 
-The Bluetooth mesh shell implements a large set of commands. Some of the commands accept parameters,
+The Bluetooth Mesh shell implements a large set of commands. Some of the commands accept parameters,
 which are mentioned in brackets after the command name. For example,
 ``mesh lpn set <value: off, on>``. Mandatory parameters are marked with angle brackets (e.g.
 ``<NetKeyIdx>``), and optional parameters are marked with square brackets (e.g. ``[DstAddr]``).
 
-The Bluetooth mesh shell commands are divided into the following groups:
+The Bluetooth Mesh shell commands are divided into the following groups:
 
 .. contents::
 	:depth: 1
@@ -282,7 +282,7 @@ Provisioning
 ============
 
 To allow a device to broadcast connectable unprovisioned beacons, the
-:kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE` configuration option must be enabled, along with the
+:kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` configuration option must be enabled, along with the
 :kconfig:option:`CONFIG_BT_MESH_PB_GATT` option.
 
 ``mesh prov pb-gatt <Val(off, on)>``
@@ -295,7 +295,7 @@ To allow a device to broadcast connectable unprovisioned beacons, the
 	* ``Val``: Enable or disable provisioning with GATT
 
 To allow a device to broadcast unprovisioned beacons, the
-:kconfig:option:`CONFIG_BT_MESH_PROV_DEVICE` configuration option must be enabled, along with the
+:kconfig:option:`CONFIG_BT_MESH_PROVISIONEE` configuration option must be enabled, along with the
 :kconfig:option:`CONFIG_BT_MESH_PB_ADV` option.
 
 ``mesh prov pb-adv <Val(off, on)>``
@@ -500,10 +500,10 @@ application. This shell module can be used for configuring itself and other node
 network.
 
 The Configuration Client uses general message parameters set by ``mesh target dst`` and ``mesh
-target net`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, given that
+target net`` to target specific nodes. When the Bluetooth Mesh shell node is provisioned, given that
 the :kconfig:option:`CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE` option is enabled with the shell
 provisioning context initialized, the Configuration Client model targets itself by default.
-Similarly, when another node has been provisioned by the Bluetooth mesh shell, the Configuration
+Similarly, when another node has been provisioned by the Bluetooth Mesh shell, the Configuration
 Client model targets the new node. In most common use-cases, the Configuration Client is depending
 on the provisioning features and the Configuration database to be fully functional. The
 Configuration Client always sends messages using the Device key bound to the destination address, so
@@ -944,7 +944,7 @@ application. This shell module can be used to trigger interaction between Health
 on devices in a Mesh network.
 
 By default, the module will choose the first Health Client instance in the model composition when
-using the Health Client commands. To choose a spesific Health Client instance the user can utilize
+using the Health Client commands. To choose a specific Health Client instance the user can utilize
 the commands ``mesh models health instance set`` and ``mesh models health instance get-all``.
 
 The Health Client may use the general messages parameters set by ``mesh target dst``,
@@ -1524,11 +1524,11 @@ firmware before accepting it. The commands are enabled through the
 	* ``Rev``: Revision number of the firmware.
 	* ``BuildNum``: Build number.
 	* ``Size``: Size of the signed bin file.
-	* ``CoreType``: New firmware core type in bit field format:
+	* ``CoreType``: New firmware core type:
 
-		* ``0``: Application core.
-		* ``1``: Network core.
-		* ``2``: Applications specific BLOB.
+		* ``1``: Application core.
+		* ``2``: Network core.
+		* ``4``: Applications specific BLOB.
 	* ``Hash``: Hash of the composition data generated using ``mesh models dfu metadata comp-hash-get`` command.
 	* ``Elems``: Number of elements on the new firmware.
 	* ``UserData``: User data supplied with the metadata.
@@ -1645,7 +1645,7 @@ The Private Beacon Client model is an optional mesh subsystem that can be enable
 Opcodes Aggregator Client
 -------------------------
 
-The Opcodes Aggregator client is an optional Bluetooth mesh model that can be enabled through the
+The Opcodes Aggregator client is an optional Bluetooth Mesh model that can be enabled through the
 :kconfig:option:`CONFIG_BT_MESH_OP_AGG_CLI` configuration option. The Opcodes Aggregator Client
 model is used to support the functionality of dispatching a sequence of access layer messages to
 nodes supporting the Opcodes Aggregator Server model.
@@ -1675,7 +1675,7 @@ nodes supporting the Opcodes Aggregator Server model.
 Remote Provisioning Client
 --------------------------
 
-The Remote Provisioning Client is an optional Bluetooth mesh model enabled through the
+The Remote Provisioning Client is an optional Bluetooth Mesh model enabled through the
 :kconfig:option:`CONFIG_BT_MESH_RPR_CLI` configuration option. The Remote Provisioning Client model
 provides support for remote provisioning of devices into a mesh network by using the Remote
 Provisioning Server model.
@@ -1761,6 +1761,31 @@ Provisioning Servers on devices in a mesh network.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all Remote Provisioning Client model instances on the node.
+
+
+Large Composition Data Client
+-----------------------------
+
+The Large Composition Data Client is an optional Bluetooth Mesh model enabled through the
+:kconfig:option:`CONFIG_BT_MESH_LARGE_COMP_DATA_CLI` configuration option. The Large Composition Data Client
+model is used to support the functionality of reading pages of Composition Data that do not fit in
+a Config Composition Data Status message, and reading the metadata of the model instances.
+
+``mesh models lcd large-comp-data-get <Page> <Offset>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Send the Large Composition Data Get message to query a portion of the Composition Data state of a node.
+
+	* ``Page``: Page number of the Composition Data.
+	* ``Offset``: Offset within the page.
+
+``mesh models lcd models-metadata-get <Page> <Offset>``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Send the Models Metadata Get message to query a portion of a page of the Models Metadata state.
+
+	* ``Page``: Page number of the Models Metadata.
+	* ``Offset``: Offset within the page.
 
 
 Configuration database

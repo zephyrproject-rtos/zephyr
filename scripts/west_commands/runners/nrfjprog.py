@@ -46,7 +46,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
         # Translate the op
 
         families = {'NRF51_FAMILY': 'NRF51', 'NRF52_FAMILY': 'NRF52',
-                    'NRF53_FAMILY': 'NRF53', 'NRF91_FAMILY': 'NRF91'}
+                    'NRF53_FAMILY': 'NRF53', 'NRF54L_FAMILY': 'NRF54L',
+                    'NRF91_FAMILY': 'NRF91'}
         cores = {'NRFDL_DEVICE_CORE_APPLICATION': 'CP_APPLICATION',
                  'NRFDL_DEVICE_CORE_NETWORK': 'CP_NETWORK'}
 
@@ -69,6 +70,8 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                 cmd.append('--sectorerase')
             elif erase == 'ERASE_PAGES_INCLUDING_UICR':
                 cmd.append('--sectoranduicrerase')
+            elif erase == 'NO_ERASE':
+                pass
             else:
                 raise RuntimeError(f'Invalid erase mode: {erase}')
 
@@ -85,6 +88,9 @@ class NrfJprogBinaryRunner(NrfBinaryRunner):
                 cmd.append('--reset')
             if _op['option'] == 'RESET_PIN':
                 cmd.append('--pinreset')
+        elif op_type == 'erasepage':
+            cmd.append('--erasepage')
+            cmd.append(f"0x{_op['page']:08x}")
         else:
             raise RuntimeError(f'Invalid operation: {op_type}')
 

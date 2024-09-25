@@ -136,6 +136,23 @@ ZTEST(timer_tick_train, test_one_tick_timer_train)
 			 timers[i].late_callbacks,
 			 (1000 * timers[i].late_callbacks + MAX_CALLBACKS/2) / MAX_CALLBACKS / 10,
 			 (1000 * timers[i].late_callbacks + MAX_CALLBACKS/2) / MAX_CALLBACKS % 10);
+		/* Record the stats gathered as a JSON object including related CONFIG_* params. */
+		TC_PRINT("RECORD: {"
+			 "\"testcase\":\"one_tick_timer_train\""
+			 ", \"timer\":%d, \"max_delta_cycles\":%u, \"max_delta_us\":%u"
+			 ", \"late_callbacks\":%u"
+			 ", \"perfect_delta_cycles\":%u, \"perfect_delta_us\":%u"
+			 ", \"train_time_ms\":%u, \"busy_loops\":%u"
+			 ", \"timers\":%u, \"expected_callbacks\":%u, \"expected_time_ms\":%u"
+			 ", \"CONFIG_SYS_CLOCK_TICKS_PER_SEC\":%u"
+			 "}\n",
+			 i, timers[i].max_delta, k_cyc_to_us_near32(timers[i].max_delta),
+			 timers[i].late_callbacks,
+			 k_ticks_to_cyc_floor32(TIMERS), k_ticks_to_us_near32(TIMERS),
+			 delta_time, busy_loops,
+			 TIMERS, MAX_CALLBACKS, max_time,
+			 CONFIG_SYS_CLOCK_TICKS_PER_SEC
+			 );
 		max_delta = timers[i].max_delta > max_delta ? timers[i].max_delta : max_delta;
 		k_timer_stop(&timers[i].tm);
 	}

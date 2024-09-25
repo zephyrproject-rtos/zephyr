@@ -457,7 +457,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	snprintk(send_buf, sizeof(send_buf), "AT+QISEND=%d,%ld", sock->id, (long) buf_len);
 
 	/* Setup the locks correctly. */
-	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
+	(void)k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 	k_sem_reset(&mdata.sem_tx_ready);
 
 	/* Send the Modem command. */
@@ -846,8 +846,12 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 /* Func: modem_rx
  * Desc: Thread to process all messages received from the Modem.
  */
-static void modem_rx(void)
+static void modem_rx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 
 		/* Wait for incoming data */
@@ -1264,7 +1268,7 @@ static int modem_init(const struct device *dev)
 	/* start RX thread */
 	k_thread_create(&modem_rx_thread, modem_rx_stack,
 			K_KERNEL_STACK_SIZEOF(modem_rx_stack),
-			(k_thread_entry_t) modem_rx,
+			modem_rx,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
 	/* Init RSSI query */

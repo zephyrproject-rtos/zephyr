@@ -55,7 +55,7 @@ static inline void relocate_vector_table(void)
 
 void __weak relocate_vector_table(void)
 {
-#if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) && !defined(CONFIG_SOC_SERIES_ATMx2) || \
+#if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) && !defined(CONFIG_SOC_SERIES_ATMX2) || \
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
@@ -179,7 +179,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * This routine prepares for the execution of and runs C code.
  *
  */
-void z_arm_prep_c(void)
+void z_prep_c(void)
 {
 	relocate_vector_table();
 #if defined(CONFIG_CPU_HAS_FPU)
@@ -187,7 +187,12 @@ void z_arm_prep_c(void)
 #endif
 	z_bss_zero();
 	z_data_copy();
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+	/* Invoke SoC-specific interrupt controller initialization */
+	z_soc_irq_init();
+#else
 	z_arm_interrupt_init();
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	z_cstart();
 	CODE_UNREACHABLE;
 }

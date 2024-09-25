@@ -66,7 +66,7 @@ static void dump_thread(struct k_thread *thread)
 	/*
 	 * When dumping minimum information,
 	 * the current thread struct and stack need to
-	 * to be dumped so debugger can examine them.
+	 * be dumped so debugger can examine them.
 	 */
 
 	if (thread == NULL) {
@@ -117,7 +117,7 @@ void process_memory_region_list(void)
 #endif
 }
 
-void coredump(unsigned int reason, const z_arch_esf_t *esf,
+void coredump(unsigned int reason, const struct arch_esf *esf,
 	      struct k_thread *thread)
 {
 	z_coredump_start();

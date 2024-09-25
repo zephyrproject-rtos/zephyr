@@ -1,0 +1,8 @@
+# EFR32MG12 BRD4161A
+
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 TriaGnoSys GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SLWRB4161A
+	select SOC_PART_NUMBER_EFR32MG12P432F1024GL125

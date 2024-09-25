@@ -10,7 +10,7 @@
 /* Grotesque hack for pinmux boards */
 #if defined(CONFIG_BOARD_RV32M1_VEGA)
 #include <fsl_port.h>
-#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
 #include "device_imx.h"
 #elif defined(CONFIG_BOARD_MIMXRT1050_EVK)
 #include <fsl_iomuxc.h>
@@ -32,7 +32,7 @@ static void board_setup(void)
 	}
 #endif
 
-#if defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#if defined(CONFIG_BOARD_UDOO_NEO_FULL_MCIMX6X_M4)
 	/*
 	 * Configure pin mux.
 	 * The following code needs to configure the same GPIOs which were
@@ -115,3 +115,9 @@ ZTEST_SUITE(gpio_port_cb_mgmt, NULL, gpio_basic_setup, NULL, NULL, NULL);
 
 /* Test GPIO callbacks */
 ZTEST_SUITE(gpio_port_cb_vari, NULL, gpio_basic_setup, NULL, NULL, NULL);
+
+/* Test GPIO port configuration influence on callbacks. Want to run just
+ * after flash, hence the name starting in 'a'
+ */
+ZTEST_SUITE(after_flash_gpio_config_trigger, NULL, gpio_basic_setup, NULL, NULL,
+	    NULL);

@@ -1,0 +1,8 @@
+# Copyright 2024 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT8195_ADSP
+	bool
+
+config SOC
+	default "mt8195_adsp" if SOC_MT8195_ADSP

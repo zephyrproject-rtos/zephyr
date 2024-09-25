@@ -25,6 +25,7 @@ static struct bt_conn *default_conn;
 static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
 static uint16_t seq_num;
+static uint16_t latency_ms = 10U; /* 10ms */
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -58,24 +59,32 @@ static void iso_timer_timeout(struct k_work *work)
 		data_initialized = true;
 	}
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	if (buf != NULL) {
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-	net_buf_add_mem(buf, buf_data, len_to_send);
+		net_buf_add_mem(buf, buf_data, len_to_send);
 
-	ret = bt_iso_chan_send(&iso_chan, buf, seq_num++, BT_ISO_TIMESTAMP_NONE);
+		ret = bt_iso_chan_send(&iso_chan, buf, seq_num);
 
-	if (ret < 0) {
-		printk("Failed to send ISO data (%d)\n", ret);
-		net_buf_unref(buf);
+		if (ret < 0) {
+			printk("Failed to send ISO data (%d)\n", ret);
+			net_buf_unref(buf);
+		}
+
+		len_to_send++;
+		if (len_to_send > ARRAY_SIZE(buf_data)) {
+			len_to_send = 1;
+		}
+	} else {
+		printk("Failed to allocate buffer, retrying in next interval (%u us)\n",
+		       interval_us);
 	}
+
+	/* Sequence number shall be incremented for each SDU interval */
+	seq_num++;
 
 	k_work_schedule(&iso_send_work, K_USEC(interval_us));
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -98,7 +107,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -70) {
+	if (rssi < -50) {
 		return;
 	}
 
@@ -251,8 +260,10 @@ int main(void)
 	param.sca = BT_GAP_SCA_UNKNOWN;
 	param.packing = 0;
 	param.framing = 0;
-	param.latency = 10; /* ms */
-	param.interval = interval_us; /* us */
+	param.c_to_p_latency = latency_ms; /* ms */
+	param.p_to_c_latency = latency_ms; /* ms */
+	param.c_to_p_interval = interval_us; /* us */
+	param.p_to_c_interval = interval_us; /* us */
 
 	err = bt_iso_cig_create(&param, &cig);
 

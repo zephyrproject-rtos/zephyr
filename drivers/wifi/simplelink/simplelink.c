@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/net_offload.h>
+#include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
 #include <zephyr/net/socket_offload.h>
 #endif
@@ -302,3 +303,5 @@ NET_DEVICE_OFFLOAD_INIT(simplelink, CONFIG_WIFI_SIMPLELINK_NAME,
 			&simplelink_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &simplelink_api,
 			CONFIG_WIFI_SIMPLELINK_MAX_PACKET_SIZE);
+
+CONNECTIVITY_WIFI_MGMT_BIND(simplelink);

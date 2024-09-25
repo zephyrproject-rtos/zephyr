@@ -88,6 +88,7 @@ static lv_fs_res_t lvgl_fs_close(struct _lv_fs_drv_t *drv, void *file)
 	int err;
 
 	err = fs_close((struct fs_file_t *)file);
+	LV_MEM_CUSTOM_FREE(file);
 	return errno_to_lv_fs_res(err);
 }
 

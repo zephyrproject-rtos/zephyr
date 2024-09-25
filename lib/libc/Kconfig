@@ -10,6 +10,14 @@ config REQUIRES_FULL_LIBC
 	  Select a C library implementation that provides a complete C library
 	  implementation, rather than the subset provided by MINIMAL_LIBC.
 
+config REQUIRES_FLOAT_PRINTF
+	bool "Requires floating point support in printf"
+	select CBPRINTF_FP_SUPPORT if MINIMAL_LIBC
+	select NEWLIB_LIBC_FLOAT_PRINTF if NEWLIB_LIBC
+	help
+	  Select a printf implementation that provides a complete
+	  implementation including floating point support.
+
 config FULL_LIBC_SUPPORTED
 	bool
 	help
@@ -35,25 +43,23 @@ config NEWLIB_LIBC_SUPPORTED
 config PICOLIBC_SUPPORTED
 	bool
 	depends on !NATIVE_APPLICATION
-	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (NATIVE_LIBRARY)
-	depends on !REQUIRES_FULL_LIBCPP || ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y")
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
 	default y
 	select FULL_LIBC_SUPPORTED
 	help
 	  Selected when the target has support for picolibc.
 
-config SUPPORT_MINIMAL_LIBC
+config NATIVE_LIBC_INCOMPATIBLE
 	bool
-	select MINIMAL_LIBC_SUPPORTED
-	select DEPRECATED
 	help
-	  Legacy symbol that selects MINIMAL_LIBC_SUPPORTED
+	  Other Kconfig options can select this, if they are not compatible with the
+	  native/host libC, and should only be compiled with an embedded libC
 
 menu "C Library"
 
 choice LIBC_IMPLEMENTATION
 	prompt "C Library Implementation"
-	default EXTERNAL_LIBC if NATIVE_BUILD
+	default EXTERNAL_LIBC if NATIVE_BUILD && !(NATIVE_LIBRARY && NATIVE_LIBC_INCOMPATIBLE)
 	default PICOLIBC
 	default NEWLIB_LIBC if REQUIRES_FULL_LIBC
 	default MINIMAL_LIBC
@@ -66,13 +72,16 @@ config MINIMAL_LIBC
 	imply COMPILER_FREESTANDING
 	select COMMON_LIBC_ABORT
 	select COMMON_LIBC_STRNLEN
+	imply COMMON_LIBC_MALLOC
+	imply COMMON_LIBC_CALLOC
+	imply COMMON_LIBC_REALLOCARRAY
 	help
 	  Build with minimal C library.
 
 config PICOLIBC
 	bool "Picolibc library"
 	select COMMON_LIBC_ABORT
-	select THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	imply THREAD_LOCAL_STORAGE if ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
 	select LIBC_ERRNO if THREAD_LOCAL_STORAGE
 	select NEED_LIBC_MEM_PARTITION
 	imply COMMON_LIBC_MALLOC
@@ -89,6 +98,13 @@ config NEWLIB_LIBC
 	depends on !NATIVE_APPLICATION
 	depends on NEWLIB_LIBC_SUPPORTED
 	select NEED_LIBC_MEM_PARTITION
+	imply POSIX_DEVICE_IO_ALIAS_CLOSE
+	imply POSIX_DEVICE_IO_ALIAS_OPEN
+	imply POSIX_DEVICE_IO_ALIAS_READ
+	imply POSIX_DEVICE_IO_ALIAS_WRITE
+	imply POSIX_FD_MGMT_ALIAS_LSEEK
+	imply POSIX_FILE_SYSTEM_ALIAS_FSTAT
+	imply POSIX_MULTI_PROCESS_ALIAS_GETPID
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.

@@ -1,0 +1,5 @@
+board:
+  name: stm32f7508_dk
+  vendor: st
+  socs:
+    - name: stm32f750xx

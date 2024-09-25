@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief DAC driver APIs
  * @defgroup dac_interface DAC driver APIs
+ * @since 2.3
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -129,6 +131,6 @@ static inline int z_impl_dac_write_value(const struct device *dev,
 }
 #endif
 
-#include <syscalls/dac.h>
+#include <zephyr/syscalls/dac.h>
 
 #endif  /* ZEPHYR_INCLUDE_DRIVERS_DAC_H_ */

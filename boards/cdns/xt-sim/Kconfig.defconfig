@@ -1,0 +1,5 @@
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if IPM_CONSOLE_RECEIVER

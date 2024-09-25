@@ -59,7 +59,7 @@ typedef struct sys_bitarray sys_bitarray_t;
 		[DIV_ROUND_UP(DIV_ROUND_UP(total_bits, 8),		\
 			       sizeof(uint32_t))] = {0};		\
 	sba_mod sys_bitarray_t name = {					\
-		.num_bits = total_bits,					\
+		.num_bits = (total_bits),				\
 		.num_bundles = DIV_ROUND_UP(				\
 			DIV_ROUND_UP(total_bits, 8), sizeof(uint32_t)),	\
 		.bundles = _sys_bitarray_bundles_##name,		\
@@ -167,6 +167,61 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
  */
 int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 		       size_t *offset);
+
+/**
+ * Calculates the bit-wise XOR of two bitarrays in a region.
+ * The result is stored in the first bitarray passed in (@p dst).
+ * Both bitarrays must be of the same size.
+ *
+ * @param dst      Bitarray struct
+ * @param other    Bitarray struct
+ * @param num_bits Number of bits in the region, must be larger than 0
+ * @param offset   Starting bit location
+ *
+ * @retval 0       Operation successful
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, mismatching bitarrays, trying to xor
+ * 0 bits, etc.)
+ */
+int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits, size_t offset);
+
+/**
+ * Find nth bit set in region
+ *
+ * This counts the number of bits set (@p count) in a
+ * region (@p offset, @p num_bits) and returns the index (@p found_at)
+ * of the nth set bit, if it exists, as long with a zero return value.
+ *
+ * If it does not exist, @p found_at is not updated and the method returns
+ *
+ * @param[in]  bitarray Bitarray struct
+ * @param[in]  n        Nth bit set to look for
+ * @param[in]  num_bits Number of bits to check, must be larger than 0
+ * @param[in]  offset   Starting bit position
+ * @param[out] found_at Index of the nth bit set, if found
+ *
+ * @retval 0       Operation successful
+ * @retval 1       Nth bit set was not found in region
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, trying to count 0 bits, etc.)
+ */
+int sys_bitarray_find_nth_set(sys_bitarray_t *bitarray, size_t n, size_t num_bits, size_t offset,
+			      size_t *found_at);
+
+/**
+ * Count bits set in a bit array region
+ *
+ * This counts the number of bits set (@p count) in a
+ * region (@p offset, @p num_bits).
+ *
+ * @param[in]  bitarray Bitarray struct
+ * @param[in]  num_bits Number of bits to check, must be larger than 0
+ * @param[in]  offset   Starting bit position
+ * @param[out] count    Number of bits set in the region if successful
+ *
+ * @retval 0       Operation successful
+ * @retval -EINVAL Invalid argument (e.g. out-of-bounds access, trying to count 0 bits, etc.)
+ */
+int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size_t offset,
+				 size_t *count);
 
 /**
  * Free bits in a bit array

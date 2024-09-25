@@ -24,7 +24,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv7m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <16>;
 			};
 		};
 	};
@@ -155,15 +154,19 @@
 			status = "disabled";
 		};
 
-		/*
-		 * For now only UART4 is supported and
-		 * tested with the serial driver
-		 */
 		uart4: uart@30a60000 {
 			compatible = "nxp,imx-iuart";
 			reg = <0x30a60000 0x10000>;
 			interrupts = <29 3>;
 			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
+		uart1: uart@30860000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			clocks = <&ccm IMX_CCM_UART1_CLK 0x7c 24>;
 			status = "disabled";
 		};
 
@@ -178,6 +181,35 @@
 			status = "disabled";
 		};
 
+		ecspi1: spi@30820000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30820000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <31 3>;
+			clocks = <&ccm IMX_CCM_ECSPI1_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi2: spi@30830000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30830000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <32 3>;
+			clocks = <&ccm IMX_CCM_ECSPI2_CLK 0 0>;
+			status = "disabled";
+		};
+
+		ecspi3: spi@30840000 {
+			compatible = "nxp,imx-ecspi";
+			reg = <0x30840000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <33 3>;
+			clocks = <&ccm IMX_CCM_ECSPI3_CLK 0 0>;
+			status = "disabled";
+		};
 	};
 };
 

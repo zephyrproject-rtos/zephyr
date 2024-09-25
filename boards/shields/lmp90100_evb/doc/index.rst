@@ -41,7 +41,7 @@ Zephyr RTOS includes one sample targeting the LMP90100 EVB:
 Programming
 ***********
 
-Set ``-DSHIELD=lmp90100_evb`` when you invoke ``west build``. For example:
+Set ``--shield lmp90100_evb`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/shields/lmp90100_evb/rtd
@@ -50,7 +50,7 @@ Set ``-DSHIELD=lmp90100_evb`` when you invoke ``west build``. For example:
    :goals: build
 
 .. _LMP90100 Sensor AFE Evaluation Board User's Guide:
-   http://www.ti.com/lit/pdf/snau028
+   https://www.farnell.com/datasheets/1604987.pdf
 
 .. _LMP90100 Multi-Channel, Low Power 24-Bit Sensor AFE:
    http://www.ti.com/product/LMP90100

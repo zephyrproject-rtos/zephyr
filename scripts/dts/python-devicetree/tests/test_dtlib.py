@@ -912,6 +912,15 @@ def test_deletion():
 /dts-v1/;
 
 / {
+	x = "foo";
+	sub0 {
+		x = "bar";
+	};
+};
+
+/delete-node/ &{/};
+
+/ {
 	sub1 {
 		x = < 1 >;
 		sub2 {
@@ -939,6 +948,29 @@ def test_deletion():
 	sub1 {
 		x = < 0x1 >;
 	};
+};
+""")
+
+    verify_parse("""
+/dts-v1/;
+
+/ {
+	x: x = < &sub >, &sub;
+
+	sub1 {
+		x = < &sub >, &sub;
+	};
+	sub2: sub2 {
+		x = < &sub >, &sub;
+	};
+};
+
+/delete-node/ &{/};
+""",
+"""
+/dts-v1/;
+
+/ {
 };
 """)
 
@@ -1871,7 +1903,7 @@ def test_prop_type_casting():
     verify_raw_to_num_error(dtlib.to_num, b"foo", 2, "b'foo' is 3 bytes long, expected 2")
     verify_raw_to_num_error(dtlib.to_nums, 0, 0, "'0' has type 'int', expected 'bytes'")
     verify_raw_to_num_error(dtlib.to_nums, b"", 0, "'length' must be greater than zero, was 0")
-    verify_raw_to_num_error(dtlib.to_nums, b"foooo", 2, "b'foooo' is 5 bytes long, expected a length that's a a multiple of 2")
+    verify_raw_to_num_error(dtlib.to_nums, b"foooo", 2, "b'foooo' is 5 bytes long, expected a length that's a multiple of 2")
 
 def test_duplicate_labels():
     '''

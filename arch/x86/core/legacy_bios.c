@@ -17,18 +17,18 @@ static uintptr_t bios_search_rsdp_buff(uintptr_t search_phy_add, uint32_t search
 {
 	uint64_t *search_buff;
 
-	z_phys_map((uint8_t **)&search_buff, search_phy_add, search_length, 0);
+	k_mem_map_phys_bare((uint8_t **)&search_buff, search_phy_add, search_length, 0);
 	if (!search_buff) {
 		return 0;
 	}
 
 	for (int i = 0; i < search_length / 8u; i++) {
 		if (search_buff[i] == RSDP_SIGNATURE) {
-			z_phys_unmap((uint8_t *)search_buff, search_length);
+			k_mem_unmap_phys_bare((uint8_t *)search_buff, search_length);
 			return (search_phy_add + (i * 8u));
 		}
 	}
-	z_phys_unmap((uint8_t *)search_buff, search_length);
+	k_mem_unmap_phys_bare((uint8_t *)search_buff, search_length);
 
 	return 0;
 }
@@ -38,10 +38,10 @@ void *bios_acpi_rsdp_get(void)
 	uint8_t *bios_ext_data, *zero_page_base;
 	uintptr_t search_phy_add, rsdp_phy_add;
 
-	z_phys_map(&zero_page_base, 0, DATA_SIZE_K(4u), 0);
+	k_mem_map_phys_bare(&zero_page_base, 0, DATA_SIZE_K(4u), 0);
 	bios_ext_data = EBDA_ADD + zero_page_base;
 	search_phy_add = (uintptr_t)((*(uint16_t *)bios_ext_data) << 4u);
-	z_phys_unmap(zero_page_base, DATA_SIZE_K(4u));
+	k_mem_unmap_phys_bare(zero_page_base, DATA_SIZE_K(4u));
 
 	if ((search_phy_add >= BIOS_EXT_DATA_LOW) && (search_phy_add < BIOS_EXT_DATA_HIGH)) {
 		rsdp_phy_add = bios_search_rsdp_buff(search_phy_add, DATA_SIZE_K(1u));

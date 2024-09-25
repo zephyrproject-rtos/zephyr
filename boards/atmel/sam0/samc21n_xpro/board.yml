@@ -1,0 +1,5 @@
+board:
+  name: samc21n_xpro
+  vendor: atmel
+  socs:
+    - name: samc21n18a

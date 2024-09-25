@@ -18,7 +18,7 @@
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/types.h>
 #ifdef CONFIG_MMU
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #endif
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
@@ -260,7 +260,7 @@ void free(void *ptr)
 	malloc_unlock();
 }
 
-SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(malloc_prepare, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_LIBC);
 #else /* No malloc arena */
 void *malloc(size_t size)
 {

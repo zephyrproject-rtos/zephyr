@@ -97,6 +97,10 @@
 		reg = <0x80100000 DT_SIZE_M(8)>;
 	};
 
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
+	};
+
 	uart0: uart@10c02000 {
 		compatible = "ns16550";
 		reg-shift = <2>;
@@ -115,6 +119,19 @@
 		active-low;
 		#reset-cells = <1>;
 		status = "okay";
+	};
+
+	sdmmc: sdmmc@10808000 {
+		compatible = "cdns,sdhc";
+		reg = <0x10808000 0x1000>,
+			<0x10B92000 0x1000>;
+		reg-names = "reg_base", "combo_phy";
+		clock-frequency = <200000000>;
+		power_delay_ms = <1000>;
+		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
+			<&reset RSTMGR_SDMMCECC_RSTLINE>,
+			<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		status = "disabled";
 	};
 
 	timer0: timer@10C03000 {
@@ -158,6 +175,45 @@
 		reg = <0x10D00100 0x100>;
 		clock-frequency = <100000000>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
+	};
+
+	watchdog0: watchdog@10d00200 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00200 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG0_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog1: watchdog@10d00300 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00300 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG1_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog2: watchdog@10d00400 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00400 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG2_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog3: watchdog@10d00500 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00500 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG3_RSTLINE>;
+		status = "disabled";
+	};
+
+	watchdog4: watchdog@10d00600 {
+		compatible = "snps,designware-watchdog";
+		reg = <0x10d00600 0x100>;
+		clock-frequency = <100000000>;
+		resets = <&reset RSTMGR_WATCHDOG4_RSTLINE>;
 		status = "disabled";
 	};
 
@@ -167,4 +223,20 @@
 		status = "disabled";
 		zephyr,num-clients = <2>;
 	};
+
+	/* cadence Nand Flash controller*/
+	nand: nand@10B80000	{
+		compatible = "cdns,nand";
+		reg = <0x10B80000 0X10000>,
+			  <0x10840000 0x10000>;
+		reg-names = "nand_reg","sdma";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		resets = <&reset RSTMGR_NAND_RSTLINE>,
+				<&reset RSTMGR_SOFTPHY_RSTLINE>;
+		block-size = <0x20000>;
+		data-rate-mode = <0>;
+		status = "disabled";
+	};
+
 };

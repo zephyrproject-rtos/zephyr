@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Xilinx ZynqMP SoC pinctrl node. It allows configuration of pin assignments
+  for the supported peripherals.
+
+  See Zynq UltraScale+ Devices Register Reference (UG1087) for details regarding
+  valid pin assignments
+compatible: "xlnx,pinctrl-zynqmp"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+            Pin assignments for the selected group

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
-#include <fcntl.h>
+#include <zephyr/posix/fcntl.h>
 #include <zephyr/net/socket.h>
 #include <net_private.h>
 #include <ipv4.h>
@@ -636,7 +636,7 @@ ZTEST(net_ipv4_fragment, test_udp)
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	pkt_recv_expected_size = net_pkt_get_len(pkt);
 
@@ -706,7 +706,7 @@ ZTEST(net_ipv4_fragment, test_tcp)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
 
-	net_tcp_finalize(pkt);
+	net_tcp_finalize(pkt, false);
 
 	pkt_recv_expected_size = net_pkt_get_len(pkt);
 
@@ -849,7 +849,7 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	pkt_recv_expected_size = net_pkt_get_len(pkt);
 

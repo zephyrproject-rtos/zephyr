@@ -5,28 +5,28 @@
  */
 
 #include <zephyr/cache.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 static inline int z_vrfy_sys_cache_data_flush_range(void *addr, size_t size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(addr, size));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(addr, size));
 
 	return z_impl_sys_cache_data_flush_range(addr, size);
 }
-#include <syscalls/sys_cache_data_flush_range_mrsh.c>
+#include <zephyr/syscalls/sys_cache_data_flush_range_mrsh.c>
 
 static inline int z_vrfy_sys_cache_data_invd_range(void *addr, size_t size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(addr, size));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(addr, size));
 
 	return z_impl_sys_cache_data_invd_range(addr, size);
 }
-#include <syscalls/sys_cache_data_invd_range_mrsh.c>
+#include <zephyr/syscalls/sys_cache_data_invd_range_mrsh.c>
 
 static inline int z_vrfy_sys_cache_data_flush_and_invd_range(void *addr, size_t size)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(addr, size));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(addr, size));
 
 	return z_impl_sys_cache_data_flush_and_invd_range(addr, size);
 }
-#include <syscalls/sys_cache_data_flush_and_invd_range_mrsh.c>
+#include <zephyr/syscalls/sys_cache_data_flush_and_invd_range_mrsh.c>

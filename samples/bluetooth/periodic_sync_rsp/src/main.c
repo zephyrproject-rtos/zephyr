@@ -122,9 +122,9 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 	.recv = recv_cb,
 };
 
-static struct bt_uuid_128 pawr_svc_uuid =
+static const struct bt_uuid_128 pawr_svc_uuid =
 	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef0));
-static struct bt_uuid_128 pawr_char_uuid =
+static const struct bt_uuid_128 pawr_char_uuid =
 	BT_UUID_INIT_128(BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
 static ssize_t write_timing(struct bt_conn *conn, const struct bt_gatt_attr *attr, const void *buf,
@@ -195,6 +195,10 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 	.disconnected = disconnected,
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 int main(void)
 {
 	struct bt_le_per_adv_sync_transfer_param past_param;
@@ -223,11 +227,9 @@ int main(void)
 
 	do {
 		err = bt_le_adv_start(
-			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE |
-						BT_LE_ADV_OPT_USE_NAME |
-						BT_LE_ADV_OPT_FORCE_NAME_IN_AD,
+			BT_LE_ADV_PARAM(BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_CONNECTABLE,
 					BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL),
-			NULL, 0, NULL, 0);
+			NULL, 0, sd, ARRAY_SIZE(sd));
 		if (err && err != -EALREADY) {
 			printk("Advertising failed to start (err %d)\n", err);
 

@@ -4,4 +4,7 @@ tests:
     tags:
       - drivers
       - dma
-    filter: dt_nodelabel_enabled("test_dma0")
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    filter: dt_nodelabel_enabled("tst_dma0")

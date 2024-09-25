@@ -1,0 +1,453 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2023 NXP
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt1060.dtsi>
+#include "mimxrt1062_fmurt6-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <freq.h>
+
+/ {
+	model = "NXP MIMXRT1062 FMURT6 board";
+	compatible = "nxp,mimxrt1062";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		watchdog0 = &wdog0;
+		sdhc0 = &usdhc1;
+		gps1 = &lpuart2;
+		telem1 = &lpuart3;
+		telem4-gps2 = &lpuart5;
+	};
+
+	chosen {
+		zephyr,flash-controller = &s26ks512s0;
+		zephyr,flash = &s26ks512s0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &ocram;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart7;
+		zephyr,shell-uart = &lpuart7;
+		zephyr,canbus = &flexcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+		red_led: led-2 {
+			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+			label = "User LED2";
+		};
+	};
+
+	/* This regulator controls VDD_3V3_SD_CARD onboard supply */
+	reg-3v3-sdcard {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sdcard";
+		enable-gpios = <&gpio4 13 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_5V_PERIPH onboard supply */
+	reg-5v-periph {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-5v-periph";
+		enable-gpios = <&gpio4 9 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_5V_HIPOWER onboard supply */
+	reg-5v-hipower {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-5v-hipower";
+		enable-gpios = <&gpio4 6 GPIO_ACTIVE_LOW>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls the 3V3_S line, which powers sensors on-board. */
+	reg-3v3-sensor {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-sensor";
+		enable-gpios = <&gpio3 27 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <2000>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls VDD_3V3_SPEKTRUM onboard supply */
+	reg-3v3-spektrum {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-3v3-spektrum";
+		enable-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+
+	/* This regulator controls ETH_VDD_3V3 supply to power up the TJA1103 PHY */
+	reg-eth-power {
+		compatible = "regulator-fixed";
+		regulator-name = "reg-eth-power";
+		enable-gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
+		regulator-always-on;
+		status = "okay";
+	};
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flexcan2 {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_flexcan2>;
+	pinctrl-names = "default";
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&flexcan3 {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_flexcan3>;
+	pinctrl-names = "default";
+	can-transceiver {
+		max-bitrate = <5000000>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&gpio7 {
+	status = "okay";
+};
+
+&gpio8 {
+	status = "okay";
+};
+
+&gpio9 {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc1>;
+	pinctrl-names = "default";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	ahb-bufferable;
+	ahb-cacheable;
+	sck-differential-clock;
+	combination-mode;
+	rx-clock-source = <3>;
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	s26ks512s0: s26ks512s@0 {
+		compatible = "nxp,imx-flexspi-hyperflash";
+		size = <DT_SIZE_M(64*8)>;
+		reg = <0>;
+		spi-max-frequency = <166000000>;
+		word-addressable;
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <0>;
+		cs-setup-time = <3>;
+		data-valid-time = <1>;
+		column-space = <3>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <20>;
+		status = "okay";
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+			/* The MCUBoot swap-move algorithm uses the last 14 sectors
+			 * of the primary slot0 for swap status and move.
+			 */
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(56))>;
+			};
+			slot1_partition: partition@32E000 {
+				label = "image-1";
+				reg = <0x0032E000 DT_SIZE_M(3)>;
+			};
+			storage_partition: partition@62E000 {
+				label = "storage";
+				reg = <0x0062E000 (DT_SIZE_M(58) - DT_SIZE_K(184))>;
+			};
+		};
+	};
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+
+};
+
+&lpi2c2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+
+	bmp388: bmp388@76 {
+		compatible = "bosch,bmp388";
+		reg = <0x76>;
+		status = "okay";
+	};
+};
+
+&lpi2c4 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		status = "disabled";
+		reg = <0x10>;
+	};
+
+};
+
+&lpuart7 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart7>;
+	pinctrl-1 = <&pinmux_lpuart7_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-1 = <&pinmux_lpuart2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart5>;
+	pinctrl-1 = <&pinmux_lpuart5_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio3 23 GPIO_ACTIVE_LOW>;
+	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&lpspi2 {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_lpspi2>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(1)>;
+
+	ism330dhcx: ism330dhcx@0 {
+		compatible = "st,ism330dhcx";
+		status = "disabled";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+	};
+};
+
+
+&lpspi3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi3>;
+	pinctrl-names = "default";
+	/* Accelerometer */
+	/* Gyroscope */
+	cs-gpios = <&gpio2 31 GPIO_ACTIVE_LOW>,
+		   <&gpio2 26 GPIO_ACTIVE_LOW>;
+
+	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&flexpwm2_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch1>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch2>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm2	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch3>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm2_pwm3	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch4>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm3_pwm2	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch5>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm3_pwm0	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch6>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm4_pwm2	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch7>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&flexpwm4_pwm0	{
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexpwm_fmu_ch8>;
+	pinctrl-names = "default";
+	nxp,prescaler = <64>;
+};
+
+&enet2_mac {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	zephyr,random-mac-address;
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+};
+
+&enet2_mdio {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy: phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	power-delay-ms = <1000>;
+	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&pinmux_usdhc1>;
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-names = "default", "slow", "med", "fast";
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+/* GPT and Systick are enabled. If power management is enabled, the GPT
+ * timer will be used instead of systick, as allows the core clock to
+ * be gated.
+ */
+&gpt_hw_timer {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&iomuxcgpr {
+	status = "okay";
+};
+
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
+};

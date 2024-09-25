@@ -244,6 +244,8 @@ static int gpio_sedi_interrupt_configure(const struct device *dev,
 			pin_config.interrupt_mode =
 				SEDI_GPIO_INT_MODE_BOTH_EDGE;
 			break;
+		default:
+			return -EINVAL;
 		}
 	}
 	/* Configure interrupt mode */
@@ -329,7 +331,7 @@ static int gpio_sedi_init(const struct device *dev)
 	};							       \
 	PM_DEVICE_DEFINE(gpio_##n, gpio_sedi_pm_action);               \
 	DEVICE_DT_INST_DEFINE(n,				       \
-		      &gpio_sedi_init,				       \
+		      gpio_sedi_init,				       \
 		      PM_DEVICE_GET(gpio_##n),		               \
 		      &gpio##n##_data,			               \
 		      &gpio##n##_config,			       \

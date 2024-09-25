@@ -6,8 +6,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdlib.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -81,9 +95,9 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 		.rank = 1,
 		.lockable = true,
 		/* Using the CSIS test sample SIRK */
-		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
-			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
-		.cb = &csip_set_member_cbs
+		.sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+			  0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+		.cb = &csip_set_member_cbs,
 	};
 	int err = 0;
 
@@ -150,8 +164,8 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 				return SHELL_CMD_HELP_PRINTED;
 			}
 
-			len = hex2bin(argv[argn], strlen(argv[argn]),
-				      param.set_sirk, sizeof(param.set_sirk));
+			len = hex2bin(argv[argn], strlen(argv[argn]), param.sirk,
+				      sizeof(param.sirk));
 			if (len == 0) {
 				shell_error(sh, "Could not parse SIRK");
 
@@ -170,14 +184,6 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 
 		return err;
 	}
-
-	return 0;
-}
-
-static int cmd_cap_acceptor_print_sirk(const struct shell *sh, size_t argc,
-				       char *argv[])
-{
-	bt_csip_set_member_print_sirk(cap_csip_svc_inst);
 
 	return 0;
 }
@@ -228,8 +234,60 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 	return 0;
 }
 
-static int cmd_cap_acceptor_set_sirk_rsp(const struct shell *sh, size_t argc,
-					 char *argv[])
+static int cmd_cap_acceptor_sirk(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+	size_t len;
+	int err;
+
+	if (cap_csip_svc_inst == NULL) {
+		shell_error(sh, "CSIS not registered");
+
+		return -ENOEXEC;
+	}
+
+	len = hex2bin(argv[1], strlen(argv[1]), sirk, sizeof(sirk));
+	if (len != sizeof(sirk)) {
+		shell_error(sh, "Invalid SIRK Length: %zu", len);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_sirk(cap_csip_svc_inst, sirk);
+	if (err != 0) {
+		shell_error(sh, "Failed to set SIRK: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "SIRK updated");
+
+	return 0;
+}
+
+static int cmd_cap_acceptor_get_sirk(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint8_t sirk[BT_CSIP_SIRK_SIZE];
+	int err;
+
+	if (cap_csip_svc_inst == NULL) {
+		shell_error(sh, "CSIS not registered");
+
+		return -ENOEXEC;
+	}
+
+	err = bt_csip_set_member_get_sirk(cap_csip_svc_inst, sirk);
+	if (err != 0) {
+		shell_error(sh, "Failed to get SIRK: %d", err);
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "SIRK");
+	shell_hexdump(sh, sirk, sizeof(sirk));
+
+	return 0;
+}
+
+static int cmd_cap_acceptor_sirk_rsp(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (strcmp(argv[1], "accept") == 0) {
 		sirk_read_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT;
@@ -254,25 +312,23 @@ static int cmd_cap_acceptor(const struct shell *sh, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(cap_acceptor_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	cap_acceptor_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_cap_acceptor_init, 1, 4),
-	SHELL_CMD_ARG(lock, NULL,
-		      "Lock the set",
-		      cmd_cap_acceptor_lock, 1, 0),
-	SHELL_CMD_ARG(release, NULL,
-		      "Release the set [force]",
-		      cmd_cap_acceptor_release, 1, 1),
-	SHELL_CMD_ARG(print_sirk, NULL,
-		      "Print the currently used SIRK",
-		      cmd_cap_acceptor_print_sirk, 1, 0),
-	SHELL_CMD_ARG(set_sirk_rsp, NULL,
+	SHELL_CMD_ARG(lock, NULL, "Lock the set", cmd_cap_acceptor_lock, 1, 0),
+	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_cap_acceptor_release, 1, 1),
+	SHELL_CMD_ARG(sirk, NULL, "Set the currently used SIRK <sirk>", cmd_cap_acceptor_sirk, 2,
+		      0),
+	SHELL_CMD_ARG(get_sirk, NULL, "Get the currently used SIRK", cmd_cap_acceptor_get_sirk, 1,
+		      0),
+	SHELL_CMD_ARG(sirk_rsp, NULL,
 		      "Set the response used in SIRK requests "
 		      "<accept, accept_enc, reject, oob>",
-		      cmd_cap_acceptor_set_sirk_rsp, 2, 0),
-		      SHELL_SUBCMD_SET_END
+		      cmd_cap_acceptor_sirk_rsp, 2, 0),
+	SHELL_SUBCMD_SET_END
 );
 
 SHELL_CMD_ARG_REGISTER(cap_acceptor, &cap_acceptor_cmds, "Bluetooth CAP acceptor shell commands",

@@ -9,6 +9,7 @@ config FLASH_NXP_S32_QSPI_NOR
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_JESD216
+	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the Flash driver for a NOR Serial Flash Memory device connected
 	  to an NXP S32 QSPI bus.

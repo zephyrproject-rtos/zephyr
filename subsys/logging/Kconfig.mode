@@ -4,6 +4,7 @@
 choice LOG_MODE
 	prompt "Mode"
 	depends on !LOG_FRONTEND_ONLY
+	default LOG_MODE_IMMEDIATE if ARCH_POSIX
 	default LOG_MODE_MINIMAL if LOG_DEFAULT_MINIMAL
 	default LOG_MODE_DEFERRED
 
@@ -52,6 +53,12 @@ config LOG_FRONTEND_ONLY
 	help
 	  Option indicates that there are no backends intended to be used.
 	  Code asserts if any backend is enabled.
+
+config LOG_FRONTEND_OPT_API
+	bool "Frontend optimized API"
+	help
+	  When enabled, frontend implements functions which are optimized versions
+	  used for the most common log messages.
 
 config LOG_CUSTOM_HEADER
 	bool "Include Custom Log Header"

@@ -39,9 +39,9 @@ struct bt_test_cb {
 			      const void *payload, size_t payload_len);
 	void (*mesh_model_recv)(uint16_t src, uint16_t dst, const void *payload,
 				size_t payload_len);
-	void (*mesh_model_bound)(uint16_t addr, struct bt_mesh_model *model,
+	void (*mesh_model_bound)(uint16_t addr, const struct bt_mesh_model *model,
 				 uint16_t key_idx);
-	void (*mesh_model_unbound)(uint16_t addr, struct bt_mesh_model *model,
+	void (*mesh_model_unbound)(uint16_t addr, const struct bt_mesh_model *model,
 				   uint16_t key_idx);
 	void (*mesh_prov_invalid_bearer)(uint8_t opcode);
 	void (*mesh_trans_incomp_timer_exp)(void);
@@ -53,8 +53,11 @@ struct bt_test_cb {
 /** Register callbacks for Bluetooth testing purposes
  *
  *  @param cb bt_test_cb callback structure
+ *
+ * @retval 0 Success.
+ * @retval -EEXIST if @p cb was already registered.
  */
-void bt_test_cb_register(struct bt_test_cb *cb);
+int bt_test_cb_register(struct bt_test_cb *cb);
 
 /** Unregister callbacks for Bluetooth testing purposes
  *

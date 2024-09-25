@@ -3,7 +3,7 @@ sample:
   name: producer-consumer
 common:
   integration_platforms:
-    - mps2_an385
+    - mps2/an385
   tags: userspace
   harness: console
   harness_config:
@@ -13,3 +13,7 @@ common:
 tests:
   sample.userspace.prod_consumer:
     filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    platform_exclude:
+      - ucans32k1sic

@@ -19,7 +19,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/mm/system_mm.h>
 #include <zephyr/sys/mem_blocks.h>
@@ -30,10 +30,7 @@
 
 #include "mm_drv_common.h"
 
-DEVICE_MMIO_TOPLEVEL_STATIC(tlb_regs, DT_DRV_INST(0));
-
-#define TLB_BASE \
-	((mm_reg_t)DEVICE_MMIO_TOPLEVEL_GET(tlb_regs))
+#define TLB_BASE (mm_reg_t)DT_REG_ADDR(DT_NODELABEL(tlb))
 
 /*
  * Number of significant bits in the page index (defines the size of

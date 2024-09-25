@@ -5,6 +5,7 @@ config FWDGT_GD32
 	bool "GD32 Free watchdog timer (FWDGT) driver"
 	default y
 	depends on DT_HAS_GD_GD32_FWDGT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	select USE_GD32_FWDGT
 	help
 	  Enable the Free watchdog timer (FWDGT) driver for GD32 SoCs.

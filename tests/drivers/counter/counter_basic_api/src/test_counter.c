@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +57,9 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(microchip_xec_timer)
 	DEVS_FOR_DT_COMPAT(nxp_imx_epit)
 	DEVS_FOR_DT_COMPAT(nxp_imx_gpt)
+#ifdef CONFIG_COUNTER_MCUX_TPM
+	DEVS_FOR_DT_COMPAT(nxp_tpm_timer)
+#endif
 	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
@@ -66,8 +70,14 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_QTMR
 	DEVS_FOR_DT_COMPAT(nxp_imx_tmr)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_LPC_RTC
+#ifdef CONFIG_COUNTER_NXP_MRT
+	DEVS_FOR_DT_COMPAT(nxp_mrt_channel)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_LPC_RTC_HIGHRES
+	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
 #endif
 #ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
@@ -78,14 +88,17 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_GECKO_STIMER
 	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
 #endif
-#ifdef CONFIG_COUNTER_MCUX_PIT
-	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)
+#ifdef CONFIG_COUNTER_NXP_PIT
+	DEVS_FOR_DT_COMPAT(nxp_pit_channel)
 #endif
 #ifdef CONFIG_COUNTER_XLNX_AXI_TIMER
 	DEVS_FOR_DT_COMPAT(xlnx_xps_timer_1_00_a)
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_timer)
+#endif
+#ifdef CONFIG_COUNTER_TMR_RTC_ESP32
+	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
 #endif
 #ifdef CONFIG_COUNTER_NXP_S32_SYS_TIMER
 	DEVS_FOR_DT_COMPAT(nxp_s32_sys_timer)
@@ -96,6 +109,12 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER_RPI_PICO
 	DEVS_FOR_DT_COMPAT(raspberrypi_pico_timer)
 #endif
+#ifdef CONFIG_COUNTER_AMBIQ
+	DEVS_FOR_DT_COMPAT(ambiq_counter)
+#endif
+#ifdef CONFIG_COUNTER_MCUX_LPTMR
+	DEVS_FOR_DT_COMPAT(nxp_lptmr)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -105,7 +124,9 @@ static const struct device *const period_devs[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_RTC_STM32
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
+#endif
 };
 
 typedef void (*counter_test_func_t)(const struct device *dev);
@@ -162,6 +183,8 @@ static void counter_tear_down_instance(const struct device *dev)
 static void test_all_instances(counter_test_func_t func,
 				counter_capability_func_t capability_check)
 {
+	int devices_skipped = 0;
+
 	zassert_true(ARRAY_SIZE(devices) > 0, "No device found");
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
 		counter_setup_instance(devices[i]);
@@ -171,10 +194,14 @@ static void test_all_instances(counter_test_func_t func,
 			func(devices[i]);
 		} else {
 			TC_PRINT("Skipped for %s\n", devices[i]->name);
+			devices_skipped++;
 		}
 		counter_tear_down_instance(devices[i]);
 		/* Allow logs to be printed. */
 		k_sleep(K_MSEC(100));
+	}
+	if (devices_skipped == ARRAY_SIZE(devices)) {
+		ztest_test_skip();
 	}
 }
 
@@ -873,7 +900,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const struct device *d
 {
 	int err;
 	uint32_t cnt;
-	uint32_t us = 1000;
+	uint32_t us = 1500;
 	uint32_t ticks = counter_us_to_ticks(dev, us);
 	uint32_t top = counter_get_top_value(dev);
 
@@ -945,6 +972,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	}
 #endif
 #ifdef CONFIG_COUNTER_NATIVE_POSIX
+	if (dev == DEVICE_DT_GET(DT_NODELABEL(counter0))) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_AMBIQ
 	if (dev == DEVICE_DT_GET(DT_NODELABEL(counter0))) {
 		return true;
 	}

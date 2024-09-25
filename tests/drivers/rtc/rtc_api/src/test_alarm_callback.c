@@ -1,5 +1,6 @@
 /*
- * Copyright 2022 Bjarki Arge Andreasen
+ * Copyright (c) 2022 Bjarki Arge Andreasen
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,16 +9,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/timeutil.h>
 
-#include <time.h>
-
-/* Fri Jan 01 2021 13:29:50 GMT+0000 */
-#define RTC_TEST_ALARM_SET_TIME		     (1609507790)
 #define RTC_TEST_ALARM_TEST_NOT_CALLED_DELAY (3)
 #define RTC_TEST_ALARM_TEST_CALLED_DELAY     (10)
-#define RTC_TEST_ALARM_TIME_MINUTE	     (30)
-#define RTC_TEST_ALARM_TIME_HOUR	     (13)
 
 static const struct device *rtc = DEVICE_DT_GET(DT_ALIAS(rtc));
 static const uint16_t alarms_count = DT_PROP(DT_ALIAS(rtc), alarms_count);
@@ -25,6 +19,36 @@ static uint32_t callback_user_data_odd = 0x4321;
 static uint32_t callback_user_data_even = 0x1234;
 static atomic_t callback_called_mask_odd;
 static atomic_t callback_called_mask_even;
+
+static const uint16_t test_alarm_time_mask_set = CONFIG_TEST_RTC_ALARM_TIME_MASK;
+
+/* Fri Jan 01 2021 13:29:50 GMT+0000 */
+static const struct rtc_time test_rtc_time_set = {
+	.tm_sec = 50,
+	.tm_min = 29,
+	.tm_hour = 13,
+	.tm_mday = 1,
+	.tm_mon = 0,
+	.tm_year = 121,
+	.tm_wday = 5,
+	.tm_yday = 1,
+	.tm_isdst = -1,
+	.tm_nsec = 0,
+};
+
+/* Fri Jan 01 2021 13:30:00 GMT+0000 */
+static const struct rtc_time test_alarm_time_set = {
+	.tm_sec = 0,
+	.tm_min = 30,
+	.tm_hour = 13,
+	.tm_mday = 1,
+	.tm_mon = 0,
+	.tm_year = 121,
+	.tm_wday = 5,
+	.tm_yday = 1,
+	.tm_isdst = -1,
+	.tm_nsec = 0,
+};
 
 static void test_rtc_alarm_callback_handler_odd(const struct device *dev, uint16_t id,
 						void *user_data)
@@ -41,11 +65,6 @@ static void test_rtc_alarm_callback_handler_even(const struct device *dev, uint1
 ZTEST(rtc_api, test_alarm_callback)
 {
 	int ret;
-	time_t timer_set;
-	struct rtc_time time_set;
-	struct rtc_time alarm_time_set;
-	uint16_t alarm_time_mask_supported;
-	uint16_t alarm_time_mask_set;
 	atomic_val_t callback_called_mask_status_odd;
 	atomic_val_t callback_called_mask_status_even;
 	bool callback_called_status;
@@ -54,51 +73,27 @@ ZTEST(rtc_api, test_alarm_callback)
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_callback(rtc, i, NULL, NULL);
 
-		zassert_ok(ret, "Failed to clear and disable alarm");
-	}
-
-	/* Validate alarms supported fields */
-	for (uint16_t i = 0; i < alarms_count; i++) {
-		ret = rtc_alarm_get_supported_fields(rtc, i, &alarm_time_mask_supported);
-
-		zassert_ok(ret, "Failed to get supported alarm fields");
-
-		/* Skip test if alarm does not support the minute and hour fields */
-		if (((RTC_ALARM_TIME_MASK_MINUTE & alarm_time_mask_supported) == 0) ||
-		((RTC_TEST_ALARM_TIME_HOUR & alarm_time_mask_supported) == 0)) {
+		if (ret == -ENOTSUP) {
+			TC_PRINT("Alarm callbacks not supported\n");
 			ztest_test_skip();
+		} else {
+			zassert_ok(ret, "Failed to clear and disable alarm %d", i);
 		}
 	}
 
-	/* Set alarm time */
-	alarm_time_set.tm_min = RTC_TEST_ALARM_TIME_MINUTE;
-	alarm_time_set.tm_hour = RTC_TEST_ALARM_TIME_HOUR;
-	alarm_time_mask_set = (RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR);
-
 	for (uint16_t i = 0; i < alarms_count; i++) {
-		ret = rtc_alarm_set_time(rtc, i, alarm_time_mask_set, &alarm_time_set);
-
-		zassert_ok(ret, "Failed to set alarm time");
+		ret = rtc_alarm_set_time(rtc, i, test_alarm_time_mask_set, &test_alarm_time_set);
+		zassert_ok(ret, "Failed to set alarm %d time", i);
 	}
 
-	/* Initialize RTC time to set */
-	timer_set = RTC_TEST_ALARM_SET_TIME;
-
-	gmtime_r(&timer_set, (struct tm *)(&time_set));
-
-	time_set.tm_isdst = -1;
-	time_set.tm_nsec = 0;
-
 	/* Set RTC time */
-	ret = rtc_set_time(rtc, &time_set);
-
+	ret = rtc_set_time(rtc, &test_rtc_time_set);
 	zassert_ok(ret, "Failed to set time");
 
 	/* Clear alarm pending status */
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_is_pending(rtc, i);
-
-		zassert_true(ret > -1, "Failed to clear alarm pending status");
+		zassert_true(ret > -1, "Failed to clear alarm %d pending status", i);
 	}
 
 	/* Set and enable alarm callback */
@@ -113,7 +108,7 @@ ZTEST(rtc_api, test_alarm_callback)
 						&callback_user_data_even);
 		}
 
-		zassert_ok(ret, "Failed to set alarm callback");
+		zassert_ok(ret, "Failed to set alarm %d callback", i);
 	}
 
 	for (uint8_t i = 0; i < 2; i++) {
@@ -143,27 +138,23 @@ ZTEST(rtc_api, test_alarm_callback)
 					: atomic_test_bit(&callback_called_mask_even, j);
 
 			zassert_equal(callback_called_status, true,
-				      "Alarm callback should have been called");
+				      "Alarm %d callback should have been called", j);
 		}
 
 		/* Reset RTC time */
-		ret = rtc_set_time(rtc, &time_set);
-
+		ret = rtc_set_time(rtc, &test_rtc_time_set);
 		zassert_ok(ret, "Failed to set time");
 	}
 
 	/* Disable and clear alarms */
 	for (uint16_t i = 0; i < alarms_count; i++) {
 		ret = rtc_alarm_set_callback(rtc, i, NULL, NULL);
-
-		zassert_ok(ret, "Failed to disable alarm callback");
+		zassert_ok(ret, "Failed to disable alarm %d callback", i);
 
 		ret = rtc_alarm_set_time(rtc, i, 0, NULL);
-
-		zassert_ok(ret, "Failed to disable alarm");
+		zassert_ok(ret, "Failed to disable alarm %d", i);
 
 		ret = rtc_alarm_is_pending(rtc, i);
-
-		zassert_true(ret > -1, "Failed to clear alarm pending state");
+		zassert_true(ret > -1, "Failed to clear alarm %d pending state", i);
 	}
 }

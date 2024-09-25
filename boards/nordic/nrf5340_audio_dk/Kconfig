@@ -1,0 +1,61 @@
+# nRF5340 Audio DK board configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+
+config BOARD_ENABLE_DCDC_APP
+	bool "Application MCU DCDC converter"
+	select SOC_DCDC_NRF53X_APP
+	default y
+
+config BOARD_ENABLE_DCDC_NET
+	bool "Network MCU DCDC converter"
+	select SOC_DCDC_NRF53X_NET
+	default y
+
+config BOARD_ENABLE_DCDC_HV
+	bool "High Voltage DCDC converter"
+	select SOC_DCDC_NRF53X_HV
+	default y
+
+config BOARD_ENABLE_CPUNET
+	bool "nRF53 Network MCU"
+	select SOC_NRF_GPIO_FORWARDER_FOR_NRF5340 if \
+		$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_GPIO_FORWARDER))
+	help
+	  This option enables releasing the Network 'force off' signal, which
+	  as a consequence will power up the Network MCU during system boot.
+	  Additionally, the option allocates GPIO pins that will be used by UARTE
+	  of the Network MCU.
+	  Note: GPIO pin allocation can only be configured by the secure Application
+	  MCU firmware, so when this option is used with the non-secure version of
+	  the board, the application needs to take into consideration, that the
+	  secure firmware image must already have configured GPIO allocation for the
+	  Network MCU.
+	default y if (BT || NRF_802154_SER_HOST)
+
+config DOMAIN_CPUNET_BOARD
+	string
+	default "nrf5340_audio_dk/nrf5340/cpunet"
+	depends on BOARD_ENABLE_CPUNET
+	help
+	  The board which will be used for CPUNET domain when creating a multi
+	  image application where one or more images should be located on
+	  another board. For example hci_ipc on the nRF5340_cpunet for
+	  Bluetooth applications.
+
+endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+
+if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET
+
+config DOMAIN_CPUAPP_BOARD
+	string
+	default "nrf5340_audio_dk/nrf5340/cpuapp"
+	help
+	  The board which will be used for CPUAPP domain when creating a multi
+	  image application where one or more images should be located on
+	  another board.
+
+endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET

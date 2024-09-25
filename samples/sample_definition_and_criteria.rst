@@ -19,7 +19,7 @@ Sample Criteria
   * The primary purpose of a sample is to provide a reference to the user.
   * Samples must not use Zephyr's testing framework.
 
-    * Must not use :kconfig:option:`CONFIG_ZTEST` or :kconfig:option:`CONFIG_ZTEST_NEW_API`.
+    * Must not use :kconfig:option:`CONFIG_ZTEST`
     * Must not use zasserts in samples.
 
   * If a sample can provide output that can be verified, then output should be evaluated against
@@ -38,7 +38,7 @@ Sample Criteria
       tests:
         sample.kernel.cond_var:
           integration_platforms:
-            - native_posix
+            - native_sim
           tags: kernel condition_variables
           harness: console
           harness_config:

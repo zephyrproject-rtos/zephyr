@@ -19,8 +19,12 @@ LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include "net_private.h"
 
 struct mgmt_event_entry {
-#ifdef CONFIG_NET_MGMT_EVENT_INFO
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+#if defined(CONFIG_NET_MGMT_EVENT_QUEUE)
 	uint8_t info[NET_EVENT_INFO_MAX_SIZE];
+#else
+	const void *info;
+#endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 	uint32_t event;
@@ -36,18 +40,32 @@ struct mgmt_event_wait {
 };
 
 static K_MUTEX_DEFINE(net_mgmt_callback_lock);
-static K_MUTEX_DEFINE(net_mgmt_event_lock);
 
+#if defined(CONFIG_NET_MGMT_EVENT_THREAD)
 K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
-static struct k_thread mgmt_thread_data;
+
+static struct k_work_q mgmt_work_q_obj;
+#endif
+
 static uint32_t global_event_mask;
 static sys_slist_t event_callbacks = SYS_SLIST_STATIC_INIT(&event_callbacks);
 
+/* Forward declaration for the actual caller */
+static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event);
+
+#if defined(CONFIG_NET_MGMT_EVENT_QUEUE)
+
+static K_MUTEX_DEFINE(net_mgmt_event_lock);
 /* event structure used to prevent increasing the stack usage on the caller thread */
 static struct mgmt_event_entry new_event;
 K_MSGQ_DEFINE(event_msgq, sizeof(struct mgmt_event_entry),
 	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(uint32_t));
 
+static struct k_work_q *mgmt_work_q = COND_CODE_1(CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE,
+	(&k_sys_work_q), (&mgmt_work_q_obj));
+
+static void mgmt_event_work_handler(struct k_work *work);
+static K_WORK_DEFINE(mgmt_work, mgmt_event_work_handler);
 
 static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 				   const void *info, size_t length)
@@ -88,13 +106,48 @@ static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
 	}
 
 	(void)k_mutex_unlock(&net_mgmt_event_lock);
+
+	k_work_submit_to_queue(mgmt_work_q, &mgmt_work);
 }
 
-static inline void mgmt_pop_event(struct mgmt_event_entry *dst)
+static void mgmt_event_work_handler(struct k_work *work)
 {
-	do {
-	} while (k_msgq_get(&event_msgq, dst, K_FOREVER) != 0);
+	struct mgmt_event_entry mgmt_event;
+
+	ARG_UNUSED(work);
+
+	while (k_msgq_get(&event_msgq, &mgmt_event, K_NO_WAIT) == 0) {
+		NET_DBG("Handling events, forwarding it relevantly");
+
+		mgmt_run_callbacks(&mgmt_event);
+
+		/* forcefully give up our timeslot, to give time to the callback */
+		k_yield();
+	}
 }
+
+#else
+
+static inline void mgmt_push_event(uint32_t event, struct net_if *iface,
+				   const void *info, size_t length)
+{
+#ifndef CONFIG_NET_MGMT_EVENT_INFO
+	ARG_UNUSED(info);
+	ARG_UNUSED(length);
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+	const struct mgmt_event_entry mgmt_event = {
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+		.info = info,
+		.info_length = length,
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+		.event = event,
+		.iface = iface,
+	};
+
+	mgmt_run_callbacks(&mgmt_event);
+}
+
+#endif /* CONFIG_NET_MGMT_EVENT_QUEUE */
 
 static inline void mgmt_add_event_mask(uint32_t event_mask)
 {
@@ -106,6 +159,10 @@ static inline void mgmt_rebuild_global_event_mask(void)
 	struct net_mgmt_event_callback *cb, *tmp;
 
 	global_event_mask = 0U;
+
+	STRUCT_SECTION_FOREACH(net_mgmt_event_static_handler, it) {
+		mgmt_add_event_mask(it->event_mask);
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
 		mgmt_add_event_mask(cb->event_mask);
@@ -125,13 +182,14 @@ static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 		 NET_MGMT_GET_COMMAND(mgmt_event)));
 }
 
-static inline void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
+static inline void mgmt_run_slist_callbacks(const struct mgmt_event_entry * const mgmt_event)
 {
 	sys_snode_t *prev = NULL;
 	struct net_mgmt_event_callback *cb, *tmp;
 
+	/* Readable layer code is starting from 1, thus the increment */
 	NET_DBG("Event layer %u code %u cmd %u",
-		NET_MGMT_GET_LAYER(mgmt_event->event),
+		NET_MGMT_GET_LAYER(mgmt_event->event) + 1,
 		NET_MGMT_GET_LAYER_CODE(mgmt_event->event),
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
@@ -185,29 +243,43 @@ static inline void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	log_stack_usage(&mgmt_thread_data);
+	log_stack_usage(&mgmt_work_q->thread);
 #endif
 }
 
-static void mgmt_thread(void)
+static inline void mgmt_run_static_callbacks(const struct mgmt_event_entry * const mgmt_event)
 {
-	struct mgmt_event_entry mgmt_event;
+	STRUCT_SECTION_FOREACH(net_mgmt_event_static_handler, it) {
+		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) ==
+		      NET_MGMT_GET_LAYER(it->event_mask)) ||
+		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) ==
+		      NET_MGMT_GET_LAYER_CODE(it->event_mask)) ||
+		    (NET_MGMT_GET_COMMAND(mgmt_event->event) &&
+		     NET_MGMT_GET_COMMAND(it->event_mask) &&
+		     !(NET_MGMT_GET_COMMAND(mgmt_event->event) &
+		       NET_MGMT_GET_COMMAND(it->event_mask)))) {
+			continue;
+		}
 
-	while (1) {
-		mgmt_pop_event(&mgmt_event);
-
-		NET_DBG("Handling events, forwarding it relevantly");
-
-		/* take the lock to prevent changes to the callback structure during use */
-		(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
-
-		mgmt_run_callbacks(&mgmt_event);
-
-		(void)k_mutex_unlock(&net_mgmt_callback_lock);
-
-		/* forcefully give up our timeslot, to give time to the callback */
-		k_yield();
+		it->handler(mgmt_event->event, mgmt_event->iface,
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+			    (void *)mgmt_event->info, mgmt_event->info_length,
+#else
+			    NULL, 0U,
+#endif
+			    it->user_data);
 	}
+}
+
+static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
+{
+	/* take the lock to prevent changes to the callback structure during use */
+	(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
+
+	mgmt_run_static_callbacks(mgmt_event);
+	mgmt_run_slist_callbacks(mgmt_event);
+
+	(void)k_mutex_unlock(&net_mgmt_callback_lock);
 }
 
 static int mgmt_event_wait_call(struct net_if *iface,
@@ -272,6 +344,9 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
 
 	(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
 
+	/* Remove the callback if it already exists to avoid loop */
+	sys_slist_find_and_remove(&event_callbacks, &cb->node);
+
 	sys_slist_prepend(&event_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
@@ -296,8 +371,9 @@ void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
 				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
+		/* Readable layer code is starting from 1, thus the increment */
 		NET_DBG("Notifying Event layer %u code %u type %u",
-			NET_MGMT_GET_LAYER(mgmt_event),
+			NET_MGMT_GET_LAYER(mgmt_event) + 1,
 			NET_MGMT_GET_LAYER_CODE(mgmt_event),
 			NET_MGMT_GET_COMMAND(mgmt_event));
 
@@ -334,20 +410,27 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 
 void net_mgmt_event_init(void)
 {
+	mgmt_rebuild_global_event_mask();
+
+#if defined(CONFIG_NET_MGMT_EVENT_THREAD)
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
 #define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
 #endif
+	struct k_work_queue_config q_cfg = {
+		.name = "net_mgmt",
+		.no_yield = false,
+	};
 
-	k_thread_create(&mgmt_thread_data, mgmt_stack,
-			K_KERNEL_STACK_SIZEOF(mgmt_stack),
-			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
-			THREAD_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&mgmt_thread_data, "net_mgmt");
+	k_work_queue_init(&mgmt_work_q_obj);
+	k_work_queue_start(&mgmt_work_q_obj, mgmt_stack,
+			   K_KERNEL_STACK_SIZEOF(mgmt_stack),
+			   THREAD_PRIORITY, &q_cfg);
 
 	NET_DBG("Net MGMT initialized: queue of %u entries, stack size of %u",
 		CONFIG_NET_MGMT_EVENT_QUEUE_SIZE,
 		CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+#endif /* CONFIG_NET_MGMT_EVENT_THREAD */
 }

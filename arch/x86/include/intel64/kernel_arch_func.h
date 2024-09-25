@@ -36,7 +36,7 @@ void x86_sse_init(struct k_thread *thread);
 
 void z_x86_syscall_entry_stub(void);
 
-bool z_x86_do_kernel_nmi(const z_arch_esf_t *esf);
+bool z_x86_do_kernel_nmi(const struct arch_esf *esf);
 
 #endif /* _ASMLANGUAGE */
 

@@ -1,0 +1,47 @@
+# RD_RW612_BGA board
+
+# Copyright 2022-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RD_RW612_BGA
+
+config FLASH_LOAD_SIZE
+	default 0x400000 if !BOOTLOADER_MCUBOOT && !NXP_MONOLITHIC_BT
+
+if LVGL
+
+# Enable DMA for LCDIC
+config MIPI_DBI_NXP_LCDIC_DMA
+	default y if MIPI_DBI
+
+# Increase descriptor count. LVGL will allocate a 30KB buffer,
+# and the SPI driver sets up RX and TX side. Since LPC DMA has
+# 1KB limit per descriptor, we need 60
+config DMA_MCUX_LPC_NUMBER_OF_DESCRIPTORS
+	default 60
+
+# Allocate buffer that is 10% of screen size
+config LV_Z_VDB_SIZE
+	default 10
+
+# Enable double buffering and offloaded render thread to improve performance
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+endif # LVGL
+
+# Enable interrupt support when using FT5336 driver
+config INPUT_FT5336_INTERRUPT
+	default y if INPUT
+
+if DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # DT_HAS_NXP_ENET_MAC_ENABLED && NETWORKING
+
+endif # BOARD_RD_RW612_BGA

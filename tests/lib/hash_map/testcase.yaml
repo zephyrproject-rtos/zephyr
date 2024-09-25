@@ -5,7 +5,7 @@
 common:
   min_ram: 24
   integration_platforms:
-    - native_posix
+    - native_sim
 
 tests:
   libraries.hash_map.separate_chaining.djb2:
@@ -19,9 +19,8 @@ tests:
       - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
   libraries.hash_map.cxx.djb2:
-    # need newlib for the c++ runtime
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    filter: CONFIG_FULL_LIBCPP_SUPPORTED
     extra_configs:
-      - CONFIG_NEWLIB_LIBC=y
       - CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE=8192
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_CXX=y

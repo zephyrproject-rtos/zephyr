@@ -6,7 +6,7 @@ DS18B20 1-Wire Temperature Sensor
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`sensor_api` API driver for the
+This sample shows how to use the Zephyr :ref:`sensor` API driver for the
 `Maxim DS18B20`_ temperature sensor.
 
 .. _Maxim DS18B20:

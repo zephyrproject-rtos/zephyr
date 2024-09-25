@@ -10,7 +10,7 @@ tests:
     filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             dt_enabled_alias_with_parent_compat("led1", "gpio-leds")
     integration_platforms:
-      - nrf52833dk_nrf52820
+      - nrf52833dk/nrf52820
     depends_on: gpio
     harness: console
     harness_config:

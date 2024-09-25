@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 #include <zephyr/sys/errno_private.h>
 #include <unistd.h>
@@ -56,10 +56,10 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
-#include <syscalls/zephyr_write_stdout_mrsh.c>
+#include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
 #endif
 
 #ifndef CONFIG_POSIX_API

@@ -25,6 +25,10 @@ if(CONFIG_FPU)
   elseif(CONFIG_FP_SOFTABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=softfp)
   endif()
+else()
+  list(APPEND ARM_C_FLAGS   -mfpu=none)
+  # Disable usage of FPU registers
+  list(APPEND ARM_C_FLAGS   -mfloat-abi=soft)
 endif()
 
 if(CONFIG_FP16)

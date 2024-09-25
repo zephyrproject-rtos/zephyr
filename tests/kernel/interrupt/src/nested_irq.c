@@ -12,7 +12,7 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC)
+	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC)
 #define TEST_NESTED_ISR
 #endif
 
@@ -56,6 +56,12 @@
  */
 #define IRQ0_PRIO	IRQ_DEFAULT_PRIORITY
 #define IRQ1_PRIO	0x0
+#elif defined(CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
+#define IRQ0_LINE	16
+#define IRQ1_LINE	17
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	2
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for

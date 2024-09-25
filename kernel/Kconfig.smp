@@ -1,0 +1,136 @@
+# Copyright (c) 2024 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+#
+menu "SMP Options"
+
+config SMP
+	bool "Symmetric multiprocessing support"
+	depends on USE_SWITCH
+	depends on !ATOMIC_OPERATIONS_C
+	help
+	  When true, kernel will be built with SMP support, allowing
+	  more than one CPU to schedule Zephyr tasks at a time.
+
+config USE_SWITCH
+	bool "Use new-style _arch_switch instead of arch_swap"
+	depends on USE_SWITCH_SUPPORTED
+	help
+	  The _arch_switch() API is a lower level context switching
+	  primitive than the original arch_swap mechanism.  It is required
+	  for an SMP-aware scheduler, or if the architecture does not
+	  provide arch_swap.  In uniprocess situations where the
+	  architecture provides both, _arch_switch incurs more somewhat
+	  overhead and may be slower.
+
+config USE_SWITCH_SUPPORTED
+	bool
+	help
+	  Indicates whether _arch_switch() API is supported by the
+	  currently enabled platform. This option should be selected by
+	  platforms that implement it.
+
+config SMP_BOOT_DELAY
+	bool "Delay booting secondary cores"
+	depends on SMP
+	help
+	  By default Zephyr will boot all available CPUs during start up.
+	  Select this option to skip this and allow custom code
+	  (architecture/SoC/board/application) to boot secondary CPUs at
+	  a later time.
+
+config MP_NUM_CPUS
+	int "Number of CPUs/cores [DEPRECATED]"
+	default MP_MAX_NUM_CPUS
+	range 1 12
+	help
+	  This is deprecated, please use MP_MAX_NUM_CPUS instead.
+
+config MP_MAX_NUM_CPUS
+	int "Maximum number of CPUs/cores"
+	default 1
+	range 1 12
+	help
+	  Maximum number of multiprocessing-capable cores available to the
+	  multicpu API and SMP features.
+
+config SCHED_IPI_SUPPORTED
+	bool
+	help
+	  True if the architecture supports a call to arch_sched_broadcast_ipi()
+	  to broadcast an interrupt that will call z_sched_ipi() on other CPUs
+	  in the system.  Required for k_thread_abort() to operate with
+	  reasonable latency (otherwise we might have to wait for the other
+	  thread to take an interrupt, which can be arbitrarily far in the
+	  future).
+
+config SCHED_IPI_CASCADE
+	bool "Use cascading IPIs to correct localized scheduling"
+	depends on SCHED_CPU_MASK && !SCHED_CPU_MASK_PIN_ONLY
+	default n
+	help
+	  Threads that are preempted by a local thread (a thread that is
+	  restricted by its CPU mask to execute on a subset of all CPUs) may
+	  trigger additional IPIs when the preempted thread is of higher
+	  priority than a currently executing thread on another CPU. Although
+	  these cascading IPIs will ensure that the system will settle upon a
+	  valid set of high priority threads, it comes at a performance cost.
+
+config TRACE_SCHED_IPI
+	bool "Test IPI"
+	help
+	  When true, it will add a hook into z_sched_ipi(), in order
+	  to check if schedule IPI has called or not, for testing
+	  purpose.
+	depends on SCHED_IPI_SUPPORTED
+	depends on MP_MAX_NUM_CPUS>1
+
+config IPI_OPTIMIZE
+	bool "Optimize IPI delivery"
+	default n
+	depends on SCHED_IPI_SUPPORTED && MP_MAX_NUM_CPUS>1
+	help
+	  When selected, the kernel will attempt to determine the minimum
+	  set of CPUs that need an IPI to trigger a reschedule in response to
+	  a thread newly made ready for execution. This increases the
+	  computation required at every scheduler operation by a value that is
+	  O(N) in the number of CPUs, and in exchange reduces the number of
+	  interrupts delivered. Which to choose is going to depend on
+	  application behavior. If the architecture also supports directing
+	  IPIs to specific CPUs then this has the potential to significantly
+	  reduce the number of IPIs (and consequently ISRs) processed by the
+	  system as the number of CPUs increases. If not, the only benefit
+	  would be to not issue any IPIs if the newly readied thread is of
+	  lower priority than all the threads currently executing on other CPUs.
+
+config KERNEL_COHERENCE
+	bool "Place all shared data into coherent memory"
+	depends on ARCH_HAS_COHERENCE
+	default y if SMP && MP_MAX_NUM_CPUS > 1
+	select THREAD_STACK_INFO
+	help
+	  When available and selected, the kernel will build in a mode
+	  where all shared data is placed in multiprocessor-coherent
+	  (generally "uncached") memory.  Thread stacks will remain
+	  cached, as will application memory declared with
+	  __incoherent.  This is intended for Zephyr SMP kernels
+	  running on cache-incoherent architectures only.  Note that
+	  when this is selected, there is an implicit API change that
+	  assumes cache coherence to any memory passed to the kernel.
+	  Code that creates kernel data structures in uncached regions
+	  may fail strangely.  Some assertions exist to catch these
+	  mistakes, but not all circumstances can be tested.
+
+config TICKET_SPINLOCKS
+	bool "Ticket spinlocks for lock acquisition fairness [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Basic spinlock implementation is based on single
+	  atomic variable and doesn't guarantee locking fairness
+	  across multiple CPUs. It's even possible that single CPU
+	  will win the contention every time which will result
+	  in a live-lock.
+	  Ticket spinlocks provide a FIFO order of lock acquisition
+	  which resolves such unfairness issue at the cost of slightly
+	  increased memory footprint.
+
+endmenu

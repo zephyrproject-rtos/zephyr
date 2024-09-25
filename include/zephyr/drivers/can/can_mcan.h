@@ -640,7 +640,7 @@ enum can_mcan_psr_lec {
  */
 #define CAN_MCAN_DT_MRAM_DEFINE(node_id, _name)                                                    \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
-	static char __noinit __nocache __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
+	static char __nocache_noinit __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
 
 /**
  * @brief Assert that the Message RAM configuration meets the Bosch M_CAN IP core restrictions
@@ -1061,15 +1061,10 @@ struct can_mcan_ext_filter {
  * @brief Bosch M_CAN driver internal data structure.
  */
 struct can_mcan_data {
+	struct can_driver_data common;
 	struct k_mutex lock;
 	struct k_sem tx_sem;
 	struct k_mutex tx_mtx;
-	can_state_change_callback_t state_change_cb;
-	void *state_change_cb_data;
-	bool started;
-#ifdef CONFIG_CAN_FD_MODE
-	bool fd;
-#endif /* CONFIG_CAN_FD_MODE */
 	void *custom;
 } __aligned(4);
 
@@ -1169,7 +1164,6 @@ struct can_mcan_tx_callback {
 struct can_mcan_rx_callback {
 	can_rx_callback_t function;
 	void *user_data;
-	uint8_t flags;
 };
 
 /**
@@ -1237,26 +1231,12 @@ struct can_mcan_callbacks {
  * @brief Bosch M_CAN driver internal configuration structure.
  */
 struct can_mcan_config {
+	const struct can_driver_config common;
 	const struct can_mcan_ops *ops;
 	const struct can_mcan_callbacks *callbacks;
 	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
-	uint32_t bus_speed;
-	uint16_t sjw;
-	uint16_t sample_point;
-	uint16_t prop_ts1;
-	uint16_t ts2;
-#ifdef CONFIG_CAN_FD_MODE
-	uint32_t bus_speed_data;
-	uint16_t sample_point_data;
-	uint8_t sjw_data;
-	uint8_t prop_ts1_data;
-	uint8_t ts2_data;
-	uint8_t tx_delay_comp_offset;
-#endif
-	const struct device *phy;
-	uint32_t max_bitrate;
 	const void *custom;
 };
 
@@ -1311,42 +1291,23 @@ struct can_mcan_config {
 #ifdef CONFIG_CAN_FD_MODE
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 8000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
-		.sjw = DT_PROP(node_id, sjw),                                                      \
-		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
-		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
-		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
-		.bus_speed_data = DT_PROP(node_id, bus_speed_data),                                \
-		.sjw_data = DT_PROP(node_id, sjw_data),                                            \
-		.sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),                    \
-		.prop_ts1_data = DT_PROP_OR(node_id, prop_seg_data, 0) +                           \
-				 DT_PROP_OR(node_id, phase_seg1_data, 0),                          \
-		.ts2_data = DT_PROP_OR(node_id, phase_seg2_data, 0),                               \
-		.tx_delay_comp_offset = DT_PROP(node_id, tx_delay_comp_offset),                    \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 8000000),                   \
 		.custom = _custom,                                                                 \
 	}
 #else /* CONFIG_CAN_FD_MODE */
 #define CAN_MCAN_DT_CONFIG_GET(node_id, _custom, _ops, _cbs)                                       \
 	{                                                                                          \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, 0, 1000000),                           \
 		.ops = _ops,                                                                       \
 		.callbacks = _cbs,                                                                 \
 		.mram_elements = CAN_MCAN_DT_MRAM_ELEMENTS_GET(node_id),                           \
 		.mram_offsets = CAN_MCAN_DT_MRAM_OFFSETS_GET(node_id),                             \
 		.mram_size = CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id),                              \
-		.bus_speed = DT_PROP(node_id, bus_speed),                                          \
-		.sjw = DT_PROP(node_id, sjw),                                                      \
-		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
-		.prop_ts1 = DT_PROP_OR(node_id, prop_seg, 0) + DT_PROP_OR(node_id, phase_seg1, 0), \
-		.ts2 = DT_PROP_OR(node_id, phase_seg2, 0),                                         \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000),                   \
 		.custom = _custom,                                                                 \
 	}
 #endif /* !CONFIG_CAN_FD_MODE */
@@ -1688,13 +1649,13 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
  */
 int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *timing_data);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 /**
  * @brief Bosch M_CAN driver callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 int can_mcan_recover(const struct device *dev, k_timeout_t timeout);
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_timeout_t timeout,
 		  can_tx_callback_t callback, void *user_data);
@@ -1727,11 +1688,5 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
  */
 void can_mcan_set_state_change_callback(const struct device *dev,
 					can_state_change_callback_t callback, void *user_data);
-
-/**
- * @brief Bosch M_CAN driver callback API upon getting the maximum supported bitrate
- * See @a can_get_max_bitrate() for argument description
- */
-int can_mcan_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_ */

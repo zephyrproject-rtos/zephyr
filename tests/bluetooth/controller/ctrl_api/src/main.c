@@ -464,7 +464,6 @@ ZTEST(internal, test_int_create_proc)
 	zassert_not_null(ctx, NULL);
 
 	zassert_equal(ctx->proc, PROC_VERSION_EXCHANGE);
-	zassert_equal(ctx->collision, 0);
 
 	for (int i = 0U; i < CONFIG_BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM; i++) {
 		zassert_not_null(ctx, NULL);

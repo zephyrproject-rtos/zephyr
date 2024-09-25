@@ -51,17 +51,10 @@ static struct k_sem cli_suspend_sem;
 static struct k_sem srv_suspend_sem;
 static const uint8_t dev_key[16] = {0xaa};
 static uint8_t cli_sent_array[TEST_SEND_ITR], cli_rcvd_array[TEST_SEND_ITR];
-
-static struct bt_mesh_msg_ctx test_ctx = {
-	.net_idx = 0,
-	.app_idx = 0,
-	.addr = SRV_ADDR,
-};
-
 static struct bt_mesh_prov prov;
 static struct bt_mesh_cfg_cli cfg_cli;
 
-static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int get_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	uint8_t seq = net_buf_simple_pull_u8(buf);
@@ -85,7 +78,7 @@ static int get_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return bt_mesh_model_send(model, ctx, &msg, NULL, NULL);
 }
 
-static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int status_handler(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
 	uint8_t seq = net_buf_simple_pull_u8(buf);
@@ -100,7 +93,8 @@ static int status_handler(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 	return 0;
 }
 
-static int dummy_vnd_mod_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uint8_t seq)
+static int dummy_vnd_mod_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			     uint8_t seq)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_DUMMY_VND_MOD_GET_OP,
 				 BT_MESH_DUMMY_VND_MOD_MSG_MAXLEN);
@@ -125,7 +119,7 @@ const struct bt_mesh_model_op _dummy_vnd_mod_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
+static const struct bt_mesh_elem elements[] = {BT_MESH_ELEM(
 	0,
 	MODEL_LIST(BT_MESH_MODEL_CFG_SRV, BT_MESH_MODEL_CFG_CLI(&cfg_cli), BT_MESH_MODEL_OP_AGG_SRV,
 		   BT_MESH_MODEL_OP_AGG_CLI),
@@ -168,25 +162,43 @@ static void op_agg_test_prov_and_conf(uint16_t addr)
 	}
 }
 
-static void test_cli_max_len_sequence_msg_send(void)
+static void common_init(uint16_t own_addr, uint16_t dst_addr, bool agg_cli_fill)
 {
-	struct bt_mesh_model *dummy_vnd_model = &elements[0].vnd_models[0];
-	uint8_t seq;
-
 	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
 	bt_mesh_device_setup(&prov, &comp);
-	op_agg_test_prov_and_conf(CLI_ADDR);
+	op_agg_test_prov_and_conf(own_addr);
 
 	ASSERT_OK(k_sem_init(&cli_suspend_sem, 0, 1));
-	ASSERT_OK(bt_mesh_op_agg_cli_seq_start(0, 0, SRV_ADDR, SRV_ADDR));
+	ASSERT_OK(k_sem_init(&srv_suspend_sem, 0, 1));
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_start(0, 0, dst_addr, dst_addr));
 
-	for (int i = 0; i < TEST_SEND_ITR; i++) {
-		seq = cli_sent_array[i] = i;
-		ASSERT_OK(dummy_vnd_mod_get(dummy_vnd_model, &test_ctx, seq));
+	if (!agg_cli_fill) {
+		return;
 	}
 
-	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = 0,
+		.app_idx = 0,
+		.addr = dst_addr,
+	};
 
+	/* Populate the op_agg sequence */
+	for (int i = 0; i < TEST_SEND_ITR; i++) {
+		cli_sent_array[i] = i;
+		ASSERT_OK(dummy_vnd_mod_get(&elements[0].vnd_models[0], &ctx, i));
+	}
+}
+
+static void confirm_agg_seq(void)
+{
+	/* Wait for all expected GET messages to be received */
+	if (k_sem_take(&srv_suspend_sem, SEM_TIMEOUT)) {
+		FAIL("Server suspension timed out. Get-messages received: %d", get_rcvd_count);
+	}
+}
+
+static void confirm_agg_status(void)
+{
 	/* Wait for all expected STATUS messages to be received */
 	if (k_sem_take(&cli_suspend_sem, SEM_TIMEOUT)) {
 		FAIL("Client suspension timed out. Status-messages received: %d",
@@ -196,22 +208,69 @@ static void test_cli_max_len_sequence_msg_send(void)
 	if (memcmp(cli_sent_array, cli_rcvd_array, ARRAY_SIZE(cli_rcvd_array))) {
 		FAIL("Message arrays (sent / rcvd) are not equal.");
 	}
+}
 
+static void test_cli_max_len_sequence_msg_send(void)
+{
+	common_init(CLI_ADDR, SRV_ADDR, true);
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+	confirm_agg_status();
 	PASS();
 }
 
 static void test_srv_max_len_status_msg_send(void)
 {
-	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
-	bt_mesh_device_setup(&prov, &comp);
-	op_agg_test_prov_and_conf(SRV_ADDR);
+	common_init(SRV_ADDR, CLI_ADDR, false);
+	confirm_agg_seq();
+	PASS();
+}
 
-	ASSERT_OK(k_sem_init(&srv_suspend_sem, 0, 1));
+static void test_tester_model_coex(void)
+{
+	common_init(CLI_ADDR, SRV_ADDR, true);
 
-	/* Wait for all expected GET messages to be received */
-	if (k_sem_take(&srv_suspend_sem, SEM_TIMEOUT)) {
-		FAIL("Server suspension timed out. Get-messages received: %d", get_rcvd_count);
-	}
+	/* Immediately send aggregated sequence to srv device */
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+
+	/* Confirm status messages for sequence */
+	confirm_agg_status();
+
+	/* Confirm incoming sequence messages from server */
+	confirm_agg_seq();
+
+	PASS();
+}
+
+static void test_dut_model_coex(void)
+{
+	/* Start an aggregated sequence, but postpone sending it */
+	common_init(SRV_ADDR, CLI_ADDR, true);
+
+	/* Wait and confirm incoming sequence messages from cli device */
+	confirm_agg_seq();
+
+	/* After incoming sequence completes, send aggregated sequence to srv device */
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+
+	/* Confirm status messages for sequence */
+	confirm_agg_status();
+
+	PASS();
+}
+
+static void test_dut_model_coex_loopback(void)
+{
+	/* Start an aggregated sequence */
+	common_init(SRV_ADDR, SRV_ADDR, true);
+
+	/* Send aggregated sequence to server model over loopback */
+	ASSERT_OK(bt_mesh_op_agg_cli_seq_send());
+
+	/* Confirm incoming sequence messages */
+	confirm_agg_seq();
+
+	/* Confirm status messages for sequence */
+	confirm_agg_status();
 
 	PASS();
 }
@@ -228,8 +287,11 @@ static const struct bst_test_instance test_op_agg[] = {
 	TEST_CASE(cli, max_len_sequence_msg_send,
 		  "OpAggCli composes a sequence request list, expecting a 380 Byte status message "
 		  "in return."),
+	TEST_CASE(tester, model_coex, "Tester: Coexistence of OpAggSrv and OpAggCli."),
 	TEST_CASE(srv, max_len_status_msg_send,
 		  "OpAggSrv will respond with a 380 Byte status message. "),
+	TEST_CASE(dut, model_coex, "DUT: Coexistence of OpAggSrv and OpAggCli."),
+	TEST_CASE(dut, model_coex_loopback, "DUT: Coexistence for OpAggSrv and OpAggCli loopback."),
 
 	BSTEST_END_MARKER};
 

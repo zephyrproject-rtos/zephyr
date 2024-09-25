@@ -293,7 +293,7 @@ static int zynqmp_fpga_load(const struct device *dev, uint32_t *image_ptr,
 	}
 
 	for (int i = 0; i < (img_size / 4); i++) {
-		*(BITSTREAM + i) = __bswap_32(*(addr + i));
+		*(BITSTREAM + i) = BSWAP_32(*(addr + i));
 	}
 
 	init_pcap(dev);

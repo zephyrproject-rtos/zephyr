@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,display = &lcd0;
+		sdhc0 = &sdhc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_red: led_red {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "LED_R";
+		};
+		led_green: led_green {
+			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+			label = "LED_G";
+		};
+		led_blue: led_blue {
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			label = "LED_B";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button_boot0: button_boot0 {
+			label = "BUTTON_BOOT0";
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* NOTE: bridge TIMER1_CH1 and LED_GREEN (PA1) */
+		pwm_led_green: pwm_led_green {
+			pwms = <&pwm1 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED_G";
+		};
+		/* NOTE: bridge TIMER1_CH2 and LED_BLUE (PA2) */
+		pwm_led_blue: pwm_led_blue {
+			pwms = <&pwm1 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "PWM_LED_B";
+		};
+	};
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+		pwm-led0 = &pwm_led_green;
+		pwm-led1 = &pwm_led_blue;
+		sw0 = &button_boot0;
+		watchdog0 = &fwdgt;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		reset-gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi0>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* longan nano has LCD with st7735s controller.
+		 * It can use with st7735r driver.
+		 */
+		lcd0: lcd@0 {
+			compatible = "sitronix,st7735r";
+			reg = <0>;
+			status = "okay";
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			rgb-is-inverted;
+			x-offset = <1>;
+			y-offset = <26>;
+			pwctr1 = [62 02 04];
+			pwctr2 = [C0];
+			pwctr3 = [0D 00];
+			pwctr4 = [8D 6A];
+			pwctr5 = [8D EE];
+			invctr = <3>;
+			frmctr1 = [05 3A 3A];
+			frmctr2 = [05 3A 3A];
+			frmctr3 = [05 3A 3A 05 3A 3A];
+			vmctr1 = <14>;
+			gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
+			gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+			colmod = <5>;
+			madctl = <120>;
+			caset = [00 01 00 a0];
+			raset = [00 1a 00 69];
+
+			mipi-mode = <MIPI_DBI_MODE_SPI_4WIRE>;
+			mipi-max-frequency = <4000000>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&usart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+};
+
+&timer1 {
+	status = "okay";
+	prescaler = <4096>;
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm1_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&dac {
+	status = "okay";
+	pinctrl-0 = <&dac_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+
+	sdhc0: sdhc@0 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <24000000>;
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			status = "okay";
+		};
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+};
+
+&fwdgt {
+	status = "okay";
+};

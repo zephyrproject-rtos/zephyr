@@ -7,11 +7,7 @@
 #define DT_DRV_COMPAT atmosic_atm34_ieee802154
 
 #define LOG_MODULE_NAME ieee802154_atm34
-#if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
-#else
-#define LOG_LEVEL LOG_LEVEL_NONE
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -29,8 +25,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "radio_req_154.h"
 #include "radio_hal_frc.h"
 
-#define RX_GIVE_IRQn BLE_ISOTS_0_IRQn
-#define TX_GIVE_IRQn BLE_ISOTS_1_IRQn
+#define RX_GIVE_IRQn SW_4_IRQn
+#define TX_GIVE_IRQn SW_5_IRQn
 
 /* Bitfield to determine which operations are currently active. If the LOCKED
  * bit is set, an operation is ongoing that does not allow other operations,
@@ -976,16 +972,17 @@ static int ieee802154_atm34_radio_configure(const struct device *dev,
 		// Used in conjunction with CSL period to calculate the CSL phase
 		atm_req_154_set_csl_ie_rx_time(atm_154_iface, config->csl_rx_time / NSEC_PER_USEC);
 		return 0;
-#endif
 	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE:
 		// The long address must be little endian when passed down
 		uint64_t long_addr;
 		sys_memcpy_swap(&long_addr, config->ack_ie.ext_addr, sizeof(long_addr));
 
 		atm_req_154_enable_enhanced_ack(atm_154_iface, config->ack_ie.short_addr, long_addr,
-						config->ack_ie.data, config->ack_ie.data_len);
+						config->ack_ie.header_ie,
+						config->ack_ie.header_ie->length +
+							IEEE802154_HEADER_IE_HEADER_LENGTH);
 		return 0;
-
+#endif
 	default:
 		break;
 	}

@@ -10,3 +10,11 @@ include: flash-controller.yaml
 properties:
   clocks:
     required: true
+
+  "#erase-block-cells":
+    type: int
+    const: 2
+
+erase-block-cells:
+  - pages-count
+  - pages-size

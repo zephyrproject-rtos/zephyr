@@ -15,3 +15,7 @@ This directory contains header files of the Miscellaneous Drivers.
   layer graphic operations like widgets, shapes, fonts, text, or bitmaps
   rendering. These operations are controlled by a vendor-specific API designed
   for this device.
+
+* STM32 Wake-up Pins
+  STM32 wake-up pins are part of the Power Control (PWR) peripheral.
+  They can be used to wake-up the system from Poweroff through GPIO pins.

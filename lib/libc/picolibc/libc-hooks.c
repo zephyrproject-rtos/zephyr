@@ -14,13 +14,13 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/errno_private.h>
 #include <zephyr/sys/libc-hooks.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/sem.h>
 #include <zephyr/logging/log.h>
 #ifdef CONFIG_MMU
-#include <zephyr/sys/mem_manage.h>
+#include <zephyr/kernel/mm.h>
 #endif
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -39,7 +39,7 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 {
 	return z_impl_zephyr_fputc(c, stream);
 }
-#include <syscalls/zephyr_fputc_mrsh.c>
+#include <zephyr/syscalls/zephyr_fputc_mrsh.c>
 #endif
 
 static int picolibc_put(char a, FILE *f)
@@ -205,6 +205,27 @@ void __retarget_lock_release(_LOCK_T lock)
 }
 
 #endif /* CONFIG_MULTITHREADING */
+
+#ifdef CONFIG_PICOLIBC_ASSERT_VERBOSE
+
+FUNC_NORETURN void __assert_func(const char *file, int line,
+				 const char *function, const char *expression)
+{
+	__ASSERT(0, "assertion \"%s\" failed: file \"%s\", line %d%s%s\n",
+		 expression, file, line,
+		 function ? ", function: " : "", function ? function : "");
+	CODE_UNREACHABLE;
+}
+
+#else
+
+FUNC_NORETURN void __assert_no_args(void)
+{
+	__ASSERT_NO_MSG(0);
+	CODE_UNREACHABLE;
+}
+
+#endif
 
 /* This function gets called if static buffer overflow detection is enabled on
  * stdlib side (Picolibc here), in case such an overflow is detected. Picolibc

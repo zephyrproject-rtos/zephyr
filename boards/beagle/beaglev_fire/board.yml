@@ -1,0 +1,5 @@
+board:
+  name: beaglev_fire
+  vendor: beagle
+  socs:
+  - name: polarfire

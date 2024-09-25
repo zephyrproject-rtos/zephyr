@@ -27,6 +27,9 @@
 
 	wakeup-source;
 
+	/* Enable FIFO to avoid losing chars on device wakeup */
+	fifo-enable;
+
 	status = "okay";
 };
 

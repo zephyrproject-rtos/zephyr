@@ -2,46 +2,45 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "../host/iso_internal.h"
 
-#include "bap_iso.h"
 #include "audio_internal.h"
+#include "bap_iso.h"
 #include "bap_endpoint.h"
 #include "bap_unicast_client_internal.h"
 #include "bap_unicast_server.h"
 
-#include <zephyr/logging/log.h>
-
 LOG_MODULE_REGISTER(bt_bap_stream, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
-
-void bt_audio_codec_cfg_to_iso_path(struct bt_iso_chan_path *path,
-				    struct bt_audio_codec_cfg *codec_cfg)
-{
-	path->pid = codec_cfg->path_id;
-	path->format = codec_cfg->id;
-	path->cid = codec_cfg->cid;
-	path->vid = codec_cfg->vid;
-	path->delay = 0; /* TODO: Add to bt_audio_codec_cfg? Use presentation delay? */
-	path->cc_len = codec_cfg->data_len;
-	path->cc = codec_cfg->data;
-}
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE) ||            \
 	defined(CONFIG_BT_BAP_BROADCAST_SINK)
@@ -51,6 +50,10 @@ void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
 	io->sdu = codec_qos->sdu;
 	io->phy = codec_qos->phy;
 	io->rtn = codec_qos->rtn;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	io->burst_number = codec_qos->burst_number;
+	io->max_pdu = codec_qos->max_pdu;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
 	* CONFIG_BT_BAP_BROADCAST_SOURCE ||                                                        \
@@ -107,38 +110,55 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream,
 
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 {
-	enum bt_audio_dir dir = ep->dir;
+	enum bt_audio_dir dir;
+
+	CHECKIF(ep == NULL) {
+		LOG_DBG("ep is NULL");
+
+		return -EINVAL;
+	}
+
+	CHECKIF(info == NULL) {
+		LOG_DBG("info is NULL");
+
+		return -EINVAL;
+	}
+
+	dir = ep->dir;
 
 	info->id = ep->status.id;
 	info->state = ep->status.state;
 	info->dir = dir;
+	info->qos_pref = &ep->qos_pref;
 
 	if (ep->iso == NULL) {
 		info->paired_ep = NULL;
+		info->iso_chan = NULL;
 	} else {
 		info->paired_ep = bt_bap_iso_get_paired_ep(ep);
+		info->iso_chan = &ep->iso->chan;
 	}
 
 	info->can_send = false;
+	info->can_recv = false;
 	if (IS_ENABLED(CONFIG_BT_AUDIO_TX) && ep->stream != NULL) {
 		if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) && bt_bap_ep_is_broadcast_src(ep)) {
 			info->can_send = true;
-		} else if (IS_ENABLED(CONFIG_BT_CONN) && ep->stream->conn != NULL) {
-			struct bt_conn_info conn_info;
-			uint8_t role;
-			int err;
-
-			err = bt_conn_get_info(ep->stream->conn, &conn_info);
-			if (err != 0) {
-				LOG_DBG("Could not get conn info: %d", err);
-
-				return err;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
+			   bt_bap_ep_is_broadcast_snk(ep)) {
+			info->can_recv = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+			   bt_bap_ep_is_unicast_client(ep)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SINK;
+				info->can_recv = dir == BT_AUDIO_DIR_SOURCE;
 			}
-
-			role = conn_info.role;
-			if ((role == BT_CONN_ROLE_CENTRAL && dir == BT_AUDIO_DIR_SINK) ||
-			    (role == BT_CONN_ROLE_PERIPHERAL && dir == BT_AUDIO_DIR_SOURCE)) {
-				info->can_send = true;
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
+			/* dir is not initialized before the connection is set */
+			if (ep->stream->conn != NULL) {
+				info->can_send = dir == BT_AUDIO_DIR_SOURCE;
+				info->can_recv = dir == BT_AUDIO_DIR_SINK;
 			}
 		}
 	}
@@ -188,6 +208,17 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos
 	return BT_BAP_ASCS_REASON_NONE;
 }
 
+static bool valid_ltv_cb(struct bt_data *data, void *user_data)
+{
+	/* just return true to continue parsing as bt_data_parse will validate for us */
+	return true;
+}
+
+bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
+{
+	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
+}
+
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	if (codec_cfg == NULL) {
@@ -220,11 +251,23 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		LOG_DBG("codec_cfg->data_len (%zu) is invalid", codec_cfg->data_len);
 		return false;
 	}
+
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+	    !bt_audio_valid_ltv(codec_cfg->data, codec_cfg->data_len)) {
+		LOG_DBG("codec_cfg->data not valid LTV");
+		return false;
+	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	if (codec_cfg->meta_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
 		LOG_DBG("codec_cfg->meta_len (%zu) is invalid", codec_cfg->meta_len);
+		return false;
+	}
+
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+	    !bt_audio_valid_ltv(codec_cfg->data, codec_cfg->data_len)) {
+		LOG_DBG("codec_cfg->meta not valid LTV");
 		return false;
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
@@ -250,10 +293,12 @@ static bool bt_bap_stream_can_send(const struct bt_bap_stream *stream)
 	return info.can_send;
 }
 
-int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
-			 uint16_t seq_num, uint32_t ts)
+static int bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			   uint32_t ts, bool has_ts)
 {
+	struct bt_iso_chan *iso_chan;
 	struct bt_bap_ep *ep;
+	int ret;
 
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
@@ -273,10 +318,40 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf,
 		return -EBADMSG;
 	}
 
-	/* TODO: Add checks for broadcast sink */
+	iso_chan = bt_bap_stream_iso_chan_get(stream);
 
-	return bt_iso_chan_send(bt_bap_stream_iso_chan_get(stream),
-				buf, seq_num, ts);
+	if (has_ts) {
+		ret = bt_iso_chan_send_ts(iso_chan, buf, seq_num, ts);
+	} else {
+		ret = bt_iso_chan_send(iso_chan, buf, seq_num);
+	}
+
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
+	if (stream->_prev_seq_num != 0U && seq_num != 0U &&
+	    (stream->_prev_seq_num + 1U) != seq_num) {
+		LOG_WRN("Unexpected seq_num diff between %u and %u for %p", stream->_prev_seq_num,
+			seq_num, stream);
+	}
+
+	stream->_prev_seq_num = seq_num;
+#endif /* CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM */
+
+	return ret;
+}
+
+int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num)
+{
+	return bap_stream_send(stream, buf, seq_num, 0, false);
+}
+
+int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			  uint32_t ts)
+{
+	return bap_stream_send(stream, buf, seq_num, ts, true);
 }
 
 int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info)
@@ -392,21 +467,28 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 	stream->ep = NULL;
 
 	if (!is_broadcast) {
-		bt_bap_stream_disconnect(stream);
+		const int err = bt_bap_stream_disconnect(stream);
+
+		if (err != 0) {
+			LOG_DBG("Failed to disconnect stream %p: %d", stream, err);
+		}
 	}
 }
 
 int bt_bap_stream_disconnect(struct bt_bap_stream *stream)
 {
-	struct bt_iso_chan *iso_chan = bt_bap_stream_iso_chan_get(stream);
+	struct bt_iso_chan *iso_chan;
 
-	LOG_DBG("stream %p iso %p", stream, iso_chan);
+	LOG_DBG("stream %p", stream);
 
 	if (stream == NULL) {
 		return -EINVAL;
 	}
 
+	iso_chan = bt_bap_stream_iso_chan_get(stream);
 	if (iso_chan == NULL || iso_chan->iso == NULL) {
+		LOG_DBG("Not connected");
+
 		return -ENOTCONN;
 	}
 
@@ -651,6 +733,40 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
+int bt_bap_stream_connect(struct bt_bap_stream *stream)
+{
+	uint8_t state;
+
+	LOG_DBG("stream %p ep %p", stream, stream == NULL ? NULL : stream->ep);
+
+	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
+		LOG_DBG("Invalid stream");
+		return -EINVAL;
+	}
+
+	/* Valid only after the CIS ID has been assigned in QoS configured state and while we are
+	 * not streaming
+	 */
+	state = stream->ep->status.state;
+	switch (state) {
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+	case BT_BAP_EP_STATE_ENABLING:
+		break;
+	default:
+		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	/* Only a unicast client can connect a stream */
+	if (conn_get_role(stream->conn) == BT_HCI_ROLE_CENTRAL) {
+		return bt_bap_unicast_client_connect(stream);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
+
 int bt_bap_stream_start(struct bt_bap_stream *stream)
 {
 	uint8_t state;
@@ -789,7 +905,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	LOG_DBG("stream %p", stream);
 
 	CHECKIF(stream == NULL || stream->ep == NULL || stream->conn == NULL) {
-		LOG_DBG("Invalid stream");
+		LOG_DBG("Invalid stream (ep %p, conn %p)", stream->ep, (void *)stream->conn);
 		return -EINVAL;
 	}
 

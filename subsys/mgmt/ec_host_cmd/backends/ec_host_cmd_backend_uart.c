@@ -100,10 +100,16 @@ static int request_expected_size(const struct ec_host_cmd_request_header *r)
 		.ctx = &_name##_hc_uart,                                                           \
 	}
 
-/* Waiting time in microseconds to detect overrun */
-#define UART_OVERRUN_TIMEOUT_US 300
 /* Timeout after receiving first byte */
-#define UART_REQ_RX_TIMEOUT     K_MSEC(150)
+#define UART_REQ_RX_TIMEOUT K_MSEC(150)
+
+/*
+ * Max data size for a version 3 request/response packet. This is big enough
+ * to handle a request/response header, flash write offset/size and 512 bytes
+ * of request payload or 224 bytes of response payload.
+ */
+#define UART_MAX_REQ_SIZE  0x220
+#define UART_MAX_RESP_SIZE 0x100
 
 static void rx_timeout(struct k_work *work)
 {
@@ -135,8 +141,7 @@ static void rx_timeout(struct k_work *work)
 	}
 
 	res = uart_rx_disable(hc_uart->uart_dev);
-	res = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size,
-			     UART_OVERRUN_TIMEOUT_US);
+	res = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
 	hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 }
@@ -245,10 +250,17 @@ static int ec_host_cmd_uart_init(const struct ec_host_cmd_backend *backend,
 	hc_uart->rx_ctx = rx_ctx;
 	hc_uart->tx_buf = tx;
 
+	/* Limit the requset/response max sizes */
+	if (hc_uart->rx_ctx->len_max > UART_MAX_REQ_SIZE) {
+		hc_uart->rx_ctx->len_max = UART_MAX_REQ_SIZE;
+	}
+	if (hc_uart->tx_buf->len_max > UART_MAX_RESP_SIZE) {
+		hc_uart->tx_buf->len_max = UART_MAX_RESP_SIZE;
+	}
+
 	k_work_init_delayable(&hc_uart->timeout_work, rx_timeout);
 	uart_callback_set(hc_uart->uart_dev, uart_callback, hc_uart);
-	ret = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size,
-			     UART_OVERRUN_TIMEOUT_US);
+	ret = uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
 	hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 
@@ -270,8 +282,7 @@ static int ec_host_cmd_uart_send(const struct ec_host_cmd_backend *backend)
 	/* The rx buffer is no longer in use by command handler.
 	 * Enable receiving to be ready to get a new command right after sending the response.
 	 */
-	uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size,
-		       UART_OVERRUN_TIMEOUT_US);
+	uart_rx_enable(hc_uart->uart_dev, hc_uart->rx_ctx->buf, hc_uart->rx_buf_size, 0);
 
 	/* uart_tx is non-blocking asynchronous function.
 	 * The state is changed to UART_HOST_CMD_READY_TO_RX in the UART_TX_DONE event.

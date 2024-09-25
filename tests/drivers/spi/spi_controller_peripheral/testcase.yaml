@@ -1,0 +1,59 @@
+common:
+  depends_on: spi
+  tags: drivers spi
+  harness: ztest
+  harness_config:
+    fixture: gpio_spi_loopback
+  platform_allow: |
+    nrf52840dk/nrf52840 nrf54l15pdk/nrf54l15/cpuapp nrf54h20dk/nrf54h20/cpuapp
+    nrf54h20dk/nrf54h20/cpurad
+
+tests:
+  drivers.spi.spi_mode0:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/250khz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode1:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=1
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/500khz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode2:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=2
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/1mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_mode3:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=3
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/2mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_4MHz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=2
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/4mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_8MHz:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=1
+    extra_args: EXTRA_DTC_OVERLAY_FILE="boards/8mhz.overlay"
+    integration_platforms:
+      - nrf52840dk/nrf52840
+
+  drivers.spi.spi_fast:
+    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
+    platform_exclude:
+      - nrf52840dk/nrf52840
+      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad

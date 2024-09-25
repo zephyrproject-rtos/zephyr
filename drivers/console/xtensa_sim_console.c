@@ -13,7 +13,7 @@
  * @param c Character to output
  * @return The character passed as input.
  */
-static int console_out(int c)
+int arch_printk_char_out(int c)
 {
 	char buf[16];
 
@@ -54,8 +54,8 @@ extern void __printk_hook_install(int (*fn)(int));
  */
 static void xt_sim_console_hook_install(void)
 {
-	__stdout_hook_install(console_out);
-	__printk_hook_install(console_out);
+	__stdout_hook_install(arch_printk_char_out);
+	__printk_hook_install(arch_printk_char_out);
 }
 
 /**

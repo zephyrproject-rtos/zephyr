@@ -12,8 +12,8 @@
  * processors.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MEMORY_MAP_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MEMORY_MAP_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_
 
 #include <zephyr/sys/util.h>
 
@@ -67,7 +67,8 @@
 #define _PPB_INT_RSVD_2           0xE000F000
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55)
+	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85)
 #define _PPB_INT_RSVD_0           0xE0000000
 #define _PPB_INT_SCS              0xE000E000
 #define _PPB_INT_SCB              0xE000ED00
@@ -88,7 +89,8 @@
 #define _PPB_EXT_PPB              0xE0042000
 #define _PPB_EXT_ROM_TABLE        0xE00FF000
 #define _PPB_EXT_END_ADDR         0xE00FFFFF
-#elif defined(CONFIG_CPU_CORTEX_M33) || defined(CONFIG_CPU_CORTEX_M55)
+#elif defined(CONFIG_CPU_CORTEX_M33) || defined(CONFIG_CPU_CORTEX_M55) \
+	|| defined(CONFIG_CPU_CORTEX_M85)
 #undef  _PPB_EXT_BASE_ADDR
 #define _PPB_EXT_BASE_ADDR        0xE0044000
 #define _PPB_EXT_ROM_TABLE        0xE00FF000
@@ -110,4 +112,4 @@
 #define _VENDOR_BASE_ADDR         0xE0100000
 #define _VENDOR_END_ADDR          0xFFFFFFFF
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_M_MEMORY_MAP_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_ */

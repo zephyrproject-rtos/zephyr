@@ -11,13 +11,50 @@ This application demonstrates how to use IPC Service and the static vrings
 backend with Zephyr. It is designed to demonstrate how to integrate it with
 Zephyr both from a build perspective and code.
 
-Building the application for nrf5340dk_nrf5340_cpuapp
+Building the application for nrf5340dk/nrf5340/cpuapp
 *****************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
-   :board: nrf5340dk_nrf5340_cpuapp
+   :board: nrf5340dk/nrf5340/cpuapp
    :goals: debug
+   :west-args: --sysbuild
+
+Building the application for lpcxpresso55s69/lpc55s69/cpu0
+**********************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: lpcxpresso55s69/lpc55s69/cpu0
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for mimxrt1160_evk/mimxrt1166/cm7
+**********************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: mimxrt1160_evk/mimxrt1166/cm7
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for mimxrt1170_evk/mimxrt1176/cm7
+**********************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: mimxrt1170_evk/mimxrt1176/cm7
+   :goals: debug
+   :west-args: --sysbuild
+
+Building the application for mimxrt1170_evk@B/mimxrt1176/cm7
+************************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipc_service/static_vrings
+   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :goals: debug
+   :west-args: --sysbuild
 
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:

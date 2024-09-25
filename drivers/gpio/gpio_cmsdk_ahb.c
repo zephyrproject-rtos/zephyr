@@ -110,7 +110,7 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 	}
 
 #ifdef CONFIG_SOC_FAMILY_ATM
-#ifdef CONFIG_SOC_SERIES_ATMx2
+#ifdef CONFIG_SOC_SERIES_ATMX2
 	if ((flags & GPIO_PULL_DOWN) != 0) {
 		return -ENOTSUP;
 	}
@@ -143,7 +143,7 @@ static int cmsdk_ahb_gpio_config(const struct device *dev, uint32_t mask,
 	}
 
 #ifdef CONFIG_SOC_FAMILY_ATM
-#ifndef CONFIG_SOC_SERIES_ATMx2
+#ifndef CONFIG_SOC_SERIES_ATMX2
 	if ((flags & GPIO_PULL_DOWN) != 0) {
 		cfg->port->pulldown_enable_set = mask;
 	} else {

@@ -7,15 +7,15 @@ config HAS_CC3220SDK
 # SimpleLink drivers require types (stdint.h) from c library which is not
 # provided by minimal lbc
 # Selecting ERRNO lets host driver use Zephyr's __errno
-# Selecting PTHREAD_IPC and POSIX_API are needed to build the host driver
+# Selecting POSIX_THREADS and POSIX_API are needed to build the host driver
 config SIMPLELINK_HOST_DRIVER
 	bool "Build the SimpleLink WiFi Host Driver"
 	depends on HAS_CC3220SDK
 	depends on MULTITHREADING
 	select REQUIRES_FULL_LIBC
 	select ERRNO
-	select PTHREAD_IPC
-	select POSIX_CLOCK
+	select POSIX_THREADS
+	select POSIX_TIMERS
 	help
 	  Build the SimpleLink host driver
 

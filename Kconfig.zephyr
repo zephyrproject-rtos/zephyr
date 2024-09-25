@@ -21,12 +21,11 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig"
 # This loads Zephyr base shield defconfigs
 source "boards/shields/*/Kconfig.defconfig"
 
-source "$(BOARD_DIR)/Kconfig.defconfig"
+osource "$(BOARD_DIR)/Kconfig.defconfig"
 
-# This loads custom SoC root defconfigs
-osource "$(KCONFIG_BINARY_DIR)/Kconfig.soc.defconfig"
-# This loads Zephyr base SoC root defconfigs
-osource "soc/$(ARCH)/*/Kconfig.defconfig"
+# This loads Zephyr specific SoC root defconfigs
+source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.defconfig"
+
 # This loads the toolchain defconfigs
 osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig.defconfig"
 # This loads the testsuite defconfig
@@ -140,6 +139,17 @@ config ROM_START_OFFSET
 	  space to store the image header, which should also meet vector table
 	  alignment requirements on most ARM targets, although some targets
 	  may require smaller or larger values.
+
+config ROM_END_OFFSET
+	hex "ROM end offset"
+	default 0
+	help
+	  If non-zero, this option reduces the maximum size that the Zephyr image is allowed to
+	  occupy, this is to allow for additional image storage which can be created and used by
+	  other systems such as bootloaders (for MCUboot, this would include the image swap
+	  fields and TLV storage at the end of the image).
+
+	  If unsure, leave at the default value 0.
 
 config LD_LINKER_SCRIPT_SUPPORTED
 	bool
@@ -306,9 +316,112 @@ config LINKER_USE_RELAX
 
 endmenu # "Linker Sections"
 
+config LINKER_ITERABLE_SUBALIGN
+	int
+	default 8 if 64BIT
+	default 4
+	help
+	  Hidden option for the default subalignment of iterable sections.
+
+config LINKER_DEVNULL_SUPPORT
+	bool
+	default y if CPU_CORTEX_M || (RISCV && !64BIT)
+
+config LINKER_DEVNULL_MEMORY
+	bool "Devnull region"
+	depends on LINKER_DEVNULL_SUPPORT
+	help
+	  Devnull region is created. It is stripped from final binary but remains
+	  in byproduct elf file.
+
+config LINKER_DEVNULL_MEMORY_SIZE
+	int "Devnull region size"
+	depends on LINKER_DEVNULL_MEMORY
+	default 262144
+	help
+	  Size can be adjusted so it fits all data placed in that region.
+
 endmenu
 
 menu "Compiler Options"
+
+config REQUIRES_STD_C99
+	bool
+	help
+	  Hidden option to select compiler support C99 standard or higher.
+
+config REQUIRES_STD_C11
+	bool
+	select REQUIRES_STD_C99
+	help
+	  Hidden option to select compiler support C11 standard or higher.
+
+config REQUIRES_STD_C17
+	bool
+	select REQUIRES_STD_C11
+	help
+	  Hidden option to select compiler support C17 standard or higher.
+
+config REQUIRES_STD_C23
+	bool
+	select REQUIRES_STD_C17
+	help
+	  Hidden option to select compiler support C23 standard or higher.
+
+choice STD_C
+	prompt "C Standard"
+	default STD_C23 if REQUIRES_STD_C23
+	default STD_C17 if REQUIRES_STD_C17
+	default STD_C11 if REQUIRES_STD_C11
+	default STD_C99
+	help
+	  C Standards.
+
+config STD_C90
+	bool "C90"
+	depends on !REQUIRES_STD_C99
+	help
+	  1989 C standard as completed in 1989 and ratified by ISO/IEC
+	  as ISO/IEC 9899:1990. This version is known as "ANSI C".
+
+config STD_C99
+	bool "C99"
+	depends on !REQUIRES_STD_C11
+	help
+	  1999 C standard.
+
+config STD_C11
+	bool "C11"
+	depends on !REQUIRES_STD_C17
+	help
+	  2011 C standard.
+
+config STD_C17
+	bool "C17"
+	depends on !REQUIRES_STD_C23
+	help
+	  2017 C standard, addresses defects in C11 without introducing
+	  new language features.
+
+config STD_C23
+	bool "C23"
+	help
+	  2023 C standard.
+
+endchoice
+
+config TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	help
+	  Hidden option to signal that toolchain supports GNU Extensions.
+
+config GNU_C_EXTENSIONS
+	bool "GNU C Extensions"
+	depends on TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+	help
+	  Enable GNU C Extensions. GNU C provides several language features
+	  not found in ISO standard C.
 
 config CODING_GUIDELINE_CHECK
 	bool "Enforce coding guideline rules"
@@ -316,10 +429,22 @@ config CODING_GUIDELINE_CHECK
 	  Use available compiler flags to check coding guideline rules during
 	  the build.
 
-config NATIVE_BUILD
+config NATIVE_LIBC
 	bool
 	select FULL_LIBC_SUPPORTED
-	select FULL_LIBCPP_SUPPORTED if CPP
+	help
+	  Zephyr will use the host system C library.
+
+config NATIVE_LIBCPP
+	bool
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Zephyr will use the host system C++ library
+
+config NATIVE_BUILD
+	bool
+	select NATIVE_LIBC if EXTERNAL_LIBC
+	select NATIVE_LIBCPP if EXTERNAL_LIBCPP
 	help
 	  Zephyr will be built targeting the host system for debug and
 	  development purposes.
@@ -353,6 +478,7 @@ choice COMPILER_OPTIMIZATIONS
 	prompt "Optimization level"
 	default NO_OPTIMIZATIONS    if COVERAGE
 	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS_AGGRESSIVE if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	default SIZE_OPTIMIZATIONS
 	help
 	  Note that these flags shall only control the compiler
@@ -363,6 +489,12 @@ config SIZE_OPTIMIZATIONS
 	bool "Optimize for size"
 	help
 	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config SIZE_OPTIMIZATIONS_AGGRESSIVE
+	bool "Aggressively optimize for size"
+	help
+	  Compiler optimizations wil be set to -Oz independently of other
 	  options.
 
 config SPEED_OPTIMIZATIONS
@@ -386,6 +518,15 @@ config NO_OPTIMIZATIONS
 	  Selecting this option will likely require manual tuning of the
 	  default stack sizes in order to avoid stack overflows.
 endchoice
+
+config LTO
+	bool "Link Time Optimization [EXPERIMENTAL]"
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	depends on !NATIVE_LIBRARY
+	depends on !CODE_DATA_RELOCATION
+	select EXPERIMENTAL
+	help
+	  This option enables Link Time Optimization.
 
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
@@ -471,17 +612,17 @@ choice
 config ASSERT_ON_ERRORS
 	bool "Assert on all errors"
 	help
-	  Assert on errors covered with the CHECK macro.
+	  Assert on errors covered with the CHECKIF() macro.
 
 config NO_RUNTIME_CHECKS
 	bool "No runtime error checks"
 	help
-	  Do not do any runtime checks or asserts when using the CHECK macro.
+	  Do not do any runtime checks or asserts when using the CHECKIF() macro.
 
 config RUNTIME_ERROR_CHECKS
 	bool "Runtime error checks"
 	help
-	  Always perform runtime checks covered with the CHECK macro. This
+	  Always perform runtime checks covered with the CHECKIF() macro. This
 	  option is the default and the only option used during testing.
 
 endchoice
@@ -517,6 +658,17 @@ config OUTPUT_DISASSEMBLE_ALL
 	help
 	  The .lst file will contain complete disassembly of the firmware
 	  not just those expected to contain instructions including zeros
+
+config OUTPUT_DISASSEMBLY_WITH_SOURCE
+	bool "Include source code in output disassembly file"
+	default y
+	depends on OUTPUT_DISASSEMBLY && !OUTPUT_DISASSEMBLE_ALL
+	help
+	  The .lst file will also contain the source code. Having
+	  control over this can be useful for reproducible builds
+	  since it can be used to remove one of the elements of
+	  the .lst file that can vary across platforms because
+	  of reasons such as having ".." include paths.
 
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
@@ -596,7 +748,7 @@ config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x1c5f21b0" if SOC_SERIES_ESP32
 	default "0x621e937a" if SOC_NRF52833_QIAA
 	default "0xada52840" if SOC_NRF52840_QIAA
-	default "0x4fb2d5bd" if SOC_SERIES_IMX_RT
+	default "0x4fb2d5bd" if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX
 	default "0x2abc77ec" if SOC_SERIES_LPC55XXX
 	default "0xe48bff56" if SOC_SERIES_RP2XXX
 	default "0x68ed2b88" if SOC_SERIES_SAMD21
@@ -638,6 +790,11 @@ config BUILD_OUTPUT_STRIPPED
 	help
 	  Build a stripped binary zephyr/zephyr.strip in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_COMPRESS_DEBUG_SECTIONS
+	bool "Compress debug sections in the ELF file"
+	help
+	  Compress debug sections in the ELF file to reduce the file size.
 
 config BUILD_OUTPUT_ADJUST_LMA
 	string
@@ -747,7 +904,9 @@ config BUILD_OUTPUT_STRIP_PATHS
 config CHECK_INIT_PRIORITIES
 	bool "Build time initialization priorities check"
 	default y
-	depends on !NATIVE_LIBRARY
+	# If we are building a native_simulator target, we can only check the init priorities
+	# if we are building the final output but we are not assembling several images together
+	depends on !(NATIVE_LIBRARY && (!BUILD_OUTPUT_EXE || NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS != ""))
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "armclang"
 	help
 	  Check the build for initialization priority issues by comparing the
@@ -755,16 +914,7 @@ config CHECK_INIT_PRIORITIES
 	  derived from the devicetree definition.
 
 	  Fails the build on priority errors (dependent devices, inverted
-	  priority), see CHECK_INIT_PRIORITIES_FAIL_ON_WARNING to fail on
-	  warnings (dependent devices, same priority) as well.
-
-config CHECK_INIT_PRIORITIES_FAIL_ON_WARNING
-	bool "Fail the build on priority check warnings"
-	depends on CHECK_INIT_PRIORITIES
-	help
-	  Fail the build if the dependency check script identifies any pair of
-	  devices depending on each other but initialized with the same
-	  priority.
+	  priority).
 
 config EMIT_ALL_SYSCALLS
 	bool "Emit all possible syscalls in the tree"
@@ -838,7 +988,7 @@ config IS_BOOTLOADER
 	  a separate Zephyr image payload.
 
 config BOOTLOADER_SRAM_SIZE
-	int "SRAM reserved for bootloader"
+	int "SRAM reserved for bootloader [DEPRECATED]"
 	default 0
 	depends on !XIP || IS_BOOTLOADER
 	depends on ARM || XTENSA
@@ -849,14 +999,19 @@ config BOOTLOADER_SRAM_SIZE
 	  - Zephyr is a !XIP image, which implicitly assumes existence of a
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
-config BOOTLOADER_ESP_IDF
-	bool "ESP-IDF bootloader support"
-	depends on SOC_FAMILY_ESP32 && !BOOTLOADER_MCUBOOT && !MCUBOOT
-	default	y
+	  This option is deprecated, users should transition to using DTS to set this, if needed.
+	  To be removed after Zephyr 3.7 release.
+
+config BOOTLOADER_SRAM_SIZE_DEPRECATED
+	bool
+	default y
+	select DEPRECATED
+	depends on BOOTLOADER_SRAM_SIZE != 0
+	depends on !XIP || IS_BOOTLOADER
+	depends on ARM || XTENSA
 	help
-	  This option will trigger the compilation of the ESP-IDF bootloader
-	  inside the build folder.
-	  At flash time, the bootloader will be flashed with the zephyr image
+	  Non-prompt symbol to indicate that the deprecated BOOTLOADER_SRAM_SIZE Kconfig has a
+	  non-0 value. Please transition to using devicetree.
 
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"
@@ -903,11 +1058,17 @@ endmenu
 
 menu "Compatibility"
 
-config COMPAT_INCLUDES
-	bool "Suppress warnings when using header shims"
+config LEGACY_GENERATED_INCLUDE_PATH
+	bool "Legacy include path for generated headers"
 	default y
 	help
-	  Suppress any warnings from the pre-processor when including
-	  deprecated header files.
+	  Allow applications and libraries to use the Zephyr legacy include
+	  path for the generated headers which does not use the `zephyr/` prefix.
+
+	  From now on, i.e., the preferred way to include the `version.h` header is to
+	  use <zephyr/version.h>, this Kconfig is currently enabled by default so that
+	  user applications won't immediately fail to compile.
+
+	  This Kconfig will be deprecated and eventually removed in the future releases.
 
 endmenu

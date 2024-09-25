@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "Kconfig.$(HWM_SCHEME)"
+
 comment "Sysbuild image configuration"
 
 osource "$(BOARD_DIR)/Kconfig.sysbuild"
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.sysbuild"
 
 menu "Modules"
 
@@ -40,3 +43,9 @@ config WARN_DEPRECATED
 	  features are enabled.
 
 rsource "images/Kconfig"
+
+menu "Build options"
+
+rsource "build/Kconfig"
+
+endmenu

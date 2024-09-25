@@ -5,6 +5,7 @@
 
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor_attribute_types.h>
 
 #include <stdint.h>
 
@@ -24,13 +25,20 @@
 /**
  * @brief Collection of function pointers implementing a common backend API for sensor emulators
  */
-__subsystem struct emul_sensor_backend_api {
+__subsystem struct emul_sensor_driver_api {
 	/** Sets a given fractional value for a given sensor channel. */
-	int (*set_channel)(const struct emul *target, enum sensor_channel ch, q31_t value,
-			   int8_t shift);
+	int (*set_channel)(const struct emul *target, struct sensor_chan_spec ch,
+			   const q31_t *value, int8_t shift);
 	/** Retrieve a range of sensor values to use with test. */
-	int (*get_sample_range)(const struct emul *target, enum sensor_channel ch, q31_t *lower,
+	int (*get_sample_range)(const struct emul *target, struct sensor_chan_spec ch, q31_t *lower,
 				q31_t *upper, q31_t *epsilon, int8_t *shift);
+	/** Set the attribute value(s) of a given channel. */
+	int (*set_attribute)(const struct emul *target, struct sensor_chan_spec ch,
+			     enum sensor_attribute attribute, const void *value);
+	/** Get metadata about an attribute. */
+	int (*get_attribute_metadata)(const struct emul *target, struct sensor_chan_spec ch,
+				      enum sensor_attribute attribute, q31_t *min, q31_t *max,
+				      q31_t *increment, int8_t *shift);
 };
 /**
  * @endcond
@@ -60,14 +68,15 @@ static inline bool emul_sensor_backend_is_supported(const struct emul *target)
  * @return -ENOTSUP if no backend API or if channel not supported by emul
  * @return -ERANGE if provided value is not in the sensor's supported range
  */
-static inline int emul_sensor_backend_set_channel(const struct emul *target, enum sensor_channel ch,
-						  q31_t value, int8_t shift)
+static inline int emul_sensor_backend_set_channel(const struct emul *target,
+						  struct sensor_chan_spec ch, const q31_t *value,
+						  int8_t shift)
 {
 	if (!target || !target->backend_api) {
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->set_channel) {
 		return api->set_channel(target, ch, value, shift);
@@ -93,19 +102,81 @@ static inline int emul_sensor_backend_set_channel(const struct emul *target, enu
  *
  */
 static inline int emul_sensor_backend_get_sample_range(const struct emul *target,
-						       enum sensor_channel ch, q31_t *lower,
+						       struct sensor_chan_spec ch, q31_t *lower,
 						       q31_t *upper, q31_t *epsilon, int8_t *shift)
 {
 	if (!target || !target->backend_api) {
 		return -ENOTSUP;
 	}
 
-	struct emul_sensor_backend_api *api = (struct emul_sensor_backend_api *)target->backend_api;
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
 
 	if (api->get_sample_range) {
 		return api->get_sample_range(target, ch, lower, upper, epsilon, shift);
 	}
 	return -ENOTSUP;
+}
+
+/**
+ * @brief Set the emulator's attribute values
+ *
+ * @param[in] target Pointer to emulator instance to operate on
+ * @param[in] ch The channel to request info for. If \p ch is unsupported, return `-ENOTSUP`
+ * @param[in] attribute The attribute to set
+ * @param[in] value the value to use (cast according to the channel/attribute pair)
+ * @return 0 is successful
+ * @return < 0 on error
+ */
+static inline int emul_sensor_backend_set_attribute(const struct emul *target,
+						    struct sensor_chan_spec ch,
+						    enum sensor_attribute attribute,
+						    const void *value)
+{
+	if (!target || !target->backend_api) {
+		return -ENOTSUP;
+	}
+
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
+
+	if (api->set_attribute == NULL) {
+		return -ENOTSUP;
+	}
+	return api->set_attribute(target, ch, attribute, value);
+}
+
+/**
+ * @brief Get metadata about an attribute.
+ *
+ * Information provided by this function includes the minimum/maximum values of the attribute as
+ * well as the increment (value per LSB) which can be used as an epsilon when comparing results.
+ *
+ * @param[in] target Pointer to emulator instance to operate on
+ * @param[in] ch The channel to request info for. If \p ch is unsupported, return '-ENOTSUP'
+ * @param[in] attribute The attribute to request info for. If \p attribute is unsupported, return
+ *   '-ENOTSUP'
+ * @param[out] min The minimum value the attribute can be set to
+ * @param[out] max The maximum value the attribute can be set to
+ * @param[out] increment The value that the attribute increases by for every LSB
+ * @param[out] shift The shift for \p min, \p max, and \p increment
+ * @return 0 on SUCCESS
+ * @return < 0 on error
+ */
+static inline int emul_sensor_backend_get_attribute_metadata(const struct emul *target,
+							     struct sensor_chan_spec ch,
+							     enum sensor_attribute attribute,
+							     q31_t *min, q31_t *max,
+							     q31_t *increment, int8_t *shift)
+{
+	if (!target || !target->backend_api) {
+		return -ENOTSUP;
+	}
+
+	struct emul_sensor_driver_api *api = (struct emul_sensor_driver_api *)target->backend_api;
+
+	if (api->get_attribute_metadata == NULL) {
+		return -ENOTSUP;
+	}
+	return api->get_attribute_metadata(target, ch, attribute, min, max, increment, shift);
 }
 
 /**

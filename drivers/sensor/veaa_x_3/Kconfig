@@ -1,0 +1,18 @@
+# VEAA-X-3 configuration options
+
+# Copyright (c) 2024, Vitrolife A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config VEAA_X_3
+	bool "VEAA-X-3 pressure driver"
+	default y
+	depends on DT_HAS_FESTO_VEAA_X_3_ENABLED
+	depends on ADC
+	depends on DAC
+	help
+	  Enable driver for Festo VEAA-X-3.
+
+	  The driver assumes that the maximum ADC value matches the maximum
+	  output from the device, and that the maximum DAC value matches the
+	  maximum input value for the device. External hardware is probably
+	  required between the ADC/DAC and the device.

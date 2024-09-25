@@ -9,6 +9,7 @@ menuconfig ADC_ADS114S0X
 	select SPI
 	select ADC_CONFIGURABLE_INPUTS
 	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	select ADC_CONFIGURABLE_VBIAS_PIN
 	help
 	  Enable the driver implementation for the ADS114S0X family
 

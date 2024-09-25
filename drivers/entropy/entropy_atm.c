@@ -9,7 +9,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/entropy.h>
 #include <string.h>
-
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(entropy_atm, CONFIG_ENTROPY_LOG_LEVEL);
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 
@@ -197,10 +198,13 @@ static void trng_handler(void)
 		entropy_atm_trng_good++;
 #endif
 		// FIXME: trng_internal_clear_synth_override();
-		ASSERT_ERR(!RING_FULL());
-
-		RING_PUSH(CMSDK_TRNG->TRNG);
-		k_sem_give(&trng_ring_sem);
+		if (RING_FULL()) {
+			LOG_WRN("RFULL! status:0x%" PRIx32 " ctrl:0x%" PRIx32, status,
+				CMSDK_TRNG->CONTROL);
+		} else {
+			RING_PUSH(CMSDK_TRNG->TRNG);
+			k_sem_give(&trng_ring_sem);
+		}
 	}
 
 #ifdef __RIF_TRNG_CONF_MACRO__

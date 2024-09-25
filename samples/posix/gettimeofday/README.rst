@@ -6,10 +6,9 @@ POSIX gettimeofday() with clock initialization over SNTP
 Overview
 ********
 
-This sample application demonstrates using the POSIX gettimeofday()
-function to display the absolute wall clock time and local time every
-second. At system startup, the current time is queried using the SNTP
-networking protocol, enabled by setting the
+This sample application demonstrates using the POSIX `gettimeofday()`_ function to display the
+absolute wall clock time and local time every second. At system startup, the current time is
+queried using the SNTP networking protocol, enabled by setting the
 :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_INIT` and
 :kconfig:option:`CONFIG_NET_CONFIG_SNTP_INIT_SERVER` options.
 
@@ -24,8 +23,7 @@ Requirements
 Building and Running
 ********************
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+This project outputs to the console. It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/posix/gettimeofday
@@ -34,9 +32,13 @@ on QEMU as follows:
    :goals: run
    :compact:
 
-For comparison, a version for native POSIX operating systems (e.g. Linux)
-can be built using:
+For comparison, to build directly for your host OS if it is POSIX compliant (for ex. Linux):
 
 .. code-block:: console
 
-   make -f Makefile.posix
+   cd samples/posix/gettimeofday
+   make -f Makefile.host
+
+The make output file will be located in samples/posix/gettimeofday/build.
+
+.. _gettimeofday(): https://pubs.opengroup.org/onlinepubs/009604599/functions/gettimeofday.html

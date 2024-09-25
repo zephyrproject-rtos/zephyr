@@ -1,6 +1,21 @@
 # Copyright (c) 2018 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
+description: |
+    When setting the int1-gpio-config/int2-gpio-config and anym-mode properties
+    in a .dts or .dtsi file you may include lis2dh.h and use the macros defined there.
+
+    Example:
+    #include <zephyr/dt-bindings/sensor/lis2dh.h>
+
+    lis2dh: lis2dh@0 {
+      ...
+
+      int1-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+      int2-gpio-config = <LIS2DH_DT_GPIO_INT_LEVEL_LOW>;
+      anym-mode = <LIS2DH_DT_ANYM_6D_POSITION>;
+    };
+
 include: sensor-device.yaml
 
 properties:
@@ -9,6 +24,40 @@ properties:
     description: |
       The INT1 and (optional) INT2 signal connections.  These signals
       are active-high as produced by the sensor.
+
+  int1-gpio-config:
+    type: int
+    default: 0
+    description: |
+      Select the interrupt configuration for INT1 gpio.
+
+      The default of 0 is the most common situation to avoid multiple interrupts
+      to be triggered by same event.
+
+      - 0 # LIS2DH_DT_GPIO_INT_EDGE_BOTH
+      - 1 # LIS2DH_DT_GPIO_INT_EDGE_RISING
+      - 2 # LIS2DH_DT_GPIO_INT_EDGE_FALLING
+      - 3 # LIS2DH_DT_GPIO_INT_LEVEL_HIGH
+      - 4 # LIS2DH_DT_GPIO_INT_LEVEL_LOW
+
+    enum: [0, 1, 2, 3, 4]
+
+  int2-gpio-config:
+    type: int
+    default: 0
+    description: |
+      Select the interrupt configuration for INT2 gpio.
+
+      The default of 0 is the most common situation to avoid multiple interrupts
+      to be triggered by same event.
+
+      - 0 # LIS2DH_DT_GPIO_INT_EDGE_BOTH
+      - 1 # LIS2DH_DT_GPIO_INT_EDGE_RISING
+      - 2 # LIS2DH_DT_GPIO_INT_EDGE_FALLING
+      - 3 # LIS2DH_DT_GPIO_INT_LEVEL_HIGH
+      - 4 # LIS2DH_DT_GPIO_INT_LEVEL_LOW
+
+    enum: [0, 1, 2, 3, 4]
 
   disconnect-sdo-sa0-pull-up:
     type: boolean
@@ -36,14 +85,11 @@ properties:
     description: |
       Select the interrupt mode for any movement.
 
-      0 = OR combination of interrupt events
-      1 = 6D movement recognition
-      2 = AND combination of interrupt events
-      3 = 6D position recognition
-
       The default of 0 is the power-on-reset value.
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
+
+      - 0 # LIS2DH_DT_ANYM_OR_COMBINATION
+      - 1 # LIS2DH_DT_ANYM_6D_MOVEMENT
+      - 2 # LIS2DH_DT_ANYM_AND_COMBINATION
+      - 3 # LIS2DH_DT_ANYM_6D_POSITION
+
+    enum: [0, 1, 2, 3]
