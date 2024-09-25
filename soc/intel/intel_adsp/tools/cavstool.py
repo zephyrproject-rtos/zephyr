@@ -748,6 +748,26 @@ def debug_offset():
 def debug_slot_offset(num):
     return debug_offset() + DEBUG_SLOT_SIZE * (1 + num)
 
+def debug_slot_offset_by_type(the_type, timeout_s=0.2):
+    ADSP_DW_SLOT_COUNT=15
+    hertz = 100
+    attempts = timeout_s * hertz
+    while attempts > 0:
+        data = win_read(debug_offset(), 0, ADSP_DW_SLOT_COUNT * 3 * 4)
+        for i in range(ADSP_DW_SLOT_COUNT):
+            start_index = i * (3 * 4)
+            end_index = (i + 1) * (3 * 4)
+            desc = data[start_index:end_index]
+            resource_id, type_id, vma = struct.unpack('<III', desc)
+            if type_id == the_type:
+                log.info("found desc %u resource_id 0x%08x type_id 0x%08x vma 0x%08x",
+                         i, resource_id, type_id, vma)
+                return debug_slot_offset(i)
+        log.debug("not found, %u attempts left", attempts)
+        attempts -= 1
+        time.sleep(1 / hertz)
+    return None
+
 def shell_base_offset():
     return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
 
