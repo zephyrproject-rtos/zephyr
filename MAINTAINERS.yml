@@ -3493,6 +3493,8 @@ Silabs Platforms:
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*_gecko*
+    - drivers/bluetooth/hci/slz_hci*
+    - drivers/*/*_silabs*
   labels:
     - "platform: Silabs"
 
