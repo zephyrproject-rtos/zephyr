@@ -6,6 +6,7 @@ config AUDIO_DMIC_MCUX
 	default y
 	depends on DT_HAS_NXP_DMIC_ENABLED
 	select DMA
+	select PINCTRL
 	help
 	  Enable support for DMIC on NXP MCUX SoC's
 
