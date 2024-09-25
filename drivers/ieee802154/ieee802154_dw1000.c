@@ -1679,12 +1679,11 @@ DEVICE_INSTANCE_FROM_DT_INST(0, dw1000_init, NULL,
 		    &dwt_0_context, &dw1000_0_config,
 		    POST_KERNEL, &dwt_radio_api);
 #else
-NET_DEVICE_DT_INST_DEFINE(0,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 		dw1000_init,
 		NULL,
 		&dwt_0_context,
 		&dw1000_0_config,
-		CONFIG_IEEE802154_DW1000_INIT_PRIO,
 		&dwt_radio_api,
 		IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2),

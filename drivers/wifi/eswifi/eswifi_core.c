@@ -811,9 +811,8 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.wifi_mgmt_api = &eswifi_mgmt_api,
 };
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, eswifi_init, NULL,
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, eswifi_init, NULL,
 				  &eswifi0, &eswifi0_cfg,
-				  CONFIG_WIFI_INIT_PRIORITY,
 				  &eswifi_offload_api,
 				  1500);
 

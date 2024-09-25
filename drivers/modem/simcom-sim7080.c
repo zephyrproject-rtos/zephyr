@@ -2429,8 +2429,8 @@ error:
 }
 
 /* Register device with the networking stack. */
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
-				  CONFIG_MODEM_SIMCOM_SIM7080_INIT_PRIORITY, &api_funcs,
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, modem_init, NULL, &mdata, NULL,
+				  &api_funcs,
 				  MDM_MAX_DATA_LENGTH);
 
 NET_SOCKET_OFFLOAD_REGISTER(simcom_sim7080, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,

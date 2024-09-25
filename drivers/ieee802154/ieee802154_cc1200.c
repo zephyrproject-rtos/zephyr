@@ -824,7 +824,6 @@ static const struct ieee802154_radio_api cc1200_radio_api = {
 	.attr_get		= cc1200_attr_get,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0, cc1200_init, NULL, &cc1200_context_data,
-			  &cc1200_config, CONFIG_IEEE802154_CC1200_INIT_PRIO,
-			  &cc1200_radio_api, IEEE802154_L2,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0, cc1200_init, NULL, &cc1200_context_data,
+			  &cc1200_config, &cc1200_radio_api, IEEE802154_L2,
 			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);

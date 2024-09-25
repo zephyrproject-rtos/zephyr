@@ -6569,6 +6569,5 @@ static struct offloaded_if_api api_funcs = {
 	.iface_api.init = offload_iface_init,
 };
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, hl7800_init, NULL, &iface_ctx,
-				  &hl7800_cfg, CONFIG_MODEM_HL7800_INIT_PRIORITY,
-				  &api_funcs, MDM_MTU);
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, hl7800_init, NULL, &iface_ctx,
+				  &hl7800_cfg, &api_funcs, MDM_MTU);
