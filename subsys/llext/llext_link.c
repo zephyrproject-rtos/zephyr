@@ -174,11 +174,11 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			continue;
 		}
 
-		elf_sym_t sym_tbl;
+		elf_sym_t sym;
 
 		ret = llext_seek(ldr, sym_shdr->sh_offset + j * sizeof(elf_sym_t));
 		if (!ret) {
-			ret = llext_read(ldr, &sym_tbl, sizeof(sym_tbl));
+			ret = llext_read(ldr, &sym, sizeof(sym));
 		}
 
 		if (ret < 0) {
@@ -187,16 +187,16 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			continue;
 		}
 
-		uint32_t stt = ELF_ST_TYPE(sym_tbl.st_info);
+		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 
 		if (stt != STT_FUNC &&
 		    stt != STT_SECTION &&
 		    stt != STT_OBJECT &&
-		    (stt != STT_NOTYPE || sym_tbl.st_shndx != SHN_UNDEF)) {
+		    (stt != STT_NOTYPE || sym.st_shndx != SHN_UNDEF)) {
 			continue;
 		}
 
-		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym_tbl.st_name);
+		const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
@@ -219,14 +219,14 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 		}
 
-		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
+		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		const void *link_addr;
 
 		switch (stb) {
 		case STB_GLOBAL:
 			/* First try the global symbol table */
 			link_addr = llext_find_sym(NULL,
-				SYM_NAME_OR_SLID(name, sym_tbl.st_value));
+				SYM_NAME_OR_SLID(name, sym.st_value));
 
 			if (!link_addr) {
 				/* Next try internal tables */
@@ -253,7 +253,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			break;
 		case STB_LOCAL:
 			if (do_local) {
-				arch_elf_relocate_local(ldr, ext, &rela, &sym_tbl, got_offset);
+				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset);
 			}
 		}
 
