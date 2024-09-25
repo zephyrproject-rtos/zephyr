@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 Andrew Featherstone
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+};
