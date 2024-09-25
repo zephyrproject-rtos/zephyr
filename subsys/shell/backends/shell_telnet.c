@@ -708,7 +708,12 @@ static int telnet_write(const struct shell_transport *transport,
 			err = telnet_send(true);
 			if (err != 0) {
 				*cnt = length;
-				return err;
+				if ((err == -ENOTCONN) || (err == -ENETDOWN)) {
+					LOG_ERR("Network disconnected, shutting down");
+				} else {
+					LOG_ERR("Error %d, shutting down", err);
+				}
+				return 0; /* Return 0 to not trigger ASSERT in shell_ops.c */
 			}
 		}
 
