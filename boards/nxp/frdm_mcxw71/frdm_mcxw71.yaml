@@ -11,5 +11,8 @@ toolchain:
 supported:
   - gpio
   - uart
+  - counter
+  - pwm
+  - watchdog
   - pinctrl
   - flash
