@@ -101,10 +101,8 @@ static int wifi_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(wlan0, "wifi_test",
-		    wifi_init, NULL,
-		    &wifi_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(wlan0, wifi_init, NULL,
+		    &wifi_context, NULL, &api_funcs, NET_ETH_MTU);
 
 static int wifi_nm_scan(const struct device *dev, struct wifi_scan_params *params,
 			scan_result_cb_t cb)

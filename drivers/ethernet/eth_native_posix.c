@@ -487,10 +487,8 @@ static const struct ethernet_api eth_if_api = {
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 
 #define DEFINE_ETH_DEVICE(x, _)						\
-	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
-			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
+	ETH_NET_DEVICE_INSTANCE(eth_native_posix_##x,			\
 			    NULL, NULL,	&eth_context_data_##x, NULL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &eth_if_api,				\
 			    NET_ETH_MTU)
 

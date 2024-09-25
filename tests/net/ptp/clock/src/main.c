@@ -159,16 +159,16 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth3_test, "eth3_test", eth_init, NULL,
-		    &eth_context_3, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INSTANCE(eth3_test, eth_init, NULL,
+		    &eth_context_3, NULL, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth2_test, "eth2_test", eth_init, NULL,
-		    &eth_context_2, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INSTANCE(eth2_test, eth_init, NULL,
+		    &eth_context_2, NULL, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth1_test, "eth1_test", eth_init, NULL,
-		    &eth_context_1, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INSTANCE(eth1_test, eth_init, NULL,
+		    &eth_context_1, NULL, &api_funcs,
 		    NET_ETH_MTU);
 
 static uint64_t timestamp_to_nsec(struct net_ptp_time *ts)

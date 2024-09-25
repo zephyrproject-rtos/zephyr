@@ -267,9 +267,8 @@ static int eth_fake_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
-		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &eth_fake_api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(eth_fake, eth_fake_init, NULL,
+		    &eth_fake_data, NULL, &eth_fake_api_funcs, NET_ETH_MTU);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char *iface2str(struct net_if *iface)

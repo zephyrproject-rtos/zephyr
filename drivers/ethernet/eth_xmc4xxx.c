@@ -1005,8 +1005,8 @@ static struct eth_xmc4xxx_data eth_xmc4xxx_data = {
 	.mac_addr = DT_INST_PROP_OR(0, local_mac_address, {0}),
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth_xmc4xxx_config,
-			      CONFIG_ETH_INIT_PRIORITY, &eth_xmc4xxx_api, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth_xmc4xxx_config,
+			      &eth_xmc4xxx_api, NET_ETH_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 

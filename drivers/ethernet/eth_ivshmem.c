@@ -419,12 +419,11 @@ static const struct ethernet_api eth_ivshmem_api = {
 		.name = "ivshmem_eth" STRINGIFY(inst),					\
 		.generate_mac_addr = generate_mac_addr_##inst,				\
 	};										\
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst,						\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 				      eth_ivshmem_initialize,				\
 				      NULL,						\
 				      &eth_ivshmem_dev_##inst,				\
 				      &eth_ivshmem_cfg_##inst,				\
-				      CONFIG_ETH_INIT_PRIORITY,				\
 				      &eth_ivshmem_api,					\
 				      NET_ETH_MTU);
 

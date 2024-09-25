@@ -625,8 +625,8 @@ static const struct ethernet_api api_funcs = {
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_DRIVER_INIT)
 
 #define NXP_ENET_QOS_MAC_DEVICE_DEFINE(n)						\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_mac_init, NULL,		\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n, eth_nxp_enet_qos_mac_init, NULL,	\
 				&enet_qos_##n##_mac_data, &enet_qos_##n##_mac_config,	\
-				CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+				&api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_MAC_DEVICE_DEFINE)

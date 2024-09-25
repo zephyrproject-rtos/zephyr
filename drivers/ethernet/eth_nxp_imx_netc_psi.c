@@ -187,7 +187,6 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                               \
 		.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,                               \
 	};                                                                                         \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \
-				      &netc_eth##n##_config, CONFIG_ETH_INIT_PRIORITY,             \
-				      &netc_eth_api, NET_ETH_MTU);
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n, netc_eth_init, NULL, &netc_eth##n##_data,          \
+				      &netc_eth##n##_config, &netc_eth_api, NET_ETH_MTU);
 DT_INST_FOREACH_STATUS_OKAY(NETC_PSI_INSTANCE_DEFINE)

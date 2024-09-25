@@ -834,10 +834,9 @@ static struct eth_config eth_0_config = {
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 	eth_init, NULL, &eth_0_context,
-	&eth_0_config, CONFIG_ETH_INIT_PRIORITY,
-	&api_funcs, NET_ETH_MTU);
+	&eth_0_config, &api_funcs, NET_ETH_MTU);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT smsc_lan91c111_mdio

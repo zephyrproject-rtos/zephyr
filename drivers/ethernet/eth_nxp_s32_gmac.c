@@ -814,12 +814,11 @@ BUILD_ASSERT((CONFIG_ETH_NXP_S32_TX_RING_BUF_SIZE % FEATURE_GMAC_DATA_BUS_WIDTH_
 											\
 	static struct eth_nxp_s32_data eth_nxp_s32_data_##n;				\
 											\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,						\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n,						\
 				eth_nxp_s32_init,					\
 				NULL,							\
 				&eth_nxp_s32_data_##n,					\
 				&eth_nxp_s32_config_##n,				\
-				CONFIG_ETH_INIT_PRIORITY,				\
 				&eth_api,						\
 				NET_ETH_MTU);
 

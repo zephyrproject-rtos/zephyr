@@ -1006,10 +1006,9 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 											\
 		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
 											\
-		ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init,			\
+		ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n, eth_nxp_enet_init,		\
 					ETH_NXP_ENET_PM_DEVICE_GET(n),			\
 					&nxp_enet_##n##_data, &nxp_enet_##n##_config,	\
-					CONFIG_ETH_INIT_PRIORITY,			\
 					&api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MAC_INIT)
