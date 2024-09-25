@@ -16,3 +16,4 @@ supported:
   - watchdog
   - pinctrl
   - flash
+  - i2c
