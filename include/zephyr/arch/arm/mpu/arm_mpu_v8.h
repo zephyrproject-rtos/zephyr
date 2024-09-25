@@ -82,7 +82,7 @@
 	(((base & MPU_RBAR_BASE_Msk) + size - 1) & MPU_RLAR_LIMIT_Msk)
 
 /* Attribute flags for cache-ability */
-#if defined(CONFIG_AARCH32_ARMV8_R)
+
 /* Memory Attributes for Device Memory
  * 1.Gathering (G/nG)
  *   Determines whether multiple accesses can be merged into a single
@@ -105,7 +105,6 @@
 #define DEVICE_nGnRE	0x4U
 #define DEVICE_nGRE	0x8U
 #define DEVICE_GRE	0xCU
-#endif
 
 /* Read/Write Allocation Configurations for Cacheable Memory */
 #define R_NON_W_NON     0x0 /* Do not allocate Read/Write */
@@ -152,8 +151,6 @@
 #define MPU_MAIR_INDEX_SRAM         1
 #define MPU_MAIR_ATTR_SRAM_NOCACHE  MPU_CACHE_ATTRIBUTES_SRAM_NOCACHE
 #define MPU_MAIR_INDEX_SRAM_NOCACHE 2
-
-#if defined(CONFIG_AARCH32_ARMV8_R)
 #define MPU_MAIR_ATTR_DEVICE        DEVICE_nGnRnE
 #define MPU_MAIR_INDEX_DEVICE       3
 /* Flash region(s): Attribute-0
@@ -166,17 +163,6 @@
 	 (MPU_MAIR_ATTR_SRAM << (MPU_MAIR_INDEX_SRAM * 8)) |		     \
 	 (MPU_MAIR_ATTR_SRAM_NOCACHE << (MPU_MAIR_INDEX_SRAM_NOCACHE * 8)) | \
 	 (MPU_MAIR_ATTR_DEVICE << (MPU_MAIR_INDEX_DEVICE * 8)))
-#else
-/* Flash region(s): Attribute-0
- * SRAM region(s): Attribute-1
- * SRAM no cache-able regions(s): Attribute-2
- */
-#define MPU_MAIR_ATTRS								\
-	(((MPU_MAIR_ATTR_FLASH << MPU_MAIR0_Attr0_Pos) & MPU_MAIR0_Attr0_Msk) |	\
-	 ((MPU_MAIR_ATTR_SRAM << MPU_MAIR0_Attr1_Pos) & MPU_MAIR0_Attr1_Msk)  |	\
-	 ((MPU_MAIR_ATTR_SRAM_NOCACHE << MPU_MAIR0_Attr2_Pos) &			\
-	  MPU_MAIR0_Attr2_Msk))
-#endif
 
 /* Some helper defines for common regions.
  *
@@ -309,6 +295,13 @@
 	}
 #endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
 
+#define REGION_DEVICE_ATTR(base, size)                                                             \
+	{                                                                                          \
+		/* AP, XN, SH */                                                                   \
+		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* Cache-ability */          \
+		.mair_idx = MPU_MAIR_INDEX_DEVICE,                                                 \
+		.r_limit = REGION_LIMIT_ADDR(base, size), /* Region Limit */                       \
+	}
 #endif
 
 struct arm_mpu_region_attr {
