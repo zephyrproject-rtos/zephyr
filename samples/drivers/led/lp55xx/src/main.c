@@ -163,13 +163,13 @@ static int turn_off_all_leds(const struct device *dev)
 	return 0;
 }
 
-int main(void)
+int lp55xx_test(void *p1, void *p2, void *p3)
 {
-	const struct device *const dev = DEVICE_DT_GET_ANY(ti_lp5562);
+	const struct device *const dev = p1;
 	int i, ret;
 
 	if (!dev) {
-		LOG_ERR("No \"ti,lp5562\" device found");
+		LOG_ERR("ti,\"%s\" not found on device tree", (char *)p2);
 		return 0;
 	} else if (!device_is_ready(dev)) {
 		LOG_ERR("LED device %s is not ready", dev->name);
@@ -231,3 +231,22 @@ int main(void)
 	}
 	return 0;
 }
+
+
+int main(void)
+{
+	LOG_INF("LP55XX Test Ready");
+	return 0;
+}
+
+#if CONFIG_DT_HAS_TI_LP5562_ENABLED
+const struct device *const lp5562_dev = DEVICE_DT_GET_ANY(ti_lp5562);
+K_THREAD_DEFINE(lp5562_id, 2048, lp55xx_test, lp5562_dev, "lp5562", NULL,
+		K_IDLE_PRIO, 0, 0);
+#endif
+
+#if CONFIG_DT_HAS_TI_LP5521_ENABLED
+const struct device *const lp5521_dev = DEVICE_DT_GET_ANY(ti_lp5521);
+K_THREAD_DEFINE(lp5521_id, 2048, lp55xx_test, lp5521_dev, "lp5521", NULL,
+		K_IDLE_PRIO, 0, 0);
+#endif
