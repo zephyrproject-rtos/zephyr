@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 
+/* Test Change */
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
