@@ -893,3 +893,20 @@ int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
 out:
 	return ret;
 }
+
+int i3c_ccc_do_setbuscon(const struct device *controller,
+				uint8_t *context, uint16_t length)
+{
+	struct i3c_ccc_payload ccc_payload;
+
+	__ASSERT_NO_MSG(controller != NULL);
+	__ASSERT_NO_MSG(context != NULL);
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_SETBUSCON;
+
+	ccc_payload.ccc.data = context;
+	ccc_payload.ccc.data_len = length;
+
+	return i3c_do_ccc(controller, &ccc_payload);
+}
