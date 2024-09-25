@@ -210,6 +210,7 @@ static int cmd_discovery(const struct shell *sh, size_t argc, char *argv[])
 		shell_print(sh, "Discovery stopped");
 	} else {
 		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -307,7 +308,7 @@ static int cmd_discoverable(const struct shell *sh,
 		err = bt_br_set_discoverable(false);
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	if (err) {
@@ -335,7 +336,7 @@ static int cmd_connectable(const struct shell *sh,
 		err = bt_br_set_connectable(false);
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	if (err) {
@@ -525,7 +526,7 @@ static int cmd_sdp_find_record(const struct shell *sh,
 		discov = discov_a2src;
 	} else {
 		shell_help(sh);
-		return 0;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
@@ -562,8 +563,7 @@ static int cmd_br(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help(sh);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
