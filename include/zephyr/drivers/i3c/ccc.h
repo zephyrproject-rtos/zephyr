@@ -1272,6 +1272,93 @@ enum i3c_ccc_rstact_defining_byte {
 };
 
 /**
+ * @name Set Bus Context MIPI I3C Specification v1.Y Minor Version (SETBUSCON)
+ * @anchor I3C_CCC_SETBUSCON_I3C_SPEC
+ *
+ * - CONTEXT[7:6]: 2'b00
+ *
+ * - CONTEXT[5]: I3C Specification Editorial Revision (within Minor Version)
+ *   - 0: Version 1.Y.0
+ *   - 1: Version 1.Y.1 or greater
+ *
+ * - CONTEXT[4]: I3C Specification Family
+ *   - 0: MIPI I3C Specification
+ *   - 1: MIPI I3C Basic Specification
+ *
+ * - CONTEXT[3:0]: I3C Specification Minor Version (v1.Y)
+ *   - 0: Illegal, do not use (see Note below)
+ *        (It would encode v1.0, but SETBUSCON was not available in I3C Basic v1.0)
+ *   - 1-15: Version 1.1 - Version 1.15
+ *
+ * Examples:  Bit[5]  Bit[4]   Bits[3:0]
+ *    I3C Basic v1.1.0:  1’b0 || 1’b1 || 4’b0001 or 8’b00010001
+ *    I3C Basic v1.1.1:  1’b1 || 1’b1 || 4’b0001 or 8’b00110001
+ *    I3C Basic v1.2.0:  1’b0 || 1’b1 || 4’b0010 or 8’b00010010
+ *
+ * @{
+ */
+
+/** I3C Specification Minor Version shift mask */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_MINOR_VER_MASK		GENMASK(3U, 0U)
+
+/**
+ * @brief I3C Specification Minor Version (v1.Y)
+ *
+ * Set the context bits for SETBUSCON
+ *
+ * @param y I3C Specification Minor Version Number
+ */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_MINOR_VER(y)			\
+	FIELD_PREP(I3C_CCC_SETBUSCON_I3C_SPEC_MINOR_VER_MASK, (y))
+
+/** MIPI I3C Specification */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_I3C_SPEC			0
+
+/** MIPI I3C Basic Specification */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_I3C_BASIC_SPEC		BIT(4)
+
+/** Version 1.Y.0 */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_I3C_SPEC_EDITORIAL_1_Y_0	0
+
+/** Version 1.Y.1 or greater */
+#define I3C_CCC_SETBUSCON_I3C_SPEC_I3C_SPEC_EDITORIAL_1_Y_1	BIT(5)
+
+/** @} */
+
+/**
+ * @name Set Bus Context Other Standards Organizations (SETBUSCON)
+ * @anchor I3C_CCC_SETBUSCON_OTHER_STANDARDS
+ *
+ * @{
+ */
+
+/**
+ * @brief JEDEC Sideband
+ *
+ * JEDEC SideBand Bus device, compliant to JESD403 Specification v1.0 or later.
+ */
+#define I3C_CCC_SETBUSCON_OTHER_STANDARDS_JEDEC_SIDEBAND	128
+
+/**
+ * @brief MCTP
+ *
+ * MCTP for system manageability (conforming to the content protocol defined in
+ * the MCTP I3C Transport Binding Specification, released by DMTF, version 1.0
+ * or newer)
+ */
+#define I3C_CCC_SETBUSCON_OTHER_STANDARDS_MCTP			129
+
+/**
+ * @brief ETSI
+ *
+ * ETSI for Secure Smart Platform Devices used for mobile networks authentication
+ * and other ETSI security functions in mobile ecosystem
+ */
+#define I3C_CCC_SETBUSCON_OTHER_STANDARDS_ETSI			130
+
+/** @} */
+
+/**
  * @brief Test if I3C CCC payload is for broadcast.
  *
  * This tests if the CCC payload is for broadcast.
@@ -2017,6 +2104,20 @@ static inline int i3c_ccc_do_getmxds_fmt3(const struct i3c_device_desc *target,
  */
 int i3c_ccc_do_deftgts_all(const struct device *controller,
 			   struct i3c_ccc_deftgts *deftgts);
+
+/**
+ * @brief Broadcast SETBUSCON to set the bus context
+ *
+ * Helper function to set the bus context of all connected targets.
+ *
+ * @param[in] controller Pointer to the controller device driver instance.
+ * @param[in] context Pointer to context byte values
+ * @param[in] length Length of the context buffer
+ *
+ * @return @see i3c_do_ccc
+ */
+int i3c_ccc_do_setbuscon(const struct device *controller,
+				uint8_t *context, uint16_t length);
 
 #ifdef __cplusplus
 }
