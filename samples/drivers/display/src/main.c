@@ -349,13 +349,15 @@ int main(void)
 	x = 0;
 	y = capabilities.y_resolution - rect_h;
 
+	LOG_INF("Display starts");
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
 		display_write(display_dev, x, y, &buf_desc, buf);
 		++grey_count;
 		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST
-		if (grey_count >= 1024) {
+		if (grey_count >= 30) {
+			LOG_INF("Display sample test mode done %s", display_dev->name);
 			break;
 		}
 #endif
