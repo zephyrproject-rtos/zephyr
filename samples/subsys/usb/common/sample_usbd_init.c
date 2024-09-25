@@ -15,6 +15,12 @@ LOG_MODULE_REGISTER(usbd_sample_config);
 
 #define ZEPHYR_PROJECT_USB_VID		0x2fe3
 
+/* By default, do not register the USB DFU class DFU mode instance. */
+static const char *const blocklist[] = {
+	"dfu_dfu",
+	NULL,
+};
+
 /* doc device instantiation start */
 /*
  * Instantiate a context named sample_usbd using the default USB device
@@ -125,7 +131,7 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 		}
 
 		err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_HS, 1,
-						NULL);
+						blocklist);
 		if (err) {
 			LOG_ERR("Failed to add register classes");
 			return NULL;
@@ -144,7 +150,7 @@ struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb)
 	/* doc configuration register end */
 
 	/* doc functions register start */
-	err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_FS, 1, NULL);
+	err = usbd_register_all_classes(&sample_usbd, USBD_SPEED_FS, 1, blocklist);
 	if (err) {
 		LOG_ERR("Failed to add register classes");
 		return NULL;
