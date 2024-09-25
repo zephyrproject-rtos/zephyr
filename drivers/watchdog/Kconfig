@@ -97,6 +97,8 @@ source "drivers/watchdog/Kconfig.cc32xx"
 
 source "drivers/watchdog/Kconfig.cc13xx_cc26xx"
 
+source "drivers/watchdog/Kconfig.cc23x0"
+
 source "drivers/watchdog/Kconfig.it51xxx"
 
 source "drivers/watchdog/Kconfig.it8xxx2"
