@@ -61,9 +61,15 @@ static void gpio_keys_poll_pin(const struct device *dev, int key_index)
 	const struct gpio_keys_pin_config *pin_cfg = &cfg->pin_cfg[key_index];
 	struct gpio_keys_pin_data *pin_data = &cfg->pin_data[key_index];
 	int new_pressed;
+	int ret;
 
-	new_pressed = gpio_pin_get_dt(&pin_cfg->spec);
+	ret = gpio_pin_get_dt(&pin_cfg->spec);
+	if (ret < 0) {
+		LOG_ERR("key_index %d get failed: %d", key_index, ret);
+		return;
+	}
 
+	new_pressed = ret;
 	LOG_DBG("%s: pin_state=%d, new_pressed=%d, key_index=%d", dev->name,
 		pin_data->cb_data.pin_state, new_pressed, key_index);
 
