@@ -1712,6 +1712,11 @@ struct bt_bap_unicast_client_cb {
 	 * If discovery procedure has complete both @p codec and @p ep are set to NULL.
 	 */
 	void (*discover)(struct bt_conn *conn, int err, enum bt_audio_dir dir);
+
+	/** @cond INTERNAL_HIDDEN */
+	/** Internally used field for list handling */
+	sys_snode_t _node;
+	/** @endcond */
 };
 
 /**
@@ -1722,9 +1727,11 @@ struct bt_bap_unicast_client_cb {
  *
  * @param cb  Unicast client callback structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EEXIST @p cb is already registered.
  */
-int bt_bap_unicast_client_register_cb(const struct bt_bap_unicast_client_cb *cb);
+int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb);
 
 /**
  * @brief Discover remote capabilities and endpoints
