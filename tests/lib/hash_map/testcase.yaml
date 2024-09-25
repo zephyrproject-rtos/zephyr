@@ -13,11 +13,25 @@ tests:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+  libraries.hash_map.separate_chaining.custom_eq.djb2:
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
+      - CONFIG_SYS_HASH_MAP_CHOICE_SC=y
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+      - CONFIG_TEST_USE_CUSTOM_EQ_FUNC=y
+      - CONFIG_BASE64=y
   libraries.hash_map.open_addressing.djb2:
     extra_configs:
       - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
       - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
       - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+  libraries.hash_map.open_addressing.custom_eq.djb2:
+    extra_configs:
+      - CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE=8192
+      - CONFIG_SYS_HASH_MAP_CHOICE_OA_LP=y
+      - CONFIG_SYS_HASH_FUNC32_CHOICE_DJB2=y
+      - CONFIG_TEST_USE_CUSTOM_EQ_FUNC=y
+      - CONFIG_BASE64=y
   libraries.hash_map.cxx.djb2:
     filter: CONFIG_FULL_LIBCPP_SUPPORTED
     extra_configs:

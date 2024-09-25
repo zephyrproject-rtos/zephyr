@@ -76,7 +76,7 @@ extern "C" {
  * @param ... Variant-specific details for @p _config_type.
  */
 #define SYS_HASHMAP_DEFINE_STATIC_ADVANCED(_name, _api, _config_type, _data_type, _hash_func,      \
-					   _eq_funct, _alloc_func, ...)                            \
+					   _eq_func, _alloc_func, ...)                             \
 	static const struct _config_type _name##_config = __VA_ARGS__;                             \
 	static struct _data_type _name##_data;                                                     \
 	static struct sys_hashmap _name = {                                                        \
