@@ -14,13 +14,13 @@ ZTEST(hash_map, test_remove_true)
 	int ret;
 
 	for (size_t i = 0; i < MANY; ++i) {
-		ret = sys_hashmap_insert(&map, i, i, NULL, NULL);
+		ret = INSERT_FUNC(&map, i, i, NULL, NULL);
 		zassert_equal(1, ret, "failed to insert (%zu, %zu): %d", i, i, ret);
 		zassert_equal(i + 1, sys_hashmap_size(&map));
 	}
 
 	for (size_t i = MANY; i > 0; --i) {
-		zassert_equal(true, sys_hashmap_remove(&map, i - 1, NULL, NULL));
+		zassert_equal(true, REMOVE_FUNC(&map, i - 1, NULL, NULL));
 		zassert_equal(i - 1, sys_hashmap_size(&map));
 	}
 
@@ -31,9 +31,15 @@ ZTEST(hash_map, test_remove_true)
 
 ZTEST(hash_map, test_remove_false)
 {
-	zassert_true(sys_hashmap_is_empty(&map));
-	zassert_false(sys_hashmap_remove(&map, 42, NULL, NULL));
+	KEY_TYPE key_rem = ALLOC_KEY(42);
+	KEY_TYPE key_insert = ALLOC_KEY(1);
 
-	zassert_equal(1, sys_hashmap_insert(&map, 1, 1, NULL, NULL));
-	zassert_false(sys_hashmap_remove(&map, 42, NULL, NULL));
+	zassert_true(sys_hashmap_is_empty(&map));
+	zassert_false(REMOVE_FUNC_NAME(&map, key_rem, NULL, NULL));
+
+	zassert_equal(1, INSERT_FUNC_NAME(&map, key_insert, 1, NULL, NULL));
+	zassert_false(REMOVE_FUNC_NAME(&map, key_rem, NULL, NULL));
+
+	FREE_KEY(key_rem);
+	FREE_KEY(key_insert);
 }
