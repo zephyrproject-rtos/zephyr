@@ -9,6 +9,7 @@
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
@@ -37,6 +38,17 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
  */
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
+
+const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
+{
+	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
+
+	if (mem_idx == LLEXT_MEM_COUNT) {
+		return NULL;
+	}
+
+	return (const uint8_t *)ext->mem[mem_idx] + ldr->sect_map[sh_ndx].offset;
+}
 
 /*
  * Load basic ELF file data
