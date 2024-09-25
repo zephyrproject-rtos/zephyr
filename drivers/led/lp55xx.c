@@ -53,6 +53,7 @@ LOG_MODULE_REGISTER(lp55xx);
 #define LP55XX_PROG_MEM_ENG1_BASE 0x10
 #define LP55XX_PROG_MEM_ENG2_BASE 0x30
 #define LP55XX_PROG_MEM_ENG3_BASE 0x50
+#define LP55XX_PROG_MEM_SIZE      0x20
 
 /*
  * The wait command has six bits for the number of steps (max 63) with up to
@@ -91,15 +92,33 @@ LOG_MODULE_REGISTER(lp55xx);
 #define LP55XX_CONFIG_PWM_HW_FREQ_558        (1 << 6)
 
 /* Values for execution engine programs. */
-#define LP55XX_PROG_COMMAND_SET_PWM (1 << 6)
-#define LP55XX_PROG_COMMAND_RAMP_TIME(prescale, step_time) \
-	(((prescale) << 6) | (step_time))
-#define LP55XX_PROG_COMMAND_STEP_COUNT(fade_direction, count) \
-	(((fade_direction) << 7) | (count))
+#define LP55XX_PROG_CMD_BITS_SET_PWM (1 << 6)
+#define LP55XX_PROG_CMD_BITS_PSC_0 (0 << 6)
+#define LP55XX_PROG_CMD_BITS_PSC_1 (1 << 6)
 
 /* Helper definitions. */
 #define LP55XX_PROG_MAX_COMMANDS 16
 #define LP55XX_MASK              0x03
+
+/* Values for execution engine programs. */
+#define LP55XX_SET_PWM_ENG_CMD_PAIR(pwm) {LP55XX_PROG_CMD_BITS_SET_PWM, (pwm)}
+
+/*
+ * The max value for step_time is 63,
+ * step_delay is 15.6ms if pre-scaler is set to 1, else 0.49ms.
+ *
+ * If required delay is less than 31, then we just double the
+ * millisecond value to get step_time with pre-scaler 0 that is 0.49ms per step.
+ * Else we need to use pre-scaler where one step takes 15.6ms. And divide delay
+ * by 16 to get an approximate step time. (integer division is used for simplicity)
+ */
+#define LP55XX_BUSY_WAIT_ENG_CMD_PAIR(delay)					\
+	{(((delay) < 31)							\
+		? (LP55XX_PROG_CMD_BITS_PSC_0 | (((delay) << 1) & 0x3F))	\
+		: (LP55XX_PROG_CMD_BITS_PSC_1 | (((delay) >> 4) & 0x3F))),	\
+	0x00}
+
+#define LP55XX_GO_TO_START_ENG_CMD_PAIR() {0, 0}
 
 /*
  * Each channel can be driven by directly assigning a value between 0 and 255 to
@@ -220,42 +239,6 @@ static int lp55xx_get_engine_reg_shift(enum lp55xx_led_sources engine,
 	}
 
 	return 0;
-}
-
-/*
- * @brief Convert a time in milliseconds to a combination of prescale and
- *	step_time for the execution engine programs.
- *
- * This function expects the given time in milliseconds to be in the allowed
- * range the device can handle (0ms to 1000ms).
- *
- * @param ms        Time to be converted in milliseconds [0..1000].
- * @param prescale  Pointer to the prescale value.
- * @param step_time Pointer to the step_time value.
- */
-static void lp55xx_ms_to_prescale_and_step(uint32_t ms,
-					   uint8_t *prescale, uint8_t *step_time)
-{
-	/*
-	 * One step with the prescaler set to 0 takes 0.49ms. The max value for
-	 * step_time is 63, so we just double the millisecond value. That way
-	 * the step_time value never goes above the allowed 63.
-	 */
-	if (ms < 31) {
-		*prescale = 0U;
-		*step_time = ms << 1;
-
-		return;
-	}
-
-	/*
-	 * With a prescaler value set to 1 one step takes 15.6ms. So by dividing
-	 * through 16 we get a decent enough result with low effort.
-	 */
-	*prescale = 1U;
-	*step_time = ms >> 4;
-
-	return;
 }
 
 #if CONFIG_DT_HAS_TI_LP5562_ENABLED
@@ -686,170 +669,51 @@ static int lp55xx_enter_engine_mode(const struct device *dev, uint32_t color_id,
 	return 0;
 }
 
-/*
- * @brief Program a command to the memory of the given execution engine.
- *
- * @param dev           LP55XX device.
- * @param engine        Engine that is programmed.
- * @param command_index Index of the command that is programmed.
- * @param command_msb   Most significant byte of the command.
- * @param command_lsb   Least significant byte of the command.
- *
- * @retval 0       On success.
- * @retval -EINVAL If the given command index is out of range or an invalid
- *		   engine is passed.
- * @retval -EIO    If the underlying I2C call fails.
- */
-static int lp55xx_program_command(const struct device *dev,
-				  enum lp55xx_led_sources engine,
-				  uint8_t command_index,
-				  uint8_t command_msb,
-				  uint8_t command_lsb)
+static inline int lp55xx_load_and_run_program(const struct device *dev,
+					      enum lp55xx_led_sources engine,
+					      uint8_t *program_code,
+					      uint8_t program_size)
 {
 	const struct lp55xx_config *config = dev->config;
 	uint8_t prog_base_addr;
 	int ret;
 
-	if (command_index >= LP55XX_PROG_MAX_COMMANDS) {
+	if ((program_code == NULL) ||
+	    (program_size == 0) ||
+	    (program_size > LP55XX_PROG_MEM_SIZE)) {
 		return -EINVAL;
 	}
-
 	ret = lp55xx_get_engine_ram_base_addr(engine, &prog_base_addr);
 	if (ret) {
 		LOG_ERR("Failed to get base RAM address.");
 		return ret;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->bus,
-				  prog_base_addr + (command_index << 1),
-				  command_msb)) {
-		LOG_ERR("Failed to update LED.");
-		return -EIO;
+	ret = lp55xx_stop_program_exec(dev, engine);
+	if (ret) {
+		LOG_ERR("Failed to stop ENG Exec.");
+		return ret;
 	}
 
-	if (i2c_reg_write_byte_dt(&config->bus,
-				  prog_base_addr + (command_index << 1) + 1,
-				  command_lsb)) {
-		LOG_ERR("Failed to update LED.");
-		return -EIO;
+	ret = lp55xx_set_engine_op_mode(dev, engine, LP55XX_OP_MODE_LOAD);
+	if (ret) {
+		LOG_ERR("Failed to switch ENG to LOAD mode");
+		return ret;
+	}
+
+	ret = i2c_burst_write_dt(&config->bus, prog_base_addr, program_code, program_size);
+	if (ret) {
+		LOG_ERR("Failed to upload program");
+		return ret;
+	}
+
+	ret = lp55xx_start_program_exec(dev, engine);
+	if (ret) {
+		LOG_ERR("Failed to execute program.");
+		return ret;
 	}
 
 	return 0;
-}
-
-/*
- * @brief Program a command to set a fixed brightness to the given engine.
- *
- * @param dev           LP55XX device.
- * @param engine        Engine to be programmed.
- * @param command_index Index of the command in the program sequence.
- * @param brightness    Brightness to be set for the LED in percent.
- *
- * @retval 0       On success.
- * @retval -EINVAL If the passed arguments are invalid or out of range.
- * @retval -EIO    If the underlying I2C call fails.
- */
-static int lp55xx_program_set_brightness(const struct device *dev,
-					 enum lp55xx_led_sources engine,
-					 uint8_t command_index,
-					 uint8_t brightness)
-{
-	uint8_t val;
-
-	if ((brightness < LP55XX_MIN_BRIGHTNESS) ||
-			(brightness > LP55XX_MAX_BRIGHTNESS)) {
-		return -EINVAL;
-	}
-
-	val = (brightness * 0xFF) / LP55XX_MAX_BRIGHTNESS;
-
-	return lp55xx_program_command(dev, engine, command_index,
-			LP55XX_PROG_COMMAND_SET_PWM, val);
-}
-
-/*
- * @brief Program a command to ramp the brightness over time.
- *
- * In each step the PWM value is increased or decreased by 1/255th until the
- * maximum or minimum value is reached or step_count steps have been done.
- *
- * @param dev           LP55XX device.
- * @param engine        Engine to be programmed.
- * @param command_index Index of the command in the program sequence.
- * @param time_per_step Time each step takes in milliseconds.
- * @param step_count    Number of steps to perform.
- * @param fade_dir      Direction of the ramp (in-/decrease brightness).
- *
- * @retval 0       On success.
- * @retval -EINVAL If the passed arguments are invalid or out of range.
- * @retval -EIO    If the underlying I2C call fails.
- */
-static int lp55xx_program_ramp(const struct device *dev,
-			       enum lp55xx_led_sources engine,
-			       uint8_t command_index,
-			       uint32_t time_per_step,
-			       uint8_t step_count,
-			       enum lp55xx_engine_fade_dirs fade_dir)
-{
-	uint8_t prescale, step_time;
-
-	if ((time_per_step < LP55XX_MIN_BLINK_PERIOD) ||
-			(time_per_step > LP55XX_MAX_BLINK_PERIOD)) {
-		return -EINVAL;
-	}
-
-	lp55xx_ms_to_prescale_and_step(time_per_step,
-			&prescale, &step_time);
-
-	return lp55xx_program_command(dev, engine, command_index,
-			LP55XX_PROG_COMMAND_RAMP_TIME(prescale, step_time),
-			LP55XX_PROG_COMMAND_STEP_COUNT(fade_dir, step_count));
-}
-
-/*
- * @brief Program a command to do nothing for the given time.
- *
- * @param dev           LP55XX device.
- * @param engine        Engine to be programmed.
- * @param command_index Index of the command in the program sequence.
- * @param time          Time to do nothing in milliseconds.
- *
- * @retval 0       On success.
- * @retval -EINVAL If the passed arguments are invalid or out of range.
- * @retval -EIO    If the underlying I2C call fails.
- */
-static inline int lp55xx_program_wait(const struct device *dev,
-				      enum lp55xx_led_sources engine,
-				      uint8_t command_index,
-				      uint32_t time)
-{
-	/*
-	 * A wait command is a ramp with the step_count set to 0. The fading
-	 * direction does not matter in this case.
-	 */
-	return lp55xx_program_ramp(dev, engine, command_index,
-			time, 0, LP55XX_FADE_UP);
-}
-
-/*
- * @brief Program a command to go back to the beginning of the program.
- *
- * Can be used at the end of a program to loop it infinitely.
- *
- * @param dev           LP55XX device.
- * @param engine        Engine to be programmed.
- * @param command_index Index of the command in the program sequence.
- *
- * @retval 0       On success.
- * @retval -EINVAL If the given command index is out of range or an invalid
- *		   engine is passed.
- * @retval -EIO    If the underlying I2C call fails.
- */
-static inline int lp55xx_program_go_to_start(const struct device *dev,
-					     enum lp55xx_led_sources engine,
-					     uint8_t command_index)
-{
-	return lp55xx_program_command(dev, engine, command_index, 0x00, 0x00);
 }
 
 static int lp55xx_led_set_pwm_brightness(const struct device *dev, uint32_t color_id,
@@ -898,31 +762,15 @@ static int lp55xx_update_blinking_brightness(const struct device *dev,
 					     enum lp55xx_led_sources engine,
 					     uint8_t brightness_on)
 {
-	int ret;
+	uint8_t pwm_value = (brightness_on * 0xFF) / LP55XX_MAX_BRIGHTNESS;
 
-	ret = lp55xx_stop_program_exec(dev, engine);
-	if (ret) {
-		return ret;
-	}
+	uint8_t program_code[][2] = {
+		LP55XX_SET_PWM_ENG_CMD_PAIR(pwm_value),
+	};
 
-	ret = lp55xx_set_engine_op_mode(dev, engine, LP55XX_OP_MODE_LOAD);
-	if (ret) {
-		return ret;
-	}
-
-
-	ret = lp55xx_program_set_brightness(dev, engine, 0, brightness_on);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_start_program_exec(dev, engine);
-	if (ret) {
-		LOG_ERR("Failed to execute program.");
-		return ret;
-	}
-
-	return 0;
+	return lp55xx_load_and_run_program(dev, engine,
+					   (uint8_t *) program_code,
+					   sizeof(program_code));
 }
 
 static int lp55xx_led_blink(const struct device *dev, uint32_t led,
@@ -930,52 +778,28 @@ static int lp55xx_led_blink(const struct device *dev, uint32_t led,
 {
 	int ret;
 	enum lp55xx_led_sources engine;
-	uint8_t command_index = 0U;
 
 	ret = lp55xx_enter_engine_mode(dev, led, &engine);
 	if (ret) {
 		return ret;
 	}
 
-	ret = lp55xx_set_engine_op_mode(dev, engine, LP55XX_OP_MODE_LOAD);
-	if (ret) {
-		return ret;
-	}
+	uint8_t program_code[][2] = {
+		/* set to maximum brightness */
+		LP55XX_SET_PWM_ENG_CMD_PAIR(LP55XX_MAX_BRIGHTNESS),
+		/* wait for on period */
+		LP55XX_BUSY_WAIT_ENG_CMD_PAIR(delay_on),
+		/* set to minimum brightness */
+		LP55XX_SET_PWM_ENG_CMD_PAIR(LP55XX_MIN_BRIGHTNESS),
+		/* wait for off period */
+		LP55XX_BUSY_WAIT_ENG_CMD_PAIR(delay_off),
+		/* restart */
+		LP55XX_GO_TO_START_ENG_CMD_PAIR(),
+	};
 
-	ret = lp55xx_program_set_brightness(dev, engine, command_index,
-			LP55XX_MAX_BRIGHTNESS);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_program_wait(dev, engine, ++command_index, delay_on);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_program_set_brightness(dev, engine, ++command_index,
-			LP55XX_MIN_BRIGHTNESS);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_program_wait(dev, engine, ++command_index, delay_off);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_program_go_to_start(dev, engine, ++command_index);
-	if (ret) {
-		return ret;
-	}
-
-	ret = lp55xx_start_program_exec(dev, engine);
-	if (ret) {
-		LOG_ERR("Failed to execute program.");
-		return ret;
-	}
-
-	return 0;
+	return lp55xx_load_and_run_program(dev, engine,
+					   (uint8_t *) program_code,
+					   sizeof(program_code));
 }
 
 static int lp55xx_led_set_brightness(const struct device *dev, uint32_t led,
