@@ -6,5 +6,6 @@ config PTP_CLOCK_NXP_ENET
 	default y
 	depends on DT_HAS_NXP_ENET_PTP_CLOCK_ENABLED && NET_L2_PTP
 	depends on ETH_NXP_ENET
+	select PINCTRL
 	help
 	  Enable NXP ENET PTP clock support.
