@@ -92,13 +92,12 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	if (!conn) {
 		shell_print(sh, "Connection failed");
 		return -ENOEXEC;
-	} else {
-
-		shell_print(sh, "Connection pending");
-
-		/* unref connection obj in advance as app user */
-		bt_conn_unref(conn);
 	}
+
+	shell_print(sh, "Connection pending");
+
+	/* unref connection obj in advance as app user */
+	bt_conn_unref(conn);
 
 	return 0;
 }
@@ -288,9 +287,9 @@ static int cmd_l2cap_register(const struct shell *sh,
 		shell_error(sh, "Unable to register psm");
 		br_server.psm = 0U;
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "L2CAP psm %u registered", br_server.psm);
 	}
+
+	shell_print(sh, "L2CAP psm %u registered", br_server.psm);
 
 	return 0;
 }
@@ -316,9 +315,9 @@ static int cmd_discoverable(const struct shell *sh,
 		shell_print(sh, "BR/EDR set/reset discoverable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "BR/EDR set/reset discoverable done");
 	}
+
+	shell_print(sh, "BR/EDR set/reset discoverable done");
 
 	return 0;
 }
@@ -344,9 +343,9 @@ static int cmd_connectable(const struct shell *sh,
 		shell_print(sh, "BR/EDR set/rest connectable failed "
 			    "(err %d)", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "BR/EDR set/reset connectable done");
 	}
+
+	shell_print(sh, "BR/EDR set/reset connectable done");
 
 	return 0;
 }
@@ -536,9 +535,9 @@ static int cmd_sdp_find_record(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "SDP discovery failed: err %d", err);
 		return -ENOEXEC;
-	} else {
-		shell_print(sh, "SDP discovery started");
 	}
+
+	shell_print(sh, "SDP discovery started");
 
 	return 0;
 }
