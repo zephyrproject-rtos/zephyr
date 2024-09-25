@@ -9,5 +9,6 @@ config UART_LPC11U6X
 	depends on DT_HAS_NXP_LPC11U6X_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  Enable UART driver for LPC11U6X series

@@ -20,6 +20,3 @@ CONFIG_CONSOLE=y
 
 # uart console (overrides remote proc console)
 CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

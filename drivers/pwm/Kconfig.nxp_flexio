@@ -8,5 +8,6 @@ config PWM_NXP_FLEXIO
 	depends on CLOCK_CONTROL
 	depends on DT_HAS_NXP_FLEXIO_PWM_ENABLED
 	select MCUX_FLEXIO
+	select PINCTRL
 	help
 	  Enable flexio based pwm driver.
