@@ -48,7 +48,7 @@
 #error "Erase unit must be a multiple of program unit"
 #endif
 
-#define MOCK_FLASH(addr) (mock_flash + (addr) - FLASH_SIMULATOR_BASE_OFFSET)
+#define MOCK_FLASH(offset) (mock_flash + (offset))
 
 /* maximum number of pages that can be tracked by the stats module */
 #define STATS_PAGE_COUNT_THRESHOLD 256
@@ -174,9 +174,9 @@ static int flash_range_is_valid(const struct device *dev, off_t offset,
 				size_t len)
 {
 	ARG_UNUSED(dev);
-	if ((offset + len > FLASH_SIMULATOR_FLASH_SIZE +
-			    FLASH_SIMULATOR_BASE_OFFSET) ||
-	    (offset < FLASH_SIMULATOR_BASE_OFFSET)) {
+
+	if ((offset < 0 || offset >= FLASH_SIMULATOR_FLASH_SIZE ||
+	     (FLASH_SIMULATOR_FLASH_SIZE - offset) < len)) {
 		return 0;
 	}
 
@@ -299,8 +299,7 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 
 static void unit_erase(const uint32_t unit)
 {
-	const off_t unit_addr = FLASH_SIMULATOR_BASE_OFFSET +
-				(unit * FLASH_SIMULATOR_ERASE_UNIT);
+	const off_t unit_addr = unit * FLASH_SIMULATOR_ERASE_UNIT;
 
 	/* erase the memory unit by setting it to erase value */
 	memset(MOCK_FLASH(unit_addr), FLASH_SIMULATOR_ERASE_VALUE,
@@ -332,8 +331,7 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 	}
 #endif
 	/* the first unit to be erased */
-	uint32_t unit_start = (offset - FLASH_SIMULATOR_BASE_OFFSET) /
-			   FLASH_SIMULATOR_ERASE_UNIT;
+	uint32_t unit_start = offset / FLASH_SIMULATOR_ERASE_UNIT;
 
 	/* erase as many units as necessary and increase their erase counter */
 	for (uint32_t i = 0; i < len / FLASH_SIMULATOR_ERASE_UNIT; i++) {
