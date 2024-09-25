@@ -1561,14 +1561,13 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_MCUX_PM_DEVICE_INIT(n)					\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n,				\
 			    eth_init,					\
 			    ETH_MCUX_PM_DEVICE_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
-			    CONFIG_ETH_INIT_PRIORITY,			\
 			    &api_funcs,					\
-			    NET_ETH_MTU);				\
+			    NET_ETH_MTU),				\
 									\
 	static void eth##n##_config_func(void)				\
 	{								\

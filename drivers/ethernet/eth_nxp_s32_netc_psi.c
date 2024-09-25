@@ -428,12 +428,11 @@ static struct nxp_s32_eth_data nxp_s32_eth##n##_data = {				\
 	.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),				\
 };											\
 											\
-ETH_NET_DEVICE_DT_INST_DEFINE(n,							\
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n,							\
 			nxp_s32_eth_initialize,						\
 			NULL,								\
 			&nxp_s32_eth##n##_data,						\
 			&nxp_s32_eth##n##_config,					\
-			CONFIG_ETH_INIT_PRIORITY,					\
 			&nxp_s32_eth_api,						\
 			NET_ETH_MTU);							\
 

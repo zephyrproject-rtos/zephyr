@@ -1336,9 +1336,9 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0, eth_initialize,
 		    NULL, &eth0_data, &eth0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
+		    &eth_api, ETH_STM32_HAL_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 

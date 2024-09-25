@@ -307,12 +307,11 @@ static const struct ethernet_api e1000_api = {
 		.config_func = e1000_config_##inst,			\
 	};								\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst,				\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 				      e1000_probe,			\
 				      NULL,				\
 				      &dev_##inst,			\
 				      &config_##inst,			\
-				      CONFIG_ETH_INIT_PRIORITY,		\
 				      &e1000_api,			\
 				      NET_ETH_MTU);
 

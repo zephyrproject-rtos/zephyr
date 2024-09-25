@@ -37,8 +37,6 @@ static const struct ethernet_api slip_if_api = {
 #define _SLIP_L2_LAYER ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 
-ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME,
-		    slip_init, NULL,
+ETH_NET_DEVICE_INSTANCE(slip, slip_init, NULL,
 		    &slip_context_data, NULL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &slip_if_api, _SLIP_MTU);

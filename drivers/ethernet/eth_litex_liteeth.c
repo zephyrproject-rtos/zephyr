@@ -350,7 +350,7 @@ static const struct ethernet_api eth_api = {
                                                                                                    \
 	};                                                                                         \
                                                                                                    \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,       \
-				      CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,\
+				      &eth_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_LITEX_INIT);

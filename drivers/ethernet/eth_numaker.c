@@ -785,6 +785,5 @@ static struct eth_numaker_config eth_numaker_cfg_inst = {
 	.reset = RESET_DT_SPEC_INST_GET(0),
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_numaker_init, NULL, &eth_numaker_data_inst,
-			      &eth_numaker_cfg_inst, CONFIG_ETH_INIT_PRIORITY,
-			      &eth_numaker_driver_api, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0, eth_numaker_init, NULL, &eth_numaker_data_inst,
+			      &eth_numaker_cfg_inst, &eth_numaker_driver_api, NET_ETH_MTU);

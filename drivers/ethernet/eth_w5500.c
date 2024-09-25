@@ -617,7 +617,7 @@ static const struct w5500_config w5500_0_config = {
 	.timeout = CONFIG_ETH_W5500_TIMEOUT,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 		    w5500_init, NULL,
 		    &w5500_0_runtime, &w5500_0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &w5500_api_funcs, NET_ETH_MTU);
+		    &w5500_api_funcs, NET_ETH_MTU);

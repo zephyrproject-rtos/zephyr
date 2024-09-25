@@ -1153,12 +1153,11 @@ const struct ethernet_api eth_cyclonev_api = {.iface_api.init = eth_cyclonev_ifa
 			.emac_index = DT_INST_PROP(inst, emac_index), \
 			.irq_config = eth_cyclonev_##inst##_irq_config, \
 	}; \
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst, eth_cyclonev_probe, NULL, \
-			&eth_cyclonev_##inst##_data, \
-			&eth_cyclonev_##inst##_cfg, \
-			CONFIG_ETH_INIT_PRIORITY, \
-			&eth_cyclonev_api, \
-			NET_ETH_MTU); \
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst, eth_cyclonev_probe, NULL,\
+			&eth_cyclonev_##inst##_data,                  \
+			&eth_cyclonev_##inst##_cfg,                   \
+			&eth_cyclonev_api,                            \
+			NET_ETH_MTU),                                 \
  \
 	static void eth_cyclonev_##inst##_irq_config(void) \
 	{ \

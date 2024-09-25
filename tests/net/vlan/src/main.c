@@ -191,10 +191,8 @@ static int eth_vlan_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_vlan_test, "eth_vlan_test",
-		    eth_vlan_init, NULL,
-		    &eth_vlan_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(eth_vlan_test, eth_vlan_init, NULL,
+		    &eth_vlan_context, NULL, &api_funcs, NET_ETH_MTU);
 
 static int eth_init(const struct device *dev)
 {
@@ -205,9 +203,8 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test, "eth_test", eth_init, NULL,
-		    &eth_vlan_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE(eth_test, eth_init, NULL,
+		    &eth_vlan_context, NULL, &api_funcs, NET_ETH_MTU);
 
 struct net_if_test {
 	uint8_t idx; /* not used for anything, just a dummy value */

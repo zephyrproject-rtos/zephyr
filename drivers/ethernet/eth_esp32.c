@@ -400,11 +400,10 @@ static struct eth_esp32_dev_data eth_esp32_dev = {
 	.dma = &eth_esp32_dma_data,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 		    eth_esp32_initialize,
 		    NULL,
 		    &eth_esp32_dev,
 		    NULL,
-		    CONFIG_ETH_INIT_PRIORITY,
 		    &eth_esp32_api,
 		    NET_ETH_MTU);
