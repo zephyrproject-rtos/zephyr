@@ -1257,6 +1257,79 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
 #define ETH_NET_DEVICE_DT_INST_DEFINE(inst, ...) \
 	ETH_NET_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
+
+#if !defined(CONFIG_ETH_DRIVER_RAW_MODE)
+
+#define Z_ETH_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				      config, api, mtu)			\
+	Z_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				  config, api, ETHERNET_L2,		\
+				  NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
+
+#else /* CONFIG_ETH_DRIVER_RAW_MODE */
+
+#define Z_ETH_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				      config, api, mtu)			\
+	DEVICE_INSTANCE(ident, init_fn, pm, data, config,		\
+			POST_KERNEL, api);
+
+#endif /* CONFIG_ETH_DRIVER_RAW_MODE */
+
+/**
+ * @brief Create an Ethernet network interface and bind it to network device.
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define ETH_NET_DEVICE_INSTANCE(ident, init_fn, pm, data, config,	\
+				api, mtu)				\
+	Z_ETH_NET_DEVICE_INSTANCE_SFX(ident, 0, init_fn, pm, data,	\
+				      config, api, mtu)
+
+/**
+ * @brief Like ETH_NET_DEVICE_INSTANCE for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number.  This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to ETH_NET_DEVICE_INSTANCE.
+ *
+ * @param ... other parameters as expected by ETH_NET_DEVICE_INSTANCE.
+ */
+#define ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst, ...)		\
+	ETH_NET_DEVICE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Create multiple Ethernet network interfaces and bind them to network
+ * devices.
+ * If your network device needs more than one instance of a network interface,
+ * use this macro below and provide a different instance suffix each time
+ * (0, 1, 2, ... or a, b, c ... whatever works for you)
+ *
+ * @param ident Either a devicetree node identifier or a plain unique token
+ * @param sfx Instance suffix for differentiation.
+ * @param init_fn Address to the init function of the driver.
+ * @param pm Reference to struct pm_device associated with the device.
+ * (optional).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define ETH_NET_DEVICE_INSTANCE_MULTI(ident, sfx, init_fn,		\
+				      pm, data, config, api, mtu)	\
+	Z_ETH_NET_DEVICE_INSTANCE_SFX(ident, sfx, init_fn, pm, data,	\
+				      config, api, mtu)
+
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
  * This happens when cable is connected.
