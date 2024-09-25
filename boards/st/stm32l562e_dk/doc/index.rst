@@ -153,6 +153,9 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
+| DISPLAY   | on-chip    | TFT LCD screen with st7789v driver  |
+|           |            | and touch panel with ft5336 driver  |
++-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
@@ -273,6 +276,16 @@ Serial Port
 STM32L562E-DK Discovery board has 6 U(S)ARTs. The Zephyr console output is
 assigned to USART1. Default settings are 115200 8N1.
 
+TFT LCD screen and touch panel
+------------------------------
+
+The TFT LCD screen and touch panel are supported for the STM32L562E-DK Discovery board.
+They can be tested using :zephyr:code-sample:`lvgl` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: stm32l562e_dk
+   :goals: build
 
 Programming and Debugging
 *************************
