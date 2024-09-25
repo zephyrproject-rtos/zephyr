@@ -40,10 +40,12 @@ void esp_init_psram(void)
 		ets_printf("External RAM size is less than configured.\n");
 	}
 
-	if (esp_psram_is_initialized()) {
-		if (!esp_psram_extram_test()) {
-			ets_printf("External RAM failed memory test!");
-			return;
+	if (IS_ENABLED(CONFIG_ESP_SPIRAM_MEMTEST)) {
+		if (esp_psram_is_initialized()) {
+			if (!esp_psram_extram_test()) {
+				ets_printf("External RAM failed memory test!");
+				return;
+			}
 		}
 	}
 
