@@ -3,6 +3,6 @@
 
 description: NXP MSF1 Flash Memory Module (FMU)
 
-compatible: "nxp,iap-msf1"
+compatible: "nxp,msf1"
 
 include: flash-controller.yaml

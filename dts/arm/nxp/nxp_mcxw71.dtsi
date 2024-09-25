@@ -83,8 +83,7 @@
 					ranges = <0x0 0x10000000 DT_SIZE_M(1)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-
-					compatible = "nxp,iap-msf1";
+					compatible = "nxp,msf1";
 					reg = <0x20000 0x1000>;
 					interrupts = <27 0>;
 					status = "disabled";
