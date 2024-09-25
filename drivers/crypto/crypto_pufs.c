@@ -96,8 +96,6 @@ struct pufcc_ecc_param ecc_param_nistp256 = {
 
 // Base register addresses of different PUFcc modules
 static struct pufcc_dma_regs *dma_regs;
-static struct pufcc_rt_regs *rt_regs;
-static struct pufcc_otp_mem *otp_mem;
 static struct pufcc_hmac_regs *hmac_regs;
 static struct pufcc_crypto_regs *crypto_regs;
 static struct pufcc_sp38a_regs *sp38a_regs;
@@ -108,14 +106,10 @@ static struct pufcc_pkc_regs *pkc_regs;
  ****************************************************************************/
 static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
                                           struct pufs_crypto_addr *msg_addr);
-static enum pufcc_status otp_range_check(uint32_t addr, uint32_t len);
-static int rwlck_index_get(uint32_t idx);
 static void reverse(uint8_t *dst, const uint8_t *src, size_t len);
 static uint32_t be2le(uint32_t var);
 static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
                                    uint32_t error_mask);
-enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
-                                      enum pufcc_otp_lock *lock_val);
 
 static char *session_to_str(enum pufs_session_type inSession) {
   return ((inSession ==  PUFS_SESSION_HASH_CALCULATION)?"Hash":\
@@ -700,238 +694,6 @@ static int pufcc_ecdsa256_sign_verify(struct sign_ctx *ctx, struct sign_pkt *pkt
 }
 
 /**
- * @fn    pufcc_otp_setup_wait
- * @brief Wait for the PUFrt module setup during power on
- *
- * @return PUFCC_SUCCESS if OTP is setup successfully, otherwise an error code
- */
-static enum pufcc_status pufcc_otp_setup_wait(void) {
-  enum pufcc_status status = busy_wait(&rt_regs->status, PUFCC_RT_ERROR_MASK);
-
-  return status;
-}
-
-/**
- * @fn    pufcc_program_otp
- * @brief Write data to an OTP slot.
- *        PUFcc OTP memory contains 1024 bytes and is divided into 32
- *        individual slots of 32 bytes each.
- *
- * @param[in]  in_buf   Buffer containing data to be written to OTP
- * @param[in]  len      Length of the input buffer
- * @param[in]  otp_slot OTP slot; PUFCC_OTPKEY_0 ~ PUFCC_OTPKEY_31
- * @return              PUFCC_SUCCESS on success, otherwise an error code.
- */
-enum pufcc_status pufcc_program_otp(const uint8_t *in_buf, uint32_t len,
-                                    enum pufcc_otp_slot otp_slot) {
-  enum pufcc_status check;
-  uint16_t addr = otp_slot * PUFCC_OTP_KEY_LEN;
-  uint32_t start_index = addr / PUFCC_WORD_SIZE;
-  enum pufcc_otp_lock lock = PUFCC_OTP_NA;
-
-  if ((check = otp_range_check(addr, len)) != PUFCC_SUCCESS) return check;
-
-  // Return error if write access is locked
-  pufcc_get_otp_rwlck(otp_slot, &lock);
-  if (lock != PUFCC_OTP_RW) return PUFCC_E_DENY;
-
-  // Program the OTP slot
-  for (uint32_t i = 0; i < len; i += 4) {
-    union {
-      uint32_t word;
-      uint8_t byte[4];
-    } otp_word;
-    for (int8_t j = 3; j >= 0; j--)  // reserve, default 0xff
-      otp_word.byte[j] = ((i + 3 - j) < len) ? in_buf[i + 3 - j] : 0xff;
-
-    otp_mem->otp[start_index + (i / 4)] = otp_word.word;
-  }
-
-  return PUFCC_SUCCESS;
-}
-
-/**
- * @fn    pufcc_read_otp
- * @brief Read data from an OTP slot.
- *        PUFcc OTP memory contains 1024 bytes and is divided into 32
- *        individual slots of 32 bytes each.
- *
- * @param[in]  out_buf  Buffer to read data into
- * @param[in]  len      Length of the data to read
- * @param[in]  otp_slot OTP slot; PUFCC_OTPKEY_0 ~ PUFCC_OTPKEY_31
- * @return              PUFCC_SUCCESS on success, otherwise an error code.
- */
-enum pufcc_status pufcc_read_otp(uint8_t *out_buf, uint32_t len,
-                                 enum pufcc_otp_slot otp_slot) {
-  enum pufcc_status check;
-  uint16_t addr = otp_slot * PUFCC_OTP_KEY_LEN;
-  uint32_t word, start_index, wlen;
-  enum pufcc_otp_lock lock = PUFCC_OTP_RW;  // default value
-
-  if ((check = otp_range_check(addr, len)) != PUFCC_SUCCESS) return check;
-
-  // Return error if read access is locked
-  pufcc_get_otp_rwlck(otp_slot, &lock);
-  if (lock == PUFCC_OTP_NA) return PUFCC_E_DENY;
-
-  wlen = len / PUFCC_WORD_SIZE;
-  start_index = addr / PUFCC_WORD_SIZE;
-
-  if (wlen > 0) {
-    memcpy(out_buf, (void *)(otp_mem->otp + start_index),
-           wlen * PUFCC_WORD_SIZE);
-
-    uint32_t *out32 = (uint32_t *)out_buf;
-    for (size_t i = 0; i < wlen; ++i) *(out32 + i) = be2le(*(out32 + i));
-  }
-
-  if (len % PUFCC_WORD_SIZE != 0) {
-    out_buf += wlen * PUFCC_WORD_SIZE;
-    word = be2le(*(otp_mem->otp + start_index + wlen));
-    memcpy(out_buf, &word, len % PUFCC_WORD_SIZE);
-  }
-
-  return PUFCC_SUCCESS;
-}
-
-/**
- * @fn    pufcc_lock_otp
- * @brief Lock an OTP key slot according to passed-in lock value.
- *
- * @param[in]  otp_slot OTP slot; PUFCC_OTPKEY_0 ~ PUFCC_OTPKEY_31
- * @param[in]  len      Length of the OTP slot to be locked
- * @param[in]  lock     Value of the lock to be placed
- * @return              PUFCC_SUCCESS on success, otherwise an error code.
- */
-enum pufcc_status pufcc_lock_otp(enum pufcc_otp_slot otp_slot, uint32_t len,
-                                 enum pufcc_otp_lock lock) {
-  enum pufcc_status check;
-  uint32_t lock_val = lock, shift = 0, start = 0, end = 0, mask = 0, val32 = 0;
-  int rwlock_index;
-  uint16_t addr = otp_slot * PUFCC_OTP_KEY_LEN;
-
-  if ((check = otp_range_check(addr, len)) != PUFCC_SUCCESS) return check;
-
-  // Set end and start indices of OTP words
-  end = (len + 3) / 4;
-  start = addr / PUFCC_WORD_SIZE;
-
-  for (uint32_t i = 0; i < end; i++) {
-    int idx = start + i;
-
-    // Get the index of RWLCK register corresponding to current OTP word index
-    if ((rwlock_index = rwlck_index_get(idx)) == -1) {
-      return PUFCC_E_ERROR;
-    }
-
-    // Get shift size for lock value to be written to RWLCK register according
-    // to OTP word index
-    shift = (idx % PUFCC_OTP_WORDS_PER_RWLCK_REG) *
-            PUFCC_OTP_RWLCK_REG_BITS_PER_OTP_WORD;
-    // Update lock value for current 'rwlock_index'
-    val32 |= lock_val << shift;
-    // Update mask value for current 'rwlock_index'
-    mask |= 0xF << shift;
-
-    // If we have fully utilized RWLCK register at 'rwlock_index' or this is
-    // the end of OTP range that we are locking then write the lock value in
-    // RWLCK register at 'rwlock_index'
-    if (shift == 28 || i == end - 1) {
-      // Read modify write
-      val32 |= (rt_regs->pif[rwlock_index] & (~mask));
-      rt_regs->pif[rwlock_index] = val32;
-
-      // Clear values for next iteration
-      val32 = 0;
-      mask = 0;
-    }
-  }
-
-  return PUFCC_SUCCESS;
-}
-
-/**
- * @fn    pufcc_zeroize_otp
- * @brief Zeroize an OTP key slot (32 bytes) permanently.
- *
- * @param[in] otp_slot OTP slot; PUFCC_OTPKEY_0 ~ PUFCC_OTPKEY_31
- * @return             PUFCC_SUCCESS on success, otherwise an error code.
- */
-enum pufcc_status pufcc_zeroize_otp(enum pufcc_otp_slot otp_slot) {
-  enum pufcc_status status;
-
-  if (otp_slot < PUFCC_OTPKEY_0 || otp_slot > PUFCC_OTPKEY_31) {
-    status = PUFCC_E_INVALID;
-  } else {
-    uint32_t zeroize_cmd =
-        (otp_slot - PUFCC_OTPKEY_0) + PUFCC_OTP_ZEROIZE_BASE_CMD;
-
-    rt_regs->otp_zeroize = zeroize_cmd;
-
-    // Wait on busy status
-    status = busy_wait(&rt_regs->status, PUFCC_RT_ERROR_MASK);
-  }
-
-  return status;
-}
-
-/**
- * @fn    pufcc_get_otp_rwlck
- * @brief Get the read write lock value of passed-in OTP slot. This function
- *        assumes that the lock value of all the words of an OTP is same as that
- *        of the first word of that slot
- *
- * @param[in]  otp_slot OTP slot; PUFCC_OTPKEY_0 ~ PUFCC_OTPKEY_31
- * @param[out] lock_val Lock address to return the lock value in
- * @return              PUFCC_SUCCESS on success, otherwise and error code
- */
-enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
-                                      enum pufcc_otp_lock *lock_val) {
-  enum pufcc_status check;
-  uint16_t addr = otp_slot * PUFCC_OTP_KEY_LEN;
-
-  if ((check = otp_range_check(addr, 4)) != PUFCC_SUCCESS) return check;
-
-  // Get OTP word index
-  int index = addr / PUFCC_WORD_SIZE;
-
-  // Get offset of the lock value within RWLCK register corresponding to this
-  // OTP word
-  int rwlck_offset = (index % PUFCC_OTP_WORDS_PER_RWLCK_REG) *
-                     PUFCC_OTP_RWLCK_REG_BITS_PER_OTP_WORD;
-
-  // Get the index of RWLCK register corresponding to current OTP word index
-  // read lock value at that index
-  index = rwlck_index_get(index);
-  uint32_t lck = (rt_regs->pif[index] >> rwlck_offset) & PUFCC_PIF_RWLCK_MASK;
-
-  switch (lck) {
-    // Read write access
-    case PUFCC_OTP_RWLCK_RW_0:
-    case PUFCC_OTP_RWLCK_RW_1:
-    case PUFCC_OTP_RWLCK_RW_2:
-    case PUFCC_OTP_RWLCK_RW_3:
-    case PUFCC_OTP_RWLCK_RW_4:
-      *lock_val = PUFCC_OTP_RW;
-      break;
-
-      // Read only access
-    case PUFCC_OTP_RWLCK_RO_0:
-    case PUFCC_OTP_RWLCK_RO_1:
-    case PUFCC_OTP_RWLCK_RO_2:
-      *lock_val = PUFCC_OTP_RO;
-      break;
-
-      // All other values indicate no access
-    default:
-      *lock_val = PUFCC_OTP_NA;
-      break;
-  }
-
-  return PUFCC_SUCCESS;
-}
-
-/**
  * @fn    rsa_p1v15_verify
  * @brief Verify input RSA2048 decrypted message according to PKCS#1 v1.5 RSA
  *        verification standard.
@@ -1011,23 +773,6 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
 }
 
 /**
- * @fn    rwlck_index_get
- * @brief Get the index of RWLCK register corresponding to passed-in OTP word
- *        index.
- *
- * @param[in] idx OTP word index for which to get the RWLCK register index for
- * @return        Index of the RWLCK register
- */
-static int rwlck_index_get(uint32_t idx) {
-  uint32_t rwlck_idx = idx / PUFCC_OTP_WORDS_PER_RWLCK_REG;
-
-  if (rwlck_idx >= PUFCC_PIF_MAX_RWLOCK_REGS) return -1;
-
-  // Return the actual index of RWCLK register in PIF registers group
-  return PUFCC_PIF_RWLCK_START_INDEX + rwlck_idx;
-}
-
-/**
  * @fn    reverse
  * @brief Reverse input byte array.
  *
@@ -1051,25 +796,6 @@ static void reverse(uint8_t *dst, const uint8_t *src, size_t len) {
 static uint32_t be2le(uint32_t var) {
   return (((0xff000000 & var) >> 24) | ((0x00ff0000 & var) >> 8) |
           ((0x0000ff00 & var) << 8) | ((0x000000ff & var) << 24));
-}
-
-/**
- * @fn    otp_range_check
- * @brief Check range validity of the input OTP address
- *
- * @param[in]  addr OTP address
- * @param[in]  len  Length of OTP after OTP address
- * @return          4 byte word with reversed endianness
- * @return          PUFCC_SUCCESS if OTP address and range is valid, otherwise
- *                  an error code.
- */
-static enum pufcc_status otp_range_check(uint32_t addr, uint32_t len) {
-  // word-aligned OTP address check
-  if ((addr % PUFCC_WORD_SIZE) != 0) return PUFCC_E_ALIGN;
-  // OTP boundary check
-  if ((len > PUFCC_OTP_LEN) || (addr > (PUFCC_OTP_LEN - len)))
-    return PUFCC_E_OVERFLOW;
-  return PUFCC_SUCCESS;
 }
 
 /**
@@ -1102,25 +828,18 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
 }
 
 static int crypto_pufs_init(const struct device *dev) {
-  enum pufcc_status status;
 
   // Initialize base addresses of different PUFcc modules
   dma_regs = (struct pufcc_dma_regs *)((struct pufs_config*)dev->config)->base;
-  rt_regs = (struct pufcc_rt_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_RT_OFFSET);
-  otp_mem = (struct pufcc_otp_mem *)(((struct pufs_config*)dev->config)->base + PUFCC_RT_OFFSET +
-                                     PUFCC_RT_OTP_OFFSET);
   hmac_regs = (struct pufcc_hmac_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_HMAC_OFFSET);
   crypto_regs = (struct pufcc_crypto_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_CRYPTO_OFFSET);
   sp38a_regs = (struct pufcc_sp38a_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_SP38A_OFFSET);
   pkc_regs = (struct pufcc_pkc_regs *)(((struct pufs_config*)dev->config)->base + PUFCC_PKC_OFFSET);
 
-  // Wait for OTP setup
-  status = pufcc_otp_setup_wait();
-
   // Connect the IRQ
   ((struct pufs_config*)dev->config)->irq_init();
 
-  return status;
+  return PUFCC_SUCCESS;
 }
 
 static void pufs_irq_handler(const struct device *dev) {

@@ -18,37 +18,6 @@
 #define PUFCC_WORD_SIZE 4
 #define PUFCC_BUSY_BIT_MASK 0x00000001
 
-/*** RT and OTP defines ***/
-#define PUFCC_RT_OFFSET 0x3000
-#define PUFCC_RT_OTP_OFFSET 0x400
-#define PUFCC_RT_ERROR_MASK 0x0000001e
-#define PUFCC_OTP_LEN 1024
-#define PUFCC_OTP_KEY_LEN 32
-#define PUFCC_OTP_ZEROIZE_BASE_CMD 0x80
-
-// One read/write lock register controls 8 OTP words
-#define PUFCC_OTP_WORDS_PER_RWLCK_REG 8
-
-// 4 bits are reserved for lock value of one OTP word in read/write lock
-// register
-#define PUFCC_OTP_RWLCK_REG_BITS_PER_OTP_WORD 4
-#define PUFCC_PIF_RWLCK_MASK 0xF
-#define PUFCC_PIF_MAX_RWLOCK_REGS \
-  (PUFCC_OTP_LEN / PUFCC_WORD_SIZE / PUFCC_OTP_WORDS_PER_RWLCK_REG)
-
-// Start index of the RWLCK register in PIF registers group
-#define PUFCC_PIF_RWLCK_START_INDEX 32
-
-// Define all possible OTP lock values
-#define PUFCC_OTP_RWLCK_RW_0 0x0  // Read Write access
-#define PUFCC_OTP_RWLCK_RW_1 0x1  // Read Write access
-#define PUFCC_OTP_RWLCK_RW_2 0x2  // Read Write access
-#define PUFCC_OTP_RWLCK_RW_3 0x4  // Read Write access
-#define PUFCC_OTP_RWLCK_RW_4 0x8  // Read Write access
-#define PUFCC_OTP_RWLCK_RO_0 0x3  // Read Only access
-#define PUFCC_OTP_RWLCK_RO_1 0x7  // Read Only access
-#define PUFCC_OTP_RWLCK_RO_2 0xb  // Read Only access
-
 /*** DMA defines ***/
 #define PUFCC_DMA_KEY_DST_HASH 0x1
 #define PUFCC_DMA_KEY_DST_SP38A 0x8
@@ -150,49 +119,6 @@ enum pufcc_status {
   PUFCC_E_INFINITY,   // Point at infinity.
   PUFCC_E_ERROR,      // Unspecific error.
   PUFCC_E_TIMEOUT,    // Operation timed out.
-};
-
-// PUFcc key slots; 32 slots of 256 bits each
-enum pufcc_otp_slot {
-  PUFCC_OTPKEY_0,   // OTP key slot 0, 256 bits
-  PUFCC_OTPKEY_1,   // OTP key slot 1, 256 bits
-  PUFCC_OTPKEY_2,   // OTP key slot 2, 256 bits
-  PUFCC_OTPKEY_3,   // OTP key slot 3, 256 bits
-  PUFCC_OTPKEY_4,   // OTP key slot 4, 256 bits
-  PUFCC_OTPKEY_5,   // OTP key slot 5, 256 bits
-  PUFCC_OTPKEY_6,   // OTP key slot 6, 256 bits
-  PUFCC_OTPKEY_7,   // OTP key slot 7, 256 bits
-  PUFCC_OTPKEY_8,   // OTP key slot 8, 256 bits
-  PUFCC_OTPKEY_9,   // OTP key slot 9, 256 bits
-  PUFCC_OTPKEY_10,  // OTP key slot 10, 256 bits
-  PUFCC_OTPKEY_11,  // OTP key slot 11, 256 bits
-  PUFCC_OTPKEY_12,  // OTP key slot 12, 256 bits
-  PUFCC_OTPKEY_13,  // OTP key slot 13, 256 bits
-  PUFCC_OTPKEY_14,  // OTP key slot 14, 256 bits
-  PUFCC_OTPKEY_15,  // OTP key slot 15, 256 bits
-  PUFCC_OTPKEY_16,  // OTP key slot 16, 256 bits
-  PUFCC_OTPKEY_17,  // OTP key slot 17, 256 bits
-  PUFCC_OTPKEY_18,  // OTP key slot 18, 256 bits
-  PUFCC_OTPKEY_19,  // OTP key slot 19, 256 bits
-  PUFCC_OTPKEY_20,  // OTP key slot 20, 256 bits
-  PUFCC_OTPKEY_21,  // OTP key slot 21, 256 bits
-  PUFCC_OTPKEY_22,  // OTP key slot 22, 256 bits
-  PUFCC_OTPKEY_23,  // OTP key slot 23, 256 bits
-  PUFCC_OTPKEY_24,  // OTP key slot 24, 256 bits
-  PUFCC_OTPKEY_25,  // OTP key slot 25, 256 bits
-  PUFCC_OTPKEY_26,  // OTP key slot 26, 256 bits
-  PUFCC_OTPKEY_27,  // OTP key slot 27, 256 bits
-  PUFCC_OTPKEY_28,  // OTP key slot 28, 256 bits
-  PUFCC_OTPKEY_29,  // OTP key slot 29, 256 bits
-  PUFCC_OTPKEY_30,  // OTP key slot 30, 256 bits
-  PUFCC_OTPKEY_31,  // OTP key slot 31, 256 bits
-};
-
-// OTP lock types
-enum pufcc_otp_lock {
-  PUFCC_OTP_NA = 0xF,  // No-Access
-  PUFCC_OTP_RO = 0x3,  // Read-Only
-  PUFCC_OTP_RW = 0x0,  // Read-Write
 };
 
 // PUFcc read/write types
@@ -344,43 +270,6 @@ struct pufcc_ecc_param {
 /*****************************************************************************
  * PUFcc register maps
  ****************************************************************************/
-// OTP memory map
-struct pufcc_otp_mem {
-  uint32_t otp[256];
-};
-
-struct pufcc_rt_regs {
-  volatile uint32_t pif[64];
-  uint32_t _pad1[64];
-  volatile uint32_t ptr[16];
-  volatile uint32_t ptc[16];
-  volatile uint32_t ptm[2];
-  uint32_t _pad2[6];
-  volatile uint32_t rn;
-  volatile uint32_t rn_status;
-  volatile uint32_t healthcfg;
-  volatile uint32_t feature;
-  volatile uint32_t interrupt;
-  volatile uint32_t otp_psmsk[2];
-  volatile uint32_t puf_psmsk;
-  volatile uint32_t version;
-  volatile uint32_t status;
-  volatile uint32_t cfg;
-  volatile uint32_t set_pin;
-  volatile uint32_t auto_repair;
-  volatile uint32_t ini_off_chk;
-  volatile uint32_t repair_pgn;
-  volatile uint32_t repair_reg;
-  volatile uint32_t puf_qty_chk;
-  volatile uint32_t puf_enroll;
-  volatile uint32_t puf_zeroize;
-  volatile uint32_t set_flag;
-  volatile uint32_t otp_zeroize;
-  uint32_t _pad3[3];
-  volatile uint32_t puf[64];
-  volatile uint32_t otp[256];
-};
-
 // DMA module register map
 struct pufcc_dma_regs {
   volatile uint32_t version;
