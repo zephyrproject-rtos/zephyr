@@ -118,6 +118,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | eLCDIF. Tested with                 |
 |           |            | :ref:`rk043fn02h_ct`, and           |
 |           |            | :ref:`rk043fn66hs_ctg` shields      |
