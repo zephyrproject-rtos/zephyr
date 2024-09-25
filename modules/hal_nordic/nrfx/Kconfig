@@ -169,6 +169,16 @@ config NRFX_PDM0
 	depends on $(dt_nodelabel_has_compat,pdm0,$(DT_COMPAT_NORDIC_NRF_PDM))
 	select NRFX_PDM
 
+config NRFX_PDM20
+	bool "PDM20 driver instance"
+	depends on $(dt_nodelabel_has_compat,pdm20,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
+
+config NRFX_PDM21
+	bool "PDM21 driver instance"
+	depends on $(dt_nodelabel_has_compat,pdm21,$(DT_COMPAT_NORDIC_NRF_PDM))
+	select NRFX_PDM
+
 config NRFX_POWER
 	bool "POWER driver"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_POWER))
