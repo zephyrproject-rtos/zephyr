@@ -1376,16 +1376,18 @@ ZTEST(central_rem, test_conn_update_central_rem_accept)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req_B.interval_min, conn_param_req_B.interval_max,
+				    conn_param_req_B.latency, conn_param_req_B.timeout, 0, 0);
 
 	/*******************/
 
 	/* Prepare */
 	event_prepare(&conn);
 
-	/* Tx Queue should have one LL Control PDU */
-	conn_update_ind.instant = event_counter(&conn) + 6U;
-	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
+	/* Tx Queue should have one LL Control PDU,  */
+	conn_update_ind_B.instant = event_counter(&conn) + 6U;
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind_B);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -1548,7 +1550,7 @@ ZTEST(central_rem, test_conn_update_central_rem_reject)
 
 	/*******************/
 
-	ull_cp_conn_param_req_neg_reply(&conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM);
+	ull_cp_conn_param_req_reply(&conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM, 0, 0, 0, 0, 0, 0);
 
 	/*******************/
 
@@ -1688,7 +1690,9 @@ ZTEST(central_rem, test_conn_update_central_rem_collision)
 	/*******************/
 
 	/* (A) */
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -2239,7 +2243,9 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision)
 	/*******************/
 
 	/* (B) */
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    req_B->interval_min, req_B->interval_max,
+				    req_B->latency, req_B->timeout, 0, 0);
 
 	/*******************/
 
@@ -2380,7 +2386,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -3218,7 +3226,9 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 	/*******************/
 
 	/* (B) */
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    req_B->interval_min, req_B->interval_max,
+				    req_B->latency, req_B->timeout, 0, 0);
 
 	/*******************/
 
@@ -3491,7 +3501,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	{
 		/* Initiate a parallel local Connection Parameter Request Procedure */
@@ -3724,7 +3736,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -3785,7 +3799,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -3847,7 +3863,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_invalid_ind)
 
 	/*******************/
 
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -3946,7 +3964,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_reject)
 
 	/*******************/
 
-	ull_cp_conn_param_req_neg_reply(&conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM);
+	ull_cp_conn_param_req_reply(&conn, BT_HCI_ERR_UNACCEPT_CONN_PARAM, 0, 0, 0, 0, 0, 0);
 
 	/*******************/
 
@@ -4086,7 +4104,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_collision)
 	/*******************/
 
 	/* (A) */
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
@@ -4336,7 +4356,9 @@ ZTEST(periph_rem, test_conn_update_periph_rem_late_collision)
 	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
 
 	/* (A) */
-	ull_cp_conn_param_req_reply(&conn);
+	ull_cp_conn_param_req_reply(&conn, 0,
+				    conn_param_req.interval_min, conn_param_req.interval_max,
+				    conn_param_req.latency, conn_param_req.timeout, 0, 0);
 
 	/*******************/
 
