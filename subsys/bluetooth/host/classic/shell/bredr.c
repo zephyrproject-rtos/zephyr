@@ -375,7 +375,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
-	int res;
+	int err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
@@ -389,21 +389,21 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get HFPAG Server Channel Number operating on RFCOMM protocol.
 		 */
-		res = bt_sdp_get_proto_param(result->resp_buf,
+		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_RFCOMM, &param);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting Server CN, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFPAG Server CN param 0x%04x", param);
 
-		res = bt_sdp_get_profile_version(result->resp_buf,
+		err = bt_sdp_get_profile_version(result->resp_buf,
 						 BT_SDP_HANDSFREE_SVCLASS,
 						 &version);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting profile version, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFP version param 0x%04x", version);
@@ -412,10 +412,10 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
 		 * get profile Supported Features mask.
 		 */
-		res = bt_sdp_get_features(result->resp_buf, &features);
-		if (res < 0) {
+		err = bt_sdp_get_features(result->resp_buf, &features);
+		if (err < 0) {
 			shell_error(ctx_shell, "Error getting HFPAG Features, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "HFPAG Supported Features param 0x%04x",
@@ -434,7 +434,7 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
-	int res;
+	int err;
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
@@ -448,11 +448,11 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
 		 * get A2SRC Server PSM Number.
 		 */
-		res = bt_sdp_get_proto_param(result->resp_buf,
+		err = bt_sdp_get_proto_param(result->resp_buf,
 					     BT_SDP_PROTO_L2CAP, &param);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC PSM Number not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 
@@ -463,12 +463,12 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_PROFILE_DESC_LIST attribute item to
 		 * get profile version number.
 		 */
-		res = bt_sdp_get_profile_version(result->resp_buf,
+		err = bt_sdp_get_profile_version(result->resp_buf,
 						 BT_SDP_ADVANCED_AUDIO_SVCLASS,
 						 &version);
-		if (res < 0) {
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC version not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "A2SRC version param 0x%04x", version);
@@ -477,10 +477,10 @@ static uint8_t sdp_a2src_user(struct bt_conn *conn,
 		 * Focus to get BT_SDP_ATTR_SUPPORTED_FEATURES attribute item to
 		 * get profile supported features mask.
 		 */
-		res = bt_sdp_get_features(result->resp_buf, &features);
-		if (res < 0) {
+		err = bt_sdp_get_features(result->resp_buf, &features);
+		if (err < 0) {
 			shell_error(ctx_shell, "A2SRC Features not found, "
-				    "err %d", res);
+				    "err %d", err);
 			goto done;
 		}
 		shell_print(ctx_shell, "A2SRC Supported Features param 0x%04x",
@@ -510,7 +510,7 @@ static struct bt_sdp_discover_params discov;
 static int cmd_sdp_find_record(const struct shell *sh,
 			       size_t argc, char *argv[])
 {
-	int res;
+	int err;
 	const char *action;
 
 	if (!default_conn) {
@@ -531,9 +531,9 @@ static int cmd_sdp_find_record(const struct shell *sh,
 
 	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
 
-	res = bt_sdp_discover(default_conn, &discov);
-	if (res) {
-		shell_error(sh, "SDP discovery failed: result %d", res);
+	err = bt_sdp_discover(default_conn, &discov);
+	if (err) {
+		shell_error(sh, "SDP discovery failed: err %d", err);
 		return -ENOEXEC;
 	} else {
 		shell_print(sh, "SDP discovery started");
