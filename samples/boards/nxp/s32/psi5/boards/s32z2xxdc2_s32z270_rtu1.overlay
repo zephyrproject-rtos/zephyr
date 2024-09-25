@@ -1,0 +1,52 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	psi5_0_default: psi5_0_default {
+		group1 {
+			pinmux = <PA7_PSI5_0_SDOUT1>, <PB3_PSI5_0_SDOUT2>;
+			output-enable;
+		};
+		group2 {
+			pinmux = <PA6_PSI5_0_SDIN1>, <PB2_PSI5_0_SDIN2>;
+			input-enable;
+		};
+	};
+};
+
+&psi5_0 {
+	pinctrl-0 = <&psi5_0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&psi5_0_ch1 {
+	target-pulse-us = <8>;
+	decoder-offset-us = <0>;
+	low-pulse-width-us = <4>;
+	high-pulse-width-us = <4>;
+	tx-mode = "short-frame-31";
+	rx-buf-size = <32>;
+	bitrate-kbps = <125>;
+	array-slot-duration-us = <1000 1000>;
+	array-slot-start-offset-us = <0 0>;
+	array-slot-data-length = <16 16>;
+	status = "okay";
+};
+
+&psi5_0_ch2 {
+	target-pulse-us = <8>;
+	decoder-offset-us = <0>;
+	low-pulse-width-us = <4>;
+	high-pulse-width-us = <4>;
+	tx-mode = "short-frame-31";
+	rx-buf-size = <32>;
+	bitrate-kbps = <125>;
+	array-slot-duration-us = <1000 1000>;
+	array-slot-start-offset-us = <0 0>;
+	array-slot-data-length = <16 16>;
+	status = "okay";
+};

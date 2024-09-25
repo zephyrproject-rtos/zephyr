@@ -1,0 +1,14 @@
+sample:
+  description: Sample for using PSI5 driver
+  name: NXP S32 PSI5 sample
+
+tests:
+  sample.boards.nxp_s32.psi5:
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+    depends_on: psi5
+    tags: psi5
+    harness: console
