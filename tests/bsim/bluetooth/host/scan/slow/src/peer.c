@@ -12,6 +12,7 @@
 #include "testlib/log_utils.h"
 #include "babblekit/flags.h"
 #include "babblekit/testcase.h"
+#include "data.h"
 
 LOG_MODULE_REGISTER(peer, LOG_LEVEL_DBG);
 
@@ -39,6 +40,10 @@ void entrypoint_peer(void)
 	err = bt_le_ext_adv_create(&adv_param, NULL, &adv);
 	TEST_ASSERT(!err, "Failed to create advertising set: %d", err);
 	LOG_DBG("Created extended advertising set.");
+
+	err = bt_le_ext_adv_set_data(adv, peer_ad, ARRAY_SIZE(peer_ad), NULL, 0);
+	TEST_ASSERT(!err, "Failed to set adv data: %d", err);
+	LOG_DBG("Set adv data.");
 
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
 	TEST_ASSERT(!err, "Failed to start extended advertising: %d", err);
