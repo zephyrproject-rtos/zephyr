@@ -139,11 +139,14 @@ enum lp55xx_engine_fade_dirs {
 };
 
 struct lp55xx_interface {
+	uint8_t cfg_reg_init;
+	/* bit mask to denote color supported by the interface */
+	uint32_t supported_colors;
 	/* color_id to register_mapping */
 	uint8_t pwm_reg_map[4];
 	uint8_t current_reg_map[4];
 	/* API to support engine handling */
-	int (*get_available_engine)(const struct device *dev,
+	int (*get_available_engine)(const struct device *dev, uint8_t color_id,
 				    enum lp55xx_led_sources *engine);
 	int (*get_led_source)(const struct device *dev, uint8_t color_id,
 			      enum lp55xx_led_sources *source);
@@ -370,7 +373,7 @@ static bool lp5562_is_engine_executing(const struct device *dev,
  * @retval 0       On success.
  * @retval -ENODEV If all engines are busy.
  */
-static int lp5562_get_available_engine(const struct device *dev,
+static int lp5562_get_available_engine(const struct device *dev, uint8_t color_id,
 				       enum lp55xx_led_sources *engine)
 {
 	enum lp55xx_led_sources src;
@@ -390,6 +393,12 @@ static int lp5562_get_available_engine(const struct device *dev,
 
 /* LP5562 Interface definitions */
 struct lp55xx_interface lp55xx_lp5562_iface = {
+	.cfg_reg_init = (LP55XX_CONFIG_INTERNAL_CLOCK |
+			 LP55XX_CONFIG_PWRSAVE_EN),
+	.supported_colors = BIT(LED_COLOR_ID_WHITE) |
+			    BIT(LED_COLOR_ID_RED) |
+			    BIT(LED_COLOR_ID_GREEN) |
+			    BIT(LED_COLOR_ID_BLUE),
 	.pwm_reg_map = {LP5562_W_PWM, LP5562_R_PWM, LP5562_G_PWM, LP5562_B_PWM,},
 	.current_reg_map = {LP5562_W_CURRENT, LP5562_R_CURRENT, LP5562_G_CURRENT, LP5562_B_CURRENT},
 	.get_available_engine = lp5562_get_available_engine,
@@ -398,6 +407,113 @@ struct lp55xx_interface lp55xx_lp5562_iface = {
 };
 
 #endif /* CONFIG_DT_HAS_TI_LP5562_ENABLED */
+
+#if CONFIG_DT_HAS_TI_LP5521_ENABLED
+
+/* LP5521 specific registers indexes */
+#define LP5521_R_PWM              0x02
+#define LP5521_G_PWM              0x03
+#define LP5521_B_PWM              0x04
+#define LP5521_R_CURRENT          0x05
+#define LP5521_G_CURRENT          0x06
+#define LP5521_B_CURRENT          0x07
+#define LP5521_CP_MODE_AUTO_MASK  0x18
+
+/*
+ * @brief Get engine corresponding to the color_id
+ *
+ * @param dev    LP5521 device.
+ * @param engine Pointer to the engine ID.
+ *
+ * @retval 0       On success.
+ * @retval -EINVAL invalid color_id.
+ */
+static int lp5521_get_available_engine(const struct device *dev, uint8_t color_id,
+					enum lp55xx_led_sources *engine)
+{
+	if ((color_id >= LED_COLOR_ID_RED) && (color_id <= LED_COLOR_ID_BLUE)) {
+		/* color id and engine id are same */
+		*engine = color_id;
+		return 0;
+	}
+
+	LOG_ERR("No unused engine available");
+	return -EINVAL;
+}
+
+/*
+ * @brief Assign a source to the given LED channel.
+ *
+ * @param dev     LP5521 device.
+ * @param channel LED channel the source is assigned to.
+ * @param source  Source for the channel.
+ *
+ * @retval 0    On success.
+ * @retval -EIO If the underlying I2C call fails.
+ */
+static int lp5521_set_led_source(const struct device *dev, uint8_t color_id,
+				 enum lp55xx_led_sources source)
+{
+	const struct lp55xx_config *config = dev->config;
+	/* LP5521 uses RGB, but ID is BGRW so invert it */
+	uint8_t bit_pos = ((LED_COLOR_ID_BLUE - (color_id)) << 1);
+
+	if (source == LP55XX_SOURCE_PWM) {
+		return i2c_reg_update_byte_dt(&config->bus, LP55XX_OP_MODE,
+						LP55XX_MASK << bit_pos,
+						LP55XX_OP_MODE_DIRECT_CTRL << bit_pos);
+	}
+
+	return 0;
+}
+
+/*
+ * @brief Get the assigned source of the given LED channel.
+ *
+ * @param dev     LP5521 device.
+ * @param channel Requested LED channel.
+ * @param source  Pointer to the source of the channel.
+ *
+ * @retval 0    On success.
+ * @retval -EIO If the underlying I2C call fails.
+ */
+static int lp5521_get_led_source(const struct device *dev, uint8_t color_id,
+				 enum lp55xx_led_sources *source)
+{
+	const struct lp55xx_config *config = dev->config;
+	/* LP5521 uses RGB, but ID is BGRW so invert it */
+	uint8_t bit_pos = ((LED_COLOR_ID_BLUE - (color_id)) << 1);
+	uint8_t op_mode;
+
+	if (i2c_reg_read_byte_dt(&config->bus, LP55XX_OP_MODE, &op_mode)) {
+		LOG_ERR("Failed to read OP MODE register.");
+		return false;
+	}
+
+	if (((op_mode >> bit_pos) & LP55XX_MASK) != LP55XX_OP_MODE_DIRECT_CTRL) {
+		return lp5521_get_available_engine(dev, color_id, source);
+	}
+	*source = LP55XX_SOURCE_PWM;
+
+	return 0;
+}
+
+/* LP5521 Interface definitions */
+struct lp55xx_interface lp55xx_lp5521_iface = {
+	.cfg_reg_init = (LP55XX_CONFIG_INTERNAL_CLOCK |
+			 LP55XX_CONFIG_PWRSAVE_EN |
+			 LP5521_CP_MODE_AUTO_MASK),
+	.supported_colors = BIT(LED_COLOR_ID_RED) |
+			    BIT(LED_COLOR_ID_GREEN) |
+			    BIT(LED_COLOR_ID_BLUE),
+	.pwm_reg_map = {0, LP5521_R_PWM, LP5521_G_PWM, LP5521_B_PWM},
+	.current_reg_map = {0, LP5521_R_CURRENT, LP5521_G_CURRENT, LP5521_B_CURRENT},
+	.get_available_engine = lp5521_get_available_engine,
+	.get_led_source = lp5521_get_led_source,
+	.set_led_source = lp5521_set_led_source,
+};
+
+#endif /* CONFIG_DT_HAS_TI_LP5521_ENABLED */
 
 /*
  * @brief Set an register shifted for the given execution engine.
@@ -543,7 +659,7 @@ static int lp55xx_enter_pwm_mode(const struct device *dev, uint32_t led)
 	return 0;
 }
 
-static int lp55xx_enter_engine_mode(const struct device *dev, uint32_t led,
+static int lp55xx_enter_engine_mode(const struct device *dev, uint32_t color_id,
 				    enum lp55xx_led_sources *engine)
 {
 	const struct lp55xx_config *config = dev->config;
@@ -551,18 +667,18 @@ static int lp55xx_enter_engine_mode(const struct device *dev, uint32_t led,
 	int ret;
 
 	/* query current led source */
-	ret = iface->get_led_source(dev, led, engine);
+	ret = iface->get_led_source(dev, color_id, engine);
 	if (ret) {
 		return ret;
 	}
 
 	/* if source is PWM, and identify available engine and link it */
 	if (*engine == LP55XX_SOURCE_PWM) {
-		ret = iface->get_available_engine(dev, engine);
+		ret = iface->get_available_engine(dev, color_id, engine);
 		if (ret) {
 			return ret;
 		}
-		ret = iface->set_led_source(dev, led, *engine);
+		ret = iface->set_led_source(dev, color_id, *engine);
 		if (ret) {
 			return ret;
 		}
@@ -907,25 +1023,6 @@ static inline int lp55xx_led_off(const struct device *dev, uint32_t led)
 	return lp55xx_led_set_pwm_brightness(dev, led, LP55XX_MIN_BRIGHTNESS);
 }
 
-static int lp55xx_led_update_current(const struct device *dev)
-{
-	const struct lp55xx_config *config = dev->config;
-	const struct lp55xx_interface *iface = config->iface;
-	const uint8_t *current = config->wrgb_current;
-	int ret;
-
-	for (uint8_t color_id = LED_COLOR_ID_WHITE; color_id <= LED_COLOR_ID_BLUE; color_id++) {
-		ret = i2c_reg_write_byte_dt(&config->bus, iface->current_reg_map[color_id],
-					    current[color_id]);
-		if (ret) {
-			LOG_ERR("Failed to set current of color %d", color_id);
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 static int lp55xx_enable(const struct device *dev, bool soft_reset)
 {
 	const struct lp55xx_config *config = dev->config;
@@ -998,6 +1095,7 @@ static int lp55xx_disable(const struct device *dev)
 static int lp55xx_led_init(const struct device *dev)
 {
 	const struct lp55xx_config *config = dev->config;
+	const struct lp55xx_interface *iface = config->iface;
 	const struct gpio_dt_spec *enable_gpio = &config->enable_gpio;
 	int ret;
 
@@ -1022,24 +1120,26 @@ static int lp55xx_led_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = lp55xx_led_update_current(dev);
-	if (ret) {
-		LOG_ERR("Setting current setting LP55XX LED chip failed.");
-		return ret;
-	}
-
-	if (i2c_reg_write_byte_dt(&config->bus, LP55XX_CONFIG,
-				  (LP55XX_CONFIG_INTERNAL_CLOCK |
-				   LP55XX_CONFIG_PWRSAVE_EN))) {
+	if (i2c_reg_write_byte_dt(&config->bus, LP55XX_CONFIG, iface->cfg_reg_init)) {
 		LOG_ERR("Configuring LP55XX LED chip failed.");
 		return -EIO;
 	}
 
 	for (uint8_t color_id = LED_COLOR_ID_WHITE; color_id <= LED_COLOR_ID_BLUE; color_id++) {
-		ret = lp55xx_led_off(dev, color_id);
-		if (ret) {
-			LOG_ERR("Failed to set default state");
-			return ret;
+		if (iface->supported_colors & BIT(color_id)) {
+			/* update current configuration */
+			ret = i2c_reg_write_byte_dt(&config->bus, iface->current_reg_map[color_id],
+						    config->wrgb_current[color_id]);
+			if (ret) {
+				LOG_ERR("Failed to set current of color %d", color_id);
+				return ret;
+			}
+			/* turn off */
+			ret = lp55xx_led_off(dev, color_id);
+			if (ret) {
+				LOG_ERR("Failed to set default state");
+				return ret;
+			}
 		}
 	}
 
@@ -1067,34 +1167,47 @@ static int lp55xx_pm_action(const struct device *dev, enum pm_device_action acti
 }
 #endif /* CONFIG_PM_DEVICE */
 
-#define LP55XX_DEFINE(id)						\
+#define LP55XX_DEFINE(id, name)						\
 	BUILD_ASSERT(DT_INST_PROP(id, red_output_current) <= LP55XX_MAX_CURRENT_SETTING,\
 		"Red channel current must be between 0 and 25.5 mA.");	\
 	BUILD_ASSERT(DT_INST_PROP(id, green_output_current) <= LP55XX_MAX_CURRENT_SETTING,\
 		"Green channel current must be between 0 and 25.5 mA.");	\
 	BUILD_ASSERT(DT_INST_PROP(id, blue_output_current) <= LP55XX_MAX_CURRENT_SETTING,\
 		"Blue channel current must be between 0 and 25.5 mA.");	\
-	BUILD_ASSERT(DT_INST_PROP(id, white_output_current) <= LP55XX_MAX_CURRENT_SETTING,\
+	BUILD_ASSERT(DT_INST_PROP_OR(id, white_output_current, 0) <= LP55XX_MAX_CURRENT_SETTING,\
 		"White channel current must be between 0 and 25.5 mA.");	\
-	static const struct lp55xx_config lp55xx_config_##id = {	\
+	static const struct lp55xx_config lp55xx_config_##name##id = {	\
 		.bus = I2C_DT_SPEC_INST_GET(id),			\
 		.wrgb_current = {					\
-			DT_INST_PROP(id, white_output_current),		\
+			DT_INST_PROP_OR(id, white_output_current, 0),	\
 			DT_INST_PROP(id, red_output_current),		\
 			DT_INST_PROP(id, green_output_current),		\
 			DT_INST_PROP(id, blue_output_current),		\
 		},							\
 		.enable_gpio = GPIO_DT_SPEC_INST_GET_OR(id, enable_gpios, {0}),	\
-		.iface = &lp55xx_lp5562_iface,				\
+		.iface = &lp55xx_##name##_iface,			\
 	};								\
 									\
 	PM_DEVICE_DT_INST_DEFINE(id, lp55xx_pm_action);			\
 									\
 	DEVICE_DT_INST_DEFINE(id, &lp55xx_led_init, PM_DEVICE_DT_INST_GET(id),	\
 			NULL,						\
-			&lp55xx_config_##id, POST_KERNEL,		\
+			&lp55xx_config_##name##id, POST_KERNEL,		\
 			CONFIG_LED_INIT_PRIORITY,			\
 			&lp55xx_led_api);				\
 
+#if CONFIG_DT_HAS_TI_LP5562_ENABLED
+
+#undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5562
-DT_INST_FOREACH_STATUS_OKAY(LP55XX_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP55XX_DEFINE, lp5562)
+
+#endif /* CONFIG_DT_HAS_TI_LP5562_ENABLED */
+
+#if CONFIG_DT_HAS_TI_LP5521_ENABLED
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT ti_lp5521
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP55XX_DEFINE, lp5521)
+
+#endif /* CONFIG_DT_HAS_TI_LP5521_ENABLED */

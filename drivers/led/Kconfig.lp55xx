@@ -1,13 +1,16 @@
 # Copyright (c) 2018 Workaround GmbH
+# Copyright (c) 2024 Croxel Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config LP55XX
 	bool "LP55XX LED driver"
 	default y
-	depends on DT_HAS_TI_LP5562_ENABLED
+	depends on DT_HAS_TI_LP5562_ENABLED || DT_HAS_TI_LP5521_ENABLED
 	select I2C
 	help
-	  Enable LED driver for LP5562.
+	  Enable LED driver for LP5562/LP5521.
 
 	  LP5562 LED driver has 4 channels (RGBW). Each channel can drive up to
+	  25.5 mA per LED.
+	  LP5521 LED driver has 3 channels (RGB). Each channel can drive up to
 	  25.5 mA per LED.
