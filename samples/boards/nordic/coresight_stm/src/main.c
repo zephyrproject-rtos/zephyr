@@ -16,12 +16,14 @@ LOG_MODULE_REGISTER(app);
 
 #define TEST_LOG(rpt, item)                                                                        \
 	({                                                                                         \
+		uint32_t key = irq_lock();                                                         \
 		uint32_t t = k_cycle_get_32();                                                     \
 		for (uint32_t i = 0; i < rpt; i++) {                                               \
 			__DEBRACKET item;                                                          \
 		}                                                                                  \
 		t = k_cycle_get_32() - t;                                                          \
-		k_msleep(200);                                                                     \
+		irq_unlock(key);                                                                   \
+		k_msleep(400);                                                                     \
 		t;                                                                                 \
 	})
 
