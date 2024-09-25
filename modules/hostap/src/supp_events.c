@@ -386,7 +386,7 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 				(struct wifi_ap_sta_info *)supplicant_status);
 		break;
 #endif /* CONFIG_AP */
-	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
+	case NET_EVENT_WIFI_CMD_SUPPLICANT:
 		event_data.data = &data;
 		if (supplicant_process_status(&event_data, (char *)supplicant_status) > 0) {
 			net_mgmt_event_notify_with_info(NET_EVENT_SUPPLICANT_INT_EVENT,
