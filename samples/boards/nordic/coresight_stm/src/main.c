@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
 #ifdef CONFIG_LOG_FRONTEND_STMESP
@@ -37,6 +36,8 @@ static void get_core_name(void)
 		core_name = "rad";
 	} else if (strstr(CONFIG_BOARD_TARGET, "cpuppr")) {
 		core_name = "ppr";
+	} else if (strstr(CONFIG_BOARD_TARGET, "cpuflpr")) {
+		core_name = "flpr";
 	}
 }
 
@@ -49,7 +50,7 @@ static void timing_report(uint32_t t, uint32_t rpt, const char *str)
 {
 	uint32_t ns = t_to_ns(t, rpt, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
-	printk("%s: Timing for %s: %d.%dus\n", core_name, str, ns / 1000, (ns % 1000) / 10);
+	LOG_RAW("%s: Timing for %s: %d.%dus\n", core_name, str, ns / 1000, (ns % 1000) / 10);
 }
 
 int main(void)
