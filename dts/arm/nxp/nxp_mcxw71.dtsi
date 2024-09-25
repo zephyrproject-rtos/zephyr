@@ -170,6 +170,28 @@
 		status = "disabled";
 	};
 
+	lpi2c0: i2c@33000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x33000 0x200>;
+		interrupts = <39 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		status = "disabled";
+	};
+
+	lpi2c1: i2c@34000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x34000 0x200>;
+		interrupts = <40 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		status = "disabled";
+	};
+
 	gpiod: gpio@46000{
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
