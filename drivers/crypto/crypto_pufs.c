@@ -1279,7 +1279,6 @@ static const struct pufs_config s_pufs_configuration = {
   .dev = DEVICE_DT_INST_GET(0)
 };
 
-
 DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
 		    &s_pufs_session_data,
 		    &s_pufs_configuration, POST_KERNEL,
