@@ -489,7 +489,6 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
-    - sjanc
   files:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
