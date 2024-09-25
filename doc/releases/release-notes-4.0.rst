@@ -148,6 +148,9 @@ Build system and Infrastructure
    * ``--vendor-prefixes``
    * ``--edtlib-Werror``
 
+* Switched to using imgtool directly from the build system when signing images instead of calling
+  ``west sign``.
+
 Documentation
 *************
 
