@@ -85,6 +85,13 @@ struct bt_l2cap_br {
 	/* The channel this context is associated with */
 	struct bt_l2cap_br_chan	chan;
 	uint8_t			info_ident;
+	/*
+	 * 2.1 CHANNEL IDENTIFIERS in
+	 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part A.
+	 * The range of fixed L2CAP CID is 0x0001 ~ 0x0007 both for LE and BR.
+	 * So use one octet buffer to keep the `Fixed channels supported`
+	 * of peer device.
+	 */
 	uint8_t			info_fixed_chan;
 	uint32_t			info_feat_mask;
 };
@@ -541,6 +548,14 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 			err = -EINVAL;
 			break;
 		}
+		/*
+		 * 2.1 CHANNEL IDENTIFIERS in
+		 * BLUETOOTH CORE SPECIFICATION Version 5.4 | Vol 3, Part A.
+		 * The info length of `Fixed channels supported` is 8 octets.
+		 * Then the range of fixed L2CAP CID is 0x0001 ~ 0x0007 both for LE and BR.
+		 * So use one octet buffer to keep the `Fixed channels supported`
+		 * of peer device.
+		 */
 		l2cap->info_fixed_chan = net_buf_pull_u8(buf);
 		LOG_DBG("remote fixed channel mask 0x%02x", l2cap->info_fixed_chan);
 
