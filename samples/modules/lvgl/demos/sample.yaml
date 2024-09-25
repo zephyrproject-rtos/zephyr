@@ -4,13 +4,22 @@ sample:
 common:
   modules:
     - lvgl
-  harness: none
+  harness: console
   filter: dt_chosen_enabled("zephyr,display")
+  extra_args:
+    - platform:mimxrt1060_evk:SHIELD=rk043fn66hs_ctg
+    - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
+    - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=rk055hdmipi4ma0
   tags:
     - samples
     - display
     - lvgl
     - gui
+  harness_config:
+    fixture: fixture_display
+    type: one_line
+    regex:
+      - "\\[\\w+ free bytes, \\w+ allocated bytes, overhead = \\w+ bytes | lvgl in malloc mode\\]"
 tests:
   sample.modules.lvgl.demo_music:
     extra_configs:
@@ -24,6 +33,7 @@ tests:
   sample.modules.lvgl.demo_widgets:
     extra_configs:
       - CONFIG_LV_Z_DEMO_WIDGETS=y
+
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
