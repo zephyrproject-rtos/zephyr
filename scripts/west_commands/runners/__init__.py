@@ -25,6 +25,7 @@ def _import_runner_module(runner_name):
 # defined; otherwise, ZephyrBinaryRunner.get_runners() won't work.
 
 _names = [
+    # zephyr-keep-sorted-start
     'blackmagicprobe',
     'bossac',
     'canopen_program',
@@ -59,7 +60,9 @@ _names = [
     'teensy',
     'trace32',
     'uf2',
+    'xsdb',
     'xtensa',
+    # zephyr-keep-sorted-stop
     # Keep this list sorted by runner name; don't add to the end.
 ]
 
