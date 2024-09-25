@@ -1610,6 +1610,35 @@ static int cmd_i3c_ccc_setvendor_bc(const struct shell *sh, size_t argc, char **
 	return ret;
 }
 
+/* i3c ccc setbuscon <device> <context> [<optional bytes>] */
+static int cmd_i3c_ccc_setbuscon(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t buf[MAX_I3C_BYTES] = {0};
+	uint8_t data_length;
+	int ret;
+	int i;
+
+	dev = device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	data_length = argc - 2;
+	for (i = 0; i < data_length; i++) {
+		buf[i] = (uint8_t)strtol(argv[2 + i], NULL, 16);
+	}
+
+	ret = i3c_ccc_do_setbuscon(dev, buf, data_length);
+	if (ret < 0) {
+		shell_error(sh, "I3C: unable to send CCC SETBUSCON.");
+		return ret;
+	}
+
+	return ret;
+}
+
 /* i3c ccc getmxds <device> <target> [<defining byte>] */
 static int cmd_i3c_ccc_getmxds(const struct shell *sh, size_t argc, char **argv)
 {
@@ -2252,6 +2281,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Send CCC GETMXDS\n"
 		      "Usage: ccc getmxds <device> <target> [<defining byte>]",
 		      cmd_i3c_ccc_getmxds, 3, 1),
+	SHELL_CMD_ARG(setbuscon, &dsub_i3c_device_name,
+		      "Send CCC SETBUSCON\n"
+		      "Usage: ccc setbuscon <device> <context> [<optional bytes>]",
+		      cmd_i3c_ccc_setbuscon, 3, MAX_I3C_BYTES - 1),
 	SHELL_CMD_ARG(getvendor, &dsub_i3c_device_attached_name,
 		      "Send CCC GETVENDOR\n"
 		      "Usage: ccc getvendor <device> <target> <id> [<defining byte>]",
