@@ -593,8 +593,12 @@ endfunction()
 # ALLOW_EMPTY <TRUE:FALSE>: Allow a Zephyr library to be empty.
 #                           An empty Zephyr library will generate a CMake
 #                           configure time warning unless `ALLOW_EMPTY` is TRUE.
+# LATE_LINK <TRUE:FALSE>: Link the library "late" in the library group. When
+#                         set to TRUE, the library will be linked after all
+#                         other libraries that are _not_ marked "late". Ordering
+#                         between late libs is not guaranteed.
 function(zephyr_library_property)
-  set(single_args "ALLOW_EMPTY")
+  set(single_args "ALLOW_EMPTY" "LATE_LINK")
   cmake_parse_arguments(LIB_PROP "" "${single_args}" "" ${ARGN})
 
   if(LIB_PROP_UNPARSED_ARGUMENTS)

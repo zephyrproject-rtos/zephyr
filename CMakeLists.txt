@@ -961,6 +961,12 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
     endif()
   endif()
 
+  # Add the library to the late list
+  get_property(late_link TARGET ${zephyr_lib} PROPERTY LATE_LINK)
+  if("${late_link}")
+    list(APPEND ZEPHYR_LATE_LIBS_PROPERTY ${zephyr_lib})
+  endif()
+
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
@@ -971,6 +977,18 @@ else()
   set(WHOLE_ARCHIVE_LIBS ${ZEPHYR_LIBS_PROPERTY})
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
+
+# Move the libraries that are supposed to be linked late in the link
+# process to the end of their respective list.
+foreach(zephyr_lib ${ZEPHYR_LATE_LIBS_PROPERTY})
+  if("${zephyr_lib}" IN_LIST WHOLE_ARCHIVE_LIBS)
+    list(REMOVE_ITEM WHOLE_ARCHIVE_LIBS ${zephyr_lib})
+    list(APPEND WHOLE_ARCHIVE_LIBS ${zephyr_lib})
+  elseif("${zephyr_lib}" IN_LIST NO_WHOLE_ARCHIVE_LIBS)
+    list(REMOVE_ITEM NO_WHOLE_ARCHIVE_LIBS ${zephyr_lib})
+    list(APPEND NO_WHOLE_ARCHIVE_LIBS ${zephyr_lib})
+  endif()
+endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
