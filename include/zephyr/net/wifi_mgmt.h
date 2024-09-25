@@ -288,6 +288,8 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_AP_STA_CONNECTED,
 	/** STA disconnected from AP */
 	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED,
+	/** Supplicant specific event */
+	NET_EVENT_WIFI_CMD_SUPPLICANT,
 };
 
 /** Event emitted for Wi-Fi scan result */
