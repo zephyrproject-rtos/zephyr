@@ -9,10 +9,7 @@ config LV_COLOR_16_SWAP
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
-	default 65535 if WIFI && BT
-	default 51200 if WIFI
-	default 40960 if BT
-	default 4096
+	default 8192
 
 endif # BOARD_M5STACK_ATOMS3_ESP32S3_PROCPU
 
