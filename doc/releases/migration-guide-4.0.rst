@@ -18,6 +18,12 @@ the :ref:`release notes<zephyr_4.0>`.
 Build System
 ************
 
+* Removed the ``CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS`` Kconfig option as ``west sign`` is no
+  longer called by the build system when signing images for MCUboot.
+
+* The imgtool part of ``west sign`` has been deprecated, options to be supplied to imgtool when
+  signing should be set in :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS` instead.
+
 Kernel
 ******
 
