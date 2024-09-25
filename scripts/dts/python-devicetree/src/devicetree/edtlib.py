@@ -642,6 +642,8 @@ class Property:
         - For 'type: int/array/string/string-array', 'val' is what you'd expect
           (a Python integer or string, or a list of them)
 
+        - For 'type: uint8-array', 'val' is a bytes object
+
         - For 'type: phandle' and 'type: path', 'val' is the pointed-to Node
           instance
 
