@@ -1781,8 +1781,7 @@ static struct offloaded_if_api api_funcs = {
 	.iface_api.init = offload_iface_init,
 };
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, NULL,
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, wncm14a2a_init, NULL,
 				  &ictx, &wncm14a2a_cfg,
-				  CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY,
 				  &api_funcs,
 				  MDM_MAX_DATA_LENGTH);

@@ -1073,9 +1073,8 @@ static const struct ieee802154_radio_api cc2520_radio_api = {
 DEVICE_INSTANCE_FROM_DT_INST(0, cc2520_init, NULL, &cc2520_context_data, NULL,
 		      POST_KERNEL, &cc2520_radio_api);
 #else
-NET_DEVICE_DT_INST_DEFINE(0, cc2520_init, NULL, &cc2520_context_data,
-			  &cc2520_config, CONFIG_IEEE802154_CC2520_INIT_PRIO,
-			  &cc2520_radio_api, IEEE802154_L2,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0, cc2520_init, NULL, &cc2520_context_data,
+			  &cc2520_config, &cc2520_radio_api, IEEE802154_L2,
 			  NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
 #endif
 

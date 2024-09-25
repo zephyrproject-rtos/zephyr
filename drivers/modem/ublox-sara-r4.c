@@ -2238,8 +2238,7 @@ error:
 	return ret;
 }
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, modem_init, NULL,
 				  &mdata, NULL,
-				  CONFIG_MODEM_UBLOX_SARA_R4_INIT_PRIORITY,
 				  &api_funcs,
 				  MDM_MAX_DATA_LENGTH);

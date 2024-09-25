@@ -1578,8 +1578,7 @@ static struct offloaded_if_api nsos_iface_offload_api = {
 	.enable = nsos_iface_enable,
 };
 
-NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
-			nsos_socket_offload_init,
+NET_DEVICE_OFFLOAD_INSTANCE(nsos_socket, nsos_socket_offload_init,
 			NULL,
 			NULL, NULL,
-			0, &nsos_iface_offload_api, NET_ETH_MTU);
+			&nsos_iface_offload_api, NET_ETH_MTU);

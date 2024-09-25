@@ -1538,9 +1538,9 @@ static int esp_init(const struct device *dev);
  * for the struct net_if that the macro declares to be visible inside the
  * function. An `extern` declaration does not work as the struct is static.
  */
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, esp_init, NULL,
+NET_DEVICE_OFFLOAD_INSTANCE_FROM_DT_INST(0, esp_init, NULL,
 				  &esp_driver_data, &esp_driver_config,
-				  CONFIG_WIFI_INIT_PRIORITY, &esp_api,
+				  &esp_api,
 				  ESP_MTU);
 
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));

@@ -1182,9 +1182,8 @@ static int winc1500_init(const struct device *dev)
 	return 0;
 }
 
-NET_DEVICE_OFFLOAD_INIT(winc1500, CONFIG_WIFI_WINC1500_NAME,
-			winc1500_init, NULL, &w1500_data, NULL,
-			CONFIG_WIFI_INIT_PRIORITY, &winc1500_api,
+NET_DEVICE_OFFLOAD_INSTANCE(winc1500, winc1500_init, NULL, &w1500_data, NULL,
+			&winc1500_api,
 			CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE);
 
 CONNECTIVITY_WIFI_MGMT_BIND(winc1500);

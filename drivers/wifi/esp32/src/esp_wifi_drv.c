@@ -908,17 +908,15 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
+		&esp32_data, NULL, &esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-NET_DEVICE_DT_INST_DEFINE(1,
+NET_DEVICE_INSTANCE_FROM_DT_INST(1,
 		NULL, NULL,
-		&esp32_ap_sta_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
+		&esp32_ap_sta_data, NULL, &esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
