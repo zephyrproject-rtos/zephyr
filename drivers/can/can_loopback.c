@@ -455,10 +455,9 @@ static int can_loopback_init(const struct device *dev)
 												\
 	static struct can_loopback_data can_loopback_data_##inst;				\
 												\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_loopback_init, NULL,				\
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, can_loopback_init, NULL,				\
 				  &can_loopback_data_##inst,					\
 				  &can_loopback_config_##inst,					\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,			\
-				  &can_loopback_driver_api);
+				  POST_KERNEL, &can_loopback_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_LOOPBACK_INIT)
