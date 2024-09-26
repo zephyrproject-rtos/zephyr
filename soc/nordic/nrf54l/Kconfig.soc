@@ -93,6 +93,12 @@ config SOC_NRF54L20_ENGA_CPUAPP
 	help
 	  NRF54L20 ENGA CPUAPP
 
+config SOC_NRF54L20_ENGA_CPUFLPR
+	bool
+	select SOC_NRF54L20_ENGA
+	help
+	  NRF54L20 ENGA CPUFLPR
+
 config SOC
 	default "nrf54l05" if SOC_NRF54L05
 	default "nrf54l09" if SOC_NRF54L09
