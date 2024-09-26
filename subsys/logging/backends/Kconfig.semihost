@@ -1,0 +1,30 @@
+# Copyright (c) 2024 Contributors to the logging subsystem.
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_SEMIHOST
+	bool "Semihost as backend"
+	depends on SEMIHOST
+	select LOG_OUTPUT
+	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
+	help
+	  Enable backend in semihost (using host stdout)
+
+if LOG_BACKEND_SEMIHOST
+
+config LOG_BACKEND_SEMIHOST_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 256
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+config LOG_BACKEND_SEMIHOST_AUTOSTART
+	bool "Autostart semihost backend"
+	default y
+	help
+	  Enable semihost backend to start automatically.
+
+backend = SEMIHOST
+backend-str = semihost
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_SEMIHOST
