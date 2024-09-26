@@ -1750,12 +1750,15 @@ ZTEST(coap, test_transmission_parameters)
 
 	params = coap_get_transmission_parameters();
 	zassert_equal(params.ack_timeout, CONFIG_COAP_INIT_ACK_TIMEOUT_MS, "Wrong ACK timeout");
+	zassert_equal(params.ack_random_percent, CONFIG_COAP_ACK_RANDOM_PERCENT,
+		      "Wrong ACK random percent");
 	zassert_equal(params.coap_backoff_percent, CONFIG_COAP_BACKOFF_PERCENT,
 		      "Wrong backoff percent");
 	zassert_equal(params.max_retransmission, CONFIG_COAP_MAX_RETRANSMIT,
 		      "Wrong max retransmission value");
 
 	params.ack_timeout = 1000;
+	params.ack_random_percent = 110;
 	params.coap_backoff_percent = 150;
 	params.max_retransmission = 2;
 
@@ -1772,6 +1775,7 @@ ZTEST(coap, test_transmission_parameters)
 	zassert_not_null(pending, "No free pending");
 
 	params.ack_timeout = 3000;
+	params.ack_random_percent = 130;
 	params.coap_backoff_percent = 250;
 	params.max_retransmission = 3;
 
@@ -1780,6 +1784,7 @@ ZTEST(coap, test_transmission_parameters)
 	zassert_equal(r, 0, "Could not initialize packet");
 
 	zassert_equal(pending->params.ack_timeout, 3000, "Wrong ACK timeout");
+	zassert_equal(pending->params.ack_random_percent, 130, "Wrong ACK random percent");
 	zassert_equal(pending->params.coap_backoff_percent, 250, "Wrong backoff percent");
 	zassert_equal(pending->params.max_retransmission, 3, "Wrong max retransmission value");
 
@@ -1788,6 +1793,7 @@ ZTEST(coap, test_transmission_parameters)
 	zassert_equal(r, 0, "Could not initialize packet");
 
 	zassert_equal(pending->params.ack_timeout, 1000, "Wrong ACK timeout");
+	zassert_equal(pending->params.ack_random_percent, 110, "Wrong ACK random percent");
 	zassert_equal(pending->params.coap_backoff_percent, 150, "Wrong backoff percent");
 	zassert_equal(pending->params.max_retransmission, 2, "Wrong max retransmission value");
 }
