@@ -1,0 +1,133 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ramp Generator Motion Control Register-Set for Trinamic stepper controller.
+
+properties:
+  vstart:
+    type: int
+    default: 1
+    description: |
+      Motor start velocity in [µsteps/t](unsigned)
+
+      Normally, set VSTOP ≥ VSTART! VSTART may be
+      set to a higher value, when motion distance is
+      sufficient to allow deceleration to VSTOP.
+
+  a1:
+    type: int
+    default: 0
+    description: |
+      First acceleration between VSTART and V1 in [µsteps/ta²](unsigned)
+
+  v1:
+    type: int
+    default: 0
+    description: |
+      First acceleration / deceleration phase threshold velocity in [µsteps/t] (unsigned)
+
+      0: Disables A1 and D1 phase, use AMAX, DMAX only
+
+  amax:
+    type: int
+    default: 0
+    description: |
+      Second acceleration between V1 and VMAX in [µsteps/ta²](unsigned)
+      This is the acceleration and deceleration value
+      for velocity mode.
+
+  vmax:
+    type: int
+    default: 0
+    description: |
+      Motion ramp target velocity in [µsteps/t] (for positioning ensure VMAX ≥ VSTART) (unsigned)
+      This is the target velocity in velocity mode. It can be changed any time during a motion.
+
+  dmax:
+    type: int
+    default: 0
+    description: |
+      Deceleration between VMAX and V1 in [µsteps/ta²](unsigned)
+
+  d1:
+    type: int
+    default: 1
+    description: |
+      Deceleration between V1 and VSTOP in [µsteps/ta²](unsigned)
+
+      Attention: Do not set 0 in positioning mode,
+      even if V1=0!
+
+  vstop:
+    type: int
+    default: 10
+    description: |
+      Motor stop velocity in [µsteps/t] (unsigned)
+
+      Attention: Set VSTOP ≥ VSTART!
+
+      Attention: Do not set 0 in positioning mode,
+      minimum 10 recommended!
+
+  tzerowait:
+    type: int
+    default: 0
+    description: |
+      Waiting time after ramping down to zero velocity before next movement or direction
+      inversion can start and before motor power down starts. Time range is about 0 to 2
+      seconds. This setting avoids excess acceleration e.g. from VSTOP to -VSTART.
+
+  ihold:
+    type: int
+    default: 0
+    description: |
+      Hold current in % of run current (0-100)
+      Standstill current (0=1/32…31=32/32)
+      In combination with StealthChop mode, setting IHOLD=0 allows to choose freewheeling or coil
+      short circuit for motor stand still
+
+  irun:
+    type: int
+    default: 0
+    description: |
+      Motor run current (0=1/32…31=32/32)
+      Hint: Choose sense resistors in a way, that normal
+      IRUN is 16 to 31 for best microstep performance.
+
+  iholddelay:
+    type: int
+    default: 0
+    description: |
+      Controls the number of clock cycles for motor power down after a motion as soon as TZEROWAIT
+      has expired. The smooth transition avoids a motor jerk upon power down.
+      0: instant power down
+      1..15: Delay per current reduction step in multiple of 2^18 clocks
+
+  vcoolthrs:
+    type: int
+    default: 0
+    description: |
+      This is the lower threshold velocity for switching on smart energy CoolStep and StallGuard
+      feature. Further it is the upper operation velocity for StealthChop. (unsigned)
+
+      Set this parameter to disable CoolStep at low speeds, where it cannot work reliably.
+      The stop on stall function (enable with sg_stop when using internal motion controller)
+      becomes enabled when exceeding this velocity. It becomes disabled again once the velocity
+      falls below this threshold. This allows for homing procedures with StallGuard by blanking out
+      the StallGuard signal at low velocities (will not work in combination with StealthChop).
+      VHIGH ≥ |VACT| ≥ VCOOLTHRS:
+        - CoolStep and stop on stall are enabled, if configured
+        - Voltage PWM mode StealthChop is switched off, if configured
+
+  vhigh:
+    type: int
+    default: 0
+    description: |
+      This velocity setting allows velocity dependent switching into a different chopper mode and
+      fullstepping to maximize torque.(unsigned)
+      |VACT| ≥ VHIGH:
+        - CoolStep is disabled (motor runs with normal current scale)
+        - If vhighchm is set, the chopper switches to chm=1 with TFD=0
+          (constant off time with slow decay, only).
+        - If vhighfs is set, the motor operates in fullstep mode.
+        - Voltage PWM mode StealthChop is switched off, if configured
