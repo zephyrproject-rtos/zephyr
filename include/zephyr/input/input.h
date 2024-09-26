@@ -137,7 +137,8 @@ struct input_callback {
  * same callback function.
  */
 #define INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, name)         \
-	static const STRUCT_SECTION_ITERABLE(input_callback, name) = {         \
+	static const STRUCT_SECTION_ITERABLE(input_callback,                   \
+					     _input_callback__##name) = {      \
 		.dev = _dev,                                                   \
 		.callback = _callback,                                         \
 		.user_data = _user_data,                                       \
@@ -155,8 +156,7 @@ struct input_callback {
  * @param _user_data Pointer to user specified data.
  */
 #define INPUT_CALLBACK_DEFINE(_dev, _callback, _user_data)                     \
-	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data,               \
-				    _input_callback__##_callback)
+	INPUT_CALLBACK_DEFINE_NAMED(_dev, _callback, _user_data, _callback)
 
 #ifdef __cplusplus
 }
