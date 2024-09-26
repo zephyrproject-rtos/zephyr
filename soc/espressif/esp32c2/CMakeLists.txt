@@ -10,6 +10,8 @@ zephyr_sources(
 
 zephyr_include_directories(.)
 
+zephyr_sources_ifndef(CONFIG_BOOTLOADER_MCUBOOT hw_init.c)
+
 # get flash size to use in esptool as string
 math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
 
