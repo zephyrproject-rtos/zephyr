@@ -585,6 +585,33 @@ struct spi_device_state {
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
 
+/**
+ * @brief Like DEVICE_INSTANCE() with SPI specifics.
+ *
+ * @details Defines a device which implements the SPI API. May
+ * generate a custom device_state container struct and init_fn
+ * wrapper when needed depending on SPI @kconfig{CONFIG_SPI_STATS}.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm_device PM device resources reference (NULL if device does not use PM).
+ * @param data_ptr Pointer to the device's private data.
+ * @param cfg_ptr The address to the structure containing the configuration
+ *                information for this instance of the driver.
+ * @param level The initialization level. See SYS_INIT() for details.
+ * @param api_ptr Provides an initial pointer to the API function struct used by
+ *                the driver. Can be NULL.
+ */
+#define SPI_DEVICE_INSTANCE(node_id, init_fn, pm_device,		\
+			    data_ptr, cfg_ptr, level, api_ptr)		\
+	Z_SPI_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));		\
+	Z_SPI_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)		\
+	DEVICE_INSTANCE_EXTERNAL_STATE(node_id, init_fn, pm_device,	\
+				       data_ptr, cfg_ptr, level,	\
+				       api_ptr,				\
+				       &(Z_DEVICE_STATE_NAME(		\
+						 Z_DEVICE_DT_DEV_ID(node_id)).devstate))
+
 static inline void spi_transceive_stats(const struct device *dev, int error,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs)
@@ -618,6 +645,11 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 			level, prio, api,					\
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),	\
 			__VA_ARGS__)
+
+#define SPI_DEVICE_INSTANCE(node_id, init_fn, pm_device,		\
+			    data_ptr, cfg_ptr, level, api_ptr)		\
+	DEVICE_INSTANCE(node_id, init_fn, pm_device, data_ptr, cfg_ptr, \
+			level, api_ptr)
 
 #define SPI_STATS_RX_BYTES_INC(dev_)
 #define SPI_STATS_TX_BYTES_INC(dev_)
