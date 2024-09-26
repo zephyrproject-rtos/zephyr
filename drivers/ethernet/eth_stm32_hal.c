@@ -205,8 +205,7 @@ static inline uint16_t allocate_tx_buffer(void)
 }
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 static ETH_TxPacketConfig tx_config;
 #endif
 
@@ -222,7 +221,7 @@ static HAL_StatusTypeDef read_eth_phy_register(ETH_HandleTypeDef *heth,
 #else
 	ARG_UNUSED(PHYAddr);
 	return HAL_ETH_ReadPHYRegister(heth, PHYReg, RegVal);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 }
 
 static inline void setup_mac_filter(ETH_HandleTypeDef *heth)
@@ -334,16 +333,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	ctx.first_tx_buffer_index = allocate_tx_buffer();
 	buf_header = &dma_tx_buffer_header[ctx.first_tx_buffer_index];
-#else /* CONFIG_ETH_STM32_HAL_API_V2 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	uint32_t cur_tx_desc_idx;
-
-	cur_tx_desc_idx = heth->TxDescList.CurTxDesc;
-	dma_tx_desc = (ETH_DMADescTypeDef *)heth->TxDescList.TxDesc[cur_tx_desc_idx];
 #else
 	dma_tx_desc = heth->TxDesc;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
-
 	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
 		k_yield();
 	}
@@ -356,8 +347,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		/* Enable transmit timestamp */
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 		HAL_ETH_PTP_InsertTxTimestamp(heth);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-		dma_tx_desc->DESC2 |= ETH_DMATXNDESCRF_TTSE;
 #else
 		dma_tx_desc->Status |= ETH_DMATXDESC_TTSE;
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
@@ -388,37 +377,19 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	buf_header->tx_buff.len = remaining_read;
 	buf_header->tx_buff.next = NULL;
 
-#else /* CONFIG_ETH_STM32_HAL_API_V2 */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	dma_buffer = dma_tx_buffer[cur_tx_desc_idx];
 #else
 	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
 		res = -ENOBUFS;
 		goto error;
 	}
-
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	ETH_BufferTypeDef tx_buffer_def;
-
-	tx_buffer_def.buffer = dma_buffer;
-	tx_buffer_def.len = total_len;
-	tx_buffer_def.next = NULL;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
-
-	tx_config.Length = total_len;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
+	tx_config.Length = total_len;
 	tx_config.pData = &ctx;
 	tx_config.TxBuffer = &dma_tx_buffer_header[ctx.first_tx_buffer_index].tx_buff;
-#else
-	tx_config.TxBuffer = &tx_buffer_def;
-#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	/* Reset TX complete interrupt semaphore before TX request*/
 	k_sem_reset(&dev_data->tx_int_sem);
@@ -442,11 +413,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 		LOG_ERR("HAL_ETH_TransmitIT tx_int_sem take timeout");
 		res = -EIO;
-
-#ifndef CONFIG_ETH_STM32_HAL_API_V2
-		/* Content of the packet could be the reason for timeout */
-		LOG_HEXDUMP_ERR(dma_buffer, total_len, "eth packet timeout");
-#endif
 
 		/* Check for errors */
 		/* Ethernet device was put in error state */
@@ -499,42 +465,11 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		res = -EIO;
 		goto error;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL) && !defined(CONFIG_ETH_STM32_HAL_API_V2)
 	if (timestamped_frame) {
 		/* Retrieve transmission timestamp from last DMA TX descriptor */
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-		ETH_TxDescListTypeDef * dma_tx_desc_list;
-
-		__IO ETH_DMADescTypeDef *last_dma_tx_desc;
-
-		dma_tx_desc_list = &heth->TxDescList;
-		for (uint32_t i = 0; i < ETH_TX_DESC_CNT; i++) {
-			const uint32_t last_desc_idx = (cur_tx_desc_idx + i) % ETH_TX_DESC_CNT;
-
-			last_dma_tx_desc =
-				(ETH_DMADescTypeDef *)dma_tx_desc_list->TxDesc[last_desc_idx];
-			if (last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_LD) {
-				break;
-			}
-		}
-
-		while (IS_ETH_DMATXDESC_OWN(last_dma_tx_desc) != (uint32_t)RESET) {
-			/* Wait for transmission */
-			k_yield();
-		}
-
-		if ((last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_LD) &&
-				(last_dma_tx_desc->DESC3 & ETH_DMATXNDESCWBF_TTSS)) {
-			pkt->timestamp.second = last_dma_tx_desc->DESC1;
-			pkt->timestamp.nanosecond = last_dma_tx_desc->DESC0;
-		} else {
-			/* Invalid value */
-			pkt->timestamp.second = UINT64_MAX;
-			pkt->timestamp.nanosecond = UINT32_MAX;
-		}
-#else
 		__IO ETH_DMADescTypeDef *last_dma_tx_desc = dma_tx_desc;
 
 		while (!(last_dma_tx_desc->Status & ETH_DMATXDESC_LS) &&
@@ -557,8 +492,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			pkt->timestamp.second = UINT64_MAX;
 			pkt->timestamp.nanosecond = UINT32_MAX;
 		}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
-
 		net_if_add_tx_timestamp(pkt);
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL && !CONFIG_ETH_STM32_HAL_API_V2 */
@@ -596,9 +529,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	void *appbuf = NULL;
 	struct eth_stm32_rx_buffer_header *rx_header;
 #else
-#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32H5X)
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
-#endif /* !CONFIG_SOC_SERIES_STM32H7X */
 	uint8_t *dma_buffer;
 	HAL_StatusTypeDef hal_ret = HAL_OK;
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
@@ -631,31 +562,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			rx_header; rx_header = rx_header->next) {
 		total_len += rx_header->size;
 	}
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	if (HAL_ETH_IsRxDataAvailable(heth) != true) {
-		/* no frame available */
-		return NULL;
-	}
-
-	ETH_BufferTypeDef rx_buffer_def;
-	uint32_t frame_length = 0;
-
-	hal_ret = HAL_ETH_GetRxDataBuffer(heth, &rx_buffer_def);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetRxDataBuffer: failed with state: %d",
-			hal_ret);
-		return NULL;
-	}
-
-	hal_ret = HAL_ETH_GetRxDataLength(heth, &frame_length);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetRxDataLength: failed with state: %d",
-			hal_ret);
-		return NULL;
-	}
-
-	total_len = frame_length;
-	dma_buffer = rx_buffer_def.buffer;
 #else
 	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
 	if (hal_ret != HAL_OK) {
@@ -665,7 +571,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
@@ -673,37 +579,6 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
 		timestamp.second = ts_registers.TimeStampHigh;
 		timestamp.nanosecond = ts_registers.TimeStampLow;
-	}
-
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	ETH_RxDescListTypeDef * dma_rx_desc_list;
-
-	dma_rx_desc_list = &heth->RxDescList;
-	if (dma_rx_desc_list->AppDescNbr) {
-		__IO ETH_DMADescTypeDef *last_dma_rx_desc;
-
-		const uint32_t last_desc_idx =
-			(dma_rx_desc_list->FirstAppDesc + dma_rx_desc_list->AppDescNbr - 1U)
-				% ETH_RX_DESC_CNT;
-
-		last_dma_rx_desc =
-			(ETH_DMADescTypeDef *)dma_rx_desc_list->RxDesc[last_desc_idx];
-
-		if (dma_rx_desc_list->AppContextDesc &&
-				last_dma_rx_desc->DESC1 & ETH_DMARXNDESCWBF_TSA) {
-			/* Retrieve timestamp from context DMA descriptor */
-			__IO ETH_DMADescTypeDef *context_dma_rx_desc;
-
-			const uint32_t context_desc_idx = (last_desc_idx + 1U) % ETH_RX_DESC_CNT;
-
-			context_dma_rx_desc =
-				(ETH_DMADescTypeDef *)dma_rx_desc_list->RxDesc[context_desc_idx];
-			if (context_dma_rx_desc->DESC1 != UINT32_MAX ||
-					context_dma_rx_desc->DESC0 != UINT32_MAX) {
-				timestamp.second = context_dma_rx_desc->DESC1;
-				timestamp.nanosecond = context_dma_rx_desc->DESC0;
-			}
-		}
 	}
 #else
 	__IO ETH_DMADescTypeDef *last_dma_rx_desc;
@@ -714,7 +589,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 		timestamp.second = last_dma_rx_desc->TimeStampHigh;
 		timestamp.nanosecond = last_dma_rx_desc->TimeStampLow;
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	pkt = net_pkt_rx_alloc_with_buffer(get_iface(dev_data),
@@ -751,12 +626,6 @@ release_desc:
 	for (rx_header = (struct eth_stm32_rx_buffer_header *)appbuf;
 			rx_header; rx_header = rx_header->next) {
 		rx_header->used = false;
-	}
-
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	hal_ret = HAL_ETH_BuildRxDescriptors(heth);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_BuildRxDescriptors: failed: %d", hal_ret);
 	}
 #else
 	/* Release descriptors to DMA */
@@ -885,8 +754,7 @@ static void eth_isr(const struct device *dev)
 
 	HAL_ETH_IRQHandler(heth);
 }
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
 	__ASSERT_NO_MSG(heth_handle != NULL);
@@ -899,7 +767,7 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 	k_sem_give(&dev_data->tx_int_sem);
 
 }
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
@@ -976,53 +844,6 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
-}
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-/* DMA and MAC errors callback only appear in H7 series */
-void HAL_ETH_DMAErrorCallback(ETH_HandleTypeDef *heth_handle)
-{
-	__ASSERT_NO_MSG(heth_handle != NULL);
-
-	LOG_ERR("%s errorcode:%x dmaerror:%x",
-		__func__,
-		HAL_ETH_GetError(heth_handle),
-		HAL_ETH_GetDMAError(heth_handle));
-
-	/* State of eth handle is ERROR in case of unrecoverable error */
-	/* unrecoverable (ETH_DMACSR_FBE | ETH_DMACSR_TPS | ETH_DMACSR_RPS) */
-	if (HAL_ETH_GetState(heth_handle) == HAL_ETH_STATE_ERROR) {
-		LOG_ERR("%s ethernet in error state", __func__);
-		/* TODO restart the ETH peripheral to recover */
-		return;
-	}
-
-	/* Recoverable errors don't put ETH in error state */
-	/* ETH_DMACSR_CDE | ETH_DMACSR_ETI | ETH_DMACSR_RWT */
-	/* | ETH_DMACSR_RBU | ETH_DMACSR_AIS) */
-
-	/* TODO Check if we were TX transmitting and the unlock semaphore */
-	/* To return the error as soon as possible else we'll just wait */
-	/* for the timeout */
-
-
-}
-void HAL_ETH_MACErrorCallback(ETH_HandleTypeDef *heth_handle)
-{
-	__ASSERT_NO_MSG(heth_handle != NULL);
-
-	/* MAC errors dumping */
-	LOG_ERR("%s errorcode:%x macerror:%x",
-		__func__,
-		HAL_ETH_GetError(heth_handle),
-		HAL_ETH_GetMACError(heth_handle));
-
-	/* State of eth handle is ERROR in case of unrecoverable error */
-	if (HAL_ETH_GetState(heth_handle) == HAL_ETH_STATE_ERROR) {
-		LOG_ERR("%s ethernet in error state", __func__);
-		/* TODO restart or reconfig ETH peripheral to recover */
-
-		return;
-	}
 }
 #endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
@@ -1117,12 +938,11 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	heth->Init.TxDesc = dma_tx_desc_tab;
 	heth->Init.RxDesc = dma_rx_desc_tab;
 	heth->Init.RxBuffLen = ETH_MAX_PACKET_SIZE;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	hal_ret = HAL_ETH_Init(heth);
 	if (hal_ret == HAL_TIMEOUT) {
@@ -1146,8 +966,7 @@ static int eth_initialize(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X */
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Tx config init: */
 	memset(&tx_config, 0, sizeof(ETH_TxPacketConfig));
 	tx_config.Attributes = ETH_TX_PACKETS_FEATURES_CSUM |
@@ -1155,20 +974,18 @@ static int eth_initialize(const struct device *dev)
 	tx_config.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
 			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE;
 	tx_config.CRCPadCtrl = ETH_CRC_PAD_INSERT;
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 	dev_data->link_up = false;
 
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	k_sem_init(&dev_data->tx_int_sem, 0, K_SEM_MAX_LIMIT);
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X) || \
-	defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	/* Adjust MDC clock range depending on HCLK frequency: */
 	HAL_ETH_SetMDIOClockRange(heth);
 
@@ -1185,25 +1002,13 @@ static int eth_initialize(const struct device *dev)
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_SetMACConfig: failed: %d", hal_ret);
 	}
-#endif /* CONFIG_SOC_SERIES_STM32H7X || CONFIG_SOC_SERIES_STM32H5X || CONFIG_ETH_STM32_HAL_API_V2 */
+#endif /* CONFIG_ETH_STM32_HAL_API_V2 */
 
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 
 	/* prepare tx buffer header */
 	for (uint16_t i = 0; i < ETH_TX_DESC_CNT; ++i) {
 		dma_tx_buffer_header[i].tx_buff.buffer = dma_tx_buffer[i];
-	}
-
-	hal_ret = HAL_ETH_Start_IT(heth);
-#elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
-	for (uint32_t i = 0; i < ETH_RX_DESC_CNT; i++) {
-		hal_ret = HAL_ETH_DescAssignMemory(heth, i, dma_rx_buffer[i],
-						   NULL);
-		if (hal_ret != HAL_OK) {
-			LOG_ERR("HAL_ETH_DescAssignMemory: failed: %d, i: %d",
-				hal_ret, i);
-			return -EINVAL;
-		}
 	}
 
 	hal_ret = HAL_ETH_Start_IT(heth);
@@ -1482,8 +1287,7 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
 		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
-#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32H5X) && \
-	!defined(CONFIG_ETH_STM32_HAL_API_V2)
+#if !defined(CONFIG_ETH_STM32_HAL_API_V2)
 #if defined(CONFIG_ETH_STM32_AUTO_NEGOTIATION_ENABLE)
 			.AutoNegotiation = ETH_AUTONEGOTIATION_ENABLE,
 #else
