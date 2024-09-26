@@ -8,3 +8,4 @@ config SOC_SERIES_NPCM4
 	select CPU_CORTEX_M_HAS_DWT
 	select CORTEX_M_SYSTICK
 	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL
