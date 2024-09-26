@@ -270,8 +270,8 @@ static int eth_init(const struct device *dev)
  * is quite unlikely that this would be done in real life but for testing
  * purposes create it here.
  */
-NET_DEVICE_INIT(eth_test, "eth_test", eth_init, NULL,
-		&eth_context, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+NET_DEVICE_INSTANCE(eth_test, eth_init, NULL,
+		&eth_context, NULL, &api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2),
 		NET_ETH_MTU);
 
