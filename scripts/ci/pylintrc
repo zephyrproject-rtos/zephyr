@@ -65,7 +65,6 @@ enable=
     empty-docstring,
     unneeded-not,
     singleton-comparison,
-    misplaced-comparison-constant,
     unidiomatic-typecheck,
     consider-using-enumerate,
     consider-iterating-dictionary,
@@ -171,7 +170,6 @@ enable=
     use-symbolic-message-instead,
     literal-comparison,
     comparison-with-itself,
-    no-self-use,
     no-classmethod-decorator,
     no-staticmethod-decorator,
     cyclic-import,
@@ -196,7 +194,6 @@ enable=
     unnecessary-pass,
     unnecessary-lambda,
     duplicate-key,
-    assign-to-new-keyword,
     useless-else-on-loop,
     confusing-with-statement,
     using-constant-test,
@@ -209,7 +206,6 @@ enable=
     useless-super-delegation,
     unnecessary-semicolon,
     bad-indentation,
-    mixed-indentation,
     deprecated-module,
     reimported,
     import-self,
@@ -243,17 +239,13 @@ enable=
     bad-thread-instantiation,
     shallow-copy-environ,
     invalid-envvar-default,
-    deprecated-string-function,
-    deprecated-str-translate-call,
-    deprecated-itertools-function,
-    deprecated-types-field,
     # Custom Zephyr check scripts
     zephyr-arg-parse,
 
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=10
+min-similarity-lines=20
 
 # Ignore comments when computing similarities.
 ignore-comments=yes
