@@ -6,7 +6,7 @@
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_sim/posix timer driver"
 	default y
-	depends on BOARD_NATIVE_POSIX
+	depends on BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
