@@ -23,7 +23,7 @@ typedef union {
 double sqrt(double square)
 {
 	int i;
-	int64_t	exponent;
+	int64_t exponent;
 	int64double_t root;
 	int64double_t last;
 	int64double_t p_square;
@@ -40,13 +40,13 @@ double sqrt(double square)
 	 * we can do this by dividing the exponent part of the float by 2
 	 * this assumes IEEE-754 format doubles
 	 */
-	exponent = ((p_square.i & EXP_MASK64)>>52)-1023;
-	if (exponent == 0x7FF-1023) {
+	exponent = ((p_square.i & EXP_MASK64) >> 52) - 1023;
+	if (exponent == 0x7FF - 1023) {
 		/* the number is a NAN or inf, return NaN or inf */
 		return square + square;
 	}
 	exponent /= 2;
-	root.i = (p_square.i & ~EXP_MASK64) | (exponent+1023)<<52;
+	root.i = (p_square.i & ~EXP_MASK64) | (exponent + 1023) << 52;
 
 	for (i = 0; i < MAX_D_ITTERATIONS; i++) {
 		last = root;

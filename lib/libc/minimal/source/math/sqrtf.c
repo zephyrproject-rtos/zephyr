@@ -16,8 +16,8 @@
 #define EXP_MASK32	GENMASK(30, 23)
 
 typedef union {
-  float f;
-  int32_t i;
+	float f;
+	int32_t i;
 } intfloat_t;
 
 float sqrtf(float square)
@@ -40,13 +40,13 @@ float sqrtf(float square)
 	 * we can do this by dividing the exponent part of the float by 2
 	 * this assumes IEEE-754 format doubles
 	 */
-	exponent = ((p_square.i & EXP_MASK32)>>23)-127;
-	if (exponent == 0xFF-127) {
+	exponent = ((p_square.i & EXP_MASK32) >> 23) - 127;
+	if (exponent == 0xFF - 127) {
 		/* the number is a NAN or inf, return NaN or inf */
 		return square + square;
 	}
 	exponent /= 2;
-	root.i = (p_square.i & ~EXP_MASK32) | (exponent+127) << 23;
+	root.i = (p_square.i & ~EXP_MASK32) | (exponent + 127) << 23;
 
 	for (i = 0; i < MAX_F_ITTERATIONS; i++) {
 		last = root;
