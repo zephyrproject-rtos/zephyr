@@ -517,6 +517,36 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 					      (node_id)).devstate),	\
 			__VA_ARGS__)
 
+/**
+ * @brief Like DEVICE_INSTANCE() with SMBus specifics.
+ *
+ * @details Defines a device which implements the SMBus API. May
+ * generate a custom device_state container struct and init_fn
+ * wrapper when needed depending on SMBus @kconfig{CONFIG_SMBUS_STATS}.
+ *
+ * @param node_id The devicetree node identifier.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm_device PM device resources reference
+ * (NULL if device does not use PM).
+ * @param data_ptr Pointer to the device's private data.
+ * @param cfg_ptr The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param level The initialization level. See SYS_INIT() for
+ * details.
+ * @param api_ptr Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ */
+#define SMBUS_DEVICE_INSTANCE(node_id, init_fn, pm_device,		\
+			      data_ptr, cfg_ptr, level, api_ptr)	\
+	Z_SMBUS_DEVICE_STATE_DEFINE(node_id,				\
+				    Z_DEVICE_DT_DEV_NAME(node_id));	\
+	Z_SMBUS_INIT_FN(Z_DEVICE_DT_DEV_NAME(node_id), init_fn)		\
+	DEVICE_INSTANCE_EXTERNAL_STATE(node_id, init_fn, pm_device,	\
+				       data_ptr, cfg_ptr, level, api_ptr,\
+				       &(Z_DEVICE_STATE_NAME(		\
+						 Z_DEVICE_DT_DEV_NAME	\
+						 (node_id)).devstate))
+
 #else /* CONFIG_SMBUS_STATS */
 
 static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
@@ -534,6 +564,11 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 			     data_ptr, cfg_ptr, level, prio,		\
 			     api_ptr, __VA_ARGS__)
 
+#define SMBUS_DEVICE_INSTANCE(node_id, init_fn, pm_device,		\
+			      data_ptr, cfg_ptr, level, api_ptr)	\
+	DEVICE_INSTANCE(node_id, init_fn, pm_device, data_ptr, cfg_ptr,	\
+			level, api_ptr)
+
 #endif /* CONFIG_SMBUS_STATS */
 
 /**
@@ -548,6 +583,16 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 #define SMBUS_DEVICE_DT_INST_DEFINE(inst, ...)		\
 	SMBUS_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
+/**
+ * @brief Like SMBUS_DEVICE_INSTANCE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SMBUS_DEVICE_INSTANCE().
+ * @param ... other parameters as expected by SMBUS_DEVICE_INSTANCE().
+ */
+#define SMBUS_DEVICE_INSTANCE_FROM_DT_INST(inst, ...)		\
+	SMBUS_DEVICE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 /**
  * @brief Configure operation of a SMBus host controller.
  *
