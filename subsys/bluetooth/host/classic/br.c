@@ -343,7 +343,7 @@ static void report_discovery_results(void)
 			continue;
 		}
 
-		priv->resolving = 1U;
+		priv->resolving = true;
 		resolving_names = true;
 	}
 
@@ -516,7 +516,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	}
 
 	priv = &result->_priv;
-	priv->resolving = 0U;
+	priv->resolving = false;
 
 	if (evt->status) {
 		goto check_names;
