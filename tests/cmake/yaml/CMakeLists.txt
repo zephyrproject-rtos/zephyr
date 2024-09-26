@@ -8,7 +8,7 @@ target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
 
 set_property(GLOBAL PROPERTY EXPECTED_ERROR 0)
 
-function(message)
+macro(message)
   if(DEFINED expect_failure)
   if(${ARGV0} STREQUAL FATAL_ERROR)
     if("${ARGV1}" STREQUAL "${expect_failure}")
@@ -23,7 +23,7 @@ function(message)
     endif()
   endif()
   _message(${ARGN})
-endfunction()
+endmacro()
 
 macro(test_assert)
   cmake_parse_arguments(TA_ARG "" "COMMENT" "TEST" ${ARGN})
