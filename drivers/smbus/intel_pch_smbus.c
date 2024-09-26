@@ -1018,10 +1018,9 @@ static void smbus_isr(const struct device *dev)
 		.config_func = pch_config_##n,                                 \
 	};                                                                     \
 	static struct pch_data smbus_##n##_data;                               \
-	SMBUS_DEVICE_DT_INST_DEFINE(n, pch_smbus_init, NULL,                   \
+	SMBUS_DEVICE_INSTANCE_FROM_DT_INST(n, pch_smbus_init, NULL,            \
 				    &smbus_##n##_data, &pch_config_data_##n,   \
-				    POST_KERNEL, CONFIG_SMBUS_INIT_PRIORITY,   \
-				    &funcs);                                   \
+				    POST_KERNEL, &funcs);                      \
 	SMBUS_IRQ_CONFIG(n);
 
 DT_INST_FOREACH_STATUS_OKAY(SMBUS_DEVICE_INIT)
