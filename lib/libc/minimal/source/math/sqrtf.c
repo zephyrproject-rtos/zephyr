@@ -27,6 +27,7 @@ float sqrtf(float square)
 	intfloat_t root;
 	intfloat_t last;
 	intfloat_t p_square;
+
 	p_square.f = square;
 
 	if (square == 0.0f) {
