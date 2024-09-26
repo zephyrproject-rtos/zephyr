@@ -149,13 +149,28 @@ void IRAM_ATTR __esp_platform_start(void)
 	 */
 	esp_config_data_cache_mode();
 
+	/* Apply SoC patches */
+	esp_errata();
+
+	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
+	 * related issues in application. Hence disable that as we are about to start
+	 * Zephyr environment.
+	 */
+	wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+
+	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+	wdt_hal_disable(&rtc_wdt_ctx);
+	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
+	esp_reset_reason_init();
+
+	esp_timer_early_init();
+
 	esp_mspi_pin_init();
 
 	esp_flash_app_init();
 
 	mspi_timing_flash_tuning();
-
-	esp_mmu_map_init();
 
 	esp_mmu_map_init();
 
@@ -184,31 +199,11 @@ void IRAM_ATTR __esp_platform_start(void)
 
 #endif /* CONFIG_ESP_SPIRAM */
 
-	/* Apply SoC patches */
-	esp_errata();
-
-	/* ESP-IDF/MCUboot 2nd stage bootloader enables RTC WDT to check on startup sequence
-	 * related issues in application. Hence disable that as we are about to start
-	 * Zephyr environment.
-	 */
-	wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-
-	wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-	wdt_hal_disable(&rtc_wdt_ctx);
-	wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-
-	esp_reset_reason_init();
-
-	esp_timer_early_init();
-
 #if CONFIG_SOC_ENABLE_APPCPU
 	/* start the ESP32S3 APP CPU */
 	esp_start_appcpu();
 #endif
 
-#if CONFIG_SOC_FLASH_ESP32
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
 #endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
