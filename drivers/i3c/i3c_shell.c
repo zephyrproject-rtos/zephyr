@@ -1072,9 +1072,9 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	action = strtol(argv[5], NULL, 16);
 
 	if (strcmp(argv[4], "get") == 0) {
-		ret = i3c_ccc_do_rstact_fmt3(tdev, action, &data);
+		ret = i3c_ccc_do_rstact_fmt3(desc, action, &data);
 	} else if (strcmp(argv[4], "set") == 0) {
-		ret = i3c_ccc_do_rstact_fmt2(tdev, action);
+		ret = i3c_ccc_do_rstact_fmt2(desc, action);
 	} else {
 		shell_error(sh, "I3C: invalid parameter");
 		return -EINVAL;
@@ -1086,7 +1086,7 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (action >= 0x80) {
-		shell_print("RSTACT Returned Data: 0x%02x", data);
+		shell_print(sh, "RSTACT Returned Data: 0x%02x", data);
 	}
 
 	return ret;
