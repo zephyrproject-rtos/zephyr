@@ -17,6 +17,7 @@
 #include <fsl_clock.h>
 
 extern uint32_t SystemCoreClock;
+extern void init_ecc_ram(void);
 
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -163,4 +164,8 @@ static int nxp_mcxw71_init(void)
 	return 0;
 }
 
+void soc_reset_hook(void)
+{
+	init_ecc_ram();
+}
 SYS_INIT(nxp_mcxw71_init, PRE_KERNEL_1, 0);
