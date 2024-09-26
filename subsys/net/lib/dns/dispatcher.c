@@ -235,6 +235,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		entry->pair = ctx;
 
 		for (int i = 0; i < ctx->fds_len; i++) {
+			CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+				ret = -ERANGE;
+				goto out;
+			}
+
 			if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 				dispatch_table[ctx->fds[i].fd].ctx = ctx;
 			}
@@ -267,6 +272,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	ctx->pair = NULL;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
+		if ((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
 		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 			dispatch_table[ctx->fds[i].fd].ctx = ctx;
 		}
@@ -288,6 +298,8 @@ out:
 
 int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 {
+	int ret = 0;
+
 	k_mutex_lock(&lock, K_FOREVER);
 
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
@@ -298,12 +310,18 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 	ctx->sock = -1;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
+		CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
+			ret = -ERANGE;
+			goto out;
+		}
+
 		dispatch_table[ctx->fds[i].fd].ctx = NULL;
 	}
 
+out:
 	k_mutex_unlock(&lock);
 
-	return 0;
+	return ret;
 }
 
 void dns_dispatcher_init(void)
