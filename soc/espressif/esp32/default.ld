@@ -274,6 +274,12 @@ SECTIONS
     *libzephyr.a:log_output.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *libzephyr.a:loader.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:flash_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:soc_flash_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:console_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:soc_init.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu_util.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
@@ -403,21 +409,14 @@ SECTIONS
   .loader.text :
   {
     . =  ALIGN(4);
-    *libzephyr.a:bootloader_init.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_clock_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_wdt.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_flash_config_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_common_loader.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_common.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_mem.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_efuse.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_sha.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:bootloader_console.*(.literal .text .literal.* .text.*)
     *libzephyr.a:bootloader_panic.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:esp_image_format.*(.literal .text .literal.* .text.*)
@@ -520,6 +519,12 @@ SECTIONS
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
     *libzephyr.a:loader.*(.rodata .rodata.*)
+    *libzephyr.a:flash_init.*(.rodata .rodata.*)
+    *libzephyr.a:soc_flash_init.*(.rodata .rodata.*)
+    *libzephyr.a:console_init.*(.rodata .rodata.*)
+    *libzephyr.a:soc_random.*(.rodata .rodata.*)
+    *libzephyr.a:soc_init.*(.rodata .rodata.*)
+    *libzephyr.a:hw_init.*(.rodata .rodata.*)
     *libdrivers__flash.a:flash_esp32.*(.rodata .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -625,14 +630,10 @@ SECTIONS
   {
     . = ALIGN(4);
     _loader_data_start = ABSOLUTE(.);
-    *libzephyr.a:bootloader_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:bootloader_esp32.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:bootloader_clock_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:bootloader_wdt.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:bootloader_flash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:bootloader_flash_config_esp32.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:bootloader_common.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
-    *libzephyr.a:bootloader_common_loader.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:bootloader_efuse.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
     *libzephyr.a:cpu_util.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
