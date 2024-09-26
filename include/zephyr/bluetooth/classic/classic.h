@@ -48,7 +48,7 @@ struct bt_br_discovery_priv {
 	/** Page scan repetition mode */
 	uint8_t pscan_rep_mode;
 	/** Resolving remote name*/
-	uint8_t resolving;
+	bool resolving;
 };
 
 /** @brief BR/EDR discovery result structure */
