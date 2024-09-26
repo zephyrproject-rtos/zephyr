@@ -29,7 +29,7 @@ NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
 
 static struct socket_dispatch_table {
 	struct dns_socket_dispatcher *ctx;
-} dispatch_table[CONFIG_NET_SOCKETS_POLL_MAX];
+} dispatch_table[CONFIG_ZVFS_OPEN_MAX];
 
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct sockaddr *addr, size_t addrlen,

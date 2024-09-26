@@ -50,6 +50,7 @@ config NET_SOCKETS_POLL_MAX
 	default 6 if WIFI_NM_WPA_SUPPLICANT
 	default 4 if SHELL_BACKEND_TELNET
 	default 3
+	range 1 ZVFS_OPEN_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
