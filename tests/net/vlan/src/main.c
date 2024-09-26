@@ -254,27 +254,23 @@ static struct dummy_api net_iface_api = {
 /* For testing purposes, create two dummy network interfaces so we can check
  * that no VLANs are created for it.
  */
-NET_DEVICE_INIT_INSTANCE(net_iface1_test,
-			 "iface1",
+NET_DEVICE_INSTANCE_MULTI(net_iface1_test,
 			 iface1,
 			 NULL,
 			 NULL,
 			 &net_iface1_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 DUMMY_L2,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),
 			 127);
 
-NET_DEVICE_INIT_INSTANCE(net_iface2_test,
-			 "iface2",
+NET_DEVICE_INSTANCE_MULTI(net_iface2_test,
 			 iface2,
 			 NULL,
 			 NULL,
 			 &net_iface2_data,
 			 NULL,
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
 			 DUMMY_L2,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),

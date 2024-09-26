@@ -128,8 +128,8 @@ static struct dummy_api server_if_api = {
 	.send = server_send,
 };
 
-NET_DEVICE_INIT(server_iface, "server_iface", NULL, NULL, NULL, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &server_if_api,
+NET_DEVICE_INSTANCE(server_iface, NULL, NULL, NULL, NULL,
+		&server_if_api,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), NET_IPV4_MTU);
 
 static const uint8_t cookie[4] = { 0x63, 0x82, 0x53, 0x63 };

@@ -100,25 +100,17 @@ static struct offloaded_if_api net_offloaded_no_impl_api = {
 
 
 /* Socket-offloaded netdevs, with and without .enable */
-NET_DEVICE_OFFLOAD_INIT(sock_offload_test_impl, "sock_offload_test_impl",
-			NULL, NULL, NULL, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_OFFLOAD_INSTANCE(sock_offload_test_impl, NULL, NULL, NULL, NULL,
 			&sock_offloaded_impl_api, 0);
 
-NET_DEVICE_OFFLOAD_INIT(sock_offload_test_no_impl, "sock_offload_test_no_impl",
-			NULL, NULL, NULL, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_OFFLOAD_INSTANCE(sock_offload_test_no_impl, NULL, NULL, NULL, NULL,
 			&sock_offloaded_no_impl_api, 0);
 
 /* Net-offloaded netdevs, with and without .enable */
-NET_DEVICE_OFFLOAD_INIT(net_offload_test_impl, "net_offload_test_impl",
-			NULL, NULL, NULL, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_OFFLOAD_INSTANCE(net_offload_test_impl, NULL, NULL, NULL, NULL,
 			&net_offloaded_impl_api, 0);
 
-NET_DEVICE_OFFLOAD_INIT(net_offload_test_no_impl, "net_offload_test_no_impl",
-			NULL, NULL, NULL, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_OFFLOAD_INSTANCE(net_offload_test_no_impl, NULL, NULL, NULL, NULL,
 			&net_offloaded_no_impl_api, 0);
 
 static void net_offloaded_netdev_before(void *fixture)

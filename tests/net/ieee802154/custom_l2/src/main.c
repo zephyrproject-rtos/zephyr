@@ -62,8 +62,7 @@ static struct ieee802154_radio_api dummy_radio_api = {
 	.iface_api.init	= dummy_iface_init,
 };
 
-NET_DEVICE_INIT(dummy, "dummy_ieee802154", NULL, NULL, NULL, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_INSTANCE(dummy, NULL, NULL, NULL, NULL,
 		&dummy_radio_api, CUSTOM_IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(CUSTOM_IEEE802154_L2),
 		CONFIG_NET_L2_CUSTOM_IEEE802154_MTU);

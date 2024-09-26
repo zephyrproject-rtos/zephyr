@@ -146,21 +146,17 @@ static struct dummy_api dummy_api_funcs = {
 	.send = dummy_send,
 };
 
-#if defined(CONFIG_NET_INTERFACE_NAME)
 #define DEV1_NAME "dummy0"
 #define DEV2_NAME "dummy1"
-#else
-#define DEV1_NAME "dummy_1"
-#define DEV2_NAME "dummy_2"
-#endif
 
-NET_DEVICE_INIT(dummy_1, DEV1_NAME, NULL, NULL, &dummy_data1, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
+
+NET_DEVICE_INSTANCE(dummy0, NULL, NULL, &dummy_data1, NULL,
+		&dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 
-NET_DEVICE_INIT(dummy_2, DEV2_NAME, NULL, NULL, &dummy_data2, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
+NET_DEVICE_INSTANCE(dummy1, NULL, NULL, &dummy_data2, NULL,
+		&dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 #define DST_PORT 4242

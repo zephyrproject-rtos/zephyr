@@ -75,9 +75,7 @@ static const struct dummy_api fake_dev_api = {
 #define L2_HDR_SIZE 0
 #endif
 
-NET_DEVICE_INIT(fake_dev, "fake_dev",
-		fake_dev_init, NULL, NULL, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_INSTANCE(fake_dev, fake_dev_init, NULL, NULL, NULL,
 		&fake_dev_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		NET_ETH_MTU);
 

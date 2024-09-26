@@ -1078,10 +1078,8 @@ static struct dummy_api net_context_if_api = {
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(net_context_test, "net_context_test",
-		net_context_dev_init, NULL,
+NET_DEVICE_INSTANCE(net_context_test, net_context_dev_init, NULL,
 		&net_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_context_if_api, _ETH_L2_LAYER,
 		_ETH_L2_CTX_TYPE, 127);
 

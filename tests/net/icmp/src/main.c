@@ -139,12 +139,12 @@ static struct dummy_api recv_if_api = {
 	.send = test_receiver,
 };
 
-NET_DEVICE_INIT(test_sender_icmp, "test_sender_icmp", NULL, NULL, &send_ctx, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &send_if_api,
+NET_DEVICE_INSTANCE(test_sender_icmp, NULL, NULL, &send_ctx, NULL,
+		&send_if_api,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), NET_IPV6_MTU);
 
-NET_DEVICE_INIT(test_receiver_icmp, "test_receiver_icmp", NULL, NULL, &recv_ctx, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &recv_if_api,
+NET_DEVICE_INSTANCE(test_receiver_icmp, NULL, NULL, &recv_ctx, NULL,
+		&recv_if_api,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), NET_IPV6_MTU);
 
 #if defined(CONFIG_NET_OFFLOADING_SUPPORT)
@@ -419,8 +419,8 @@ static const struct net_wifi_mgmt_offload offload_api = {
 	.wifi_iface.get_type = offload_get_type,
 };
 
-NET_DEVICE_OFFLOAD_INIT(test_offload, "test_offload", NULL, NULL, &offload_ctx, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &offload_api, 1500);
+NET_DEVICE_OFFLOAD_INSTANCE(test_offload, NULL, NULL, &offload_ctx, NULL,
+			&offload_api, 1500);
 #endif /* CONFIG_NET_OFFLOADING_SUPPORT */
 
 static int icmp_handler(struct net_icmp_ctx *ctx,

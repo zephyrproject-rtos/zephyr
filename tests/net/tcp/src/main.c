@@ -197,10 +197,8 @@ static struct dummy_api net_tcp_if_api = {
 	.send = tester_send,
 };
 
-NET_DEVICE_INIT(net_tcp_test, "net_tcp_test",
-		net_tcp_dev_init, NULL,
+NET_DEVICE_INSTANCE(net_tcp_test, net_tcp_dev_init, NULL,
 		&net_tcp_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_tcp_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 

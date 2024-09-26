@@ -266,24 +266,21 @@ static struct dummy_api net_route_mcast_if_api_3 = {
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT_INSTANCE(mcast_iface_1, "mcast_iface_1", iface_1,
+NET_DEVICE_INSTANCE_MULTI(mcast_iface_1, iface_1,
 			net_route_mcast_dev_init, NULL,
 			&net_route_data_if1, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_route_mcast_if_api_1, _ETH_L2_LAYER,
 			_ETH_L2_CTX_TYPE, 127);
 
-NET_DEVICE_INIT_INSTANCE(mcast_iface_2, "mcast_iface_2", iface_2,
+NET_DEVICE_INSTANCE_MULTI(mcast_iface_2, iface_2,
 			net_route_mcast_dev_init, NULL,
 			&net_route_data_if2, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_route_mcast_if_api_2, _ETH_L2_LAYER,
 			_ETH_L2_CTX_TYPE, 127);
 
-NET_DEVICE_INIT_INSTANCE(mcast_iface_3, "mcast_iface_3", iface_3,
+NET_DEVICE_INSTANCE_MULTI(mcast_iface_3, iface_3,
 			net_route_mcast_dev_init, NULL,
 			&net_route_data_if3, NULL,
-			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&net_route_mcast_if_api_3, _ETH_L2_LAYER,
 			_ETH_L2_CTX_TYPE, 127);
 

@@ -303,8 +303,8 @@ static struct offloaded_if_api offloaded_1_if_api = {
 	.iface_api.init = offloaded_1_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_1, "offloaded_1", NULL, NULL,
-			NULL, NULL, 0, &offloaded_1_if_api, 1500);
+NET_DEVICE_OFFLOAD_INSTANCE(offloaded_1, NULL, NULL,
+			NULL, NULL, &offloaded_1_if_api, 1500);
 
 /* Offloaded interface 2 - low priority */
 
@@ -365,8 +365,8 @@ static struct offloaded_if_api offloaded_2_if_api = {
 	.iface_api.init = offloaded_2_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(offloaded_2, "offloaded_2", NULL, NULL,
-			NULL, NULL, 0, &offloaded_2_if_api, 1500);
+NET_DEVICE_OFFLOAD_INSTANCE(offloaded_2, NULL, NULL,
+			NULL, NULL, &offloaded_2_if_api, 1500);
 
 
 /* Native dummy interface */
@@ -396,8 +396,8 @@ static const struct dummy_api dummy_native_dev_api = {
 	.send = dummy_native_dev_send,
 };
 
-NET_DEVICE_INIT(dummy_native, "dummy_native", NULL, NULL, NULL,
-		NULL, 0, &dummy_native_dev_api, DUMMY_L2,
+NET_DEVICE_INSTANCE(dummy_native, NULL, NULL, NULL,
+		NULL, &dummy_native_dev_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 1500);
 
 /* Actual tests */

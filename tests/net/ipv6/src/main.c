@@ -388,9 +388,7 @@ static const struct ethernet_api net_test_if_api = {
 #define _ETH_L2_LAYER ETHERNET_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 
-NET_DEVICE_INIT(eth_ipv6_net, "eth_ipv6_net",
-		net_test_dev_init, NULL, &net_test_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+NET_DEVICE_INSTANCE(eth_ipv6_net, net_test_dev_init, NULL, &net_test_data, NULL,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		NET_ETH_MTU);
 
@@ -437,10 +435,8 @@ static const struct dummy_api net_dummy_if_api = {
 #define _DUMMY_L2_LAYER DUMMY_L2
 #define _DUMMY_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(eth_ipv6_net_dummy, "eth_ipv6_net_dummy",
-		net_test_dev_init, NULL, &net_dummy_data,
-		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_dummy_if_api, _DUMMY_L2_LAYER, _DUMMY_L2_CTX_TYPE,
+NET_DEVICE_INSTANCE(eth_ipv6_net_dummy, net_test_dev_init, NULL, &net_dummy_data,
+		NULL, &net_dummy_if_api, _DUMMY_L2_LAYER, _DUMMY_L2_CTX_TYPE,
 		127);
 
 /**
