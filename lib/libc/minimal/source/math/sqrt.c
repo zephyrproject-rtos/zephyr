@@ -27,6 +27,7 @@ double sqrt(double square)
 	int64double_t root;
 	int64double_t last;
 	int64double_t p_square;
+
 	p_square.d = square;
 
 	if (square == 0.0) {
