@@ -184,6 +184,23 @@
 			      pm, data, config, level, prio, api)
 
 /**
+ * @brief Define an SCMI transport driver
+ *
+ * This is merely a wrapper over DEVICE_INSTANCE_FROM_DT_INST(), but is
+ * required since transport layer drivers are not allowed to place
+ * their own init() function in the init section. Instead, transport
+ * layer drivers place the scmi_core_transport_init() function in the
+ * init section, which, in turn, will call the transport layer driver
+ * init() function. This is required because the SCMI core needs to
+ * perform channel binding and setup during the transport layer driver's
+ * initialization.
+ */
+#define SCMI_TRANSPORT_INSTANCE_FROM_DT_INST(inst, pm, data, config,	\
+					     level, api)		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &scmi_core_transport_init,	\
+				     pm, data, config, level, api)
+
+/**
  * @brief Define an SCMI protocol
  *
  * This macro performs three important functions:
@@ -217,6 +234,39 @@
 					     config, level, prio, api)
 
 /**
+ * @brief Define an SCMI protocol
+ *
+ * This macro performs three important functions:
+ *	1) It defines a `struct scmi_protocol`, which is
+ *	needed by all protocol drivers to work with the SCMI API.
+ *
+ *	2) It declares the static channels bound to the protocol.
+ *	This is only applicable if the transport layer driver
+ *	supports static channels.
+ *
+ *	3) It creates a `struct device` a sets the `data` field
+ *	to the newly defined `struct scmi_protocol`. This is
+ *	needed because the protocol driver needs to work with the
+ *	SCMI API **and** the subsystem API.
+ *
+ * @param node_id protocol node identifier
+ * @param init_fn pointer to protocol's initialization function
+ * @param api pointer to protocol's subsystem API
+ * @param pm pointer to the protocol's power management resources
+ * @param data pointer to protocol's private data
+ * @param config pointer to protocol's private constant data
+ * @param level protocol initialization level
+ * @param api pointer to driver's api
+ */
+#define SCMI_PROTOCOL_INSTANCE(node_id, init_fn, pm, data, config,		\
+			       level, api)					\
+	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
+	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR(node_id), data);	\
+	DEVICE_INSTANCE(node_id, init_fn, pm,					\
+			&SCMI_PROTOCOL_NAME(DT_REG_ADDR(node_id)),		\
+			config, level, api)
+
+/**
  * @brief Just like DT_SCMI_PROTOCOL_DEFINE(), but uses an instance
  * of a `DT_DRV_COMPAT` compatible instead of a node identifier
  *
@@ -233,6 +283,15 @@
 				     level, prio, api)				\
 	DT_SCMI_PROTOCOL_DEFINE(DT_INST(inst, DT_DRV_COMPAT), init_fn, pm,	\
 				data, config, level, prio, api)
+/**
+ * @brief Just like SCMI_PROTOCOL_INSTANCE(), but uses an instance
+ * of a `DT_DRV_COMPAT` compatible instead of a node identifier
+ *
+ * @param inst instance number
+ * @param ... Other parameters as expected by SCMI_PROTOCOL_INSTANCE
+ */
+#define SCMI_PROTOCOL_INSTANCE_FROM_DT_INST(inst, ...)			\
+	SCMI_PROTOCOL_INSTANCE(DT_INST(inst, DT_DRV_COMPAT), __VA_ARGS__)
 
 /**
  * @brief Define an SCMI protocol with no device
