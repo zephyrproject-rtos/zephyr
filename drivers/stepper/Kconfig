@@ -49,6 +49,7 @@ config STEPPER_SHELL_THREAD_PRIORITY
 
 comment "Stepper Drivers"
 
+rsource "adi_tmc/Kconfig"
 rsource "Kconfig.fake"
 rsource "Kconfig.gpio"
 
