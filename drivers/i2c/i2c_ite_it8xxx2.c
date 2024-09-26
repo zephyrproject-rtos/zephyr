@@ -1314,12 +1314,11 @@ DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 										\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##inst;                 \
 										\
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_it8xxx2_init,                       \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(inst, i2c_it8xxx2_init,                \
 				  NULL,                                         \
 				  &i2c_it8xxx2_data_##inst,                     \
 				  &i2c_it8xxx2_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_it8xxx2_driver_api);                     \
 										\
 	static void i2c_it8xxx2_config_func_##inst(void)                        \

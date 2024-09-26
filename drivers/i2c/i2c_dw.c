@@ -1218,9 +1218,8 @@ static int i2c_dw_initialize(const struct device *dev)
 		RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)                        \
 			I2C_CONFIG_DMA_INIT(n)};                                                   \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,                  \
-				  &i2c_config_dw_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
-				  &funcs);                                                         \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, i2c_dw_initialize, NULL, &i2c_##n##_runtime,           \
+				  &i2c_config_dw_##n, POST_KERNEL, &funcs);                        \
 	I2C_DW_IRQ_CONFIG(n)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_DW)
