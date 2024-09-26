@@ -1022,7 +1022,7 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
 			interrupts = <61 0>;
 			clock-names = "stmmaceth", "mac-clk-tx", "mac-clk-rx";
