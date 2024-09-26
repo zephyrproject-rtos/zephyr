@@ -75,17 +75,22 @@ function(zephyr_mcuboot_tasks)
 
   # Fetch devicetree details for flash and slot information
   dt_chosen(flash_node PROPERTY "zephyr,flash")
-  dt_nodelabel(slot0_flash NODELABEL "slot0_partition")
-  dt_prop(slot_size PATH "${slot0_flash}" PROPERTY "reg" INDEX 1)
+  dt_nodelabel(slot0_flash NODELABEL "slot0_partition" REQUIRED)
+  dt_prop(slot_size PATH "${slot0_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
   dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
+
+  if(NOT write_block_size)
+    set(write_block_size 4)
+    message(WARNING "slot0_partition write block size devicetree parameter is missing, assuming write block size is 4")
+  endif()
 
   # If single slot mode, or if in firmware updater mode and this is the firmware updater image,
   # use slot 0 information
   if(NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP AND (NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER OR CONFIG_MCUBOOT_APPLICATION_FIRMWARE_UPDATER))
     # Slot 1 size is used instead of slot 0 size
     set(slot_size)
-    dt_nodelabel(slot1_flash NODELABEL "slot1_partition")
-    dt_prop(slot_size PATH "${slot1_flash}" PROPERTY "reg" INDEX 1)
+    dt_nodelabel(slot1_flash NODELABEL "slot1_partition" REQUIRED)
+    dt_prop(slot_size PATH "${slot1_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
   endif()
 
   # Basic 'imgtool sign' command with known image information.
