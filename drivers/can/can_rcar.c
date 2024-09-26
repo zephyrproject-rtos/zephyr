@@ -1205,13 +1205,12 @@ static const struct can_driver_api can_rcar_driver_api = {
 	};									\
 	static struct can_rcar_data can_rcar_data_##n;				\
 										\
-	CAN_DEVICE_DT_INST_DEFINE(n, can_rcar_init,				\
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(n, can_rcar_init,			\
 				  NULL,						\
 				  &can_rcar_data_##n,				\
 				  &can_rcar_cfg_##n,				\
 				  POST_KERNEL,					\
-				  CONFIG_CAN_INIT_PRIORITY,			\
-				  &can_rcar_driver_api				\
+				  &can_rcar_driver_api,				\
 				  );						\
 	static void can_rcar_##n##_init(const struct device *dev)		\
 	{									\

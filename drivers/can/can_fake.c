@@ -167,9 +167,8 @@ static const struct can_driver_api fake_can_driver_api = {
 									                \
 	static struct fake_can_data fake_can_data_##inst;		                \
 									                \
-	CAN_DEVICE_DT_INST_DEFINE(inst, fake_can_init, NULL, &fake_can_data_##inst,     \
-				  &fake_can_config_##inst, POST_KERNEL,	                \
-				  CONFIG_CAN_INIT_PRIORITY,                             \
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, fake_can_init, NULL, &fake_can_data_##inst,\
+				  &fake_can_config_##inst, POST_KERNEL,			     \
 				  &fake_can_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FAKE_CAN_INIT)

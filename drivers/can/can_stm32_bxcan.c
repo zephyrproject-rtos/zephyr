@@ -1153,10 +1153,9 @@ static const struct can_stm32_config can_stm32_cfg_##inst = {            \
 static struct can_stm32_data can_stm32_dev_data_##inst;
 
 #define CAN_STM32_DEFINE_INST(inst)                                      \
-CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32_init, NULL,                    \
-			  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst, \
-			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,         \
-			  &can_api_funcs);
+CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, can_stm32_init, NULL,             \
+			  &can_stm32_dev_data_##inst, &can_stm32_cfg_##inst,\
+			  POST_KERNEL, &can_api_funcs);
 
 #define CAN_STM32_INST(inst)      \
 CAN_STM32_IRQ_INST(inst)          \

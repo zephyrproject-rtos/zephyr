@@ -220,12 +220,11 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 	static struct can_mcan_data can_mcan_data_##n =			\
 		CAN_MCAN_DATA_INITIALIZER(NULL);			\
 									\
-	CAN_DEVICE_DT_INST_DEFINE(n, mcux_mcan_init, NULL,		\
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(n, mcux_mcan_init, NULL,	\
 				  &can_mcan_data_##n,			\
 				  &can_mcan_config_##n,			\
 				  POST_KERNEL,				\
-				  CONFIG_CAN_INIT_PRIORITY,		\
-				  &mcux_mcan_driver_api);		\
+				  &mcux_mcan_driver_api),		\
 									\
 	static void mcux_mcan_irq_config_##n(const struct device *dev)	\
 	{								\

@@ -1014,8 +1014,7 @@ static int mcp2515_init(const struct device *dev)
 		.osc_freq = DT_INST_PROP(inst, osc_freq),                                          \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp2515_init, NULL, &mcp2515_data_##inst,                  \
-				  &mcp2515_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,   \
-				  &can_api_funcs);
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, mcp2515_init, NULL, &mcp2515_data_##inst,           \
+				  &mcp2515_config_##inst, POST_KERNEL, &can_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP2515_INIT)

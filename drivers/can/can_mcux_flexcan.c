@@ -1419,11 +1419,10 @@ static const struct can_driver_api mcux_flexcan_fd_driver_api = {
 									\
 	static struct mcux_flexcan_data mcux_flexcan_data_##id;		\
 									\
-	CAN_DEVICE_DT_INST_DEFINE(id, mcux_flexcan_init,		\
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(id, mcux_flexcan_init,		\
 				  NULL, &mcux_flexcan_data_##id,	\
 				  &mcux_flexcan_config_##id,		\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,\
-				  &FLEXCAN_DRIVER_API(id));		\
+				  POST_KERNEL, &FLEXCAN_DRIVER_API(id));\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev) \
 	{								\

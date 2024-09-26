@@ -1768,8 +1768,7 @@ static const struct can_driver_api mcp251xfd_api_funcs = {
 		MCP251XFD_SET_CLOCK(inst)                                                          \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, mcp251xfd_init, NULL, &mcp251xfd_data_##inst,             \
-				  &mcp251xfd_config_##inst, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY, \
-				  &mcp251xfd_api_funcs);
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, mcp251xfd_init, NULL, &mcp251xfd_data_##inst,      \
+				  &mcp251xfd_config_##inst, POST_KERNEL, &mcp251xfd_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(MCP251XFD_INIT)

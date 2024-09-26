@@ -487,11 +487,10 @@ static const struct can_native_linux_config can_native_linux_cfg_##inst = {	\
 										\
 static struct can_native_linux_data can_native_linux_data_##inst;		\
 										\
-CAN_DEVICE_DT_INST_DEFINE(inst, can_native_linux_init, NULL,			\
+CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, can_native_linux_init, NULL,		\
 			  &can_native_linux_data_##inst,			\
 			  &can_native_linux_cfg_##inst,				\
-			  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,		\
-			  &can_native_linux_driver_api);
+			  POST_KERNEL, &can_native_linux_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NATIVE_LINUX_INIT)
 
