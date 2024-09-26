@@ -699,6 +699,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 
 int bt_bap_stream_stop(struct bt_bap_stream *stream)
 {
+	enum bt_iso_state iso_state;
 	struct bt_bap_ep *ep;
 	uint8_t role;
 	int err;
@@ -723,6 +724,27 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 	default:
 		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->status.state));
 		return -EBADMSG;
+	}
+
+	/* ASCS_v1.0 3.2 ASE state machine transitions
+	 *
+	 * If the server detects link loss of a CIS for an ASE in the Streaming state or the
+	 * Disabling state, the server shall immediately transition that ASE to the QoS Configured
+	 * state.
+	 *
+	 * This effectively means that if an ASE no longer has a connected CIS, the server shall
+	 * bring it to the QoS Configured state. That means that we, as a unicast client, should not
+	 * attempt to stop it
+	 */
+	if (ep->iso == NULL) {
+		LOG_DBG("Stream endpoint does not have a CIS, server will stop the ASE");
+		return -EALREADY;
+	}
+
+	iso_state = ep->iso->chan.state;
+	if (iso_state != BT_ISO_STATE_CONNECTED && iso_state != BT_ISO_STATE_CONNECTING) {
+		LOG_DBG("Stream endpoint CIS is not connected, server will stop the ASE");
+		return -EALREADY;
 	}
 
 	err = bt_bap_unicast_client_stop(stream);

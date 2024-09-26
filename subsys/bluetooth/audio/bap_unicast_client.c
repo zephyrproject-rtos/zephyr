@@ -3395,7 +3395,18 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		}
 		req->num_ases++;
 
-		return bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
+		err = bt_bap_unicast_client_ep_send(stream->conn, ep, buf);
+		if (err != 0) {
+			/* Return expected error directly */
+			if (err == -ENOTCONN || err == -ENOMEM) {
+				return err;
+			}
+
+			LOG_DBG("bt_bap_unicast_client_ep_send failed with unexpected error %d",
+				err);
+
+			return -ENOEXEC;
+		}
 	}
 
 	return 0;
