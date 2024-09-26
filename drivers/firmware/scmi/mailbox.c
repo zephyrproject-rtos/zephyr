@@ -111,6 +111,4 @@ static struct scmi_transport_api scmi_mbox_api = {
 	.channel_is_free = scmi_mbox_channel_is_free,
 };
 
-DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,
-			    CONFIG_ARM_SCMI_TRANSPORT_INIT_PRIORITY,
-			    &scmi_mbox_api);
+SCMI_MAILBOX_INSTANCE_FROM_DT_INST(0, PRE_KERNEL_1, &scmi_mbox_api);

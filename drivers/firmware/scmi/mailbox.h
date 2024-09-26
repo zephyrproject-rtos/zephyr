@@ -98,12 +98,12 @@
  *	2) Creates aforementioned structures for the base protocol
  *	(identified by the `scmi` node)
  *
- *	3) "registers" the driver via `DT_INST_SCMI_TRANSPORT_DEFINE()`.
+ *	3) "registers" the driver via `SCMI_TRANSPORT_INSTANCE_FROM_DT_INST()`.
  */
-#define DT_INST_SCMI_MAILBOX_DEFINE(inst, level, prio, api)			\
+#define SCMI_MAILBOX_INSTANCE_FROM_DT_INST(inst, level, api)			\
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, SCMI_MBOX_PROTO_CHAN_DEFINE)	\
 	DT_INST_SCMI_MBOX_BASE_CHAN_DEFINE(inst)				\
-	DT_INST_SCMI_TRANSPORT_DEFINE(inst, NULL, NULL, NULL, level, prio, api)
+	SCMI_TRANSPORT_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, level, api)
 
 struct scmi_mbox_channel {
 	/* SHMEM area bound to the channel */
