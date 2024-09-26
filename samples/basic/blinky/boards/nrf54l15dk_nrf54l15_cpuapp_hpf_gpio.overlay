@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+&led0 {
+	gpios = <&hpf_gpio 9 GPIO_ACTIVE_HIGH>;
+};
