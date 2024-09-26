@@ -374,10 +374,9 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 		.ctx = &CONCAT(_i2c, n, _lpi2c_rtio),			\
 	};								\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, mcux_lpi2c_init, NULL,	\
 				&mcux_lpi2c_data_##n,			\
 				&mcux_lpi2c_config_##n, POST_KERNEL,	\
-				CONFIG_I2C_INIT_PRIORITY,		\
 				&mcux_lpi2c_driver_api);		\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev)\

@@ -367,12 +367,11 @@ static const struct lpc11u6x_i2c_config i2c_cfg_##idx = {		      \
 									      \
 static struct lpc11u6x_i2c_data i2c_data_##idx;			              \
 									      \
-I2C_DEVICE_DT_INST_DEFINE(idx,						      \
-		    lpc11u6x_i2c_init,					      \
-		    NULL,						      \
-		    &i2c_data_##idx, &i2c_cfg_##idx,			      \
-		    PRE_KERNEL_1, CONFIG_I2C_INIT_PRIORITY,		      \
-		    &i2c_api);						      \
+I2C_DEVICE_INSTANCE_FROM_DT_INST(idx,						      \
+		    lpc11u6x_i2c_init,						      \
+		    NULL,							      \
+		    &i2c_data_##idx, &i2c_cfg_##idx,				      \
+		    PRE_KERNEL_1, &i2c_api);					      \
 									      \
 static void lpc11u6x_i2c_isr_config_##idx(const struct device *dev)		      \
 {									      \

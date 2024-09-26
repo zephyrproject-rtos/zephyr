@@ -670,9 +670,9 @@ static int i2c_smartbond_init(const struct device *dev)
 		I2C_SMARTBOND_CONFIGURE(id);                                                       \
 		return ret;                                                                        \
 	}                                                                                          \
-	I2C_DEVICE_DT_INST_DEFINE(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id), \
-				&i2c_smartbond_##id##_data, \
-				&i2c_smartbond_##id##_cfg, POST_KERNEL,                          \
-				CONFIG_I2C_INIT_PRIORITY, &i2c_smartbond_driver_api);
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(id, i2c_smartbond_##id##_init, PM_DEVICE_DT_INST_GET(id),\
+				&i2c_smartbond_##id##_data,                                 \
+				&i2c_smartbond_##id##_cfg, POST_KERNEL,                     \
+				&i2c_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SMARTBOND_DEVICE)

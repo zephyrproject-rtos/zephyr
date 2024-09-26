@@ -149,11 +149,11 @@ static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
 	.bitrate	= DT_INST_PROP(_num, clock_frequency),		\
 };									\
 									\
-I2C_DEVICE_DT_INST_DEFINE(_num,						\
+I2C_DEVICE_INSTANCE_FROM_DT_INST(_num,					\
 	    i2c_sbcon_init,						\
 	    NULL,							\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
+	    PRE_KERNEL_2, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)

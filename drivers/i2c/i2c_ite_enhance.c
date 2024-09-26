@@ -1504,12 +1504,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE),
 										\
 	static struct i2c_enhance_data i2c_enhance_data_##inst;                 \
 										\
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_enhance_init,                       \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(inst, i2c_enhance_init,                \
 				  NULL,                                         \
 				  &i2c_enhance_data_##inst,                     \
 				  &i2c_enhance_cfg_##inst,                      \
 				  POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY,                     \
 				  &i2c_enhance_driver_api);                     \
 										\
 	static void i2c_enhance_config_func_##inst(void)                        \

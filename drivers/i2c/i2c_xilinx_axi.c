@@ -642,10 +642,10 @@ static const struct i2c_driver_api i2c_xilinx_axi_driver_api = {
                                                                                                    \
 	static struct i2c_xilinx_axi_data i2c_xilinx_axi_data_##compat##_##n;                      \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xilinx_axi_init, NULL,                                    \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, i2c_xilinx_axi_init, NULL,                             \
 				  &i2c_xilinx_axi_data_##compat##_##n,                             \
 				  &i2c_xilinx_axi_config_##compat##_##n, POST_KERNEL,              \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_xilinx_axi_driver_api);           \
+				  &i2c_xilinx_axi_driver_api);                                     \
                                                                                                    \
 	static void i2c_xilinx_axi_config_func_##compat##_##n(const struct device *dev)            \
 	{                                                                                          \

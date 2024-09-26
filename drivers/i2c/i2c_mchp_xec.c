@@ -905,10 +905,9 @@ static int i2c_xec_init(const struct device *dev)
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_init, NULL,	\
-		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
-		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
-		&i2c_xec_driver_api);					\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, i2c_xec_init, NULL,	\
+		&i2c_xec_data_##n, &i2c_xec_config_##n,		\
+		POST_KERNEL, &i2c_xec_driver_api);		\
 									\
 	static void i2c_xec_irq_config_func_##n(void)			\
 	{                                                               \

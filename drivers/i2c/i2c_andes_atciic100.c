@@ -778,13 +778,12 @@ static int i2c_atciic100_init(const struct device *dev)
 		.irq_num	= DT_INST_IRQN(n),			\
 		.dt_init_fn	= i2c_dt_init_##n			\
 	};								\
-	I2C_DEVICE_DT_INST_DEFINE(n,					\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n,				\
 		i2c_atciic100_init,					\
 		NULL,							\
 		&i2c_atciic100_dev_data_##n,				\
 		&i2c_atciic100_config_##n,				\
 		POST_KERNEL,						\
-		CONFIG_I2C_INIT_PRIORITY,				\
 		&i2c_atciic100_driver);					\
 									\
 	static void i2c_dt_init_##n(void)				\

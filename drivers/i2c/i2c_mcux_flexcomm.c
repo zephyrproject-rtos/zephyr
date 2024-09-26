@@ -545,13 +545,12 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		.reset = RESET_DT_SPEC_INST_GET(id),			\
 	};								\
 	static struct mcux_flexcomm_data mcux_flexcomm_data_##id;	\
-	I2C_DEVICE_DT_INST_DEFINE(id,					\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(id,				\
 			    mcux_flexcomm_init,				\
 			    NULL,					\
 			    &mcux_flexcomm_data_##id,			\
 			    &mcux_flexcomm_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_I2C_INIT_PRIORITY,			\
 			    &mcux_flexcomm_driver_api);			\
 	static void mcux_flexcomm_config_func_##id(const struct device *dev) \
 	{								\

@@ -839,9 +839,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
 	};											   \
-	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
-			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
-			     &i2c_esp32_driver_api);
+	I2C_DEVICE_INSTANCE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
+			     &i2c_esp32_config_##idx, POST_KERNEL, &i2c_esp32_driver_api);
 
 #if DT_NODE_HAS_STATUS_OKAY(I2C(0))
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS

@@ -516,8 +516,8 @@ static const struct i2c_driver_api i2c_cat1_driver_api = {
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 	};                                                                                         \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,               \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,        \
 				  &i2c_cat1_cfg_##n, POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_cat1_driver_api);
+				  &i2c_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)

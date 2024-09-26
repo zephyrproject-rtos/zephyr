@@ -549,8 +549,8 @@ static const struct i2c_driver_api i2c_ra_iic_driver_api = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_ra_iic_init, NULL, &i2c_ra_iic_data_##index,          \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(index, i2c_ra_iic_init, NULL, &i2c_ra_iic_data_##index,   \
 				  &i2c_ra_iic_config_##index, POST_KERNEL,                         \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_ra_iic_driver_api);
+				  &i2c_ra_iic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RA_IIC_INIT)

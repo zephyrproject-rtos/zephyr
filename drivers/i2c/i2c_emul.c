@@ -335,7 +335,7 @@ static const struct i2c_driver_api i2c_emul_api = {
 	static struct i2c_emul_data i2c_emul_data_##n = {                                          \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_emul_init, NULL, &i2c_emul_data_##n, &i2c_emul_cfg_##n,   \
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &i2c_emul_api);
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, i2c_emul_init, NULL, &i2c_emul_data_##n, &i2c_emul_cfg_##n,\
+				  POST_KERNEL, &i2c_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_EMUL_INIT)

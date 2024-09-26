@@ -775,13 +775,12 @@ static const struct i2c_driver_api i2c_numaker_driver_api = {
                                                                                    \
 	static struct i2c_numaker_data i2c_numaker_data_##inst;                    \
                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(inst,                                            \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(inst,                                     \
 				  i2c_numaker_init,                                \
 				  NULL,                                            \
 				  &i2c_numaker_data_##inst,                        \
 				  &i2c_numaker_config_##inst,                      \
 				  POST_KERNEL,                                     \
-				  CONFIG_I2C_INIT_PRIORITY,                        \
 				  &i2c_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_NUMAKER_INIT);

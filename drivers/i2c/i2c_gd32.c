@@ -708,10 +708,9 @@ static int i2c_gd32_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
 		.irq_cfg_func = i2c_gd32_irq_cfg_func_##inst,			\
 	};									\
-	I2C_DEVICE_DT_INST_DEFINE(inst,						\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(inst,					\
 				  i2c_gd32_init, NULL,				\
 				  &i2c_gd32_data_##inst, &i2c_gd32_cfg_##inst,	\
-				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-				  &i2c_gd32_driver_api);			\
+				  POST_KERNEL, &i2c_gd32_driver_api);		\
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_GD32_INIT)

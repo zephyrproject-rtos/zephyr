@@ -946,8 +946,8 @@ static int i2c_max32_init(const struct device *dev)
 		I2C_MAX32_CONFIG_IRQ_FUNC(_num) MAX32_I2C_TX_DMA_INIT(_num)                        \
 			MAX32_I2C_RX_DMA_INIT(_num)};                                              \
 	static struct max32_i2c_data max32_i2c_data_##_num;                                        \
-	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,              \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,       \
 				  &max32_i2c_dev_cfg_##_num, PRE_KERNEL_2,                         \
-				  CONFIG_I2C_INIT_PRIORITY, &api);
+				  &api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_MAX32)

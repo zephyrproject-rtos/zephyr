@@ -316,9 +316,9 @@ void i2c_gecko_isr(const struct device *dev)
 												\
 	static struct i2c_gecko_data i2c_gecko_data_##idx;					\
 												\
-	I2C_DEVICE_DT_INST_DEFINE(idx, i2c_gecko_init, NULL, &i2c_gecko_data_##idx,		\
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(idx, i2c_gecko_init, NULL, &i2c_gecko_data_##idx,	\
 				  &i2c_gecko_config_##idx, POST_KERNEL,				\
-					CONFIG_I2C_INIT_PRIORITY, &i2c_gecko_driver_api);	\
+					&i2c_gecko_driver_api);					\
 												\
 	GECKO_I2C_IRQ_HANDLER(idx)
 

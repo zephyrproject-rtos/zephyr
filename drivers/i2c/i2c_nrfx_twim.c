@@ -259,13 +259,12 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 				DT_PROP(I2C(idx), easydma_maxcnt_bits)),       \
 	};								       \
 	PM_DEVICE_DT_DEFINE(I2C(idx), twim_nrfx_pm_action);		       \
-	I2C_DEVICE_DT_DEFINE(I2C(idx),					       \
-		      i2c_nrfx_twim_init,				       \
-		      PM_DEVICE_DT_GET(I2C(idx)),			       \
-		      &twim_##idx##_data,				       \
-		      &twim_##idx##z_config,				       \
-		      POST_KERNEL,					       \
-		      CONFIG_I2C_INIT_PRIORITY,				       \
+	I2C_DEVICE_INSTANCE(I2C(idx),						       \
+		      i2c_nrfx_twim_init,					       \
+		      PM_DEVICE_DT_GET(I2C(idx)),				       \
+		      &twim_##idx##_data,					       \
+		      &twim_##idx##z_config,					       \
+		      POST_KERNEL,						       \
 		      &i2c_nrfx_twim_driver_api)
 
 #define I2C_MEMORY_SECTION(idx)						       \
