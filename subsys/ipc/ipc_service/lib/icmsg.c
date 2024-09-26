@@ -273,11 +273,16 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	int ret = pbuf_tx_init(dev_data->tx_pb);
 
 	if (ret < 0) {
-		__ASSERT(false, "Incorrect configuration");
+		__ASSERT(false, "Incorrect Tx configuration");
 		return ret;
 	}
 
-	(void)pbuf_rx_init(dev_data->rx_pb);
+	ret = pbuf_rx_init(dev_data->rx_pb);
+
+	if (ret < 0) {
+		__ASSERT(false, "Incorrect Rx configuration");
+		return ret;
+	}
 
 	ret = pbuf_write(dev_data->tx_pb, magic, sizeof(magic));
 
