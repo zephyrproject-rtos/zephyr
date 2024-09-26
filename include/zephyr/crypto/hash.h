@@ -91,14 +91,14 @@ struct hash_pkt {
 	/** Start address of input buffer */
 	uint8_t *in_buf;
 
+	/** Bytes to be operated upon */
+	size_t  in_len;
+
 	/** Start address of previously calculated hash / digest. 
 	 * It is useful where hash is calculated in chunks.
 	*/
 	uint8_t *in_hash;
-
-	/** Bytes to be operated upon */
-	size_t  in_len;
-
+	
 	/** Bytes previously operated upon */
 	uint32_t  *prev_len;
 
