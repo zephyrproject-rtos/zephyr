@@ -28,6 +28,8 @@
 extern "C" {
 #endif
 
+#define MICRO_STEP_RES_INDEX(res) LOG2(res)
+
 /**
  * @brief Stepper Motor micro step resolution options
  */
@@ -80,6 +82,9 @@ enum stepper_run_mode {
 enum stepper_signal_result {
 	/** Steps set using move or set_target_position have been executed */
 	STEPPER_SIGNAL_STEPS_COMPLETED = 0,
+	STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED = 1,
+	STEPPER_SIGNAL_LEFT_END_STOP_DETECTED = 2,
+	STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED = 3,
 };
 
 /**
