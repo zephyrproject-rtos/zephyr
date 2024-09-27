@@ -210,7 +210,8 @@ static int llext_find_tables(struct llext_loader *ldr)
  * Maps the ELF sections into regions according to their usage flags,
  * calculating ldr->sects and ldr->sect_map.
  */
-static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
+static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
+			      const struct llext_load_param *ldr_parm)
 {
 	int i, j;
 	const char *name;
@@ -285,6 +286,15 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		ldr->sect_map[i].mem_idx = mem_idx;
 		elf_shdr_t *region = ldr->sects + mem_idx;
+
+		/*
+		 * ELF objects can have sections for memory regions, detached from
+		 * other sections of the same type. E.g. executable sections that will be
+		 * placed in slower memory. Don't merge such sections into main regions
+		 */
+		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
+			continue;
+		}
 
 		if (region->sh_type == SHT_NULL) {
 			/* First section of this type, copy all info to the
@@ -586,7 +596,8 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				}
 			}
 
-			if (ldr_parm->pre_located) {
+			if (ldr_parm->pre_located &&
+			    (!ldr_parm->section_detached || !ldr_parm->section_detached(shdr))) {
 				sym_tab->syms[j].addr = (uint8_t *)sym.st_value +
 					(ldr->hdr.e_type == ET_REL ? section_addr : 0);
 			} else {
@@ -658,7 +669,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Mapping ELF sections...");
-	ret = llext_map_sections(ldr, ext);
+	ret = llext_map_sections(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to map ELF sections, ret %d", ret);
 		goto out;

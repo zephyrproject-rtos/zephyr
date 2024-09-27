@@ -135,6 +135,12 @@ struct llext_load_param {
 	 * the memory buffer, when calculating relocation targets.
 	 */
 	bool pre_located;
+	/**
+	 * Extensions can implement custom ELF sections to be loaded in specific
+	 * memory regions, detached from other sections of compatible types.
+	 * This optional callback checks whether a section should be detached.
+	 */
+	bool (*section_detached)(const elf_shdr_t *shdr);
 };
 
 /** Default initializer for @ref llext_load_param */
