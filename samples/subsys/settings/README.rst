@@ -100,3 +100,87 @@ Sample Output
    <gamma> = 0 (default)
    save <gamma> key directly: OK.
    ...
+
+Provisioning of Settings
+************************
+
+Settings will often have to be provisioned separately from the application
+itself, e.g. because the settings are specific to a particular device or because
+the settings are sensitive and should not be included in the application binary.
+
+The settings subsystem supports this use case by allowing settings to be
+provisioned from a separate image.
+
+To demonstrate this feature, the sample can be built with the
+``CONFIG_FLASH_SIMULATOR_PROVISION`` option on QEMU. This will simulate a flash
+partition with a fixed memory layout and load the settings from a separate image
+at runtime into QEMU memory.
+
+To build and run the sample on QEMU, follow these steps:
+
+1. Build the sample for the qemu_x86 board with the default settings from
+   qemu_x86.conf (i.e. with the NVS settings backend enabled.) and this
+   overlay:
+
+   .. code-block:: shell
+
+      $ west build -b qemu_x86 samples/subsys/settings -- -DOVERLAY_CONFIG=overlay-qemu.conf
+
+2. Place the sample soc-nv-flash-image.hex file in the build directory:
+
+   .. code-block:: shell
+
+      $ cp samples/subsys/settings/soc-nv-flash-image.hex build/zephyr
+
+3. Start the QEMU emulator with the following command:
+
+   .. code-block:: shell
+
+      $ west build -t run
+
+To achieve the same with a real device, a separate flash image can be prepared
+that conforms to the selected memory backend and is flashed separately to the
+appropriate flash memory location.
+
+Run your application in debug mode in terminal 1:
+
+   .. code-block:: shell
+
+      $ west build -t debugserver
+
+Start a remote debug session in terminal 2:
+
+   .. code-block:: shell
+
+      $ gdb build/zephyr/zephyr.elf
+      (gdb) target remote localhost:1234
+      (gdb) continue
+
+Now interact with your application to prepare the desired settings state. You
+could also write a dummy application that writes the settings to flash.
+
+To dump the state of the settings backend in Intel HEX format:
+
+   .. code-block:: shell
+
+      (gdb) Ctrl-C
+      (gdb) dump ihex memory soc-nv-flash-image.hex <storage_partition addr> <storage_partition size>
+      (gdb) exit
+
+To inspect the image:
+
+   .. code-block:: shell
+
+      (gdb) dump binary soc-nv-flash-image.bin <storage_partition addr> <storage_partition size>
+      (gdb) exit
+      $ hexdump -C soc-nv-flash-image.bin
+
+To convert a binary file to Intel HEX format with correct address offsets, use
+the ``objcpy`` tool:
+
+   .. code-block:: shell
+
+      objcopy -I binary -O ihex --change-addresses=<storage_partition addr> \
+          soc-nv-flash-image.bin build/zephyr/soc-nv-flash-image.hex
+
+And then flash the hex file to the device without erasing existing flash content.

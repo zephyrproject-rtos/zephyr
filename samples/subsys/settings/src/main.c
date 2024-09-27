@@ -495,6 +495,37 @@ static void example_delete(void)
 	}
 }
 
+static void example_iterate(void)
+{
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		printk("\n##############\n");
+		printk("# iteration %d", i);
+		printk("\n##############\n");
+
+		/*---------------------------------------------
+		 * basic save and load using registered handler
+		 */
+		example_save_and_load_basic();
+
+		/*-------------------------------------------------
+		 *load subtree directly using call-specific handler
+		 */
+		example_direct_load_subtree();
+
+		/*-------------------------
+		 * delete certain key-value
+		 */
+		example_delete();
+
+		/*---------------------------------------
+		 * a key-value without dedicated handler
+		 */
+		example_without_handler();
+	}
+}
+
 static void example_runtime_usage(void)
 {
 	int rc;
@@ -536,46 +567,41 @@ static void example_runtime_usage(void)
 	       source_name_val);
 }
 
-int main(void)
+static void example_provisioning(void)
 {
 
-	int i;
+	printk(SECTION_BEGIN_LINE);
+	printk("Display pre-provisioned settings\n");
+	/* load all key-values at once
+	 * In case a key-value doesn't exist in the storage
+	 * default values should be assigned to settings consuments variable
+	 * before any settings load call
+	 */
+	printk("\nload all key-value pairs using registered handlers\n");
+	settings_load();
+}
 
+int main(void)
+{
 	printk("\n*** Settings usage example ***\n\n");
 
 	/* settings initialization */
 	example_initialization();
 
-	for (i = 0; i < 6; i++) {
-		printk("\n##############\n");
-		printk("# iteration %d", i);
-		printk("\n##############\n");
-
-		/*---------------------------------------------
-		 * basic save and load using registered handler
-		 */
-		example_save_and_load_basic();
-
+	if (IS_ENABLED(CONFIG_FLASH_SIMULATOR_PROVISION)) {
 		/*-------------------------------------------------
-		 *load subtree directly using call-specific handler
+		 * Main focus is on pre-provisioned data, iterating
+		 * would only obscure the result.
 		 */
-		example_direct_load_subtree();
+		example_provisioning();
+	} else {
+		example_iterate();
 
-		/*-------------------------
-		 * delete certain key-value
+		/*------------------------------------------------------
+		 * write and read settings destination using runtime API
 		 */
-		example_delete();
-
-		/*---------------------------------------
-		 * a key-value without dedicated handler
-		 */
-		example_without_handler();
+		example_runtime_usage();
 	}
-
-	/*------------------------------------------------------
-	 * write and read settings destination using runtime API
-	 */
-	example_runtime_usage();
 
 	printk("\n*** THE END  ***\n");
 	return 0;
