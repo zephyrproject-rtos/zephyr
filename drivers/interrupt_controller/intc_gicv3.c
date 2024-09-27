@@ -447,6 +447,17 @@ static void gicv3_dist_init(void)
 	unsigned int idx;
 	mem_addr_t base = GIC_DIST_BASE;
 
+#ifdef CONFIG_GIC_SAFE_CONFIG
+	/*
+	 * Currently multiple OSes can run one the different CPU Cores which share single GIC,
+	 * but GIC distributor should avoid to be re-configured in order to avoid crash the
+	 * OSes has already been started.
+	 */
+	if (sys_read32(GICD_CTLR) & (BIT(GICD_CTLR_ENABLE_G0) | BIT(GICD_CTLR_ENABLE_G1NS))) {
+		return;
+	}
+#endif
+
 	num_ints = sys_read32(GICD_TYPER);
 	num_ints &= GICD_TYPER_ITLINESNUM_MASK;
 	num_ints = (num_ints + 1) << 5;
