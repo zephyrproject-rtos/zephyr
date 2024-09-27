@@ -392,6 +392,12 @@ else()
   add_custom_target(qemu_nvme_disk)
 endif()
 
+if(CONFIG_FLASH_SIMULATOR_PROVISION)
+  list(APPEND QEMU_EXTRA_FLAGS
+    -device loader,file=${CMAKE_CURRENT_BINARY_DIR}/soc-nv-flash-image.hex
+  )
+endif()
+
 if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
