@@ -47,6 +47,7 @@ UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
 #define CDC_ACM_RX_FIFO_BUSY		4
+#define CDC_ACM_TX_EP_BUSY              5
 
 static struct k_work_q cdc_acm_work_q;
 static K_KERNEL_STACK_DEFINE(cdc_acm_stack,
@@ -224,6 +225,8 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
+		} else if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
+			atomic_clear_bit(&data->state, CDC_ACM_TX_EP_BUSY);
 		}
 
 		goto ep_request_error;
@@ -245,6 +248,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 		/* TX transfer completion */
+		atomic_clear_bit(&data->state, CDC_ACM_TX_EP_BUSY);
 		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
@@ -522,7 +526,7 @@ static int cdc_acm_send_notification(const struct device *dev,
 }
 
 /*
- * TX handler is triggered when the state of TX fifo has been altered.
+ * TX handler is triggered when the state of TX fifo is not empty
  */
 static void cdc_acm_tx_fifo_handler(struct k_work *work)
 {
@@ -543,6 +547,10 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 
 	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
 		LOG_INF("USB support is suspended (FIXME: submit rwup)");
+		return;
+	}
+
+	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_EP_BUSY)) {
 		return;
 	}
 
@@ -674,9 +682,6 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	lock = irq_lock();
 	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
 	irq_unlock(lock);
-	if (done) {
-		data->tx_fifo.altered = true;
-	}
 
 	LOG_INF("UART dev %p, len %d, remaining space %u",
 		dev, len, ring_buf_space_get(data->tx_fifo.rb));
@@ -809,7 +814,6 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		return;
 	}
 
-	data->tx_fifo.altered = false;
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
 	data->tx_fifo.irq = false;
@@ -824,8 +828,8 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (data->tx_fifo.altered) {
-		LOG_DBG("tx fifo altered, submit work");
+	if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		LOG_DBG("tx fifo not empty, submit work");
 		cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 	}
 
