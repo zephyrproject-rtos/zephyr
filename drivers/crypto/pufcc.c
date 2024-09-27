@@ -9,13 +9,16 @@
 #else
   #include <zephyr/sys/sys_io.h>
   #include <zephyr/kernel.h>
+  #include "crypto_pufs.h"
 #endif
 
 /*****************************************************************************
  * Macros
  ****************************************************************************/
 #define SG_DMA_MAX_DSCS_SIZE (512 - 8)  // Enough for 15 descriptors
-#define BUFFER_SIZE 512
+#ifndef RS_RTOS_PORT
+  #define BUFFER_SIZE 512
+#endif
 #define PUFCC_MAX_BUSY_COUNT 8000000  // Max busy count for processing 10MB data
 #define CTR_MODE_BLOCK_SIZE 16
 
@@ -23,12 +26,15 @@
  * Local variable declarations
  ****************************************************************************/
 #ifndef RS_RTOS_PORT
-extern uint32_t __pufcc_descriptors;
-#else
-  uint32_t __pufcc_descriptors[BUFFER_SIZE];
-#endif
-static struct pufcc_sg_dma_desc *sg_dma_descs =
+  extern uint32_t __pufcc_descriptors;
+  static struct pufcc_sg_dma_desc *sg_dma_descs =
     (struct pufcc_sg_dma_desc *)&__pufcc_descriptors;
+#else
+  static struct pufcc_sg_dma_desc *sg_dma_descs =
+    (struct pufcc_sg_dma_desc *)__pufcc_descriptors;
+#endif
+
+
 static uint8_t pufcc_buffer[BUFFER_SIZE];
 
 // PUFcc microprogram for RSA2048

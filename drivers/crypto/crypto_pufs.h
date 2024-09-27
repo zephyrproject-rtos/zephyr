@@ -11,6 +11,10 @@
 #include "pufcc.h"
 #include <zephyr/crypto/crypto.h>
 
+#define BUFFER_SIZE 512
+
+extern uint8_t __pufcc_descriptors[BUFFER_SIZE];
+
 enum pufs_session_type {
   PUFS_SESSION_SIGN_VERIFICATION = 0,
   PUFS_SESSION_HASH_CALCULATION,

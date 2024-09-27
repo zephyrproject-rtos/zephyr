@@ -32,10 +32,42 @@ static char *session_to_str(enum pufs_session_type inSession) {
             ((inSession ==  PUFS_SESSION_SIGN_VERIFICATION)?"Sign_Verification":"Unknown")));
 }                                      
 
+uint8_t __pufcc_descriptors[BUFFER_SIZE];
+
+static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data_addr) {
+  uint8_t desc_count = 0;
+
+  if((pkt == NULL) || (data_addr == NULL)) {
+    LOG_ERR("%s(%d) NULL pointer(s)\n", __func__, __LINE__);
+    return -EBADFD;
+  }
+
+  // Set SGDMA descriptors
+  do {
+    data_addr->read_addr = (uint32_t)pkt->in_buf;
+    data_addr->len = pkt->in_len;
+    desc_count++;
+    if((desc_count * sizeof(struct pufcc_sg_dma_desc)) < BUFFER_SIZE){
+      data_addr->next = data_addr+1;
+    } else {
+      break;
+    }    
+  } while (pkt);
+
+  if (pkt) {
+    // No enough descriptors available
+    LOG_ERR("%s(%d) Not More Than %d Elements Allowed. Desc_Count:%d\n", \
+    __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count);
+    return -ENOTEMPTY;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
 static int crypto_pufs_init(const struct device *dev) {
 
   // Initialize base addresses of different PUFcc modules
-  enum pufcc_status lvStatus = pufcc_init((struct pufcc_dma_regs *)((struct pufs_config*)dev->config)->base);
+  enum pufcc_status lvStatus = pufcc_init(((struct pufs_config*)dev->config)->base);
 
   if(lvStatus == PUFCC_SUCCESS) {
     // Connect the IRQ
@@ -125,7 +157,7 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
                               );
   
   if(lvStatus != PUFCC_SUCCESS) {
-    LOG_ERR("%s(%d) PUFcc Error Code:%d\n", lvStatus);
+    LOG_ERR("%s(%d) PUFcc Error Code:%d\n", __func__, __LINE__, lvStatus);
     return -ECANCELED;
   }
 
@@ -273,39 +305,54 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.hash_ctx = ctx;
 
   if(!ctx->started) {    // started flag indicates if chunkwise hash calculation was started
+    
     struct rs_crypto_addr data_addr = {
-      .read_addr = pkt->in_buf,
-      .write_addr = pkt->out_buf,
+      .read_addr = (uint32_t)pkt->in_buf,
+      .write_addr = (uint32_t)pkt->out_buf,
       .len = pkt->in_len      
     };
-    struct rs_crypto_hash hash_out = {
-      .val = pkt->out_buf,
-      .len = pkt->out_len
-    };
+    
+    struct rs_crypto_hash hash_out = {0};
+        
     lvStatus = pufcc_calc_sha256_hash(&data_addr, &hash_out);
+
+    /* Copy output hash values calculated by PUFcc */
+    memcpy((void*)pkt->out_buf, (void*)hash_out.val, hash_out.len);
+    pkt->out_len = hash_out.len;
+
   } else {
-    struct rs_crypto_addr data_addr = {
-      .read_addr = pkt->in_buf,
-      .write_addr = pkt->out_buf,
-      .len = pkt->in_len,
-      .
-    };
-    struct rs_crypto_hash hash_in = {
-      .val = pkt->out_buf,
-      .len = pkt->out_len
-    };
-    struct rs_crypto_hash hash_out = {
-      .val = pkt->out_buf,
-      .len = pkt->out_len
-    };
+
+    struct rs_crypto_addr lvHash_Data_Addr[BUFFER_SIZE];
+    
+    if(fill_rs_crypto_addr(pkt, lvHash_Data_Addr) != PUFCC_SUCCESS) {      
+      return -ENOTEMPTY;
+    }
+
+    struct rs_crypto_hash hash_in = {0};
+
+    hash_in.len = pkt->in_len;
+    /* Copy input hash values for operating upon */
+    memcpy((void*)hash_in.val, (void*)pkt->in_buf, hash_in.len);
+
+    struct rs_crypto_hash hash_out = {0};
+
     lvStatus = pufcc_calc_sha256_hash_sg(
-                                          &data_addr, 
+                                          lvHash_Data_Addr, 
                                           pkt->head, 
                                           pkt->tail, 
                                           pkt->prev_len,
                                           &hash_in,
                                           &hash_out
                                         );
+
+    /* Copy output hash values calculated by PUFcc */
+    memcpy((void*)pkt->out_buf, (void*)hash_out.val, (size_t)hash_out.len);
+    pkt->out_len = hash_out.len; 
+
+    if(lvStatus != PUFCC_SUCCESS) {
+      LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
+      return -ECANCELED;
+    }                                       
   }
 
   if(lvStatus != PUFCC_SUCCESS) {
@@ -393,6 +440,59 @@ static int pufs_hash_async_callback_set(const struct device *dev, hash_completio
   return PUFCC_SUCCESS;
 }
 
+int pufs_sign_rsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
+{
+  enum pufcc_status lvStatus = PUFCC_SUCCESS;
+
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx; 
+
+  struct rs_crypto_addr msg_addr = {
+                                    .read_addr = (uint32_t)pkt->in_buf,
+                                    .len = pkt->in_len
+                                   };
+
+  lvStatus = pufcc_rsa2048_sign_verify(
+                                        (uint8_t *)ctx->sig, 
+                                        &msg_addr, 
+                                        (struct rs_crypto_rsa2048_puk *)ctx->pub_key
+                                      );
+
+  if(lvStatus != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
+    return -ECANCELED;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
+int pufs_sign_ecdsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
+{
+  enum pufcc_status lvStatus = PUFCC_SUCCESS;
+
+  ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
+  ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx;
+
+  struct rs_crypto_addr msg_addr = {
+                                    .read_addr = (uint32_t)pkt->in_buf,
+                                    .len = pkt->in_len,
+                                    .next = NULL
+                                  };
+  
+  lvStatus = pufcc_ecdsa256_sign_verify(
+                                         (struct rs_crypto_ec256_sig *)ctx->sig, 
+                                         &msg_addr, 
+                                         (struct rs_crypto_ec256_puk *)ctx->pub_key
+                                       );
+
+  if(lvStatus != PUFCC_SUCCESS) {
+    LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
+    return -ECANCELED;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
 /* Setup a signature session */
 static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ctx,
                                    enum sign_algo algo)
@@ -411,10 +511,10 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
   } else {
     if(algo == CRYPTO_SIGN_ALGO_ECDSA256) {
       ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_ECDSA256;
-      ctx->ops.ecdsa_crypt_hndlr = pufcc_ecdsa256_sign_verify;
+      ctx->ops.ecdsa_crypt_hndlr = pufs_sign_ecdsa_op;
     } else {
       ctx->ops.signing_algo = CRYPTO_SIGN_ALGO_RSA2048;
-      ctx->ops.rsa_crypt_hndlr = pufcc_rsa2048_sign_verify;
+      ctx->ops.rsa_crypt_hndlr = pufs_sign_rsa_op;
     }
   }
 

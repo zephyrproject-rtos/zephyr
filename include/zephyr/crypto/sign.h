@@ -76,10 +76,20 @@ struct sign_ctx {
 	 */
 	struct sign_ops ops;
 
-	/** To be populated by the app before calling begin_session() */
+	/** 
+	 * To be populated by the app before calling begin_session() 
+	 * In case of ecdsa, the public key should have {x, y}
+	 * coordinates respectively. In case of RSA2048, the public key
+	 * should have the modulus and exponent {n, e} respectively.
+	 * */
 	const uint8_t *pub_key;
 
-	/** To be populated by the app before calling begin_session() */
+	/** 
+	 * To be populated by the app before calling begin_session() 
+	 * In case of ecdsa, the signature should be constituted of two 
+	 * integer arrays of {r, s} respectively. In case of  RSA2048 the signature
+	 * is a normal array of integer values. 
+	*/
 	const uint8_t *sig;
 
 	/** The device driver instance this crypto context relates to. Will be
