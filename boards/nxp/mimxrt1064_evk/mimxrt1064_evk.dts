@@ -34,6 +34,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan2;
+		zephyr,touch = &ft5336;
 	};
 
 	sdram0: memory@80000000 {
