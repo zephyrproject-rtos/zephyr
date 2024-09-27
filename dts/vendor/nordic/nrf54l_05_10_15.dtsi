@@ -179,6 +179,7 @@
 					#interrupt-cells = <2>;
 					#address-cells = <1>;
 					status = "disabled";
+					interrupt-lines = <287>;
 				};
 			};
 
@@ -759,6 +760,7 @@
 				arm,num-irq-priority-bits = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				interrupt-lines = <287>;
 			};
 
 			cpuapp_systick: timer@e000e010 {
