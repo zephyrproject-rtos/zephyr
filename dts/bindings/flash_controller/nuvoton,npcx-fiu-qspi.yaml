@@ -38,3 +38,7 @@ properties:
     type: boolean
     description: |
       Two external SPI devices are supported for Direct Read Access (DRA) on QSPI bus.
+  flash-dev-inv:
+    type: boolean
+    description: |
+      Inverse the device connected to the base address.
