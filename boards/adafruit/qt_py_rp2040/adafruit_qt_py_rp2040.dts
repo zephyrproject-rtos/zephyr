@@ -56,11 +56,6 @@
 	};
 };
 
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
-};
-
 &uart1 {
 	current-speed = <115200>;
 	status = "okay";
