@@ -1827,7 +1827,16 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  *
  * @return Hop limit
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
+#else
+static inline uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return 0;
+}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 /**
  * @brief Set the default IPv6 hop limit of a given interface.
@@ -1835,7 +1844,16 @@ uint8_t net_if_ipv6_get_hop_limit(struct net_if *iface);
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 void net_if_ipv6_set_hop_limit(struct net_if *iface, uint8_t hop_limit);
+#else
+static inline void net_if_ipv6_set_hop_limit(struct net_if *iface,
+					     uint8_t hop_limit)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(hop_limit);
+}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -1860,7 +1878,16 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
  *
  * @return Hop limit
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface);
+#else
+static inline uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return 0;
+}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 /**
  * @brief Set the default IPv6 multicast hop limit of a given interface.
@@ -1868,7 +1895,16 @@ uint8_t net_if_ipv6_get_mcast_hop_limit(struct net_if *iface);
  * @param iface Network interface
  * @param hop_limit New hop limit
  */
+#if defined(CONFIG_NET_NATIVE_IPV6)
 void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface, uint8_t hop_limit);
+#else
+static inline void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface,
+						   uint8_t hop_limit)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(hop_limit);
+}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 /**
  * @brief Set IPv6 reachable time for a given interface
