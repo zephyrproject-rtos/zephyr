@@ -62,7 +62,8 @@ static inline const char *llext_string(struct llext_loader *ldr, struct llext *e
  * Relocation (llext_link.c)
  */
 
-int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local);
+int llext_link(struct llext_loader *ldr, struct llext *ext,
+	       const struct llext_load_param *ldr_parm);
 void llext_dependency_remove_all(struct llext *ext);
 
 #endif /* ZEPHYR_SUBSYS_LLEXT_PRIV_H_ */
