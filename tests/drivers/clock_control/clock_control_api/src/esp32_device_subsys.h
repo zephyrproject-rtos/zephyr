@@ -12,9 +12,15 @@ static const struct device_subsys_data subsys_data[] = {
 	{.subsys = (void *) ESP32_LEDC_MODULE},
 	{.subsys = (void *) ESP32_UART1_MODULE},
 	{.subsys = (void *) ESP32_I2C0_MODULE},
+#if !defined(CONFIG_SOC_SERIES_ESP32C2)
 	{.subsys = (void *) ESP32_UHCI0_MODULE},
-	{.subsys = (void *) ESP32_RMT_MODULE},
-	{.subsys = (void *) ESP32_TWAI_MODULE},
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32S2) || \
+	defined(CONFIG_SOC_SERIES_ESP32S3)
+	{.subsys = (void *) ESP32_TIMG1_MODULE},
+#else
+	{.subsys = (void *) ESP32_TIMG0_MODULE},
+#endif
 	{.subsys = (void *) ESP32_RNG_MODULE},
 };
 
