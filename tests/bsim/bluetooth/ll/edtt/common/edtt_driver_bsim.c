@@ -20,6 +20,7 @@
 #include "bs_utils.h"
 #include "bs_oswrap.h"
 #include "bs_pc_base_fifo_user.h"
+#include "bsim_args_runner.h"
 
 /* Recheck if something arrived from the EDTT every 5ms */
 #define EDTT_IF_RECHECK_DELTA 5 /* ms */
@@ -41,8 +42,6 @@ static int edtt_autoshutdown;
 #define TO_EDTT   1
 static int fifo[2] = { -1, -1 };
 static char *fifo_path[2] = {NULL, NULL};
-
-extern unsigned int global_device_nbr;
 
 static void edttd_clean_up(void);
 static void edptd_create_fifo_if(void);
@@ -173,6 +172,7 @@ void set_edtt_autoshutdown(bool Mode)
 static void edptd_create_fifo_if(void)
 {
 	int flags;
+	int device_nbr = bsim_args_get_global_device_nbr();
 
 	bs_trace_raw_time(9, "Bringing EDTT IF up (waiting for other side)\n");
 
@@ -190,10 +190,8 @@ static void edptd_create_fifo_if(void)
 						 sizeof(char));
 	fifo_path[TO_EDTT] = (char *)bs_calloc(pb_com_path_length + 30,
 						 sizeof(char));
-	sprintf(fifo_path[TO_DEVICE], "%s/Device%i.PTTin",
-		pb_com_path, global_device_nbr);
-	sprintf(fifo_path[TO_EDTT], "%s/Device%i.PTTout",
-		pb_com_path, global_device_nbr);
+	sprintf(fifo_path[TO_DEVICE], "%s/Device%i.PTTin", pb_com_path, device_nbr);
+	sprintf(fifo_path[TO_EDTT], "%s/Device%i.PTTout", pb_com_path, device_nbr);
 
 	if ((pb_create_fifo_if_not_there(fifo_path[TO_DEVICE]) != 0)
 		|| (pb_create_fifo_if_not_there(fifo_path[TO_EDTT]) != 0)) {
