@@ -527,7 +527,7 @@ static int llext_export_symbols(struct llext_loader *ldr, struct llext *ext)
 }
 
 static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
-			      bool pre_located)
+			      const struct llext_load_param *ldr_parm)
 {
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
@@ -586,7 +586,7 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 				}
 			}
 
-			if (pre_located) {
+			if (ldr_parm->pre_located) {
 				sym_tab->syms[j].addr = (uint8_t *)sym.st_value +
 					(ldr->hdr.e_type == ET_REL ? section_addr : 0);
 			} else {
@@ -609,7 +609,12 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		  const struct llext_load_param *ldr_parm)
 {
+	const struct llext_load_param default_ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	int ret;
+
+	if (!ldr_parm) {
+		ldr_parm = &default_ldr_parm;
+	}
 
 	/* Zero all memory that is affected by the loading process
 	 * (see the NOTICE at the top of this file).
@@ -681,14 +686,14 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	LOG_DBG("Copying symbols...");
-	ret = llext_copy_symbols(ldr, ext, ldr_parm ? ldr_parm->pre_located : false);
+	ret = llext_copy_symbols(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy symbols, ret %d", ret);
 		goto out;
 	}
 
 	LOG_DBG("Linking ELF...");
-	ret = llext_link(ldr, ext, ldr_parm ? ldr_parm->relocate_local : true);
+	ret = llext_link(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to link, ret %d", ret);
 		goto out;
