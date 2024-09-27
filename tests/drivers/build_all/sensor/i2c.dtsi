@@ -1070,16 +1070,16 @@ test_i2c_apds9253: apds9253@96 {
 	resolution = <APDS9253_RESOLUTION_16BIT_25MS>;
 };
 
-test_i2c_mmc56x3: mmc56x3@92 {
+test_i2c_mmc56x3: mmc56x3@97 {
 	compatible = "memsic,mmc56x3";
-	reg = <0x92>;
+	reg = <0x97>;
 	magn-odr = <0>;
 	auto-self-reset;
 };
 
-test_i2c_tmp1075: tmp1075@91 {
+test_i2c_tmp1075: tmp1075@98 {
 	compatible = "ti,tmp1075";
-	reg = <0x91>;
+	reg = <0x98>;
 	alert-gpios =  <&test_gpio 0 0>;
 	conversion-rate = <220000>;
 	lower-threshold = <27>;
