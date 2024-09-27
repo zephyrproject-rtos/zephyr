@@ -348,6 +348,9 @@ Networking
   :c:func:`coap_get_block2_option` now accepts an additional ``bool *has_more``
   parameter, to store the value of the more flag. (:github:`76052`)
 
+* The struct :c:struct:`coap_transmission_parameters` has a new field ``ack_random_percent`` if
+  :kconfig:option:`CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT` is enabled. (:github:`79058`)
+
 * The Ethernet bridge shell is moved under network shell. This is done so that
   all the network shell activities can be found under ``net`` shell command.
   After this change the bridge shell is used by ``net bridge`` command. (:github:`77235`)
