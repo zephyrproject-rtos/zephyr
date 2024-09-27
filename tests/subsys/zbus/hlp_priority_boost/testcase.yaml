@@ -1,7 +1,7 @@
 tests:
   message_bus.zbus.hlp_priority_boost:
     platform_exclude:
-      - fvp_base_revc_2xaemv8a//smp/ns
+      - fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
       # All Intel Audio DSP platforms have non-coherent cache
       # between CPUs. So the zbus_channel struct data goes
       # out-of-sync between CPUs with multiple producer and
