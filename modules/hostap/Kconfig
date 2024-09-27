@@ -485,4 +485,8 @@ config SAE_PWE_EARLY_EXIT
 	  this can be intensive, so, add an option to exit early.
 	  Note that this is highly insecure and shouldn't be used in production
 
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
+	bool
+	depends on WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
+
 endif # WIFI_NM_WPA_SUPPLICANT
