@@ -504,6 +504,15 @@ config BT_CTLR_SCAN_AUX_SET
 	help
 	  Maximum supported auxiliary channel scan sets.
 
+config BT_CTLR_SCAN_AUX_CHAIN_COUNT
+	int "LE Extended Scanning Auxiliary Chains"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	range 1 64
+	default 3
+	help
+	  Maximum number of extended/periodic advertising chains that can be
+	  followed simultaneously
+
 config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
 	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
 	depends on (BT_OBSERVER && BT_CTLR_ADV_EXT) || BT_CTLR_SYNC_PERIODIC

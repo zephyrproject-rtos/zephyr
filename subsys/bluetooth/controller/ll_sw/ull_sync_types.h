@@ -81,6 +81,9 @@ struct ll_sync_set {
 	 */
 	struct node_rx_pdu *node_rx_sync_estab;
 
+	/* Extra node_rx for generating incomplete report */
+	struct node_rx_pdu *rx_incomplete;
+
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct {
 		struct node_rx_pdu *node_rx_estab;
@@ -92,8 +95,6 @@ struct ll_sync_set {
 		struct ll_sync_iso_set *volatile sync_iso;
 	} iso;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
-
-	uint16_t data_len;
 };
 
 struct node_rx_sync {

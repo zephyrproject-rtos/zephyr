@@ -420,15 +420,10 @@ uint8_t ll_sync_terminate(uint16_t handle)
 	/* Check and stop any auxiliary PDU receptions */
 	lll_aux = sync->lll.lll_aux;
 	if (lll_aux) {
-		struct ll_scan_aux_set *aux;
-
-		aux = HDR_LLL2ULL(lll_aux);
-		err = ull_scan_aux_stop(aux);
+		err = ull_scan_aux_stop(&sync->lll);
 		if (err && (err != -EALREADY)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
-
-		LL_ASSERT(!aux->parent);
 	}
 
 	link_sync_lost = sync->node_rx_lost.rx.hdr.link;
@@ -588,9 +583,6 @@ void ull_sync_release(struct ll_sync_set *sync)
 		sync->timeout = 0U;
 	}
 
-	/* reset accumulated data len */
-	sync->data_len = 0U;
-
 	mem_release(sync, &sync_free);
 }
 
@@ -660,7 +652,7 @@ bool ull_sync_setup_sid_match(struct ll_scan_set *scan, uint8_t sid)
 		  (sid == scan->periodic.sid)));
 }
 
-void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
+void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 		    struct node_rx_pdu *node_rx, struct pdu_adv_sync_info *si)
 {
 	uint32_t ticks_slot_overhead;
@@ -721,7 +713,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->data_chan_id = lll_chan_id(lll->access_addr);
 	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
 	lll->event_counter = sys_le16_to_cpu(si->evt_cntr);
-	lll->phy = aux->lll.phy;
+	lll->phy = phy;
 	lll->forced = 0U;
 
 	interval = sys_le16_to_cpu(si->interval);

@@ -40,19 +40,36 @@ struct ll_scan_set {
 #endif
 };
 
-struct ll_scan_aux_set {
-	struct ull_hdr      ull;
+struct ll_scan_aux_chain {
 	struct lll_scan_aux lll;
 
 	/* lll_scan or lll_sync */
 	void *volatile parent;
 
+	/* Current nodes in this chain */
+	/* TODO - do we need both head and tail? */
 	struct node_rx_pdu *rx_head;
 	struct node_rx_pdu *rx_last;
 
+	/* current ticker timeout for this chain */
+	uint32_t ticker_ticks;
+
+	/* Next chain in list (if any) */
+	struct ll_scan_aux_chain *next;
+
+	/* Current total advertising data */
 	uint16_t data_len;
 
-#if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
-	struct node_rx_pdu *rx_incomplete;
-#endif
+	/* This chain is LLL scheduled */
+	uint8_t is_lll_sched:1;
+	/* Last emitted node_rx's aux_sched (only used in sync contexts) */
+	uint8_t aux_sched:1;
+};
+
+struct ll_scan_aux_set {
+	struct ull_hdr      ull;
+
+	struct ll_scan_aux_chain *sched_chains;
+	struct ll_scan_aux_chain *active_chains;
+	struct ll_scan_aux_chain *flushing_chains;
 };
