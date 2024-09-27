@@ -1,0 +1,5 @@
+board:
+  name: bluepill_stm32f103c8t6
+  vendor: st
+  socs:
+    - name: stm32f103xb

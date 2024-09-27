@@ -1,0 +1,20 @@
+identifier: bluepill_stm32f103c8t6
+name: STM32F103RCT6 Bluepill Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 20
+flash: 64
+supported:
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - watchdog
+  - adc
+  - counter
+  - usbd
+vendor: st
