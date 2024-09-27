@@ -149,7 +149,7 @@ static inline void hal_trigger_crypt_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO,
 			      NRF_RADIO_EVENT_ADDRESS, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
-	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_CRYPT, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
+	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
 }
 
 /*******************************************************************************
@@ -157,7 +157,7 @@ static inline void hal_trigger_crypt_ppi_config(void)
  */
 static inline void hal_trigger_crypt_ppi_disable(void)
 {
-	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_CRYPT);
+	nrf_ccm_subscribe_clear(NRF_CCM, NRF_CCM_TASK_START);
 }
 
 /*******************************************************************************
