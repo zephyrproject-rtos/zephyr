@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -160,6 +162,24 @@
 			input-codes = <0>;
 			double-tap-codes = <0>;
 			double-tap-delay-ms = <0>;
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			sbus {
+				compatible = "futaba,sbus";
+				right_stick_x {
+					channel = <1>;
+					type = <INPUT_EV_ABS>;
+					zephyr,code = <INPUT_ABS_RX>;
+				};
+			};
 		};
 
 		i2c@1 {
