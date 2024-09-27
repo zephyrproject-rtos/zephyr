@@ -1677,24 +1677,24 @@ struct i2c_reg {
 
 struct itim32_reg {
 	/* [0x00] Internal 8-Bit Timer Counter */
-	volatile uint8_t CNT;
+	volatile uint8_t ITCNT;
 	/* [0x01] Internal Timer Prescaler */
-	volatile uint8_t PRE;
+	volatile uint8_t ITPRE;
 	/* [0x02] Internal 16-Bit Timer Counter */
-	volatile uint16_t CNT16;
+	volatile uint16_t ITCNT16;
 	/* [0x04] Internal Timer Control and Status */
-	volatile uint8_t CTS;
+	volatile uint8_t ITCTS;
 	volatile uint8_t RESERVED1[3];
 	/* [0x08] Internal 32-Bit Timer Counter */
-	volatile uint32_t CNT32;
+	volatile uint32_t ITCNT32;
 };
 
 /* ITIM32 register fields */
-#define NPCM_CTS_ITEN                         (7)
-#define NPCM_CTS_CKSEL                        (4)
-#define NPCM_CTS_TO_WUE                       (3)
-#define NPCM_CTS_TO_IE                        (2)
-#define NPCM_CTS_TO_STS                       (0)
+#define NPCM_ITCTS_ITEN				(7)
+#define NPCM_ITCTS_CKSEL			(4)
+#define NPCM_ITCTS_TO_WUE			(3)
+#define NPCM_ITCTS_TO_IE			(2)
+#define NPCM_ITCTS_TO_STS			(0)
 
 /*
  * Tachometer (TACH) Sensor device registers

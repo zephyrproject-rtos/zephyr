@@ -41,6 +41,15 @@
 			apb3-prescaler = <1>; /* APB3_CLK runs at 96MHz */
 		};
 
+		timer_systick: timer-systick@400b0000 {
+			compatible = "nuvoton,npcm-itim-systick";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b0000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 0>;
+			interrupts = <29 1>;
+		};
+
 		qspi_spim0: quad-spim@40017000 {
 			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL1 0>;
 		};

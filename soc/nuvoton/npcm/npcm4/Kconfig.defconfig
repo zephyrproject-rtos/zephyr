@@ -8,6 +8,9 @@ if SOC_SERIES_NPCM4
 config NUM_IRQS
 	default 82
 
+config CORTEX_M_SYSTICK
+	default !NPCM_ITIM_SYSTICK
+
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
