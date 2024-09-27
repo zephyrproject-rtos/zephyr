@@ -12,6 +12,7 @@ add_subdirectory_ifdef(CONFIG_STEP_DIR_STEPPER step_dir)
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+zephyr_library_sources_ifdef(CONFIG_A4988_STEPPER a4988_stepper_controller.c)
 zephyr_library_sources_ifdef(CONFIG_FAKE_STEPPER fake_stepper_controller.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_STEPPER gpio_stepper_controller.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_SHELL stepper_shell.c)
