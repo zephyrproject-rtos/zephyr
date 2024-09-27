@@ -250,6 +250,7 @@ uint8_t lll_scan_aux_setup(struct pdu_adv *pdu, uint8_t pdu_phy,
 void lll_scan_aux_isr_aux_setup(void *param)
 {
 	struct pdu_adv_aux_ptr *aux_ptr;
+	struct lll_scan_aux *lll_aux;
 	struct node_rx_pdu *node_rx;
 	uint32_t window_widening_us;
 	uint32_t window_size_us;
@@ -269,7 +270,14 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	phy_aux = BIT(PDU_ADV_AUX_PTR_PHY_GET(aux_ptr));
 	ftr->aux_phy = phy_aux;
 
-	lll = ftr->param;
+	lll = ull_scan_lll_is_valid_get(ftr->param);
+	if (!lll) {
+		/* param is a scan_aux */
+		lll_aux = ftr->param;
+		lll = ull_scan_aux_lll_parent_get(lll_aux, NULL);
+	} else {
+		lll_aux = NULL;
+	}
 
 	/* Determine the window size */
 	if (aux_ptr->offs_units) {
@@ -299,11 +307,14 @@ void lll_scan_aux_isr_aux_setup(void *param)
 
 	radio_pkt_rx_set(node_rx->pdu);
 
-	/* FIXME: we could (?) use isr_rx_ull_schedule if already have aux
-	 *        context allocated, i.e. some previous aux was scheduled from
-	 *        ull already.
+	/* Use isr_rx_ull_schedule if already have aux context allocated,
+	 * i.e. some previous aux was scheduled from ull already.
 	 */
-	radio_isr_set(isr_rx_lll_schedule, node_rx);
+	if (lll_aux) {
+		radio_isr_set(isr_rx_ull_schedule, lll_aux);
+	} else {
+		radio_isr_set(isr_rx_lll_schedule, node_rx);
+	}
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
@@ -569,8 +580,12 @@ sync_aux_prepare_done:
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	uint32_t overhead;
 
+#if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+	overhead = lll_preempt_calc(ull, TICKER_ID_SCAN_AUX, ticks_at_event);
+#else /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	overhead = lll_preempt_calc(ull, (TICKER_ID_SCAN_AUX_BASE +
 					  ull_scan_aux_lll_handle_get(lll_aux)), ticks_at_event);
+#endif /* !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 	/* check if preempt to start has changed */
 	if (overhead) {
 		LL_ASSERT_OVERHEAD(overhead);
@@ -661,6 +676,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+	e->lll = param;
 
 	lll_done(param);
 }
@@ -700,6 +716,7 @@ static void isr_done(void *param)
 
 		e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 		LL_ASSERT(e);
+		e->lll = param;
 	}
 
 	lll_isr_cleanup(param);
@@ -853,7 +870,7 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 isr_rx_do_close:
 	if (lll_aux) {
-		radio_isr_set(isr_done, NULL);
+		radio_isr_set(isr_done, lll_aux);
 	} else {
 		/* Send message to flush Auxiliary PDU list */
 		if (lll->is_aux_sched && err != -ECANCELED) {
@@ -888,7 +905,7 @@ isr_rx_do_close:
 			radio_isr_set(lll_scan_isr_resume, lll);
 		} else {
 			/* auxiliary channel radio event done */
-			radio_isr_set(isr_done, NULL);
+			radio_isr_set(isr_done, lll->lll_aux);
 		}
 	}
 	radio_disable();
@@ -1308,7 +1325,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 		ftr->aux_lll_sched = lll_scan_aux_setup(pdu, phy_aux,
 							phy_aux_flags_rx,
 							lll_scan_aux_isr_aux_setup,
-							lll);
+							lll_aux ? (void *)lll_aux : (void *)lll);
 
 		node_rx->hdr.type = NODE_RX_TYPE_EXT_AUX_REPORT;
 
@@ -1601,7 +1618,7 @@ isr_rx_connect_rsp_do_close:
 
 		radio_isr_set(lll_scan_isr_resume, lll);
 	} else {
-		radio_isr_set(isr_done, NULL);
+		radio_isr_set(isr_done, lll_aux);
 	}
 
 	radio_disable();
@@ -1644,6 +1661,7 @@ static void isr_early_abort(void *param)
 
 	e = ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_SCAN_AUX);
 	LL_ASSERT(e);
+	e->lll = param;
 
 	lll_isr_early_abort(param);
 }

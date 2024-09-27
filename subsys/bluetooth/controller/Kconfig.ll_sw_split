@@ -498,13 +498,31 @@ config BT_CTRL_ADV_ADI_IN_SCAN_RSP
 	help
 	  Enable ADI field in AUX_SCAN_RSP PDU
 
+config BT_CTLR_SCAN_AUX_USE_CHAINS
+	bool "Use new chains based implementation for following advertising chains"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	help
+	  Use the new chains based implementation of following advertising chains
+	  instead of the old sets based one. The new implementation has a much lighter
+	  footprint, since it limits allocations per advertising chain to the bare
+	  minimum and only uses one ticker
+
 config BT_CTLR_SCAN_AUX_SET
 	int "LE Extended Scanning Auxiliary Sets"
-	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && !BT_CTLR_SCAN_AUX_USE_CHAINS
 	range 1 64
 	default 1
 	help
 	  Maximum supported auxiliary channel scan sets.
+
+config BT_CTLR_SCAN_AUX_CHAIN_COUNT
+	int "LE Extended Scanning Auxiliary Chains"
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT && BT_CTLR_SCAN_AUX_USE_CHAINS
+	range 1 64
+	default 3
+	help
+	  Maximum number of extended/periodic advertising chains that can be
+	  followed simultaneously
 
 config BT_CTLR_SCAN_AUX_SYNC_RESERVE_MIN
 	bool "Use minimal Scan Auxiliary and Periodic Sync PDU time reservation"
