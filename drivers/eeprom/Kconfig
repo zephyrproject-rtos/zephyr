@@ -104,7 +104,6 @@ config EEPROM_SIMULATOR
 	bool "Simulated EEPROM driver"
 	default y
 	depends on DT_HAS_ZEPHYR_SIM_EEPROM_ENABLED
-	depends on !(ARCH_POSIX && !EXTERNAL_LIBC)
 	select STATS
 	select STATS_NAMES
 	help
