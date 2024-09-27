@@ -713,7 +713,7 @@ static int clock_control_rpi_pico_init(const struct device *dev)
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
 
