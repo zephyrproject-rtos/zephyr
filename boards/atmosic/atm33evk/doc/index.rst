@@ -73,7 +73,22 @@ Getting Started
 
 Follow the instructions_ from the official Zephyr documentation on how to get started.
 
-.. _instructions: https://docs.zephyrproject.org/3.4.0/develop/getting_started/index.html
+
+
+Connecting an ATMEVK on Linux
+=============================
+
+Special udev and group permissions are required by OpenOCD, which is the primary
+debugger used to interface with Atmosic EVKs, in order to access the USB FTDI
+SWD interface or J-Link OB.  When following Step 4 "Install udev rules, which
+allow you ..." for Ubuntu_, add the following line to
+`60-openocd.rules`::
+
+ ATTRS{idVendor}=="1366", ATTRS{idProduct}=="1050", MODE="660", GROUP="plugdev", TAG+="uaccess"
+
+.. _Ubuntu: https://docs.zephyrproject.org/3.7.0/develop/getting_started/index.html#install-the-zephyr-sdk
+
+.. _instructions: https://docs.zephyrproject.org/3.7.0/develop/getting_started/index.html
 
 Connecting an ATMEVK on Windows
 ===============================
@@ -119,17 +134,14 @@ The Atmosic SPE can be found under ``openair/samples/spe``.
 
 .. _var_assignments:
 
-In the remainder of this document, substitute for `<SPE>`, `<APP>`, and `<MCUBOOT>` appropriately.  For example::
+In the remainder of this document, substitute for ``<SPE>``, ``<APP>``, ``<MCUBOOT>``, and ``<BOARD>`` appropriately.  For example::
 
- `<SPE>`: `openair/examples/spe`
- `<APP>`: `zephyr/samples/hello_world`
- `<MCUBOOT>`: `bootloader/mcuboot/boot/zephyr`
+ SPE: openair/samples/spe
+ APP: zephyr/samples/hello_world
+ MCUBOOT: bootloader/mcuboot/boot/zephyr
+ BOARD: <BOARD>
 
-and::
-
- `BOARD`: `ATMEVK-3330-QN-5`
-
-Alternatively, use any board from the boards_ list as `<BOARD>`.
+Alternatively, use any board from the boards_ list as ``<BOARD>``.
 
 Building the SPE
 ================
@@ -205,7 +217,9 @@ In this section, substitute ``<DEVICE_ID>`` with the serial for the Atmosic inte
 
 The following subsections describe how to flash a device with and without MCUboot option.  If the application requires Bluetooth (configured with ``CONFIG_BT``), and uses the fixed BLE link controller image option, then the controller image requires programming.  This is typically done prior to programming the application and resetting (omitting the ``--noreset`` option to ``west flash``).  For example::
 
-  west flash --verify --device=<DEVICE_ID> --jlink --skip-rebuild -d build/<BOARD>/<MCUBOOT> --use-elf --elf-file modules/hal/atmosic_lib/ATM33xx-5/drivers/ble/atmwstk_LL.elf --noreset
+  west flash --verify --device=<DEVICE_ID> --jlink --skip-rebuild -d build/<BOARD>/<MCUBOOT> --use-elf --elf-file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_<FLAV>.elf --noreset
+
+where ``<FLAV>`` is one of ``LL`` or ``PD50LL``.
 
 For the non-MCUboot option, substitute ``<MCUBOOT>`` with ``<SPE>`` in the above command.
 
@@ -255,7 +269,7 @@ With MCUBoot::
 
 * replace ``<DEVICE_ID>`` with the appropriate device ID (typically the JLINK serial ID. Ex: ``000900028906``)
 * replace ``<BOARD>`` with the targeted board design (Ex: ATMEVK-3325-LQK )
-* replace ``<application path>`` with the path to your application (Ex: ``zephyr/samples/bluetooth/peripheral_dis``)
+* replace ``<application path>`` with the path to your application (Ex: ``zephyr/samples/bluetooth/peripheral_hr``)
 * see below for selecting ``-w``/``-l`` options.
 
 Using -w [flavor] and -l [flavor] Options
@@ -332,18 +346,18 @@ Generate atm isp file
 =====================
 ::
 
-  west atm_arch -o ATMEVK-3330-QN-5_beacon.atm \
-    -p build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/partition_info.map \
-    --app_file build/ATMEVK-3330-QN-5_ns/zephyr/samples/bluetooth/beacon/zephyr/zephyr.signed.bin \
-    --mcuboot_file build/ATMEVK-3330-QN-5/bootloader/mcuboot/boot/zephyr/zephyr/zephyr.bin \
-    --atmwstk_file modules/hal/atmosic_lib/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
+  west atm_arch -o <BOARD>_beacon.atm \
+    -p build/<BOARD>_ns/<APP>/zephyr/partition_info.map \
+    --app_file build/<BOARD>_ns/<APP>/zephyr/zephyr.signed.bin \
+    --mcuboot_file build/<BOARD>/<MCUBOOT>/zephyr/zephyr.bin \
+    --atmwstk_file openair/modules/hal_atmosic/ATM33xx-5/drivers/ble/atmwstk_PD50LL.bin \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp
 
 Show atm isp file
 =================
 ::
 
-  west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
+  west atm_arch -i <BOARD>_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
     --show
 
@@ -351,7 +365,7 @@ Flash atm isp file
 ==================
 ::
 
-  west atm_arch -i ATMEVK-3330-QN-5_beacon.atm \
+  west atm_arch -i <BOARD>_beacon.atm \
     --atm_isp_path modules/hal/atmosic_lib/tools/atm_isp \
     --openocd_pkg_root=modules/hal/atmosic_lib \
     --burn
