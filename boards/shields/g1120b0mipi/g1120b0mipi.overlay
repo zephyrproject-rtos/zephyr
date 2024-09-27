@@ -7,6 +7,7 @@
 /{
 	chosen {
 		zephyr,display = &rm67162_g1120b0mipi;
+		zephyr,touch = &ft3267_g1120b0mipi;
 	};
 
 	en_mipi_display_g1120b0mipi: enable-mipi-display {

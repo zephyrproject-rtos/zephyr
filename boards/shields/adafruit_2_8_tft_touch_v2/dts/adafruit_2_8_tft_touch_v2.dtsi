@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &adafruit_2_8_tft_touch_v2_ili9340;
+		zephyr,touch = &ft5336_adafruit_2_8_tft_touch_v2;
 	};
 
 	lvgl_pointer {
