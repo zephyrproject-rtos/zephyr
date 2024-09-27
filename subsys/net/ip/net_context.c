@@ -2456,7 +2456,7 @@ unlock:
 	return verdict;
 }
 
-#if defined(CONFIG_NET_UDP)
+#if defined(CONFIG_NET_NATIVE_UDP)
 static int recv_udp(struct net_context *context,
 		    net_context_recv_cb_t cb,
 		    k_timeout_t timeout,
@@ -2538,7 +2538,7 @@ static int recv_udp(struct net_context *context,
 }
 #else
 #define recv_udp(...) 0
-#endif /* CONFIG_NET_UDP */
+#endif /* CONFIG_NET_NATIVE_UDP */
 
 static enum net_verdict net_context_raw_packet_received(
 					struct net_conn *conn,

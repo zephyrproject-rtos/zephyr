@@ -174,6 +174,7 @@ struct net_if *z_vrfy_net_if_get_by_index(int index)
 #include <zephyr/syscalls/net_if_get_by_index_mrsh.c>
 #endif
 
+#if defined(CONFIG_NET_NATIVE)
 static inline void net_context_send_cb(struct net_context *context,
 				       int status)
 {
@@ -382,6 +383,7 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 			;
 	}
 }
+#endif /* CONFIG_NET_NATIVE */
 
 void net_if_stats_reset(struct net_if *iface)
 {
@@ -445,6 +447,7 @@ static inline void init_iface(struct net_if *iface)
 	net_ipv6_pe_init(iface);
 }
 
+#if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct net_l2 *l2;
@@ -551,6 +554,7 @@ done:
 
 	return verdict;
 }
+#endif /* CONFIG_NET_NATIVE */
 
 int net_if_set_link_addr_locked(struct net_if *iface,
 				uint8_t *addr, uint8_t len,
