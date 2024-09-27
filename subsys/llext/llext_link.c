@@ -135,8 +135,8 @@ static const void *llext_find_extension_sym(const char *sym_name, struct llext *
 	return se.addr;
 }
 
-static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
-			   elf_shdr_t *shdr, bool do_local, elf_shdr_t *tgt)
+static void llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_t *shdr,
+			   const struct llext_load_param *ldr_parm, elf_shdr_t *tgt)
 {
 	unsigned int sh_cnt = shdr->sh_size / shdr->sh_entsize;
 	/*
@@ -252,7 +252,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 			*(const void **)(text + got_offset) = link_addr;
 			break;
 		case STB_LOCAL:
-			if (do_local) {
+			if (ldr_parm->relocate_local) {
 				arch_elf_relocate_local(ldr, ext, &rela, &sym, got_offset);
 			}
 		}
@@ -263,7 +263,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 	}
 }
 
-int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
+int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_load_param *ldr_parm)
 {
 	uintptr_t sect_base = 0;
 	elf_rela_t rel;
@@ -330,7 +330,7 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, bool do_local)
 				tgt = ldr->sect_hdrs + shdr->sh_info;
 			}
 
-			llext_link_plt(ldr, ext, shdr, do_local, tgt);
+			llext_link_plt(ldr, ext, shdr, ldr_parm, tgt);
 			continue;
 		}
 
