@@ -65,6 +65,13 @@ built, flashed, and debugged in the usual way. See
 :ref:`build_an_application` and :ref:`application_run` for more details on
 building and running.
 
+Applications for the ``nrf54l20pdk/nrf54l20/cpuflpr`` board target need
+to be built as multicore configuration with code snippet called ``vpr_launcher``
+for the application core.
+
+Enter the following command to compile ``hello_world`` for the FLPR core::
+ west build -p -b nrf54l20pdk/nrf54l20/cpuflpr --sysbuild -- -DSB_VPR_LAUNCHER=y
+
 Flashing
 ========
 
