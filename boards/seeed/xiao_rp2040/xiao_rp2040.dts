@@ -86,11 +86,6 @@
 	};
 };
 
-&clocks {
-	pinctrl-0 = <&clocks_default>;
-	pinctrl-names = "default";
-};
-
 &timer {
 	status = "okay";
 };
