@@ -1,6 +1,6 @@
 tests:
   message_bus.zbus.user_data.channel_user_data:
-    platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
+    platform_exclude: fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns
     tags: zbus
     integration_platforms:
       - native_sim
