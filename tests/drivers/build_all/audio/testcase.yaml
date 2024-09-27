@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - audio
+tests:
+  drivers.audio.build.i2c:
+    extra_args: DTC_OVERLAY_FILE="i2c_devices.overlay"
+    extra_configs:
+      - CONFIG_I2C=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
