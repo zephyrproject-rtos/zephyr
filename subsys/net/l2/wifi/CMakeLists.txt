@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
+zephyr_library_named(wifi_nm)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_include_directories_ifdef(
   CONFIG_NET_L2_WIFI_SHELL ${ZEPHYR_BASE}/subsys/net/lib/shell
@@ -33,31 +33,31 @@ file(MAKE_DIRECTORY ${gen_dir})
 zephyr_include_directories(${gen_inc_dir})
 
 generate_inc_file_for_target(
-    app
+    wifi_nm
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/client.pem
     ${gen_dir}/client.pem.inc
     )
 
 generate_inc_file_for_target(
-    app
+    wifi_nm
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/client-key.pem
     ${gen_dir}/client-key.pem.inc
     )
 
 generate_inc_file_for_target(
-    app
+    wifi_nm
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/ca.pem
     ${gen_dir}/ca.pem.inc
     )
 
 generate_inc_file_for_target(
-    app
+    wifi_nm
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/server.pem
     ${gen_dir}/server.pem.inc
     )
 
 generate_inc_file_for_target(
-    app
+    wifi_nm
     ${ZEPHYR_BASE}/samples/net/wifi/test_certs/server-key.pem
     ${gen_dir}/server-key.pem.inc
     )
