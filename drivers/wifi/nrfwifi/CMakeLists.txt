@@ -29,9 +29,14 @@ zephyr_include_directories_ifdef(CONFIG_NRF70_RADIO_TEST
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/radio_test
 )
 
-zephyr_include_directories_ifndef(CONFIG_NRF70_RADIO_TEST
-  {OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/default
+zephyr_include_directories_ifdef(CONFIG_NRF70_OFFLOADED_RAW_TX
+  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/offload_raw_tx
+  off_raw_tx/inc
 )
+
+if(NOT CONFIG_NRF70_RADIO_TEST AND NOT CONFIG_NRF70_OFFLOADED_RAW_TX)
+  zephyr_include_directories(${OS_AGNOSTIC_BASE}/fw_if/umac_if/inc/default)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_SR_COEX
   src/coex.c
@@ -70,13 +75,15 @@ zephyr_library_sources_ifdef(CONFIG_NRF_WIFI_PATCHES_BUILTIN
   src/fw_load.c
 )
 
-zephyr_library_sources_ifndef(CONFIG_NRF70_RADIO_TEST
+if(NOT CONFIG_NRF70_RADIO_TEST AND NOT CONFIG_NRF70_OFFLOADED_RAW_TX)
+  zephyr_library_sources(
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/rx.c
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_vif.c
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_util.c
   src/net_if.c
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/default/fmac_api.c
 )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT
   src/wifi_mgmt_scan.c
@@ -89,6 +96,12 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_SYSTEM_MODE_COMMON
 zephyr_library_sources_ifdef(CONFIG_NRF70_RADIO_TEST
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/radio_test/fmac_api.c
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_util.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_NRF70_OFFLOADED_RAW_TX
+  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/offload_raw_tx/fmac_api.c
+  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_util.c
+  off_raw_tx/src/off_raw_tx_api.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_NRF70_DATA_TX
@@ -155,6 +168,8 @@ else()
     set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
   elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
     set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
+  elseif(CONFIG_NRF70_OFFLOADED_RAW_TX)
+    set(NRF70_PATCH ${FW_BINS_BASE}/offloaded_raw_tx/nrf70.bin)
   else()
     # Error
     message(FATAL_ERROR "Unsupported nRF70 patch configuration")
