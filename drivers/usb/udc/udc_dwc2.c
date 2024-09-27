@@ -2727,11 +2727,6 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 			/* Clear USB Suspend interrupt. */
 			sys_write32(USB_DWC2_GINTSTS_USBSUSP, gintsts_reg);
 
-			if (!priv->enumdone) {
-				/* Ignore stale suspend interrupt */
-				continue;
-			}
-
 			/* Notify the stack */
 			udc_set_suspended(dev, true);
 			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
