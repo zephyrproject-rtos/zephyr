@@ -65,4 +65,12 @@ config FLASH_NPCX_FIU_SUPP_DRA_2_DEV
 	  Selected if NPCX series supports two external SPI devices in Direct
 	  Read Access (DRA) on QSPI bus.
 
+DT_NPCX_FIU_LOW_DEV_SWAP := $(dt_nodelabel_bool_prop,qspi_fiu1,flash-dev-inv)
+config FLASH_NPCX_FIU_SUPP_LOW_DEV_SWAP
+	bool "Inverse the access of the two external flashes"
+	default y if SOC_SERIES_NPCX4 && FLASH_NPCX_FIU_SUPP_DRA_2_DEV && \
+		     "$(DT_NPCX_FIU_LOW_DEV_SWAP)"
+	help
+	  Select if it needs to swap the access of the two external flashes.
+
 endif #FLASH_NPCX_FIU_QSPI

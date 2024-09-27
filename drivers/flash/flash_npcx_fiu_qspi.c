@@ -30,6 +30,7 @@ struct npcx_qspi_fiu_config {
 	struct npcx_clk_cfg clk_cfg;
 	/* Enable 2 external SPI devices for direct read on QSPI bus */
 	bool en_direct_access_2dev;
+	bool base_flash_inv;
 };
 
 /* Device data */
@@ -244,6 +245,25 @@ void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
 	k_sem_give(&data->lock_sem);
 }
 
+#if defined(CONFIG_FLASH_NPCX_FIU_DRA_V2)
+void qspi_npcx_fiu_set_spi_size(const struct device *dev, const struct npcx_qspi_cfg *cfg)
+{
+	struct fiu_reg *const inst = HAL_INSTANCE(dev);
+	uint8_t flags = cfg->flags;
+
+	if (cfg->spi_dev_sz <= NPCX_SPI_DEV_SIZE_128M) {
+		if ((flags & NPCX_QSPI_SEC_FLASH_SL) == 0) {
+			SET_FIELD(inst->BURST_CFG, NPCX_BURST_CFG_SPI_DEV_SEL, NPCX_SPI_F_CS0);
+		} else {
+			SET_FIELD(inst->BURST_CFG, NPCX_BURST_CFG_SPI_DEV_SEL, NPCX_SPI_F_CS1);
+		}
+		inst->SPI_DEV_SIZE = BIT(cfg->spi_dev_sz);
+	} else {
+		LOG_ERR("Invalid setting of low device size");
+	}
+}
+#endif
+
 static int qspi_npcx_fiu_init(const struct device *dev)
 {
 	const struct npcx_qspi_fiu_config *const config = dev->config;
@@ -273,6 +293,11 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 		struct fiu_reg *const inst = HAL_INSTANCE(dev);
 
 		inst->FIU_EXT_CFG |= BIT(NPCX_FIU_EXT_CFG_SPI1_2DEV);
+#if defined(CONFIG_FLASH_NPCX_FIU_SUPP_LOW_DEV_SWAP)
+		if (config->base_flash_inv) {
+			inst->FIU_EXT_CFG |= BIT(NPCX_FIU_EXT_CFG_LOW_DEV_NUM);
+		}
+#endif
 #endif
 	}
 
@@ -284,6 +309,7 @@ static const struct npcx_qspi_fiu_config npcx_qspi_fiu_config_##n = {		\
 	.base = DT_INST_REG_ADDR(n),						\
 	.clk_cfg = NPCX_DT_CLK_CFG_ITEM(n),					\
 	.en_direct_access_2dev = DT_INST_PROP(n, en_direct_access_2dev),	\
+	.base_flash_inv = DT_INST_PROP(n, flash_dev_inv),			\
 };										\
 static struct npcx_qspi_fiu_data npcx_qspi_fiu_data_##n;			\
 DEVICE_DT_INST_DEFINE(n, qspi_npcx_fiu_init, NULL,				\
