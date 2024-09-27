@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define DT_DRV_COMPAT reyax_rylrxxx
