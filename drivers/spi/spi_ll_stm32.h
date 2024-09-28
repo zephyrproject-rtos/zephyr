@@ -218,12 +218,13 @@ static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
-	while (LL_SPI_IsActiveFlag_RXP(spi)) {
-		(void)LL_SPI_ReceiveData8(spi);
+	while (ll_func_rx_is_not_empty(spi)) {
+		(void) LL_SPI_ReceiveData8(spi);
 	}
-#endif /* st_stm32h7_spi */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
+
 	LL_SPI_Disable(spi);
 
 	while (LL_SPI_IsEnabled(spi)) {
