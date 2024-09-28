@@ -562,7 +562,7 @@ int http_client_req(int sock, struct http_request *req,
 	int total_sent = 0;
 	int ret, total_recv, i;
 	const char *method;
-	k_timeout_t req_timeout = K_MSEC(timeout);
+	k_timeout_t req_timeout = (timeout == SYS_FOREVER_MS) ? K_FOREVER : K_MSEC(timeout);
 	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
 
 	if (sock < 0 || req == NULL || req->response == NULL ||
