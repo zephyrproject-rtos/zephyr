@@ -59,15 +59,10 @@ static int nxp_s32_emios_init(const struct device *dev)
 		.enableGlobalTimeBase = true							\
 	};
 
-#define NXP_S32_EMIOS_MASTER_BUS_VERIFY(node_id)						\
-	BUILD_ASSERT(IN_RANGE(DT_PROP(node_id, period),						\
-			      MIN_MASTER_BUS_PERIOD, MAX_MASTER_BUS_PERIOD),			\
-		     "Node "DT_NODE_PATH(node_id)": period is out of range");
-
 #define NXP_S32_EMIOS_MASTER_BUS_CONFIG(node_id)						\
 	{											\
 		.hwChannel = DT_PROP(node_id, channel),						\
-		.defaultPeriod = DT_PROP(node_id, period),					\
+		.defaultPeriod = MAX_MASTER_BUS_PERIOD,						\
 		.masterBusPrescaler = DT_PROP(node_id, prescaler) - 1,				\
 		.allowDebugMode = DT_PROP(node_id, freeze),					\
 		.masterMode = NXP_S32_EMIOS_MASTER_BUS_MODE(DT_STRING_TOKEN(node_id, mode)),	\
@@ -75,8 +70,6 @@ static int nxp_s32_emios_init(const struct device *dev)
 	},
 
 #define NXP_S32_EMIOS_GENERATE_MASTER_BUS_CONFIG(n)						\
-	DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_CHILD(n, master_bus),				\
-				     NXP_S32_EMIOS_MASTER_BUS_VERIFY)				\
 	const Emios_Ip_MasterBusConfigType nxp_s32_emios_##n##_master_bus_config[] = {		\
 		DT_FOREACH_CHILD_STATUS_OKAY(DT_INST_CHILD(n, master_bus),			\
 					     NXP_S32_EMIOS_MASTER_BUS_CONFIG)			\
