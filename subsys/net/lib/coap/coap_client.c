@@ -592,14 +592,21 @@ static int recv_response(struct coap_client *client, struct coap_packet *respons
 	int total_len;
 	int available_len;
 	int ret;
+	int flags = ZSOCK_MSG_DONTWAIT;
+
+	if (IS_ENABLED(CONFIG_COAP_CLIENT_TRUNCATE_MSGS)) {
+		flags |= ZSOCK_MSG_TRUNC;
+	}
 
 	memset(client->recv_buf, 0, sizeof(client->recv_buf));
-	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf),
-			    ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_TRUNC, &client->address,
-			    &client->socklen);
+	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), flags,
+			    &client->address, &client->socklen);
 
 	if (total_len < 0) {
 		LOG_ERR("Error reading response: %d", errno);
+		if (errno == EOPNOTSUPP) {
+			return -errno;
+		}
 		return -EINVAL;
 	} else if (total_len == 0) {
 		LOG_ERR("Zero length recv");
@@ -937,6 +944,10 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 					LOG_ERR("Error receiving response");
 					clients[i]->response_ready = false;
 					k_mutex_unlock(&clients[i]->lock);
+					if (ret == -EOPNOTSUPP) {
+						LOG_ERR("Socket misconfigured.");
+						goto idle;
+					}
 					continue;
 				}
 
