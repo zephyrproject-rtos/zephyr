@@ -135,6 +135,21 @@
 				width = <240>;
 				height = <240>;
 			};
+
+			test_spi_ssd1327fb: ssd1327fb@7 {
+				compatible = "solomon,ssd1327fb";
+				reg = <7>;
+				mipi-max-frequency = <100000000>;
+
+				width = <240>;
+				height = <240>;
+				oscillator-freq = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				prechargep = <0>;
+				remap-value = <0>;
+			};
 		};
 
 		test_mipi_dsi {
