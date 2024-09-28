@@ -8,7 +8,6 @@
 #define DT_DRV_COMPAT futaba_sbus
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/input/input.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
