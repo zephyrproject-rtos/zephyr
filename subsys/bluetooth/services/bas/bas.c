@@ -25,7 +25,6 @@
 #include <zephyr/bluetooth/services/bas.h>
 #include "bas_internal.h"
 
-#define LOG_LEVEL CONFIG_BT_BAS_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bas, CONFIG_BT_BAS_LOG_LEVEL);
 

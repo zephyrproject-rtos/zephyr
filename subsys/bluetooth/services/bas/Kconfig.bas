@@ -6,6 +6,12 @@
 config BT_BAS
 	bool "GATT Battery service"
 
+if BT_BAS
+
+module = BT_BAS
+module-str = BAS
+source "subsys/logging/Kconfig.template.log_config"
+
 config BT_BAS_BLS
 	bool "Battery Level Status"
 	help
@@ -27,4 +33,7 @@ config BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT
 	bool "Additional Battery Status Present"
 	help
 	Enable this option if Additional Battery Status information is present.
-endif
+
+endif # BT_BAS_BLS
+
+endif # BT_BAS

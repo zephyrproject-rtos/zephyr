@@ -488,14 +488,6 @@ endif # BT_MESH
 
 menu "Services"
 
-# BAS
-
-if BT_BAS
-module = BT_BAS
-module-str = BAS
-source "subsys/logging/Kconfig.template.log_config"
-endif # BT_BAS
-
 # CTS
 
 if BT_CTS
