@@ -59,4 +59,6 @@ source "drivers/dac/Kconfig.ad559x"
 
 source "drivers/dac/Kconfig.ad569x"
 
+source "drivers/dac/Kconfig.test"
+
 endif # DAC
