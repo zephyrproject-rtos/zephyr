@@ -145,12 +145,36 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 
 void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
+	struct bt_avdtp *session;
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
+
+	session = sep->session;
+	if (session == NULL) {
+		return;
+	}
 
 	LOG_DBG("chan %p", chan);
 	chan->conn = NULL;
-	if (sep->state > AVDTP_OPENING) {
-		sep->state = AVDTP_OPENING;
+	avdtp_sep_lock(sep);
+	if ((sep->state == AVDTP_CLOSING) && (session->req != NULL) &&
+	    (session->req->sig == BT_AVDTP_CLOSE)) {
+		/* closing the stream */
+		struct bt_avdtp_req *req = session->req;
+
+		bt_avdtp_set_state(sep, AVDTP_IDLE);
+		avdtp_sep_unlock(sep);
+		req->status = 0;
+		bt_avdtp_clear_req(session);
+		if (req->func != NULL) {
+			req->func(req);
+		}
+	} else if (sep->state > AVDTP_OPENING) {
+		bt_avdtp_set_state(sep, AVDTP_IDLE);
+		avdtp_sep_unlock(sep);
+		/* the l2cap is disconnected by other unexpected reasons */
+		session->ops->stream_l2cap_disconnected(session, sep);
+	} else {
+		avdtp_sep_unlock(sep);
 	}
 }
 
@@ -184,6 +208,15 @@ static int avdtp_media_connect(struct bt_avdtp *session, struct bt_avdtp_sep *se
 
 	return bt_l2cap_chan_connect(session->br_chan.chan.conn, &sep->chan.chan,
 				     BT_L2CAP_PSM_AVDTP);
+}
+
+static int avdtp_media_disconnect(struct bt_avdtp_sep *sep)
+{
+	if (sep == NULL || sep->chan.chan.conn == NULL || sep->chan.chan.ops == NULL) {
+		return -EINVAL;
+	}
+
+	return bt_l2cap_chan_disconnect(&sep->chan.chan);
 }
 
 static struct net_buf *avdtp_create_reply_pdu(uint8_t msg_type, uint8_t pkt_type, uint8_t sig_id,
@@ -680,15 +713,17 @@ static void avdtp_close_handler(struct bt_avdtp *session, struct net_buf *buf, u
 {
 	if (msg_type == BT_AVDTP_CMD) {
 		int err = 0;
+		int ret;
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
+		sep = avdtp_get_cmd_sep(buf);
+		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->close_ind == NULL)) {
 			err = -ENOTSUP;
 		} else {
-			if (sep->state != AVDTP_OPEN) {
+			if (!(sep->state & (AVDTP_OPEN | AVDTP_STREAMING))) {
 				err = -ENOTSUP;
 				error_code = BT_AVDTP_BAD_STATE;
 			} else {
@@ -699,6 +734,7 @@ static void avdtp_close_handler(struct bt_avdtp *session, struct net_buf *buf, u
 		rsp_buf = avdtp_create_reply_pdu(err ? BT_AVDTP_REJECT : BT_AVDTP_ACCEPT,
 						 BT_AVDTP_PACKET_TYPE_SINGLE, BT_AVDTP_CLOSE, tid);
 		if (!rsp_buf) {
+			avdtp_sep_unlock(sep);
 			return;
 		}
 
@@ -709,15 +745,35 @@ static void avdtp_close_handler(struct bt_avdtp *session, struct net_buf *buf, u
 			LOG_DBG("close err code:%d", error_code);
 			net_buf_add_u8(rsp_buf, error_code);
 		} else {
-			sep->state = AVDTP_CONFIGURED;
-			sep->sep_info.inuse = 0u;
+			bt_avdtp_set_state(sep, AVDTP_CLOSING);
 		}
 
-		err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
-		if (err < 0) {
+		ret = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
+		if (ret) {
 			net_buf_unref(rsp_buf);
-			LOG_ERR("Error:L2CAP send fail - result = %d", err);
+			LOG_ERR("Error:L2CAP send fail - result = %d", ret);
+		}
+		if (!err && !ret) {
+			bt_avdtp_set_state(sep, AVDTP_IDLE);
+		}
+		avdtp_sep_unlock(sep);
+	} else {
+		struct bt_avdtp_req *req = session->req;
+
+		if (req == NULL) {
 			return;
+		}
+		k_work_cancel_delayable(&session->timeout_work);
+		avdtp_set_status(req, buf, msg_type);
+		if (msg_type == BT_AVDTP_ACCEPT) {
+			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_CLOSING);
+			if (!avdtp_media_disconnect(CTRL_REQ(req)->sep)) {
+				return;
+			}
+		}
+		bt_avdtp_clear_req(session);
+		if (req->func != NULL) {
+			req->func(req);
 		}
 	}
 }
@@ -727,11 +783,13 @@ static void avdtp_suspend_handler(struct bt_avdtp *session, struct net_buf *buf,
 {
 	if (msg_type == BT_AVDTP_CMD) {
 		int err = 0;
+		int ret;
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
+		sep = avdtp_get_cmd_sep(buf);
+		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->suspend_ind == NULL)) {
 			err = -ENOTSUP;
 		} else {
@@ -747,6 +805,7 @@ static void avdtp_suspend_handler(struct bt_avdtp *session, struct net_buf *buf,
 			avdtp_create_reply_pdu(err ? BT_AVDTP_REJECT : BT_AVDTP_ACCEPT,
 					       BT_AVDTP_PACKET_TYPE_SINGLE, BT_AVDTP_SUSPEND, tid);
 		if (!rsp_buf) {
+			avdtp_sep_unlock(sep);
 			return;
 		}
 
@@ -756,15 +815,40 @@ static void avdtp_suspend_handler(struct bt_avdtp *session, struct net_buf *buf,
 			}
 			LOG_DBG("suspend err code:%d", error_code);
 			net_buf_add_u8(rsp_buf, error_code);
-		} else {
-			sep->state = AVDTP_OPEN;
 		}
 
-		err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
-		if (err < 0) {
+		ret = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
+		if (ret) {
 			net_buf_unref(rsp_buf);
-			LOG_ERR("Error:L2CAP send fail - result = %d", err);
+			LOG_ERR("Error:L2CAP send fail - result = %d", ret);
+		}
+		if (!err && !ret) {
+			bt_avdtp_set_state(sep, AVDTP_OPEN);
+		}
+		avdtp_sep_unlock(sep);
+	} else {
+		struct bt_avdtp_req *req = session->req;
+
+		if (req == NULL) {
 			return;
+		}
+		k_work_cancel_delayable(&session->timeout_work);
+		if (msg_type == BT_AVDTP_ACCEPT) {
+			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_OPEN);
+		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len >= 1U) {
+				uint8_t acp_seid;
+
+				acp_seid = net_buf_pull_u8(buf);
+				if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
+					return;
+				}
+			}
+		}
+		avdtp_set_status(req, buf, msg_type);
+		bt_avdtp_clear_req(session);
+		if (req->func != NULL) {
+			req->func(req);
 		}
 	}
 }
@@ -774,20 +858,24 @@ static void avdtp_abort_handler(struct bt_avdtp *session, struct net_buf *buf, u
 {
 	if (msg_type == BT_AVDTP_CMD) {
 		int err = 0;
+		int ret;
 		struct bt_avdtp_sep *sep;
 		struct net_buf *rsp_buf;
 		uint8_t error_code = 0;
 
-		sep = avdtp_get_sep(net_buf_pull_u8(buf) >> 2);
+		sep = avdtp_get_cmd_sep(buf);
+		avdtp_sep_lock(sep);
 		if ((sep == NULL) || (session->ops->abort_ind == NULL)) {
 			err = -ENOTSUP;
 		} else {
+			/* all current sep state is OK for abort operation */
 			err = session->ops->abort_ind(session, sep, &error_code);
 		}
 
 		rsp_buf = avdtp_create_reply_pdu(err ? BT_AVDTP_REJECT : BT_AVDTP_ACCEPT,
 						 BT_AVDTP_PACKET_TYPE_SINGLE, BT_AVDTP_ABORT, tid);
 		if (!rsp_buf) {
+			avdtp_sep_unlock(sep);
 			return;
 		}
 
@@ -797,15 +885,56 @@ static void avdtp_abort_handler(struct bt_avdtp *session, struct net_buf *buf, u
 			}
 			LOG_DBG("abort err code:%d", error_code);
 			net_buf_add_u8(rsp_buf, error_code);
-		} else {
-			sep->state = AVDTP_IDLE;
 		}
 
-		err = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
-		if (err < 0) {
+		ret = bt_l2cap_chan_send(&session->br_chan.chan, rsp_buf);
+		if (ret) {
 			net_buf_unref(rsp_buf);
-			LOG_ERR("Error:L2CAP send fail - result = %d", err);
+			LOG_ERR("Error:L2CAP send fail - result = %d", ret);
+		}
+		if (!err && !ret) {
+			if ((sep->state & (AVDTP_OPEN | AVDTP_STREAMING)) &&
+			    (sep->chan.state == BT_L2CAP_CONNECTED)) {
+				bt_avdtp_set_state(sep, AVDTP_ABORTING);
+			} else {
+				bt_avdtp_set_state(sep, AVDTP_IDLE);
+			}
+		}
+		avdtp_sep_unlock(sep);
+	} else {
+		struct bt_avdtp_req *req = session->req;
+
+		if (req == NULL) {
 			return;
+		}
+		k_work_cancel_delayable(&session->timeout_work);
+		if (msg_type == BT_AVDTP_ACCEPT) {
+			uint8_t pre_state = CTRL_REQ(req)->sep->state;
+
+			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_ABORTING);
+			/* release stream */
+			if (pre_state & (AVDTP_OPEN | AVDTP_STREAMING)) {
+				avdtp_media_disconnect(CTRL_REQ(req)->sep);
+			}
+
+			/* For abort, make sure the state revert to IDLE state after
+			 * releasing l2cap channel.
+			 */
+			bt_avdtp_set_state_lock(CTRL_REQ(req)->sep, AVDTP_IDLE);
+		} else if (msg_type == BT_AVDTP_REJECT) {
+			if (buf->len >= 1U) {
+				uint8_t acp_seid;
+
+				acp_seid = net_buf_pull_u8(buf);
+				if (acp_seid != CTRL_REQ(req)->acp_stream_ep_id) {
+					return;
+				}
+			}
+		}
+		avdtp_set_status(req, buf, msg_type);
+		bt_avdtp_clear_req(session);
+		if (req->func != NULL) {
+			req->func(req);
 		}
 	}
 }
@@ -1402,6 +1531,11 @@ int bt_avdtp_open(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 	return bt_avdtp_ctrl(session, param, BT_AVDTP_OPEN, AVDTP_CONFIGURED);
 }
 
+int bt_avdtp_close(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
+{
+	return bt_avdtp_ctrl(session, param, BT_AVDTP_CLOSE, AVDTP_OPEN | AVDTP_STREAMING);
+}
+
 int bt_avdtp_start(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 {
 	int err;
@@ -1412,6 +1546,18 @@ int bt_avdtp_start(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
 	}
 
 	return err;
+}
+
+int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
+{
+	return bt_avdtp_ctrl(session, param, BT_AVDTP_SUSPEND, AVDTP_STREAMING);
+}
+
+int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param)
+{
+	return bt_avdtp_ctrl(session, param, BT_AVDTP_ABORT,
+			     AVDTP_CONFIGURED | AVDTP_OPENING | AVDTP_OPEN | AVDTP_STREAMING |
+				     AVDTP_CLOSING);
 }
 
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf)
