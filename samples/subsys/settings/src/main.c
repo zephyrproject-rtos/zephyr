@@ -20,6 +20,12 @@
 #define STORAGE_PARTITION	storage_partition
 #define STORAGE_PARTITION_ID	FIXED_PARTITION_ID(STORAGE_PARTITION)
 
+#define TO_BITS(_bytes) ((_bytes) << 3)
+#define MASK(_len)                                                                                 \
+	(((_len) >= sizeof(uint32_t)) ? BIT64_MASK(TO_BITS(_len)) : BIT_MASK(TO_BITS(_len)))
+#define MASKED_VAL(_var, _len)                                                                     \
+	((_len) <= 0 ? (0) : ((_len) == sizeof(uint64_t)) ? (_var) : ((_var) & MASK(_len)))
+
 #define GAMMA_DEFAULT_VAl 0
 #define FAIL_MSG "fail (err %d)\n"
 #define SECTION_BEGIN_LINE \
@@ -61,13 +67,13 @@ static int alpha_handle_set(const char *name, size_t len, settings_read_cb read_
 {
 	const char *next;
 	size_t next_len;
-	int rc;
+	int bytes_read;
 
 	if (settings_name_steq(name, "angle/1", &next) && !next) {
 		if (len != sizeof(angle_val)) {
 			return -EINVAL;
 		}
-		rc = read_cb(cb_arg, &angle_val, sizeof(angle_val));
+		(void)read_cb(cb_arg, &angle_val, sizeof(angle_val));
 		printk("<alpha/angle/1> = %d\n", angle_val);
 		return 0;
 	}
@@ -82,21 +88,22 @@ static int alpha_handle_set(const char *name, size_t len, settings_read_cb read_
 		next_len = settings_name_next(name, &next);
 
 		if (!next) {
-			rc = read_cb(cb_arg, &length_val, sizeof(length_val));
+			bytes_read = read_cb(cb_arg, &length_val, sizeof(length_val));
+			length_val = MASKED_VAL(length_val, bytes_read);
 			printk("<alpha/length> = %" PRId64 "\n", length_val);
 			return 0;
 		}
 
 		if (!strncmp(next, "1", next_len)) {
-			rc = read_cb(cb_arg, &length_1_val,
-				     sizeof(length_1_val));
+			bytes_read = read_cb(cb_arg, &length_1_val, sizeof(length_1_val));
+			length_1_val = MASKED_VAL(length_1_val, bytes_read);
 			printk("<alpha/length/1> = %d\n", length_1_val);
 			return 0;
 		}
 
 		if (!strncmp(next, "2", next_len)) {
-			rc = read_cb(cb_arg, &length_2_val,
-				     sizeof(length_2_val));
+			bytes_read = read_cb(cb_arg, &length_2_val, sizeof(length_2_val));
+			length_2_val = MASKED_VAL(length_2_val, bytes_read);
 			printk("<alpha/length/2> = %d\n", length_2_val);
 			return 0;
 		}
@@ -111,13 +118,14 @@ static int beta_handle_set(const char *name, size_t len, settings_read_cb read_c
 {
 	const char *next;
 	size_t name_len;
-	int rc;
+	int bytes_read;
 
 	name_len = settings_name_next(name, &next);
 
 	if (!next) {
 		if (!strncmp(name, "voltage", name_len)) {
-			rc = read_cb(cb_arg, &voltage_val, sizeof(voltage_val));
+			bytes_read = read_cb(cb_arg, &voltage_val, sizeof(voltage_val));
+			voltage_val = MASKED_VAL(voltage_val, bytes_read);
 			printk("<alpha/beta/voltage> = %d\n", voltage_val);
 			return 0;
 		}
@@ -128,11 +136,10 @@ static int beta_handle_set(const char *name, size_t len, settings_read_cb read_c
 				       "with the application\n");
 				return -EINVAL;
 			}
-			rc = read_cb(cb_arg, source_name_val,
-				     sizeof(source_name_val));
-			if (rc < 0) {
-				return rc;
-			} else if (rc > 0) {
+			bytes_read = read_cb(cb_arg, source_name_val, sizeof(source_name_val));
+			if (bytes_read < 0) {
+				return bytes_read;
+			} else if (bytes_read > 0) {
 				printk("<alpha/beta/source> = %s\n",
 				       source_name_val);
 			}
@@ -264,7 +271,7 @@ static int direct_loader(const char *name, size_t len, settings_read_cb read_cb,
 {
 	const char *next;
 	size_t name_len;
-	int rc;
+	int bytes_read;
 	struct direct_length_data *dest = (struct direct_length_data *)param;
 
 	printk("direct load: ");
@@ -272,7 +279,8 @@ static int direct_loader(const char *name, size_t len, settings_read_cb read_cb,
 	name_len = settings_name_next(name, &next);
 
 	if (name_len == 0) {
-		rc = read_cb(cb_arg, &(dest->length), sizeof(dest->length));
+		bytes_read = read_cb(cb_arg, &(dest->length), sizeof(dest->length));
+		dest->length = MASKED_VAL(dest->length, bytes_read);
 		printk("<alpha/length>\n");
 		return 0;
 	}
@@ -284,13 +292,15 @@ static int direct_loader(const char *name, size_t len, settings_read_cb read_cb,
 	}
 
 	if (!strncmp(name, "1", name_len)) {
-		rc = read_cb(cb_arg, &(dest->length_1), sizeof(dest->length_1));
+		bytes_read = read_cb(cb_arg, &(dest->length_1), sizeof(dest->length_1));
+		dest->length_1 = MASKED_VAL(dest->length_1, bytes_read);
 		printk("<alpha/length/1>\n");
 		return 0;
 	}
 
 	if (!strncmp(name, "2", name_len)) {
-		rc = read_cb(cb_arg, &(dest->length_2), sizeof(dest->length_2));
+		bytes_read = read_cb(cb_arg, &(dest->length_2), sizeof(dest->length_2));
+		dest->length_2 = MASKED_VAL(dest->length_2, bytes_read);
 		printk("<alpha/length/2>\n");
 		return 0;
 	}
@@ -333,7 +343,7 @@ static int direct_loader_immediate_value(const char *name, size_t len,
 {
 	const char *next;
 	size_t name_len;
-	int rc;
+	int bytes_read;
 	struct direct_immediate_value *one_value =
 					(struct direct_immediate_value *)param;
 
@@ -341,15 +351,15 @@ static int direct_loader_immediate_value(const char *name, size_t len,
 
 	if (name_len == 0) {
 		if (len == one_value->len) {
-			rc = read_cb(cb_arg, one_value->dest, len);
-			if (rc >= 0) {
+			bytes_read = read_cb(cb_arg, one_value->dest, len);
+			if (bytes_read == len) {
 				one_value->fetched = 1;
 				printk("immediate load: OK.\n");
 				return 0;
 			}
 
-			printk(FAIL_MSG, rc);
-			return rc;
+			printk(FAIL_MSG, bytes_read);
+			return bytes_read;
 		}
 		return -EINVAL;
 	}
