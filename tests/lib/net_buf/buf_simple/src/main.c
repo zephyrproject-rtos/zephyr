@@ -240,6 +240,34 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_add_be64)
 			  sizeof(be64), "Invalid 64 bits byte order");
 }
 
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_add_str)
+{
+	int ret;
+	char *str;
+
+	ret = net_buf_simple_add_str_len(&buf, "01234567", 5);
+	zassert_ok(ret, "Adding a string should have succeeded");
+
+	str = net_buf_simple_to_str(&buf);
+	zassert_str_equal(str, "01234", "Invalid character string produced");
+
+	ret = net_buf_simple_sprintf(&buf, ", %s, %u", "kite", 10);
+	zassert_ok(ret, "Formatting a string should have succeeded");
+
+	str = net_buf_simple_to_str(&buf);
+	zassert_str_equal("01234, kite, 10", str, "Invalid character string produced");
+
+	ret = net_buf_simple_add_str(&buf, "+");
+	zassert_ok(ret, "Should accept completely filling the buffer");
+	zassert_mem_equal(buf.data, "01234, kite, 10+", buf.len, "Invalid memory added");
+
+	ret = net_buf_simple_sprintf(&buf, "+");
+	zassert_equal(ret, -ENOMEM, "Should prevent buffer overflow");
+
+	str = net_buf_simple_to_str(&buf);
+	zassert_equal_ptr(str, NULL, "Should refuse adding \\0 when buffer is full");
+}
+
 ZTEST(net_buf_simple_test_suite, test_net_buf_simple_remove_le16)
 {
 	net_buf_simple_reserve(&buf, 16);

@@ -11,6 +11,8 @@
 #define ZEPHYR_INCLUDE_NET_BUF_H_
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -1831,6 +1833,100 @@ static inline void net_buf_add_be64(struct net_buf *buf, uint64_t val)
 {
 	net_buf_simple_add_be64(&buf->b, val);
 }
+
+/**
+ * @brief Add a character string to the end of the buffer, with length limit
+ *
+ * Adds a @c \\0 terminated string to buffer if it fits, up to a maximum length.
+ * The terminating @c \\0 itself is not added.
+ *
+ * See @ref net_buf_simple_to_str to access the data as a regular C string.
+ *
+ * @param buf Buffer to update.
+ * @param str String to be added.
+ * @param max_len Maximum length of @c str that will be added to the buffer,
+ *        truncating it if longer.
+ *
+ * @return 0 if the string could fit.
+ * @return -ENOMEM if the buffer was too short for the string.
+ */
+int net_buf_simple_add_str_len(struct net_buf_simple *buf, const char *str, size_t max_len);
+
+/**
+ * @brief Add a character string to the end of the buffer
+ *
+ * Adds a @c \\0 terminated string to buffer if it fits.
+ * The terminating @c \\0 itself is not added.
+ *
+ * See @ref net_buf_simple_to_str to access the data as a regular C string.
+ *
+ * @param buf Buffer to update.
+ * @param str String to be added.
+ *
+ * @return 0 if the string could fit.
+ * @return -ENOMEM if the buffer was too short for the string.
+ */
+static inline int net_buf_simple_add_str(struct net_buf_simple *buf, const char *str)
+{
+	return net_buf_simple_add_str_len(buf, str, SIZE_MAX);
+}
+
+/**
+ * @brief Append a formatted string to the buffer if it fits
+ *
+ * Like @ref net_buf_simple_sprintf but called with a @c va_list instead of a
+ * variable number of arguments.
+ *
+ * @param buf Buffer to update.
+ * @param fmt Format string as used by vsnprintf().
+ * @param ap Argument list as used by vsnprintf().
+ *
+ * @return 0 if the string could fit.
+ * @return -ENOMEM if the buffer was too short for the formatted string.
+ */
+int net_buf_simple_vsprintf(struct net_buf_simple *buf, const char *fmt, va_list ap);
+
+/**
+ * @brief Append a formatted string to the buffer if it fits,
+ *
+ * Adds a formatted string to the end of a buffer, like the @c snprintf()
+ * function does, only if the resulting does not fit, or leave the buffer
+ * unchanged otherwise.
+ *
+ * See @ref net_buf_simple_to_str to access the data as a regular C string.
+ *
+ * @param buf Buffer to update.
+ * @param fmt Format string as used with snprintf().
+ * @param ... Additional arguments formatted by @c fmt
+ *
+ * @return 0 if the formatted string could fit.
+ * @return -ENOMEM if the buffer was too short for the formatted string.
+ */
+static inline int net_buf_simple_sprintf(struct net_buf_simple *buf, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = net_buf_simple_vsprintf(buf, fmt, ap);
+	va_end(ap);
+
+	return ret;
+}
+
+/**
+ * @brief Get a C string representation of the buffer with a trailing @c \\ 0.
+ *
+ * Ensure the buffer has a @c \\0 terminator to the C string, and if there was
+ * room for it return the pointer to the terminated buffer.
+ *
+ * @param buf Buffer to access as a C string.
+ *
+ * @return A pointer to the buffer as a string, or NULL if there was no room for
+ *         the @c \\0 terminator. The string returned can still be modified
+ *         through @c buf. Exclusive access must be ensured by the caller.
+ */
+char *net_buf_simple_to_str(struct net_buf_simple *buf);
 
 /**
  * @brief Remove data from the end of the buffer.

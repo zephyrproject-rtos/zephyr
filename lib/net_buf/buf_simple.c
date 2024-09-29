@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(net_buf_simple, CONFIG_NET_BUF_LOG_LEVEL);
 
 #include <stdio.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -71,6 +72,33 @@ void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
 	return memcpy(net_buf_simple_add(buf, len), mem, len);
+}
+
+int net_buf_simple_add_str_len(struct net_buf_simple *buf, const char *str, size_t max_len)
+{
+	size_t len = strlen(str);
+
+	len = MIN(len, max_len);
+	if (net_buf_simple_tailroom(buf) < len) {
+		return -ENOMEM;
+	}
+
+	net_buf_simple_add_mem(buf, str, len);
+	return 0;
+}
+
+int net_buf_simple_vsprintf(struct net_buf_simple *buf, const char *fmt, va_list ap)
+{
+	size_t tailroom = net_buf_simple_tailroom(buf);
+	size_t len;
+
+	len = vsnprintf(net_buf_simple_tail(buf), tailroom, fmt, ap);
+	if (len > tailroom) {
+		return -ENOMEM;
+	}
+
+	net_buf_simple_add(buf, len);
+	return 0;
 }
 
 uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val)
@@ -608,6 +636,16 @@ uint64_t net_buf_simple_pull_be64(struct net_buf_simple *buf)
 	net_buf_simple_pull(buf, sizeof(val));
 
 	return sys_be64_to_cpu(val);
+}
+
+char *net_buf_simple_to_str(struct net_buf_simple *buf)
+{
+	if (net_buf_simple_tailroom(buf) < 1) {
+		return NULL;
+	}
+
+	*net_buf_simple_tail(buf) = '\0';
+	return buf->data;
 }
 
 size_t net_buf_simple_headroom(const struct net_buf_simple *buf)
