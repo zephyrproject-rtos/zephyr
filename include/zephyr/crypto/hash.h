@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Intel Corporation.
+ *               2024 Rapid Silicon.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
