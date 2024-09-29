@@ -98,7 +98,7 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), /* 09 */
-				BT_SDP_ARRAY_16(0X0100u) /* AVDTP version: 01 00 */
+				BT_SDP_ARRAY_16(0x0100U) /* AVDTP version: 01 00 */
 			},
 			)
 		},
@@ -167,7 +167,7 @@ static struct bt_sdp_attribute a2dp_source_attrs[] = {
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
-				BT_SDP_ARRAY_16(0X0100u)
+				BT_SDP_ARRAY_16(0x0100U)
 			},
 			)
 		},
@@ -306,21 +306,31 @@ int app_config_req(struct bt_a2dp *a2dp, struct bt_a2dp_ep *ep,
 		struct bt_a2dp_codec_cfg *codec_cfg, struct bt_a2dp_stream **stream,
 		uint8_t *rsp_err_code)
 {
+	uint32_t sample_rate;
+
 	bt_a2dp_stream_cb_register(&sbc_stream, &stream_ops);
 	*stream = &sbc_stream;
 	*rsp_err_code = 0;
 
 	shell_print(ctx_shell, "receive requesting config and accept");
-	if (*rsp_err_code == 0) {
-		uint32_t sample_rate;
+	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
+		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
+	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
 
-		shell_print(ctx_shell, "SBC configure success");
-		sample_rate  = bt_a2dp_sbc_get_sampling_frequency(
-			(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
-		shell_print(ctx_shell, "sample rate %dHz", sample_rate);
-	} else {
-		shell_print(ctx_shell, "configure err");
-	}
+	return 0;
+}
+
+int app_reconfig_req(struct bt_a2dp_stream *stream,
+	struct bt_a2dp_codec_cfg *codec_cfg, uint8_t *rsp_err_code)
+{
+	uint32_t sample_rate;
+
+	*rsp_err_code = 0;
+	shell_print(ctx_shell, "receive requesting reconfig and accept");
+	sample_rate = bt_a2dp_sbc_get_sampling_frequency(
+		(struct bt_a2dp_codec_sbc_params *)&codec_cfg->codec_config->codec_ie[0]);
+	shell_print(ctx_shell, "sample rate %dHz", sample_rate);
+
 	return 0;
 }
 
@@ -349,6 +359,22 @@ void app_establish_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 	}
 }
 
+int app_release_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	shell_print(ctx_shell, "receive requesting release and accept");
+	return 0;
+}
+
+void app_release_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		shell_print(ctx_shell, "success to release");
+	} else {
+		shell_print(ctx_shell, "fail to release");
+	}
+}
+
 int app_start_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
 {
 	*rsp_err_code = 0;
@@ -362,6 +388,22 @@ void app_start_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
 		shell_print(ctx_shell, "success to start");
 	} else {
 		shell_print(ctx_shell, "fail to start");
+	}
+}
+
+int app_suspend_req(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code)
+{
+	*rsp_err_code = 0;
+	shell_print(ctx_shell, "receive requesting suspend and accept");
+	return 0;
+}
+
+void app_suspend_rsp(struct bt_a2dp_stream *stream, uint8_t rsp_err_code)
+{
+	if (rsp_err_code == 0) {
+		shell_print(ctx_shell, "success to suspend");
+	} else {
+		shell_print(ctx_shell, "fail to suspend");
 	}
 }
 
@@ -385,11 +427,24 @@ void stream_started(struct bt_a2dp_stream *stream)
 	shell_print(ctx_shell, "stream started");
 }
 
+void stream_suspended(struct bt_a2dp_stream *stream)
+{
+	shell_print(ctx_shell, "stream suspended");
+}
+
+void stream_aborted(struct bt_a2dp_stream *stream)
+{
+	shell_print(ctx_shell, "stream aborted");
+}
+
 void sink_sbc_streamer_data(struct bt_a2dp_stream *stream, struct net_buf *buf,
 			uint16_t seq_num, uint32_t ts)
 {
 	uint8_t sbc_hdr;
 
+	if (buf->len < 1U) {
+		return;
+	}
 	sbc_hdr = net_buf_pull_u8(buf);
 	shell_print(ctx_shell, "received, num of frames: %d, data length:%d",
 		(uint8_t)BT_A2DP_SBC_MEDIA_HDR_NUM_FRAMES_GET(sbc_hdr), buf->len);
@@ -410,14 +465,13 @@ struct bt_a2dp_cb a2dp_cb = {
 	.config_rsp = app_config_rsp,
 	.establish_req = app_establish_req,
 	.establish_rsp = app_establish_rsp,
-	.release_req = NULL,
-	.release_rsp = NULL,
+	.release_req = app_release_req,
+	.release_rsp = app_release_rsp,
 	.start_req = app_start_req,
 	.start_rsp = app_start_rsp,
-	.suspend_req = NULL,
-	.suspend_rsp = NULL,
-	.reconfig_req = NULL,
-	.reconfig_rsp = NULL,
+	.suspend_req = app_suspend_req,
+	.suspend_rsp = app_suspend_rsp,
+	.reconfig_req = app_reconfig_req,
 };
 
 static int cmd_register_cb(const struct shell *sh, int32_t argc, char *argv[])
@@ -539,8 +593,8 @@ static struct bt_a2dp_stream_ops stream_ops = {
 	.established = stream_established,
 	.released = stream_released,
 	.started = stream_started,
-	.suspended = NULL,
-	.reconfigured = NULL,
+	.suspended = stream_suspended,
+	.aborted = stream_aborted,
 #if defined(CONFIG_BT_A2DP_SINK)
 	.recv = stream_recv,
 #endif
@@ -580,6 +634,19 @@ static int cmd_configure(const struct shell *sh, int32_t argc, char *argv[])
 		}
 	} else {
 		shell_error(sh, "a2dp is not connected");
+	}
+	return 0;
+}
+
+static int cmd_reconfigure(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_reconfig(&sbc_stream, &sbc_cfg_default) != 0) {
+		shell_print(sh, "fail");
 	}
 	return 0;
 }
@@ -639,6 +706,19 @@ static int cmd_establish(const struct shell *sh, int32_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_release(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_release(&sbc_stream) != 0) {
+		shell_print(sh, "fail");
+	}
+	return 0;
+}
+
 static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 {
 	if (a2dp_initied == 0) {
@@ -647,6 +727,32 @@ static int cmd_start(const struct shell *sh, int32_t argc, char *argv[])
 	}
 
 	if (bt_a2dp_stream_start(&sbc_stream) != 0) {
+		shell_print(sh, "fail");
+	}
+	return 0;
+}
+
+static int cmd_suspend(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_suspend(&sbc_stream) != 0) {
+		shell_print(sh, "fail");
+	}
+	return 0;
+}
+
+static int cmd_abort(const struct shell *sh, int32_t argc, char *argv[])
+{
+	if (a2dp_initied == 0) {
+		shell_print(sh, "need to register a2dp connection callbacks");
+		return -ENOEXEC;
+	}
+
+	if (bt_a2dp_stream_abort(&sbc_stream) != 0) {
 		shell_print(sh, "fail");
 	}
 	return 0;
@@ -669,11 +775,11 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	/* num of frames is 1 */
 	net_buf_add_u8(buf, (uint8_t)BT_A2DP_SBC_MEDIA_HDR_ENCODE(1, 0, 0, 0));
 	net_buf_add_mem(buf, media_data, sizeof(media_data));
-	shell_print(sh, "num of frames: %d, data length: %d", 1u, sizeof(media_data));
+	shell_print(sh, "num of frames: %d, data length: %d", 1U, sizeof(media_data));
 	shell_print(sh, "data: %d, %d, %d, %d, %d, %d ......", media_data[0],
 		media_data[1], media_data[2], media_data[3], media_data[4], media_data[5]);
 
-	ret = bt_a2dp_stream_send(&sbc_stream, buf, 0u, 0u);
+	ret = bt_a2dp_stream_send(&sbc_stream, buf, 0U, 0U);
 	if (ret < 0) {
 		printk("  Failed to send SBC audio data on streams(%d)\n", ret);
 		net_buf_unref(buf);
@@ -692,9 +798,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(a2dp_cmds,
 	SHELL_CMD_ARG(connect, NULL, HELP_NONE, cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(discover_peer_eps, NULL, HELP_NONE, cmd_get_peer_eps, 1, 0),
-	SHELL_CMD_ARG(configure, NULL, HELP_NONE, cmd_configure, 1, 0),
-	SHELL_CMD_ARG(establish, NULL, HELP_NONE, cmd_establish, 1, 0),
-	SHELL_CMD_ARG(start, NULL, "\"start the default selected ep\"", cmd_start, 1, 0),
+	SHELL_CMD_ARG(configure, NULL, "\"configure/enable the stream\"", cmd_configure, 1, 0),
+	SHELL_CMD_ARG(establish, NULL, "\"establish the stream\"", cmd_establish, 1, 0),
+	SHELL_CMD_ARG(reconfigure, NULL, "\"reconfigure the stream\"", cmd_reconfigure, 1, 0),
+	SHELL_CMD_ARG(release, NULL, "\"release the stream\"", cmd_release, 1, 0),
+	SHELL_CMD_ARG(start, NULL, "\"start the stream\"", cmd_start, 1, 0),
+	SHELL_CMD_ARG(suspend, NULL, "\"suspend the stream\"", cmd_suspend, 1, 0),
+	SHELL_CMD_ARG(abort, NULL, "\"abort the stream\"", cmd_abort, 1, 0),
 	SHELL_CMD_ARG(send_media, NULL, HELP_NONE, cmd_send_media, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
