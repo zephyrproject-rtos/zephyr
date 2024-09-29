@@ -29,17 +29,17 @@
 
 #define A2DP_AVDTP(_avdtp) CONTAINER_OF(_avdtp, struct bt_a2dp, session)
 #define DISCOVER_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_discover_params, req)
-#define DISCOVER_PARAM(_discover_param) CONTAINER_OF(_discover_param, struct bt_a2dp,\
-						discover_param)
+#define DISCOVER_PARAM(_discover_param)                                                            \
+	CONTAINER_OF(_discover_param, struct bt_a2dp, discover_param)
 #define GET_CAP_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_get_capabilities_params, req)
-#define GET_CAP_PARAM(_get_cap_param) CONTAINER_OF(_get_cap_param, struct bt_a2dp,\
-						get_capabilities_param)
+#define GET_CAP_PARAM(_get_cap_param)                                                              \
+	CONTAINER_OF(_get_cap_param, struct bt_a2dp, get_capabilities_param)
 #define SET_CONF_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_set_configuration_params, req)
-#define SET_CONF_PARAM(_set_conf_param) CONTAINER_OF(_set_conf_param, struct bt_a2dp,\
-						set_config_param)
-#define OPEN_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_open_params, req)
-#define OPEN_PARAM(_open_param) CONTAINER_OF(_open_param, struct bt_a2dp, open_param)
-#define START_REQ(_req) CONTAINER_OF(_req, struct bt_avdtp_start_params, req)
+#define SET_CONF_PARAM(_set_conf_param)                                                            \
+	CONTAINER_OF(_set_conf_param, struct bt_a2dp, set_config_param)
+#define OPEN_REQ(_req)            CONTAINER_OF(_req, struct bt_avdtp_open_params, req)
+#define OPEN_PARAM(_open_param)   CONTAINER_OF(_open_param, struct bt_a2dp, open_param)
+#define START_REQ(_req)           CONTAINER_OF(_req, struct bt_avdtp_start_params, req)
 #define START_PARAM(_start_param) CONTAINER_OF(_start_param, struct bt_a2dp, start_param)
 
 #include "host/hci_core.h"
@@ -75,7 +75,7 @@ struct bt_a2dp {
 static struct bt_a2dp_cb *a2dp_cb;
 K_MUTEX_DEFINE(a2dp_mutex);
 
-#define A2DP_LOCK() k_mutex_lock(&a2dp_mutex, K_FOREVER)
+#define A2DP_LOCK()   k_mutex_lock(&a2dp_mutex, K_FOREVER)
 #define A2DP_UNLOCK() k_mutex_unlock(&a2dp_mutex)
 
 /* Connections */
@@ -106,8 +106,7 @@ static struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 			return &connection[i];
 		}
 
-		if (!connection[i].session.br_chan.chan.conn &&
-			free == A2DP_NO_SPACE) {
+		if (!connection[i].session.br_chan.chan.conn && free == A2DP_NO_SPACE) {
 			free = i;
 			break;
 		}
@@ -160,7 +159,7 @@ static int a2dp_discovery_ind(struct bt_avdtp *session, uint8_t *errcode)
 }
 
 static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-		struct net_buf *rsp_buf, uint8_t *errcode)
+				     struct net_buf *rsp_buf, uint8_t *errcode)
 {
 	struct bt_a2dp_ep *ep;
 
@@ -182,8 +181,8 @@ static int a2dp_get_capabilities_ind(struct bt_avdtp *session, struct bt_avdtp_s
 	return 0;
 }
 
-static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
-		uint8_t int_seid, struct net_buf *buf, uint8_t *errcode)
+static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t int_seid,
+			       struct net_buf *buf, uint8_t *errcode)
 {
 	struct bt_a2dp *a2dp = A2DP_AVDTP(session);
 	struct bt_a2dp_ep *ep;
@@ -202,9 +201,8 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 
 	/* parse the configuration */
 	codec_info_element_len = 4U;
-	err = bt_avdtp_parse_capability_codec(buf,
-				&codec_type, &codec_info_element,
-				&codec_info_element_len);
+	err = bt_avdtp_parse_capability_codec(buf, &codec_type, &codec_info_element,
+					      &codec_info_element_len);
 	if (err) {
 		*errcode = BT_AVDTP_BAD_ACP_SEID;
 		return -1;
@@ -222,10 +220,10 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 		sbc_set = (struct bt_a2dp_codec_sbc_params *)codec_info_element;
 		sbc = (struct bt_a2dp_codec_sbc_params *)&ep->codec_cap->codec_ie[0];
 		if (((BT_A2DP_SBC_SAMP_FREQ(sbc_set) & BT_A2DP_SBC_SAMP_FREQ(sbc)) == 0) ||
-			((BT_A2DP_SBC_CHAN_MODE(sbc_set) & BT_A2DP_SBC_CHAN_MODE(sbc)) == 0) ||
-			((BT_A2DP_SBC_BLK_LEN(sbc_set) & BT_A2DP_SBC_BLK_LEN(sbc)) == 0) ||
-			((BT_A2DP_SBC_SUB_BAND(sbc_set) & BT_A2DP_SBC_SUB_BAND(sbc)) == 0) ||
-			((BT_A2DP_SBC_ALLOC_MTHD(sbc_set) & BT_A2DP_SBC_ALLOC_MTHD(sbc)) == 0)) {
+		    ((BT_A2DP_SBC_CHAN_MODE(sbc_set) & BT_A2DP_SBC_CHAN_MODE(sbc)) == 0) ||
+		    ((BT_A2DP_SBC_BLK_LEN(sbc_set) & BT_A2DP_SBC_BLK_LEN(sbc)) == 0) ||
+		    ((BT_A2DP_SBC_SUB_BAND(sbc_set) & BT_A2DP_SBC_SUB_BAND(sbc)) == 0) ||
+		    ((BT_A2DP_SBC_ALLOC_MTHD(sbc_set) & BT_A2DP_SBC_ALLOC_MTHD(sbc)) == 0)) {
 			*errcode = BT_AVDTP_BAD_ACP_SEID;
 			return -1;
 		}
@@ -239,8 +237,8 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 		cfg.codec_config = &codec_config;
 		cfg.codec_config->len = codec_info_element_len;
 		memcpy(&cfg.codec_config->codec_ie[0], codec_info_element,
-			(codec_info_element_len > A2DP_MAX_IE_LENGTH ?
-			A2DP_MAX_IE_LENGTH : codec_info_element_len));
+		       (codec_info_element_len > A2DP_MAX_IE_LENGTH ? A2DP_MAX_IE_LENGTH
+								    : codec_info_element_len));
 		err = a2dp_cb->config_req(a2dp, ep, &cfg, &stream, &rsp_err_code);
 		if (err) {
 			*errcode = rsp_err_code;
@@ -263,9 +261,7 @@ static int a2dp_set_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep *se
 }
 
 #if defined(CONFIG_BT_A2DP_SINK)
-static void bt_a2dp_media_data_callback(
-		struct bt_avdtp_sep *sep,
-		struct net_buf *buf)
+static void bt_a2dp_media_data_callback(struct bt_avdtp_sep *sep, struct net_buf *buf)
 {
 	struct bt_avdtp_media_hdr *media_hdr;
 	struct bt_a2dp_ep *ep;
@@ -279,9 +275,8 @@ static void bt_a2dp_media_data_callback(
 
 	media_hdr = net_buf_pull_mem(buf, sizeof(*media_hdr));
 
-	stream->ops->recv(stream, buf,
-		sys_get_be16((uint8_t *)&media_hdr->sequence_number),
-		sys_get_be32((uint8_t *)&media_hdr->time_stamp));
+	stream->ops->recv(stream, buf, sys_get_be16((uint8_t *)&media_hdr->sequence_number),
+			  sys_get_be32((uint8_t *)&media_hdr->time_stamp));
 }
 #endif
 
@@ -484,16 +479,15 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 
 	LOG_DBG("GET CAPABILITIES result:%d", a2dp->get_capabilities_param.status);
 	if (a2dp->get_capabilities_param.status) {
-		if ((a2dp->discover_cb_param != NULL) &&
-		(a2dp->discover_cb_param->cb != NULL)) {
+		if ((a2dp->discover_cb_param != NULL) && (a2dp->discover_cb_param->cb != NULL)) {
 			a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
 			a2dp->discover_cb_param = NULL;
 		}
 		return 0;
 	}
 
-	err = bt_avdtp_parse_capability_codec(a2dp->get_capabilities_param.buf,
-			&codec_type, &codec_info_element, &codec_info_element_len);
+	err = bt_avdtp_parse_capability_codec(a2dp->get_capabilities_param.buf, &codec_type,
+					      &codec_info_element, &codec_info_element_len);
 	if (err) {
 		LOG_DBG("codec capability parsing fail");
 		return 0;
@@ -509,8 +503,7 @@ static int bt_a2dp_get_capabilities_cb(struct bt_avdtp_req *req)
 
 		info->codec_type = codec_type;
 		info->sep_info = a2dp->discover_cb_param->seps_info[a2dp->get_cap_index];
-		memcpy(&info->codec_cap.codec_ie,
-			codec_info_element, codec_info_element_len);
+		memcpy(&info->codec_cap.codec_ie, codec_info_element, codec_info_element_len);
 		info->codec_cap.len = codec_info_element_len;
 		user_ret = a2dp->discover_cb_param->cb(a2dp, info, &ep);
 		if (ep != NULL) {
@@ -547,16 +540,15 @@ static int bt_a2dp_get_sep_caps(struct bt_a2dp *a2dp)
 		a2dp->get_cap_index++;
 	}
 
-	for (; a2dp->get_cap_index < a2dp->peer_seps_count;
-			a2dp->get_cap_index++) {
+	for (; a2dp->get_cap_index < a2dp->peer_seps_count; a2dp->get_cap_index++) {
 		if (a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].media_type ==
-			BT_AVDTP_AUDIO) {
+		    BT_AVDTP_AUDIO) {
 			a2dp->get_capabilities_param.req.func = bt_a2dp_get_capabilities_cb;
 			a2dp->get_capabilities_param.buf = NULL;
 			a2dp->get_capabilities_param.stream_endpoint_id =
 				a2dp->discover_cb_param->seps_info[a2dp->get_cap_index].id;
 			err = bt_avdtp_get_capabilities(&a2dp->session,
-				&a2dp->get_capabilities_param);
+							&a2dp->get_capabilities_param);
 			if (err) {
 				LOG_DBG("AVDTP get codec_cap failed");
 				a2dp->discover_cb_param->cb(a2dp, NULL, NULL);
@@ -595,11 +587,8 @@ static int bt_a2dp_discover_cb(struct bt_avdtp_req *req)
 				break;
 			}
 			a2dp->peer_seps_count++;
-			LOG_DBG("id:%d, inuse:%d, media_type:%d, tsep:%d, ",
-				sep_info->id,
-				sep_info->inuse,
-				sep_info->media_type,
-				sep_info->tsep);
+			LOG_DBG("id:%d, inuse:%d, media_type:%d, tsep:%d, ", sep_info->id,
+				sep_info->inuse, sep_info->media_type, sep_info->tsep);
 		} while (a2dp->peer_seps_count < a2dp->discover_cb_param->sep_count);
 
 		/* trigger the getting capability */
@@ -684,11 +673,11 @@ void bt_a2dp_stream_cb_register(struct bt_a2dp_stream *stream, struct bt_a2dp_st
 }
 
 int bt_a2dp_stream_config(struct bt_a2dp *a2dp, struct bt_a2dp_stream *stream,
-		struct bt_a2dp_ep *local_ep, struct bt_a2dp_ep *remote_ep,
-		struct bt_a2dp_codec_cfg *config)
+			  struct bt_a2dp_ep *local_ep, struct bt_a2dp_ep *remote_ep,
+			  struct bt_a2dp_codec_cfg *config)
 {
-	if ((a2dp == NULL) || (stream == NULL) || (local_ep == NULL) ||
-		(remote_ep == NULL) || (config == NULL)) {
+	if ((a2dp == NULL) || (stream == NULL) || (local_ep == NULL) || (remote_ep == NULL) ||
+	    (config == NULL)) {
 		return -EINVAL;
 	}
 
@@ -724,8 +713,9 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->open_param.req.func = bt_a2dp_open_cb;
-	a2dp->open_param.acp_stream_ep_id = stream->remote_ep != NULL ?
-		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
+	a2dp->open_param.acp_stream_ep_id = stream->remote_ep != NULL
+						    ? stream->remote_ep->sep.sep_info.id
+						    : stream->remote_ep_id;
 	a2dp->open_param.sep = &stream->local_ep->sep;
 	return bt_avdtp_open(&a2dp->session, &a2dp->open_param);
 }
@@ -746,8 +736,9 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 
 	a2dp = stream->a2dp;
 	a2dp->start_param.req.func = bt_a2dp_start_cb;
-	a2dp->start_param.acp_stream_ep_id = stream->remote_ep != NULL ?
-		stream->remote_ep->sep.sep_info.id : stream->remote_ep_id;
+	a2dp->start_param.acp_stream_ep_id = stream->remote_ep != NULL
+						     ? stream->remote_ep->sep.sep_info.id
+						     : stream->remote_ep_id;
 	a2dp->start_param.sep = &stream->local_ep->sep;
 	return bt_avdtp_start(&a2dp->session, &a2dp->start_param);
 }
@@ -774,8 +765,8 @@ uint32_t bt_a2dp_get_mtu(struct bt_a2dp_stream *stream)
 }
 
 #if defined(CONFIG_BT_A2DP_SOURCE)
-int bt_a2dp_stream_send(struct bt_a2dp_stream *stream,  struct net_buf *buf,
-			uint16_t seq_num, uint32_t ts)
+int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
+			uint32_t ts)
 {
 	struct bt_avdtp_media_hdr *media_hdr;
 
