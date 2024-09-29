@@ -351,6 +351,44 @@ static int a2dp_start_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, ui
 	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, false);
 }
 
+static int a2dp_suspend_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_ctrl_req_cb req_cb;
+	bt_a2dp_ctrl_done_cb done_cb;
+
+	__ASSERT(sep, "Invalid sep");
+	req_cb = a2dp_cb != NULL ? a2dp_cb->suspend_req : NULL;
+	done_cb =
+		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->suspended : NULL;
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, false);
+}
+
+static int a2dp_close_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_ctrl_req_cb req_cb;
+	bt_a2dp_ctrl_done_cb done_cb;
+
+	__ASSERT(sep, "Invalid sep");
+	req_cb = a2dp_cb != NULL ? a2dp_cb->release_req : NULL;
+	done_cb =
+		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->released : NULL;
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, true);
+}
+
+static int a2dp_abort_ind(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_ctrl_req_cb req_cb;
+	bt_a2dp_ctrl_done_cb done_cb;
+
+	__ASSERT(sep, "Invalid sep");
+	req_cb = a2dp_cb != NULL ? a2dp_cb->abort_req : NULL;
+	done_cb = (ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->aborted : NULL;
+	return a2dp_ctrl_ind(session, sep, errcode, req_cb, done_cb, true);
+}
+
 static int bt_a2dp_set_config_cb(struct bt_avdtp_req *req)
 {
 	struct bt_a2dp *a2dp = SET_CONF_PARAM(SET_CONF_REQ(req));
@@ -656,6 +694,36 @@ static int bt_a2dp_start_cb(struct bt_avdtp_req *req)
 	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, false);
 }
 
+static int bt_a2dp_suspend_cb(struct bt_avdtp_req *req)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->suspend_rsp : NULL;
+	bt_a2dp_done_cb done_cb =
+		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->suspended : NULL;
+
+	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, false);
+}
+
+static int bt_a2dp_close_cb(struct bt_avdtp_req *req)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->release_rsp : NULL;
+	bt_a2dp_done_cb done_cb =
+		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->released : NULL;
+
+	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
+}
+
+static int bt_a2dp_abort_cb(struct bt_avdtp_req *req)
+{
+	struct bt_a2dp_ep *ep = CONTAINER_OF(CTRL_REQ(req)->sep, struct bt_a2dp_ep, sep);
+	bt_a2dp_rsp_cb rsp_cb = a2dp_cb != NULL ? a2dp_cb->abort_rsp : NULL;
+	bt_a2dp_done_cb done_cb =
+		(ep->stream != NULL && ep->stream->ops != NULL) ? ep->stream->ops->aborted : NULL;
+
+	return bt_a2dp_ctrl_cb(req, rsp_cb, done_cb, true);
+}
+
 static int bt_a2dp_stream_ctrl_pre(struct bt_a2dp_stream *stream, bt_avdtp_func_t cb)
 {
 	struct bt_a2dp *a2dp;
@@ -685,6 +753,18 @@ int bt_a2dp_stream_establish(struct bt_a2dp_stream *stream)
 	return bt_avdtp_open(&a2dp->session, &a2dp->ctrl_param);
 }
 
+int bt_a2dp_stream_release(struct bt_a2dp_stream *stream)
+{
+	int err;
+	struct bt_a2dp *a2dp = stream->a2dp;
+
+	err = bt_a2dp_stream_ctrl_pre(stream, bt_a2dp_close_cb);
+	if (err) {
+		return err;
+	}
+	return bt_avdtp_close(&a2dp->session, &a2dp->ctrl_param);
+}
+
 int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 {
 	int err;
@@ -695,6 +775,30 @@ int bt_a2dp_stream_start(struct bt_a2dp_stream *stream)
 		return err;
 	}
 	return bt_avdtp_start(&a2dp->session, &a2dp->ctrl_param);
+}
+
+int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream)
+{
+	int err;
+	struct bt_a2dp *a2dp = stream->a2dp;
+
+	err = bt_a2dp_stream_ctrl_pre(stream, bt_a2dp_suspend_cb);
+	if (err) {
+		return err;
+	}
+	return bt_avdtp_suspend(&a2dp->session, &a2dp->ctrl_param);
+}
+
+int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream)
+{
+	int err;
+	struct bt_a2dp *a2dp = stream->a2dp;
+
+	err = bt_a2dp_stream_ctrl_pre(stream, bt_a2dp_abort_cb);
+	if (err) {
+		return err;
+	}
+	return bt_avdtp_abort(&a2dp->session, &a2dp->ctrl_param);
 }
 
 int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *config)
@@ -749,6 +853,30 @@ int bt_a2dp_stream_send(struct bt_a2dp_stream *stream, struct net_buf *buf, uint
 }
 #endif
 
+int a2dp_stream_l2cap_disconnected(struct bt_avdtp *session, struct bt_avdtp_sep *sep)
+{
+	struct bt_a2dp_ep *ep;
+
+	__ASSERT(sep, "Invalid sep");
+	ep = CONTAINER_OF(sep, struct bt_a2dp_ep, sep);
+	if (ep->stream != NULL) {
+		struct bt_a2dp_stream_ops *ops;
+		struct bt_a2dp_stream *stream = ep->stream;
+
+		ops = stream->ops;
+		/* Many places set ep->stream as NULL like abort and close.
+		 * it should be OK without lock protection because
+		 * all the related callbacks are in the same zephyr task context.
+		 */
+		ep->stream = NULL;
+		if ((ops != NULL) && (ops->released != NULL)) {
+			ops->released(stream);
+		}
+	}
+
+	return 0;
+}
+
 static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.connected = a2dp_connected,
 	.disconnected = a2dp_disconnected,
@@ -759,6 +887,10 @@ static const struct bt_avdtp_ops_cb signaling_avdtp_ops = {
 	.re_configuration_ind = a2dp_re_config_ind,
 	.open_ind = a2dp_open_ind,
 	.start_ind = a2dp_start_ind,
+	.close_ind = a2dp_close_ind,
+	.suspend_ind = a2dp_suspend_ind,
+	.abort_ind = a2dp_abort_ind,
+	.stream_l2cap_disconnected = a2dp_stream_l2cap_disconnected,
 };
 
 int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
