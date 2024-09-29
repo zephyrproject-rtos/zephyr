@@ -202,6 +202,9 @@ struct bt_avdtp_ops_cb {
 	int (*suspend_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
 	int (*abort_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
+
+	/* stream l2cap is closed */
+	int (*stream_l2cap_disconnected)(struct bt_avdtp *session, struct bt_avdtp_sep *sep);
 };
 
 /** @brief Global AVDTP session structure. */
@@ -258,8 +261,17 @@ int bt_avdtp_reconfigure(struct bt_avdtp *session, struct bt_avdtp_set_configura
 /* AVDTP OPEN */
 int bt_avdtp_open(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
 
+/* AVDTP CLOSE */
+int bt_avdtp_close(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
 /* AVDTP START */
 int bt_avdtp_start(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP SUSPEND */
+int bt_avdtp_suspend(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
+
+/* AVDTP ABORT */
+int bt_avdtp_abort(struct bt_avdtp *session, struct bt_avdtp_ctrl_params *param);
 
 /* AVDTP send data */
 int bt_avdtp_send_media_data(struct bt_avdtp_sep *sep, struct net_buf *buf);
