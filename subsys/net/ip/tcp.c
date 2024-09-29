@@ -3637,8 +3637,8 @@ int net_tcp_put(struct net_context *context)
 		({ const char *state = net_context_state(context);
 					state ? state : "<unknown>"; }));
 
-	if (conn && (conn->state == TCP_ESTABLISHED ||
-		     conn->state == TCP_SYN_RECEIVED)) {
+	if (conn->state == TCP_ESTABLISHED ||
+	    conn->state == TCP_SYN_RECEIVED) {
 		/* Send all remaining data if possible. */
 		if (conn->send_data_total > 0) {
 			NET_DBG("conn %p pending %zu bytes", conn,
@@ -3670,7 +3670,7 @@ int net_tcp_put(struct net_context *context)
 
 			keep_alive_timer_stop(conn);
 		}
-	} else if (conn && conn->in_connect) {
+	} else if (conn->in_connect) {
 		conn->in_connect = false;
 		k_sem_reset(&conn->connect_sem);
 	}
