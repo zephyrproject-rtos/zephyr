@@ -128,6 +128,8 @@ struct bt_avdtp_sep {
 	struct bt_l2cap_br_chan chan;
 	/** the endpoint media data */
 	void (*media_data_cb)(struct bt_avdtp_sep *sep, struct net_buf *buf);
+	/* semaphore for lock/unlock */
+	struct k_sem sem_lock;
 	/** avdtp session */
 	struct bt_avdtp *session;
 	/** SEP state */
