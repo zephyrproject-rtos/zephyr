@@ -15,6 +15,37 @@ All Kconfig options can be searched in the :ref:`Kconfig search page
    Before making changes to Kconfig files, it's a good idea to also go through
    the :ref:`kconfig_tips_and_tricks` page.
 
+.. _configuration_file_types:
+
+Kconfig configuration file types
+********************************
+
+There are two types of Kconfig configuration files:
+
+1. **Kconfig Files**: These files use the following syntax:
+
+   .. code-block:: none
+
+      config CPU_HAS_FPU
+      bool
+      help
+         This symbol is ``y`` if the CPU has a hardware floating point unit.
+
+   Kconfig files define configuration options and their attributes. They are
+   typically named ``Kconfig``, either with no suffix or with the suffix
+   ``.defconfig``. They may also have a suffix that differentiates them
+   from other Kconfig files within the same directory. See :ref:`initial-conf`
+   for more details.
+
+2. **.config Files**: These files use the following syntax:
+
+   .. code-block:: none
+
+      CONFIG_CPU_HAS_FPU=y
+
+   This file type stores the configuration values that have been
+   either selected or are the default values and typically has a
+   descriptive file name prefix with the suffix ``_defconfig``.
 
 Visible and invisible Kconfig symbols
 *************************************
