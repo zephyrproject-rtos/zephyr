@@ -86,6 +86,8 @@
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
 
+#define BT_AVDTP_RTP_VERSION 2
+
 struct bt_avdtp;
 struct bt_avdtp_req;
 struct bt_avdtp_sep_info;
@@ -114,6 +116,7 @@ typedef int (*bt_avdtp_func_t)(struct bt_avdtp_req *req);
 struct bt_avdtp_req {
 	uint8_t sig;
 	uint8_t tid;
+	uint8_t status;
 	bt_avdtp_func_t func;
 };
 
@@ -145,13 +148,11 @@ struct bt_avdtp_media_hdr {
 
 struct bt_avdtp_discover_params {
 	struct bt_avdtp_req req;
-	uint8_t status;
 	struct net_buf *buf;
 };
 
 struct bt_avdtp_get_capabilities_params {
 	struct bt_avdtp_req req;
-	uint8_t status;
 	uint8_t stream_endpoint_id;
 	struct net_buf *buf;
 };
@@ -159,7 +160,6 @@ struct bt_avdtp_get_capabilities_params {
 struct bt_avdtp_set_configuration_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
-	uint8_t status;
 	uint8_t acp_stream_ep_id;
 	uint8_t int_stream_endpoint_id;
 	uint8_t media_type;
@@ -168,17 +168,10 @@ struct bt_avdtp_set_configuration_params {
 	uint8_t *codec_specific_ie;
 };
 
-struct bt_avdtp_open_params {
+/* avdtp_open, avdtp_close, avdtp_start, avdtp_suspend */
+struct bt_avdtp_ctrl_params {
 	struct bt_avdtp_req req;
 	struct bt_avdtp_sep *sep;
-	uint8_t status;
-	uint8_t acp_stream_ep_id;
-};
-
-struct bt_avdtp_start_params {
-	struct bt_avdtp_req req;
-	struct bt_avdtp_sep *sep;
-	uint8_t status;
 	uint8_t acp_stream_ep_id;
 };
 
@@ -196,6 +189,9 @@ struct bt_avdtp_ops_cb {
 
 	int (*set_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
 				     uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
+
+	int (*re_configuration_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep,
+				    uint8_t int_seid, struct net_buf *buf, uint8_t *errcode);
 
 	int (*open_ind)(struct bt_avdtp *session, struct bt_avdtp_sep *sep, uint8_t *errcode);
 
@@ -215,7 +211,8 @@ struct bt_avdtp {
 	const struct bt_avdtp_ops_cb *ops;
 	struct bt_avdtp_sep *current_sep;
 	struct k_work_delayable timeout_work;
-	uint8_t signalling_l2cap_connected;
+	/* semaphore for lock/unlock */
+	struct k_sem sem_lock;
 };
 
 struct bt_avdtp_event_cb {
