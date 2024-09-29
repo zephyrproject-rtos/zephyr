@@ -24,7 +24,7 @@
 #define FAIL_MSG "fail (err %d)\n"
 #define SECTION_BEGIN_LINE \
 	"\n=================================================\n"
-/* Default values are assigned to settings values consuments
+/* Default values are assigned to settings values consumers
  * All of them will be overwritten if storage contain proper key-values
  */
 uint8_t angle_val;
@@ -34,18 +34,14 @@ uint32_t length_2_val = 60;
 int32_t voltage_val = -3000;
 char source_name_val[6] = "";
 
-int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
-		  void *cb_arg);
-int alpha_handle_commit(void);
-int alpha_handle_export(int (*cb)(const char *name,
-			       const void *value, size_t val_len));
+static int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg);
+static int alpha_handle_commit(void);
+static int alpha_handle_export(int (*cb)(const char *name, const void *value, size_t val_len));
 
-int beta_handle_set(const char *name, size_t len, settings_read_cb read_cb,
-		  void *cb_arg);
-int beta_handle_commit(void);
-int beta_handle_export(int (*cb)(const char *name,
-			       const void *value, size_t val_len));
-int beta_handle_get(const char *name, char *val, int val_len_max);
+static int beta_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg);
+static int beta_handle_commit(void);
+static int beta_handle_export(int (*cb)(const char *name, const void *value, size_t val_len));
+static int beta_handle_get(const char *name, char *val, int val_len_max);
 
 /* dynamic main tree handler */
 struct settings_handler alph_handler = {
@@ -61,8 +57,7 @@ SETTINGS_STATIC_HANDLER_DEFINE(beta, "alpha/beta", beta_handle_get,
 			       beta_handle_set, beta_handle_commit,
 			       beta_handle_export);
 
-int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
-		  void *cb_arg)
+static int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	const char *next;
 	size_t next_len;
@@ -112,8 +107,7 @@ int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	return -ENOENT;
 }
 
-int beta_handle_set(const char *name, size_t len, settings_read_cb read_cb,
-		  void *cb_arg)
+static int beta_handle_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
 {
 	const char *next;
 	size_t name_len;
@@ -149,14 +143,13 @@ int beta_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	return -ENOENT;
 }
 
-int alpha_handle_commit(void)
+static int alpha_handle_commit(void)
 {
 	printk("loading all settings under <alpha> handler is done\n");
 	return 0;
 }
 
-int alpha_handle_export(int (*cb)(const char *name,
-			       const void *value, size_t val_len))
+static int alpha_handle_export(int (*cb)(const char *name, const void *value, size_t val_len))
 {
 	printk("export keys under <alpha> handler\n");
 	(void)cb("alpha/angle/1", &angle_val, sizeof(angle_val));
@@ -167,8 +160,7 @@ int alpha_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
-int beta_handle_export(int (*cb)(const char *name,
-			       const void *value, size_t val_len))
+static int beta_handle_export(int (*cb)(const char *name, const void *value, size_t val_len))
 {
 	printk("export keys under <beta> handler\n");
 	(void)cb("alpha/beta/voltage", &voltage_val, sizeof(voltage_val));
@@ -178,13 +170,13 @@ int beta_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
-int beta_handle_commit(void)
+static int beta_handle_commit(void)
 {
 	printk("loading all settings under <beta> handler is done\n");
 	return 0;
 }
 
-int beta_handle_get(const char *name, char *val, int val_len_max)
+static int beta_handle_get(const char *name, char *val, int val_len_max)
 {
 	const char *next;
 
@@ -493,7 +485,7 @@ static void example_delete(void)
 	}
 }
 
-void example_runtime_usage(void)
+static void example_runtime_usage(void)
 {
 	int rc;
 	uint8_t injected_str[sizeof(source_name_val)] = "RT";
