@@ -545,6 +545,28 @@ struct bt_a2dp_cb {
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 */
 	void (*suspend_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
+	/**
+	 * @brief Stream abort request callback
+	 *
+	 * The callback is called whenever an stream is requested to be
+	 * aborted.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[out] rsp_err_code  give the error code if response error.
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 *
+	 * @return 0 in case of success or negative value in case of error.
+	 */
+	int (*abort_req)(struct bt_a2dp_stream *stream, uint8_t *rsp_err_code);
+	/** @brief Callback function for bt_a2dp_stream_abort()
+	 *
+	 *  Called when the abort operation is completed.
+	 *
+	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] rsp_err_code the remote responded error code
+	 *                          bt_a2dp_err_code or bt_avdtp_err_code
+	 */
+	void (*abort_rsp)(struct bt_a2dp_stream *stream, uint8_t rsp_err_code);
 };
 
 /** @brief A2DP Connect.
@@ -662,6 +684,15 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object that has been suspended.
 	 */
 	void (*suspended)(struct bt_a2dp_stream *stream);
+	/**
+	 * @brief Stream abort callback
+	 *
+	 * The callback is called whenever an Audio Stream has been aborted.
+	 * After aborted, the stream becomes invalid.
+	 *
+	 * @param stream Stream object that has been aborted.
+	 */
+	void (*aborted)(struct bt_a2dp_stream *stream);
 #if defined(CONFIG_BT_A2DP_SINK)
 	/** @brief the media streaming data, only for sink
 	 *
@@ -769,6 +800,17 @@ int bt_a2dp_stream_suspend(struct bt_a2dp_stream *stream);
  *  @return 0 in case of success and error code in case of error.
  */
 int bt_a2dp_stream_reconfig(struct bt_a2dp_stream *stream, struct bt_a2dp_codec_cfg *config);
+
+/** @brief abort a2dp streamer.
+ *
+ * This function sends the AVDTP_ABORT command.
+ * After abort, the stream becomes invalid.
+ *
+ *  @param stream The stream object.
+ *
+ *  @return 0 in case of success and error code in case of error.
+ */
+int bt_a2dp_stream_abort(struct bt_a2dp_stream *stream);
 
 /** @brief get the stream l2cap mtu
  *
