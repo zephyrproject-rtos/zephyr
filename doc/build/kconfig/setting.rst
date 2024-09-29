@@ -91,8 +91,8 @@ this:
 
       # CONFIG_SOME_OTHER_BOOL is not set
 
-   This is the format you will see in the merged configuration in
-   :file:`zephyr/.config`.
+   This is the format you will see in the merged configuration
+   saved to :file:`zephyr/.config` in the build directory.
 
    This style is accepted for historical reasons: Kconfig configuration files
    can be parsed as makefiles (though Zephyr doesn't use this). Having
