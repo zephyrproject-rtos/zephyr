@@ -953,6 +953,65 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_ap_status(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_iface_status status = {0};
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	context.sh = sh;
+
+	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
+		     sizeof(struct wifi_iface_status))) {
+		PR_WARNING("Status request failed\n");
+
+		return -ENOEXEC;
+	}
+
+	switch (status.state) {
+	case WIFI_HAPD_IFACE_UNINITIALIZED:
+		PR("State: %s\n", "HAPD_IFACE_UNINITIALIZED");
+		return 0;
+	case WIFI_HAPD_IFACE_DISABLED:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_COUNTRY_UPDATE:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_ACS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_HT_SCAN:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		return 0;
+	case WIFI_HAPD_IFACE_DFS:
+		PR("State: %s\n", "HAPD_IFACE_DISABLED");
+		break;
+	case WIFI_HAPD_IFACE_ENABLED:
+		break;
+	default:
+		return 0;
+	}
+
+	PR("Interface Mode: %s\n", wifi_mode_txt(status.iface_mode));
+	PR("Link Mode: %s\n", wifi_link_mode_txt(status.link_mode));
+	PR("SSID: %.32s\n", status.ssid);
+	PR("BSSID: %s\n", net_sprint_ll_addr_buf(status.bssid, WIFI_MAC_ADDR_LEN, mac_string_buf,
+						 sizeof(mac_string_buf)));
+	PR("Band: %s\n", wifi_band_txt(status.band));
+	PR("Channel: %d\n", status.channel);
+	PR("Security: %s\n", wifi_security_txt(status.security));
+	PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
+	if (status.iface_mode == WIFI_MODE_INFRA) {
+		PR("RSSI: %d\n", status.rssi);
+	}
+	PR("Beacon Interval: %d\n", status.beacon_interval);
+	PR("DTIM: %d\n", status.dtim_period);
+	PR("TWT: %s\n", status.twt_capable ? "Supported" : "Not supported");
+
+	return 0;
+}
+
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
@@ -2716,43 +2775,36 @@ static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
-	SHELL_CMD_ARG(disable, NULL,
-		  "Disable Access Point mode.\n",
-		  cmd_wifi_ap_disable,
-		  1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_cmd_ap,
+	SHELL_CMD_ARG(disable, NULL, "Disable Access Point mode.\n", cmd_wifi_ap_disable, 1, 0),
 	SHELL_CMD_ARG(enable, NULL,
-		  "-s --ssid=<SSID>\n"
-		  "-c --channel=<channel number>\n"
-		  "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
-		  "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
-		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
-		  "7: WPA-PSK, 11: DPP\n"
-		  "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
-		  "0:Disable, 1:Optional, 2:Required\n"
-		  "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
-		  "-m --bssid=<BSSID>\n"
-		  "-h --help (prints help)",
-		  cmd_wifi_ap_enable,
-		  2, 13),
-	SHELL_CMD_ARG(stations, NULL,
-		  "List stations connected to the AP",
-		  cmd_wifi_ap_stations,
-		  1, 0),
+		      "-s --ssid=<SSID>\n"
+		      "-c --channel=<channel number>\n"
+		      "-p --passphrase=<PSK> (valid only for secure SSIDs)\n"
+		      "-k --key-mgmt=<Security type> (valid only for secure SSIDs)\n"
+		      "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE, 4:WAPI, 5:EAP-TLS, 6:WEP\n"
+		      "7: WPA-PSK, 11: DPP\n"
+		      "-w --ieee-80211w=<MFP> (optional: needs security type to be specified)\n"
+		      "0:Disable, 1:Optional, 2:Required\n"
+		      "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+		      "-m --bssid=<BSSID>\n"
+		      "-h --help (prints help)",
+		      cmd_wifi_ap_enable, 2, 13),
+	SHELL_CMD_ARG(stations, NULL, "List stations connected to the AP", cmd_wifi_ap_stations, 1,
+		      0),
 	SHELL_CMD_ARG(disconnect, NULL,
-		  "Disconnect a station from the AP\n"
-		  "<MAC address of the station>\n",
-		  cmd_wifi_ap_sta_disconnect,
-		  2, 0),
+		      "Disconnect a station from the AP\n"
+		      "<MAC address of the station>\n",
+		      cmd_wifi_ap_sta_disconnect, 2, 0),
 	SHELL_CMD_ARG(config, NULL,
-		  "Configure AP parameters.\n"
-		  "-i --max_inactivity=<time duration (in seconds)>\n"
-		  "-s --max_num_sta=<maximum number of stations>\n"
-		  "-h --help (prints help)",
-		  cmd_wifi_ap_config_params,
-		  2, 5),
-	SHELL_SUBCMD_SET_END
-);
+		      "Configure AP parameters.\n"
+		      "-i --max_inactivity=<time duration (in seconds)>\n"
+		      "-s --max_num_sta=<maximum number of stations>\n"
+		      "-h --help (prints help)",
+		      cmd_wifi_ap_config_params, 2, 5),
+	SHELL_CMD_ARG(status, NULL, "Status of Wi-Fi SAP\n", cmd_wifi_ap_status, 1, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((wifi), ap, &wifi_cmd_ap,
 		 "Access Point mode commands.",
