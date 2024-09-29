@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
  * clip the value instead of yet another correction. The IDF implementation
  * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
  */
-#define ADC_CLIP_MVOLT_11DB	2550
+#define ADC_CLIP_MVOLT_12DB     2550
 #elif CONFIG_SOC_SERIES_ESP32S3
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
 #else
@@ -95,7 +95,7 @@ static inline int gain_to_atten(enum adc_gain gain, adc_atten_t *atten)
 		*atten = ADC_ATTEN_DB_6;
 		break;
 	case ADC_GAIN_1_4:
-		*atten = ADC_ATTEN_DB_11;
+		*atten = ADC_ATTEN_DB_12;
 		break;
 	default:
 		return -ENOTSUP;
@@ -117,7 +117,7 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 	case ADC_ATTEN_DB_6:
 		*val_mv = *val_mv >> 1; /* 1/ADC_GAIN_1_2 */
 		break;
-	case ADC_ATTEN_DB_11:
+	case ADC_ATTEN_DB_12:
 		*val_mv = *val_mv / 4; /* 1/ADC_GAIN_1_4 */
 		break;
 	case ADC_ATTEN_DB_0: /* 1/ADC_GAIN_1 */
@@ -458,9 +458,9 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		cal = cal_mv = esp_adc_cal_raw_to_voltage(reading, &data->chars[channel_id]);
 
 #if CONFIG_SOC_SERIES_ESP32
-		if (data->attenuation[channel_id] == ADC_ATTEN_DB_11) {
-			if (cal > ADC_CLIP_MVOLT_11DB) {
-				cal = ADC_CLIP_MVOLT_11DB;
+		if (data->attenuation[channel_id] == ADC_ATTEN_DB_12) {
+			if (cal > ADC_CLIP_MVOLT_12DB) {
+				cal = ADC_CLIP_MVOLT_12DB;
 			}
 		}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
