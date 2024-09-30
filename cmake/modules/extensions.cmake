@@ -38,6 +38,7 @@ include(CheckCXXCompilerFlag)
 # 7.1 llext_* configuration functions
 # 7.2 add_llext_* build control functions
 # 7.3 llext helper functions
+# 8. Script mode handling
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -5759,3 +5760,38 @@ function(llext_filter_zephyr_flags filter flags outvar)
 
   set(${outvar} ${zephyr_filtered_flags} PARENT_SCOPE)
 endfunction()
+
+########################################################
+# 8. Script mode handling
+########################################################
+#
+# Certain features are not available when CMake is used in script mode.
+# For example custom targets, and thus features related to custom targets, such
+# as target properties are not available in script mode.
+#
+# This section defines behavior for functions whose default implementation does
+# not work correctly in script mode.
+#
+# The script mode function can be a simple stub or a more complex solution
+# depending on the exact use of the function in script mode.
+#
+# Current Zephyr CMake scripts which includes `extensions.cmake` in script mode
+# are: package_helper.cmake, verify-toolchain.cmake
+#
+
+if(CMAKE_SCRIPT_MODE_FILE)
+  # add_custom_target and set_target_properties are not supported in script mode.
+  # However, Zephyr CMake functions like `zephyr_get()`, `zephyr_create_scope()`,
+  # llext functions creates or relies on custom CMake targets.
+  function(add_custom_target)
+    # This silence the error: 'add_custom_target command is not scriptable'
+  endfunction()
+
+  function(set_target_properties)
+    # This silence the error: 'set_target_properties command is not scriptable'
+  endfunction()
+
+  function(zephyr_set variable)
+    # This silence the error: zephyr_set(...  SCOPE <scope>) doesn't exists.
+  endfunction()
+endif()
