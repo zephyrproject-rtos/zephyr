@@ -589,7 +589,7 @@ static void iso_timer_timeout(struct k_work *work)
 	k_work_reschedule(&iso_send_work, K_USEC(big_create_param.interval - 100));
 
 	for (int i = 0; i < big_create_param.num_bis; i++) {
-		buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
+		buf = net_buf_alloc(&bis_tx_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Could not allocate buffer");
 			return;

@@ -68,6 +68,7 @@ struct bt_cap_initiator_broadcast_stream_param stream_params;
 struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
 struct bt_cap_initiator_broadcast_create_param create_param;
 struct bt_cap_broadcast_source *broadcast_source;
+static struct k_work_delayable audio_send_work;
 struct bt_le_ext_adv *ext_adv;
 
 static void broadcast_started_cb(struct bt_bap_stream *stream)
@@ -110,10 +111,12 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 		mock_data_initialized = true;
 	}
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		printk("Could not allocate buffer when sending on %p\n", stream);
 
+		/* Retry next SDU interval */
+		k_work_schedule(&audio_send_work, K_USEC(broadcast_preset_48_2_1.qos.interval));
 		return;
 	}
 
@@ -121,11 +124,18 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 	net_buf_add_mem(buf, mock_data, broadcast_preset_48_2_1.qos.sdu);
 	ret = bt_bap_stream_send(stream, buf, seq_num++);
 	if (ret < 0) {
-		/* This will end broadcasting on this stream. */
+		printk("Could not send on %p: %d\n", stream, ret);
 		net_buf_unref(buf);
 
+		/* Retry next SDU interval */
+		k_work_schedule(&audio_send_work, K_USEC(broadcast_preset_48_2_1.qos.interval));
 		return;
 	}
+}
+
+static void audio_timer_timeout(struct k_work *work)
+{
+	broadcast_sent_cb(&broadcast_stream->bap_stream);
 }
 
 static struct bt_bap_stream_ops broadcast_stream_ops = {
@@ -318,6 +328,8 @@ int cap_initiator_init(void)
 		broadcast_stream = &broadcast_source_stream;
 		bt_bap_stream_cb_register(&broadcast_stream->bap_stream, &broadcast_stream_ops);
 	}
+
+	k_work_init_delayable(&audio_send_work, audio_timer_timeout);
 
 	return 0;
 }
