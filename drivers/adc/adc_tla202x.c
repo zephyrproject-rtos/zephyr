@@ -22,10 +22,10 @@
 
 #define DT_DRV_COMPAT ti_tla2021
 
-LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
+LOG_MODULE_REGISTER(tla202x, CONFIG_ADC_LOG_LEVEL);
 
-#define ACQ_THREAD_PRIORITY   CONFIG_ADC_TLA2021_ACQUISITION_THREAD_PRIORITY
-#define ACQ_THREAD_STACK_SIZE CONFIG_ADC_TLA2021_ACQUISITION_THREAD_STACK_SIZE
+#define ACQ_THREAD_PRIORITY   CONFIG_ADC_TLA202X_ACQUISITION_THREAD_PRIORITY
+#define ACQ_THREAD_STACK_SIZE CONFIG_ADC_TLA202X_ACQUISITION_THREAD_STACK_SIZE
 
 #define ADC_CHANNEL_msk BIT(0)
 #define ADC_RESOLUTION  12
@@ -51,33 +51,33 @@ LOG_MODULE_REGISTER(tla2021, CONFIG_ADC_LOG_LEVEL);
 #define REG_CONFIG_OS_pos   15
 #define REG_CONFIG_OS_msk   (BIT_MASK(1) << REG_CONFIG_OS_pos)
 
-typedef int16_t tla2021_reg_data_t;
-typedef uint16_t tla2021_reg_config_t;
+typedef int16_t tla202x_reg_data_t;
+typedef uint16_t tla202x_reg_config_t;
 
-struct tla2021_config {
+struct tla202x_config {
 	const struct i2c_dt_spec bus;
 };
 
-struct tla2021_data {
+struct tla202x_data {
 	const struct device *dev;
 	struct adc_context ctx;
 #ifdef CONFIG_ADC_ASYNC
 	struct k_sem acq_lock;
 #endif
-	tla2021_reg_data_t *buffer;
-	tla2021_reg_data_t *repeat_buffer;
+	tla202x_reg_data_t *buffer;
+	tla202x_reg_data_t *repeat_buffer;
 
 	/*
 	 * Shadow register
 	 */
-	tla2021_reg_config_t reg_config;
+	tla202x_reg_config_t reg_config;
 };
 
-static int tla2021_read_register(const struct device *dev, uint8_t reg, uint16_t *value)
+static int tla202x_read_register(const struct device *dev, uint8_t reg, uint16_t *value)
 {
 	int ret;
 
-	const struct tla2021_config *config = dev->config;
+	const struct tla202x_config *config = dev->config;
 	uint8_t tmp[2];
 
 	ret = i2c_write_read_dt(&config->bus, &reg, sizeof(reg), tmp, sizeof(tmp));
@@ -90,11 +90,11 @@ static int tla2021_read_register(const struct device *dev, uint8_t reg, uint16_t
 	return 0;
 }
 
-static int tla2021_write_register(const struct device *dev, uint8_t reg, uint16_t value)
+static int tla202x_write_register(const struct device *dev, uint8_t reg, uint16_t value)
 {
 	int ret;
 
-	const struct tla2021_config *config = dev->config;
+	const struct tla202x_config *config = dev->config;
 	uint8_t tmp[3] = {reg};
 
 	sys_put_be16(value, &tmp[1]);
@@ -107,7 +107,7 @@ static int tla2021_write_register(const struct device *dev, uint8_t reg, uint16_
 	return 0;
 }
 
-static int tla2021_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
+static int tla202x_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
 	if (cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid gain");
@@ -127,9 +127,9 @@ static int tla2021_channel_setup(const struct device *dev, const struct adc_chan
 	return 0;
 }
 
-static int tla2021_start_read(const struct device *dev, const struct adc_sequence *seq)
+static int tla202x_start_read(const struct device *dev, const struct adc_sequence *seq)
 {
-	struct tla2021_data *data = dev->data;
+	struct tla202x_data *data = dev->data;
 
 	const size_t num_extra_samples = seq->options ? seq->options->extra_samplings : 0;
 	const size_t num_samples = (1 + num_extra_samples) * POPCOUNT(seq->channels);
@@ -159,7 +159,7 @@ static int tla2021_start_read(const struct device *dev, const struct adc_sequenc
 		return -EINVAL;
 	}
 
-	if (seq->buffer_size < (num_samples * sizeof(tla2021_reg_data_t))) {
+	if (seq->buffer_size < (num_samples * sizeof(tla202x_reg_data_t))) {
 		LOG_ERR("buffer size too small");
 		return -EINVAL;
 	}
@@ -171,30 +171,30 @@ static int tla2021_start_read(const struct device *dev, const struct adc_sequenc
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int tla2021_read_async(const struct device *dev, const struct adc_sequence *seq,
+static int tla202x_read_async(const struct device *dev, const struct adc_sequence *seq,
 			      struct k_poll_signal *async)
 {
 	int ret;
 
-	struct tla2021_data *data = dev->data;
+	struct tla202x_data *data = dev->data;
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
-	ret = tla2021_start_read(dev, seq);
+	ret = tla202x_start_read(dev, seq);
 	adc_context_release(&data->ctx, ret);
 
 	return ret;
 }
 
-static int tla2021_read(const struct device *dev, const struct adc_sequence *seq)
+static int tla202x_read(const struct device *dev, const struct adc_sequence *seq)
 {
-	return tla2021_read_async(dev, seq, NULL);
+	return tla202x_read_async(dev, seq, NULL);
 }
 
-static void tla2021_perform_read(const struct device *dev)
+static void tla202x_perform_read(const struct device *dev)
 {
-	struct tla2021_data *data = dev->data;
-	tla2021_reg_config_t reg;
-	tla2021_reg_data_t res;
+	struct tla202x_data *data = dev->data;
+	tla202x_reg_config_t reg;
+	tla202x_reg_data_t res;
 	int ret;
 
 	/*
@@ -203,7 +203,7 @@ static void tla2021_perform_read(const struct device *dev)
 	k_usleep(WAKEUP_TIME_US + CONVERSION_TIME_US);
 	do {
 		k_yield();
-		ret = tla2021_read_register(dev, REG_CONFIG, &reg);
+		ret = tla202x_read_register(dev, REG_CONFIG, &reg);
 		if (ret < 0) {
 			adc_context_complete(&data->ctx, ret);
 		}
@@ -212,7 +212,7 @@ static void tla2021_perform_read(const struct device *dev)
 	/*
 	 * Read result
 	 */
-	ret = tla2021_read_register(dev, REG_DATA, &res);
+	ret = tla202x_read_register(dev, REG_DATA, &res);
 	if (ret) {
 		adc_context_complete(&data->ctx, ret);
 	}
@@ -230,17 +230,17 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	int ret;
 
-	struct tla2021_data *data = CONTAINER_OF(ctx, struct tla2021_data, ctx);
+	struct tla202x_data *data = CONTAINER_OF(ctx, struct tla202x_data, ctx);
 	const struct device *dev = data->dev;
 
-	tla2021_reg_config_t reg = data->reg_config;
+	tla202x_reg_config_t reg = data->reg_config;
 
 	/*
 	 * Start single-shot conversion
 	 */
 	WRITE_BIT(reg, REG_CONFIG_MODE_pos, 1);
 	WRITE_BIT(reg, REG_CONFIG_OS_pos, 1);
-	ret = tla2021_write_register(dev, REG_CONFIG, reg);
+	ret = tla202x_write_register(dev, REG_CONFIG, reg);
 	if (ret) {
 		LOG_WRN("Failed to start conversion");
 	}
@@ -250,13 +250,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #ifdef CONFIG_ADC_ASYNC
 	k_sem_give(&data->acq_lock);
 #else
-	tla2021_perform_read(dev);
+	tla202x_perform_read(dev);
 #endif
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
 {
-	struct tla2021_data *data = CONTAINER_OF(ctx, struct tla2021_data, ctx);
+	struct tla202x_data *data = CONTAINER_OF(ctx, struct tla202x_data, ctx);
 
 	if (repeat_sampling) {
 		data->buffer = data->repeat_buffer;
@@ -264,32 +264,32 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static void tla2021_acq_thread_fn(void *p1, void *p2, void *p3)
+static void tla202x_acq_thread_fn(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct tla2021_data *data = dev->data;
+	struct tla202x_data *data = dev->data;
 
 	while (true) {
 		k_sem_take(&data->acq_lock, K_FOREVER);
 
-		tla2021_perform_read(dev);
+		tla202x_perform_read(dev);
 	}
 }
 #endif
 
-static int tla2021_init(const struct device *dev)
+static int tla202x_init(const struct device *dev)
 {
 	int ret;
 
-	const struct tla2021_config *config = dev->config;
-	struct tla2021_data *data = dev->data;
+	const struct tla202x_config *config = dev->config;
+	struct tla202x_data *data = dev->data;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
 		LOG_ERR("Bus not ready");
 		return -EINVAL;
 	}
 
-	ret = tla2021_write_register(dev, REG_CONFIG, data->reg_config);
+	ret = tla202x_write_register(dev, REG_CONFIG, data->reg_config);
 	if (ret) {
 		LOG_ERR("Device reset failed: %d", ret);
 		return ret;
@@ -300,27 +300,27 @@ static int tla2021_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(adc, tla2021_driver_api) = {
-	.channel_setup = tla2021_channel_setup,
-	.read = tla2021_read,
+static DEVICE_API(adc, tla202x_driver_api) = {
+	.channel_setup = tla202x_channel_setup,
+	.read = tla202x_read,
 	.ref_internal = 4096,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async = tla2021_read_async,
+	.read_async = tla202x_read_async,
 #endif
 };
 
-#define TLA2021_THREAD_INIT(n)                                                                     \
-	K_THREAD_DEFINE(adc_tla2021_##n##_thread, ACQ_THREAD_STACK_SIZE, tla2021_acq_thread_fn,    \
+#define TLA202X_THREAD_INIT(n)                                                                     \
+	K_THREAD_DEFINE(adc_tla202x_##n##_thread, ACQ_THREAD_STACK_SIZE, tla202x_acq_thread_fn,    \
 			DEVICE_DT_INST_GET(n), NULL, NULL, ACQ_THREAD_PRIORITY, 0, 0);
 
-#define TLA2021_INIT(n)                                                                            \
-	static const struct tla2021_config inst_##n##_config;                                      \
-	static struct tla2021_data inst_##n##_data;                                                \
-	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA2021_THREAD_INIT(n)))                                     \
-	static const struct tla2021_config inst_##n##_config = {                                   \
+#define TLA202X_INIT(n)                                                                            \
+	static const struct tla202x_config inst_##n##_config;                                      \
+	static struct tla202x_data inst_##n##_data;                                                \
+	IF_ENABLED(CONFIG_ADC_ASYNC, (TLA202X_THREAD_INIT(n)))                                     \
+	static const struct tla202x_config inst_##n##_config = {                                   \
 		.bus = I2C_DT_SPEC_INST_GET(n),                                                    \
 	};                                                                                         \
-	static struct tla2021_data inst_##n##_data = {                                             \
+	static struct tla202x_data inst_##n##_data = {                                             \
 		.dev = DEVICE_DT_INST_GET(n),                                                      \
 		ADC_CONTEXT_INIT_LOCK(inst_##n##_data, ctx),                                       \
 		ADC_CONTEXT_INIT_TIMER(inst_##n##_data, ctx),                                      \
@@ -329,9 +329,9 @@ static DEVICE_API(adc, tla2021_driver_api) = {
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
 			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),))       \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
-			      POST_KERNEL, CONFIG_ADC_TLA2021_INIT_PRIORITY, &tla2021_driver_api);
+	DEVICE_DT_INST_DEFINE(n, &tla202x_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
+			      POST_KERNEL, CONFIG_ADC_TLA202X_INIT_PRIORITY, &tla202x_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TLA2021_INIT)
+DT_INST_FOREACH_STATUS_OKAY(TLA202X_INIT)
 
-BUILD_ASSERT(CONFIG_I2C_INIT_PRIORITY < CONFIG_ADC_TLA2021_INIT_PRIORITY);
+BUILD_ASSERT(CONFIG_I2C_INIT_PRIORITY < CONFIG_ADC_TLA202X_INIT_PRIORITY);
