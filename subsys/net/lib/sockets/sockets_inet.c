@@ -34,9 +34,6 @@ LOG_MODULE_DECLARE(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "../../ip/tcp_internal.h"
 #include "../../ip/net_private.h"
 
-#define SET_ERRNO(x) \
-	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
-
 const struct socket_op_vtable sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx,
@@ -141,6 +138,8 @@ static int zsock_socket_internal(int family, int type, int proto)
 
 int zsock_close_ctx(struct net_context *ctx)
 {
+	int ret;
+
 	/* Reset callbacks to avoid any race conditions while
 	 * flushing queues. No need to check return values here,
 	 * as these are fail-free operations and we're closing
@@ -157,7 +156,11 @@ int zsock_close_ctx(struct net_context *ctx)
 
 	zsock_flush_queue(ctx);
 
-	SET_ERRNO(net_context_put(ctx));
+	ret = net_context_put(ctx);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
 
 	return 0;
 }
@@ -250,36 +253,61 @@ unlock:
 
 int zsock_shutdown_ctx(struct net_context *ctx, int how)
 {
+	int ret;
+
 	if (how == ZSOCK_SHUT_RD) {
 		if (net_context_get_state(ctx) == NET_CONTEXT_LISTENING) {
-			SET_ERRNO(net_context_accept(ctx, NULL, K_NO_WAIT, NULL));
+			ret = net_context_accept(ctx, NULL, K_NO_WAIT, NULL);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		} else {
-			SET_ERRNO(net_context_recv(ctx, NULL, K_NO_WAIT, NULL));
+			ret = net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
 		}
 
 		sock_set_eof(ctx);
 
 		zsock_flush_queue(ctx);
-	} else if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
-		SET_ERRNO(-ENOTSUP);
-	} else {
-		SET_ERRNO(-EINVAL);
+
+		return 0;
 	}
 
-	return 0;
+	if (how == ZSOCK_SHUT_WR || how == ZSOCK_SHUT_RDWR) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	errno = EINVAL;
+	return -1;
 }
 
 int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		   socklen_t addrlen)
 {
-	SET_ERRNO(net_context_bind(ctx, addr, addrlen));
+	int ret;
+
+	ret = net_context_bind(ctx, addr, addrlen);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
 	/* For DGRAM socket, we expect to receive packets after call to
 	 * bind(), but for STREAM socket, next expected operation is
 	 * listen(), which doesn't work if recv callback is set.
 	 */
 	if (net_context_get_type(ctx) == SOCK_DGRAM) {
-		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
-					   ctx->user_data));
+		ret = net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
+				       ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
 	}
 
 	return 0;
@@ -296,47 +324,75 @@ static void zsock_connected_cb(struct net_context *ctx, int status, void *user_d
 int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 		      socklen_t addrlen)
 {
+	k_timeout_t timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
+	net_context_connect_cb_t cb = NULL;
+	int ret;
 
 #if defined(CONFIG_SOCKS)
 	if (net_context_is_proxy_enabled(ctx)) {
-		SET_ERRNO(net_socks5_connect(ctx, addr, addrlen));
-		SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
-					   K_NO_WAIT, ctx->user_data));
+		ret = net_socks5_connect(ctx, addr, addrlen);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+		ret = net_context_recv(ctx, zsock_received_cb,
+				       K_NO_WAIT, ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
 		return 0;
 	}
 #endif
 	if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTED) {
 		return 0;
-	} else if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
+	}
+
+	if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
 		if (sock_is_error(ctx)) {
-			SET_ERRNO(-POINTER_TO_INT(ctx->user_data));
-		} else {
-			SET_ERRNO(-EALREADY);
+			errno = POINTER_TO_INT(ctx->user_data);
+			return -1;
+		}
+
+		errno = EALREADY;
+		return -1;
+	}
+
+	if (sock_is_nonblock(ctx)) {
+		timeout = K_NO_WAIT;
+		cb = zsock_connected_cb;
+	}
+
+	if (net_context_get_type(ctx) == SOCK_STREAM) {
+		/* For STREAM sockets net_context_recv() only installs
+		 * recv callback w/o side effects, and it has to be done
+		 * first to avoid race condition, when TCP stream data
+		 * arrives right after connect.
+		 */
+		ret = net_context_recv(ctx, zsock_received_cb,
+					K_NO_WAIT, ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+		ret = net_context_connect(ctx, addr, addrlen, cb,
+						timeout, ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
 		}
 	} else {
-		k_timeout_t timeout = K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT);
-		net_context_connect_cb_t cb = NULL;
-
-		if (sock_is_nonblock(ctx)) {
-			timeout = K_NO_WAIT;
-			cb = zsock_connected_cb;
+		ret = net_context_connect(ctx, addr, addrlen, cb,
+						timeout, ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
 		}
-
-		if (net_context_get_type(ctx) == SOCK_STREAM) {
-			/* For STREAM sockets net_context_recv() only installs
-			 * recv callback w/o side effects, and it has to be done
-			 * first to avoid race condition, when TCP stream data
-			 * arrives right after connect.
-			 */
-			SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
-						   K_NO_WAIT, ctx->user_data));
-			SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb,
-						      timeout, ctx->user_data));
-		} else {
-			SET_ERRNO(net_context_connect(ctx, addr, addrlen, cb,
-						      timeout, ctx->user_data));
-			SET_ERRNO(net_context_recv(ctx, zsock_received_cb,
-						   K_NO_WAIT, ctx->user_data));
+		ret = net_context_recv(ctx, zsock_received_cb,
+					K_NO_WAIT, ctx->user_data);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
 		}
 	}
 
@@ -345,8 +401,19 @@ int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
 
 int zsock_listen_ctx(struct net_context *ctx, int backlog)
 {
-	SET_ERRNO(net_context_listen(ctx, backlog));
-	SET_ERRNO(net_context_accept(ctx, zsock_accepted_cb, K_NO_WAIT, ctx));
+	int ret;
+
+	ret = net_context_listen(ctx, backlog);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	ret = net_context_accept(ctx, zsock_accepted_cb, K_NO_WAIT, ctx);
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
 
 	return 0;
 }
@@ -2460,16 +2527,19 @@ int zsock_getpeername_ctx(struct net_context *ctx, struct sockaddr *addr,
 	socklen_t newlen = 0;
 
 	if (addr == NULL || addrlen == NULL) {
-		SET_ERRNO(-EINVAL);
+		errno = EINVAL;
+		return -1;
 	}
 
 	if (!(ctx->flags & NET_CONTEXT_REMOTE_ADDR_SET)) {
-		SET_ERRNO(-ENOTCONN);
+		errno = ENOTCONN;
+		return -1;
 	}
 
 	if (net_context_get_type(ctx) == SOCK_STREAM &&
 	    net_context_get_state(ctx) != NET_CONTEXT_CONNECTED) {
-		SET_ERRNO(-ENOTCONN);
+		errno = ENOTCONN;
+		return -1;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->remote.sa_family == AF_INET) {
@@ -2494,7 +2564,8 @@ int zsock_getpeername_ctx(struct net_context *ctx, struct sockaddr *addr,
 
 		memcpy(addr, &addr6, MIN(*addrlen, newlen));
 	} else {
-		SET_ERRNO(-EINVAL);
+		errno = EINVAL;
+		return -1;
 	}
 
 	*addrlen = newlen;
@@ -2512,7 +2583,8 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 		struct sockaddr_in addr4 = { 0 };
 
 		if (net_sin_ptr(&ctx->local)->sin_addr == NULL) {
-			SET_ERRNO(-EINVAL);
+			errno = EINVAL;
+			return -1;
 		}
 
 		newlen = sizeof(struct sockaddr_in);
@@ -2521,7 +2593,8 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 						 (struct sockaddr *)&addr4,
 						 &newlen);
 		if (ret < 0) {
-			SET_ERRNO(-ret);
+			errno = -ret;
+			return -1;
 		}
 
 		memcpy(addr, &addr4, MIN(*addrlen, newlen));
@@ -2530,7 +2603,8 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 		struct sockaddr_in6 addr6 = { 0 };
 
 		if (net_sin6_ptr(&ctx->local)->sin6_addr == NULL) {
-			SET_ERRNO(-EINVAL);
+			errno = EINVAL;
+			return -1;
 		}
 
 		newlen = sizeof(struct sockaddr_in6);
@@ -2539,12 +2613,14 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
 						 (struct sockaddr *)&addr6,
 						 &newlen);
 		if (ret < 0) {
-			SET_ERRNO(-ret);
+			errno = -ret;
+			return -1;
 		}
 
 		memcpy(addr, &addr6, MIN(*addrlen, newlen));
 	} else {
-		SET_ERRNO(-EINVAL);
+		errno = EINVAL;
+		return -1;
 	}
 
 	*addrlen = newlen;
