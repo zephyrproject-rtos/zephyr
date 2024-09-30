@@ -633,9 +633,17 @@ static inline uint32_t hal_radio_tx_power_value(int8_t tx_power_lvl)
 		return RADIO_TXPOWER_TXPOWER_Neg20dBm;
 	}
 
+#if defined(RADIO_TXPOWER_TXPOWER_Neg26dBm)
 	if (tx_power_lvl >= -26) {
 		return RADIO_TXPOWER_TXPOWER_Neg26dBm;
 	}
+#endif
+
+#if defined(RADIO_TXPOWER_TXPOWER_Neg28dBm)
+	if (tx_power_lvl >= -28) {
+		return RADIO_TXPOWER_TXPOWER_Neg28dBm;
+	}
+#endif
 
 	if (tx_power_lvl >= -40) {
 		return RADIO_TXPOWER_TXPOWER_Neg40dBm;
