@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	adxl372_eval_adxl372_ardz: adxl372@0 {
+		compatible = "adi,adxl372";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		int1-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
