@@ -779,6 +779,19 @@ config BT_EXT_SCAN_BUF_SIZE
 	  provided by the controller is larger than this buffer size,
 	  the remaining data will be discarded.
 
+config BT_EXT_SCAN_BUF_NUM
+	int "Maximum number of report reassembly buffers"
+	range 1 65535
+	default 2
+	help
+	  Advertising reports can be fragmented when transmitted over HCI to the
+	  Host. They are re-assembled into a dedicated buffer pool and the
+	  application is notified asynchronously. This number governs the amount
+	  of pending reassembled advertising reports.
+
+	  Note that this option only uses up resources if extended advertising
+	  is enabled.
+
 endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY

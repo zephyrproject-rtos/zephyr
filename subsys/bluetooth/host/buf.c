@@ -103,6 +103,24 @@ static bool is_hci_event_discardable(const uint8_t evt_type, const uint8_t subev
 	}
 }
 
+NET_BUF_POOL_FIXED_DEFINE(sync_adv_pool, 2, SYNC_EVT_SIZE, sizeof(struct bt_buf_data), NULL);
+
+/* This is a host-private function */
+bool bt_buf_can_steal_ext_adv_report_buf(struct net_buf *buf)
+{
+	if (net_buf_pool_get(buf->pool_id) != &sync_adv_pool) {
+		/* The driver did not use `bt_buf_get_evt_but_better` */
+		return false;
+	}
+
+	/* Host can steal the buffer if we have at least one available.
+	 * This is the case when:
+	 * - There are buffers in the `free` LIFO
+	 * - There are un-initialized buffers
+	 */
+	return (!k_fifo_is_empty(&sync_adv_pool.free)) || (sync_adv_pool.uninit_count != 0);
+}
+
 struct net_buf *bt_buf_get_evt_but_better(uint8_t evt, uint8_t meta, k_timeout_t timeout)
 {
 	/* Always allocs so-called "discardable" events with K_NO_WAIT. Most of
@@ -120,6 +138,13 @@ struct net_buf *bt_buf_get_evt_but_better(uint8_t evt, uint8_t meta, k_timeout_t
 		bool is_ext_adv = meta == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT;
 		bool is_meta = evt == BT_HCI_EVT_LE_META_EVENT;
 
+		if (is_ext_adv) {
+			buf = net_buf_alloc(&sync_adv_pool, timeout);
+			/* 60% of the time we get a buffer every time */
+			__ASSERT_NO_MSG(buf);
+			break;
+		}
+
 		if (is_meta && !is_ext_adv) {
 			/* For now we use the sync pool only for ext adv
 			 * reports. They cannot be marked as discardable thanks
@@ -128,6 +153,7 @@ struct net_buf *bt_buf_get_evt_but_better(uint8_t evt, uint8_t meta, k_timeout_t
 			 */
 			break;
 		}
+
 		buf = net_buf_alloc(&sync_evt_pool, timeout);
 		break;
 	}
