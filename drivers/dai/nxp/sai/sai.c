@@ -620,6 +620,8 @@ out_dmareq_disable:
 	SAI_TX_RX_ENABLE_DISABLE_IRQ(dir, data->regmap,
 				     kSAI_FIFOErrorInterruptEnable, false);
 
+	irq_disable(cfg->irq);
+
 	return 0;
 }
 
@@ -722,6 +724,8 @@ static int sai_trigger_start(const struct device *dev,
 	LOG_DBG("start on direction %d", dir);
 
 	sai_tx_rx_sw_reset(data, cfg, dir);
+
+	irq_enable(cfg->irq);
 
 	/* enable error interrupt */
 	SAI_TX_RX_ENABLE_DISABLE_IRQ(dir, data->regmap,
@@ -842,7 +846,7 @@ static int sai_init(const struct device *dev)
 	data->tx_state = DAI_STATE_NOT_READY;
 	data->rx_state = DAI_STATE_NOT_READY;
 
-	/* register ISR and enable IRQ */
+	/* register ISR */
 	cfg->irq_config();
 
 	return 0;
@@ -902,12 +906,12 @@ void irq_config_##inst(void)							\
 		    sai_isr,							\
 		    DEVICE_DT_INST_GET(inst),					\
 		    0);								\
-	irq_enable(DT_INST_IRQN(inst));						\
 }										\
 										\
 static struct sai_config sai_config_##inst = {					\
 	.regmap_phys = DT_INST_REG_ADDR(inst),					\
 	.regmap_size = DT_INST_REG_SIZE(inst),					\
+	.irq = DT_INST_IRQN(inst),						\
 	.clk_data = SAI_CLOCK_DATA_DECLARE(inst),				\
 	.rx_fifo_watermark = SAI_RX_FIFO_WATERMARK(inst),			\
 	.tx_fifo_watermark = SAI_TX_FIFO_WATERMARK(inst),			\
