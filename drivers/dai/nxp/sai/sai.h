@@ -259,6 +259,7 @@ struct sai_data {
 struct sai_config {
 	uint32_t regmap_phys;
 	uint32_t regmap_size;
+	uint32_t irq;
 	struct sai_clock_data clk_data;
 	bool mclk_is_output;
 	/* if the tx/rx-fifo-watermark properties are not specified, it's going
