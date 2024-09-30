@@ -376,7 +376,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	if (!wpa_s) {
 		ret = -ENOENT;
 		LOG_ERR("Failed to get wpa_s handle for %s", ifname);
-		goto out;
+		goto free;
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
@@ -384,7 +384,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
 		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
 			ifname, sizeof(event->interface_status.ifname));
-		goto out;
+		goto free;
 	}
 
 	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
@@ -402,7 +402,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		 * with WPA supplicant so we cannot unregister NM etc.
 		 */
 		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
-		goto out;
+		goto free;
 	}
 
 	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
@@ -440,11 +440,11 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	return 0;
 
-out:
+free:
 	if (event) {
 		os_free(event);
 	}
-
+out:
 	return ret;
 }
 #endif
