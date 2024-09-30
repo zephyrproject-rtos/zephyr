@@ -199,6 +199,7 @@ test_spi_icm426888: icm42688@1a {
 	compatible = "invensense,icm42688";
 	reg = <0x1a>;
 	spi-max-frequency = <24000000>;
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_max31855: max31855@1b {
