@@ -683,14 +683,6 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			goto continue_unlock;
 		}
 
-		if (!ctx->oa) {
-#if CONFIG_ETH_ADIN2111_SPI_CFG0
-			if (status0 & ADIN2111_STATUS1_SPI_ERR) {
-				LOG_WRN("Detected TX SPI CRC error");
-			}
-#endif
-		}
-
 		/* handle port 1 phy interrupts */
 		if (status0 & ADIN2111_STATUS0_PHYINT) {
 			adin2111_port_on_phyint(ctx->port[0]);
@@ -705,46 +697,53 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
 				ret = eth_adin2111_oa_data_read(dev, 0);
 				if (ret < 0) {
-					break;
+					goto continue_unlock;
 				}
 			}
 			if (status1 & ADIN2111_STATUS1_P2_RX_RDY) {
 				ret = eth_adin2111_oa_data_read(dev, 1);
 				if (ret < 0) {
-					break;
+					goto continue_unlock;
 				}
 			}
-			goto continue_unlock;
-		}
+		} else {
+#if CONFIG_ETH_ADIN2111_SPI_CFG0
+			if (status0 & ADIN2111_STATUS1_SPI_ERR) {
+				LOG_WRN("Detected TX SPI CRC error");
+			}
+#endif /* CONFIG_ETH_ADIN2111_SPI_CFG0 */
 
-		/* handle port 1 rx */
-		if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
-			do {
-				ret = adin2111_read_fifo(dev, 0U);
-				if (ret < 0) {
-					break;
-				}
+			/* handle port 1 rx */
+			if (status1 & ADIN2111_STATUS1_P1_RX_RDY) {
+				do {
+					ret = adin2111_read_fifo(dev, 0U);
+					if (ret < 0) {
+						break;
+					}
 
-				ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1, &status1);
-				if (ret < 0) {
-					goto continue_unlock;
-				}
-			} while (!!(status1 & ADIN2111_STATUS1_P1_RX_RDY));
-		}
+					ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1,
+								    &status1);
+					if (ret < 0) {
+						goto continue_unlock;
+					}
+				} while (!!(status1 & ADIN2111_STATUS1_P1_RX_RDY));
+			}
 
-		/* handle port 2 rx */
-		if ((status1 & ADIN2111_STATUS1_P2_RX_RDY) && is_adin2111) {
-			do {
-				ret = adin2111_read_fifo(dev, 1U);
-				if (ret < 0) {
-					break;
-				}
+			/* handle port 2 rx */
+			if ((status1 & ADIN2111_STATUS1_P2_RX_RDY) && is_adin2111) {
+				do {
+					ret = adin2111_read_fifo(dev, 1U);
+					if (ret < 0) {
+						break;
+					}
 
-				ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1, &status1);
-				if (ret < 0) {
-					goto continue_unlock;
-				}
-			} while (!!(status1 & ADIN2111_STATUS1_P2_RX_RDY));
+					ret = eth_adin2111_reg_read(dev, ADIN2111_STATUS1,
+								    &status1);
+					if (ret < 0) {
+						goto continue_unlock;
+					}
+				} while (!!(status1 & ADIN2111_STATUS1_P2_RX_RDY));
+			}
 		}
 
 continue_unlock:
