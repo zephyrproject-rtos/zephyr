@@ -133,6 +133,22 @@ arduino_serial: &uart1 {
 	current-speed = <115200>;
 };
 
+&spi1a_miso_p1_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_mosi_p1_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_sck_p1_26 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi1a_ss0_p1_23 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
 arduino_spi: &spi1 {
 	pinctrl-0 = <&spi1a_miso_p1_28 &spi1a_mosi_p1_29 &spi1a_sck_p1_26
 		     &spi1a_ss0_p1_23>;
