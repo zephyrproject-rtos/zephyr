@@ -52,7 +52,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, dev_id=None,
                  commander=DEFAULT_JLINK_EXE,
                  dt_flash=True, erase=True, reset=False,
-                 iface='swd', speed='auto',
+                 iface='swd', speed='auto', flash_script = None,
                  loader=None,
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
@@ -69,6 +69,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.dev_id = dev_id
         self.commander = commander
+        self.flash_script = flash_script
         self.dt_flash = dt_flash
         self.erase = erase
         self.reset = reset
@@ -120,6 +121,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='interface to use, default is swd')
         parser.add_argument('--speed', default='auto',
                             help='interface speed, default is autodetect')
+        parser.add_argument('--flash-script', default=None,
+                            help='Custom flashing script, default is None')
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--gdbserver', default='JLinkGDBServer',
@@ -152,6 +155,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  erase=args.erase,
                                  reset=args.reset,
                                  iface=args.iface, speed=args.speed,
+                                 flash_script=args.flash_script,
                                  gdbserver=args.gdbserver,
                                  loader=args.loader,
                                  gdb_host=args.gdb_host,
@@ -331,9 +335,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             else:
                 self.run_client(client_cmd)
 
-    def flash(self, **kwargs):
-
-        loader_details = ""
+    def get_default_flash_commands(self):
         lines = [
             'ExitOnError 1',  # Treat any command-error as fatal
             'r',  # Reset and halt the target
@@ -406,16 +408,12 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         self.logger.debug('JLink commander script:\n' +
                           '\n'.join(lines))
+        return flash_file, lines
 
-        # Don't use NamedTemporaryFile: the resulting file can't be
-        # opened again on Windows.
-        with tempfile.TemporaryDirectory(suffix='jlink') as d:
-            fname = os.path.join(d, 'runner.jlink')
-            with open(fname, 'wb') as f:
-                f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
-            if self.supports_loader and self.loader:
-                loader_details = "?" + self.loader
-
+    def run_flash_cmd(self, fname, flash_file, **kwargs):
+        loader_details = ""
+        if self.supports_loader and self.loader:
+            loader_details = "?" + self.loader
             cmd = (
                 [self.commander]
                 + (
@@ -432,8 +430,24 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 + self.tool_opt
             )
 
+        if flash_file:
             self.logger.info(f'Flashing file: {flash_file}')
-            kwargs = {}
-            if not self.logger.isEnabledFor(logging.DEBUG):
-                kwargs['stdout'] = subprocess.DEVNULL
-            self.check_call(cmd, **kwargs)
+        kwargs = {}
+        if not self.logger.isEnabledFor(logging.DEBUG):
+            kwargs['stdout'] = subprocess.DEVNULL
+        self.check_call(cmd, **kwargs)
+
+    def flash(self, **kwargs):
+        fname = self.flash_script
+        if fname is None:
+            # Don't use NamedTemporaryFile: the resulting file can't be
+            # opened again on Windows.
+            with tempfile.TemporaryDirectory(suffix='jlink') as d:
+                flash_file, lines = self.get_default_flash_commands()
+                fname = os.path.join(d, 'runner.jlink')
+                with open(fname, 'wb') as f:
+                    f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
+
+                self.run_flash_cmd(fname, flash_file, **kwargs)
+        else:
+            self.run_flash_cmd(fname, None, **kwargs)
