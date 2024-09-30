@@ -202,7 +202,7 @@ static void iso_send(struct bt_iso_chan *chan)
 	interval = (role == ROLE_CENTRAL) ?
 		   cig_create_param.c_to_p_interval : cig_create_param.p_to_c_interval;
 
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate buffer");
 		k_work_reschedule(&chan_work->send_work, K_USEC(interval));

@@ -157,7 +157,12 @@ static void audio_timer_timeout(struct k_work *work)
 	for (size_t i = 0; i < configured_source_stream_count; i++) {
 		struct bt_bap_stream *stream = source_streams[i].stream;
 
-		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+		if (buf == NULL) {
+			printk("Failed to allocate TX buffer\n");
+			/* Break and retry later */
+			break;
+		}
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len_to_send);
