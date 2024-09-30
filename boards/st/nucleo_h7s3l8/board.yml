@@ -1,0 +1,6 @@
+board:
+  name: nucleo_h7s3l8
+  full_name: Nucleo H7S3L8
+  vendor: st
+  socs:
+    - name: stm32h7s3xx
