@@ -848,6 +848,7 @@ static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD, wifi_set_rts_threshold);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 		    void *data, size_t len)
 {
@@ -863,6 +864,8 @@ static int wifi_dpp(uint32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 static int wifi_pmksa_flush(uint32_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
