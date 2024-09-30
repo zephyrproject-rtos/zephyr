@@ -201,10 +201,6 @@
 	};
 };
 
-&ieee802154 {
-	status = "okay";
-};
-
 &ieee802154g {
 	status = "okay";
 };
