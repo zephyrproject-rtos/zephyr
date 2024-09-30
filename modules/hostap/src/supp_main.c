@@ -438,6 +438,8 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, 0);
 
+	return 0;
+
 out:
 	if (event) {
 		os_free(event);
