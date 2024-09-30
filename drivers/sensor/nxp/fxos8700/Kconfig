@@ -49,6 +49,9 @@ config FXOS8700_TRIGGER_NONE
 
 config FXOS8700_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXOS8700),int1-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_FXOS8700),int2-gpios)
 	select FXOS8700_TRIGGER
 
 config FXOS8700_TRIGGER_OWN_THREAD

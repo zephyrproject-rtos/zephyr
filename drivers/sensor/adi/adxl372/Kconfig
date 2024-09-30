@@ -95,11 +95,13 @@ config ADXL372_TRIGGER_NONE
 config ADXL372_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL372),int1-gpios)
 	select ADXL372_TRIGGER
 
 config ADXL372_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADXL372),int1-gpios)
 	select ADXL372_TRIGGER
 
 endchoice
