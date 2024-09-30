@@ -425,7 +425,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wpa_supplicant"), iface);
+	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
 	if (ret) {
 		LOG_ERR("Failed to unregister mgd iface %s with native stack (%d)",
 			ifname, ret);
