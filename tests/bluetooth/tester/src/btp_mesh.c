@@ -2086,10 +2086,10 @@ static uint8_t models_metadata_get(const void *cmd, uint16_t cmd_len,
 static uint8_t subnet_bridge_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_subnet_bridge_get_cmd *cp = cmd;
-	enum bt_mesh_subnet_bridge_state state;
+	enum bt_mesh_brg_cfg_state state;
 	int err;
 
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_get(net.net_idx, sys_le16_to_cpu(cp->addr), &state);
+	err = bt_mesh_brg_cfg_cli_get(net.net_idx, sys_le16_to_cpu(cp->addr), &state);
 	if (err) {
 		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
@@ -2103,13 +2103,12 @@ static uint8_t subnet_bridge_get(const void *cmd, uint16_t cmd_len, void *rsp, u
 static uint8_t subnet_bridge_set(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_subnet_bridge_set_cmd *cp = cmd;
-	enum bt_mesh_subnet_bridge_state state;
+	enum bt_mesh_brg_cfg_state state;
 	int err;
 
 	state = cp->val;
 
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_set(net.net_idx, sys_le16_to_cpu(cp->addr), state,
-						    &state);
+	err = bt_mesh_brg_cfg_cli_set(net.net_idx, sys_le16_to_cpu(cp->addr), state, &state);
 	if (err) {
 		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
@@ -2123,8 +2122,8 @@ static uint8_t subnet_bridge_set(const void *cmd, uint16_t cmd_len, void *rsp, u
 static uint8_t bridging_table_add(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_bridging_table_add_cmd *cp = cmd;
-	struct bt_mesh_bridging_table_entry entry;
-	struct bt_mesh_bridging_table_status rp;
+	struct bt_mesh_brg_cfg_table_entry entry;
+	struct bt_mesh_brg_cfg_table_status rp;
 	int err;
 
 	LOG_DBG("");
@@ -2135,8 +2134,7 @@ static uint8_t bridging_table_add(const void *cmd, uint16_t cmd_len, void *rsp, 
 	entry.addr1 = sys_le16_to_cpu(cp->addr1);
 	entry.addr2 = sys_le16_to_cpu(cp->addr2);
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_add(net_key_idx, sys_le16_to_cpu(cp->addr), &entry,
-						     &rp);
+	err = bt_mesh_brg_cfg_cli_table_add(net_key_idx, sys_le16_to_cpu(cp->addr), &entry, &rp);
 	if (err) {
 		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
@@ -2149,12 +2147,12 @@ static uint8_t bridging_table_remove(const void *cmd, uint16_t cmd_len, void *rs
 				     uint16_t *rsp_len)
 {
 	const struct btp_mesh_bridging_table_remove_cmd *cp = cmd;
-	struct bt_mesh_bridging_table_status rp;
+	struct bt_mesh_brg_cfg_table_status rp;
 	int err;
 
 	LOG_DBG("");
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_remove(
+	err = bt_mesh_brg_cfg_cli_table_remove(
 		net_key_idx, sys_le16_to_cpu(cp->addr), sys_le16_to_cpu(cp->net_idx1),
 		sys_le16_to_cpu(cp->net_idx2), sys_le16_to_cpu(cp->addr1),
 		sys_le16_to_cpu(cp->addr2), &rp);
@@ -2170,8 +2168,8 @@ static uint8_t bridging_table_remove(const void *cmd, uint16_t cmd_len, void *rs
 static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_bridged_subnets_get_cmd *cp = cmd;
-	struct bt_mesh_filter_netkey filter_net_idx;
-	struct bt_mesh_bridged_subnets_list rp;
+	struct bt_mesh_brg_cfg_filter_netkey filter_net_idx;
+	struct bt_mesh_brg_cfg_subnets_list rp;
 	int err;
 
 	LOG_DBG("");
@@ -2184,8 +2182,8 @@ static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len, void *rsp,
 	filter_net_idx.filter = cp->filter;
 	filter_net_idx.net_idx = sys_le16_to_cpu(cp->net_idx);
 
-	err = bt_mesh_brg_cfg_cli_bridged_subnets_get(net_key_idx, sys_le16_to_cpu(cp->addr),
-						      filter_net_idx, cp->start_idx, &rp);
+	err = bt_mesh_brg_cfg_cli_subnets_get(net_key_idx, sys_le16_to_cpu(cp->addr),
+					      filter_net_idx, cp->start_idx, &rp);
 	if (err) {
 		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
@@ -2197,7 +2195,7 @@ static uint8_t bridged_subnets_get(const void *cmd, uint16_t cmd_len, void *rsp,
 static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mesh_bridging_table_get_cmd *cp = cmd;
-	struct bt_mesh_bridging_table_list rp;
+	struct bt_mesh_brg_cfg_table_list rp;
 	int err;
 
 	LOG_DBG("");
@@ -2207,7 +2205,7 @@ static uint8_t bridging_table_get(const void *cmd, uint16_t cmd_len, void *rsp, 
 	 */
 	rp.list = NULL;
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_get(
+	err = bt_mesh_brg_cfg_cli_table_get(
 		net_key_idx, sys_le16_to_cpu(cp->addr), sys_le16_to_cpu(cp->net_idx1),
 		sys_le16_to_cpu(cp->net_idx2), sys_le16_to_cpu(cp->start_idx), &rp);
 	if (err) {
@@ -2227,8 +2225,7 @@ static uint8_t bridging_table_size_get(const void *cmd, uint16_t cmd_len, void *
 
 	LOG_DBG("");
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_size_get(net_key_idx, sys_le16_to_cpu(cp->addr),
-							  &size);
+	err = bt_mesh_brg_cfg_cli_table_size_get(net_key_idx, sys_le16_to_cpu(cp->addr), &size);
 	if (err) {
 		LOG_ERR("err=%d", err);
 		return BTP_STATUS_FAILED;
