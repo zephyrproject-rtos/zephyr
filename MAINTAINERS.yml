@@ -2357,8 +2357,10 @@ Input:
 IPC:
   status: maintained
   maintainers:
-    - carlocaione
+    - doki-nordic
     - arnopo
+  collaborators:
+    - carlocaione
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
