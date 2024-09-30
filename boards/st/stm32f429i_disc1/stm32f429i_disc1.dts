@@ -61,8 +61,6 @@
 	lvgl_pointer {
 		compatible = "zephyr,lvgl-pointer-input";
 		input = <&stmpe811>;
-		invert-x;
-		invert-y;
 	};
 
 	mipi_dbi {
@@ -177,6 +175,8 @@
 		touch-detect-delay-us = <5000>;
 		touch-average-control = <8>;
 		tracking-index = <127>;
+		inverted-x;
+		inverted-y;
 	};
 };
 
