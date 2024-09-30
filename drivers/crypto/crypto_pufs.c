@@ -613,8 +613,7 @@ static struct pufs_data s_pufs_session_data = {
 static const struct pufs_config s_pufs_configuration = {
   .base = DT_INST_REG_ADDR(0),
   .irq_init = pufs_irq_Init,
-  .irq_num = DT_INST_IRQN(0),
-  .dev = DEVICE_DT_INST_GET(0)
+  .irq_num = DT_INST_IRQN(0)
 };
 
 DEVICE_DT_INST_DEFINE(0, crypto_pufs_init, NULL,
