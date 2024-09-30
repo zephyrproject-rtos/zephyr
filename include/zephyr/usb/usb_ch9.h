@@ -283,7 +283,12 @@ struct usb_association_descriptor {
 /** Macro to obtain descriptor index from USB_SREQ_GET_DESCRIPTOR request */
 #define USB_GET_DESCRIPTOR_INDEX(wValue)	((uint8_t)(wValue))
 
-/** USB Control Endpoints maximum packet size (MPS) */
+/**
+ * USB Control Endpoints maximum packet size (MPS)
+ *
+ * This value may not be correct for devices operating at speeds other than
+ * high speed.
+ */
 #define USB_CONTROL_EP_MPS		64U
 
 /** USB endpoint direction mask */
