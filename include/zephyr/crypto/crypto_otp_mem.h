@@ -58,7 +58,7 @@
 /* More flags to be added as necessary */
 
 // OTP lock types
-enum crypto_otp_lock {
+enum crypto_otp_set_lock {
   CRYPTO_OTP_RW = 0x0,  // Read-Write
   CRYPTO_OTP_RO = 0x3,  // Read-Only
   CRYPTO_OTP_NA = 0xF,  // No-Access
@@ -67,7 +67,7 @@ enum crypto_otp_lock {
 /** @brief Crypto OTP Memory driver API definition. */
 __subsystem struct otp_driver_api {
 	/* Get the driver capability flags for OTP Memory operations */
-	int (*query_hw_caps)(const struct device *dev);
+	int (*otp_hw_caps)(const struct device *dev);
 
 	/**
 	 * otp_info API returns the total number of slots 
@@ -114,24 +114,24 @@ __subsystem struct otp_driver_api {
 				      );
 
 	/**
-	 * otp_lock API locks the selected OTP slot as per
-	 * the crypto_otp_lock. Use otp_info to get total 
+	 * otp_set_lock API locks the selected OTP slot as per
+	 * the crypto_otp_set_lock. Use otp_info to get total 
 	 * number of slots and bytes per slot.
 	 */
-	int (*otp_lock)(
+	int (*otp_set_lock)(
 					const struct device *dev, 
 					uint16_t otp_slot,
-					enum crypto_otp_lock lock
+					enum crypto_otp_set_lock lock
 				   );
 
 	/**
-	 * otp_get_rwlck API gets the selected OTP Slots's
+	 * otp_get_lock API gets the selected OTP Slots's
 	 * lock status.
 	 */
-	int (*otp_get_rwlck)(
+	int (*otp_get_lock)(
 					const struct device *dev, 
 					uint16_t otp_slot,
-					enum crypto_otp_lock *lock
+					enum crypto_otp_set_lock *lock
 				   );
 };
 
@@ -148,16 +148,16 @@ __subsystem struct otp_driver_api {
  *
  * @return bitmask of supported options.
  */
-__syscall int crypto_query_hwcaps(const struct device *dev);
+__syscall int otp_query_hwcaps(const struct device *dev);
 
-static inline int z_impl_crypto_query_hwcaps(const struct device *dev)
+static inline int z_impl_otp_query_hwcaps(const struct device *dev)
 {
 	struct otp_driver_api *api;
 	int tmp;
 
 	api = (struct otp_driver_api *) dev->api;
 
-	tmp = api->query_hw_caps(dev);
+	tmp = api->otp_hw_caps(dev);
 
 	__ASSERT((tmp & (CAP_READ_OTP | CAP_WRITE_OTP)) != 0,
 		 "Driver should support at least Read or Write to the OTP Memory");
@@ -166,6 +166,163 @@ static inline int z_impl_crypto_query_hwcaps(const struct device *dev)
 	     "Driver should support at least Synch or Asynch operation");
 
 	return tmp;
+
+}
+
+/**
+ * @brief Query the crypto otp information.
+ *
+ * This API is used by the app to query the otp memory information.
+ * It provides the total number of slots available in the otp and the
+ * number of bytes per slot.
+ *
+ * @param[in]  dev Pointer to the device structure for the driver instance.
+ * @param[out] totalSlots total number of available otp slots.
+ * @param[out] bytesPerSlot number of bytes per slot.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_info)(
+							const struct device *dev,
+							uint16_t *totalSlots,
+							uint16_t *bytesPerSlot
+						 );
+static inline int z_impl_otp_info(
+									const struct device *dev,
+									uint16_t *totalSlots,
+									uint16_t *bytesPerSlot
+								 )
+{
+
+}
+
+/**
+ * @brief Read the crypto otp slot
+ *
+ * This API is used to read a certain number of bytes from an otp slot.
+ *
+ * @param       dev Pointer to the device structure for the driver instance.
+ * @param[in]   otp_slot the slot number of the otp to read from.
+ * @param[out]  data The bytes returned.
+ * @param[in]   len The number of bytes to read.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_read)(
+							const struct device *dev, 
+							uint16_t otp_slot, 
+							uint8_t *data, 
+							uint32_t len
+						 );
+static inline int z_impl_otp_read(
+									const struct device *dev, 
+									uint16_t otp_slot, 
+									uint8_t *data, 
+									uint32_t len
+								 )
+{
+
+}
+
+/**
+ * @brief Write to the crypto otp slot
+ *
+ * This API is used to write a certain number of bytes to an otp slot.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param[in]   otp_slot the slot number of the otp to write to.
+ * @param[out]  data The bytes written to the selected otp slot.
+ * @param[in]   len The number of bytes to read.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_write)(
+							const struct device *dev,
+							uint16_t otp_slot,
+							uint8_t *data,
+							uint32_t len
+						  );
+static inline int z_impl_otp_write(
+									const struct device *dev, 
+									uint16_t otp_slot, 
+									uint8_t *data, 
+									uint32_t len
+								  )
+{
+
+}						  
+
+/**
+ * @brief Zeroize the crypto otp slot
+ *
+ * This API is used to zeroize a an otp slot.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param[in]   otp_slot the slot number to zeroize.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_zeroize)(
+							  const struct device *dev,
+							  uint16_t otp_slot
+							);
+static inline int z_impl_otp_zeoirze(
+										const struct device *dev,
+										uint16_t otp_slot
+									)	
+{
+
+}														
+
+/**
+ * @brief Set the crypto otp slot a particular lock value. The lock
+ * value can be referenced from crypto_otp_set_lock enumeration.
+ *
+ * This API is used to set a lock value to an otp slot.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param[in]   otp_slot the slot number to lock.
+ * @param[in]   lock The lock value to assign to an otp slot.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_set_lock)(
+							const struct device *dev,
+							uint16_t otp_slot,
+							enum crypto_otp_set_lock lock
+						 );
+static inline int z_impl_otp_set_lock(
+									const struct device *dev,
+									uint16_t otp_slot,
+									enum crypto_otp_set_lock lock
+								)
+{
+
+}								
+
+/**
+ * @brief Get the lock value of a particular crypto otp slot. The lock
+ * value can be referenced from crypto_otp_set_lock enumeration.
+ *
+ * This API is used to get a lock value of an otp slot.
+ *
+ * @param dev   Pointer to the device structure for the driver instance.
+ * @param[in]   otp_slot the slot number to lock.
+ * @param[out]  lock The current lock value of an otp slot.
+ *
+ * @return error code.
+ */	
+__syscall int (*otp_get_lock)(
+								const struct device *dev,
+								uint16_t otp_slot,
+								enum crypto_otp_set_lock *lock
+							  );
+static inline int z_impl_otp_get_lock(
+									const struct device *dev,
+									uint16_t otp_slot,
+									enum crypto_otp_set_lock *lock
+								)
+{
 
 }
 
