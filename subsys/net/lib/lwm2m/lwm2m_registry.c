@@ -778,7 +778,14 @@ int lwm2m_set_s64(const struct lwm2m_obj_path *path, int64_t value)
 
 int lwm2m_set_bool(const struct lwm2m_obj_path *path, bool value)
 {
-	uint8_t temp = (value != 0 ? 1 : 0);
+	uint8_t temp = 0;
+
+	/* Ensure the bool value is sent as 0 or 1. Add a compiler barrier so that the conversion from bool to int
+	 * is not optimized out with CONFIG_SIZE_OPTIMIZATIONS. */
+	compiler_barrier();
+	if (value != 0) {
+		temp = 1;
+	}
 
 	return lwm2m_engine_set(path, &temp, 1);
 }
