@@ -119,7 +119,7 @@
 &qspi {
 	status = "okay";
 	pinctrl-0 = <&qspi_default>;
-	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-1 = <&qspi_default>;
 	pinctrl-names = "default", "sleep";
 	p25q16h: p25q16h@0 {
 		compatible = "nordic,qspi-nor";
