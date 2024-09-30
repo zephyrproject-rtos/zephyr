@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <strings.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
