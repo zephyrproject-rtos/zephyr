@@ -28,11 +28,13 @@ config IIS3DHHC_TRIGGER_NONE
 config IIS3DHHC_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DHHC),irq-gpios)
 	select IIS3DHHC_TRIGGER
 
 config IIS3DHHC_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DHHC),irq-gpios)
 	select IIS3DHHC_TRIGGER
 
 endchoice # IIS3DHHC_TRIGGER_MODE

@@ -16,6 +16,8 @@ menuconfig LM77
 config LM77_TRIGGER
 	bool "Trigger support"
 	depends on LM77
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_LM77),int-gpios)
 	default y
 	help
 	  Enable trigger support for the LM77 digital temperature sensor.
