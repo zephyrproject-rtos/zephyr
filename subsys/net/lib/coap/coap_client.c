@@ -935,7 +935,7 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 		for (int i = 0; i < num_clients; i++) {
 			if (clients[i]->response_ready) {
 				struct coap_packet response;
-				bool response_truncated;
+				bool response_truncated = false;
 
 				k_mutex_lock(&clients[i]->lock, K_FOREVER);
 
