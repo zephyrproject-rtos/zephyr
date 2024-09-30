@@ -179,12 +179,20 @@
 					       &cpu6_intc 11 &cpu7_intc 11>;
 		};
 
-		mbox: mbox-controller@e6400000 {
-			compatible = "andestech,plic-sw";
-			reg = <0xe6400000 0x00400000>;
-			#mbox-cells = <1>;
-			channel-max = <30>;
-			status = "okay";
+		plic_sw: interrupt-controller@e6400000 {
+			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0xe6400000 0x04000000>;
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
+			interrupts-extended = <&cpu0_intc 3 &cpu1_intc 3
+					       &cpu2_intc 3 &cpu3_intc 3
+					       &cpu4_intc 3 &cpu5_intc 3
+					       &cpu6_intc 3 &cpu7_intc 3>;
+
+			#size-cells = <0>;
 		};
 
 		mtimer: timer@e6000000 {
