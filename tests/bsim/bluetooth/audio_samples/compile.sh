@@ -24,13 +24,13 @@ if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/cap/initiator \
     sample=${ZEPHYR_BASE}/samples/bluetooth/cap_initiator \
-    cmake_args="-DCONFIG_SAMPLE_UNICAST=n" \
+    cmake_extra_args="-DCONFIG_SAMPLE_UNICAST=n" \
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf \
     exe_name=bs_${BOARD_TS}_${app}_broadcast_prj_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/cap/acceptor \
     sample=${ZEPHYR_BASE}/samples/bluetooth/cap_acceptor \
-    cmake_args="-DCONFIG_SAMPLE_SCAN_SELF=y -DCONFIG_SAMPLE_UNICAST=n" \
+    cmake_extra_args="-DCONFIG_SAMPLE_SCAN_SELF=y -DCONFIG_SAMPLE_UNICAST=n" \
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf \
     exe_name=bs_${BOARD_TS}_${app}_broadcast_prj_conf sysbuild=1 compile
@@ -60,13 +60,13 @@ else
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/cap/initiator \
     sample=${ZEPHYR_BASE}/samples/bluetooth/cap_initiator \
-    cmake_args="-DCONFIG_SAMPLE_UNICAST=n" \
+    cmake_extra_args="-DCONFIG_SAMPLE_UNICAST=n" \
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_broadcast_prj_conf sysbuild=1 compile
   app=tests/bsim/bluetooth/audio_samples/cap/acceptor \
     sample=${ZEPHYR_BASE}/samples/bluetooth/cap_acceptor \
-    cmake_args="-DCONFIG_SAMPLE_SCAN_SELF=y -DCONFIG_SAMPLE_UNICAST=n" \
+    cmake_extra_args="-DCONFIG_SAMPLE_SCAN_SELF=y -DCONFIG_SAMPLE_UNICAST=n" \
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_broadcast_prj_conf sysbuild=1 compile
