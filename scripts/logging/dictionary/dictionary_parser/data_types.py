@@ -30,14 +30,19 @@ class DataTypes():
 
         if database.is_tgt_64bit():
             self.add_data_type(self.LONG, "q")
+            self.add_data_type(self.ULONG, "Q")
             self.add_data_type(self.LONG_LONG, "q")
+            self.add_data_type(self.ULONG_LONG, "Q")
             self.add_data_type(self.PTR, "Q")
         else:
             self.add_data_type(self.LONG, "i")
+            self.add_data_type(self.ULONG, "I")
             self.add_data_type(self.LONG_LONG, "q")
+            self.add_data_type(self.ULONG_LONG, "Q")
             self.add_data_type(self.PTR, "I")
 
         self.add_data_type(self.INT, "i")
+        self.add_data_type(self.UINT, "I")
         self.add_data_type(self.DOUBLE, "d")
         self.add_data_type(self.LONG_DOUBLE, "d")
 
