@@ -999,6 +999,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_MCUX_RTC
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
 	return false;
 }
 
