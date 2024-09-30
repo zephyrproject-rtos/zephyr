@@ -976,8 +976,10 @@ static int usbfsotg_init(const struct device *dev)
 	const struct usbfsotg_config *config = dev->config;
 	USB_Type *base = config->base;
 
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_voltage_regulator)
 	/* (FIXME) Enable USB voltage regulator */
 	SIM->SOPT1 |= SIM_SOPT1_USBREGEN_MASK;
+#endif
 
 	/* Reset USB module */
 	base->USBTRC0 |= USB_USBTRC0_USBRESET_MASK;
@@ -1057,8 +1059,10 @@ static int usbfsotg_shutdown(const struct device *dev)
 	/* Disable USB module */
 	config->base->CTL = 0;
 
+#if !DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_voltage_regulator)
 	/* Disable USB voltage regulator */
 	SIM->SOPT1 &= ~SIM_SOPT1_USBREGEN_MASK;
+#endif
 
 	return 0;
 }
