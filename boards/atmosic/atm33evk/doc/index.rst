@@ -182,6 +182,11 @@ To review how the fixed and statically linked controllers are used, please refer
 
 If the ATM33 entropy driver is enabled without CONFIG_BT=y (mainly for evaluation), the system still requires a minimal BLE controller stack.  Without choosing a specific stack configuration an appopriate minimal BLE controller will be selected.  This may increase the size of your application.
 
+Note that developers cannot use ``CONFIG_BT_CTLR_*`` `flags`__ with the ATM33 platform, as a custom, hardware-optimized link controller is used instead of Zephyr's link controller software.
+
+.. _CONFIG_BT_CTLR_KCONFIGS: https://docs.zephyrproject.org/latest/kconfig.html#!%5ECONFIG_BT_CTLR
+__ CONFIG_BT_CTLR_KCONFIGS_
+
 
 Non-MCUboot Option
 ------------------
