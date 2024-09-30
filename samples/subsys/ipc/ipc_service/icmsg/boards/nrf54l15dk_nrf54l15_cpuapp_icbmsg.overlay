@@ -27,7 +27,7 @@
 			rx-region = <&sram_rx>;
 			tx-blocks = <16>;
 			rx-blocks = <18>;
-			mboxes = <&cpuapp_vevif_rx 15>, <&cpuapp_vevif_tx 16>;
+			mboxes = <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_tx 21>;
 			mbox-names = "rx", "tx";
 			status = "okay";
 		};
