@@ -437,12 +437,6 @@ config MBEDTLS_HKDF_C
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
 
-config MBEDTLS_PEM_CERTIFICATE_FORMAT
-	bool "Support for PEM certificate format"
-	help
-	  By default only DER (binary) format of certificates is supported. Enable
-	  this option to enable support for PEM format.
-
 config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
 	default y if !ARM

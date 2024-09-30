@@ -63,6 +63,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
 	select MBEDTLS_RSA_FULL if !(PSA_WANT_ALG_RSA_PKCS1V15_SIGN || PSA_WANT_ALG_RSA_PSS)
+	select MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
@@ -75,6 +76,7 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
+	select MBEDTLS_X509_CRT_PARSE_C
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
@@ -84,18 +86,22 @@ config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
 	select MBEDTLS_RSA_FULL if !(PSA_WANT_ALG_RSA_PKCS1V15_SIGN || PSA_WANT_ALG_RSA_PSS)
+	select MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
 	depends on MBEDTLS_ECDH_C
 	select MBEDTLS_RSA_FULL if !(PSA_WANT_ALG_RSA_PKCS1V15_SIGN || PSA_WANT_ALG_RSA_PSS)
+	select MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
+	select MBEDTLS_X509_CRT_PARSE_C
 	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
+	select MBEDTLS_X509_CRT_PARSE_C
 	depends on (MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C) || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_ECDSA_DETERMINISTIC
@@ -103,6 +109,7 @@ config MBEDTLS_ECDSA_DETERMINISTIC
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 	bool "ECDH-RSA based ciphersuite modes"
+	select MBEDTLS_X509_CRT_PARSE_C
 	depends on MBEDTLS_ECDH_C
 
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
@@ -116,6 +123,7 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
 	bool "TLS 1.3 ephemeral key exchange mode"
+	select MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 	bool "TLS 1.3 PSK ephemeral key exchange mode"
@@ -126,9 +134,9 @@ endmenu # Ciphersuites
 
 config MBEDTLS_SERVER_NAME_INDICATION
 	bool "Support for RFC 6066 server name indication (SNI) in SSL"
+	depends on MBEDTLS_X509_CRT_PARSE_C
 	help
 	  Enable this to support RFC 6066 server name indication (SNI) in SSL.
-	  This requires that MBEDTLS_X509_CRT_PARSE_C is also set.
 
 config MBEDTLS_SSL_CACHE_C
 	bool "SSL session cache support"
@@ -182,21 +190,25 @@ endmenu # TLS
 menu "X.509"
 
 config MBEDTLS_X509_CRL_PARSE_C
-	bool "X.509 CRL parsing"
-	help
-	  Used by X.509 CRL parsing
+	bool "X.509 Certificate Revocation List parsing"
 
 config MBEDTLS_X509_CSR_WRITE_C
 	bool "X.509 Certificate Signing Requests writing"
-	help
-	  For X.509 certificate request writing.
 
 config MBEDTLS_X509_CSR_PARSE_C
 	bool "X.509 Certificate Signing Request parsing"
-	help
-	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_PARSE_C
+	bool "X.509 certificate parsing"
 
 config MBEDTLS_X509_CRT_WRITE_C
 	bool "X.509 certificate creation"
+
+config MBEDTLS_PEM_CERTIFICATE_FORMAT
+	bool "Support for PEM certificate format"
+	depends on MBEDTLS_X509_CRT_PARSE_C
+	help
+	  By default only DER (binary) format of certificates is supported. Enable
+	  this option to enable support for PEM format.
 
 endmenu # X.509
