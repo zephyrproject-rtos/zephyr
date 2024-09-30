@@ -40,7 +40,7 @@ static int subnet_bridge_set(const struct bt_mesh_model *model, struct bt_mesh_m
 {
 	uint8_t enable = net_buf_simple_pull_u8(buf);
 
-	if (enable > BT_MESH_SUBNET_BRIDGE_ENABLED) {
+	if (enable > BT_MESH_BRG_CFG_ENABLED) {
 		return -EINVAL;
 	}
 
@@ -52,7 +52,7 @@ static int subnet_bridge_set(const struct bt_mesh_model *model, struct bt_mesh_m
 
 static void bridging_table_status_send(const struct bt_mesh_model *model,
 				       struct bt_mesh_msg_ctx *ctx, uint8_t status,
-				       struct bt_mesh_bridging_table_entry *entry)
+				       struct bt_mesh_brg_cfg_table_entry *entry)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_STATUS, 9);
 
@@ -76,7 +76,7 @@ static bool netkey_check(uint16_t net_idx1, uint16_t net_idx2)
 static int bridging_table_add(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_bridging_table_entry entry;
+	struct bt_mesh_brg_cfg_table_entry entry;
 	uint8_t status = STATUS_SUCCESS;
 	int err;
 
@@ -99,7 +99,7 @@ static int bridging_table_add(const struct bt_mesh_model *model, struct bt_mesh_
 static int bridging_table_remove(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	struct bt_mesh_bridging_table_entry entry;
+	struct bt_mesh_brg_cfg_table_entry entry;
 	uint8_t status = STATUS_SUCCESS;
 	int err;
 
@@ -135,7 +135,7 @@ static int bridged_subnets_get(const struct bt_mesh_model *model, struct bt_mesh
 		return -EINVAL;
 	}
 
-	struct bt_mesh_filter_netkey filter_net_idx;
+	struct bt_mesh_brg_cfg_filter_netkey filter_net_idx;
 
 	filter_net_idx.filter = net_idx_filter & BIT_MASK(2);
 	filter_net_idx.net_idx = (net_idx_filter >> 4) & BIT_MASK(12);

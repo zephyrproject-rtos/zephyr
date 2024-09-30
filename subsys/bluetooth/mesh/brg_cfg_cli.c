@@ -17,12 +17,11 @@ static int32_t msg_timeout;
 
 static struct bt_mesh_brg_cfg_cli *cli;
 
-static int subnet_bridge_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static int bridge_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
-	enum bt_mesh_subnet_bridge_state status =
-		(enum bt_mesh_subnet_bridge_state)net_buf_simple_pull_u8(buf);
-	enum bt_mesh_subnet_bridge_state *rsp;
+	enum bt_mesh_brg_cfg_state status = (enum bt_mesh_brg_cfg_state)net_buf_simple_pull_u8(buf);
+	enum bt_mesh_brg_cfg_state *rsp;
 
 	if (bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_SUBNET_BRIDGE_STATUS, ctx->addr,
 				      (void **)&rsp)) {
@@ -30,17 +29,17 @@ static int subnet_bridge_status(const struct bt_mesh_model *model, struct bt_mes
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	if (cli->cb && cli->cb->subnet_bridge_status) {
-		cli->cb->subnet_bridge_status(cli, ctx->addr, status);
+	if (cli->cb && cli->cb->bridge_status) {
+		cli->cb->bridge_status(cli, ctx->addr, status);
 	}
 	return 0;
 }
 
-static int bridging_table_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-				 struct net_buf_simple *buf)
+static int table_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
-	struct bt_mesh_bridging_table_status table_status;
-	struct bt_mesh_bridging_table_status *rsp;
+	struct bt_mesh_brg_cfg_table_status table_status;
+	struct bt_mesh_brg_cfg_table_status *rsp;
 
 	table_status.status = net_buf_simple_pull_u8(buf);
 	table_status.entry.directions = net_buf_simple_pull_u8(buf);
@@ -63,17 +62,17 @@ static int bridging_table_status(const struct bt_mesh_model *model, struct bt_me
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	if (cli->cb && cli->cb->bridging_table_status) {
-		cli->cb->bridging_table_status(cli, ctx->addr, &table_status);
+	if (cli->cb && cli->cb->table_status) {
+		cli->cb->table_status(cli, ctx->addr, &table_status);
 	}
 	return 0;
 }
 
-static int bridged_subnets_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static int subnets_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
 {
-	struct bt_mesh_bridged_subnets_list subnets_list;
-	struct bt_mesh_bridged_subnets_list *rsp;
+	struct bt_mesh_brg_cfg_subnets_list subnets_list;
+	struct bt_mesh_brg_cfg_subnets_list *rsp;
 	uint16_t net_idx_filter;
 
 	net_idx_filter = net_buf_simple_pull_le16(buf);
@@ -102,17 +101,17 @@ static int bridged_subnets_list(const struct bt_mesh_model *model, struct bt_mes
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	if (cli->cb && cli->cb->bridged_subnets_list) {
-		cli->cb->bridged_subnets_list(cli, ctx->addr, &subnets_list);
+	if (cli->cb && cli->cb->subnets_list) {
+		cli->cb->subnets_list(cli, ctx->addr, &subnets_list);
 	}
 	return 0;
 }
 
-static int bridging_table_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			       struct net_buf_simple *buf)
+static int table_list(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+		      struct net_buf_simple *buf)
 {
-	struct bt_mesh_bridging_table_list table_list;
-	struct bt_mesh_bridging_table_list *rsp;
+	struct bt_mesh_brg_cfg_table_list table_list;
+	struct bt_mesh_brg_cfg_table_list *rsp;
 
 	table_list.status = net_buf_simple_pull_u8(buf);
 	key_idx_unpack_pair(buf, &table_list.net_idx1, &table_list.net_idx2);
@@ -141,14 +140,14 @@ static int bridging_table_list(const struct bt_mesh_model *model, struct bt_mesh
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	if (cli->cb && cli->cb->bridging_table_list) {
-		cli->cb->bridging_table_list(cli, ctx->addr, &table_list);
+	if (cli->cb && cli->cb->table_list) {
+		cli->cb->table_list(cli, ctx->addr, &table_list);
 	}
 	return 0;
 }
 
-static int bridging_table_size_status(const struct bt_mesh_model *model,
-				      struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+static int table_size_status(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			     struct net_buf_simple *buf)
 {
 	uint16_t size = net_buf_simple_pull_le16(buf);
 	uint16_t *rsp;
@@ -159,18 +158,18 @@ static int bridging_table_size_status(const struct bt_mesh_model *model,
 		bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
 	}
 
-	if (cli->cb && cli->cb->bridging_table_size_status) {
-		cli->cb->bridging_table_size_status(cli, ctx->addr, size);
+	if (cli->cb && cli->cb->table_size_status) {
+		cli->cb->table_size_status(cli, ctx->addr, size);
 	}
 	return 0;
 }
 
 const struct bt_mesh_model_op _bt_mesh_brg_cfg_cli_op[] = {
-	{OP_SUBNET_BRIDGE_STATUS, BT_MESH_LEN_EXACT(1), subnet_bridge_status},
-	{OP_BRIDGING_TABLE_STATUS, BT_MESH_LEN_EXACT(9), bridging_table_status},
-	{OP_BRIDGED_SUBNETS_LIST, BT_MESH_LEN_MIN(3), bridged_subnets_list},
-	{OP_BRIDGING_TABLE_LIST, BT_MESH_LEN_MIN(6), bridging_table_list},
-	{OP_BRIDGING_TABLE_SIZE_STATUS, BT_MESH_LEN_EXACT(2), bridging_table_size_status},
+	{OP_SUBNET_BRIDGE_STATUS, BT_MESH_LEN_EXACT(1), bridge_status},
+	{OP_BRIDGING_TABLE_STATUS, BT_MESH_LEN_EXACT(9), table_status},
+	{OP_BRIDGED_SUBNETS_LIST, BT_MESH_LEN_MIN(3), subnets_list},
+	{OP_BRIDGING_TABLE_LIST, BT_MESH_LEN_MIN(6), table_list},
+	{OP_BRIDGING_TABLE_SIZE_STATUS, BT_MESH_LEN_EXACT(2), table_size_status},
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -202,8 +201,7 @@ const struct bt_mesh_model_cb _bt_mesh_brg_cfg_cli_cb = {
 	.init = brg_cfg_cli_init,
 };
 
-int bt_mesh_brg_cfg_cli_subnet_bridge_get(uint16_t net_idx, uint16_t addr,
-					  enum bt_mesh_subnet_bridge_state *status)
+int bt_mesh_brg_cfg_cli_get(uint16_t net_idx, uint16_t addr, enum bt_mesh_brg_cfg_state *status)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SUBNET_BRIDGE_GET, 0);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -219,9 +217,8 @@ int bt_mesh_brg_cfg_cli_subnet_bridge_get(uint16_t net_idx, uint16_t addr,
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !status ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_subnet_bridge_set(uint16_t net_idx, uint16_t addr,
-					  enum bt_mesh_subnet_bridge_state val,
-					  enum bt_mesh_subnet_bridge_state *status)
+int bt_mesh_brg_cfg_cli_set(uint16_t net_idx, uint16_t addr, enum bt_mesh_brg_cfg_state val,
+			    enum bt_mesh_brg_cfg_state *status)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_SUBNET_BRIDGE_SET, 1);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -238,7 +235,7 @@ int bt_mesh_brg_cfg_cli_subnet_bridge_set(uint16_t net_idx, uint16_t addr,
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !status ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_bridging_table_size_get(uint16_t net_idx, uint16_t addr, uint16_t *size)
+int bt_mesh_brg_cfg_cli_table_size_get(uint16_t net_idx, uint16_t addr, uint16_t *size)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_SIZE_GET, 0);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -254,9 +251,9 @@ int bt_mesh_brg_cfg_cli_bridging_table_size_get(uint16_t net_idx, uint16_t addr,
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !size ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_bridging_table_add(uint16_t net_idx, uint16_t addr,
-					   struct bt_mesh_bridging_table_entry *entry,
-					   struct bt_mesh_bridging_table_status *rsp)
+int bt_mesh_brg_cfg_cli_table_add(uint16_t net_idx, uint16_t addr,
+				  struct bt_mesh_brg_cfg_table_entry *entry,
+				  struct bt_mesh_brg_cfg_table_status *rsp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_ADD, 8);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -292,9 +289,9 @@ int bt_mesh_brg_cfg_cli_bridging_table_add(uint16_t net_idx, uint16_t addr,
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !rsp ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_bridging_table_remove(uint16_t net_idx, uint16_t addr, uint16_t net_idx1,
-					      uint16_t net_idx2, uint16_t addr1, uint16_t addr2,
-					      struct bt_mesh_bridging_table_status *rsp)
+int bt_mesh_brg_cfg_cli_table_remove(uint16_t net_idx, uint16_t addr, uint16_t net_idx1,
+				     uint16_t net_idx2, uint16_t addr1, uint16_t addr2,
+				     struct bt_mesh_brg_cfg_table_status *rsp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_REMOVE, 7);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -321,10 +318,9 @@ int bt_mesh_brg_cfg_cli_bridging_table_remove(uint16_t net_idx, uint16_t addr, u
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !rsp ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_bridged_subnets_get(uint16_t net_idx, uint16_t addr,
-					    struct bt_mesh_filter_netkey filter_net_idx,
-					    uint8_t start_idx,
-					    struct bt_mesh_bridged_subnets_list *rsp)
+int bt_mesh_brg_cfg_cli_subnets_get(uint16_t net_idx, uint16_t addr,
+				    struct bt_mesh_brg_cfg_filter_netkey filter_net_idx,
+				    uint8_t start_idx, struct bt_mesh_brg_cfg_subnets_list *rsp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGED_SUBNETS_GET, 3);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
@@ -342,9 +338,9 @@ int bt_mesh_brg_cfg_cli_bridged_subnets_get(uint16_t net_idx, uint16_t addr,
 	return bt_mesh_msg_ackd_send(cli->model, &ctx, &msg, !rsp ? NULL : &rsp_ctx);
 }
 
-int bt_mesh_brg_cfg_cli_bridging_table_get(uint16_t net_idx, uint16_t addr, uint16_t net_idx1,
-					   uint16_t net_idx2, uint16_t start_idx,
-					   struct bt_mesh_bridging_table_list *rsp)
+int bt_mesh_brg_cfg_cli_table_get(uint16_t net_idx, uint16_t addr, uint16_t net_idx1,
+				  uint16_t net_idx2, uint16_t start_idx,
+				  struct bt_mesh_brg_cfg_table_list *rsp)
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BRIDGING_TABLE_GET, 5);
 	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(net_idx, addr);
