@@ -360,7 +360,7 @@ static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, siz
 {
 	const struct device *dev;
 	int err = -EINVAL;
-	enum stepper_direction direction;
+	enum stepper_direction direction = STEPPER_DIRECTION_POSITIVE;
 
 	for (int i = 0; i < ARRAY_SIZE(stepper_direction_map); i++) {
 		if (strcmp(argv[ARG_IDX_PARAM], stepper_direction_map[i].name) == 0) {
