@@ -485,7 +485,7 @@ class RimageSigner(Signer):
         kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         # TODO: make this a new sign.py --bootloader option.
-        if target in ('imx8', 'imx8m', 'imx8ulp'):
+        if target in ('imx8', 'imx8m', 'imx8ulp', 'imx95'):
             bootloader = None
             kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
             out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')
