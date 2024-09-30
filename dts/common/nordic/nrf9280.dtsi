@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
-
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf9230-engb.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf9230.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf9230.h>
