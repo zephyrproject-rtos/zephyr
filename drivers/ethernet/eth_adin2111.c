@@ -648,7 +648,7 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 	const struct device *dev = p1;
 	struct adin2111_data *ctx = dev->data;
 	const struct adin2111_config *adin_cfg = dev->config;
-	bool is_adin2111 = (adin_cfg->id == ADIN2111_MAC);
+	const bool is_adin2111 = (adin_cfg->id == ADIN2111_MAC);
 	uint32_t status0;
 	uint32_t status1;
 	int ret;
@@ -686,7 +686,7 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 		}
 
 		/* handle port 2 phy interrupts */
-		if ((status1 & ADIN2111_STATUS1_PHYINT) && is_adin2111) {
+		if (is_adin2111 && (status1 & ADIN2111_STATUS1_PHYINT)) {
 			adin2111_port_on_phyint(ctx->port[1]);
 		}
 
@@ -697,7 +697,7 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 					goto continue_unlock;
 				}
 			}
-			if ((status1 & ADIN2111_STATUS1_P2_RX_RDY ) && is_adin2111) {
+			if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
 				ret = eth_adin2111_oa_data_read(dev, 1);
 				if (ret < 0) {
 					goto continue_unlock;
@@ -727,7 +727,7 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 			}
 
 			/* handle port 2 rx */
-			if ((status1 & ADIN2111_STATUS1_P2_RX_RDY) && is_adin2111) {
+			if (is_adin2111 && (status1 & ADIN2111_STATUS1_P2_RX_RDY)) {
 				do {
 					ret = adin2111_read_fifo(dev, 1U);
 					if (ret < 0) {
@@ -994,7 +994,7 @@ static int adin2111_write_filter_address(const struct device *dev,
 static int adin2111_filter_multicast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
-	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	const bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	uint8_t mm[NET_ETH_ADDR_LEN] = {BIT(0), 0U, 0U, 0U, 0U, 0U};
 	uint8_t mmask[NET_ETH_ADDR_LEN] = {0xFFU, 0U, 0U, 0U, 0U, 0U};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
@@ -1009,7 +1009,7 @@ static int adin2111_filter_multicast(const struct device *dev)
 static int adin2111_filter_broadcast(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
-	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	const bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	uint8_t mac[NET_ETH_ADDR_LEN] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 	uint32_t rules = ADIN2111_ADDR_APPLY2PORT1 |
 			 (is_adin2111 ? ADIN2111_ADDR_APPLY2PORT2 : 0) |
@@ -1129,7 +1129,7 @@ static int eth_adin2111_set_promiscuous(const struct device *dev, const uint16_t
 					bool enable)
 {
 	const struct adin2111_config *cfg = dev->config;
-	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	const bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	uint32_t fwd_mask;
 
 	if ((!is_adin2111 && port_idx > 0) || (is_adin2111 && port_idx > 1)) {
@@ -1354,7 +1354,7 @@ int eth_adin2111_sw_reset(const struct device *dev, uint16_t delay)
 static int adin2111_init(const struct device *dev)
 {
 	const struct adin2111_config *cfg = dev->config;
-	bool is_adin2111 = (cfg->id == ADIN2111_MAC);
+	const bool is_adin2111 = (cfg->id == ADIN2111_MAC);
 	struct adin2111_data *ctx = dev->data;
 	int ret;
 	uint32_t val;
