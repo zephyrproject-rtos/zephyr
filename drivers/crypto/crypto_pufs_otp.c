@@ -17,8 +17,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crypto_puf_security_otp);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(pufsecurity_pufcc_otp)
-  #define DT_DRV_COMPAT pufsecurity_pufcc_otp
+#if DT_HAS_COMPAT_STATUS_OKAY(pufsecurity_otp)
+  #define DT_DRV_COMPAT pufsecurity_otp
 #else
   #error No PUF Security HW Crypto OTP in device tree
 #endif
