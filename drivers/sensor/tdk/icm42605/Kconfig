@@ -25,6 +25,7 @@ config ICM42605_TRIGGER_NONE
 config ICM42605_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM42605),int-gpios)
 	select ICM42605_TRIGGER
 
 endchoice

@@ -35,6 +35,8 @@ config LPS2XDF_TRIGGER_NONE
 config LPS2XDF_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22DF),drdy-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS28DFW),drdy-gpios)
 	select LPS2XDF_TRIGGER
 
 config LPS2XDF_TRIGGER_OWN_THREAD
