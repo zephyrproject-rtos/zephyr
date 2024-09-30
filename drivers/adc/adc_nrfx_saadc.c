@@ -7,7 +7,8 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <haly/nrfy_saadc.h>
-#include <zephyr/dt-bindings/adc/nrf-adc.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-v3.h>
+#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
 #include <zephyr/linker/devicetree_regions.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL

@@ -6,6 +6,7 @@
 
 #include <mem.h>
 #include <nordic/nrf_common.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc-nrf54l.h>
 #include <zephyr/dt-bindings/regulator/nrf5x.h>
 
 /delete-node/ &sw_pwm;
