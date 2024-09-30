@@ -6,7 +6,7 @@
 
 / {
 	zephyr,user {
-		io-channels = <&adc 0>, <&adc 1>, <&adc 7>;
+		io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 7>;
 	};
 };
 
@@ -35,6 +35,16 @@
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN2>; /* P1.06 */
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <8>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_DVDD>; /* 0.9 V internal */
 		zephyr,resolution = <12>;
 		zephyr,oversampling = <8>;
 	};
