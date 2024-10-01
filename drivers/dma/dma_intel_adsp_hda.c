@@ -27,6 +27,10 @@
 #include "dma_intel_adsp_hda.h"
 #include <intel_adsp_hda.h>
 
+#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(dma_intel_adsp_hda);
+
 int intel_adsp_hda_dma_host_in_config(const struct device *dev,
 				       uint32_t channel,
 				       struct dma_config *dma_cfg)
@@ -347,6 +351,42 @@ int intel_adsp_hda_dma_stop(const struct device *dev, uint32_t channel)
 
 	if (!intel_adsp_hda_is_enabled(cfg->base, cfg->regblock_size, channel)) {
 		return 0;
+	}
+
+	/*
+	 * Workaround for random metallic noise on DMA restart:
+	 * Make sure that the output link DMA read and write pointers are exactly 0 when we disable
+	 * the channel.
+	 * On channel restart the pointers are not rested to 0 and can result corruption.
+	 */
+	if (cfg->direction == MEMORY_TO_PERIPHERAL) {
+		uint32_t wp, size;
+		int i;
+
+		wp = *DGBWP(cfg->base, cfg->regblock_size, channel);
+		size = intel_adsp_hda_get_buffer_size(cfg->base, cfg->regblock_size, channel);
+
+		/* Move the WP to wrap to exactly to 0 if it is not already 0 */
+		if (wp) {
+			intel_adsp_hda_link_commit(cfg->base, cfg->regblock_size, channel,
+						   size - wp);
+		}
+
+		/* Wait for the pointers to reach 0 */
+		for (i = 0; i < 1000; i++) {
+			uint32_t unused = intel_adsp_hda_unused(cfg->base, cfg->regblock_size,
+								channel);
+
+			if (unused >= size)
+				break;
+			k_sleep(K_USEC(1));
+		}
+
+		if (i >= 1000) {
+			LOG_WRN("Drain timed out on channel %d (WP: %u, RP: %u)", channel,
+				*DGBWP(cfg->base, cfg->regblock_size, channel),
+				*DGBRP(cfg->base, cfg->regblock_size, channel));
+		}
 	}
 
 	intel_adsp_hda_disable(cfg->base, cfg->regblock_size, channel);
