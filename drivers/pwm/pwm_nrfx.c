@@ -390,50 +390,7 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
 			 &pwm_nrfx_drv_api_funcs)
 
-#ifdef CONFIG_HAS_HW_NRF_PWM0
-PWM_NRFX_DEVICE(0);
-#endif
+#define COND_PWM_NRFX_DEVICE(unused, prefix, i, _) \
+	IF_ENABLED(CONFIG_HAS_HW_NRF_PWM##prefix##i, (PWM_NRFX_DEVICE(prefix##i);))
 
-#ifdef CONFIG_HAS_HW_NRF_PWM1
-PWM_NRFX_DEVICE(1);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM2
-PWM_NRFX_DEVICE(2);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM3
-PWM_NRFX_DEVICE(3);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM20
-PWM_NRFX_DEVICE(20);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM21
-PWM_NRFX_DEVICE(21);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM22
-PWM_NRFX_DEVICE(22);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM120
-PWM_NRFX_DEVICE(120);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM130
-PWM_NRFX_DEVICE(130);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM131
-PWM_NRFX_DEVICE(131);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM132
-PWM_NRFX_DEVICE(132);
-#endif
-
-#ifdef CONFIG_HAS_HW_NRF_PWM133
-PWM_NRFX_DEVICE(133);
-#endif
+NRFX_FOREACH_PRESENT(PWM, COND_PWM_NRFX_DEVICE, (), (), _)
