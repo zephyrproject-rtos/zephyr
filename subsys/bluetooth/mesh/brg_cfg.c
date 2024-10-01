@@ -224,8 +224,8 @@ static bool netkey_check(uint16_t net_idx1, uint16_t net_idx2)
 	return bt_mesh_subnet_get(net_idx1) && bt_mesh_subnet_get(net_idx2);
 }
 
-int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx1,
-			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2, uint8_t *status)
+int bt_mesh_brg_cfg_tbl_add(uint8_t direction, uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
+			    uint16_t addr2, uint8_t *status)
 {
 	/* Sanity checks */
 	if (!BT_MESH_ADDR_IS_UNICAST(addr1) || net_idx1 == net_idx2 || addr1 == addr2 ||

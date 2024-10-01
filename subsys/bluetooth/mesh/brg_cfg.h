@@ -13,17 +13,6 @@
 
 #define BT_MESH_BRG_CFG_NKEY_PRHB_FLT_MASK 0x000C
 
-enum bt_mesh_brg_cfg_dir {
-	/* Value is prohibited. */
-	BT_MESH_BRG_CFG_DIR_PROHIBITED = 0,
-	/* Briging from Addr1 to Addr2. */
-	BT_MESH_BRG_CFG_DIR_ONEWAY = 1,
-	/* Briging to/from Addr1 from/to Addr2. */
-	BT_MESH_BRG_CFG_DIR_TWOWAY = 2,
-	/* Values above these are prohibited. */
-	BT_MESH_BRG_CFG_DIR_MAX = 3,
-};
-
 #define BT_MESH_BRG_CFG_NETIDX_NOMATCH 0xFFFF
 
 /* One row of the bridging table */
@@ -50,8 +39,8 @@ int bt_mesh_brg_cfg_tbl_reset(void);
 
 int bt_mesh_brg_cfg_tbl_get(const struct bt_mesh_brg_cfg_row **rows);
 
-int bt_mesh_brg_cfg_tbl_add(enum bt_mesh_brg_cfg_dir direction, uint16_t net_idx1,
-			    uint16_t net_idx2, uint16_t addr1, uint16_t addr2, uint8_t *status);
+int bt_mesh_brg_cfg_tbl_add(uint8_t direction, uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1,
+			    uint16_t addr2, uint8_t *status);
 
 int bt_mesh_brg_cfg_tbl_remove(uint16_t net_idx1, uint16_t net_idx2, uint16_t addr1, uint16_t addr2,
 			       uint8_t *status);
