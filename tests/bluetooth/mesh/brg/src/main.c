@@ -293,6 +293,11 @@ ZTEST(bt_mesh_brg_cfg, test_brg_tbl_pending_store)
 	bt_mesh_brg_cfg_pending_store();
 }
 
+/* Value is prohibited. */
+#define BT_MESH_BRG_CFG_DIR_PROHIBITED 0
+/* Values above and including this is prohibited. */
+#define BT_MESH_BRG_CFG_DIR_MAX 3
+
 /* Test if invalid entries are not added to the table. */
 ZTEST(bt_mesh_brg_cfg, test_tbl_add_invalid_ip)
 {
