@@ -43,6 +43,20 @@ config CLOCK_MANAGEMENT_CLK_NAME
 	  clock framework debug logging is enabled, traces will be printed
 	  as the clock tree is reconfigured.
 
+config CLOCK_MANAGEMENT_FIXED_SOURCE
+	bool "Fixed clock source driver"
+	default y
+	depends on DT_HAS_FIXED_CLOCK_ENABLED
+	help
+	  Fixed clock source driver, for non configurable clock sources
+
+config CLOCK_MANAGEMENT_SOURCE
+	bool "Clock source driver"
+	default y
+	depends on DT_HAS_CLOCK_SOURCE_ENABLED
+	help
+	  Clock source driver, for fixed clock sources that may be gated/ungated
+
 module = CLOCK_MANAGEMENT
 module-str = clock-management
 source "subsys/logging/Kconfig.template.log_config"
